@@ -513,7 +513,7 @@ const ACTION_LABELS: Record<string, string> = {
   "connector.toggle": "Connector getoggelt",
   "experience.profile_update": "Erfahrungsprofil aktualisiert",
   "dashboard.briefing": "Tagesübersicht abgerufen",
-  "presence.update": "Presence aktualisiert",
+  "presence.update": "Anwesenheit aktualisiert",
   "security.2fa_qrcode": "2FA-QR-Code generiert",
   "agent.supervisor_run": "Agent-Supervisor gestartet",
   "agent.control": "Agent gesteuert",

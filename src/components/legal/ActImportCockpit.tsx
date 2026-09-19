@@ -46,6 +46,20 @@ const EMPTY: ActImportMetrics = {
   canFinalize: false,
 };
 
+/** Import states in lawyer language — raw engine states never reach the UI. */
+const IMPORT_STATUS_LABELS: Record<string, string> = {
+  not_started: "Nicht begonnen",
+  uploading: "Wird hochgeladen",
+  pending: "Wartet",
+  processing: "In Verarbeitung",
+  partial: "Teilweise",
+  review: "Zu prüfen",
+  ready: "Bereit",
+  failed: "Fehlgeschlagen",
+  finalized: "Analysiert",
+  completed: "Abgeschlossen",
+};
+
 export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const retryInputRef = useRef<HTMLInputElement>(null);
@@ -172,9 +186,9 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
         method: "POST",
       });
       await load(created.id);
-      setMessage("Upload abgeschlossen. Readiness und Problemdateien können jetzt geprüft werden.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Aktenimport fehlgeschlagen");
+      setMessage("Hochladen abgeschlossen. Bereitschaft und Problemdateien können jetzt geprüft werden.");
+    } catch {
+      setMessage("Aktenimport fehlgeschlagen");
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -277,8 +291,8 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
       });
       await load();
       setMessage("Retry abgeschlossen.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Retry fehlgeschlagen");
+    } catch {
+      setMessage("Erneuter Versuch fehlgeschlagen");
     } finally {
       setBusy(false);
       if (retryInputRef.current) retryInputRef.current.value = "";
@@ -302,10 +316,10 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
           ((await response.json().catch(() => ({}))) as { message?: string }).message ??
             "Freigabe fehlgeschlagen"
         );
-      setMessage("Snapshot erstellt. Die gemeinsame Aktenanalyse läuft.");
+      setMessage("Analyse gestartet. Die gemeinsame Aktenanalyse läuft.");
       await load();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Freigabe fehlgeschlagen");
+    } catch {
+      setMessage("Freigabe fehlgeschlagen");
     } finally {
       setBusy(false);
     }
@@ -348,11 +362,13 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
         <div>
           <div className="flex items-center gap-2">
             <FileSearch size={18} className="brand-text" />
-            <h3 className="font-semibold">Forensischer Aktenimport</h3>
-            <Badge variant="info">{status}</Badge>
+            <h3 className="font-semibold">Aktenimport</h3>
+            {status !== "not_started" && (
+              <Badge variant="info">{IMPORT_STATUS_LABELS[status] ?? status}</Badge>
+            )}
           </div>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Originale → OCR → Brain → Qualitätsgate → ein gemeinsamer Snapshot
+            Ganze Aktenordner einlesen: Texterkennung, Prüfung und eine gemeinsame Aktenanalyse.
           </p>
         </div>
         <div className="flex gap-2">
@@ -392,7 +408,7 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
                 disabled={busy}
                 onClick={() => retryInputRef.current?.click()}
               >
-                <RotateCw size={14} /> Retry ({metrics.failed})
+                <RotateCw size={14} /> Erneut versuchen ({metrics.failed})
               </Button>
             </>
           )}
@@ -402,7 +418,7 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
               disabled={busy || !metrics.canFinalize}
               onClick={() => void finalize()}
             >
-              <Play size={14} /> Snapshot analysieren
+              <Play size={14} /> Akte analysieren
             </Button>
           )}
         </div>
@@ -415,8 +431,8 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
               ["Bereit", metrics.ready],
               ["Verarbeitung", metrics.processing + metrics.pending],
               ["Probleme", problemCount],
-              ["Klassifiziert", `${metrics.classificationPercent}%`],
-              ["ON-Abdeckung", `${metrics.onCoveragePercent}%`],
+              ["Klassifiziert", `${metrics.classificationPercent} %`],
+              ["Ordnungsnummern", `${metrics.onCoveragePercent} %`],
             ].map(([label, value]) => (
               <div key={String(label)} className="rounded-lg bg-[color:var(--ds-surface-2)] p-2">
                 <div className="text-lg font-semibold">{value}</div>
@@ -443,22 +459,22 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
                     }
                   />
                   <span className="min-w-0 flex-1 truncate">{item.relativePath}</span>
-                  <Badge variant="info">{item.status}</Badge>
+                  <Badge variant="info">{IMPORT_STATUS_LABELS[item.status] ?? item.status}</Badge>
                 </div>
               ))}
             </div>
           )}
           {metrics.canFinalize && (
             <p className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
-              <CheckCircle2 size={13} /> Alle Dokumente sind für den Snapshot bereit.
+              <CheckCircle2 size={13} /> Alle Dokumente sind für die Analyse bereit.
             </p>
           )}
         </>
       )}
       {busy && (
         <p className="flex items-center gap-2 text-xs">
-          <Loader2 size={13} className="animate-spin" /> Verarbeitung läuft – diese Session bleibt
-          im Brain gespeichert.
+          <Loader2 size={13} className="animate-spin" /> Verarbeitung läuft – der Import bleibt
+          gespeichert, auch wenn Sie die Seite verlassen.
         </p>
       )}
       {message && <p className="text-xs text-[color:var(--ds-text-muted)]">{message}</p>}

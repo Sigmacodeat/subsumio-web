@@ -6,7 +6,6 @@ import { useLang } from "@/lib/use-lang";
 import {
   BookOpen,
   Search,
-  Loader2,
   ArrowLeft,
   ChevronRight,
   Scale,
@@ -19,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { frontmatterOf, type NormFrontmatter } from "@/lib/legal-types";
-import { PageHeader } from "@/components/dashboard/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 
 const LAW_PAGES_LIMIT = 300;
@@ -59,19 +59,19 @@ const CODE_LABELS: Record<string, string> = {
 export default function NormsPage() {
   const { t } = useLang();
   return (
-    <Suspense
-      fallback={
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("aria.loading")}
-        >
-          <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
-        </div>
-      }
-    >
+    <Suspense fallback={<NormsSkeleton label={t("aria.loading")} />}>
       <NormsPageInner />
     </Suspense>
+  );
+}
+
+function NormsSkeleton({ label }: { label: string }) {
+  return (
+    <div className="space-y-2" aria-busy="true" aria-label={label}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="h-10 w-full rounded-lg" />
+      ))}
+    </div>
   );
 }
 
@@ -153,8 +153,8 @@ function NormsPageInner() {
         }
 
         setNorms(items.filter((item) => item.jurisdiction === "at" || item.jurisdiction === "eu"));
-      } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("norms.error_load"));
+      } catch {
+        if (!cancelled) setLoadError(t("norms.error_load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -208,21 +208,13 @@ function NormsPageInner() {
   );
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title={t("norms.title")}
-        description={t("norms.desc")}
-        breadcrumbs={[
-          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: t("norms.breadcrumb") },
-        ]}
-      />
-
+    // Embedded in the research page, which owns the page header (one h1 per page).
+    <div className="space-y-6">
       {capped && <CappedResultsNotice limit={LAW_PAGES_LIMIT} />}
 
       {/* Search */}
-      <div className="flex gap-2">
-        <div className="relative max-w-lg flex-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-lg min-w-[12rem] flex-1">
           <Search
             size={14}
             className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
@@ -235,20 +227,18 @@ function NormsPageInner() {
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </div>
-      </div>
-
-      <div className="brand-soft brand-text w-fit rounded-lg px-3 py-1.5 text-xs font-medium">
-        🇦🇹 Österreich · EU-Recht
+        <span className="text-xs text-[color:var(--ds-text-muted)]">Österreich · EU-Recht</span>
       </div>
 
       {/* Selected norm detail */}
       {selectedNorm && (
-        <div className="brand-border brand-soft space-y-4 rounded-xl border p-5">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
+                aria-label="Zurück zur Liste"
                 onClick={() => setSelectedNorm(null)}
                 className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               >
@@ -258,23 +248,11 @@ function NormsPageInner() {
                 <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
                   {selectedNorm.title}
                 </h2>
-                <div className="mt-1 flex items-center gap-2">
-                  <Badge
-                    variant="default"
-                    className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
-                  >
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Badge variant="default" className="text-xs">
                     {CODE_LABELS[selectedNorm.code] || selectedNorm.code.toUpperCase()}
                   </Badge>
-                  <Badge
-                    variant="default"
-                    className={`border text-xs ${
-                      selectedNorm.jurisdiction === "at"
-                        ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
-                        : selectedNorm.jurisdiction === "ch"
-                          ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                          : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
-                    }`}
-                  >
+                  <Badge variant="default" className="text-xs">
                     {selectedNorm.jurisdiction === "at"
                       ? t("norms.jurisdiction_at")
                       : selectedNorm.jurisdiction.toUpperCase()}
@@ -288,7 +266,7 @@ function NormsPageInner() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="hover:brand-text hover:brand-border flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
               title={t("norms.copy_title")}
             >
               {copied ? (
@@ -301,11 +279,10 @@ function NormsPageInner() {
           </div>
           <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
             {detailLoading ? (
-              <div className="flex items-center gap-2 py-4" role="status" aria-live="polite">
-                <Loader2 size={14} className="brand-text animate-spin" />
-                <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  {t("norms.loading_detail")}
-                </span>
+              <div className="space-y-2 py-1" aria-busy="true" aria-label={t("norms.loading_detail")}>
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-11/12 rounded" />
+                <Skeleton className="h-3 w-4/5 rounded" />
               </div>
             ) : (
               fullContent || selectedNorm.content
@@ -329,28 +306,22 @@ function NormsPageInner() {
             {t("norms.laws_count")}
           </span>
           <span className="flex items-center gap-1">
-            <Globe size={12} /> AT: {norms.filter((n) => n.jurisdiction === "at").length}
+            <Globe size={12} /> Österreich: {norms.filter((n) => n.jurisdiction === "at").length}
           </span>
         </div>
       )}
 
       {/* Norm list grouped by code */}
       {loading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("aria.loading")}
-        >
-          <Loader2 size={24} className="brand-text animate-spin" />
-        </div>
+        <NormsSkeleton label={t("aria.loading")} />
       ) : filtered.length === 0 ? (
-        <div className="space-y-3 py-16 text-center">
-          <BookOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("norms.empty")}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {norms.length > 0 ? t("norms.empty_filter") : t("norms.empty_import")}
-          </p>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title={t("norms.empty")}
+          description={norms.length > 0 ? t("norms.empty_filter") : t("norms.empty_import")}
+          actionLabel={query ? "Suche zurücksetzen" : undefined}
+          onAction={query ? () => setQuery("") : undefined}
+        />
       ) : (
         <div className="space-y-4">
           {Object.entries(byCode).map(([code, items]) => (
@@ -367,17 +338,8 @@ function NormsPageInner() {
                   <button
                     key={n.slug}
                     onClick={() => setSelectedNorm(n)}
-                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                   >
-                    <span
-                      className={`h-2 w-2 shrink-0 rounded-full ${
-                        n.jurisdiction === "at"
-                          ? "bg-[color:var(--ds-danger-solid)]"
-                          : n.jurisdiction === "ch"
-                            ? "bg-[color:var(--ds-success-solid)]"
-                            : "bg-[color:var(--ds-info-solid)]"
-                      }`}
-                    />
                     <span className="flex-1 truncate text-sm text-[color:var(--ds-text-muted)] group-hover:text-[color:var(--ds-text)]">
                       {n.title}
                     </span>
@@ -388,7 +350,7 @@ function NormsPageInner() {
                     )}
                     <ChevronRight
                       size={12}
-                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)]"
+                      className="shrink-0 text-[color:var(--ds-text-muted)]"
                     />
                   </button>
                 ))}

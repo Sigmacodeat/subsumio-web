@@ -116,9 +116,9 @@ const LAYER_INFO: Array<{
   name: string;
   icon: typeof FileText;
 }> = [
-  { num: 1, name: "ON-Scanner", icon: FileText },
-  { num: 2, name: "Entity-Extractor", icon: Users },
-  { num: 3, name: "Forensic Analyst", icon: Gavel },
+  { num: 1, name: "Ordnungsnummern", icon: FileText },
+  { num: 2, name: "Beteiligte & Rollen", icon: Users },
+  { num: 3, name: "Sachverhaltsanalyse", icon: Gavel },
   { num: 4, name: "Rechtliche Tiefenanalyse", icon: Scale },
   { num: 5, name: "Schaden, Fristen & Prozessrisiko", icon: Table },
   { num: 6, name: "Schriftsatz & Gegenargumente", icon: PenTool },
@@ -127,11 +127,11 @@ const LAYER_INFO: Array<{
 /** Per-page-type label shown on each output card, so a page is self-explanatory
  * regardless of which numeric bucket the backend filed it under. */
 const SUB_TYPE_LABELS: Record<string, string> = {
-  on_index: "ON-Index",
-  person: "Entität",
+  on_index: "Ordnungsnummern-Verzeichnis",
+  person: "Beteiligter",
   completeness_check: "Vollständigkeitsprüfung",
   forensic_report: "Forensische Analyse",
-  legal_grounding_map: "Rechtsgrundlagen (§-Retrieval)",
+  legal_grounding_map: "Rechtsgrundlagen",
   precedent_match: "Präzedenzfälle (OGH/BGH/BVerfG)",
   burden_of_proof: "Beweislastverteilung",
   admissibility_check: "Zulässigkeitsprüfung",
@@ -649,7 +649,7 @@ export function PipelinePanel({
         addToast({
           type: "error",
           title: "Keine Dokumente",
-          description: "Diese Akte hat keine verknüpften Dokumente für die Pipeline.",
+          description: "Diese Akte hat noch keine verknüpften Dokumente für die Aufarbeitung.",
           duration: 4000,
         });
         return;
@@ -672,18 +672,18 @@ export function PipelinePanel({
 
       addToast({
         type: "success",
-        title: "Pipeline gestartet",
-        description: "Die Multi-Layer Legal Agent Pipeline wurde gestartet.",
+        title: "Aufarbeitung gestartet",
+        description: "Die automatische Fallaufarbeitung wurde gestartet.",
         duration: 4000,
       });
 
       // Start polling for state updates
       setTimeout(() => refetch(), 3000);
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
-        title: "Pipeline-Start fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unbekannter Fehler",
+        title: "Aufarbeitung konnte nicht gestartet werden",
+        description: "Bitte versuchen Sie es erneut.",
         duration: 5000,
       });
     } finally {
@@ -720,17 +720,17 @@ export function PipelinePanel({
 
         addToast({
           type: "success",
-          title: "Pipeline fortgesetzt",
-          description: `Pipeline wird ab Layer ${fromLayer} fortgesetzt.`,
+          title: "Aufarbeitung fortgesetzt",
+          description: `Die Aufarbeitung wird ab Schritt ${fromLayer} fortgesetzt.`,
           duration: 4000,
         });
         setShowPartyCorrection(false);
         setTimeout(() => refetch(), 3000);
-      } catch (err) {
+      } catch {
         addToast({
           type: "error",
           title: "Resume fehlgeschlagen",
-          description: err instanceof Error ? err.message : "Unbekannter Fehler",
+          description: "Bitte versuchen Sie es erneut.",
           duration: 5000,
         });
       }
@@ -782,11 +782,11 @@ export function PipelinePanel({
             <Activity size={18} className="brand-text" />
             <div>
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Legal Agent Pipeline
+                Automatische Fallaufarbeitung
               </h3>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Multi-Layer: ON-Scanner → Entity → Forensic → Rechtliche Tiefenanalyse →
-                Schaden/Fristen/Risiko → Schriftsatz → Critic
+                Ordnungsnummern, Beteiligte, Sachverhalt, rechtliche Analyse, Schaden, Fristen und
+                Risiken bis zum Schriftsatzentwurf — mit abschließender Gegenprüfung.
               </p>
             </div>
           </div>
@@ -807,7 +807,7 @@ export function PipelinePanel({
               {pipelineStatus === "not_started"
                 ? "Nicht gestartet"
                 : pipelineStatus === "running"
-                  ? "Läuft..."
+                  ? "Läuft"
                   : pipelineStatus === "completed"
                     ? "Abgeschlossen"
                     : pipelineStatus === "failed"
@@ -832,7 +832,7 @@ export function PipelinePanel({
                 onClick={handleTriggerPipeline}
               >
                 {triggering ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
-                Pipeline starten
+                Aufarbeitung starten
               </Button>
             )}
           </div>
@@ -871,7 +871,7 @@ export function PipelinePanel({
                     )}
                     <Icon size={14} className={cn("shrink-0", layerStatusColor(status))} />
                     <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                      Layer {layer.num}: {layer.name}
+                      Schritt {layer.num}: {layer.name}
                     </span>
                     <StatusIcon
                       size={12}
@@ -1024,7 +1024,7 @@ export function PipelinePanel({
                                 onClick={() => handleResumePipeline(3)}
                               >
                                 <Play size={12} />
-                                Resume ab Layer 3
+                                Ab Schritt 3 fortsetzen
                               </Button>
                             )}
                           </div>
@@ -1061,7 +1061,7 @@ export function PipelinePanel({
                                 </div>
                               ))}
                               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                                Nach Korrektur wird die Pipeline ab Layer 3 (Forensic Analyst) mit
+                                Nach der Korrektur wird die Aufarbeitung ab Schritt 3 (Sachverhaltsanalyse) mit
                                 den korrigierten Rollen fortgesetzt.
                               </p>
                             </div>
@@ -1078,7 +1078,7 @@ export function PipelinePanel({
 
                   {expandedLayer === layer.num && !hasOutput && (
                     <div className="mt-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-3 text-xs text-[color:var(--ds-text-muted)]">
-                      Keine Output-Pages für diesen Layer.
+                      Für diesen Schritt liegen noch keine Ergebnisse vor.
                     </div>
                   )}
                 </div>
@@ -1369,7 +1369,7 @@ export function PipelinePanel({
               ))}
               {limitationExpiredClaims.length === 0 && limitationUrgentClaims.length === 0 && (
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Details nicht verfügbar — vollständigen Verjährungs-Scan im Layer-5-Output öffnen.
+                  Details nicht verfügbar — vollständige Verjährungsprüfung in den Ergebnissen von Schritt 5 öffnen.
                 </p>
               )}
             </div>
@@ -1482,7 +1482,7 @@ export function PipelinePanel({
               <Scale size={18} className="text-[color:var(--ds-category-indigo-text)]" />
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Narrative Kohärenz (Ensemble Critic)
+                  Schlüssigkeit der Argumentation
                 </h3>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
                   {pipelineState.ensemble_verdict.consensus.central_thesis
@@ -1558,7 +1558,7 @@ export function PipelinePanel({
                 </div>
               ) : (
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Keine Kohärenz-Verletzungen. Alle Layer-Outputs folgen derselben zentralen These.
+                  Keine Widersprüche: Alle Ergebnisse folgen derselben zentralen These.
                 </p>
               )}
             </div>
@@ -1615,11 +1615,11 @@ export function PipelinePanel({
         <div className="rounded-xl border border-[color:var(--ds-danger)] bg-[color:var(--ds-surface)] p-6 text-center">
           <AlertCircle size={28} className="mx-auto mb-3 text-[color:var(--ds-danger)]" />
           <p className="text-sm text-[color:var(--ds-text)]">
-            Pipeline-Daten konnten nicht geladen werden.
+            Die Ergebnisse der Aufarbeitung konnten nicht geladen werden.
           </p>
           <button
             onClick={() => refetch()}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             <RefreshCw size={14} />
             Erneut versuchen
@@ -1632,11 +1632,10 @@ export function PipelinePanel({
         <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center">
           <Activity size={32} className="mx-auto mb-3 text-[color:var(--ds-text-muted)]" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Die Legal Agent Pipeline wurde für diese Akte noch nicht gestartet.
+            Die automatische Fallaufarbeitung wurde für diese Akte noch nicht gestartet.
           </p>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Klicken Sie auf &quot;Pipeline starten&quot;, um die automatische Fallaufarbeitung zu
-            beginnen.
+            Mit „Aufarbeitung starten“ beginnt die Analyse der Aktendokumente.
           </p>
         </div>
       )}

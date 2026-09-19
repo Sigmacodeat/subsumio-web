@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   FlaskConical,
   History,
-  Info,
   Loader2,
   RotateCcw,
   UploadCloud,
@@ -15,7 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { api, ApiRequestError } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import {
   completeMigration,
@@ -146,6 +146,14 @@ function kindOf(value: unknown): ImportKind {
   return KIND_ORDER.includes(value as ImportKind) ? (value as ImportKind) : "cases";
 }
 
+/** Nur eigene, deutsche Fehlertexte zeigen — technische Meldungen werden ersetzt. */
+function friendlyReadError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "";
+  return /^(Die|Das|Bitte) /.test(msg)
+    ? msg
+    : "Die Datei konnte nicht gelesen werden. Bitte speichern Sie sie als CSV oder Excel (.xlsx).";
+}
+
 function describeRollback(r: RollbackResult): string {
   const parts = [
     r.archivedCases && `${r.archivedCases} Akten archiviert`,
@@ -158,6 +166,7 @@ function describeRollback(r: RollbackResult): string {
 
 export default function ImportKanzleiPage() {
   const { t } = useLang();
+  const confirm = useConfirm();
   const [kind, setKind] = useState<ImportKind>("cases");
   const [table, setTable] = useState<ImportTable | null>(null);
   const [fileName, setFileName] = useState("");
@@ -234,7 +243,7 @@ export default function ImportKanzleiPage() {
     } catch (err) {
       setTable(null);
       setFileName("");
-      setError(err instanceof Error ? err.message : "Die Datei konnte nicht gelesen werden.");
+      setError(friendlyReadError(err));
     } finally {
       setBusy(null);
     }
@@ -315,11 +324,9 @@ export default function ImportKanzleiPage() {
       );
       await persist(checked);
       setPlan(nextPlan);
-    } catch (err) {
+    } catch {
       setError(
-        err instanceof Error
-          ? `Probelauf fehlgeschlagen: ${err.message}`
-          : "Probelauf fehlgeschlagen."
+        "Der Probelauf konnte nicht abgeschlossen werden. Es wurde nichts übernommen — bitte versuchen Sie es erneut."
       );
     } finally {
       setBusy(null);
@@ -367,8 +374,10 @@ export default function ImportKanzleiPage() {
           : completeMigration(running, report, "dashboard");
       await persist(running, { created_refs: result.refs, outcome_counts: result.counts });
       void loadHistory();
-    } catch (err) {
-      setError(err instanceof Error ? `Import abgebrochen: ${err.message}` : "Import abgebrochen.");
+    } catch {
+      setError(
+        "Der Import wurde abgebrochen. Bereits übernommene Einträge bleiben erhalten und lassen sich unter „Letzte Importe“ zurücknehmen."
+      );
     } finally {
       setBusy(null);
     }
@@ -384,13 +393,13 @@ export default function ImportKanzleiPage() {
       entry.refs.pages.length +
       entry.refs.contactCompletions.length +
       entry.refs.timeEntries.reduce((s, t) => s + t.ids.length, 0);
-    if (
-      !window.confirm(
-        `Import „${entry.project.name}“ zurücknehmen? ${n} Einträge werden archiviert, entfernt oder zurückgesetzt. Inzwischen geänderte oder verrechnete Einträge bleiben erhalten.`
-      )
-    ) {
-      return false;
-    }
+    const ok = await confirm({
+      title: "Import zurücknehmen",
+      message: `Import „${entry.project.name}“: ${n} Einträge werden archiviert, entfernt oder zurückgesetzt. Inzwischen geänderte oder verrechnete Einträge bleiben erhalten.`,
+      confirmLabel: "Zurücknehmen",
+      variant: "danger",
+    });
+    if (!ok) return false;
     setBusy("rollback");
     setError(null);
     try {
@@ -402,12 +411,8 @@ export default function ImportKanzleiPage() {
       });
       void loadHistory();
       return true;
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? `Zurücknehmen fehlgeschlagen: ${err.message}`
-          : "Zurücknehmen fehlgeschlagen."
-      );
+    } catch {
+      setError("Der Import konnte nicht zurückgenommen werden. Bitte versuchen Sie es erneut.");
       return false;
     } finally {
       setBusy(null);
@@ -423,7 +428,7 @@ export default function ImportKanzleiPage() {
   const warningCount = plan ? plan.rows.filter((r) => r.warnings.length > 0).length : 0;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("importkanzlei.title")}
         description={t("importkanzlei.description")}
@@ -434,11 +439,10 @@ export default function ImportKanzleiPage() {
       />
 
       <div
-        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3"
+        className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" aria-hidden />
-        <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]">
+        <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
           Export aus RA-MICRO, Advoware, DATEV Anwalt oder Excel als CSV oder .xlsx. Reihenfolge:
           zuerst Akten, dann Kontakte, Fristen und Zeiten, denn diese werden über die Aktenzahl
           zugeordnet. Der Probelauf zeigt für jede Zeile, was passiert; vorhandene Daten werden nie
@@ -524,9 +528,12 @@ export default function ImportKanzleiPage() {
       </label>
 
       {error && (
-        <p className="text-sm text-[color:var(--ds-danger-text)]" role="alert">
+        <div
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
           {error}
-        </p>
+        </div>
       )}
 
       {table && (
@@ -620,7 +627,7 @@ export default function ImportKanzleiPage() {
               </h2>
               <Button
                 variant="secondary"
-                className="gap-2"
+                className="gap-2 whitespace-nowrap"
                 disabled={missing.length > 0 || busy !== null || table.rows.length === 0}
                 onClick={() => void runDryRunStep()}
               >
@@ -629,7 +636,7 @@ export default function ImportKanzleiPage() {
                 ) : (
                   <FlaskConical size={14} />
                 )}
-                {busy === "plan" ? "Prüfe…" : "Probelauf starten"}
+                {busy === "plan" ? "Wird geprüft …" : "Probelauf starten"}
               </Button>
             </div>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -684,7 +691,7 @@ export default function ImportKanzleiPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="primary"
-              className="gap-2"
+              className="gap-2 whitespace-nowrap"
               disabled={!plan || writable === 0 || busy !== null || Boolean(outcome)}
               onClick={() => void runImport()}
             >
@@ -694,7 +701,7 @@ export default function ImportKanzleiPage() {
                 <ArrowRight size={16} />
               )}
               {busy === "import"
-                ? `Importiere… ${progress}%`
+                ? `Wird importiert … ${progress} %`
                 : plan
                   ? `${writable} ${writable === 1 ? "Eintrag" : "Einträge"} importieren`
                   : "Importieren"}
@@ -806,10 +813,7 @@ export default function ImportKanzleiPage() {
                   </span>{" "}
                   <span className="text-[color:var(--ds-text-muted)]">
                     · {h.project.name} ·{" "}
-                    {new Date(h.project.updated_at).toLocaleString("de-AT", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
+                    <span className="tabular-nums">{formatDateTime(h.project.updated_at)}</span>
                     {h.counts &&
                       ` · ${h.counts.imported} importiert${h.counts.completed ? `, ${h.counts.completed} ergänzt` : ""}`}
                   </span>

@@ -5,7 +5,8 @@
 // live in ./chrome.tsx; the icon registry in ./icons.ts.
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { H1_CLASS, H2_CTA_CLASS, H3_CLASS } from "./typography";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronRight, Check, X } from "lucide-react";
@@ -251,9 +252,17 @@ export function BadgePill({
 }
 
 /** Standard hero subtitle paragraph. */
-export function HeroSub({ children }: { children: React.ReactNode }) {
+export function HeroSub({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+    <p
+      className={`mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg ${className}`}
+    >
       {children}
     </p>
   );
@@ -337,7 +346,7 @@ export function PageHero({
     accentVariant === "gradient"
       ? "gradient-text"
       : accentVariant === "gradient-premium"
-        ? "gradient-text-premium glow-text"
+        ? "gradient-text-premium"
         : "brand-text";
 
   const textCol = (
@@ -376,7 +385,9 @@ export function PageHero({
         animate={{ y: 0 }}
         transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
       >
-        <HeroSub>{sub}</HeroSub>
+        {/* Split hero: the text column is left-aligned on desktop, so the
+            paragraph must not centre itself (it sat 16 px in from the h1). */}
+        <HeroSub className={visual ? "lg:mx-0" : ""}>{sub}</HeroSub>
       </motion.div>
       {actions && (
         <motion.div
@@ -770,7 +781,7 @@ export function PricingCard({
       }`}
     >
       {badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--brand-primary)] px-4 py-1 text-sm font-semibold text-white">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--brand-solid)] px-4 py-1 text-sm font-semibold text-white">
           {badge}
         </span>
       )}
@@ -792,7 +803,7 @@ export function PricingCard({
         href={ctaHref}
         className={`block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-[background-color,border-color,color] motion-reduce:transition-none ${
           highlighted
-            ? "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)]"
+            ? "bg-[color:var(--brand-solid)] text-white hover:bg-[color:var(--brand-solid-hover)]"
             : "border [border-color:var(--mk-border-strong)] [color:var(--mk-text)] hover:[background:var(--mk-hover)]"
         }`}
       >

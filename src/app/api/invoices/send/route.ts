@@ -10,9 +10,21 @@ const log = logger("api/invoices/send");
 
 export const maxDuration = 60;
 
+const MAX_PDF_BYTES = 8 * 1024 * 1024;
+
 const sendSchema = z.object({
   invoiceSlug: z.string().min(1, "invoiceSlug_required"),
   toEmail: z.string().optional(),
+  /** The invoice PDF as rendered in the browser (same generator as the download). */
+  pdfBase64: z
+    .string()
+    .max(Math.ceil((MAX_PDF_BYTES * 4) / 3) + 4, "pdf_too_large")
+    .optional(),
+  pdfFilename: z
+    .string()
+    .max(120)
+    .regex(/^[\w.\- ]+\.pdf$/i, "pdf_filename_invalid")
+    .optional(),
 });
 
 export const POST = createHandler(
@@ -74,7 +86,22 @@ export const POST = createHandler(
 <p>Mit freundlichen Grüßen<br/>${esc(settings.anwaltName || settings.kanzleiName || "")}</p>`;
       const html = injectTracking(rawHtml, trackingId);
 
-      await transporter.sendMail({ from: fromAddr, to: recipient, subject, html });
+      let attachments: Array<{ filename: string; content: Buffer; contentType: string }> = [];
+      if (body.pdfBase64) {
+        const pdf = Buffer.from(body.pdfBase64, "base64");
+        if (pdf.subarray(0, 5).toString("latin1") !== "%PDF-" || pdf.length > MAX_PDF_BYTES) {
+          return apiError("pdf_invalid", "Die Rechnung konnte nicht als PDF angehängt werden", 400);
+        }
+        attachments = [
+          {
+            filename: body.pdfFilename ?? `Rechnung_${String(fm.invoice_number ?? "")}.pdf`,
+            content: pdf,
+            contentType: "application/pdf",
+          },
+        ];
+      }
+
+      await transporter.sendMail({ from: fromAddr, to: recipient, subject, html, attachments });
 
       // Log tracking event for the outbound email
       void logTrackingEvent({
@@ -87,8 +114,13 @@ export const POST = createHandler(
         slug: body.invoiceSlug,
         frontmatter: {
           ...fm,
+          // A draft that went out by e-mail is sent; paid/overdue stay as they are.
+          ...(String(fm.status ?? "draft") === "draft"
+            ? { status: "sent", sent_at: new Date().toISOString() }
+            : {}),
           email_sent_at: new Date().toISOString(),
           email_sent_to: recipient,
+          email_attachment: attachments.length > 0,
         },
       });
 

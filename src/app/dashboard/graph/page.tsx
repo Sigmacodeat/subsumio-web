@@ -2,23 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Network,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  RefreshCw,
-  Users,
-  Building2,
-  Lightbulb,
-  FileText,
-  Loader2,
-} from "lucide-react";
+import { Network, ZoomIn, ZoomOut, Maximize2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { api } from "@/lib/api";
 import type { GraphNode, GraphLink } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { brainTypeIcon, brainTypeLabel } from "../brain/brain-types";
 
 // Hex fallbacks only fire before the design tokens are resolved from
 // `--graph-*` CSS vars on mount (see `resolveNodeColors`) — keeps a single
@@ -48,6 +40,18 @@ const NODE_COLOR_FALLBACKS: Record<string, string> = {
 // Keep in sync with --graph-fallback in globals.css.
 const GRAPH_FALLBACK_HEX = "#5e626d";
 
+/** Beziehungsarten in Klartext; unbekannte Arten werden neutral benannt. */
+const LINK_LABELS: Record<string, string> = {
+  mentions: "erwähnt",
+  references: "verweist auf",
+  cites: "zitiert",
+  related_to: "steht in Bezug zu",
+  party_to: "Partei in",
+  represents: "vertritt",
+  belongs_to: "gehört zu",
+  works_at: "tätig bei",
+};
+
 function resolveNodeColors(root: HTMLElement): Record<string, string> {
   const cs = getComputedStyle(root);
   const resolved: Record<string, string> = {};
@@ -57,7 +61,10 @@ function resolveNodeColors(root: HTMLElement): Record<string, string> {
   return resolved;
 }
 
-type LayoutNode = GraphNode & { x: number; y: number };
+const linkEnd = (end: string | GraphNode) => (typeof end === "string" ? end : end.id);
+
+/** Unit-circle position; scaled to the canvas size at draw time so the ring stays centered. */
+type LayoutNode = GraphNode & { ux: number; uy: number };
 
 export default function GraphPage() {
   const router = useRouter();
@@ -68,43 +75,45 @@ export default function GraphPage() {
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [nodeColors, setNodeColors] = useState<Record<string, string>>(NODE_COLOR_FALLBACKS);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setFailed(false);
     try {
       const data = await api.brain.graph();
       setNodes(data.nodes);
       setLinks(data.links);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("graph.error_load"));
+      console.error("[graph] load failed:", e instanceof Error ? e.message : String(e));
+      setFailed(true);
       setNodes([]);
       setLinks([]);
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     // Deferred so the loading-state flip is not a synchronous setState
     // inside the effect body (react-hooks/set-state-in-effect).
     const timer = setTimeout(loadGraph, 0);
     return () => clearTimeout(timer);
-  }, [loadGraph, t]);
+  }, [loadGraph]);
 
   // Layout is purely derived from the node list — no state, no effect.
-  const layoutNodes = useMemo<LayoutNode[]>(() => {
-    if (nodes.length === 0) return [];
-    const W = 800;
-    const H = 600;
-    return nodes.map((n, i) => ({
-      ...n,
-      x: W / 2 + Math.cos((i / nodes.length) * Math.PI * 2) * 180,
-      y: H / 2 + Math.sin((i / nodes.length) * Math.PI * 2) * 130,
-    }));
-  }, [nodes]);
+  const layoutNodes = useMemo<LayoutNode[]>(
+    () =>
+      nodes.map((n, i) => ({
+        ...n,
+        ux: Math.cos((i / nodes.length) * Math.PI * 2),
+        uy: Math.sin((i / nodes.length) * Math.PI * 2),
+      })),
+    [nodes]
+  );
+
+  const presentTypes = useMemo(() => [...new Set(nodes.map((n) => n.type))], [nodes]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -113,93 +122,73 @@ export default function GraphPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-
-    const W = rect.width;
-    const H = rect.height;
-    const scale = zoom;
-    const offsetX = (W * (1 - scale)) / 2;
-    const offsetY = (H * (1 - scale)) / 2;
-
-    let animFrame: number;
-    let tick = 0;
-
     // Canvas can't read CSS variables, so resolve the design tokens from the
-    // dashboard root and re-read only when the theme attribute flips.
+    // dashboard root and redraw when the theme attribute flips.
     const themeRoot =
       (canvas.closest('[data-app="dashboard"]') as HTMLElement | null) ?? document.documentElement;
-    let lastTheme = "";
     const palette = {
       text: "hsl(225, 20%, 12%)",
-      subtle: "hsl(220, 8%, 40%)",
-      accentGlow: "hsla(222, 74%, 52%, 0.15)",
+      line: "hsla(222, 20%, 50%, 0.35)",
     };
     let resolvedNodeColors = NODE_COLOR_FALLBACKS;
     const readPalette = () => {
       const cs = getComputedStyle(themeRoot);
       palette.text = cs.getPropertyValue("--ds-text").trim() || palette.text;
-      palette.subtle = cs.getPropertyValue("--ds-text-subtle").trim() || palette.subtle;
-      palette.accentGlow = cs.getPropertyValue("--color-accent-glow").trim() || palette.accentGlow;
+      palette.line = cs.getPropertyValue("--ds-border-strong").trim() || palette.line;
       resolvedNodeColors = resolveNodeColors(themeRoot);
       setNodeColors(resolvedNodeColors);
     };
-    readPalette();
 
+    const positions = new Map<string, { x: number; y: number }>();
+    let geometry = { W: 0, H: 0, offsetX: 0, offsetY: 0 };
+
+    // One static drawing per change — no animation loop, no pulsing content.
     const draw = () => {
-      const theme = themeRoot.getAttribute("data-theme") || "";
-      if (theme !== lastTheme) {
-        lastTheme = theme;
-        readPalette();
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const W = rect.width;
+      const H = rect.height;
+      const offsetX = (W * (1 - zoom)) / 2;
+      const offsetY = (H * (1 - zoom)) / 2;
+      geometry = { W, H, offsetX, offsetY };
+      const rx = Math.min(W * 0.36, 300);
+      const ry = Math.min(H * 0.34, 220);
+      positions.clear();
+      for (const n of layoutNodes) {
+        positions.set(n.id, { x: W / 2 + n.ux * rx, y: H / 2 + n.uy * ry });
       }
+
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
-      tick += 0.005;
+      ctx.scale(zoom, zoom);
 
       links.forEach((link) => {
-        const srcId = typeof link.source === "string" ? link.source : link.source.id;
-        const tgtId = typeof link.target === "string" ? link.target : link.target.id;
-        const src = layoutNodes.find((n) => n.id === srcId);
-        const tgt = layoutNodes.find((n) => n.id === tgtId);
+        const src = positions.get(linkEnd(link.source));
+        const tgt = positions.get(linkEnd(link.target));
         if (!src || !tgt) return;
-
         ctx.beginPath();
         ctx.moveTo(src.x, src.y);
         ctx.lineTo(tgt.x, tgt.y);
-        ctx.strokeStyle = palette.accentGlow;
+        ctx.strokeStyle = palette.line;
         ctx.lineWidth = 1;
         ctx.stroke();
-
-        const midX = (src.x + tgt.x) / 2;
-        const midY = (src.y + tgt.y) / 2;
-        ctx.fillStyle = palette.subtle;
-        ctx.font = "10px JetBrains Mono, monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(link.type, midX, midY - 4);
       });
 
       layoutNodes.forEach((node) => {
+        const pos = positions.get(node.id);
+        if (!pos) return;
         const color =
           resolvedNodeColors[node.type] || NODE_COLOR_FALLBACKS[node.type] || GRAPH_FALLBACK_HEX;
-        const radius = 8 + node.connections * 2;
-        const pulse = Math.sin(tick * 2) * 2;
-
-        const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius + 8);
-        gradient.addColorStop(0, color + "40");
-        gradient.addColorStop(1, "transparent");
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius + 6 + pulse, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
+        const radius = Math.min(8 + node.connections * 2, 22);
 
         ctx.beginPath();
-        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = color + "20";
+        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color + "26";
         ctx.fill();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
@@ -208,253 +197,216 @@ export default function GraphPage() {
         ctx.fillStyle = palette.text;
         ctx.font = "12px Inter, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(node.name, node.x, node.y + radius + 16);
-
-        ctx.fillStyle = palette.subtle;
-        ctx.font = "10px JetBrains Mono, monospace";
-        ctx.fillText(node.type, node.x, node.y + radius + 28);
+        ctx.fillText(node.name, pos.x, pos.y + radius + 16);
       });
 
       ctx.restore();
-      animFrame = requestAnimationFrame(draw);
     };
 
+    readPalette();
     draw();
+
+    const themeObserver = new MutationObserver(() => {
+      readPalette();
+      draw();
+    });
+    themeObserver.observe(themeRoot, { attributes: true, attributeFilter: ["data-theme"] });
+    const resizeObserver = new ResizeObserver(() => draw());
+    resizeObserver.observe(canvas);
 
     const handleClick = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left - offsetX) / scale;
-      const y = (e.clientY - rect.top - offsetY) / scale;
-
+      const x = (e.clientX - rect.left - geometry.offsetX) / zoom;
+      const y = (e.clientY - rect.top - geometry.offsetY) / zoom;
       const hit = layoutNodes.find((n) => {
-        const dx = n.x - x;
-        const dy = n.y - y;
-        return Math.sqrt(dx * dx + dy * dy) < 20;
+        const p = positions.get(n.id);
+        if (!p) return false;
+        return Math.hypot(p.x - x, p.y - y) < 22;
       });
-
       setSelected(hit ? nodes.find((n) => n.id === hit.id) || null : null);
     };
 
     canvas.addEventListener("click", handleClick);
 
     return () => {
-      cancelAnimationFrame(animFrame);
+      themeObserver.disconnect();
+      resizeObserver.disconnect();
       canvas.removeEventListener("click", handleClick);
     };
   }, [layoutNodes, links, nodes, zoom]);
 
   const isEmpty = !loading && nodes.length === 0;
+  const title = "Beziehungsnetz";
 
-  const typeIconMap: Record<string, React.ElementType> = {
-    person: Users,
-    company: Building2,
-    idea: Lightbulb,
-    document: FileText,
-  };
+  const selectedLinks = selected
+    ? links.filter((l) => linkEnd(l.source) === selected.id || linkEnd(l.target) === selected.id)
+    : [];
+
+  const iconBtn =
+    "rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none";
 
   return (
-    <div className="mx-auto flex h-full max-w-[1200px] min-w-0 flex-col space-y-6 p-4 md:p-6 lg:p-8">
-      <h1 className="sr-only">{t("graph.title")}</h1>
-      <div className="flex h-full min-w-0 overflow-hidden">
-        <div className="relative min-w-0 flex-1 bg-[color:var(--ds-bg)]">
-          {loading ? (
-            <div
-              className="flex h-full flex-col items-center justify-center"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 size={32} className="mb-3 animate-spin text-[color:var(--ds-text-muted)]" />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">{t("graph.loading")}</p>
-            </div>
-          ) : isEmpty ? (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-                <Network size={28} className="text-[color:var(--ds-border-strong)]" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
-                {t("graph.empty_title")}
-              </h3>
-              <p className="mb-2 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                {t("graph.empty_hint")}
-              </p>
-              {error && <p className="mt-2 text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
-            </div>
-          ) : (
-            <>
-              <canvas
-                ref={canvasRef}
-                className="h-full w-full cursor-crosshair"
-                style={{ width: "100%", height: "100%" }}
-              />
+    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={title}
+        description={
+          !loading && nodes.length > 0
+            ? `${nodes.length} Personen, Unternehmen und Dokumente mit ${links.length} Verknüpfungen — wählen Sie einen Punkt für Details.`
+            : "Wer mit wem verbunden ist: Personen, Unternehmen und Dokumente aus dem Kanzleiwissen."
+        }
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("nav.brain"), href: "/dashboard/brain" },
+          { label: title },
+        ]}
+        actions={
+          !isEmpty && !loading ? (
+            <Button variant="secondary" onClick={loadGraph} className="whitespace-nowrap">
+              <RefreshCw size={14} aria-hidden="true" />
+              {t("graph.btn_refresh")}
+            </Button>
+          ) : undefined
+        }
+      />
 
-              <div className="absolute top-4 left-4 flex items-center gap-2">
-                <div className="flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-1 backdrop-blur">
-                  <button
-                    onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
-                    aria-label="Vergrößern"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                  >
-                    <ZoomIn size={14} />
-                  </button>
-                  <span className="px-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
-                    {Math.round(zoom * 100)}%
-                  </span>
-                  <button
-                    onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
-                    aria-label="Verkleinern"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                  >
-                    <ZoomOut size={14} />
-                  </button>
-                  <button
-                    onClick={() => setZoom(1)}
-                    aria-label="Zoom zurücksetzen"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                  >
-                    <Maximize2 size={14} />
-                  </button>
+      {loading ? (
+        <Skeleton className="h-[60vh] min-h-[420px] w-full rounded-xl" />
+      ) : isEmpty ? (
+        <EmptyState
+          icon={Network}
+          title={failed ? "Beziehungsnetz derzeit nicht erreichbar" : "Noch keine Verknüpfungen"}
+          description={
+            failed
+              ? "Die Verknüpfungen konnten nicht geladen werden. Bitte versuchen Sie es in einigen Minuten erneut."
+              : t("graph.empty_hint")
+          }
+          actionLabel={failed ? "Erneut laden" : "Kontakt anlegen"}
+          onAction={() => (failed ? void loadGraph() : router.push("/dashboard/contacts"))}
+        />
+      ) : (
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row">
+          <div className="relative h-[60vh] min-h-[420px] min-w-0 flex-1 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+            <canvas
+              ref={canvasRef}
+              role="img"
+              aria-label={`${title}: ${nodes.length} Einträge, ${links.length} Verknüpfungen`}
+              className="h-full w-full cursor-pointer"
+              style={{ width: "100%", height: "100%" }}
+            />
+
+            <div className="absolute top-3 left-3 flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1 shadow-[var(--ds-shadow-2)]">
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
+                aria-label="Vergrößern"
+                className={iconBtn}
+              >
+                <ZoomIn size={14} />
+              </button>
+              <span className="px-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                {Math.round(zoom * 100)} %
+              </span>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
+                aria-label="Verkleinern"
+                className={iconBtn}
+              >
+                <ZoomOut size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoom(1)}
+                aria-label="Ansicht zurücksetzen"
+                className={iconBtn}
+              >
+                <Maximize2 size={14} />
+              </button>
+            </div>
+
+            {presentTypes.length > 0 && (
+              <div className="absolute bottom-3 left-3 flex flex-wrap gap-x-4 gap-y-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 shadow-[var(--ds-shadow-2)]">
+                {presentTypes.map((type) => {
+                  const color = nodeColors[type] || GRAPH_FALLBACK_HEX;
+                  return (
+                    <span key={type} className="flex items-center gap-1.5">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full border-2"
+                        style={{ borderColor: color, backgroundColor: color + "33" }}
+                        aria-hidden="true"
+                      />
+                      <span className="text-xs text-[color:var(--ds-text-muted)]">
+                        {brainTypeLabel(type)}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {selected && (
+            <aside className="w-full shrink-0 space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 lg:w-72">
+              <div className="flex items-start gap-3">
+                {(() => {
+                  const Icon = brainTypeIcon(selected.type);
+                  return (
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]">
+                      <Icon size={16} aria-hidden="true" />
+                    </span>
+                  );
+                })()}
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
+                    {selected.name}
+                  </h2>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    {brainTypeLabel(selected.type)} · {selected.connections}{" "}
+                    {selected.connections === 1 ? "Verknüpfung" : "Verknüpfungen"}
+                  </p>
                 </div>
                 <button
-                  onClick={loadGraph}
-                  aria-label="Graph neu laden"
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  aria-label="Details schließen"
+                  className={iconBtn}
                 >
-                  <RefreshCw size={14} />
+                  <X size={14} />
                 </button>
               </div>
 
-              <div className="absolute bottom-4 left-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 backdrop-blur">
-                <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                  Legende
-                </p>
-                <div className="space-y-2">
-                  {Object.entries(nodeColors)
-                    .slice(0, 4)
-                    .map(([type, color]) => (
-                      <div key={type} className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full border-2"
-                          style={{ borderColor: color, backgroundColor: color + "20" }}
-                        />
-                        <span className="text-xs text-[color:var(--ds-text-muted)] capitalize">
-                          {type}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              <div className="absolute top-4 right-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 text-right backdrop-blur">
-                <div className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                  {t("graph.title")}
-                </div>
-                <div className="space-y-1">
-                  <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                    {nodes.length}{" "}
-                    <span className="text-[color:var(--ds-text-muted)]">{t("graph.nodes")}</span>
-                  </div>
-                  <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                    {links.length}{" "}
-                    <span className="text-[color:var(--ds-text-muted)]">{t("graph.edges")}</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {selected && (
-          <div className="w-72 shrink-0 overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-            <div className="mb-5 flex items-start gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                style={{
-                  backgroundColor: (nodeColors[selected.type] || GRAPH_FALLBACK_HEX) + "20",
-                  border: `1px solid ${nodeColors[selected.type] || GRAPH_FALLBACK_HEX}40`,
-                }}
-              >
-                {(() => {
-                  const Icon = typeIconMap[selected.type] || FileText;
-                  return (
-                    <Icon
-                      size={17}
-                      style={{ color: nodeColors[selected.type] || GRAPH_FALLBACK_HEX }}
-                    />
-                  );
-                })()}
-              </div>
-              <div>
-                <h3 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
-                  {selected.name}
-                </h3>
-                <Badge
-                  variant={(selected.type as Parameters<typeof Badge>[0]["variant"]) || "default"}
-                  className="mt-1.5"
-                >
-                  {selected.type}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                  Slug
-                </p>
-                <p className="brand-text brand-soft rounded-lg px-3 py-2 font-mono text-sm">
-                  {selected.id}
-                </p>
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                  Verbindungen
-                </p>
-                <p className="font-mono text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                  {selected.connections}
-                </p>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                  Kanten
-                </p>
-                {links
-                  .filter((l) => {
-                    const src = typeof l.source === "string" ? l.source : l.source.id;
-                    const tgt = typeof l.target === "string" ? l.target : l.target.id;
-                    return src === selected.id || tgt === selected.id;
-                  })
-                  .map((link, i) => {
-                    const src = typeof link.source === "string" ? link.source : link.source.id;
-                    const tgt = typeof link.target === "string" ? link.target : link.target.id;
+              {selectedLinks.length > 0 && (
+                <ul className="space-y-1.5">
+                  {selectedLinks.map((link, i) => {
+                    const src = linkEnd(link.source);
+                    const tgt = linkEnd(link.target);
                     const other = src === selected.id ? tgt : src;
                     const otherNode = nodes.find((n) => n.id === other);
                     return (
-                      <div key={i} className="mb-2 flex items-center gap-2 text-xs">
-                        <span className="brand-text brand-soft rounded px-2 py-0.5 font-mono">
-                          {link.type}
+                      <li key={i} className="flex items-baseline gap-2 text-xs">
+                        <span className="shrink-0 text-[color:var(--ds-text-subtle)]">
+                          {LINK_LABELS[link.type] ?? "verknüpft mit"}
                         </span>
-                        <span className="text-[color:var(--ds-text-muted)]">→</span>
-                        <span className="text-[color:var(--ds-text)]">
+                        <span className="min-w-0 truncate text-[color:var(--ds-text)]">
                           {otherNode?.name || other}
                         </span>
-                      </div>
+                      </li>
                     );
                   })}
-              </div>
+                </ul>
+              )}
 
               <Button
-                variant="outline"
-                size="md"
+                variant="secondary"
                 className="w-full"
                 onClick={() => router.push(`/dashboard/brain/${encodeURIComponent(selected.id)}`)}
               >
-                Seite öffnen
+                Eintrag öffnen
               </Button>
-            </div>
-          </div>
-        )}
-      </div>
+            </aside>
+          )}
+        </div>
+      )}
     </div>
   );
 }

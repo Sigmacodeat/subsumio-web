@@ -26,6 +26,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { csrfFetch } from "@/lib/csrf";
 import { unwrapApiBody } from "@/lib/api-body";
+import { formatDateTime } from "@/lib/utils";
 
 interface Account {
   id: string;
@@ -70,13 +71,7 @@ const EMPTY = {
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "noch nie";
-  return new Date(iso).toLocaleString("de-AT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export default function EmailSettingsPage() {
@@ -138,7 +133,11 @@ export default function EmailSettingsPage() {
       const data = await res.json().catch(() => ({}));
       const url = (data?.data?.authUrl ?? data?.authUrl) as string | undefined;
       if (!res.ok || !url) {
-        addToast({ type: "error", title: "Anmeldung nicht möglich", description: data?.message });
+        addToast({
+          type: "error",
+          title: "Anmeldung nicht möglich",
+          description: "Der Anbieter ist derzeit nicht erreichbar. Bitte versuchen Sie es später erneut.",
+        });
         return;
       }
       window.location.assign(url);
@@ -172,12 +171,12 @@ export default function EmailSettingsPage() {
           smtpSecure: (Number(form.smtpPort) || 465) === 465,
         }),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         addToast({
           type: "error",
           title: "Verbindung fehlgeschlagen",
-          description: data?.message ?? data?.error ?? "Bitte prüfen Sie die Angaben.",
+          description:
+            "Bitte prüfen Sie E-Mail-Adresse, Server und Passwort. Bei Microsoft 365 und Gmail ist meist ein App-Passwort nötig.",
         });
         return;
       }
@@ -209,7 +208,16 @@ export default function EmailSettingsPage() {
             : await csrfFetch(`/api/email/accounts/${id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        addToast({ type: "error", title: "Aktion fehlgeschlagen", description: data?.message });
+        addToast({
+          type: "error",
+          title:
+            kind === "sync"
+              ? "Postfach konnte nicht abgerufen werden"
+              : kind === "toggle"
+                ? "Status konnte nicht geändert werden"
+                : "Postfach konnte nicht getrennt werden",
+          description: "Bitte versuchen Sie es erneut.",
+        });
       } else if (kind === "sync") {
         const r = unwrapApiBody(data).result;
         addToast({
@@ -224,21 +232,22 @@ export default function EmailSettingsPage() {
     }
   }
 
-  if (accounts === null) return <PageSkeleton rows={4} className="mx-auto max-w-[900px]" />;
+  if (accounts === null) return <PageSkeleton rows={4} className="mx-auto max-w-[720px]" />;
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="E-Mail-Postfach"
-        description="Verbinden Sie das Postfach Ihrer Kanzlei. Eingehende E-Mails werden alle fünf Minuten abgerufen, der passenden Akte zugeordnet und auf Fristen geprüft. Antworten gehen über Ihren eigenen Mailserver hinaus."
+        description="Eingehende E-Mails werden alle fünf Minuten abgerufen, der passenden Akte zugeordnet und auf Fristen geprüft."
         breadcrumbs={[
+          { label: "Übersicht", href: "/dashboard" },
           { label: "Einstellungen", href: "/dashboard/settings" },
           { label: "E-Mail-Postfach" },
         ]}
         actions={
-          !showForm ? (
+          !showForm && accounts.length > 0 ? (
             <Button variant="primary" size="sm" className="gap-2" onClick={() => setShowForm(true)}>
-              <Plus size={14} /> Postfach verbinden
+              <Plus size={14} /> Weiteres Postfach
             </Button>
           ) : undefined
         }
@@ -447,7 +456,8 @@ export default function EmailSettingsPage() {
                 </div>
                 {a.lastError && (
                   <div className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
-                    {a.lastError}
+                    Der letzte Abruf ist fehlgeschlagen. Bitte prüfen Sie das Passwort bzw. die
+                    Freigabe beim Anbieter und rufen Sie das Postfach erneut ab.
                   </div>
                 )}
               </div>

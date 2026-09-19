@@ -353,7 +353,8 @@ export default function NewCasePage() {
   useEffect(() => {
     let cancelled = false;
     api.brain
-      .listPages({ type: "legal_contact", limit: 500 })
+      // listAllPages pages past the engine's 200-row cap.
+      .listAllPages({ type: "legal_contact" })
       .then((pages) => {
         if (!cancelled) setContacts(contactOptions(pages));
       })
@@ -488,7 +489,9 @@ export default function NewCasePage() {
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("casesnew.title")}
+        description={t("casesnew.description")}
         breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("nav.cases"), href: "/dashboard/cases" },
           { label: t("casesnew.breadcrumb") },
         ]}
@@ -506,7 +509,7 @@ export default function NewCasePage() {
                 className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,color] motion-reduce:transition-none",
                   isDone
-                    ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
+                    ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-solid)] text-white"
                     : isActive
                       ? "brand-text border-[color:var(--brand-primary)]"
                       : "border-[color:var(--ds-border)] text-[color:var(--ds-text-subtle)]"
@@ -526,7 +529,7 @@ export default function NewCasePage() {
                 <div
                   className={cn(
                     "h-px flex-1 transition-[background-color,border-color,color] motion-reduce:transition-none",
-                    isDone ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--ds-border)]"
+                    isDone ? "bg-[color:var(--brand-solid)]" : "bg-[color:var(--ds-border)]"
                   )}
                 />
               )}
@@ -642,7 +645,7 @@ export default function NewCasePage() {
               <Input
                 id="case-title"
                 {...register("title")}
-                placeholder="z.B. Musterfall GmbH vs. Schuldner AG"
+                placeholder="z. B. Musterfall GmbH ./. Schuldner AG"
                 autoFocus
               />
               {f.formState.errors.title && (
@@ -657,7 +660,7 @@ export default function NewCasePage() {
                 <Label htmlFor="case-number" className="mb-1.5 block text-xs">
                   {t("casesnew.label_case_number")}
                 </Label>
-                <Input id="case-number" {...register("caseNumber")} placeholder="z.B. 2026-001" />
+                <Input id="case-number" {...register("caseNumber")} placeholder="z. B. 2026-001" />
               </div>
               <div>
                 <Label htmlFor="case-status" className="mb-1.5 block text-xs">
@@ -690,7 +693,7 @@ export default function NewCasePage() {
                   id="case-legal-area"
                   {...register("legalArea")}
                   list="legal-area-suggestions"
-                  placeholder="z.B. Zivilrecht"
+                  placeholder="z. B. Zivilrecht"
                 />
                 <datalist id="legal-area-suggestions">
                   {LEGAL_AREA_SUGGESTIONS.map((area) => (
@@ -706,7 +709,7 @@ export default function NewCasePage() {
                   id="case-sub-area"
                   {...register("subArea")}
                   list="sub-area-suggestions"
-                  placeholder="z.B. Vertragsrecht"
+                  placeholder="z. B. Vertragsrecht"
                 />
                 <datalist id="sub-area-suggestions">
                   {(SUB_AREA_SUGGESTIONS[legalArea ?? ""] ?? []).map((sub) => (
@@ -1009,7 +1012,7 @@ export default function NewCasePage() {
                   id="mandate-id"
                   value={mandateId ?? ""}
                   onChange={(e) => setValue("mandateId", e.target.value)}
-                  placeholder="z.B. MANDAT-2026-001"
+                  placeholder="z. B. MANDAT-2026-001"
                   className="text-sm"
                 />
               </div>

@@ -22,6 +22,7 @@ import {
   Inbox,
   Clock,
   Globe,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,17 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { EvalGateWidget } from "@/components/legal/EvalGateWidget";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/dashboard/skeleton";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { TFunc } from "@/content/dashboard";
 import {
@@ -58,7 +69,6 @@ import {
   FREQUENCY_LABELS,
   SOURCE_LABELS,
   SEVERITY_LABELS,
-  SEVERITY_COLORS,
   CHANGE_TYPE_LABELS,
   LEGACY_WATCHLIST,
 } from "@/lib/regulatory-monitors";
@@ -67,6 +77,18 @@ const inputCls =
   "w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus:border-[color:var(--brand-primary)]";
 const selectCls = inputCls;
 const labelCls = "block text-xs text-[color:var(--ds-text-muted)] mb-1 font-medium";
+
+/** Schweregrad über Status-Tokens statt fester Tailwind-Farben. */
+const SEVERITY_BADGE: Record<Severity, "danger" | "warning" | "info"> = {
+  high: "danger",
+  medium: "warning",
+  low: "info",
+};
+
+/** Quellenkennung eines Treffers lesbar machen (nie rohe Kennungen zeigen). */
+function sourceLabel(src: string): string {
+  return (SOURCE_LABELS as Record<string, string>)[src] ?? src;
+}
 
 // ─── Monitor Form Component ───────────────────────────────────────
 
@@ -188,8 +210,8 @@ function MonitorFormDialog({
       };
       await onSave(monitor);
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("monitoring.form_error_save"));
+    } catch {
+      setError(t("monitoring.form_error_save"));
     } finally {
       setSaving(false);
     }
@@ -206,8 +228,11 @@ function MonitorFormDialog({
 
         <div className="space-y-4 py-2">
           <div>
-            <label className={labelCls}>{t("monitoring.form_topic_label")}</label>
+            <label htmlFor="mon-topic" className={labelCls}>
+              {t("monitoring.form_topic_label")}
+            </label>
             <Input
+              id="mon-topic"
               value={form.topic}
               onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
               placeholder={t("monitoring.form_topic_placeholder")}
@@ -215,8 +240,11 @@ function MonitorFormDialog({
           </div>
 
           <div>
-            <label className={labelCls}>{t("monitoring.form_desc_label")}</label>
+            <label htmlFor="mon-desc" className={labelCls}>
+              {t("monitoring.form_desc_label")}
+            </label>
             <Input
+              id="mon-desc"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder={t("monitoring.form_desc_placeholder")}
@@ -225,8 +253,11 @@ function MonitorFormDialog({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className={labelCls}>{t("monitoring.form_jurisdiction")}</label>
+              <label htmlFor="mon-jurisdiction" className={labelCls}>
+                {t("monitoring.form_jurisdiction")}
+              </label>
               <select
+                id="mon-jurisdiction"
                 value={form.jurisdiction}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, jurisdiction: e.target.value as Jurisdiction }))
@@ -243,8 +274,11 @@ function MonitorFormDialog({
               </select>
             </div>
             <div>
-              <label className={labelCls}>{t("monitoring.form_frequency")}</label>
+              <label htmlFor="mon-frequency" className={labelCls}>
+                {t("monitoring.form_frequency")}
+              </label>
               <select
+                id="mon-frequency"
                 value={form.frequency}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, frequency: e.target.value as MonitorFrequency }))
@@ -270,9 +304,10 @@ function MonitorFormDialog({
                   onClick={() => toggleSource(src)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
                     form.sources.includes(src)
-                      ? "brand-soft brand-text brand-border"
+                      ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                       : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                  } active:scale-[0.97]`}
+                  }`}
+                  aria-pressed={form.sources.includes(src)}
                 >
                   {SOURCE_LABELS[src]}
                 </button>
@@ -281,9 +316,12 @@ function MonitorFormDialog({
           </div>
 
           <div>
-            <label className={labelCls}>{t("monitoring.form_keywords_label")}</label>
+            <label htmlFor="mon-keyword" className={labelCls}>
+              {t("monitoring.form_keywords_label")}
+            </label>
             <div className="mb-2 flex gap-2">
               <Input
+                id="mon-keyword"
                 value={form.newKeyword}
                 onChange={(e) => setForm((f) => ({ ...f, newKeyword: e.target.value }))}
                 onKeyDown={(e) => {
@@ -299,6 +337,7 @@ function MonitorFormDialog({
                 variant="secondary"
                 onClick={addKeyword}
                 disabled={!form.newKeyword.trim()}
+                aria-label="Suchbegriff hinzufügen"
               >
                 <Plus size={14} />
               </Button>
@@ -314,6 +353,7 @@ function MonitorFormDialog({
                     <button
                       type="button"
                       onClick={() => removeKeyword(kw)}
+                      aria-label={`Suchbegriff „${kw}“ entfernen`}
                       className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={11} />
@@ -326,8 +366,11 @@ function MonitorFormDialog({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className={labelCls}>{t("monitoring.form_status")}</label>
+              <label htmlFor="mon-status" className={labelCls}>
+                {t("monitoring.form_status")}
+              </label>
               <select
+                id="mon-status"
                 value={form.status}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, status: e.target.value as MonitorStatus }))
@@ -353,8 +396,11 @@ function MonitorFormDialog({
 
           {form.email_notifications && (
             <div>
-              <label className={labelCls}>{t("monitoring.form_notify_emails_label")}</label>
+              <label htmlFor="mon-emails" className={labelCls}>
+                {t("monitoring.form_notify_emails_label")}
+              </label>
               <Input
+                id="mon-emails"
                 value={form.notify_emails}
                 onChange={(e) => setForm((f) => ({ ...f, notify_emails: e.target.value }))}
                 placeholder={t("monitoring.form_notify_emails_placeholder")}
@@ -376,7 +422,7 @@ function MonitorFormDialog({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             {t("monitoring.form_cancel")}
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="brand-bg gap-1.5 text-white">
+          <Button onClick={handleSave} disabled={saving} className="gap-1.5">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             {editing ? t("monitoring.form_save") : t("monitoring.form_create")}
           </Button>
@@ -403,15 +449,8 @@ function MonitorCard({
   onToggleEmail: () => void;
   t: TFunc;
 }) {
-  const { lang } = useLang();
   const lastRun = monitor.last_run_at
-    ? new Date(monitor.last_run_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+    ? formatDateTime(monitor.last_run_at)
     : t("monitoring.card_never");
 
   return (
@@ -422,7 +461,7 @@ function MonitorCard({
             <h3 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
               {monitor.topic}
             </h3>
-            <Badge variant={monitor.status === "active" ? "accent" : "default"}>
+            <Badge variant={monitor.status === "active" ? "success" : "default"}>
               {monitor.status === "active"
                 ? t("monitoring.form_status_active")
                 : t("monitoring.form_status_paused")}
@@ -436,37 +475,41 @@ function MonitorCard({
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
-            onClick={onToggleStatus}
-            title={
-              monitor.status === "active"
-                ? t("monitoring.card_pause")
-                : t("monitoring.card_activate")
-            }
-            aria-label={
-              monitor.status === "active"
-                ? t("monitoring.card_pause")
-                : t("monitoring.card_activate")
-            }
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-          >
-            {monitor.status === "active" ? <Pause size={14} /> : <Play size={14} />}
-          </button>
-          <button
+            type="button"
             onClick={onEdit}
             title={t("monitoring.card_edit")}
             aria-label={t("monitoring.card_edit")}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
           >
             <Pencil size={14} />
           </button>
-          <button
-            onClick={onDelete}
-            title={t("monitoring.card_delete")}
-            aria-label={t("monitoring.card_delete")}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
-          >
-            <Trash2 size={14} />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Weitere Aktionen: ${monitor.topic}`}
+                className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+              >
+                <MoreHorizontal size={14} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={onToggleStatus} className="gap-2 text-xs">
+                {monitor.status === "active" ? <Pause size={13} /> : <Play size={13} />}
+                {monitor.status === "active"
+                  ? t("monitoring.card_pause")
+                  : t("monitoring.card_activate")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
+              >
+                <Trash2 size={13} />
+                {t("monitoring.card_delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -512,7 +555,7 @@ function MonitorCard({
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 border-t border-[color:var(--ds-border)] pt-1">
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-[color:var(--ds-border)] pt-2">
         <span className="mr-1 text-xs text-[color:var(--ds-text-subtle)]">
           {t("monitoring.card_sources_label")}
         </span>
@@ -546,22 +589,19 @@ function AlertItem({
     >
       <div className="flex items-start gap-3">
         <div
-          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alert.read ? "bg-[color:var(--ds-text-subtle)]" : "animate-pulse bg-[color:var(--brand-primary)]"}`}
+          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alert.read ? "bg-[color:var(--ds-text-subtle)]" : "bg-[color:var(--brand-solid)]"}`}
+          aria-label={alert.read ? "Gelesen" : "Ungelesen"}
         />
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <h4 className="line-clamp-2 text-sm font-medium text-[color:var(--ds-text)]">
               {alert.title}
             </h4>
             <div className="flex shrink-0 items-center gap-1.5">
-              <span
-                className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[alert.severity]}`}
-              >
+              <Badge variant={SEVERITY_BADGE[alert.severity] ?? "default"}>
                 {SEVERITY_LABELS[alert.severity]}
-              </span>
-              <span className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {CHANGE_TYPE_LABELS[alert.change_type]}
-              </span>
+              </Badge>
+              <Badge variant="default">{CHANGE_TYPE_LABELS[alert.change_type]}</Badge>
             </div>
           </div>
 
@@ -575,8 +615,8 @@ function AlertItem({
             <span className="font-medium text-[color:var(--ds-text)]">{alert.monitor_topic}</span>
             {alert.court && <span>• {alert.court}</span>}
             {alert.case_number && <span>• {alert.case_number}</span>}
-            <span>• {alert.date}</span>
-            <span>• {alert.source}</span>
+            <span className="tabular-nums">• {formatDate(alert.date)}</span>
+            {alert.source && <span>• {sourceLabel(alert.source)}</span>}
           </div>
 
           <div className="flex items-center gap-2 pt-1">
@@ -609,6 +649,7 @@ function AlertItem({
 
 export default function MonitoringPage() {
   const { t } = useLang();
+  const confirmDialog = useConfirm();
   const [monitors, setMonitors] = useState<RegulatoryMonitor[]>([]);
   const [alerts, setAlerts] = useState<RegulatoryAlert[]>([]);
   const [alertSlugs, setAlertSlugs] = useState<string[]>([]);
@@ -666,8 +707,8 @@ export default function MonitoringPage() {
       } catch {
         setLegacyKeywords([]);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("monitoring.error_load"));
+    } catch {
+      setError(t("monitoring.error_load"));
     } finally {
       setLoading(false);
     }
@@ -788,82 +829,90 @@ export default function MonitoringPage() {
               setEditingMonitor(null);
               setDialogOpen(true);
             }}
-            className="brand-bg gap-1.5 text-white"
+            className="gap-1.5 whitespace-nowrap"
           >
-            <Plus size={15} /> {t("monitoring.new_monitor")}
+            <Plus size={15} aria-hidden="true" /> {t("monitoring.new_monitor")}
           </Button>
         }
       />
 
-      {/* Stats bar */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <p className="text-2xl font-bold text-[color:var(--ds-text)]">{monitors.length}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {activeMonitors} {t("monitoring.active")}
-          </p>
+      {/* Stats bar — Farbe nur bei Zahl > 0 */}
+      {loading ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[72px] rounded-xl" />
+          ))}
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <p className="text-2xl font-bold text-[color:var(--ds-text)]">{alerts.length}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("monitoring.alerts_total")}
-          </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatTile
+            label={`${t("monitoring.tab_monitors")} · ${activeMonitors} ${t("monitoring.active")}`}
+            value={monitors.length}
+          />
+          <StatTile label={t("monitoring.alerts_total")} value={alerts.length} />
+          <StatTile label={t("monitoring.unread")} value={unreadCount} highlight />
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <p className="brand-text text-2xl font-bold">{unreadCount}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">{t("monitoring.unread")}</p>
-        </div>
-      </div>
+      )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]">
-          <AlertTriangle size={14} /> {error}
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]"
+        >
+          <AlertTriangle size={14} aria-hidden="true" /> {error}
         </div>
       )}
 
       {loading ? (
         <div
-          className="flex items-center justify-center py-16 text-sm text-[color:var(--ds-text-muted)]"
+          className="grid gap-3 md:grid-cols-2"
           role="status"
-          aria-live="polite"
+          aria-label={t("monitoring.loading")}
         >
-          <Loader2 size={18} className="mr-2 animate-spin" /> {t("monitoring.loading")}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-36 w-full rounded-xl" />
+          ))}
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="monitors" className="gap-1.5">
-              <Radar size={14} /> {t("monitoring.tab_monitors")} ({monitors.length})
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="monitors" className="gap-1.5 whitespace-nowrap">
+              <Radar size={14} aria-hidden="true" /> {t("monitoring.tab_monitors")}
+              {monitors.length > 0 && (
+                <span className="text-[color:var(--ds-text-muted)] tabular-nums">
+                  {monitors.length}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="alerts" className="gap-1.5">
-              <Bell size={14} /> {t("monitoring.tab_alerts")} (
-              {unreadCount > 0 && <span className="brand-text font-bold">{unreadCount}</span>}{" "}
-              {alerts.length})
+            <TabsTrigger value="alerts" className="gap-1.5 whitespace-nowrap">
+              <Bell size={14} aria-hidden="true" /> {t("monitoring.tab_alerts")}
+              {unreadCount > 0 && (
+                <span
+                  className="brand-text font-semibold tabular-nums"
+                  aria-label={`${unreadCount} ${t("monitoring.unread")}`}
+                >
+                  {unreadCount}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-1.5">
-              <Settings size={14} /> {t("monitoring.tab_settings")}
+            <TabsTrigger value="settings" className="gap-1.5 whitespace-nowrap">
+              <Settings size={14} aria-hidden="true" /> {t("monitoring.tab_settings")}
             </TabsTrigger>
           </TabsList>
 
           {/* ── Monitors Tab ── */}
           <TabsContent value="monitors" className="mt-4 space-y-3">
             {monitors.length === 0 && legacyKeywords.length === 0 ? (
-              <div className="py-16 text-center text-[color:var(--ds-text-muted)]">
-                <Radar size={36} className="mx-auto mb-3 opacity-30" />
-                <p className="mb-2 text-sm">{t("monitoring.empty_title")}</p>
-                <p className="mb-4 text-xs text-[color:var(--ds-text-subtle)]">
-                  {t("monitoring.empty_hint")}
-                </p>
-                <Button
-                  onClick={() => {
-                    setEditingMonitor(null);
-                    setDialogOpen(true);
-                  }}
-                  className="brand-bg gap-1.5 text-white"
-                >
-                  <Plus size={15} /> {t("monitoring.create_monitor")}
-                </Button>
-              </div>
+              <EmptyState
+                icon={Radar}
+                title={t("monitoring.empty_title")}
+                description={t("monitoring.empty_hint")}
+                actionLabel={t("monitoring.create_monitor")}
+                onAction={() => {
+                  setEditingMonitor(null);
+                  setDialogOpen(true);
+                }}
+              />
             ) : (
               <>
                 {monitors.length === 0 && legacyKeywords.length > 0 && (
@@ -885,10 +934,18 @@ export default function MonitoringPage() {
                         setDialogOpen(true);
                       }}
                       onDelete={async () => {
-                        if (
-                          confirm(t("monitoring.card_confirm_delete").replace("{topic}", m.topic))
-                        ) {
+                        const ok = await confirmDialog({
+                          title: t("monitoring.card_delete"),
+                          message: t("monitoring.card_confirm_delete").replace("{topic}", m.topic),
+                          confirmLabel: t("monitoring.card_delete"),
+                          cancelLabel: t("monitoring.form_cancel"),
+                          variant: "danger",
+                        });
+                        if (!ok) return;
+                        try {
                           await deleteMonitor(m);
+                        } catch {
+                          setError(t("monitoring.form_error_save"));
                         }
                       }}
                       onToggleStatus={() => toggleMonitorStatus(m)}
@@ -911,6 +968,7 @@ export default function MonitoringPage() {
                   {t("monitoring.filter_label")}
                 </span>
                 <select
+                  aria-label={t("monitoring.filter_all_severities")}
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
@@ -921,6 +979,7 @@ export default function MonitoringPage() {
                   <option value="low">{t("monitoring.severity_low")}</option>
                 </select>
                 <select
+                  aria-label={t("monitoring.filter_all_sources")}
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
@@ -928,11 +987,12 @@ export default function MonitoringPage() {
                   <option value="all">{t("monitoring.filter_all_sources")}</option>
                   {availableSources.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {sourceLabel(s)}
                     </option>
                   ))}
                 </select>
                 <select
+                  aria-label={t("monitoring.filter_all_monitors")}
                   value={monitorFilter}
                   onChange={(e) => setMonitorFilter(e.target.value)}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
@@ -950,26 +1010,26 @@ export default function MonitoringPage() {
                   {t("monitoring.filter_show_read")}
                 </label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <ArrowUpDown size={14} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("monitoring.sort_label")}
                 </span>
                 <button
                   onClick={() => setSortBy("date_desc")}
-                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_desc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"} active:scale-[0.97]`}
+                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_desc" ? "bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 >
                   {t("monitoring.sort_date_desc")}
                 </button>
                 <button
                   onClick={() => setSortBy("date_asc")}
-                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_asc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"} active:scale-[0.97]`}
+                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_asc" ? "bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 >
                   {t("monitoring.sort_date_asc")}
                 </button>
                 <button
                   onClick={() => setSortBy("severity")}
-                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "severity" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"} active:scale-[0.97]`}
+                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "severity" ? "bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 >
                   {t("monitoring.sort_severity")}
                 </button>
@@ -978,14 +1038,28 @@ export default function MonitoringPage() {
 
             {/* Alert list */}
             {filteredAlerts.length === 0 ? (
-              <div className="py-16 text-center text-[color:var(--ds-text-muted)]">
-                <Bell size={36} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">
-                  {alerts.length === 0
+              <EmptyState
+                icon={Bell}
+                title={
+                  alerts.length === 0
                     ? t("monitoring.alerts_empty")
-                    : t("monitoring.alerts_empty_filtered")}
-                </p>
-              </div>
+                    : t("monitoring.alerts_empty_filtered")
+                }
+                actionLabel={
+                  alerts.length === 0 ? t("monitoring.create_monitor") : "Filter zurücksetzen"
+                }
+                onAction={() => {
+                  if (alerts.length === 0) {
+                    setEditingMonitor(null);
+                    setDialogOpen(true);
+                  } else {
+                    setSeverityFilter("all");
+                    setSourceFilter("all");
+                    setMonitorFilter("all");
+                    setShowRead(true);
+                  }
+                }}
+              />
             ) : (
               <div className="space-y-2">
                 {filteredAlerts.map((alert, i) => {
@@ -1040,40 +1114,13 @@ export default function MonitoringPage() {
                       <Switch
                         checked={m.email_notifications}
                         onCheckedChange={() => toggleMonitorEmail(m)}
+                        aria-label={`${t("monitoring.settings_email_title")}: ${m.topic}`}
                       />
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-              <div className="flex items-center gap-2">
-                <Clock size={16} className="text-[color:var(--ds-text-muted)]" />
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {t("monitoring.settings_cron_title")}
-                </h3>
-              </div>
-              <div className="space-y-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                <p>
-                  {t("monitoring.settings_cron_schedule").replace(
-                    "{code}",
-                    "/api/cron/regulatory-monitors"
-                  )}
-                </p>
-                <p>
-                  {t("monitoring.settings_cron_requirements")
-                    .replace("{code1}", "CRON_SECRET")
-                    .replace("{code2}", "RESEND_API_KEY")}
-                </p>
-                <p>
-                  {t("monitoring.settings_cron_sources").replace("{code}", "/api/cron/case-law")}
-                </p>
-              </div>
-            </div>
-
-            {/* Eval Gate */}
-            <EvalGateWidget />
 
             {legacyKeywords.length > 0 && (
               <div className="space-y-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-5">
@@ -1112,6 +1159,30 @@ export default function MonitoringPage() {
         editing={editingMonitor}
         t={t}
       />
+    </div>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
+      <p
+        className={cn(
+          "mt-1 text-2xl font-semibold tabular-nums",
+          highlight && value > 0 ? "brand-text" : "text-[color:var(--ds-text)]"
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }

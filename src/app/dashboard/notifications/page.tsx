@@ -2,17 +2,14 @@
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bell,
   Check,
   Trash2,
   CheckCheck,
-  Search,
   AlertCircle,
   MessageSquare,
   FileText,
@@ -20,7 +17,12 @@ import {
   Inbox,
   Clock,
 } from "lucide-react";
+import Link from "next/link";
 import { tracking } from "@/lib/tracking";
+import { formatDaysUntil, formatRelativeTime } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
@@ -39,7 +41,7 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: strin
   deadline: { icon: Clock, label: "Frist", color: "text-[color:var(--ds-warning-text)]" },
   mention: { icon: MessageSquare, label: "Erwähnung", color: "text-[color:var(--ds-info-text)]" },
   reply: { icon: MessageSquare, label: "Antwort", color: "text-[color:var(--ds-info-text)]" },
-  system: { icon: Bell, label: "System", color: "text-[color:var(--ds-neutral-text)]" },
+  system: { icon: Bell, label: "Hinweis", color: "text-[color:var(--ds-neutral-text)]" },
   notification_failure: {
     icon: AlertCircle,
     label: "Fehler",
@@ -55,20 +57,10 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: strin
     label: "Aufbewahrung",
     color: "text-[color:var(--ds-category-purple-text)]",
   },
-  autonomous_task: { icon: Bot, label: "Autonom", color: "text-[color:var(--ds-success-text)]" },
-  inbox_triage: { icon: Inbox, label: "Inbox", color: "text-[color:var(--ds-info-text)]" },
+  autonomous_task: { icon: Bot, label: "Assistent", color: "text-[color:var(--ds-success-text)]" },
+  inbox_triage: { icon: Inbox, label: "Posteingang", color: "text-[color:var(--ds-info-text)]" },
 };
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = (now.getTime() - d.getTime()) / 1000;
-  if (diff < 60) return "gerade eben";
-  if (diff < 3600) return `vor ${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `vor ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `vor ${Math.floor(diff / 86400)}d`;
-  return d.toLocaleDateString("de-DE");
-}
 
 function getNotificationMessage(n: NotificationItem): {
   title: string;
@@ -84,7 +76,11 @@ function getNotificationMessage(n: NotificationItem): {
       const caseSlug = data?.caseSlug as string | undefined;
       return {
         title: isOverdue ? "Frist abgelaufen" : "Fristenwarnung",
-        message: `${title}${days !== undefined ? (isOverdue ? ` — ${Math.abs(days)}T überfällig` : ` — in ${days}T`) : ""}`,
+        message: `${title}${
+          typeof days === "number" && Number.isFinite(days)
+            ? ` — ${formatDaysUntil(isOverdue ? -Math.abs(days) : days)}`
+            : ""
+        }`,
         href: caseSlug
           ? `/dashboard/cases/${encodeURIComponent(caseSlug)}?tab=deadlines`
           : undefined,
@@ -109,7 +105,7 @@ function getNotificationMessage(n: NotificationItem): {
     case "notification_failure":
       return {
         title: "Benachrichtigung fehlgeschlagen",
-        message: `${data?.deadlineTitle ?? "Frist"} — ${data?.reason ?? "unbekannt"}`,
+        message: `Die Erinnerung zur Frist „${String(data?.deadlineTitle ?? "ohne Bezeichnung")}" konnte nicht zugestellt werden. Bitte prüfen Sie die Frist selbst.`,
         href: data?.caseSlug
           ? `/dashboard/cases/${encodeURIComponent(data.caseSlug as string)}`
           : undefined,
@@ -117,7 +113,9 @@ function getNotificationMessage(n: NotificationItem): {
     case "document_request":
       return {
         title: "Dokumentenanforderung",
-        message: `${data?.title ?? "Akte"} — ${data?.itemCount ?? 0} Dokumente${data?.isReminder ? " (Erinnerung)" : ""}`,
+        message: `${data?.title ?? "Akte"} — ${Number(data?.itemCount ?? 0)} ${
+          Number(data?.itemCount ?? 0) === 1 ? "Dokument" : "Dokumente"
+        }${data?.isReminder ? " (Erinnerung)" : ""}`,
         href: data?.caseSlug
           ? `/dashboard/cases/${encodeURIComponent(data.caseSlug as string)}`
           : undefined,
@@ -129,7 +127,6 @@ function getNotificationMessage(n: NotificationItem): {
       };
     case "autonomous_task": {
       const status = data?.status as string;
-      const taskType = data?.taskType as string;
       const caseSlug = data?.caseSlug as string | undefined;
       const statusLabel =
         status === "completed"
@@ -138,7 +135,7 @@ function getNotificationMessage(n: NotificationItem): {
             ? "fehlgeschlagen"
             : "Freigabe erforderlich";
       return {
-        title: `Autonom: ${taskType}`,
+        title: "Aufgabe des Assistenten",
         message: `Status: ${statusLabel}`,
         href: caseSlug ? `/dashboard/cases/${encodeURIComponent(caseSlug)}` : undefined,
       };
@@ -148,13 +145,13 @@ function getNotificationMessage(n: NotificationItem): {
       const urgency = data?.urgency as string;
       const suggestedAction = data?.suggestedAction as string;
       return {
-        title: `Inbox: ${subject ?? "Nachricht"}`,
+        title: `Posteingang: ${subject ?? "Nachricht"}`,
         message: `${urgency === "urgent" ? "Dringend" : urgency === "normal" ? "Normal" : "Niedrig"} — ${suggestedAction ?? ""}`,
       };
     }
     default:
       return {
-        title: "System",
+        title: "Hinweis",
         message: String(data?.message ?? ""),
       };
   }
@@ -163,12 +160,13 @@ function getNotificationMessage(n: NotificationItem): {
 export default function NotificationCenterPage() {
   const { addToast } = useToast();
   const { t } = useLang();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const result = await api.notifications.list({ limit: 200 });
@@ -205,8 +203,11 @@ export default function NotificationCenterPage() {
       tracking.notifications.markRead(id);
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
-    onError: (err: Error) => {
-      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
+    onError: () => {
+      addToast({
+        title: "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -217,8 +218,11 @@ export default function NotificationCenterPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       addToast({ title: t("notifications.all_marked"), type: "success" });
     },
-    onError: (err: Error) => {
-      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
+    onError: () => {
+      addToast({
+        title: "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -229,8 +233,11 @@ export default function NotificationCenterPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       addToast({ title: t("notifications.deleted"), type: "success" });
     },
-    onError: (err: Error) => {
-      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
+    onError: () => {
+      addToast({
+        title: "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -243,8 +250,11 @@ export default function NotificationCenterPage() {
         type: "success",
       });
     },
-    onError: (err: Error) => {
-      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
+    onError: () => {
+      addToast({
+        title: "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -254,216 +264,207 @@ export default function NotificationCenterPage() {
     return Array.from(types).sort();
   }, [data]);
 
-  function handleNavigate(href: string | undefined) {
-    if (href) {
-      window.location.href = href;
-    }
+  const readCount = (data || []).length - unreadCount;
+
+  async function deleteAllRead() {
+    const ok = await confirm({
+      title: "Gelesene Benachrichtigungen löschen",
+      message: `${readCount} gelesene ${readCount === 1 ? "Benachrichtigung wird" : "Benachrichtigungen werden"} endgültig entfernt.`,
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (ok) deleteAllReadMutation.mutate();
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("notifications.title")}
         description={t("notifications.desc")}
-        actions={[
-          <Button
-            key="mark-all-read"
-            variant="outline"
-            size="sm"
-            onClick={() => markAllReadMutation.mutate()}
-            disabled={unreadCount === 0 || markAllReadMutation.isPending}
-          >
-            <CheckCheck className="mr-2 h-4 w-4" />
-            {t("notifications.mark_all_read")}
-          </Button>,
-          <Button
-            key="delete-read"
-            variant="outline"
-            size="sm"
-            onClick={() => deleteAllReadMutation.mutate()}
-            disabled={deleteAllReadMutation.isPending}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {t("notifications.delete_read")}
-          </Button>,
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("notifications.title") },
         ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={unreadCount === 0 || markAllReadMutation.isPending}
+            >
+              <CheckCheck className="mr-2 h-4 w-4" aria-hidden />
+              Alle als gelesen markieren
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={deleteAllRead}
+              disabled={readCount === 0 || deleteAllReadMutation.isPending}
+            >
+              <Trash2 className="mr-2 h-4 w-4" aria-hidden />
+              {t("notifications.delete_read")}
+            </Button>
+          </div>
+        }
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("notifications.unread")}</CardTitle>
-            <Bell className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{unreadCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("notifications.total")}</CardTitle>
-            <Bell className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.length ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("notifications.filtered")}</CardTitle>
-            <Search className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filtered.length}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <Search className="h-4 w-4" />
-            {t("notifications.filter")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <TabsList>
+            <TabsTrigger value="all">{t("notifications.tab_all")}</TabsTrigger>
+            <TabsTrigger value="unread">
+              {t("notifications.tab_unread")}
+              {unreadCount > 0 && (
+                <span className="ml-1.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                  {unreadCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="read">{t("notifications.tab_read")}</TabsTrigger>
+          </TabsList>
+          <div className="flex flex-wrap gap-2">
             <Input
-              placeholder={t("notifications.search_placeholder")}
+              placeholder="Benachrichtigungen durchsuchen"
+              aria-label="Benachrichtigungen durchsuchen"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-xs"
+              className="w-full sm:w-64"
             />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
-            >
-              <option value="">{t("notifications.all_types")}</option>
-              {availableTypes.map((t) => (
-                <option key={t} value={t}>
-                  {TYPE_META[t]?.label ?? t}
-                </option>
-              ))}
-            </select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">{t("notifications.tab_all")}</TabsTrigger>
-          <TabsTrigger value="unread">
-            {t("notifications.tab_unread")}
-            {unreadCount > 0 && (
-              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
+            {availableTypes.length > 1 && (
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                aria-label="Nach Art filtern"
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              >
+                <option value="">Alle Arten</option>
+                {availableTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {TYPE_META[type]?.label ?? "Hinweis"}
+                  </option>
+                ))}
+              </select>
             )}
-          </TabsTrigger>
-          <TabsTrigger value="read">{t("notifications.tab_read")}</TabsTrigger>
-        </TabsList>
+          </div>
+        </div>
 
-        <TabsContent value={activeTab} className="space-y-4">
-          <Card>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="p-8 text-center text-[color:var(--ds-text-muted)]">
-                  {t("notifications.loading")}
-                </div>
-              ) : filtered.length > 0 ? (
-                <div className="divide-y divide-[color:var(--ds-border)]">
-                  {filtered.map((n: NotificationItem) => {
-                    const meta = getNotificationMessage(n);
-                    const typeMeta = TYPE_META[n.type] ?? TYPE_META.system;
-                    const Icon = typeMeta.icon;
-                    return (
-                      <div
-                        key={n.id}
-                        className={`flex items-start gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none ${!n.readAt ? "bg-[color:var(--ds-surface-2)]" : ""}`}
-                      >
-                        <div className={`mt-0.5 shrink-0 ${typeMeta.color}`}>
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                              {meta.title}
-                            </span>
-                            <Badge variant="default" className="text-xs">
-                              {typeMeta.label}
-                            </Badge>
-                            {!n.readAt && (
-                              <span className="h-2 w-2 rounded-full bg-[color:var(--ds-danger-text)]" />
-                            )}
-                          </div>
-                          {meta.href ? (
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              className="mt-1 cursor-pointer text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
-                              onClick={() => handleNavigate(meta.href)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  handleNavigate(meta.href);
-                                }
-                              }}
-                            >
-                              {meta.message}
-                            </div>
-                          ) : (
-                            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                              {meta.message}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                            {formatDate(n.createdAt)}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          {!n.readAt && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => markReadMutation.mutate(n.id)}
-                              disabled={markReadMutation.isPending}
-                              aria-label={t("notifications.aria_mark_read")}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteMutation.mutate(n.id)}
-                            disabled={deleteMutation.isPending}
-                            aria-label={t("notifications.aria_delete")}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+        <TabsContent value={activeTab} className="mt-4 space-y-4">
+          {isLoading ? (
+            <div
+              role="status"
+              aria-label="Benachrichtigungen werden geladen"
+              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+            >
+              <RowSkeleton count={4} />
+            </div>
+          ) : isError ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+            >
+              Die Benachrichtigungen konnten nicht geladen werden. Bitte laden Sie die Seite neu.
+            </div>
+          ) : filtered.length > 0 ? (
+            <div className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+              {filtered.map((n: NotificationItem) => {
+                const meta = getNotificationMessage(n);
+                const typeMeta = TYPE_META[n.type] ?? TYPE_META.system;
+                const Icon = typeMeta.icon;
+                return (
+                  <div
+                    key={n.id}
+                    className={`flex items-start gap-3 p-4 ${!n.readAt ? "bg-[color:var(--ds-surface-2)]" : ""}`}
+                  >
+                    <div className={`mt-0.5 shrink-0 ${typeMeta.color}`}>
+                      <Icon className="h-4 w-4" aria-hidden />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {!n.readAt && (
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-solid)]"
+                            aria-label="Ungelesen"
+                          />
+                        )}
+                        <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                          {meta.title}
+                        </span>
+                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                          {typeMeta.label}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Bell className="mb-3 h-10 w-10 text-[color:var(--ds-border-strong)]" />
-                  <p className="font-medium text-[color:var(--ds-text)]">
-                    {t("notifications.empty_title")}
-                  </p>
-                  <p className="text-sm text-[color:var(--ds-text-muted)]">
-                    {activeTab === "unread"
-                      ? t("notifications.empty_unread")
-                      : activeTab === "read"
-                        ? t("notifications.empty_read")
-                        : t("notifications.empty_all")}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      {meta.message &&
+                        (meta.href ? (
+                          <Link
+                            href={meta.href}
+                            className="mt-1 block text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
+                          >
+                            {meta.message}
+                          </Link>
+                        ) : (
+                          <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
+                            {meta.message}
+                          </p>
+                        ))}
+                      <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                        {formatRelativeTime(n.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {!n.readAt && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => markReadMutation.mutate(n.id)}
+                          disabled={markReadMutation.isPending}
+                          aria-label={t("notifications.aria_mark_read")}
+                          title={t("notifications.aria_mark_read")}
+                        >
+                          <Check className="h-4 w-4" aria-hidden />
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteMutation.mutate(n.id)}
+                        disabled={deleteMutation.isPending}
+                        aria-label={t("notifications.aria_delete")}
+                        title={t("notifications.aria_delete")}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Bell}
+              title={t("notifications.empty_title")}
+              description={
+                searchQuery || typeFilter
+                  ? "Keine Benachrichtigung passt zu Suche oder Filter."
+                  : activeTab === "unread"
+                    ? t("notifications.empty_unread")
+                    : activeTab === "read"
+                      ? t("notifications.empty_read")
+                      : "Hier erscheinen Fristwarnungen, Erwähnungen, Antworten und Hinweise des Assistenten."
+              }
+              actionLabel={searchQuery || typeFilter ? "Filter zurücksetzen" : undefined}
+              onAction={
+                searchQuery || typeFilter
+                  ? () => {
+                      setSearchQuery("");
+                      setTypeFilter("");
+                    }
+                  : undefined
+              }
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

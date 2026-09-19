@@ -6,13 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
-
+import { csrfFetch } from "@/lib/csrf";
+import { formatDateTime } from "@/lib/utils";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { unwrapApiBody } from "@/lib/api-body";
+
+/** Event identifiers stay technical on the wire; the UI shows what happened in the firm. */
+const EVENT_LABELS: Record<string, { de: string; en: string }> = {
+  "case.created": { de: "Akte angelegt", en: "Matter created" },
+  "deadline.critical": { de: "Frist wird kritisch", en: "Deadline becomes critical" },
+  "invoice.paid": { de: "Rechnung bezahlt", en: "Invoice paid" },
+  "document.received": { de: "Dokument eingegangen", en: "Document received" },
+  "intake.new": { de: "Neue Mandatsanfrage", en: "New client enquiry" },
+};
+const EVENT_TYPES = Object.keys(EVENT_LABELS);
+
 export default function WebhooksPage() {
   const { addToast } = useToast();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const eventLabel = (evt: string) => EVENT_LABELS[evt]?.[lang === "en" ? "en" : "de"] ?? evt;
 
   const [webhooks, setWebhooks] = useState<
     Array<{
@@ -34,14 +51,6 @@ export default function WebhooksPage() {
     secret: "",
     description: "",
   });
-
-  const eventTypes = [
-    "case.created",
-    "deadline.critical",
-    "invoice.paid",
-    "document.received",
-    "intake.new",
-  ];
 
   const load = useCallback(async () => {
     try {
@@ -67,7 +76,7 @@ export default function WebhooksPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/webhooks/outgoing", {
+      const res = await csrfFetch("/api/webhooks/outgoing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -84,10 +93,19 @@ export default function WebhooksPage() {
     }
   }
 
-  async function deleteWebhook(id: string) {
+  async function deleteWebhook(id: string, url: string) {
+    if (
+      !window.confirm(
+        L(
+          `Benachrichtigungen an ${url} beenden? Das Zielsystem erhält danach keine Ereignisse mehr.`,
+          `Stop notifications to ${url}? The target system will no longer receive events.`
+        )
+      )
+    )
+      return;
     setDeleting(id);
     try {
-      const res = await fetch(`/api/webhooks/outgoing?id=${encodeURIComponent(id)}`, {
+      const res = await csrfFetch(`/api/webhooks/outgoing?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
@@ -109,81 +127,98 @@ export default function WebhooksPage() {
     });
   }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20" role="status" aria-live="polite">
-        <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Webhook size={20} className="text-[color:var(--ds-text)]" />
-          <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">
-            {t("webhooks.title")}
-          </h1>
-        </div>
-        <Button onClick={() => setShowForm(!showForm)} variant="secondary" className="gap-2">
-          <Plus size={14} />
-          {t("webhooks.new")}
-        </Button>
-      </div>
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={L("Webhooks", "Webhooks")}
+        description={L(
+          "Benachrichtigen Sie andere Programme Ihrer Kanzlei automatisch, wenn in Subsumio etwas passiert – etwa wenn eine Akte angelegt wird.",
+          "Automatically notify other programs in your firm when something happens in Subsumio – for example when a matter is created."
+        )}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("settings.title"), href: "/dashboard/settings" },
+          { label: "Webhooks" },
+        ]}
+        actions={
+          webhooks.length > 0 && !showForm ? (
+            <Button onClick={() => setShowForm(true)} className="gap-2 whitespace-nowrap">
+              <Plus size={14} />
+              {t("webhooks.new")}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {showForm && (
-        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
             {t("webhooks.register_title")}
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                {t("webhooks.url_label")}
+              <Label htmlFor="wh-url" className="text-xs text-[color:var(--ds-text-muted)]">
+                {L("Zieladresse (URL)", "Target address (URL)")}
               </Label>
               <Input
+                id="wh-url"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="https://yourserver.com/webhook"
+                placeholder="https://kanzlei-system.example/eingang"
               />
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {L(
+                  "Die Adresse, an die Subsumio eine Nachricht schickt. Ihr IT-Dienstleister nennt Ihnen diese.",
+                  "The address Subsumio sends a message to. Your IT provider can give it to you."
+                )}
+              </p>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                {t("webhooks.events_label")}
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {eventTypes.map((evt) => (
+            <fieldset className="space-y-1">
+              <legend className="text-xs text-[color:var(--ds-text-muted)]">
+                {L("Bei welchen Ereignissen?", "For which events?")}
+              </legend>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {EVENT_TYPES.map((evt) => (
                   <button
                     key={evt}
+                    type="button"
+                    aria-pressed={form.events.includes(evt)}
                     onClick={() => toggleEvent(evt)}
                     className={`rounded-lg border px-3 py-1.5 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${
                       form.events.includes(evt)
-                        ? "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]"
+                        ? "brand-soft brand-text brand-border"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-3)]"
                     } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
                   >
-                    {evt}
+                    {eventLabel(evt)}
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                {t("webhooks.secret_label")}
+              <Label htmlFor="wh-secret" className="text-xs text-[color:var(--ds-text-muted)]">
+                {L("Signaturschlüssel", "Signing secret")}
               </Label>
               <Input
+                id="wh-secret"
                 type="password"
                 value={form.secret}
                 onChange={(e) => setForm({ ...form, secret: e.target.value })}
                 placeholder={t("webhooks.secret_placeholder")}
               />
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {L(
+                  "Damit prüft das Zielsystem, dass die Nachricht wirklich von Subsumio stammt.",
+                  "The target system uses it to verify that the message really comes from Subsumio."
+                )}
+              </p>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              <Label htmlFor="wh-desc" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("webhooks.desc_label")}
               </Label>
               <Input
+                id="wh-desc"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder={t("webhooks.desc_placeholder")}
@@ -191,51 +226,67 @@ export default function WebhooksPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => void save()} disabled={saving} className="brand-bg text-white">
-              {saving ? <Loader2 size={14} className="animate-spin" /> : t("webhooks.save")}
+            <Button onClick={() => void save()} disabled={saving} loading={saving}>
+              {t("webhooks.save")}
             </Button>
             <Button onClick={() => setShowForm(false)} variant="ghost">
               {t("webhooks.cancel")}
             </Button>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className="space-y-2">
-        {webhooks.length === 0 ? (
-          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("webhooks.empty")}</p>
-        ) : (
-          webhooks.map((wh) => (
-            <div
+      {loading ? (
+        <div className="space-y-2" role="status" aria-label={L("Wird geladen", "Loading")}>
+          {[0, 1].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : webhooks.length === 0 ? (
+        !showForm && (
+          <EmptyState
+            icon={Webhook}
+            title={t("webhooks.empty")}
+            description={L(
+              "Nur nötig, wenn ein anderes Programm Ihrer Kanzlei automatisch über Ereignisse informiert werden soll.",
+              "Only needed if another program in your firm should be told about events automatically."
+            )}
+            actionLabel={t("webhooks.new")}
+            onAction={() => setShowForm(true)}
+          />
+        )
+      ) : (
+        <ul className="space-y-2">
+          {webhooks.map((wh) => (
+            <li
               key={wh.id}
-              className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <LinkIcon size={14} className="text-[color:var(--ds-text-muted)]" />
-                  <span className="text-sm font-medium text-[color:var(--ds-text)]">{wh.url}</span>
+                  <LinkIcon size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                  <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                    {wh.url}
+                  </span>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {wh.events.map((evt) => (
-                    <Badge
-                      key={evt}
-                      variant="default"
-                      className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-xs text-[color:var(--ds-text-muted)]"
-                    >
-                      {evt}
+                    <Badge key={evt} variant="default" className="text-xs">
+                      {eventLabel(evt)}
                     </Badge>
                   ))}
                 </div>
-                <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  {t("webhooks.created")} {new Date(wh.created_at).toLocaleString()}
+                <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                  {t("webhooks.created")} {formatDateTime(wh.created_at)}
                 </div>
               </div>
               <Button
-                onClick={() => void deleteWebhook(wh.id)}
+                onClick={() => void deleteWebhook(wh.id, wh.url)}
                 disabled={deleting === wh.id}
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
+                aria-label={L("Webhook löschen", "Delete webhook")}
+                className="h-8 w-8 shrink-0 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
               >
                 {deleting === wh.id ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -243,10 +294,10 @@ export default function WebhooksPage() {
                   <Trash2 size={14} />
                 )}
               </Button>
-            </div>
-          ))
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

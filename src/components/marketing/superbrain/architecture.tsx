@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { BookOpen, CheckCircle2, Info, RefreshCw } from "lucide-react";
 import { EASE, ClipReveal, GlowCard, VIEWPORT } from "../motion-system";
 import { Section, H2_CTA_CLASS } from "../primitives";

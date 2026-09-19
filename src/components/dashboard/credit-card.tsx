@@ -9,6 +9,16 @@ import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { formatDateTime } from "@/lib/utils";
+
+/** Guthaben kommt teils als Dezimal-String ("82.00") — immer de-AT ausgeben. */
+function fmtCredits(value: number | string | null | undefined): string {
+  const n = Number(value);
+  // de-DE-Gruppierung ("2.000") — passt zu den €-Beträgen; de-AT würde "2 000" setzen.
+  return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(
+    Number.isFinite(n) ? n : 0
+  );
+}
 
 interface CreditBalance {
   ownerId: string;
@@ -59,10 +69,10 @@ interface CreditsData {
 }
 
 const OPERATION_LABELS: Record<string, string> = {
-  think: "Think (Q&A)",
-  document_analysis: "Dokument-Analyse",
-  subsumption: "Subsumption",
-  agent: "Agent-Run",
+  think: "Rechtsfrage",
+  document_analysis: "Dokumentanalyse",
+  subsumption: "Subsumtion",
+  agent: "Automatisierter Ablauf",
   deadline_detect: "Fristen-Erkennung",
   frist_engine: "Fristenrechner",
 };
@@ -123,9 +133,11 @@ export function CreditCard() {
         window.location.assign(json.url);
         return;
       }
-      setError(json.message ?? json.error ?? "Checkout fehlgeschlagen");
+      setError(
+        "Der Kauf konnte nicht gestartet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns."
+      );
     } catch {
-      setError("Netzwerkfehler");
+      setError("Keine Verbindung zum Server. Bitte prüfen Sie Ihre Internetverbindung.");
     }
     setBuying(null);
   }
@@ -143,14 +155,17 @@ export function CreditCard() {
         }),
       });
       if (res.ok) {
-        addToast({ type: "success", title: "Auto-Reload gespeichert" });
+        addToast({ type: "success", title: "Automatisches Aufladen gespeichert" });
         void fetchCredits();
       } else {
-        const json = (await res.json()) as { message?: string };
-        addToast({ type: "error", title: json.message ?? "Speichern fehlgeschlagen" });
+        addToast({
+          type: "error",
+          title: "Einstellung wurde nicht gespeichert",
+          description: "Bitte versuchen Sie es erneut.",
+        });
       }
     } catch {
-      addToast({ type: "error", title: "Netzwerkfehler" });
+      addToast({ type: "error", title: "Keine Verbindung zum Server" });
     }
     setSavingAutoReload(false);
   }
@@ -163,14 +178,14 @@ export function CreditCard() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `ai-costs-per-case-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `ki-kosten-je-akte-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
       } else {
         addToast({ type: "error", title: "Export fehlgeschlagen" });
       }
     } catch {
-      addToast({ type: "error", title: "Netzwerkfehler beim Export" });
+      addToast({ type: "error", title: "Export nicht möglich — keine Verbindung zum Server" });
     }
   }
 
@@ -212,7 +227,7 @@ export function CreditCard() {
                 Credits nicht verfügbar
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Billing ist noch nicht konfiguriert.
+                Die Abrechnung über Guthaben ist für diese Kanzlei noch nicht eingerichtet.
               </p>
             </div>
           </div>
@@ -240,9 +255,9 @@ export function CreditCard() {
           </div>
           <div className="flex items-baseline gap-2">
             <span
-              className={`text-3xl font-bold ${lowBalance ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text)]"}`}
+              className={`text-3xl font-bold tabular-nums ${lowBalance ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text)]"}`}
             >
-              {balance.balance}
+              {fmtCredits(balance.balance)}
             </span>
             <span className="text-sm text-[color:var(--ds-text-muted)]">
               {t("billing.credits_remaining") || "Credits verfügbar"}
@@ -258,7 +273,7 @@ export function CreditCard() {
                 {t("billing.credits_included") || "Inklusiv"}
               </p>
               <p className="text-lg font-semibold text-[color:var(--ds-text)]">
-                {balance.includedCredit}
+                {fmtCredits(balance.includedCredit)}
               </p>
             </div>
             <div className="text-center">
@@ -266,7 +281,7 @@ export function CreditCard() {
                 {t("billing.credits_purchased") || "Gekauft"}
               </p>
               <p className="text-lg font-semibold text-[color:var(--ds-text)]">
-                {balance.purchasedCredit}
+                {fmtCredits(balance.purchasedCredit)}
               </p>
             </div>
             <div className="text-center">
@@ -274,7 +289,7 @@ export function CreditCard() {
                 {t("billing.credits_used") || "Verbraucht"}
               </p>
               <p className="text-lg font-semibold text-[color:var(--ds-text)]">
-                {balance.usedCredit}
+                {fmtCredits(balance.usedCredit)}
               </p>
             </div>
           </div>
@@ -288,7 +303,7 @@ export function CreditCard() {
               {(
                 t("billing.overage_notice") ||
                 "Überplan-Nutzung: {overage} Credits über dem Inklusiv-Kontingent — wird am Periodenende abgerechnet."
-              ).replace("{overage}", String(balance.overage))}
+              ).replace("{overage}", fmtCredits(balance.overage))}
             </p>
           </div>
         )}
@@ -299,7 +314,7 @@ export function CreditCard() {
             <TrendingDown size={14} className="text-[color:var(--ds-warning-text)]" />
             <p className="text-xs text-[color:var(--ds-warning-text)]">
               {t("billing.low_credits") ||
-                "Wenige Credits übrig — kaufe ein Pack, um AI-Features weiter zu nutzen."}
+                "Wenige Credits übrig — kaufen Sie ein Paket, um KI-Funktionen weiter zu nutzen."}
             </p>
           </div>
         )}
@@ -322,12 +337,16 @@ export function CreditCard() {
                   {pack.savingsPct > 0 && <Badge variant="success">-{pack.savingsPct}%</Badge>}
                 </div>
                 <p className="mb-1 text-2xl font-bold text-[color:var(--ds-text)]">
-                  {pack.credits}
+                  {fmtCredits(pack.credits)}
                   <span className="ml-1 text-xs font-normal text-[color:var(--ds-text-muted)]">
                     Credits
                   </span>
                 </p>
-                <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">{pack.priceEur} €</p>
+                <p className="mb-3 text-sm text-[color:var(--ds-text-muted)] tabular-nums">
+                  {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(
+                    Number(pack.priceEur) || 0
+                  )}
+                </p>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -347,17 +366,17 @@ export function CreditCard() {
           <p className="mb-2 text-xs font-medium tracking-wider text-[color:var(--ds-text-muted)] uppercase">
             {t("billing.credit_costs") || "Kosten pro Operation"}
           </p>
-          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {Object.entries(creditCosts).map(([op, cost]) => (
               <div
                 key={op}
                 className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2"
               >
-                <span className="text-xs text-[color:var(--ds-text-muted)]">
+                <span className="min-w-0 truncate text-xs text-[color:var(--ds-text-muted)]">
                   {OPERATION_LABELS[op] ?? op}
                 </span>
-                <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {cost === 0 ? "gratis" : `${cost}`}
+                <span className="ml-2 shrink-0 text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
+                  {Number(cost) === 0 ? "kostenlos" : fmtCredits(cost)}
                 </span>
               </div>
             ))}
@@ -369,7 +388,7 @@ export function CreditCard() {
           <div className="mb-3 flex items-center gap-2">
             <Zap size={14} className="brand-text" />
             <p className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {t("billing.auto_reload") || "Auto-Reload"}
+              {t("billing.auto_reload") || "Automatisch aufladen"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -402,7 +421,7 @@ export function CreditCard() {
                 >
                   {creditPacks.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.credits} Credits)
+                      {p.name} ({fmtCredits(p.credits)} Credits)
                     </option>
                   ))}
                 </select>
@@ -417,6 +436,8 @@ export function CreditCard() {
         {/* Transaction History Toggle */}
         <div className="flex items-center justify-between">
           <button
+            type="button"
+            aria-expanded={showHistory}
             onClick={() => setShowHistory(!showHistory)}
             className="flex items-center gap-2 text-xs font-medium text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           >
@@ -437,7 +458,7 @@ export function CreditCard() {
                 <tr className="border-b border-[color:var(--ds-border)] text-left text-[color:var(--ds-text-muted)]">
                   <th className="pr-4 pb-2 font-medium">Datum</th>
                   <th className="pr-4 pb-2 font-medium">Typ</th>
-                  <th className="pr-4 pb-2 font-medium">Operation</th>
+                  <th className="pr-4 pb-2 font-medium">Leistung</th>
                   <th className="pr-4 pb-2 font-medium">Akte</th>
                   <th className="pr-4 pb-2 text-right font-medium">Credits</th>
                   <th className="pb-2 text-right font-medium">Saldo</th>
@@ -446,13 +467,8 @@ export function CreditCard() {
               <tbody>
                 {transactions.slice(0, 20).map((tx) => (
                   <tr key={tx.id} className="border-b border-[color:var(--ds-border)]/50">
-                    <td className="py-2 pr-4 text-[color:var(--ds-text-muted)]">
-                      {new Date(tx.createdAt).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <td className="py-2 pr-4 whitespace-nowrap text-[color:var(--ds-text-muted)] tabular-nums">
+                      {formatDateTime(tx.createdAt)}
                     </td>
                     <td className="py-2 pr-4">
                       <Badge
@@ -473,16 +489,16 @@ export function CreditCard() {
                         : (tx.description ?? "—")}
                     </td>
                     <td className="py-2 pr-4 text-[color:var(--ds-text-muted)]">
-                      {tx.caseSlug ?? "—"}
+                      {tx.caseSlug ? tx.caseSlug.split("/").pop() : "—"}
                     </td>
                     <td
                       className={`py-2 pr-4 text-right font-semibold ${tx.amount > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text)]"}`}
                     >
-                      {tx.amount > 0 ? "+" : ""}
-                      {tx.amount}
+                      {Number(tx.amount) > 0 ? "+" : ""}
+                      {fmtCredits(tx.amount)}
                     </td>
-                    <td className="py-2 text-right text-[color:var(--ds-text-muted)]">
-                      {tx.balanceAfter}
+                    <td className="py-2 text-right text-[color:var(--ds-text-muted)] tabular-nums">
+                      {fmtCredits(tx.balanceAfter)}
                     </td>
                   </tr>
                 ))}
@@ -499,8 +515,11 @@ export function CreditCard() {
         )}
 
         {error && (
-          <div className="rounded-xl border border-[color:var(--ds-error-border)] bg-[color:var(--ds-error-bg)] p-3">
-            <p className="text-xs text-[color:var(--ds-error-text)]">{error}</p>
+          <div
+            role="alert"
+            className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
+          >
+            <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>
           </div>
         )}
       </div>

@@ -870,7 +870,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <motion.div
         ref={drawerRef}
         initial={false}
-        animate={{ x: mobileOpen ? 0 : "100%" }}
+        // Closed: removed from layout once the slide-out ends. A fixed drawer parked at
+        // translateX(100%) still widened the page to 780 px on phones.
+        animate={
+          mobileOpen
+            ? { x: 0, display: "block" }
+            : { x: "100%", transitionEnd: { display: "none" } }
+        }
         transition={panelTransition}
         drag={mobileOpen && !reduceMotion ? "x" : false}
         dragDirectionLock
@@ -1027,8 +1033,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               className={cn(
                 "ml-auto h-full w-1.5 transition-[width,background-color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
                 isResizing
-                  ? "w-2 bg-[var(--brand-primary)]"
-                  : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[var(--brand-primary)]"
+                  ? "w-2 bg-[color:var(--brand-solid)]"
+                  : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[color:var(--brand-solid)]"
               )}
             />
           </div>

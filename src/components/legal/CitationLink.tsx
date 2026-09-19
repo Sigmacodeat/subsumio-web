@@ -94,7 +94,7 @@ export function CitationLink({ citation, className, grounding }: CitationLinkPro
           >
             <div className="mb-1 flex items-center gap-1.5 font-semibold">
               <FileText size={12} />
-              Corpus-Quelltext
+              Gesetzestext
             </div>
             <div className="line-clamp-6 text-[color:var(--ds-text-muted)]">
               {grounding.source_text}
@@ -168,7 +168,7 @@ export function GroundingBadge({
     return (
       <Badge variant="default" className={className}>
         <AlertCircle size={10} />
-        Corpus nicht geprüft
+        Rechtsquellen nicht geprüft
       </Badge>
     );
   }
@@ -182,13 +182,13 @@ export function GroundingBadge({
       {verified > 0 && (
         <Badge variant="success">
           <CheckCircle2 size={10} />
-          {verified} verifiziert
+          {verified} geprüft
         </Badge>
       )}
       {unverified > 0 && (
         <Badge variant="warning">
           <AlertCircle size={10} />
-          {unverified} nicht verifiziert
+          {unverified} ungeprüft
         </Badge>
       )}
     </div>
@@ -345,13 +345,13 @@ export function AttorneyReviewWarning({
       <div className="leading-relaxed">
         {unverified > 0 && (
           <p className="font-medium">
-            {unverified} {unverified === 1 ? "Zitat" : "Zitate"} nicht im Corpus verifiziert —
+            {unverified} {unverified === 1 ? "Zitat" : "Zitate"} nicht in den Rechtsquellen gefunden —
             anwaltliche Prüfung zwingend erforderlich.
           </p>
         )}
         {unverified === 0 && verified === 0 && (
           <p className="font-medium">
-            Keine Corpus-Prüfung durchgeführt — anwaltliche Prüfung erforderlich.
+            Keine Prüfung gegen die Rechtsquellen — anwaltliche Prüfung erforderlich.
           </p>
         )}
         <p className="mt-0.5 text-[color:var(--ds-warning-text)]">

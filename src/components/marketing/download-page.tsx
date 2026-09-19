@@ -107,7 +107,7 @@ function PhoneMockup() {
           <div className="flex items-center justify-between px-5 pt-3 font-mono text-sm [color:var(--mk-text-muted)]">
             <span>9:41</span>
             <span className="flex items-center gap-1">
-              <span className="h-1 w-1 rounded-full bg-[var(--brand-primary)]" /> Σ
+              <span className="h-1 w-1 rounded-full bg-[color:var(--brand-solid)]" /> Σ
             </span>
           </div>
 
@@ -146,7 +146,7 @@ function PhoneMockup() {
                 transition={{ delay: 1.2 + i * 0.18, duration: 0.3 }}
                 className="mb-1 flex items-center gap-1.5"
               >
-                <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--brand-primary)]" />
+                <span className="h-1 w-1 shrink-0 rounded-full bg-[color:var(--brand-solid)]" />
                 <span
                   className="h-1.5 rounded-full [background:var(--mk-border-strong)]"
                   style={{ width: `${70 - i * 12}%` }}

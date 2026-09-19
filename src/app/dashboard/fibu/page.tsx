@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import {
-  Banknote,
-  FileText,
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  Plus,
-  Clock,
-  TrendingUp,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Banknote, FileText, Loader2, Plus, RefreshCw } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
+import { formatDate, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +19,9 @@ import { getOposSummary, getDunningLabel, type OpenItem, type BankTransaction } 
 
 import { unwrapApiBody } from "@/lib/api-body";
 export default function FibuPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { addToast } = useToast();
+  const router = useRouter();
   const [openItems, setOpenItems] = useState<OpenItem[]>([]);
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +64,11 @@ export default function FibuPage() {
       setOpenItems(items);
       setTransactions(txns);
     } catch {
-      addToast({ type: "error", title: "Fehler beim Laden" });
+      addToast({
+        type: "error",
+        title: "Buchhaltungsdaten konnten nicht geladen werden",
+        description: "Bitte laden Sie die Seite neu.",
+      });
     } finally {
       setLoading(false);
     }
@@ -80,12 +80,12 @@ export default function FibuPage() {
 
   async function handleImport() {
     if (!importForm.date || !importForm.amount || !importForm.iban) {
-      addToast({ type: "error", title: "Datum, Betrag und IBAN erforderlich" });
+      addToast({ type: "error", title: "Bitte Datum, Betrag und IBAN angeben" });
       return;
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/fibu/opos", {
+      const res = await csrfFetch("/api/fibu/opos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -105,9 +105,15 @@ export default function FibuPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = unwrapApiBody(await res.json());
+      const imported = Number(data.imported) || 0;
+      const matched = Number(data.matched) || 0;
       addToast({
         type: "success",
-        title: `${data.imported} Transaktion(en) importiert, ${data.matched} matched`,
+        title: `${imported} ${imported === 1 ? "Bankbuchung" : "Bankbuchungen"} erfasst`,
+        description:
+          matched > 0
+            ? `${matched} davon einem offenen Posten zugeordnet.`
+            : "Keinem offenen Posten automatisch zugeordnet.",
       });
       setShowImport(false);
       setImportForm({
@@ -122,10 +128,11 @@ export default function FibuPage() {
       });
       void load();
     } catch (e) {
+      console.error("[fibu] import failed:", e instanceof Error ? e.message : e);
       addToast({
         type: "error",
-        title: "Import fehlgeschlagen",
-        description: e instanceof Error ? e.message : undefined,
+        title: "Bankbuchung wurde nicht gespeichert",
+        description: "Bitte prüfen Sie die Angaben und versuchen Sie es erneut.",
       });
     } finally {
       setSaving(false);
@@ -148,10 +155,12 @@ export default function FibuPage() {
       });
       await load();
     } catch (error) {
+      console.error("[fibu] bank feed failed:", error instanceof Error ? error.message : error);
       addToast({
         type: "error",
-        title: "Bank-Feed nicht verfügbar",
-        description: error instanceof Error ? error.message : undefined,
+        title: "Bankabgleich nicht möglich",
+        description:
+          "Es ist keine Bankverbindung eingerichtet oder die Bank antwortet nicht. Sie können Buchungen weiterhin manuell erfassen.",
       });
     } finally {
       setSaving(false);
@@ -166,12 +175,12 @@ export default function FibuPage() {
       !linkForm.client_name ||
       !linkForm.iban
     ) {
-      addToast({ type: "error", title: "Pflichtfelder ausfüllen" });
+      addToast({ type: "error", title: "Bitte alle Pflichtfelder ausfüllen" });
       return;
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/fibu/payment-links", {
+      const res = await csrfFetch("/api/fibu/payment-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -199,10 +208,11 @@ export default function FibuPage() {
         remittance_text: "",
       });
     } catch (e) {
+      console.error("[fibu] payment link failed:", e instanceof Error ? e.message : e);
       addToast({
         type: "error",
-        title: "Fehler",
-        description: e instanceof Error ? e.message : undefined,
+        title: "Zahlungslink wurde nicht erstellt",
+        description: "Bitte prüfen Sie Betrag und IBAN und versuchen Sie es erneut.",
       });
     } finally {
       setSaving(false);
@@ -210,6 +220,7 @@ export default function FibuPage() {
   }
 
   const summary = getOposSummary(openItems);
+  const openCount = summary.total - summary.paid;
   const unmatchedTxns = transactions.filter((t) => t.status === "unmatched");
 
   return (
@@ -219,78 +230,77 @@ export default function FibuPage() {
         description={t("fibu.desc")}
         breadcrumbs={[{ label: t("breadcrumb.dashboard"), href: "/dashboard" }, { label: "FiBu" }]}
         actions={
-          <div className="flex gap-2">
-            <Button variant="secondary" disabled={saving} onClick={() => void syncBankFeed()}>
-              Bank synchronisieren
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => {
+                setShowImport(!showImport);
+                setShowPaymentLink(false);
+              }}
+            >
+              <Banknote size={14} aria-hidden="true" />
+              Bankbuchung erfassen
             </Button>
             <Button
-              variant="secondary"
-              className="gap-2 text-sm"
-              onClick={() => setShowPaymentLink(!showPaymentLink)}
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              disabled={saving}
+              onClick={() => void syncBankFeed()}
             >
-              <Plus size={14} />
+              <RefreshCw size={14} aria-hidden="true" />
+              Bank abgleichen
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => {
+                setShowPaymentLink(!showPaymentLink);
+                setShowImport(false);
+              }}
+            >
+              <Plus size={14} aria-hidden="true" />
               Zahlungslink
             </Button>
-            <Button
-              className="brand-bg gap-2 text-white"
-              onClick={() => setShowImport(!showImport)}
-            >
-              <Banknote size={14} />
-              Bank-Import
-            </Button>
-          </div>
+          </>
         }
       />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-            <FileText size={12} />
-            Offene Posten
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-text)]">{summary.total}</p>
+      {/* Kennzahlen — Farbe nur, wenn es etwas zu beachten gibt */}
+      {loading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[76px] rounded-xl" />
+          ))}
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-            <Clock size={12} />
-            Offener Betrag
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-text)]">
-            {summary.totalOpenAmount.toFixed(2)} €
-          </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <FibuStat label="Offene Posten" value={String(openCount)} />
+          <FibuStat label="Offener Betrag" value={formatEur(summary.totalOpenAmount, lang)} />
+          <FibuStat
+            label="Überfällig"
+            value={String(summary.overdue)}
+            sub={summary.overdue > 0 ? formatEur(summary.totalOverdueAmount, lang) : undefined}
+            tone={summary.overdue > 0 ? "danger" : undefined}
+          />
+          <FibuStat label="Bezahlt" value={String(summary.paid)} />
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] p-4">
-          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-attention-text)]">
-            <AlertTriangle size={12} />
-            Überfällig
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-attention-text)]">
-            {summary.overdue}
-          </p>
-        </div>
-        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
-          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
-            <CheckCircle2 size={12} />
-            Bezahlt
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)]">
-            {summary.paid}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Bank Import Form */}
       {showImport && (
         <form
-          className="space-y-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4"
+          className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
           onSubmit={(e) => {
             e.preventDefault();
             void handleImport();
           }}
         >
-          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
-            Bank-Transaktion importieren
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            Bankbuchung erfassen
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1">
@@ -322,8 +332,8 @@ export default function FibuPage() {
                   setImportForm({ ...importForm, direction: e.target.value as "debit" | "credit" })
                 }
               >
-                <option value="credit">Eingang (Credit)</option>
-                <option value="debit">Ausgang (Debit)</option>
+                <option value="credit">Eingang</option>
+                <option value="debit">Ausgang</option>
               </select>
             </div>
             <div className="space-y-1">
@@ -331,7 +341,7 @@ export default function FibuPage() {
               <Input
                 value={importForm.iban}
                 onChange={(e) => setImportForm({ ...importForm, iban: e.target.value })}
-                placeholder="DE89 3704 0044 0532 0130 00"
+                placeholder="AT61 1904 3002 3457 3201"
                 required
               />
             </div>
@@ -365,25 +375,35 @@ export default function FibuPage() {
               />
             </div>
           </div>
-          <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
-            Importieren
-          </Button>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={saving}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+              Buchung speichern
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowImport(false)}>
+              Abbrechen
+            </Button>
+          </div>
         </form>
       )}
 
       {/* Payment Link Form */}
       {showPaymentLink && (
         <form
-          className="space-y-4 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4"
+          className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
           onSubmit={(e) => {
             e.preventDefault();
             void handlePaymentLink();
           }}
         >
-          <h2 className="text-sm font-semibold text-[color:var(--ds-success-text)]">
-            Zahlungslink erstellen (EPC-QR)
-          </h2>
+          <div>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Zahlungslink erstellen
+            </h2>
+            <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+              Erzeugt einen EPC-QR-Code (SEPA-Überweisung), den der Mandant mit der Banking-App scannt.
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Rechnungs-ID *</Label>
@@ -454,63 +474,47 @@ export default function FibuPage() {
               />
             </div>
           </div>
-          <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            Zahlungslink erstellen
-          </Button>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={saving}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              Zahlungslink erstellen
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowPaymentLink(false)}>
+              Abbrechen
+            </Button>
+          </div>
         </form>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
-        </div>
+        <RowSkeleton count={4} />
       ) : (
         <>
           {/* OPOS List */}
-          <section aria-labelledby="opos-heading">
+          <section aria-labelledby="opos-heading" className="space-y-2">
             <h2
               id="opos-heading"
-              className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
+              className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase"
             >
-              Offene Posten ({openItems.length})
+              Offene Posten{openItems.length > 0 ? ` · ${openItems.length}` : ""}
             </h2>
-            <div className="space-y-2">
-              {openItems.length === 0 ? (
-                <p className="py-4 text-sm text-[color:var(--ds-text-muted)]">
-                  Keine offenen Posten.
-                </p>
-              ) : (
-                openItems.map((item) => {
+            {openItems.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title="Keine offenen Posten"
+                description="Offene Posten entstehen aus versendeten Rechnungen. Zahlungseingänge werden ihnen beim Bankabgleich zugeordnet."
+                actionLabel="Zu den Rechnungen"
+                onAction={() => router.push("/dashboard/invoicing")}
+              />
+            ) : (
+              <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+                {openItems.map((item) => {
                   const isOverdue = item.status !== "paid" && new Date(item.due_date) < new Date();
                   return (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
-                    >
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                          isOverdue
-                            ? "bg-[color:var(--ds-attention-bg)]"
-                            : item.status === "paid"
-                              ? "bg-[color:var(--ds-success-bg)]"
-                              : "bg-[color:var(--ds-info-bg)]"
-                        }`}
-                      >
-                        {isOverdue ? (
-                          <AlertTriangle
-                            size={14}
-                            className="text-[color:var(--ds-attention-text)]"
-                          />
-                        ) : item.status === "paid" ? (
-                          <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
-                        ) : (
-                          <FileText size={14} className="text-[color:var(--ds-info-text)]" />
-                        )}
-                      </div>
+                    <li key={item.id} className="flex items-center gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                          <span className="text-sm font-medium text-[color:var(--ds-text)] tabular-nums">
                             {item.invoice_number}
                           </span>
                           <Badge
@@ -519,8 +523,8 @@ export default function FibuPage() {
                               item.status === "paid"
                                 ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                                 : isOverdue
-                                  ? "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]"
-                                  : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                                  : ""
                             }`}
                           >
                             {item.status === "paid"
@@ -530,52 +534,77 @@ export default function FibuPage() {
                                 : getDunningLabel(item.dunning_level) || "Offen"}
                           </Badge>
                         </div>
-                        <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                          {item.client_name} · Fällig: {item.due_date.split("T")[0]} · Offen:{" "}
-                          {item.open_amount.toFixed(2)} €
+                        <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                          {item.client_name} · fällig {formatDate(item.due_date)}
                         </div>
                       </div>
-                    </div>
+                      <div className="shrink-0 text-right text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
+                        {formatEur(item.open_amount, lang)}
+                      </div>
+                    </li>
                   );
-                })
-              )}
-            </div>
+                })}
+              </ul>
+            )}
           </section>
 
           {/* Unmatched Transactions */}
           {unmatchedTxns.length > 0 && (
-            <section aria-labelledby="unmatched-heading">
+            <section aria-labelledby="unmatched-heading" className="space-y-2">
               <h2
                 id="unmatched-heading"
-                className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
+                className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase"
               >
-                Unzugeordnete Bank-Transaktionen ({unmatchedTxns.length})
+                Nicht zugeordnete Bankbuchungen · {unmatchedTxns.length}
               </h2>
-              <div className="space-y-2">
+              <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
                 {unmatchedTxns.map((txn) => (
-                  <div
-                    key={txn.id}
-                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-warning-bg)]">
-                      <TrendingUp size={14} className="text-[color:var(--ds-warning-text)]" />
-                    </div>
+                  <li key={txn.id} className="flex items-center gap-3 px-4 py-3">
                     <div className="min-w-0 flex-1">
-                      <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                        {txn.amount.toFixed(2)} €
-                      </span>
-                      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                        {txn.date.split("T")[0]} · {txn.sender_name ?? "Unbekannt"} ·{" "}
+                      <div className="truncate text-sm text-[color:var(--ds-text)]">
+                        {txn.sender_name ?? "Unbekannter Absender"}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                        {formatDate(txn.date)} ·{" "}
                         {txn.reference ?? txn.purpose ?? "Kein Verwendungszweck"}
                       </div>
                     </div>
-                  </div>
+                    <div className="shrink-0 text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
+                      {formatEur(txn.amount, lang)}
+                    </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </section>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function FibuStat({
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "danger";
+}) {
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div
+        className={`mt-1 text-xl font-semibold tabular-nums ${
+          tone === "danger" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"
+        }`}
+      >
+        {value}
+      </div>
+      {sub && <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">{sub}</div>}
     </div>
   );
 }

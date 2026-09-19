@@ -1,32 +1,69 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Download, CalendarClock, AlertTriangle, Clock, Link2, Copy, Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Download, CalendarClock, Copy, Check, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { STATUS_BG, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
-import { cn } from "@/lib/utils";
-import { caseFrontmatter } from "@/lib/legal-types";
-import { timelineToDeadline } from "@/lib/legal-deadlines";
+import { cn, daysUntil, formatDate, formatDaysUntil } from "@/lib/utils";
+import { minutesToTime, parseTimeToMinutes, toLocalIsoDate } from "@/lib/calendar-conflicts";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { FilterChip } from "@/components/dashboard/filter-chip";
 import { useLang } from "@/lib/use-lang";
-import type { Lang } from "@/content/site";
 import { EmptyState } from "@/components/dashboard/empty-state";
+
+type ExportKind = "deadline" | "hearing" | "appointment";
 
 interface CalendarEvent {
   id: string;
   title: string;
+  /** `YYYY-MM-DD` */
   date: string;
+  /** `HH:MM` */
   time?: string;
+  durationMin?: number;
   description?: string;
-  type: "deadline" | "hearing" | "meeting" | "reminder" | "appointment";
-  caseNumber?: string;
+  kind: ExportKind;
+  isNotfrist?: boolean;
+  caseLabel?: string;
   location?: string;
   vorfristDate?: string;
 }
 
-function generateIcal(events: CalendarEvent[], _lang: Lang = "de"): string {
+const KIND_LABEL: Record<ExportKind, string> = {
+  deadline: "Frist",
+  hearing: "Verhandlung",
+  appointment: "Termin",
+};
+
+const FILTER_LABEL: Record<"all" | ExportKind, string> = {
+  all: "Alle",
+  deadline: "Fristen",
+  hearing: "Verhandlungen",
+  appointment: "Termine",
+};
+
+function icsDate(iso: string): string {
+  return iso.replace(/-/g, "");
+}
+
+function nextDay(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return toLocalIsoDate(new Date(y, m - 1, d + 1));
+}
+
+function escapeIcalText(s: string): string {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
+/** RFC 5545: Zeitangaben im Wiener Ortszeit-Kontext, ganztägige Einträge mit Folgetag als Ende. */
+function generateIcal(events: CalendarEvent[]): string {
+  const stamp = `${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -34,50 +71,45 @@ function generateIcal(events: CalendarEvent[], _lang: Lang = "de"): string {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:Subsumio Kanzlei-Fristen",
-    "X-WR-TIMEZONE:Europe/Berlin",
+    "X-WR-TIMEZONE:Europe/Vienna",
   ];
 
   for (const ev of events) {
-    const uid = `${ev.id}@subsumio.local`;
-    const dateStr = ev.date.replace(/-/g, "");
-
     lines.push("BEGIN:VEVENT");
-    lines.push(`UID:${uid}`);
-    // Appointments have a time — use DATETIME format with Europe/Berlin timezone
-    if (ev.type === "appointment" && ev.time) {
-      const timeStr = ev.time.replace(/:/g, "").padStart(4, "0").slice(0, 4);
-      const dtStart = `${dateStr}T${timeStr}00`;
-      lines.push(`DTSTART;TZID=Europe/Berlin:${dtStart}`);
-      // Default 1 hour duration for appointments
-      const [h, m] = ev.time.split(":").map(Number);
-      const endH = (h ?? 9) + 1;
-      const endTimeStr = `${String(endH).padStart(2, "0")}${String(m ?? 0).padStart(2, "0")}`;
-      lines.push(`DTEND;TZID=Europe/Berlin:${dateStr}T${endTimeStr}00`);
+    lines.push(`UID:${ev.id.replace(/[^\w.-]/g, "-")}@subsumio.local`);
+    const start = parseTimeToMinutes(ev.time);
+    if (ev.kind !== "deadline" && start !== null) {
+      const end = start + (ev.durationMin ?? 60);
+      lines.push(
+        `DTSTART;TZID=Europe/Vienna:${icsDate(ev.date)}T${minutesToTime(start).replace(":", "")}00`
+      );
+      lines.push(
+        `DTEND;TZID=Europe/Vienna:${icsDate(ev.date)}T${minutesToTime(end).replace(":", "")}00`
+      );
     } else {
-      lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
-      lines.push(`DTEND;VALUE=DATE:${dateStr}`);
+      lines.push(`DTSTART;VALUE=DATE:${icsDate(ev.date)}`);
+      lines.push(`DTEND;VALUE=DATE:${icsDate(nextDay(ev.date))}`);
     }
-    lines.push(`SUMMARY:${escapeIcalText(ev.title)}`);
+    const prefix = ev.isNotfrist ? "Notfrist: " : ev.kind === "deadline" ? "Frist: " : "";
+    lines.push(`SUMMARY:${escapeIcalText(`${prefix}${ev.title}`)}`);
     if (ev.description) lines.push(`DESCRIPTION:${escapeIcalText(ev.description)}`);
     if (ev.location) lines.push(`LOCATION:${escapeIcalText(ev.location)}`);
-    // VALARM for deadlines: use Vorfrist date if available, otherwise remind 2 days before at 08:00
-    if (ev.type === "deadline") {
+    if (ev.kind === "deadline") {
       if (ev.vorfristDate) {
-        const vfDate = ev.vorfristDate.replace(/-/g, "");
         lines.push("BEGIN:VALARM");
-        lines.push(`TRIGGER;VALUE=DATE-TIME:${vfDate}T080000`);
+        lines.push(`TRIGGER;VALUE=DATE-TIME:${icsDate(ev.vorfristDate)}T080000`);
         lines.push("ACTION:DISPLAY");
         lines.push(`DESCRIPTION:${escapeIcalText(`Vorfrist: ${ev.title}`)}`);
         lines.push("END:VALARM");
       }
-      // Always also add a 2-day reminder as fallback
+      // Zusätzlich immer eine Erinnerung zwei Tage vorher.
       lines.push("BEGIN:VALARM");
-      lines.push("TRIGGER:-P2DT8H");
+      lines.push("TRIGGER:-P2D");
       lines.push("ACTION:DISPLAY");
       lines.push(`DESCRIPTION:${escapeIcalText(`Frist: ${ev.title}`)}`);
       lines.push("END:VALARM");
     }
-    lines.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`);
+    lines.push(`DTSTAMP:${stamp}`);
     lines.push("END:VEVENT");
   }
 
@@ -85,140 +117,109 @@ function generateIcal(events: CalendarEvent[], _lang: Lang = "de"): string {
   return lines.join("\r\n");
 }
 
-function escapeIcalText(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
-}
-
 export default function CalendarExportPage() {
-  const { lang, t } = useLang();
+  const { t } = useLang();
+  const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "deadline" | "hearing" | "meeting" | "appointment">(
-    "all"
-  );
+  const [filter, setFilter] = useState<"all" | ExportKind>("all");
+  const [copied, setCopied] = useState(false);
+  const [icsSubscriptionUrl, setIcsSubscriptionUrl] = useState("");
 
   useEffect(() => {
-    loadEvents();
+    setIcsSubscriptionUrl(`${window.location.origin}/api/legal/deadlines.ics`);
+    void loadEvents();
   }, []);
 
   async function loadEvents() {
+    setLoading(true);
+    setLoadError(null);
     try {
-      const batch = await api.brain.batchListPages(
-        ["legal_deadline", "legal_case", "appointment"],
-        200
-      );
-      const pages = batch["legal_deadline"] ?? [];
-      const casePages = batch["legal_case"] ?? [];
-      const appointmentPages = batch["appointment"] ?? [];
-      const loaded: CalendarEvent[] = pages.map((p) => {
-        const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-        return {
-          id: String(p.slug || ""),
-          title: String(p.title || ""),
-          date: String(
-            fm.due_date ||
-              fm.date ||
-              p.created_at?.split("T")[0] ||
-              new Date().toISOString().split("T")[0]
-          ),
-          description: String(fm.description || p.content?.slice(0, 200) || ""),
-          type: String(fm.event_type || "deadline") as CalendarEvent["type"],
-          caseNumber: fm.case_number ? String(fm.case_number) : undefined,
-          location: fm.court ? String(fm.court) : fm.location ? String(fm.location) : undefined,
-          vorfristDate: typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
-        };
-      });
-
-      // Also load from legal-case pages that have deadline data
-      for (const cp of casePages) {
-        const fm = caseFrontmatter(cp);
-        const rawDeadlines = fm.deadlines?.length
-          ? fm.deadlines
-          : [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])].map((entry) =>
-              timelineToDeadline(entry, cp.slug)
-            );
-        if (rawDeadlines.length) {
-          for (const dl of rawDeadlines) {
-            const date = dl.due_date;
-            if (!date) continue;
-            loaded.push({
-              id: `deadline-${String(cp.slug)}-${String(dl.title || "")}`,
-              title: String(dl.title || ""),
-              date: String(date),
-              description: String(dl.description || `Frist für Akte ${fm.case_number || cp.slug}`),
-              type: String(dl.type || "deadline") as CalendarEvent["type"],
-              caseNumber: fm.case_number ? String(fm.case_number) : undefined,
-              location: dl.court ? String(dl.court) : dl.location ? String(dl.location) : undefined,
-              vorfristDate: dl.vorfrist_date,
-            });
-          }
-        }
-      }
-
-      // Also load appointment pages (from WhatsApp-created appointments)
-      for (const appt of appointmentPages) {
-        const fm = (appt.frontmatter ?? {}) as Record<string, unknown>;
-        const date = String(fm.date ?? "");
-        if (!date) continue;
-        const status = String(fm.status ?? "");
-        if (status === "cancelled" || status === "completed") continue;
+      // Fristen aus dem einheitlichen Fristen-Register (wie Fristenbuch und Fristenseite),
+      // Termine aus dem Kanzleikalender.
+      const [fristenData, batch] = await Promise.all([
+        api.legal.fristen(),
+        api.brain.batchListPages(["appointment"], 300),
+      ]);
+      const loaded: CalendarEvent[] = [];
+      for (const f of fristenData.fristen) {
+        if (f.status === "done" || f.status === "completed") continue;
+        const date = String(f.due_date ?? "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
         loaded.push({
-          id: String(appt.slug || ""),
-          title: String(fm.title ?? appt.title ?? "Termin"),
+          id: `frist-${f.id}`,
+          title: f.title,
           date,
-          time: String(fm.time ?? ""),
-          description: String(appt.content?.slice(0, 200) ?? ""),
-          type: "appointment",
-          caseNumber: fm.case_title ? String(fm.case_title) : undefined,
-          location: fm.location ? String(fm.location) : undefined,
+          kind: f.type === "hearing" ? "hearing" : "deadline",
+          isNotfrist: f.is_notfrist,
+          description: [f.case_title ? `Akte: ${f.case_title}` : null, f.law]
+            .filter(Boolean)
+            .join(" · "),
+          caseLabel: f.case_title,
+          location: f.court,
+          vorfristDate: f.vorfrist_date?.slice(0, 10),
         });
       }
-
-      setEvents(loaded.sort((a, b) => a.date.localeCompare(b.date)));
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Termine konnten nicht geladen werden.");
+      for (const appt of batch["appointment"] ?? []) {
+        const fm = (appt.frontmatter ?? {}) as Record<string, unknown>;
+        const date = String(fm.date ?? "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+        const status = String(fm.status ?? "");
+        if (status === "cancelled" || status === "completed") continue;
+        const apptType = String(fm.appointment_type ?? "");
+        loaded.push({
+          id: appt.slug,
+          title: String(fm.title ?? appt.title ?? "Termin"),
+          date,
+          time: typeof fm.time === "string" && fm.time ? fm.time.slice(0, 5) : undefined,
+          durationMin: typeof fm.duration === "number" ? fm.duration : undefined,
+          description: appt.content?.slice(0, 200) || undefined,
+          kind: apptType === "hearing" ? "hearing" : "appointment",
+          caseLabel: typeof fm.case_title === "string" ? fm.case_title : undefined,
+          location: typeof fm.location === "string" ? fm.location : undefined,
+        });
+      }
+      setEvents(
+        loaded.sort(
+          (a, b) => a.date.localeCompare(b.date) || (a.time ?? "").localeCompare(b.time ?? "")
+        )
+      );
+    } catch {
+      setLoadError(
+        "Fristen und Termine konnten gerade nicht geladen werden. Bitte versuchen Sie es in einem Moment erneut."
+      );
       setEvents([]);
     } finally {
       setLoading(false);
     }
   }
 
+  const filtered = useMemo(
+    () => (filter === "all" ? events : events.filter((e) => e.kind === filter)),
+    [events, filter]
+  );
+  const counts = useMemo(() => {
+    const c: Record<ExportKind, number> = { deadline: 0, hearing: 0, appointment: 0 };
+    for (const e of events) c[e.kind] += 1;
+    return c;
+  }, [events]);
+  const overdueCount = filtered.filter((e) => (daysUntil(e.date) ?? 0) < 0).length;
+
   function downloadIcal() {
-    const filtered = filter === "all" ? events : events.filter((e) => e.type === filter);
-    const ical = generateIcal(filtered, lang);
+    const ical = generateIcal(filtered);
     const blob = new Blob([ical], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `subsumio-fristen-${new Date().toISOString().split("T")[0]}.ics`;
+    a.download = `subsumio-fristen-${toLocalIsoDate(new Date())}.ics`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  const filtered = filter === "all" ? events : events.filter((e) => e.type === filter);
-  const upcoming = filtered.filter(
-    (e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0))
-  );
-  const overdue = filtered.filter(
-    (e) => new Date(e.date) < new Date(new Date().setHours(0, 0, 0, 0))
-  );
-
-  const TYPE_COLORS: Record<string, StatusColor> = {
-    deadline: "amber",
-    hearing: "blue",
-    meeting: "violet",
-    reminder: "emerald",
-    appointment: "blue",
-  };
-
-  const [copied, setCopied] = useState(false);
-  const icsSubscriptionUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/api/legal/deadlines.ics` : "";
-
   function copySubscriptionUrl() {
-    if (!icsSubscriptionUrl) return;
-    navigator.clipboard.writeText(icsSubscriptionUrl).then(() => {
+    if (!icsSubscriptionUrl || !navigator.clipboard) return;
+    void navigator.clipboard.writeText(icsSubscriptionUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     });
@@ -228,192 +229,183 @@ export default function CalendarExportPage() {
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("calexport.title")}
-        description={t("calexport.desc")}
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Kalender-Export" }]}
+        description="Übertragen Sie offene Fristen und Termine in Outlook, Google oder Apple Kalender — als laufendes Abonnement oder als einmalige Datei."
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("calendar.title"), href: "/dashboard/calendar" },
+          { label: t("calexport.title") },
+        ]}
         actions={
           <Button
             variant="primary"
-            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
             onClick={downloadIcal}
+            disabled={loading || filtered.length === 0}
           >
-            <Download size={14} />
+            <Download size={14} aria-hidden="true" />
             iCal herunterladen
           </Button>
         }
       />
 
-      {/* Subscription URL */}
-      <div className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3">
-        <div className="flex items-start gap-3">
-          <Link2 size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
-          <div className="flex-1">
-            <p className="mb-1 text-sm font-medium text-[color:var(--ds-success-text)]">
-              Kalender-Abonnement (mit Vorfrist-Alarm)
-            </p>
-            <p className="mb-2 text-xs text-[color:var(--ds-success-text)]">
-              Abonnieren Sie den Live-Feed mit automatischen Vorfrist-Warnungen (VALARM 2 Tage vor
-              der Frist). Outlook, Google Calendar und Apple Calendar unterstützen
-              Kalender-Abonnements.
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-lg border border-[color:var(--ds-success-border)] bg-white/50 px-3 py-1.5 text-xs text-[color:var(--ds-success-text)]">
-                {icsSubscriptionUrl}
-              </code>
-              <button
-                onClick={copySubscriptionUrl}
-                className="flex shrink-0 items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-              >
-                {copied ? <Check size={12} /> : <Copy size={12} />}
-                {copied ? "Kopiert!" : "Kopieren"}
-              </button>
-            </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Kalender abonnieren
+          </h2>
+          <p className="text-sm text-[color:var(--ds-text)]">
+            Das Abonnement aktualisiert sich selbst; jede Frist bringt eine Erinnerung zur Vorfrist
+            und zwei Tage vor Fristende mit.
+          </p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            Die Adresse ist nur mit Anmeldung bei Subsumio abrufbar. Kalenderprogramme ohne diese
+            Anmeldung (etwa Google Kalender) können sie nicht laden — nutzen Sie dort den
+            Datei-Export.
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs text-[color:var(--ds-text)]">
+              {icsSubscriptionUrl || "…"}
+            </code>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={copySubscriptionUrl}
+              className="shrink-0 gap-1.5 whitespace-nowrap"
+            >
+              {copied ? (
+                <Check size={13} aria-hidden="true" />
+              ) : (
+                <Copy size={13} aria-hidden="true" />
+              )}
+              {copied ? "Kopiert" : "Adresse kopieren"}
+            </Button>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Info */}
-      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
-        <CalendarClock size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
-        <div className="text-sm text-[color:var(--ds-info-text)]">
-          <p className="mb-1 font-medium">Importieren Sie die .ics-Datei in:</p>
-          <ul className="space-y-0.5 text-xs">
-            <li>• Outlook: Datei → Öffnen und Exportieren → Importieren/Exportieren → iCalendar</li>
-            <li>• Google Calendar: Einstellungen → Kalender importieren → Datei auswählen</li>
-            <li>• Apple Calendar: Datei → Importieren → .ics auswählen</li>
+        <section className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Datei importieren
+          </h2>
+          <ul className="space-y-1 text-sm text-[color:var(--ds-text)]">
+            <li>
+              <span className="font-medium">Outlook:</span> Datei → Öffnen und Exportieren →
+              Importieren/Exportieren → iCalendar
+            </li>
+            <li>
+              <span className="font-medium">Google Kalender:</span> Einstellungen → Importieren und
+              Exportieren → Datei auswählen
+            </li>
+            <li>
+              <span className="font-medium">Apple Kalender:</span> Ablage → Importieren → .ics
+              auswählen
+            </li>
           </ul>
-        </div>
+        </section>
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2">
-        {(["all", "deadline", "hearing", "meeting", "appointment"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-              filter === f
-                ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
-                : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-            } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
-          >
-            {f === "all"
-              ? "Alle"
-              : f === "deadline"
-                ? "Fristen"
-                : f === "hearing"
-                  ? "Verhandlungen"
-                  : f === "meeting"
-                    ? "Besprechungen"
-                    : "Termine"}
-          </button>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Anstehend</div>
-          <div className="text-xl font-bold text-[color:var(--ds-info-text)]">
-            {upcoming.length}
-          </div>
-        </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Überfällig</div>
-          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
-            {overdue.length}
-          </div>
-        </div>
-      </div>
-
-      {loadError && (
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
-          {loadError}
-        </div>
-      )}
-
-      {/* Events */}
-      {loading ? (
-        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">
-          Termine werden geladen…
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={CalendarClock}
-          title="Keine Termine gefunden"
-          description="Legen Sie Fristen in Ihren Akten an oder nutzen Sie die Fristen-Erkennung."
-        />
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((ev) => {
-            const color = TYPE_COLORS[ev.type] || "gray";
-            const isOverdue = new Date(ev.date) < new Date(new Date().setHours(0, 0, 0, 0));
-            return (
-              <div
-                key={ev.id}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-                  isOverdue
-                    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
-                    : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                }`}
-              >
-                <div
-                  className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_BG[color])}
-                  aria-hidden="true"
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="filter-strip">
+            {(["all", "deadline", "hearing", "appointment"] as const)
+              .filter((f) => f === "all" || counts[f] > 0 || filter === f)
+              .map((f) => (
+                <FilterChip
+                  key={f}
+                  label={
+                    f === "all"
+                      ? FILTER_LABEL.all
+                      : `${FILTER_LABEL[f]}${counts[f] > 0 ? ` (${counts[f]})` : ""}`
+                  }
+                  active={filter === f}
+                  onClick={() => setFilter(f)}
                 />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {ev.title}
-                    </span>
-                    <Badge
-                      variant="default"
-                      className={cn("border text-xs", statusBadgeClasses(color))}
-                    >
-                      {ev.type === "deadline"
-                        ? "Frist"
-                        : ev.type === "hearing"
-                          ? "Verhandlung"
-                          : ev.type === "meeting"
-                            ? "Besprechung"
-                            : "Erinnerung"}
-                    </Badge>
-                    {isOverdue && (
-                      <Badge
-                        variant="default"
-                        className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
-                      >
-                        Überfällig
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(ev.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                    {ev.caseNumber && ` · Akte ${ev.caseNumber}`}
-                    {ev.location && ` · ${ev.location}`}
-                  </div>
-                  {ev.description && (
-                    <div className="mt-1 line-clamp-1 text-xs text-[color:var(--ds-text-muted)]">
-                      {ev.description}
-                    </div>
-                  )}
-                </div>
-                <div className="shrink-0 text-xs text-[color:var(--ds-text-muted)]">
-                  {isOverdue ? (
-                    <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
-                  ) : (
-                    <Clock size={14} className="text-[color:var(--ds-info-text)]" />
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              ))}
+          </div>
+          {!loading && filtered.length > 0 && (
+            <p className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+              {filtered.length} {filtered.length === 1 ? "Eintrag" : "Einträge"} im Export
+              {overdueCount > 0 ? ` · davon ${overdueCount} überfällig` : ""}
+            </p>
+          )}
         </div>
-      )}
+
+        {loadError && (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+          >
+            <span>{loadError}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void loadEvents()}
+              className="shrink-0 gap-1.5 text-[color:var(--ds-danger-text)]"
+            >
+              <RotateCcw size={13} aria-hidden="true" />
+              Erneut laden
+            </Button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="space-y-2" aria-busy="true">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          !loadError && (
+            <EmptyState
+              icon={CalendarClock}
+              title="Keine offenen Fristen oder Termine"
+              description="Sobald Sie Fristen in Akten erfassen oder Termine anlegen, lassen sie sich hier exportieren."
+              actionLabel="Zu den Fristen"
+              onAction={() => router.push("/dashboard/deadlines")}
+            />
+          )
+        ) : (
+          <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+            {filtered.map((ev) => {
+              const days = daysUntil(ev.date);
+              const overdue = days !== null && days < 0;
+              return (
+                <li key={ev.id} className="flex items-center gap-4 px-4 py-3">
+                  <div className="w-24 shrink-0 tabular-nums">
+                    <div
+                      className={cn(
+                        "text-sm font-semibold",
+                        overdue
+                          ? "text-[color:var(--ds-danger-text)]"
+                          : "text-[color:var(--ds-text)]"
+                      )}
+                    >
+                      {formatDate(ev.date)}
+                    </div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {ev.kind === "deadline"
+                        ? formatDaysUntil(days)
+                        : ev.time
+                          ? `${ev.time} Uhr`
+                          : "ganztägig"}
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {ev.title}
+                    </div>
+                    <div className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                      {[ev.isNotfrist ? "Notfrist" : KIND_LABEL[ev.kind], ev.caseLabel, ev.location]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

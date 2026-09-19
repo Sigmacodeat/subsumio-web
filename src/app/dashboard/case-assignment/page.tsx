@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Users, Loader2, Search, UserPlus, UserCheck, Mail, Crown, Briefcase } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, Search, UserPlus, Mail, Crown } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,9 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTeam } from "@/lib/queries/settings";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface CasePage {
   slug: string;
@@ -36,23 +39,29 @@ interface CaseAssignment {
   lawyerSlug?: string;
   legalArea?: string;
   priority?: string;
+  caseNumber?: string;
 }
 
 async function fetchCaseAssignments(): Promise<CaseAssignment[]> {
-  const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
-  return (pages as CasePage[]).map((p) => {
-    const fm = p.frontmatter ?? {};
-    return {
-      caseSlug: p.slug,
-      caseTitle: p.title,
-      caseStatus: String(fm.status ?? "active"),
-      lawyerId: fm.own_lawyer_id as string | undefined,
-      lawyerName: fm.own_lawyer_name as string | undefined,
-      lawyerSlug: fm.own_lawyer_slug as string | undefined,
-      legalArea: fm.legal_area as string | undefined,
-      priority: fm.priority as string | undefined,
-    };
-  });
+  // listAllPages pages past the engine's 200-row cap and drops tombstones;
+  // archived matters need no owner, so they are left out of the workload.
+  const pages = await api.brain.listAllPages({ type: "legal_case" });
+  return (pages as CasePage[])
+    .filter((p) => String(p.frontmatter?.status ?? "") !== "archived")
+    .map((p) => {
+      const fm = p.frontmatter ?? {};
+      return {
+        caseSlug: p.slug,
+        caseTitle: p.title,
+        caseStatus: String(fm.status ?? "active"),
+        lawyerId: fm.own_lawyer_id as string | undefined,
+        lawyerName: fm.own_lawyer_name as string | undefined,
+        lawyerSlug: fm.own_lawyer_slug as string | undefined,
+        legalArea: fm.legal_area as string | undefined,
+        priority: fm.priority as string | undefined,
+        caseNumber: fm.case_number as string | undefined,
+      };
+    });
 }
 
 export default function CaseAssignmentPage() {
@@ -60,6 +69,7 @@ export default function CaseAssignmentPage() {
   const { t, lang } = useLang();
   const isEn = lang === "en";
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [assigningSlug, setAssigningSlug] = useState<string | null>(null);
 
@@ -80,14 +90,19 @@ export default function CaseAssignmentPage() {
   const byLawyer = useMemo(() => {
     const map = new Map<string, { member: TeamMember | null; cases: CaseAssignment[] }>();
 
-    // Initialize all team members
+    // Initialize all team members (keyed by e-mail — the id written on assignment)
     for (const member of teamMembers) {
       map.set(member.email, { member, cases: [] });
     }
     map.set("__unassigned__", { member: null, cases: [] });
 
     for (const assignment of assignments) {
-      const key = assignment.lawyerName ?? "__unassigned__";
+      // Match on the stored id (e-mail) first, then on the display name, so a
+      // member is never listed twice (once with cases, once empty).
+      const member =
+        teamMembers.find((m) => assignment.lawyerId && m.email === assignment.lawyerId) ??
+        teamMembers.find((m) => assignment.lawyerName && m.name === assignment.lawyerName);
+      const key = member?.email ?? assignment.lawyerName ?? "__unassigned__";
       if (!map.has(key)) {
         map.set(key, { member: null, cases: [] });
       }
@@ -100,14 +115,6 @@ export default function CaseAssignmentPage() {
       return b[1].cases.length - a[1].cases.length;
     });
   }, [teamMembers, assignments]);
-
-  const filteredAssignments = useMemo(() => {
-    if (!search) return assignments;
-    const q = search.toLowerCase();
-    return assignments.filter(
-      (a) => a.caseTitle.toLowerCase().includes(q) || a.caseSlug.toLowerCase().includes(q)
-    );
-  }, [assignments, search]);
 
   const unassignedCount = assignments.filter((a) => !a.lawyerName).length;
   const totalAssigned = assignments.length - unassignedCount;
@@ -130,18 +137,21 @@ export default function CaseAssignmentPage() {
         }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const title = assignments.find((a) => a.caseSlug === caseSlug)?.caseTitle ?? caseSlug;
       addToast({
         type: "success",
         title: isEn ? "Case assigned" : "Akte zugewiesen",
-        description: `${caseSlug} → ${lawyerName}`,
+        description: `${title} → ${lawyerName}`,
         duration: 3000,
       });
       void queryClient.invalidateQueries({ queryKey: ["case-assignments"] });
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
         title: isEn ? "Assignment failed" : "Zuweisung fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unknown error",
+        description: isEn
+          ? "The case was not changed. Please try again."
+          : "Die Akte wurde nicht geändert. Bitte versuchen Sie es erneut.",
         duration: 5000,
       });
     } finally {
@@ -151,75 +161,46 @@ export default function CaseAssignmentPage() {
 
   const isLoading = teamQuery.isLoading || assignmentsQuery.isLoading;
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={isEn ? "Case Assignment & Team View" : "Akten-Zuweisung & Team-Übersicht"}
+        title={t("nav.case_assignment")}
         description={
           isEn
-            ? "Assign cases to team members and see workload distribution at a glance."
-            : "Weisen Sie Akten Teammitgliedern zu und sehen Sie die Arbeitslastverteilung auf einen Blick."
+            ? "Assign a responsible lawyer to each active case and see the workload per person."
+            : "Jeder aktiven Akte einen Sachbearbeiter zuweisen und die Auslastung je Person sehen."
         }
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: isEn ? "Team & Assignments" : "Team & Zuweisungen" },
+          { label: t("cases.title"), href: "/dashboard/cases" },
+          { label: t("nav.case_assignment") },
         ]}
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <div className="flex items-center gap-2">
-            <Users size={16} className="text-[color:var(--ds-text-muted)]" />
-            <span className="text-xs text-[color:var(--ds-text-muted)]">
-              {isEn ? "Team members" : "Teammitglieder"}
-            </span>
+      {/* Stats — neutral tiles; only a non-zero "unassigned" gets a signal colour */}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] lg:grid-cols-4">
+        {[
+          { label: isEn ? "Team members" : "Teammitglieder", value: teamMembers.length, tone: "" },
+          { label: isEn ? "Active cases" : "Aktive Akten", value: assignments.length, tone: "" },
+          { label: isEn ? "Assigned" : "Zugewiesen", value: totalAssigned, tone: "" },
+          {
+            label: isEn ? "Unassigned" : "Ohne Sachbearbeiter",
+            value: unassignedCount,
+            tone: "text-[color:var(--ds-warning-text)]",
+          },
+        ].map((k) => (
+          <div key={k.label} className="bg-[color:var(--ds-surface)] px-4 py-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">{k.label}</div>
+            <div
+              className={cn(
+                "mt-1 text-2xl leading-none font-semibold tabular-nums",
+                k.value > 0 && k.tone ? k.tone : "text-[color:var(--ds-text)]"
+              )}
+            >
+              {isLoading ? <Skeleton className="h-6 w-8" /> : k.value}
+            </div>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
-            {teamMembers.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <div className="flex items-center gap-2">
-            <Briefcase size={16} className="text-[color:var(--ds-text-muted)]" />
-            <span className="text-xs text-[color:var(--ds-text-muted)]">
-              {isEn ? "Total cases" : "Akten gesamt"}
-            </span>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
-            {assignments.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
-          <div className="flex items-center gap-2">
-            <UserCheck size={16} className="text-[color:var(--ds-success-text)]" />
-            <span className="text-xs text-[color:var(--ds-success-text)]">
-              {isEn ? "Assigned" : "Zugewiesen"}
-            </span>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">
-            {totalAssigned}
-          </p>
-        </div>
-        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
-          <div className="flex items-center gap-2">
-            <UserPlus size={16} className="text-[color:var(--ds-warning-text)]" />
-            <span className="text-xs text-[color:var(--ds-warning-text)]">
-              {isEn ? "Unassigned" : "Unzugewiesen"}
-            </span>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-warning-text)] tabular-nums">
-            {unassignedCount}
-          </p>
-        </div>
+        ))}
       </div>
 
       {/* Search */}
@@ -231,199 +212,193 @@ export default function CaseAssignmentPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={isEn ? "Search cases..." : "Akten durchsuchen..."}
+          placeholder={isEn ? "Search cases …" : "Akten durchsuchen …"}
+          aria-label={isEn ? "Search cases" : "Akten durchsuchen"}
           className="pl-9"
         />
       </div>
 
       {/* Team workload sections */}
-      <div className="space-y-4">
-        {byLawyer.map(([key, group]) => {
-          const isUnassigned = key === "__unassigned__";
-          const member = group.member;
-          const cases = search
-            ? group.cases.filter(
-                (c) =>
-                  c.caseTitle.toLowerCase().includes(search.toLowerCase()) ||
-                  c.caseSlug.toLowerCase().includes(search.toLowerCase())
-              )
-            : group.cases;
+      {isLoading ? (
+        <div className="space-y-3" role="status" aria-live="polite">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : assignments.length === 0 ? (
+        <EmptyState
+          title={isEn ? "No active cases" : "Keine aktiven Akten"}
+          description={
+            isEn
+              ? "As soon as cases exist, you can assign them here."
+              : "Sobald Akten angelegt sind, können Sie sie hier zuweisen."
+          }
+          actionLabel={t("cases.new")}
+          onAction={() => router.push("/dashboard/cases/new")}
+        />
+      ) : (
+        <div className="space-y-4">
+          {byLawyer.map(([key, group]) => {
+            const isUnassigned = key === "__unassigned__";
+            const member = group.member;
+            const cases = search
+              ? group.cases.filter(
+                  (c) =>
+                    c.caseTitle.toLowerCase().includes(search.toLowerCase()) ||
+                    (c.caseNumber ?? "").toLowerCase().includes(search.toLowerCase())
+                )
+              : group.cases;
 
-          if (cases.length === 0 && search) return null;
+            if (cases.length === 0 && search) return null;
 
-          return (
-            <section
-              key={key}
-              className={cn(
-                "rounded-xl border p-4",
-                isUnassigned
-                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
-                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              )}
-            >
-              {/* Section header */}
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {isUnassigned ? (
-                    <UserPlus size={16} className="text-[color:var(--ds-warning-text)]" />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
-                      <span className="text-xs font-semibold text-[color:var(--ds-text-muted)]">
-                        {(member?.name ?? key).charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                        {isUnassigned
-                          ? isEn
-                            ? "Unassigned"
-                            : "Unzugewiesen"
-                          : (member?.name ?? key)}
-                      </span>
-                      <Badge variant="default" className="text-xs">
-                        {cases.length} {isEn ? "cases" : "Akten"}
-                      </Badge>
-                      {member?.role === "owner" && (
-                        <Crown size={12} className="text-[color:var(--ds-warning-text)]" />
-                      )}
-                    </div>
-                    {member?.email && (
-                      <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                        <Mail size={10} />
-                        {member.email}
+            return (
+              <section
+                key={key}
+                className={cn(
+                  "rounded-xl border p-4",
+                  "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                )}
+              >
+                {/* Section header */}
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {isUnassigned ? (
+                      <UserPlus size={16} className="text-[color:var(--ds-warning-text)]" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+                        <span className="text-xs font-semibold text-[color:var(--ds-text-muted)]">
+                          {(member?.name ?? key).charAt(0).toUpperCase()}
+                        </span>
                       </div>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Case list */}
-              {cases.length === 0 ? (
-                <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  {isEn ? "No cases." : "Keine Akten."}
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  {cases.slice(0, 10).map((c) => {
-                    const encoded = c.caseSlug.split("/").map(encodeURIComponent).join("/");
-                    return (
-                      <div
-                        key={c.caseSlug}
-                        className="flex items-center justify-between gap-2 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2"
-                      >
-                        <Link
-                          href={`/dashboard/cases/${encoded}`}
-                          className="flex min-w-0 flex-1 items-center gap-2 hover:opacity-80"
-                        >
-                          <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                            {c.caseTitle}
-                          </span>
-                          {c.legalArea && (
-                            <Badge variant="default" className="shrink-0 text-[10px]">
-                              {c.legalArea}
-                            </Badge>
-                          )}
-                          {c.priority === "high" && (
-                            <Badge className="shrink-0 border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[10px] text-[color:var(--ds-danger-text)]">
-                              {isEn ? "HIGH" : "HOCH"}
-                            </Badge>
-                          )}
-                        </Link>
-
-                        {/* Assign dropdown */}
-                        {assigningSlug === c.caseSlug ? (
-                          <Loader2
-                            size={14}
-                            className="shrink-0 animate-spin text-[color:var(--ds-text-muted)]"
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                          {isUnassigned
+                            ? isEn
+                              ? "Unassigned"
+                              : "Ohne Sachbearbeiter"
+                            : (member?.name ?? key)}
+                        </span>
+                        <Badge variant="default" className="text-xs">
+                          {cases.length}{" "}
+                          {isEn
+                            ? cases.length === 1
+                              ? "case"
+                              : "cases"
+                            : cases.length === 1
+                              ? "Akte"
+                              : "Akten"}
+                        </Badge>
+                        {member?.role === "owner" && (
+                          <Crown
+                            size={12}
+                            className="text-[color:var(--ds-text-muted)]"
+                            aria-label={isEn ? "Owner" : "Inhaber"}
                           />
-                        ) : (
-                          <select
-                            value={c.lawyerName ?? ""}
-                            onChange={(e) => {
-                              const selected = teamMembers.find((m) => m.name === e.target.value);
-                              if (selected) {
-                                void assignLawyer(
-                                  c.caseSlug,
-                                  selected.name ?? selected.email,
-                                  selected.email
-                                );
-                              }
-                            }}
-                            className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                          >
-                            <option value="">{isEn ? "Assign..." : "Zuweisen..."}</option>
-                            {teamMembers.map((m) => (
-                              <option key={m.id} value={m.name ?? m.email}>
-                                {m.name ?? m.email}
-                              </option>
-                            ))}
-                          </select>
                         )}
                       </div>
-                    );
-                  })}
-                  {cases.length > 10 && (
-                    <p className="px-1 text-xs text-[color:var(--ds-text-subtle)]">
-                      {isEn ? `+${cases.length - 10} more` : `+${cases.length - 10} weitere`}
-                    </p>
-                  )}
-                </div>
-              )}
-            </section>
-          );
-        })}
-      </div>
-
-      {/* Unassigned cases quick-assign (if search is active and matches unassigned) */}
-      {search && filteredAssignments.some((a) => !a.lawyerName) && (
-        <section className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-warning-text)]">
-            <UserPlus size={14} />
-            {isEn ? "Unassigned cases" : "Unzugeordnete Akten"}
-          </h3>
-          <div className="space-y-1.5">
-            {filteredAssignments
-              .filter((a) => !a.lawyerName)
-              .map((c) => {
-                const encoded = c.caseSlug.split("/").map(encodeURIComponent).join("/");
-                return (
-                  <div
-                    key={c.caseSlug}
-                    className="flex items-center justify-between gap-2 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2"
-                  >
-                    <Link
-                      href={`/dashboard/cases/${encoded}`}
-                      className="truncate text-sm text-[color:var(--ds-text)] hover:opacity-80"
-                    >
-                      {c.caseTitle}
-                    </Link>
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const selected = teamMembers.find((m) => m.name === e.target.value);
-                        if (selected)
-                          void assignLawyer(
-                            c.caseSlug,
-                            selected.name ?? selected.email,
-                            selected.email
-                          );
-                      }}
-                      className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                    >
-                      <option value="">{isEn ? "Assign..." : "Zuweisen..."}</option>
-                      {teamMembers.map((m) => (
-                        <option key={m.id} value={m.name ?? m.email}>
-                          {m.name ?? m.email}
-                        </option>
-                      ))}
-                    </select>
+                      {member?.email && (
+                        <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
+                          <Mail size={10} />
+                          {member.email}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-          </div>
-        </section>
+                </div>
+
+                {/* Case list */}
+                {cases.length === 0 ? (
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    {isEn ? "No cases assigned." : "Keine Akten zugewiesen."}
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {cases.slice(0, 10).map((c) => {
+                      return (
+                        <div
+                          key={c.caseSlug}
+                          className="flex items-center justify-between gap-2 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2"
+                        >
+                          <Link
+                            href={`/dashboard/cases/${encodeSlugPath(c.caseSlug)}`}
+                            className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
+                          >
+                            {c.caseNumber && (
+                              <span className="hidden shrink-0 font-mono text-xs text-[color:var(--ds-text-muted)] tabular-nums sm:inline">
+                                {c.caseNumber}
+                              </span>
+                            )}
+                            <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                              {c.caseTitle}
+                            </span>
+                            {c.legalArea && (
+                              <span className="hidden shrink-0 text-xs text-[color:var(--ds-text-muted)] md:inline">
+                                {c.legalArea}
+                              </span>
+                            )}
+                            {(c.priority === "high" || c.priority === "critical") && (
+                              <Badge variant="warning" className="shrink-0 text-xs">
+                                {isEn
+                                  ? c.priority === "critical"
+                                    ? "Critical"
+                                    : "High"
+                                  : c.priority === "critical"
+                                    ? "Kritisch"
+                                    : "Hoch"}
+                              </Badge>
+                            )}
+                          </Link>
+
+                          {/* Assign dropdown */}
+                          {assigningSlug === c.caseSlug ? (
+                            <Loader2
+                              size={14}
+                              className="shrink-0 animate-spin text-[color:var(--ds-text-muted)]"
+                            />
+                          ) : (
+                            <select
+                              aria-label={
+                                isEn
+                                  ? `Responsible lawyer for ${c.caseTitle}`
+                                  : `Sachbearbeiter für ${c.caseTitle}`
+                              }
+                              value={c.lawyerName ?? ""}
+                              onChange={(e) => {
+                                const selected = teamMembers.find((m) => m.name === e.target.value);
+                                if (selected) {
+                                  void assignLawyer(
+                                    c.caseSlug,
+                                    selected.name ?? selected.email,
+                                    selected.email
+                                  );
+                                }
+                              }}
+                              className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                            >
+                              <option value="">{isEn ? "Assign …" : "Zuweisen …"}</option>
+                              {teamMembers.map((m) => (
+                                <option key={m.id} value={m.name ?? m.email}>
+                                  {m.name ?? m.email}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {cases.length > 10 && (
+                      <p className="px-1 text-xs text-[color:var(--ds-text-subtle)]">
+                        {isEn ? `+${cases.length - 10} more` : `+${cases.length - 10} weitere`}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
       )}
     </div>
   );

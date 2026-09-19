@@ -4,7 +4,8 @@
 // Pauses on hover. Respects prefers-reduced-motion (shows first item statically).
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { EASE } from "./motion-system";
 
 export default function RotatingBadge({

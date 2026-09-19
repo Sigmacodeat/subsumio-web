@@ -14,10 +14,10 @@ import { Check, Loader2, Minus } from "lucide-react";
  */
 
 export const UPLOAD_STAGES = [
-  { key: "upload", label: "Upload" },
+  { key: "upload", label: "Übertragung" },
   { key: "verify", label: "Prüfsumme" },
   { key: "scan", label: "Virenscan" },
-  { key: "extract", label: "Extrahieren" },
+  { key: "extract", label: "Texterkennung" },
 ] as const;
 
 export type UploadFileLike = {

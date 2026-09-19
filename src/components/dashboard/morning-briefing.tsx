@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useState, useEffect, useCallback } from "react";
 import { markdownToPlainText } from "@/lib/markdown";
+import { formatDaysUntil } from "@/lib/utils";
 import { Sparkles, RefreshCw, Clock, Mail, FileCheck, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { AI_BADGE_LABEL } from "@/lib/ai-act";
@@ -25,7 +26,12 @@ function isSameDay(dateStr: string): boolean {
   );
 }
 
-export function MorningBriefing() {
+/**
+ * `compact`: only the written situation report, for the Übersicht where the
+ * figures and deadlines already have their own sections. Renders nothing when
+ * no model wrote a narrative (the statistical fallback would repeat the KPIs).
+ */
+export function MorningBriefing({ compact = false }: { compact?: boolean } = {}) {
   const { t, lang } = useLang();
   const [briefing, setBriefing] = useState<BriefingResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,6 +77,53 @@ export function MorningBriefing() {
       stats.pendingSignatures > 0 ||
       stats.unassignedDocs > 0 ||
       stats.followUpsToday > 0);
+
+  if (compact) {
+    // No placeholder while loading: the section only appears once a model has
+    // actually written a report, so the column never jumps when it is absent.
+    if (loading || !briefing || briefing.usedFallback || !briefing.narrative?.trim()) {
+      return null;
+    }
+    return (
+      <section
+        aria-labelledby="overview-briefing"
+        className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--ds-shadow-1)]"
+      >
+        <h2
+          id="overview-briefing"
+          className="border-b border-[color:var(--ds-border)] px-4 py-3 text-[15px] font-semibold text-[color:var(--ds-text)] md:px-5"
+        >
+          Tageslage
+        </h2>
+        {loading || !briefing ? (
+          <div className="space-y-2 px-4 py-4 md:px-5">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-5/6" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        ) : (
+          <div className="px-4 py-4 md:px-5">
+            <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+              {markdownToPlainText(briefing.narrative)}
+            </p>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
+                {AI_BADGE_LABEL}
+              </span>
+              <button
+                type="button"
+                onClick={() => fetchBriefing(true)}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-[color:var(--ds-text-subtle)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              >
+                <RefreshCw size={11} aria-hidden />
+                Aktualisieren
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   if (loading) {
     return (
@@ -255,17 +308,13 @@ export function MorningBriefing() {
                           : "text-[color:var(--ds-text-subtle)]"
                     }`}
                   >
-                    {d.daysLeft < 0
-                      ? lang === "en"
-                        ? `${Math.abs(d.daysLeft)}d overdue`
-                        : `${Math.abs(d.daysLeft)}T überfällig`
-                      : d.daysLeft === 0
-                        ? lang === "en"
+                    {lang === "en"
+                      ? d.daysLeft < 0
+                        ? `${Math.abs(d.daysLeft)} days overdue`
+                        : d.daysLeft === 0
                           ? "Today"
-                          : "Heute"
-                        : lang === "en"
-                          ? `${d.daysLeft}d left`
-                          : `noch ${d.daysLeft}T`}
+                          : `in ${d.daysLeft} days`
+                      : formatDaysUntil(d.daysLeft)}
                   </span>
                 </div>
               ))}

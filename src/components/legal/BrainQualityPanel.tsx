@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Brain,
   Database,
@@ -71,20 +72,18 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           onClick={refetch}
           className="h-7 px-2"
           disabled={loading}
-          aria-label={lang !== "en" ? "Brain-Qualität aktualisieren" : "Refresh brain quality"}
+          aria-label={lang !== "en" ? "Qualität des Kanzleiwissens aktualisieren" : "Refresh knowledge quality"}
         >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>
       </div>
 
       {loading && !summary && (
-        <div
-          className="flex items-center justify-center gap-2 py-8 text-sm text-[color:var(--ds-text-muted)]"
-          role="status"
-          aria-live="polite"
-        >
-          <Loader2 size={16} className="animate-spin" />
-          Qualität wird ermittelt…
+        <div className="space-y-2 py-2" role="status" aria-live="polite">
+          <span className="sr-only">Qualität wird ermittelt</span>
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-3/5" />
         </div>
       )}
 

@@ -10,7 +10,6 @@ import {
   User,
   AlertTriangle,
   CheckCircle2,
-  Loader2,
   Download,
   ChevronLeft,
   ChevronRight,
@@ -19,8 +18,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { auditLabel, hasAuditLabel, type AuditEntry } from "@/lib/audit-labels";
+import { formatDateTime } from "@/lib/utils";
+import { Skeleton } from "@/components/dashboard/skeleton";
+import { auditLabel, type AuditEntry } from "@/lib/audit-labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useApiQuery } from "@/lib/use-api-query";
@@ -28,58 +28,52 @@ import type { Lang } from "@/content/site";
 
 const PAGE_SIZE = 25;
 
-const ACTION_COLORS: Record<string, string> = {
-  "user.login": "emerald",
-  "user.logout": "gray",
-  "user.signup": "blue",
-  "case.create": "violet",
-  "case.update": "amber",
-  "case.delete": "red",
-  "case.view": "slate",
-  "invoice.create": "emerald",
-  "invoice.update": "amber",
-  "invoice.delete": "red",
-  "invoice.send": "cyan",
-  "invoice.remind": "orange",
-  "document.upload": "blue",
-  "document.delete": "red",
-  "deadline.create": "orange",
-  "deadline.update": "amber",
-  "deadline.delete": "red",
-  "evidence.create": "violet",
-  "evidence.update": "amber",
-  "evidence.delete": "red",
-  "drafting.generate": "cyan",
-  "drafting.export": "blue",
-  "conflict.check": "pink",
-  "judgements.search": "indigo",
-  "legal.tabular": "teal",
-  "legal.statute": "indigo",
-  "legal.rvg": "amber",
-  "legal.ai_deadlines": "orange",
-  "legal.contract_draft": "violet",
-  "legal.document_review": "blue",
-  "legal.due_diligence": "violet",
-  "legal.risk_analysis": "red",
-  "legal.memo": "cyan",
-  "legal.redline": "pink",
-  "legal.anonymize": "slate",
-  "legal.judgements_sync": "teal",
-  "settings.update": "gray",
-  "billing.upgrade": "emerald",
-  "team.invite": "blue",
-  "team.remove": "red",
-  "team.role_change": "amber",
-  "connector.add": "blue",
-  "connector.remove": "red",
-  "connector.sync": "cyan",
-  "query.submit": "pink",
-  "data.export": "slate",
-  "data.delete": "red",
+/** Anwaltsverständliche Bezeichnung für den betroffenen Datensatz. */
+const ENTITY_LABELS: Record<string, string> = {
+  act_import_session: "Aktenübernahme",
+  agent_action: "Assistent-Vorschlag",
+  api_key: "Zugangsschlüssel",
+  backup: "Datensicherung",
+  bank_transaction: "Bankbuchung",
+  billing: "Abrechnung",
+  case: "Akte",
+  client_submission: "Mandanten-Einreichung",
+  conflict_check: "Kollisionsprüfung",
+  connector: "Verbindung",
+  contract: "Vertrag",
+  deadline: "Frist",
+  document: "Dokument",
+  document_request: "Unterlagenanforderung",
+  email_message: "E-Mail",
+  intake_request: "Mandatsanfrage",
+  invoice: "Rechnung",
+  judgement: "Entscheidung",
+  legal_case: "Akte",
+  legal_deadline: "Frist",
+  mail_account: "E-Mail-Konto",
+  notification: "Benachrichtigung",
+  org: "Team",
+  page: "Eintrag im Kanzleiwissen",
+  person: "Person",
+  plan: "Tarif",
+  playbook: "Prüfleitfaden",
+  portal_token: "Mandantenportal-Zugang",
+  power_of_attorney: "Vollmacht",
+  presence: "Anwesenheit",
+  review_set: "Prüfset",
+  search: "Suche",
+  template: "Vorlage",
+  time_entry: "Zeiteintrag",
+  trust_account: "Anderkonto",
+  user: "Benutzer",
+  webhook: "Webhook",
+  workflow: "Ablauf",
+  work_product: "Arbeitsergebnis",
 };
 
-function actionColor(action: string): string {
-  return ACTION_COLORS[action] || "gray";
+function entityLabel(type: string | undefined | null): string {
+  if (!type) return "—";
+  return ENTITY_LABELS[type] ?? "Sonstiger Datensatz";
 }
 
 function actionIcon(action: string) {
@@ -95,34 +89,34 @@ function actionIcon(action: string) {
   if (action.startsWith("billing.")) return CheckCircle2;
   if (action.startsWith("team.")) return User;
   if (action.startsWith("connector.")) return RefreshCw;
-  if (action.startsWith("legal.")) return AlertTriangle;
+  if (action.startsWith("legal.")) return FileText;
   if (action.startsWith("data.")) return Download;
-  return AlertTriangle;
+  return Clock;
 }
 
 function formatTimestamp(lang: Lang, ts: string): string {
-  try {
-    return new Date(ts).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return ts;
-  }
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return formatDateTime(ts);
+  return d.toLocaleString(lang === "en" ? "en-GB" : "de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 function formatRelative(ts: string): string {
   try {
-    const diff = Date.now() - new Date(ts).getTime();
+    const time = new Date(ts).getTime();
+    if (Number.isNaN(time)) return "";
+    const diff = Date.now() - time;
     const mins = Math.floor(diff / 60_000);
     if (mins < 1) return "gerade eben";
-    if (mins < 60) return `vor ${mins} Min`;
+    if (mins < 60) return `vor ${mins} Min.`;
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `vor ${hours} Std`;
+    if (hours < 24) return `vor ${hours} Std.`;
     const days = Math.floor(hours / 24);
     if (days < 30) return `vor ${days} Tag${days > 1 ? "en" : ""}`;
     const months = Math.floor(days / 30);
@@ -207,7 +201,13 @@ export default function AuditLogPage() {
     const res = await fetch(`/api/audit?${params.toString()}`, {
       signal: AbortSignal.timeout(30_000),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      throw new Error(
+        res.status === 403
+          ? "Sie haben keine Berechtigung, das Protokoll einzusehen."
+          : "Das Protokoll konnte nicht geladen werden. Bitte versuchen Sie es in einem Moment erneut."
+      );
+    }
     return (await res.json()) as { entries: AuditEntry[] };
   }, [filterAction, filterEntityType, filterFrom, filterTo]);
 
@@ -221,6 +221,7 @@ export default function AuditLogPage() {
         e.action.toLowerCase().includes(s) ||
         auditLabel(e.action).toLowerCase().includes(s) ||
         e.entityType.toLowerCase().includes(s) ||
+        entityLabel(e.entityType).toLowerCase().includes(s) ||
         (e.entityId || "").toLowerCase().includes(s) ||
         (e.userEmail || "").toLowerCase().includes(s) ||
         (e.details ? JSON.stringify(e.details).toLowerCase().includes(s) : false)
@@ -242,21 +243,21 @@ export default function AuditLogPage() {
 
   function exportCsv() {
     const lines = [
-      "timestamp,action,label,entityType,entityId,userEmail,details",
+      "Zeitpunkt,Aktion,Bezeichnung,Datensatz,Kennung,Benutzer,Angaben",
       ...filtered.map((e) => {
         const ts = new Date(e.timestamp).toISOString();
         const label = auditLabel(e.action);
         const details = e.details
           ? JSON.stringify(e.details).replace(/,/g, ";").replace(/"/g, "'")
           : "";
-        return `"${ts}","${e.action}","${label}","${e.entityType}","${e.entityId || ""}","${e.userEmail || ""}","${details}"`;
+        return `"${ts}","${e.action}","${label}","${entityLabel(e.entityType)}","${e.entityId || ""}","${e.userEmail || ""}","${details}"`;
       }),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `audit-log-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `protokoll-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -274,7 +275,7 @@ export default function AuditLogPage() {
     (filterAction ? 1 : 0) + (filterEntityType ? 1 : 0) + (filterFrom ? 1 : 0) + (filterTo ? 1 : 0);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("audit.title")}
         description={t("audit.description")}
@@ -288,9 +289,10 @@ export default function AuditLogPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters((v) => !v)}
-              className="gap-1.5"
+              aria-expanded={showFilters}
+              className="gap-1.5 whitespace-nowrap"
             >
-              <Filter size={14} />
+              <Filter size={14} aria-hidden />
               Filter
               {activeFilterCount > 0 && (
                 <span className="brand-bg ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold text-white">
@@ -303,19 +305,20 @@ export default function AuditLogPage() {
               size="sm"
               onClick={exportCsv}
               disabled={filtered.length === 0}
-              className="gap-1.5"
+              title="Die gefilterten Einträge als Tabelle (CSV) herunterladen"
+              className="gap-1.5 whitespace-nowrap"
             >
-              <Download size={14} />
-              CSV
+              <Download size={14} aria-hidden />
+              Exportieren
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={loadEntries}
               disabled={loading}
-              className="gap-1.5"
+              className="gap-1.5 whitespace-nowrap"
             >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={14} aria-hidden className={loading ? "animate-spin" : ""} />
               Aktualisieren
             </Button>
           </div>
@@ -323,9 +326,10 @@ export default function AuditLogPage() {
       />
 
       {/* Search bar */}
-      <div className="mb-4 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <Search
+            aria-hidden
             size={16}
             className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
           />
@@ -336,11 +340,14 @@ export default function AuditLogPage() {
               setPage(0);
             }}
             placeholder={t("audit.search_placeholder")}
+            aria-label="Protokoll durchsuchen"
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
           />
           {search && (
             <button
+              type="button"
               onClick={() => setSearch("")}
+              aria-label="Suche leeren"
               className="absolute top-1/2 right-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
             >
               <X size={14} />
@@ -351,7 +358,7 @@ export default function AuditLogPage() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="mb-4 space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-[color:var(--ds-text)]">Filter</span>
             {activeFilterCount > 0 && (
@@ -365,10 +372,14 @@ export default function AuditLogPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="audit-filter-action"
+                className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+              >
                 Aktion
               </label>
               <select
+                id="audit-filter-action"
                 value={filterAction}
                 onChange={(e) => {
                   setFilterAction(e.target.value);
@@ -379,16 +390,20 @@ export default function AuditLogPage() {
                 <option value="">Alle Aktionen</option>
                 {uniqueActions.map((a) => (
                   <option key={a} value={a} title={a}>
-                    {hasAuditLabel(a) ? auditLabel(a) : `${auditLabel(a)} (${a})`}
+                    {auditLabel(a)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="audit-filter-entity"
+                className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+              >
                 {t("audit.entity_type")}
               </label>
               <select
+                id="audit-filter-entity"
                 value={filterEntityType}
                 onChange={(e) => {
                   setFilterEntityType(e.target.value);
@@ -396,16 +411,19 @@ export default function AuditLogPage() {
                 }}
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
-                <option value="">Alle Typen</option>
-                {uniqueEntityTypes.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                <option value="">Alle Datensätze</option>
+                {uniqueEntityTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {entityLabel(type)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="audit-filter-from"
+                className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+              >
                 Von
               </label>
               <div className="relative">
@@ -414,6 +432,7 @@ export default function AuditLogPage() {
                   className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
                 />
                 <input
+                  id="audit-filter-from"
                   type="date"
                   value={filterFrom}
                   onChange={(e) => {
@@ -425,7 +444,10 @@ export default function AuditLogPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="audit-filter-to"
+                className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+              >
                 Bis
               </label>
               <div className="relative">
@@ -434,6 +456,7 @@ export default function AuditLogPage() {
                   className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
                 />
                 <input
+                  id="audit-filter-to"
                   type="date"
                   value={filterTo}
                   onChange={(e) => {
@@ -449,10 +472,16 @@ export default function AuditLogPage() {
       )}
 
       {/* Stats bar */}
-      <div className="mb-4 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
-        <span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--ds-text-muted)]">
+        <span className="tabular-nums">
           {filtered.length} {t("audit.entries_count")}
         </span>
+        {entries.length >= 500 && (
+          <span className="text-[color:var(--ds-text-subtle)]">
+            Angezeigt werden die neuesten 500 Einträge — grenzen Sie den Zeitraum über den Filter
+            ein, um ältere Einträge zu sehen.
+          </span>
+        )}
         {filtered.length !== entries.length && (
           <span className="text-[color:var(--ds-text-subtle)]">
             ({entries.length} {t("audit.total_count")})
@@ -468,27 +497,43 @@ export default function AuditLogPage() {
       {/* Content */}
       {loading ? (
         <div
-          className="flex flex-col items-center justify-center gap-3 py-24"
+          className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
           role="status"
-          aria-live="polite"
+          aria-label="Protokoll wird geladen"
         >
-          <Loader2 size={28} className="brand-text animate-spin" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">Audit-Log wird geladen…</p>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-6 border-b border-[color:var(--ds-border)] px-4 py-3.5 last:border-0"
+            >
+              <Skeleton className="h-3.5 w-32 rounded" />
+              <Skeleton className="h-3.5 w-40 rounded" />
+              <Skeleton className="hidden h-3.5 w-24 rounded md:block" />
+              <Skeleton className="hidden h-3.5 w-44 rounded lg:block" />
+            </div>
+          ))}
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-24">
-          <AlertTriangle size={32} className="text-[color:var(--ds-danger-text)]" />
-          <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
-            Fehler beim Laden
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-16 text-center"
+        >
+          <AlertTriangle size={28} aria-hidden className="text-[color:var(--ds-danger-text)]" />
+          <p className="text-sm font-medium text-[color:var(--ds-text)]">
+            Das Protokoll konnte nicht geladen werden
           </p>
-          <p className="text-xs text-[color:var(--ds-text-subtle)]">{error}</p>
+          <p className="max-w-md text-xs text-[color:var(--ds-text-muted)]">
+            {error.startsWith("Sie haben") || error.startsWith("Das Protokoll")
+              ? error
+              : "Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut."}
+          </p>
           <Button variant="outline" size="sm" onClick={loadEntries} className="mt-2 gap-1.5">
             <RefreshCw size={14} /> Erneut versuchen
           </Button>
         </div>
       ) : pageEntries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-24">
-          <Shield size={40} className="text-[color:var(--ds-text-subtle)]" />
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] py-16">
+          <Shield size={32} aria-hidden className="text-[color:var(--ds-text-subtle)]" />
           <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">
             {t("audit.empty_title")}
           </p>
@@ -515,23 +560,27 @@ export default function AuditLogPage() {
                     <th className="hidden px-4 py-3 font-medium md:table-cell">
                       {t("audit.col_user")}
                     </th>
-                    <th className="hidden px-4 py-3 font-medium lg:table-cell">
-                      {t("audit.col_details")}
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageEntries.map((e) => {
-                    const color = actionColor(e.action);
                     const Icon = actionIcon(e.action);
                     return (
                       <tr
                         key={e.id}
                         onClick={() => setSelectedEntry(e)}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter" || ev.key === " ") {
+                            ev.preventDefault();
+                            setSelectedEntry(e);
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-label={`${auditLabel(e.action)}, ${formatTimestamp(lang, e.timestamp)} — Details öffnen`}
                         className="cursor-pointer border-b border-[color:var(--ds-border)] transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-xs font-medium text-[color:var(--ds-text)]">
+                          <div className="text-xs font-medium text-[color:var(--ds-text)] tabular-nums">
                             {formatTimestamp(lang, e.timestamp)}
                           </div>
                           <div className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)]">
@@ -540,13 +589,12 @@ export default function AuditLogPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div
-                              className={cn(
-                                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-                                `bg-${color}-500/10`
-                              )}
-                            >
-                              <Icon size={13} className={cn(`text-${color}-500`)} />
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
+                              <Icon
+                                size={13}
+                                aria-hidden
+                                className="text-[color:var(--ds-text-muted)]"
+                              />
                             </div>
                             <div className="min-w-0">
                               {/* Rohe Aktions-ID nur als Tooltip; sichtbar nur, wenn kein Label existiert. */}
@@ -556,37 +604,21 @@ export default function AuditLogPage() {
                               >
                                 {auditLabel(e.action)}
                               </div>
-                              {!hasAuditLabel(e.action) && (
-                                <div className="truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
-                                  {e.action}
-                                </div>
-                              )}
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-xs text-[color:var(--ds-text-muted)]">
-                            {e.entityType || "—"}
+                          <div
+                            className="text-xs text-[color:var(--ds-text-muted)]"
+                            title={e.entityType || undefined}
+                          >
+                            {entityLabel(e.entityType)}
                           </div>
-                          {e.entityId && (
-                            <div className="max-w-[180px] truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
-                              {e.entityId}
-                            </div>
-                          )}
                         </td>
                         <td className="hidden px-4 py-3 md:table-cell">
                           {e.userEmail ? (
                             <span className="block max-w-[180px] truncate text-xs text-[color:var(--ds-text-muted)]">
                               {e.userEmail}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[color:var(--ds-text-subtle)]">—</span>
-                          )}
-                        </td>
-                        <td className="hidden px-4 py-3 lg:table-cell">
-                          {e.details ? (
-                            <span className="block max-w-[240px] truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
-                              {JSON.stringify(e.details).slice(0, 100)}
                             </span>
                           ) : (
                             <span className="text-xs text-[color:var(--ds-text-subtle)]">—</span>
@@ -602,8 +634,8 @@ export default function AuditLogPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-xs text-[color:var(--ds-text-subtle)]">
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} von{" "}
                 {filtered.length}
               </div>
@@ -639,7 +671,7 @@ export default function AuditLogPage() {
       {selectedEntry && (
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
         <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/60"
+          className="fixed inset-0 z-50 flex justify-end bg-[color:var(--ds-text)]/40"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedEntry(null);
           }}
@@ -656,7 +688,7 @@ export default function AuditLogPage() {
                 id="audit-entry-detail-title"
                 className="text-sm font-bold text-[color:var(--ds-text)]"
               >
-                Audit-Eintrag Details
+                Eintrag im Protokoll
               </h2>
               <button
                 ref={drawerCloseRef}
@@ -674,17 +706,11 @@ export default function AuditLogPage() {
                 </label>
                 <div className="mt-1.5 flex items-center gap-2">
                   {(() => {
-                    const color = actionColor(selectedEntry.action);
                     const Icon = actionIcon(selectedEntry.action);
                     return (
                       <>
-                        <div
-                          className={cn(
-                            "flex h-8 w-8 items-center justify-center rounded-lg",
-                            `bg-${color}-500/10`
-                          )}
-                        >
-                          <Icon size={15} className={cn(`text-${color}-500`)} />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
+                          <Icon size={15} aria-hidden className="text-[color:var(--ds-text-muted)]" />
                         </div>
                         <div>
                           <div
@@ -693,11 +719,6 @@ export default function AuditLogPage() {
                           >
                             {auditLabel(selectedEntry.action)}
                           </div>
-                          {!hasAuditLabel(selectedEntry.action) && (
-                            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)]">
-                              {selectedEntry.action}
-                            </div>
-                          )}
                         </div>
                       </>
                     );
@@ -723,7 +744,7 @@ export default function AuditLogPage() {
                 </label>
                 <div className="mt-1 space-y-1">
                   <p className="text-sm text-[color:var(--ds-text)]">
-                    {selectedEntry.entityType || "—"}
+                    {entityLabel(selectedEntry.entityType)}
                   </p>
                   {selectedEntry.entityId && (
                     <p className="font-mono text-xs break-all text-[color:var(--ds-text-subtle)]">
@@ -756,19 +777,22 @@ export default function AuditLogPage() {
               )}
 
               {selectedEntry.details && (
-                <div>
-                  <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                    Details
-                  </label>
+                <details>
+                  <summary className="cursor-pointer text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                    Technische Angaben
+                  </summary>
+                  <p className="mt-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                    Vom System gespeicherte Rohdaten zu diesem Vorgang, unverändert für Nachweiszwecke.
+                  </p>
                   <pre className="mt-1.5 overflow-x-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 font-mono text-xs break-all whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {JSON.stringify(selectedEntry.details, null, 2)}
                   </pre>
-                </div>
+                </details>
               )}
 
               <div>
                 <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                  ID
+                  Kennung des Eintrags
                 </label>
                 <p className="mt-1 font-mono text-xs break-all text-[color:var(--ds-text-subtle)]">
                   {selectedEntry.id}

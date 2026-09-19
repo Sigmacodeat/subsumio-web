@@ -7,12 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { frontmatterOf, type DecisionFrontmatter } from "@/lib/legal-types";
-import { PageHeader } from "@/components/dashboard/page-header";
-import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
-import { useGroundedAnswer } from "@/lib/use-grounded-answer";
-import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface JudgementResult {
@@ -30,23 +26,18 @@ interface JudgementResult {
 }
 
 export default function RechtsprechungPage() {
-  const { t, lang } = useLang();
-  const { groundAnswer } = useGroundedAnswer();
+  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<JudgementResult[]>([]);
   const jurisdiction = "at" as const;
   const [searched, setSearched] = useState(false);
-  const [aiGrounding, setAiGrounding] = useState<GroundingMetadata | null>(null);
-  const [hasAiResults, setHasAiResults] = useState(false);
 
   async function handleSearch() {
     if (!query.trim()) return;
     setSearching(true);
     setSearched(true);
     setResults([]);
-    setAiGrounding(null);
-    setHasAiResults(false);
 
     try {
       const judgements: JudgementResult[] = [];
@@ -91,92 +82,13 @@ export default function RechtsprechungPage() {
           });
         }
       } catch {
-        // Externe Quellen können offline sein — Brain-Treffer + AI-Fallback bleiben
+        // Externe Quellen können offline sein — Treffer aus dem Kanzleiwissen bleiben
       }
 
-      // 3. AI fallback if no results at all — structured JSON prompt
-      if (judgements.length === 0) {
-        setHasAiResults(false);
-        const thinkResult = await api.query.think(
-          `Suche nach Rechtsprechung zu "${query}" in Österreich.
-
-Antworte AUSSCHLIESSLICH als JSON-Array mit maximal 10 relevanten Urteilen. Kein Markdown, kein Text vor oder nach dem JSON.
-
-Format pro Eintrag:
-{
-  "title": "Kurzer Titel des Urteils",
-  "court": "Gericht (z.B. OGH, VfGH, VwGH)",
-  "date": "YYYY-MM-DD",
-  "az": "Aktenzeichen (z.B. 6 Ob 123/24a)",
-  "ecli": "ECLI falls bekannt, sonst leerer String",
-  "legalArea": "Rechtsgebiet (z.B. Zivilrecht, Strafrecht)",
-  "keywords": ["Schlagwort1", "Schlagwort2"],
-  "summary": "Kurze Zusammenfassung des Leitsatzes (max 300 Zeichen)",
-  "url": "URL zum Urteil falls bekannt, sonst leerer String"
-}`,
-          {
-            mode: "balanced",
-            queryMode: "conservative",
-          }
-        );
-
-        // Parse structured JSON response
-        const raw = thinkResult.answer.trim();
-        // Extract JSON array from response (handles cases where AI wraps in markdown code block)
-        const jsonMatch = raw.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[0]) as Array<{
-              title?: string;
-              court?: string;
-              date?: string;
-              az?: string;
-              ecli?: string;
-              legalArea?: string;
-              keywords?: string[];
-              summary?: string;
-              url?: string;
-            }>;
-            for (const entry of parsed) {
-              if (!entry.title) continue;
-              judgements.push({
-                id: `ai-${judgements.length}`,
-                title: entry.title,
-                court: entry.court || "Unbekannt",
-                date: entry.date || new Date().toISOString(),
-                ecli: entry.ecli || undefined,
-                az: entry.az || undefined,
-                legalArea: entry.legalArea || "Allgemein",
-                keywords: Array.isArray(entry.keywords) ? entry.keywords : [],
-                summary: entry.summary || "",
-                url: entry.url || "#",
-                source: "ai",
-              });
-            }
-            if (judgements.length > 0) setHasAiResults(true);
-          } catch {
-            // JSON parse failed — no fallback to regex
-          }
-        }
-      }
-
+      // No AI fallback: a model asked to "find" decisions invents Geschäftszahlen
+      // and ECLIs. Only the firm's knowledge and the RIS return decisions here.
       setResults(judgements);
 
-      // A.4: Ground AI fallback results — run corpus grounding on AI summaries
-      if (hasAiResults) {
-        const aiText = judgements
-          .filter((j) => j.source === "ai")
-          .map((j) => j.summary)
-          .join(" ");
-        if (aiText.trim()) {
-          try {
-            const grounding = await groundAnswer(aiText);
-            setAiGrounding(grounding);
-          } catch {
-            setAiGrounding(null);
-          }
-        }
-      }
     } catch {
       setResults([]);
     } finally {
@@ -185,20 +97,15 @@ Format pro Eintrag:
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title="Rechtsprechung"
-        description="Urteile und Entscheidungen durchsuchen"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Rechtsprechung" }]}
-      />
-
+    // Embedded in the research page, which owns the page header (one h1 per page).
+    <div className="space-y-6">
       {/* Search */}
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div className="brand-soft brand-text w-fit rounded-lg px-3 py-1.5 text-xs font-medium">
-          🇦🇹 Österreich
-        </div>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          Entscheidungen österreichischer Gerichte aus dem Kanzleiwissen und dem RIS
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <div className="relative min-w-[12rem] flex-1">
             <Search
               size={14}
               className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
@@ -207,7 +114,7 @@ Format pro Eintrag:
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Urteil suchen… z.B. Haftung, Vertragsbruch, Datenschutz"
+              placeholder="Entscheidung suchen … z. B. Haftung, Vertragsbruch, Datenschutz"
               aria-label={t("aria.search_judgements")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
@@ -216,7 +123,7 @@ Format pro Eintrag:
             onClick={handleSearch}
             disabled={searching || !query.trim()}
             variant="primary"
-            className="brand-bg brand-bg gap-2 text-white"
+            className="gap-2 whitespace-nowrap"
           >
             {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
             Suchen
@@ -228,8 +135,13 @@ Format pro Eintrag:
       {searched && results.length === 0 && !searching && (
         <EmptyState
           icon={Landmark}
-          title="Keine Entscheidungen in der Wissensbasis gefunden"
-          description="Importieren Sie Rechtsprechung über den Konnektor „legal-judgements“."
+          title="Keine Entscheidungen gefunden"
+          description="Versuchen Sie andere oder allgemeinere Suchbegriffe."
+          actionLabel="Suche zurücksetzen"
+          onAction={() => {
+            setQuery("");
+            setSearched(false);
+          }}
         />
       )}
 
@@ -241,53 +153,41 @@ Format pro Eintrag:
           {results.map((r) => (
             <div
               key={r.id}
-              className="hover:brand-border rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[color:var(--ds-text)]">{r.title}</span>
                     <Badge
                       variant="default"
                       className={cn(
                         "border text-xs",
-                        r.source === "brain"
-                          ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                          : r.source === "ai"
-                            ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
-                            : r.source === "ris-ogd"
-                              ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
-                              : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                        "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
                       )}
                     >
                       {r.source === "brain"
-                        ? "Brain"
+                        ? "Kanzleiwissen"
                         : r.source === "ris-ogd"
-                          ? "RIS-OGD"
+                          ? "RIS"
                           : r.source === "opencaselaw"
                             ? "OpenCaseLaw"
                             : r.source === "openlegaldata"
                               ? "OpenLegalData"
-                              : r.source === "ai"
-                                ? "KI ⚠️ Verifizieren"
-                                : r.source}
+                              : r.source}
                     </Badge>
                   </div>
-                  <div className="mb-2 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
+                  <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--ds-text-muted)]">
                     <span className="flex items-center gap-1">
                       <Landmark size={10} />
                       {r.court}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 tabular-nums">
                       <Calendar size={10} />
-                      {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
+                      {formatDate(r.date)}
                     </span>
-                    {r.az && <span className="font-mono">{r.az}</span>}
-                    {r.ecli && <span className="font-mono text-xs">{r.ecli}</span>}
+                    {r.az && <span className="tabular-nums">{r.az}</span>}
+                    {r.ecli && <span className="break-all tabular-nums">{r.ecli}</span>}
                   </div>
                   <p className="line-clamp-3 text-sm text-[color:var(--ds-text-muted)]">
                     {r.summary}
@@ -298,7 +198,7 @@ Format pro Eintrag:
                         <Badge
                           key={k}
                           variant="default"
-                          className="brand-soft brand-border/10 brand-text text-xs"
+                          className="text-xs"
                         >
                           {k}
                         </Badge>
@@ -311,7 +211,9 @@ Format pro Eintrag:
                     href={r.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:brand-text hover:brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+                    aria-label={`Entscheidung öffnen: ${r.title}`}
+                    title="Entscheidung öffnen"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                   >
                     <ExternalLink size={14} />
                   </a>
@@ -322,18 +224,6 @@ Format pro Eintrag:
         </div>
       )}
 
-      {/* A.4: Grounding panel for AI-sourced results — mandatory for every AI output */}
-      {hasAiResults && (
-        <CitationPanel
-          data={
-            {
-              grounding: aiGrounding ?? null,
-              isStreaming: false,
-            } satisfies CitationPanelData
-          }
-          compact
-        />
-      )}
     </div>
   );
 }

@@ -524,7 +524,7 @@ function SyncStatusSection({
                         aria-label={`Disk-Import Fortschritt: ${r.diskProgress.toFixed(1)} Prozent`}
                       >
                         <div
-                          className="h-1 rounded-full bg-[color:var(--brand-primary)]"
+                          className="h-1 rounded-full bg-[color:var(--brand-solid)]"
                           style={{ width: `${Math.min(r.diskProgress, 100)}%` }}
                         />
                       </div>

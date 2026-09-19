@@ -711,7 +711,7 @@ export default function PortalPage() {
                             </div>
                           </div>
                           {!done && (
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-primary)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] motion-reduce:transition-none">
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-solid)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] motion-reduce:transition-none">
                               <input
                                 type="file"
                                 accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -742,7 +742,7 @@ export default function PortalPage() {
             <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">{t("portal.documents_title")}</h3>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none">
                   <input
                     type="file"
                     accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -867,7 +867,7 @@ export default function PortalPage() {
                 <button
                   onClick={() => void sendMessage(caseData.slug)}
                   disabled={sendingMessage || !newMessage.trim()}
-                  className="rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none"
+                  className="rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   {sendingMessage ? "…" : t("portal.send")}
                 </button>
@@ -932,7 +932,7 @@ export default function PortalPage() {
               <button
                 onClick={() => void sendChatMessage()}
                 disabled={chatLoading || !chatInput.trim()}
-                className="rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none"
+                className="rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none"
               >
                 {chatLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>

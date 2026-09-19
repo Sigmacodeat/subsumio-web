@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Cpu, Check, Zap, DollarSign, Gauge, Shield, Loader2, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import {
@@ -13,12 +15,27 @@ import {
 import {
   formatCost,
   formatContextWindow,
-  getSpeedLabel,
   getProviderLabel,
 } from "@/lib/model-config";
 
+const SPEED_LABELS: Record<number, { de: string; en: string }> = {
+  1: { de: "sehr langsam", en: "very slow" },
+  2: { de: "langsam", en: "slow" },
+  3: { de: "mittel", en: "medium" },
+  4: { de: "schnell", en: "fast" },
+  5: { de: "sehr schnell", en: "very fast" },
+};
+
+const CAPABILITY_LABELS: Record<string, { de: string; en: string }> = {
+  "tool-use": { de: "Aktenzugriff", en: "Tool use" },
+  vision: { de: "Liest Bilder und Scans", en: "Reads images and scans" },
+  "extended-thinking": { de: "Gründliche Abwägung", en: "Extended reasoning" },
+  "structured-output": { de: "Strukturierte Ausgabe", en: "Structured output" },
+};
+
 export default function AIModelSettingsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const query = useModelPreference();
   const mutation = useUpdateModelPreference();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -45,49 +62,65 @@ export default function AIModelSettingsPage() {
     }
   }
 
+  const description = L(
+    "Legt fest, welches KI-Modell Assistent, Dokumentanalyse und Entwürfe standardmäßig verwenden.",
+    "Sets which AI model the assistant, document analysis and drafts use by default."
+  );
+  const breadcrumbs = [
+    { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+    { label: t("settings.title"), href: "/dashboard/settings" },
+    { label: t("settings.aimodel.breadcrumb") },
+  ];
+
   if (query.isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center" role="status" aria-live="polite">
-        <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("settings.aimodel.title")}
+          description={description}
+          breadcrumbs={breadcrumbs}
+        />
+        <div className="space-y-3" role="status" aria-label={L("Wird geladen", "Loading")}>
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (query.isError) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title={t("settings.aimodel.title")}
-          description={t("settings.aimodel.description")}
-          breadcrumbs={[
-            { label: t("settings.title"), href: "/dashboard/settings" },
-            { label: t("settings.aimodel.breadcrumb") },
-          ]}
+          description={description}
+          breadcrumbs={breadcrumbs}
         />
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6 text-center">
+        <div
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6 text-center"
+        >
           <p className="text-sm text-[color:var(--ds-danger-text)]">
-            {t("settings.aimodel.error_save")}
+            {L(
+              "Die verfügbaren Modelle konnten nicht geladen werden.",
+              "The available models could not be loaded."
+            )}
           </p>
-          <button
-            onClick={() => query.refetch()}
-            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-          >
-            Erneut versuchen
-          </button>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => query.refetch()}>
+            {L("Erneut versuchen", "Try again")}
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("settings.aimodel.title")}
-        description={t("settings.aimodel.description")}
-        breadcrumbs={[
-          { label: t("settings.title"), href: "/dashboard/settings" },
-          { label: t("settings.aimodel.breadcrumb") },
-        ]}
+        description={description}
+        breadcrumbs={breadcrumbs}
         actions={
           saving ? (
             <div
@@ -97,6 +130,10 @@ export default function AIModelSettingsPage() {
             >
               <Loader2 size={12} className="animate-spin" />
               {t("settings.kanzlei.btn_saving")}
+            </div>
+          ) : mutation.isError ? (
+            <div role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+              {t("settings.aimodel.error_save")}
             </div>
           ) : mutation.isSuccess ? (
             <div className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
@@ -120,7 +157,7 @@ export default function AIModelSettingsPage() {
           }
         }}
         className={cn(
-          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+          "cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
           activeId === "auto"
             ? "brand-border brand-soft"
             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -150,12 +187,14 @@ export default function AIModelSettingsPage() {
                     activeId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
                   )}
                 >
-                  Automatisch (Standard)
+                  {L("Automatisch (empfohlen)", "Automatic (recommended)")}
                 </h3>
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                Der Subsumio-Dienst wählt automatisch das optimale Modell basierend auf
-                Query-Komplexität und Größe der Wissensbasis.
+                {L(
+                  "Subsumio wählt je Anfrage das passende Modell – für einfache Fragen ein schnelles, für umfangreiche Akten ein leistungsstärkeres.",
+                  "Subsumio picks a suitable model for each request – a fast one for simple questions, a stronger one for large matters."
+                )}
               </p>
             </div>
           </div>
@@ -168,7 +207,7 @@ export default function AIModelSettingsPage() {
       </div>
 
       {/* Model cards grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4">
         {models.map((model) => {
           const isActive = model.id === activeId;
           const isSavingThis = saving && selectedId === model.id;
@@ -252,7 +291,7 @@ export default function AIModelSettingsPage() {
                   <div className="mb-1 flex items-center gap-1.5">
                     <Gauge size={11} className="text-[color:var(--ds-text-subtle)]" />
                     <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      Context
+                      {L("Textumfang", "Context")}
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
@@ -263,23 +302,29 @@ export default function AIModelSettingsPage() {
                   <div className="mb-1 flex items-center gap-1.5">
                     <DollarSign size={11} className="text-[color:var(--ds-text-subtle)]" />
                     <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      Cost/1M
+                      {L("Kosten je 1 Mio. Einheiten", "Cost per 1M units")}
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
                     {formatCost(model.costPer1MInput)}
-                    <span className="text-xs text-[color:var(--ds-text-subtle)]"> in</span>
+                    <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                      {" "}
+                      {L("Eingabe", "input")}
+                    </span>
                   </p>
                   <p className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
                     {formatCost(model.costPer1MOutput)}
-                    <span className="text-[color:var(--ds-text-subtle)]"> out</span>
+                    <span className="text-[color:var(--ds-text-subtle)]">
+                      {" "}
+                      {L("Ausgabe", "output")}
+                    </span>
                   </p>
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
                   <div className="mb-1 flex items-center gap-1.5">
                     <Zap size={11} className="text-[color:var(--ds-text-subtle)]" />
                     <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      Speed
+                      {L("Tempo", "Speed")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -296,7 +341,7 @@ export default function AIModelSettingsPage() {
                     ))}
                   </div>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    {getSpeedLabel(model.speedRating as 1 | 2 | 3 | 4 | 5)}
+                    {SPEED_LABELS[model.speedRating]?.[lang === "en" ? "en" : "de"] ?? ""}
                   </p>
                 </div>
               </div>
@@ -309,7 +354,7 @@ export default function AIModelSettingsPage() {
                     className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]"
                   >
                     <Shield size={9} />
-                    {cap}
+                    {CAPABILITY_LABELS[cap]?.[lang === "en" ? "en" : "de"] ?? cap}
                   </span>
                 ))}
               </div>
@@ -319,19 +364,20 @@ export default function AIModelSettingsPage() {
       </div>
 
       {/* Info note */}
-      <div className="mt-6 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
+      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
         <div className="flex items-start gap-3">
           <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
             <Cpu size={14} className="brand-text" />
           </div>
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              Gilt für das gesamte Kanzleiwissen
+              {L("Gilt für die ganze Kanzlei", "Applies to the whole firm")}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Die Modellauswahl gilt für das gesamte Kanzleiwissen. Im Assistenten können Sie pro
-              Anfrage einen Override setzen, ohne die globale Einstellung zu ändern. Der
-              Subsumio-Dienst benötigt den konfigurierten API-Key des jeweiligen Providers.
+              {L(
+                "Im Assistenten können Sie für eine einzelne Anfrage ein anderes Modell wählen, ohne diese Einstellung zu ändern. Ein Modell funktioniert nur, wenn der Zugangsschlüssel des jeweiligen Anbieters hinterlegt ist.",
+                "In the assistant you can choose a different model for a single request without changing this setting. A model only works if the provider's access key is set up."
+              )}
             </p>
           </div>
         </div>

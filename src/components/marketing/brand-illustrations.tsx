@@ -11,14 +11,12 @@
 // aria-hidden, and reduced-motion safe (renders fully drawn).
 
 import { useRef } from "react";
-import {
-  motion,
+import { motion,
   useMotionValue,
-  useReducedMotion,
   useScroll,
   useTransform,
-  type MotionValue,
-} from "framer-motion";
+  type MotionValue } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 
 const EASE_DRAW: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 

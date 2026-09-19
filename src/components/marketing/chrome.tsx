@@ -5,7 +5,8 @@
 // registry in ./icons.ts.
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {

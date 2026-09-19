@@ -172,9 +172,12 @@ describe("Sidebar directory + admin filtering", () => {
     renderSidebar({ role: "admin" });
 
     // Admin section should be visible and contain directory link
-    const dirLink = screen.queryByRole("link", { name: /Alle Funktionen|Directory/i });
+    const dirLink = screen.queryAllByRole("link", { name: /Alle Funktionen|Directory/i });
     // The link may be inside a collapsed section — just verify it exists in DOM
-    expect(dirLink || screen.queryByText(/Alle Funktionen|Directory/i)).toBeTruthy();
+    // (the core/extended toggle also reads "Alle Funktionen anzeigen").
+    expect(
+      dirLink.length + screen.queryAllByText(/Alle Funktionen|Directory/i).length
+    ).toBeGreaterThan(0);
   });
 
   test("non-admin users do not see admin-only items", async () => {

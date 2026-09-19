@@ -138,7 +138,7 @@ export function SaasUsageClient() {
             onClick={() => setDays(d)}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
               days === d
-                ? "bg-[color:var(--brand-primary)] text-white"
+                ? "bg-[color:var(--brand-solid)] text-white"
                 : "border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
             } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
           >

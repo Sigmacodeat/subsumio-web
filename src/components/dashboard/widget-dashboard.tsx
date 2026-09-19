@@ -65,6 +65,7 @@ function daysUntil(date: Date) {
 }
 
 function formatDate(date: Date, lang: Lang = "de") {
+  if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
     day: "2-digit",
     month: "short",
@@ -445,7 +446,7 @@ export function InboxList({ items }: { items: DashboardPageLike[] }) {
                 icon={Mail}
                 href="/dashboard/intake"
                 title={text(item.title, t("cockpit.untitled_inbox"))}
-                meta={`${source} · ${formatDate(new Date(item.created_at), lang)}`}
+                meta={`${source} · ${formatDate(new Date(item.created_at || item.updated_at), lang)}`}
                 badge={source}
                 badgeVariant="info"
               />
@@ -835,7 +836,7 @@ export function AIActivityFeed({
                 {text(item.title, item.type)}
               </span>
               <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                {formatDate(new Date(item.created_at), lang)}
+                {formatDate(new Date(item.created_at || item.updated_at), lang)}
               </span>
             </div>
           );

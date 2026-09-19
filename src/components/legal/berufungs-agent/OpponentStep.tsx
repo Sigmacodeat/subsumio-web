@@ -170,7 +170,7 @@ export function OpponentStep({
             <div className="mt-2 max-h-32 overflow-y-auto rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2">
               <p className="font-mono text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                 {streamingProgress.slice(-800)}
-                <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-[color:var(--brand-primary)]" />
+                <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-[color:var(--brand-solid)]" />
               </p>
             </div>
           )}

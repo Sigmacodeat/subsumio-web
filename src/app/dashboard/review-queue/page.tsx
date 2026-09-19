@@ -17,7 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath, formatDate } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -52,6 +54,21 @@ function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, str
   };
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  document_draft: "Schriftsatzentwurf",
+  contract: "Vertrag",
+  legal_case: "Akte",
+  letter: "Schreiben",
+  memo: "Aktenvermerk",
+  pipeline_state: "Automatische Aktenanalyse",
+};
+
+function itemHref(page: BrainPage): string {
+  return page.type === "legal_case"
+    ? `/dashboard/cases/${encodeSlugPath(page.slug)}`
+    : `/dashboard/brain/${encodeURIComponent(page.slug)}`;
+}
+
 const REVIEWABLE_TYPES = [
   "document_draft",
   "contract",
@@ -62,7 +79,7 @@ const REVIEWABLE_TYPES = [
 ];
 
 export default function ReviewQueuePage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { addToast } = useToast();
   const STATUS_LABELS = useStatusLabels(t);
   const [pages, setPages] = useState<BrainPage[]>([]);
@@ -83,8 +100,8 @@ export default function ReviewQueuePage() {
         if (pages) all.push(...pages);
       }
       setPages(all);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Review-Queue konnte nicht geladen werden.");
+    } catch {
+      setError("Die Freigaben konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
     } finally {
       setLoading(false);
     }
@@ -181,8 +198,8 @@ export default function ReviewQueuePage() {
       });
       await loadPages();
       addToast({ type: "success", title: t("review_queue.toast_status_updated" as DashboardKey) });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Status konnte nicht aktualisiert werden.");
+    } catch {
+      setError("Der Status konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.");
     } finally {
       setUpdating(null);
     }
@@ -200,8 +217,8 @@ export default function ReviewQueuePage() {
       });
       await loadPages();
       addToast({ type: "success", title: t("review_queue.toast_assigned" as DashboardKey) });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Zuweisung fehlgeschlagen.");
+    } catch {
+      setError("Die Zuweisung ist fehlgeschlagen. Bitte versuchen Sie es erneut.");
     } finally {
       setUpdating(null);
     }
@@ -215,14 +232,14 @@ export default function ReviewQueuePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ case_slug: caseSlug, resume_from_layer: 3 }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error("resume_failed");
       await loadPages();
       addToast({
         type: "success",
         title: t("review_queue.toast_pipeline_resumed" as DashboardKey),
       });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Pipeline konnte nicht fortgesetzt werden.");
+    } catch {
+      setError("Die Aktenanalyse konnte nicht fortgesetzt werden. Bitte versuchen Sie es erneut.");
     } finally {
       setUpdating(null);
     }
@@ -289,12 +306,10 @@ export default function ReviewQueuePage() {
           )}
 
           {loading && (
-            <div
-              className="flex h-40 items-center justify-center rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+            <div className="space-y-3" aria-busy="true">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+              ))}
             </div>
           )}
 
@@ -313,14 +328,13 @@ export default function ReviewQueuePage() {
                       </div>
                       <div className="min-w-0">
                         <a
-                          href={`/dashboard/brain/${encodeURIComponent(page.slug)}`}
+                          href={itemHref(page)}
                           className="block truncate text-sm font-medium text-[color:var(--ds-text)] hover:underline"
                         >
                           {page.title}
                         </a>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--ds-text-muted)]">
-                          <span className="max-w-full truncate font-mono">{page.slug}</span>
-                          <span>{page.type}</span>
+                          <span>{(page.type && TYPE_LABEL[page.type]) || "Dokument"}</span>
                           {assignee && (
                             <span className="flex items-center gap-1">
                               <User size={10} /> {assignee}
@@ -328,10 +342,7 @@ export default function ReviewQueuePage() {
                           )}
                           {reviewedAt && (
                             <span className="flex items-center gap-1">
-                              <Clock size={10} />{" "}
-                              {new Date(reviewedAt).toLocaleDateString(
-                                lang === "en" ? "en-GB" : "de-DE"
-                              )}
+                              <Clock size={10} /> geprüft {formatDate(reviewedAt)}
                             </span>
                           )}
                         </div>
@@ -382,9 +393,9 @@ export default function ReviewQueuePage() {
                                     : "";
                                 if (caseRef) void resumePipeline(caseRef);
                               }}
-                              className="gap-1 text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
+                              className="gap-1 text-xs whitespace-nowrap"
                             >
-                              <Play size={12} /> Freigeben & Fortsetzen
+                              <Play size={12} aria-hidden="true" /> Freigeben &amp; fortsetzen
                             </Button>
                           )}
                           {status === "needs_human_review" && (
@@ -398,19 +409,19 @@ export default function ReviewQueuePage() {
                                     : "";
                                 if (caseRef) void resumePipeline(caseRef);
                               }}
-                              className="gap-1 text-xs text-[color:var(--ds-attention-text)] hover:bg-[color:var(--ds-attention-bg)]"
+                              className="gap-1 text-xs whitespace-nowrap"
                             >
-                              <AlertCircle size={12} /> Review &amp; Fortsetzen
+                              <AlertCircle size={12} aria-hidden="true" /> Prüfen &amp; fortsetzen
                             </Button>
                           )}
                         </>
                       ) : (
                         <>
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => updateStatus(page.slug, "approved")}
-                            className="gap-1 text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
+                            className="gap-1 text-xs whitespace-nowrap"
                           >
                             <CheckSquare size={12} /> {t("review_queue.approve")}
                           </Button>
@@ -418,7 +429,7 @@ export default function ReviewQueuePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => updateStatus(page.slug, "changes_requested")}
-                            className="text-xs text-[color:var(--ds-attention-text)] hover:bg-[color:var(--ds-attention-bg)]"
+                            className="text-xs whitespace-nowrap"
                           >
                             {t("review_queue.revise")}
                           </Button>
@@ -426,7 +437,7 @@ export default function ReviewQueuePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => updateStatus(page.slug, "rejected")}
-                            className="text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
+                            className="text-xs whitespace-nowrap text-[color:var(--ds-text-muted)]"
                           >
                             {t("review_queue.reject")}
                           </Button>
@@ -440,19 +451,24 @@ export default function ReviewQueuePage() {
           )}
 
           {!loading && reviewItems.length === 0 && !error && (
-            <div className="rounded-2xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
-              <Inbox
-                size={40}
-                className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40"
-              />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                {t("review_queue.empty")}{" "}
-                <code className="rounded bg-[color:var(--ds-hover)] px-1 text-xs">
-                  review_status
-                </code>{" "}
-                {t("review_queue.empty_hint")}
-              </p>
-            </div>
+            <EmptyState
+              icon={Inbox}
+              title="Keine offenen Freigaben"
+              description="Entwürfe, Verträge und Akten, die eine Prüfung benötigen, erscheinen hier."
+              actionLabel={
+                statusFilter !== "all" || assigneeFilter !== "all"
+                  ? "Filter zurücksetzen"
+                  : undefined
+              }
+              onAction={
+                statusFilter !== "all" || assigneeFilter !== "all"
+                  ? () => {
+                      setStatusFilter("all");
+                      setAssigneeFilter("all");
+                    }
+                  : undefined
+              }
+            />
           )}
         </div>
 
@@ -464,7 +480,7 @@ export default function ReviewQueuePage() {
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {[
-                { label: t("review_queue.all_status"), value: reviewSummary.total },
+                { label: "Gesamt", value: reviewSummary.total },
                 { label: STATUS_LABELS.pending, value: reviewSummary.pending },
                 { label: STATUS_LABELS.in_review, value: reviewSummary.inReview },
                 { label: STATUS_LABELS.changes_requested, value: reviewSummary.changesRequested },
@@ -473,7 +489,7 @@ export default function ReviewQueuePage() {
                   key={item.label}
                   className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
                 >
-                  <div className="text-lg font-semibold text-[color:var(--ds-text)]">
+                  <div className="text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">
                     {item.value}
                   </div>
                   <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">

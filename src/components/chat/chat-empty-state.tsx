@@ -18,7 +18,7 @@ export function ChatEmptyState({
   onExampleClick,
   exampleQueries,
   contextLabel,
-  userName,
+  userName: _userName,
   className,
 }: ChatEmptyStateProps) {
   const { t, lang } = useLang();
@@ -41,18 +41,10 @@ export function ChatEmptyState({
 
       {/* Large editorial greeting */}
       <h3 className="font-display text-2xl font-semibold tracking-tight text-[color:var(--ds-text)]">
-        {userName
-          ? lang === "en"
-            ? `Hello, ${userName}`
-            : `Guten Tag, ${userName}`
-          : t("chat.empty_title")}
+        {t("chat.empty_title")}
       </h3>
       <p className="mt-2 max-w-md text-[15px] leading-relaxed text-[color:var(--ds-text-muted)]">
-        {userName
-          ? lang === "en"
-            ? "How can I help you today?"
-            : "Womit kann ich Ihnen heute helfen?"
-          : t("chat.empty_desc")}
+        {t("chat.empty_desc")}
         {contextLabel && (
           <>
             {" "}

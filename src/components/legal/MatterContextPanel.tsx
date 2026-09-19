@@ -701,7 +701,7 @@ function GapRow({ gap }: { gap: MatterGap }) {
 function ActivityRow({ activity }: { activity: MatterActivityEntry }) {
   return (
     <div className="flex items-center gap-2 text-xs">
-      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-primary)]" />
+      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-solid)]" />
       <span className="text-[color:var(--ds-text-muted)]">{activity.at.slice(0, 10)}</span>
       <span className="text-[color:var(--ds-text)]">{activity.description}</span>
       {activity.actor && (

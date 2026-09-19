@@ -12,7 +12,7 @@ import {
   FileText,
   FolderOpen,
   CalendarClock,
-  Sparkles,
+  Lightbulb,
   Activity,
   ShieldAlert,
   CircleDollarSign,
@@ -37,7 +37,7 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
   overview: FileText,
   documents: FolderOpen,
   deadlines: CalendarClock,
-  strategy: Sparkles,
+  strategy: Lightbulb,
   activity: Activity,
   evidence: ShieldAlert,
   billing: CircleDollarSign,
@@ -51,12 +51,12 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
 const TAB_LABELS_DE: Record<MatterTab, string> = {
   overview: "Übersicht",
   documents: "Dokumente",
-  deadlines: "Fristen",
+  deadlines: "Fristen & Aufgaben",
   strategy: "Strategie",
-  activity: "Verlauf",
+  activity: "Aktivität",
   evidence: "Beweise",
   billing: "Kosten",
-  contacts: "Kontakte",
+  contacts: "Beteiligte",
   notes: "Notizen",
   "phone-notes": "Telefon",
   emails: "E-Mails",
@@ -66,12 +66,12 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
 const TAB_LABELS_EN: Record<MatterTab, string> = {
   overview: "Overview",
   documents: "Documents",
-  deadlines: "Deadlines",
+  deadlines: "Deadlines & tasks",
   strategy: "Strategy",
   activity: "Activity",
   evidence: "Evidence",
   billing: "Billing",
-  contacts: "Contacts",
+  contacts: "Parties",
   notes: "Notes",
   "phone-notes": "Phone",
   emails: "E-mails",
@@ -110,15 +110,16 @@ export function MatterTabBar() {
           <Link
             key={tab}
             href={matterTabUrl(caseSlug, tab)}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none md:text-sm",
+              "flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] motion-reduce:transition-none md:text-sm",
               active
                 ? "bg-[color:var(--ds-hover)] text-[color:var(--ds-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             )}
             onClick={() => setMoreOpen(false)}
           >
-            <Icon size={14} className="shrink-0" />
+            <Icon size={14} className="shrink-0" aria-hidden="true" />
             <span className={cn(active ? "inline" : "hidden", "sm:inline")}>{labels[tab]}</span>
           </Link>
         );
@@ -127,7 +128,11 @@ export function MatterTabBar() {
       {/* Secondary tabs in "More" dropdown */}
       <div className="relative ml-auto" ref={moreRef}>
         <button
+          type="button"
           onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          aria-haspopup="menu"
+          aria-label={t("mattertab.more")}
           className={cn(
             "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none md:text-sm",
             isSecondaryActive || moreOpen
@@ -141,7 +146,7 @@ export function MatterTabBar() {
           </span>
         </button>
         {moreOpen && (
-          <div className="absolute top-full right-0 mt-1 min-w-[160px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1 shadow-lg">
+          <div className="absolute top-full right-0 mt-1 min-w-[160px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1 shadow-[var(--ds-shadow-2)]">
             {SECONDARY_TABS.map((tab) => {
               const Icon = TAB_ICONS[tab];
               const active = isActive(tab);

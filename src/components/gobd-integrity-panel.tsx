@@ -9,6 +9,7 @@ import {
   type InvoiceHashFields,
 } from "@/lib/gobd";
 import type { BrainPage } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 
 type VerifyState =
   | { kind: "idle" }
@@ -73,9 +74,9 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
   }
 
   return (
-    <div className="brand-border brand-soft/5 mt-10 space-y-4 rounded-xl border p-5">
+    <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
       <div className="flex items-center gap-2">
-        <Archive size={15} className="brand-text" />
+        <Archive size={15} className="text-[color:var(--ds-text-muted)]" aria-hidden="true" />
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
           Beleg — Integrität und Aufbewahrung
         </h3>
@@ -85,17 +86,19 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
         {retentionUntil && (
           <div className="flex justify-between gap-2">
             <dt className="text-[color:var(--ds-text-muted)]">Aufbewahrung bis</dt>
-            <dd className="font-mono text-[color:var(--ds-text)]">{retentionUntil}</dd>
+            <dd className="text-[color:var(--ds-text)] tabular-nums">
+              {formatDate(retentionUntil)}
+            </dd>
           </div>
         )}
         {hashedAt && (
           <div className="flex justify-between gap-2">
             <dt className="text-[color:var(--ds-text-muted)]">Gestempelt am</dt>
-            <dd className="font-mono text-[color:var(--ds-text)]">{hashedAt.split("T")[0]}</dd>
+            <dd className="text-[color:var(--ds-text)] tabular-nums">{formatDate(hashedAt)}</dd>
           </div>
         )}
         <div className="flex flex-col gap-1 sm:col-span-2">
-          <dt className="text-[color:var(--ds-text-muted)]">Gespeicherter Hash (SHA-256)</dt>
+          <dt className="text-[color:var(--ds-text-muted)]">Gespeicherte Prüfsumme (SHA-256)</dt>
           <dd className="font-mono break-all text-[color:var(--ds-text-muted)]">{storedHash}</dd>
         </div>
       </dl>
@@ -140,8 +143,8 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
               }}
             />
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              Wählen Sie die Originaldatei — sie wird lokal im Browser gehasht und gegen den
-              gespeicherten Wert geprüft. Die Datei verlässt den Browser nicht.
+              Wählen Sie die Originaldatei — ihre Prüfsumme wird lokal im Browser berechnet und mit
+              dem gespeicherten Wert verglichen. Die Datei verlässt den Browser nicht.
             </p>
           </div>
         )}
@@ -153,8 +156,8 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
               className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
             />
             <div className="text-xs text-[color:var(--ds-success-text)]">
-              <strong>Unverändert seit Ausstellung.</strong> Der neu berechnete Hash stimmt mit dem
-              gespeicherten überein.
+              <strong>Unverändert seit Ausstellung.</strong> Die neu berechnete Prüfsumme stimmt mit
+              der gespeicherten überein.
             </div>
           </div>
         )}
@@ -163,7 +166,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
             <ShieldAlert size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
             <div className="space-y-1 text-xs text-[color:var(--ds-danger-text)]">
               <div>
-                <strong>Verändert seit Ausstellung.</strong> Der berechnete Hash weicht ab.
+                <strong>Verändert seit Ausstellung.</strong> Die berechnete Prüfsumme weicht ab.
               </div>
               <div className="font-mono break-all text-[color:var(--ds-danger-text)]">
                 Ist: {state.computed}
@@ -173,7 +176,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
         )}
         {state.kind === "error" && (
           <div className="text-xs text-[color:var(--ds-danger-text)]">
-            Prüfung fehlgeschlagen: {state.message}
+            Die Prüfung konnte nicht durchgeführt werden. Bitte wählen Sie die Datei erneut aus.
           </div>
         )}
       </div>

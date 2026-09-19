@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Inter, Space_Grotesk, JetBrains_Mono, Fraunces } from "next/font/google";
+import { Inter, Newsreader, JetBrains_Mono, Fraunces } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import AppUpdateBanner from "@/components/pwa/app-update-banner";
 import { MonitoringProvider } from "@/components/providers/monitoring-provider";
@@ -16,16 +16,24 @@ import "./globals.css";
 // next/font self-hosts at build time — zero runtime requests to Google
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
 // render-blocking CSS @import.
+// UI and body: Inter with its optical-size axis — from ~24 px it switches to
+// the Display cut on its own (tighter, finer), the way Linear and Attio set it.
 const inter = Inter({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz"],
   variable: "--font-inter",
   display: "optional",
   preload: true,
 });
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-grotesk",
-  display: "optional",
+// Display: Newsreader, a transitional text serif with optical sizes. Page titles
+// and large headlines only — the legal-software leaders (Harvey, Mercury, Attio)
+// pair one serious serif for headlines with a neutral sans for the interface.
+const newsreader = Newsreader({
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
   preload: true,
 });
 // Brand serif — wordmark only (logo lockup). Never used for UI text.
@@ -151,7 +159,7 @@ export default async function RootLayout({
   return (
     <html
       lang="de-AT"
-      className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}
+      className={`h-full ${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}
       style={{ colorScheme: "light dark" }}
       suppressHydrationWarning
     >

@@ -5,7 +5,8 @@
 // Server Component; this island hydrates on its own.
 
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import {
   ArrowRight,
   Check,
@@ -80,10 +81,10 @@ export default function LandingHero() {
             <RotatingBadge items={t.heroBadges} />
           </motion.div>
 
-          {/* H1 — bold (not black — Space Grotesk loads max 700) */}
+          {/* H1 — Newsreader at display size: weight 500, contrast does the work */}
           <h1
-            className="mb-5 text-[clamp(2.5rem,7vw,4.25rem)] leading-[1.06] font-semibold tracking-[-0.02em] text-balance [color:var(--mk-text)]"
-            style={{ fontFamily: "var(--font-brand), Georgia, serif" }}
+            className="mb-5 text-[clamp(2.5rem,7vw,4.5rem)] leading-[1.04] font-medium tracking-[-0.022em] text-balance [color:var(--mk-text)]"
+            style={{ fontFamily: "var(--font-display)" }}
           >
             <SplitTextReveal
               as="span"

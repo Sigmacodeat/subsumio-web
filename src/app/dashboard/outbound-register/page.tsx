@@ -13,11 +13,15 @@ import { api } from "@/lib/api";
 import type { OutboundEntry } from "@/lib/outbound-register";
 import { CHANNEL_LABELS, DELIVERY_STATUS_LABELS } from "@/lib/outbound-register";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { encodeSlugPath, formatDateTime } from "@/lib/utils";
+import Link from "next/link";
 
 export default function OutboundRegisterPage() {
   const { addToast } = useToast();
   const { t } = useLang();
   const [entries, setEntries] = useState<OutboundEntry[]>([]);
+  const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,7 +47,13 @@ export default function OutboundRegisterPage() {
 
   useEffect(() => {
     void load();
+    api.brain
+      .listPages({ type: "legal_case", limit: 200 })
+      .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
+      .catch(() => setCases([]));
   }, [load]);
+
+  const caseTitle = (slug: string) => cases.find((c) => c.slug === slug)?.title ?? "Akte";
 
   async function handleCreate() {
     if (!form.recipient_name || !form.subject || !form.sent_by) {
@@ -64,7 +74,7 @@ export default function OutboundRegisterPage() {
           sent_by: form.sent_by,
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error("save_failed");
       addToast({ type: "success", title: "Eintrag erstellt" });
       setShowCreate(false);
       setForm({
@@ -76,11 +86,11 @@ export default function OutboundRegisterPage() {
         sent_by: "",
       });
       void load();
-    } catch (e) {
+    } catch {
       addToast({
         type: "error",
-        title: "Fehler",
-        description: e instanceof Error ? e.message : undefined,
+        title: "Eintrag konnte nicht gespeichert werden",
+        description: "Bitte versuchen Sie es erneut.",
       });
     } finally {
       setSaving(false);
@@ -98,16 +108,17 @@ export default function OutboundRegisterPage() {
         ]}
         actions={
           <div className="flex gap-2">
-            <Button variant="secondary" className="gap-2" asChild>
+            <Button variant="outline" size="sm" className="gap-1.5 whitespace-nowrap" asChild>
               <a href="/api/outbound-register?format=csv" download>
-                <Download size={14} /> CSV
+                <Download size={14} aria-hidden="true" /> Als CSV exportieren
               </a>
             </Button>
             <Button
+              size="sm"
               onClick={() => setShowCreate(!showCreate)}
-              className="brand-bg gap-2 text-white"
+              className="gap-1.5 whitespace-nowrap"
             >
-              <Plus size={16} /> Eintrag
+              <Plus size={14} aria-hidden="true" /> Neuer Eintrag
             </Button>
           </div>
         }
@@ -124,8 +135,11 @@ export default function OutboundRegisterPage() {
           <h2 className="text-sm font-semibold">Neuer Ausgang</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Kanal *</Label>
+              <Label htmlFor="ob-channel" className="text-xs text-[color:var(--ds-text-muted)]">
+                Kanal *
+              </Label>
               <select
+                id="ob-channel"
                 value={form.channel}
                 onChange={(e) =>
                   setForm({ ...form, channel: e.target.value as OutboundEntry["channel"] })
@@ -140,45 +154,68 @@ export default function OutboundRegisterPage() {
               </select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Empfänger *</Label>
+              <Label htmlFor="ob-recipient" className="text-xs text-[color:var(--ds-text-muted)]">
+                Empfänger *
+              </Label>
               <Input
+                id="ob-recipient"
                 value={form.recipient_name}
                 onChange={(e) => setForm({ ...form, recipient_name: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Adresse</Label>
+              <Label htmlFor="ob-address" className="text-xs text-[color:var(--ds-text-muted)]">
+                Adresse
+              </Label>
               <Input
+                id="ob-address"
                 value={form.recipient_address}
                 onChange={(e) => setForm({ ...form, recipient_address: e.target.value })}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Akte</Label>
-              <Input
+              <Label htmlFor="ob-case" className="text-xs text-[color:var(--ds-text-muted)]">
+                Akte
+              </Label>
+              <select
+                id="ob-case"
                 value={form.case_slug}
                 onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
-              />
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">Ohne Aktenbezug</option>
+                {cases.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Betreff *</Label>
+              <Label htmlFor="ob-subject" className="text-xs text-[color:var(--ds-text-muted)]">
+                Betreff *
+              </Label>
               <Input
+                id="ob-subject"
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Versendet von *</Label>
+              <Label htmlFor="ob-sender" className="text-xs text-[color:var(--ds-text-muted)]">
+                Versendet von *
+              </Label>
               <Input
+                id="ob-sender"
                 value={form.sent_by}
                 onChange={(e) => setForm({ ...form, sent_by: e.target.value })}
                 required
               />
             </div>
           </div>
-          <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
+          <Button type="submit" disabled={saving} className="gap-2">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             Speichern
           </Button>
@@ -186,8 +223,10 @@ export default function OutboundRegisterPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+        <div className="space-y-2" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       ) : entries.length === 0 ? (
         <EmptyState
@@ -208,23 +247,35 @@ export default function OutboundRegisterPage() {
                 className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium">{entry.recipient_name}</span>
                     <Badge variant="default" className="text-xs">
-                      {channelLabel.de}
+                      {channelLabel?.de ?? entry.channel}
                     </Badge>
                     <Badge
                       variant="default"
                       className={`text-xs ${entry.delivery_status === "failed" || entry.delivery_status === "bounced" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : entry.delivery_status === "delivered" ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : ""}`}
                     >
-                      {statusLabel.de}
+                      {statusLabel?.de ?? entry.delivery_status}
                     </Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {entry.subject} {entry.case_slug ? `· ${entry.case_slug}` : ""}
+                    {entry.subject}
+                    {entry.case_slug && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`/dashboard/cases/${encodeSlugPath(entry.case_slug)}`}
+                          className="text-[color:var(--brand-primary)] hover:underline"
+                        >
+                          {caseTitle(entry.case_slug)}
+                        </Link>
+                      </>
+                    )}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(entry.date).toLocaleString("de-DE")} · von {entry.sent_by}
+                    <span className="tabular-nums">{formatDateTime(entry.date)}</span> · von{" "}
+                    {entry.sent_by}
                   </div>
                 </div>
               </div>

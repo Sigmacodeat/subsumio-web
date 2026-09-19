@@ -20,7 +20,6 @@ import {
   Building2,
   Search,
   Scale,
-  FileClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +33,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { contactFormSchema, type ContactFormData } from "@/lib/schemas/contact";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { useToast } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -92,20 +92,20 @@ const ROLE_COLORS: Record<ContactRole, string> = {
   client:
     "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
   opponent:
-    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+    "bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]",
   court:
     "bg-[color:var(--ds-category-violet-bg)] border-[color:var(--ds-category-violet-border)] text-[color:var(--ds-category-violet-text)]",
   lawyer:
-    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+    "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
   other:
     "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
 };
 
 const ROLE_DOT: Record<ContactRole, string> = {
   client: "bg-[color:var(--ds-info-solid)]",
-  opponent: "bg-[color:var(--ds-danger-solid)]",
+  opponent: "bg-[color:var(--ds-attention-solid)]",
   court: "bg-[color:var(--ds-category-violet-text)]",
-  lawyer: "bg-[color:var(--ds-success-solid)]",
+  lawyer: "bg-[color:var(--ds-neutral-text)]",
   other: "bg-[color:var(--ds-neutral-text)]",
 };
 
@@ -193,14 +193,15 @@ export default function ContactsPage() {
         contacts: nextContacts,
         cases: casePages,
       });
-    } catch (err) {
+    } catch {
+      // Raw transport errors are not shown to the lawyer.
       const cached = await getCache<ContactsCache>(OFFLINE_KEYS.contacts);
       if (cached) {
         setContacts(cached.contacts);
         setCases(cached.cases);
         setLoadError(t("contacts.err_offline_cache"));
       } else {
-        setLoadError(err instanceof Error ? err.message : t("contacts.err_load_failed"));
+        setLoadError(t("contacts.err_load_failed"));
         setContacts([]);
       }
     } finally {
@@ -442,13 +443,13 @@ export default function ContactsPage() {
         description: contact?.name ?? t("contacts.toast_deleted_fallback"),
         duration: 6000,
       });
-    } catch (err) {
+    } catch {
       setContacts(backup);
       await setCache<ContactsCache>(OFFLINE_KEYS.contacts, { contacts: backup, cases });
       addToast({
         type: "error",
         title: t("contacts.toast_delete_failed"),
-        description: err instanceof Error ? err.message : t("contacts.err_unknown"),
+        description: "Bitte versuchen Sie es erneut.",
       });
     }
   }
@@ -458,31 +459,35 @@ export default function ContactsPage() {
       <PageHeader
         title={t("contacts.title")}
         description={t("contacts.description")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("contacts.title") },
+        ]}
         actions={
-          <Button onClick={openCreate} className="brand-bg brand-bg gap-2 text-white">
-            <Plus size={16} />
-            {t("contacts.btn_new_contact")}
-          </Button>
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5 whitespace-nowrap" asChild>
+              <Link href="/dashboard/kollisionspruefung">
+                <AlertTriangle size={14} aria-hidden="true" />
+                {t("nav.kollisionspruefung")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 whitespace-nowrap" asChild>
+              <Link href="/dashboard/opponents">
+                <Scale size={14} aria-hidden="true" />
+                {t("nav.opponents")}
+              </Link>
+            </Button>
+            <Button onClick={openCreate} size="sm" className="gap-1.5 whitespace-nowrap">
+              <Plus size={14} aria-hidden="true" />
+              {t("contacts.btn_new_contact")}
+            </Button>
+          </>
         }
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <HubLink href="/dashboard/opponents" icon={Scale} label={t("nav.opponents")} />
-        <HubLink
-          href="/dashboard/kollisionspruefung"
-          icon={AlertTriangle}
-          label={t("nav.kollisionspruefung")}
-        />
-        <HubLink
-          href="/dashboard/document-requests"
-          icon={FileClock}
-          label={t("nav.document_requests")}
-        />
-      </div>
-
       {/* Stats bar */}
       {!loading && contacts.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label={t("contacts.stats_total")} value={contacts.length} />
           <StatCard
             label={t("contacts.stats_clients")}
@@ -512,7 +517,7 @@ export default function ContactsPage() {
               return (
                 <FilterChip
                   key={key}
-                  label={`${roleLabel(key)} (${count})`}
+                  label={count > 0 ? `${roleLabel(key)} (${count})` : roleLabel(key)}
                   active={roleFilter === key}
                   onClick={() => setRoleFilter(roleFilter === key ? "all" : key)}
                 />
@@ -584,29 +589,32 @@ export default function ContactsPage() {
             </div>
           ))}
         </div>
-      ) : contacts.length === 0 ? (
+      ) : contacts.length === 0 && loadError ? null : contacts.length === 0 ? (
         <EmptyState
-          icon={<UserCircle size={26} className="text-[color:var(--ds-text-subtle)]" />}
+          icon={UserCircle}
           title={t("contacts.empty_title")}
-          hint={t("contacts.empty_hint_fresh")}
-          cta={
-            <Button onClick={openCreate} className="brand-bg brand-bg gap-2 text-white">
-              <Plus size={16} />
-              {t("contacts.empty_cta")}
-            </Button>
-          }
+          description={t("contacts.empty_hint_fresh")}
+          actionLabel={t("contacts.empty_cta")}
+          onAction={openCreate}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Search size={26} className="text-[color:var(--ds-text-subtle)]" />}
+          icon={Search}
           title={t("contacts.no_results_title")}
-          hint={t("contacts.no_results_hint")}
+          description={t("contacts.no_results_hint")}
+          actionLabel="Filter zurücksetzen"
+          onAction={() => {
+            setQuery("");
+            setRoleFilter("all");
+          }}
         />
       ) : (
         <>
-          <p className="text-xs text-[color:var(--ds-text-subtle)]">
-            {t("contacts.result_count").replace("{{count}}", String(filtered.length))}
-          </p>
+          {filtered.length !== contacts.length && (
+            <p className="text-xs text-[color:var(--ds-text-subtle)]">
+              {t("contacts.result_count").replace("{{count}}", String(filtered.length))}
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {filtered.map((contact) => {
               const linked = findLinkedCases(contact.slug, cases);
@@ -617,9 +625,7 @@ export default function ContactsPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${ROLE_COLORS[contact.role]}`}
-                      >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--ds-surface-2)] text-xs font-semibold text-[color:var(--ds-text-muted)]">
                         {getInitials(contact.name)}
                       </div>
                       <div className="min-w-0">
@@ -789,7 +795,7 @@ export default function ContactsPage() {
               type="button"
               disabled={createForm.status === "submitting"}
               onClick={createForm.handleSubmit}
-              className="brand-bg brand-bg gap-2 text-white"
+              className="gap-2"
             >
               {createForm.status === "submitting" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -842,7 +848,7 @@ export default function ContactsPage() {
               type="button"
               disabled={editForm.status === "submitting"}
               onClick={editForm.handleSubmit}
-              className="brand-bg brand-bg gap-2 text-white"
+              className="gap-2"
             >
               {editForm.status === "submitting" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -862,26 +868,6 @@ export default function ContactsPage() {
 
 // ── Sub-components ──────────────────────────────────────────────────────
 
-function HubLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: typeof Search;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
-    >
-      <Icon size={15} className="shrink-0" />
-      <span className="truncate">{label}</span>
-    </Link>
-  );
-}
-
 function StatCard({ label, value, dotClass }: { label: string; value: number; dotClass?: string }) {
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
@@ -890,31 +876,6 @@ function StatCard({ label, value, dotClass }: { label: string; value: number; do
         <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">{label}</span>
       </div>
       <p className="mt-1 text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</p>
-    </div>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  hint,
-  cta,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  hint: string;
-  cta?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-        {icon}
-      </div>
-      <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">{title}</h3>
-      <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-        {hint}
-      </p>
-      {cta && <div className="mt-5">{cta}</div>}
     </div>
   );
 }
@@ -1096,8 +1057,8 @@ function ContactFormFields({
           placeholder={t("contacts.ph_leitweg")}
           className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
         />
-        <p className="mt-1 text-[10px] text-[color:var(--ds-text-muted)]">
-          Erforderlich für Rechnungen an öffentliche Auftraggeber (XRechnung)
+        <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+          Nur für E-Rechnungen an deutsche öffentliche Auftraggeber (XRechnung) erforderlich.
         </p>
       </div>
 

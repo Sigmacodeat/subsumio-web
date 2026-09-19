@@ -6,26 +6,21 @@ import { useRouter } from "next/navigation";
 import {
   Briefcase,
   Plus,
-  Scale,
-  Users,
-  Calendar,
-  CalendarClock,
   ChevronRight,
   Clock,
-  FileText,
   PauseCircle,
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Trash2,
   RotateCcw,
   Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
-import { cn, encodeSlugPath } from "@/lib/utils";
+import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
@@ -55,6 +50,9 @@ interface LegalCaseItem {
   courtName?: string;
   openDeadlines: number;
   criticalDeadlines: number;
+  /** Earliest open deadline (overdue ones included) — what a register shows first. */
+  nextDeadline?: { date: string; title: string; days: number };
+  lawyerName?: string;
   openTasks: number;
   documentCount: number;
   timeMinutes: number;
@@ -87,32 +85,40 @@ const PRIORITY_LABELS: Record<string, string> = {
   normal: "Normal",
   low: "Niedrig",
 };
+/** Priorities worth flagging in the register; "Mittel"/"Normal"/"Niedrig" stay silent. */
+const PRIORITY_FLAGGED = new Set(["high", "urgent", "critical"]);
 const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
   medium:
     "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   high: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  urgent:
+    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
   critical:
     "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
-function daysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
-}
+type OpenDeadline = { due_date: string; title?: string };
 
-function parseCase(page: BrainPage): LegalCaseItem {
+/**
+ * `external` are the case's open deadlines from the Fristen read-model: most
+ * deadlines live as standalone pages, not inside the case frontmatter, so the
+ * register would otherwise show "—" for matters that do have a deadline.
+ */
+function parseCase(page: BrainPage, external: OpenDeadline[] = []): LegalCaseItem {
   const fm = caseFrontmatter(page);
   const deadlines = fm.deadlines ?? [];
-  const openDeadlines = deadlines.filter((d) => String(d.status ?? "pending") !== "done");
-  const criticalDeadlines = openDeadlines.filter((d) => {
-    const date = d.due_date;
-    if (!date) return false;
-    return daysUntil(date) <= 3;
-  });
+  const embeddedOpen = deadlines.filter((d) => String(d.status ?? "pending") !== "done");
+  const seen = new Set(embeddedOpen.map((d) => `${d.due_date}|${d.title ?? ""}`));
+  const openDeadlines: OpenDeadline[] = [
+    ...embeddedOpen,
+    ...external.filter((d) => !seen.has(`${d.due_date}|${d.title ?? ""}`)),
+  ];
+  const datedOpen = openDeadlines
+    .map((d) => ({ date: d.due_date, title: d.title ?? "", days: daysUntil(d.due_date) }))
+    .filter((d): d is { date: string; title: string; days: number } => d.days !== null)
+    .sort((a, b) => a.days - b.days);
+  const criticalDeadlines = datedOpen.filter((d) => d.days <= 3);
   const openTasks = (fm.tasks ?? []).filter((task) => !task.done).length;
   const timeMinutes = (fm.time_entries ?? []).reduce((sum, entry) => sum + (entry.minutes || 0), 0);
   return {
@@ -127,6 +133,8 @@ function parseCase(page: BrainPage): LegalCaseItem {
     courtName: fm.court_name || undefined,
     openDeadlines: openDeadlines.length,
     criticalDeadlines: criticalDeadlines.length,
+    nextDeadline: datedOpen[0],
+    lawyerName: fm.own_lawyer_name || undefined,
     openTasks,
     documentCount: (fm.documents ?? []).length,
     timeMinutes,
@@ -162,19 +170,37 @@ export default function CasesPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listAllPages({ type: "legal_case" });
+      const [pages, fristenRes] = await Promise.all([
+        api.brain.listAllPages({ type: "legal_case" }),
+        // Optional: without the read-model the register still works, just
+        // with embedded deadlines only.
+        api.legal.fristen().catch(() => ({ fristen: [] })),
+      ]);
+      const byCase = new Map<string, OpenDeadline[]>();
+      for (const f of fristenRes.fristen) {
+        if (!f.case_slug || !f.due_date || f.status === "done") continue;
+        const list = byCase.get(f.case_slug) ?? [];
+        list.push({ due_date: f.due_date, title: f.title });
+        byCase.set(f.case_slug, list);
+      }
       const items = pages
-        .map(parseCase)
+        .map((p) => parseCase(p, byCase.get(p.slug)))
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       await setCache(OFFLINE_KEYS.cases, items);
       setCases(items);
-    } catch (err) {
-      const cached = await getCache<LegalCaseItem[]>(OFFLINE_KEYS.cases);
+    } catch {
+      const cached = await getCache<Array<LegalCaseItem | BrainPage>>(OFFLINE_KEYS.cases);
       if (cached) {
-        setCases(cached);
+        // "Neue Akte" offline appends a raw page to this cache — normalise it
+        // so search/sort never hit undefined fields.
+        setCases(
+          cached.map(
+            (c) => ("frontmatter" in c && !("caseNumber" in c) ? parseCase(c) : c) as LegalCaseItem
+          )
+        );
         setLoadError(t("cases.error_offline"));
       } else {
-        setLoadError(err instanceof Error ? err.message : t("cases.error_load"));
+        setLoadError(t("cases.error_load"));
       }
     } finally {
       setLoading(false);
@@ -230,13 +256,13 @@ export default function CasesPage() {
         description: caseItem?.title ?? t("cases.toast_deleted_desc"),
         duration: 6000,
       });
-    } catch (err) {
+    } catch {
       setCases(cases);
       await setCache(OFFLINE_KEYS.cases, cases);
       addToast({
         type: "error",
         title: t("cases.toast_delete_fail"),
-        description: err instanceof Error ? err.message : t("cases.unknown_error"),
+        description: t("cases.unknown_error"),
       });
     }
   }
@@ -291,13 +317,13 @@ export default function CasesPage() {
             .replace("{{failed}}", String(failed)),
         });
       }
-    } catch (err) {
+    } catch {
       setCases(backup);
       await setCache(OFFLINE_KEYS.cases, backup);
       addToast({
         type: "error",
         title: t("cases.toast_bulk_fail"),
-        description: err instanceof Error ? err.message : t("cases.unknown_error"),
+        description: t("cases.unknown_error"),
       });
     } finally {
       setBulkLoading(false);
@@ -359,14 +385,14 @@ export default function CasesPage() {
         addToast({
           type: "error",
           title: t("cases.toast_restore_fail"),
-          description: `HTTP ${res.status}`,
+          description: t("cases.unknown_error"),
         });
       }
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
         title: t("cases.toast_restore_fail"),
-        description: err instanceof Error ? err.message : t("cases.unknown_error"),
+        description: t("cases.unknown_error"),
       });
     }
   }
@@ -432,13 +458,13 @@ export default function CasesPage() {
             .replace("{{failed}}", String(failed)),
         });
       }
-    } catch (err) {
+    } catch {
       setCases(backup);
       await setCache(OFFLINE_KEYS.cases, backup);
       addToast({
         type: "error",
         title: t("cases.toast_restore_fail"),
-        description: err instanceof Error ? err.message : t("cases.unknown_error"),
+        description: t("cases.unknown_error"),
       });
     } finally {
       setBulkLoading(false);
@@ -466,83 +492,143 @@ export default function CasesPage() {
     },
     {} as Record<string, number>
   );
+  const visibleStatuses = Object.keys(STATUS_CONFIG).filter(
+    (key) => (statusCounts[key] || 0) > 0 || statusFilter === key
+  );
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const activeCases = cases.filter(
     (c) => !["archived", "won", "lost", "settled"].includes(c.status)
   );
-  const criticalCases = activeCases.filter(
-    (c) => c.criticalDeadlines > 0 || c.priority === "critical"
+  const dueSoonCases = activeCases.filter(
+    (c) => c.nextDeadline && c.nextDeadline.days >= 0 && c.nextDeadline.days <= 7
   );
-  const casesMissingParties = activeCases.filter((c) => !c.clientName || !c.opponentName);
-  const reviewNeededCases = activeCases.filter(
-    (c) => c.conflictStatus === "conflict_pending" || c.openDeadlines > 0 || c.openTasks > 0
-  );
+  const overdueCases = activeCases.filter((c) => c.nextDeadline && c.nextDeadline.days < 0);
+  const unassignedCases = activeCases.filter((c) => !c.lawyerName);
 
+  // Register columns: which ones show depends on the width the table actually
+  // gets (container query), not the viewport — with the assistant panel open a
+  // 1440 px screen leaves ~800 px for the list.
   const columns: Column<LegalCaseItem>[] = [
+    {
+      key: "caseNumber",
+      header: L("Aktenzeichen", "Case no."),
+      sortable: true,
+      sortAccessor: (c) => c.caseNumber,
+      hideOnMobile: true,
+      width: "w-[8.5rem] whitespace-nowrap",
+      cell: (c) => (
+        <span className="font-mono text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+          {c.caseNumber}
+        </span>
+      ),
+    },
     {
       key: "title",
       header: t("cases.col_title"),
       sortable: true,
       sortAccessor: (c) => c.title,
-      cell: (c) => (
-        <div className="flex min-w-0 items-center gap-3">
-          <div
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
-              STATUS_BG[(STATUS_CONFIG[c.status] || STATUS_CONFIG.open).color],
-              STATUS_BORDER[(STATUS_CONFIG[c.status] || STATUS_CONFIG.open).color]
-            )}
-          >
-            {(() => {
-              const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.open;
-              const Icon = cfg.icon;
-              return <Icon size={16} className={STATUS_TEXT[cfg.color]} aria-hidden="true" />;
-            })()}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate font-medium text-[color:var(--ds-text)]">{c.title}</div>
-            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)]">
-              {c.caseNumber}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "status",
-      header: t("cases.col_status"),
-      sortable: true,
-      sortAccessor: (c) => c.status,
       cell: (c) => {
-        const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.open;
+        const cfg = STATUS_CONFIG[c.status];
+        // Status and priority only when they deviate from the default ("Offen",
+        // "Mittel"/"Normal") — identical badges on every row are noise.
+        const showStatus = c.status !== "open" && cfg;
+        const showPriority = PRIORITY_FLAGGED.has(c.priority);
         return (
-          <Badge
-            variant="default"
-            className={cn(
-              "border text-xs font-medium",
-              STATUS_BG[cfg.color],
-              STATUS_TEXT[cfg.color],
-              STATUS_BORDER[cfg.color]
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="min-w-0">
+              <div className="truncate font-medium text-[color:var(--ds-text)]">{c.title}</div>
+              <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums md:hidden">
+                {c.caseNumber}
+              </div>
+            </div>
+            {showStatus && (
+              <Badge
+                variant="default"
+                className={cn(
+                  "shrink-0 border text-xs font-medium",
+                  STATUS_BG[cfg.color],
+                  STATUS_TEXT[cfg.color],
+                  STATUS_BORDER[cfg.color]
+                )}
+              >
+                {t(cfg.labelKey)}
+              </Badge>
             )}
-          >
-            {t(cfg.labelKey)}
-          </Badge>
+            {showPriority && (
+              <Badge
+                variant="default"
+                className={cn("shrink-0 border text-xs", PRIORITY_COLORS[c.priority])}
+              >
+                {PRIORITY_LABELS[c.priority] ?? c.priority}
+              </Badge>
+            )}
+          </div>
         );
       },
     },
     {
-      key: "priority",
-      header: t("cases.col_priority"),
+      key: "client",
+      header: t("cases.col_client"),
       sortable: true,
-      sortAccessor: (c) => c.priority,
+      sortAccessor: (c) => c.clientName ?? "",
+      width: "hidden @2xl:table-cell max-w-[11rem]",
+      cell: (c) =>
+        c.clientName ? (
+          <span className="block truncate text-[color:var(--ds-text)]">{c.clientName}</span>
+        ) : (
+          <span className="text-xs text-[color:var(--ds-warning-text)]">
+            {t("cases.missing_client")}
+          </span>
+        ),
+    },
+    {
+      key: "opponent",
+      header: t("cases.col_opponent"),
       hideOnMobile: true,
-      cell: (c) => (
-        <Badge
-          variant="default"
-          className={cn("border text-xs", PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.medium)}
-        >
-          {PRIORITY_LABELS[c.priority] ?? c.priority}
-        </Badge>
-      ),
+      width: "hidden @4xl:table-cell max-w-[11rem]",
+      cell: (c) =>
+        c.opponentName ? (
+          <span className="block truncate text-[color:var(--ds-text-muted)]">{c.opponentName}</span>
+        ) : (
+          <span className="text-[color:var(--ds-text-subtle)]">—</span>
+        ),
+    },
+    {
+      key: "nextDeadline",
+      header: L("Nächste Frist", "Next deadline"),
+      sortable: true,
+      sortAccessor: (c) => c.nextDeadline?.days ?? Number.MAX_SAFE_INTEGER,
+      width: "whitespace-nowrap",
+      cell: (c) => {
+        const d = c.nextDeadline;
+        if (!d) return <span className="text-[color:var(--ds-text-subtle)]">—</span>;
+        const tone =
+          d.days < 0 || d.days <= 3
+            ? "text-[color:var(--ds-danger-text)]"
+            : d.days <= 7
+              ? "text-[color:var(--ds-warning-text)]"
+              : "text-[color:var(--ds-text-muted)]";
+        return (
+          <span className="tabular-nums" title={d.title || undefined}>
+            <span className="text-[color:var(--ds-text)]">{formatDate(d.date)}</span>
+            <span className={cn("ml-1.5 text-xs", tone)}>{formatDaysUntil(d.days)}</span>
+          </span>
+        );
+      },
+    },
+    {
+      key: "lawyer",
+      header: L("Sachbearbeiter", "Responsible"),
+      sortable: true,
+      sortAccessor: (c) => c.lawyerName ?? "",
+      hideOnMobile: true,
+      width: "hidden @5xl:table-cell max-w-[10rem]",
+      cell: (c) =>
+        c.lawyerName ? (
+          <span className="block truncate text-[color:var(--ds-text-muted)]">{c.lawyerName}</span>
+        ) : (
+          <span className="text-[color:var(--ds-text-subtle)]">—</span>
+        ),
     },
     {
       key: "legalArea",
@@ -550,101 +636,28 @@ export default function CasesPage() {
       sortable: true,
       sortAccessor: (c) => c.legalArea,
       hideOnMobile: true,
+      width: "hidden @6xl:table-cell whitespace-nowrap",
       cell: (c) =>
         c.legalArea ? (
-          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-            <Scale size={10} />
-            {c.legalArea}
-          </span>
+          <span className="text-[color:var(--ds-text-muted)]">{c.legalArea}</span>
         ) : (
           <span className="text-[color:var(--ds-text-subtle)]">—</span>
         ),
-    },
-    {
-      key: "client",
-      header: t("cases.col_client"),
-      hideOnMobile: true,
-      cell: (c) =>
-        c.clientName ? (
-          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-            <Users size={10} />
-            {c.clientName}
-          </span>
-        ) : (
-          <Badge variant="warning" className="text-xs">
-            {t("cases.missing_client")}
-          </Badge>
-        ),
-    },
-    {
-      key: "opponent",
-      header: t("cases.col_opponent"),
-      hideOnMobile: true,
-      cell: (c) =>
-        c.opponentName ? (
-          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-            <Users size={10} />
-            {c.opponentName}
-          </span>
-        ) : (
-          <span className="text-[color:var(--ds-text-subtle)]">—</span>
-        ),
-    },
-    {
-      key: "signals",
-      header: t("cases.col_signals"),
-      hideOnMobile: true,
-      cell: (c) => (
-        <div className="flex flex-wrap gap-1.5">
-          <Badge
-            variant={
-              c.criticalDeadlines > 0 ? "danger" : c.openDeadlines > 0 ? "warning" : "default"
-            }
-            className="gap-1 text-xs"
-          >
-            <CalendarClock size={10} />
-            {c.openDeadlines}
-          </Badge>
-          <Badge variant={c.openTasks > 0 ? "warning" : "default"} className="gap-1 text-xs">
-            <CheckCircle2 size={10} />
-            {c.openTasks}
-          </Badge>
-          <Badge variant="default" className="gap-1 text-xs">
-            <FileText size={10} />
-            {c.documentCount}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      key: "updatedAt",
-      header: t("cases.col_updated"),
-      sortable: true,
-      sortAccessor: (c) => new Date(c.updatedAt).getTime(),
-      cell: (c) => (
-        <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-          <Calendar size={10} />
-          {new Date(c.updatedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}
-        </span>
-      ),
     },
     {
       key: "actions",
       header: "",
-      width: "w-10",
+      width: "w-16",
+      hideOnMobile: true,
       cell: (c) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-end gap-1">
           {canArchive && c.status === "archived" ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 restoreCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,color,opacity] duration-[var(--ds-duration-fast)] group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               title={t("cases.btn_restore")}
               aria-label={`${t("cases.btn_restore")} ${c.title}`}
             >
@@ -656,30 +669,56 @@ export default function CasesPage() {
                 e.stopPropagation();
                 deleteCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,color,opacity] duration-[var(--ds-duration-fast)] group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               title={t("cases.delete")}
               aria-label={`${t("cases.delete")} ${c.title}`}
             >
-              <Trash2 size={14} />
+              <Archive size={14} />
             </button>
           ) : null}
-          <ChevronRight size={14} className="text-[color:var(--ds-text-subtle)]" />
+          <ChevronRight
+            size={14}
+            className="text-[color:var(--ds-text-subtle)]"
+            aria-hidden="true"
+          />
         </div>
       ),
     },
   ];
 
+  const kpis = [
+    { label: t("cases.health_active"), value: activeCases.length, tone: "" },
+    {
+      label: L("Frist in 7 Tagen", "Deadline within 7 days"),
+      value: dueSoonCases.length,
+      tone: "text-[color:var(--ds-warning-text)]",
+    },
+    {
+      label: L("Frist überfällig", "Deadline overdue"),
+      value: overdueCases.length,
+      tone: "text-[color:var(--ds-danger-text)]",
+    },
+    { label: L("Ohne Sachbearbeiter", "Unassigned"), value: unassignedCases.length, tone: "" },
+  ];
+
   return (
-    <div data-tour="cases-list" className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div data-tour="cases-list" className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("cases.title")}
-        description={`${cases.length} ${t("cases.count")}`}
+        description={L(
+          "Aktenregister der Kanzlei — nach Aktenzeichen, Mandant und nächster Frist.",
+          "The firm's case register — by case number, client and next deadline."
+        )}
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("cases.title") },
         ]}
         actions={
-          <Button variant="glow" className="gap-2" onClick={() => setQuickCreateOpen(true)}>
+          <Button
+            variant="glow"
+            className="gap-2 whitespace-nowrap"
+            onClick={() => setQuickCreateOpen(true)}
+          >
             <Plus size={16} />
             {t("cases.new")}
           </Button>
@@ -687,59 +726,61 @@ export default function CasesPage() {
       />
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] lg:grid-cols-4">
-        {[
-          { label: t("cases.health_active"), value: activeCases.length },
-          { label: t("cases.health_critical"), value: criticalCases.length },
-          { label: t("cases.health_review"), value: reviewNeededCases.length },
-          { label: t("cases.health_missing_parties"), value: casesMissingParties.length },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
-          >
+        {kpis.map((item) => (
+          <div key={item.label} className="bg-[color:var(--ds-surface)] px-4 py-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
-            <div className="mt-1 text-2xl leading-none font-semibold text-[color:var(--ds-text)] tabular-nums">
-              {item.value}
+            <div
+              className={cn(
+                "mt-1 text-2xl leading-none font-semibold tabular-nums",
+                item.value > 0 && item.tone ? item.tone : "text-[color:var(--ds-text)]"
+              )}
+            >
+              {loading && cases.length === 0 ? <Skeleton className="h-6 w-8" /> : item.value}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Status filter chips */}
-      <div className="filter-strip">
-        <FilterChip
-          label={t("cases.all")}
-          active={statusFilter === "all"}
-          onClick={() => setStatusFilter("all")}
-        />
-        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-          const count = statusCounts[key] || 0;
-          return (
+      {/* Search + status filter: only statuses that actually occur (or the active one) */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchBar
+            placeholder={t("cases.search")}
+            onSearch={setSearch}
+            onClear={() => setSearch("")}
+            className="w-full max-w-md"
+          />
+          <Link
+            href="/dashboard/altlasten"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+          >
+            <Archive size={13} aria-hidden="true" />
+            {L("Bestandsakten prüfen", "Review legacy cases")}
+            <ChevronRight size={12} aria-hidden="true" />
+          </Link>
+        </div>
+        {visibleStatuses.length > 1 || statusFilter !== "all" ? (
+          <div className="filter-strip">
             <FilterChip
-              key={key}
-              label={`${t(cfg.labelKey)} (${count})`}
-              active={statusFilter === key}
-              onClick={() => setStatusFilter(statusFilter === key ? "all" : key)}
+              label={t("cases.all")}
+              active={statusFilter === "all"}
+              onClick={() => setStatusFilter("all")}
             />
-          );
-        })}
-        <Link
-          href="/dashboard/altlasten"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-[var(--ds-duration-normal)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-        >
-          <Archive size={13} />
-          {t("nav.altlasten")}
-          <ChevronRight size={12} />
-        </Link>
+            {visibleStatuses.map((key) => {
+              const cfg = STATUS_CONFIG[key];
+              const count = statusCounts[key] || 0;
+              return (
+                <FilterChip
+                  key={key}
+                  label={count > 0 ? `${t(cfg.labelKey)} (${count})` : t(cfg.labelKey)}
+                  active={statusFilter === key}
+                  onClick={() => setStatusFilter(statusFilter === key ? "all" : key)}
+                />
+              );
+            })}
+          </div>
+        ) : null}
       </div>
-
-      {/* Search */}
-      <SearchBar
-        placeholder={t("cases.search")}
-        onSearch={setSearch}
-        onClear={() => setSearch("")}
-        className="max-w-md"
-      />
 
       {/* Error with retry */}
       {loadError && (
@@ -757,36 +798,40 @@ export default function CasesPage() {
         </div>
       )}
 
-      {/* Data table */}
-      <DataTable
-        density="dense"
-        columns={columns}
-        data={filtered}
-        loading={loading}
-        emptyTitle={t("cases.empty_title")}
-        emptyDescription={
-          cases.length === 0 ? t("cases.empty_no_cases") : t("cases.empty_filtered")
-        }
-        emptyIcon={Briefcase}
-        emptyActionLabel={cases.length === 0 ? t("cases.empty_create") : undefined}
-        onEmptyAction={cases.length === 0 ? () => setQuickCreateOpen(true) : undefined}
-        onRowClick={(c) => router.push(`/dashboard/cases/${encodeSlugPath(c.slug)}`)}
-        rowKey={(c) => c.slug}
-        pageSize={20}
-        selectable={canArchive}
-        onBulkAction={
-          canArchive ? (statusFilter === "archived" ? bulkRestore : bulkDelete) : undefined
-        }
-        bulkActionLabel={
-          canArchive
-            ? statusFilter === "archived"
-              ? t("cases.bulk_restore_label")
-              : t("cases.bulk_delete")
-            : undefined
-        }
-        bulkActionIcon={statusFilter === "archived" ? RotateCcw : Trash2}
-        bulkActionLoading={bulkLoading}
-      />
+      {/* Data table — @container lets columns react to the real list width */}
+      {loadError && cases.length === 0 ? null : (
+        <div className="@container">
+          <DataTable
+            density="dense"
+            columns={columns}
+            data={filtered}
+            loading={loading}
+            emptyTitle={t("cases.empty_title")}
+            emptyDescription={
+              cases.length === 0 ? t("cases.empty_no_cases") : t("cases.empty_filtered")
+            }
+            emptyIcon={Briefcase}
+            emptyActionLabel={cases.length === 0 ? t("cases.empty_create") : undefined}
+            onEmptyAction={cases.length === 0 ? () => setQuickCreateOpen(true) : undefined}
+            onRowClick={(c) => router.push(`/dashboard/cases/${encodeSlugPath(c.slug)}`)}
+            rowKey={(c) => c.slug}
+            pageSize={20}
+            selectable={canArchive}
+            onBulkAction={
+              canArchive ? (statusFilter === "archived" ? bulkRestore : bulkDelete) : undefined
+            }
+            bulkActionLabel={
+              canArchive
+                ? statusFilter === "archived"
+                  ? t("cases.bulk_restore_label")
+                  : t("cases.bulk_delete")
+                : undefined
+            }
+            bulkActionIcon={statusFilter === "archived" ? RotateCcw : Archive}
+            bulkActionLoading={bulkLoading}
+          />
+        </div>
+      )}
 
       <CaseQuickCreateDialog
         open={quickCreateOpen}

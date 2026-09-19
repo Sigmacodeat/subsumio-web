@@ -7,6 +7,7 @@ import { parseEml, type ParsedEmail } from "@/lib/email-parser";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { formatDateTime } from "@/lib/utils";
 
 interface ImportResult {
   success: boolean;
@@ -47,8 +48,10 @@ export default function EmailImportPage() {
           date: email.date,
         });
         next[i] = res;
-      } catch (err) {
-        setImportError(err instanceof Error ? err.message : t("email_import.error_failed"));
+      } catch {
+        // Keep the batch going; the row shows its own failure, the banner a plain summary.
+        next[i] = { success: false };
+        setImportError(t("email_import.error_failed"));
       }
     }
     setResults(next);
@@ -76,11 +79,12 @@ export default function EmailImportPage() {
         onDrop={(e) => {
           e.preventDefault();
           const files = Array.from(e.dataTransfer.files).filter(
-            (f) => f.name.endsWith(".eml") || f.name.endsWith(".msg")
+            // Only RFC-822 .eml can be parsed in the browser (Outlook .msg is binary).
+            (f) => f.name.toLowerCase().endsWith(".eml")
           );
           void onDrop(files);
         }}
-        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-info-border)] hover:bg-blue-500/[0.02] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
         onClick={() => document.getElementById("email-file-input")?.click()}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
@@ -90,7 +94,11 @@ export default function EmailImportPage() {
           }
         }}
       >
-        <Upload size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
+        <Upload
+          size={32}
+          className="mx-auto mb-3 text-[color:var(--ds-text-subtle)]"
+          aria-hidden="true"
+        />
         <p className="text-sm text-[color:var(--ds-text-muted)]">{t("email_import.drop_text")}</p>
         <input
           id="email-file-input"
@@ -118,8 +126,8 @@ export default function EmailImportPage() {
               {parsed.length} {t("email_import.recognized")}
             </h2>
             <Button
-              variant="primary"
-              className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
+              size="sm"
+              className="gap-1.5 whitespace-nowrap"
               onClick={importEmails}
               disabled={importing}
             >
@@ -155,16 +163,18 @@ export default function EmailImportPage() {
                     </span>
                     {email.confidence === "high" ? (
                       <span className="rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-success-text)]">
-                        {t("email_import.confidence_high")}
+                        Zuordnung: {t("email_import.confidence_high")}
                       </span>
                     ) : (
                       <span className="rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-warning-text)]">
-                        {t("email_import.confidence_low")}
+                        Zuordnung: {t("email_import.confidence_low")}
                       </span>
                     )}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {email.fromName} &lt;{email.from}&gt; · {email.date}
+                    {email.fromName ? `${email.fromName} <${email.from}>` : email.from}
+                    {email.date &&
+                      ` · ${formatDateTime(email.date) === "—" ? email.date : formatDateTime(email.date)}`}
                   </div>
                   {email.attachments.length > 0 && (
                     <div className="text-xs text-[color:var(--ds-text-muted)]">

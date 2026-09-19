@@ -7,7 +7,8 @@
 // SEO-indexable; this file owns only the presentation + motion.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import {
   Paperclip,
   Mic,

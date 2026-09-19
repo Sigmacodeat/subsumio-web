@@ -11,7 +11,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-[color:var(--brand-primary)] bg-[image:var(--brand-button-gradient)] text-white shadow-[var(--ds-shadow-1),var(--brand-button-highlight)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-[var(--ds-glow-brand),var(--brand-button-highlight)] active:bg-[color:var(--brand-primary-hover)] active:bg-none",
+          "bg-[color:var(--brand-solid)] bg-[image:var(--brand-button-gradient)] text-white shadow-[var(--ds-shadow-1),var(--brand-button-highlight)] hover:bg-[color:var(--brand-solid-hover)] hover:shadow-[var(--ds-glow-brand),var(--brand-button-highlight)] active:bg-[color:var(--brand-solid-hover)] active:bg-none",
         secondary:
           "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]",
         ghost:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
           // success-700 (solid-hover) als Basis — white auf success-600 war
           // nur 3.82:1; der Hover geht eine Stufe dunkler.
           "bg-[color:var(--ds-success-solid-hover)] text-white shadow-sm hover:bg-[color:var(--signal-success-800)]",
-        glow: "bg-[color:var(--brand-primary)] bg-[image:var(--brand-button-gradient)] text-white shadow-[var(--ds-glow-brand),var(--brand-button-highlight)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-[var(--ds-shadow-3),var(--ds-glow-brand)] active:bg-[color:var(--brand-primary-hover)]",
+        glow: "bg-[color:var(--brand-solid)] bg-[image:var(--brand-button-gradient)] text-white shadow-[var(--ds-glow-brand),var(--brand-button-highlight)] hover:bg-[color:var(--brand-solid-hover)] hover:shadow-[var(--ds-shadow-3),var(--ds-glow-brand)] active:bg-[color:var(--brand-solid-hover)]",
         outline:
           "border border-[color:var(--ds-border-strong)] bg-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/[0.08] hover:text-[color:var(--brand-primary)]",
       },

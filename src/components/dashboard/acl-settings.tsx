@@ -5,6 +5,7 @@ import { Shield, Plus, Trash2, UserPlus, UserMinus, Lock, FileText } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   useAclGroups,
@@ -76,23 +77,12 @@ export function AclSettings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="mb-2 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-[color:var(--brand-primary)]" />
-          <h3 className="text-lg font-semibold text-[color:var(--ds-text)]">
-            Dokument-Berechtigungen
-          </h3>
-        </div>
-        <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
-          Erstellen Sie Gruppen und weisen Sie Teammitglieder zu. Seiten ohne Berechtigung sind für
-          alle sichtbar (open-by-default).
-        </p>
-      </div>
 
       {/* Create Group */}
       <Card className="border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex gap-2">
           <Input
+            aria-label="Name der neuen Gruppe"
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
             placeholder="Gruppenname (z.B. Familienrecht)"
@@ -104,22 +94,25 @@ export function AclSettings() {
           <Button
             onClick={handleCreateGroup}
             disabled={!newGroupName.trim() || createGroupMutation.isPending}
-            className="gap-2"
+            className="gap-2 whitespace-nowrap"
           >
             <Plus className="h-4 w-4" />
-            Gruppe erstellen
+            Gruppe anlegen
           </Button>
         </div>
       </Card>
 
       {/* Groups List */}
       {groupsQuery.isLoading ? (
-        <p className="text-sm text-[color:var(--ds-text-muted)]">Gruppen werden geladen…</p>
+        <div className="space-y-3" role="status" aria-label="Wird geladen">
+          <Skeleton className="h-16 w-full rounded-xl" />
+          <Skeleton className="h-16 w-full rounded-xl" />
+        </div>
       ) : groups.length === 0 ? (
         <EmptyState
           icon={Lock}
-          title="Noch keine Gruppen erstellt"
-          description="Erstellen Sie eine Gruppe, um Berechtigungen zu verwalten."
+          title="Noch keine Gruppen angelegt"
+          description="Solange keine Gruppe besteht, sieht jedes Teammitglied alle Akten und Dokumente."
         />
       ) : (
         <div className="space-y-3">
@@ -142,7 +135,8 @@ export function AclSettings() {
                   <div>
                     <p className="font-medium text-[color:var(--ds-text)]">{group.name}</p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {group.member_count ?? 0} Mitglied(er)
+                      {group.member_count ?? 0}{" "}
+                      {(group.member_count ?? 0) === 1 ? "Mitglied" : "Mitglieder"}
                     </p>
                   </div>
                 </div>
@@ -153,6 +147,7 @@ export function AclSettings() {
                     e.stopPropagation();
                     handleDeleteGroup(group.id);
                   }}
+                  aria-label={`Gruppe ${group.name} löschen`}
                   className="text-[color:var(--ds-danger-text)] hover:opacity-80"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -165,6 +160,7 @@ export function AclSettings() {
                   {/* Add Member */}
                   <div className="flex gap-2">
                     <select
+                      aria-label="Teammitglied auswählen"
                       value={selectedUserId}
                       onChange={(e) => setSelectedUserId(e.target.value)}
                       className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
@@ -189,9 +185,7 @@ export function AclSettings() {
 
                   {/* Members List */}
                   {membersQuery.isLoading ? (
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      Mitglieder werden geladen…
-                    </p>
+                    <Skeleton className="h-10 w-full" />
                   ) : members.length === 0 ? (
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
                       Keine Mitglieder in dieser Gruppe.
@@ -224,6 +218,7 @@ export function AclSettings() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleRemoveMember(m.user_id)}
+                              aria-label={`${teamMember?.name ?? "Mitglied"} aus der Gruppe entfernen`}
                               className="text-[color:var(--ds-danger-text)] hover:opacity-80"
                             >
                               <UserMinus className="h-4 w-4" />
@@ -246,17 +241,17 @@ export function AclSettings() {
           <FileText className="h-5 w-5 flex-shrink-0 text-[color:var(--ds-text-muted)]" />
           <div className="space-y-1 text-sm text-[color:var(--ds-text-muted)]">
             <p>
-              <strong className="text-[color:var(--ds-text)]">Open-by-default:</strong> Seiten ohne
-              Berechtigungseinträge sind für alle Teammitglieder sichtbar.
+              <strong className="text-[color:var(--ds-text)]">Grundsatz:</strong> Akten und
+              Dokumente ohne Gruppenzuordnung sind für alle Teammitglieder sichtbar.
             </p>
             <p>
               <strong className="text-[color:var(--ds-text)]">Einschränkung:</strong> Sobald eine
-              Seite Berechtigungen hat, ist sie nur noch für Mitglieder der zugewiesenen Gruppen
+              Akte oder ein Dokument einer Gruppe zugeordnet ist, ist es nur noch für Mitglieder der zugewiesenen Gruppen
               sichtbar.
             </p>
             <p>
-              <strong className="text-[color:var(--ds-text)]">Admin-Bypass:</strong> Administratoren
-              sehen alle Seiten unabhängig von ACL-Gruppen.
+              <strong className="text-[color:var(--ds-text)]">Kanzleiverwaltung:</strong>{" "}
+              Administratoren sehen immer alle Akten und Dokumente.
             </p>
           </div>
         </div>

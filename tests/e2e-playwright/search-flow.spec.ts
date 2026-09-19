@@ -68,6 +68,9 @@ test.describe("Search Flow", () => {
           'input[placeholder*="Kanzleiwissen"], input[placeholder*="Brain"], input[placeholder*="brain"], input[type="search"]'
         )
         .first()
+        // Empty knowledge base shows the empty state instead of the search field.
+        .or(page.locator("[data-empty-state]"))
+        .first()
     ).toBeVisible({ timeout: 15_000 });
   });
 
@@ -78,9 +81,8 @@ test.describe("Search Flow", () => {
     await expect(
       page
         .locator("canvas")
-        .or(page.locator("text=/Graph ist leer/i"))
-        .or(page.locator("text=/Graph wird geladen/i"))
-        .or(page.locator("text=/Graph konnte nicht geladen/i"))
+        .or(page.locator("[data-empty-state]"))
+        .or(page.locator("text=/Beziehungsnetz/i"))
         .or(page.locator(".animate-spin"))
         .first()
     ).toBeVisible({ timeout: 15_000 });

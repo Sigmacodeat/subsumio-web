@@ -219,7 +219,7 @@ export function TabularReviewGrid({
             <div className="mt-1.5 space-y-1.5">
               <p className="flex items-start gap-1 text-xs break-words text-[color:var(--ds-danger-text)]">
                 <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-                <span>{original.error ?? t("tabular.row_error_label")}</span>
+                <span>Dieses Dokument konnte nicht ausgewertet werden.</span>
               </p>
               <Button
                 variant="secondary"

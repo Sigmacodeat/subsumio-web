@@ -35,11 +35,18 @@ export function DashboardError({ error, reset, moduleKey }: DashboardErrorProps)
         </div>
         <h2 className="mb-2 text-lg font-semibold text-[color:var(--ds-text)]">{title}</h2>
         <p className="mb-6 text-sm text-[color:var(--ds-text-muted)]">
-          {error.message || defaultMsg}
+          {/* Never the raw message: it can carry stack fragments, provider errors or
+              internal ids. The digest lets support find the server log. */}
+          {defaultMsg}
         </p>
+        {error.digest && (
+          <p className="-mt-4 mb-6 text-xs text-[color:var(--ds-text-subtle)]">
+            Fehlerkennung für den Support: <span className="font-mono">{error.digest}</span>
+          </p>
+        )}
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-5 py-2.5 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-5 py-2.5 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
           <RotateCcw size={14} /> {retry}
         </button>

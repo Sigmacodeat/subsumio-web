@@ -1,6 +1,6 @@
 /* Fonts are self-hosted via next/font (layout.tsx) — no runtime requests
    to Google (GDPR) and no render-blocking @import. The --font-inter,
-   --font-grotesk and --font-jetbrains variables are set on <html>. */
+   --font-serif and --font-jetbrains variables are set on <html>. */
 /* source(none) disables Tailwind v4's automatic content detection, which walks
    the whole project tree and only skips .gitignore'd paths. law-corpus/ is
    committed (772k files / 18 GB of statute markdown), so auto-detection scanned
@@ -508,7 +508,8 @@
   --color-gray-900: var(--neutral-900);
 
   --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-serif), Georgia, "Times New Roman", serif;
+  --font-heading: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "Fira Code", monospace;
   /* Editorial display serif — marketing site only (hero/thesis headlines). */
   --font-editorial: var(--font-fraunces), Georgia, serif;
@@ -645,8 +646,13 @@
   );
 
   /* ── Marketing card shadow — unified across all tones ── */
-  --mk-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
-  --mk-shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.12);
+  /* Same layered, navy-tinted elevation as the product (ambient + key light). */
+  --mk-shadow-card:
+    0 1px 1px hsla(222, 40%, 12%, 0.03), 0 4px 8px -4px hsla(222, 40%, 12%, 0.07),
+    0 12px 20px -10px hsla(222, 40%, 12%, 0.08);
+  --mk-shadow-card-hover:
+    0 1px 1px hsla(222, 40%, 12%, 0.03), 0 8px 16px -4px hsla(222, 40%, 12%, 0.08),
+    0 24px 40px -12px hsla(222, 40%, 12%, 0.14);
 }
 
 :root {
@@ -654,6 +660,10 @@
      Default = dark mode (marketing/app shell). Light overrides below. */
   --brand-primary: var(--brand-500);
   --brand-primary-hover: var(--brand-400);
+  /* Solid brand fills (buttons, badges with white text). Separate from
+     --brand-primary so dark themes can keep links light and fills dark. */
+  --brand-solid: var(--brand-primary);
+  --brand-solid-hover: var(--brand-primary-hover);
   --brand-secondary: var(--brand-400);
   --brand-tertiary: var(--brand-300);
   --brand-glow: color-mix(in srgb, var(--brand-primary) 24%, transparent);
@@ -665,16 +675,21 @@
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
   /* Depth (dark shell defaults; light tones override below) */
-  --ds-shadow-1: 0 1px 2px hsla(222, 60%, 3%, 0.5), inset 0 1px 0 hsla(0, 0%, 100%, 0.04);
-  --ds-shadow-2: 0 4px 10px -2px hsla(222, 60%, 3%, 0.55), inset 0 1px 0 hsla(0, 0%, 100%, 0.05);
-  --ds-shadow-3: 0 18px 40px -14px hsla(222, 60%, 3%, 0.75), inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+  /* Dark elevation: a faint top highlight carries the edge, shadows stay soft. */
+  --ds-shadow-1: 0 1px 2px hsla(222, 30%, 2%, 0.45), inset 0 1px 0 hsla(0, 0%, 100%, 0.035);
+  --ds-shadow-2:
+    0 4px 12px -4px hsla(222, 30%, 2%, 0.55), 0 1px 2px hsla(222, 30%, 2%, 0.4),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.045);
+  --ds-shadow-3:
+    0 0 0 1px hsla(0, 0%, 100%, 0.06), 0 24px 48px -16px hsla(222, 30%, 2%, 0.7),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
   --ds-glow-brand:
     0 0 0 1px color-mix(in srgb, var(--brand-primary) 30%, transparent),
     0 10px 28px -8px color-mix(in srgb, var(--brand-primary) 60%, transparent);
   --brand-button-gradient: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--brand-primary) 90%, white) 0%,
-    var(--brand-primary) 100%
+    color-mix(in srgb, var(--brand-solid) 90%, white) 0%,
+    var(--brand-solid) 100%
   );
   --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.14);
 
@@ -765,18 +780,25 @@
     0 1px 2px hsla(222, 8%, 15%, 0.05), 0 8px 24px hsla(222, 8%, 15%, 0.07),
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
   --brand-text: var(--brand-700);
-  --ds-shadow-1: 0 1px 2px hsla(222, 40%, 12%, 0.06), 0 1px 1px hsla(222, 40%, 12%, 0.03);
-  --ds-shadow-2: 0 2px 6px -1px hsla(222, 40%, 12%, 0.08), 0 1px 2px hsla(222, 40%, 12%, 0.05);
-  --ds-shadow-3: 0 14px 34px -14px hsla(222, 40%, 12%, 0.22), 0 2px 6px hsla(222, 40%, 12%, 0.06);
+  /* Elevation — layered ambient + key light, navy-tinted (Vercel/Attio school).
+     1 = resting card, 2 = raised/hover, 3 = menus, popovers, dialogs. */
+  --ds-shadow-1:
+    0 1px 1px hsla(222, 40%, 12%, 0.03), 0 2px 4px -2px hsla(222, 40%, 12%, 0.06);
+  --ds-shadow-2:
+    0 1px 1px hsla(222, 40%, 12%, 0.03), 0 4px 8px -4px hsla(222, 40%, 12%, 0.07),
+    0 12px 20px -10px hsla(222, 40%, 12%, 0.08);
+  --ds-shadow-3:
+    0 0 0 1px hsla(222, 30%, 12%, 0.06), 0 1px 1px hsla(222, 40%, 12%, 0.02),
+    0 8px 16px -4px hsla(222, 40%, 12%, 0.07), 0 24px 40px -12px hsla(222, 40%, 12%, 0.16);
   --ds-glow-brand:
     0 0 0 1px color-mix(in srgb, var(--brand-primary) 24%, transparent),
     0 8px 22px -8px color-mix(in srgb, var(--brand-primary) 55%, transparent);
   --brand-button-gradient: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--brand-primary) 88%, white) 0%,
-    var(--brand-primary) 100%
+    color-mix(in srgb, var(--brand-solid) 90%, white) 0%,
+    var(--brand-solid) 100%
   );
-  --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.18);
+  --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.16);
   color-scheme: light;
 
   /* Shared --ds-* components (e.g. src/components/ui/button.tsx's ghost
@@ -968,15 +990,19 @@
   --ds-border: hsl(40, 6%, 88%);
   --ds-border-strong: hsl(40, 5%, 80%);
   --ds-border-hover: hsl(40, 6%, 82%);
-  --ds-control-border: hsl(40, 4%, 70%);
+  /* Input/control boundaries: 3:1 on white (WCAG 1.4.11). */
+  --ds-control-border: hsl(40, 4%, 53%);
+  /* Three clearly separated text steps on white: 18:1 · 7:1 · 5:1 (≥ 4.5:1 on every surface). */
   --ds-text: hsl(40, 15%, 8%);
-  --ds-text-muted: hsl(40, 6%, 40%);
-  --ds-text-subtle: hsl(40, 5%, 42%);
+  --ds-text-muted: hsl(40, 6%, 34%);
+  --ds-text-subtle: hsl(40, 5%, 41%);
   --ds-text-secondary: var(--ds-text-muted);
   --ds-ring: var(--brand-600);
   --ds-accent: var(--brand-primary);
   --brand-primary: var(--brand-600);
   --brand-primary-hover: var(--brand-700);
+  --brand-solid: var(--brand-600);
+  --brand-solid-hover: var(--brand-700);
   --brand-secondary: var(--brand-400);
   --brand-tertiary: var(--brand-300);
   --brand-glow: color-mix(in srgb, var(--brand-primary) 12%, transparent);
@@ -984,8 +1010,9 @@
   --brand-gradient-via: var(--brand-400);
   --brand-gradient-to: var(--brand-300);
   --brand-text: var(--brand-primary);
-  --accent-premium: var(--accent-600);
-  --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
+  /* Gold is the signet, not a signal: text use needs accent-700 for 4.5:1. */
+  --accent-premium: var(--accent-700);
+  --accent-premium-soft: color-mix(in srgb, var(--accent-600) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
   --card-shadow: var(--ds-shadow-1);
   --card-shadow-hover: var(--ds-shadow-2);
@@ -1068,13 +1095,15 @@
   --ds-chart-familie: hsl(330, 60%, 45%);
 
   /* Nav category icon tints */
-  --nav-cat-cases: var(--brand-primary);
-  --nav-cat-comm: hsl(180, 50%, 32%);
-  --nav-cat-docs: var(--accent-premium);
-  --nav-cat-research: hsl(260, 60%, 45%);
-  --nav-cat-ops: var(--neutral-600);
-  --nav-cat-billing: var(--signal-success-700);
-  --nav-cat-admin: var(--neutral-600);
+  /* Navigation icons: one quiet ink, brand only where active — a rainbow of
+     section colours competed with the one brand accent. */
+  --nav-cat-cases: var(--ds-text-muted);
+  --nav-cat-comm: var(--ds-text-muted);
+  --nav-cat-docs: var(--ds-text-muted);
+  --nav-cat-research: var(--ds-text-muted);
+  --nav-cat-ops: var(--ds-text-muted);
+  --nav-cat-billing: var(--ds-text-muted);
+  --nav-cat-admin: var(--ds-text-muted);
 
   /* Graph palette */
   --graph-person: var(--brand-500);
@@ -1102,25 +1131,29 @@
 
   /* Dark dashboard canvas — deep, near-black blue-gray.
      Linear / Supabase / Vercel school: minimal chroma, elevation via lightness. */
-  --ds-bg: hsl(222, 30%, 7%);
-  --ds-surface: hsl(222, 26%, 11%);
-  --ds-surface-2: hsl(222, 24%, 15%);
-  --ds-hover: hsl(222, 22%, 20%);
+  /* Desaturated navy: elevation through lightness, not chroma (Linear, Harvey). */
+  --ds-bg: hsl(222, 16%, 7%);
+  --ds-surface: hsl(222, 14%, 10.5%);
+  --ds-surface-2: hsl(222, 12%, 14%);
+  --ds-hover: hsl(222, 11%, 18%);
   --ds-surface-hover: var(--ds-hover);
   --ds-border: hsla(222, 30%, 62%, 0.14);
   --ds-border-strong: hsla(222, 30%, 66%, 0.22);
   --ds-border-hover: hsla(222, 30%, 72%, 0.28);
-  --ds-control-border: hsla(220, 10%, 55%, 0.24);
+  --ds-control-border: hsla(220, 12%, 66%, 0.62);
   /* Text hierarchy — verified ≥4.5:1 on --ds-surface and --ds-surface-2.
      Kept intentionally brighter for comfortable small-table legibility. */
   --ds-text: hsl(222, 15%, 94%);
-  --ds-text-muted: hsl(222, 12%, 78%);
-  --ds-text-subtle: hsl(222, 10%, 70%);
+  --ds-text-muted: hsl(222, 10%, 72%);
+  --ds-text-subtle: hsl(222, 8%, 60%);
   --ds-text-secondary: var(--ds-text-muted);
   --ds-ring: var(--brand-400);
   --ds-accent: var(--brand-primary);
-  --brand-primary: var(--brand-400);
+  --brand-primary: var(--brand-350);
   --brand-primary-hover: var(--brand-300);
+  /* Fills stay deep enough for white text (≥ 4.5:1); links use brand-400. */
+  --brand-solid: var(--brand-500);
+  --brand-solid-hover: hsl(222, 58%, 52%);
   --brand-secondary: var(--brand-300);
   --brand-tertiary: var(--brand-200);
   --brand-glow: color-mix(in srgb, var(--brand-primary) 18%, transparent);
@@ -1210,13 +1243,13 @@
   --ds-chart-familie: hsl(330, 45%, 70%);
 
   /* Nav category icon tints */
-  --nav-cat-cases: var(--brand-primary);
-  --nav-cat-comm: hsl(180, 45%, 70%);
-  --nav-cat-docs: var(--accent-premium);
-  --nav-cat-research: hsl(260, 45%, 70%);
-  --nav-cat-ops: var(--ds-text-subtle);
-  --nav-cat-billing: hsl(150, 40%, 68%);
-  --nav-cat-admin: var(--ds-text-subtle);
+  --nav-cat-cases: var(--ds-text-muted);
+  --nav-cat-comm: var(--ds-text-muted);
+  --nav-cat-docs: var(--ds-text-muted);
+  --nav-cat-research: var(--ds-text-muted);
+  --nav-cat-ops: var(--ds-text-muted);
+  --nav-cat-billing: var(--ds-text-muted);
+  --nav-cat-admin: var(--ds-text-muted);
 
   /* Graph palette */
   --graph-person: var(--brand-300);
@@ -1954,21 +1987,24 @@
   background-color: var(--ds-surface);
 }
 
-/* Dashboard typography: Space Grotesk for display, Inter for UI, mono for numbers.
-   Apply font-feature settings for better tabular figures and OpenType niceties. */
-[data-app="dashboard"] h1,
+/* Dashboard typography: the serif only for the page title (h1) and explicit
+   .font-display; every other heading is interface text in Inter — small serif
+   headings in a dense register read as decoration, not structure. */
 [data-app="dashboard"] h2,
 [data-app="dashboard"] h3,
 [data-app="dashboard"] h4,
 [data-app="dashboard"] h5,
-[data-app="dashboard"] h6,
-[data-app="dashboard"] .font-display {
-  font-family: var(--font-display);
-  letter-spacing: var(--ds-tracking-snug);
+[data-app="dashboard"] h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.011em;
 }
 
-[data-app="dashboard"] h1 {
-  letter-spacing: var(--ds-tracking-tight);
+[data-app="dashboard"] h1,
+[data-app="dashboard"] .font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  font-optical-sizing: auto;
 }
 
 [data-app="dashboard"] .tracking-tight {
@@ -2254,25 +2290,22 @@ a.citation-official:focus-visible {
   margin: 1em 0;
 }
 
-/* Brand typography: Space Grotesk for display, Inter for body. */
+/* Brand typography: Newsreader for headlines (h1/h2), Inter for everything
+   else. The serif carries weight through size and contrast, not boldness. */
 h1,
 h2,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.018em;
+  font-weight: 500;
+  font-optical-sizing: auto;
+}
 h3,
 h4,
 h5,
-h6,
-.font-display {
-  font-family: var(--font-display);
-  letter-spacing: var(--ds-tracking-snug);
-}
-h1 {
-  letter-spacing: var(--ds-tracking-tight);
-}
-h1 {
-  font-weight: var(--ds-weight-display);
-}
-h2 {
-  font-weight: var(--ds-weight-display);
+h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.011em;
 }
 h3,
 h4 {
@@ -2533,55 +2566,21 @@ body {
   color: var(--mk-accent-brass);
 }
 
-/* Gradient text — premium blue-violet */
-.gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--brand-300) 0%,
-    var(--brand-400) 52%,
-    hsl(260, 60%, 75%) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Light-tone override: darker blue-violet for AA contrast on light bg. */
-[data-tone="light"] .gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--brand-700) 0%,
-    var(--brand-500) 52%,
-    hsl(260, 60%, 50%) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
+/* Headline emphasis — editorial, not neon. The accent line of a headline is
+   set in the serif's italic in the one brand ink (Harvey/Mercury school);
+   blue-to-violet gradient text read as generic AI branding and broke the
+   "no purple" rule. Class names kept so every hero picks this up. */
+.gradient-text,
 .gradient-text-premium {
-  background: linear-gradient(
-    135deg,
-    var(--brand-300) 0%,
-    var(--brand-400) 50%,
-    hsl(260, 60%, 75%) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--brand-300);
+  font-style: italic;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.012em;
 }
-
-/* Light-tone override: darker indigo-violet for AA on light. */
+[data-tone="light"] .gradient-text,
 [data-tone="light"] .gradient-text-premium {
-  background: linear-gradient(
-    135deg,
-    hsl(255, 60%, 45%) 0%,
-    var(--brand-500) 50%,
-    var(--brand-700) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--brand-700);
 }
 
 /* Animated pulse ring */
@@ -3278,10 +3277,39 @@ pre {
   }
 }
 
-/* Cited passage a citation link jumped to (src/lib/highlight-quote.ts). */
-::highlight(subsumio-citation) {
-  background-color: var(--brand-glow);
-  color: var(--ds-text);
+/* Cited passage a citation link jumped to: the ::highlight() rule is injected
+   at runtime by src/lib/highlight-quote.ts — the CSS parser of the dev build
+   (Lightning CSS) rejects ::highlight() and failed every page with a 500. */
+
+/* ── Form controls (premium pass 2026-09-19) ──────────────────────────────
+   Input boundaries need 3:1 against their surface (WCAG 1.4.11); the hairline
+   --ds-border (1.3:1) is for decorative dividers only. Placeholders use the
+   subtle ink so they never read like a filled-in value. Focus keeps the ring
+   colour set by the component. */
+[data-app="dashboard"]
+  :is(
+    input:not([type]),
+    input[type="text"],
+    input[type="search"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    textarea,
+    select
+  ):not(:focus):not(:disabled) {
+  border-color: var(--ds-control-border);
+}
+[data-app="dashboard"] :is(input, textarea)::placeholder {
+  color: var(--ds-text-subtle);
+  opacity: 1;
+}
+[data-app="dashboard"] :is(input, textarea, select):hover:not(:focus):not(:disabled) {
+  border-color: color-mix(in srgb, var(--ds-control-border) 70%, var(--ds-text));
 }
 
 /* pdf.js text layer over the rendered page (components/documents/pdf-document-viewer.tsx):

@@ -2,11 +2,15 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useLang } from "@/lib/use-lang";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
+import { EmptyState as DsEmptyState } from "@/components/dashboard/empty-state";
+import { CitationPanel } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { renderMarkdown } from "@/lib/markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AI_BADGE_LABEL } from "@/lib/ai-act";
 import {
   FileText,
   ClipboardCheck,
@@ -17,13 +21,11 @@ import {
   Bot,
   Loader2,
   RotateCcw,
-  TrendingUp,
   AlertCircle,
   CheckCircle2,
   XCircle,
   Clock,
   Activity,
-  Zap,
   Sparkles,
   X,
   Eye,
@@ -135,16 +137,24 @@ function formatDuration(start: string | undefined, end: string | undefined, t: T
   return `${diffDays} ${t("reports.duration_days")}`;
 }
 
-function timeAgo(date?: string, t?: TFunc): string {
+function timeAgo(date?: string): string {
   if (!date) return "—";
-  const diffMs = Date.now() - new Date(date).getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return t?.("reports.duration_now") ?? "just now";
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h`;
-  const diffDays = Math.floor(diffH / 24);
-  return `${diffDays}d`;
+  return formatRelativeTime(date);
+}
+
+/** Runs corpus grounding once per AI result and shows the standard trust panel. */
+function GroundedResult({ text, compact }: { text: string; compact?: boolean }) {
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
+  useEffect(() => {
+    if (text.trim()) void groundAnswer(text);
+  }, [text, groundAnswer]);
+  return (
+    <CitationPanel
+      data={{ grounding, citations: [], isStreaming: isGrounding }}
+      compact={compact}
+      className="mt-3"
+    />
+  );
 }
 
 // ── Stats Bar ──────────────────────────────────────────────────
@@ -152,57 +162,30 @@ function StatsBar({ jobs, t }: { jobs: AgentJob[]; t: TFunc }) {
   const total = jobs.length;
   const completed = jobs.filter((j) => j.status === "completed").length;
   const active = jobs.filter((j) => j.status === "active" || j.status === "waiting").length;
-  const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const totalCost = jobs.reduce((sum, j) => sum + (j.cost ?? 0), 0);
+  const failed = jobs.filter((j) => j.status === "failed").length;
+  const successRate = total > 0 ? `${Math.round((completed / total) * 100)} %` : "—";
 
+  // Kosten in USD/Tokens gehören in die Betreiber-Ansicht, nicht in die Kanzlei-Übersicht.
   const stats = [
-    {
-      label: t("reports.total_jobs"),
-      value: String(total),
-      icon: FileText,
-      color: "text-[color:var(--ds-text)]",
-    },
-    {
-      label: t("reports.success_rate"),
-      value: `${successRate}%`,
-      icon: TrendingUp,
-      color: "text-[color:var(--ds-success-text)]",
-    },
-    {
-      label: t("reports.active_now"),
-      value: String(active),
-      icon: Activity,
-      color: "text-[color:var(--ds-info-text)]",
-    },
-    {
-      label: t("reports.total_cost"),
-      value: `$${totalCost.toFixed(2)}`,
-      icon: Zap,
-      color: "text-[color:var(--ds-text-muted)]",
-    },
+    { label: t("reports.total_jobs"), value: String(total) },
+    { label: t("reports.success_rate"), value: successRate },
+    { label: t("reports.active_now"), value: String(active) },
+    { label: t("agents.status_failed"), value: String(failed) },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map((s) => {
-        const Icon = s.icon;
-        return (
-          <div
-            key={s.label}
-            className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-[var(--card-shadow)]"
-          >
-            <div className="flex items-center gap-2">
-              <Icon size={15} className={s.color} />
-              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {s.label}
-              </span>
-            </div>
-            <div className="mt-2 text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
-              {s.value}
-            </div>
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
+        >
+          <div className="text-xs text-[color:var(--ds-text-muted)]">{s.label}</div>
+          <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+            {s.value}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -216,14 +199,14 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
   const isRunning = jobs.some((j) => j.status === "active" || j.status === "waiting");
 
   return (
-    <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-gradient-to-br from-[color:var(--brand-glow)] to-transparent p-5 shadow-[var(--card-shadow)] md:p-6">
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 md:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
-          <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
-            <Sparkles size={18} className="brand-text" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+            <CalendarCheck size={18} className="text-[color:var(--ds-text-muted)]" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-[color:var(--ds-text)]">
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {t("reports.rundown_title")}
             </h2>
             <p className="mt-0.5 text-sm text-[color:var(--ds-text-muted)]">
@@ -236,14 +219,15 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
         </div>
         <Button
           size="sm"
-          variant="glow"
+          variant="primary"
+          className="self-start whitespace-nowrap lg:self-auto"
           onClick={() => triggerMutation.mutate()}
           disabled={triggerMutation.isPending || isRunning}
         >
           {triggerMutation.isPending || isRunning ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
-            <Sparkles size={14} />
+            <Sparkles size={14} aria-hidden="true" />
           )}
           {triggerMutation.isPending || isRunning
             ? t("reports.btn_rundown_loading")
@@ -256,7 +240,11 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
         <div className="mt-3 flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2">
           <AlertCircle size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" />
           <span className="text-xs text-[color:var(--ds-danger-text)]">
-            {triggerMutation.error instanceof Error ? triggerMutation.error.message : "Error"}
+            {/(credit|guthaben|402|quota|balance)/i.test(
+              triggerMutation.error instanceof Error ? triggerMutation.error.message : ""
+            )
+              ? "Das Tagesbriefing konnte nicht gestartet werden: Das KI-Guthaben ist aufgebraucht. Bitte laden Sie unter Plan & Abrechnung Guthaben nach."
+              : "Das Tagesbriefing konnte nicht gestartet werden. Bitte versuchen Sie es in einigen Minuten erneut."}
           </span>
         </div>
       )}
@@ -271,10 +259,12 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
             </span>
             <span className="ml-auto flex items-center gap-2">
               <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                {timeAgo(latest.completedAt ?? latest.startedAt, t)}
+                {timeAgo(latest.completedAt ?? latest.startedAt)}
               </span>
               {latest.result && (
                 <button
+                  type="button"
+                  aria-label={t("reports.btn_view")}
                   onClick={() => onView(latest)}
                   className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   title={t("reports.btn_view")}
@@ -290,11 +280,6 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
                 className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
               />
-              <div className="mt-2">
-                <Badge variant="default" className="text-[10px] text-[color:var(--ds-text-muted)]">
-                  {AI_BADGE_LABEL}
-                </Badge>
-              </div>
               <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t from-[color:var(--ds-surface)] to-transparent" />
             </div>
           ) : (
@@ -302,6 +287,7 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
               {t("reports.rundown_none")}
             </p>
           )}
+          {latest.result && <GroundedResult text={latest.result} compact />}
         </div>
       )}
     </div>
@@ -338,9 +324,9 @@ function ReportRow({
           </span>
           <span className="font-mono text-xs text-[color:var(--ds-text-subtle)]">#{job.id}</span>
           {job.isRundown && (
-            <span className="brand-soft brand-text brand-border rounded-full border px-1.5 py-0.5 text-xs font-semibold">
-              Rundown
-            </span>
+            <Badge variant="default" className="text-xs">
+              Tagesbriefing
+            </Badge>
           )}
         </div>
         <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
@@ -370,6 +356,8 @@ function ReportRow({
       <div className="flex items-center gap-1">
         {job.result && (
           <button
+            type="button"
+            aria-label={`${t("reports.btn_view")}: #${job.id}`}
             onClick={() => onView(job)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             title={t("reports.btn_view")}
@@ -381,6 +369,8 @@ function ReportRow({
           job.status === "failed" ||
           job.status === "partial_success") && (
           <button
+            type="button"
+            aria-label={`${t("reports.btn_replay")}: #${job.id}`}
             onClick={() => onReplay(job.id)}
             disabled={replaying}
             className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
@@ -416,17 +406,24 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-detail-title"
+        className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--ds-shadow-3)]"
+      >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div className="flex items-center gap-2">
             {statusIcon(job.status)}
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            <h2 id="report-detail-title" className="text-sm font-semibold text-[color:var(--ds-text)]">
               {roleLabel(job.role, t)}{" "}
               <span className="font-mono text-[color:var(--ds-text-subtle)]">#{job.id}</span>
             </h2>
           </div>
           <button
+            type="button"
+            aria-label="Schließen"
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
@@ -440,20 +437,6 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
             {statusIcon(job.status)}
             {statusLabel(job.status, t)}
           </span>
-          {job.model && (
-            <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">{job.model}</span>
-          )}
-          {job.tokens && (
-            <span className="text-xs text-[color:var(--ds-text-muted)]">
-              {job.tokens.input.toLocaleString()} in · {job.tokens.output.toLocaleString()} out
-              {job.tokens.cache > 0 && ` · ${job.tokens.cache.toLocaleString()} cache`}
-            </span>
-          )}
-          {job.cost !== undefined && job.cost > 0 && (
-            <span className="text-xs text-[color:var(--ds-text-muted)]">
-              ${job.cost.toFixed(4)}
-            </span>
-          )}
           <span className="ml-auto text-xs text-[color:var(--ds-text-subtle)]">
             {formatDuration(job.startedAt, job.completedAt, t)}
           </span>
@@ -467,11 +450,7 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
                 className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(job.result) }}
               />
-              <div className="mt-3">
-                <Badge variant="default" className="text-[10px] text-[color:var(--ds-text-muted)]">
-                  {AI_BADGE_LABEL}
-                </Badge>
-              </div>
+              <GroundedResult text={job.result} />
             </>
           ) : (
             <p className="text-sm text-[color:var(--ds-text-subtle)]">
@@ -484,7 +463,7 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
           {/* Prompt (collapsible) */}
           <details className="mt-4 border-t border-[color:var(--ds-border)] pt-3">
             <summary className="cursor-pointer text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              Prompt
+              Auftrag
             </summary>
             <pre className="mt-2 max-h-40 overflow-y-auto rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
               {job.prompt}
@@ -547,7 +526,7 @@ function ByAgentView({ jobs, t }: { jobs: AgentJob[]; t: TFunc }) {
                     {job.prompt}
                   </span>
                   <span className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
-                    {timeAgo(job.completedAt ?? job.startedAt, t)}
+                    {timeAgo(job.completedAt ?? job.startedAt)}
                   </span>
                 </div>
               ))}
@@ -562,15 +541,11 @@ function ByAgentView({ jobs, t }: { jobs: AgentJob[]; t: TFunc }) {
 // ── Empty State ────────────────────────────────────────────────
 function EmptyState({ t, variant }: { t: TFunc; variant: "all" | "failed" }) {
   return (
-    <div className="py-16 text-center">
-      <Bot size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
-      <p className="text-sm text-[color:var(--ds-text-muted)]">
-        {variant === "failed" ? t("reports.empty_failed") : t("reports.empty")}
-      </p>
-      {variant === "all" && (
-        <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">{t("reports.empty_hint")}</p>
-      )}
-    </div>
+    <DsEmptyState
+      icon={variant === "failed" ? CheckCircle2 : FileText}
+      title={variant === "failed" ? t("reports.empty_failed") : t("reports.empty")}
+      description={variant === "all" ? t("reports.empty_hint") : undefined}
+    />
   );
 }
 
@@ -606,41 +581,63 @@ export default function ReportsPage() {
 
   async function handleReplay(id: number) {
     setReplayingId(id);
-    await replayMutation.mutateAsync(id);
-    setReplayingId(null);
-    agentsQuery.refetch();
+    try {
+      await replayMutation.mutateAsync(id);
+    } catch (err) {
+      console.error("[reports] replay failed:", err instanceof Error ? err.message : err);
+    } finally {
+      setReplayingId(null);
+      void agentsQuery.refetch();
+    }
   }
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[color:var(--ds-text)]">{t("reports.title")}</h1>
-        <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">{t("reports.subtitle")}</p>
-      </div>
+      <PageHeader
+        title={t("reports.title")}
+        description={t("reports.subtitle")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("reports.title") },
+        ]}
+      />
 
       {/* Stats */}
-      <StatsBar jobs={jobs} t={t} />
+      {agentsQuery.isLoading ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[68px] rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <StatsBar jobs={jobs} t={t} />
+      )}
 
       {/* Rundown Panel */}
       <RundownPanel t={t} onView={setViewJob} />
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-[color:var(--ds-border)]">
+      <div
+        role="tablist"
+        className="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] [scrollbar-width:none]"
+      >
         {tabs.map((tabItem) => {
           const Icon = tabItem.icon;
           return (
             <button
               key={tabItem.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === tabItem.id}
               onClick={() => setTab(tabItem.id)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "flex shrink-0 items-center gap-2 border-b-2 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 tab === tabItem.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               )}
             >
-              <Icon size={15} />
+              <Icon size={15} aria-hidden="true" />
               {tabItem.label}
               {tabItem.id === "failed" && jobs.some((j) => j.status === "failed") && (
                 <span className="rounded-full bg-[color:var(--ds-danger-bg)] px-1.5 py-0.5 text-xs font-semibold text-[color:var(--ds-danger-text)]">
@@ -654,8 +651,8 @@ export default function ReportsPage() {
 
       {/* Content */}
       {agentsQuery.isLoading ? (
-        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-          <Loader2 size={20} className="brand-text animate-spin" />
+        <div role="status" aria-label={t("aria.loading")}>
+          <RowSkeleton count={4} />
         </div>
       ) : tab === "by_agent" ? (
         <ByAgentView jobs={jobs} t={t} />

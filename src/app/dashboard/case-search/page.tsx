@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronUp,
   Briefcase,
-  Loader2,
   Scale,
   Users,
   Gavel,
@@ -26,8 +25,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/lib/use-lang";
 import { caseFrontmatter } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
-import { cn, encodeSlugPath } from "@/lib/utils";
+import { cn, encodeSlugPath, formatDate } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface FacetItem {
@@ -80,20 +80,33 @@ const STATUS_COLORS: Record<string, StatusColor> = {
 
 const STATUS_LABELS_DE: Record<string, string> = {
   open: "Offen",
-  pending: "Wartend",
-  settled: "Verglichen",
+  pending: "Anhängig",
+  settled: "Erledigt",
   won: "Gewonnen",
   lost: "Verloren",
   appealed: "Berufung",
-  dormant: "Ruht",
+  dormant: "Ruhend",
   archived: "Archiviert",
 };
+
+const PRIORITY_LABELS_DE: Record<string, string> = {
+  critical: "Kritisch",
+  urgent: "Dringend",
+  high: "Hoch",
+  medium: "Mittel",
+  normal: "Normal",
+  low: "Niedrig",
+};
+/** Only these priorities get a badge in the result list; the default stays silent. */
+const PRIORITY_FLAGGED = new Set(["critical", "urgent", "high"]);
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
   medium:
     "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   high: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  urgent:
+    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
   critical:
     "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
@@ -129,8 +142,8 @@ const FACETS: FacetConfig[] = [
   },
   {
     key: "lawyer",
-    label: "Bearbeiter",
-    labelEn: "Lawyer",
+    label: "Sachbearbeiter",
+    labelEn: "Responsible",
     icon: Users,
     extract: (i) => (i.lawyerName ? [i.lawyerName] : []),
   },
@@ -143,15 +156,15 @@ const FACETS: FacetConfig[] = [
   },
   {
     key: "tags",
-    label: "Tags",
+    label: "Schlagworte",
     labelEn: "Tags",
     icon: Tag,
     extract: (i) => i.tags,
   },
   {
     key: "conflictStatus",
-    label: "Konflikt-Status",
-    labelEn: "Conflict Status",
+    label: "Kollisionsprüfung",
+    labelEn: "Conflict check",
     icon: AlertTriangle,
     extract: (i) => (i.conflictStatus ? [i.conflictStatus] : []),
   },
@@ -202,7 +215,8 @@ export default function CaseSearchPage() {
   const { data: items, isLoading } = useQuery<FacetItem[]>({
     queryKey: ["facet-cases"],
     queryFn: async () => {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+      // listAllPages pages through the engine's 200-row cap and drops tombstones.
+      const pages = await api.brain.listAllPages({ type: "legal_case" });
       return pages.map(parseFacetItem);
     },
     staleTime: 60_000,
@@ -259,7 +273,7 @@ export default function CaseSearchPage() {
       let cmp = 0;
       if (sortBy === "title") cmp = a.title.localeCompare(b.title);
       else if (sortBy === "priority") {
-        const order = { critical: 0, high: 1, medium: 2, low: 3 };
+        const order = { critical: 0, urgent: 0, high: 1, medium: 2, normal: 2, low: 3 };
         cmp =
           (order[a.priority as keyof typeof order] ?? 2) -
           (order[b.priority as keyof typeof order] ?? 2);
@@ -305,7 +319,8 @@ export default function CaseSearchPage() {
   };
 
   const fmtValue = (facetKey: string, value: string): string => {
-    if (facetKey === "status") return STATUS_LABELS_DE[value] ?? value;
+    if (facetKey === "status") return isEn ? value : (STATUS_LABELS_DE[value] ?? value);
+    if (facetKey === "priority") return isEn ? value : (PRIORITY_LABELS_DE[value] ?? value);
     if (facetKey === "jurisdiction") {
       const labels: Record<string, string> = {
         de: "Deutschland",
@@ -319,7 +334,7 @@ export default function CaseSearchPage() {
       const labels: Record<string, string> = {
         conflict_pending: isEn ? "Pending" : "Prüfung offen",
         conflict_clear: isEn ? "Clear" : "Kein Konflikt",
-        conflict_waived: isEn ? "Waived" : "Waiver erteilt",
+        conflict_waived: isEn ? "Waived" : "Befreiung erteilt",
       };
       return labels[value] ?? value;
     }
@@ -329,15 +344,16 @@ export default function CaseSearchPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={isEn ? "Faceted Case Search" : "Fakettierte Akten-Suche"}
+        title={isEn ? "Case search" : "Akten-Suche"}
         description={
           isEn
-            ? "Search and filter cases across multiple dimensions — status, legal area, priority, lawyer, court, tags, and more."
-            : "Akten suchen und filtern über mehrere Dimensionen — Status, Rechtsgebiet, Priorität, Bearbeiter, Gericht, Tags und mehr."
+            ? "Find cases by text and narrow them down by status, legal area, responsible lawyer or court."
+            : "Akten per Stichwort finden und nach Status, Rechtsgebiet, Sachbearbeiter oder Gericht eingrenzen."
         }
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: isEn ? "Case Search" : "Akten-Suche" },
+          { label: t("cases.title"), href: "/dashboard/cases" },
+          { label: isEn ? "Case search" : "Akten-Suche" },
         ]}
       />
 
@@ -352,16 +368,17 @@ export default function CaseSearchPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder={
             isEn
-              ? "Search by title, case number, client, opponent, lawyer, court, tags..."
-              : "Suche nach Titel, Aktenzeichen, Mandant, Gegner, Bearbeiter, Gericht, Tags..."
+              ? "Title, case number, client, opponent, lawyer, court …"
+              : "Bezeichnung, Aktenzeichen, Mandant, Gegner, Sachbearbeiter, Gericht …"
           }
           className="pl-10"
+          aria-label={isEn ? "Search cases" : "Akten durchsuchen"}
         />
       </div>
 
-      <div className="flex gap-4">
-        {/* Facet sidebar */}
-        <aside className="hidden w-64 shrink-0 space-y-3 lg:block">
+      <div className="flex flex-col gap-4 lg:flex-row">
+        {/* Facet sidebar — stacked above the results on narrow screens */}
+        <aside className="w-full shrink-0 space-y-3 lg:w-64">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter size={14} className="text-[color:var(--ds-text-muted)]" />
@@ -400,7 +417,9 @@ export default function CaseSearchPage() {
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
               >
                 <button
+                  type="button"
                   onClick={() => toggleFacet(facet.key)}
+                  aria-expanded={isExpanded}
                   className="flex w-full items-center justify-between px-3 py-2 text-left"
                 >
                   <div className="flex items-center gap-2">
@@ -440,7 +459,7 @@ export default function CaseSearchPage() {
                               className={cn(
                                 "flex h-3 w-3 shrink-0 items-center justify-center rounded border",
                                 isSelected
-                                  ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
+                                  ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-solid)]"
                                   : "border-[color:var(--ds-border)]"
                               )}
                             >
@@ -509,6 +528,7 @@ export default function CaseSearchPage() {
             {/* Sort */}
             <div className="flex items-center gap-1.5">
               <select
+                aria-label={isEn ? "Sort by" : "Sortieren nach"}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
@@ -518,7 +538,17 @@ export default function CaseSearchPage() {
                 <option value="priority">{isEn ? "Priority" : "Priorität"}</option>
               </select>
               <button
+                type="button"
                 onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                aria-label={
+                  sortDir === "asc"
+                    ? isEn
+                      ? "Sort descending"
+                      : "Absteigend sortieren"
+                    : isEn
+                      ? "Sort ascending"
+                      : "Aufsteigend sortieren"
+                }
                 className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)]"
               >
                 {sortDir === "asc" ? "↑" : "↓"}
@@ -528,12 +558,10 @@ export default function CaseSearchPage() {
 
           {/* Results list */}
           {isLoading ? (
-            <div
-              className="flex items-center justify-center py-12"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
+            <div className="space-y-1.5" role="status" aria-live="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <EmptyState
@@ -566,89 +594,76 @@ export default function CaseSearchPage() {
                     href={`/dashboard/cases/${encodeSlugPath(item.slug)}`}
                     className="group flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                   >
-                    {/* Status icon */}
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-                        STATUS_BG[color],
-                        STATUS_BORDER[color]
-                      )}
-                    >
-                      <Briefcase size={14} className={STATUS_TEXT[color]} />
-                    </div>
-
-                    {/* Title + meta */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
+                        <span className="shrink-0 font-mono text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                          {item.caseNumber}
+                        </span>
                         <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                           {item.title}
                         </span>
-                        <Badge
-                          variant="default"
-                          className={cn(
-                            "shrink-0 border text-[10px]",
-                            STATUS_BG[color],
-                            STATUS_TEXT[color],
-                            STATUS_BORDER[color]
-                          )}
-                        >
-                          {STATUS_LABELS_DE[item.status] ?? item.status}
-                        </Badge>
-                        <Badge
-                          variant="default"
-                          className={cn(
-                            "shrink-0 border text-[10px]",
-                            PRIORITY_COLORS[item.priority] ?? PRIORITY_COLORS.medium
-                          )}
-                        >
-                          {item.priority}
-                        </Badge>
+                        {item.status !== "open" && (
+                          <Badge
+                            variant="default"
+                            className={cn(
+                              "shrink-0 border text-xs",
+                              STATUS_BG[color],
+                              STATUS_TEXT[color],
+                              STATUS_BORDER[color]
+                            )}
+                          >
+                            {isEn ? item.status : (STATUS_LABELS_DE[item.status] ?? item.status)}
+                          </Badge>
+                        )}
+                        {PRIORITY_FLAGGED.has(item.priority) && (
+                          <Badge
+                            variant="default"
+                            className={cn(
+                              "shrink-0 border text-xs",
+                              PRIORITY_COLORS[item.priority] ?? PRIORITY_COLORS.medium
+                            )}
+                          >
+                            {isEn
+                              ? item.priority
+                              : (PRIORITY_LABELS_DE[item.priority] ?? item.priority)}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-[color:var(--ds-text-muted)]">
-                        <span className="font-mono">{item.caseNumber}</span>
-                        {item.legalArea && (
-                          <span className="flex items-center gap-0.5">
-                            <Scale size={9} />
-                            {item.legalArea}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                        {(item.clientName || item.opponentName) && (
+                          <span>
+                            {item.clientName ?? "—"}
+                            {item.opponentName && (
+                              <span className="text-[color:var(--ds-text-subtle)]">
+                                {" "}
+                                ./. {item.opponentName}
+                              </span>
+                            )}
                           </span>
                         )}
-                        {item.clientName && (
-                          <span className="flex items-center gap-0.5">
-                            <Users size={9} />
-                            {item.clientName}
-                          </span>
-                        )}
-                        {item.opponentName && (
-                          <span className="text-[color:var(--ds-text-subtle)]">
-                            vs. {item.opponentName}
-                          </span>
-                        )}
-                        {item.lawyerName && (
-                          <span className="text-[color:var(--ds-text-subtle)]">
-                            · {item.lawyerName}
-                          </span>
-                        )}
+                        {item.legalArea && <span>{item.legalArea}</span>}
                         {item.courtName && (
-                          <span className="flex items-center gap-0.5">
-                            <Gavel size={9} />
+                          <span className="flex items-center gap-1">
+                            <Gavel size={11} aria-hidden="true" />
                             {item.courtName}
                           </span>
                         )}
+                        {item.lawyerName && (
+                          <span className="flex items-center gap-1">
+                            <Users size={11} aria-hidden="true" />
+                            {item.lawyerName}
+                          </span>
+                        )}
                         {item.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="flex items-center gap-0.5 text-[color:var(--ds-text-subtle)]"
-                          >
-                            <Tag size={8} />
-                            {tag}
+                          <span key={tag} className="text-[color:var(--ds-text-subtle)]">
+                            #{tag}
                           </span>
                         ))}
                       </div>
                     </div>
 
-                    {/* Updated date */}
-                    <span className="shrink-0 text-[10px] text-[color:var(--ds-text-subtle)]">
-                      {new Date(item.updatedAt).toLocaleDateString(isEn ? "en-GB" : "de-DE")}
+                    <span className="hidden shrink-0 text-xs text-[color:var(--ds-text-subtle)] tabular-nums sm:inline">
+                      {formatDate(item.updatedAt)}
                     </span>
                   </Link>
                 );

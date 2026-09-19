@@ -3,8 +3,8 @@
 /**
  * MatterSidebarSection — Shows matter-scoped navigation in the sidebar
  * when the user is inside a matter page.
- * Renders a compact list of matter tabs (Overview, Documents, Deadlines, etc.)
- * with the active matter title as a header.
+ * Renders one entry for the open matter (title and case number); the matter's
+ * registers live in the page's tab bar.
  * Falls back to null when not on a matter page.
  */
 
@@ -12,43 +12,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
 import { usePage } from "@/lib/queries/brain";
-import {
-  Briefcase,
-  FileText,
-  CalendarClock,
-  Lightbulb,
-  Activity,
-  Receipt,
-  Users,
-  ShieldAlert,
-  ChevronRight,
-} from "lucide-react";
+import { Briefcase, ChevronRight } from "lucide-react";
 import { useMatterDataSafe } from "@/lib/matter-data-context";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
-
-interface MatterNavItem {
-  tab: string;
-  icon: typeof Briefcase;
-  labelDe: string;
-  labelEn: string;
-}
-
-const MATTER_NAV_ITEMS: MatterNavItem[] = [
-  { tab: "overview", icon: Briefcase, labelDe: "Übersicht", labelEn: "Overview" },
-  { tab: "documents", icon: FileText, labelDe: "Dokumente", labelEn: "Documents" },
-  {
-    tab: "deadlines",
-    icon: CalendarClock,
-    labelDe: "Fristen & Aufgaben",
-    labelEn: "Deadlines & Tasks",
-  },
-  { tab: "strategy", icon: Lightbulb, labelDe: "Strategie", labelEn: "Strategy" },
-  { tab: "evidence", icon: ShieldAlert, labelDe: "Beweise", labelEn: "Evidence" },
-  { tab: "activity", icon: Activity, labelDe: "Aktivität", labelEn: "Activity" },
-  { tab: "billing", icon: Receipt, labelDe: "Kosten", labelEn: "Billing" },
-  { tab: "contacts", icon: Users, labelDe: "Beteiligte", labelEn: "Contacts" },
-];
 
 interface MatterSidebarSectionProps {
   collapsed: boolean;
@@ -85,72 +52,47 @@ export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSec
 
   const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
 
+  const caseNumber =
+    matter?.caseNumber ??
+    (fallbackPage.data?.frontmatter as Record<string, unknown> | undefined)?.case_number;
+  const label = matterTitle || t("mattersidebar.matter");
+  const isOverview = activeTab === "overview";
+
+  // One entry for the open matter. Its registers are the tab bar on the page;
+  // listing them here as well doubled the navigation and pushed the firm-wide
+  // groups off screen.
   return (
     <div className={cn("mt-3 border-t border-[color:var(--ds-border)] pt-3", collapsed && "px-0")}>
-      {/* Matter header */}
-      {!collapsed && (
-        <div className="mb-2 px-3">
-          <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-            <Briefcase size={10} className="shrink-0" />
-            {t("mattersidebar.matter")}
-          </div>
-          <div className="mt-1 truncate text-[12px] font-medium text-[color:var(--ds-text)]">
-            {matterTitle || caseSlug.split("/").pop()}
-          </div>
-        </div>
-      )}
-
-      {/* Matter nav items */}
-      <div className="space-y-0.5">
-        {MATTER_NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const itemTab = item.tab === "overview" ? "" : item.tab;
-          const href = itemTab
-            ? `/dashboard/cases/${encodedSlug}/${itemTab}`
-            : `/dashboard/cases/${encodedSlug}`;
-          const isActive = activeTab === item.tab;
-
-          if (collapsed) {
-            return (
-              <Link
-                key={item.tab}
-                href={href}
-                aria-current={isActive ? "page" : undefined}
-                aria-label={lang === "en" ? item.labelEn : item.labelDe}
-                onClick={onNavigate}
-                title={lang === "en" ? item.labelEn : item.labelDe}
-                className={cn(
-                  "group flex h-9 w-full items-center justify-center rounded-lg transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
-                  isActive
-                    ? "brand-soft brand-text"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                )}
-              >
-                <Icon size={18} strokeWidth={isActive ? 2.25 : 1.75} />
-              </Link>
-            );
-          }
-
-          return (
-            <Link
-              key={item.tab}
-              href={href}
-              aria-current={isActive ? "page" : undefined}
-              onClick={onNavigate}
-              className={cn(
-                "group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
-                isActive
-                  ? "brand-soft brand-text"
-                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              )}
-            >
-              <Icon size={15} className="shrink-0" strokeWidth={isActive ? 2 : 1.75} />
-              <span className="flex-1 truncate">{lang === "en" ? item.labelEn : item.labelDe}</span>
-              {isActive && <ChevronRight size={12} className="shrink-0 opacity-50" />}
-            </Link>
-          );
-        })}
-      </div>
+      <Link
+        href={`/dashboard/cases/${encodedSlug}`}
+        aria-current={isOverview ? "page" : undefined}
+        aria-label={collapsed ? label : undefined}
+        title={collapsed ? label : undefined}
+        onClick={onNavigate}
+        className={cn(
+          "group flex items-center rounded-lg transition-[background-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+          collapsed ? "h-9 w-full justify-center" : "gap-2.5 px-3 py-2",
+          "brand-soft brand-text"
+        )}
+      >
+        <Briefcase size={collapsed ? 18 : 15} className="shrink-0" aria-hidden />
+        {!collapsed && (
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+              {lang === "en" ? "Open matter" : "Geöffnete Akte"}
+            </span>
+            <span className="block truncate text-[13px] font-medium text-[color:var(--ds-text)]">
+              {matterTitle || "…"}
+            </span>
+            {typeof caseNumber === "string" && (
+              <span className="block text-[11px] text-[color:var(--ds-text-muted)] tabular-nums">
+                {caseNumber}
+              </span>
+            )}
+          </span>
+        )}
+        {!collapsed && <ChevronRight size={12} className="shrink-0 opacity-50" aria-hidden />}
+      </Link>
     </div>
   );
 }

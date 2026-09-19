@@ -9,15 +9,15 @@ import {
   MessageSquare,
   AlertTriangle,
   CheckCircle2,
-  Loader2,
   Share2,
-  Upload,
   Download,
 } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import { encodeSlugPath } from "@/lib/utils";
+import { encodeSlugPath, formatDate } from "@/lib/utils";
 import { caseFrontmatter, type DeadlineEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -44,7 +44,7 @@ interface SharedSpace {
 }
 
 export default function ClientPortalPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   // Vorschau-Modus: Diese Seite zeigt dem ANWALT, wie das Mandanten-Portal
   // aussehen wird. Ein echtes Mandanten-Portal braucht eine eigene,
   // pro Mandant authentifizierte Deployment-Oberfläche (Phase 5) —
@@ -88,7 +88,7 @@ export default function ClientPortalPage() {
             status: fm.status || "open",
             lastUpdate: p.updated_at || p.created_at,
             nextStep: nextDl
-              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || Date.now()).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${formatDate(nextDl.due_date)}`
               : t("client_portal.no_deadline"),
             documents: Array.isArray(docs) ? docs.length : 0,
             messages: 0,
@@ -102,8 +102,9 @@ export default function ClientPortalPage() {
         const spacesData = await spacesRes.json();
         setSharedSpaces(spacesData.data || []);
       }
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : t("client_portal.error_load"));
+    } catch {
+      // Plain wording only — transport errors are not shown to the lawyer.
+      setLoadError(t("client_portal.error_load"));
       setCases([]);
       setSharedSpaces([]);
     } finally {
@@ -118,23 +119,16 @@ export default function ClientPortalPage() {
 
   if (!previewing) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="w-full max-w-md space-y-6">
-          <div className="space-y-2 text-center">
-            <div
-              className="brand-soft brand-border mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border"
-              aria-hidden="true"
-            >
-              <Eye size={28} className="brand-text" />
-            </div>
-            <h1 className="text-xl font-bold text-[color:var(--ds-text)]">
-              {t("client_portal.preview_title")}
-            </h1>
-            <p className="text-sm text-[color:var(--ds-text-muted)]">
-              {t("client_portal.preview_desc")}
-            </p>
-          </div>
-
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("client_portal.preview_title")}
+          description={t("client_portal.preview_desc")}
+          breadcrumbs={[
+            { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+            { label: t("client_portal.breadcrumb") },
+          ]}
+        />
+        <div className="max-w-[720px] space-y-4">
           <div
             className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
             role="note"
@@ -146,17 +140,13 @@ export default function ClientPortalPage() {
                 aria-hidden="true"
               />
               <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
-                {t("client_portal.preview_warning")}
+                Diese Vorschau zeigt der Kanzlei alle Akten, die für das Mandantenportal freigegeben
+                sind. Ein eigener Zugang pro Mandant ist noch nicht Teil dieses Dashboards.
               </p>
             </div>
           </div>
-
-          <Button
-            variant="primary"
-            className="brand-bg brand-bg w-full text-white"
-            onClick={startPreview}
-          >
-            <Eye size={16} className="mr-2" aria-hidden="true" />
+          <Button onClick={startPreview} className="gap-2">
+            <Eye size={16} aria-hidden="true" />
             {t("client_portal.open_preview")}
           </Button>
         </div>
@@ -196,7 +186,9 @@ export default function ClientPortalPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Share2 size={16} className="text-[color:var(--ds-text-muted)]" />
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Shared Spaces</h3>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Geteilte Datenräume
+            </h2>
           </div>
           {sharedSpaces.map((space) => (
             <div
@@ -230,30 +222,17 @@ export default function ClientPortalPage() {
                 </span>
                 {space.expires_at && (
                   <span className="flex items-center gap-1">
-                    <CalendarClock size={10} />
-                    {new Date(space.expires_at).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
+                    <CalendarClock size={10} aria-hidden="true" />
+                    gültig bis {formatDate(space.expires_at)}
                   </span>
                 )}
               </div>
               <div className="mt-3 flex gap-2">
-                <Button
-                  variant="secondary"
-                  className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                  asChild
-                >
-                  <Link href={`/dashboard/shared-spaces/${space.slug}`} className="flex-1">
+                <Button variant="outline" size="sm" className="text-xs" asChild>
+                  <Link href={`/dashboard/shared-spaces/${space.slug}`}>
                     <Download size={12} className="mr-1.5" />
-                    Dokumente
+                    Dokumente öffnen
                   </Link>
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="flex-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                >
-                  <Upload size={12} className="mr-1.5" />
-                  Hochladen
                 </Button>
               </div>
             </div>
@@ -263,22 +242,21 @@ export default function ClientPortalPage() {
 
       {/* Cases */}
       {loading ? (
-        <div
-          className="py-20 text-center text-[color:var(--ds-text-muted)]"
-          role="status"
-          aria-live="polite"
-        >
-          <Loader2 size={24} className="mx-auto mb-3 animate-spin" />
-          {t("client_portal.loading")}
+        <div className="space-y-3" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-36 w-full rounded-xl" />
+          ))}
         </div>
       ) : cases.length === 0 ? (
-        <div className="space-y-4 py-20 text-center">
-          <FileText size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-[color:var(--ds-text-muted)]">{t("client_portal.empty")}</p>
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {t("client_portal.empty_hint")}
-          </p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={t("client_portal.empty")}
+          description={t("client_portal.empty_hint")}
+          actionLabel="Zu den Akten"
+          onAction={() => {
+            window.location.href = "/dashboard/cases";
+          }}
+        />
       ) : (
         <div className="space-y-3">
           {cases.map((c) => (
@@ -316,22 +294,19 @@ export default function ClientPortalPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <CalendarClock size={10} />
-                  {new Date(c.lastUpdate).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
+                  {formatDate(c.lastUpdate)}
                 </span>
               </div>
 
-              <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
+              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
                 <div className="flex items-start gap-2">
                   <CheckCircle2
                     size={14}
-                    className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+                    aria-hidden="true"
                   />
                   <div>
-                    <p className="text-xs font-medium text-[color:var(--ds-warning-text)]">
+                    <p className="text-xs font-medium text-[color:var(--ds-text)]">
                       {t("client_portal.next_step")}
                     </p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">{c.nextStep}</p>
@@ -340,12 +315,8 @@ export default function ClientPortalPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                  asChild
-                >
-                  <Link href={`/dashboard/cases/${encodeSlugPath(c.slug)}`} className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1 text-xs" asChild>
+                  <Link href={`/dashboard/cases/${encodeSlugPath(c.slug)}`}>
                     <FileText size={12} className="mr-1.5" />
                     {t("client_portal.documents")}
                   </Link>

@@ -73,7 +73,7 @@ export default function AnalyticsConsentBanner() {
       <div className="flex gap-2">
         <button
           onClick={accept}
-          className="min-h-10 rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-sm font-semibold text-white transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+          className="min-h-10 rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-semibold text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
           Einverstanden
         </button>

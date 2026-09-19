@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Download, Edit, Trash2, Filter, FileText, Plus } from "lucide-react";
+import { Clock, Download, Pencil, Trash2, FileText, Plus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
+import { formatDate, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -29,6 +37,22 @@ import {
 import { api } from "@/lib/api";
 import { tracking } from "@/lib/tracking";
 import { EmptyState } from "@/components/dashboard/empty-state";
+
+const ALL_CASES = "__all";
+
+/** Minuten → "1,50 h" (de-AT, zwei Nachkommastellen). */
+function formatHours(minutes: number): string {
+  const h = (Number.isFinite(minutes) ? minutes : 0) / 60;
+  return `${new Intl.NumberFormat("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(h)} h`;
+}
+
+function esc(text: string): string {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 type TimeEntryWithMeta = {
   id: string;
@@ -46,12 +70,12 @@ type TimeEntryWithMeta = {
 };
 
 export default function TimeEntriesPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { addToast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCase, setSelectedCase] = useState<string>("");
+  const [selectedCase, setSelectedCase] = useState<string>(ALL_CASES);
   const [editEntry, setEditEntry] = useState<TimeEntryWithMeta | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<TimeEntryWithMeta | null>(null);
   const [editForm, setEditForm] = useState({
@@ -92,7 +116,7 @@ export default function TimeEntriesPage() {
       if (searchQuery && !entry.description.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-      if (selectedCase && entry.case_slug !== selectedCase) {
+      if (selectedCase !== ALL_CASES && entry.case_slug !== selectedCase) {
         return false;
       }
       if (activeTab === "billable" && !entry.billable) {
@@ -127,7 +151,12 @@ export default function TimeEntriesPage() {
       });
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      console.error("[time] create failed:", err.message);
+      addToast({
+        title: "Zeiteintrag konnte nicht gespeichert werden",
+        description: "Bitte prüfen Sie Akte, Dauer und Datum und versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -147,11 +176,13 @@ export default function TimeEntriesPage() {
     (sum: number, e: TimeEntryWithMeta) => sum + (e.minutes || 0),
     0
   );
-  const totalHours = (totalMinutes / 60).toFixed(2);
-  const billableAmount = filteredEntries
+  const totalHours = formatHours(totalMinutes);
+  const billableValue = filteredEntries
     .filter((e: TimeEntryWithMeta) => e.billable && !e.billed)
-    .reduce((sum: number, e: TimeEntryWithMeta) => sum + ((e.minutes || 0) / 60) * (e.rate || 0), 0)
-    .toFixed(2);
+    .reduce((sum: number, e: TimeEntryWithMeta) => sum + ((e.minutes || 0) / 60) * (e.rate || 0), 0);
+  const billableAmount = formatEur(billableValue, lang);
+  const caseTitle = (slug?: string) =>
+    (slug && cases.find((c: { slug: string; title: string }) => c.slug === slug)?.title) || slug || "—";
 
   // Export entries as CSV or PDF
   function handleExport(format: "csv" | "pdf") {
@@ -163,11 +194,11 @@ export default function TimeEntriesPage() {
         <html><head><title>Zeiteinträge Export</title>
         <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid hsl(222,8%,85%);padding:8px;text-align:left}th{background:hsl(222,8%,96%)}</style>
         </head><body>
-        <h1>Zeiteinträge Export — ${new Date().toLocaleDateString("de-DE")}</h1>
+        <h1>Zeiteinträge — ${formatDate(new Date())}</h1>
         <table><thead><tr><th>Datum</th><th>Beschreibung</th><th>Akte</th><th>Minuten</th><th>Stunden</th><th>Abrechenbar</th><th>Satz</th><th>Betrag</th></tr></thead><tbody>
-        ${filteredEntries.map((e: TimeEntryWithMeta) => `<tr><td>${formatDate(e.date)}</td><td>${e.description}</td><td>${e.case_slug || "—"}</td><td>${e.minutes}</td><td>${(e.minutes / 60).toFixed(2)}</td><td>${e.billable ? "Ja" : "Nein"}</td><td>${e.rate ? `€${e.rate}` : "—"}</td><td>${e.billable && e.rate ? `€${((e.minutes / 60) * e.rate).toFixed(2)}` : "—"}</td></tr>`).join("")}
+        ${filteredEntries.map((e: TimeEntryWithMeta) => `<tr><td>${formatDate(e.date)}</td><td>${esc(e.description)}</td><td>${esc(e.case_title || caseTitle(e.case_slug))}</td><td>${e.minutes}</td><td>${formatHours(e.minutes)}</td><td>${e.billable ? "Ja" : "Nein"}</td><td>${e.rate ? formatEur(e.rate) : "—"}</td><td>${e.billable && e.rate ? formatEur((e.minutes / 60) * e.rate) : "—"}</td></tr>`).join("")}
         </tbody></table>
-        <p><strong>Gesamt:</strong> ${totalHours}h — Abrechenbar: €${billableAmount}</p>
+        <p><strong>Gesamt:</strong> ${totalHours} — nicht abgerechnet: ${billableAmount}</p>
         </body></html>`);
       printWindow.document.close();
       printWindow.print();
@@ -192,7 +223,7 @@ export default function TimeEntriesPage() {
       formatDate(e.date),
       `"${e.description.replace(/"/g, '""')}"`,
       e.case_slug || "",
-      e.case_title || "",
+      `"${(e.case_title || caseTitle(e.case_slug)).replace(/"/g, '""')}"`,
       String(e.minutes),
       (e.minutes / 60).toFixed(2),
       e.billable ? "Ja" : "Nein",
@@ -213,8 +244,8 @@ export default function TimeEntriesPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     addToast({
-      title: "Export erfolgreich",
-      description: `${filteredEntries.length} Einträge als CSV exportiert`,
+      title: "Export erstellt",
+      description: `${filteredEntries.length} ${filteredEntries.length === 1 ? "Eintrag" : "Einträge"} als CSV exportiert`,
       type: "success",
     });
   }
@@ -246,7 +277,12 @@ export default function TimeEntriesPage() {
       setEditEntry(null);
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      console.error("[time] update failed:", err.message);
+      addToast({
+        title: "Änderung konnte nicht gespeichert werden",
+        description: "Bitte versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -272,7 +308,12 @@ export default function TimeEntriesPage() {
       setDeleteEntry(null);
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      console.error("[time] delete failed:", err.message);
+      addToast({
+        title: "Eintrag konnte nicht gelöscht werden",
+        description: "Bitte versuchen Sie es erneut.",
+        type: "error",
+      });
     },
   });
 
@@ -285,152 +326,171 @@ export default function TimeEntriesPage() {
     });
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("de-DE");
-  }
-
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("nav.time_tracking")}
-        description={t("nav.time_tracking")}
-        actions={[
-          <Button key="create" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Neuer Eintrag
-          </Button>,
-          <Button key="export-csv" variant="outline" size="sm" onClick={() => handleExport("csv")}>
-            <Download className="mr-2 h-4 w-4" />
-            CSV Export
-          </Button>,
-          <Button key="export-pdf" variant="outline" size="sm" onClick={() => handleExport("pdf")}>
-            <FileText className="mr-2 h-4 w-4" />
-            PDF Export
-          </Button>,
+        description="Leistungszeiten je Akte erfassen, prüfen und als Grundlage für Honorarnoten exportieren."
+        breadcrumbs={[
+          { label: "Übersicht", href: "/dashboard" },
+          { label: t("nav.time_tracking") },
         ]}
+        actions={
+          <>
+            <Button variant="primary" size="sm" className="whitespace-nowrap" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Neuer Eintrag
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  disabled={filteredEntries.length === 0}
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  Exportieren
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="gap-2 text-xs" onClick={() => handleExport("csv")}>
+                  <Download size={13} aria-hidden="true" />
+                  Als CSV (Excel)
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 text-xs" onClick={() => handleExport("pdf")}>
+                  <FileText size={13} aria-hidden="true" />
+                  Drucken / PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
       />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gesamtzeit</CardTitle>
-            <Calendar className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalHours}h</div>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">{totalMinutes} Minuten</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Abrechenbar</CardTitle>
-            <Calendar className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">€{billableAmount}</div>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">Nicht abgerechnet</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Einträge</CardTitle>
-            <Calendar className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredEntries.length}</div>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">Gefiltert</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Kennzahlen */}
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[76px] rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <TimeStat label="Erfasste Zeit" value={totalHours} sub={`${totalMinutes} Minuten`} />
+          <TimeStat label="Nicht abgerechnet" value={billableAmount} sub="abrechenbar, noch offen" />
+          <TimeStat
+            label="Einträge"
+            value={String(filteredEntries.length)}
+            sub={
+              filteredEntries.length === (entries?.length ?? 0)
+                ? "alle Einträge"
+                : `von ${entries?.length ?? 0} gesamt`
+            }
+          />
+        </div>
+      )}
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <Filter className="h-4 w-4" />
-            Filter
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Input
-              placeholder={t("time.ph_search")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-xs"
-            />
-            <Input
-              placeholder={t("time.ph_case")}
-              value={selectedCase}
-              onChange={(e) => setSelectedCase(e.target.value)}
-              className="max-w-xs"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filter */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Input
+          placeholder="Tätigkeit suchen …"
+          aria-label="Tätigkeit suchen"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="sm:max-w-xs"
+        />
+        <Select value={selectedCase} onValueChange={setSelectedCase}>
+          <SelectTrigger className="sm:max-w-xs" aria-label="Nach Akte filtern">
+            <SelectValue placeholder="Alle Akten" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_CASES}>Alle Akten</SelectItem>
+            {cases.map((c: { slug: string; title: string }) => (
+              <SelectItem key={c.slug} value={c.slug}>
+                {c.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">Alle</TabsTrigger>
-          <TabsTrigger value="billable">Abrechenbar</TabsTrigger>
-          <TabsTrigger value="unbilled">Nicht abgerechnet</TabsTrigger>
-          <TabsTrigger value="auto">Automatisch</TabsTrigger>
-          <TabsTrigger value="manual">Manuell</TabsTrigger>
-        </TabsList>
+        <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+          <TabsList>
+            <TabsTrigger value="all">Alle</TabsTrigger>
+            <TabsTrigger value="billable">Abrechenbar</TabsTrigger>
+            <TabsTrigger value="unbilled">Nicht abgerechnet</TabsTrigger>
+            <TabsTrigger value="auto">Automatisch</TabsTrigger>
+            <TabsTrigger value="manual">Manuell</TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value={activeTab} className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Zeiteinträge</CardTitle>
-              <CardDescription>{filteredEntries.length} Einträge</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
-              ) : filteredEntries.length > 0 ? (
-                <div className="space-y-4">
-                  {filteredEntries.map((entry: TimeEntryWithMeta) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center justify-between rounded-lg border p-4"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">{entry.description}</div>
-                        <div className="text-sm text-[color:var(--ds-text-muted)]">
-                          {formatDate(entry.date)} • {entry.case_slug || "Global"} • {entry.minutes}{" "}
-                          min
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {entry.is_auto_generated && <Badge className="text-xs">Auto</Badge>}
-                        {entry.billable && !entry.billed && (
-                          <Badge className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
-                            Abrechenbar
-                          </Badge>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => handleEdit(entry)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteEntry(entry)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+        <TabsContent value={activeTab} className="mt-4">
+          {isLoading ? (
+            <RowSkeleton count={4} />
+          ) : filteredEntries.length > 0 ? (
+            <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+              {filteredEntries.map((entry: TimeEntryWithMeta) => (
+                <li key={entry.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {entry.description}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={Clock}
-                  title="Keine Zeiteinträge gefunden"
-                  actionLabel="Neuer Eintrag"
-                  onAction={() => setCreateOpen(true)}
-                  className="border-0 bg-transparent py-8"
-                />
-              )}
-            </CardContent>
-          </Card>
+                    <div className="truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                      {formatDate(entry.date)} · {entry.case_title || caseTitle(entry.case_slug)} ·{" "}
+                      {formatHours(entry.minutes)}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {entry.is_auto_generated && (
+                      <Badge className="hidden text-xs sm:inline-flex">Automatisch</Badge>
+                    )}
+                    {entry.billed ? (
+                      <Badge className="hidden text-xs sm:inline-flex">Abgerechnet</Badge>
+                    ) : entry.billable ? (
+                      <Badge className="hidden border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)] sm:inline-flex">
+                        Abrechenbar
+                      </Badge>
+                    ) : null}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`${t("time.edit_title")}: ${entry.description}`}
+                      title={t("time.edit_title")}
+                      onClick={() => handleEdit(entry)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`${t("time.delete_title")}: ${entry.description}`}
+                      title={t("time.delete_title")}
+                      onClick={() => setDeleteEntry(entry)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (entries?.length ?? 0) > 0 ? (
+            <EmptyState
+              icon={Clock}
+              title="Keine Einträge für diesen Filter"
+              description="Passen Sie Suche, Akte oder Register an."
+            />
+          ) : (
+            <EmptyState
+              icon={Clock}
+              title="Noch keine Zeiteinträge"
+              description="Erfassen Sie Ihre erste Leistung zu einer Akte."
+              actionLabel="Neuer Eintrag"
+              onAction={() => setCreateOpen(true)}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -507,7 +567,7 @@ export default function TimeEntriesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="research">Recherche</SelectItem>
-                    <SelectItem value="drafting">Entwurf</SelectItem>
+                    <SelectItem value="drafting">Schriftsatz</SelectItem>
                     <SelectItem value="court">Gericht</SelectItem>
                     <SelectItem value="meeting">Besprechung</SelectItem>
                     <SelectItem value="other">Sonstiges</SelectItem>
@@ -527,22 +587,28 @@ export default function TimeEntriesPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Abrechenbar</Label>
-              <Button
-                variant={createForm.billable ? "primary" : "outline"}
-                className="w-full"
-                onClick={() => setCreateForm({ ...createForm, billable: !createForm.billable })}
-              >
-                {createForm.billable ? "Ja" : "Nein"}
-              </Button>
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="create-billable">Abrechenbar</Label>
+              <Switch
+                id="create-billable"
+                checked={createForm.billable}
+                onCheckedChange={(v) => setCreateForm({ ...createForm, billable: v })}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
               {t("time.cancel")}
             </Button>
-            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+            <Button
+              onClick={handleCreate}
+              disabled={
+                createMutation.isPending ||
+                !createForm.description ||
+                !createForm.minutes ||
+                !createForm.case_slug
+              }
+            >
               {createMutation.isPending ? t("time.saving") : t("time.save")}
             </Button>
           </DialogFooter>
@@ -597,16 +663,13 @@ export default function TimeEntriesPage() {
                   onChange={(e) => setEditForm({ ...editForm, rate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="flex items-end justify-between gap-3 pb-2">
                 <Label htmlFor="edit-billable">{t("time.billable")}</Label>
-                <Button
+                <Switch
                   id="edit-billable"
-                  variant={editForm.billable ? "primary" : "outline"}
-                  className="w-full"
-                  onClick={() => setEditForm({ ...editForm, billable: !editForm.billable })}
-                >
-                  {editForm.billable ? t("time.yes") : t("time.no")}
-                </Button>
+                  checked={editForm.billable}
+                  onCheckedChange={(v) => setEditForm({ ...editForm, billable: v })}
+                />
               </div>
             </div>
           </div>
@@ -644,6 +707,16 @@ export default function TimeEntriesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function TimeStat({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</div>
+      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{sub}</div>
     </div>
   );
 }

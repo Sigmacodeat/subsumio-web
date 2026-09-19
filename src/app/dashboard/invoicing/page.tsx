@@ -7,32 +7,31 @@ import {
   Plus,
   Send,
   CheckCircle2,
-  Clock,
   XCircle,
   AlertTriangle,
   Printer,
   Mail,
   Trash2,
-  Loader2,
   FileSpreadsheet,
   BarChart3,
-  MoreVertical,
+  MoreHorizontal,
   FileCode2,
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn, formatEur } from "@/lib/utils";
+import { cn, formatDate, formatEur } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
-import { STATUS_TEXT, STATUS_BG, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
+import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
   caseFrontmatter,
   invoiceFrontmatter,
@@ -45,6 +44,8 @@ import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/l
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { InvoiceQuickCreateDialog } from "@/components/legal/InvoiceQuickCreateDialog";
@@ -110,14 +111,36 @@ interface InvoicingCache {
 
 const STATUS_CONFIG: Record<
   string,
-  { labelKey: DashboardKey; icon: React.ElementType; color: StatusColor }
+  { labelKey: DashboardKey; color: StatusColor }
 > = {
-  draft: { labelKey: "inv.status_draft", icon: Clock, color: "gray" },
-  sent: { labelKey: "inv.status_sent", icon: Send, color: "blue" },
-  paid: { labelKey: "inv.status_paid", icon: CheckCircle2, color: "emerald" },
-  overdue: { labelKey: "inv.status_overdue", icon: AlertTriangle, color: "red" },
-  cancelled: { labelKey: "inv.status_cancelled", icon: XCircle, color: "gray" },
+  draft: { labelKey: "inv.status_draft", color: "gray" },
+  sent: { labelKey: "inv.status_sent", color: "blue" },
+  paid: { labelKey: "inv.status_paid", color: "emerald" },
+  overdue: { labelKey: "inv.status_overdue", color: "red" },
+  cancelled: { labelKey: "inv.status_cancelled", color: "gray" },
 };
+
+/** Server error codes → plain German. Never show a raw code or provider message. */
+function invoiceErrorText(code: unknown, fallback: string): string {
+  switch (code) {
+    case "smtp_not_configured":
+      return "E-Mail-Versand ist nicht eingerichtet. Bitte hinterlegen Sie den Postausgang in den Einstellungen.";
+    case "validation_failed":
+      return "Die E-Rechnung ist unvollständig. Bitte prüfen Sie Mandantenadresse, Kanzleidaten und Positionen.";
+    case "xml_not_wellformed":
+      return "Die Datei ist keine gültige E-Rechnung (XML nicht lesbar).";
+    case "not_found":
+      return "Die Rechnung wurde nicht gefunden. Bitte laden Sie die Seite neu.";
+    case "no_recipient_email":
+      return "Für diesen Mandanten ist keine E-Mail-Adresse hinterlegt.";
+    case "invoice_not_overdue":
+      return "Eine Mahnung ist nur für versendete Rechnungen möglich.";
+    case "no_embedded_xml":
+      return "Das PDF enthält keine eingebettete E-Rechnung (ZUGFeRD/Factur-X).";
+    default:
+      return fallback;
+  }
+}
 
 /** Escape user input before injecting into HTML strings — prevents XSS. */
 function escapeHtml(text: string): string {
@@ -142,7 +165,18 @@ export default function InvoicingPage() {
   const [loading, setLoading] = useState(true);
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessageText] = useState<string | null>(null);
+  const [statusTone, setStatusTone] = useState<"success" | "error" | "info">("info");
+  /** Show a status line; `tone` decides colour, `ms` auto-hides it. */
+  function setStatusMessage(
+    text: string | null,
+    tone: "success" | "error" | "info" = "info",
+    ms?: number
+  ) {
+    setStatusMessageText(text);
+    setStatusTone(tone);
+    if (text && ms) setTimeout(() => setStatusMessageText((cur) => (cur === text ? null : cur)), ms);
+  }
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("lawyer");
 
@@ -238,7 +272,7 @@ export default function InvoicingPage() {
       if (cached) {
         setInvoices(cached.invoices);
         setCases(cached.cases);
-        setStatusMessage(t("inv.error_offline"));
+        setStatusMessage(t("inv.error_offline"), "info");
       } else {
         setInvoices([]);
         setCases([]);
@@ -280,6 +314,10 @@ export default function InvoicingPage() {
 
     const settings = kanzlei ?? (await loadKanzleiSettings());
     const vatRate = inv.vatRate ?? vatRateFor(settings);
+    const num = (n: number) =>
+      new Intl.NumberFormat("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+        Number.isFinite(n) ? n : 0
+      );
     const html = `
 <!DOCTYPE html>
 <html lang="de">
@@ -325,8 +363,8 @@ export default function InvoicingPage() {
     <div class="meta-box">
       <strong>Rechnungsdetails:</strong>
       <p>Rechnungs-Nr.: ${escapeHtml(inv.number)}</p>
-      <p>Datum: ${escapeHtml(inv.date)}</p>
-      <p>Fällig: ${escapeHtml(inv.dueDate)}</p>
+      <p>Datum: ${escapeHtml(formatDate(inv.date))}</p>
+      ${inv.dueDate ? `<p>Fällig: ${escapeHtml(formatDate(inv.dueDate))}</p>` : ""}
       ${inv.caseNumber ? `<p>Aktenzeichen: ${escapeHtml(inv.caseNumber)}</p>` : ""}
     </div>
   </div>
@@ -346,11 +384,11 @@ export default function InvoicingPage() {
         .map(
           (item) => `
         <tr>
-          <td>${escapeHtml(item.date)}</td>
+          <td>${escapeHtml(formatDate(item.date))}</td>
           <td>${escapeHtml(item.description)}</td>
-          <td class="right">${item.hours > 0 ? item.hours.toFixed(2) : "—"}</td>
-          <td class="right">${item.hours > 0 ? item.rate.toFixed(2) : "—"}</td>
-          <td class="right">${item.amount.toFixed(2)}</td>
+          <td class="right">${item.hours > 0 ? num(item.hours) : "—"}</td>
+          <td class="right">${item.hours > 0 ? num(item.rate) : "—"}</td>
+          <td class="right">${num(item.amount)}</td>
         </tr>
       `
         )
@@ -374,9 +412,9 @@ export default function InvoicingPage() {
           .map(
             (item) => `
           <tr>
-            <td>${escapeHtml(item.date)}</td>
+            <td>${escapeHtml(formatDate(item.date))}</td>
             <td>${escapeHtml(item.description)}</td>
-            <td class="right">${item.amount.toFixed(2)}</td>
+            <td class="right">${num(item.amount)}</td>
           </tr>
         `
           )
@@ -388,10 +426,10 @@ export default function InvoicingPage() {
   }
 
   <div class="totals">
-    <div class="total-row"><span>Honorar netto</span><span>${inv.subtotal.toFixed(2)} €</span></div>
-    ${inv.expenseTotal > 0 ? `<div class="total-row"><span>Auslagen netto</span><span>${inv.expenseTotal.toFixed(2)} €</span></div>` : ""}
-    <div class="total-row"><span>Mehrwertsteuer (${(vatRate * 100).toFixed(0)}%)</span><span>${inv.tax.toFixed(2)} €</span></div>
-    ${inv.advancePayment > 0 ? `<div class="total-row"><span>Vorschuss / Anzahlung</span><span>- ${inv.advancePayment.toFixed(2)} €</span></div>` : ""}
+    <div class="total-row"><span>Honorar netto</span><span>${formatEur(inv.subtotal, lang)}</span></div>
+    ${inv.expenseTotal > 0 ? `<div class="total-row"><span>Auslagen netto</span><span>${formatEur(inv.expenseTotal, lang)}</span></div>` : ""}
+    <div class="total-row"><span>Mehrwertsteuer (${(vatRate * 100).toFixed(0)}%)</span><span>${formatEur(inv.tax, lang)}</span></div>
+    ${inv.advancePayment > 0 ? `<div class="total-row"><span>Vorschuss / Anzahlung</span><span>− ${formatEur(inv.advancePayment, lang)}</span></div>` : ""}
     <div class="total-row grand"><span>Gesamtbetrag</span><span>${formatEur(inv.total, lang)}</span></div>
   </div>
 
@@ -411,9 +449,15 @@ export default function InvoicingPage() {
   }
 
   async function downloadPdf(inv: Invoice) {
+    const pdf = await buildInvoicePdf(inv);
+    pdf.save(`Rechnung_${inv.number}.pdf`);
+  }
+
+  /** The same PDF for download and for the e-mail attachment. */
+  async function buildInvoicePdf(inv: Invoice) {
     const settings = kanzlei ?? (await loadKanzleiSettings());
     const { generateInvoicePdf } = await import("@/lib/invoice-pdf");
-    const pdf = generateInvoicePdf({
+    return generateInvoicePdf({
       number: inv.number,
       client: inv.client,
       clientAddress: inv.clientAddress,
@@ -441,7 +485,6 @@ export default function InvoicingPage() {
         ustId: settings?.ustId,
       },
     });
-    pdf.save(`Rechnung_${inv.number}.pdf`);
   }
 
   async function downloadXmlInvoice(inv: Invoice, format: "ebinterface" | "xrechnung") {
@@ -483,11 +526,10 @@ export default function InvoicingPage() {
       const data = await res.json();
       if (!res.ok || !data.ok) {
         setStatusMessage(
-          data.error === "validation_failed"
-            ? `E-Rechnung Validierung fehlgeschlagen: ${data.validation?.errors?.[0]?.message ?? "Unbekannt"}`
-            : `${t("inv.error_prefix")}: ${data.error ?? data.message ?? "Unknown"}`
+          invoiceErrorText(data.error, `${label} konnte nicht erstellt werden. Bitte versuchen Sie es erneut.`),
+          "error",
+          6000
         );
-        setTimeout(() => setStatusMessage(null), 5000);
         return;
       }
       const blob = new Blob([data.xml], { type: "application/xml" });
@@ -497,18 +539,16 @@ export default function InvoicingPage() {
       a.download = data.filename;
       a.click();
       URL.revokeObjectURL(url);
-      setStatusMessage(`${label} XML heruntergeladen`);
-      setTimeout(() => setStatusMessage(null), 3000);
+      setStatusMessage(`${label}-Datei heruntergeladen.`, "success", 3000);
     } catch (err) {
-      setStatusMessage("E-Rechnung Generierung fehlgeschlagen");
+      setStatusMessage(`${label} konnte nicht erstellt werden. Bitte versuchen Sie es erneut.`, "error", 6000);
       console.error("[e-invoice] generate failed:", err);
-      setTimeout(() => setStatusMessage(null), 5000);
     }
   }
 
   async function downloadZugferdPdf(inv: Invoice) {
     const settings = kanzlei ?? (await loadKanzleiSettings());
-    setStatusMessage("ZUGFeRD PDF wird generiert...");
+    setStatusMessage("ZUGFeRD-PDF wird erstellt …");
     try {
       const res = await csrfFetch("/api/e-invoice/generate", {
         method: "POST",
@@ -543,13 +583,12 @@ export default function InvoicingPage() {
         }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setStatusMessage(
-          data.error === "validation_failed"
-            ? `Validierung fehlgeschlagen: ${data.validation?.errors?.[0]?.message ?? "Unbekannt"}`
-            : `${t("inv.error_prefix")}: ${data.error ?? data.message ?? "Unknown"}`
+          invoiceErrorText(data.error, "ZUGFeRD-PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut."),
+          "error",
+          6000
         );
-        setTimeout(() => setStatusMessage(null), 5000);
         return;
       }
       const blob = await res.blob();
@@ -559,17 +598,15 @@ export default function InvoicingPage() {
       a.download = `zugferd_${inv.number}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      setStatusMessage("ZUGFeRD PDF heruntergeladen");
-      setTimeout(() => setStatusMessage(null), 3000);
+      setStatusMessage("ZUGFeRD-PDF heruntergeladen.", "success", 3000);
     } catch (err) {
-      setStatusMessage("ZUGFeRD PDF Generierung fehlgeschlagen");
+      setStatusMessage("ZUGFeRD-PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut.", "error", 6000);
       console.error("[e-invoice] zugferd failed:", err);
-      setTimeout(() => setStatusMessage(null), 5000);
     }
   }
 
   async function importEInvoice(file: File) {
-    setStatusMessage("E-Rechnung wird importiert...");
+    setStatusMessage("E-Rechnung wird eingelesen …");
     try {
       let parsed: import("@/lib/e-invoice/types").ParsedEInvoice | null = null;
       let sourceFormat: "xml" | "pdf" = "xml";
@@ -584,11 +621,10 @@ export default function InvoicingPage() {
         const data = await res.json();
         if (!res.ok || !data.ok) {
           setStatusMessage(
-            data.error === "xml_not_wellformed"
-              ? `XML ungültig: ${data.validation?.errors?.[0]?.message ?? ""}`
-              : `Import fehlgeschlagen: ${data.error ?? data.message ?? ""}`
+            invoiceErrorText(data.error, "Die E-Rechnung konnte nicht eingelesen werden."),
+            "error",
+            6000
           );
-          setTimeout(() => setStatusMessage(null), 5000);
           return;
         }
         parsed = data.parsed;
@@ -603,15 +639,17 @@ export default function InvoicingPage() {
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          setStatusMessage(`Import fehlgeschlagen: ${data.error ?? data.message ?? ""}`);
-          setTimeout(() => setStatusMessage(null), 5000);
+          setStatusMessage(
+            invoiceErrorText(data.error, "Die E-Rechnung konnte nicht eingelesen werden."),
+            "error",
+            6000
+          );
           return;
         }
         parsed = data.parsed;
         sourceFormat = "pdf";
       } else {
-        setStatusMessage("Bitte XML- oder PDF-Datei hochladen");
-        setTimeout(() => setStatusMessage(null), 3000);
+        setStatusMessage("Bitte wählen Sie eine XML- oder PDF-Datei.", "error", 4000);
         return;
       }
 
@@ -658,13 +696,13 @@ export default function InvoicingPage() {
       }
 
       setStatusMessage(
-        `E-Rechnung importiert: ${parsed.invoiceNumber} — ${parsed.seller?.name ?? ""}`
+        `Eingangsrechnung ${parsed.invoiceNumber}${parsed.seller?.name ? ` von ${parsed.seller.name}` : ""} übernommen.`,
+        "success",
+        5000
       );
-      setTimeout(() => setStatusMessage(null), 5000);
     } catch (err) {
-      setStatusMessage("E-Rechnung Import fehlgeschlagen");
+      setStatusMessage("Die E-Rechnung konnte nicht eingelesen werden.", "error", 6000);
       console.error("[e-invoice] import failed:", err);
-      setTimeout(() => setStatusMessage(null), 5000);
     }
   }
 
@@ -676,21 +714,31 @@ export default function InvoicingPage() {
       const res = await csrfFetch("/api/invoices/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceSlug: inv.id }),
+        body: JSON.stringify({
+          invoiceSlug: inv.id,
+          // The mail says "anbei" — so the invoice goes along as a PDF.
+          pdfBase64: (await buildInvoicePdf(inv)).output("datauristring").split(",")[1],
+          pdfFilename: `Rechnung_${inv.number}.pdf`,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
-        setStatusMessage(`${t("inv.email_sent")} ${data.sentTo}`);
-        setTimeout(() => setStatusMessage(null), 4000);
+        setStatusMessage(`${t("inv.email_sent")} ${data.sentTo}`, "success", 4000);
+        if (inv.status === "draft") {
+          setInvoices((list) =>
+            list.map((i) => (i.id === inv.id ? { ...i, status: "sent" as const } : i))
+          );
+        }
       } else {
         setStatusMessage(
           data.error === "smtp_not_configured"
             ? t("inv.email_smtp_error")
-            : `${t("inv.error_prefix")}: ${data.error}`
+            : invoiceErrorText(data.error, t("inv.email_fail")),
+          "error"
         );
       }
     } catch (err) {
-      setStatusMessage(t("inv.email_fail"));
+      setStatusMessage(t("inv.email_fail"), "error");
       console.error("[invoice-email] failed:", err instanceof Error ? err.message : String(err));
     } finally {
       setBusySlug(null);
@@ -709,21 +757,23 @@ export default function InvoicingPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setStatusMessage(
-          `${data.reminderCount}. ${t("inv.reminder_sent")} — ${t("inv.reminder_fee")}: ${data.fee.toFixed(2)} €`
-        );
         // Refresh invoice list
         await loadAll();
-        setTimeout(() => setStatusMessage(null), 5000);
+        setStatusMessage(
+          `${data.reminderCount}. ${t("inv.reminder_sent")} — ${t("inv.reminder_fee")} ${formatEur(Number(data.fee) || 0, lang)}`,
+          "success",
+          5000
+        );
       } else {
         setStatusMessage(
           data.error === "smtp_not_configured"
             ? t("inv.email_smtp_error")
-            : `${t("inv.error_prefix")}: ${data.error}`
+            : invoiceErrorText(data.error, t("inv.reminder_fail")),
+          "error"
         );
       }
     } catch (err) {
-      setStatusMessage(t("inv.reminder_fail"));
+      setStatusMessage(t("inv.reminder_fail"), "error");
       console.error("[invoice-reminder] failed:", err instanceof Error ? err.message : String(err));
     } finally {
       setBusySlug(null);
@@ -758,13 +808,10 @@ export default function InvoicingPage() {
       );
       setInvoices(nextInvoices);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases });
-      setStatusMessage(`${t("inv.updated")} ${inv.number}.`);
+      setStatusMessage(`${inv.number} ${t("inv.updated")}`, "success", 4000);
     } catch (err) {
-      setStatusMessage(
-        err instanceof Error
-          ? `${t("inv.status_save_fail")} ${err.message}`
-          : t("inv.status_save_fail")
-      );
+      console.error("[invoicing] status update failed:", err instanceof Error ? err.message : err);
+      setStatusMessage(t("inv.status_save_fail"), "error");
     } finally {
       setBusySlug(null);
     }
@@ -787,11 +834,10 @@ export default function InvoicingPage() {
       const nextInvoices = invoices.filter((i) => i.id !== inv.id);
       setInvoices(nextInvoices);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases });
-      setStatusMessage(`${t("inv.deleted")} ${inv.number}.`);
+      setStatusMessage(`${inv.number} ${t("inv.deleted")}`, "success", 4000);
     } catch (err) {
-      setStatusMessage(
-        err instanceof Error ? `${t("inv.delete_fail")} ${err.message}` : t("inv.delete_fail")
-      );
+      console.error("[invoicing] delete failed:", err instanceof Error ? err.message : err);
+      setStatusMessage(t("inv.delete_fail"), "error");
     }
   }
 
@@ -801,10 +847,18 @@ export default function InvoicingPage() {
       inv.client.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalOutstanding = invoices
-    .filter((i) => i.status === "sent" || i.status === "overdue")
-    .reduce((s, i) => s + i.total, 0);
-  const totalPaid = invoices.filter((i) => i.status === "paid").reduce((s, i) => s + i.total, 0);
+  const sumOf = (list: Invoice[]) => list.reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const drafts = invoices.filter((i) => i.status === "draft");
+  const outstanding = invoices.filter((i) => i.status === "sent" || i.status === "overdue");
+  const overdueCount = invoices.filter((i) => i.status === "overdue").length;
+  const paid = invoices.filter((i) => i.status === "paid");
+  const en = lang === "en";
+  const countLabel = (n: number) =>
+    en ? `${n} ${n === 1 ? "invoice" : "invoices"}` : `${n} ${n === 1 ? "Rechnung" : "Rechnungen"}`;
+  const positionsLabel = (n: number) =>
+    en ? `${n} ${n === 1 ? "item" : "items"}` : `${n} ${n === 1 ? "Position" : "Positionen"}`;
+  const canSend = userRole === "admin" || userRole === "lawyer" || userRole === "assistant";
+  const canManage = userRole === "admin" || userRole === "lawyer";
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -816,7 +870,7 @@ export default function InvoicingPage() {
           { label: t("inv.title") },
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <>
             <input
               type="file"
               accept=".xml,.pdf"
@@ -828,76 +882,78 @@ export default function InvoicingPage() {
                 e.target.value = "";
               }}
             />
+            <Button variant="primary" size="sm" className="whitespace-nowrap" onClick={() => setQuickCreateOpen(true)}>
+              <Plus size={14} aria-hidden="true" />
+              {t("inv.create")}
+            </Button>
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 text-sm"
+              className="whitespace-nowrap"
               onClick={() => document.getElementById("e-invoice-import")?.click()}
             >
-              <Upload size={14} />
-              E-Rechnung Import
+              <Upload size={14} aria-hidden="true" />
+              {en ? "Import e-invoice" : "E-Rechnung einlesen"}
             </Button>
-            <Button
-              variant="primary"
-              className="gap-2 text-sm"
-              onClick={() => setQuickCreateOpen(true)}
-            >
-              <Plus size={14} />
-              {t("inv.create")}
-            </Button>
-          </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="whitespace-nowrap" aria-label={en ? "Related areas" : "Verwandte Bereiche"}>
+                  <MoreHorizontal size={14} aria-hidden="true" />
+                  {en ? "More" : "Mehr"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <HubMenuLink href="/dashboard/fee-agreements" icon={FileText} label={t("nav.fee_agreements")} />
+                <HubMenuLink href="/dashboard/fibu" icon={FileSpreadsheet} label={t("nav.fibu")} />
+                <HubMenuLink href="/dashboard/controlling" icon={BarChart3} label={t("nav.controlling")} />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         }
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <HubLink href="/dashboard/fee-agreements" icon={FileText} label={t("nav.fee_agreements")} />
-        <HubLink href="/dashboard/fibu" icon={FileSpreadsheet} label={t("nav.fibu")} />
-        <HubLink href="/dashboard/controlling" icon={BarChart3} label={t("nav.controlling")} />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
-          <div
-            className={cn(
-              "text-xl font-bold tabular-nums",
-              totalOutstanding > 0
-                ? "text-[color:var(--ds-warning-text)]"
-                : "text-[color:var(--ds-text)]"
-            )}
-          >
-            {formatEur(totalOutstanding, lang)}
-          </div>
+      {/* Kennzahlen: Entwürfe · Offen · Bezahlt — jeweils Summe brutto + Anzahl */}
+      {loading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[76px] rounded-xl" />
+          ))}
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.paid")}</div>
-          <div
-            className={cn(
-              "text-xl font-bold tabular-nums",
-              totalPaid > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text)]"
-            )}
-          >
-            {formatEur(totalPaid, lang)}
-          </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <InvoiceStat
+            label={en ? "Drafts" : "Entwürfe"}
+            value={formatEur(sumOf(drafts), lang)}
+            sub={countLabel(drafts.length)}
+          />
+          <InvoiceStat
+            label={t("inv.outstanding")}
+            value={formatEur(sumOf(outstanding), lang)}
+            sub={
+              overdueCount > 0
+                ? `${countLabel(outstanding.length)} · ${overdueCount} ${t("inv.status_overdue").toLowerCase()}`
+                : countLabel(outstanding.length)
+            }
+            tone={overdueCount > 0 ? "danger" : outstanding.length > 0 ? "warning" : undefined}
+          />
+          <InvoiceStat
+            label={t("inv.paid")}
+            value={formatEur(sumOf(paid), lang)}
+            sub={countLabel(paid.length)}
+          />
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.invoices")}</div>
-          <div className="text-xl font-bold text-[color:var(--ds-text)]">{invoices.length}</div>
-        </div>
-      </div>
+      )}
 
       {statusMessage && (
         <div
+          role={statusTone === "error" ? "alert" : "status"}
           className={cn(
             "rounded-xl border px-4 py-3 text-sm",
-            statusMessage.includes("nicht") ||
-              statusMessage.includes("fehl") ||
-              statusMessage.includes("fail") ||
-              statusMessage.includes("not") ||
-              statusMessage.includes("error")
+            statusTone === "error"
               ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
-              : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+              : statusTone === "success"
+                ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
           )}
         >
           {statusMessage}
@@ -911,64 +967,55 @@ export default function InvoicingPage() {
         onCreated={() => void loadAll()}
       />
 
-      {/* Search */}
-      <SearchBar
-        placeholder={t("inv.search")}
-        onSearch={setSearchQuery}
-        onClear={() => setSearchQuery("")}
-        className="max-w-md"
-      />
+      {/* Search — only useful once there is something to search */}
+      {(invoices.length > 0 || searchQuery) && (
+        <SearchBar
+          placeholder={t("inv.search")}
+          onSearch={setSearchQuery}
+          onClear={() => setSearchQuery("")}
+          className="max-w-md"
+        />
+      )}
 
       {/* Invoice List */}
       {loading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("inv.loading")}
-        >
-          <Loader2
-            size={24}
-            className="animate-spin text-[color:var(--ds-text-muted)]"
-            aria-hidden="true"
-          />
+        <div role="status" aria-label={t("inv.loading")}>
+          <RowSkeleton count={4} />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-            <FileText size={28} className="text-[color:var(--ds-border-strong)]" />
-          </div>
-          <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
-            {t("inv.empty_title")}
-          </h3>
-          <p className="mb-6 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-            {t("inv.empty_desc")}
-          </p>
-          <Button variant="glow" size="md" onClick={() => setQuickCreateOpen(true)}>
-            <Plus size={15} /> {t("inv.create")}
-          </Button>
-        </div>
+        searchQuery ? (
+          <EmptyState
+            icon={FileText}
+            title={en ? "No matching invoices" : "Keine passenden Rechnungen"}
+            description={
+              en
+                ? "No invoice number or client matches your search."
+                : "Keine Rechnungsnummer und kein Mandant entspricht Ihrer Suche."
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title={t("inv.empty_title")}
+            description={t("inv.empty_desc")}
+            actionLabel={t("inv.create")}
+            onAction={() => setQuickCreateOpen(true)}
+          />
+        )
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {filtered.map((inv) => {
-            const status = STATUS_CONFIG[inv.status];
-            const StatusIcon = status.icon;
+            const status = STATUS_CONFIG[inv.status] ?? STATUS_CONFIG.draft;
+            const busy = busySlug === inv.id;
+            const payable = inv.status === "sent" || inv.status === "overdue";
             return (
-              <div
+              <li
                 key={inv.id}
-                className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none sm:gap-4 sm:px-4"
+                className="flex items-center gap-3 px-3 py-3 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none sm:gap-4 sm:px-4"
               >
-                <div
-                  className={cn(
-                    "hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg sm:flex",
-                    STATUS_BG[status.color]
-                  )}
-                  aria-hidden="true"
-                >
-                  <StatusIcon size={18} className={STATUS_TEXT[status.color]} />
-                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                    <span className="text-sm font-medium text-[color:var(--ds-text)] tabular-nums">
                       {inv.number}
                     </span>
                     <Badge
@@ -986,205 +1033,154 @@ export default function InvoicingPage() {
                       </Badge>
                     ) : null}
                   </div>
-                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {inv.client} · {inv.items.length + inv.expenses.length} {t("inv.positions")} ·{" "}
-                    {inv.date}
-                    {inv.paidAt
-                      ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })}`
-                      : ""}
+                  <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                    {[
+                      inv.client || t("inv.unknown_client"),
+                      positionsLabel(inv.items.length + inv.expenses.length),
+                      formatDate(inv.date),
+                      inv.paidAt ? `${t("inv.paid_on")} ${formatDate(inv.paidAt)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-xs font-bold text-[color:var(--ds-text)] sm:text-sm">
+                  <div className="text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
                     {formatEur(inv.total, lang)}
                   </div>
                   <div className="hidden text-xs text-[color:var(--ds-text-muted)] sm:block">
                     {t("inv.incl_vat")}
                   </div>
                 </div>
-                {/* Desktop action buttons */}
-                <div className="hidden shrink-0 items-center gap-1 sm:flex">
-                  <button
-                    onClick={() => void printInvoice(inv)}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                    title={t("inv.print")}
-                  >
-                    <Printer size={14} />
-                  </button>
-                  <button
+                {/* Max. zwei sichtbare Aktionen, der Rest im Mehr-Menü */}
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <IconAction
+                    label={t("inv.download_pdf")}
                     onClick={() => void downloadPdf(inv)}
-                    className="hover:brand-text brand-bg/10 rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                    title={t("inv.download_pdf")}
+                    className="hidden sm:inline-flex"
                   >
-                    <FileText size={14} />
-                  </button>
-                  {(userRole === "admin" || userRole === "lawyer" || userRole === "assistant") && (
-                    <button
-                      onClick={() => void sendInvoiceEmail(inv)}
-                      disabled={busySlug === inv.id}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                      title={t("inv.send_email")}
-                    >
-                      <Mail size={14} />
-                    </button>
-                  )}
+                    <FileText size={15} />
+                  </IconAction>
                   {inv.status === "draft" && (
-                    <button
+                    <IconAction
+                      label={t("inv.mark_sent")}
                       onClick={() => updateStatus(inv, "sent")}
-                      disabled={busySlug === inv.id}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                      title={t("inv.mark_sent")}
+                      disabled={busy}
+                      className="hidden sm:inline-flex"
                     >
-                      <Send size={14} />
-                    </button>
+                      <Send size={15} />
+                    </IconAction>
                   )}
-                  {inv.status === "sent" && (
-                    <button
+                  {payable && (
+                    <IconAction
+                      label={t("inv.mark_paid")}
                       onClick={() => updateStatus(inv, "paid")}
-                      disabled={busySlug === inv.id}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                      title={t("inv.mark_paid")}
+                      disabled={busy}
+                      className="hidden sm:inline-flex"
                     >
-                      <CheckCircle2 size={14} />
-                    </button>
+                      <CheckCircle2 size={15} />
+                    </IconAction>
                   )}
-                  {inv.status !== "paid" &&
-                    inv.status !== "cancelled" &&
-                    (userRole === "admin" || userRole === "lawyer") && (
-                      <button
-                        onClick={() => updateStatus(inv, "cancelled")}
-                        disabled={busySlug === inv.id}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                        title={t("inv.cancel_invoice")}
-                      >
-                        <XCircle size={14} />
-                      </button>
-                    )}
-                  {(inv.status === "sent" || inv.status === "overdue") &&
-                    (userRole === "admin" || userRole === "lawyer") && (
-                      <button
-                        onClick={() => void sendReminder(inv)}
-                        disabled={busySlug === inv.id}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] hover:text-[color:var(--ds-warning-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                        title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
-                      >
-                        <AlertTriangle size={14} />
-                      </button>
-                    )}
-                  {(userRole === "admin" || userRole === "lawyer") && (
-                    <button
-                      onClick={() => deleteInvoice(inv)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                      title={t("inv.delete")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-
-                {/* Mobile action dropdown */}
-                <div className="shrink-0 sm:hidden">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
-                        aria-label="Aktionen"
+                        type="button"
+                        className="inline-flex rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                        aria-label={`${en ? "More actions for" : "Weitere Aktionen für"} ${inv.number}`}
                       >
-                        <MoreVertical size={16} />
+                        <MoreHorizontal size={16} />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem
-                        onClick={() => void printInvoice(inv)}
-                        className="gap-2 text-xs"
-                      >
-                        <Printer size={13} />
-                        {t("inv.print")}
-                      </DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="w-60">
+                      {inv.status === "draft" && (
+                        <DropdownMenuItem
+                          onClick={() => updateStatus(inv, "sent")}
+                          disabled={busy}
+                          className="gap-2 text-xs sm:hidden"
+                        >
+                          <Send size={13} />
+                          {t("inv.mark_sent")}
+                        </DropdownMenuItem>
+                      )}
+                      {payable && (
+                        <DropdownMenuItem
+                          onClick={() => updateStatus(inv, "paid")}
+                          disabled={busy}
+                          className="gap-2 text-xs sm:hidden"
+                        >
+                          <CheckCircle2 size={13} />
+                          {t("inv.mark_paid")}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => void downloadPdf(inv)}
-                        className="gap-2 text-xs"
+                        className="gap-2 text-xs sm:hidden"
                       >
                         <FileText size={13} />
                         {t("inv.download_pdf")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => void downloadXmlInvoice(inv, "ebinterface")}
-                        className="gap-2 text-xs"
-                      >
-                        <FileCode2 size={13} />
-                        ebInterface XML (e-Rechnung.gv.at)
+                      <DropdownMenuItem onClick={() => void printInvoice(inv)} className="gap-2 text-xs">
+                        <Printer size={13} />
+                        {t("inv.print")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => void downloadXmlInvoice(inv, "xrechnung")}
-                        className="gap-2 text-xs"
-                      >
-                        <FileCode2 size={13} />
-                        XRechnung XML
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => void downloadZugferdPdf(inv)}
-                        className="gap-2 text-xs"
-                      >
-                        <FileText size={13} />
-                        ZUGFeRD PDF
-                      </DropdownMenuItem>
-                      {(userRole === "admin" ||
-                        userRole === "lawyer" ||
-                        userRole === "assistant") && (
+                      {canSend && (
                         <DropdownMenuItem
                           onClick={() => void sendInvoiceEmail(inv)}
-                          disabled={busySlug === inv.id}
+                          disabled={busy}
                           className="gap-2 text-xs"
                         >
                           <Mail size={13} />
                           {t("inv.send_email")}
                         </DropdownMenuItem>
                       )}
-                      {inv.status === "draft" && (
+                      {payable && canManage && (
                         <DropdownMenuItem
-                          onClick={() => updateStatus(inv, "sent")}
-                          disabled={busySlug === inv.id}
+                          onClick={() => void sendReminder(inv)}
+                          disabled={busy}
                           className="gap-2 text-xs"
                         >
-                          <Send size={13} />
-                          {t("inv.mark_sent")}
+                          <AlertTriangle size={13} />
+                          {inv.reminderCount
+                            ? `${inv.reminderCount + 1}. ${t("inv.reminder")} ${en ? "send" : "senden"}`
+                            : t("inv.send_reminder")}
                         </DropdownMenuItem>
                       )}
-                      {inv.status === "sent" && (
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(inv, "paid")}
-                          disabled={busySlug === inv.id}
-                          className="gap-2 text-xs"
-                        >
-                          <CheckCircle2 size={13} />
-                          {t("inv.mark_paid")}
-                        </DropdownMenuItem>
-                      )}
-                      {inv.status !== "paid" &&
-                        inv.status !== "cancelled" &&
-                        (userRole === "admin" || userRole === "lawyer") && (
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => void downloadXmlInvoice(inv, "ebinterface")}
+                        className="gap-2 text-xs"
+                      >
+                        <FileCode2 size={13} />
+                        ebInterface (e-rechnung.gv.at)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void downloadXmlInvoice(inv, "xrechnung")}
+                        className="gap-2 text-xs"
+                      >
+                        <FileCode2 size={13} />
+                        XRechnung
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void downloadZugferdPdf(inv)}
+                        className="gap-2 text-xs"
+                      >
+                        <FileText size={13} />
+                        ZUGFeRD-PDF
+                      </DropdownMenuItem>
+                      {canManage && (inv.status !== "paid" && inv.status !== "cancelled") && (
+                        <>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => updateStatus(inv, "cancelled")}
-                            disabled={busySlug === inv.id}
+                            disabled={busy}
                             className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
                             <XCircle size={13} />
                             {t("inv.cancel_invoice")}
                           </DropdownMenuItem>
-                        )}
-                      {(inv.status === "sent" || inv.status === "overdue") &&
-                        (userRole === "admin" || userRole === "lawyer") && (
-                          <DropdownMenuItem
-                            onClick={() => void sendReminder(inv)}
-                            disabled={busySlug === inv.id}
-                            className="gap-2 text-xs"
-                          >
-                            <AlertTriangle size={13} />
-                            {t("inv.send_reminder")}
-                          </DropdownMenuItem>
-                        )}
-                      {(userRole === "admin" || userRole === "lawyer") && (
+                        </>
+                      )}
+                      {canManage && (
                         <DropdownMenuItem
                           onClick={() => deleteInvoice(inv)}
                           className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
@@ -1196,16 +1192,77 @@ export default function InvoicingPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
 }
 
-function HubLink({
+function InvoiceStat({
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  tone?: "warning" | "danger";
+}) {
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div
+        className={cn(
+          "mt-1 text-xl font-semibold tabular-nums",
+          tone === "danger"
+            ? "text-[color:var(--ds-danger-text)]"
+            : tone === "warning"
+              ? "text-[color:var(--ds-warning-text)]"
+              : "text-[color:var(--ds-text)]"
+        )}
+      >
+        {value}
+      </div>
+      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">{sub}</div>
+    </div>
+  );
+}
+
+function IconAction({
+  label,
+  onClick,
+  disabled,
+  className,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none disabled:opacity-40 motion-reduce:transition-none",
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function HubMenuLink({
   href,
   icon: Icon,
   label,
@@ -1215,12 +1272,11 @@ function HubLink({
   label: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
-    >
-      <Icon size={15} className="shrink-0" />
-      <span className="truncate">{label}</span>
-    </Link>
+    <DropdownMenuItem asChild className="gap-2 text-xs">
+      <Link href={href}>
+        <Icon size={13} aria-hidden="true" />
+        {label}
+      </Link>
+    </DropdownMenuItem>
   );
 }

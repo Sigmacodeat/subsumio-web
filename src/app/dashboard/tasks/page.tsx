@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckSquare, CalendarClock, Briefcase, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckSquare, CalendarClock, Briefcase, CheckCircle2, RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { cn, encodeSlugPath } from "@/lib/utils";
+import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
@@ -16,9 +17,15 @@ type Filter = "all" | "open" | "done";
 
 export default function TasksPage() {
   const { t } = useLang();
+  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("open");
 
-  const { data: casePages = [], isLoading } = useQuery({
+  const {
+    data: casePages = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["tasks-cases"],
     queryFn: () => api.cases.list({ limit: 200 }),
   });
@@ -42,7 +49,7 @@ export default function TasksPage() {
           id: `${page.slug}-${task.id}`,
           text: task.text || t("tasks.untitled"),
           done: Boolean(task.done),
-          dueDate: task.dueDate,
+          dueDate: typeof task.dueDate === "string" && task.dueDate ? task.dueDate : undefined,
           createdAt: task.createdAt || page.created_at,
           caseSlug: page.slug,
           caseTitle: page.title,
@@ -50,10 +57,13 @@ export default function TasksPage() {
       }
     }
 
+    // Offene zuerst; innerhalb davon nach Fälligkeit, Aufgaben ohne Datum zuletzt.
     return items.sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1;
-      if (!a.dueDate || !b.dueDate) return 0;
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate.localeCompare(b.dueDate);
     });
   }, [casePages, t]);
 
@@ -63,18 +73,29 @@ export default function TasksPage() {
   }, [tasks, filter]);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto w-full max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("tasks.title")}
-        description={t("tasks.description")}
+        description="Offene Aufgaben aus allen Akten, nach Fälligkeit sortiert. Aufgaben legen Sie in der jeweiligen Akte an und haken sie dort ab."
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("tasks.title") },
+        ]}
         actions={
-          <div className="flex items-center rounded-lg border border-[color:var(--ds-border)] p-0.5">
+          <div
+            role="radiogroup"
+            aria-label="Aufgaben filtern"
+            className="flex items-center rounded-lg border border-[color:var(--ds-border)] p-0.5"
+          >
             {(["all", "open", "done"] as Filter[]).map((f) => (
               <button
                 key={f}
+                type="button"
+                role="radio"
+                aria-checked={filter === f}
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                  "px-3 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                   filter === f
                     ? "rounded-md bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)]"
@@ -87,8 +108,24 @@ export default function TasksPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
+      <div>
+        {isError ? (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+          >
+            <span>Die Aufgaben konnten nicht geladen werden.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void refetch()}
+              className="shrink-0 gap-1.5 text-[color:var(--ds-danger-text)]"
+            >
+              <RotateCcw size={13} aria-hidden="true" />
+              Erneut laden
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
@@ -97,8 +134,14 @@ export default function TasksPage() {
         ) : filteredTasks.length === 0 ? (
           <EmptyState
             icon={CheckSquare}
-            title={t("tasks.empty_title")}
-            description={t("tasks.empty_desc")}
+            title={filter === "done" ? "Keine erledigten Aufgaben" : t("tasks.empty_title")}
+            description={
+              filter === "done"
+                ? "Abgehakte Aufgaben aus Ihren Akten erscheinen hier."
+                : "Aufgaben entstehen in der Akte — öffnen Sie eine Akte, um eine Aufgabe anzulegen."
+            }
+            actionLabel="Zu den Akten"
+            onAction={() => router.push("/dashboard/cases")}
           />
         ) : (
           <div className="space-y-2">
@@ -125,6 +168,7 @@ export default function TasksPage() {
                     )}
                   >
                     {task.text}
+                    {task.done && <span className="sr-only"> (erledigt)</span>}
                   </p>
                   <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
                     <Link
@@ -136,20 +180,23 @@ export default function TasksPage() {
                     </Link>
                     {task.dueDate && (
                       <>
-                        <span className="h-3 w-px bg-[color:var(--ds-border)]" />
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarClock size={11} />
+                        <span className="h-3 w-px bg-[color:var(--ds-border)]" aria-hidden="true" />
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 tabular-nums",
+                            !task.done &&
+                              (daysUntil(task.dueDate) ?? 0) < 0 &&
+                              "text-[color:var(--ds-danger-text)]"
+                          )}
+                        >
+                          <CalendarClock size={11} aria-hidden="true" />
                           {formatDate(task.dueDate)}
+                          {!task.done && ` · ${formatDaysUntil(daysUntil(task.dueDate))}`}
                         </span>
                       </>
                     )}
                   </div>
                 </div>
-                {task.done ? (
-                  <Badge variant="success">{t("tasks.done")}</Badge>
-                ) : (
-                  <Badge variant="accent">{t("tasks.open")}</Badge>
-                )}
               </div>
             ))}
           </div>
@@ -157,11 +204,4 @@ export default function TasksPage() {
       </div>
     </div>
   );
-}
-
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "short",
-  });
 }

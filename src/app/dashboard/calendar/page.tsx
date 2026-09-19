@@ -1,532 +1,110 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useMe } from "@/lib/queries/auth";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
-  CalendarClock,
   AlertTriangle,
-  Clock,
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
-  Calendar as CalendarIcon,
-  List,
-  CheckSquare,
+  Download,
   Plus,
-  Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { useToast } from "@/components/ui/toast";
-import { cn, encodeSlugPath } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { CalendarInUiEditor } from "@/components/calendar/calendar-editor";
+import { api } from "@/lib/api";
+import { useMe } from "@/lib/queries/auth";
+import { useFristen } from "@/lib/queries/legal";
+import { useLang } from "@/lib/use-lang";
+import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
+import {
+  describeCalendarConflict,
+  findCalendarConflicts,
+  toLocalIsoDate,
+  type CalendarEntry,
+} from "@/lib/calendar-conflicts";
+import {
+  CalendarEditDialog,
+  appointmentToEntry,
+  useAppointments,
+  type Appointment,
+} from "@/components/calendar/calendar-editor";
 
 type ViewMode = "week" | "month";
 
-type CalendarEventType = "deadline" | "task" | "case" | "outlook";
+/** Darstellungsart eines Kalendereintrags — bestimmt Farbe und Bezeichnung. */
+type ItemKind = "frist" | "notfrist" | "hearing" | "appointment" | "task";
 
-interface CalendarEvent {
+interface CalItem {
   id: string;
   title: string;
+  /** `YYYY-MM-DD` (Ortszeit) */
   date: string;
-  endDate?: string;
-  type: CalendarEventType;
-  status?: string;
-  href?: string;
-  urgency?: string;
+  time?: string;
+  durationMin?: number;
+  kind: ItemKind;
+  done?: boolean;
+  caseTitle?: string;
   location?: string;
-  outlookId?: string;
-  webLink?: string;
+  href?: string;
+  externalHref?: string;
+  appointment?: Appointment;
+  source: "fristen" | "kanzlei" | "outlook" | "akte";
 }
 
-export default function CalendarPage() {
-  const { t } = useLang();
-  const { addToast } = useToast();
-  const qc = useQueryClient();
-  const [view, setView] = useState<ViewMode>("week");
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [showOutlookDialog, setShowOutlookDialog] = useState(false);
+const KIND_LABEL: Record<ItemKind, string> = {
+  frist: "Frist",
+  notfrist: "Notfrist",
+  hearing: "Verhandlung",
+  appointment: "Termin",
+  task: "Aufgabe",
+};
 
-  const { data: deadlinePages = [], isLoading: deadlinesLoading } = useQuery({
-    queryKey: ["calendar-deadlines"],
-    queryFn: () => api.deadlines.list({ limit: 200 }),
-  });
+/** Farbcodierung ausschließlich über Status-Tokens. */
+const KIND_STYLE: Record<ItemKind, { chip: string; dot: string }> = {
+  frist: {
+    chip: "border-l-[color:var(--ds-warning-solid)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    dot: "bg-[color:var(--ds-warning-solid)]",
+  },
+  notfrist: {
+    chip: "border-l-[color:var(--ds-danger-solid)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] font-medium",
+    dot: "bg-[color:var(--ds-danger-solid)]",
+  },
+  hearing: {
+    chip: "border-l-[color:var(--ds-info-solid)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+    dot: "bg-[color:var(--ds-info-solid)]",
+  },
+  appointment: {
+    chip: "border-l-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-text)]",
+    dot: "bg-[color:var(--ds-neutral-text)]",
+  },
+  task: {
+    chip: "border-l-[color:var(--ds-border-strong)] bg-transparent text-[color:var(--ds-text-muted)] border border-dashed border-[color:var(--ds-border)]",
+    dot: "bg-[color:var(--ds-border-strong)]",
+  },
+};
 
-  const { data: casePages = [], isLoading: casesLoading } = useQuery({
-    queryKey: ["calendar-cases"],
-    queryFn: () => api.cases.list({ limit: 200 }),
-  });
+const KIND_ORDER: Record<ItemKind, number> = {
+  notfrist: 0,
+  frist: 1,
+  hearing: 2,
+  appointment: 3,
+  task: 4,
+};
 
-  // Outlook events come through the connector API, which only firm admins may
-  // read (connector.read). Lawyers and assistants got a 403 on every calendar
-  // visit; skip the request unless the role allows it.
-  const meQuery = useMe();
-  const canReadConnectors = meQuery.data?.user?.role === "admin";
-  const { data: outlookData, isLoading: outlookLoading } = useQuery({
-    queryKey: ["calendar-outlook"],
-    queryFn: () => api.outlook.calendar.list({ maxResults: 100 }),
-    staleTime: 60_000,
-    retry: false,
-    enabled: canReadConnectors,
-  });
-
-  const outlookEvents = useMemo(() => {
-    const raw = outlookData as Record<string, unknown> | undefined;
-    if (!raw || raw.error) return [];
-    const events = (raw.events ?? []) as Array<Record<string, unknown>>;
-    return events;
-  }, [outlookData]);
-
-  const createOutlookEventMutation = useMutation({
-    mutationFn: api.outlook.calendar.create,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["calendar-outlook"] });
-      addToast({ type: "success", title: t("calendar.outlook_created") });
-      setShowOutlookDialog(false);
-    },
-    onError: (e) => {
-      addToast({
-        type: "error",
-        title: e instanceof Error ? e.message : t("calendar.create_error"),
-      });
-    },
-  });
-
-  const events = useMemo(() => {
-    const items: CalendarEvent[] = [];
-
-    for (const page of deadlinePages) {
-      const fm = page.frontmatter ?? {};
-      const due = (fm.due_date ?? fm.date ?? fm.deadline_date ?? "") as string;
-      if (due) {
-        items.push({
-          id: page.slug,
-          title: page.title,
-          date: due,
-          type: "deadline",
-          status: String(fm.status ?? "open"),
-          href: `/dashboard/cases/${encodeSlugPath(page.slug)}`,
-          urgency: String(fm.urgency ?? computeUrgency(due)),
-        });
-      }
-    }
-
-    for (const page of casePages) {
-      const fm = page.frontmatter ?? {};
-      const deadlines = Array.isArray(fm.deadlines) ? fm.deadlines : [];
-      for (const d of deadlines) {
-        if (d.date) {
-          items.push({
-            id: `${page.slug}-${d.label}`,
-            title: `${d.label}: ${page.title}`,
-            date: d.date,
-            type: "deadline",
-            href: `/dashboard/cases/${encodeSlugPath(page.slug)}`,
-            urgency: d.urgency ?? computeUrgency(d.date),
-          });
-        }
-      }
-      const tasks = Array.isArray(fm.tasks) ? fm.tasks : [];
-      for (const task of tasks) {
-        if (!task.done && task.dueDate) {
-          items.push({
-            id: `${page.slug}-task-${task.id}`,
-            title: task.text,
-            date: task.dueDate,
-            type: "task",
-            href: `/dashboard/cases/${encodeSlugPath(page.slug)}`,
-          });
-        }
-      }
-    }
-
-    // Outlook calendar events
-    for (const evt of outlookEvents) {
-      const start = (evt.start as { dateTime?: string })?.dateTime;
-      const end = (evt.end as { dateTime?: string })?.dateTime;
-      if (!start) continue;
-      items.push({
-        id: String(evt.id ?? `outlook-${Date.now()}`),
-        title: String(evt.subject ?? "(Kein Betreff)"),
-        date: start,
-        endDate: end,
-        type: "outlook",
-        location: (evt.location as { displayName?: string })?.displayName,
-        webLink: String(evt.webLink ?? ""),
-        outlookId: String(evt.id ?? ""),
-      });
-    }
-
-    return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [deadlinePages, casePages, outlookEvents]);
-
-  const visibleEvents = useMemo(() => {
-    const start = startOfWeek(currentDate);
-    const end = view === "week" ? addDays(start, 7) : endOfMonth(currentDate);
-    return events.filter((e) => {
-      const d = new Date(e.date);
-      return d >= start && d <= end;
-    });
-  }, [events, currentDate, view]);
-
-  const navigate = (direction: "prev" | "next" | "today") => {
-    if (direction === "today") {
-      setCurrentDate(new Date());
-      return;
-    }
-    const delta = view === "week" ? 7 : 1;
-    const multiplier = direction === "prev" ? -1 : 1;
-    setCurrentDate((d) => addDays(d, delta * multiplier));
-  };
-
-  const isLoading = deadlinesLoading || casesLoading || outlookLoading;
-
-  return (
-    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title={t("calendar.title")}
-        description={t("calendar.description")}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => setShowOutlookDialog(!showOutlookDialog)}
-            >
-              <Plus size={14} />
-              Outlook-Termin
-            </Button>
-            <div className="flex items-center rounded-lg border border-[color:var(--ds-border)] p-0.5">
-              <button
-                onClick={() => setView("week")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none",
-                  view === "week"
-                    ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
-                    : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                )}
-              >
-                <CalendarIcon size={13} />
-                {t("calendar.week")}
-              </button>
-              <button
-                onClick={() => setView("month")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none",
-                  view === "month"
-                    ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
-                    : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                )}
-              >
-                <List size={13} />
-                {t("calendar.month")}
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("calendar.prev_month")}
-                onClick={() => navigate("prev")}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("today")}>
-                {t("calendar.today")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("calendar.next_month")}
-                onClick={() => navigate("next")}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-          </div>
-        }
-      />
-
-      {/* tabIndex macht die scrollbare Region tastatur-bedienbar (axe
-          scrollable-region-focusable) */}
-      <div className="flex-1 overflow-y-auto" tabIndex={0} aria-label={t("calendar.events_list")}>
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ) : visibleEvents.length === 0 ? (
-          <EmptyState
-            icon={CalendarClock}
-            title={t("calendar.empty_title")}
-            description={t("calendar.empty_desc")}
-          />
-        ) : (
-          <div className="space-y-2">
-            {groupByDate(visibleEvents).map(([date, group]) => (
-              <div
-                key={date}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
-              >
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                    {formatDate(date)}
-                  </span>
-                  {isToday(date) && (
-                    <Badge variant="accent" className="text-[10px]">
-                      {t("calendar.today")}
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  {group.map((event) => (
-                    <Link
-                      key={event.id}
-                      href={event.href ?? "#"}
-                      className="flex items-center gap-3 rounded-md px-2 py-2 transition-[background-color,transform] duration-[var(--ds-duration-fast)] ease-out hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.995] motion-reduce:transition-none"
-                    >
-                      <EventIcon type={event.type} urgency={event.urgency} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                          {event.title}
-                        </p>
-                        <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                          {event.type === "deadline"
-                            ? t("calendar.deadline")
-                            : event.type === "outlook"
-                              ? "Outlook"
-                              : t("calendar.task")}
-                          {event.location ? ` · ${event.location}` : ""}
-                        </p>
-                      </div>
-                      <UrgencyBadge urgency={event.urgency} />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Outlook event creation dialog */}
-      {showOutlookDialog && (
-        <OutlookEventDialog
-          onSubmit={(input) => void createOutlookEventMutation.mutateAsync(input)}
-          onCancel={() => setShowOutlookDialog(false)}
-          isPending={createOutlookEventMutation.isPending}
-        />
-      )}
-
-      {/* In-UI appointment editor */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">
-          {t("calendar.new")}
-        </h2>
-        <CalendarInUiEditor />
-      </div>
-    </div>
-  );
-}
-
-function OutlookEventDialog({
-  onSubmit,
-  onCancel,
-  isPending,
-}: {
-  onSubmit: (input: {
-    subject: string;
-    start: string;
-    end: string;
-    location?: string;
-    body?: string;
-  }) => void;
-  onCancel: () => void;
-  isPending: boolean;
-}) {
-  const { t } = useLang();
-  const [subject, setSubject] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
-  const [location, setLocation] = useState("");
-  const [body, setBody] = useState("");
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!subject.trim() || !startDate) return;
-    const start = `${startDate}T${startTime}:00`;
-    const end = `${startDate}T${endTime}:00`;
-    onSubmit({
-      subject: subject.trim(),
-      start,
-      end,
-      location: location.trim() || undefined,
-      body: body.trim() || undefined,
-    });
-  }
-
-  return (
-    <form
-      className="space-y-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4"
-      onSubmit={handleSubmit}
-    >
-      <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
-        {t("calendar.outlook_title")}
-      </h2>
-      <div className="space-y-1">
-        <Label htmlFor="outlook-subject" className="text-xs text-[color:var(--ds-text-muted)]">
-          {t("calendar.subject")}
-        </Label>
-        <Input
-          id="outlook-subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          placeholder={t("calendar.subject_placeholder")}
-          required
-        />
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="space-y-1">
-          <Label htmlFor="outlook-date" className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("calendar.date")}
-          </Label>
-          <Input
-            id="outlook-date"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="outlook-start" className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("calendar.start")}
-          </Label>
-          <Input
-            id="outlook-start"
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="outlook-end" className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("calendar.end")}
-          </Label>
-          <Input
-            id="outlook-end"
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            required
-          />
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="outlook-location" className="text-xs text-[color:var(--ds-text-muted)]">
-          {t("calendar.location")} ({t("common.optional")})
-        </Label>
-        <Input
-          id="outlook-location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder={t("calendar.location_placeholder")}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="outlook-body" className="text-xs text-[color:var(--ds-text-muted)]">
-          {t("calendar.desc_optional")}
-        </Label>
-        <textarea
-          id="outlook-body"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={3}
-          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-          placeholder={t("calendar.description_placeholder")}
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={isPending || !subject.trim() || !startDate}
-          className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
-        >
-          {isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-          {t("calendar.create")}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          {t("calendar.cancel")}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function EventIcon({ type, urgency }: { type: string; urgency?: string }) {
-  if (type === "outlook") {
-    return (
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-info-bg)]">
-        <CalendarIcon size={14} className="text-[color:var(--ds-info-text)]" />
-      </div>
-    );
-  }
-  if (type === "task") {
-    return (
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)]">
-        <CheckSquare size={14} className="text-[color:var(--brand-primary)]" />
-      </div>
-    );
-  }
-  const isOverdue = urgency === "overdue";
-  return (
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)]">
-      {isOverdue ? (
-        <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
-      ) : (
-        <Clock size={14} className="text-[color:var(--ds-warning-text)]" />
-      )}
-    </div>
-  );
-}
-
-function UrgencyBadge({ urgency }: { urgency?: string }) {
-  if (!urgency || urgency === "upcoming") return null;
-  if (urgency === "overdue") {
-    return <Badge variant="danger">{urgency}</Badge>;
-  }
-  if (urgency === "critical") {
-    return <Badge variant="warning">{urgency}</Badge>;
-  }
-  return <Badge variant="info">{urgency}</Badge>;
-}
-
-function computeUrgency(date: string): string {
-  const diff = Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (diff < 0) return "overdue";
-  if (diff <= 3) return "critical";
-  if (diff <= 7) return "warning";
-  return "upcoming";
-}
+const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const VIEW_STORAGE_KEY = "subsumio:calendar-view";
 
 function startOfWeek(d: Date): Date {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(date.setDate(diff));
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const offset = (date.getDay() + 6) % 7; // Montag = 0
+  date.setDate(date.getDate() - offset);
+  return date;
 }
 
 function addDays(d: Date, days: number): Date {
@@ -535,32 +113,795 @@ function addDays(d: Date, days: number): Date {
   return date;
 }
 
-function endOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+function monthLabel(d: Date): string {
+  return new Intl.DateTimeFormat("de-AT", { month: "long", year: "numeric" }).format(d);
 }
 
-function isToday(date: string): boolean {
-  const d = new Date(date);
-  const today = new Date();
-  return d.toDateString() === today.toDateString();
+function weekdayLong(iso: string): string {
+  const [y, m, day] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("de-AT", { weekday: "long" }).format(new Date(y, m - 1, day));
 }
 
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString("de-DE", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function weekdayShort(iso: string): string {
+  const [y, m, day] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("de-AT", { weekday: "short" }).format(new Date(y, m - 1, day));
 }
 
-function groupByDate<T extends { date: string }>(items: T[]): Array<[string, T[]]> {
-  const map = new Map<string, T[]>();
-  for (const item of items) {
-    const key = item.date.split("T")[0];
-    const arr = map.get(key) ?? [];
-    arr.push(item);
-    map.set(key, arr);
+function isoWeek(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+}
+
+/** Outlook liefert UTC-Zeiten ohne Zonenangabe; im Kalender zählt die Ortszeit. */
+function outlookLocal(
+  value: { dateTime?: string; timeZone?: string } | undefined
+): { date: string; time: string; ms: number } | null {
+  if (!value?.dateTime) return null;
+  const raw = value.dateTime.replace(/\.\d+$/, "");
+  const tz = value.timeZone ?? "UTC";
+  const d = tz === "UTC" || tz === "Etc/UTC" ? new Date(`${raw}Z`) : new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    date: toLocalIsoDate(d),
+    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+    ms: d.getTime(),
+  };
+}
+
+function itemToEntry(item: CalItem): CalendarEntry {
+  return {
+    id: item.id,
+    title: item.title,
+    date: item.date,
+    time: item.time,
+    durationMin: item.durationMin,
+    kind: item.kind === "frist" || item.kind === "notfrist" ? "deadline" : "appointment",
+    isHearing: item.kind === "hearing",
+    done: item.done || item.kind === "task",
+  };
+}
+
+export default function CalendarPage() {
+  const { t } = useLang();
+  const router = useRouter();
+  const [view, setView] = useState<ViewMode>("month");
+  const [cursor, setCursor] = useState(() => new Date());
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Appointment | null>(null);
+  const [presetDate, setPresetDate] = useState<string | undefined>();
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+      if (stored === "week" || stored === "month") setView(stored);
+    } catch {
+      /* Ansicht bleibt Standard */
+    }
+  }, []);
+
+  function changeView(next: ViewMode) {
+    setView(next);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      /* nicht kritisch */
+    }
   }
-  return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+  const fristenQuery = useFristen();
+  const appts = useAppointments();
+
+  // Outlook events come through the connector API, which only firm admins may
+  // read (connector.read). Skip the request unless the role allows it.
+  const meQuery = useMe();
+  const canReadConnectors = meQuery.data?.user?.role === "admin";
+  const outlookQuery = useQuery({
+    queryKey: ["calendar-outlook"],
+    queryFn: () => api.outlook.calendar.list({ maxResults: 100 }),
+    staleTime: 60_000,
+    retry: false,
+    enabled: canReadConnectors,
+  });
+
+  const today = toLocalIsoDate(new Date());
+
+  const items = useMemo(() => {
+    const list: CalItem[] = [];
+
+    for (const f of fristenQuery.data?.fristen ?? []) {
+      const date = String(f.due_date ?? "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+      const isHearing = f.type === "hearing";
+      list.push({
+        id: `frist:${f.id}`,
+        title: f.title,
+        date,
+        kind: isHearing ? "hearing" : f.is_notfrist ? "notfrist" : "frist",
+        done: f.status === "done" || f.status === "completed",
+        caseTitle: f.case_title,
+        href: f.case_slug
+          ? `/dashboard/cases/${encodeSlugPath(f.case_slug)}`
+          : "/dashboard/deadlines",
+        source: "fristen",
+      });
+    }
+
+    for (const a of appts.appointments) {
+      list.push({
+        id: a.slug,
+        title: a.title,
+        date: a.date,
+        time: a.time,
+        durationMin: a.duration,
+        kind: a.type === "hearing" ? "hearing" : "appointment",
+        caseTitle: a.caseTitle,
+        location: a.location,
+        appointment: a,
+        source: "kanzlei",
+      });
+    }
+
+    for (const page of appts.casePages) {
+      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      const tasks = Array.isArray(fm.tasks) ? (fm.tasks as Array<Record<string, unknown>>) : [];
+      for (const task of tasks) {
+        const due = typeof task.dueDate === "string" ? task.dueDate.slice(0, 10) : "";
+        if (task.done || !/^\d{4}-\d{2}-\d{2}$/.test(due)) continue;
+        list.push({
+          id: `task:${page.slug}:${String(task.id ?? task.text)}`,
+          title: String(task.text || "Aufgabe"),
+          date: due,
+          kind: "task",
+          caseTitle: page.title,
+          href: `/dashboard/cases/${encodeSlugPath(page.slug)}`,
+          source: "akte",
+        });
+      }
+    }
+
+    const raw = outlookQuery.data as Record<string, unknown> | undefined;
+    const outlookEvents =
+      raw && !raw.error ? ((raw.events ?? []) as Array<Record<string, unknown>>) : [];
+    for (const evt of outlookEvents) {
+      const start = outlookLocal(evt.start as { dateTime?: string; timeZone?: string });
+      if (!start) continue;
+      const end = outlookLocal(evt.end as { dateTime?: string; timeZone?: string });
+      const allDay = evt.isAllDay === true;
+      list.push({
+        id: `outlook:${String(evt.id ?? start.ms)}`,
+        title: String(evt.subject || "Ohne Betreff"),
+        date: start.date,
+        time: allDay ? undefined : start.time,
+        durationMin:
+          !allDay && end ? Math.max(15, Math.round((end.ms - start.ms) / 60_000)) : undefined,
+        kind: "appointment",
+        location: (evt.location as { displayName?: string } | undefined)?.displayName || undefined,
+        externalHref: typeof evt.webLink === "string" ? evt.webLink : undefined,
+        source: "outlook",
+      });
+    }
+
+    return list.sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        (a.time ?? "").localeCompare(b.time ?? "") ||
+        KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
+    );
+  }, [fristenQuery.data, appts.appointments, appts.casePages, outlookQuery.data]);
+
+  const itemsByDate = useMemo(() => {
+    const map = new Map<string, CalItem[]>();
+    for (const item of items) {
+      const list = map.get(item.date);
+      if (list) list.push(item);
+      else map.set(item.date, [item]);
+    }
+    return map;
+  }, [items]);
+
+  const entries = useMemo(() => items.map(itemToEntry), [items]);
+  const conflicts = useMemo(() => findCalendarConflicts(entries), [entries]);
+  const upcomingConflicts = useMemo(
+    () => conflicts.filter((c) => c.date >= today),
+    [conflicts, today]
+  );
+  const conflictIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of conflicts) {
+      set.add(c.a.id);
+      set.add(c.b.id);
+    }
+    return set;
+  }, [conflicts]);
+  const conflictDates = useMemo(() => new Set(conflicts.map((c) => c.date)), [conflicts]);
+
+  // Existing entries for the dialog's overlap warning (appointments + open deadlines).
+  const dialogEntries = useMemo(
+    () => [
+      ...appts.appointments.map(appointmentToEntry),
+      ...entries.filter((e) => e.kind === "deadline" && !e.done),
+    ],
+    [appts.appointments, entries]
+  );
+
+  const weekStart = startOfWeek(cursor);
+  const periodLabel =
+    view === "week"
+      ? `KW ${isoWeek(weekStart)} · ${formatDate(weekStart)} – ${formatDate(addDays(weekStart, 6))}`
+      : monthLabel(cursor);
+
+  function navigate(direction: -1 | 1) {
+    setCursor((d) =>
+      view === "week"
+        ? addDays(d, 7 * direction)
+        : new Date(d.getFullYear(), d.getMonth() + direction, 1)
+    );
+  }
+
+  function openNew(date?: string) {
+    setEditing(null);
+    setPresetDate(date ?? today);
+    setDialogOpen(true);
+  }
+
+  function openItem(item: CalItem) {
+    if (item.appointment) {
+      setEditing(item.appointment);
+      setPresetDate(undefined);
+      setDialogOpen(true);
+    } else if (item.href) {
+      router.push(item.href);
+    } else if (item.externalHref) {
+      window.open(item.externalHref, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  const upcoming = useMemo(
+    () => items.filter((i) => i.date >= today && !i.done).slice(0, 8),
+    [items, today]
+  );
+
+  const isLoading = fristenQuery.isLoading || appts.loading;
+  const loadFailed = fristenQuery.isError || appts.error;
+
+  return (
+    <div className="mx-auto w-full max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={t("calendar.title")}
+        description="Fristen, Verhandlungen und Termine aller Akten in einem Kalender — Überschneidungen werden markiert."
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("calendar.title") },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild className="gap-2 whitespace-nowrap">
+              <Link href="/dashboard/calendar-export">
+                <Download size={14} aria-hidden="true" />
+                Exportieren
+              </Link>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => openNew()}
+              className="gap-2 whitespace-nowrap"
+            >
+              <Plus size={14} aria-hidden="true" />
+              {t("calendar.new")}
+            </Button>
+          </div>
+        }
+      />
+
+      {loadFailed && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <span>
+            Ein Teil des Kalenders konnte nicht geladen werden. Fehlende Einträge erscheinen nach
+            dem erneuten Laden.
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              void fristenQuery.refetch();
+              void appts.reload();
+            }}
+            className="shrink-0 gap-1.5 text-[color:var(--ds-danger-text)]"
+          >
+            <RotateCcw size={13} aria-hidden="true" />
+            Erneut laden
+          </Button>
+        </div>
+      )}
+
+      {upcomingConflicts.length > 0 && (
+        <section
+          aria-labelledby="calendar-conflicts-title"
+          className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
+        >
+          <h2
+            id="calendar-conflicts-title"
+            className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-warning-text)]"
+          >
+            <AlertTriangle size={15} aria-hidden="true" />
+            {upcomingConflicts.length === 1
+              ? "1 Terminkollision"
+              : `${upcomingConflicts.length} Terminkollisionen`}
+          </h2>
+          <ul className="mt-2 space-y-1 text-sm text-[color:var(--ds-warning-text)]">
+            {upcomingConflicts.slice(0, 5).map((c) => (
+              <li key={`${c.kind}-${c.a.id}-${c.b.id}`} className="flex gap-2">
+                <span className="shrink-0 font-medium tabular-nums">
+                  {weekdayShort(c.date)} {formatDate(c.date)}
+                </span>
+                <span>{describeCalendarConflict(c)}</span>
+              </li>
+            ))}
+            {upcomingConflicts.length > 5 && (
+              <li className="text-xs">und {upcomingConflicts.length - 5} weitere</li>
+            )}
+          </ul>
+        </section>
+      )}
+
+      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--ds-shadow-1)]">
+        {/* Einzige Werkzeugleiste: Zeitraum, Navigation, Ansicht */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-3">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={view === "week" ? "Vorherige Woche" : t("calendar.prev_month")}
+              onClick={() => navigate(-1)}
+            >
+              <ChevronLeft size={16} />
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setCursor(new Date())}>
+              {t("calendar.today")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={view === "week" ? "Nächste Woche" : t("calendar.next_month")}
+              onClick={() => navigate(1)}
+            >
+              <ChevronRight size={16} />
+            </Button>
+            <h2
+              className="ml-2 text-base font-semibold text-[color:var(--ds-text)] tabular-nums first-letter:uppercase"
+              aria-live="polite"
+            >
+              {periodLabel}
+            </h2>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label="Ansicht"
+            className="flex items-center rounded-lg border border-[color:var(--ds-border)] p-0.5"
+          >
+            {(["week", "month"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={view === v}
+                onClick={() => changeView(v)}
+                className={cn(
+                  "rounded-md px-3 py-1 text-xs font-medium transition-[background-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+                  view === v
+                    ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] shadow-[var(--ds-shadow-1)]"
+                    : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                )}
+              >
+                {v === "week" ? t("calendar.week") : t("calendar.month")}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-7 gap-px p-4" aria-busy="true">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-md" />
+            ))}
+          </div>
+        ) : view === "month" ? (
+          <MonthGrid
+            cursor={cursor}
+            today={today}
+            itemsByDate={itemsByDate}
+            conflictIds={conflictIds}
+            conflictDates={conflictDates}
+            onOpenItem={openItem}
+            onNew={openNew}
+            onShowDay={(day) => {
+              setCursor(day);
+              changeView("week");
+            }}
+          />
+        ) : (
+          <WeekList
+            weekStart={weekStart}
+            today={today}
+            itemsByDate={itemsByDate}
+            conflictIds={conflictIds}
+            onOpenItem={openItem}
+            onNew={openNew}
+          />
+        )}
+
+        <Legend />
+      </section>
+
+      {view === "month" && !isLoading && (
+        <section aria-labelledby="calendar-upcoming-title" className="space-y-3">
+          <h2
+            id="calendar-upcoming-title"
+            className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase"
+          >
+            Demnächst
+          </h2>
+          {upcoming.length === 0 ? (
+            <EmptyState
+              icon={CalendarClock}
+              title="Keine anstehenden Fristen oder Termine"
+              description="Neue Termine legen Sie hier an; Fristen erfassen Sie in der Akte oder unter Fristen."
+              actionLabel={t("calendar.new")}
+              onAction={() => openNew()}
+            />
+          ) : (
+            <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+              {upcoming.map((item) => (
+                <li key={item.id}>
+                  <AgendaRow
+                    item={item}
+                    conflict={conflictIds.has(item.id)}
+                    showDate
+                    onOpen={() => openItem(item)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      <CalendarEditDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        appointment={editing}
+        presetDate={presetDate}
+        cases={appts.cases}
+        existingEntries={dialogEntries}
+        onSave={appts.save}
+        onDelete={appts.remove}
+      />
+    </div>
+  );
+}
+
+function Legend() {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-muted)]">
+      {(Object.keys(KIND_LABEL) as ItemKind[]).map((k) => (
+        <span key={k} className="inline-flex items-center gap-1.5">
+          <span className={cn("h-2 w-2 rounded-full", KIND_STYLE[k].dot)} aria-hidden="true" />
+          {KIND_LABEL[k]}
+        </span>
+      ))}
+      <span className="inline-flex items-center gap-1.5">
+        <AlertTriangle
+          size={12}
+          className="text-[color:var(--ds-warning-text)]"
+          aria-hidden="true"
+        />
+        Kollision
+      </span>
+    </div>
+  );
+}
+
+function itemAriaLabel(item: CalItem, conflict: boolean): string {
+  return [
+    KIND_LABEL[item.kind],
+    item.time ? `${item.time} Uhr` : null,
+    item.title,
+    item.caseTitle ? `Akte ${item.caseTitle}` : null,
+    item.done ? "erledigt" : null,
+    conflict ? "Kollision" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function Chip({
+  item,
+  conflict,
+  onOpen,
+}: {
+  item: CalItem;
+  conflict: boolean;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={itemAriaLabel(item, conflict)}
+      title={item.title}
+      className={cn(
+        "flex w-full items-center gap-1 truncate rounded-sm border-l-2 px-1.5 py-0.5 text-left text-[11px] leading-4 transition-[filter] duration-[var(--ds-duration-fast)] hover:brightness-95 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+        KIND_STYLE[item.kind].chip,
+        item.done && "line-through opacity-60"
+      )}
+    >
+      {conflict && <AlertTriangle size={10} className="shrink-0" aria-hidden="true" />}
+      {item.time && <span className="shrink-0 tabular-nums">{item.time}</span>}
+      <span className="truncate">{item.title}</span>
+    </button>
+  );
+}
+
+function MonthGrid({
+  cursor,
+  today,
+  itemsByDate,
+  conflictIds,
+  conflictDates,
+  onOpenItem,
+  onNew,
+  onShowDay,
+}: {
+  cursor: Date;
+  today: string;
+  itemsByDate: Map<string, CalItem[]>;
+  conflictIds: Set<string>;
+  conflictDates: Set<string>;
+  onOpenItem: (item: CalItem) => void;
+  onNew: (date: string) => void;
+  onShowDay: (day: Date) => void;
+}) {
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const gridStart = startOfWeek(first);
+  const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+  const weeks = Math.ceil(((last.getTime() - gridStart.getTime()) / 86_400_000 + 1) / 7);
+  const days = Array.from({ length: weeks * 7 }, (_, i) => addDays(gridStart, i));
+
+  return (
+    <div className="p-2 sm:p-3">
+      <div className="grid grid-cols-7 gap-1 pb-1" aria-hidden="true">
+        {WEEKDAYS.map((d) => (
+          <div
+            key={d}
+            className="text-center text-[11px] font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase"
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day) => {
+          const iso = toLocalIsoDate(day);
+          const inMonth = day.getMonth() === cursor.getMonth();
+          const isToday = iso === today;
+          const dayItems = itemsByDate.get(iso) ?? [];
+          const hasConflict = conflictDates.has(iso);
+          const weekend = day.getDay() === 0 || day.getDay() === 6;
+          return (
+            <div
+              key={iso}
+              className={cn(
+                "group min-h-[64px] rounded-md border p-1 sm:min-h-[92px]",
+                inMonth
+                  ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                  : "border-transparent bg-[color:var(--ds-surface-2)]/50",
+                weekend && inMonth && "bg-[color:var(--ds-surface-2)]/40",
+                isToday && "border-[color:var(--brand-primary)]/60"
+              )}
+            >
+              <div className="mb-1 flex items-center justify-between gap-1">
+                <button
+                  type="button"
+                  onClick={() => onNew(iso)}
+                  aria-label={`${weekdayLong(iso)}, ${formatDate(iso)}${isToday ? " (heute)" : ""} – Termin anlegen`}
+                  className={cn(
+                    "flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+                    isToday
+                      ? "bg-[color:var(--brand-solid)] font-semibold text-white hover:bg-[color:var(--brand-solid)]"
+                      : inMonth
+                        ? "text-[color:var(--ds-text)]"
+                        : "text-[color:var(--ds-text-subtle)]"
+                  )}
+                >
+                  {day.getDate()}
+                </button>
+                {hasConflict && (
+                  <AlertTriangle
+                    size={12}
+                    className="text-[color:var(--ds-warning-text)]"
+                    aria-label="Kollision an diesem Tag"
+                  />
+                )}
+              </div>
+              {/* Ab sm: Einträge als Chips; am Handy als Punkte (Details in „Demnächst“). */}
+              <div className="hidden space-y-0.5 sm:block">
+                {dayItems.slice(0, 3).map((item) => (
+                  <Chip
+                    key={item.id}
+                    item={item}
+                    conflict={conflictIds.has(item.id)}
+                    onOpen={() => onOpenItem(item)}
+                  />
+                ))}
+                {dayItems.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => onShowDay(day)}
+                    className="px-1.5 text-[11px] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  >
+                    +{dayItems.length - 3} weitere
+                  </button>
+                )}
+              </div>
+              {dayItems.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 sm:hidden" aria-hidden="true">
+                  {dayItems.slice(0, 4).map((item) => (
+                    <span
+                      key={item.id}
+                      className={cn("h-1.5 w-1.5 rounded-full", KIND_STYLE[item.kind].dot)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeekList({
+  weekStart,
+  today,
+  itemsByDate,
+  conflictIds,
+  onOpenItem,
+  onNew,
+}: {
+  weekStart: Date;
+  today: string;
+  itemsByDate: Map<string, CalItem[]>;
+  conflictIds: Set<string>;
+  onOpenItem: (item: CalItem) => void;
+  onNew: (date: string) => void;
+}) {
+  const days = Array.from({ length: 7 }, (_, i) => toLocalIsoDate(addDays(weekStart, i)));
+  return (
+    <ol className="divide-y divide-[color:var(--ds-border)]">
+      {days.map((iso) => {
+        const dayItems = itemsByDate.get(iso) ?? [];
+        const isToday = iso === today;
+        return (
+          <li
+            key={iso}
+            className={cn(
+              "flex flex-col gap-2 px-4 py-3 sm:flex-row sm:gap-4",
+              isToday && "bg-[color:var(--ds-surface-2)]/60"
+            )}
+          >
+            <div className="flex w-full shrink-0 items-center justify-between sm:w-36 sm:flex-col sm:items-start sm:justify-start">
+              <div className="text-sm font-medium text-[color:var(--ds-text)] tabular-nums">
+                <span className="capitalize">{weekdayShort(iso)}</span> {formatDate(iso)}
+              </div>
+              {isToday ? (
+                <span className="text-xs font-medium text-[color:var(--brand-primary)]">heute</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onNew(iso)}
+                  className="text-xs text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                  aria-label={`Termin am ${formatDate(iso)} anlegen`}
+                >
+                  + Termin
+                </button>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              {dayItems.length === 0 ? (
+                <p className="py-1 text-sm text-[color:var(--ds-text-subtle)]">Keine Einträge</p>
+              ) : (
+                <ul className="space-y-1">
+                  {dayItems.map((item) => (
+                    <li key={item.id}>
+                      <AgendaRow
+                        item={item}
+                        conflict={conflictIds.has(item.id)}
+                        onOpen={() => onOpenItem(item)}
+                        compact
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function AgendaRow({
+  item,
+  conflict,
+  onOpen,
+  showDate,
+  compact,
+}: {
+  item: CalItem;
+  conflict: boolean;
+  onOpen: () => void;
+  showDate?: boolean;
+  compact?: boolean;
+}) {
+  const isDeadline = item.kind === "frist" || item.kind === "notfrist";
+  const days = daysUntil(item.date);
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        "flex w-full items-center gap-3 text-left transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none",
+        compact ? "rounded-md px-2 py-1.5" : "px-4 py-3"
+      )}
+    >
+      {showDate && (
+        <div className="w-24 shrink-0 text-sm tabular-nums">
+          <div className="font-medium text-[color:var(--ds-text)]">{formatDate(item.date)}</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {isDeadline ? formatDaysUntil(days) : weekdayShort(item.date)}
+          </div>
+        </div>
+      )}
+      <span
+        className={cn("h-2 w-2 shrink-0 rounded-full", KIND_STYLE[item.kind].dot)}
+        aria-hidden="true"
+      />
+      <div className="w-16 shrink-0 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+        {item.time ? `${item.time} Uhr` : KIND_LABEL[item.kind]}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "truncate text-sm text-[color:var(--ds-text)]",
+            item.kind === "notfrist" && "font-medium",
+            item.done && "line-through opacity-60"
+          )}
+        >
+          {item.title}
+        </div>
+        {(item.caseTitle || item.location || item.time) && (
+          <div className="truncate text-xs text-[color:var(--ds-text-muted)]">
+            {[item.time ? KIND_LABEL[item.kind] : null, item.caseTitle, item.location]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
+        )}
+      </div>
+      {conflict && (
+        <span className="inline-flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-warning-text)]">
+          <AlertTriangle size={12} aria-hidden="true" />
+          Kollision
+        </span>
+      )}
+    </button>
+  );
 }

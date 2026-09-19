@@ -12,6 +12,16 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { DictationEntry } from "@/lib/dictation";
 import { formatDictationDuration } from "@/lib/dictation";
+import type { BrainPage } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  de: "Deutsch",
+  en: "Englisch",
+  fr: "Französisch",
+  it: "Italienisch",
+};
 
 export default function DictationPage() {
   const { addToast } = useToast();
@@ -20,6 +30,7 @@ export default function DictationPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cases, setCases] = useState<BrainPage[]>([]);
   const [form, setForm] = useState({
     case_slug: "",
     lawyer_name: "",
@@ -41,6 +52,21 @@ export default function DictationPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.cases
+      .list({ limit: 200 })
+      .then((list) => {
+        if (!cancelled) setCases(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const caseTitle = (slug: string) => cases.find((c) => c.slug === slug)?.title ?? "Akte";
 
   async function handleCreate() {
     if (!form.lawyer_name || !form.lawyer_email || !form.duration_seconds) {
@@ -64,12 +90,8 @@ export default function DictationPage() {
       setShowCreate(false);
       setForm({ case_slug: "", lawyer_name: "", lawyer_email: "", duration_seconds: "" });
       void load();
-    } catch (e) {
-      addToast({
-        type: "error",
-        title: t("dictation.err_create"),
-        description: e instanceof Error ? e.message : undefined,
-      });
+    } catch {
+      addToast({ type: "error", title: t("dictation.err_create") });
     } finally {
       setSaving(false);
     }
@@ -87,7 +109,7 @@ export default function DictationPage() {
           { label: t("dictation.title") },
         ]}
         actions={
-          <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
+          <Button onClick={() => setShowCreate(!showCreate)} className="gap-2 whitespace-nowrap">
             <Plus size={16} /> {t("dictation.new")}
           </Button>
         }
@@ -141,11 +163,19 @@ export default function DictationPage() {
               <Label htmlFor="dict-case" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("dictation.case")}
               </Label>
-              <Input
+              <select
                 id="dict-case"
                 value={form.case_slug}
                 onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
-              />
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              >
+                <option value="">Ohne Aktenbezug</option>
+                {cases.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1">
               <Label htmlFor="dict-duration" className="text-xs text-[color:var(--ds-text-muted)]">
@@ -161,7 +191,7 @@ export default function DictationPage() {
               />
             </div>
           </div>
-          <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
+          <Button type="submit" disabled={saving} className="gap-2">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Mic size={14} />}
             {t("dictation.save")}
           </Button>
@@ -169,17 +199,19 @@ export default function DictationPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+        <div className="space-y-2" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       ) : entries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
-          <Mic size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm font-medium">{t("dictation.empty")}</p>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            {t("dictation.empty_hint")}
-          </p>
-        </div>
+        <EmptyState
+          icon={Mic}
+          title={t("dictation.empty")}
+          description={t("dictation.empty_hint")}
+          actionLabel={showCreate ? undefined : t("dictation.new")}
+          onAction={showCreate ? undefined : () => setShowCreate(true)}
+        />
       ) : (
         <div className="space-y-2">
           {entries.map((entry) => (
@@ -206,8 +238,11 @@ export default function DictationPage() {
                   </Badge>
                 </div>
                 <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                  {formatDictationDuration(entry.duration_seconds)} · {entry.language}{" "}
-                  {entry.case_slug ? `· ${entry.case_slug}` : ""}
+                  {formatDictationDuration(entry.duration_seconds)}
+                  {entry.language
+                    ? ` · ${LANGUAGE_LABELS[entry.language] ?? entry.language.toUpperCase()}`
+                    : ""}
+                  {entry.case_slug ? ` · ${caseTitle(entry.case_slug)}` : ""}
                 </div>
                 {entry.transcript && (
                   <div className="mt-1 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">

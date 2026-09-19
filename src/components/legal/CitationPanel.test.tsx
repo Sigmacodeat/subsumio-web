@@ -73,7 +73,7 @@ describe("CitationPanel", () => {
 
   it("renders corpus grounding verified count", () => {
     render(<CitationPanel data={baseData} />);
-    expect(screen.getByText("1 verifiziert")).toBeTruthy();
+    expect(screen.getByText("1 geprüft")).toBeTruthy();
   });
 
   it("renders unverified count when present", () => {
@@ -92,10 +92,10 @@ describe("CitationPanel", () => {
       },
     };
     render(<CitationPanel data={data} />);
-    expect(screen.getByText("1 nicht verifiziert")).toBeTruthy();
+    expect(screen.getByText("1 ungeprüft")).toBeTruthy();
   });
 
-  it("shows 'Corpus nicht geprüft' when corpus not checked", () => {
+  it("shows 'Rechtsquellen nicht geprüft' when corpus not checked", () => {
     const data: CitationPanelData = {
       ...baseData,
       grounding: {
@@ -107,12 +107,12 @@ describe("CitationPanel", () => {
       },
     };
     render(<CitationPanel data={data} />);
-    expect(screen.getByText("Corpus nicht geprüft")).toBeTruthy();
+    expect(screen.getByText("Rechtsquellen nicht geprüft")).toBeTruthy();
   });
 
   it("renders brain citations in expanded view", () => {
     render(<CitationPanel data={baseData} />);
-    expect(screen.getByText("Brain-Quellen (1)")).toBeTruthy();
+    expect(screen.getByText("Quellen aus Akte und Kanzleiwissen (1)")).toBeTruthy();
     // § 433 BGB appears in both Brain-Quellen and Corpus-Grounding
     expect(screen.getAllByText(/§ 433 BGB/).length).toBeGreaterThanOrEqual(1);
   });
@@ -123,13 +123,13 @@ describe("CitationPanel", () => {
       gaps: ["Fehlende Rechtsprechung zum Thema"],
     };
     render(<CitationPanel data={data} />);
-    expect(screen.getByText(/Lücken im Brain/)).toBeTruthy();
+    expect(screen.getByText(/Nicht belegt/)).toBeTruthy();
     expect(screen.getByText("Fehlende Rechtsprechung zum Thema")).toBeTruthy();
   });
 
   it("renders grounded citations with verified icon", () => {
     render(<CitationPanel data={baseData} />);
-    expect(screen.getByText("Corpus-Grounding (1)")).toBeTruthy();
+    expect(screen.getByText("Geprüfte Rechtsquellen (1)")).toBeTruthy();
     // The verified citation text should appear (may appear multiple times)
     expect(screen.getAllByText(/§ 433 BGB/).length).toBeGreaterThanOrEqual(1);
   });
@@ -146,7 +146,7 @@ describe("CitationPanel", () => {
       },
     };
     render(<CitationPanel data={data} />);
-    expect(screen.getByText(/Nicht im Corpus gefunden/)).toBeTruthy();
+    expect(screen.getByText(/Nicht in den Rechtsquellen gefunden/)).toBeTruthy();
   });
 
   it("collapses and expands on toggle click", () => {
@@ -172,7 +172,7 @@ describe("CitationPanel", () => {
 
   it("renders grounding timestamp in expanded view", () => {
     render(<CitationPanel data={baseData} />);
-    expect(screen.getByText(/Corpus geprüft am/)).toBeTruthy();
+    expect(screen.getByText(/Gegen die Rechtsquellen geprüft am/)).toBeTruthy();
   });
 
   it("shows low groundedness when no citations", () => {
@@ -230,6 +230,6 @@ describe("CitationBadgesInline", () => {
       isStreaming: false,
     };
     render(<CitationBadgesInline data={data} />);
-    expect(screen.getByText("2 verifiziert")).toBeTruthy();
+    expect(screen.getByText("2 geprüft")).toBeTruthy();
   });
 });

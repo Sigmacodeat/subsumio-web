@@ -864,13 +864,13 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               <div
                 className={`max-w-[88%] rounded-xl px-4 py-3 ${
                   msg.role === "user"
-                    ? "bg-[var(--brand-primary)] text-white"
+                    ? "bg-[color:var(--brand-solid)] text-white"
                     : "bg-[var(--ds-surface-2)] text-[var(--ds-text)]"
                 }`}
               >
                 {isAssistant && msg.isStreaming && !msg.content && (
                   <div className="flex items-center gap-2 text-sm text-[var(--ds-text-muted)]">
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-[var(--brand-primary)]" />
+                    <div className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--brand-solid)]" />
                     <span>Suche Paragraphen...</span>
                   </div>
                 )}
@@ -904,7 +904,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                       />
                     )}
                     {msg.isStreaming && (
-                      <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-[var(--brand-primary)] align-text-bottom" />
+                      <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-[color:var(--brand-solid)] align-text-bottom" />
                     )}
                   </>
                 )}
@@ -1004,7 +1004,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               <button
                 type="submit"
                 disabled={!scenario.trim() || isStreaming}
-                className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {isStreaming ? "Analysiere..." : "Subsumtion starten"}
                 {!isStreaming && (
@@ -1047,7 +1047,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                 <button
                   type="submit"
                   disabled={!followUp.trim()}
-                  className="rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   Senden
                 </button>

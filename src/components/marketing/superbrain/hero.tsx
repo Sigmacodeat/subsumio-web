@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p } from "@/content/site";

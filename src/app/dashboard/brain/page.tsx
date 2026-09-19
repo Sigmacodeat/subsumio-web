@@ -1,116 +1,76 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  BookOpen,
-  Users,
-  Building2,
-  Lightbulb,
-  FileText,
-  Calendar,
-  MapPin,
-  Filter,
-  SortAsc,
-  ChevronRight,
-  Clock,
-  Hash,
-  Loader2,
-  Briefcase,
-  CalendarClock,
-  Scale,
-  Landmark,
-} from "lucide-react";
+import { Search, BookOpen, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { BrainQualityPanel } from "@/components/legal/BrainQualityPanel";
-import type { BrainPage, Entity, SearchResult } from "@/lib/types";
+import type { BrainPage, SearchResult } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
-import type { DashboardKey } from "@/content/dashboard";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  BRAIN_TYPE_PLURALS,
+  brainEntryHref,
+  brainTypeIcon,
+  brainTypeLabel,
+  isInternalBrainType,
+} from "./brain-types";
 
-type FilterType =
-  | "all"
-  | Entity["type"]
-  | "document"
-  | "legal_case"
-  | "legal_actor"
-  | "legal_deadline"
-  | "court"
-  | "statute"
-  | "norm";
-type PageItem = BrainPage & { type: string; words: number; updated: string };
+type PageItem = { slug: string; title: string; type: string; tags: string[]; updated: string };
+type DisplayItem = PageItem & { snippet?: string };
+type SortKey = "updated" | "title";
 
-const TYPE_FILTERS: {
-  key: FilterType;
-  labelKey: DashboardKey;
-  icon: React.ElementType;
-  color: string;
-}[] = [
-  { key: "all", labelKey: "brain.filter_all", icon: BookOpen, color: "default" },
-  { key: "person", labelKey: "brain.filter_persons", icon: Users, color: "person" },
-  { key: "company", labelKey: "brain.filter_companies", icon: Building2, color: "company" },
-  { key: "idea", labelKey: "brain.filter_ideas", icon: Lightbulb, color: "idea" },
-  { key: "document", labelKey: "brain.filter_documents", icon: FileText, color: "document" },
-  { key: "event", labelKey: "brain.filter_events", icon: Calendar, color: "event" },
-  { key: "place", labelKey: "brain.filter_places", icon: MapPin, color: "place" },
-  { key: "legal_case", labelKey: "brain.filter_cases", icon: Briefcase, color: "accent" },
-  { key: "legal_actor", labelKey: "brain.filter_actors", icon: Scale, color: "accent" },
-  {
-    key: "legal_deadline",
-    labelKey: "brain.filter_deadlines",
-    icon: CalendarClock,
-    color: "accent",
-  },
-  { key: "court", labelKey: "brain.filter_courts", icon: Landmark, color: "accent" },
-  { key: "statute", labelKey: "brain.filter_statutes", icon: BookOpen, color: "accent" },
-  { key: "norm", labelKey: "brain.filter_norms", icon: BookOpen, color: "accent" },
+const SORTS: { key: SortKey; labelKey: "brain.sort_updated" | "brain.sort_title" }[] = [
+  { key: "updated", labelKey: "brain.sort_updated" },
+  { key: "title", labelKey: "brain.sort_title" },
 ];
+
+function toItem(p: BrainPage): PageItem {
+  return {
+    slug: p.slug,
+    // Seeded titles may start with an emoji — the list stays text-only.
+    title: (p.title || p.slug).replace(/^[\p{Extended_Pictographic}\uFE0F\s]+/u, "") || p.slug,
+    type: p.type ?? "document",
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    updated: p.updated_at || p.created_at || "",
+  };
+}
 
 export default function BrainPage() {
   const { t } = useLang();
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [sort, setSort] = useState<"updated" | "title" | "words">("updated");
+  const [filter, setFilter] = useState<string>("all");
+  const [sort, setSort] = useState<SortKey>("updated");
   const [pages, setPages] = useState<PageItem[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
-  const [stats, setStats] = useState({ pages: 0, entities: 0, edges: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [list, brainStats] = await Promise.all([
-          api.brain.listPages({ limit: 200 }),
-          api.brain.stats(),
-        ]);
+        const list = await api.brain.listPages({ limit: 200 });
         if (cancelled) return;
-        const items: PageItem[] = list.map((p) => ({
-          ...p,
-          type: (p as PageItem).type ?? "document",
-          words: p.word_count ?? 0,
-          updated: p.updated_at ? p.updated_at.slice(0, 10) : "",
-        }));
-        setPages(items);
-        setStats({
-          pages: brainStats.total_pages,
-          entities: brainStats.total_entities,
-          edges: brainStats.total_edges,
-        });
+        setPages(list.filter((p) => !isInternalBrainType(p.type)).map(toItem));
       } catch (err) {
         console.error(
           "[brain] failed to load pages:",
           err instanceof Error ? err.message : String(err)
         );
-        if (!cancelled) setPages([]);
+        if (!cancelled) {
+          setPages([]);
+          setLoadFailed(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -146,270 +106,209 @@ export default function BrainPage() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const displayed = useMemo(() => {
+  // Filter chips only for types that actually occur — no "(0)" chips.
+  const typeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of pages) counts.set(p.type, (counts.get(p.type) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [pages]);
+
+  const displayed = useMemo<DisplayItem[]>(() => {
     if (searchResults !== null) {
-      return searchResults.map((r) => ({
-        slug: r.slug,
-        title: r.title,
-        type: "document" as const,
-        tags: [] as string[],
-        words: 0,
-        updated: r.created_at?.slice(0, 10) ?? "",
-        snippet: r.snippet,
-      }));
+      const known = new Map(pages.map((p) => [p.slug, p]));
+      return searchResults
+        .filter((r) => !isInternalBrainType(known.get(r.slug)?.type))
+        .map((r) => ({
+          slug: r.slug,
+          title: r.title || r.slug,
+          type: known.get(r.slug)?.type ?? "document",
+          tags: [],
+          updated: known.get(r.slug)?.updated ?? r.created_at ?? "",
+          snippet: r.snippet,
+        }));
     }
     let list = [...pages];
-    if (filter !== "all") {
-      list = list.filter((p) => p.type === filter);
-    }
-    list.sort((a, b) => {
-      if (sort === "title") return a.title.localeCompare(b.title);
-      if (sort === "words") return b.words - a.words;
-      return b.updated.localeCompare(a.updated);
-    });
+    if (filter !== "all") list = list.filter((p) => p.type === filter);
+    list.sort((a, b) =>
+      sort === "title" ? a.title.localeCompare(b.title, "de") : b.updated.localeCompare(a.updated)
+    );
     return list;
   }, [pages, filter, sort, searchResults]);
 
   const isEmpty = !loading && pages.length === 0 && !query;
-
-  const typeColorMap: Record<string, string> = {
-    person: "person",
-    company: "company",
-    idea: "idea",
-    document: "document",
-    event: "event",
-    place: "place",
-  };
-
-  const typeIconMap: Record<string, React.ElementType> = {
-    person: Users,
-    company: Building2,
-    idea: Lightbulb,
-    document: FileText,
-    event: Calendar,
-    place: MapPin,
-  };
+  const chipClass = (active: boolean) =>
+    cn(
+      "inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+      active
+        ? "brand-soft brand-text brand-border"
+        : "border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+    );
 
   return (
-    <div className="mx-auto flex h-full max-w-[1200px] min-w-0 space-y-6 overflow-hidden p-4 md:p-6 lg:p-8">
-      <h1 className="sr-only">{t("nav.brain")}</h1>
-      <div className="w-52 shrink-0 space-y-1 overflow-y-auto border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-          {t("brain.type")}
-        </p>
-        {TYPE_FILTERS.map((f) => {
-          const Icon = f.icon;
-          return (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
-                filter === f.key
-                  ? "brand-soft brand-text brand-border border"
-                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              )}
-            >
-              <Icon size={15} className="shrink-0" />
-              {t(f.labelKey)}
-            </button>
-          );
-        })}
+    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={t("nav.brain")}
+        description="Akten, Dokumente, Fristen und Kontakte der Kanzlei an einer Stelle durchsuchen."
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("nav.brain") },
+        ]}
+        actions={
+          <Button onClick={() => router.push("/dashboard/upload")} className="whitespace-nowrap">
+            {t("brain.btn_upload")}
+          </Button>
+        }
+      />
 
-        <div className="pt-4 pb-2">
-          <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-            {t("brain.sort")}
-          </p>
-          {[
-            { key: "updated" as const, labelKey: "brain.sort_updated" as const },
-            { key: "title" as const, labelKey: "brain.sort_title" as const },
-            { key: "words" as const, labelKey: "brain.sort_words" as const },
-          ].map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setSort(s.key)}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
-                sort === s.key
-                  ? "brand-soft brand-text brand-border border"
-                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              )}
-            >
-              <SortAsc size={15} className="shrink-0" />
-              {t(s.labelKey)}
-            </button>
-          ))}
-        </div>
-
-        <div className="pt-2">
-          <BrainQualityPanel />
-        </div>
-      </div>
-
-      <div className="min-w-0 flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-10 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
+      {loading ? (
+        <PageSkeleton rows={6} className="p-0" />
+      ) : isEmpty ? (
+        <EmptyState
+          icon={BookOpen}
+          title={loadFailed ? "Kanzleiwissen derzeit nicht erreichbar" : t("brain.empty_title")}
+          description={
+            loadFailed
+              ? "Die Einträge konnten nicht geladen werden. Bitte laden Sie die Seite in einigen Minuten neu."
+              : "Laden Sie Dokumente hoch oder legen Sie Akten an — sie erscheinen danach hier."
+          }
+          actionLabel={loadFailed ? "Neu laden" : t("brain.btn_upload")}
+          onAction={() =>
+            loadFailed ? window.location.reload() : router.push("/dashboard/upload")
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
               <Input
-                icon={<Search size={15} />}
+                icon={
+                  searching ? (
+                    <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Search size={15} aria-hidden="true" />
+                  )
+                }
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("brain.search_placeholder")}
+                aria-label={t("brain.search_placeholder")}
               />
             </div>
-            <Button
-              variant="secondary"
-              size="md"
-              className="shrink-0"
-              disabled
-              title={t("brain.filter_tooltip")}
-            >
-              <Filter size={15} />
-              {t("brain.btn_filter")}
-            </Button>
-          </div>
-        </div>
-
-        <div className="px-6 py-6">
-          <div className="mb-6 flex items-center gap-4 text-sm text-[color:var(--ds-text-muted)]">
-            <span>
-              <strong className="text-[color:var(--ds-text)]">{stats.pages}</strong>{" "}
-              {t("brain.stats_pages")}
-            </span>
-            <span>·</span>
-            <span>
-              <strong className="text-[color:var(--ds-text)]">{stats.entities}</strong>{" "}
-              {t("brain.stats_entities")}
-            </span>
-            <span>·</span>
-            <span>
-              <strong className="text-[color:var(--ds-text)]">{stats.edges}</strong>{" "}
-              {t("brain.stats_edges")}
-            </span>
-            {searching && (
-              <>
-                <span>·</span>
-                <Loader2 size={14} className="brand-text animate-spin" />
-              </>
+            {searchResults === null && (
+              <div
+                className="flex shrink-0 items-center gap-1"
+                role="group"
+                aria-label={t("brain.sort")}
+              >
+                {SORTS.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => setSort(s.key)}
+                    aria-pressed={sort === s.key}
+                    className={chipClass(sort === s.key)}
+                  >
+                    {t(s.labelKey)}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {loading ? (
-            <PageSkeleton rows={6} className="p-0" />
-          ) : isEmpty ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-                <BookOpen size={28} className="text-[color:var(--ds-border-strong)]" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
-                {t("brain.empty_title")}
-              </h3>
-              <p className="mb-6 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                {t("brain.empty_hint")}
-              </p>
-              <div className="flex gap-3">
-                <Button variant="glow" size="md" onClick={() => router.push("/dashboard/upload")}>
-                  {t("brain.btn_upload")}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  onClick={() => router.push("/dashboard/settings")}
+          {searchResults === null && typeCounts.length > 1 && (
+            <div
+              className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+              role="group"
+              aria-label={t("brain.type")}
+            >
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                aria-pressed={filter === "all"}
+                className={chipClass(filter === "all")}
+              >
+                {t("brain.filter_all")}
+                <span className="tabular-nums opacity-70">{pages.length}</span>
+              </button>
+              {typeCounts.map(([type, count]) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFilter(type)}
+                  aria-pressed={filter === type}
+                  className={chipClass(filter === type)}
                 >
-                  {t("brain.btn_setup")}
-                </Button>
-              </div>
+                  {BRAIN_TYPE_PLURALS[type] ?? brainTypeLabel(type)}
+                  <span className="tabular-nums opacity-70">{count}</span>
+                </button>
+              ))}
             </div>
-          ) : displayed.length === 0 ? (
-            <div className="py-16 text-center text-sm text-[color:var(--ds-text-muted)]">
+          )}
+
+          {displayed.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-12 text-sm text-[color:var(--ds-text-muted)]">
+              <AlertCircle size={15} aria-hidden="true" />
               {t("brain.no_results").replace("{{query}}", query)}
             </div>
           ) : (
-            <div className="space-y-2">
+            <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
               {displayed.map((page, pageIndex) => {
-                const TypeIcon = typeIconMap[page.type] || FileText;
-                const tags = "tags" in page ? page.tags : [];
+                const TypeIcon = brainTypeIcon(page.type);
                 return (
-                  <a
-                    key={page.slug}
-                    href={`/dashboard/brain/${encodeURIComponent(page.slug)}`}
-                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
-                  >
-                    <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
-                      <TypeIcon size={17} className="brand-text" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                          {page.title}
+                  <li key={page.slug} className="group flex items-center gap-3">
+                    <Link
+                      href={brainEntryHref(page.slug, page.type)}
+                      className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]">
+                        <TypeIcon size={15} aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                            {page.title}
+                          </span>
+                          <Badge variant="default" className="shrink-0">
+                            {brainTypeLabel(page.type)}
+                          </Badge>
                         </span>
-                        <Badge
-                          variant={
-                            typeColorMap[page.type] as Parameters<typeof Badge>[0]["variant"]
-                          }
-                        >
-                          {page.type}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
-                        <span className="font-mono">{page.slug}</span>
-                        {page.words > 0 && (
-                          <>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <Hash size={10} />
-                              {page.words} {t("brain.words")}
-                            </span>
-                          </>
-                        )}
-                        {page.updated && (
-                          <>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={10} />
-                              {page.updated}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {"snippet" in page && page.snippet && (
-                        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                          {page.snippet}
-                        </p>
+                        {page.snippet ? (
+                          <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                            {page.snippet}
+                          </span>
+                        ) : page.tags.length > 0 ? (
+                          <span className="mt-1 block truncate text-xs text-[color:var(--ds-text-subtle)]">
+                            {page.tags.map((tag) => `#${tag}`).join("  ")}
+                          </span>
+                        ) : null}
+                      </span>
+                      {page.updated && (
+                        <span className="hidden shrink-0 text-xs text-[color:var(--ds-text-subtle)] tabular-nums sm:block">
+                          {formatDate(page.updated)}
+                        </span>
                       )}
-                      {tags && tags.length > 0 && (
-                        <div className="mt-2 flex items-center gap-1">
-                          {tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)]"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                      <ChevronRight
+                        size={16}
+                        className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                        aria-hidden="true"
+                      />
+                    </Link>
                     {searchResults !== null && (
                       <RetrievalFeedbackButtons
                         query={query}
                         resultSlug={page.slug}
                         resultTitle={page.title}
                         rankPosition={pageIndex + 1}
-                        className="mr-2 shrink-0"
+                        className="mr-3 shrink-0"
                       />
                     )}
-                    <ChevronRight
-                      size={16}
-                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] motion-reduce:transition-none"
-                    />
-                  </a>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

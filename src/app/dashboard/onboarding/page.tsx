@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Zap,
+  Landmark,
   Upload,
   MessageSquare,
   CheckCircle2,
@@ -13,7 +13,6 @@ import {
   Loader2,
   Scale,
   FileText,
-  Smartphone,
   CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,17 +39,16 @@ import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
-type Step = "welcome" | "profile" | "whatsapp" | "billing" | "upload" | "query" | "done";
+type Step = "welcome" | "profile" | "billing" | "upload" | "query" | "done";
 
-const STEPS: Step[] = ["welcome", "profile", "whatsapp", "billing", "upload", "query", "done"];
+const STEPS: Step[] = ["welcome", "profile", "billing", "upload", "query", "done"];
 const STEP_INDEX: Record<Step, number> = {
   welcome: 0,
   profile: 1,
-  whatsapp: 2,
-  billing: 3,
-  upload: 4,
-  query: 5,
-  done: 6,
+  billing: 2,
+  upload: 3,
+  query: 4,
+  done: 5,
 };
 
 export default function OnboardingPage() {
@@ -82,8 +80,6 @@ export default function OnboardingPage() {
   const [completing, setCompleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [whatsappPhone, setWhatsappPhone] = useState("");
-  const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [billing, setBilling] = useState({
     stundensatz: "220",
     abrechnungstakt: "15",
@@ -142,25 +138,29 @@ export default function OnboardingPage() {
     setError(null);
     setQueryAnswer(null);
     resetQueryGrounding();
+    let streamed = "";
     try {
       const result = await api.query.think(queryText.trim(), {
         mode: "balanced",
         queryMode: "balanced",
         onChunk: (chunk) => {
+          streamed += chunk;
           setQueryAnswer((prev) => (prev ?? "") + chunk);
         },
       });
-      if (!result.answer && !queryAnswer) {
-        setQueryAnswer(result.answer || "—");
+      const finalText = result.answer || streamed;
+      if (!finalText) {
+        setError("Der Assistent hat keine Antwort geliefert. Bitte formulieren Sie die Frage neu.");
+      } else if (!streamed) {
+        setQueryAnswer(finalText);
       }
-      const finalText = result.answer || queryAnswer || "";
       if (finalText) groundQuery(finalText).catch(() => {});
       if (finalText) api.onboarding.updateProgress({ firstQuery: true }).catch(() => {});
     } catch {
       setError(t("onboarding.error_query"));
     }
     setQuerying(false);
-  }, [queryText, t, queryAnswer, groundQuery, resetQueryGrounding]);
+  }, [queryText, t, groundQuery, resetQueryGrounding]);
 
   const saveProfile = useCallback(async () => {
     const contactName = profile.anwaltName.trim() || userName.trim();
@@ -229,23 +229,18 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div
-      className="mx-auto flex min-h-full max-w-[1200px] items-center justify-center space-y-6 p-4 md:p-6 lg:p-8"
-      style={{
-        background:
-          "linear-gradient(135deg, var(--brand-gradient-from, hsl(222, 60%, 36%)) 0%, var(--brand-gradient-via, hsl(222, 60%, 64%)) 50%, var(--brand-gradient-to, hsl(260, 60%, 65%)) 100%)",
-      }}
-    >
-      <div className="w-full max-w-2xl">
+    <div className="mx-auto flex min-h-full max-w-[720px] items-center justify-center p-4 md:p-6 lg:p-8">
+      <div className="w-full">
         {/* Progress bar */}
-        <div className="mb-6 flex items-center gap-2">
+        <div className="mb-6 flex items-center gap-2" aria-hidden>
           {STEPS.slice(0, -1).map((s, i) => (
             <div
               key={s}
-              className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-                i <= currentIdx ? "bg-white" : "bg-white/20"
+              className={`h-1.5 flex-1 rounded-full transition-[background-color] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
+                i <= currentIdx
+                  ? "bg-[color:var(--brand-solid)]"
+                  : "bg-[color:var(--ds-border)]"
               }`}
-              style={{ flex: 1 }}
             />
           ))}
         </div>
@@ -260,6 +255,7 @@ export default function OnboardingPage() {
               </span>
               {step !== "done" && (
                 <button
+                  type="button"
                   onClick={skipOnboarding}
                   disabled={completing}
                   className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
@@ -273,9 +269,9 @@ export default function OnboardingPage() {
             {step === "welcome" && (
               <div className="space-y-4 text-center">
                 <div className="brand-soft brand-border mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border">
-                  <Zap size={28} className="brand-text" />
+                  <Landmark size={28} className="brand-text" aria-hidden />
                 </div>
-                <h1 className="text-2xl font-bold text-[color:var(--ds-text)]">
+                <h1 className="font-display text-2xl font-semibold text-[color:var(--ds-text)]">
                   {t("onboarding.title")}
                 </h1>
                 <p className="mx-auto max-w-md text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
@@ -298,9 +294,9 @@ export default function OnboardingPage() {
                     <Scale size={18} className="brand-text" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                    <h1 className="font-display text-lg font-semibold text-[color:var(--ds-text)]">
                       {t("onboarding.step_profile")}
-                    </h2>
+                    </h1>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
                       {t("onboarding.step_profile_desc")}
                     </p>
@@ -408,7 +404,11 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
+                {error && (
+                  <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                    {error}
+                  </p>
+                )}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -421,86 +421,6 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* WhatsApp Setup */}
-            {step === "whatsapp" && (
-              <div className="space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
-                    <Smartphone size={18} className="brand-text" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
-                      {t("onboarding.step_whatsapp")}
-                    </h2>
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("onboarding.step_whatsapp_desc")}
-                    </p>
-                  </div>
-                </div>
-
-                {whatsappConnected ? (
-                  <div className="flex flex-col items-center gap-3 py-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--ds-success-bg)]">
-                      <CheckCircle2 size={24} className="text-[color:var(--ds-success-text)]" />
-                    </div>
-                    <p className="text-sm font-medium text-[color:var(--ds-success-text)]">
-                      {t("onboarding.whatsapp_connected")}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="ob-wa-phone"
-                        className="text-xs font-medium text-[color:var(--ds-text-muted)]"
-                      >
-                        {t("onboarding.whatsapp_phone")}
-                      </Label>
-                      <Input
-                        id="ob-wa-phone"
-                        value={whatsappPhone}
-                        onChange={(e) => setWhatsappPhone(e.target.value)}
-                        placeholder={t("onboarding.whatsapp_phone_hint")}
-                      />
-                    </div>
-                    <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
-                      <p className="text-xs text-[color:var(--ds-warning-text)]">
-                        Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach der Einrichtung
-                        können Sie die Webhook-URL in den Einstellungen konfigurieren.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
-
-                <div className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm" onClick={back}>
-                    <ArrowLeft size={14} /> {t("onboarding.back")}
-                  </Button>
-                  <div className="flex gap-2">
-                    {!whatsappConnected && (
-                      <Button variant="ghost" size="sm" onClick={next}>
-                        {t("onboarding.whatsapp_skip")} <ArrowRight size={14} />
-                      </Button>
-                    )}
-                    <Button
-                      variant="glow"
-                      size="sm"
-                      onClick={() => {
-                        if (whatsappPhone.trim()) {
-                          setWhatsappConnected(true);
-                        }
-                        next();
-                      }}
-                    >
-                      {t("onboarding.next")} <ArrowRight size={14} />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Billing Setup */}
             {step === "billing" && (
               <div className="space-y-5">
@@ -509,9 +429,9 @@ export default function OnboardingPage() {
                     <CreditCard size={18} className="brand-text" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                    <h1 className="font-display text-lg font-semibold text-[color:var(--ds-text)]">
                       {t("onboarding.step_billing")}
-                    </h2>
+                    </h1>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
                       {t("onboarding.step_billing_desc")}
                     </p>
@@ -592,7 +512,11 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
+                {error && (
+                  <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                    {error}
+                  </p>
+                )}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -613,9 +537,9 @@ export default function OnboardingPage() {
                     <Upload size={18} className="brand-text" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                    <h1 className="font-display text-lg font-semibold text-[color:var(--ds-text)]">
                       {t("onboarding.step_upload")}
-                    </h2>
+                    </h1>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
                       {t("onboarding.step_upload_desc")}
                     </p>
@@ -628,7 +552,7 @@ export default function OnboardingPage() {
                       <CheckCircle2 size={28} className="text-[color:var(--ds-success-text)]" />
                     </div>
                     <p className="text-sm font-medium text-[color:var(--ds-success-text)]">
-                      {t("onboarding.step_upload_success")}
+                      Hochgeladen. Das Dokument wird jetzt erfasst und ist in Kürze durchsuchbar.
                     </p>
                   </div>
                 ) : (
@@ -690,7 +614,11 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
+                {error && (
+                  <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                    {error}
+                  </p>
+                )}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -712,9 +640,9 @@ export default function OnboardingPage() {
                     <MessageSquare size={18} className="brand-text" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                    <h1 className="font-display text-lg font-semibold text-[color:var(--ds-text)]">
                       {t("onboarding.step_query")}
-                    </h2>
+                    </h1>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
                       {t("onboarding.step_query_desc")}
                     </p>
@@ -776,7 +704,11 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
+                {error && (
+                  <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                    {error}
+                  </p>
+                )}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -795,15 +727,15 @@ export default function OnboardingPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-success-bg)]">
                   <CheckCircle2 size={28} className="text-[color:var(--ds-success-text)]" />
                 </div>
-                <h1 className="text-2xl font-bold text-[color:var(--ds-text)]">
-                  {t("onboarding.step_done")}
+                <h1 className="font-display text-2xl font-semibold text-[color:var(--ds-text)]">
+                  Einrichtung abgeschlossen
                 </h1>
                 <p className="mx-auto max-w-md text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
                   {t("onboarding.step_done_desc")}
                 </p>
                 <div className="pt-4">
                   <Button variant="glow" size="md" onClick={finish} loading={completing}>
-                    {t("onboarding.finish")} <ArrowRight size={14} />
+                    Zur Übersicht <ArrowRight size={14} aria-hidden />
                   </Button>
                 </div>
               </div>

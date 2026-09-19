@@ -19,12 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatDate as formatDateUtil } from "@/lib/utils";
+import { sourceLabel, urgencyLabel } from "@/components/legal/matter-tabs/format";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { DocumentRequestComposer } from "@/components/legal/DocumentRequestComposer";
 import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
-import type { DeadlineEntry } from "@/lib/legal-types";
 import { unwrapApiBody } from "@/lib/api-body";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
@@ -68,11 +68,10 @@ const PRIORITY_CLASS: Record<ReviewItem["priority"], string> = {
   low: "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
 };
 
+/** TT.MM.JJJJ, or "" when the value is missing/unparseable (callers inline it). */
 function formatDate(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return "";
-  return date.toLocaleDateString("de-DE");
+  const formatted = formatDateUtil(value);
+  return formatted === "—" ? "" : formatted;
 }
 
 function pageText(page: BrainPage): string {
@@ -144,7 +143,7 @@ export function MatterReviewInbox({
         id: `deadline-${originalIndex}-${deadline.title}`,
         kind: "suggested_deadline",
         title: deadline.title,
-        description: `${deadline.due_date} · ${deadline.urgency}${deadline.source_quote ? ` · „${deadline.source_quote.slice(0, 90)}“` : ""}`,
+        description: `${formatDate(deadline.due_date)}${deadline.urgency ? ` · ${urgencyLabel(deadline.urgency)}` : ""}${deadline.source_quote && deadline.source_quote !== deadline.title ? ` · „${deadline.source_quote.slice(0, 90)}“` : ""}`,
         source: deadline.source,
         priority:
           deadline.urgency === "high" || deadline.urgency === "critical" ? "high" : "medium",
@@ -310,24 +309,8 @@ export function MatterReviewInbox({
 
   async function acceptSuggestedDeadline(item: ReviewItem) {
     if (typeof item.index !== "number" || !matter?.suggestedDeadlines?.[item.index]) return;
-    const suggestion = matter.suggestedDeadlines[item.index];
     setUpdating(item.id);
     try {
-      const entry: DeadlineEntry = {
-        id: `dl-${Date.now()}`,
-        title: suggestion.title,
-        due_date: suggestion.due_date,
-        status: "pending",
-        type: "deadline",
-        source: suggestion.source,
-        description: suggestion.source_quote,
-        review_status: "approved",
-        reviewed_at: new Date().toISOString(),
-      };
-      const updated = [...ctx.deadlinesList, entry];
-      ctx.setDeadlinesList(updated);
-      ctx.setCaseData({ ...matter, deadlines: updated });
-      await ctx.saveCaseUpdate({ deadlines: updated });
       await ctx.confirmSuggestedDeadline(item.index, true);
       addToast({ type: "success", title: "Frist übernommen" });
     } catch (err) {
@@ -346,6 +329,11 @@ export function MatterReviewInbox({
     try {
       await ctx.confirmSuggestedDeadline(item.index, false);
       addToast({ type: "success", title: "Fristvorschlag verworfen" });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Fristvorschlag konnte nicht verworfen werden",
+      });
     } finally {
       setUpdating(null);
     }
@@ -587,7 +575,7 @@ export function MatterReviewInbox({
                           {item.title}
                         </h4>
                         <span className="rounded-full bg-[color:var(--ds-hover)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)]">
-                          {item.source}
+                          {sourceLabel(item.source)}
                         </span>
                       </div>
                       <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">

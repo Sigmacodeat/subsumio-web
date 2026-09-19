@@ -1,1 +1,5 @@
-export { default } from "@/components/dashboard/route-loading";
+import { PageSkeleton } from "@/components/dashboard/skeleton";
+
+export default function NotificationsLoading() {
+  return <PageSkeleton />;
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import {
   Users,
@@ -8,7 +9,6 @@ import {
   Phone,
   ShieldAlert,
   AlertTriangle,
-  Loader2,
   UserCircle,
   Pencil,
 } from "lucide-react";
@@ -174,7 +174,7 @@ export function ContactsTab() {
   };
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       <div className="max-w-3xl space-y-4">
         {/* Conflict Warning */}
         {ctx.contactConflict && (
@@ -238,13 +238,10 @@ export function ContactsTab() {
 
         {/* Loading State */}
         {ctx.contactsLoading && (
-          <div
-            className="flex items-center gap-2 py-8 text-sm text-[color:var(--ds-text-muted)]"
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2 size={16} className="animate-spin" />
-            {t("cases.detail_contacts_loading")}
+          <div className="space-y-2 py-2" role="status" aria-live="polite">
+            <span className="sr-only">{t("cases.detail_contacts_loading")}</span>
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
         )}
 

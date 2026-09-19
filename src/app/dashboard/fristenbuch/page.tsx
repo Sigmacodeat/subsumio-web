@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, encodeSlugPath } from "@/lib/utils";
+import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
+import { toLocalIsoDate } from "@/lib/calendar-conflicts";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { type DeadlineStatus } from "@/lib/legal-deadlines";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -30,17 +31,6 @@ import { useFristen, type Frist } from "@/lib/queries/legal";
 import { inTimeWindow, type TimeWindow } from "@/lib/fristenbuch-window";
 
 type FristenbuchEintrag = Frist;
-
-interface FristenbuchSummary {
-  gesamt: number;
-  overdue: number;
-  critical: number;
-  warning: number;
-  vorfrist: number;
-  pending: number;
-  done: number;
-  completed?: number;
-}
 
 const STATUS_MAP: Record<
   DeadlineStatus,
@@ -59,19 +49,10 @@ function csvCell(value: string | number | boolean | undefined | null): string {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
-function getDaysUntil(dateStr: string): number {
-  const target = new Date(dateStr);
-  const now = new Date();
-  target.setUTCHours(0, 0, 0, 0);
-  now.setUTCHours(0, 0, 0, 0);
-  const diff = target.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
 export default function FristenbuchPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { t, lang } = useLang();
+  const { t } = useLang();
 
   const { data, isLoading: loading, isError, refetch } = useFristen();
   const fristen = useMemo(() => data?.fristen ?? [], [data]);
@@ -83,9 +64,14 @@ export default function FristenbuchPage() {
 
   const loadError = isError ? t("deadlines.error_load") : null;
 
-  const caseSlugs = useMemo(() => {
-    const set = new Set(fristen.map((e) => e.case_slug).filter(Boolean) as string[]);
-    return [...set].sort();
+  const caseOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const e of fristen) {
+      if (e.case_slug && !map.has(e.case_slug)) {
+        map.set(e.case_slug, e.case_title ?? e.case_slug.split("/").pop() ?? e.case_slug);
+      }
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "de"));
   }, [fristen]);
 
   const responsibles = useMemo(() => {
@@ -95,11 +81,13 @@ export default function FristenbuchPage() {
 
   const filtered = useMemo(() => {
     return fristen.filter((e) => {
+      const needle = search.trim().toLowerCase();
       const matchesSearch =
-        search === "" ||
-        e.title.toLowerCase().includes(search.toLowerCase()) ||
-        (e.law ?? "").toLowerCase().includes(search.toLowerCase()) ||
-        (e.case_slug ?? "").toLowerCase().includes(search.toLowerCase());
+        needle === "" ||
+        e.title.toLowerCase().includes(needle) ||
+        (e.law ?? "").toLowerCase().includes(needle) ||
+        (e.case_title ?? "").toLowerCase().includes(needle) ||
+        (e.responsible ?? "").toLowerCase().includes(needle);
       const matchesStatus = filter === "all" || e.status === filter;
       const matchesCase = caseFilter === "" || e.case_slug === caseFilter;
       const matchesResponsible = responsibleFilter === "" || e.responsible === responsibleFilter;
@@ -113,16 +101,30 @@ export default function FristenbuchPage() {
     });
   }, [fristen, search, filter, caseFilter, responsibleFilter, timeWindow]);
 
-  const stats: FristenbuchSummary = data?.zusammenfassung ?? {
-    gesamt: 0,
-    overdue: 0,
-    critical: 0,
-    warning: 0,
-    vorfrist: 0,
-    pending: 0,
-    done: 0,
-    completed: 0,
-  };
+  // Chronologisch — das Register wird von oben nach unten abgearbeitet.
+  const sorted = useMemo(
+    () => [...filtered].sort((a, b) => a.due_date.localeCompare(b.due_date)),
+    [filtered]
+  );
+
+  const stats = useMemo(() => {
+    const open = fristen.filter((e) => e.status !== "done" && e.status !== "completed");
+    const days = (e: FristenbuchEintrag) => daysUntil(e.due_date);
+    return {
+      open: open.length,
+      overdue: open.filter((e) => (days(e) ?? 0) < 0).length,
+      critical: open.filter((e) => {
+        const d = days(e);
+        return d !== null && d >= 0 && d <= 3;
+      }).length,
+      vorfrist: open.filter((e) => e.vorfrist_date && (daysUntil(e.vorfrist_date) ?? 1) <= 0)
+        .length,
+      byStatus: fristen.reduce<Record<string, number>>((acc, e) => {
+        acc[e.status] = (acc[e.status] ?? 0) + 1;
+        return acc;
+      }, {}),
+    };
+  }, [fristen]);
 
   const icsUrl =
     typeof window !== "undefined"
@@ -141,7 +143,7 @@ export default function FristenbuchPage() {
   }
 
   function exportCsv() {
-    if (!filtered.length) return;
+    if (!sorted.length) return;
     const headers = [
       "Datum",
       "Frist",
@@ -156,29 +158,43 @@ export default function FristenbuchPage() {
       "Erledigt von",
       "Quelle",
     ];
-    const rows = filtered.map((e) => [
-      e.due_date,
+    const statusLabel = (status: string) =>
+      t((STATUS_MAP[status as DeadlineStatus] ?? STATUS_MAP.pending).labelKey);
+    const rows = sorted.map((e) => [
+      formatDate(e.due_date),
       e.title,
       e.case_title ?? e.case_slug,
       e.responsible,
       e.law,
-      e.status,
-      e.vorfrist_date,
+      statusLabel(e.status),
+      e.vorfrist_date ? formatDate(e.vorfrist_date) : "",
       e.is_notfrist ? "ja" : "nein",
       e.second_check_by,
-      e.completed_at?.slice(0, 10),
+      e.completed_at ? formatDate(e.completed_at) : "",
       e.completed_by,
-      e.source,
+      e.source === "legal_case" ? "Akte" : "Fristenbuch",
     ]);
     const csv = [headers, ...rows].map((r) => r.map(csvCell).join(";")).join("\r\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fristenbuch-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `fristenbuch-${toLocalIsoDate(new Date())}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  const RESPONSIBLE_COLUMN: Column<FristenbuchEintrag> = {
+    key: "responsible",
+    header: t("deadlines.fristenbuch_responsible"),
+    sortable: true,
+    sortAccessor: (e) => e.responsible ?? "",
+    hideOnMobile: true,
+    width: "w-[1%] whitespace-nowrap",
+    cell: (e) => (
+      <span className="text-xs text-[color:var(--ds-text)]">{e.responsible ?? "—"}</span>
+    ),
+  };
 
   const columns: Column<FristenbuchEintrag>[] = [
     {
@@ -186,35 +202,28 @@ export default function FristenbuchPage() {
       header: t("deadlines.col_date"),
       sortable: true,
       sortAccessor: (e) => e.due_date,
-      width: "120px",
+      width: "w-[1%] whitespace-nowrap",
       cell: (e) => {
-        const days = getDaysUntil(e.due_date);
+        const done = e.status === "done" || e.status === "completed";
+        const days = daysUntil(e.due_date);
         return (
-          <div className="text-right">
+          <div className="tabular-nums">
             <div
               className={cn(
-                "text-sm font-semibold tabular-nums",
-                days < 0
-                  ? "text-[color:var(--ds-danger-text)]"
-                  : days <= 3
-                    ? "text-[color:var(--ds-warning-text)]"
-                    : "text-[color:var(--ds-text)]"
+                "text-sm font-semibold",
+                done
+                  ? "text-[color:var(--ds-text-muted)]"
+                  : days !== null && days < 0
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : days !== null && days <= 3
+                      ? "text-[color:var(--ds-warning-text)]"
+                      : "text-[color:var(--ds-text)]"
               )}
             >
-              {new Date(e.due_date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              })}
+              {formatDate(e.due_date)}
             </div>
             <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-              {days < 0
-                ? `${Math.abs(days)} ${t("deadlines.days_overdue")}`
-                : days === 0
-                  ? t("deadlines.today")
-                  : days === 1
-                    ? t("deadlines.tomorrow")
-                    : `${t("deadlines.in_days")} ${days} ${t("deadlines.days")}`}
+              {done ? t("deadlines.status_done") : formatDaysUntil(days)}
             </div>
           </div>
         );
@@ -225,209 +234,159 @@ export default function FristenbuchPage() {
       header: t("deadlines.col_title"),
       sortable: true,
       sortAccessor: (e) => e.title,
+      width: "w-full max-w-0",
       cell: (e) => {
-        const cfg = STATUS_MAP[e.status as DeadlineStatus] || STATUS_MAP.pending;
-        const StatusIcon = cfg.icon;
+        const meta = [
+          e.case_title ?? (e.case_slug ? e.case_slug.split("/").pop() : null),
+          e.law,
+          e.vorfrist_date ? `Vorfrist ${formatDate(e.vorfrist_date)}` : null,
+        ].filter(Boolean);
         return (
-          <div className="flex min-w-0 items-center gap-3">
-            <div
-              className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
-                STATUS_BG[cfg.color],
-                STATUS_BORDER[cfg.color]
-              )}
-              aria-hidden="true"
-            >
-              <StatusIcon size={16} className={STATUS_TEXT[cfg.color]} />
+          <div className="min-w-0">
+            <div className="line-clamp-2 font-medium text-[color:var(--ds-text)]" title={e.title}>
+              {e.title}
             </div>
-            <div className="min-w-0">
-              <div className="truncate font-medium text-[color:var(--ds-text)]">{e.title}</div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                {e.law && (
-                  <Badge
-                    variant="default"
-                    className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
-                  >
-                    {e.law}
-                  </Badge>
-                )}
-                {e.is_notfrist && (
-                  <Badge
-                    variant="default"
-                    className="flex items-center gap-0.5 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
-                  >
-                    <ShieldCheck size={10} />
-                    {t("deadlines.second_check")}
-                  </Badge>
-                )}
-                {e.vorfrist_date && (
-                  <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {t("deadlines.fristenbuch_vorfrist")}:{" "}
-                    {new Date(e.vorfrist_date).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
-                  </span>
-                )}
+            {meta.length > 0 && (
+              <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
+                {meta.join(" · ")}
               </div>
-            </div>
+            )}
           </div>
         );
       },
-    },
-    {
-      key: "case_slug",
-      header: t("deadlines.col_case"),
-      sortable: true,
-      sortAccessor: (e) => e.case_slug ?? "",
-      hideOnMobile: true,
-      cell: (e) =>
-        e.case_slug ? (
-          <button
-            onClick={() => router.push(`/dashboard/cases/${encodeSlugPath(e.case_slug!)}`)}
-            className="text-xs text-[color:var(--brand-primary)] hover:underline"
-            title={e.case_slug}
-          >
-            {e.case_title ?? e.case_slug}
-          </button>
-        ) : (
-          <span className="text-xs text-[color:var(--ds-text-muted)]">—</span>
-        ),
-    },
-    {
-      key: "responsible",
-      header: t("deadlines.fristenbuch_responsible"),
-      sortable: true,
-      sortAccessor: (e) => e.responsible ?? "",
-      hideOnMobile: true,
-      cell: (e) => (
-        <span className="text-xs text-[color:var(--ds-text)]">{e.responsible ?? "—"}</span>
-      ),
-    },
-    {
-      key: "folge",
-      header: t("deadlines.fristenbuch_source"),
-      hideOnMobile: true,
-      cell: (e) => (
-        <span className="text-xs text-[color:var(--ds-text-muted)]">
-          {e.source === "fristenbuch"
-            ? "Fristenbuch"
-            : e.source === "legal_deadline"
-              ? "Fristenseite"
-              : e.source === "legal_case"
-                ? "Akte"
-                : "Timeline"}
-        </span>
-      ),
     },
     {
       key: "status",
       header: t("deadlines.col_status"),
       sortable: true,
       sortAccessor: (e) => e.status,
-      width: "120px",
+      width: "w-[1%] whitespace-nowrap",
       cell: (e) => {
-        const cfg = STATUS_MAP[e.status as DeadlineStatus] || STATUS_MAP.pending;
+        const cfg =
+          STATUS_MAP[(e.status === "completed" ? "done" : e.status) as DeadlineStatus] ||
+          STATUS_MAP.pending;
+        const done = e.status === "done" || e.status === "completed";
         return (
-          <Badge
-            variant="default"
-            className={cn(
-              "border text-xs",
-              STATUS_BG[cfg.color],
-              STATUS_BORDER[cfg.color],
-              STATUS_TEXT[cfg.color]
+          <div className="flex flex-col items-start gap-1">
+            <Badge
+              variant="default"
+              className={cn(
+                "border text-xs whitespace-nowrap",
+                STATUS_BG[cfg.color],
+                STATUS_BORDER[cfg.color],
+                STATUS_TEXT[cfg.color]
+              )}
+            >
+              {t(cfg.labelKey)}
+            </Badge>
+            {e.is_notfrist && (
+              <Badge
+                variant="default"
+                className="flex items-center gap-0.5 border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs whitespace-nowrap text-[color:var(--ds-danger-text)]"
+              >
+                <ShieldCheck size={10} aria-hidden="true" />
+                {t("deadlines.notfrist")}
+              </Badge>
             )}
-          >
-            {t(cfg.labelKey)}
-          </Badge>
+            {done && (e.completed_at || e.completed_by) && (
+              <span className="text-xs whitespace-nowrap text-[color:var(--ds-text-muted)]">
+                {[e.completed_at ? formatDate(e.completed_at) : null, e.completed_by]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
+          </div>
         );
       },
     },
-    {
-      key: "completed",
-      header: t("deadlines.fristenbuch_completed"),
-      hideOnMobile: true,
-      cell: (e) =>
-        e.status === "done" && (e.completed_at || e.completed_by) ? (
-          <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {e.completed_at
-              ? new Date(e.completed_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })
-              : ""}
-            {e.completed_by ? ` · ${e.completed_by}` : ""}
-          </span>
-        ) : (
-          <span className="text-xs text-[color:var(--ds-text-muted)]">—</span>
-        ),
-    },
   ];
+
+  // Zuständigkeit nur zeigen, wenn überhaupt jemand eingetragen ist.
+  if (responsibles.length > 0) {
+    columns.splice(2, 0, RESPONSIBLE_COLUMN);
+  }
+
+  const hasFilters =
+    filter !== "all" ||
+    caseFilter !== "" ||
+    responsibleFilter !== "" ||
+    timeWindow !== "all" ||
+    search !== "";
+
+  const statusChips = (
+    [
+      ["overdue", "deadlines.status_overdue"],
+      ["critical", "deadlines.status_critical"],
+      ["warning", "deadlines.status_warning"],
+      ["vorfrist", "deadlines.vorfrist_reached"],
+      ["pending", "deadlines.status_pending"],
+      ["done", "deadlines.status_done"],
+    ] as const
+  )
+    .map(([key, labelKey]) => ({ key, labelKey, count: stats.byStatus[key] ?? 0 }))
+    .filter((c) => c.count > 0 || filter === c.key);
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" data-tour="fristenbuch">
       <PageHeader
         title={t("deadlines.fristenbuch")}
-        description={t("deadlines.fristenbuch_desc")}
+        description="Das Fristenbuch der Kanzlei: alle Fristen chronologisch, mit Zuständigkeit und Erledigungsvermerk — zum Ausdrucken für die tägliche Fristenkontrolle."
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("deadlines.title"), href: "/dashboard/deadlines" },
           { label: t("deadlines.fristenbuch") },
         ]}
         actions={
-          <div className="flex items-center gap-2.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.print()}
-              className="gap-2 text-xs"
-            >
-              <Printer size={14} />
-              {t("deadlines.fristenbuch_print")}
-            </Button>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={exportCsv}
-              disabled={!filtered.length}
-              className="gap-2 text-xs"
+              disabled={!sorted.length}
+              className="gap-2 whitespace-nowrap"
             >
               <Download size={14} />
               {t("deadlines.fristenbuch_csv")}
             </Button>
-            <Button variant="ghost" size="sm" onClick={copyIcsUrl} className="gap-2 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={copyIcsUrl}
+              className="gap-2 whitespace-nowrap"
+            >
               <CalendarPlus size={14} />
-              {t("deadlines.fristenbuch_ics")}
+              Kalender-Abo kopieren
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.print()}
+              className="gap-2 whitespace-nowrap"
+            >
+              <Printer size={14} />
+              {t("deadlines.fristenbuch_print")}
             </Button>
           </div>
         }
       />
 
-      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-3 lg:grid-cols-5 print:border-none">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] lg:grid-cols-4 print:border-none">
         {[
-          {
-            label: t("deadlines.fristenbuch_gesamt"),
-            value: stats.gesamt,
-            color: "text-[color:var(--ds-text)]",
-          },
+          { label: "Offen", value: stats.open, tone: "text-[color:var(--ds-text)]" },
           {
             label: t("deadlines.status_overdue"),
             value: stats.overdue,
-            color: "text-[color:var(--ds-danger-text)]",
+            tone: "text-[color:var(--ds-danger-text)]",
           },
           {
-            label: t("deadlines.status_critical"),
+            label: "In den nächsten 3 Tagen",
             value: stats.critical,
-            color: "text-[color:var(--ds-danger-text)]",
+            tone: "text-[color:var(--ds-warning-text)]",
           },
           {
             label: t("deadlines.vorfrist_reached"),
             value: stats.vorfrist,
-            color: "text-[color:var(--ds-info-text)]",
-          },
-          {
-            label: t("deadlines.fristenbuch_ok"),
-            value: stats.pending,
-            color: "text-[color:var(--ds-success-text)]",
+            tone: "text-[color:var(--ds-info-text)]",
           },
         ].map((item) => (
           <div
@@ -436,7 +395,10 @@ export default function FristenbuchPage() {
           >
             <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
             <div
-              className={cn("mt-1 text-2xl leading-none font-semibold tabular-nums", item.color)}
+              className={cn(
+                "mt-1 text-2xl leading-none font-semibold tabular-nums",
+                item.value > 0 ? item.tone : "text-[color:var(--ds-text)]"
+              )}
             >
               {item.value}
             </div>
@@ -445,64 +407,56 @@ export default function FristenbuchPage() {
       </div>
 
       {(stats.overdue > 0 || stats.critical > 0) && (
-        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 print:hidden">
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 print:hidden"
+        >
           <AlertTriangle size={18} className="shrink-0 text-[color:var(--ds-danger-text)]" />
           <p className="text-sm text-[color:var(--ds-danger-text)]">
-            {stats.overdue > 0 && `${stats.overdue} ${t("deadlines.alert_critical_plural")} `}
-            {stats.critical > 0 && `${stats.critical} ${t("deadlines.fristenbuch_kritisch_hint")}`}
+            {[
+              stats.overdue > 0
+                ? `${stats.overdue} ${stats.overdue === 1 ? "Frist ist überfällig" : "Fristen sind überfällig"}`
+                : null,
+              stats.critical > 0
+                ? `${stats.critical} ${stats.critical === 1 ? "Frist endet" : "Fristen enden"} in den nächsten 3 Tagen`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
       )}
 
-      <div className="filter-strip print:hidden">
-        <FilterChip
-          label={t("deadlines.all")}
-          active={filter === "all"}
-          onClick={() => setFilter("all")}
-        />
-        {(
-          [
-            ["overdue", "deadlines.status_overdue"],
-            ["critical", "deadlines.status_critical"],
-            ["warning", "deadlines.status_warning"],
-            ["vorfrist", "deadlines.vorfrist_reached"],
-            ["pending", "deadlines.fristenbuch_ok"],
-          ] as const
-        ).map(([key, labelKey]) => {
-          const count =
-            key === "overdue"
-              ? stats.overdue
-              : key === "critical"
-                ? stats.critical
-                : key === "warning"
-                  ? stats.warning
-                  : key === "vorfrist"
-                    ? stats.vorfrist
-                    : stats.pending;
-          if (count === 0) return null;
-          return (
+      {statusChips.length > 1 && (
+        <div className="filter-strip print:hidden">
+          <FilterChip
+            label={t("deadlines.all")}
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+          />
+          {statusChips.map((c) => (
             <FilterChip
-              key={key}
-              label={`${t(labelKey)} (${count})`}
-              active={filter === key}
-              onClick={() => setFilter(filter === key ? "all" : key)}
+              key={c.key}
+              label={c.count > 0 ? `${t(c.labelKey)} (${c.count})` : t(c.labelKey)}
+              active={filter === c.key}
+              onClick={() => setFilter(filter === c.key ? "all" : c.key)}
             />
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 print:hidden">
         <SearchBar
           placeholder={t("deadlines.fristenbuch_search")}
           onSearch={setSearch}
           onClear={() => setSearch("")}
-          className="max-w-md"
+          className="w-full sm:max-w-md"
         />
         <select
           value={timeWindow}
           onChange={(e) => setTimeWindow(e.target.value as TimeWindow)}
           aria-label={t("deadlines.fristenbuch_window_all")}
-          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:w-auto"
         >
           <option value="all">{t("deadlines.fristenbuch_window_all")}</option>
           <option value="today">{t("deadlines.fristenbuch_window_today")}</option>
@@ -514,7 +468,7 @@ export default function FristenbuchPage() {
             value={responsibleFilter}
             onChange={(e) => setResponsibleFilter(e.target.value)}
             aria-label={t("deadlines.fristenbuch_responsible")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:w-auto"
           >
             <option value="">{t("deadlines.fristenbuch_all_responsible")}</option>
             {responsibles.map((name) => (
@@ -524,16 +478,17 @@ export default function FristenbuchPage() {
             ))}
           </select>
         )}
-        {caseSlugs.length > 0 && (
+        {caseOptions.length > 0 && (
           <select
             value={caseFilter}
             onChange={(e) => setCaseFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            aria-label={t("deadlines.col_case")}
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:w-auto"
           >
             <option value="">{t("deadlines.fristenbuch_all_cases")}</option>
-            {caseSlugs.map((slug) => (
+            {caseOptions.map(([slug, title]) => (
               <option key={slug} value={slug}>
-                {slug}
+                {title}
               </option>
             ))}
           </select>
@@ -555,31 +510,45 @@ export default function FristenbuchPage() {
         </div>
       )}
 
-      <DataTable
-        columns={columns}
-        data={filtered}
-        loading={loading}
-        emptyTitle={t("deadlines.fristenbuch_empty")}
-        emptyDescription={
-          loading ? t("deadlines.fristenbuch_loading") : t("deadlines.empty_filtered")
-        }
-        emptyIcon={BookOpen}
-        onRowClick={(e) =>
-          e.case_slug ? router.push(`/dashboard/cases/${encodeSlugPath(e.case_slug)}`) : undefined
-        }
-        rowKey={(e) => e.id}
-        pageSize={50}
-      />
+      {!(loadError && fristen.length === 0) && (
+        <DataTable
+          density="dense"
+          columns={columns}
+          data={sorted}
+          loading={loading}
+          emptyTitle={
+            hasFilters ? "Keine Fristen für diese Auswahl" : t("deadlines.fristenbuch_empty")
+          }
+          emptyDescription={
+            hasFilters
+              ? t("deadlines.empty_filtered")
+              : "Fristen, die Sie in Akten oder unter Fristen erfassen, erscheinen hier chronologisch."
+          }
+          emptyIcon={BookOpen}
+          emptyActionLabel={hasFilters ? "Filter zurücksetzen" : "Zu den Fristen"}
+          onEmptyAction={() => {
+            if (hasFilters) {
+              setFilter("all");
+              setCaseFilter("");
+              setResponsibleFilter("");
+              setTimeWindow("all");
+              setSearch("");
+            } else {
+              router.push("/dashboard/deadlines");
+            }
+          }}
+          onRowClick={(e) =>
+            e.case_slug ? router.push(`/dashboard/cases/${encodeSlugPath(e.case_slug)}`) : undefined
+          }
+          rowKey={(e) => e.id}
+          pageSize={50}
+        />
+      )}
 
       <div className="hidden print:block">
         <p className="mt-4 border-t border-[color:var(--ds-border)] pt-2 text-xs text-[color:var(--ds-text-muted)]">
-          {t("deadlines.fristenbuch_print_footer")}:{" "}
-          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}{" "}
-          — {filtered.length} {t("deadlines.count")}
+          {t("deadlines.fristenbuch_print_footer")}: {formatDate(new Date())} — {sorted.length}{" "}
+          Fristen
           {timeWindow !== "all" &&
             ` · ${t(
               timeWindow === "today"

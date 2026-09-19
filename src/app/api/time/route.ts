@@ -19,6 +19,21 @@ const log = logger("api/time");
 
 export const dynamic = "force-dynamic";
 
+/** The engine returns at most 100 pages per request; page through the rest. */
+async function listAllOfType(
+  brain: ReturnType<typeof createServerBrainClient>,
+  type: string,
+  max = 5000
+) {
+  const out: Awaited<ReturnType<typeof brain.listPages>> = [];
+  for (let offset = 0; offset < max; offset += 100) {
+    const batch = await brain.listPages({ type, limit: 100, offset });
+    out.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return out;
+}
+
 const timeQuerySchema = z
   .object({
     caseSlug: z.string().optional(),
@@ -89,8 +104,16 @@ export const GET = createHandler(
           entries = raw.map((e) => ({ ...e, case_slug: caseSlug }));
         }
       } else {
-        const pages = await brain.listPages({ type: "time_entry", limit });
-        entries = pages.map((p) => {
+        // Time is recorded in two places: the `time_entries` list of each
+        // matter (the time API, the matter tab, the timer) and standalone
+        // `time_entry` pages (imports). The firm-wide view reads both —
+        // before, it read only the pages and showed nothing for entries booked
+        // in a matter.
+        const [pages, cases] = await Promise.all([
+          listAllOfType(brain, "time_entry"),
+          listAllOfType(brain, "legal_case"),
+        ]);
+        const fromPages: TimeEntryWithCase[] = pages.map((p) => {
           const fm = p.frontmatter as Record<string, unknown>;
           return {
             id: p.slug,
@@ -104,8 +127,23 @@ export const GET = createHandler(
             lawyer: fm.lawyer ? String(fm.lawyer) : undefined,
             activity_type: fm.activity_type ? String(fm.activity_type) : undefined,
             case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
-          };
+          } as TimeEntryWithCase;
         });
+        const fromCases: TimeEntryWithCase[] = cases.flatMap((c) => {
+          const fm = (c.frontmatter ?? {}) as Record<string, unknown>;
+          if (String(fm.status ?? "") === "tombstoned") return [];
+          const raw = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
+          return raw.map((e) => ({ ...e, case_slug: c.slug }));
+        });
+        const seen = new Set<string>();
+        entries = [...fromCases, ...fromPages]
+          .filter((e) => {
+            const key = `${e.case_slug ?? ""}#${e.id}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .sort((a, b) => String(b.date).localeCompare(String(a.date)));
       }
 
       const filtered = filterEntries(entries, {

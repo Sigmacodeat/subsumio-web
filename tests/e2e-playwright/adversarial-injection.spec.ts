@@ -58,7 +58,7 @@ async function openChat(page: import("@playwright/test").Page) {
   // restores from localStorage and its default is flaky under cold compiles.
   await page.addInitScript(() => {
     try {
-      localStorage.setItem("subsumio-copilot-open", "true");
+      localStorage.setItem("subsumio-copilot-open-v2", "true");
       localStorage.setItem("subsumio-tour-completed", "true");
     } catch {}
   });

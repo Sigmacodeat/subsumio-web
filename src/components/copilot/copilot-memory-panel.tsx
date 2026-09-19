@@ -222,7 +222,7 @@ export function CopilotMemoryPanel() {
             <button
               onClick={addMemory}
               disabled={saving || !newKey.trim() || !newValue.trim()}
-              className="flex items-center gap-1 rounded-md bg-[color:var(--brand-primary)] px-2 py-1 text-[10px] font-medium text-white disabled:opacity-50"
+              className="flex items-center gap-1 rounded-md bg-[color:var(--brand-solid)] px-2 py-1 text-[10px] font-medium text-white disabled:opacity-50"
             >
               {saving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
               {isEn ? "Save" : "Speichern"}

@@ -6,9 +6,7 @@ import {
   CalendarClock,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   XCircle,
-  FileText,
   Calculator,
   Mail,
   FileSearch,
@@ -16,10 +14,13 @@ import {
   RotateCcw,
   Plus,
   ShieldCheck,
-  EyeOff,
   Printer,
   Sparkles,
+  MoreHorizontal,
+  BookOpen,
+  CalendarDays,
 } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,8 +34,16 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
-import { cn, encodeSlugPath } from "@/lib/utils";
-import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
+import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
+import { toLocalIsoDate } from "@/lib/calendar-conflicts";
+import { buildApprovedDeadlinePage } from "@/lib/deadline-approval";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { computeFrist, fristOptionsFor } from "@/lib/legal/frist-options";
@@ -74,18 +83,6 @@ interface DeadlineItem {
   ervZustelldatum?: string;
 }
 
-const STATUS_CONFIG: Record<
-  string,
-  { labelKey: DashboardKey; color: StatusColor; icon: React.ElementType }
-> = {
-  pending: { labelKey: "deadlines.status_pending", color: "blue", icon: Clock },
-  warning: { labelKey: "deadlines.status_warning", color: "amber", icon: AlertTriangle },
-  critical: { labelKey: "deadlines.status_critical", color: "red", icon: AlertTriangle },
-  overdue: { labelKey: "deadlines.status_overdue", color: "red", icon: XCircle },
-  done: { labelKey: "deadlines.status_done", color: "emerald", icon: CheckCircle2 },
-  vorfrist: { labelKey: "deadlines.vorfrist_reached", color: "blue", icon: Clock },
-};
-
 const TYPE_CONFIG: Record<string, DashboardKey> = {
   deadline: "deadlines.type_deadline",
   event: "deadlines.type_event",
@@ -93,11 +90,134 @@ const TYPE_CONFIG: Record<string, DashboardKey> = {
   filing: "deadlines.type_filing",
 };
 
-function getDaysUntil(dateStr: string): number {
-  const target = new Date(dateStr);
-  const now = new Date();
-  const diff = target.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+type DeadlineFilter =
+  | "open"
+  | "all"
+  | "overdue"
+  | "week"
+  | "notfrist"
+  | "unreviewed"
+  | "vorfrist"
+  | "done";
+
+const BADGE_BASE = "border text-xs whitespace-nowrap";
+
+/**
+ * Nur Abweichungen vom Normalfall bekommen ein Abzeichen (Notfrist, ungeprüft,
+ * Zweitprüfung, Vorfrist, Termin statt Frist). Eine gewöhnliche, freigegebene
+ * Frist bleibt ohne Abzeichen.
+ */
+function DeadlineBadges({
+  d,
+  open,
+  vorfrist,
+  t,
+}: {
+  d: DeadlineItem;
+  open: boolean;
+  vorfrist: boolean;
+  t: (key: DashboardKey) => string;
+}) {
+  const badges: React.ReactNode[] = [];
+  if (d.isNotfrist) {
+    badges.push(
+      <Badge
+        key="notfrist"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+        )}
+      >
+        {t("deadlines.notfrist")}
+      </Badge>
+    );
+  }
+  if (d.type !== "deadline") {
+    badges.push(
+      <Badge
+        key="type"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+        )}
+      >
+        {t(TYPE_CONFIG[d.type] || "deadlines.type_event")}
+      </Badge>
+    );
+  }
+  if (open && d.reviewStatus === "needs_review") {
+    badges.push(
+      <Badge
+        key="review"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+        )}
+      >
+        {t("deadlines.review_needed")}
+      </Badge>
+    );
+  } else if (open && d.reviewStatus && d.reviewStatus !== "approved") {
+    badges.push(
+      <Badge
+        key="review"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]"
+        )}
+      >
+        {t("deadlines.unreviewed")}
+      </Badge>
+    );
+  }
+  if (open && d.isNotfrist && !d.secondCheckAt && d.reviewStatus === "approved") {
+    badges.push(
+      <Badge
+        key="second"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]"
+        )}
+      >
+        {t("deadlines.second_check_pending")}
+      </Badge>
+    );
+  }
+  if (vorfrist) {
+    badges.push(
+      <Badge
+        key="vorfrist"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+        )}
+      >
+        {t("deadlines.vorfrist_reached")}
+      </Badge>
+    );
+  }
+  if (!open) {
+    badges.push(
+      <Badge
+        key="done"
+        variant="default"
+        className={cn(
+          BADGE_BASE,
+          "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+        )}
+      >
+        {t("deadlines.status_done")}
+      </Badge>
+    );
+  }
+  if (badges.length === 0) return null;
+  return <div className="flex flex-col items-start gap-1">{badges}</div>;
 }
 
 function calculateDeadline(
@@ -105,10 +225,10 @@ function calculateDeadline(
   startDate: string,
   state?: string,
   country?: string
-): { dueDate: Date; label: string; law: string; note: string } {
+): { dueDate: string; label: string; law: string; note: string } {
   const r = computeFrist(key, startDate, { state, country });
   return {
-    dueDate: new Date(`${r.dueDate}T12:00:00Z`),
+    dueDate: r.dueDate,
     label: r.label,
     law: r.law,
     note: r.hinweise.join(" · "),
@@ -125,7 +245,7 @@ export default function DeadlinesPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<DeadlineFilter>("open");
   const [caseFilter, setCaseFilter] = useState<string | null>(null);
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
   const calcOptions = useMemo(() => fristOptionsFor(rechtsraum.country), [rechtsraum.country]);
@@ -190,9 +310,9 @@ export default function DeadlinesPage() {
   const [calcKey, setCalcKey] = useState("");
   const [calcError, setCalcError] = useState<string | null>(null);
   const calcOption = calcOptions.find((o) => o.key === calcKey) ?? calcOptions[0];
-  const [calcDate, setCalcDate] = useState(new Date().toISOString().split("T")[0]);
+  const [calcDate, setCalcDate] = useState(() => toLocalIsoDate(new Date()));
   const [calcResult, setCalcResult] = useState<{
-    dueDate: Date;
+    dueDate: string;
     label: string;
     law: string;
     note: string;
@@ -204,6 +324,7 @@ export default function DeadlinesPage() {
     Array<{ type: string; description: string; date?: string; confidence: string }>
   >([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [savingDetected, setSavingDetected] = useState<number | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
 
@@ -263,13 +384,13 @@ export default function DeadlinesPage() {
       items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       await setCache(OFFLINE_KEYS.deadlines, items);
       setDeadlines(items);
-    } catch (err) {
+    } catch {
       const cached = await getCache<DeadlineItem[]>(OFFLINE_KEYS.deadlines);
       if (cached) {
         setDeadlines(cached);
         setLoadError(t("deadlines.error_offline"));
       } else {
-        setLoadError(err instanceof Error ? err.message : t("deadlines.error_load"));
+        setLoadError(t("deadlines.error_load"));
       }
     } finally {
       setLoading(false);
@@ -321,10 +442,10 @@ export default function DeadlinesPage() {
       });
       addToast({ type: "success", title: t("deadlines.second_check_done") });
       await loadDeadlines();
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
-        title: err instanceof Error ? err.message : t("deadlines.update_failed"),
+        title: t("deadlines.update_failed"),
       });
     } finally {
       setSecondCheckBusy(false);
@@ -341,10 +462,10 @@ export default function DeadlinesPage() {
         frontmatter,
       });
       await loadDeadlines();
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
-        title: err instanceof Error ? err.message : t("deadlines.update_failed"),
+        title: t("deadlines.update_failed"),
       });
     } finally {
       setActionBusy(null);
@@ -385,10 +506,10 @@ export default function DeadlinesPage() {
       });
       addToast({ type: "success", title: t("deadlines.detect_saved") });
       await loadDeadlines();
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
-        title: err instanceof Error ? err.message : t("deadlines.detect_save_failed"),
+        title: t("deadlines.detect_save_failed"),
       });
     } finally {
       setSavingDetected(null);
@@ -412,9 +533,9 @@ export default function DeadlinesPage() {
     const caseParam = searchParams.get("case");
     const statusParam = searchParams.get("status");
     if (caseParam) setCaseFilter(caseParam);
-    if (statusParam === "critical") setFilter("critical");
+    if (statusParam === "critical" || statusParam === "week") setFilter("week");
     else if (statusParam === "overdue") setFilter("overdue");
-    else if (statusParam === "open") setFilter("all");
+    else if (statusParam === "open") setFilter("open");
   }, [searchParams]);
 
   useEffect(() => {
@@ -440,7 +561,7 @@ export default function DeadlinesPage() {
           title:
             data.error === "smtp_not_configured"
               ? t("deadlines.toast_smtp")
-              : `${t("deadlines.error_prefix")}: ${data.error}`,
+              : "Die Erinnerungen konnten nicht versendet werden. Bitte versuchen Sie es später erneut.",
         });
       }
     } catch {
@@ -448,291 +569,339 @@ export default function DeadlinesPage() {
     }
   }
 
+  const isOpen = (d: DeadlineItem) => d.status !== "done" && d.status !== "completed";
+  const isUnreviewed = (d: DeadlineItem) =>
+    isOpen(d) && !!d.reviewStatus && d.reviewStatus !== "approved";
+  const vorfristReached = (d: DeadlineItem) =>
+    isOpen(d) && !!d.vorfristDate && (daysUntil(d.vorfristDate) ?? 1) <= 0;
+  const dueThisWeek = (d: DeadlineItem) => {
+    const days = daysUntil(d.date);
+    return isOpen(d) && days !== null && days >= 0 && days <= 7;
+  };
+  const isOverdue = (d: DeadlineItem) => isOpen(d) && (daysUntil(d.date) ?? 0) < 0;
+
+  const FILTER_PREDICATES: Record<DeadlineFilter, (d: DeadlineItem) => boolean> = {
+    open: isOpen,
+    all: () => true,
+    overdue: isOverdue,
+    week: dueThisWeek,
+    notfrist: (d) => isOpen(d) && !!d.isNotfrist,
+    unreviewed: isUnreviewed,
+    vorfrist: vorfristReached,
+    done: (d) => !isOpen(d),
+  };
+
+  const needle = search.trim().toLowerCase();
   const filtered = deadlines.filter((d) => {
     const matchesSearch =
-      search === "" ||
-      d.description.toLowerCase().includes(search.toLowerCase()) ||
-      (d.caseTitle || "").toLowerCase().includes(search.toLowerCase());
-    const matchesFilter =
-      filter === "all" ||
-      d.status === filter ||
-      (filter === "unreviewed" && d.reviewStatus === "unreviewed") ||
-      (filter === "notfrist" && d.isNotfrist) ||
-      (filter === "vorfrist" && d.vorfristDate && new Date(d.vorfristDate) <= new Date());
+      needle === "" ||
+      d.description.toLowerCase().includes(needle) ||
+      (d.caseTitle || "").toLowerCase().includes(needle) ||
+      (d.law || "").toLowerCase().includes(needle);
     const matchesCase =
       !caseFilter || d.caseSlug === caseFilter || d.caseSlug === `cases/${caseFilter}`;
-    return matchesSearch && matchesFilter && matchesCase;
+    return matchesSearch && matchesCase && FILTER_PREDICATES[filter](d);
   });
 
-  const counts = deadlines.reduce(
-    (acc, d) => {
-      acc[d.status] = (acc[d.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-  const sourceCounts = deadlines.reduce(
-    (acc, d) => {
-      const key = d.source?.includes("bea")
-        ? "bea"
-        : d.source?.includes("ai")
-          ? "ai"
-          : d.source?.includes("manual")
-            ? "manual"
-            : d.slug
-              ? "direct"
-              : "case";
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-  const reviewOpenCount = deadlines.filter(
-    (d) => d.reviewStatus && d.reviewStatus !== "approved"
-  ).length;
-  const unreviewedCount = deadlines.filter((d) => d.reviewStatus === "unreviewed").length;
-  const notfristCount = deadlines.filter((d) => d.isNotfrist).length;
-  const vorfristReachedCount = deadlines.filter(
-    (d) => d.vorfristDate && new Date(d.vorfristDate) <= new Date()
-  ).length;
+  const counts = Object.fromEntries(
+    (Object.keys(FILTER_PREDICATES) as DeadlineFilter[]).map((k) => [
+      k,
+      deadlines.filter(FILTER_PREDICATES[k]).length,
+    ])
+  ) as Record<DeadlineFilter, number>;
+  const criticalCount = deadlines.filter((d) => {
+    const days = daysUntil(d.date);
+    return isOpen(d) && days !== null && days >= 0 && days <= 3;
+  }).length;
+
+  /** Die eine naheliegende Aktion je Zeile; alles Weitere liegt im Menü. */
+  function primaryAction(d: DeadlineItem): "approve" | "second_check" | "done" | null {
+    if (!d.slug || !isOpen(d)) return null;
+    if (d.reviewStatus && d.reviewStatus !== "approved") return "approve";
+    if (d.isNotfrist && !d.secondCheckAt) return "second_check";
+    return "done";
+  }
+
+  /**
+   * Register-only rows (e.g. the AI deadline calendar: source "fristenbuch", no own
+   * page) can only be approved; approval writes a legal_deadline page that then
+   * takes precedence over the row in /api/legal/fristen.
+   */
+  const isRegisterOnly = (d: DeadlineItem) => !d.slug && d.source === "fristenbuch";
+
+  async function approveRegisterOnly(d: DeadlineItem) {
+    setActionBusy(d.id);
+    try {
+      await api.brain.createPage(
+        buildApprovedDeadlinePage({
+          caseSlug: d.caseSlug,
+          title: d.description,
+          date: d.date,
+          law: d.law,
+          vorfristDate: d.vorfristDate,
+          reviewedBy: currentUserName,
+        })
+      );
+      addToast({ type: "success", title: t("deadlines.review_approved") });
+      await loadDeadlines();
+    } catch {
+      addToast({ type: "error", title: t("deadlines.update_failed") });
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  function approve(d: DeadlineItem) {
+    if (isRegisterOnly(d)) {
+      void approveRegisterOnly(d);
+      return;
+    }
+    void updateDeadlinePage(d, {
+      review_status: "approved",
+      reviewed_at: new Date().toISOString(),
+      // Needed for the four-eyes check: the second check must be
+      // done by someone other than the approver.
+      reviewed_by: currentUserName,
+    });
+  }
+
+  function markDone(d: DeadlineItem) {
+    void updateDeadlinePage(d, {
+      status: "done",
+      completed_at: new Date().toISOString(),
+      completed_by: currentUserName,
+    });
+  }
 
   const columns: Column<DeadlineItem>[] = [
+    {
+      key: "date",
+      header: t("deadlines.col_date"),
+      sortable: true,
+      sortAccessor: (d) => d.date,
+      width: "w-[1%] whitespace-nowrap",
+      cell: (d) => {
+        const days = daysUntil(d.date);
+        const open = isOpen(d);
+        return (
+          <div className="tabular-nums">
+            <div
+              className={cn(
+                "text-sm font-semibold",
+                !open
+                  ? "text-[color:var(--ds-text-muted)]"
+                  : days !== null && days < 0
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : days !== null && days <= 3
+                      ? "text-[color:var(--ds-warning-text)]"
+                      : "text-[color:var(--ds-text)]"
+              )}
+            >
+              {formatDate(d.date)}
+            </div>
+            <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+              {open ? formatDaysUntil(days) : t("deadlines.status_done")}
+            </div>
+          </div>
+        );
+      },
+    },
     {
       key: "description",
       header: t("deadlines.col_title"),
       sortable: true,
       sortAccessor: (d) => d.description,
+      width: "w-full max-w-0",
       cell: (d) => {
-        const statusCfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.pending;
-        const StatusIcon = statusCfg.icon;
+        const meta = [
+          d.caseTitle,
+          d.law,
+          d.ervZustelldatum ? `zugestellt ${formatDate(d.ervZustelldatum)}` : null,
+        ].filter(Boolean);
         return (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0">
             <div
               className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
-                STATUS_BG[statusCfg.color],
-                STATUS_BORDER[statusCfg.color]
+                "line-clamp-2 font-medium text-[color:var(--ds-text)]",
+                !isOpen(d) && "text-[color:var(--ds-text-muted)] line-through"
               )}
-              aria-hidden="true"
+              title={d.description}
             >
-              <StatusIcon size={16} className={STATUS_TEXT[statusCfg.color]} />
+              {d.description}
             </div>
-            <div className="min-w-0">
-              <div className="truncate font-medium text-[color:var(--ds-text)]">
-                {d.description}
+            {meta.length > 0 && (
+              <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
+                {meta.join(" · ")}
               </div>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <Badge
-                  variant="default"
-                  className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
-                >
-                  {t(TYPE_CONFIG[d.type] || "deadlines.type_deadline")}
-                </Badge>
-                {(d.reviewStatus === "approved" || d.reviewStatus === "needs_review") && (
-                  <Badge
-                    variant="default"
-                    className={cn(
-                      "border text-xs",
-                      d.reviewStatus === "approved"
-                        ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                        : d.reviewStatus === "needs_review"
-                          ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
-                          : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
-                    )}
-                  >
-                    {d.reviewStatus === "approved"
-                      ? t("deadlines.review_approved")
-                      : d.reviewStatus === "needs_review"
-                        ? t("deadlines.review_needed")
-                        : t("deadlines.review_open")}
-                  </Badge>
-                )}
-                {d.law && (
-                  <Badge
-                    variant="default"
-                    className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
-                  >
-                    {d.law}
-                  </Badge>
-                )}
-                {d.isNotfrist && (
-                  <Badge
-                    variant="default"
-                    className="flex items-center gap-0.5 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
-                  >
-                    <ShieldCheck size={10} />
-                    {t("deadlines.notfrist")}
-                  </Badge>
-                )}
-                {d.vorfristDate &&
-                  new Date(d.vorfristDate) <= new Date() &&
-                  d.status !== "done" && (
-                    <Badge
-                      variant="default"
-                      className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
-                    >
-                      {t("deadlines.vorfrist_reached")}
-                    </Badge>
-                  )}
-                {d.ervZustelldatum && (
-                  <Badge
-                    variant="default"
-                    className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
-                  >
-                    {t("deadlines.erv_date")}:{" "}
-                    {new Date(d.ervZustelldatum).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
-                  </Badge>
-                )}
-                {d.reviewStatus === "unreviewed" && (
-                  <Badge
-                    variant="default"
-                    className="flex items-center gap-0.5 border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-xs text-[color:var(--ds-neutral-text)]"
-                  >
-                    <EyeOff size={10} />
-                    {t("deadlines.unreviewed")}
-                  </Badge>
-                )}
-                {d.secondCheckRequired && !d.secondCheckAt && (
-                  <Badge
-                    variant="default"
-                    className="border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-xs text-[color:var(--ds-attention-text)]"
-                  >
-                    {t("deadlines.second_check_pending")}
-                  </Badge>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         );
       },
     },
     {
-      key: "caseTitle",
-      header: t("deadlines.col_case"),
-      sortable: true,
-      sortAccessor: (d) => d.caseTitle || "",
-      hideOnMobile: true,
-      cell: (d) =>
-        d.caseTitle ? (
-          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-            <FileText size={10} />
-            {d.caseTitle}
-          </span>
-        ) : (
-          <span className="text-[color:var(--ds-text-subtle)]">—</span>
-        ),
-    },
-    {
-      key: "date",
-      header: t("deadlines.col_date"),
-      sortable: true,
-      sortAccessor: (d) => new Date(d.date).getTime(),
-      cell: (d) => {
-        const days = getDaysUntil(d.date);
-        return (
-          <div className="text-right">
-            <div
-              className={cn(
-                "text-sm font-semibold tabular-nums",
-                days < 0
-                  ? "text-[color:var(--ds-danger-text)]"
-                  : days <= 3
-                    ? "text-[color:var(--ds-warning-text)]"
-                    : "text-[color:var(--ds-text)]"
-              )}
-            >
-              {new Date(d.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              })}
-            </div>
-            <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-              {days < 0
-                ? `${Math.abs(days)} ${t("deadlines.days_overdue")}`
-                : days === 0
-                  ? t("deadlines.today")
-                  : days === 1
-                    ? t("deadlines.tomorrow")
-                    : `${t("deadlines.in_days")} ${days} ${t("deadlines.days")}`}
-            </div>
-          </div>
-        );
-      },
+      key: "status",
+      header: t("deadlines.col_status"),
+      width: "w-[1%] whitespace-nowrap",
+      cell: (d) => <DeadlineBadges d={d} open={isOpen(d)} vorfrist={vorfristReached(d)} t={t} />,
     },
     {
       key: "actions",
-      header: t("deadlines.col_actions"),
+      header: "",
       hideOnMobile: true,
+      width: "w-[1%] whitespace-nowrap",
       cell: (d) => {
-        const busy = actionBusy === d.slug;
-        return d.slug ? (
-          <div className="flex justify-end gap-1.5">
-            {d.reviewStatus !== "approved" && (
+        if (isRegisterOnly(d)) {
+          if (!isOpen(d) || d.reviewStatus === "approved") return null;
+          const busy = actionBusy === d.id;
+          return (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops the row click; the control inside is a real button.
+            <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
               <Button
                 size="sm"
                 variant="ghost"
                 disabled={busy}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void updateDeadlinePage(d, {
-                    review_status: "approved",
-                    reviewed_at: new Date().toISOString(),
-                    // Needed for the four-eyes check: the second check must be
-                    // done by someone other than the approver.
-                    reviewed_by: currentUserName,
-                  });
-                }}
-                className="gap-1 text-xs"
+                onClick={() => approve(d)}
+                className="gap-1 text-xs whitespace-nowrap"
               >
                 {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                 {t("deadlines.approve")}
               </Button>
-            )}
-            {d.status !== "done" && d.isNotfrist && !d.secondCheckAt && (
+            </div>
+          );
+        }
+        if (!d.slug) return null;
+        const busy = actionBusy === d.slug;
+        const action = primaryAction(d);
+        return (
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops the row click; the controls inside are real buttons.
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            {action && (
               <Button
                 size="sm"
                 variant="ghost"
                 disabled={busy}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSecondCheckTarget(d);
-                }}
-                className="gap-1 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg)]"
+                onClick={() =>
+                  action === "approve"
+                    ? approve(d)
+                    : action === "second_check"
+                      ? setSecondCheckTarget(d)
+                      : markDone(d)
+                }
+                className="gap-1 text-xs whitespace-nowrap"
               >
-                <ShieldCheck size={13} />
-                {t("deadlines.second_check")}
+                {busy ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : action === "second_check" ? (
+                  <ShieldCheck size={13} />
+                ) : (
+                  <CheckCircle2 size={13} />
+                )}
+                {action === "approve"
+                  ? t("deadlines.approve")
+                  : action === "second_check"
+                    ? "Zweitprüfung"
+                    : t("deadlines.mark_done")}
               </Button>
             )}
-            {d.status !== "done" && (!d.isNotfrist || d.secondCheckAt) && (
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={busy}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void updateDeadlinePage(d, {
-                    status: "done",
-                    completed_at: new Date().toISOString(),
-                    completed_by: currentUserName,
-                  });
-                }}
-                className="gap-1 text-xs"
-              >
-                {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-                {t("deadlines.mark_done")}
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Weitere Aktionen für ${d.description}`}
+                  disabled={busy}
+                >
+                  <MoreHorizontal size={15} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {d.caseSlug && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/dashboard/cases/${encodeSlugPath(d.caseSlug!)}`)}
+                    className="gap-2 text-xs"
+                  >
+                    <BookOpen size={13} /> Akte öffnen
+                  </DropdownMenuItem>
+                )}
+                {isOpen(d) && action !== "approve" && d.reviewStatus !== "approved" && (
+                  <DropdownMenuItem onClick={() => approve(d)} className="gap-2 text-xs">
+                    <CheckCircle2 size={13} /> {t("deadlines.approve")}
+                  </DropdownMenuItem>
+                )}
+                {isOpen(d) && action === "approve" && (!d.isNotfrist || d.secondCheckAt) && (
+                  <DropdownMenuItem onClick={() => markDone(d)} className="gap-2 text-xs">
+                    <CheckCircle2 size={13} /> Als erledigt markieren
+                  </DropdownMenuItem>
+                )}
+                {isOpen(d) && d.isNotfrist && !d.secondCheckAt && action !== "second_check" && (
+                  <DropdownMenuItem
+                    onClick={() => setSecondCheckTarget(d)}
+                    className="gap-2 text-xs"
+                  >
+                    <ShieldCheck size={13} /> {t("deadlines.second_check")}
+                  </DropdownMenuItem>
+                )}
+                {!isOpen(d) && !d.isNotfrist && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        void updateDeadlinePage(d, {
+                          status: "pending",
+                          completed_at: null,
+                          completed_by: null,
+                        })
+                      }
+                      className="gap-2 text-xs"
+                    >
+                      <RotateCcw size={13} /> Wieder öffnen
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        ) : (
-          <span className="text-xs text-[color:var(--ds-text-subtle)]">
-            {t("deadlines.case_embedded")}
-          </span>
         );
       },
     },
+  ];
+
+  const kpis: Array<{ key: DeadlineFilter; label: string; value: number; tone: string }> = [
+    {
+      key: "overdue",
+      label: t("deadlines.status_overdue"),
+      value: counts.overdue,
+      tone: "text-[color:var(--ds-danger-text)]",
+    },
+    {
+      key: "week",
+      label: "Diese Woche fällig",
+      value: counts.week,
+      tone: "text-[color:var(--ds-warning-text)]",
+    },
+    {
+      key: "notfrist",
+      label: "Offene Notfristen",
+      value: counts.notfrist,
+      tone: "text-[color:var(--ds-danger-text)]",
+    },
+    {
+      key: "unreviewed",
+      label: t("deadlines.unreviewed"),
+      value: counts.unreviewed,
+      tone: "text-[color:var(--ds-warning-text)]",
+    },
+  ];
+
+  const chips: Array<{ key: DeadlineFilter; label: string; always?: boolean }> = [
+    { key: "open", label: t("tasks.open"), always: true },
+    { key: "week", label: "Diese Woche" },
+    { key: "overdue", label: t("deadlines.status_overdue") },
+    { key: "notfrist", label: t("deadlines.filter_notfrist") },
+    { key: "unreviewed", label: t("deadlines.filter_unreviewed") },
+    { key: "vorfrist", label: t("deadlines.filter_vorfrist") },
+    { key: "done", label: t("deadlines.status_done") },
+    { key: "all", label: t("deadlines.all"), always: true },
   ];
 
   return (
@@ -742,40 +911,19 @@ export default function DeadlinesPage() {
     >
       <PageHeader
         title={t("deadlines.title")}
-        description={`${deadlines.length} ${t("deadlines.count")}`}
+        description="Alle Fristen und Termine Ihrer Akten nach Fälligkeit — prüfen, freigeben und als erledigt vermerken."
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("deadlines.title") },
         ]}
         actions={
-          <div className="flex items-center gap-2.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.print()}
-              className="gap-2 text-xs"
-            >
-              <Printer size={14} />
-              {t("deadlines.fristenbuch_print")}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setQuickCreateOpen(true)}
-              className="gap-2 text-xs"
-            >
-              <Plus size={14} />
-              {t("deadlines.create")}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={sendReminders} className="gap-2 text-xs">
-              <Mail size={14} />
-              {t("deadlines.send_reminders")}
-            </Button>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowCalc(!showCalc)}
-              className="gap-2 text-xs"
+              aria-expanded={showCalc}
+              className="gap-2 whitespace-nowrap"
             >
               <Calculator size={14} />
               {t("deadlines.calculate")}
@@ -784,24 +932,61 @@ export default function DeadlinesPage() {
               variant="ghost"
               size="sm"
               onClick={() => setShowAiDetect(!showAiDetect)}
-              className="gap-2 text-xs"
+              aria-expanded={showAiDetect}
+              className="gap-2 whitespace-nowrap"
             >
               <FileSearch size={14} />
               {t("deadlines.detect")}
             </Button>
             <Button
-              variant={showAiSuggestions ? "primary" : "ghost"}
+              variant="primary"
               size="sm"
-              onClick={() => setShowAiSuggestions(!showAiSuggestions)}
-              className="gap-2 text-xs"
+              onClick={() => setQuickCreateOpen(true)}
+              className="gap-2 whitespace-nowrap"
             >
-              <Sparkles size={14} />
-              {lang === "en" ? "AI Suggestions" : "KI-Vorschläge"}
+              <Plus size={14} />
+              {t("deadlines.create")}
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Weitere Aktionen">
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => setShowAiSuggestions(!showAiSuggestions)}
+                  className="gap-2 text-xs"
+                >
+                  <Sparkles size={13} />
+                  {showAiSuggestions ? "KI-Vorschläge ausblenden" : "KI-Vorschläge anzeigen"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void sendReminders()} className="gap-2 text-xs">
+                  <Mail size={13} />
+                  {t("deadlines.send_reminders")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="gap-2 text-xs">
+                  <Link href="/dashboard/fristenbuch">
+                    <BookOpen size={13} />
+                    {t("deadlines.fristenbuch")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="gap-2 text-xs">
+                  <Link href="/dashboard/calendar">
+                    <CalendarDays size={13} />
+                    Kalender
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.print()} className="gap-2 text-xs">
+                  <Printer size={13} />
+                  {t("deadlines.fristenbuch_print")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         }
       />
-
       {/* Quick create dialog */}
       <DeadlineQuickCreateDialog
         open={quickCreateOpen}
@@ -892,7 +1077,7 @@ export default function DeadlinesPage() {
               role="alert"
               className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
             >
-              {t("deadlines.at_engine_error")} {calcError}
+              {t("deadlines.at_engine_error")}
             </div>
           )}
           {calcResult && (
@@ -905,23 +1090,18 @@ export default function DeadlinesPage() {
                   <p className="mt-1 text-sm text-[color:var(--ds-text)]">
                     {t("deadlines.calc_due")}{" "}
                     <strong>
-                      {calcResult.dueDate.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {new Intl.DateTimeFormat("de-AT", { weekday: "long" }).format(
+                        new Date(`${calcResult.dueDate}T12:00:00`)
+                      )}
+                      , {formatDate(calcResult.dueDate)}
                     </strong>
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                     {calcResult.note}
                   </p>
                 </div>
-                <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  {Math.ceil(
-                    (calcResult.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                  )}{" "}
-                  {t("deadlines.calc_remaining")}
+                <span className="shrink-0 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)]">
+                  {formatDaysUntil(daysUntil(calcResult.dueDate))}
                 </span>
               </div>
             </div>
@@ -961,6 +1141,7 @@ export default function DeadlinesPage() {
             onClick={async () => {
               if (!aiText.trim()) return;
               setAiLoading(true);
+              setAiError(null);
               try {
                 const res = await csrfFetch("/api/legal/ai-deadlines", {
                   method: "POST",
@@ -974,7 +1155,19 @@ export default function DeadlinesPage() {
                     type: "success",
                     title: `${data.detected?.length || 0} ${t("deadlines.detect_result")}`,
                   });
+                } else {
+                  setAiResults([]);
+                  setAiError(
+                    res.status === 429
+                      ? "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in einer Minute erneut."
+                      : "Die Fristen-Erkennung ist derzeit nicht verfügbar. Bitte erfassen Sie die Frist manuell über „Frist anlegen“."
+                  );
                 }
+              } catch {
+                setAiResults([]);
+                setAiError(
+                  "Die Fristen-Erkennung ist derzeit nicht erreichbar. Bitte erfassen Sie die Frist manuell über „Frist anlegen“."
+                );
               } finally {
                 setAiLoading(false);
               }
@@ -986,43 +1179,57 @@ export default function DeadlinesPage() {
             {aiLoading ? t("deadlines.detect_analyzing") : t("deadlines.detect_button")}
           </button>
 
+          {aiError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
+            >
+              {aiError}
+            </div>
+          )}
+
           {aiResults.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-xs font-semibold text-[color:var(--ds-text)]">
                 {aiResults.length} {t("deadlines.detect_result")}
               </h3>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                KI-Entwurf — anwaltlich zu prüfen. Gespeicherte Vorschläge erscheinen als
+                „Ungeprüft“ und müssen freigegeben werden.
+              </p>
               {aiResults.map((r, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
                 >
                   <div
-                    className={`h-2 w-2 rounded-full ${r.confidence === "high" ? "bg-[color:var(--ds-success-solid)]" : r.confidence === "medium" ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]"}`}
+                    aria-hidden="true"
+                    className={`h-2 w-2 shrink-0 rounded-full ${r.confidence === "high" ? "bg-[color:var(--ds-success-solid)]" : r.confidence === "medium" ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]"}`}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm text-[color:var(--ds-text)]">{r.description}</div>
                     {r.date && (
                       <div className="text-xs text-[color:var(--ds-text-muted)]">
-                        {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
+                        {formatDate(r.date)} · {formatDaysUntil(daysUntil(r.date))}
                       </div>
                     )}
                   </div>
                   <Badge
                     variant="default"
-                    className={`text-xs ${r.confidence === "high" ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]" : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"}`}
+                    className={`shrink-0 text-xs whitespace-nowrap ${r.confidence === "high" ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]" : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"}`}
                   >
-                    {r.confidence}
+                    {r.confidence === "high"
+                      ? "Sicher erkannt"
+                      : r.confidence === "medium"
+                        ? "Wahrscheinlich"
+                        : "Unsicher"}
                   </Badge>
                   <Button
                     size="sm"
                     variant="outline"
                     disabled={!r.date || savingDetected === i}
                     onClick={() => void saveDetectedDeadline(r, i)}
-                    className="shrink-0 text-xs"
+                    className="shrink-0 gap-1 text-xs whitespace-nowrap"
                   >
                     {savingDetected === i ? (
                       <Loader2 size={13} className="animate-spin" />
@@ -1042,83 +1249,77 @@ export default function DeadlinesPage() {
       {showAiSuggestions && <AiDeadlineSuggestions />}
 
       {/* Alert banner */}
-      {(counts.critical || 0) > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3">
+      {(counts.overdue > 0 || criticalCount > 0) && (
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3"
+        >
           <AlertTriangle size={18} className="shrink-0 text-[color:var(--ds-danger-text)]" />
           <p className="text-sm text-[color:var(--ds-danger-text)]">
-            {counts.critical}{" "}
-            {counts.critical === 1
-              ? t("deadlines.alert_critical")
-              : t("deadlines.alert_critical_plural")}{" "}
-            {t("deadlines.alert_in_days")}
+            {[
+              counts.overdue > 0
+                ? `${counts.overdue} ${counts.overdue === 1 ? "Frist ist überfällig" : "Fristen sind überfällig"}`
+                : null,
+              criticalCount > 0
+                ? `${criticalCount} ${criticalCount === 1 ? "Frist endet" : "Fristen enden"} in den nächsten 3 Tagen`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] lg:grid-cols-4">
-        {[
-          { label: t("deadlines.source_case"), value: sourceCounts.case || 0 },
-          { label: t("deadlines.source_direct"), value: sourceCounts.direct || 0 },
-          { label: t("deadlines.source_ai"), value: sourceCounts.ai || 0 },
-          { label: t("deadlines.review_open_count"), value: reviewOpenCount },
-        ].map((item) => (
-          <div key={item.label} className="bg-[color:var(--ds-surface)] px-4 py-3">
+        {kpis.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => setFilter(filter === item.key ? "open" : item.key)}
+            aria-pressed={filter === item.key}
+            className={cn(
+              "bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none",
+              filter === item.key && "bg-[color:var(--ds-surface-2)]"
+            )}
+          >
             <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
-            <div className="mt-1 text-2xl leading-none font-semibold text-[color:var(--ds-text)] tabular-nums">
+            <div
+              className={cn(
+                "mt-1 text-2xl leading-none font-semibold tabular-nums",
+                item.value > 0 ? item.tone : "text-[color:var(--ds-text)]"
+              )}
+            >
               {item.value}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
-      {/* Status filter chips */}
+      {/* Status filter chips — counts only when > 0 */}
       <div className="filter-strip">
         {caseFilter && (
           <FilterChip
-            label={`${t("deadlines.filter_case" as never)}: ${caseFilter.replace(/^cases\//, "")}`}
+            label={`${t("deadlines.filter_case" as never)}: ${
+              deadlines.find((d) => d.caseSlug === caseFilter)?.caseTitle ??
+              caseFilter.replace(/^(legal\/)?cases\//, "")
+            }`}
             active
             onClick={() => setCaseFilter(null)}
           />
         )}
-        <FilterChip
-          label={t("deadlines.all")}
-          active={filter === "all"}
-          onClick={() => setFilter("all")}
-        />
-        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-          const count = counts[key] || 0;
-          return (
+        {chips
+          .filter((c) => c.always || counts[c.key] > 0 || filter === c.key)
+          .map((c) => (
             <FilterChip
-              key={key}
-              label={`${t(cfg.labelKey)} (${count})`}
-              active={filter === key}
-              onClick={() => setFilter(filter === key ? "all" : key)}
+              key={c.key}
+              label={
+                counts[c.key] > 0 && c.key !== "all" ? `${c.label} (${counts[c.key]})` : c.label
+              }
+              active={filter === c.key}
+              onClick={() => setFilter(filter === c.key && c.key !== "open" ? "open" : c.key)}
             />
-          );
-        })}
-        {unreviewedCount > 0 && (
-          <FilterChip
-            label={`${t("deadlines.filter_unreviewed")} (${unreviewedCount})`}
-            active={filter === "unreviewed"}
-            onClick={() => setFilter(filter === "unreviewed" ? "all" : "unreviewed")}
-          />
-        )}
-        {notfristCount > 0 && (
-          <FilterChip
-            label={`${t("deadlines.filter_notfrist")} (${notfristCount})`}
-            active={filter === "notfrist"}
-            onClick={() => setFilter(filter === "notfrist" ? "all" : "notfrist")}
-          />
-        )}
-        {vorfristReachedCount > 0 && (
-          <FilterChip
-            label={`${t("deadlines.filter_vorfrist")} (${vorfristReachedCount})`}
-            active={filter === "vorfrist"}
-            onClick={() => setFilter(filter === "vorfrist" ? "all" : "vorfrist")}
-          />
-        )}
+          ))}
       </div>
-
       {/* Search */}
       <SearchBar
         placeholder={t("deadlines.search")}
@@ -1143,25 +1344,27 @@ export default function DeadlinesPage() {
         </div>
       )}
 
-      {/* Data table */}
-      <DataTable
-        density="dense"
-        columns={columns}
-        data={filtered}
-        loading={loading}
-        emptyTitle={t("deadlines.empty_title")}
-        emptyDescription={
-          deadlines.length === 0 ? t("deadlines.empty_no_data") : t("deadlines.empty_filtered")
-        }
-        emptyIcon={CalendarClock}
-        emptyActionLabel={deadlines.length === 0 ? t("deadlines.empty_create") : undefined}
-        onEmptyAction={deadlines.length === 0 ? () => setQuickCreateOpen(true) : undefined}
-        onRowClick={(d) =>
-          d.caseSlug && router.push(`/dashboard/cases/${encodeSlugPath(d.caseSlug)}`)
-        }
-        rowKey={(d) => d.id}
-        pageSize={20}
-      />
+      {/* Data table — hidden when loading failed and nothing is cached */}
+      {!(loadError && deadlines.length === 0) && (
+        <DataTable
+          density="dense"
+          columns={columns}
+          data={filtered}
+          loading={loading}
+          emptyTitle={t("deadlines.empty_title")}
+          emptyDescription={
+            deadlines.length === 0 ? t("deadlines.empty_no_data") : t("deadlines.empty_filtered")
+          }
+          emptyIcon={CalendarClock}
+          emptyActionLabel={deadlines.length === 0 ? t("deadlines.empty_create") : undefined}
+          onEmptyAction={deadlines.length === 0 ? () => setQuickCreateOpen(true) : undefined}
+          onRowClick={(d) =>
+            d.caseSlug && router.push(`/dashboard/cases/${encodeSlugPath(d.caseSlug)}`)
+          }
+          rowKey={(d) => d.id}
+          pageSize={20}
+        />
+      )}
 
       {/* P0: Vier-Augen second-check confirmation modal */}
       {secondCheckTarget && (

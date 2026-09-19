@@ -3,17 +3,37 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
-import { ShieldAlert, Loader2, ChevronRight, Search as SearchIcon, X } from "lucide-react";
+import { ShieldAlert, ChevronRight, Search as SearchIcon, X } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { cn, encodeSlugPath } from "@/lib/utils";
+import { encodeSlugPath } from "@/lib/utils";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { RotateCcw } from "lucide-react";
 
 const CASES_LIMIT = 200;
+
+const CASE_STATUS_LABEL: Record<string, string> = {
+  open: "offen",
+  active: "offen",
+  in_progress: "in Bearbeitung",
+  pending: "offen",
+  closed: "abgeschlossen",
+  archived: "archiviert",
+};
+
+function caseCountLabel(n: number): string {
+  return n === 1 ? "1 Akte" : `${n} Akten`;
+}
+
+/** Win rate only means something once at least one case has been decided. */
+function winRateLabel(o: { wins: number; losses: number; winRate: number }): string | null {
+  return o.wins + o.losses > 0 ? `${Math.round(o.winRate * 100)} %` : null;
+}
 
 interface OpponentStats {
   name: string;
@@ -36,9 +56,12 @@ export default function OpponentsPage() {
   const [selectedOpponent, setSelectedOpponent] = useState<OpponentStats | null>(null);
   const [capped, setCapped] = useState(false);
   const [query, setQuery] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
     (async () => {
       try {
         const pages = await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
@@ -96,9 +119,8 @@ export default function OpponentsPage() {
         }
 
         setOpponents(Object.values(opponentMap).sort((a, b) => b.caseCount - a.caseCount));
-      } catch (e) {
-        if (!cancelled)
-          setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
+      } catch {
+        if (!cancelled) setLoadError(t("opponents.error_load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -106,7 +128,7 @@ export default function OpponentsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey, t]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return opponents;
@@ -120,13 +142,20 @@ export default function OpponentsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader title={t("opponents.title")} description={t("opponents.desc")} />
+      <PageHeader
+        title={t("opponents.title")}
+        description={t("opponents.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("opponents.title") },
+        ]}
+      />
 
       {capped && <CappedResultsNotice limit={CASES_LIMIT} />}
 
       {/* Stats summary */}
       {opponents.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("opponents.stat_total")}
@@ -153,7 +182,7 @@ export default function OpponentsPage() {
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("opponents.stat_wins")}
             </div>
-            <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
+            <div className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
               {opponents.reduce((s, o) => s + o.wins, 0)}
             </div>
           </div>
@@ -166,20 +195,7 @@ export default function OpponentsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setLoading(true);
-              setLoadError(null);
-              void (async () => {
-                try {
-                  await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
-                  setOpponents([]);
-                } catch (e) {
-                  setLoadError(e instanceof Error ? e.message : t("opponents.error_load"));
-                } finally {
-                  setLoading(false);
-                }
-              })();
-            }}
+            onClick={() => setReloadKey((k) => k + 1)}
             className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} /> {t("opponents.retry")}
@@ -216,19 +232,21 @@ export default function OpponentsPage() {
 
       {/* Opponent list */}
       {loading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("aria.loading")}
-        >
-          <Loader2 size={24} className="brand-text animate-spin" />
+        <div className="space-y-2" aria-busy="true" aria-label={t("aria.loading")}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
-      ) : opponents.length === 0 ? (
-        <div className="space-y-4 py-20 text-center">
-          <ShieldAlert size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-[color:var(--ds-text-muted)]">{t("opponents.empty_title")}</p>
-          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("opponents.empty_desc")}</p>
-        </div>
+      ) : loadError ? null : opponents.length === 0 ? (
+        <EmptyState
+          icon={ShieldAlert}
+          title={t("opponents.empty_title")}
+          description={t("opponents.empty_desc")}
+          actionLabel="Zu den Akten"
+          onAction={() => {
+            window.location.href = "/dashboard/cases";
+          }}
+        />
       ) : (
         <div className="space-y-3">
           {selectedOpponent ? (
@@ -245,40 +263,34 @@ export default function OpponentsPage() {
                   {selectedOpponent.name}
                 </h2>
                 <div className="mt-1 flex items-center gap-3 text-sm text-[color:var(--ds-text-muted)]">
+                  <span>{caseCountLabel(selectedOpponent.caseCount)}</span>
                   <span>
-                    {selectedOpponent.caseCount} {t("opponents.cases_count")}
-                  </span>
-                  <span
-                    className={
-                      selectedOpponent.winRate >= 0.5
-                        ? "text-[color:var(--ds-success-text)]"
-                        : "text-[color:var(--ds-danger-text)]"
-                    }
-                  >
-                    {Math.round(selectedOpponent.winRate * 100)}% {t("opponents.win_rate")}
+                    {winRateLabel(selectedOpponent)
+                      ? `${winRateLabel(selectedOpponent)} ${t("opponents.win_rate")}`
+                      : "noch keine entschiedene Akte"}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+                  <div className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
                     {selectedOpponent.wins}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
                     {t("opponents.stat_wins")}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
+                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+                  <div className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
                     {selectedOpponent.losses}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
                     {t("opponents.lost")}
                   </div>
                 </div>
-                <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-info-text)]">
+                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+                  <div className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
                     {selectedOpponent.settlements}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -319,7 +331,7 @@ export default function OpponentsPage() {
                           ? "text-[color:var(--ds-danger-text)]"
                           : c.status === "settled"
                             ? "text-[color:var(--ds-info-text)]"
-                            : "text-[color:var(--ds-warning-text)]";
+                            : "text-[color:var(--ds-text-muted)]";
                     return (
                       <Link
                         key={c.slug}
@@ -335,7 +347,7 @@ export default function OpponentsPage() {
                                 ? t("opponents.lost")
                                 : c.status === "settled"
                                   ? t("opponents.settled")
-                                  : c.status}
+                                  : (CASE_STATUS_LABEL[c.status] ?? c.status)}
                           </span>
                           <ChevronRight
                             size={12}
@@ -354,28 +366,26 @@ export default function OpponentsPage() {
                 <button
                   key={o.name}
                   onClick={() => setSelectedOpponent(o)}
-                  className="hover:brand-border hover:brand-soft group flex w-full items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
+                  className="hover:brand-border hover:brand-soft group flex w-full items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
-                    <ShieldAlert size={18} className="text-[color:var(--ds-danger-text)]" />
+                    <ShieldAlert
+                      size={18}
+                      className="text-[color:var(--ds-text-muted)]"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-[color:var(--ds-text)]">{o.name}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {o.caseCount} {t("opponents.cases_count")} ·{" "}
-                      {o.preferredAreas.slice(0, 2).join(", ")}
+                      {caseCountLabel(o.caseCount)}
+                      {o.preferredAreas.length > 0 &&
+                        ` · ${o.preferredAreas.slice(0, 2).join(", ")}`}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div
-                      className={cn(
-                        "text-sm font-medium",
-                        o.winRate >= 0.5
-                          ? "text-[color:var(--ds-success-text)]"
-                          : "text-[color:var(--ds-danger-text)]"
-                      )}
-                    >
-                      {Math.round(o.winRate * 100)}%
+                    <div className="text-sm font-medium text-[color:var(--ds-text)] tabular-nums">
+                      {winRateLabel(o) ?? "—"}
                     </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
                       {t("opponents.win_rate")}

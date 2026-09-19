@@ -19,7 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { api } from "@/lib/api";
 import type { SearchResult as EngineSearchResult } from "@/lib/types";
 
@@ -109,21 +110,46 @@ function inferTypeFromSlug(slug: string): string {
 function getHref(result: DisplayResult): string {
   const type = result.type;
   if (type === "legal_case" || type === "case") {
-    return `/dashboard/cases/${encodeURIComponent(result.slug)}`;
+    return `/dashboard/cases/${encodeSlugPath(result.slug)}`;
   }
   if (type === "legal_document" || type === "document") {
-    return `/dashboard/documents/${encodeURIComponent(result.slug)}`;
+    // Same target as the command palette: the document register opens the file.
+    return `/dashboard/vault?slug=${encodeURIComponent(result.slug)}`;
   }
   if (type === "legal_deadline" || type === "deadline") {
     return `/dashboard/deadlines`;
   }
   if (type === "invoice") {
-    return `/dashboard/invoices`;
+    return `/dashboard/invoicing`;
   }
   if (type === "chat_inbox" || type === "chat_outbox") {
     return `/dashboard/whatsapp`;
   }
-  return `/dashboard/pages/${encodeURIComponent(result.slug)}`;
+  return `/dashboard/brain/${encodeURIComponent(result.slug)}`;
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  legal_case: "Akte",
+  case: "Akte",
+  legal_document: "Dokument",
+  document: "Dokument",
+  legal_deadline: "Frist",
+  deadline: "Frist",
+  invoice: "Rechnung",
+  chat_inbox: "WhatsApp",
+  chat_outbox: "WhatsApp",
+  conversation_event: "Nachricht",
+  contact: "Kontakt",
+  legal_contact: "Kontakt",
+  client: "Kontakt",
+  note: "Notiz",
+  legal_note: "Notiz",
+};
+
+function typeLabel(type: string): string {
+  if (TYPE_LABEL[type]) return TYPE_LABEL[type];
+  const hit = Object.keys(TYPE_LABEL).find((k) => type.startsWith(k));
+  return hit ? TYPE_LABEL[hit] : "Eintrag";
 }
 
 export default function GlobalSearchPage() {
@@ -155,8 +181,8 @@ export default function GlobalSearchPage() {
         source: r.source,
       }));
       setResults(mapped);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError("Die Suche konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut.");
       setResults([]);
     } finally {
       setLoading(false);
@@ -212,6 +238,7 @@ export default function GlobalSearchPage() {
             if (e.key === "Enter") void doSearch(query);
           }}
           placeholder={t("search.placeholder" as DashboardKey)}
+          aria-label={t("search.placeholder" as DashboardKey)}
           className="h-12 pr-12 pl-12 text-base"
           autoFocus
         />
@@ -233,7 +260,9 @@ export default function GlobalSearchPage() {
       {/* Scope filters */}
       {hasSearched && (
         <div className="flex flex-wrap gap-2">
-          {SCOPE_CONFIG.map((s) => {
+          {SCOPE_CONFIG.filter(
+            (s) => s.id === "all" || scopeCounts[s.id] > 0 || scope === s.id
+          ).map((s) => {
             const count = scopeCounts[s.id];
             const Icon = s.icon;
             const isActive = scope === s.id;
@@ -244,7 +273,7 @@ export default function GlobalSearchPage() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-fast)] ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                   isActive
-                    ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                    ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                 )}
               >
@@ -292,12 +321,13 @@ export default function GlobalSearchPage() {
 
       {/* Results */}
       {!loading && hasSearched && filteredResults.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Search size={32} className="mb-2 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {t("search.no_results" as DashboardKey)}
-          </p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title={t("search.no_results" as DashboardKey)}
+          description="Prüfen Sie die Schreibweise oder wählen Sie einen anderen Bereich."
+          actionLabel={scope !== "all" ? "In allen Bereichen suchen" : undefined}
+          onAction={scope !== "all" ? () => setScope("all") : undefined}
+        />
       )}
 
       {!loading && filteredResults.length > 0 && (
@@ -308,8 +338,6 @@ export default function GlobalSearchPage() {
           {filteredResults.map((result) => {
             const Icon = getScopeIcon(result.type);
             const snippet = result.snippet || "";
-            const caseNumber = undefined;
-            const status = undefined;
 
             return (
               <Link
@@ -325,16 +353,6 @@ export default function GlobalSearchPage() {
                     <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                       {result.title}
                     </span>
-                    {caseNumber && (
-                      <Badge variant="default" className="shrink-0 text-xs">
-                        {caseNumber}
-                      </Badge>
-                    )}
-                    {status && (
-                      <Badge variant="default" className="shrink-0 text-xs opacity-70">
-                        {status}
-                      </Badge>
-                    )}
                   </div>
                   {snippet && (
                     <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
@@ -342,8 +360,7 @@ export default function GlobalSearchPage() {
                     </p>
                   )}
                   <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                    {result.type.replace(/_/g, " ")}
-                    {result.score !== undefined && ` · ${Math.round(result.score * 100)}%`}
+                    {typeLabel(result.type)}
                   </div>
                 </div>
               </Link>
@@ -354,12 +371,9 @@ export default function GlobalSearchPage() {
 
       {/* Empty state - not searched yet */}
       {!hasSearched && !loading && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Search size={48} className="mb-3 text-[color:var(--ds-border)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {t("search.hint" as DashboardKey)}
-          </p>
-        </div>
+        <p className="py-10 text-center text-sm text-[color:var(--ds-text-muted)]">
+          {t("search.hint" as DashboardKey)} Drücken Sie die Eingabetaste, um zu suchen.
+        </p>
       )}
     </div>
   );

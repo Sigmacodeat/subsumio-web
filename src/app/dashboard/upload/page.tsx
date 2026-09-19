@@ -39,6 +39,7 @@ import { runUploadPool } from "@/lib/upload-queue";
 import { inferUploadRouting, type KnownCase } from "@/lib/upload-routing";
 import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
 import { sha256HexBytes, gobdFrontmatter } from "@/lib/gobd";
+import Link from "next/link";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { UploadLifecycle, uploadStageIndex } from "@/components/dashboard/upload-lifecycle";
 import type { BrainPage } from "@/lib/types";
@@ -103,9 +104,35 @@ function formatBytes(bytes: number) {
 }
 
 function formatEta(seconds?: number) {
-  if (!seconds || !Number.isFinite(seconds) || seconds < 1) return "< 1s";
-  if (seconds < 60) return `${Math.ceil(seconds)}s`;
-  return `${Math.floor(seconds / 60)}m ${Math.ceil(seconds % 60)}s`;
+  if (!seconds || !Number.isFinite(seconds) || seconds < 1) return "unter 1 s";
+  if (seconds < 60) return `${Math.ceil(seconds)} s`;
+  return `${Math.floor(seconds / 60)} min ${Math.ceil(seconds % 60)} s`;
+}
+
+/** Document-type codes from the recognition step, in the firm's language. */
+const DOC_TYPE_LABELS: Record<string, string> = {
+  court_judgment: "Urteil",
+  court_order: "Gerichtsbeschluss",
+  pleading: "Schriftsatz",
+  contract: "Vertrag",
+  correspondence: "Korrespondenz",
+  witness_statement: "Zeugenaussage",
+  expert_report: "Gutachten",
+  police_report: "Ermittlungsakte",
+  ladung: "Ladung",
+  zahlungsbefehl: "Zahlungsbefehl",
+  erv_erledigung: "ERV-Erledigung",
+};
+
+/**
+ * Upload errors in plain language. Messages we build ourselves (size, type,
+ * duplicate) are German sentences and pass; raw HTTP/engine texts do not.
+ */
+function plainUploadError(message: string | undefined, fallback: string): string {
+  if (!message) return fallback;
+  const technical =
+    /HTTP|\bstatus\b|fetch|network|timeout|engine|LLM|openrouter|credits|error:|exception|[{}<>]|^[A-Z_]{3,}$/i;
+  return technical.test(message) || message.length > 240 ? fallback : message;
 }
 
 type UploadMode = "case" | "knowledge";
@@ -478,18 +505,17 @@ function UploadPageInner() {
         // The upload succeeded (markdown extracted), but the original bytes
         // may not have been stored — the user needs to know.
         const persistWarning =
-          (result as { original_persisted?: boolean; persist_error?: string })
-            .original_persisted === false
-            ? ((result as { persist_error?: string }).persist_error ??
-              t("upload.original_not_saved"))
+          (result as { original_persisted?: boolean }).original_persisted === false
+            ? t("upload.original_not_saved")
             : undefined;
         const extractionStatus = result.extraction_status;
+        // Our own sentences only — the engine's extraction warnings are technical.
         const extractionWarning =
           extractionStatus === "failed"
-            ? result.extraction_warnings || t("upload.no_text_extracted")
+            ? t("upload.no_text_extracted")
             : extractionStatus === "partial"
-              ? result.extraction_warnings || t("upload.partial_extraction")
-              : result.extraction_warnings;
+              ? t("upload.partial_extraction")
+              : undefined;
         const pipelineWarning =
           result.post_upload_queued === false ? t("upload.saved_no_pipeline") : undefined;
 
@@ -537,11 +563,8 @@ function UploadPageInner() {
                 )
               );
             })
-            .catch((readinessError) => {
-              const message =
-                readinessError instanceof Error
-                  ? readinessError.message
-                  : t("upload.processing_failed");
+            .catch(() => {
+              const message = t("upload.processing_failed");
               setFiles((prev) =>
                 prev.map((f) =>
                   f.id === uploadFile.id
@@ -562,7 +585,7 @@ function UploadPageInner() {
               ? {
                   ...f,
                   status: isDuplicate ? "skipped" : "error",
-                  error: msg,
+                  error: plainUploadError(msg, t("upload.err_failed")),
                   serverPhase: undefined,
                 }
               : f
@@ -697,7 +720,7 @@ function UploadPageInner() {
           {!casesLoading && cases.length === 0 && (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
               <AlertCircle size={12} />
-              Keine Akten vorhanden. Bitte erstelle zuerst eine Akte.
+              Keine Akten vorhanden. Bitte legen Sie zuerst eine Akte an.
             </p>
           )}
         </div>
@@ -744,7 +767,7 @@ function UploadPageInner() {
           htmlFor="upload-tags"
           className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
         >
-          Tags (kommasepariert)
+          Schlagworte (durch Komma getrennt)
         </Label>
         <Input
           id="upload-tags"
@@ -825,10 +848,10 @@ function UploadPageInner() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label className="mb-1.5 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              Jurisdiktion (optional)
+              Rechtsordnung (optional)
             </Label>
             <Select value={jurisdictionOverride} onValueChange={setJurisdictionOverride}>
-              <SelectTrigger className="w-full" aria-label="Jurisdiktion (optional)">
+              <SelectTrigger className="w-full" aria-label="Rechtsordnung (optional)">
                 <SelectValue placeholder={t("upload.auto_detect")} />
               </SelectTrigger>
               <SelectContent>
@@ -924,7 +947,7 @@ function UploadPageInner() {
             variant="secondary"
             onClick={pickFolder}
             disabled={scanning || !isOnline()}
-            className="gap-2"
+            className="shrink-0 gap-2 whitespace-nowrap"
           >
             <FolderOpen size={15} />
             {scanning ? t("upload.folder_scanning") : t("upload.folder_scan")}
@@ -939,11 +962,6 @@ function UploadPageInner() {
         <div className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
           <strong className="text-[color:var(--ds-text)]">{t("upload.how_title")}</strong>{" "}
           {t("upload.how_desc")}
-          <br />
-          <strong className="mt-1 block text-[color:var(--ds-info-text)]">
-            {t("upload.hint_label")}
-          </strong>{" "}
-          {t("upload.hint_desc")}
         </div>
       </div>
 
@@ -992,7 +1010,7 @@ function UploadPageInner() {
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={overallProgress}
-                  aria-label="Gesamtfortschritt Upload"
+                  aria-label="Gesamtfortschritt"
                 >
                   <div
                     className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
@@ -1031,7 +1049,7 @@ function UploadPageInner() {
                       </div>
                       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-[color:var(--ds-text-muted)]">
                         {f.status === "preparing" ? (
-                          <span>Initialisiert · {formatBytes(f.file.size)}</span>
+                          <span>Wird vorbereitet · {formatBytes(f.file.size)}</span>
                         ) : f.status === "processing" ? (
                           <span>
                             {f.serverPhase === "downloading"
@@ -1062,7 +1080,7 @@ function UploadPageInner() {
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={Math.round(f.progress)}
-                        aria-label={`Upload ${f.file.name}`}
+                        aria-label={`Fortschritt ${f.file.name}`}
                       >
                         <div
                           className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
@@ -1078,9 +1096,12 @@ function UploadPageInner() {
                           Offline-Warteschlange — wird automatisch synchronisiert
                         </span>
                       ) : (
-                        <span className="font-mono text-xs text-[color:var(--ds-success-text)]">
-                          → {f.slug}
-                        </span>
+                        <Link
+                          href={`/dashboard/brain/${encodeURIComponent(f.slug)}`}
+                          className="text-xs font-medium text-[color:var(--ds-success-text)] hover:underline"
+                        >
+                          Dokument öffnen
+                        </Link>
                       )}
                       {f.gobdStamped && (
                         <Badge
@@ -1093,7 +1114,8 @@ function UploadPageInner() {
                       {f.recognizedJurisdiction && (
                         <Badge
                           variant="default"
-                          className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
+                          className="text-xs"
+                          title="Automatisch erkannte Rechtsordnung"
                         >
                           {f.recognizedJurisdiction.toUpperCase()}
                         </Badge>
@@ -1101,9 +1123,10 @@ function UploadPageInner() {
                       {f.recognizedDocType && (
                         <Badge
                           variant="default"
-                          className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
+                          className="text-xs"
+                          title="Automatisch erkannter Dokumenttyp"
                         >
-                          {f.recognizedDocType}
+                          {DOC_TYPE_LABELS[f.recognizedDocType] ?? f.recognizedDocType}
                         </Badge>
                       )}
                       {f.gzLeitzahl && (
@@ -1114,21 +1137,20 @@ function UploadPageInner() {
                               ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                               : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                           }`}
-                          title={f.gzValidated ? "GZ strukturell validiert" : "GZ nicht validiert"}
+                          title={f.gzValidated ? "GZ formal geprüft" : "GZ nicht geprüft"}
                         >
-                          {f.gzValidated ? "✓ " : "⚠ "}
                           {f.gzLeitzahl}
                         </Badge>
                       )}
                       {f.persistWarning && (
                         <span className="flex items-center gap-1 text-xs text-[color:var(--ds-warning-text)]">
                           <AlertCircle size={11} />
-                          Aufbewahrungs-Warnung: Original nicht gespeichert ({f.persistWarning})
+                          {f.persistWarning}
                         </span>
                       )}
                       {f.extractionWarning && (
                         <p className="mt-1 text-xs text-[color:var(--ds-warning-text)]">
-                          Extraktionshinweis: {f.extractionWarning}
+                          {f.extractionWarning}
                         </p>
                       )}
                     </span>
@@ -1241,8 +1263,8 @@ function UploadPageInner() {
             </span>
           </div>
           <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">{t("upload.indexing")}</p>
-          <div className="flex gap-3">
-            <Button size="sm" variant="success" onClick={() => router.push("/dashboard/chat")}>
+          <div className="flex flex-wrap gap-3">
+            <Button size="sm" onClick={() => router.push("/dashboard/chat")}>
               {t("upload.ask_brain")}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => router.push("/dashboard/brain")}>

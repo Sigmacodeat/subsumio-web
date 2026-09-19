@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, forwardRef, type CSSProperties } from "react";
+import {
+  Fragment,
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  forwardRef,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -1660,15 +1668,19 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             <div className="flex gap-1 px-3 pt-2">
               <button
                 onClick={toggleCoreMode}
-                className="flex min-w-0 flex-1 items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium text-[color:var(--ds-text-subtle)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
                 aria-pressed={!coreMode}
                 title={
                   coreMode ? t("sidebar.show_all_functions") : t("sidebar.show_core_functions")
                 }
               >
-                <span className="flex items-center gap-1.5">
+                <span className="flex min-w-0 items-center gap-1.5">
                   {coreMode ? <Layers size={13} /> : <LayoutGrid size={13} />}
-                  {coreMode ? t("sidebar.core_mode") : t("sidebar.extended_mode")}
+                  {/* The button names what it does, not the current state: "Kernfunktionen"
+                      read like a menu entry and nobody knew it hid half the product. */}
+                  <span className="truncate">
+                    {coreMode ? t("sidebar.extended_mode") : t("sidebar.core_mode")}
+                  </span>
                 </span>
                 <ChevronRight
                   size={12}
@@ -1887,7 +1899,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             {/* Expanded: accordion sections */}
             {!collapsed && (
               <div className="mt-4 space-y-2">
-                {accordionSections.map((section) => {
+                {accordionSections.map((section, sectionIndex) => {
                   const isOpen = openSections.includes(section.titleKey);
                   const sectionActive = section.items.some((item) =>
                     isActiveHref(pathname, item.href)
@@ -1895,162 +1907,164 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   const SectionIcon = section.items[0]?.icon ?? FolderOpen;
                   const panelId = sectionDomId(section.titleKey);
                   const catVar = section.colorVar ?? "--nav-cat-ops";
+                  const firstAdmin =
+                    section.titleKey.startsWith("nav.section.admin") &&
+                    !accordionSections[sectionIndex - 1]?.titleKey.startsWith("nav.section.admin");
                   return (
-                    <div
-                      key={section.titleKey}
-                      className={cn(
-                        "rounded-lg border transition-[background-color,border-color,box-shadow,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
-                        section.titleKey.startsWith("nav.section.admin")
-                          ? "border-[color:var(--ds-border)] bg-transparent"
-                          : "border-transparent",
-                        isOpen
-                          ? "border-[color:var(--ds-border-hover)] bg-[color:var(--ds-surface-2)] shadow-sm"
-                          : sectionActive
-                            ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
-                            : "hover:bg-[color:var(--ds-hover)]"
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={(event) => toggleSection(section.titleKey, event)}
-                        className="group flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
-                        aria-expanded={isOpen}
-                        aria-controls={panelId}
-                      >
-                        <SectionIcon
-                          size={15}
-                          className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] group-hover:[color:var(--ds-text)] motion-reduce:transition-none"
-                          style={{
-                            color:
-                              sectionActive || isOpen
-                                ? `var(${catVar})`
-                                : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
-                          }}
-                        />
-                        {/* Normal case (not uppercase/tracking-wider): at the old
-                            220px sidebar width the long German section names truncated
-                            into unreadable "MANDANTEN & K…" fragments. */}
-                        <span
-                          className={cn(
-                            "min-w-0 flex-1 truncate text-[13px] font-semibold tracking-tight",
-                            sectionActive || isOpen
-                              ? "text-[color:var(--ds-text)]"
-                              : "text-[color:var(--ds-text-muted)]"
-                          )}
-                          title={t(section.titleKey)}
-                        >
-                          {t(section.titleKey)}
-                        </span>
-                        {sectionActive && !isOpen && (
-                          <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: `var(${catVar})` }}
-                            aria-hidden
-                          />
-                        )}
-                        <ChevronDown
-                          size={14}
-                          className={cn(
-                            "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[220ms] ease-[var(--ds-ease-smooth)]",
-                            isOpen && "rotate-180"
-                          )}
-                        />
-                      </button>
-                      {isOpen && section.descKey && (
-                        <p className="px-3 pb-1 text-[11px] leading-tight text-[color:var(--ds-text-subtle)]">
-                          {t(section.descKey)}
+                    <Fragment key={section.titleKey}>
+                      {firstAdmin && (
+                        <p className="mx-3 mt-5 mb-1 border-t border-[color:var(--ds-border)] pt-4 text-[11px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                          Verwaltung
                         </p>
                       )}
-                      <motion.div
-                        id={panelId}
-                        initial={false}
-                        animate={{
-                          height: isOpen ? "auto" : 0,
-                          opacity: isOpen ? 1 : 0,
-                        }}
-                        transition={sidebarPanelTransition}
-                        className="overflow-hidden"
-                        aria-hidden={!isOpen}
-                        {...(!isOpen ? { inert: true } : {})}
+                      <div
+                        className={cn(
+                          "rounded-lg border transition-[background-color,border-color,box-shadow,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
+                          "border-transparent",
+                          isOpen
+                            ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
+                            : sectionActive
+                              ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
+                              : "hover:bg-[color:var(--ds-hover)]"
+                        )}
                       >
-                        <div className="min-h-0 overflow-hidden">
-                          <div
-                            className="space-y-0.5 px-2 pb-2"
-                            role="group"
-                            aria-label={t(section.titleKey)}
+                        <button
+                          type="button"
+                          onClick={(event) => toggleSection(section.titleKey, event)}
+                          className="group flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
+                          aria-expanded={isOpen}
+                          aria-controls={panelId}
+                        >
+                          <SectionIcon
+                            size={15}
+                            className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] group-hover:[color:var(--ds-text)] motion-reduce:transition-none"
+                            style={{
+                              color:
+                                sectionActive || isOpen
+                                  ? `var(${catVar})`
+                                  : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
+                            }}
+                          />
+                          {/* Normal case (not uppercase/tracking-wider): at the old
+                            220px sidebar width the long German section names truncated
+                            into unreadable "MANDANTEN & K…" fragments. */}
+                          <span
+                            className={cn(
+                              "min-w-0 flex-1 truncate text-[13px] font-semibold tracking-tight",
+                              sectionActive || isOpen
+                                ? "text-[color:var(--ds-text)]"
+                                : "text-[color:var(--ds-text-muted)]"
+                            )}
+                            title={t(section.titleKey)}
                           >
-                            {section.items.map((item, index) => {
-                              const Icon = item.icon;
-                              const itemCatVar = section.colorVar ?? "--nav-cat-ops";
-                              if (item.comingSoon) {
+                            {t(section.titleKey)}
+                          </span>
+                          {sectionActive && !isOpen && (
+                            <span
+                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: `var(${catVar})` }}
+                              aria-hidden
+                            />
+                          )}
+                          <ChevronDown
+                            size={14}
+                            className={cn(
+                              "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[220ms] ease-[var(--ds-ease-smooth)]",
+                              isOpen && "rotate-180"
+                            )}
+                          />
+                        </button>
+                        <motion.div
+                          id={panelId}
+                          initial={false}
+                          animate={{
+                            height: isOpen ? "auto" : 0,
+                            opacity: isOpen ? 1 : 0,
+                          }}
+                          transition={sidebarPanelTransition}
+                          className="overflow-hidden"
+                          aria-hidden={!isOpen}
+                          {...(!isOpen ? { inert: true } : {})}
+                        >
+                          <div className="min-h-0 overflow-hidden">
+                            <div
+                              className="space-y-0.5 px-2 pb-2"
+                              role="group"
+                              aria-label={t(section.titleKey)}
+                            >
+                              {section.items.map((item, index) => {
+                                const Icon = item.icon;
+                                const itemCatVar = section.colorVar ?? "--nav-cat-ops";
+                                if (item.comingSoon) {
+                                  return (
+                                    <button
+                                      key={item.href}
+                                      disabled
+                                      className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-subtle)] select-none"
+                                      aria-disabled="true"
+                                    >
+                                      <Icon
+                                        size={15}
+                                        className="shrink-0 opacity-50"
+                                        style={{
+                                          color: `color-mix(in srgb, var(${itemCatVar}) 45%, var(--ds-text-subtle))`,
+                                        }}
+                                      />
+                                      <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                        <span className="truncate">{t(item.labelKey)}</span>
+                                        <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
+                                          {t("sidebar.coming_soon")}
+                                        </span>
+                                      </span>
+                                    </button>
+                                  );
+                                }
+                                const active = isActiveHref(pathname, item.href);
                                 return (
-                                  <button
+                                  <Link
                                     key={item.href}
-                                    disabled
-                                    className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-subtle)] select-none"
-                                    aria-disabled="true"
+                                    href={item.href}
+                                    aria-current={active ? "page" : undefined}
+                                    onClick={() => {
+                                      trackRecent(item);
+                                      setMobileOpen(false);
+                                    }}
+                                    title={item.tooltipKey ? t(item.tooltipKey) : undefined}
+                                    style={{ "--sidebar-item-index": index } as CSSProperties}
+                                    className={cn(
+                                      "sidebar-item-in relative flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium transition-[background-color,color,transform] duration-[120ms] ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
+                                      active
+                                        ? "brand-soft brand-text font-semibold shadow-[0_0_10px_-2px_var(--brand-glow)]"
+                                        : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                    )}
                                   >
                                     <Icon
                                       size={15}
-                                      className="shrink-0 opacity-50"
+                                      className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
                                       style={{
-                                        color: `color-mix(in srgb, var(${itemCatVar}) 45%, var(--ds-text-subtle))`,
+                                        color: active
+                                          ? `var(${itemCatVar})`
+                                          : `color-mix(in srgb, var(${itemCatVar}) 55%, var(--ds-text-muted))`,
                                       }}
                                     />
-                                    <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                                      <span className="truncate">{t(item.labelKey)}</span>
-                                      <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
-                                        {t("sidebar.coming_soon")}
-                                      </span>
+                                    <span className="min-w-0 flex-1 truncate">
+                                      {highlightMatch(t(item.labelKey), searchQuery)}
                                     </span>
-                                  </button>
+                                    {badges[item.href] && (
+                                      <NavBadge
+                                        count={badges[item.href].count}
+                                        variant={badges[item.href].variant}
+                                        collapsed={false}
+                                      />
+                                    )}
+                                  </Link>
                                 );
-                              }
-                              const active = isActiveHref(pathname, item.href);
-                              return (
-                                <Link
-                                  key={item.href}
-                                  href={item.href}
-                                  aria-current={active ? "page" : undefined}
-                                  onClick={() => {
-                                    trackRecent(item);
-                                    setMobileOpen(false);
-                                  }}
-                                  title={item.tooltipKey ? t(item.tooltipKey) : undefined}
-                                  style={{ "--sidebar-item-index": index } as CSSProperties}
-                                  className={cn(
-                                    "sidebar-item-in relative flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium transition-[background-color,color,transform] duration-[120ms] ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
-                                    active
-                                      ? "brand-soft brand-text font-semibold shadow-[0_0_10px_-2px_var(--brand-glow)]"
-                                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                                  )}
-                                >
-                                  <Icon
-                                    size={15}
-                                    className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
-                                    style={{
-                                      color: active
-                                        ? `var(${itemCatVar})`
-                                        : `color-mix(in srgb, var(${itemCatVar}) 55%, var(--ds-text-muted))`,
-                                    }}
-                                  />
-                                  <span className="min-w-0 flex-1 truncate">
-                                    {highlightMatch(t(item.labelKey), searchQuery)}
-                                  </span>
-                                  {badges[item.href] && (
-                                    <NavBadge
-                                      count={badges[item.href].count}
-                                      variant={badges[item.href].variant}
-                                      collapsed={false}
-                                    />
-                                  )}
-                                </Link>
-                              );
-                            })}
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    </div>
+                        </motion.div>
+                      </div>
+                    </Fragment>
                   );
                 })}
               </div>
@@ -2153,7 +2167,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-valuemax={320}
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
-            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
+            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] focus:bg-[color:var(--brand-solid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
           />
         )}
       </div>

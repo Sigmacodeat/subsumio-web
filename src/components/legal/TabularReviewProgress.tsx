@@ -5,7 +5,7 @@ import { Activity, AlertTriangle, Loader2, RotateCcw, XCircle } from "lucide-rea
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import type { TabularReviewRun, TabularReviewRunStatus } from "@/lib/types";
@@ -92,7 +92,7 @@ export function TabularReviewProgress({ run, onRetryAll, retrying }: TabularRevi
       {/* Header: title + status */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Activity size={18} className="brand-text shrink-0" />
+          <Activity size={18} className="shrink-0 text-[color:var(--ds-text-muted)]" />
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
               {run.title}
@@ -100,13 +100,7 @@ export function TabularReviewProgress({ run, onRetryAll, retrying }: TabularRevi
             <p className="text-xs text-[color:var(--ds-text-muted)]">
               {t("tabular.run_created").replace(
                 "{{date}}",
-                new Date(run.created_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
+                formatDateTime(run.created_at)
               )}
             </p>
           </div>
@@ -193,7 +187,10 @@ export function TabularReviewProgress({ run, onRetryAll, retrying }: TabularRevi
       {run.status === "failed" && (
         <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <XCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{t("tabular.failed_banner").replace("{{error}}", run.error ?? "—")}</span>
+          <span>
+            Die Auswertung ist fehlgeschlagen. Bitte starten Sie sie erneut oder versuchen Sie es
+            in einigen Minuten noch einmal.
+          </span>
         </div>
       )}
     </div>

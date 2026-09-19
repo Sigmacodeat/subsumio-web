@@ -233,8 +233,8 @@ export default function VerfahrensdokuPage() {
       setSaved(true);
       addToast({ type: "success", description: t("verfahrensdoku.btn_saved") });
       setTimeout(() => setSaved(false), 2500);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : t("verfahrensdoku.error_save"));
+    } catch {
+      setSaveError(t("verfahrensdoku.error_save"));
       addToast({ type: "error", description: t("verfahrensdoku.error_save") });
     } finally {
       setSaving(false);
@@ -265,19 +265,28 @@ export default function VerfahrensdokuPage() {
     label: string,
     name: keyof VerfahrensdokuFormData,
     placeholder: string,
-    textarea = false
+    textarea = false,
+    inputType: "text" | "date" = "text"
   ) => (
     <div className="space-y-1.5">
-      <Label className="text-xs text-[color:var(--ds-text-muted)]">{label}</Label>
+      <Label htmlFor={`vd-${name}`} className="text-xs text-[color:var(--ds-text-muted)]">
+        {label}
+      </Label>
       {textarea ? (
         <textarea
+          id={`vd-${name}`}
           {...dokuForm.register(name)}
           placeholder={placeholder}
           rows={3}
           className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
       ) : (
-        <Input type="text" {...dokuForm.register(name)} placeholder={placeholder} />
+        <Input
+          id={`vd-${name}`}
+          type={inputType}
+          {...dokuForm.register(name)}
+          placeholder={placeholder}
+        />
       )}
       {dokuForm.formState.errors[name] && (
         <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
@@ -297,7 +306,7 @@ export default function VerfahrensdokuPage() {
           { label: t("verfahrensdoku.breadcrumb") },
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" onClick={printPdf} className="gap-1.5 text-xs">
               <Printer size={14} /> {t("verfahrensdoku.btn_print")}
             </Button>
@@ -314,7 +323,7 @@ export default function VerfahrensdokuPage() {
               size="sm"
               onClick={save}
               disabled={saving}
-              className="brand-bg brand-bg gap-1.5 text-xs text-white"
+              className="gap-1.5 text-xs whitespace-nowrap"
             >
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -337,7 +346,11 @@ export default function VerfahrensdokuPage() {
         </p>
       </div>
 
-      {saveError && <div className="text-xs text-[color:var(--ds-danger-text)]">{saveError}</div>}
+      {saveError && (
+        <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-xs text-[color:var(--ds-danger-text)]">
+          {saveError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Form */}
@@ -356,13 +369,13 @@ export default function VerfahrensdokuPage() {
               "anwaltName",
               t("verfahrensdoku.field_representative_ph")
             )}
-            {field("USt-IdNr.", "ustId", "DE123456789")}
+            {field("UID-Nummer", "ustId", "ATU12345678")}
             {field(
               t("verfahrensdoku.field_responsible"),
               "verantwortlich",
               t("verfahrensdoku.field_responsible_ph")
             )}
-            {field(t("verfahrensdoku.field_stand"), "stand", today)}
+            {field(t("verfahrensdoku.field_stand"), "stand", today, false, "date")}
           </div>
 
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -417,18 +430,23 @@ export default function VerfahrensdokuPage() {
         {/* Preview */}
         <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 lg:sticky lg:top-6 lg:self-start">
           <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
-            <FileText size={14} className="brand-text" />
+            <FileText size={14} className="text-[color:var(--ds-text-muted)]" />
             <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {t("verfahrensdoku.preview_title")} (Markdown)
+              {t("verfahrensdoku.preview_title")}
             </span>
           </div>
-          <pre
-            className="max-h-[70vh] overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]"
+          {/* Rendered with the same escaping converter as the print/Word export. */}
+          <div
+            className="prose prose-sm dark:prose-invert max-h-[70vh] max-w-none overflow-y-auto text-xs leading-relaxed text-[color:var(--ds-text-muted)]"
             tabIndex={0}
             aria-label={t("verfahrensdoku.preview_title")}
-          >
-            {markdown}
-          </pre>
+            dangerouslySetInnerHTML={{
+              // The page owns the only h1 — demote the document's own headings.
+              __html: markdownToHtml(markdown)
+                .replace(/<(\/?)h2>/g, "<$1h4>")
+                .replace(/<(\/?)h1>/g, "<$1h3>"),
+            }}
+          />
         </div>
       </div>
     </div>

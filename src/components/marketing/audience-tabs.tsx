@@ -7,7 +7,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight } from "lucide-react";
 import { p, UI_STRINGS } from "@/content/site";
 import {

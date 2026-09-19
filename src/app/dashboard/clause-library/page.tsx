@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Library,
-  Loader2,
   AlertTriangle,
   Plus,
   Search,
@@ -13,7 +12,6 @@ import {
   Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
@@ -21,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { ClauseQuickCreateDialog } from "@/components/legal/ClauseQuickCreateDialog";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORY_LABELS: Record<string, string> = {
   nda: "NDA",
@@ -50,12 +50,14 @@ export default function ClauseLibraryPage() {
     try {
       const pages = await api.brain.listPages({ type: "clause_library", limit: 200 });
       setClauses(pages);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("clauses.toast_create_failed"));
+    } catch {
+      setError(
+        "Die Klauseln konnten nicht geladen werden. Bitte versuchen Sie es in einigen Minuten erneut."
+      );
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     void loadClauses();
@@ -112,10 +114,7 @@ export default function ClauseLibraryPage() {
           { label: t("clauses.breadcrumb") },
         ]}
         actions={
-          <Button
-            onClick={() => setQuickCreateOpen(true)}
-            className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
-          >
+          <Button onClick={() => setQuickCreateOpen(true)} className="gap-2 whitespace-nowrap">
             <Plus size={15} /> {t("clauses.btn_create")}
           </Button>
         }
@@ -138,6 +137,7 @@ export default function ClauseLibraryPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("clauses.search_placeholder")}
+          aria-label={t("clauses.search_placeholder")}
           className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-10 text-[color:var(--ds-text)]"
         />
       </div>
@@ -146,15 +146,21 @@ export default function ClauseLibraryPage() {
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
-            <Badge
+            <button
               key={cat}
-              variant="default"
-              className="cursor-pointer border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
-              onClick={() => setSearch(cat)}
+              type="button"
+              onClick={() => setSearch(search === cat ? "" : cat)}
+              aria-pressed={search === cat}
+              className={cn(
+                "inline-flex items-center rounded-md border px-2 py-0.5 text-xs transition-[background-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+                search === cat
+                  ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
+              )}
             >
               <Tag size={9} className="mr-1" />
               {CATEGORY_LABELS[cat] ?? cat}
-            </Badge>
+            </button>
           ))}
         </div>
       )}
@@ -166,8 +172,37 @@ export default function ClauseLibraryPage() {
       )}
 
       {loading && (
-        <div className="flex h-32 items-center justify-center" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Selected clause detail */}
+      {selectedClause && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {selectedClause.title}
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copyClause(selectedClause)}
+              className="gap-1.5 text-xs"
+            >
+              {copied ? (
+                <Check size={12} className="text-[color:var(--ds-success-text)]" />
+              ) : (
+                <Copy size={12} />
+              )}
+              {t("clauses.btn_copy")}
+            </Button>
+          </div>
+          <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+            {selectedClause.content}
+          </div>
         </div>
       )}
 
@@ -182,7 +217,7 @@ export default function ClauseLibraryPage() {
               className={cn(
                 "group cursor-pointer rounded-xl border p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
                 selectedClause?.slug === clause.slug
-                  ? "brand-border brand-soft"
+                  ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)]"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
               )}
               onClick={() => setSelectedClause(clause)}
@@ -206,7 +241,9 @@ export default function ClauseLibraryPage() {
                     e.stopPropagation();
                     copyClause(clause);
                   }}
-                  className="text-[color:var(--ds-text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[color:var(--ds-success-text)]"
+                  aria-label={`${t("clauses.btn_copy")}: ${clause.title}`}
+                  title={t("clauses.btn_copy")}
+                  className="rounded-md text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
                 >
                   {copied && selectedClause?.slug === clause.slug ? (
                     <Check size={14} className="text-[color:var(--ds-success-text)]" />
@@ -247,43 +284,14 @@ export default function ClauseLibraryPage() {
         </div>
       )}
 
-      {/* Selected clause detail */}
-      {selectedClause && (
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {selectedClause.title}
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => copyClause(selectedClause)}
-              className="gap-1.5 text-xs"
-            >
-              {copied ? (
-                <Check size={12} className="text-[color:var(--ds-success-text)]" />
-              ) : (
-                <Copy size={12} />
-              )}
-              {copied ? t("clauses.btn_copy") : t("clauses.btn_copy")}
-            </Button>
-          </div>
-          <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
-            {selectedClause.content}
-          </div>
-        </div>
-      )}
-
       {!loading && filtered.length === 0 && !error && (
-        <div className="py-16 text-center">
-          <Library
-            size={40}
-            className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40"
-          />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {search ? t("clauses.empty_title") : t("clauses.empty_hint")}
-          </p>
-        </div>
+        <EmptyState
+          icon={Library}
+          title={t("clauses.empty_title")}
+          description={search ? undefined : t("clauses.empty_hint")}
+          actionLabel={search ? "Suche zurücksetzen" : t("clauses.btn_create")}
+          onAction={search ? () => setSearch("") : () => setQuickCreateOpen(true)}
+        />
       )}
     </div>
   );

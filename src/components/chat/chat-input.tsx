@@ -359,7 +359,7 @@ export function ChatInput({
                 onClick={handleSubmit}
                 disabled={!canSend}
                 className={cn(
-                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
+                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-solid)] text-white transition-[background-color,transform,opacity] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--brand-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
                   overLimit && "bg-[color:var(--ds-danger-solid)]"
                 )}
                 aria-label={t("chat.send")}

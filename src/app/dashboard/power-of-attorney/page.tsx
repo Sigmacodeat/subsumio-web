@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, Loader2, FileCheck, AlertTriangle, FileDown, PenTool, Send } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +28,7 @@ export default function PowerOfAttorneyPage() {
   usePortalVisitEvents();
   const searchParams = useSearchParams();
   const [poas, setPoas] = useState<PowerOfAttorney[]>([]);
+  const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,7 +72,14 @@ export default function PowerOfAttorneyPage() {
 
   useEffect(() => {
     void load();
+    // Akten for the picker and to show titles instead of internal identifiers.
+    api.brain
+      .listPages({ type: "legal_case", limit: 200 })
+      .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
+      .catch(() => setCases([]));
   }, [load]);
+
+  const caseTitle = (slug: string) => cases.find((c) => c.slug === slug)?.title ?? "Akte";
 
   async function handleCreate() {
     if (!form.case_slug || !form.client_name || !form.scope) {
@@ -89,7 +100,7 @@ export default function PowerOfAttorneyPage() {
           expires_at: form.expires_at || undefined,
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error("save_failed");
       addToast({ type: "success", title: t("poa.ok_create") });
       setShowCreate(false);
       setForm({
@@ -101,11 +112,11 @@ export default function PowerOfAttorneyPage() {
         expires_at: "",
       });
       void load();
-    } catch (e) {
+    } catch {
       addToast({
         type: "error",
         title: t("poa.err_save"),
-        description: e instanceof Error ? e.message : undefined,
+        description: "Bitte versuchen Sie es erneut.",
       });
     } finally {
       setSaving(false);
@@ -138,11 +149,11 @@ export default function PowerOfAttorneyPage() {
       } else {
         addToast({ type: "error", title: t("poa.pdf_error") });
       }
-    } catch (e) {
+    } catch {
       addToast({
         type: "error",
         title: t("poa.pdf_error"),
-        description: e instanceof Error ? e.message : undefined,
+        description: "Bitte versuchen Sie es erneut.",
       });
     } finally {
       setGeneratingPdf(null);
@@ -191,12 +202,24 @@ export default function PowerOfAttorneyPage() {
               <Label htmlFor="poa-case" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("poa.fld_case")} *
               </Label>
-              <Input
-                id="poa-case"
-                value={form.case_slug}
-                onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
-                required
-              />
+              {form.case_slug && !cases.some((c) => c.slug === form.case_slug) ? (
+                <Input id="poa-case" value={caseTitle(form.case_slug)} readOnly />
+              ) : (
+                <select
+                  id="poa-case"
+                  value={form.case_slug}
+                  onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
+                  required
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
+                >
+                  <option value="">Akte wählen</option>
+                  {cases.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="poa-client" className="text-xs text-[color:var(--ds-text-muted)]">
@@ -273,15 +296,19 @@ export default function PowerOfAttorneyPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+        <div className="space-y-2" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       ) : poas.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
-          <FileCheck size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm font-medium">{t("poa.empty")}</p>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("poa.empty_hint")}</p>
-        </div>
+        <EmptyState
+          icon={FileCheck}
+          title={t("poa.empty")}
+          description={t("poa.empty_hint")}
+          actionLabel="Vollmacht anlegen"
+          onAction={() => setShowCreate(true)}
+        />
       ) : (
         <div className="space-y-2">
           {poas.map((poa) => {
@@ -294,7 +321,7 @@ export default function PowerOfAttorneyPage() {
                 className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium">{poa.client_name}</span>
                     <Badge variant="default" className="text-xs">
                       {typeLabel.de}
@@ -307,11 +334,11 @@ export default function PowerOfAttorneyPage() {
                     </Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {poa.scope} · {t("poa.scope_label")}: {poa.case_slug}
+                    {poa.scope} · {t("poa.scope_label")}: {caseTitle(poa.case_slug)}
                   </div>
                   {poa.expires_at && (
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("poa.expires_label")}: {poa.expires_at.split("T")[0]}
+                      {t("poa.expires_label")}: {formatDate(poa.expires_at)}
                     </div>
                   )}
                 </div>

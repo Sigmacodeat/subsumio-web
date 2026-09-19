@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownLeft,
@@ -7,7 +8,6 @@ import {
   Inbox,
   Link2,
   Link2Off,
-  Loader2,
   Mail,
   PenLine,
   Reply,
@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
@@ -128,7 +128,7 @@ function messageText(mail: MailItem): string {
 }
 
 function quote(mail: MailItem, lang: "de" | "en"): string {
-  const date = new Date(mail.createdAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE");
+  const date = formatDateTime(mail.createdAt);
   const who = mail.fromName ? `${mail.fromName} <${mail.fromEmail}>` : mail.fromEmail;
   const body = messageText(mail)
     .split("\n")
@@ -140,7 +140,6 @@ function quote(mail: MailItem, lang: "de" | "en"): string {
 export function EmailsTab() {
   const { lang } = useLang();
   const copy = COPY[lang === "en" ? "en" : "de"];
-  const locale = lang === "en" ? "en-GB" : "de-DE";
   const ctx = useMatterDetail();
   const { addToast } = useToast();
   const caseSlug = ctx.caseData?.slug ?? "";
@@ -232,8 +231,8 @@ export function EmailsTab() {
         throw new Error(typeof data.error === "string" ? data.error : copy.failed);
       }
       await load();
-    } catch (err) {
-      addToast({ type: "error", title: err instanceof Error ? err.message : copy.failed });
+    } catch {
+      addToast({ type: "error", title: copy.failed });
     } finally {
       setBusyId(null);
     }
@@ -302,8 +301,8 @@ export function EmailsTab() {
       setComposer(null);
       setAiDraft(null);
       await load();
-    } catch (err) {
-      addToast({ type: "error", title: err instanceof Error ? err.message : copy.failed });
+    } catch {
+      addToast({ type: "error", title: copy.failed });
     } finally {
       setSending(false);
     }
@@ -311,8 +310,10 @@ export function EmailsTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12" role="status" aria-live="polite">
-        <Loader2 size={20} className="brand-text animate-spin" />
+      <div className="space-y-3" role="status" aria-live="polite">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
       </div>
     );
   }
@@ -358,10 +359,7 @@ export function EmailsTab() {
             </span>
           </span>
           <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
-            {new Date(mail.createdAt).toLocaleString(locale, {
-              dateStyle: "short",
-              timeStyle: "short",
-            })}
+            {formatDateTime(mail.createdAt)}
           </span>
         </button>
         {open && (
@@ -513,7 +511,8 @@ export function EmailsTab() {
 
       <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
         <h3 className="border-b border-[color:var(--ds-border)] px-4 py-2.5 text-sm font-medium text-[color:var(--ds-text)]">
-          {copy.filed} ({filed.length})
+          {copy.filed}
+          {filed.length > 0 ? ` (${filed.length})` : ""}
         </h3>
         {filed.length === 0 ? (
           <EmptyState
@@ -527,7 +526,8 @@ export function EmailsTab() {
 
       <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
         <h3 className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-4 py-2.5 text-sm font-medium text-[color:var(--ds-text)]">
-          <Inbox size={14} aria-hidden /> {copy.unassigned} ({unassigned.length})
+          <Inbox size={14} aria-hidden /> {copy.unassigned}
+          {unassigned.length > 0 ? ` (${unassigned.length})` : ""}
         </h3>
         {unassigned.length === 0 ? (
           <EmptyState
@@ -542,7 +542,8 @@ export function EmailsTab() {
       {imported.length > 0 && (
         <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           <h3 className="border-b border-[color:var(--ds-border)] px-4 py-2.5 text-sm font-medium text-[color:var(--ds-text)]">
-            {copy.outlook} ({imported.length})
+            {copy.outlook}
+            {imported.length > 0 ? ` (${imported.length})` : ""}
           </h3>
           <ul>
             {imported.map((doc) => (
@@ -555,7 +556,7 @@ export function EmailsTab() {
                     {doc.name.replace(/^E-Mail:\s*/, "")}
                   </span>
                   <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                    {new Date(doc.uploadedAt).toLocaleDateString(locale)}
+                    {formatDate(doc.uploadedAt)}
                   </span>
                 </div>
                 {doc.notes && (

@@ -5,7 +5,9 @@
 // the product delivers (the passage, not just the answer). The wordmark keeps
 // the domain dot: Subsum•io = subsum.io.
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 
 const GOLD = "var(--accent-300, #d8b86a)";
 
@@ -22,7 +24,11 @@ export function SubsumioMark({
   className?: string;
 }) {
   const reduce = useReducedMotion();
-  const move = animated && !reduce;
+  // The server cannot know the reduced-motion preference; animating only after
+  // mount keeps server and client markup identical (no hydration mismatch).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const move = animated && mounted && !reduce;
   const gradId = `sm-tile-${size}`;
 
   // Shared geometry on a 72 grid.
@@ -80,7 +86,7 @@ export function SubsumioMark({
         rx="3.5"
         fill={GOLD}
         style={{ transformBox: "fill-box", transformOrigin: "left center" }}
-        initial={move ? { scaleX: 0.2, opacity: 0.6 } : false}
+        initial={false}
         animate={
           move ? { scaleX: [0.2, 1, 1, 1], opacity: [0.6, 1, 0.78, 1] } : { scaleX: 1, opacity: 1 }
         }

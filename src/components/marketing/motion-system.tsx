@@ -5,17 +5,15 @@
 // State-of-the-art: staggerChildren, spring physics, reduced-motion fallback,
 // GPU-optimized transforms, clip-path reveals, glow cards, magnetic hover.
 
-import {
-  motion,
+import { motion,
   useInView,
-  useReducedMotion,
   useMotionValue,
   useSpring,
   useScroll,
   useTransform,
   animate,
-  Variants,
-} from "framer-motion";
+  Variants } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import {
   createContext,
   ReactNode,

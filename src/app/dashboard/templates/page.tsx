@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -52,6 +54,8 @@ interface TemplateItem {
 
 const CATEGORIES = ["pleading", "contract", "opinion", "correspondence", "general"] as const;
 const JURISDICTIONS = ["all", "at", "de", "ch"] as const;
+const jurisdictionLabel = (j: string) =>
+  j === "all" ? "Allgemein" : j === "at" ? "Österreich" : j === "de" ? "Deutschland" : "Schweiz";
 
 const CATEGORY_ICONS: Record<string, typeof FileText> = {
   pleading: FileCheck,
@@ -73,8 +77,7 @@ function parseTemplate(page: BrainPage): TemplateItem {
     variables: Array.isArray(fm.variables) ? (fm.variables as TemplateItem["variables"]) : [],
     isBuiltin: Boolean(fm.is_builtin),
     createdAt:
-      ((page as unknown as Record<string, unknown>).created_at as string) ||
-      new Date().toISOString(),
+      ((page as unknown as Record<string, unknown>).created_at as string) || "",
   };
 }
 
@@ -113,8 +116,8 @@ export default function TemplateLibraryPage() {
       const pages = await api.legal.templates.list({ limit: 200 });
       const items = (Array.isArray(pages) ? pages : []).map(parseTemplate);
       setTemplates(items);
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : t("templates.err_load"));
+    } catch {
+      setLoadError(t("templates.err_load"));
     } finally {
       setLoading(false);
     }
@@ -191,7 +194,7 @@ export default function TemplateLibraryPage() {
 
   async function saveTemplate() {
     if (!formTitle.trim() || !formBody.trim()) {
-      setSaveError(t("templates.toast_error"));
+      setSaveError("Bitte geben Sie einen Titel und den Vorlagentext ein.");
       return;
     }
     setSaving(true);
@@ -223,8 +226,8 @@ export default function TemplateLibraryPage() {
       setCreating(false);
       resetForm();
       addToast({ type: "success", title: t("templates.toast_saved" as DashboardKey) });
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : t("templates.toast_error"));
+    } catch {
+      setSaveError("Die Vorlage konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.");
     } finally {
       setSaving(false);
     }
@@ -243,11 +246,10 @@ export default function TemplateLibraryPage() {
       setTemplates((prev) => prev.filter((t) => t.slug !== slug));
       if (selectedTemplate?.slug === slug) setSelectedTemplate(null);
       addToast({ type: "success", title: t("templates.toast_deleted" as DashboardKey) });
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
         title: t("templates.toast_delete_failed" as DashboardKey),
-        description: err instanceof Error ? err.message : undefined,
       });
     }
   }
@@ -271,10 +273,7 @@ export default function TemplateLibraryPage() {
           { label: t("templates.title") },
         ]}
         actions={
-          <Button
-            onClick={startCreate}
-            className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
-          >
+          <Button onClick={startCreate} className="gap-2 whitespace-nowrap">
             <Plus size={15} /> {t("templates.btn_new")}
           </Button>
         }
@@ -291,6 +290,7 @@ export default function TemplateLibraryPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("templates.search")}
+            aria-label={t("templates.search")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-10 text-[color:var(--ds-text)]"
           />
         </div>
@@ -314,9 +314,9 @@ export default function TemplateLibraryPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("templates.all_jurisdictions")}</SelectItem>
-              {JURISDICTIONS.map((j) => (
+              {JURISDICTIONS.filter((j) => j !== "all").map((j) => (
                 <SelectItem key={j} value={j}>
-                  {j === "all" ? "DACH" : j.toUpperCase()}
+                  {jurisdictionLabel(j)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -326,8 +326,10 @@ export default function TemplateLibraryPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+          ))}
         </div>
       )}
 
@@ -383,7 +385,7 @@ export default function TemplateLibraryPage() {
                   </div>
                   {template.isBuiltin && (
                     <Badge variant="default" className="shrink-0 text-xs">
-                      Built-in
+                      Standard
                     </Badge>
                   )}
                 </div>
@@ -438,6 +440,8 @@ export default function TemplateLibraryPage() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    aria-label={`${t("templates.btn_delete")}: ${template.title}`}
+                    title={t("templates.btn_delete")}
                     onClick={() => void deleteTemplate(template.slug)}
                     className="h-8 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                   >
@@ -451,24 +455,22 @@ export default function TemplateLibraryPage() {
       )}
 
       {/* Create/Edit Dialog */}
-      {creating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[color:var(--ds-text)]">
-                {editingSlug ? t("templates.btn_edit") : t("templates.btn_new")}
-              </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setCreating(false);
-                  resetForm();
-                }}
-              >
-                <X size={16} />
-              </Button>
-            </div>
+      <Dialog
+        open={creating}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreating(false);
+            resetForm();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingSlug ? t("templates.btn_edit") : t("templates.btn_new")}
+            </DialogTitle>
+          </DialogHeader>
+          <div>
 
             <div className="space-y-4">
               {/* Title */}
@@ -478,7 +480,7 @@ export default function TemplateLibraryPage() {
                   id="tpl-title"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="z.B. Klageschrift Mietrecht"
+                  placeholder="z. B. Klage Mietrecht"
                 />
               </div>
 
@@ -508,7 +510,7 @@ export default function TemplateLibraryPage() {
                     <SelectContent>
                       {JURISDICTIONS.map((j) => (
                         <SelectItem key={j} value={j}>
-                          {j === "all" ? "DACH" : j.toUpperCase()}
+                          {jurisdictionLabel(j)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -556,12 +558,14 @@ export default function TemplateLibraryPage() {
                           value={v.key}
                           onChange={(e) => updateVariable(i, "key", e.target.value)}
                           placeholder={t("templates.var_key")}
+                          aria-label={t("templates.var_key")}
                           className="w-32 text-xs"
                         />
                         <Input
                           value={v.label}
                           onChange={(e) => updateVariable(i, "label", e.target.value)}
                           placeholder={t("templates.var_label")}
+                          aria-label={t("templates.var_label")}
                           className="flex-1 text-xs"
                         />
                         <Button
@@ -576,6 +580,7 @@ export default function TemplateLibraryPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeVariable(i)}
+                          aria-label="Variable entfernen"
                           className="h-8 px-2 text-xs text-[color:var(--ds-danger-text)]"
                         >
                           <X size={14} />
@@ -612,8 +617,8 @@ export default function TemplateLibraryPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

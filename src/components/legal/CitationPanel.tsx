@@ -14,7 +14,7 @@ import {
   BookOpen,
   Info,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CitationLink, GroundingBadge } from "@/components/legal/CitationLink";
@@ -110,8 +110,9 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
     >
       {/* Header row: badges */}
       <div className="flex flex-wrap items-center gap-2 px-4 py-3">
-        {/* AI Act Art. 50 badge */}
-        {!data.isStreaming && (
+        {/* AI Act Art. 50 badge — merged into the review badge when review is
+            required, so the same statement is not shown twice. */}
+        {!data.isStreaming && !requiresReview && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -160,11 +161,13 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         {/* Attorney review warning */}
         {requiresReview && !data.isStreaming && (
           <span
-            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-danger-text)]"
-            title="Diese AI-Ausgabe erfordert anwaltliche Prüfung, bevor sie verwendet wird."
+            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]"
+            title={AI_NOTICE}
+            aria-label={AI_NOTICE}
           >
             <ShieldAlert size={10} aria-hidden="true" />
-            Anwaltlich zu prüfen
+            <span>KI-generiert ·</span>
+            <span>Anwaltlich zu prüfen</span>
           </span>
         )}
 
@@ -222,7 +225,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
               <div className="mb-2 flex items-center gap-1.5">
                 <Scale size={12} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  Corpus-Grounding ({data.grounding!.grounded_citations.length})
+                  Geprüfte Rechtsquellen ({data.grounding!.grounded_citations.length})
                 </span>
               </div>
               <div className="space-y-1.5">
@@ -274,7 +277,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                       )}
                       {!gc.verified && gc.category !== "judikatur" && (
                         <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]">
-                          Nicht im Corpus gefunden — möglicherweise erfunden oder außerhalb des
+                          Nicht in den Rechtsquellen gefunden — möglicherweise falsch zitiert oder außerhalb des
                           abgedeckten Rechtskreises.
                         </p>
                       )}
@@ -291,7 +294,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
               <div className="mb-2 flex items-center gap-1.5">
                 <FileText size={12} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  Brain-Quellen ({data.citations!.length})
+                  Quellen aus Akte und Kanzleiwissen ({data.citations!.length})
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -347,7 +350,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
               <div className="mb-2 flex items-center gap-1.5">
                 <AlertTriangle size={12} className="text-[color:var(--ds-warning-text)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
-                  Lücken im Brain ({data.gaps!.length})
+                  Nicht belegt ({data.gaps!.length})
                 </span>
               </div>
               <ul className="space-y-1">
@@ -367,10 +370,8 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
           {/* Grounding timestamp */}
           {hasGrounding && data.grounding!.analyzed_at && (
             <div className="border-t border-[color:var(--ds-border)] pt-1 text-xs text-[color:var(--ds-text-subtle)]">
-              Corpus geprüft am{" "}
-              {new Date(data.grounding!.analyzed_at).toLocaleString(
-                lang === "en" ? "en-GB" : "de-DE"
-              )}
+              {lang === "en" ? "Checked against legal sources on" : "Gegen die Rechtsquellen geprüft am"}{" "}
+              {formatDateTime(data.grounding!.analyzed_at)}
             </div>
           )}
         </div>

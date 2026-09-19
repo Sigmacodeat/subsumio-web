@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useLang } from "@/lib/use-lang";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Bot,
   Play,
@@ -16,11 +17,9 @@ import {
   RefreshCw,
   RotateCcw,
   Send,
-  MessageSquare,
   User,
-  Wand2,
   ListTree,
-  Cpu,
+  Wand2,
 } from "lucide-react";
 import {
   useAgents,
@@ -35,13 +34,31 @@ import {
 } from "@/lib/queries/agents";
 import type { TFunc } from "@/content/dashboard";
 import { AgentBuilder } from "@/components/dashboard/agent-builder";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { useToast } from "@/components/ui/toast";
 
 // ── Helpers ──────────────────────────────────────────────────
 
+/** Fachliche Bezeichnung je Teilaufgabe statt interner Kennungen (legal-researcher …). */
+const SPECIALIST_LABELS: Record<string, string> = {
+  "legal-researcher": "Recherche",
+  "legal-analyst": "Fallanalyse",
+  "legal-strategist": "Strategie",
+  "legal-drafter": "Schriftsatzentwurf",
+  "legal-deadline-extractor": "Fristen-Erkennung",
+  "legal-critic": "Qualitätsprüfung",
+};
+
+function jobLabel(job: Pick<AgentJob, "name" | "subagentDef">): string {
+  if (job.name === "supervisor") return "Gesamtauftrag";
+  if (job.subagentDef) return SPECIALIST_LABELS[job.subagentDef] ?? "Teilaufgabe";
+  return "Teilaufgabe";
+}
+
 function formatInboxPayload(payload: unknown, t: TFunc): string {
   if (typeof payload === "string") return payload;
-  if (typeof payload !== "object" || payload === null) return String(payload);
+  if (typeof payload !== "object" || payload === null) return String(payload ?? "");
 
   const p = payload as Record<string, unknown>;
 
@@ -52,19 +69,39 @@ function formatInboxPayload(payload: unknown, t: TFunc): string {
         ? t("agents.outcome_complete")
         : p.outcome === "failed"
           ? t("agents.outcome_failed")
-          : String(p.outcome ?? t("agents.outcome_unknown"));
-    return `${t("agents.inbox_child_done")} #${childId} ${outcome}.`;
+          : t("agents.outcome_unknown");
+    return `Teilaufgabe #${childId} ${outcome}.`;
   }
 
-  if (p.type === "cancelled")
-    return `${t("agents.inbox_cancelled")}${p.error ? `: ${p.error}` : ""}`;
-  if (p.type === "timeout") return `${t("agents.inbox_timeout")}${p.error ? `: ${p.error}` : ""}`;
+  if (p.type === "cancelled") return "Auftrag abgebrochen.";
+  if (p.type === "timeout") return `${t("agents.inbox_timeout")}.`;
 
-  const readable = Object.entries(p)
-    .filter(([k]) => k !== "type")
-    .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
-    .join(" · ");
-  return readable || JSON.stringify(payload);
+  // Freitext-Felder übernehmen; strukturierte Rohdaten nie als JSON anzeigen.
+  for (const key of ["text", "message", "content", "summary"]) {
+    if (typeof p[key] === "string" && (p[key] as string).trim()) return p[key] as string;
+  }
+  return "Statusmeldung des Assistenten.";
+}
+
+/** Ergebnistext für die Anzeige; rohe Datenstrukturen werden nicht ausgegeben. */
+function readableResult(result: string | undefined): string | null {
+  if (!result) return null;
+  const trimmed = result.trim();
+  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return trimmed;
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const obj = parsed as Record<string, unknown>;
+      for (const key of ["answer", "text", "summary", "result", "content", "output"]) {
+        if (typeof obj[key] === "string" && (obj[key] as string).trim()) {
+          return (obj[key] as string).trim();
+        }
+      }
+    }
+  } catch {
+    // not JSON — fall through
+  }
+  return null;
 }
 
 // ── Status Helpers ───────────────────────────────────────────
@@ -107,10 +144,7 @@ function statusFill(status: AgentJob["status"]): string {
       return "var(--color-warning)";
     case "failed":
       return "var(--color-danger)";
-    case "paused":
-      return "var(--ds-text-muted)";
     case "partial_success":
-      return "var(--color-warning)";
     case "needs_review":
       return "var(--color-warning)";
     case "monitoring":
@@ -139,7 +173,7 @@ function statusLabel(status: AgentJob["status"], t: TFunc): string {
     case "monitoring":
       return t("reports.status_monitoring");
     default:
-      return status;
+      return "Unbekannt";
   }
 }
 
@@ -155,12 +189,17 @@ function statusIcon(status: AgentJob["status"]) {
       return <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />;
     case "paused":
       return <Pause size={14} className="text-[color:var(--ds-neutral-text)]" />;
+    default:
+      return <Clock size={14} className="text-[color:var(--ds-text-muted)]" />;
   }
 }
 
-// ── DAG Component ────────────────────────────────────────────
+const sectionLabel =
+  "text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase";
 
-function AgentDAG({
+// ── Ablaufplan (Gesamtauftrag → Teilaufgaben) ─────────────────
+
+function JobPlan({
   jobs,
   selectedJob,
   onSelectJob,
@@ -169,19 +208,13 @@ function AgentDAG({
   selectedJob: number | null;
   onSelectJob: (id: number) => void;
 }) {
-  const { t } = useLang();
   const rootJobs = useMemo(() => jobs.filter((j) => !j.parentId), [jobs]);
+  const height = Math.max(160, rootJobs.length * 140 + 40);
 
   return (
-    <div
-      className="w-full overflow-x-auto"
-      tabIndex={0}
-      role="img"
-      aria-label="Agent workflow graph"
-    >
-      <div className="min-w-[600px] p-6">
-        <svg width="100%" height="300" viewBox="0 0 800 300">
-          {/* Draw connections */}
+    <div className="w-full overflow-x-auto" role="img" aria-label="Ablaufplan der Aufträge">
+      <div className="min-w-[600px] p-4">
+        <svg width="100%" height={height} viewBox={`0 0 800 ${height}`}>
           {rootJobs.map((root, rootIdx) => {
             const children = jobs.filter((j) => j.parentId === root.id);
             const rootX = 100;
@@ -194,7 +227,6 @@ function AgentDAG({
 
               return (
                 <g key={`conn-${root.id}-${child.id}`}>
-                  {/* Connection path */}
                   <path
                     d={`M ${rootX + 70} ${rootY} C ${midX} ${rootY}, ${midX} ${childY}, ${childX - 70} ${childY}`}
                     fill="none"
@@ -203,7 +235,6 @@ function AgentDAG({
                     strokeDasharray={child.status === "waiting" ? "4 4" : undefined}
                     opacity={0.6}
                   />
-                  {/* Arrow head */}
                   <polygon
                     points={`${childX - 70},${childY} ${childX - 78},${childY - 4} ${childX - 78},${childY + 4}`}
                     fill={statusFill(child.status)}
@@ -213,12 +244,10 @@ function AgentDAG({
             });
           })}
 
-          {/* Draw nodes */}
           {jobs.map((job) => {
             const isRoot = !job.parentId;
             const isSelected = selectedJob === job.id;
 
-            // Calculate position
             let x: number, y: number;
             if (isRoot) {
               const rootIdx = rootJobs.findIndex((r) => r.id === job.id);
@@ -243,52 +272,22 @@ function AgentDAG({
                 onClick={() => onSelectJob(job.id)}
                 style={{ cursor: "pointer" }}
               >
-                {/* Node background */}
                 <rect
                   x={x}
                   y={y}
                   width={140}
                   height={60}
                   rx={8}
-                  fill={
-                    isSelected
-                      ? "var(--color-accent-glow, var(--ds-surface-2))"
-                      : "var(--ds-border)"
-                  }
+                  fill={isSelected ? "var(--ds-surface-2)" : "var(--ds-surface)"}
                   stroke={isSelected ? "var(--brand-primary)" : "var(--ds-border-strong)"}
                   strokeWidth={isSelected ? 2 : 1}
                 />
-                {/* Status indicator */}
                 <circle cx={x + 12} cy={y + 12} r={5} fill={statusFill(job.status)} />
-                {/* Specialist icon indicator */}
-                {job.subagentDef && (
-                  <text
-                    x={x + 130}
-                    y={y + 16}
-                    textAnchor="end"
-                    fill="var(--ds-text-muted)"
-                    fontSize={10}
-                    fontFamily="monospace"
-                  >
-                    {job.subagentDef.replace("legal-", "")}
-                  </text>
-                )}
-                {/* Job name */}
-                <text x={x + 12} y={y + 32} fill="var(--ds-text)" fontSize={12} fontWeight={600}>
-                  {job.name === "supervisor"
-                    ? t("agents.supervisor")
-                    : job.subagentDef?.replace("legal-", "").replace(/-/g, " ") ||
-                      t("agents.subagent")}
+                <text x={x + 12} y={y + 34} fill="var(--ds-text)" fontSize={12} fontWeight={600}>
+                  {jobLabel(job)}
                 </text>
-                {/* Job ID */}
-                <text
-                  x={x + 12}
-                  y={y + 50}
-                  fill="var(--ds-text-subtle)"
-                  fontSize={10}
-                  fontFamily="monospace"
-                >
-                  #{job.id}
+                <text x={x + 12} y={y + 50} fill="var(--ds-text-subtle)" fontSize={10}>
+                  Nr. {job.id}
                 </text>
               </g>
             );
@@ -305,26 +304,29 @@ function JobDetail({
   job,
   allJobs,
   onRefresh,
+  onSelectJob,
 }: {
   job: AgentJob;
   allJobs: AgentJob[];
   onRefresh: () => void;
+  onSelectJob: (id: number) => void;
 }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { addToast } = useToast();
   const children = allJobs.filter((j: AgentJob) => j.parentId === job.id);
   const [acting, setActing] = useState<string | null>(null);
 
-  const runAction = async (action: string, fn: () => Promise<unknown>) => {
+  const runAction = async (action: string, label: string, fn: () => Promise<unknown>) => {
     setActing(action);
     try {
       await fn();
       onRefresh();
     } catch (err) {
+      console.error(`[agents] ${action} failed:`, err instanceof Error ? err.message : err);
       addToast({
         type: "error",
-        title: `${action} fehlgeschlagen`,
-        description: err instanceof Error ? err.message : "Unbekannter Fehler",
+        title: `${label} nicht möglich`,
+        description: "Bitte aktualisieren Sie die Ansicht und versuchen Sie es erneut.",
         duration: 5000,
       });
     } finally {
@@ -344,6 +346,7 @@ function JobDetail({
   const messages = useMemo(() => inboxQuery.data ?? [], [inboxQuery.data]);
   const [inboxInput, setInboxInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const resultText = readableResult(job.result);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -354,36 +357,48 @@ function JobDetail({
 
   async function handleSendMessage() {
     if (!inboxInput.trim()) return;
-    const msg = await sendMutation.mutateAsync({ jobId: job.id, text: inboxInput.trim() });
-    if (msg) {
-      setInboxInput("");
+    try {
+      const msg = await sendMutation.mutateAsync({ jobId: job.id, text: inboxInput.trim() });
+      if (msg) setInboxInput("");
+    } catch (err) {
+      console.error("[agents] send failed:", err instanceof Error ? err.message : err);
+      addToast({
+        type: "error",
+        title: "Nachricht nicht gesendet",
+        description: "Bitte versuchen Sie es erneut.",
+        duration: 5000,
+      });
     }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`h-3 w-3 rounded-full ${statusColor(job.status)}`} />
-          <h3 className="text-lg font-semibold text-[color:var(--ds-text)]">
-            {job.name === "supervisor"
-              ? t("agents.supervisor")
-              : job.subagentDef?.replace("legal-", "").replace(/-/g, " ") || t("agents.subagent")}
-          </h3>
-          <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">#{job.id}</span>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor(job.status)}`}
+            aria-hidden="true"
+          />
+          <h2 className="truncate text-base font-semibold text-[color:var(--ds-text)]">
+            {jobLabel(job)}
+          </h2>
+          <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+            Nr. {job.id}
+          </span>
         </div>
-        <span className="rounded-full bg-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)]">
+        <span className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
           {statusLabel(job.status, t)}
         </span>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap gap-2">
         {(job.status === "waiting" || job.status === "active") && (
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => runAction("pause", () => pauseMutation.mutateAsync(job.id))}
+            onClick={() =>
+              runAction("pause", t("agents.btn_pause"), () => pauseMutation.mutateAsync(job.id))
+            }
             disabled={acting !== null}
           >
             {acting === "pause" ? (
@@ -397,8 +412,10 @@ function JobDetail({
         {job.status === "paused" && (
           <Button
             size="sm"
-            variant="success"
-            onClick={() => runAction("resume", () => resumeMutation.mutateAsync(job.id))}
+            variant="secondary"
+            onClick={() =>
+              runAction("resume", t("agents.btn_resume"), () => resumeMutation.mutateAsync(job.id))
+            }
             disabled={acting !== null}
           >
             {acting === "resume" ? (
@@ -412,8 +429,11 @@ function JobDetail({
         {(job.status === "waiting" || job.status === "active" || job.status === "paused") && (
           <Button
             size="sm"
-            variant="danger"
-            onClick={() => runAction("cancel", () => cancelMutation.mutateAsync(job.id))}
+            variant="ghost"
+            className="text-[color:var(--ds-danger-text)]"
+            onClick={() =>
+              runAction("cancel", t("agents.btn_cancel"), () => cancelMutation.mutateAsync(job.id))
+            }
             disabled={acting !== null}
           >
             {acting === "cancel" ? (
@@ -427,8 +447,10 @@ function JobDetail({
         {(job.status === "completed" || job.status === "failed") && (
           <Button
             size="sm"
-            variant="outline"
-            onClick={() => runAction("replay", () => replayMutation.mutateAsync(job.id))}
+            variant="secondary"
+            onClick={() =>
+              runAction("replay", t("agents.btn_replay"), () => replayMutation.mutateAsync(job.id))
+            }
             disabled={acting !== null}
           >
             {acting === "replay" ? (
@@ -441,251 +463,223 @@ function JobDetail({
         )}
       </div>
 
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-          {t("agents.section_prompt")}
-        </h4>
-        <p className="text-sm leading-relaxed text-[color:var(--ds-text)]">{job.prompt}</p>
-      </div>
+      <section>
+        <h3 className={cn(sectionLabel, "mb-1.5")}>Aufgabe</h3>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+          {job.prompt || "—"}
+        </p>
+      </section>
 
-      {job.model && (
-        <div className="flex items-center gap-2">
-          <Cpu size={14} className="brand-text" />
-          <span className="text-sm text-[color:var(--ds-text-muted)]">
-            {t("agents.label_model")}:{" "}
-            <span className="text-[color:var(--ds-text)]">{job.model}</span>
-          </span>
-        </div>
-      )}
-
-      {job.tokens && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="font-mono text-lg font-semibold text-[color:var(--ds-text)]">
-              {job.tokens.input.toLocaleString()}
-            </div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("agents.label_input_tokens")}
-            </div>
-          </div>
-          <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="font-mono text-lg font-semibold text-[color:var(--ds-text)]">
-              {job.tokens.output.toLocaleString()}
-            </div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("agents.label_output_tokens")}
-            </div>
-          </div>
-          <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="font-mono text-lg font-semibold text-[color:var(--ds-success-text)]">
-              ${job.cost?.toFixed(2) ?? "0.00"}
-            </div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("agents.label_cost")}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {job.progress && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-[color:var(--ds-text-muted)]">{job.progress.message}</span>
-            <span className="font-mono text-[color:var(--ds-text)]">
-              {job.progress.step}/{job.progress.total}
+      {job.progress && job.progress.total > 0 && (
+        <section className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="min-w-0 truncate text-[color:var(--ds-text-muted)]">
+              {job.progress.message}
+            </span>
+            <span className="shrink-0 text-[color:var(--ds-text)] tabular-nums">
+              Schritt {job.progress.step} von {job.progress.total}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
-              className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
-              style={{ width: `${(job.progress.step / job.progress.total) * 100}%` }}
+              className="brand-bg h-full rounded-full transition-[width] duration-[var(--ds-duration-normal)] motion-reduce:transition-none"
+              style={{
+                width: `${Math.min(100, (job.progress.step / job.progress.total) * 100)}%`,
+              }}
             />
           </div>
-        </div>
+        </section>
       )}
 
       {job.result && (
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-            {t("agents.section_result")}
-          </h4>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
-            {job.result}
-          </p>
-        </div>
+        <section className="space-y-2">
+          <h3 className={sectionLabel}>{t("agents.section_result")}</h3>
+          {resultText ? (
+            <>
+              <p className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                {resultText}
+              </p>
+              <GroundedOutputPanel text={resultText} />
+            </>
+          ) : (
+            <p className="text-sm text-[color:var(--ds-text-muted)]">
+              Das Ergebnis liegt als strukturierte Daten vor und wird in der zugehörigen Akte bzw.
+              unter Freigaben angezeigt.
+            </p>
+          )}
+        </section>
       )}
 
       {children.length > 0 && (
-        <div>
-          <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-            {t("agents.section_children")}
-          </h4>
-          <div className="space-y-2">
+        <section>
+          <h3 className={cn(sectionLabel, "mb-2")}>Teilaufgaben</h3>
+          <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-lg border border-[color:var(--ds-border)]">
             {children.map((child) => (
-              <div
-                key={child.id}
-                className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2"
-              >
-                <div className={`h-2 w-2 rounded-full ${statusColor(child.status)}`} />
-                <span className="text-sm text-[color:var(--ds-text)]">
-                  {child.subagentDef?.replace("legal-", "") || t("agents.subagent")}
-                </span>
-                <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
-                  #{child.id}
-                </span>
-              </div>
+              <li key={child.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectJob(child.id)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none"
+                >
+                  <span
+                    className={`h-2 w-2 shrink-0 rounded-full ${statusColor(child.status)}`}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--ds-text)]">
+                    {jobLabel(child)}
+                  </span>
+                  <span className="text-xs text-[color:var(--ds-text-muted)]">
+                    {statusLabel(child.status, t)}
+                  </span>
+                </button>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
-      {/* Inbox / Chat Panel */}
-      <div
-        className="flex flex-col rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-        style={{ maxHeight: 380 }}
-      >
-        <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3">
-          <div className="flex items-center gap-2">
-            <MessageSquare size={14} className="brand-text" />
-            <h4 className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              {t("agents.section_inbox")}
-            </h4>
+      {/* Rückfragen / Steuerung laufender Aufträge */}
+      {(inboxEnabled || messages.length > 0) && (
+        <section className="flex max-h-[380px] flex-col overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-2.5">
+            <h3 className={sectionLabel}>Nachrichten</h3>
             {messages.length > 0 && (
-              <span className="brand-soft brand-text brand-border rounded-full border px-1.5 py-0.5 text-xs">
+              <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
                 {messages.length}
               </span>
             )}
           </div>
-          {inboxQuery.isLoading && messages.length === 0 && (
-            <Loader2 size={12} className="animate-spin text-[color:var(--ds-text-muted)]" />
-          )}
-        </div>
 
-        <div ref={scrollRef} className="min-h-[120px] flex-1 space-y-3 overflow-y-auto p-3">
-          {messages.length === 0 && !inboxQuery.isLoading && (
-            <div className="py-6 text-center">
-              <Bot size={24} className="mx-auto mb-2 text-[color:var(--ds-border)]" />
-              <p className="text-xs text-[color:var(--ds-text-muted)]">{t("agents.inbox_empty")}</p>
-              <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                {job.status === "active" || job.status === "waiting"
-                  ? t("agents.inbox_empty_hint_active")
-                  : t("agents.inbox_empty_hint_inactive")}
+          <div ref={scrollRef} className="min-h-[100px] flex-1 space-y-3 overflow-y-auto p-3">
+            {inboxQuery.isLoading && messages.length === 0 && (
+              <div className="space-y-2" aria-hidden="true">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="ml-auto h-8 w-2/3" />
+              </div>
+            )}
+            {messages.length === 0 && !inboxQuery.isLoading && (
+              <p className="py-4 text-center text-xs text-[color:var(--ds-text-muted)]">
+                Noch keine Nachrichten. Hier können Sie dem laufenden Auftrag Hinweise geben.
               </p>
+            )}
+
+            {messages.map((msg) => {
+              const isUser = msg.sender === "user";
+              const text = formatInboxPayload(msg.payload, t);
+              return (
+                <div
+                  key={msg.id}
+                  className={cn("flex gap-2.5", isUser ? "flex-row-reverse" : "flex-row")}
+                >
+                  <div
+                    className={cn(
+                      "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                      isUser ? "brand-soft" : "bg-[color:var(--ds-surface-2)]"
+                    )}
+                    aria-hidden="true"
+                  >
+                    {isUser ? (
+                      <User size={12} className="brand-text" />
+                    ) : (
+                      <Bot size={12} className="text-[color:var(--ds-text-muted)]" />
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      "max-w-[80%] rounded-xl border px-3 py-2 text-sm",
+                      isUser
+                        ? "brand-soft brand-border text-[color:var(--ds-text)]"
+                        : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                    )}
+                  >
+                    <p className="leading-relaxed break-words whitespace-pre-wrap">{text}</p>
+                    <span className="mt-1 block text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                      {formatDateTime(msg.sent_at)}
+                      {msg.read_at && <span className="ml-1">· {t("agents.label_read")}</span>}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {inboxEnabled && (
+            <div className="border-t border-[color:var(--ds-border)] p-3">
+              <div className="flex gap-2">
+                <Input
+                  value={inboxInput}
+                  onChange={(e) => setInboxInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                  placeholder="Hinweis an den laufenden Auftrag …"
+                  aria-label="Hinweis an den laufenden Auftrag"
+                  disabled={sendMutation.isPending}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSendMessage}
+                  disabled={sendMutation.isPending || !inboxInput.trim()}
+                  className="shrink-0"
+                >
+                  {sendMutation.isPending ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Send size={12} />
+                  )}
+                  {t("agents.btn_send")}
+                </Button>
+              </div>
             </div>
           )}
+        </section>
+      )}
 
-          {messages.map((msg) => {
-            const isUser = msg.sender === "user";
-            const isSystem = msg.sender === "minions" || msg.sender === "system";
-            const text = formatInboxPayload(msg.payload, t);
-            return (
-              <div
-                key={msg.id}
-                className={cn("flex gap-2.5", isUser ? "flex-row-reverse" : "flex-row")}
-              >
-                <div
-                  className={cn(
-                    "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                    isUser
-                      ? "brand-soft"
-                      : isSystem
-                        ? "bg-[color:var(--ds-warning-bg)]"
-                        : "bg-[color:var(--ds-success-bg)]"
-                  )}
-                >
-                  {isUser ? (
-                    <User size={12} className="brand-text" />
-                  ) : isSystem ? (
-                    <Bot size={12} className="text-[color:var(--ds-warning-text)]" />
-                  ) : (
-                    <Bot size={12} className="text-[color:var(--ds-success-text)]" />
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-xl px-3 py-2 text-sm",
-                    isUser
-                      ? "brand-soft brand-border border text-[color:var(--ds-text)]"
-                      : "border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
-                  )}
-                >
-                  <p className="leading-relaxed break-words whitespace-pre-wrap">{text}</p>
-                  <span className="mt-1 block text-xs text-[color:var(--ds-text-subtle)]">
-                    {new Date(msg.sent_at).toLocaleTimeString(lang === "en" ? "en-GB" : "de-DE", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                    {msg.read_at && <span className="ml-1">· {t("agents.label_read")}</span>}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-
-          {sendMutation.isPending && (
-            <div className="flex flex-row-reverse gap-2.5">
-              <div
-                className="brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
-                role="status"
-                aria-live="polite"
-              >
-                <Loader2 size={12} className="brand-text animate-spin" />
-              </div>
-              <div className="brand-soft brand-border rounded-xl border px-3 py-2 text-sm text-[color:var(--ds-text)]">
-                <span className="text-[color:var(--ds-text-muted)]">
-                  {t("agents.inbox_sending")}
-                </span>
-              </div>
-            </div>
+      {(job.startedAt || job.completedAt) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+          {job.startedAt && (
+            <span>
+              {t("agents.label_started")}: {formatDateTime(job.startedAt)}
+            </span>
+          )}
+          {job.completedAt && (
+            <span>
+              {t("agents.label_completed")}: {formatDateTime(job.completedAt)}
+            </span>
           )}
         </div>
-
-        {/* Input */}
-        {(job.status === "active" || job.status === "waiting" || job.status === "paused") && (
-          <div className="border-t border-[color:var(--ds-border)] p-3">
-            <div className="flex gap-2">
-              <Input
-                value={inboxInput}
-                onChange={(e) => setInboxInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                placeholder={t("agents.inbox_input_placeholder")}
-                aria-label={t("agents.message")}
-                disabled={sendMutation.isPending}
-              />
-              <Button
-                size="sm"
-                onClick={handleSendMessage}
-                disabled={sendMutation.isPending || !inboxInput.trim()}
-              >
-                {sendMutation.isPending ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : (
-                  <Send size={12} />
-                )}
-                {t("agents.btn_send")}
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
-        {job.startedAt && (
-          <span>
-            {t("agents.label_started")}:{" "}
-            {new Date(job.startedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
-          </span>
-        )}
-        {job.completedAt && (
-          <span>
-            {t("agents.label_completed")}:{" "}
-            {new Date(job.completedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }
+
+// ── Vorlagen für neue Aufträge ────────────────────────────────
+
+const TASK_TEMPLATES: { label: string; prompt: string }[] = [
+  {
+    label: "Due-Diligence-Prüfung",
+    prompt:
+      "Due-Diligence-Prüfung durchführen: Risiken, Haftungsklauseln und fehlende Standardklauseln in allen Verträgen und Dokumenten identifizieren und das Gesamtrisiko bewerten.",
+  },
+  {
+    label: "Vertragsprüfung",
+    prompt:
+      "Alle Verträge nach österreichischem Recht (ABGB, KSchG, DSGVO) prüfen: Klauselmatrix erstellen, kritische Klauseln markieren, konkrete Änderungen vorschlagen und AGB- sowie DSGVO-Konformität beurteilen.",
+  },
+  {
+    label: "Prozessvorbereitung",
+    prompt:
+      "Prozess vorbereiten: Sachverhalt analysieren, einschlägige Normen und Rechtsprechung identifizieren, Chancen und Risiken bewerten und eine Beweisstrategie entwerfen.",
+  },
+  {
+    label: "Compliance-Prüfung",
+    prompt:
+      "Compliance-Prüfung durchführen: DSGVO-Konformität, Geldwäscheprävention (§§ 8a ff RAO) und Aufbewahrungspflichten (§§ 131, 132 BAO) prüfen und den Handlungsbedarf priorisiert darstellen.",
+  },
+  {
+    label: "Kanzleiwissen auswerten",
+    prompt:
+      "Akten und Dokumente der Kanzlei auf wiederkehrende Muster und erfolgreiche Vorgehensweisen durchsehen und die Erkenntnisse zusammenfassen.",
+  },
+];
 
 // ── Main Page ────────────────────────────────────────────────
 
@@ -713,6 +707,7 @@ export default function AgentsPage() {
   );
 
   const activeCount = jobs.filter((j: AgentJob) => j.status === "active").length;
+  const hasPlan = jobs.some((j) => j.parentId);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -724,43 +719,72 @@ export default function AgentsPage() {
         setSelectedJob(jobId);
       }
     } catch (err) {
+      console.error("[agents] submit failed:", err instanceof Error ? err.message : err);
       addToast({
         type: "error",
-        title: "Agent-Start fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unbekannter Fehler",
+        title: "Auftrag konnte nicht gestartet werden",
+        description: "Bitte versuchen Sie es in einigen Minuten erneut.",
         duration: 5000,
       });
     }
   }
 
+  const tabClass = (active: boolean) =>
+    cn(
+      "flex items-center gap-2 border-b-2 px-1 pb-2.5 text-sm font-medium whitespace-nowrap transition-[color,border-color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+      active
+        ? "brand-text border-[color:var(--brand-primary)]"
+        : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+    );
+
   return (
-    <div className="mx-auto flex h-[calc(100vh-3.5rem)] max-w-[1200px] flex-col space-y-6 p-4 md:p-6 lg:p-8">
-      <h1 className="sr-only">{t("nav.agents")}</h1>
-      {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2">
+    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title="Assistenten-Aufträge"
+        description="Mehrstufige Aufgaben an den Assistenten übergeben, den Fortschritt verfolgen und Ergebnisse prüfen."
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Einstellungen", href: "/dashboard/settings" },
+          { label: "Assistenten-Aufträge" },
+        ]}
+        actions={
+          tab === "jobs" && jobs.length > 0 ? (
+            <Button
+              variant="secondary"
+              onClick={() => agentsQuery.refetch()}
+              className="whitespace-nowrap"
+            >
+              <RefreshCw size={14} aria-hidden="true" />
+              {t("agents.btn_refresh")}
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div
+        className="flex gap-6 border-b border-[color:var(--ds-border)]"
+        role="tablist"
+        aria-label="Ansicht"
+      >
         <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "jobs"}
           onClick={() => setTab("jobs")}
-          className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-            tab === "jobs"
-              ? "brand-soft brand-text brand-border border"
-              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-          )}
+          className={tabClass(tab === "jobs")}
         >
-          <ListTree size={15} />
-          {t("agents.tab_jobs")}
+          <ListTree size={15} aria-hidden="true" />
+          Aufträge
         </button>
         <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "builder"}
           onClick={() => setTab("builder")}
-          className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-            tab === "builder"
-              ? "brand-soft brand-text brand-border border"
-              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-          )}
+          className={tabClass(tab === "builder")}
         >
-          <Wand2 size={15} />
-          {t("agents.tab_builder")}
+          <Wand2 size={15} aria-hidden="true" />
+          Vorlagen
         </button>
       </div>
 
@@ -772,287 +796,207 @@ export default function AgentsPage() {
           }}
         />
       ) : (
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left: Job List + Submit */}
-          <div className="flex w-80 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-            {/* Workflow Templates */}
-            <div className="space-y-2 border-b border-[color:var(--ds-border)] p-4">
-              <div className="flex items-center gap-2">
-                <Cpu size={14} className="brand-text" />
-                <span className="text-xs font-semibold text-[color:var(--ds-text)]">
-                  {t("agents.workflow_templates")}
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                {[
-                  {
-                    label: t("agents.template_due_diligence"),
-                    prompt:
-                      "Führe eine Due Diligence Prüfung durch. Identifiziere Risiken, Haftungsklauseln, fehlende Standardklauseln und bewerte den Gesamtrisiko-Score. Nutze alle verfügbaren Verträge und Dokumente.",
-                    icon: "🔍",
-                  },
-                  {
-                    label: t("agents.template_contract_review"),
-                    prompt:
-                      "Analysiere alle Verträge im Vault nach österreichischem Recht (ABGB, KSchG, DSGVO). Erstelle eine Klauselmatrix, identifiziere rote Flaggen, und empfehle konkrete Änderungen. Prüfe AGB-Konformität und DSGVO-Klauseln.",
-                    icon: "📋",
-                  },
-                  {
-                    label: t("agents.template_litigation_prep"),
-                    prompt:
-                      "Bereite die Litigation vor. Analysiere den Sachverhalt, identifiziere relevante Gesetze und Präzedenzfälle, erstelle eine Chancen-Risiko-Bewertung, und entwirf eine Beweisstrategie.",
-                    icon: "⚖️",
-                  },
-                  {
-                    label: t("agents.template_compliance_check"),
-                    prompt:
-                      "Führe einen vollständigen Compliance-Check durch. Prüfe DSGVO-Konformität, die Vorgaben zur Geldwäscheprävention (§§ 8a ff RAO) und die Aufbewahrungspflichten (§§ 131, 132 BAO) und identifiziere Handlungsbedarf mit Priorisierung.",
-                    icon: "✅",
-                  },
-                  {
-                    label: t("agents.template_knowledge_extract"),
-                    prompt:
-                      "Durchsuche alle Akten und Dokumente der Kanzlei nach wiederkehrenden Mustern, erfolgreichen Strategien, und extrahiere Lessons Learned als Wissensbasis.",
-                    icon: "🧠",
-                  },
-                ].map((template) => (
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+          {/* Links: neuer Auftrag + Liste */}
+          <div className="min-w-0 space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-2">
+              <label htmlFor="agent-task" className={sectionLabel}>
+                Neuer Auftrag
+              </label>
+              <textarea
+                id="agent-task"
+                value={submitPrompt}
+                onChange={(e) => setSubmitPrompt(e.target.value)}
+                placeholder={t("agents.task_placeholder")}
+                rows={3}
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              />
+              <div className="flex flex-wrap gap-1.5" aria-label="Vorlagen">
+                {TASK_TEMPLATES.map((template) => (
                   <button
                     key={template.label}
-                    onClick={() => {
-                      setSubmitPrompt(template.prompt);
-                    }}
-                    className="hover:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-left text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                    type="button"
+                    onClick={() => setSubmitPrompt(template.prompt)}
+                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                   >
-                    <span className="mr-1.5">{template.icon}</span>
                     {template.label}
                   </button>
                 ))}
               </div>
-            </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitMutation.isPending || !submitPrompt.trim()}
+              >
+                {submitMutation.isPending ? (
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send size={14} aria-hidden="true" />
+                )}
+                Auftrag starten
+              </Button>
+            </form>
 
-            {/* Submit Form */}
-            <div className="border-b border-[color:var(--ds-border)] p-4">
-              <form onSubmit={handleSubmit} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Cpu size={14} className="brand-text" />
-                  <span className="text-xs font-semibold text-[color:var(--ds-text)]">
-                    {t("agents.new_supervisor")}
-                  </span>
-                </div>
-                <input
-                  value={submitPrompt}
-                  onChange={(e) => setSubmitPrompt(e.target.value)}
-                  placeholder={t("agents.task_placeholder")}
-                  aria-label={t("agents.task_placeholder")}
-                  className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
-                  disabled={submitMutation.isPending || !submitPrompt.trim()}
-                >
-                  {submitMutation.isPending ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                  {submitMutation.isPending ? t("agents.btn_starting") : t("agents.btn_start")}
-                </Button>
-              </form>
-            </div>
-
-            {/* Header */}
-            <div className="border-b border-[color:var(--ds-border)] p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {t("agents.agent_jobs")}
-                </h2>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--ds-info-solid)]" />
-                  <span className="text-xs text-[color:var(--ds-text-muted)]">
+            <section className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h2 className={sectionLabel}>Aufträge</h2>
+                {activeCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--ds-info-solid)]" />
                     {activeCount} {t("agents.active_count")}
                   </span>
-                </div>
+                )}
               </div>
 
-              <div className="flex gap-1">
-                {(["all", "active", "completed", "failed"] as const).map((f) => (
+              {jobs.length > 0 && (
+                <div className="flex gap-1 overflow-x-auto">
+                  {(["all", "active", "completed", "failed"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setFilter(f)}
+                      aria-pressed={filter === f}
+                      className={cn(
+                        "shrink-0 rounded-md border px-2 py-1 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
+                        filter === f
+                          ? "brand-soft brand-text brand-border"
+                          : "border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      )}
+                    >
+                      {f === "all"
+                        ? t("agents.filter_all")
+                        : f === "active"
+                          ? t("agents.status_active")
+                          : f === "completed"
+                            ? t("agents.status_completed")
+                            : t("agents.status_failed")}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                {loading && jobs.length === 0 && (
+                  <div className="space-y-2" role="status" aria-label="Wird geladen">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                )}
+                {!loading && jobs.length === 0 && (
+                  <p className="rounded-lg border border-dashed border-[color:var(--ds-border-strong)] px-3 py-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                    Noch keine Aufträge. Beschreiben Sie oben eine Aufgabe oder wählen Sie eine
+                    Vorlage.
+                  </p>
+                )}
+                {!loading && jobs.length > 0 && filteredJobs.length === 0 && (
+                  <p className="px-1 py-3 text-xs text-[color:var(--ds-text-muted)]">
+                    Keine Aufträge mit diesem Status.
+                  </p>
+                )}
+                {filteredJobs.map((job: AgentJob) => (
                   <button
-                    key={f}
-                    onClick={() => setFilter(f)}
+                    key={job.id}
+                    type="button"
+                    onClick={() => setSelectedJob(job.id)}
+                    aria-pressed={selectedJob === job.id}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-                      filter === f
-                        ? "brand-soft brand-text brand-border border"
-                        : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
+                      "w-full rounded-lg border p-3 text-left transition-[background-color,border-color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+                      selectedJob === job.id
+                        ? "brand-soft brand-border"
+                        : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
                     )}
                   >
-                    {f === "all"
-                      ? t("agents.filter_all")
-                      : f === "active"
-                        ? t("agents.status_active")
-                        : f === "completed"
-                          ? t("agents.status_completed")
-                          : t("agents.status_failed")}
+                    <div className="mb-1 flex items-center gap-2">
+                      {statusIcon(job.status)}
+                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                        {jobLabel(job)}
+                      </span>
+                      <span className="ml-auto text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                        Nr. {job.id}
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+                      {job.prompt}
+                    </p>
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Job list */}
-            <div className="flex-1 space-y-1 overflow-y-auto p-2">
-              {loading && jobs.length === 0 && (
-                <div
-                  className="flex items-center justify-center py-8"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <Loader2 size={20} className="brand-text animate-spin" />
-                </div>
-              )}
-              {filteredJobs.map((job: AgentJob) => (
-                <button
-                  key={job.id}
-                  onClick={() => setSelectedJob(job.id)}
-                  className={cn(
-                    "w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-                    selectedJob === job.id
-                      ? "brand-soft brand-border"
-                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
-                  )}
-                >
-                  <div className="mb-1 flex items-center gap-2">
-                    {statusIcon(job.status)}
-                    <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                      {job.name === "supervisor"
-                        ? t("agents.supervisor")
-                        : job.subagentDef?.replace("legal-", "") || t("agents.subagent")}
-                    </span>
-                    <span className="ml-auto font-mono text-xs text-[color:var(--ds-text-muted)]">
-                      #{job.id}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
-                    {job.prompt}
-                  </p>
-                  {job.progress && (
-                    <div className="mt-2 h-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
-                      <div
-                        className="brand-soft h-full rounded-full"
-                        style={{ width: `${(job.progress.step / job.progress.total) * 100}%` }}
-                      />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+            </section>
           </div>
 
-          {/* Middle: DAG Visualization */}
-          <div className="flex flex-1 flex-col overflow-hidden bg-[color:var(--ds-bg)]">
-            <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] p-4">
-              <div className="flex items-center gap-2">
-                <Bot size={16} className="brand-text" />
-                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {t("agents.agent_dag")}
-                </h2>
-              </div>
-              <div className="flex items-center gap-4">
-                <Button size="sm" variant="ghost" onClick={() => agentsQuery.refetch()}>
-                  <RefreshCw size={12} />
-                  {t("agents.btn_refresh")}
-                </Button>
-                <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-success-solid)]" />{" "}
-                    {t("agents.legend_completed")}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-info-solid)]" />{" "}
-                    {t("agents.legend_active")}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-warning-solid)]" />{" "}
-                    {t("agents.legend_waiting")}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-danger-solid)]" />{" "}
-                    {t("agents.legend_failed")}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-auto">
-              {jobs.length === 0 && !loading ? (
-                <div className="flex h-full items-center justify-center p-8">
-                  <div className="max-w-md space-y-5 text-center">
-                    <div className="brand-soft brand-border mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border">
-                      <Bot size={24} className="brand-text" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-[color:var(--ds-text)]">
-                        {t("agents.seed_title")}
-                      </h3>
-                      <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                        {t("agents.seed_desc")}
-                      </p>
-                    </div>
-                    <div className="space-y-2 text-left">
-                      {[
-                        { n: 1, key: "agents.seed_step_1" as const },
-                        { n: 2, key: "agents.seed_step_2" as const },
-                        { n: 3, key: "agents.seed_step_3" as const },
-                      ].map((step) => (
-                        <div
-                          key={step.n}
-                          className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
-                        >
-                          <span className="brand-soft brand-text flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-                            {step.n}
-                          </span>
-                          <span className="text-sm text-[color:var(--ds-text-muted)]">
-                            {t(step.key)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                      {t("agents.seed_empty_dag")}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <AgentDAG jobs={jobs} selectedJob={selectedJob} onSelectJob={setSelectedJob} />
-              )}
-            </div>
-          </div>
-
-          {/* Right: Detail Panel */}
-          <div className="w-96 overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-            <div className="border-b border-[color:var(--ds-border)] p-4">
-              <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {t("agents.details")}
-              </h2>
-            </div>
-            <div className="p-4">
-              {selectedJobData ? (
+          {/* Rechts: Detail + Ablaufplan */}
+          <div className="min-w-0 space-y-6">
+            {selectedJobData ? (
+              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 md:p-5">
                 <JobDetail
                   job={selectedJobData}
                   allJobs={jobs}
                   onRefresh={() => agentsQuery.refetch()}
+                  onSelectJob={setSelectedJob}
                 />
-              ) : (
-                <div className="py-12 text-center">
-                  <Bot size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
-                  <p className="text-sm text-[color:var(--ds-text-muted)]">
-                    {t("agents.select_job")}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-[color:var(--ds-border-strong)] px-6 py-10">
+                <div className="mx-auto max-w-md space-y-4">
+                  <p className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {jobs.length === 0 ? "So funktionieren Aufträge" : "Kein Auftrag ausgewählt"}
                   </p>
+                  {jobs.length === 0 ? (
+                    <ol className="space-y-2">
+                      {[
+                        "Aufgabe beschreiben oder eine Vorlage wählen.",
+                        "Der Assistent teilt die Aufgabe in Teilaufgaben (z. B. Recherche, Fristen-Erkennung) und arbeitet sie ab.",
+                        t("agents.seed_step_3") + ".",
+                      ].map((text, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-3 text-sm text-[color:var(--ds-text-muted)]"
+                        >
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--ds-surface-2)] text-xs font-semibold text-[color:var(--ds-text)] tabular-nums">
+                            {i + 1}
+                          </span>
+                          {text}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-sm text-[color:var(--ds-text-muted)]">
+                      Wählen Sie links einen Auftrag, um Aufgabe, Fortschritt und Ergebnis zu sehen.
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {hasPlan && (
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className={sectionLabel}>Ablaufplan</h2>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
+                    {(
+                      [
+                        ["completed", t("agents.legend_completed")],
+                        ["active", t("agents.legend_active")],
+                        ["waiting", t("agents.legend_waiting")],
+                        ["failed", t("agents.legend_failed")],
+                      ] as const
+                    ).map(([status, label]) => (
+                      <span key={status} className="flex items-center gap-1">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: statusFill(status) }}
+                          aria-hidden="true"
+                        />
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+                  <JobPlan jobs={jobs} selectedJob={selectedJob} onSelectJob={setSelectedJob} />
+                </div>
+              </section>
+            )}
           </div>
         </div>
       )}

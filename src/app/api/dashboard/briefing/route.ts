@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDegradedAnswer } from "@/lib/engine-degraded";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
@@ -292,11 +293,11 @@ async function generateNarrative(
           }
         }
       }
-      return answer || null;
+      return answer && !isDegradedAnswer(answer) ? answer : null;
     }
 
     const data = await res.json();
-    return typeof data.answer === "string" ? data.answer : null;
+    return typeof data.answer === "string" && !isDegradedAnswer(data.answer) ? data.answer : null;
   } catch {
     return null;
   }

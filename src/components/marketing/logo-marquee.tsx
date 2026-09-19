@@ -6,7 +6,8 @@
 // Research: Aceternity UI, shadcn.io, Vercel Geist, Ryan Mulligan CSS Marquee.
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import {
   ShieldCheck,
   Lock,
