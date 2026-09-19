@@ -182,3 +182,72 @@ Die Revision wird zurückgewiesen.
     expect(patchCanonicalNormen(out, NORMEN, "Beschluss")).toBe(out);
   });
 });
+
+describe("statute metadata from RIS body sections", () => {
+  const NORM = `---
+title: "2. Geschäftsverteilung der Volksanwaltschaft"
+type: law
+jurisdiction: at
+gesetzesnummer: ""
+nor_id: "NOR40270195"
+source_url: "https://www.ris.bka.gv.at/eli/bgbl/ii/2025/126/P12/NOR40270195"
+source_format: xml
+---
+
+# 2. Geschäftsverteilung der Volksanwaltschaft
+
+## Kurztitel
+
+2. Geschäftsverteilung der Volksanwaltschaft
+
+## Kundmachungsorgan
+
+BGBl. II Nr. 126/2025 aufgehoben durch BGBl. II Nr. 185/2026
+
+## §/Artikel/Anlage
+
+§ 12
+
+## Inkrafttretensdatum
+
+01.07.2025
+
+## Außerkrafttretensdatum
+
+10.07.2026
+
+## Abkürzung
+
+2. GeV der VA 2025
+
+## Gesetzesnummer
+
+20012918
+
+## Text
+
+§ 12. Die Geschäftsverteilung tritt in Kraft.
+`;
+
+  test("name, abbreviation, citation, validity and ELI reach the canonical schema", () => {
+    const c = mapToCanonical(parseRaw(NORM), "x");
+    expect(c.short_title).toBe("2. Geschäftsverteilung der Volksanwaltschaft");
+    expect(c.abbr).toBe("2. GeV der VA 2025");
+    expect(c.statute_id).toBe("20012918");
+    expect(c.paragraph_ref).toBe("§ 12");
+    expect(c.promulgation_organ).toContain("BGBl. II Nr. 126/2025");
+    expect(c.in_force_from).toBe("2025-07-01");
+    expect(c.in_force_to).toBe("2026-07-10");
+    expect(c.eli).toBe("https://www.ris.bka.gv.at/eli/bgbl/ii/2025/126/P12/NOR40270195");
+  });
+
+  test("frontmatter values win over body sections", () => {
+    const withAbbr = NORM.replace("type: law", 'type: law\nabbreviation: "GeV-VA"');
+    expect(mapToCanonical(parseRaw(withAbbr), "x").abbr).toBe("GeV-VA");
+  });
+
+  test("decisions do not pick up statute sections", () => {
+    const dec = NORM.replace("type: law", "type: court_decision\ncourt: VwGH\ncase_number: Ra 1/1");
+    expect(mapToCanonical(parseRaw(dec), "x").abbr).toBeNull();
+  });
+});

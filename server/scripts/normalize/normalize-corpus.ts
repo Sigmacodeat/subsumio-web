@@ -234,8 +234,57 @@ function docIdOf(fm: Record<string, string>, url: string): string {
   return "";
 }
 
+/**
+ * RIS statute files carry their metadata as sections in the body
+ * ("## Kurztitel", "## Abkürzung", "## Kundmachungsorgan",
+ * "## Inkrafttretensdatum", "## Außerkrafttretensdatum", …), not in the
+ * frontmatter. Without them 57 % of the federal paragraphs reached the
+ * database with no statute name and no validity dates: the brain saw
+ * "Art. 27" but not which law, nor whether it is still in force.
+ * Read-only: the body is not changed.
+ */
+const RIS_META_SECTIONS: Record<string, string> = {
+  kurztitel: "kurztitel",
+  abkürzung: "abkuerzung",
+  kundmachungsorgan: "kundmachungsorgan",
+  inkrafttretensdatum: "inkrafttretensdatum",
+  außerkrafttretensdatum: "ausserkrafttretensdatum",
+  typ: "typ",
+  langtitel: "langtitel",
+  schlagworte: "schlagworte",
+  "§/artikel/anlage": "paragraph",
+  gesetzesnummer: "gesetzesnummer",
+};
+
+export function risMetaFromBody(body: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const lines = body.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const h = lines[i].match(/^##\s+(.+?)\s*$/);
+    if (!h) continue;
+    const key = RIS_META_SECTIONS[h[1].toLowerCase()];
+    if (!key || out[key]) continue;
+    const value: string[] = [];
+    for (let j = i + 1; j < lines.length && !/^#{1,6}\s/.test(lines[j]); j++) {
+      const t = lines[j].trim();
+      if (t) value.push(t);
+    }
+    const v = value.join(" ").slice(0, 500);
+    if (v) out[key] = v;
+  }
+  return out;
+}
+
 export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontmatter {
-  const { fm, list } = raw;
+  const { list } = raw;
+  // Frontmatter wins; body sections only fill what it lacks or leaves empty
+  // (statutes). An empty `gesetzesnummer: ""` counts as missing.
+  const fm: Record<string, string> = { ...raw.fm };
+  if (docClassOf(raw.fm) === "statute") {
+    for (const [k, v] of Object.entries(risMetaFromBody(raw.body))) {
+      if (!clean(fm[k])) fm[k] = v;
+    }
+  }
   const url = clean(fm.source_url) ?? "";
   const cls = docClassOf(fm);
 
@@ -290,7 +339,7 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     // Pseudo-Fundstelle: sieht amtlich aus, sagt nichts. 73.078 Chunks waren
     // betroffen. Verworfen — dann greift der Titel als Fundstelle.
     abbr: (() => {
-      const a = pick(fm, "abbreviation", "abbr");
+      const a = pick(fm, "abbreviation", "abbr", "abkuerzung");
       return a && /^GNR-\d+$/i.test(a) ? null : a;
     })(),
 
@@ -299,7 +348,8 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     promulgation_organ: pick(fm, "kundmachungsorgan"),
     in_force_from: toIsoDate(fm.inkrafttretensdatum),
     in_force_to: toIsoDate(fm.ausserkrafttretensdatum),
-    eli: pick(fm, "eli"),
+    // RIS source URLs of the form …/eli/bgbl/1973/413/A10/NOR… are ELI URIs.
+    eli: pick(fm, "eli") ?? (/\/eli\//.test(url) ? url : null),
     region: pick(fm, "bundesland", "state"),
 
     court: cls === "decision" ? pick(fm, "court", "gericht") : null,

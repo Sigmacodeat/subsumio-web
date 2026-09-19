@@ -19,7 +19,9 @@
  */
 
 export const SCHEMA_VERSION = 1;
-export const NORMALIZER_VERSION = 1;
+// 2: statute metadata (Kurztitel, Abkürzung, Kundmachungsorgan, Gültigkeit)
+//    is also read from the RIS body sections, and RIS ELI URLs fill `eli`.
+export const NORMALIZER_VERSION = 2;
 
 /** Dokumentklasse — ersetzt die 8 konkurrierenden type-Felder. */
 export type DocClass = "statute" | "decision" | "literature";
