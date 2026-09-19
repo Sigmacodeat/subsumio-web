@@ -13,7 +13,8 @@
 # Order = value per RIS request:
 #   1. cited norms for decisions already on disk (100 decisions per request)
 #   2. inventory of all federal norms in force, then fetch missing ones as XML
-#   3. consolidated state law as XML (missing or rejected)
+#   3. consolidated state law as XML (missing or rejected), then renormalize
+#      and report older versions without an end date
 #   4. full decision texts of OGH, VfGH, VwGH (only Rechtssätze were on disk)
 #   5. missing decisions per court, largest gaps first
 # The corpus pipeline normalizes and imports whatever lands on disk.
@@ -40,8 +41,21 @@ step bun scripts/ris-xml-fetch-normen.ts --ris "$STATE/ris-inforce.jsonl" \
   --keep-xml /law-corpus/_xml/at-normen
 
 # Consolidated state law as XML; replaces the older state-folder/HTML files
-# the validator rejected.
+# the validator rejected. The states number their laws independently, so the
+# files live under <state>/gnr-<nr>/ — the move of the older gnr-<nr>/ layout
+# runs first (idempotent). A complete scan also writes the inventory of state
+# norms in force (_state/ris-landesrecht-inforce.jsonl).
+step bun scripts/migrate-landesrecht-layout.ts --apply
 step bun scripts/fetch-at-landesrecht-xml.ts --keep-xml /law-corpus/_xml/at-landesrecht
+
+# Normalizer v4: state-qualified statute ids, readable RIS links (.html).
+step bun scripts/normalize/normalize-corpus.ts --corpus at-landesrecht --batch 500
+step bun scripts/normalize/normalize-corpus.ts --corpus at-normen --batch 500
+
+# Older versions still active without an end date — report only; the dates
+# are written with --apply after review.
+step bun scripts/mark-superseded-versions.ts --source law-at-landesrecht
+step bun scripts/mark-superseded-versions.ts --source law-at-normen
 
 # Full decision texts of the supreme courts: OGH (plus OLG/LG in "Justiz"),
 # VfGH, VwGH. The corpus held their Rechtssätze but almost no decisions.

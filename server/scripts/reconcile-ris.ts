@@ -9,8 +9,10 @@
  *   not in the database; extra = active in the database, not in force at
  *   RIS, and without an in_force_to date explaining why. Dated older
  *   versions are expected and reported separately.
- * - Courts and state law: count-level against RIS hit totals, one request
- *   per application. For OGH/VwGH/VfGH RIS counts Rechtssätze, so the
+ * - State law: document-level the same way once fetch-at-landesrecht-xml.ts
+ *   has written its inventory (_state/ris-landesrecht-inforce.jsonl);
+ *   before that, count-level.
+ * - Courts: count-level against RIS hit totals, one request per application. For OGH/VwGH/VfGH RIS counts Rechtssätze, so the
  *   database side counts Rechtssätze too (decision texts are reported in the
  *   note).
  *
@@ -28,6 +30,7 @@ import { getUserAgent, proxyFetchOptions } from "./ris-proxy";
 const DRY = process.argv.includes("--dry-run");
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 const INVENTORY = join(ROOT, "_state", "ris-inforce.jsonl");
+const LR_INVENTORY = join(ROOT, "_state", "ris-landesrecht-inforce.jsonl");
 const API = "https://data.bka.gv.at/ris/api/v2.6";
 
 /** source_id → RIS application; `rs` = RIS counts Rechtssätze for this court. */
@@ -162,33 +165,61 @@ async function main() {
         extra: ris === null ? null : Math.max(0, db - ris),
         sample_missing: [],
         sample_extra: [],
-        note: c.rs
-          ? `RIS zählt Rechtssätze; Entscheidungstexte in der DB: ${counts.texte}`
-          : null,
+        note: c.rs ? `RIS zählt Rechtssätze; Entscheidungstexte in der DB: ${counts.texte}` : null,
       });
     }
 
-    // State law — count level, versions in force only: every consolidated
-    // version has its own document number, and the database keeps the older
-    // ones (dated, ranked down) for "which version applied" questions.
-    const lr = await hits(`${API}/Landesrecht?Applikation=LrKons&DokumenteProSeite=Ten&Fassung.FassungVom=${today}`);
-    const [lrDb] = await q(
-      `SELECT count(*) FILTER (WHERE coalesce(frontmatter->>'in_force_to', '9999') >= $1)::int AS geltend,
+    // State law — document level when the inventory exists.
+    if (existsSync(LR_INVENTORY)) {
+      const ris = new Set<string>();
+      for (const line of readFileSync(LR_INVENTORY, "utf8").split("\n")) {
+        if (line.trim()) ris.add((JSON.parse(line) as { id: string }).id);
+      }
+      const lrRows = await q(
+        `SELECT frontmatter->>'doc_id' AS id, (frontmatter->>'in_force_to') < $1 AS historisch FROM pages
+         WHERE source_id = 'law-at-landesrecht' AND deleted_at IS NULL AND frontmatter->>'doc_id' ~ '^L[A-Z]{2}[0-9]'`,
+        [today]
+      );
+      const db = new Set<string>(lrRows.map((r) => r.id));
+      const historical = new Set<string>(lrRows.filter((r) => r.historisch).map((r) => r.id));
+      const { missing, extra } = diff(ris, db);
+      const unexplained = extra.filter((id) => !historical.has(id));
+      rows.push({
+        source_id: "law-at-landesrecht",
+        method: "doc-ids",
+        ris_total: ris.size,
+        db_total: db.size - historical.size,
+        missing: missing.length,
+        extra: unexplained.length,
+        sample_missing: missing.slice(0, 50),
+        sample_extra: unexplained.slice(0, 50),
+        note: `${historical.size} ältere Fassungen (datiert) zusätzlich in der DB`,
+      });
+    } else {
+      // State law — count level, versions in force only: every consolidated
+      // version has its own document number, and the database keeps the older
+      // ones (dated, ranked down) for "which version applied" questions.
+      const lr = await hits(
+        `${API}/Landesrecht?Applikation=LrKons&DokumenteProSeite=Ten&Fassung.FassungVom=${today}`
+      );
+      const [lrDb] = await q(
+        `SELECT count(*) FILTER (WHERE coalesce(frontmatter->>'in_force_to', '9999') >= $1)::int AS geltend,
               count(*) FILTER (WHERE (frontmatter->>'in_force_to') < $1)::int AS historisch
        FROM pages WHERE source_id = 'law-at-landesrecht' AND deleted_at IS NULL`,
-      [today]
-    );
-    rows.push({
-      source_id: "law-at-landesrecht",
-      method: "counts",
-      ris_total: lr,
-      db_total: lrDb.geltend,
-      missing: lr === null ? null : Math.max(0, lr - lrDb.geltend),
-      extra: lr === null ? null : Math.max(0, lrDb.geltend - lr),
-      sample_missing: [],
-      sample_extra: [],
-      note: `verglichen: geltende Fassungen; ${lrDb.historisch} ältere Fassungen zusätzlich in der DB`,
-    });
+        [today]
+      );
+      rows.push({
+        source_id: "law-at-landesrecht",
+        method: "counts",
+        ris_total: lr,
+        db_total: lrDb.geltend,
+        missing: lr === null ? null : Math.max(0, lr - lrDb.geltend),
+        extra: lr === null ? null : Math.max(0, lrDb.geltend - lr),
+        sample_missing: [],
+        sample_extra: [],
+        note: `verglichen: geltende Fassungen; ${lrDb.historisch} ältere Fassungen zusätzlich in der DB`,
+      });
+    }
   } finally {
     releaseRisLock();
   }

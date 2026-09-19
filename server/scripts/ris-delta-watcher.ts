@@ -47,7 +47,13 @@ import {
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import { mapRisReference } from "../src/core/ingestion/connectors/legal-judgements.ts";
-import { buildMarkdown as buildDecisionFile, decisionTypeOf } from "./judikatur-file";
+import {
+  buildMarkdown as buildDecisionFile,
+  decisionFileName,
+  decisionTypeOf,
+  dokumentnummerOf,
+} from "./judikatur-file";
+import { landOfDocId } from "./normalize/normalize-corpus";
 import { buildTextMarkdown, politeDelayMs, textRefsOf } from "./fetch-entscheidungstexte";
 import {
   fetchWithRetry,
@@ -290,6 +296,14 @@ export function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): strin
  * Baut das Markdown für ein Judikatur-Dokument (Entscheidung).
  * Folgt demselben Frontmatter-Schema wie fetch-all-at-judikatur.ts.
  */
+/** RIS document number of a corpus file, from its source_url. */
+function dokNrOfFile(path: string): string | null {
+  const url = readFileSync(path, "utf8")
+    .slice(0, 2000)
+    .match(/^source_url:\s*["']?([^\s"']+)/m)?.[1];
+  return url ? dokumentnummerOf(url) : null;
+}
+
 /** RIS document numbers carry the decision date: JJR_20190326_… → 2019-03-26. */
 export function decisionDateOfDocNr(id: string): string | null {
   const m = id.match(/^J[A-Z]{2}_(\d{4})(\d{2})(\d{2})_/);
@@ -372,19 +386,24 @@ export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
   const corpusDir = join(CORPUS_ROOT, app.corpusDir);
 
   if (app.endpoint === "Judikatur") {
-    // Pfad OHNE Datum — verhindert Duplikate wenn sich changedAt ändert.
-    // Bisherige Dateien mit Datum-Prefix müssen migriert werden (siehe migrate-judikatur-paths.ts).
-    const slug = slugify(doc.geschaeftszahl || doc.id);
-    return join(corpusDir, `${slug}.md`);
+    // Named by the RIS document number: several Rechtssätze share one
+    // Geschäftszahl, a name built from it let them overwrite each other.
+    // An older file of the same document keeps its name.
+    const legacy = join(corpusDir, `${slugify(doc.geschaeftszahl || doc.id)}.md`);
+    if (existsSync(legacy) && dokNrOfFile(legacy) === doc.id) return legacy;
+    return join(corpusDir, decisionFileName(doc.id));
   }
 
   // Bundesrecht / Landesrecht
   const apa = doc.artikelParagraphAnlage;
   const key = normKey(apa) || doc.id.toLowerCase();
-  const subDir = doc.gesetzesnummer
+  const gnrDir = doc.gesetzesnummer
     ? `gnr-${doc.gesetzesnummer}`
     : slugify(doc.kurztitel || doc.id);
-  return join(corpusDir, subDir, `${key}.md`);
+  // The states number their laws independently: the state is part of the path
+  // (same layout as fetch-at-landesrecht-xml.ts).
+  const land = app.endpoint === "Landesrecht" ? landOfDocId(doc.id) : null;
+  return join(corpusDir, ...(land ? [land] : []), gnrDir, `${key}.md`);
 }
 
 /**
@@ -467,7 +486,8 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
         `https://www.ris.bka.gv.at/Dokumente/${app.applikation}/${t.dokNr}/${t.dokNr}.xml`
       );
       const body = textXml ? risXmlToText(textXml) : "";
-      if (body.length < 200 || (t.gz && !contentMatchesDocument(body, { case_number: t.gz }))) continue;
+      if (body.length < 200 || (t.gz && !contentMatchesDocument(body, { case_number: t.gz })))
+        continue;
       const ecli = textXml?.match(/ECLI:AT:[A-Z0-9]+:\d{4}:[A-Z0-9.]+/)?.[0] ?? null;
       const courtKey = COURT_KEY[app.applikation] ?? app.applikation.toLowerCase();
       atomicWrite(target, buildTextMarkdown(t, courtKey, app.applikation, body, ecli));
