@@ -4202,7 +4202,29 @@ const find_contradictions: Operation = {
             }>;
           }>
         | undefined) ?? [];
-    const findings = perQuery.flatMap((q) => q.contradictions);
+    let findings = perQuery.flatMap((q) => q.contradictions);
+    // Probe runs are brain-wide. An untrusted caller (tenant agent, remote
+    // client) may only see pairs whose BOTH pages live in its sources —
+    // otherwise another firm's slugs leak through the report. Trusted local
+    // callers (remote === false) keep the full report.
+    const scopeSources = new Set<string>(
+      [ctx.sourceId, ...(ctx.auth?.allowedSources ?? [])].filter(
+        (x): x is string => typeof x === "string" && x.length > 0
+      )
+    );
+    if (ctx.remote !== false) {
+      const slugs = [...new Set(findings.flatMap((f) => [f.a.slug, f.b.slug]))];
+      const visible = new Set<string>();
+      if (slugs.length > 0 && scopeSources.size > 0) {
+        const rows = await ctx.engine.executeRaw<{ slug: string }>(
+          `SELECT DISTINCT slug FROM pages
+            WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[]) AND deleted_at IS NULL`,
+          [slugs, [...scopeSources]]
+        );
+        for (const r of rows) visible.add(r.slug);
+      }
+      findings = findings.filter((f) => visible.has(f.a.slug) && visible.has(f.b.slug));
+    }
     const filtered = findings.filter((f) => {
       if (sevFilter && f.severity !== sevFilter) return false;
       if (slugFilter) {

@@ -45,7 +45,8 @@ const courts = (arg("--court") ?? "ogh").split(",");
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 const STATE = join(ROOT, "_normalized", "_state", "fetch-entscheidungstexte.json");
 
-function politeDelayMs(): number {
+/** RIS OGD: 2 s during business hours, 1 s otherwise (Vienna time). */
+export function politeDelayMs(): number {
   const now = new Date();
   const hour = parseInt(
     now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })

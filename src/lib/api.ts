@@ -611,6 +611,13 @@ export const api = {
           result.answer_revised = true;
           options.onRevised?.(result.answer);
         }
+        // Verification regenerated the answer after streaming: the final text
+        // replaces the streamed draft (callers render result.answer at the end).
+        if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+          result.answer = parsed.final_answer;
+          result.answer_revised = true;
+          options.onRevised?.(result.answer);
+        }
         if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
         if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
         // The server-side citation gate already grounded this answer — keep it,

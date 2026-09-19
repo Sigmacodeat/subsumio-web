@@ -1,0 +1,534 @@
+{
+  "version": 2,
+  "created": "2026-09-19",
+  "labeling": "Labels von Hand gegen den Korpustext (RIS-OGD bzw. EUR-Lex) der jeweiligen Norm vergeben; 'rationale' nennt die tragende Stelle. 'acceptable' listet weitere vertretbare Urteile für Grenzfälle.",
+  "cases": [
+    {
+      "id": "vj-1489-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1489"
+      },
+      "expected": "supported",
+      "answer": "Schadenersatzansprüche verjähren nach § 1489 ABGB in drei Jahren ab Kenntnis von Schaden und Schädiger.",
+      "rationale": "§ 1489 S 1: drei Jahre ab Kenntnis von Schaden und Beschädiger.",
+      "split": "dev"
+    },
+    {
+      "id": "vj-879-wrongnorm",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 879"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 879 ABGB verjähren Schadenersatzansprüche in drei Jahren.",
+      "rationale": "§ 879 regelt Nichtigkeit gesetz-/sittenwidriger Verträge, nicht Verjährung.",
+      "split": "dev"
+    },
+    {
+      "id": "vj-1489-overreach",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1489"
+      },
+      "expected": "partial",
+      "answer": "Nach § 1489 ABGB verjähren Schadenersatzansprüche in drei Jahren ab Kenntnis, gegenüber Verbrauchern jedoch erst nach fünf Jahren.",
+      "rationale": "Dreijahresfrist gedeckt; Verbraucher-Fünfjahresfrist steht nicht in § 1489.",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "sr-1295-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1295"
+      },
+      "expected": "supported",
+      "answer": "Nach § 1295 Abs 1 ABGB kann der Geschädigte vom Schädiger Ersatz des schuldhaft zugefügten Schadens verlangen.",
+      "rationale": "§ 1295 Abs 1: Ersatz des aus Verschulden zugefügten Schadens.",
+      "split": "dev"
+    },
+    {
+      "id": "sr-1295-strict",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1295"
+      },
+      "expected": "unsupported",
+      "answer": "Der Halter eines Kraftfahrzeugs haftet nach § 1295 ABGB auch ohne jedes Verschulden für Unfallschäden.",
+      "rationale": "§ 1295 setzt Verschulden voraus; verschuldensunabhängige Halterhaftung steht im EKHG.",
+      "split": "dev"
+    },
+    {
+      "id": "mi-1096-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1096"
+      },
+      "expected": "supported",
+      "answer": "Ist die Wohnung unbrauchbar, ist der Mieter nach § 1096 ABGB für die Dauer und im Maß der Unbrauchbarkeit vom Mietzins befreit.",
+      "rationale": "§ 1096 Abs 1 S 2 wörtlich.",
+      "split": "dev"
+    },
+    {
+      "id": "mi-1096-wrongnorm",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1096"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 1096 ABGB kann der Vermieter den Mietvertrag bei Zahlungsverzug des Mieters vorzeitig auflösen.",
+      "rationale": "Das regelt § 1118, nicht § 1096.",
+      "split": "dev"
+    },
+    {
+      "id": "mi-1096-overreach",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1096"
+      },
+      "expected": "partial",
+      "answer": "Nach § 1096 ABGB ist der Mieter bei Unbrauchbarkeit vom Zins befreit und kann zusätzlich verschuldensunabhängig Schadenersatz verlangen.",
+      "rationale": "Zinsbefreiung gedeckt; verschuldensunabhängiger Schadenersatz nicht.",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "mi-1117-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1117"
+      },
+      "expected": "supported",
+      "answer": "Bei gesundheitsschädlichen Wohnräumen kann der Mieter nach § 1117 ABGB auch dann ohne Kündigung vom Vertrag abstehen, wenn er darauf verzichtet hatte.",
+      "rationale": "§ 1117 S 2.",
+      "split": "dev"
+    },
+    {
+      "id": "mi-1118-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1118"
+      },
+      "expected": "supported",
+      "answer": "Nach § 1118 ABGB kann der Vermieter die vorzeitige Aufhebung des Vertrages verlangen, wenn der Mieter nach Mahnung den rückständigen Zins bis zum nächsten Termin nicht vollständig zahlt.",
+      "rationale": "§ 1118 zweiter Fall.",
+      "split": "dev"
+    },
+    {
+      "id": "nb-364-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 364"
+      },
+      "expected": "supported",
+      "answer": "Nach § 364 Abs 2 ABGB kann der Grundeigentümer dem Nachbarn Lärm untersagen, soweit er das ortsübliche Maß überschreitet und die ortsübliche Nutzung wesentlich beeinträchtigt.",
+      "rationale": "§ 364 Abs 2.",
+      "split": "dev"
+    },
+    {
+      "id": "nb-364-wrongnorm",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 364"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 364 ABGB kann der Mieter wegen Baulärms den Mietzins mindern.",
+      "rationale": "§ 364 regelt Nachbarrechte des Eigentümers, nicht Zinsminderung des Mieters.",
+      "split": "dev"
+    },
+    {
+      "id": "wh-1319a-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1319a"
+      },
+      "expected": "supported",
+      "answer": "Der Wegehalter haftet nach § 1319a ABGB nur, wenn er oder seine Leute den Mangel vorsätzlich oder grob fahrlässig verschuldet haben.",
+      "rationale": "§ 1319a Abs 1.",
+      "split": "dev"
+    },
+    {
+      "id": "wh-1319a-contra",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1319a"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 1319a ABGB haftet der Wegehalter bereits bei leichter Fahrlässigkeit.",
+      "rationale": "Widerspricht § 1319a Abs 1 (Vorsatz oder grobe Fahrlässigkeit).",
+      "split": "dev"
+    },
+    {
+      "id": "gw-933-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 933"
+      },
+      "expected": "supported",
+      "answer": "Nach § 933 ABGB beträgt die Gewährleistungsfrist bei beweglichen Sachen zwei Jahre und bei unbeweglichen Sachen drei Jahre.",
+      "rationale": "§ 933 Abs 1.",
+      "split": "dev"
+    },
+    {
+      "id": "gw-933-contra",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 933"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 933 ABGB beträgt die Gewährleistungsfrist für unbewegliche Sachen fünf Jahre.",
+      "rationale": "Widerspricht § 933 Abs 1 (drei Jahre).",
+      "split": "dev"
+    },
+    {
+      "id": "gw-933-overreach",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 933"
+      },
+      "expected": "partial",
+      "answer": "Nach § 933 ABGB beträgt die Gewährleistungsfrist bei beweglichen Sachen zwei Jahre, und der Käufer muss den Mangel binnen 14 Tagen rügen.",
+      "rationale": "Frist gedeckt; Rügepflicht steht nicht in § 933 (vgl § 377 UGB).",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "gw-932-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 932"
+      },
+      "expected": "supported",
+      "answer": "Nach § 932 ABGB kann der Übernehmer zunächst nur die Verbesserung oder den Austausch der Sache verlangen.",
+      "rationale": "§ 932 Abs 2.",
+      "split": "dev"
+    },
+    {
+      "id": "gw-932-contra",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 932"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 932 ABGB kann der Käufer bei jedem Mangel sofort den Vertrag auflösen.",
+      "rationale": "Widerspricht dem Vorrang von Verbesserung/Austausch in § 932 Abs 2.",
+      "split": "dev"
+    },
+    {
+      "id": "bl-1298-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1298"
+      },
+      "expected": "supported",
+      "answer": "Nach § 1298 ABGB muss der Schuldner beweisen, dass er an der Erfüllung ohne sein Verschulden verhindert war.",
+      "rationale": "§ 1298 S 1.",
+      "split": "dev"
+    },
+    {
+      "id": "kv-1325-ok",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1325"
+      },
+      "expected": "supported",
+      "answer": "Bei einer Körperverletzung sind nach § 1325 ABGB die Heilungskosten, der Verdienstentgang und ein angemessenes Schmerzengeld zu ersetzen.",
+      "rationale": "§ 1325.",
+      "split": "dev"
+    },
+    {
+      "id": "kv-1325-contra",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1325"
+      },
+      "expected": "unsupported",
+      "answer": "Das Schmerzengeld ist nach § 1325 ABGB mit 20.000 Euro begrenzt.",
+      "rationale": "§ 1325 kennt keine Obergrenze (angemessenes Schmerzengeld).",
+      "split": "dev"
+    },
+    {
+      "id": "kv-1325-overreach",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1325"
+      },
+      "expected": "partial",
+      "answer": "Nach § 1325 ABGB sind bei Körperverletzung Heilungskosten und Schmerzengeld zu ersetzen, Schmerzengeld allerdings nur bei grobem Verschulden.",
+      "rationale": "Ersatzposten gedeckt; Einschränkung auf grobes Verschulden steht nicht in § 1325.",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "vf-bvg7-ok",
+      "citation": {
+        "code": "B-VG",
+        "paragraph": "Art. 7"
+      },
+      "expected": "supported",
+      "answer": "Nach Art 7 B-VG sind alle Staatsbürger vor dem Gesetz gleich.",
+      "rationale": "Art 7 Abs 1 S 1.",
+      "split": "dev"
+    },
+    {
+      "id": "vf-bvg7-wrongnorm",
+      "citation": {
+        "code": "B-VG",
+        "paragraph": "Art. 7"
+      },
+      "expected": "unsupported",
+      "answer": "Art 7 B-VG gewährleistet in Österreich das Grundrecht auf Datenschutz.",
+      "rationale": "Datenschutz-Grundrecht steht in § 1 DSG, nicht Art 7 B-VG.",
+      "split": "dev"
+    },
+    {
+      "id": "mrg-1-ok",
+      "citation": {
+        "code": "MRG",
+        "paragraph": "§ 1"
+      },
+      "expected": "supported",
+      "answer": "Das Mietrechtsgesetz gilt nach § 1 MRG für die Miete von Wohnungen und Geschäftsräumlichkeiten.",
+      "rationale": "§ 1 Abs 1 MRG.",
+      "split": "dev"
+    },
+    {
+      "id": "zpo-226-ok",
+      "citation": {
+        "code": "ZPO",
+        "paragraph": "§ 226"
+      },
+      "expected": "supported",
+      "answer": "In Österreich muss die Klage nach § 226 ZPO ein bestimmtes Begehren enthalten.",
+      "rationale": "§ 226 Abs 1 ZPO.",
+      "split": "dev"
+    },
+    {
+      "id": "zpo-226-wrong",
+      "citation": {
+        "code": "ZPO",
+        "paragraph": "§ 226"
+      },
+      "expected": "unsupported",
+      "answer": "In Österreich muss die Klage nach § 226 ZPO binnen vier Wochen ab Zustellung eingebracht werden.",
+      "rationale": "§ 226 regelt den Klageinhalt, keine Einbringungsfrist.",
+      "split": "dev"
+    },
+    {
+      "id": "stgb-5-ok",
+      "citation": {
+        "code": "StGB",
+        "paragraph": "§ 5"
+      },
+      "expected": "supported",
+      "answer": "Nach österreichischem Strafrecht handelt gemäß § 5 StGB auch vorsätzlich, wer die Tatbildverwirklichung ernstlich für möglich hält und sich damit abfindet.",
+      "rationale": "§ 5 Abs 1 StGB (bedingter Vorsatz).",
+      "split": "dev"
+    },
+    {
+      "id": "eu-dsgvo6-ok",
+      "citation": {
+        "code": "DSGVO",
+        "paragraph": "Art. 6"
+      },
+      "expected": "supported",
+      "answer": "Nach Art 6 DSGVO ist eine Verarbeitung etwa dann rechtmäßig, wenn die betroffene Person eingewilligt hat.",
+      "rationale": "Art 6 Abs 1 lit a DSGVO.",
+      "split": "dev"
+    },
+    {
+      "id": "eu-dsgvo6-wrongnorm",
+      "citation": {
+        "code": "DSGVO",
+        "paragraph": "Art. 6"
+      },
+      "expected": "unsupported",
+      "answer": "Art 6 DSGVO gibt der betroffenen Person ein Recht auf Löschung ihrer Daten.",
+      "rationale": "Das Recht auf Löschung steht in Art 17, nicht Art 6.",
+      "split": "dev"
+    },
+    {
+      "id": "h-1311-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1311"
+      },
+      "expected": "supported",
+      "answer": "Den bloßen Zufall trägt nach § 1311 ABGB derjenige, in dessen Vermögen er sich ereignet.",
+      "rationale": "§ 1311 S 1."
+    },
+    {
+      "id": "h-1311-wrongnorm",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1311"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 1311 ABGB haftet der Tierhalter für Schäden, die sein Tier verursacht.",
+      "rationale": "Tierhalterhaftung steht in § 1320."
+    },
+    {
+      "id": "h-1313a-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1313a"
+      },
+      "expected": "supported",
+      "answer": "Der Schuldner haftet nach § 1313a ABGB für das Verschulden seiner Erfüllungsgehilfen wie für sein eigenes.",
+      "rationale": "§ 1313a."
+    },
+    {
+      "id": "h-1313a-wrong",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1313a"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 1313a ABGB haftet ein Unternehmer auch außerhalb eines Vertragsverhältnisses für jedes Delikt seiner Angestellten.",
+      "rationale": "§ 1313a setzt eine Leistungspflicht gegenüber dem Geschädigten voraus (deliktisch § 1315)."
+    },
+    {
+      "id": "h-1320-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1320"
+      },
+      "expected": "supported",
+      "answer": "Der Tierhalter haftet nach § 1320 ABGB, wenn er nicht beweist, dass er für die erforderliche Verwahrung gesorgt hat.",
+      "rationale": "§ 1320 Abs 1 S 2."
+    },
+    {
+      "id": "h-1320-overreach",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1320"
+      },
+      "expected": "partial",
+      "answer": "Nach § 1320 ABGB haftet der Tierhalter, wenn er die Verwahrung nicht nachweist, allerdings nur bis 50.000 Euro.",
+      "rationale": "Haftung gedeckt; Höchstbetrag steht nicht in § 1320.",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ]
+    },
+    {
+      "id": "h-kschg1-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "KSchG",
+        "paragraph": "§ 1"
+      },
+      "expected": "supported",
+      "answer": "Das Konsumentenschutzgesetz gilt nach § 1 KSchG für Rechtsgeschäfte zwischen Unternehmern und Verbrauchern.",
+      "rationale": "§ 1 Abs 1 KSchG."
+    },
+    {
+      "id": "h-dsgvo17-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "DSGVO",
+        "paragraph": "Art. 17"
+      },
+      "expected": "supported",
+      "answer": "Nach Art 17 DSGVO kann die betroffene Person verlangen, dass sie betreffende personenbezogene Daten unverzüglich gelöscht werden.",
+      "rationale": "Art 17 Abs 1 DSGVO."
+    },
+    {
+      "id": "h-dsgvo17-wrongnorm",
+      "split": "holdout",
+      "citation": {
+        "code": "DSGVO",
+        "paragraph": "Art. 17"
+      },
+      "expected": "unsupported",
+      "answer": "Nach Art 17 DSGVO muss der Verantwortliche einen Datenschutzbeauftragten benennen.",
+      "rationale": "Das regelt Art 37, nicht Art 17."
+    },
+    {
+      "id": "h-dsgvo82-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "DSGVO",
+        "paragraph": "Art. 82"
+      },
+      "expected": "supported",
+      "answer": "Nach Art 82 DSGVO hat jede Person, der wegen eines Verstoßes gegen die Verordnung ein Schaden entstanden ist, Anspruch auf Schadenersatz.",
+      "rationale": "Art 82 Abs 1 DSGVO."
+    },
+    {
+      "id": "h-emrk8-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "EMRK",
+        "paragraph": "Art. 8"
+      },
+      "expected": "supported",
+      "answer": "Art 8 EMRK schützt in Österreich das Recht auf Achtung des Privat- und Familienlebens.",
+      "rationale": "Art 8 Abs 1 EMRK."
+    },
+    {
+      "id": "h-emrk8-wrongnorm",
+      "split": "holdout",
+      "citation": {
+        "code": "EMRK",
+        "paragraph": "Art. 8"
+      },
+      "expected": "unsupported",
+      "answer": "Art 8 EMRK garantiert in Österreich das Recht auf ein faires Verfahren.",
+      "rationale": "Faires Verfahren ist Art 6 EMRK."
+    },
+    {
+      "id": "h-1431-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "ABGB",
+        "paragraph": "§ 1431"
+      },
+      "expected": "supported",
+      "answer": "Wer aus Irrtum eine Nichtschuld zahlt, kann sie nach § 1431 ABGB zurückfordern.",
+      "rationale": "§ 1431."
+    },
+    {
+      "id": "h-ugb377-ok",
+      "split": "holdout",
+      "citation": {
+        "code": "UGB",
+        "paragraph": "§ 377"
+      },
+      "expected": "supported",
+      "answer": "Ist der Kauf für beide Teile unternehmensbezogen, muss der Käufer nach § 377 UGB Mängel binnen angemessener Frist anzeigen.",
+      "rationale": "§ 377 Abs 1 UGB."
+    },
+    {
+      "id": "h-ugb377-contra",
+      "split": "holdout",
+      "citation": {
+        "code": "UGB",
+        "paragraph": "§ 377"
+      },
+      "expected": "unsupported",
+      "answer": "Nach § 377 UGB muss auch ein Verbraucher jeden Mangel binnen 14 Tagen rügen.",
+      "rationale": "§ 377 gilt nur für beiderseits unternehmensbezogene Käufe und nennt keine 14 Tage."
+    }
+  ],
+  "splits": "dev: 31 Fälle, gegen die Prompt und Modellwahl abgestimmt wurden. holdout: 15 Fälle, geschrieben vor dem zweiten Lauf und nie zum Abstimmen verwendet."
+}

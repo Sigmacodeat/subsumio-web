@@ -1,43 +1,22 @@
-import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
-import { apiError, apiSuccess } from "@/lib/api-response";
-import { ENGINE_URL } from "@/lib/engine";
+import { POST as triggerPipeline } from "@/app/api/legal/trigger-pipeline/route";
+import { NextRequest } from "next/server";
+import { apiError } from "@/lib/api-response";
 
 export const maxDuration = 60;
 
-const startPipelineSchema = z.object({
-  case_slug: z.string().min(1).max(200),
-});
-
-export const POST = createHandler(
-  {
-    action: "brain.write",
-    rateTier: "heavy",
-    body: startPipelineSchema,
-    audit: (_ctx, body) => ({
-      action: "case.update" as const,
-      entityType: "case",
-      details: { case_slug: body.case_slug, pipeline: true },
-    }),
-  },
-  async (ctx, body, _query, _req) => {
-    const res = await fetch(`${ENGINE_URL}/api/pipeline/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({ case_slug: body.case_slug }),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      return apiError("pipeline_start_failed", errText || `Engine ${res.status}`, res.status);
-    }
-
-    const data = await res.json().catch(() => ({}));
-    return apiSuccess({
-      status: data.status ?? "started",
-      case_slug: body.case_slug,
-      pipeline_id: data.pipeline_id ?? null,
-    });
+/**
+ * Start a case analysis. The engine has no /api/pipeline/start; starting is
+ * a pipeline trigger and must reserve credits like every other trigger.
+ */
+export async function POST(req: NextRequest, routeCtx: Parameters<typeof triggerPipeline>[1]) {
+  const body = (await req.json().catch(() => null)) as { case_slug?: unknown } | null;
+  if (!body || typeof body.case_slug !== "string" || !body.case_slug.trim()) {
+    return apiError("case_slug_required", "case_slug fehlt", 400);
   }
-);
+  const forwarded = new NextRequest(new URL("/api/legal/trigger-pipeline", req.url), {
+    method: "POST",
+    headers: req.headers,
+    body: JSON.stringify({ case_slug: body.case_slug.trim() }),
+  });
+  return triggerPipeline(forwarded, routeCtx);
+}

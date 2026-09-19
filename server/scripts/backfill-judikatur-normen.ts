@@ -126,7 +126,10 @@ function indexMissing(dir: string): Map<string, string[]> {
 }
 
 function writeAtomic(path: string, content: string) {
-  const tmp = `${path}.tmp-normen`;
+  // Short temp name in the same directory: some RIS file names are already
+  // near the 255-byte limit (one OGH decision lists 24 case numbers), so
+  // appending a suffix to the name failed with ENAMETOOLONG.
+  const tmp = join(dirname(path), `.normen-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`);
   writeFileSync(tmp, content, "utf8");
   renameSync(tmp, path);
 }
@@ -148,6 +151,7 @@ async function main() {
       if (missing.size === 0) continue;
       let patched = 0;
       let noNormsAtRis = 0;
+      let writeErrors = 0;
       let requests = 0;
       const done = new Set(state[court] ?? []);
 
@@ -174,14 +178,20 @@ async function main() {
             }
             const art = decisionTypeOf(ref);
             for (const p of paths) {
-              const before = readFileSync(p, "utf8");
-              const isCanonical = /^schema_version:/m.test(before.slice(0, 400));
-              const after = isCanonical
-                ? patchCanonicalNormen(before, normen, art)
-                : patchRawNormen(before, normen, art);
-              if (after !== before) {
-                if (!DRY) writeAtomic(p, after);
-                patched++;
+              // One unwritable file must not end the run for everything else.
+              try {
+                const before = readFileSync(p, "utf8");
+                const isCanonical = /^schema_version:/m.test(before.slice(0, 400));
+                const after = isCanonical
+                  ? patchCanonicalNormen(before, normen, art)
+                  : patchRawNormen(before, normen, art);
+                if (after !== before) {
+                  if (!DRY) writeAtomic(p, after);
+                  patched++;
+                }
+              } catch (err) {
+                writeErrors++;
+                console.error(`  Schreibfehler ${p.slice(-80)}: ${err instanceof Error ? err.message.slice(0, 120) : err}`);
               }
             }
             for (const id of ids) missing.delete(id);
@@ -199,7 +209,7 @@ async function main() {
         );
       }
       console.log(
-        `=== ${court} fertig: ${patched} Dateien ergänzt, ${noNormsAtRis} ohne Normen im RIS, ${missing.size} im RIS nicht gefunden`
+        `=== ${court} fertig: ${patched} Dateien ergänzt, ${noNormsAtRis} ohne Normen im RIS, ${missing.size} im RIS nicht gefunden, ${writeErrors} Schreibfehler`
       );
     }
   } finally {

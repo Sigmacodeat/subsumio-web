@@ -12,7 +12,6 @@
  */
 
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { packForIndustry } from "@/lib/industry-pack";
 import {
   WORKFLOW_TEMPLATES,
   buildWorkflowSteps,
@@ -41,7 +40,7 @@ async function sleep(ms: number): Promise<void> {
  * Called after user creation in signup/register flows.
  *
  * Sends a lightweight stats request to trigger source creation,
- * then optionally mounts the industry skill pack.
+ * then seeds workflows, Kanzlei defaults and the demo matter.
  * Retries up to 3 times with exponential backoff on transient failures.
  */
 export async function provisionBrain(
@@ -49,7 +48,6 @@ export async function provisionBrain(
   opts?: { industry?: string | null }
 ): Promise<ProvisionResult> {
   const headers = engineHeadersForBrain(brainId);
-  const pack = packForIndustry(opts?.industry);
 
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
@@ -68,19 +66,9 @@ export async function provisionBrain(
         return { ok: false, brainId, error: `engine returned ${res.status}` };
       }
 
-      // 2. If industry pack is specified, mount it via the engine API
-      if (pack) {
-        try {
-          await fetch(`${ENGINE_URL}/api/skillpack/apply`, {
-            method: "POST",
-            headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify({ pack }),
-            signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // Skill pack mounting is optional — brain still works without it
-        }
-      }
+      // (No skill-pack mount: the engine has no /api/skillpack/apply — the
+      // call 404'd silently on every signup. Subsumio is legal-only; the
+      // legal defaults are seeded below.)
 
       // 3. Seed default workflow instances so the workflows page isn't empty
       try {

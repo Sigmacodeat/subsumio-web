@@ -31,7 +31,9 @@ export interface PostUploadTask {
   task_type: PostUploadTaskType;
   attempts: number;
   next_attempt_at: string; // ISO timestamp
-  status: "pending" | "done" | "exhausted";
+  /** blocked = terminal: the document can never be analysed (extraction or
+   *  embedding failed); retrying would only burn attempts or paid calls. */
+  status: "pending" | "done" | "exhausted" | "blocked";
   last_error?: string;
 }
 
@@ -61,7 +63,8 @@ function encodeSlug(slug: string): string {
  */
 export async function enqueuePostUploadTask(
   task: Omit<PostUploadTask, "attempts" | "next_attempt_at" | "status">,
-  brainId: string
+  brainId: string,
+  opts: { force?: boolean } = {}
 ): Promise<void> {
   const slug = taskSlug(task.doc_slug, task.task_type);
   const headers = {
@@ -78,7 +81,11 @@ export async function enqueuePostUploadTask(
     });
     if (existing.ok) {
       const page = (await existing.json()) as { frontmatter?: { status?: string } };
-      if (page.frontmatter?.status === "pending") return; // already queued
+      // Pending = already queued. done/exhausted/blocked = already handled for
+      // this document: re-enqueueing reset attempts to 0 and re-ran the paid
+      // analysis on every reconcile sweep. Only an explicit `force` re-runs.
+      if (page.frontmatter?.status === "pending") return;
+      if (!opts.force && page.frontmatter?.status) return;
     }
   } catch {
     /* not found or unreachable — proceed to upsert */
@@ -128,6 +135,8 @@ export async function enqueueAllPostUploadTasks(params: {
   doc_title?: string;
   doc_size?: number;
   uploaded_at?: string;
+  /** Re-run tasks that already finished (explicit user retry only). */
+  force?: boolean;
 }): Promise<void> {
   const base = {
     doc_slug: params.doc_slug,
@@ -151,7 +160,9 @@ export async function enqueueAllPostUploadTasks(params: {
       let lastErr: unknown;
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-          await enqueuePostUploadTask({ ...base, task_type }, params.brain_id);
+          await enqueuePostUploadTask({ ...base, task_type }, params.brain_id, {
+            force: params.force,
+          });
           return; // success
         } catch (err) {
           lastErr = err;

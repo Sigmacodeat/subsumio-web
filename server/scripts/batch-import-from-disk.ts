@@ -35,6 +35,7 @@
  */
 
 import { docIdFromContent, loadActiveDocSlugs, resolveSlug } from "./doc-identity.ts";
+import { titleOf, writeIngestLog, type IngestEvent } from "./ingest-log.ts";
 import { parseArgs } from "util";
 import { readdirSync, readFileSync, existsSync, statSync } from "fs";
 import { join, extname, resolve } from "path";
@@ -438,6 +439,8 @@ async function main() {
 
   // A document already in the brain under another file name keeps its page.
   const knownDocs = await loadActiveDocSlugs(engine, SOURCE_ID);
+  // Per-document ingest log (corpus_ingest_log), flushed at batch boundaries.
+  let ingestEvents: IngestEvent[] = [];
   console.log(`${knownDocs.size} bekannte Dokumente in '${SOURCE_ID}'.`);
 
   // SIGINT handler — save cursor before exit
@@ -483,6 +486,7 @@ async function main() {
       }
       const content = readFileSync(filePath, "utf-8");
       const docId = docIdFromContent(content);
+      const existed = !!(docId && knownDocs.has(docId));
       slug = resolveSlug(knownDocs, docId, slug);
       if (docId && !knownDocs.has(docId)) knownDocs.set(docId, slug);
       if (content.trim().length === 0) {
@@ -568,6 +572,14 @@ async function main() {
       } else {
         cursor.totalImported++;
         batchImported++;
+        ingestEvents.push({
+          source_id: SOURCE_ID,
+          doc_id: docId,
+          slug,
+          title: titleOf(content),
+          action: existed ? "updated" : "added",
+          origin: "batch-import-from-disk",
+        });
       }
     } catch (e) {
       batchErrors++;
@@ -593,6 +605,8 @@ async function main() {
 
       // Save cursor after each batch
       await saveCursor(cursor);
+      await writeIngestLog(engine, ingestEvents);
+      ingestEvents = [];
 
       // Reset batch counters
       batchImported = 0;

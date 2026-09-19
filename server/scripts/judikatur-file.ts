@@ -96,13 +96,18 @@ export function dokumentnummerOf(url: string): string | null {
 }
 
 /**
- * What is already on disk, keyed three ways so every naming generation is
- * recognised: the RIS document number from source_url (authoritative), the
- * file name ("2016-12-27-g309-2126636-1"), and the file name without a date
- * prefix — older fetches wrote "g309-2126636-1.md".
+ * What is already on disk. The RIS document number (from source_url) is the
+ * identity. File names only count for files without one (very old fetches):
+ * "2016-12-27-g309-2126636-1" and the undated "g309-2126636-1".
+ *
+ * A case number alone never identifies a document: one OGH or VwGH decision
+ * has several Rechtssätze under the same Geschäftszahl, and when the name
+ * counted, every Rechtssatz after the first was taken as already present and
+ * never fetched.
  */
 export interface ExistingDocs {
   dokNrs: Set<string>;
+  /** Names of files without a readable RIS document number. */
   fileKeys: Set<string>;
   undatedKeys: Set<string>;
 }
@@ -114,20 +119,24 @@ export function loadExistingDocs(outDir: string): ExistingDocs {
   for (const file of readdirSync(outDir)) {
     if (!file.endsWith(".md")) continue;
     const key = file.slice(0, -3);
-    out.fileKeys.add(key);
-    out.undatedKeys.add(key.replace(/^\d{4}-\d{2}-\d{2}-/, ""));
+    let dok: string | null = null;
     let fd: number | undefined;
     try {
       fd = openSync(join(outDir, file), "r");
       const n = readSync(fd, buf, 0, buf.length, 0);
       const head = buf.toString("utf8", 0, n);
       const url = head.match(/^source_url:\s*["']?([^\s"']+)/m)?.[1];
-      const dok = url ? dokumentnummerOf(url) : null;
-      if (dok) out.dokNrs.add(dok);
+      dok = url ? dokumentnummerOf(url) : null;
     } catch {
-      /* unreadable file: the name keys still apply */
+      /* unreadable file: the name keys apply */
     } finally {
       if (fd !== undefined) closeSync(fd);
+    }
+    if (dok) {
+      out.dokNrs.add(dok);
+    } else {
+      out.fileKeys.add(key);
+      out.undatedKeys.add(key.replace(/^\d{4}-\d{2}-\d{2}-/, ""));
     }
   }
   return out;
@@ -149,18 +158,18 @@ export function isAlreadyOnDisk(
   );
 }
 
-export function rememberOnDisk(
-  existing: ExistingDocs,
-  risId: string,
-  url: string,
-  fileKey: string,
-  slugAz: string
-): void {
+export function rememberOnDisk(existing: ExistingDocs, risId: string, url: string): void {
   existing.dokNrs.add(risId);
   const dok = dokumentnummerOf(url);
   if (dok) existing.dokNrs.add(dok);
-  existing.fileKeys.add(fileKey);
-  existing.undatedKeys.add(slugAz);
+}
+
+/**
+ * File name of a newly fetched decision: its RIS document number, unique by
+ * construction (case numbers are not — see ExistingDocs).
+ */
+export function decisionFileName(dokNr: string): string {
+  return `${dokNr.toLowerCase()}.md`;
 }
 
 // ---------------------------------------------------------------------------

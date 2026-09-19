@@ -54,6 +54,7 @@ import {
   wrapChunkForEmbedding,
 } from "./embedding-context.ts";
 import {
+  DEFAULT_SYNOPSIS_MODEL,
   generatePerChunkSynopsis,
   SYNOPSIS_PROMPT_VERSION,
   type GeneratePerChunkSynopsisResult,
@@ -196,7 +197,9 @@ export interface ReembedPageArgs {
   releaseSynopsisLease?: () => Promise<void>;
 }
 
-const DEFAULT_HAIKU_MODEL = "openrouter:deepseek/deepseek-chat";
+// Same constant as the synopsis generator and import-file, so the
+// corpus_generation hash written at import matches the one written on reindex.
+const DEFAULT_HAIKU_MODEL = DEFAULT_SYNOPSIS_MODEL;
 
 /**
  * Re-embed one page through the active CR mode. Implements the D26 P0-2

@@ -24,6 +24,7 @@
  * as P2 items in the plan file.
  */
 
+import { canonicalLookup } from "../../model-pricing.ts";
 import Anthropic from "@anthropic-ai/sdk";
 import type { MinionJobContext, MinionJob } from "../types.ts";
 import { UnrecoverableError } from "../types.ts";
@@ -187,7 +188,12 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // and overlay system prompt, allowed_tools, max_turns, and model.
     if (data.subagent_def) {
       const def = resolveSpecialist(data.subagent_def);
-      if (def) {
+      if (!def) {
+        // Fail closed: an unknown specialist used to fall through to the
+        // generic subagent with the FULL tool registry and no system prompt.
+        throw new Error(`unknown subagent_def "${data.subagent_def}"`);
+      }
+      {
         data.system = def.systemPrompt;
         if (!data.allowed_tools && def.allowedTools && def.allowedTools.length > 0) {
           data.allowed_tools = def.allowedTools;
@@ -222,9 +228,6 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           }
         }
       }
-      // Silently ignore unknown definitions so the handler falls back to
-      // the generic subagent behavior — this avoids breaking replay of old
-      // jobs if a definition is later renamed.
     }
 
     // v0.38 (S1.5 + S1.7) — capability-based gate replaces the v0.31.12
@@ -321,10 +324,13 @@ export function makeSubagentHandler(deps: SubagentDeps) {
             ? data._source_ids
             : undefined,
       });
-    const toolDefs =
-      data.allowed_tools && data.allowed_tools.length > 0
-        ? filterAllowedTools(registry, data.allowed_tools)
-        : registry;
+    // An explicit list — including an EMPTY list — is authoritative:
+    // `allowed_tools: []` means "no tools" (map/reduce extraction agents).
+    // Only an absent list falls back to the full registry. Treating `[]` as
+    // "absent" handed tool-free extraction agents every brain tool.
+    const toolDefs = Array.isArray(data.allowed_tools)
+      ? filterAllowedTools(registry, data.allowed_tools)
+      : registry;
 
     // v0.41 Approach C: render the final system prompt now that toolDefs
     // is known. Splices a deterministic tool-usage preamble listing each
@@ -445,6 +451,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         return {
           result: finalText,
           turns_count: assistantTurns,
+          model,
           stop_reason: "end_turn",
           tokens: tokenTotals,
         };
@@ -983,6 +990,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     return {
       result: finalText,
       turns_count: assistantTurns,
+      model,
       stop_reason: stopReason,
       tokens: tokenTotals,
     };
@@ -1520,6 +1528,17 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
         cache_read: usage.cache_read_tokens,
       });
       heartbeat("llm_call_completed", { turn_idx: turnIdx, tokens: usage });
+      // Budget gate for the gateway path (the only path in OpenRouter-only
+      // production). The legacy path reserves 5¢ BEFORE each call; here we
+      // charge the turn's real cost AFTER it, which bounds any overshoot to
+      // one turn. An exhausted owner aborts the loop.
+      const turnCents = gatewayTurnCostCents(modelStr || model, usage);
+      const reservation = await reserveBudget(engine, ctx.id, turnCents);
+      if (reservation.kind === "exhausted") {
+        throw new Error(
+          `budget exhausted: balance ${reservation.balance_at_attempt} cents, needed ${reservation.requested_cents}`
+        );
+      }
     },
     onToolCallStart: async (turnIdx, messageIdx, ordinal, toolName, input, providerToolCallId) => {
       // CRITICAL — read back the canonical gbrain_tool_use_id from RETURNING,
@@ -1591,6 +1610,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
   return {
     result: result.finalText,
     turns_count: result.totalTurns,
+    model,
     stop_reason: stopReason,
     tokens: {
       in: result.totalUsage.input_tokens,
@@ -1967,3 +1987,16 @@ export const __testing = {
   adaptContentBlocksToChatBlocks,
   loadPriorToolsV2,
 };
+
+/** Cost of one gateway turn in whole cents (min 1) from the canonical price
+ *  table; unknown models fall back to the legacy 5¢ per-turn estimate. */
+export function gatewayTurnCostCents(
+  modelId: string,
+  usage: { input_tokens?: number; output_tokens?: number; cache_read_tokens?: number }
+): number {
+  const price = canonicalLookup(modelId);
+  if (!price) return 5;
+  const input = (usage.input_tokens ?? 0) + (usage.cache_read_tokens ?? 0) * 0.1;
+  const usd = (input * price.input + (usage.output_tokens ?? 0) * price.output) / 1_000_000;
+  return Math.max(1, Math.ceil(usd * 100));
+}

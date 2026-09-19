@@ -510,6 +510,10 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     agenticRetrievalEnabled: opts.legalMode === true || opts.taxMode === true,
     queryPlanningEnabled: opts.legalMode === true || opts.taxMode === true,
   });
+  if (gather.diagnostics.pagesRetrievalFailed) {
+    // Surfaced to the lawyer via finalAnswerEvent (think/final-answer.ts).
+    warnings.push("RETRIEVAL_FAILED: page search unavailable — answer is not source-backed");
+  }
 
   // P0-SECR-002: Filter gathered evidence by verified matter scope. Uploaded
   // documents are commonly stored below `documents/...` and linked to a case
@@ -1161,7 +1165,14 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
         const ensembleMode: EnsembleMode =
           opts.searchMode === "conservative" ? "strict" : "standard";
         // Extract §-citation strings from the answer text for ensemble verification
-        const citationStrings = response.answer.match(/§\s*\d+[a-z]?\s+[A-Z][A-Za-z]{1,10}/g) ?? [];
+        // "§ 1295 Abs 1 ABGB" must yield the statute "ABGB", not "Abs".
+        const citationStrings = [
+          ...new Set(
+            response.answer.match(
+              /§§?\s*\d+[a-z]?(?:\s+(?:Abs\.?|Absatz|Satz|S\.|Z|Ziff\.?|Nr\.?|lit\.?)\s*\d*[a-z]?)*\s+(?!Abs\b|Satz\b|Nr\b|lit\b)[A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]{1,15}/g
+            ) ?? []
+          ),
+        ];
         if (citationStrings.length > 0) {
           try {
             ensembleVerification = await runEnsembleVerification({

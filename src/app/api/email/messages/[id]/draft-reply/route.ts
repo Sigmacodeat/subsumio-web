@@ -63,7 +63,8 @@ export const POST = createHandler(
 
     const result = await engineComplete(ctx.headers, {
       purpose: "email_reply_draft",
-      tier: "utility",
+      // Client-facing text: reasoning tier (the owner's quality-first rule).
+      tier: "reasoning",
       system: SYSTEM,
       prompt,
       maxTokens: 700,
