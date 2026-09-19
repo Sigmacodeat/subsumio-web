@@ -1,489 +1,179 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useToast } from "@/components/ui/toast";
-import { useLang } from "@/lib/use-lang";
-import {
-  Share2,
-  Plus,
-  Loader2,
-  AlertCircle,
-  Users,
-  FileText,
-  Settings,
-  Shield,
-  Clock,
-  CheckCircle2,
-  X,
-  Crown,
-  Pencil,
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Building2, FileText, FolderLock, Users } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { csrfFetch } from "@/lib/csrf";
-import type { SharedSpace, SpaceMember, SpaceResource } from "@/lib/shared-spaces";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { unwrapApiBody } from "@/lib/api-body";
+import { formatDate } from "@/lib/utils";
 
-const roleBadge: Record<string, string> = {
-  owner:
-    "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)] border-[color:var(--ds-category-purple-border)]",
-  admin:
-    "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
-  editor:
-    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
-  viewer:
-    "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
-};
+interface HostedRoom {
+  id: string;
+  title: string;
+  case_slug: string;
+  documents: number;
+  members: number;
+  created_at: string;
+}
 
-const statusBadge: Record<string, string> = {
-  active:
-    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
-  pending:
-    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
-  revoked:
-    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
-};
+interface GuestRoom {
+  id: string;
+  title: string;
+  host_firm: string;
+  documents: number;
+  expires_at?: string;
+}
 
-const resourceIcon: Record<string, typeof FileText> = {
-  document: FileText,
-  case: Users,
-  playbook: Settings,
-  contract: Shield,
-  folder: FileText,
-};
-
-export default function SharedSpacesPage() {
-  const { addToast } = useToast();
-  const { t } = useLang();
-  const [spaces, setSpaces] = useState<SharedSpace[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [selectedSpace, setSelectedSpace] = useState<SharedSpace | null>(null);
-  const [creating, setCreating] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await csrfFetch("/api/shared-spaces");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setSpaces(Array.isArray(json.data) ? json.data : []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unbekannter Fehler");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+/**
+ * Data rooms (lib/data-rooms.ts): matters this firm shares with other firms,
+ * and matters other firms shared with it. A room is opened from the matter's
+ * "Zugriff & Freigaben" page.
+ */
+export default function DataRoomsPage() {
+  const [hosted, setHosted] = useState<HostedRoom[] | null>(null);
+  const [guest, setGuest] = useState<GuestRoom[]>([]);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    const handler = () => setShowCreate(true);
-    window.addEventListener("subsumio:create-space", handler);
-    return () => window.removeEventListener("subsumio:create-space", handler);
-  }, []);
-
-  const handleCreate = async (title: string, description: string) => {
-    setCreating(true);
-    try {
-      const res = await csrfFetch("/api/shared-spaces", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description }),
+    fetch("/api/data-rooms")
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        const body = unwrapApiBody<{ hosted: HostedRoom[]; shared_with_us: GuestRoom[] }>(
+          await res.json()
+        );
+        setHosted(body.hosted ?? []);
+        setGuest(body.shared_with_us ?? []);
+      })
+      .catch(() => {
+        setError(true);
+        setHosted([]);
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `HTTP ${res.status}`);
-      }
-      await load();
-      setShowCreate(false);
-      addToast({ type: "success", description: "Shared Space erstellt" });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erstellung fehlgeschlagen");
-      addToast({ type: "error", description: "Erstellung fehlgeschlagen" });
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div
-        className="flex min-h-[60vh] items-center justify-center"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
-      </div>
-    );
-  }
-
-  if (error && spaces.length === 0) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="h-12 w-12 text-[color:var(--ds-danger-text)]" />
-        <p className="text-[color:var(--ds-text-muted)]">
-          {t("shared.err_load")}: {error}
-        </p>
-        <Button onClick={load} variant="outline">
-          Erneut versuchen
-        </Button>
-      </div>
-    );
-  }
+  }, []);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1100px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={t("shared.title")}
-        description={t("shared.description")}
-        breadcrumbs={[
-          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: t("shared.title") },
-        ]}
-        actions={
-          <Button onClick={() => setShowCreate(true)} size="sm">
-            <Plus className="mr-1.5 h-4 w-4" />
-            Neuer Space
-          </Button>
-        }
+        title="Datenräume"
+        description="Unterlagen einer Akte gezielt mit anderen Kanzleien teilen – Korrespondenzanwalt, Mitverteidigung, Gegenseite. Nur freigegebene Dokumente, befristbar, jeder Abruf protokolliert."
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Datenräume" }]}
       />
 
       {error && (
-        <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-4">
-          <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
-          </div>
-        </Card>
-      )}
-
-      {spaces.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center gap-4 p-12">
-          <Share2 className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
-          <h2 className="text-xl font-semibold">Keine Shared Spaces vorhanden</h2>
-          <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
-            Legen Sie einen geteilten Bereich an, um Dokumente, Akten und Playbooks mit anderen
-            Organisationen zu teilen.
-          </p>
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="mr-1.5 h-4 w-4" />
-            Ersten Space erstellen
-          </Button>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {spaces.map((space) => (
-            <SpaceCard key={space.slug} space={space} onClick={() => setSelectedSpace(space)} />
-          ))}
-        </div>
-      )}
-
-      {showCreate && (
-        <CreateSpaceModal
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreate}
-          creating={creating}
-        />
-      )}
-
-      {selectedSpace && (
-        <SpaceDetailModal space={selectedSpace} onClose={() => setSelectedSpace(null)} />
-      )}
-    </div>
-  );
-}
-
-function SpaceCard({ space, onClick }: { space: SharedSpace; onClick: () => void }) {
-  const activeMembers = space.members.filter((m) => m.status === "active").length;
-  const pendingMembers = space.members.filter((m) => m.status === "pending").length;
-
-  return (
-    <Card className="group cursor-pointer p-5 transition-shadow hover:shadow-md" onClick={onClick}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <div className="bg-brand/10 flex h-10 w-10 items-center justify-center rounded-lg">
-            <Share2 className="text-brand h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-[color:var(--ds-text)]">{space.title}</h3>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">
-              {new Date(space.created_at).toLocaleDateString("de-DE")}
-            </p>
-          </div>
-        </div>
-        <Badge variant="default" className={roleBadge[space.members[0]?.role ?? "viewer"]}>
-          {space.members[0]?.role ?? "viewer"}
-        </Badge>
-      </div>
-
-      {space.description && (
-        <p className="mt-3 line-clamp-2 text-sm text-[color:var(--ds-text-muted)]">
-          {space.description}
+        <p className="text-sm text-[color:var(--ds-danger-text)]">
+          Die Datenräume konnten nicht geladen werden.
         </p>
       )}
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
-        <span className="flex items-center gap-1">
-          <Users className="h-3.5 w-3.5" />
-          {activeMembers} aktiv{pendingMembers > 0 && ` · ${pendingMembers} ausstehend`}
-        </span>
-        <span className="flex items-center gap-1">
-          <FileText className="h-3.5 w-3.5" />
-          {space.resources.length} Ressourcen
-        </span>
-      </div>
-    </Card>
-  );
-}
-
-function CreateSpaceModal({
-  onClose,
-  onCreate,
-  creating,
-}: {
-  onClose: () => void;
-  onCreate: (title: string, description: string) => void;
-  creating: boolean;
-}) {
-  const { t } = useLang();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.trim()) onCreate(title.trim(), description.trim());
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="w-full max-w-md p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t("shared.new_title")}</h2>
-          <button
-            onClick={onClose}
-            className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">{t("shared.label_title")}</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("shared.title_placeholder")}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-              required
-              maxLength={100}
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">{t("shared.label_desc")}</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("shared.desc_placeholder")}
-              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-              rows={3}
-              maxLength={500}
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={creating}>
-              {t("shared.cancel")}
-            </Button>
-            <Button type="submit" disabled={creating || !title.trim()}>
-              {creating ? (
-                <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  {t("shared.creating")}
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  {t("shared.create")}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </div>
-  );
-}
-
-function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="max-h-[85vh] w-full max-w-2xl overflow-y-auto p-6">
-        <div className="mb-4 flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-brand/10 flex h-12 w-12 items-center justify-center rounded-lg">
-              <Share2 className="text-brand h-6 w-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold">{space.title}</h2>
-              {space.description && (
-                <p className="mt-0.5 text-sm text-[color:var(--ds-text-muted)]">
-                  {space.description}
-                </p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="mb-6 flex flex-wrap gap-4 text-xs text-[color:var(--ds-text-muted)]">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            Erstellt: {new Date(space.created_at).toLocaleString("de-DE")}
-          </span>
-          <span className="flex items-center gap-1">
-            <Pencil className="h-3.5 w-3.5" />
-            Aktualisiert: {new Date(space.updated_at).toLocaleString("de-DE")}
-          </span>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <Users className="h-4 w-4" />
-            Mitglieder ({space.members.length})
-          </h3>
-          <div className="space-y-2">
-            {space.members.map((member: SpaceMember, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2"
-              >
-                <div className="flex items-center gap-2">
-                  {member.role === "owner" && (
-                    <Crown className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
-                  )}
-                  <div>
-                    <p className="text-sm font-medium">{member.org_name}</p>
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      Eingeladen von {member.invited_by}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className={statusBadge[member.status]}>
-                    {member.status}
-                  </Badge>
-                  <Badge variant="default" className={roleBadge[member.role]}>
-                    {member.role}
-                  </Badge>
-                </div>
-              </div>
+      <section aria-labelledby="shared-with-us" className="space-y-3">
+        <h2 id="shared-with-us" className="text-sm font-semibold text-[color:var(--ds-text)]">
+          Mit uns geteilt
+        </h2>
+        {hosted === null ? (
+          <Skeleton className="h-20 w-full" />
+        ) : guest.length === 0 ? (
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Keine andere Kanzlei hat Ihnen derzeit Unterlagen freigegeben.
+          </p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {guest.map((r) => (
+              <RoomCard
+                key={r.id}
+                href={`/dashboard/shared-spaces/${r.id}`}
+                title={r.title}
+                subtitle={r.host_firm}
+                icon={Building2}
+                facts={[
+                  `${r.documents} Dokument${r.documents === 1 ? "" : "e"}`,
+                  r.expires_at ? `bis ${formatDate(r.expires_at)}` : "unbefristet",
+                ]}
+              />
             ))}
           </div>
-        </div>
+        )}
+      </section>
 
-        <div className="mb-6">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <FileText className="h-4 w-4" />
-            Ressourcen ({space.resources.length})
-          </h3>
-          {space.resources.length === 0 ? (
-            <EmptyState
-              icon={FileText}
-              title="Noch keine Ressourcen geteilt"
-              description="Fügen Sie Dokumente, Akten oder Playbooks hinzu."
-              className="py-8"
-            />
-          ) : (
-            <div className="space-y-2">
-              {space.resources.map((resource: SpaceResource, i) => {
-                const Icon = resourceIcon[resource.type] ?? FileText;
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-                      <div>
-                        <p className="text-sm font-medium">{resource.title}</p>
-                        <p className="text-xs text-[color:var(--ds-text-muted)]">
-                          Geteilt von {resource.shared_by} ·{" "}
-                          {new Date(resource.shared_at).toLocaleDateString("de-DE")}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="default">{resource.permissions}</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <Settings className="h-4 w-4" />
-            Einstellungen
-          </h3>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <div className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2">
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Standard-Berechtigung</p>
-              <p className="mt-0.5 text-sm font-medium capitalize">
-                {space.settings.default_permission}
-              </p>
-            </div>
-            <div className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2">
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Mitglieder-Einladung</p>
-              <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
-                {space.settings.allow_member_invite ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" />{" "}
-                    Erlaubt
-                  </>
-                ) : (
-                  <>
-                    <X className="h-3.5 w-3.5 text-[color:var(--ds-danger-text)]" /> Gesperrt
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2">
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Ressourcen-Freigabe</p>
-              <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
-                {space.settings.require_approval_for_resources ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" />{" "}
-                    Genehmigung nötig
-                  </>
-                ) : (
-                  <>
-                    <X className="h-3.5 w-3.5 text-[color:var(--ds-danger-text)]" /> Frei
-                  </>
-                )}
-              </p>
-            </div>
+      <section aria-labelledby="hosted" className="space-y-3">
+        <h2 id="hosted" className="text-sm font-semibold text-[color:var(--ds-text)]">
+          Von uns geteilt
+        </h2>
+        {hosted === null ? (
+          <Skeleton className="h-20 w-full" />
+        ) : hosted.length === 0 ? (
+          <EmptyState
+            icon={FolderLock}
+            title="Noch kein Datenraum"
+            description="Öffnen Sie eine Akte, dann „Zugriff & Freigaben“ (Schild-Symbol im Aktenkopf) und legen Sie dort den Datenraum an."
+          />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {hosted.map((r) => (
+              <RoomCard
+                key={r.id}
+                href={`/dashboard/shared-spaces/${r.id}`}
+                title={r.title}
+                subtitle={`angelegt ${formatDate(r.created_at)}`}
+                icon={FolderLock}
+                facts={[
+                  `${r.documents} Dokument${r.documents === 1 ? "" : "e"}`,
+                  `${r.members} Person${r.members === 1 ? "" : "en"}`,
+                ]}
+              />
+            ))}
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose}>
-            Schließen
-          </Button>
-        </div>
-      </Card>
+        )}
+      </section>
     </div>
+  );
+}
+
+function RoomCard({
+  href,
+  title,
+  subtitle,
+  icon: Icon,
+  facts,
+}: {
+  href: string;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  facts: string[];
+}) {
+  return (
+    <Link
+      href={href}
+      className="group block rounded-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+    >
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <Icon size={16} aria-hidden="true" className="text-[color:var(--brand-primary)]" />
+            <span className="truncate">{title}</span>
+            <ArrowRight
+              size={14}
+              aria-hidden="true"
+              className="ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+            />
+          </CardTitle>
+          <CardDescription>{subtitle}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex gap-4 pt-0 text-xs text-[color:var(--ds-text-muted)]">
+          {facts.map((f, i) => (
+            <span key={f} className="inline-flex items-center gap-1">
+              {i === 0 ? (
+                <FileText size={12} aria-hidden="true" />
+              ) : (
+                <Users size={12} aria-hidden="true" />
+              )}
+              {f}
+            </span>
+          ))}
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

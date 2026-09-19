@@ -58,9 +58,23 @@ Die Regel steht zweimal im Code und ist per Test gleichgeschaltet:
 - `chat-sessions/` ist aus Suche und Copilot-Recherche ausgeschlossen
   (`DEFAULT_HARD_EXCLUDES`): alte Antworten sind nie Beleg für neue.
 
+## Datenräume: Freigaben an andere Kanzleien
+
+- Pro Akte ein Datenraum (`src/lib/data-rooms.ts`, API `/api/data-rooms`,
+  Seiten unter `/dashboard/shared-spaces`). Anlegen und verwalten darf, wer die
+  Akte ändern darf; geöffnet wird er auf „Zugriff & Freigaben“.
+- Geteilt werden nur ausdrücklich gewählte Dokumente der Akte. Die Dokumente
+  bleiben im Datenraum (brain) der Ursprungskanzlei; Gäste erhalten keinen
+  Engine-Zugang. Jeder Abruf läuft über `/api/data-rooms/[id]/document`, das
+  die Mitgliedschaft prüft, nur gelistete Dokumente ausliefert und den Abruf
+  im Audit-Log der Ursprungskanzlei festhält.
+- Einladung per E-Mail; annehmen kann nur ein angemeldetes Konto mit genau
+  dieser Adresse, das zu einer anderen Kanzlei gehört. Einmal-Link, optional
+  befristet, jederzeit entziehbar. Raum, Dokumentliste und Mitglieder liegen
+  in der Postgres der Web-App (`subsumio_data_room*`).
+
 ## Noch nicht abgedeckt
 
-- Freigaben an andere Kanzleien (Korrespondenzanwalt, Datenraum). Nur
-  Mitglieder der eigenen Kanzlei können eingetragen werden.
+- Gäste können im Datenraum nur lesen (kein Hochladen, keine Kommentare).
 - Pfade ohne Personenbezug (Cron, Webhooks, WhatsApp) laufen weiter ohne
   Nutzer-Token; WhatsApp begrenzt den Aktenumfang über die Identität der Nummer.

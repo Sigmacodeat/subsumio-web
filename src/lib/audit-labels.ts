@@ -19,6 +19,12 @@ export type AuditAction =
   | "case.create"
   | "case.update"
   | "matter.access_update"
+  | "data_room.create"
+  | "data_room.share"
+  | "data_room.invite"
+  | "data_room.accept"
+  | "data_room.revoke"
+  | "data_room.access"
   | "trust.booking"
   | "trust.reversal"
   | "trust.reconciliation"
@@ -313,6 +319,12 @@ const ACTION_LABELS: Record<string, string> = {
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
   "matter.access_update": "Aktenzugriff geändert",
+  "data_room.create": "Datenraum angelegt",
+  "data_room.share": "Dokumente im Datenraum geändert",
+  "data_room.invite": "In Datenraum eingeladen",
+  "data_room.accept": "Datenraum-Einladung angenommen",
+  "data_room.revoke": "Datenraum-Zugang entzogen",
+  "data_room.access": "Dokument im Datenraum abgerufen",
   "trust.booking": "Treuhandbuchung erfasst",
   "trust.reversal": "Treuhandbuchung storniert",
   "trust.reconciliation": "Treuhandkonto abgeglichen",

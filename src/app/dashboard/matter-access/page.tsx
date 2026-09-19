@@ -3,7 +3,17 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Eye, History, Loader2, Lock, ShieldAlert, UserPlus, Users, X } from "lucide-react";
+import {
+  Eye,
+  FolderLock,
+  History,
+  Loader2,
+  Lock,
+  ShieldAlert,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -172,6 +182,27 @@ function MatterAccessContent() {
     if (ok) {
       setGrantUser("");
       setGrantUntil("");
+    }
+  }
+
+  async function openDataRoom() {
+    setSaving(true);
+    try {
+      const res = await csrfFetch("/api/data-rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case_slug: caseSlug }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok)
+        throw new Error(
+          json?.error?.message ?? L("Datenraum nicht verfügbar", "Data room unavailable")
+        );
+      const { id } = unwrapApiBody<{ id: string }>(json);
+      window.location.assign(`/dashboard/shared-spaces/${encodeURIComponent(id)}`);
+    } catch (err) {
+      addToast({ type: "error", title: err instanceof Error ? err.message : String(err) });
+      setSaving(false);
     }
   }
 
@@ -494,6 +525,30 @@ function MatterAccessContent() {
               )}
             </CardContent>
           </Card>
+
+          {/* Sharing with other firms */}
+          {state.can_grant && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FolderLock size={16} aria-hidden="true" />
+                  {L("Mit anderen Kanzleien teilen", "Share with other firms")}
+                </CardTitle>
+                <CardDescription>
+                  {L(
+                    "Ein Datenraum gibt einzelne Dokumente dieser Akte an Personen anderer Kanzleien frei – befristbar, widerrufbar, jeder Abruf protokolliert.",
+                    "A data room shares selected documents of this matter with people at other firms — time-limited, revocable, every access logged."
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" disabled={saving} onClick={() => void openDataRoom()}>
+                  <FolderLock size={14} className="mr-2" aria-hidden="true" />
+                  {L("Datenraum öffnen", "Open data room")}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* History */}
           <Card>
