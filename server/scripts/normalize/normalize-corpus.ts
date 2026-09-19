@@ -106,6 +106,8 @@ export function clean(v: string | null | undefined): string | null {
   // Tabulatoren und Zeilenumbrüche. Die frühere Fassung fasste nur
   // mehrfache Leerzeichen zusammen, wodurch 39 Titel einen Tabulator
   // behielten und als Zitier-Label mit \t in der Datenbank landeten.
+  // Escape sequences written literally by an old fetcher ("VGW-111/2021\t").
+  s = s.replace(/\\[tnr]/g, " ");
   s = s.replace(/\s+/g, " ");
   s = s.replace(/^["']|["']$/g, "");
   s = s.trim();
@@ -201,23 +203,31 @@ function sourceFormatOf(fm: Record<string, string>, url: string): SourceFormat {
   return "unknown";
 }
 
+/** The RIS document number a URL points at, decoded ("…%c3%84S…" → "…ÄS…"). */
+export function risDocNumberOf(url: string): string | null {
+  const m = url.match(/Dokumentnummer=([^&"'\s]+)/) ?? url.match(/\/Dokumente\/[^/]+\/([^/]+)\//);
+  if (!m) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return m[1];
+  }
+}
+
 function docIdOf(fm: Record<string, string>, url: string): string {
+  // The text was fetched from the source URL, so the document number in that
+  // URL names the content. An id field written by an older fetcher could
+  // disagree: VwGH pages labelled "…L03" carried the text of Rechtssatz
+  // "…L01". The URL wins; the other id is kept in doc_id_alt.
+  const fromUrl = risDocNumberOf(url);
+  if (fromUrl) return fromUrl;
   const direct = pick(fm, "document_id", "dokumentnummer", "doc_id", "nor_id", "celex");
   if (direct) return direct;
   const id = clean(fm.id);
   if (id) return id.replace(/^ris-/, "");
-  // Bis zum Trennzeichen lesen, dann dekodieren: Dokumentnummern enthalten
-  // prozent-kodierte Umlaute (GEMRE_ST_60101_Pr%c3%a4s_… = "…Präs…"). Ein
-  // Muster wie [A-Za-z0-9_]+ bricht am % ab und verschmilzt verschiedene
-  // Gesetze zu einer ID — bei at-gemeinden betrifft das 177 Dateien.
-  const m = url.match(/Dokumentnummer=([^&"'\s]+)/) ?? url.match(/\/Dokumente\/[^/]+\/([^/]+)\//);
-  if (m) {
-    try {
-      return decodeURIComponent(m[1]);
-    } catch {
-      return m[1];
-    }
-  }
+  // Percent-encoded umlauts are decoded in risDocNumberOf (GEMRE_…_Pr%c3%a4s_…
+  // = "…Präs…"); a pattern like [A-Za-z0-9_]+ would stop at the % and merge
+  // different laws into one id.
   const eli = clean(fm.eli);
   if (eli) {
     const e = eli.match(/\/(NOR\d+|LNO\d+)$/);
@@ -379,7 +389,11 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     keywords: [...new Set(keywords)],
 
     source: clean(fm.source) ?? "ris-ogd",
-    source_url: url,
+    // A link a lawyer can open: RIS API queries become the document page.
+    source_url:
+      /data\.bka\.gv\.at\/ris\/api\//.test(url) && /^NOR\d+$/.test(docId)
+        ? `https://www.ris.bka.gv.at/Dokumente/Bundesnormen/${docId}/${docId}.html`
+        : url,
     source_format: sourceFormatOf(fm, url),
     retrieved_at: toIsoDate(fm.retrieved_at) ?? toIsoDate(fm.version_date),
     license: clean(fm.license),

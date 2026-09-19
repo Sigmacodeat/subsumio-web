@@ -251,3 +251,57 @@ BGBl. II Nr. 126/2025 aufgehoben durch BGBl. II Nr. 185/2026
     expect(mapToCanonical(parseRaw(dec), "x").abbr).toBeNull();
   });
 });
+
+describe("normalizer v3: identity and links", () => {
+  test("doc_id follows the RIS URL the text came from; the other id is kept as alternate", () => {
+    const raw = `---
+type: court_decision
+court: VwGH
+case_number: Ra 2024/11/0169
+id: ris-JWR_2024110169_20250429L03
+source_url: https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Vwgh&Dokumentnummer=JWR_2024110169_20250429L01
+---
+
+## Rechtssatz
+
+§ 47 Abs. 2a KFG 1967 verlangt die Glaubhaftmachung eines rechtlichen Interesses.
+`;
+    const c = mapToCanonical(parseRaw(raw), "x");
+    expect(c.doc_id).toBe("JWR_2024110169_20250429L01");
+    expect(c.doc_id_alt).toContain("JWR_2024110169_20250429L03");
+  });
+
+  test("percent-encoded umlauts in the URL are decoded", () => {
+    const raw = `---
+type: court_decision
+source_url: https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=JJR_19300128_OGH0002_000R%c3%84S00370_2900000_001
+---
+
+Text
+`;
+    expect(mapToCanonical(parseRaw(raw), "x").doc_id).toBe(
+      "JJR_19300128_OGH0002_000RÄS00370_2900000_001"
+    );
+  });
+
+  test("an API query link becomes the document page; literal \\t escapes are removed", () => {
+    const raw = `---
+type: law
+nor_id: NOR30000281
+case_number: "VGW-111/093/14138/2021\\\\t"
+source_url: https://data.bka.gv.at/ris/api/v2.6/Bundesrecht?Applikation=BrKons&Gesetzesnummer=20000249
+---
+
+§ 1. Text
+`;
+    const c = mapToCanonical(parseRaw(raw), "x");
+    expect(c.source_url).toBe(
+      "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR30000281/NOR30000281.html"
+    );
+  });
+
+  test("clean() drops literal escape sequences", async () => {
+    const { clean } = await import("../scripts/normalize/normalize-corpus.ts");
+    expect(clean("VGW-111/093/14138/2021\\t")).toBe("VGW-111/093/14138/2021");
+  });
+});
