@@ -22,14 +22,18 @@
 
 import { countCJKAwareWords } from "../cjk.ts";
 
-export const LEGAL_DECISION_CHUNKER_VERSION = 6;
+export const LEGAL_DECISION_CHUNKER_VERSION = 7;
 
-/** Target words per chunk for long sections. */
-const DECISION_CHUNK_SIZE = 600;
+/**
+ * Target words per chunk for long sections. ~350 German words ≈ 500 tokens:
+ * a citation then points at one passage, not two pages. At 600 words / 6 000
+ * characters, 46 % of BVwG chunks sat at the 1 500-token ceiling.
+ */
+const DECISION_CHUNK_SIZE = 350;
 /** Overlap words between chunks. */
-const DECISION_CHUNK_OVERLAP = 60;
+const DECISION_CHUNK_OVERLAP = 50;
 /** Hard cap on chunk character length. */
-const DECISION_MAX_CHARS = 6000;
+const DECISION_MAX_CHARS = 3500;
 
 /** Section headings we recognize in court decision markdown.
  *  These match the heading TEXT (without the ## prefix). */
@@ -388,6 +392,19 @@ export function chunkLegalDecision(
       }
     }
     flushOther();
+  }
+
+  // The header (court, date, case number, cited norms) goes in front of the
+  // first content chunk instead of standing alone. Alone it was a 20–60 word
+  // chunk on every one of 135 000 short VwGH Rechtssätze — noise for search,
+  // and the Rechtssatz lost the norms it applies.
+  if (chunks.length > 1 && chunks[0].metadata.chunk_role === "metadata") {
+    const header = chunks[0].text;
+    const first = chunks[1];
+    if (header.length + first.text.length + 2 <= DECISION_MAX_CHARS) {
+      chunks.splice(0, 2, { ...first, text: `${header}\n\n${first.text}` });
+      chunks.forEach((c, i) => (c.index = i));
+    }
   }
 
   // If we only produced a metadata chunk + nothing else, or no chunks at all,

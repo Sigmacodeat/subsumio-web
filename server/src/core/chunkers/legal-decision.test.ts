@@ -94,13 +94,21 @@ describe("legal-decision chunker", () => {
     expect(leitsatz!.text).toContain("Sachverständigen");
   });
 
-  it("emits a metadata chunk combining short metadata sections", () => {
+  it("puts the header in front of the first content chunk instead of a chunk of its own", () => {
     const chunks = chunkLegalDecision(SAMPLE_DECISION, BASE_META);
-    const meta = chunks.find((c) => c.metadata.chunk_role === "metadata");
-    expect(meta).toBeDefined();
-    expect(meta!.text).toContain("OGH");
-    expect(meta!.text).toContain("RS0026645");
-    expect(meta!.text).toContain("22.04.2026");
+    expect(chunks.find((c) => c.metadata.chunk_role === "metadata")).toBeUndefined();
+    expect(chunks[0].text).toContain("OGH");
+    expect(chunks[0].text).toContain("RS0026645");
+    expect(chunks[0].text).toContain("22.04.2026");
+    expect(chunks.map((c) => c.index)).toEqual(chunks.map((_, i) => i));
+  });
+
+  it("keeps chunks near 500 tokens: no chunk above 3 500 characters", () => {
+    const long = SAMPLE_DECISION.replace(
+      /## Rechtssatz\n/,
+      `## Rechtssatz\n${"Der Oberste Gerichtshof hat erwogen, dass die Revision berechtigt ist. ".repeat(400)}\n`
+    );
+    for (const c of chunkLegalDecision(long, BASE_META)) expect(c.text.length).toBeLessThanOrEqual(3600);
   });
 
   it("emits entscheidungstext chunks for each TE entry", () => {
@@ -208,7 +216,7 @@ Die Beklagte wird verurteilt, an den Kläger 5.000 Euro nebst Zinsen zu zahlen.`
   });
 
   it("exports LEGAL_DECISION_CHUNKER_VERSION", () => {
-    expect(LEGAL_DECISION_CHUNKER_VERSION).toBe(6);
+    expect(LEGAL_DECISION_CHUNKER_VERSION).toBe(7);
   });
 
   it("handles DE jurisdiction with different section names", () => {

@@ -21,12 +21,12 @@
  *   3. Each chunk carries metadata: paragraph ref, statute abbr, jurisdiction,
  *      absatz number, chunk_role (full | absatz | remainder).
  *
- * BUMP: LEGAL_CHUNKER_VERSION = 4 — forces re-chunk of existing legal pages.
+ * BUMP: LEGAL_CHUNKER_VERSION = 5 — forces re-chunk of existing legal pages.
  */
 
 import { countCJKAwareWords } from "../cjk.ts";
 
-export const LEGAL_CHUNKER_VERSION = 4;
+export const LEGAL_CHUNKER_VERSION = 5;
 
 /** Target words per chunk for long §§ (lower than generic: legal text is
  *  dense, precision > coverage). */
@@ -34,7 +34,9 @@ const LEGAL_CHUNK_SIZE = 250;
 /** Overlap words between chunks of the same §. */
 const LEGAL_CHUNK_OVERLAP = 30;
 /** Hard cap on chunk character length (embed limit safety). */
-const LEGAL_MAX_CHARS = 6000;
+// 3 500 like the decision chunker: long Absätze and Anlagen reached 6 000
+// characters (~1 500 tokens), too coarse for a precise citation.
+const LEGAL_MAX_CHARS = 3500;
 /** A § body under this many words is emitted as a single chunk. */
 const SINGLE_CHUNK_WORD_THRESHOLD = 300;
 /** A § body under this many chars is emitted as a single chunk. */

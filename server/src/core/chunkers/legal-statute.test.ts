@@ -240,7 +240,7 @@ describe("legal-statute chunker", () => {
   });
 
   it("exports LEGAL_CHUNKER_VERSION", () => {
-    expect(LEGAL_CHUNKER_VERSION).toBe(4);
+    expect(LEGAL_CHUNKER_VERSION).toBe(5);
   });
 
   it("handles CH jurisdiction with Art. references", () => {
