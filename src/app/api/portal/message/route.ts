@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { ENGINE_URL } from "@/lib/engine";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { portalMessageSlugPrefix } from "@/lib/portal-messages";
@@ -22,8 +23,8 @@ export const POST = createPublicHandler(
     rateLimitMax: 10,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, body, _query) => {
-    const access = await resolvePortalAccess(body.token);
+  async (req, body, _query) => {
+    const access = await resolvePortalAccess(portalToken(req, body.token));
     if (access instanceof Response) return access;
 
     const text = body.message.trim();

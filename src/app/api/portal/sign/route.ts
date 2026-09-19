@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
@@ -44,7 +45,7 @@ export const POST = createPublicHandler(
     }),
   },
   async (req, body) => {
-    const access = await resolvePortalAccess(body.token);
+    const access = await resolvePortalAccess(portalToken(req, body.token));
     if (access instanceof Response) return access;
     const { headers, caseSlug, payload } = access;
 

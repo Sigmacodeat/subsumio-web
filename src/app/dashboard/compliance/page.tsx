@@ -17,6 +17,7 @@ import {
   EyeOff,
   Database,
   FileClock,
+  ThumbsUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -295,6 +296,11 @@ export default function CompliancePage() {
         <HubLink href="/dashboard/anonymize" icon={EyeOff} label={t("nav.anonymize")} />
         <HubLink href="/dashboard/data-export" icon={Database} label={t("nav.data_export")} />
         <HubLink href="/dashboard/compliance/ai-act" icon={Bot} label="KI-Verordnung" />
+        <HubLink
+          href="/dashboard/compliance/answer-quality"
+          icon={ThumbsUp}
+          label="Antwortqualität"
+        />
       </div>
 
       {/* Honest framing: this is a maintained checklist, not an automated audit */}

@@ -1,4 +1,5 @@
 import { listEnginePages } from "@/lib/engine-pages";
+import { portalToken } from "@/lib/portal-session";
 import { z } from "zod";
 import { engineHeadersForBrain } from "@/lib/engine";
 import { apiError, createPublicHandler } from "@/lib/api-handler";
@@ -35,8 +36,8 @@ export const GET = createPublicHandler(
       details: { source: "portal" },
     }),
   },
-  async (_req, _body, query) => {
-    const payload = await verifyPortalToken(query.token);
+  async (req, _body, query) => {
+    const payload = await verifyPortalToken(portalToken(req, query.token));
     if (!payload) {
       return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
     }

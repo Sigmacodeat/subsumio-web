@@ -57,6 +57,7 @@ import {
   DEFAULT_EXAMPLE_QUERIES_EN,
   type ChatMessage,
   type ChatSession,
+  type AnswerDownReason,
   type ChatFeatures,
   type ChatContextType,
   type Jurisdiction,
@@ -2197,6 +2198,40 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const handleEditById = useCallback((messageId: string) => handleEdit(messageId), [handleEdit]);
   const handleReplyById = useCallback((messageId: string) => handleReply(messageId), [handleReply]);
 
+  // Rate an answer: shown at once, stored on the server with its question and
+  // sources (lib/answer-feedback.ts) and kept on the local message.
+  const handleFeedback = useCallback(
+    (messageId: string, rating: "up" | "down", reason?: AnswerDownReason) => {
+      const msgs = messagesRef.current;
+      const index = msgs.findIndex((m) => m.id === messageId);
+      const answer = msgs[index];
+      if (!answer) return;
+      const question =
+        [...msgs.slice(0, index)].reverse().find((m) => m.role === "user")?.content ?? "";
+      const feedback = { rating, ...(reason ? { reason } : {}) };
+      const rated = { ...answer, feedback };
+      setMessages((m) => m.map((x) => (x.id === messageId ? rated : x)));
+      if (persistHistory && activeSessionId) void saveMessage(activeSessionId, rated);
+      void csrfFetch("/api/copilot/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message_id: messageId,
+          rating,
+          ...(reason ? { reason } : {}),
+          question: question.slice(0, 2_000),
+          answer: answer.content.slice(0, 20_000),
+          citations: (answer.citations ?? []).map((c) => c.slug).slice(0, 50),
+          ...(selectedCaseSlug || context.caseSlug
+            ? { case_slug: selectedCaseSlug || context.caseSlug }
+            : {}),
+          ...(answer.model ? { model: answer.model } : {}),
+        }),
+      }).catch(() => {});
+    },
+    [setMessages, persistHistory, activeSessionId, selectedCaseSlug, context.caseSlug]
+  );
+
   // Follow-up suggestion click: send as new user message
   const handleFollowUp = useCallback(
     (query: string) => {
@@ -2398,6 +2433,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                         onToolCancel={handleToolCancel}
                         onToolRetry={handleToolRetry}
                         onFollowUp={handleFollowUp}
+                        onFeedback={msg.role === "assistant" ? handleFeedback : undefined}
                       />
                     </div>
                   );

@@ -54,6 +54,8 @@ export function PortalAppBar({ token }: { token: string }) {
       link.rel = "manifest";
       document.head.appendChild(link);
     }
+    // The manifest request must carry the session cookie (token "meine-akte").
+    link.crossOrigin = "use-credentials";
     link.href = href;
     return () => {
       if (previous) link!.setAttribute("href", previous);
@@ -131,6 +133,25 @@ export function PortalAppBar({ token }: { token: string }) {
     } finally {
       setPush("off");
     }
+  }
+
+  async function signOut() {
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/portal/push", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+    } catch {
+      // signing out must not depend on push
+    }
+    await fetch("/api/portal/session", { method: "DELETE" }).catch(() => {});
+    window.location.assign("/");
   }
 
   return (
@@ -219,6 +240,13 @@ export function PortalAppBar({ token }: { token: string }) {
           {error}
         </span>
       )}
+      <button
+        type="button"
+        onClick={() => void signOut()}
+        className="ml-auto text-xs [color:var(--mk-text-muted)] underline"
+      >
+        Von diesem Gerät abmelden
+      </button>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { PORTAL_SESSION_SLUG } from "@/lib/portal-session";
 import { PortalAppBar } from "@/components/portal/portal-app-bar";
 import {
   FileText,
@@ -122,8 +123,32 @@ interface SignableDoc {
 export default function PortalPage() {
   const { lang, t, setLang } = useLang();
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = decodeURIComponent(params.token as string);
+
+  // The link's token becomes a session cookie; the address changes to
+  // /portal/meine-akte so the token leaves the address bar and the history
+  // (lib/portal-session.ts). The portal routes read the cookie from then on.
+  useEffect(() => {
+    if (token === PORTAL_SESSION_SLUG) return;
+    let cancelled = false;
+    fetch("/api/portal/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    })
+      .then((res) => {
+        if (!res.ok || cancelled) return;
+        const search = window.location.search;
+        window.history.replaceState(null, "", `/portal/${PORTAL_SESSION_SLUG}${search}`);
+        router.replace(`/portal/${PORTAL_SESSION_SLUG}${search}`);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token, router]);
   const deepLinkSignSlug = searchParams.get("sign");
   const deepLinkType = searchParams.get("type") as
     | "signature_request"

@@ -34,7 +34,11 @@ export interface ChatMessage {
   replyTo?: { id: string; role: ChatRole; preview: string };
   toolCalls?: ToolCall[];
   grounding?: GroundingMetadata | null;
+  /** The reader's rating of this answer (lib/answer-feedback.ts). */
+  feedback?: { rating: "up" | "down"; reason?: AnswerDownReason };
 }
+
+export type AnswerDownReason = "wrong" | "missing_source" | "incomplete" | "other";
 
 export type ToolType =
   | "navigate"

@@ -1,4 +1,5 @@
 import { listEnginePages } from "@/lib/engine-pages";
+import { portalToken } from "@/lib/portal-session";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { apiError, createPublicHandler } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -126,7 +127,9 @@ export const POST = createPublicHandler(
       return apiError("document_password_too_long", "Dokumentkennwort ist zu lang.", 400);
     }
 
-    const payload = await verifyPortalToken(typeof token === "string" ? token : null);
+    const payload = await verifyPortalToken(
+      portalToken(req, typeof token === "string" ? token : null)
+    );
     if (!payload) {
       return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
     }

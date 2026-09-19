@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL } from "@/lib/engine";
@@ -44,8 +45,8 @@ export const GET = createPublicHandler(
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, _body, query) => {
-    const access = await resolvePortalAccess(query.token);
+  async (req, _body, query) => {
+    const access = await resolvePortalAccess(portalToken(req, query.token));
     if (access instanceof Response) return access;
     const { headers, caseSlug } = access;
 

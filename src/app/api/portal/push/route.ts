@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { resolvePortalAccess } from "@/lib/portal-access";
@@ -34,20 +35,21 @@ export const POST = createPublicHandler(
     rateLimitMax: 10,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, body) => {
+  async (req, body) => {
     if (!portalPushPublicKey()) {
       return apiError("push_unavailable", "Benachrichtigungen sind nicht eingerichtet.", 503);
     }
     if (!isPushServiceEndpoint(body.subscription.endpoint)) {
       return apiError("invalid_endpoint", "Unbekannter Benachrichtigungsdienst.", 400);
     }
-    const access = await resolvePortalAccess(body.token);
+    const token = portalToken(req, body.token);
+    const access = await resolvePortalAccess(token);
     if (access instanceof Response) return access;
     await savePortalSubscription({
       ...body.subscription,
       brainId: access.payload.brain_id,
       caseSlug: access.caseSlug,
-      portalPath: `/portal/${encodeURIComponent(body.token)}`,
+      portalPath: `/portal/${encodeURIComponent(token)}`,
     });
     return Response.json({ ok: true });
   }
@@ -63,8 +65,8 @@ export const DELETE = createPublicHandler(
     rateLimitMax: 10,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, body) => {
-    const access = await resolvePortalAccess(body.token);
+  async (req, body) => {
+    const access = await resolvePortalAccess(portalToken(req, body.token));
     if (access instanceof Response) return access;
     await removePortalSubscription(body.endpoint);
     return Response.json({ ok: true });

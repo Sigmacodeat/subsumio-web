@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { resolvePortalAccess } from "@/lib/portal-access";
@@ -22,13 +23,14 @@ export const POST = createPublicHandler(
     rateLimitMax: 5,
     rateLimitWindowMs: 60 * 60_000,
   },
-  async (_req, body) => {
-    const access = await resolvePortalAccess(body.token);
+  async (req, body) => {
+    const token = portalToken(req, body.token);
+    const access = await resolvePortalAccess(token);
     if (access instanceof Response) return access;
     const ok = await requestPortalNotify({
       headers: access.headers,
       caseSlug: access.caseSlug,
-      token: body.token,
+      token,
       email: body.email,
     });
     if (!ok) return apiError("save_failed", "Das hat leider nicht geklappt.", 502);
@@ -46,8 +48,8 @@ export const DELETE = createPublicHandler(
     rateLimitMax: 10,
     rateLimitWindowMs: 60 * 60_000,
   },
-  async (_req, body) => {
-    const access = await resolvePortalAccess(body.token);
+  async (req, body) => {
+    const access = await resolvePortalAccess(portalToken(req, body.token));
     if (access instanceof Response) return access;
     await removePortalNotify(access.headers, access.caseSlug, body.email);
     return Response.json({ ok: true });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { listPortalMessages } from "@/lib/portal-messages";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
@@ -20,8 +21,8 @@ export const GET = createPublicHandler(
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, _body, query) => {
-    const access = await resolvePortalAccess(query.token);
+  async (req, _body, query) => {
+    const access = await resolvePortalAccess(portalToken(req, query.token));
     if (access instanceof Response) return access;
     if (access.caseSlug !== query.caseSlug) {
       return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);

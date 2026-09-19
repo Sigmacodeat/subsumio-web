@@ -1,4 +1,5 @@
 import { verifyPortalToken } from "@/lib/portal-token";
+import { portalToken } from "@/lib/portal-session";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
  * that client's matter instead of the lawyers' dashboard.
  */
 export async function GET(req: Request): Promise<Response> {
-  const token = new URL(req.url).searchParams.get("token") ?? "";
+  const token = portalToken(req, new URL(req.url).searchParams.get("token"));
   const payload = await verifyPortalToken(token);
   if (!payload) return new Response("Not found", { status: 404 });
   const start = `/portal/${encodeURIComponent(token)}`;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portalToken } from "@/lib/portal-session";
 import { ENGINE_URL } from "@/lib/engine";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -31,9 +32,9 @@ export const GET = createPublicHandler(
     rateLimitMax: 60,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, _body, query) => {
+  async (req, _body, query) => {
     if (!query) return apiError("invalid_request", "Ungültige Anfrage", 400);
-    const access = await resolvePortalAccess(query.token);
+    const access = await resolvePortalAccess(portalToken(req, query.token));
     if (access instanceof Response) return access;
 
     const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(access.caseSlug)}`, {

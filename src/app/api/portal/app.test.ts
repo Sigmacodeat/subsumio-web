@@ -26,6 +26,7 @@ vi.mock("web-push", () => ({
 import * as documentRoute from "./document/route";
 import * as pushRoute from "./push/route";
 import * as manifestRoute from "./manifest/route";
+import * as sessionRoute from "./session/route";
 import { isPushServiceEndpoint, notifyPortalClients } from "@/lib/portal-push";
 
 const ENGINE = "http://localhost:3001";
@@ -135,5 +136,46 @@ describe("portal manifest", () => {
     expect(
       (await manifestRoute.GET(new Request("http://x/api/portal/manifest?token=bad"))).status
     ).toBe(404);
+  });
+});
+
+describe("portal session", () => {
+  it("swaps the link's token for an HttpOnly cookie the routes accept", async () => {
+    engine(openCase);
+    const res = await sessionRoute.POST(
+      new NextRequest("http://x/api/portal/session", {
+        method: "POST",
+        body: JSON.stringify({ token: "tok" }),
+      })
+    );
+    const cookie = res.headers.get("set-cookie") ?? "";
+    expect(cookie).toMatch(/^subsumio_portal=tok;/);
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("SameSite=Strict");
+
+    const withCookie = await documentRoute.GET(
+      new NextRequest("http://x/api/portal/document?token=meine-akte&slug=docs/urteil", {
+        headers: { cookie: "other=1; subsumio_portal=tok" },
+      })
+    );
+    expect(withCookie.status).toBe(200);
+    const without = await documentRoute.GET(
+      new NextRequest("http://x/api/portal/document?token=meine-akte&slug=docs/urteil")
+    );
+    expect(without.status).toBe(403);
+  });
+
+  it("refuses an invalid token and signs out", async () => {
+    const bad = await sessionRoute.POST(
+      new NextRequest("http://x/api/portal/session", {
+        method: "POST",
+        body: JSON.stringify({ token: "bad" }),
+      })
+    );
+    expect(bad.status).toBe(403);
+    const out = await sessionRoute.DELETE(
+      new NextRequest("http://x/api/portal/session", { method: "DELETE" })
+    );
+    expect(out.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 });
