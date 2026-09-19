@@ -36,6 +36,15 @@ import { AT_LAW_SOURCES_ALL } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
 import {
+  PRIVATE_CHAT_PREFIX,
+  callerMatterAccess,
+  matterScopeAllows,
+  privateChatDenies,
+  scopeForCaller,
+  withDeniedMatters,
+  type MatterAccessRow,
+} from "../core/matter-access.ts";
+import {
   isEngineError,
   NotFoundError as EngineNotFoundError,
   ConnectionError as EngineConnectionError,
@@ -179,6 +188,8 @@ declare global {
        * ethical wall enforcement.
        */
       userId?: string;
+      /** Matters the caller may read but not change (core/matter-access.ts). */
+      matterReadOnly?: string[];
       uploadTokenPayload?: UploadTokenPayload;
     }
   }
@@ -1547,13 +1558,7 @@ function isMatterScoped(
   slug: string,
   caseSlug?: string
 ): boolean {
-  if (scope === undefined || scope === "all") return true;
-  if (scope.length === 0) return false;
-  return scope.some((prefix) => {
-    const matches = (candidate: string) =>
-      candidate === prefix || candidate.startsWith(`${prefix}/`);
-    return matches(slug) || (caseSlug !== undefined && matches(caseSlug));
-  });
+  return matterScopeAllows(scope, slug, caseSlug);
 }
 
 function filterByMatterScope<
@@ -1610,6 +1615,75 @@ function matterScopeMiddleware(apiKey: string | undefined) {
  * the caller's source, and attaches the group UUIDs to req.aclGroups.
  * "all" = no ACL filtering (admin or no groups configured).
  */
+/**
+ * The access rules of every matter in a source that has any, cached briefly:
+ * the middleware runs on every request, and grants/walls change rarely.
+ * Writes to a case page clear the source's entry (see POST /api/pages).
+ */
+const MATTER_ACCESS_TTL_MS = 10_000;
+interface SourceAccess {
+  at: number;
+  rows: MatterAccessRow[];
+  /** Owner segments of private Copilot conversations (chat-sessions/private/<owner>/…). */
+  chatOwners: string[];
+}
+const matterAccessCache = new Map<string, SourceAccess>();
+
+export function invalidateMatterAccess(sourceId: string): void {
+  matterAccessCache.delete(sourceId);
+}
+
+async function sourceAccess(engine: BrainEngine, sourceId: string): Promise<SourceAccess> {
+  const cached = matterAccessCache.get(sourceId);
+  if (cached && Date.now() - cached.at < MATTER_ACCESS_TTL_MS) return cached;
+  const raw = await engine.executeRaw<{ slug: string; permissions: unknown }>(
+    `SELECT slug, frontmatter->'permissions' AS permissions
+       FROM pages
+      WHERE source_id = $1
+        AND type = 'legal_case'
+        AND deleted_at IS NULL
+        AND frontmatter->'permissions' IS NOT NULL`,
+    [sourceId]
+  );
+  const owners = await engine.executeRaw<{ owner: string }>(
+    `SELECT DISTINCT split_part(slug, '/', 3) AS owner
+       FROM pages
+      WHERE source_id = $1
+        AND slug LIKE $2
+        AND deleted_at IS NULL`,
+    [sourceId, `${PRIVATE_CHAT_PREFIX}%`]
+  );
+  const entry: SourceAccess = {
+    at: Date.now(),
+    rows: raw.map((r) => ({
+      slug: r.slug,
+      permissions: (typeof r.permissions === "string"
+        ? JSON.parse(r.permissions)
+        : r.permissions) as MatterAccessRow["permissions"],
+    })),
+    chatOwners: owners.map((o) => o.owner),
+  };
+  matterAccessCache.set(sourceId, entry);
+  return entry;
+}
+
+/**
+ * Refuses a write to a matter the caller may only read. Throws the same
+ * not-found style error as the scope check for matters they cannot see.
+ */
+function assertMatterWritable(req: Request, slug: string, caseSlug?: string): void {
+  const readOnly = req.matterReadOnly;
+  if (!readOnly || readOnly.length === 0) return;
+  const hit = readOnly.find((m) => matterScopeAllows([m], slug, caseSlug));
+  if (hit) {
+    throw new OperationError(
+      "matter_read_only",
+      `Matter ${hit} is read-only for this user.`,
+      "The caller was granted read access to this matter, not write access."
+    );
+  }
+}
+
 export function aclGroupsMiddleware(engine: BrainEngine) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -1636,15 +1710,33 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
         next();
         return;
       }
+      const sourceId = requestSourceId(req);
+      // A token is issued for one firm; never honour it for another.
+      if (payload.sourceId !== sourceId) {
+        res.status(403).json({
+          error: "identity_token_wrong_source",
+          message: "Identity token was issued for a different source.",
+        });
+        return;
+      }
       // Thread userId for ethical wall engine-layer enforcement
       req.userId = payload.userId;
-      // Admin users get unrestricted access
+      // Matter access (walls, restricted matters, grants) applies to every
+      // role, admins included — see core/matter-access.ts.
+      const known = await sourceAccess(engine, sourceId);
+      const access = callerMatterAccess({ userId: payload.userId, role: payload.role }, known.rows);
+      // Other people's private Copilot conversations are hidden from everyone.
+      req.matterScope = withDeniedMatters(
+        scopeForCaller(req.matterScope ?? "all", access),
+        privateChatDenies(known.chatOwners, payload.userId)
+      );
+      req.matterReadOnly = access.readOnly;
+      // Admin users get unrestricted document-level ACL access
       if (payload.role === "admin") {
         req.aclGroups = "all";
         next();
         return;
       }
-      const sourceId = requestSourceId(req);
       const { getUserGroups } = await import("../core/acl.ts");
       const groupIds = await getUserGroups(engine, payload.userId, sourceId);
       req.aclGroups = groupIds.length > 0 ? groupIds : "all";
@@ -3342,7 +3434,22 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         sourceId,
         readSourcesFor(req)
       );
-      const citations = filterByMatterScope(allCitations, matterScope);
+      // Shared law (statutes, decisions in the law-* sources) is public
+      // authority, not matter evidence: it stays citable inside a matter.
+      const sharedLawSlugs = new Set(
+        allCitations.length
+          ? (
+              await engine.executeRaw<{ slug: string }>(
+                `SELECT DISTINCT slug FROM pages
+                  WHERE slug = ANY($1::text[]) AND source_id LIKE 'law-%' AND deleted_at IS NULL`,
+                [allCitations.map((c) => c.slug)]
+              )
+            ).map((r) => r.slug)
+          : []
+      );
+      const citations = allCitations.filter(
+        (c) => sharedLawSlugs.has(c.slug) || isMatterScoped(matterScope, c.slug, c.case_slug)
+      );
       const gaps =
         matterScope !== "all"
           ? (result.gaps ?? []).filter((g) => {
@@ -4046,6 +4153,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const slugParam = req.params.slug;
       const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+      const deleteCaseSlug = readCaseSlug(pageForScope);
+      assertMatterScope(req.matterScope, slug, deleteCaseSlug);
+      assertMatterWritable(req, slug, deleteCaseSlug);
       const result = await invokeOp(
         engine,
         "delete_page",
@@ -4056,9 +4167,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         req.aclGroups ?? "all",
         req.userId
       );
+      if (pageForScope?.type === "legal_case") invalidateMatterAccess(requestSourceId(req));
       res.json(result);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
+      if (e instanceof OperationError && e.code === "matter_read_only") {
+        res.status(403).json({ error: e.code, message: msg });
+        return;
+      }
       const status =
         e instanceof EngineNotFoundError
           ? 404
@@ -4228,7 +4344,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       let existingContent: string | undefined;
       let existingTitle: string | undefined;
       let existingType: string | undefined;
-      if (merge) {
+      // A case page's access rules (frontmatter.permissions) are loaded for
+      // every case write, so they survive a full overwrite and only change
+      // through the web app's matter-access route (header below).
+      const touchesAccess =
+        merge || type === "legal_case" || Object.hasOwn(bodyFrontmatter, "permissions");
+      if (touchesAccess) {
         try {
           const existingRaw = await invokeOp(
             engine,
@@ -4258,6 +4379,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // page doesn't exist yet — merge degrades to create
         }
       }
+      // Only a merge builds on the stored page; a full write keeps nothing of
+      // it except the access rules applied below.
+      const existingPermissions = existingFrontmatter.permissions;
+      const storedType = existingType;
+      if (!merge) {
+        existingFrontmatter = {};
+        existingContent = undefined;
+        existingTitle = undefined;
+        existingType = undefined;
+      }
 
       const content =
         body.content !== undefined && body.content !== null
@@ -4273,6 +4404,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         ...(title ? { title } : existingTitle ? { title: existingTitle } : {}),
         ...(type ? { type } : existingType ? { type: existingType } : {}),
       };
+      const permissionsWrite = req.headers["x-subsumio-matter-permissions"] === "write";
+      if (!permissionsWrite) {
+        if (existingPermissions !== undefined) {
+          frontmatter.permissions = existingPermissions;
+        } else {
+          delete frontmatter.permissions;
+        }
+      }
       for (const key of Object.keys(frontmatter)) {
         if (frontmatter[key] === undefined || frontmatter[key] === null) delete frontmatter[key];
       }
@@ -4286,7 +4425,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         markdown = `---\n${yamlBlock}\n---\n\n${content}`;
       }
 
-      assertMatterScope(req.matterScope, slug);
+      const writeCaseSlug =
+        typeof frontmatter.case_slug === "string" ? frontmatter.case_slug : undefined;
+      assertMatterScope(req.matterScope, slug, writeCaseSlug);
+      assertMatterWritable(req, slug, writeCaseSlug);
       const result = await invokeOp(
         engine,
         "put_page",
@@ -4296,8 +4438,22 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         req.matterScope ?? "all",
         req.aclGroups ?? "all"
       );
+      if (
+        (frontmatter.type ?? storedType) === "legal_case" ||
+        slug.startsWith(PRIVATE_CHAT_PREFIX)
+      ) {
+        invalidateMatterAccess(sourceId);
+      }
       res.json({ slug, success: true, ...(result && typeof result === "object" ? result : {}) });
     } catch (e) {
+      if (e instanceof EngineNotFoundError) {
+        res.status(404).json({ error: "page_not_found", message: "Page not found." });
+        return;
+      }
+      if (e instanceof OperationError && e.code === "matter_read_only") {
+        res.status(403).json({ error: e.code, message: e.message });
+        return;
+      }
       const msg = e instanceof Error ? e.message : "unknown";
       console.error("[web-api] put_page failed:", e);
       res.status(500).json({
@@ -5018,7 +5174,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       // P0-SECR-002: case uploads require the caller to be scoped to the target case.
       const caseSlug = fields.case_slug?.trim();
-      if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
+      if (caseSlug) {
+        assertMatterScope(req.matterScope, caseSlug);
+        assertMatterWritable(req, caseSlug);
+      }
       // G18 fix: validate matter scope against the document slug BEFORE
       // persistence. Pre-fix, this check was after runExtractionAndImport,
       // so a matter-scoped caller could persist a document on the wrong
@@ -5177,6 +5336,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // error — return 415 with the actionable guidance so the UI can show it.
       if (e instanceof UnsupportedUploadError) {
         res.status(415).json({ error: "unsupported_format", message: msg });
+        return;
+      }
+      if (e instanceof OperationError && e.code === "matter_read_only") {
+        res.status(403).json({ error: e.code, message: msg });
         return;
       }
       if (e instanceof PasswordRequiredError) {

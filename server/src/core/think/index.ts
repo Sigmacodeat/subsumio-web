@@ -75,6 +75,7 @@ import {
 import { AIConfigError } from "../ai/errors.ts";
 import { normalizeModelId } from "../model-id.ts";
 import { hasAnthropicKey } from "../ai/anthropic-key.ts";
+import { matterScopeAllows } from "../matter-access.ts";
 
 /** Anthropic Messages client interface — same shape used by subagent.ts so test stubs can be shared. */
 export interface ThinkLLMClient {
@@ -518,13 +519,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   const scope = opts.matterScope;
   if (scope && scope !== "all") {
     const matchesScope = (slug: string, caseSlug?: string) =>
-      scope.some(
-        (prefix) =>
-          slug === prefix ||
-          slug.startsWith(`${prefix}/`) ||
-          caseSlug === prefix ||
-          caseSlug?.startsWith(`${prefix}/`)
-      );
+      matterScopeAllows(scope, slug, caseSlug);
     const evidencePageIds = [
       ...new Set(
         [...gather.pages.map((p) => p.page_id), ...gather.takes.map((t) => t.page_id)].filter(

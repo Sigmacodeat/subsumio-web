@@ -24,6 +24,7 @@ import {
   Clock,
   Receipt,
   Upload,
+  ShieldCheck,
 } from "lucide-react";
 import { useMatterData, type MatterVitals } from "@/lib/matter-data-context";
 import { useRecentMatters } from "@/lib/use-recent-matters";
@@ -428,6 +429,15 @@ export function MatterHeader() {
             className="h-8 w-8 p-0"
           >
             {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+            <Link
+              href={`/dashboard/matter-access?case=${encodeURIComponent(matter.slug)}`}
+              title={lang === "en" ? "Access & sharing" : "Zugriff & Freigaben"}
+              aria-label={lang === "en" ? "Access & sharing" : "Zugriff & Freigaben"}
+            >
+              <ShieldCheck size={15} />
+            </Link>
           </Button>
           {matter.portalEnabled && (
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>

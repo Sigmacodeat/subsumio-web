@@ -18,6 +18,7 @@ export type AuditAction =
   | "user.signup"
   | "case.create"
   | "case.update"
+  | "matter.access_update"
   | "trust.booking"
   | "trust.reversal"
   | "trust.reconciliation"
@@ -311,6 +312,7 @@ const ACTION_LABELS: Record<string, string> = {
   "user.signup": "Registrierung",
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
+  "matter.access_update": "Aktenzugriff geändert",
   "trust.booking": "Treuhandbuchung erfasst",
   "trust.reversal": "Treuhandbuchung storniert",
   "trust.reconciliation": "Treuhandkonto abgeglichen",

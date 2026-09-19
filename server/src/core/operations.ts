@@ -6,6 +6,7 @@
 import { lstatSync, realpathSync } from "fs";
 import { resolve, relative, sep } from "path";
 import type { BrainEngine } from "./engine.ts";
+import { matterScopeAllows } from "./matter-access.ts";
 import { clampSearchLimit } from "./engine.ts";
 import type { GBrainConfig } from "./config.ts";
 import type { PageType } from "./types.ts";
@@ -646,14 +647,7 @@ function isMatterScopeMatch(
   slug: string,
   caseSlug?: string
 ): boolean {
-  if (!scope) return true;
-  if (scope === "all") return true;
-  if (scope.length === 0) return false;
-  return scope.some((prefix) => {
-    const matches = (candidate: string) =>
-      candidate === prefix || candidate.startsWith(`${prefix}/`);
-    return matches(slug) || (caseSlug !== undefined && matches(caseSlug));
-  });
+  return matterScopeAllows(scope, slug, caseSlug);
 }
 
 export function matterScopeFilter<
