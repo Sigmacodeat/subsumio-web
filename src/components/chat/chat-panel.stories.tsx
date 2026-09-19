@@ -19,7 +19,6 @@ const meta: Meta<typeof ChatPanel> = {
     context: { type: "global" },
     features: {
       fileUpload: true,
-      modelSelector: true,
       modeSelector: true,
       caseSelector: true,
       jurisdictionSelector: true,
@@ -58,7 +57,6 @@ export const Minimal: Story = {
   args: {
     features: {
       fileUpload: false,
-      modelSelector: false,
       modeSelector: true,
       caseSelector: false,
       jurisdictionSelector: false,

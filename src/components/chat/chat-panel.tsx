@@ -793,7 +793,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   >(undefined);
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("at");
   const [queryMode, setQueryMode] = useState<QueryMode>("deep_matter");
-  const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const [sessionTokens, setSessionTokens] = useState(0);
   const [_isCompact, setIsCompact] = useState(false);
   const [subsumptionMode, setSubsumptionMode] = useState(false);
@@ -1118,7 +1117,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
-          ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
             toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
@@ -1152,7 +1150,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           isStreaming: false,
           tokensUsed: result.tokens_used,
           latencyMs: result.latency_ms,
-          model: modelOverride && modelOverride !== "auto" ? modelOverride : undefined,
+          model: result.model,
           mode: queryMode,
         };
 
@@ -1276,7 +1274,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       cases,
       context,
       jurisdiction,
-      modelOverride,
       persistHistory,
       queryMode,
       router,
@@ -1718,7 +1715,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
-          ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
             toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
@@ -1750,7 +1746,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           isStreaming: false,
           tokensUsed: result.tokens_used,
           latencyMs: result.latency_ms,
-          model: modelOverride && modelOverride !== "auto" ? modelOverride : undefined,
+          model: result.model,
           mode: queryMode,
         };
         setMessages((m) => [...m.slice(0, -1), finalMsg]);
@@ -1858,7 +1854,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       selectedCaseSlug,
       cases,
       context,
-      modelOverride,
       queryMode,
       t,
       isStreaming,
@@ -2131,7 +2126,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <ChatHeader
         isStreaming={isStreaming}
         features={{
-          modelSelector: resolvedFeatures.modelSelector,
           modeSelector: resolvedFeatures.modeSelector,
           caseSelector: resolvedFeatures.caseSelector,
           jurisdictionSelector: resolvedFeatures.jurisdictionSelector,
@@ -2139,8 +2133,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           tokenWidget: resolvedFeatures.tokenWidget,
           exportChat: resolvedFeatures.exportChat,
         }}
-        modelOverride={modelOverride}
-        onModelChange={setModelOverride}
         queryMode={queryMode}
         onQueryModeChange={setQueryMode}
         jurisdiction={jurisdiction}
@@ -2365,10 +2357,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             placeholder={placeholder}
             features={{
               fileUpload: resolvedFeatures.fileUpload,
-              modelSelector: false,
             }}
-            modelOverride={modelOverride}
-            onModelChange={setModelOverride}
           />
         </>
       )}

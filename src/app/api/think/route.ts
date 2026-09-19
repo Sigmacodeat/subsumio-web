@@ -27,7 +27,6 @@ const thinkSchema = z.object({
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
   query_mode: z.enum(["conservative", "balanced", "deep_matter"]).default("balanced"),
   case_slug: z.string().optional(),
-  model: z.string().optional(),
 });
 
 export const POST = createHandler(
@@ -58,7 +57,6 @@ export const POST = createHandler(
         mode: engineMode,
         case_slug: safeBody.case_slug,
         query_mode: body.query_mode,
-        model: body.model,
       };
 
       const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(

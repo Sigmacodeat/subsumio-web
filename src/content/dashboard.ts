@@ -1494,8 +1494,8 @@ export const D = {
     en: "2FA, password policies and session management",
   },
   "settings.tile_ai_model_desc": {
-    de: "KI-Modell-Auswahl und Provider-Konfiguration",
-    en: "AI model selection and provider configuration",
+    de: "Welches Modell in welchem Arbeitsbereich arbeitet",
+    en: "Which model works in which area",
   },
   "settings.tier_quick_start": {
     de: "Grundeinrichtung",
@@ -1670,8 +1670,8 @@ export const D = {
     en: "Audit log and tracking of all actions (read-only)",
   },
   "settings.tile_ai_model_desc_full": {
-    de: "KI-Modell-Auswahl — selten geändert, bewusst im System-Tier",
-    en: "AI model selection — rarely changed, intentionally in system tier",
+    de: "Modell pro Arbeitsbereich: Chat, Akte, Strategie, Fristen, Entwürfe",
+    en: "Model per work area: chat, file, strategy, deadlines, drafts",
   },
   "settings.tile_rciid_desc": {
     de: "Krypto-Forensik-Integration mit RCIID konfigurieren",
@@ -2116,7 +2116,7 @@ export const D = {
   "nav.process_strategy": { de: "Prozessstrategie", en: "Process Strategy" },
   "nav.berufungs_agent": { de: "Berufungs-Agent", en: "Appeals Agent" },
   "nav.war_room": { de: "Perspektivenraum", en: "War Room" },
-  "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
+  "nav.ai_model": { de: "KI-Modelle", en: "AI models" },
   "nav.memory": { de: "Gedächtnis", en: "Memory" },
   "nav.tooltip.memory": {
     de: "Assistenten-Gedächtnis verwalten — Erinnerungen, Präferenzen, Anweisungen",
@@ -6161,22 +6161,111 @@ export const D = {
   "settings.kanzlei.toast_saved": { de: "Einstellungen gespeichert", en: "Settings saved" },
   "settings.kanzlei.error_save": { de: "Speichern fehlgeschlagen", en: "Save failed" },
 
-  // ── Settings AI Model page ──
-  "settings.aimodel.title": { de: "KI-Modell", en: "AI Model" },
+  // ── Settings AI Model page (firm model profile) ──
+  "settings.aimodel.title": { de: "KI-Modelle", en: "AI models" },
   "settings.aimodel.description": {
-    de: "Standardmodell für Chat, Analyse und Drafting",
-    en: "Default model for chat, analysis and drafting",
+    de: "Welches Modell in welchem Arbeitsbereich Ihrer Kanzlei arbeitet",
+    en: "Which model works in which area of your firm",
   },
-  "settings.aimodel.breadcrumb": { de: "KI-Modell", en: "AI Model" },
-  "settings.aimodel.label_model": { de: "Modell", en: "Model" },
-  "settings.aimodel.label_temperature": { de: "Temperatur", en: "Temperature" },
-  "settings.aimodel.label_max_tokens": { de: "Max. Token", en: "Max tokens" },
+  "settings.aimodel.breadcrumb": { de: "KI-Modelle", en: "AI models" },
+  "settings.aimodel.intro": {
+    de: "Die Einstellung gilt für alle Mitglieder der Kanzlei. „Automatisch“ setzt jede Aufgabe auf das passende Modell. Wer ein Modell fest wählt, bestimmt Qualität und Kosten eines Bereichs selbst. Haftungskritische Prüfungen haben eine feste Untergrenze.",
+    en: "This setting applies to every member of the firm. “Automatic” puts each task on the fitting model. Pinning a model sets quality and cost for an area yourself. Liability-critical checks have a fixed minimum.",
+  },
+  "settings.aimodel.readonly": {
+    de: "Nur Administratoren können die KI-Modelle ändern.",
+    en: "Only administrators can change the AI models.",
+  },
+  "settings.aimodel.option_auto": { de: "Automatisch", en: "Automatic" },
+  "settings.aimodel.option_auto_hint": {
+    de: "Empfohlen · je nach Aufgabe",
+    en: "Recommended · per task",
+  },
+  "settings.aimodel.price_factor": { de: "Preisstufe {n}×", en: "Price level {n}×" },
+  "settings.aimodel.price_unknown": { de: "Preis unbekannt", en: "Price unknown" },
+  "settings.aimodel.floor_note": {
+    de: "Untergrenze: {model}",
+    en: "Minimum: {model}",
+  },
+  "settings.aimodel.locked_badge": { de: "Fest eingestellt", en: "Fixed" },
+  "settings.aimodel.area.chat.title": { de: "Chat & Recherche", en: "Chat & research" },
+  "settings.aimodel.area.chat.desc": {
+    de: "Antworten im Assistenten, Recherche- und Analyse-Agent. „Automatisch“ nimmt für komplexe Rechtsfragen das stärkere Modell.",
+    en: "Answers in the assistant, research and analysis agents. “Automatic” uses the stronger model for complex legal questions.",
+  },
+  "settings.aimodel.area.erfassung.title": { de: "Akte erfassen", en: "Reading the file" },
+  "settings.aimodel.area.erfassung.desc": {
+    de: "Aktenverzeichnis, Beteiligte, Sachverhalt, Normen, Schaden, Präjudizien und Beweismittel-Zulässigkeit in der Aktenanalyse.",
+    en: "File index, parties, facts, norms, damages, precedents and admissibility of evidence in the case analysis.",
+  },
+  "settings.aimodel.area.analyse.title": {
+    de: "Bewertung & Strategie",
+    en: "Assessment & strategy",
+  },
+  "settings.aimodel.area.analyse.desc": {
+    de: "Beweislast, Beweiswürdigung, Prozesskosten, Vergleich, Rechtsmittel, Vollstreckung und Verfahrensstrategie.",
+    en: "Burden of proof, evidence assessment, litigation costs, settlement, appeals, enforcement and procedural strategy.",
+  },
+  "settings.aimodel.area.fristen.title": {
+    de: "Fristen & Verjährung",
+    en: "Deadlines & limitation",
+  },
+  "settings.aimodel.area.fristen.desc": {
+    de: "Fristen aus Dokumenten erkennen, Fristen prüfen und Verjährung scannen. Nie unter der Untergrenze – eine versäumte Frist ist der klassische Haftungsfall.",
+    en: "Detecting deadlines in documents, checking deadlines and scanning for limitation. Never below the minimum – a missed deadline is the classic liability case.",
+  },
+  "settings.aimodel.area.entwuerfe.title": { de: "Entwürfe", en: "Drafts" },
+  "settings.aimodel.area.entwuerfe.desc": {
+    de: "Schriftsatz-Entwurf in der Aktenanalyse und Antwortentwürfe für E-Mails.",
+    en: "Pleading drafts in the case analysis and e-mail reply drafts.",
+  },
+  "settings.aimodel.area.qualitaet.title": { de: "Qualitätskontrolle", en: "Quality control" },
+  "settings.aimodel.area.qualitaet.desc": {
+    de: "Subsumtionsprüfung, Gegner-Simulation und Kritiker. Läuft immer auf dem stärksten Modell, damit jede Analyse gegengeprüft wird.",
+    en: "Subsumption check, opponent simulation and critic. Always runs on the strongest model so every analysis is cross-checked.",
+  },
+  "settings.aimodel.last_changed": {
+    de: "Zuletzt geändert am {date} von {name}",
+    en: "Last changed on {date} by {name}",
+  },
+  "settings.aimodel.last_changed_no_name": {
+    de: "Zuletzt geändert am {date}",
+    en: "Last changed on {date}",
+  },
+  "settings.aimodel.never_changed": {
+    de: "Noch nicht angepasst – alle Bereiche laufen automatisch.",
+    en: "Not customised yet – every area runs automatically.",
+  },
+  "settings.aimodel.unsaved_one": { de: "1 ungespeicherte Änderung", en: "1 unsaved change" },
+  "settings.aimodel.unsaved_many": {
+    de: "{n} ungespeicherte Änderungen",
+    en: "{n} unsaved changes",
+  },
   "settings.aimodel.btn_save": { de: "Speichern", en: "Save" },
+  "settings.aimodel.btn_saving": { de: "Speichern…", en: "Saving…" },
+  "settings.aimodel.btn_discard": { de: "Verwerfen", en: "Discard" },
   "settings.aimodel.toast_saved": {
-    de: "Modell-Einstellungen gespeichert",
-    en: "Model settings saved",
+    de: "KI-Modelle gespeichert. Neue Aufgaben nutzen die Einstellung sofort, laufende Analysen spätestens nach 30 Sekunden.",
+    en: "AI models saved. New tasks use the setting right away, running analyses within 30 seconds.",
   },
   "settings.aimodel.error_save": { de: "Speichern fehlgeschlagen", en: "Save failed" },
+  "settings.aimodel.error_below_floor": {
+    de: "Dieser Bereich darf nicht unter seiner Untergrenze laufen.",
+    en: "This area cannot run below its minimum.",
+  },
+  "settings.aimodel.error_area_locked": {
+    de: "Die Qualitätskontrolle ist fest eingestellt.",
+    en: "Quality control is fixed.",
+  },
+  "settings.aimodel.error_forbidden": {
+    de: "Nur Administratoren können die KI-Modelle ändern.",
+    en: "Only administrators can change the AI models.",
+  },
+  "settings.aimodel.error_load": {
+    de: "Die KI-Modelle konnten nicht geladen werden.",
+    en: "The AI models could not be loaded.",
+  },
+  "settings.aimodel.retry": { de: "Erneut versuchen", en: "Try again" },
 
   // ── Settings Security page ──
   "settings.security.title": { de: "Sicherheit", en: "Security" },

@@ -418,6 +418,18 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     }
     warnings.push(`INTENT_MODEL_ROUTING: complexity=${complexity} tier=${modelTier}`);
   }
+  if (!opts.model && opts.sourceId) {
+    // The firm's model profile (area "chat") may pin the answer tier; the
+    // chat floor (reasoning) always holds.
+    const { loadModelProfile, effectiveTier } = await import("../model-profile.ts");
+    const profile = await loadModelProfile(engine, opts.sourceId);
+    const profiled = effectiveTier("chat", modelTier, profile) as "deep" | "reasoning";
+    if (profiled !== modelTier) {
+      warnings.push(`MODEL_PROFILE: chat tier ${modelTier} -> ${profiled}`);
+      modelTier = profiled;
+      modelFallback = profiled === "reasoning" ? "sonnet" : "opus";
+    }
+  }
 
   const modelUsed = await resolveModel(engine, {
     cliFlag: opts.model,

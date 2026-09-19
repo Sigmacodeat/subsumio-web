@@ -127,6 +127,10 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     cacheCreate: 5,
     output: 20,
   }),
+  "openrouter:anthropic/claude-sonnet-5": rateFromCanonical(
+    "openrouter:anthropic/claude-sonnet-5",
+    { input: 24, cachedInput: 2.4, cacheCreate: 30, output: 120 }
+  ),
   "anthropic:claude-sonnet-4-6": rateFromCanonical("anthropic:claude-sonnet-4-6", {
     input: 6,
     cachedInput: 0.6,
@@ -137,6 +141,19 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     "openrouter:anthropic/claude-sonnet-4.6",
     { input: 36, cachedInput: 3.6, cacheCreate: 45, output: 180 }
   ),
+  // deep-Tier (Qualitätskontrolle, komplexe Fragen, per Kanzlei-Modellprofil wählbar)
+  "anthropic:claude-opus-5": rateFromCanonical("anthropic:claude-opus-5", {
+    input: 60,
+    cachedInput: 6,
+    cacheCreate: 75,
+    output: 300,
+  }),
+  "openrouter:anthropic/claude-opus-5": rateFromCanonical("openrouter:anthropic/claude-opus-5", {
+    input: 60,
+    cachedInput: 6,
+    cacheCreate: 75,
+    output: 300,
+  }),
   // BenGER Benchathon #1 (69.3), AT-Future-Law Gesamtsieger, für Subsumption + Drafter
   "anthropic:claude-opus-4-8": rateFromCanonical("anthropic:claude-opus-4-8", {
     input: 10,

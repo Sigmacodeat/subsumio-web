@@ -761,7 +761,6 @@ export function StrategyTab() {
               features={{
                 caseSelector: false,
                 jurisdictionSelector: true,
-                modelSelector: true,
                 modeSelector: true,
                 fileUpload: true,
                 sessionHistory: true,

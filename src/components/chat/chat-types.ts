@@ -170,7 +170,6 @@ export interface ChatSession {
 }
 
 export interface ChatFeatures {
-  modelSelector?: boolean;
   modeSelector?: boolean;
   caseSelector?: boolean;
   jurisdictionSelector?: boolean;
@@ -185,7 +184,6 @@ export interface ChatFeatures {
 }
 
 export const DEFAULT_FEATURES: Required<ChatFeatures> = {
-  modelSelector: true,
   modeSelector: false,
   caseSelector: true,
   jurisdictionSelector: true,

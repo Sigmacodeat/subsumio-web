@@ -22,6 +22,7 @@ import {
   type TokenUsage,
 } from "@/lib/billing/credit-rate-card";
 import { CANONICAL_PRICING } from "../../../server/src/core/model-pricing";
+import { TIER_DEFAULTS } from "../../../server/src/core/model-config";
 
 describe("credit-rate-card", () => {
   // ── Rate Card Lookup ───────────────────────────────────────────────────
@@ -69,6 +70,28 @@ describe("credit-rate-card", () => {
   });
 
   // ── Token → Credit Berechnung ──────────────────────────────────────────
+
+  describe("coverage of the engine's tier models", () => {
+    // Every model a firm can pick in the model profile (native and
+    // OpenRouter-only deployments) must bill at its own rate — an unknown id
+    // silently falls back to DEFAULT_CREDIT_RATE (Haiku pricing).
+    it.each([
+      ...Object.values(TIER_DEFAULTS),
+      "anthropic:claude-haiku-4-5",
+      "anthropic:claude-sonnet-5",
+      "anthropic:claude-opus-5",
+      "openrouter:anthropic/claude-haiku-4.5",
+      "openrouter:anthropic/claude-sonnet-5",
+      "openrouter:anthropic/claude-opus-5",
+    ])("%s has an explicit rate derived from canonical pricing", (modelId) => {
+      expect(CREDIT_RATE_CARD[modelId], modelId).toBeDefined();
+      const canonical = CANONICAL_PRICING[modelId]!;
+      expect(canonical, modelId).toBeDefined();
+      expect(CREDIT_RATE_CARD[modelId]!.input).toBe(
+        Math.round(canonical.input * 12 * 10_000) / 10_000
+      );
+    });
+  });
 
   describe("calculateTokenCredits", () => {
     it("calculates credits for 1M Haiku input tokens (no cache)", () => {

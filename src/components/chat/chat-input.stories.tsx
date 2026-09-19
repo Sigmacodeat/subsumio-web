@@ -16,11 +16,10 @@ const meta: Meta<typeof ChatInput> = {
   args: {
     onSend: fn(),
     onStop: fn(),
-    onModelChange: fn(),
     isStreaming: false,
     disabled: false,
     placeholder: "Frage den Copilot…",
-    features: { fileUpload: true, modelSelector: true },
+    features: { fileUpload: true },
   },
 };
 
@@ -41,8 +40,8 @@ export const Disabled: Story = {
   },
 };
 
-export const WithFileUploadOnly: Story = {
+export const WithoutFileUpload: Story = {
   args: {
-    features: { fileUpload: true, modelSelector: false },
+    features: { fileUpload: false },
   },
 };

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
+import type { AreaChoice, ModelArea, ModelProfileResponse } from "@/lib/model-profile-types";
 
 export class ApiGetError extends Error {
   constructor(
@@ -335,58 +336,50 @@ export function usePipelineEstimate(opts: { pages?: number; parts?: number; tier
   });
 }
 
-// ── AI Model Preference ──
+// ── Firm model profile (KI-Modelle) ──
 
-export interface ModelPreferenceResponse {
-  models: Array<{
-    id: string;
-    name: string;
-    provider: string;
-    contextWindow: number;
-    costPer1MInput: number;
-    costPer1MOutput: number;
-    speedRating: number;
-    description: string;
-    capabilities: string[];
-    brainScoped: boolean;
-    dataResidency: "eu" | "non_eu";
-  }>;
-  preferredModelId: string;
-  preferredModel: {
-    id: string;
-    name: string;
-    provider: string;
-    contextWindow: number;
-    costPer1MInput: number;
-    costPer1MOutput: number;
-    speedRating: number;
-    description: string;
-    capabilities: string[];
-    brainScoped: boolean;
-    dataResidency: "eu" | "non_eu";
-  } | null;
-  brainId: string;
-  modelPolicy: "any" | "eu_only";
+export class ModelProfileSaveError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string
+  ) {
+    super(message);
+    this.name = "ModelProfileSaveError";
+  }
 }
 
-export function useModelPreference() {
+export function useModelProfile() {
   return useQuery({
-    queryKey: ["settings", "model"],
-    queryFn: () => apiGet<{ data: ModelPreferenceResponse }>("/api/settings/model"),
+    queryKey: ["settings", "model-profile"],
+    queryFn: () => apiGet<ModelProfileResponse>("/api/settings/model-profile"),
   });
 }
 
-export function useUpdateModelPreference() {
+export function useUpdateModelProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (modelId: string) =>
-      csrfFetch("/api/settings/model", {
-        method: "PATCH",
+    mutationFn: async (areas: Partial<Record<ModelArea, AreaChoice>>) => {
+      const res = await csrfFetch("/api/settings/model-profile", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelId }),
-      }).then((r) => r.json()),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["settings", "model"] });
+        body: JSON.stringify({ areas }),
+      });
+      // Errors use the standard web shape: { error: <message>, code: <code> }.
+      const body = (await res.json().catch(() => null)) as
+        | (ModelProfileResponse & { error?: string; code?: string })
+        | null;
+      if (!res.ok || !body) {
+        throw new ModelProfileSaveError(
+          res.status,
+          body?.code ?? "save_failed",
+          body?.error ?? `HTTP ${res.status}`
+        );
+      }
+      return body as ModelProfileResponse;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(["settings", "model-profile"], data);
     },
   });
 }

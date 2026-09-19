@@ -1,49 +1,80 @@
 "use client";
 
-import { useState } from "react";
-import { Cpu, Check, Zap, DollarSign, Gauge, Shield, Loader2, Globe } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, CheckCircle2, Cpu, Info, Loader2, Lock, Save, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Button } from "@/components/ui/button";
 import { useLang } from "@/lib/use-lang";
 import {
-  useModelPreference,
-  useUpdateModelPreference,
-  type ModelPreferenceResponse,
+  ModelProfileSaveError,
+  useModelProfile,
+  useUpdateModelProfile,
 } from "@/lib/queries/settings";
-import {
-  formatCost,
-  formatContextWindow,
-  getSpeedLabel,
-  getProviderLabel,
-} from "@/lib/model-config";
+import { modelDisplayName } from "@/lib/model-display";
+import type {
+  AreaChoice,
+  ModelArea,
+  ModelProfileAreaView,
+  ModelProfileResponse,
+} from "@/lib/model-profile-types";
+import type { DashboardKey } from "@/content/dashboard";
+
+type Draft = Partial<Record<ModelArea, AreaChoice>>;
+
+/** Price level of a model relative to the cheapest priced model on the page. */
+function priceLevels(pricing: ModelProfileResponse["pricing"]): Map<string, number> {
+  const avg = new Map<string, number>();
+  for (const [model, p] of Object.entries(pricing)) {
+    if (p) avg.set(model, (p.input + p.output) / 2);
+  }
+  const min = Math.min(...avg.values());
+  const levels = new Map<string, number>();
+  if (!Number.isFinite(min) || min <= 0) return levels;
+  for (const [model, a] of avg) levels.set(model, Math.max(1, Math.round(a / min)));
+  return levels;
+}
+
+function saveErrorKey(err: unknown): DashboardKey {
+  if (err instanceof ModelProfileSaveError) {
+    if (err.code === "below_floor") return "settings.aimodel.error_below_floor";
+    if (err.code === "area_locked") return "settings.aimodel.error_area_locked";
+    if (err.status === 403) return "settings.aimodel.error_forbidden";
+  }
+  return "settings.aimodel.error_save";
+}
 
 export default function AIModelSettingsPage() {
-  const { t } = useLang();
-  const query = useModelPreference();
-  const mutation = useUpdateModelPreference();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { t, lang } = useLang();
+  const query = useModelProfile();
+  const mutation = useUpdateModelProfile();
+  const [draft, setDraft] = useState<Draft>({});
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
-  const data = query.data?.data as ModelPreferenceResponse | undefined;
-  const models = data?.models ?? [];
-  const serverPreferredId = data?.preferredModelId ?? "auto";
-  const activeId = selectedId ?? serverPreferredId;
+  const data = query.data;
+  const levels = useMemo(() => (data ? priceLevels(data.pricing) : new Map()), [data]);
 
-  const saving = mutation.isPending;
-
-  function handleSelect(modelId: string) {
-    setSelectedId(modelId);
-    if (modelId === "auto") {
-      // "auto" means no explicit preference — clear it
-      // We still send it; the server treats "auto" as DEFAULT_MODEL_ID
-      mutation.mutate("auto", {
-        onError: () => setSelectedId(null),
-      });
-    } else {
-      mutation.mutate(modelId, {
-        onError: () => setSelectedId(null),
-      });
+  const changes = useMemo(() => {
+    if (!data) return {} as Draft;
+    const out: Draft = {};
+    for (const area of data.areas) {
+      const next = draft[area.id];
+      if (next !== undefined && next !== area.choice) out[area.id] = next;
     }
-  }
+    return out;
+  }, [data, draft]);
+  const changeCount = Object.keys(changes).length;
+
+  const header = (
+    <PageHeader
+      title={t("settings.aimodel.title")}
+      description={t("settings.aimodel.description")}
+      breadcrumbs={[
+        { label: t("settings.title"), href: "/dashboard/settings" },
+        { label: t("settings.aimodel.breadcrumb") },
+      ]}
+    />
+  );
 
   if (query.isLoading) {
     return (
@@ -53,289 +84,270 @@ export default function AIModelSettingsPage() {
     );
   }
 
-  if (query.isError) {
+  if (query.isError || !data) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title={t("settings.aimodel.title")}
-          description={t("settings.aimodel.description")}
-          breadcrumbs={[
-            { label: t("settings.title"), href: "/dashboard/settings" },
-            { label: t("settings.aimodel.breadcrumb") },
-          ]}
-        />
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6 text-center">
+      <div className="mx-auto max-w-[960px] p-4 md:p-6 lg:p-8">
+        {header}
+        <div
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6 text-center"
+        >
           <p className="text-sm text-[color:var(--ds-danger-text)]">
-            {t("settings.aimodel.error_save")}
+            {t("settings.aimodel.error_load")}
           </p>
-          <button
-            onClick={() => query.refetch()}
-            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-          >
-            Erneut versuchen
-          </button>
+          <Button variant="secondary" size="sm" className="mt-3" onClick={() => query.refetch()}>
+            {t("settings.aimodel.retry")}
+          </Button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title={t("settings.aimodel.title")}
-        description={t("settings.aimodel.description")}
-        breadcrumbs={[
-          { label: t("settings.title"), href: "/dashboard/settings" },
-          { label: t("settings.aimodel.breadcrumb") },
-        ]}
-        actions={
-          saving ? (
-            <div
-              className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 size={12} className="animate-spin" />
-              {t("settings.kanzlei.btn_saving")}
-            </div>
-          ) : mutation.isSuccess ? (
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
-              <Check size={12} />
-              {t("settings.aimodel.toast_saved")}
-            </div>
-          ) : undefined
-        }
-      />
+  const handleSave = () => {
+    if (changeCount === 0) return;
+    setSavedAt(null);
+    mutation.mutate(changes, {
+      onSuccess: () => {
+        setDraft({});
+        setSavedAt(Date.now());
+      },
+    });
+  };
 
-      {/* Auto / Default card */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-pressed={activeId === "auto"}
-        onKeyDown={(e) => {
-          if (e.target !== e.currentTarget) return;
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleSelect("auto");
-          }
-        }}
-        className={cn(
-          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
-          activeId === "auto"
-            ? "brand-border brand-soft"
-            : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
-        )}
-        onClick={() => handleSelect("auto")}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div
-              className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-                activeId === "auto"
-                  ? "brand-bg"
-                  : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
-              )}
-            >
-              <Cpu
-                size={20}
-                className={activeId === "auto" ? "text-white" : "text-[color:var(--ds-text-muted)]"}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3
-                  className={cn(
-                    "text-base font-semibold",
-                    activeId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
-                  )}
-                >
-                  Automatisch (Standard)
-                </h3>
-              </div>
-              <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                Der Subsumio-Dienst wählt automatisch das optimale Modell basierend auf
-                Query-Komplexität und Größe der Wissensbasis.
-              </p>
-            </div>
-          </div>
-          {activeId === "auto" && (
-            <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-              <Check size={14} className="text-white" />
-            </div>
+  const locale = lang === "en" ? "en-GB" : "de-AT";
+  const updatedAt = data.profile.updated_at
+    ? new Date(data.profile.updated_at).toLocaleString(locale, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : null;
+
+  return (
+    <div className="mx-auto max-w-[960px] space-y-6 p-4 md:p-6 lg:p-8">
+      {header}
+
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
+        <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden />
+        <div className="space-y-1.5 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+          <p>{t("settings.aimodel.intro")}</p>
+          <p className="text-xs text-[color:var(--ds-text-subtle)]">
+            {updatedAt
+              ? data.updatedByName
+                ? t("settings.aimodel.last_changed")
+                    .replace("{date}", updatedAt)
+                    .replace("{name}", data.updatedByName)
+                : t("settings.aimodel.last_changed_no_name").replace("{date}", updatedAt)
+              : t("settings.aimodel.never_changed")}
+          </p>
+          {!data.canEdit && (
+            <p className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text)]">
+              <Lock size={12} aria-hidden />
+              {t("settings.aimodel.readonly")}
+            </p>
           )}
         </div>
       </div>
 
-      {/* Model cards grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {models.map((model) => {
-          const isActive = model.id === activeId;
-          const isSavingThis = saving && selectedId === model.id;
-          return (
-            <div
-              key={model.id}
-              role="button"
-              tabIndex={0}
-              aria-pressed={isActive}
-              onKeyDown={(e) => {
-                if (e.target !== e.currentTarget) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleSelect(model.id);
-                }
-              }}
-              className={cn(
-                "group cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
-                isActive
-                  ? "brand-border brand-soft"
-                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
-              )}
-              onClick={() => handleSelect(model.id)}
-            >
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-[background-color,border-color,color] motion-reduce:transition-none",
-                      isActive
-                        ? "brand-bg"
-                        : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] group-hover:border-[color:var(--ds-border-strong)]"
-                    )}
-                  >
-                    <Cpu
-                      size={20}
-                      className={isActive ? "text-white" : "text-[color:var(--ds-text-muted)]"}
-                    />
-                  </div>
-                  <div>
-                    <h3
-                      className={cn(
-                        "text-base font-semibold",
-                        isActive ? "brand-text" : "text-[color:var(--ds-text)]"
-                      )}
-                    >
-                      {model.name}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-                        {getProviderLabel(model.provider as never)}
-                      </span>
-                      {"dataResidency" in model && model.dataResidency === "eu" && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
-                          <Globe size={9} />
-                          EU
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2" role="status" aria-live="polite">
-                  {isSavingThis && (
-                    <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
-                  )}
-                  {isActive && !isSavingThis && (
-                    <div className="brand-bg flex h-6 w-6 items-center justify-center rounded-full">
-                      <Check size={14} className="text-white" />
-                    </div>
-                  )}
-                </div>
-              </div>
+      <div className="space-y-4">
+        {data.areas.map((area) => (
+          <AreaCard
+            key={area.id}
+            area={area}
+            value={draft[area.id] ?? area.choice}
+            dirty={changes[area.id] !== undefined}
+            disabled={!data.canEdit || mutation.isPending}
+            levels={levels}
+            onChange={(choice) => {
+              setSavedAt(null);
+              mutation.reset();
+              setDraft((d) => ({ ...d, [area.id]: choice }));
+            }}
+          />
+        ))}
+      </div>
 
-              <p className="mb-4 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                {model.description}
+      {data.canEdit && (changeCount > 0 || mutation.isError || savedAt !== null) && (
+        <div className="sticky bottom-4 z-30 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/95 shadow-[var(--ds-shadow-3)] backdrop-blur">
+          <div
+            className="flex flex-wrap items-center gap-3 px-4 py-3"
+            role="status"
+            aria-live="polite"
+          >
+            {mutation.isError ? (
+              <p className="text-sm text-[color:var(--ds-danger-text)]" role="alert">
+                {t(saveErrorKey(mutation.error))}
               </p>
-
-              {/* Stats row */}
-              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <Gauge size={11} className="text-[color:var(--ds-text-subtle)]" />
-                    <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      Context
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
-                    {formatContextWindow(model.contextWindow)}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <DollarSign size={11} className="text-[color:var(--ds-text-subtle)]" />
-                    <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      Cost/1M
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
-                    {formatCost(model.costPer1MInput)}
-                    <span className="text-xs text-[color:var(--ds-text-subtle)]"> in</span>
-                  </p>
-                  <p className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                    {formatCost(model.costPer1MOutput)}
-                    <span className="text-[color:var(--ds-text-subtle)]"> out</span>
-                  </p>
-                </div>
-                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <Zap size={11} className="text-[color:var(--ds-text-subtle)]" />
-                    <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      Speed
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "h-1.5 w-1.5 rounded-full",
-                          i < model.speedRating
-                            ? "bg-[color:var(--ds-success-solid)]"
-                            : "bg-[color:var(--ds-border-strong)]"
-                        )}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    {getSpeedLabel(model.speedRating as 1 | 2 | 3 | 4 | 5)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Capabilities */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {model.capabilities.map((cap) => (
-                  <span
-                    key={cap}
-                    className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]"
-                  >
-                    <Shield size={9} />
-                    {cap}
-                  </span>
-                ))}
-              </div>
+            ) : changeCount > 0 ? (
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                {changeCount === 1
+                  ? t("settings.aimodel.unsaved_one")
+                  : t("settings.aimodel.unsaved_many").replace("{n}", String(changeCount))}
+              </p>
+            ) : (
+              <p className="flex items-center gap-1.5 text-sm text-[color:var(--ds-success-text)]">
+                <CheckCircle2 size={14} aria-hidden />
+                {t("settings.aimodel.toast_saved")}
+              </p>
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              {changeCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    setDraft({});
+                    mutation.reset();
+                  }}
+                >
+                  {t("settings.aimodel.btn_discard")}
+                </Button>
+              )}
+              {changeCount > 0 && (
+                <Button
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleSave}
+                  disabled={mutation.isPending}
+                  loading={mutation.isPending}
+                >
+                  {!mutation.isPending && <Save size={14} aria-hidden />}
+                  {mutation.isPending
+                    ? t("settings.aimodel.btn_saving")
+                    : t("settings.aimodel.btn_save")}
+                </Button>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AreaCard({
+  area,
+  value,
+  dirty,
+  disabled,
+  levels,
+  onChange,
+}: {
+  area: ModelProfileAreaView;
+  value: AreaChoice;
+  dirty: boolean;
+  disabled: boolean;
+  levels: Map<string, number>;
+  onChange: (choice: AreaChoice) => void;
+}) {
+  const { t } = useLang();
+  const titleKey = `settings.aimodel.area.${area.id}.title` as DashboardKey;
+  const descKey = `settings.aimodel.area.${area.id}.desc` as DashboardKey;
+  const floorModel = area.options.find((o) => o.choice === area.floor)?.models[0];
+  const legendId = `model-area-${area.id}`;
+
+  return (
+    <fieldset
+      className={cn(
+        "rounded-2xl border bg-[color:var(--ds-surface)] p-5 transition-[border-color] motion-reduce:transition-none",
+        dirty ? "brand-border" : "border-[color:var(--ds-border)]"
+      )}
+      aria-describedby={`${legendId}-desc`}
+    >
+      <legend
+        id={legendId}
+        className="mb-1 flex flex-wrap items-center gap-2 text-base font-semibold text-[color:var(--ds-text)]"
+      >
+        {t(titleKey)}
+        {area.locked ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
+            <Lock size={10} aria-hidden />
+            {t("settings.aimodel.locked_badge")}
+          </span>
+        ) : (
+          area.floor !== "utility" &&
+          floorModel && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
+              <ShieldCheck size={10} aria-hidden />
+              {t("settings.aimodel.floor_note").replace("{model}", modelDisplayName(floorModel))}
+            </span>
+          )
+        )}
+      </legend>
+      <p
+        id={`${legendId}-desc`}
+        className="mb-4 text-sm leading-relaxed text-[color:var(--ds-text-muted)]"
+      >
+        {t(descKey)}
+      </p>
+
+      <div
+        className={cn(
+          "grid gap-2",
+          area.options.length >= 4 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3",
+          area.options.length === 1 && "sm:grid-cols-1"
+        )}
+      >
+        {area.options.map((option) => {
+          const checked = value === option.choice;
+          const isAuto = option.choice === "auto";
+          const level = !isAuto && option.models[0] ? levels.get(option.models[0]) : undefined;
+          const optionDisabled = disabled || area.locked;
+          return (
+            <label
+              key={option.choice}
+              className={cn(
+                "relative flex min-h-[76px] flex-col gap-1 rounded-xl border-2 px-3.5 py-3 text-left transition-[background-color,border-color] focus-within:ring-2 focus-within:ring-[color:var(--brand-primary)] motion-reduce:transition-none",
+                checked
+                  ? "brand-border brand-soft"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
+                optionDisabled
+                  ? "cursor-default"
+                  : "cursor-pointer hover:border-[color:var(--ds-border-strong)]"
+              )}
+            >
+              <input
+                type="radio"
+                name={legendId}
+                value={option.choice}
+                checked={checked}
+                disabled={optionDisabled}
+                onChange={() => onChange(option.choice)}
+                className="sr-only"
+              />
+              <span className="flex items-center justify-between gap-2">
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 text-sm font-semibold",
+                    checked ? "brand-text" : "text-[color:var(--ds-text)]"
+                  )}
+                >
+                  {!isAuto && <Cpu size={13} aria-hidden />}
+                  {isAuto
+                    ? t("settings.aimodel.option_auto")
+                    : modelDisplayName(option.models[0] ?? option.choice)}
+                </span>
+                {checked && (
+                  <span className="brand-bg flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
+                    <Check size={12} className="text-white" aria-hidden />
+                  </span>
+                )}
+              </span>
+              <span className="text-xs leading-snug text-[color:var(--ds-text-muted)]">
+                {isAuto
+                  ? area.locked
+                    ? option.models.map(modelDisplayName).join(" · ")
+                    : `${t("settings.aimodel.option_auto_hint")}: ${option.models
+                        .map(modelDisplayName)
+                        .join(" · ")}`
+                  : level !== undefined
+                    ? t("settings.aimodel.price_factor").replace("{n}", String(level))
+                    : t("settings.aimodel.price_unknown")}
+              </span>
+            </label>
           );
         })}
       </div>
-
-      {/* Info note */}
-      <div className="mt-6 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
-        <div className="flex items-start gap-3">
-          <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-            <Cpu size={14} className="brand-text" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              Gilt für das gesamte Kanzleiwissen
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Die Modellauswahl gilt für das gesamte Kanzleiwissen. Im Assistenten können Sie pro
-              Anfrage einen Override setzen, ohne die globale Einstellung zu ändern. Der
-              Subsumio-Dienst benötigt den konfigurierten API-Key des jeweiligen Providers.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </fieldset>
   );
 }

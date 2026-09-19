@@ -26,6 +26,7 @@ import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { type ChatMessage } from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
+import { modelDisplayName } from "@/lib/model-display";
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -255,7 +256,7 @@ function ChatMessageBubbleInner({
             {message.model && (
               <span className="inline-flex items-center gap-0.5" title={t("chat.ai_model")}>
                 <Cpu size={9} />
-                {message.model}
+                {modelDisplayName(message.model)}
               </span>
             )}
           </div>

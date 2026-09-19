@@ -13,6 +13,7 @@
 import type { BrainEngine } from "../engine.ts";
 import { chat, getChatModel, isAvailable, type ChatMessage, type ChatResult } from "./gateway.ts";
 import { resolveModel, type ModelTier } from "../model-config.ts";
+import { areaForPurpose, effectiveTier, loadModelProfile } from "../model-profile.ts";
 import { sanitizePromptInput } from "../think/sanitize.ts";
 
 export interface UtilityCompletionRequest {
@@ -112,14 +113,21 @@ export function normalizeUtilityRequest(body: Record<string, unknown>): {
 
 export async function runUtilityCompletion(
   engine: BrainEngine | null,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  /** Tenant source; its model profile applies to purposes mapped to an area. */
+  sourceId?: string | null
 ): Promise<UtilityCompletionResult> {
   const req = normalizeUtilityRequest(body);
   if (!isAvailable("chat")) {
     throw new UtilityCompletionError(503, "llm_not_configured", "No chat model configured");
   }
+  let tier = req.tier;
+  const area = areaForPurpose(req.purpose);
+  if (area) {
+    tier = effectiveTier(area, tier, await loadModelProfile(engine, sourceId));
+  }
   const model = await resolveModel(engine, {
-    tier: req.tier,
+    tier,
     configKey: `models.purpose.${req.purpose}`,
     fallback: getChatModel(),
   });
@@ -148,6 +156,6 @@ export async function runUtilityCompletion(
     usage: result.usage,
     latency_ms: Date.now() - started,
     purpose: req.purpose,
-    tier: req.tier,
+    tier,
   };
 }

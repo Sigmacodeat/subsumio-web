@@ -86,7 +86,6 @@ interface ThinkOptions {
   instructions?: string;
   queryMode?: QueryMode;
   caseSlug?: string;
-  model?: string;
   signal?: AbortSignal;
   onChunk?: (chunk: string) => void;
 }
@@ -552,7 +551,6 @@ export const api = {
           mode,
           query_mode: options.queryMode,
           case_slug: options.caseSlug,
-          ...(options.model && options.model !== "auto" ? { model: options.model } : {}),
         }),
         // SSE stream — use 5 min timeout (matches maxDuration=300) when
         // caller doesn't provide a signal. Default 30s would kill the stream.
@@ -607,6 +605,8 @@ export const api = {
         }
         if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
         if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
+        // The model the engine actually answered with (after the firm's model profile).
+        if (typeof parsed.model === "string") result.model = parsed.model;
       });
 
       return result;

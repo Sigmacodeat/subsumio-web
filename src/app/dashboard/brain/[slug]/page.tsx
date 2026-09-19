@@ -543,7 +543,6 @@ export default function BrainDetailPage() {
                 features={{
                   caseSelector: false,
                   jurisdictionSelector: true,
-                  modelSelector: true,
                   modeSelector: true,
                   fileUpload: false,
                   sessionHistory: true,
