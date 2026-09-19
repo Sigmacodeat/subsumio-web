@@ -894,6 +894,16 @@ export interface SearchResult {
    */
   citation_validity_boost?: number;
   /**
+   * Statutes: "repealed" when in_force_to lies in the past, "not_yet_in_force"
+   * when in_force_from lies in the future. Unset for provisions in force.
+   */
+  statute_validity?: "repealed" | "not_yet_in_force";
+  /** ISO date the provision ceased / will start to apply (statutes only). */
+  in_force_to?: string;
+  in_force_from?: string;
+  /** Multiplier applied by applyStatuteValidityBoost. */
+  statute_validity_boost?: number;
+  /**
    * v0.44 — relevance score assigned by the LLM re-ranker (DeepSeek cross-encoder).
    * Set when llmRerank is enabled in SearchOpts. Doesn't replace `score` —
    * downstream consumers may depend on the RRF score.

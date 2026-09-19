@@ -1,5 +1,5 @@
 #!/bin/sh
-# Deploys the committed repository state (HEAD) to the netcup server.
+# Deploys the pushed repository state (origin/main) to the netcup server.
 #
 # Run from the repository root on the Mac:
 #   sh server/deploy/netcup/deploy-code.sh            # build and switch
@@ -27,13 +27,18 @@ BUILD="web engine corpus-pipeline"
 build_only=0
 [ "${1:-}" = "--build" ] && build_only=1
 
-if [ -n "$(git status --porcelain --untracked-files=no -- . ':!next-env.d.ts' ':!tsconfig.json')" ]; then
-  echo "[deploy] Hinweis: nicht committete Änderungen werden NICHT ausgerollt (nur HEAD)." >&2
+# Ships the PUSHED state (origin/main), never local HEAD: several sessions
+# commit in this checkout, and an unpushed local commit once nearly shipped a
+# web image without a production fix that was already on origin.
+REF="${DEPLOY_REF:-origin/main}"
+git fetch -q origin
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse "$REF")" ]; then
+  echo "[deploy] Hinweis: lokaler Stand weicht von $REF ab — ausgerollt wird $REF." >&2
 fi
-sha="$(git rev-parse --short HEAD)"
+sha="$(git rev-parse --short "$REF")"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-git archive --format=tar.gz HEAD > "$tmp/release.tar.gz"
+git archive --format=tar.gz "$REF" > "$tmp/release.tar.gz"
 echo "[deploy] $sha hochladen …"
 scp -q "$tmp/release.tar.gz" "$HOST:/root/subsumio-release.tar.gz"
 

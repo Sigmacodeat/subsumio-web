@@ -1393,6 +1393,15 @@ export interface BrainEngine {
     pageIds: number[]
   ): Promise<Map<number, "good_law" | "overturned" | "superseded" | "confirmed">>;
   /**
+   * For statute pages among `pageIds`: validity dates from the canonical
+   * frontmatter (in_force_from / in_force_to). Only pages that carry at
+   * least one date get an entry. Used by hybrid search to rank law in force
+   * above repealed or not-yet-effective provisions. Single SQL query.
+   */
+  getStatuteValidity?(
+    pageIds: number[]
+  ): Promise<Map<number, { in_force_from: string | null; in_force_to: string | null }>>;
+  /**
    * v0.27.0: for a list of slugs, return their updated_at timestamps (or created_at fallback).
    * Used by hybrid search recency boost. Single SQL query, not N+1.
    * Slugs with no timestamp get no entry in the map.
