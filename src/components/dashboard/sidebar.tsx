@@ -305,6 +305,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         labelKey: "nav.review_sets",
         keywords: "review sets review-sets e-discovery privilege",
         tooltipKey: "nav.tooltip.review_sets",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/dictation",
@@ -351,12 +352,14 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         icon: ListChecks,
         labelKey: "nav.obligation_tracking",
         keywords: "obligationen verpflichtungen obligations tracking",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/playbooks",
         icon: BookMarked,
         labelKey: "nav.playbooks",
         keywords: "playbooks handbucher manuals vorlagen",
+        audienceTier: "erweitert",
       },
     ],
   },
@@ -371,6 +374,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         labelKey: "nav.brain",
         keywords: "wissen knowledge base explorer seiten",
         tooltipKey: "nav.tooltip.brain",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/graph",
@@ -378,6 +382,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         labelKey: "nav.graph",
         keywords: "graph netzwerk entitaten beziehungen entities",
         tooltipKey: "nav.tooltip.graph",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/sources",
@@ -385,6 +390,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         labelKey: "nav.sources",
         keywords: "quellen datenquellen connectors sources",
         tooltipKey: "nav.tooltip.sources",
+        audienceTier: "erweitert",
       },
     ],
   },
@@ -753,6 +759,13 @@ const PRIMARY_ITEMS: NavItem[] = [
     tooltipKey: "nav.tooltip.deadlines",
   },
   {
+    href: "/dashboard/freigaben",
+    icon: BadgeCheck,
+    labelKey: "nav.approvals_hub",
+    keywords: "freigaben freigeben prufen genehmigen approvals review ki fristen aktionen",
+    tooltipKey: "nav.tooltip.approvals_hub",
+  },
+  {
     href: "/dashboard/intake",
     icon: Inbox,
     labelKey: "nav.intake",
@@ -777,6 +790,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 
 const PRIMARY_COLOR_VARS: string[] = [
   "--brand-primary",
+  "--nav-cat-cases",
   "--nav-cat-cases",
   "--nav-cat-cases",
   "--nav-cat-comm",

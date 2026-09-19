@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { Claim } from "@/lib/claim-account";
+import { CaseSelect } from "@/components/legal/case-select";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Offen",
@@ -186,11 +187,11 @@ export default function ClaimAccountPage() {
           <h2 className="font-semibold">{t("claim.create_title")}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <Label>{t("claim.case_slug")} *</Label>
-              <Input
+              <Label htmlFor="claim-case">{t("claim.case_slug")} *</Label>
+              <CaseSelect
+                id="claim-case"
                 value={form.case_slug}
-                onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
-                placeholder="legal/cases/2026-001"
+                onChange={(case_slug) => setForm({ ...form, case_slug })}
               />
             </div>
             <div>

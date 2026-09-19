@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { engineTranscribe } from "@/lib/engine-llm";
 import {
   createDictationEntry,
+  transitionDictationStatus,
   getPendingCorrections,
   formatDictationDuration,
   type DictationEntry,
@@ -10,39 +13,101 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+
 const createSchema = z.object({
   case_slug: z.string().max(300).optional(),
-  lawyer_email: z.string().email(),
-  lawyer_name: z.string().min(1).max(300),
-  duration_seconds: z.number().min(0),
-  language: z.string().max(20).optional(),
+  duration_seconds: z
+    .number()
+    .min(1)
+    .max(60 * 60),
+  language: z.enum(["de", "en", "fr", "it"]).default("de"),
+  // Recorded audio (base64). Transcribed via the engine, NOT stored: the
+  // dictation page keeps the recording until the transcript is saved.
+  audio_base64: z
+    .string()
+    .min(1)
+    .max(Math.ceil((MAX_AUDIO_BYTES * 4) / 3) + 4),
+  mime_type: z.string().max(100).default("audio/webm"),
 });
 
 export const POST = createHandler(
   {
     action: "brain.write",
-    rateTier: "standard",
+    rateTier: "heavy",
     body: createSchema,
+    credits: "think",
     audit: (ctx, body) => ({
       action: "case.update" as const,
       entityType: "dictation_entry",
-      entityId: body.lawyer_email,
+      entityId: ctx.user.email,
       details: { duration: body.duration_seconds, caseSlug: body.case_slug },
     }),
   },
   async (ctx, body) => {
-    const entry = createDictationEntry(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
+    const bytes = Buffer.from(body.audio_base64, "base64");
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_AUDIO_BYTES) {
+      return apiError(
+        "audio_size_invalid",
+        "Die Aufnahme ist leer oder zu groß (max. 20 MB).",
+        400
+      );
+    }
+    const ext = body.mime_type.includes("mp4")
+      ? "m4a"
+      : body.mime_type.includes("ogg")
+        ? "ogg"
+        : "webm";
+    const result = await engineTranscribe(ctx.headers, {
+      bytes,
+      mimeType: body.mime_type,
+      filename: `diktat.${ext}`,
+      language: body.language,
+      model: "openai/whisper-1",
+    });
+    const transcript = result?.text?.trim() ?? "";
+    if (!transcript) {
+      return apiError(
+        "transcription_failed",
+        "Die Aufnahme konnte nicht verschriftet werden. Die Aufnahme bleibt erhalten — bitte erneut versuchen.",
+        502
+      );
+    }
+
+    const entry = transitionDictationStatus(
+      createDictationEntry({
+        case_slug: body.case_slug || undefined,
+        lawyer_email: ctx.user.email,
+        lawyer_name: ctx.user.name || ctx.user.email,
+        duration_seconds: Math.round(body.duration_seconds),
+        language: body.language,
+      }),
+      "transcribed",
+      { transcript }
+    );
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
         slug: `legal/dictations/${entry.id}`,
-        title: `Diktat: ${body.lawyer_name} (${formatDictationDuration(body.duration_seconds)})`,
+        title: `Diktat: ${entry.lawyer_name} (${formatDictationDuration(entry.duration_seconds)})`,
         type: "dictation_entry",
+        content: transcript,
         frontmatter: entry,
       }),
       signal: AbortSignal.timeout(10_000),
     });
+    if (!res.ok) {
+      // Transcript still goes back so nothing the lawyer dictated is lost.
+      return apiError(
+        "save_failed",
+        "Das Diktat wurde verschriftet, aber nicht gespeichert.",
+        502,
+        {
+          transcript,
+        }
+      );
+    }
     return apiSuccess({ entry });
   }
 );
@@ -60,16 +125,8 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "dictation_entry", limit: "500" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: DictationEntry[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as DictationEntry[];
+    const pages = await listEnginePages(ctx.headers, "dictation_entry", 2_000);
+    let items = pages.map((p) => p.frontmatter as unknown as DictationEntry).filter(Boolean);
     if (query?.case_slug) {
       items = items.filter((e) => e.case_slug === query.case_slug);
     }
@@ -79,6 +136,7 @@ export const GET = createHandler(
     if (query?.pending_corrections) {
       items = getPendingCorrections(items);
     }
+    items.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
     return apiSuccess({ items });
   }
 );

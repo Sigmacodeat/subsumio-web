@@ -81,7 +81,7 @@ function MyDay({ role }: { role?: string }) {
   const unreviewed = cockpit.deadlines.filter(
     (d) => String(d.page.frontmatter?.review_status ?? "") === "unreviewed"
   ).length;
-  const reviewInboxCount = badges.data?.["/dashboard/communications"]?.count ?? 0;
+  const approvalsCount = badges.data?.["/dashboard/freigaben"]?.count ?? 0;
 
   const kpis: OverviewKpi[] = [
     {
@@ -124,20 +124,13 @@ function MyDay({ role }: { role?: string }) {
       tone: "warning",
     },
     {
-      key: "messages",
-      label: "Nachrichten prüfen",
-      hint: "E-Mail, Portal und WhatsApp",
-      count: reviewInboxCount,
-      href: "/dashboard/communications?view=review",
-      icon: ATTENTION_ICONS.mail,
-      tone: "neutral",
-    },
-    {
+      // One entry for everything awaiting a decision; same number as the
+      // sidebar badge and the Freigaben page (shared server summary).
       key: "reviews",
       label: "Freigaben",
-      hint: "Entwürfe, die auf Ihre Freigabe warten",
-      count: cockpit.pendingReviews.length,
-      href: "/dashboard/review-queue",
+      hint: "KI-Fristen, KI-Aktionen, Mandanteneingaben, Analysen und Zeitvorschläge",
+      count: approvalsCount,
+      href: "/dashboard/freigaben",
       icon: ATTENTION_ICONS.review,
       tone: "warning",
     },

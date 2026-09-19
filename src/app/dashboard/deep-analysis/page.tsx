@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { DocumentPicker, type PickedDocument } from "@/components/legal/document-picker";
+import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface DeepAnalysisCitation {
   slug: string;
@@ -75,12 +77,44 @@ const riskBorder: Record<string, string> = {
   critical: "border-l-[color:var(--ds-danger-solid)]",
 };
 
+/** The report as Markdown, for filing in the matter. */
+function reportMarkdown(report: DeepAnalysisReport, docs: PickedDocument[]): string {
+  const titles = new Map(docs.map((d) => [d.slug, d.name]));
+  const lines = [
+    `**Gesamtrisiko:** ${RISK_LABELS[report.overall_risk] ?? report.overall_risk} · ${report.document_count} Dokumente`,
+    "",
+    "## Zusammenfassung",
+    report.executive_summary,
+  ];
+  if (report.findings.length) {
+    lines.push("", "## Befunde");
+    for (const f of report.findings) {
+      lines.push(
+        "",
+        `### ${f.theme} (${RISK_LABELS[f.risk_level] ?? f.risk_level})`,
+        f.description,
+        f.affected_documents.length
+          ? `Betroffen: ${f.affected_documents.map((s) => docLabel(s, titles)).join(", ")}`
+          : ""
+      );
+    }
+  }
+  if (report.cross_document_patterns.length) {
+    lines.push("", "## Dokumentübergreifende Muster", ...report.cross_document_patterns.map((p) => `- ${p}`));
+  }
+  if (report.warnings.length) {
+    lines.push("", "## Hinweise", ...report.warnings.map((w) => `- ${w}`));
+  }
+  return lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n");
+}
+
 export default function DeepAnalysisPage() {
   const { t } = useLang();
   const [report, setReport] = useState<DeepAnalysisReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [slugs, setSlugs] = useState("");
+  const [docs, setDocs] = useState<PickedDocument[]>([]);
+  const [caseSlug, setCaseSlug] = useState("");
   const [prompt, setPrompt] = useState("");
   const [expandedFindings, setExpandedFindings] = useState<Set<number>>(new Set());
   const {
@@ -90,10 +124,7 @@ export default function DeepAnalysisPage() {
   } = useGroundedAnswer();
 
   const run = async () => {
-    const slugList = slugs
-      .split(/[,\n\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const slugList = docs.map((d) => d.slug);
     if (slugList.length === 0) return;
 
     setLoading(true);
@@ -166,21 +197,16 @@ export default function DeepAnalysisPage() {
       <Card className="p-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="deep-analysis-docs" className="mb-1.5 block text-sm font-medium">
-              Dokumentkennungen (durch Komma oder Zeilenumbruch getrennt)
-            </label>
-            <textarea
+            <DocumentPicker
               id="deep-analysis-docs"
-              value={slugs}
-              onChange={(e) => setSlugs(e.target.value)}
-              placeholder="legal/contracts/vertrag-1, legal/contracts/vertrag-2, ..."
-              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-              rows={3}
+              selected={docs}
+              onChange={setDocs}
+              onCaseChange={setCaseSlug}
+              max={25}
               disabled={loading}
             />
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Maximal 25 Dokumente pro Analyse. Einfacher: Dokumente unter „Dokumente“ auswählen
-              und dort „Tiefenanalyse“ starten.
+              Maximal 25 Dokumente pro Analyse.
             </p>
           </div>
           <div>
@@ -196,7 +222,7 @@ export default function DeepAnalysisPage() {
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={run} disabled={loading || !slugs.trim()}>
+            <Button onClick={run} disabled={loading || docs.length === 0}>
               {loading ? (
                 <>
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -253,6 +279,13 @@ export default function DeepAnalysisPage() {
                   Gesamtrisiko: {RISK_LABELS[report.overall_risk] ?? report.overall_risk}
                 </Badge>
                 <Badge variant="default">{report.document_count} Dokumente</Badge>
+                <SaveToMatterButton
+                  source="deep_analysis"
+                  defaultCase={caseSlug}
+                  defaultTitle="Tiefenanalyse"
+                  content={reportMarkdown(report, docs)}
+                  citations={reportGrounding?.grounded_citations}
+                />
               </div>
             </div>
             <p className="text-sm leading-relaxed">{report.executive_summary}</p>
