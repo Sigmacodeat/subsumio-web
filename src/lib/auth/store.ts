@@ -8,6 +8,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { Pool, type PoolConfig } from "pg";
 import { AuthError } from "@/lib/errors";
 import type { OnboardingProgress } from "@/lib/types";
+import { trialEndsAtFrom } from "@/lib/billing/trial";
 
 export type Plan = "free" | "pro" | "team" | "enterprise";
 
@@ -75,6 +76,9 @@ export interface User {
    * See src/lib/brain-learning.ts.
    */
   brainLearning?: boolean;
+  /** End of the free self-service trial (ISO). Resolve limits through
+   *  `effectivePlan` in src/lib/billing/trial.ts, never `plan` alone. */
+  trialEndsAt?: string | null;
   createdAt: string;
 }
 
@@ -691,6 +695,9 @@ export async function buildNewUser(opts: {
   referredBy?: string | null;
   industry?: string | null;
   jurisdiction?: "DE" | "AT" | "CH" | null;
+  /** Self-service signup: start the free trial. SSO/SCIM accounts join a firm
+   *  that already has a contract and get none. */
+  startTrial?: boolean;
 }): Promise<User> {
   const s = getStore();
   let referralCode = generateReferralCode();
@@ -725,6 +732,7 @@ export async function buildNewUser(opts: {
       teamInvited: false,
       firstQuery: false,
     },
+    trialEndsAt: opts.startTrial ? trialEndsAtFrom() : null,
     createdAt: new Date().toISOString(),
   };
 }

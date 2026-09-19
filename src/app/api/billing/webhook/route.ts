@@ -557,7 +557,10 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       break;
     }
     case "customer.subscription.trial_will_end": {
-      // Trial ending soon (3 days before) — send email to convert to paid.
+      // Stripe only has a trial when the firm chose a plan during its free
+      // trial (checkout passes the remaining days as trial_end). The plan is
+      // already chosen, so this is the notice that billing starts, not a
+      // request to subscribe.
       const customerId = (obj as { customer?: string }).customer;
       if (customerId) {
         try {
@@ -566,8 +569,8 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             const { sendMail } = await import("@/lib/mail");
             await sendMail({
               to: user.email,
-              subject: "Ihr Testzeitraum endet bald",
-              text: "Ihr Testzeitraum endet in 3 Tagen. Um Ihren Service ohne Unterbrechung fortzusetzen, schließen Sie bitte Ihr Abonnement ab.\n\nUpgrade: https://app.subsum.io/dashboard/billing",
+              subject: "Ihre Testphase endet in 3 Tagen",
+              text: "Ihre Testphase endet in 3 Tagen. Danach wird der gewählte Tarif erstmals abgerechnet; Sie müssen nichts tun.\n\nTarif ändern oder kündigen: https://app.subsum.io/dashboard/billing",
             });
           }
         } catch (err) {

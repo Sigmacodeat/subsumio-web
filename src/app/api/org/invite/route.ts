@@ -35,7 +35,7 @@ export const POST = createHandler(
 
     const store = getStore();
     const members = await store.listByOrg(org.id);
-    const seats = limitsFor(ctx.user.plan).seats;
+    const seats = limitsFor(ctx.plan).seats;
     if (members.length >= seats) {
       return apiError("no_seats_left", "Keine freien Pl\u00e4tze", 409, { seats });
     }

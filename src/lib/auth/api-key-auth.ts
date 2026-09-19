@@ -12,6 +12,7 @@
  */
 
 import { billingAccountFor } from "@/lib/billing/billing-account";
+import { effectivePlan } from "@/lib/billing/trial";
 import { hashApiKey } from "@/lib/api-keys";
 import { getApiKeyStore, type StoredApiKey } from "@/lib/api-key-store";
 import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
@@ -51,7 +52,7 @@ export async function verifyApiKey(
 
   // Resolve brainId, plan and paying account (same logic as engineContext)
   let brainId = user.brainId;
-  let plan: Plan = user.plan;
+  let plan: Plan = effectivePlan(user);
   let billing = billingAccountFor(user, null);
   if (user.orgId) {
     const org = await getOrgStore().getById(user.orgId);
@@ -60,7 +61,7 @@ export async function verifyApiKey(
       brainId = org.brainId;
       billing = billingAccountFor(user, org);
       const payer = await getStore().getById(billing.ownerId);
-      if (payer) plan = payer.plan;
+      if (payer) plan = effectivePlan(payer);
     }
   }
 
