@@ -36,6 +36,7 @@ import { extractAllNormReferences } from "../src/core/legal/judikatur-citations.
 import { extractMultiJurisdictionNormReferences } from "../src/core/legal/multi-jurisdiction-citations.ts";
 import { createProgress } from "../src/core/progress.ts";
 import { docIdFromContent, loadActiveDocSlugs, resolveSlug } from "./doc-identity.ts";
+import { titleOf, writeIngestLog, type IngestEvent } from "./ingest-log.ts";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
@@ -268,6 +269,8 @@ interface ParsedDecision {
   slug: string;
   /** RIS document number; the page that already carries it gets updated. */
   docId: string | null;
+  /** The document had an active page before this run (for the ingest log). */
+  existed?: boolean;
   content: string;
   normRefs: Array<{ code: string; ref: string; statuteSlug?: string }>;
 }
@@ -413,6 +416,7 @@ async function main() {
     const known = await loadActiveDocSlugs(engine, srcCfg.sourceId);
     let reused = 0;
     for (const d of decisions) {
+      d.existed = !!(d.docId && known.has(d.docId));
       const slug = resolveSlug(known, d.docId, d.slug);
       if (slug !== d.slug) reused++;
       d.slug = slug;
@@ -445,6 +449,7 @@ async function main() {
       }> = [];
 
       const batchStart = bi;
+      const ingestEvents: IngestEvent[] = [];
       for (let di = 0; di < batch.length; di++) {
         const d = batch[di];
         const globalIdx = batchStart + di + 1;
@@ -462,6 +467,16 @@ async function main() {
                 }
               : {}),
           });
+          if (result.status === "imported") {
+            ingestEvents.push({
+              source_id: srcCfg.sourceId,
+              doc_id: d.docId,
+              slug: d.slug,
+              title: titleOf(d.content),
+              action: d.existed ? "updated" : "added",
+              origin: FROM_NORMALIZED ? "import-judikatur (normalisiert)" : "import-judikatur",
+            });
+          }
           if (result.status === "imported" || result.status === "skipped") pagesOk++;
           else {
             pagesErr++;
@@ -514,6 +529,8 @@ async function main() {
           );
         }
       }
+
+      await writeIngestLog(engine, ingestEvents);
 
       if (batchLinks.length > 0) {
         const written = await (engine as any).addLinksBatch(batchLinks, {

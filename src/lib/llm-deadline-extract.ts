@@ -153,12 +153,14 @@ export async function extractDeadlinesWithLLM(
   try {
     const result = await engineComplete(headers, {
       purpose: "deadline_extract",
-      tier: "utility",
+      // A missed Frist is the costliest error this product can make —
+      // extraction runs on the reasoning tier, never the cheapest model.
+      tier: "reasoning",
       system: SYSTEM_PROMPT,
       prompt: `BEZUGSDATUM: ${referenceDate}\n\nText:\n${truncated}`,
       json: true,
       maxTokens: 800,
-      timeoutMs: 15_000,
+      timeoutMs: 45_000,
     });
     const content = result?.text?.trim();
     if (!content) return [];

@@ -90,6 +90,8 @@ export const POST = createHandler(
         doc_title: typeof fm.title === "string" ? fm.title : undefined,
         doc_size: typeof fm.doc_size === "number" ? fm.doc_size : undefined,
         uploaded_at: typeof fm.uploaded_at === "string" ? fm.uploaded_at : undefined,
+        // Explicit user retry: re-run even tasks that already finished.
+        force: true,
       });
     } catch (err) {
       log.error("[documents/retry] enqueue failed:", err);

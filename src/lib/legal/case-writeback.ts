@@ -51,6 +51,14 @@ export async function writeSuggestedDeadlinesAndParties(
     const suggestedDeadlines = deduplicateDeadlines(extractedDeadlines, caseFm, documentSlug);
     const suggestedParties = deduplicateParties(extractedParties, caseFm, documentSlug);
 
+    // High-urgency suggestions get an unreviewed legal_deadline page up front
+    // (visible in the Fristenbuch with the "ungeprüft" badge). Its slug is
+    // stored on the suggestion so the later approval updates THAT page
+    // instead of creating a duplicate (src/lib/legal/deadline-decision.ts).
+    for (const sd of suggestedDeadlines) {
+      if (isAutoCreateCandidate(sd)) sd.deadline_slug = autoDeadlineSlug(sd);
+    }
+
     const mergedFrontmatter: Record<string, unknown> = {};
     if (suggestedDeadlines.length > 0) {
       mergedFrontmatter.suggested_deadlines = [
@@ -137,12 +145,29 @@ function deduplicateParties(
     });
 }
 
+function isAutoCreateCandidate(sd: Record<string, unknown>): boolean {
+  const urgency = String(sd.urgency ?? "normal");
+  const dueDate = String(sd.due_date ?? "");
+  return /^\d{4}-\d{2}-\d{2}$/.test(dueDate) && (urgency === "high" || urgency === "critical");
+}
+
+function autoDeadlineSlug(sd: Record<string, unknown>): string {
+  const dueDate = String(sd.due_date ?? "");
+  const title = String(sd.title ?? "Frist");
+  return `legal/deadlines/${dueDate.replace(/[^0-9-]/g, "")}-${title
+    .toLowerCase()
+    .replace(/[^a-z0-9äöüß]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48)}-${Date.now().toString(36)}`;
+}
+
 /**
- * Auto-create `legal_deadline` pages for high-confidence suggested deadlines
- * so they appear in the deadline review queue with `review_status: "unreviewed"`.
+ * Auto-create `legal_deadline` pages for high-urgency suggested deadlines
+ * so they appear in the Fristenbuch with `review_status: "unreviewed"`
+ * until a lawyer approves or discards the suggestion.
  *
- * Only deadlines with a valid due_date and urgency "high" or "critical"
- * are auto-created. Individual failures are non-blocking.
+ * Only suggestions that carry a `deadline_slug` (valid ISO date and urgency
+ * "high"/"critical") are created. Individual failures are logged, not thrown.
  */
 async function autoCreateDeadlinePages(
   engineHeaders: EngineHeaders,
@@ -150,19 +175,14 @@ async function autoCreateDeadlinePages(
   caseSlug: string
 ): Promise<void> {
   for (const sd of suggestedDeadlines) {
+    const dlSlug = typeof sd.deadline_slug === "string" ? sd.deadline_slug : "";
+    if (!dlSlug) continue;
     const urgency = String(sd.urgency ?? "normal");
     const dueDate = String(sd.due_date ?? "");
-    if (!dueDate || (urgency !== "high" && urgency !== "critical")) continue;
+    const title = String(sd.title ?? "Frist");
 
     try {
-      const title = String(sd.title ?? "Frist");
-      const dlSlug = `legal/deadlines/${dueDate.replace(/[^0-9-]/g, "")}-${title
-        .toLowerCase()
-        .replace(/[^a-z0-9äöüß]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 48)}-${Date.now().toString(36)}`;
-
-      await fetch(`${ENGINE_URL}/api/pages`, {
+      const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { ...engineHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -178,13 +198,19 @@ async function autoCreateDeadlinePages(
             review_status: "unreviewed",
             source: "ai_document_analysis",
             urgency,
-            ai_confidence: "high",
+            ai_confidence: "unverified",
           },
         }),
         signal: AbortSignal.timeout(DEADLINE_CREATE_TIMEOUT),
       });
-    } catch {
-      // Non-blocking — einzelne Fehler nicht abbrechen
+      if (!res.ok) {
+        log.error(`[analyze] unreviewed deadline ${dlSlug} not created: HTTP ${res.status}`);
+      }
+    } catch (err) {
+      log.error(
+        `[analyze] unreviewed deadline ${dlSlug} not created:`,
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 }

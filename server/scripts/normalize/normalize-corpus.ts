@@ -293,6 +293,44 @@ export function risMetaFromBody(body: string): Record<string, string> {
   return out;
 }
 
+/** RIS document-number prefix of a state-law norm → state code. */
+export const LAND_CODES: Record<string, string> = {
+  BG: "bgld",
+  KT: "ktn",
+  NO: "noe",
+  OO: "ooe",
+  SB: "sbg",
+  ST: "stmk",
+  TI: "tir",
+  VB: "vbg",
+  WI: "wien",
+};
+
+/** State of a state-law document number (LTI40038778 → "tir"), else null. */
+export function landOfDocId(docId: string | null | undefined): string | null {
+  const m = docId?.match(/^L([A-Z]{2})\d/);
+  return m ? (LAND_CODES[m[1]] ?? null) : null;
+}
+
+/**
+ * The states number their laws independently: Gesetzesnummer 10000001 is a
+ * Burgenland, an Upper Austrian, a Salzburg and a Tyrolean law at once. A
+ * state-law statute_id therefore carries the state ("tir-10000001").
+ */
+export function landQualifiedStatuteId(docId: string, gnr: string | null): string | null {
+  const land = landOfDocId(docId);
+  if (!gnr || !land || gnr.startsWith(`${land}-`)) return gnr;
+  return `${land}-${gnr}`;
+}
+
+/** RIS document links point to the readable page, not the XML file. */
+export function risReadableUrl(url: string): string {
+  return url.replace(
+    /^(https:\/\/www\.ris\.bka\.gv\.at\/Dokumente\/(?:Bundesnormen|Landesnormen)\/[A-Z0-9_]+\/[A-Z0-9_]+)\.xml$/,
+    "$1.html"
+  );
+}
+
 export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontmatter {
   const { list } = raw;
   // Frontmatter wins; body sections only fill what it lacks or leaves empty
@@ -361,7 +399,7 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
       return a && /^GNR-\d+$/i.test(a) ? null : a;
     })(),
 
-    statute_id: pick(fm, "gesetzesnummer", "statute_id"),
+    statute_id: landQualifiedStatuteId(docId, pick(fm, "gesetzesnummer", "statute_id")),
     paragraph_ref: pick(fm, "paragraph"),
     promulgation_organ: pick(fm, "kundmachungsorgan"),
     in_force_from: toIsoDate(fm.inkrafttretensdatum),
@@ -393,7 +431,7 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     source_url:
       /data\.bka\.gv\.at\/ris\/api\//.test(url) && /^NOR\d+$/.test(docId)
         ? `https://www.ris.bka.gv.at/Dokumente/Bundesnormen/${docId}/${docId}.html`
-        : url,
+        : risReadableUrl(url),
     source_format: sourceFormatOf(fm, url),
     retrieved_at: toIsoDate(fm.retrieved_at) ?? toIsoDate(fm.version_date),
     license: clean(fm.license),
@@ -689,7 +727,11 @@ function main() {
         const dest = join(outDir, rel);
         mkdirSync(dirname(dest), { recursive: true });
         // Atomic: an import running in parallel must never read a half-written file.
-        const tmp = `${dest}.tmp-${process.pid}`;
+        // Short temp name: some RIS file names are already near 255 bytes.
+        const tmp = join(
+          dirname(dest),
+          `.norm-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`
+        );
         writeFileSync(tmp, `${serializeCanonical(fm)}\n\n${newBody.replace(/^\n+/, "")}`, "utf8");
         renameSync(tmp, dest);
       }

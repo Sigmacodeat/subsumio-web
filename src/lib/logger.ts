@@ -20,14 +20,24 @@ interface LogEntry {
   [key: string]: unknown;
 }
 
-let currentRequestId: string | undefined;
+// Request ids come from a provider (server: AsyncLocalStorage in
+// src/lib/request-context.ts, installed by createHandler). A module-level
+// variable is NOT safe on a concurrent server — requests would overwrite
+// each other's id. `setRequestId` remains as an explicit override for
+// scripts and tests.
+let explicitRequestId: string | undefined;
+let requestIdProvider: (() => string | undefined) | undefined;
+
+export function setRequestIdProvider(provider: () => string | undefined): void {
+  requestIdProvider = provider;
+}
 
 export function setRequestId(id: string | undefined): void {
-  currentRequestId = id;
+  explicitRequestId = id;
 }
 
 export function getRequestId(): string | undefined {
-  return currentRequestId;
+  return requestIdProvider?.() ?? explicitRequestId;
 }
 
 function shouldLog(level: LogLevel): boolean {
@@ -99,7 +109,7 @@ function emit(level: LogLevel, module: string, rawMsg: unknown, rest: unknown[])
     level,
     module,
     msg,
-    ...(currentRequestId ? { requestId: currentRequestId } : {}),
+    ...(getRequestId() ? { requestId: getRequestId() } : {}),
     ...(meta ?? {}),
   };
   let line: string;

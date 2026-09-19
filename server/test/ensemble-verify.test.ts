@@ -7,6 +7,7 @@ import {
   type EnsembleVerifyOpts,
 } from "../src/core/ensemble-verify.ts";
 import type { ChatResult } from "../src/core/ai/gateway.ts";
+import { TIER_DEFAULTS } from "../src/core/model-config.ts";
 
 // ── Mock chat function ────────────────────────────────────────────────
 
@@ -26,8 +27,9 @@ const mockChat: ChatFn = mock(async (opts) => {
     providerId: "mock",
   });
 
-  // Paraphrase judge: verify all except "§ 999 BGB" (non-existent)
-  if (opts.model?.includes("gpt-4o-mini")) {
+  // Paraphrase judge (routed via the utility tier): verify all except
+  // "§ 999 BGB" (non-existent)
+  if (opts.model === TIER_DEFAULTS.utility || opts.model?.includes("gpt-4o-mini")) {
     return makeResult(JSON.stringify({
       citations: citations.map((c: string) => ({
         citation: c,

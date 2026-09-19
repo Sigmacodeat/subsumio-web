@@ -59,6 +59,7 @@ import type { BrainEngine } from "../engine.ts";
 import { dimsProviderOptions } from "./dims.ts";
 import { hasAnthropicKey } from "./anthropic-key.ts";
 import { AIConfigError, AITransientError, normalizeAIError } from "./errors.ts";
+import { providerFailoverModel } from "./provider-failover.ts";
 import { runGuardrails, hasGuardrails, type GuardrailHook } from "../guardrails.ts";
 
 // ---- Gateway-wide AI-HTTP timeout (v0.42.20.0, #1762/#1775) ----
@@ -114,8 +115,10 @@ const MAX_CHARS = 8000;
 // don't transitively load every provider SDK just to read the defaults.
 export { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./defaults.ts";
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./defaults.ts";
-const DEFAULT_EXPANSION_MODEL = "openrouter:deepseek/deepseek-chat";
-const DEFAULT_CHAT_MODEL = "openrouter:deepseek/deepseek-chat";
+// Unconfigured chat/expansion calls follow the deployment's utility tier
+// (model-config.ts) — never a hardcoded third-party vendor.
+const DEFAULT_EXPANSION_MODEL = TIER_DEFAULTS.utility;
+const DEFAULT_CHAT_MODEL = TIER_DEFAULTS.utility;
 // v0.35.0.0+: reranker default. Used only when search.reranker.enabled is set
 // AND no explicit reranker_model is configured. Mode bundles' per-mode
 // `reranker_model` default to this same value but can be overridden.
@@ -3041,7 +3044,32 @@ export function effectiveMaxOutputTokens(
   return base;
 }
 
+/**
+ * Chat with provider failover: a Claude model on Anthropic's API that fails
+ * for account or availability reasons (no credit, key rejected, overload,
+ * 5xx, network) is retried once on the same model through OpenRouter. See
+ * provider-failover.ts. Request errors surface unchanged.
+ */
 export async function chat(opts: ChatOpts): Promise<ChatResult> {
+  try {
+    return await chatDirect(opts);
+  } catch (err) {
+    const primary = opts.model ?? getChatModel();
+    const alternate = providerFailoverModel(primary, err);
+    if (!alternate) throw err;
+    logProviderFailover(primary, alternate, err);
+    return chatDirect({ ...opts, model: alternate });
+  }
+}
+
+function logProviderFailover(primary: string, alternate: string, err: unknown): void {
+  const reason = err instanceof Error ? err.message : String(err);
+  console.warn(
+    `[ai-gateway] provider failover: ${primary} failed (${reason.slice(0, 200)}); retrying on ${alternate}`
+  );
+}
+
+async function chatDirect(opts: ChatOpts): Promise<ChatResult> {
   const tracker = __budgetStore.getStore() ?? null;
   const modelStrEarly = opts.model ?? getChatModel();
 
@@ -3422,7 +3450,33 @@ export async function chatWithFallback(
  * Falls back to non-streaming `chat()` when the provider doesn't support
  * streaming — the single chunk contains the full text.
  */
-export async function* chatStream(
+type ChatStreamEvent =
+  | { type: "text"; text: string }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
+  | { type: "done"; result: ChatResult };
+
+/**
+ * Streaming chat with the same provider failover as chat() — but only while
+ * nothing has been sent yet: once text is out, switching provider would
+ * splice two different answers together, so a later failure surfaces as is.
+ */
+export async function* chatStream(opts: ChatOpts): AsyncGenerator<ChatStreamEvent> {
+  let started = false;
+  try {
+    for await (const event of chatStreamDirect(opts)) {
+      started = true;
+      yield event;
+    }
+  } catch (err) {
+    const primary = opts.model ?? getChatModel();
+    const alternate = started ? null : providerFailoverModel(primary, err);
+    if (!alternate) throw err;
+    logProviderFailover(primary, alternate, err);
+    yield* chatStreamDirect({ ...opts, model: alternate });
+  }
+}
+
+async function* chatStreamDirect(
   opts: ChatOpts
 ): AsyncGenerator<
   | { type: "text"; text: string }

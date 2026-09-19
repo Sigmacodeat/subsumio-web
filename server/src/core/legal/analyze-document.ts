@@ -146,8 +146,10 @@ export interface AnalyzeDocumentOpts {
   sourceIds?: string[];
   /** Injected LLM. Defaults to the gateway chat adapter. */
   llm?: AnalyzeLLM;
-  /** Cap the document text sent to the model (chars). Default 24000. */
+  /** Size of one analysis window (chars). Default 24000. */
   maxChars?: number;
+  /** Max windows per document (long files are analysed in parts). Default 8. */
+  maxChunks?: number;
 }
 
 /** Build the default gateway-backed LLM adapter. Returns null if no chat model
@@ -163,6 +165,85 @@ async function defaultLLM(): Promise<AnalyzeLLM | null> {
     });
     return r.text;
   };
+}
+
+const MONTHS_DE = [
+  ["jänner", "januar", "jan"],
+  ["februar", "feber", "feb"],
+  ["märz", "maerz", "mär"],
+  ["april", "apr"],
+  ["mai"],
+  ["juni", "jun"],
+  ["juli", "jul"],
+  ["august", "aug"],
+  ["september", "sept", "sep"],
+  ["oktober", "okt"],
+  ["november", "nov"],
+  ["dezember", "dez"],
+];
+
+/**
+ * A key date is kept only if the document actually carries it: the literal
+ * string, or — for an ISO date — one of the usual DACH spellings
+ * (12.03.2026, 12.3.2026, 12.03.26, 12. März 2026). A date the model
+ * invented would otherwise become a Fristvorschlag.
+ */
+export function isDateGroundedInText(date: string, text: string): boolean {
+  const hay = text.toLowerCase();
+  const needle = date.trim().toLowerCase();
+  if (!needle) return false;
+  if (hay.includes(needle)) return true;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(needle);
+  if (!m) return false;
+  const [, y, mo, d] = m as unknown as [string, string, string, string];
+  const dn = String(Number(d));
+  const mn = String(Number(mo));
+  const yy = y.slice(2);
+  const numeric = [
+    `${d}.${mo}.${y}`,
+    `${dn}.${mn}.${y}`,
+    `${d}.${mo}.${yy}`,
+    `${dn}.${mn}.${yy}`,
+    `${dn}. ${mn}. ${y}`,
+    `${d}/${mo}/${y}`,
+  ];
+  if (numeric.some((n) => hay.includes(n))) return true;
+  const names = MONTHS_DE[Number(mo) - 1] ?? [];
+  return names.some(
+    (name) => hay.includes(`${dn}. ${name} ${y}`) || hay.includes(`${d}. ${name} ${y}`)
+  );
+}
+
+/** Warnings that mean the model produced NO usable analysis. */
+export const FATAL_ANALYSIS_WARNINGS = [
+  "NO_LLM_AVAILABLE",
+  "LLM_CALL_FAILED",
+  "LLM_OUTPUT_NOT_JSON",
+];
+
+/** True when the analysis is empty because the model failed — callers must
+ *  surface this as a failure, never as "analysed, nothing found". */
+export function isAnalysisFailed(a: Pick<DocumentAnalysis, "warnings">): boolean {
+  return a.warnings.some((w) => FATAL_ANALYSIS_WARNINGS.some((f) => w.startsWith(f)));
+}
+
+/** Split long documents into overlapping windows so late passages (e.g. the
+ *  Rechtsmittelbelehrung at the end of a Bescheid) are analysed too. */
+export function splitForAnalysis(
+  text: string,
+  maxChars: number,
+  maxChunks: number,
+  overlap = 1000
+): { chunks: string[]; truncated: boolean } {
+  if (text.length <= maxChars) return { chunks: [text], truncated: false };
+  const step = Math.max(1, maxChars - overlap);
+  const chunks: string[] = [];
+  for (let start = 0; start < text.length && chunks.length < maxChunks; start += step) {
+    chunks.push(text.slice(start, start + maxChars));
+    if (start + maxChars >= text.length) break;
+  }
+  const covered = (chunks.length - 1) * step + maxChars;
+  return { chunks, truncated: covered < text.length };
 }
 
 /**
@@ -183,9 +264,12 @@ export async function analyzeDocument(
   }
   const documentText = String((page as { compiled_truth?: string }).compiled_truth ?? "");
   const maxChars = opts.maxChars ?? 24000;
-  const clipped = documentText.slice(0, maxChars);
-  if (documentText.length > maxChars) {
-    warnings.push(`DOCUMENT_TRUNCATED_FOR_ANALYSIS: ${documentText.length} → ${maxChars} chars`);
+  const maxChunks = opts.maxChunks ?? 8;
+  const { chunks, truncated } = splitForAnalysis(documentText, maxChars, maxChunks);
+  if (truncated) {
+    warnings.push(
+      `DOCUMENT_TRUNCATED_FOR_ANALYSIS: ${documentText.length} chars, analysed ${chunks.length} parts`
+    );
   }
 
   const llm = opts.llm ?? (await defaultLLM());
@@ -205,45 +289,67 @@ export async function analyzeDocument(
     return empty;
   }
 
-  const user = `<dokument slug="${opts.slug}">\n${clipped}\n</dokument>`;
-  let raw: string;
-  try {
-    raw = await llm({ system: SYSTEM_PROMPT, user, maxTokens: 4000 });
-  } catch (e) {
-    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
-    return empty;
+  // Every part must succeed: a partial analysis would silently miss the
+  // deadlines of the failed part, which is worse than an explicit failure.
+  const parts: Record<string, unknown>[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const label = chunks.length > 1 ? ` teil="${i + 1}/${chunks.length}"` : "";
+    const user = `<dokument slug="${opts.slug}"${label}>\n${chunks[i]}\n</dokument>`;
+    let raw: string;
+    try {
+      raw = await llm({ system: SYSTEM_PROMPT, user, maxTokens: 4000 });
+    } catch (e) {
+      warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
+      return empty;
+    }
+    const parsedPart = tryParseJSON(raw);
+    if (!parsedPart) {
+      warnings.push("LLM_OUTPUT_NOT_JSON");
+      return empty;
+    }
+    parts.push(parsedPart);
   }
+  const parsed = parts[0]!;
 
-  const parsed = tryParseJSON(raw);
-  if (!parsed) {
-    warnings.push("LLM_OUTPUT_NOT_JSON");
-    return empty;
-  }
-
-  const rawIssues = parseIssues(parsed.issues);
+  const rawIssues = parts.flatMap((p) => parseIssues(p.issues));
   const { grounded, warnings: groundWarnings } = groundIssues(rawIssues, documentText);
   for (const w of groundWarnings) warnings.push(w);
   if (grounded.length < rawIssues.length) {
     warnings.push(`DROPPED_${rawIssues.length - grounded.length}_UNGROUNDED_ISSUES`);
   }
 
-  const keyDates = Array.isArray(parsed.key_dates)
-    ? (parsed.key_dates as unknown[]).flatMap((d) => {
-        if (typeof d !== "object" || d === null) return [];
-        const o = d as Record<string, unknown>;
-        if (typeof o.date !== "string") return [];
-        return [{ date: o.date, what: typeof o.what === "string" ? o.what : "" }];
-      })
-    : [];
+  const seenDates = new Set<string>();
+  let droppedDates = 0;
+  const keyDates = parts.flatMap((p) =>
+    Array.isArray(p.key_dates)
+      ? (p.key_dates as unknown[]).flatMap((d) => {
+          if (typeof d !== "object" || d === null) return [];
+          const o = d as Record<string, unknown>;
+          if (typeof o.date !== "string") return [];
+          if (!isDateGroundedInText(o.date, documentText)) {
+            droppedDates++;
+            return [];
+          }
+          const what = typeof o.what === "string" ? o.what : "";
+          const key = `${o.date}|${what}`;
+          if (seenDates.has(key)) return [];
+          seenDates.add(key);
+          return [{ date: o.date, what }];
+        })
+      : []
+  );
+  if (droppedDates > 0) warnings.push(`DROPPED_${droppedDates}_UNGROUNDED_DATES`);
+
+  const union = (field: string) => [...new Set(parts.flatMap((p) => asStringArray(p[field])))];
 
   return {
     slug: opts.slug,
     document_type: typeof parsed.document_type === "string" ? parsed.document_type : "Unbekannt",
-    parties: asStringArray(parsed.parties),
+    parties: union("parties"),
     key_dates: keyDates,
     issues: grounded,
-    relevant_statutes: asStringArray(parsed.relevant_statutes),
-    recommended_actions: asStringArray(parsed.recommended_actions),
+    relevant_statutes: union("relevant_statutes"),
+    recommended_actions: union("recommended_actions"),
     attorney_review_required: true,
     warnings,
   };

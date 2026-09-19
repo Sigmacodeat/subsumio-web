@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { useRealtime } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -164,6 +165,7 @@ const I18N: Record<string, { de: string; en: string }> = {
   toast_portal_copied: { de: "Portal-Link kopiert", en: "Portal link copied" },
   toast_error: { de: "Aktion fehlgeschlagen", en: "Action failed" },
   ai_suggestion: { de: "KI-Vorschlag", en: "AI suggestion" },
+  due_date: { de: "Frist:", en: "Due:" },
   days_overdue: { de: "Tage überfällig", en: "days overdue" },
   days: { de: "Tage", en: "days" },
 };
@@ -178,6 +180,7 @@ export function ReviewInboxTab() {
   const { addToast } = useToast();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<ReviewType>("all");
+  const [editedDates, setEditedDates] = useState<Record<string, string>>({});
 
   const reviewQuery = useQuery({
     queryKey: ["review-inbox"],
@@ -209,52 +212,21 @@ export function ReviewInboxTab() {
         | "party_assertion"
         | "import_document";
       item: ReviewItem;
+      /** Lawyer-edited deadline date (suggested_deadline approve only). */
+      dueDate?: string;
     }) => {
       const { type, action, item } = params;
       if (type === "suggested_deadline") {
         if (item.arrayIndex !== null && item.caseSlug) {
-          const reviewStatus = action === "approve" ? "approved" : "rejected";
-          // Patch the case frontmatter to mark the suggested deadline as confirmed
-          await fetch(`/api/pages/${encodeURIComponent(item.caseSlug)}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              frontmatter: {
-                suggested_deadlines: {
-                  [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
-                },
-              },
-              merge: true,
-            }),
-          }).then((res) => res.json());
-          // When approved, auto-create a legal_deadline page so it appears in calendar + deadlines list
-          if (action === "approve" && item.dueDate) {
-            try {
-              await fetch("/api/pages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  slug: `legal/deadlines/${Date.now()}-${item.caseSlug.split("/").pop()}`,
-                  title: item.title,
-                  type: "legal_deadline",
-                  frontmatter: {
-                    case_slug: item.caseSlug,
-                    due_date: item.dueDate,
-                    title: item.title,
-                    status: "pending",
-                    urgency: item.urgency || "medium",
-                    source: item.source || "ai",
-                    source_quote: item.sourceQuote || null,
-                    review_status: "approved",
-                    auto_created: true,
-                    created_at: new Date().toISOString(),
-                  },
-                }),
-              });
-            } catch {
-              /* best effort — deadline page creation is non-blocking */
-            }
-          }
+          // Server-side, atomic: the deadline is written and checked BEFORE
+          // the suggestion is marked approved (src/lib/legal/deadline-decision.ts).
+          await decideDeadlineSuggestion({
+            caseSlug: item.caseSlug,
+            index: item.arrayIndex,
+            action: action === "approve" ? "approve" : "reject",
+            dueDate:
+              action === "approve" ? (params.dueDate ?? item.dueDate ?? undefined) : undefined,
+          });
           return { ok: true };
         }
         return api.brain.updatePage({
@@ -383,8 +355,11 @@ export function ReviewInboxTab() {
         title: tr(toastMap[variables.action] || "toast_approved", lang),
       });
     },
-    onError: () => {
-      addToast({ type: "error", title: tr("toast_error", lang) });
+    onError: (err) => {
+      addToast({
+        type: "error",
+        title: err instanceof Error && err.message ? err.message : tr("toast_error", lang),
+      });
     },
   });
 
@@ -623,15 +598,32 @@ export function ReviewInboxTab() {
                     )}
                     {item.type === "suggested_deadline" && (
                       <>
+                        <label className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
+                          {tr("due_date", lang)}
+                          <input
+                            type="date"
+                            aria-label={tr("due_date", lang)}
+                            value={editedDates[item.id] ?? item.dueDate ?? ""}
+                            onChange={(e) =>
+                              setEditedDates((prev) => ({ ...prev, [item.id]: e.target.value }))
+                            }
+                            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text)]"
+                          />
+                        </label>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
-                              type: item.type,
-                              action: "approve",
-                              item,
-                            })
+                            void actionMutation
+                              .mutateAsync({
+                                type: item.type,
+                                action: "approve",
+                                item,
+                                dueDate: editedDates[item.id] ?? item.dueDate ?? undefined,
+                              })
+                              .catch(() => {
+                                /* surfaced via onError toast */
+                              })
                           }
-                          disabled={busy}
+                          disabled={busy || !(editedDates[item.id] ?? item.dueDate)}
                           className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (

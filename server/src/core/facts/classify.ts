@@ -16,6 +16,7 @@
  * The LLM uses Haiku via the AI gateway (cheap; the per-turn hot path).
  */
 
+import { TIER_DEFAULTS } from "../model-config.ts";
 import { chat, isAvailable } from "../ai/gateway.ts";
 import type { ChatResult } from "../ai/gateway.ts";
 import type { FactRow, FactKind } from "../engine.ts";
@@ -109,7 +110,7 @@ export async function classifyAgainstCandidates(
   let classifierResult: ChatResult | null = null;
   try {
     classifierResult = await chat({
-      model: opts.model ?? "openrouter:deepseek/deepseek-chat",
+      model: opts.model ?? TIER_DEFAULTS.utility,
       system: CLASSIFIER_SYSTEM,
       messages: [
         {

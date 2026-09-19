@@ -14,7 +14,7 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pipeline/list`, {
+      const res = await fetch(`${ENGINE_URL}/api/legal-pipeline/list`, {
         headers: ctx.headers,
         signal: AbortSignal.timeout(8_000),
       });

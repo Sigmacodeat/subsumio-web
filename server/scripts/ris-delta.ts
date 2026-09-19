@@ -81,6 +81,10 @@ export interface DeltaDocument {
   inkrafttreten: string | null;
   /** Ausserkrafttretensdatum (YYYY-MM-DD), falls Norm nicht mehr in Kraft */
   ausserkrafttreten: string | null;
+  /** Official abbreviation of the law (Bundes-/Landesrecht), e.g. "ABGB". */
+  abkuerzung: string | null;
+  /** The RIS search hit itself, for fields the watcher maps later (decisions). */
+  raw?: Record<string, unknown>;
 }
 
 export interface DeltaResult {
@@ -298,6 +302,7 @@ export interface ParsedRef {
   changeType: "new" | "changed";
   inkrafttreten: string | null;
   ausserkrafttreten: string | null;
+  abkuerzung: string | null;
 }
 
 /**
@@ -360,6 +365,7 @@ export function parseRef(ref: Record<string, unknown>, applikation: string): Par
   let artikelParagraphAnlage: string | null = null;
   let inkrafttreten: string | null = null;
   let ausserkrafttreten: string | null = null;
+  let abkuerzung: string | null = null;
 
   // Bundesrecht: Felder liegen unter meta.Bundesrecht.BrKons (nicht direkt unter Bundesrecht)
   // Der BrKons-Sub-Object enthält Gesetzesnummer, ArtikelParagraphAnlage, Inkrafttretensdatum etc.
@@ -373,6 +379,7 @@ export function parseRef(ref: Record<string, unknown>, applikation: string): Par
       artikelParagraphAnlage = (brKons.ArtikelParagraphAnlage as string) || null;
       inkrafttreten = (brKons.Inkrafttretensdatum as string) || null;
       ausserkrafttreten = (brKons.Ausserkrafttretensdatum as string) || null;
+      abkuerzung = (brKons.Abkuerzung as string) || null;
     }
   }
 
@@ -386,6 +393,7 @@ export function parseRef(ref: Record<string, unknown>, applikation: string): Par
       artikelParagraphAnlage = (lrKons.ArtikelParagraphAnlage as string) || null;
       inkrafttreten = (lrKons.Inkrafttretensdatum as string) || null;
       ausserkrafttreten = (lrKons.Ausserkrafttretensdatum as string) || null;
+      abkuerzung = (lrKons.Abkuerzung as string) || null;
     }
   }
 
@@ -419,6 +427,7 @@ export function parseRef(ref: Record<string, unknown>, applikation: string): Par
     changeType,
     inkrafttreten,
     ausserkrafttreten,
+    abkuerzung,
   };
 }
 
@@ -447,7 +456,8 @@ export async function fetchDelta(
 
   for (let page = 1; page <= maxPages; page++) {
     // Rate-limit: 200ms delay between pages (RIS OGD polite crawling)
-    if (page > 1) await new Promise((r) => setTimeout(r, 200));
+    // RIS OGD: 1–2 s between requests (was 200 ms).
+    if (page > 1) await new Promise((r) => setTimeout(r, 1000));
     const result = await fetchDeltaPage(app.endpoint, app.applikation, imRisSeit, page);
     if (!result) {
       // Fehler nach allen Retries — abbrechen, Cursor nicht updaten
@@ -490,6 +500,12 @@ export async function fetchDelta(
         geschaeftszahl: parsed.geschaeftszahl,
         artikelParagraphAnlage: parsed.artikelParagraphAnlage,
         changeType: parsed.changeType,
+        // Validity dates and abbreviation were read above but not passed on,
+        // so every changed norm lost its in-force dates in the daily sync.
+        inkrafttreten: parsed.inkrafttreten,
+        ausserkrafttreten: parsed.ausserkrafttreten,
+        abkuerzung: parsed.abkuerzung,
+        raw: ref,
       });
     }
 

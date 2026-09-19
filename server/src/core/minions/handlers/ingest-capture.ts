@@ -289,7 +289,9 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       `INSERT INTO sources(id, name, config)
        VALUES ($1, $2, $3::jsonb)
        ON CONFLICT (id) DO NOTHING`,
-      [targetSource, targetSource, JSON.stringify({ provisioned_by: "ingest_capture" })]
+      // Raw object, not JSON.stringify: postgres.js double-encodes a string
+      // bound to ::jsonb (CLAUDE.md JSONB invariant).
+      [targetSource, targetSource, { provisioned_by: "ingest_capture" }]
     );
 
     if (!isText) {

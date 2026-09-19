@@ -186,3 +186,6 @@
 # Lädt die konsolidierte EU-Finanzsanktionsliste und ersetzt die gespeicherte
 # Fassung. Jede Identitätsprüfung vermerkt, gegen welchen Stand geprüft wurde.
 20 4 * * 1     curl -fsS --max-time 280 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/sanctions-sync || true
+
+# Law corpus inventory for the operator dashboard (/ops/corpus → Bestand).
+17 * * * *     curl -fsS --max-time 890 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/corpus-inventory || true

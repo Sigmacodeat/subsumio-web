@@ -576,3 +576,44 @@ describe("Austrian answers — jurisdiction preference", () => {
     expect(r?.text).toBeNull();
   });
 });
+
+describe("lookupCorpusParagraph — articles (EUR-Lex layout)", () => {
+  const regulation = [
+    "---",
+    'title: "DSGVO"',
+    "---",
+    "(165) Im Einklang mit Artikel 17 AEUV achtet diese Verordnung den Status der Kirchen.",
+    "",
+    "Artikel\u00a016",
+    "",
+    "Recht auf Berichtigung",
+    "",
+    "(1) Die betroffene Person hat das Recht auf Berichtigung.",
+    "",
+    "Artikel\u00a017",
+    "",
+    "Recht auf Löschung",
+    "",
+    "(1) Die betroffene Person hat das Recht, die Löschung zu verlangen.",
+    "",
+    "Artikel 18",
+    "",
+    "Recht auf Einschränkung",
+  ].join("\n");
+
+  it("takes the article heading, not an earlier mention in the recitals", async () => {
+    vi.mocked(fs.readFile).mockReset();
+    vi.mocked(fs.readFile).mockResolvedValueOnce(regulation as never);
+    const text = await lookupCorpusParagraph("dsgvo", "Art. 17");
+    expect(text).toContain("Recht auf Löschung");
+    expect(text).not.toContain("AEUV");
+  });
+
+  it("reads to the next heading (no-break space included) and no further", async () => {
+    vi.mocked(fs.readFile).mockReset();
+    vi.mocked(fs.readFile).mockResolvedValueOnce(regulation as never);
+    const text = await lookupCorpusParagraph("dsgvo", "Art. 17");
+    expect(text).toContain("die Löschung zu verlangen");
+    expect(text).not.toContain("Einschränkung");
+  });
+});

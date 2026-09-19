@@ -6,6 +6,7 @@ import type { PostUploadTask } from "@/lib/post-upload-outbox";
 import { MAX_ATTEMPTS } from "@/lib/post-upload-outbox";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
+import { listEnginePages } from "@/lib/engine-pages";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/post-upload-drain");
@@ -26,6 +27,9 @@ interface TaskPage {
   frontmatter?: Partial<PostUploadTask>;
 }
 
+/** Max tasks read per brain per run (paged in batches of ENGINE_LIST_MAX). */
+const OUTBOX_SCAN_LIMIT = 2_000;
+
 function backoffMs(attempt: number): number {
   // 1 min → 4 min → 16 min → exhausted
   return Math.min(60_000 * Math.pow(4, attempt), 16 * 60_000);
@@ -43,12 +47,13 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   // tenants (each with a 15s timeout) can exceed maxDuration if a few engines
   // are slow. Failures are isolated per brain (settled, not rejected).
   const fetched = await mapWithConcurrency(brainIds, async (brainId) => {
-    const tasksRes = await fetch(`${ENGINE_URL}/api/pages?type=post_upload_task&limit=200`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!tasksRes.ok) throw new Error(`task fetch failed for ${brainId}: HTTP ${tasksRes.status}`);
-    const pages = (await tasksRes.json()) as TaskPage[];
+    // Paged: the engine caps one list call, and tasks waiting on a document
+    // used to fill the first 200 rows forever, starving everything behind them.
+    const pages = (await listEnginePages(
+      engineHeadersForBrain(brainId),
+      "post_upload_task",
+      OUTBOX_SCAN_LIMIT
+    )) as unknown as TaskPage[];
     return pages.map((page) => ({
       ...page,
       frontmatter: { ...page.frontmatter, brain_id: page.frontmatter?.brain_id ?? brainId },
@@ -83,6 +88,24 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     // never inspect the async placeholder or a document without embeddings.
     if (task_type !== "reconcile_case") {
       const readiness = await documentReadiness(headers, doc_slug);
+      if (!readiness.ready && readiness.terminal) {
+        // The document will never become analysable — close the task instead
+        // of re-deferring it every 2 minutes forever. The document itself
+        // already shows the extraction/embedding failure to the user.
+        const patch = await enginePatchPage(headers, {
+          slug: page.slug,
+          type: "post_upload_task_blocked",
+          frontmatter: {
+            status: "blocked",
+            blocked_at: new Date().toISOString(),
+            last_error: `blocked_${readiness.reason}`,
+          },
+        });
+        if (!patch.ok)
+          log.error(`[post-upload-drain] failed to block ${page.slug}: ${patch.status}`);
+        blocked++;
+        continue;
+      }
       if (!readiness.ready) {
         const patch = await enginePatchPage(headers, {
           slug: page.slug,
@@ -252,21 +275,29 @@ function encodeSlug(slug: string): string {
 async function documentReadiness(
   headers: Record<string, string>,
   slug: string
-): Promise<{ ready: boolean; reason: string }> {
+): Promise<{ ready: boolean; reason: string; terminal?: boolean }> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
       headers,
       signal: AbortSignal.timeout(10_000),
     });
+    // A deleted document never comes back — terminal, not "try again".
+    if (res.status === 404) return { ready: false, reason: "document_missing", terminal: true };
     if (!res.ok) return { ready: false, reason: `document_http_${res.status}` };
     const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
     const fm = page.frontmatter ?? {};
     const extraction = String(fm.extraction_status ?? "processing");
     const embedding = String(fm.embedding_status ?? "unknown");
+    if (extraction === "failed" || extraction === "permanently_failed") {
+      return { ready: false, reason: `extraction_${extraction}`, terminal: true };
+    }
     if (!["ready", "partial", "text_layer", "ocr_complete"].includes(extraction)) {
       return { ready: false, reason: `extraction_${extraction}` };
     }
-    if (embedding === "pending" || embedding === "failed") {
+    if (embedding === "failed") {
+      return { ready: false, reason: "embedding_failed", terminal: true };
+    }
+    if (embedding === "pending") {
       return { ready: false, reason: `embedding_${embedding}` };
     }
     return { ready: true, reason: "ready" };

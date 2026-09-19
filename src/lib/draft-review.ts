@@ -14,7 +14,58 @@
  * - consistency: Internal contradictions or inconsistencies
  */
 
-import { api } from "@/lib/api";
+import { ENGINE_URL } from "@/lib/engine";
+import { engineThink } from "@/lib/engine-think";
+import { listEnginePages } from "@/lib/engine-pages";
+import { encodeSlugPath } from "@/lib/utils";
+
+// Server-side module: every call carries the caller's tenant headers. It used
+// to import the BROWSER client (`api`), which on the server posted to the
+// engine without tenant/source headers — the fail-closed engine rejected it
+// and the review silently failed.
+type EngineHeaders = Record<string, string>;
+
+async function writePage(
+  headers: EngineHeaders,
+  page: {
+    slug: string;
+    title?: string;
+    type: string;
+    content: string;
+    frontmatter: Record<string, unknown>;
+  }
+): Promise<void> {
+  const res = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(page),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`engine page write ${res.status}`);
+}
+
+async function readPage(
+  headers: EngineHeaders,
+  slug: string
+): Promise<{
+  title?: string;
+  content?: string;
+  compiled_truth?: string;
+  frontmatter?: Record<string, unknown>;
+} | null> {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(slug)}`, {
+    headers,
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`engine page read ${res.status}`);
+  return (await res.json()) as {
+    title?: string;
+    content?: string;
+    compiled_truth?: string;
+    frontmatter?: Record<string, unknown>;
+  };
+}
 
 export type ReviewSeverity = "critical" | "warning" | "info" | "suggestion";
 export type ReviewCategory =
@@ -169,32 +220,39 @@ function parseReviewResponse(
   };
 }
 
-export async function reviewDraft(opts: {
-  content: string;
-  title: string;
-  type: string;
-  draftSlug?: string;
-}): Promise<DraftReviewResult> {
+export async function reviewDraft(
+  headers: EngineHeaders,
+  opts: {
+    content: string;
+    title: string;
+    type: string;
+    draftSlug?: string;
+    caseSlug?: string;
+  }
+): Promise<DraftReviewResult> {
   const prompt = REVIEW_PROMPT_TEMPLATE.replace("{title}", opts.title)
     .replace("{type}", opts.type)
     .replace("{content}", opts.content.slice(0, 12000));
 
-  const result = await api.query.think(prompt, {
+  const result = await engineThink(headers, {
+    query: prompt,
     mode: "tokenmax",
-    queryMode: "deep_matter",
+    ...(opts.caseSlug ? { caseSlug: opts.caseSlug } : {}),
+    timeoutMs: 55_000,
   });
 
   return parseReviewResponse(result.answer, opts.title, opts.type, opts.draftSlug);
 }
 
 export async function persistReviewResult(
+  headers: EngineHeaders,
   review: DraftReviewResult,
   brainId: string
 ): Promise<void> {
   if (!review.draftSlug) return;
 
   const slug = `copilot/draft-review/${review.id}`;
-  await api.brain.createPage({
+  await writePage(headers, {
     slug,
     title: `Review: ${review.draftTitle}`,
     type: "copilot_draft_review",
@@ -215,9 +273,12 @@ export async function persistReviewResult(
   });
 }
 
-export async function loadReview(reviewId: string): Promise<DraftReviewResult | null> {
+export async function loadReview(
+  headers: EngineHeaders,
+  reviewId: string
+): Promise<DraftReviewResult | null> {
   const slug = `copilot/draft-review/${reviewId}`;
-  const page = await api.brain.getPage(slug);
+  const page = await readPage(headers, slug);
   if (!page) return null;
 
   const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
@@ -228,7 +289,7 @@ export async function loadReview(reviewId: string): Promise<DraftReviewResult | 
     draftType: String(fm.draft_type ?? ""),
     reviewStatus: (fm.review_status as DraftReviewResult["reviewStatus"]) ?? "in_review",
     issues: (fm.issues as DraftReviewIssue[]) ?? [],
-    summary: page.content ?? "",
+    summary: page.content ?? page.compiled_truth ?? "",
     overallRisk: (fm.overall_risk as DraftReviewResult["overallRisk"]) ?? "medium",
     reviewedAt: String(fm.reviewed_at ?? new Date().toISOString()),
     reviewerModel: fm.reviewer_model as string | undefined,
@@ -236,11 +297,12 @@ export async function loadReview(reviewId: string): Promise<DraftReviewResult | 
 }
 
 export async function updateIssueStatus(
+  headers: EngineHeaders,
   reviewId: string,
   issueId: string,
   status: ReviewIssueStatus
 ): Promise<void> {
-  const review = await loadReview(reviewId);
+  const review = await loadReview(headers, reviewId);
   if (!review) throw new Error("Review not found");
 
   const updatedIssues = review.issues.map((i) => (i.id === issueId ? { ...i, status } : i));
@@ -258,8 +320,9 @@ export async function updateIssueStatus(
   }
 
   const slug = `copilot/draft-review/${reviewId}`;
-  await api.brain.updatePage({
+  await writePage(headers, {
     slug,
+    title: `Review: ${review.draftTitle}`,
     type: "copilot_draft_review",
     content: review.summary,
     frontmatter: {
@@ -277,11 +340,14 @@ export async function updateIssueStatus(
   });
 }
 
-export async function listReviews(opts?: {
-  draftSlug?: string;
-  status?: DraftReviewResult["reviewStatus"];
-}): Promise<DraftReviewResult[]> {
-  const pages = await api.brain.listPages({ type: "copilot_draft_review", limit: 50 });
+export async function listReviews(
+  headers: EngineHeaders,
+  opts?: {
+    draftSlug?: string;
+    status?: DraftReviewResult["reviewStatus"];
+  }
+): Promise<DraftReviewResult[]> {
+  const pages = await listEnginePages(headers, "copilot_draft_review", 50);
   let reviews = (
     pages as unknown as Array<{
       slug: string;

@@ -9,6 +9,7 @@ import {
   buildExecutionWaves,
   withDependencyContext,
   criticRecommendsRevision,
+  parseCriticVerdict,
   type SupervisorStep,
   type SupervisorChildResult,
 } from "../src/core/minions/handlers/supervisor.ts";
@@ -184,8 +185,19 @@ describe("criticRecommendsRevision", () => {
     expect(criticRecommendsRevision("Overall: REJECT — fabricated citation")).toBe(true);
   });
 
-  it("does not trigger on publish or derived words", () => {
+  it("does not trigger on an explicit publish verdict", () => {
     expect(criticRecommendsRevision('{"recommendation": "publish"}')).toBe(false);
-    expect(criticRecommendsRevision("The revised draft already addressed this.")).toBe(false);
+    expect(
+      criticRecommendsRevision("No need to revise — citations verified.\nVERDICT: publish")
+    ).toBe(false);
+  });
+
+  it("the final VERDICT line wins over words in the prose", () => {
+    expect(parseCriticVerdict("I would not reject this.\nVERDICT: publish")).toBe("publish");
+    expect(parseCriticVerdict("Looks fine overall.\nVERDICT: reject")).toBe("reject");
+  });
+
+  it("fails closed: no readable verdict means revise", () => {
+    expect(parseCriticVerdict("The revised draft already addressed this.")).toBe("revise");
   });
 });

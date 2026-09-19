@@ -1,4 +1,5 @@
 import { readFileSync, statSync, lstatSync } from "fs";
+import { DEFAULT_SYNOPSIS_MODEL } from "./page-summary.ts";
 import { basename, extname } from "path";
 import { createHash } from "crypto";
 import { marked } from "marked";
@@ -1105,7 +1106,7 @@ export async function importFromContent(
       ? null
       : computeCorpusGeneration({
           crMode: effectiveCRMode,
-          haikuModel: "openrouter:deepseek/deepseek-chat",
+          haikuModel: DEFAULT_SYNOPSIS_MODEL,
         });
 
   // Transaction wraps all DB writes. Every per-page tx call carries the
