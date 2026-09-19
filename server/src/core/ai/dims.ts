@@ -57,6 +57,21 @@ export function isValidVoyageOutputDim(dims: number): boolean {
 const ZEROENTROPY_DIM_MODELS = new Set(["zembed-1"]);
 export const ZEROENTROPY_VALID_DIMS = [2560, 1280, 640, 320, 160, 80, 40] as const;
 
+// Qwen3-Embedding (0.6B / 4B / 8B) is Matryoshka-trained: any width from 32
+// up to the model's native size is valid, and the provider shortens and
+// re-normalizes server-side. Reached via OpenRouter as
+// `qwen/qwen3-embedding-8b`, or by bare id on self-hosted endpoints.
+const QWEN3_EMBEDDING_MAX_DIMS: Record<string, number> = {
+  "0.6b": 1024,
+  "4b": 2560,
+  "8b": 4096,
+};
+
+export function qwen3EmbeddingMaxDim(modelId: string): number | null {
+  const m = /(?:^|\/)qwen3-embedding-(0\.6b|4b|8b)$/i.exec(modelId);
+  return m ? QWEN3_EMBEDDING_MAX_DIMS[m[1]!.toLowerCase()]! : null;
+}
+
 export function supportsZeroEntropyDimension(modelId: string): boolean {
   return ZEROENTROPY_DIM_MODELS.has(modelId);
 }
@@ -196,6 +211,22 @@ export function dimsProviderOptions(
             ...(inputType ? { input_type: inputType } : {}),
           },
         };
+      }
+      // Qwen3-Embedding: send the configured width; without it the provider
+      // returns the native 1024/2560/4096 dims and the insert fails.
+      // Query/document asymmetry for Qwen is an instruction prefix on the
+      // query text (ai/embedding-instructions.ts), not a request field.
+      {
+        const max = qwen3EmbeddingMaxDim(modelId);
+        if (max !== null) {
+          if (!Number.isInteger(dims) || dims < 32 || dims > max) {
+            throw new AIConfigError(
+              `Qwen3 embedding model "${modelId}" supports dimensions 32..${max}, got ${dims}.`,
+              `Set \`embedding_dimensions\` to a value in 32..${max} (1536 fits a pgvector HNSW index).`
+            );
+          }
+          return { openaiCompatible: { dimensions: dims } };
+        }
       }
       // OpenAI text-embedding-3 family on the openai-compatible adapter
       // (Azure OpenAI hosts these via its OpenAI-compatible /embeddings

@@ -21,6 +21,7 @@
  *     rotation (via configureGateway()) invalidates stale entries.
  */
 
+import { recordAiSpend } from "./spend-log.ts";
 import {
   embed as aiEmbed,
   embedMany,
@@ -54,9 +55,9 @@ import type {
 } from "./types.ts";
 import { resolveRecipe, assertTouchpoint, parseModelId } from "./model-resolver.ts";
 import { resolveModel, TIER_DEFAULTS } from "../model-config.ts";
-import { recordAiSpend } from "./spend-log.ts";
 import type { BrainEngine } from "../engine.ts";
 import { dimsProviderOptions } from "./dims.ts";
+import { queryInstructionFor } from "./embedding-instructions.ts";
 import { hasAnthropicKey } from "./anthropic-key.ts";
 import { AIConfigError, AITransientError, normalizeAIError } from "./errors.ts";
 import { providerFailoverModel } from "./provider-failover.ts";
@@ -1440,7 +1441,10 @@ export async function embed(texts: string[], opts?: EmbedOpts): Promise<Float32A
   const resolveTarget = opts?.embeddingModel ?? getEmbeddingModel();
   const tracker = __budgetStore.getStore() ?? null;
   const { model, recipe, modelId } = await resolveEmbeddingProvider(resolveTarget);
-  const truncated = texts.map((t) => (t ?? "").slice(0, MAX_CHARS));
+  // Instruction-tuned models (Qwen3-Embedding) need their query prefix on
+  // the query side only; documents stay bare.
+  const instruction = opts?.inputType === "query" ? queryInstructionFor(modelId) : null;
+  const truncated = texts.map((t) => ((instruction ?? "") + (t ?? "")).slice(0, MAX_CHARS));
 
   // Reserve up front for the worst-case batch token count. Embeddings have
   // no output rate, so maxOutputTokens=0. record() at the end uses the
