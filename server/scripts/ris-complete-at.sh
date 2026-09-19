@@ -43,4 +43,8 @@ for court in bvwg vwgh ogh lvwg dok vfgh gbk umse uvs dsk asylgh pvak ubas; do
   step bun scripts/fetch-all-at-judikatur.ts --court "$court" --from 1900
 done
 
+# Decision → norm links for everything that arrived. Idempotent; run again
+# after the pipeline has imported the new files.
+step bun scripts/build-citation-links.ts --apply
+
 echo "=== $(date -u +%FT%TZ) RIS_COMPLETE_DONE" >> "$LOG"
