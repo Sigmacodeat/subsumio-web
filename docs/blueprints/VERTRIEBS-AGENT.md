@@ -227,8 +227,8 @@ Mensch, Freigabe in der Ops-Konsole, Versand als Stripe Invoice mit Zahlungslink
   automatisch Community; Kauf während des Tests rechnet erst ab Testende ab).
 - **Checkout nur für eingeloggte Nutzer** und mit Weiterleitung; für den Chat braucht es
   `ui_mode: embedded`, Stripe Tax, UID-Erfassung, SEPA/EPS.
-- **Kontaktformular ist `mailto:`** (`contact-page.tsx`) – kein Lead-Backend. `capture_lead` und
-  `handoff_human` brauchen eine echte Ablage mit Ops-Sicht.
+- ~~**Kontaktformular ist `mailto:`**~~ Erledigt 2026-09-19: Kontaktseite und Chat schreiben nach
+  `/api/concierge/lead` (Ablage `subsumio_leads`, Mail an `CONCIERGE_LEAD_INBOX`), Sicht unter `/ops/leads`.
 - **Preise liegen an drei Stellen** (`plans.ts`, `site.ts`, `audiences.ts`). Der Agent liest nur
   `plans.ts`. Drift-Test erledigt 2026-09-19 (`src/lib/billing/price-drift.test.ts`).
 - **Demo-Endpunkt liefert nur Suchtreffer**, keine belegte Antwort. Für die Live-Demo braucht es eine
@@ -296,7 +296,7 @@ Alle Schritte schreiben in `OnboardingProgress`; die Ops-Konsole zeigt, wo Kanzl
 | Phase | Inhalt | Voraussetzung / Abnahme |
 |---|---|---|
 | **0 – Fundament** | Testphase implementieren; Preise aus einer Quelle; Lead-Backend statt `mailto:`; Anthropic als Unterauftragsverarbeiter gelistet; EU-Routing erzwungen | Website-Versprechen = Produktverhalten |
-| **1 – Auskunft** | Widget, `search_knowledge`, `get_pricing`, Claim-Check, `capture_lead`, `book_meeting`, `handoff_human`; Golden + Red-Team-Set | Faktentreue ≥ 98 %, Preis 100 %, 0 verbindliche Aktionen |
+| **1 – Auskunft** (gebaut 2026-09-19: `src/lib/concierge/`, `/api/concierge`, Widget, `/ops/leads`; Termin vorerst als Anfrage, kein Kalender) | Widget, `search_knowledge`, `get_pricing`, Claim-Check, `capture_lead`, `book_meeting`, `handoff_human`; Golden + Red-Team-Set | Faktentreue ≥ 98 %, Preis 100 %, 0 verbindliche Aktionen |
 | **2 – Überzeugen** | Live-Demo mit belegter Antwort, Rechner, Angebot-PDF, AVV/TOM-Versand, Einwandbausteine | Demo-Antwort mit Zitaten auf Demo-Brain |
 | **3 – Abschließen** | Konto per Verifikation, Kanzleidaten + VIES, AGB/AVV-Karte, eingebetteter Stripe Checkout, Stripe Tax, Promotion Codes | Test- und Live-Modus durchgespielt, Audit-Einträge vollständig |
 | **4 – Onboarding** | Übergang ins Dashboard, Onboarding-Modus des Copilot, Check-ins, Testphasen-Bilanz | Messbar kürzere Zeit bis erste belegte Antwort |

@@ -9,6 +9,7 @@ import {
   Database,
   Gauge,
   HardDrive,
+  Inbox,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
@@ -35,6 +36,7 @@ export const OPS_NAV: { title: string; items: NavItem[] }[] = [
       { href: "/ops/kanzleien", label: "Kanzleien", icon: Building2 },
       { href: "/ops/users", label: "Nutzer", icon: Users },
       { href: "/ops/mailbox", label: "Support-Mailbox", icon: Mail },
+      { href: "/ops/leads", label: "Anfragen", icon: Inbox },
     ],
   },
   {

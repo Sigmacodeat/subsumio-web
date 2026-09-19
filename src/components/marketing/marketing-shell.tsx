@@ -14,6 +14,7 @@ import { MotionConfig } from "framer-motion";
 import { MarketingBackground, MarketingNav, MarketingFooter } from "./chrome";
 import { ScrollProgress } from "./motion-system";
 import BackToTop from "./back-to-top";
+import ConciergeWidget from "./concierge/concierge-widget";
 export default function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
@@ -23,6 +24,7 @@ export default function MarketingShell({ children }: { children: React.ReactNode
       {children}
       <MarketingFooter />
       <BackToTop />
+      <ConciergeWidget />
     </MotionConfig>
   );
 }
