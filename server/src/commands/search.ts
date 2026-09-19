@@ -79,6 +79,8 @@ const KNOB_DESCRIPTIONS: Record<keyof ModeBundle, string> = {
   relationalRetrieval:
     "Typed-edge relational recall arm (relational queries walk the graph; no-op otherwise)",
   relational_retrieval_depth: "Max hops for relational traversal (1..3, 2 default)",
+  keyword_arm:
+    "When the keyword arm joins the fusion: always | citations (only for queries citing a §, abbreviation or case number)",
   // v0.46 cognitive tier priority cascade
   cognitive_tier: "Cognitive tier priority cascade (Mental Models > Observations > Raw Facts)",
   cognitive_tier3_boost: "Boost multiplier for Tier 3 (Mental Models), default 1.08",
