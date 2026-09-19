@@ -431,7 +431,18 @@ async function keywordRanking(engine: Engine, question: string, limit = 200): Pr
         LIMIT $2`,
       [q, limit]
     );
-  const strict = (await run(question)).map((r) => r.id);
+  // A query that hits the database statement timeout counts as "no hits"
+  // for that arm instead of aborting the whole build.
+  const safeRun = async (q: string) => {
+    try {
+      return await run(q);
+    } catch (e) {
+      if ((e as { code?: string }).code !== "57014") throw e;
+      log(`  Keyword-Zeitlimit: ${q.slice(0, 60)}`);
+      return [];
+    }
+  };
+  const strict = (await safeRun(question)).map((r) => r.id);
   // Production falls back to a bounded OR query when the strict arm returns
   // fewer than 3 hits (search/hybrid.ts).
   if (strict.length >= 3) return strict;
@@ -439,7 +450,7 @@ async function keywordRanking(engine: Engine, question: string, limit = 200): Pr
   if (!relaxed) return strict;
   const seen = new Set(strict);
   const merged = [...strict];
-  for (const r of await run(relaxed)) {
+  for (const r of await safeRun(relaxed)) {
     if (!seen.has(r.id) && merged.length < limit) {
       seen.add(r.id);
       merged.push(r.id);
