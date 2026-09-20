@@ -22,3 +22,23 @@ export function isCitationQuery(q: string): boolean {
     /\bECLI:/.test(q)
   );
 }
+
+/**
+ * The court-decision identifiers in a query, as RIS writes them: the ECLI
+ * and the RIS document number.
+ *
+ * A lawyer pastes "ECLI:AT:OGH0002:2019:RS0132425" and expects that one
+ * decision. German full-text search splits the string into pieces and
+ * matched nothing for 13 of 18 sampled ECLIs, although every page was in
+ * the corpus — so the identifier is looked up exactly instead of searched.
+ * Rechtssatz numbers (RS0132425) are found by the keyword arm (12 of 12 in
+ * the same sample) and need no special path.
+ */
+export function decisionIdentifiers(q: string): string[] {
+  const out = new Set<string>();
+  for (const m of q.matchAll(/ECLI:[A-Z]{2}:[A-Z0-9]+:\d{4}:[A-Z0-9._-]+/gi)) {
+    out.add(m[0].toUpperCase());
+  }
+  for (const m of q.matchAll(/\bJ[A-Z]{2}_[A-Z0-9_]+\b/g)) out.add(m[0]);
+  return [...out];
+}

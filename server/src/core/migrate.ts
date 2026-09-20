@@ -6524,6 +6524,24 @@ export const MIGRATIONS: Migration[] = [
         ON corpus_inventory_snapshot (source_id, measured_at DESC);
     `,
   },
+  {
+    version: 144,
+    name: "pages_ecli_index",
+    // A lawyer pastes an ECLI and must get that decision. The lookup is an
+    // equality on frontmatter->>'ecli'; without the index it is a sequential
+    // scan over every page.
+    sql: "",
+    handler: async (engine) => {
+      const where = `deleted_at IS NULL AND (frontmatter->>'ecli') IS NOT NULL`;
+      const concurrently = engine.kind === "postgres" ? "CONCURRENTLY " : "";
+      await engine.runMigration(
+        144,
+        `CREATE INDEX ${concurrently}IF NOT EXISTS pages_ecli_idx
+           ON pages ((upper(frontmatter->>'ecli'))) WHERE ${where};`
+      );
+    },
+    transaction: false,
+  },
 ];
 
 export const LATEST_VERSION =

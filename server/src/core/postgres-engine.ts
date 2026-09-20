@@ -3845,6 +3845,30 @@ export class PostgresEngine implements BrainEngine {
     return result;
   }
 
+  /**
+   * Pages carrying one of these decision identifiers (ECLI or RIS document
+   * number), first chunk each. Exact lookup: an ECLI is an identifier, and
+   * the German text search splits it into pieces that match nothing.
+   */
+  async findChunksByDecisionIdentifier(
+    identifiers: string[],
+    limit = 20
+  ): Promise<Array<{ chunk_id: number; page_id: number }>> {
+    if (identifiers.length === 0) return [];
+    const rows = (await this.executeRaw(
+      `SELECT DISTINCT ON (p.id) cc.id AS chunk_id, p.id AS page_id
+       FROM pages p
+       JOIN content_chunks cc ON cc.page_id = p.id AND cc.modality = 'text'
+       WHERE p.deleted_at IS NULL
+         AND (upper(p.frontmatter ->> 'ecli') = ANY($1::text[])
+              OR p.frontmatter ->> 'doc_id' = ANY($1::text[]))
+       ORDER BY p.id, cc.chunk_index ASC
+       LIMIT $2`,
+      [identifiers.map((i) => i.toUpperCase()), limit]
+    )) as Array<{ chunk_id: number; page_id: number }>;
+    return rows.map((r) => ({ chunk_id: Number(r.chunk_id), page_id: Number(r.page_id) }));
+  }
+
   async getStatuteValidity(
     pageIds: number[]
   ): Promise<Map<number, { in_force_from: string | null; in_force_to: string | null }>> {

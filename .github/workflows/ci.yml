@@ -67,6 +67,19 @@ jobs:
       - run: bun install
       - run: bun run test:unit
 
+  deploy-script:
+    name: Deploy script guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      # The guards that keep two parallel deploys from emptying the release
+      # folder (see server/deploy/netcup/deploy-code.sh). Runs the script's own
+      # server-side blocks against a temporary folder.
+      - run: sh -n server/deploy/netcup/deploy-code.sh
+      - run: npx vitest run --config vitest.config.scripts.ts server/scripts/deploy-code.test.ts
+
   workflow-simulation:
     name: E2E Workflow Simulation (42-step legal workflow)
     runs-on: ubuntu-latest

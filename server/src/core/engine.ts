@@ -1398,6 +1398,16 @@ export interface BrainEngine {
    * least one date get an entry. Used by hybrid search to rank law in force
    * above repealed or not-yet-effective provisions. Single SQL query.
    */
+  /**
+   * Pages carrying one of these decision identifiers (ECLI or RIS document
+   * number), with their first chunk. Exact lookup, no ranking: an ECLI is
+   * an identifier, not a phrase, and the German text search tokenises it
+   * into pieces that match nothing.
+   */
+  findChunksByDecisionIdentifier?(
+    identifiers: string[],
+    limit?: number
+  ): Promise<Array<{ chunk_id: number; page_id: number }>>;
   getStatuteValidity?(
     pageIds: number[]
   ): Promise<Map<number, { in_force_from: string | null; in_force_to: string | null }>>;

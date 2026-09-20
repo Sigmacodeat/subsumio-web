@@ -16,6 +16,15 @@
 #   /opt/subsumio        current release (DEPLOYED_COMMIT names the commit)
 #   /opt/subsumio-prev   the release before, for a quick way back
 #   /opt/subsumio-new    only during a deploy
+#   /opt/subsumio-deploy.lock   held for the length of one deploy
+#
+# ONE deploy at a time. Two runs used to share the upload path and the same
+# folders: on 2026-09-20 two parallel deploys left /opt/subsumio with nothing
+# but an empty server/ folder, so cron and backup restart-looped and the
+# nightly deadline reminders stopped. The lock below makes the second run stop
+# with a message instead of joining in, the upload gets a name of its own, and
+# the switch refuses when the folder is no longer the one this run prepared
+# against.
 set -eu
 
 HOST="${DEPLOY_HOST:-subsumio-netcup}"
@@ -55,19 +64,49 @@ fi
 sha="$(git rev-parse --short "$REF")"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
+
+# ── One deploy at a time ────────────────────────────────────────────────
+# mkdir is atomic, so exactly one run wins. The loser prints who holds the
+# lock and stops; it never removes a lock it does not own.
+LOCK="$APP-deploy.lock"
+owner="$(id -un)@$(hostname -s) $(date -u '+%Y-%m-%dT%H:%M:%SZ') $sha"
+if ! ssh "$HOST" "mkdir '$LOCK' 2>/dev/null"; then
+  held="$(ssh "$HOST" "cat '$LOCK/owner' 2>/dev/null" || true)"
+  echo "[deploy] Es läuft bereits ein Deploy: ${held:-unbekannt}" >&2
+  echo "[deploy] Warten, bis er fertig ist. Läuft sicher keiner mehr (Abbruch," >&2
+  echo "         abgebrochene Verbindung), erst prüfen und dann freigeben:" >&2
+  echo "           ssh $HOST 'ps -eo etime,args | grep -E \"docker compose|tar -xzf\" | grep -v grep'" >&2
+  echo "           ssh $HOST 'rm -rf $LOCK'" >&2
+  exit 1
+fi
+ssh "$HOST" "printf '%s\n' '$owner' > '$LOCK/owner'"
+trap 'ssh "$HOST" "rm -rf \"$LOCK\"" >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT INT TERM
+
+# The upload gets a name of its own: a second run must never overwrite the
+# archive a first one is still unpacking.
+remote_tar="/root/subsumio-release-$sha-$$.tar.gz"
 git archive --format=tar.gz "$REF" > "$tmp/release.tar.gz"
 echo "[deploy] $sha hochladen …"
-scp -q "$tmp/release.tar.gz" "$HOST:/root/subsumio-release.tar.gz"
+scp -q "$tmp/release.tar.gz" "$HOST:$remote_tar"
 
-ssh "$HOST" "APP=$APP H=$H SHA=$sha" 'sh -s' <<'REMOTE'
+ssh "$HOST" "APP=$APP H=$H SHA=$sha TAR=$remote_tar" 'sh -s' <<'REMOTE'
 set -eu
+[ -d "$APP" ] || { echo "[deploy] $APP fehlt — Server prüfen, nichts umgeschaltet." >&2; exit 1; }
+[ -s "$APP/$H/.env" ] || { echo "[deploy] $APP/$H/.env fehlt — nichts umgeschaltet." >&2; exit 1; }
 rm -rf "$APP-new"
 mkdir "$APP-new"
-tar -xzf /root/subsumio-release.tar.gz -C "$APP-new"
+tar -xzf "$TAR" -C "$APP-new"
+rm -f "$TAR"
 echo "$SHA" > "$APP-new/DEPLOYED_COMMIT"
 cp -p "$APP/$H/.env" "$APP-new/$H/.env"
 chmod 600 "$APP-new/$H/.env"
 [ -d "$APP/$H/imports" ] && cp -a "$APP/$H/imports" "$APP-new/$H/imports"
+# The release must be complete before anything is switched.
+for f in package.json "$H/docker-compose.yml" "$H/crontab" "$H/.env" DEPLOYED_COMMIT; do
+  [ -s "$APP-new/$f" ] || { echo "[deploy] Unvollständige Version: $f fehlt." >&2; exit 1; }
+done
+# What the switch will expect to find; it refuses if this changed meanwhile.
+cat "$APP/DEPLOYED_COMMIT" 2>/dev/null > "$APP-new/PREVIOUS_COMMIT" || : > "$APP-new/PREVIOUS_COMMIT"
 REMOTE
 
 echo "[deploy] Abbilder bauen …"
@@ -81,6 +120,18 @@ fi
 echo "[deploy] umschalten …"
 ssh "$HOST" "APP=$APP H=$H APP_SERVICES='$APP_SERVICES'" 'sh -s' <<'REMOTE'
 set -eu
+# Refuse when the current release is not the one this run prepared against —
+# someone else switched in the meantime, and moving folders now would mix two
+# deploys (that is how /opt/subsumio was emptied on 2026-09-20).
+expected="$(cat "$APP-new/PREVIOUS_COMMIT" 2>/dev/null || echo "")"
+current="$(cat "$APP/DEPLOYED_COMMIT" 2>/dev/null || echo "")"
+if [ ! -d "$APP" ] || [ "$current" != "$expected" ]; then
+  echo "[deploy] Der Server hat sich während des Baus verändert" >&2
+  echo "         (erwartet: ${expected:-keine Marke}, gefunden: ${current:-keine Marke})." >&2
+  echo "         Nichts umgeschaltet. Deploy erneut starten." >&2
+  exit 1
+fi
+rm -f "$APP-new/PREVIOUS_COMMIT"
 rm -rf "$APP-prev"
 mv "$APP" "$APP-prev"
 mv "$APP-new" "$APP"
