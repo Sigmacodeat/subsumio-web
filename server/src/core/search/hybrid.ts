@@ -33,6 +33,7 @@ import { isTitlePhraseMatch } from "./title-match.ts";
 import { normalizeAlias } from "./alias-normalize.ts";
 import { stampEvidence } from "./evidence.ts";
 import { expandAnchors, hydrateChunks } from "./two-pass.ts";
+import { decisionIdentifiers } from "./citation-query.ts";
 import { enforceTokenBudget } from "./token-budget.ts";
 import { recordSearchTelemetry } from "./telemetry.ts";
 import { weightsForIntent, effectiveRrfK, applyExactMatchBoost } from "./intent-weights.ts";
@@ -1412,6 +1413,39 @@ export function applyStatuteValidityBoost(
     r.score *= factor;
     r.statute_validity = status;
     r.statute_validity_boost = factor;
+  }
+}
+
+/**
+ * Exact hits for decision identifiers in the query, placed above everything
+ * else. Silent no-op when the query carries no identifier, when the engine
+ * has no lookup, or when the lookup fails — search must not break over it.
+ */
+export async function prependDecisionIdentifierHits(
+  engine: import("../engine.ts").BrainEngine,
+  query: string,
+  results: SearchResult[]
+): Promise<void> {
+  if (!engine.findChunksByDecisionIdentifier) return;
+  const ids = decisionIdentifiers(query);
+  if (ids.length === 0) return;
+  try {
+    const hits = await engine.findChunksByDecisionIdentifier(ids);
+    if (hits.length === 0) return;
+    const known = new Set(results.map((r) => r.chunk_id));
+    const missing = hits.filter((h) => !known.has(h.chunk_id)).map((h) => h.chunk_id);
+    const hydrated = missing.length > 0 ? await hydrateChunks(engine, missing) : [];
+    const top = results.length > 0 ? Math.max(...results.map((r) => r.score)) : 1;
+    const hitIds = new Set(hits.map((h) => h.chunk_id));
+    for (const r of results) {
+      if (hitIds.has(r.chunk_id)) r.score = top + 1;
+    }
+    for (const r of hydrated) {
+      r.score = top + 1;
+      results.push(r);
+    }
+  } catch {
+    /* identifier lookup is an extra, never a failure mode for search */
   }
 }
 
@@ -3041,6 +3075,13 @@ export async function hybridSearch(
   // runPostFusionStages so all three early-return paths share the same
   // boost surface. Salience and recency are independent axes — either,
   // both, or neither fires depending on resolved modes.
+  // A pasted ECLI or RIS document number is an identifier, not a phrase:
+  // look it up exactly and put that decision first. Without this the German
+  // text search tokenises "ECLI:AT:OGH0002:2019:RS0132425" into pieces and
+  // returned nothing for 13 of 18 sampled ECLIs whose page was in the
+  // corpus (2026-09-20 measurement).
+  await prependDecisionIdentifierHits(engine, query, fused);
+
   if (fused.length > 0) {
     await runPostFusionStages(engine, fused, postFusionOpts);
     // v0.32.x search-lite: intent exact-match boost (entity/event intents).
