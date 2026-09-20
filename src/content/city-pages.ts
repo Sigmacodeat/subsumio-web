@@ -103,7 +103,7 @@ const _cities: Record<string, CityPageContent> = {
     faq: [
       {
         q: "Funktioniert Subsumio auch für kleinere Grazer Kanzleien?",
-        a: "Ja. Der Solo-Tarif (249 €/Monat, 1 Nutzer) ist für Einzelanwältinnen und Einzelanwälte gedacht. Sie können 14 Tage kostenlos testen, ohne Kreditkarte.",
+        a: "Ja. Der Solo-Tarif (249 €/Monat, 1 Nutzer) ist für Einzelanwältinnen und Einzelanwälte gedacht. Sie können 30 Tage kostenlos testen, ohne Kreditkarte.",
       },
       {
         q: "Kennt die KI die Unterschiede zum deutschen Recht?",
@@ -156,7 +156,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Kann ich Subsumio vorher testen?",
-        a: "Ja — 14 Tage kostenlos, ohne Kreditkarte. Sie laden eigene Akten hoch und prüfen die belegten Antworten an Ihrem echten Material.",
+        a: "Ja — 30 Tage kostenlos, ohne Kreditkarte. Sie laden eigene Akten hoch und prüfen die belegten Antworten an Ihrem echten Material.",
       },
     ],
   },
@@ -246,7 +246,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Wie komme ich zu meiner ersten Antwort?",
-        a: "Registrieren, Akten hochladen, erste Frage stellen — ohne Installation. 14 Tage kostenlos, ohne Kreditkarte.",
+        a: "Registrieren, Akten hochladen, erste Frage stellen — ohne Installation. 30 Tage kostenlos, ohne Kreditkarte.",
       },
       {
         q: "Bleiben Mandantendaten in Österreich?",

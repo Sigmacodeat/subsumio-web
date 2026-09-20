@@ -624,19 +624,21 @@ export function DataTable<T>({
                 <Skeleton className="h-3 w-1/2 rounded" />
               </div>
             ))
-          : rows.map((row, i) => {
+          : rows.map((row) => {
               const key = row.id;
               const isSelected = selected.has(key);
               const cardBody = (
                 <>
                   {selectable && (
-                    <div className="flex items-center justify-between" data-row-selection>
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleRow(key)}
-                        aria-label={`Eintrag ${i + 1} auswählen`}
-                      />
-                    </div>
+                    // On a phone a lone checkbox above the card said nothing.
+                    // The word next to it does, and it widens the tap target.
+                    <label
+                      className="flex w-fit items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+                      data-row-selection
+                    >
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleRow(key)} />
+                      {isSelected ? "Ausgewählt" : "Auswählen"}
+                    </label>
                   )}
                   {columns
                     .filter((c) => !c.hideOnMobile)

@@ -285,7 +285,7 @@ async function verifyApiSample(files: FileReport[], sampleSize: number): Promise
 
       if (isRIS) {
         await releaseRisLock();
-        await new Promise((r) => setTimeout(r, 1500));
+        await risPause();
       }
     } catch (e) {
       console.log(`  ❌ ${file.path} — ${e instanceof Error ? e.message : String(e)}`);
@@ -563,6 +563,7 @@ async function main() {
 }
 
 import { writeFileSync } from "fs";
+import { risPause } from "./ris-pace";
 
 main().catch((e) => {
   console.error("Fatal error:", e);

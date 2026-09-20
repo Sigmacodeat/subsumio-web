@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { billableRecipientsByBrain } from "@/lib/cron-utils";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { renderMarkdown } from "@/lib/markdown";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
@@ -160,7 +160,8 @@ export const GET = createCronHandler(async (_req: NextRequest): Promise<Response
     });
   }
 
-  const recipientsByBrain = await getRecipientsByBrain();
+  // One agent run per firm and day: only firms that pay or are on their trial.
+  const recipientsByBrain = await billableRecipientsByBrain();
   const brainIds = new Set(recipientsByBrain.keys());
   const senders = loadAllowedSenders();
   const mailOn = isMailConfigured();

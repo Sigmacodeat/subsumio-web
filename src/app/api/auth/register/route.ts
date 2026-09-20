@@ -48,6 +48,7 @@ export const POST = createPublicHandler(
         locale: "de",
         referredBy: referredBy || null,
         industry,
+        startTrial: true,
       });
 
       const user = await store.create(draft);

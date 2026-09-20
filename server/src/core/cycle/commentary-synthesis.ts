@@ -39,6 +39,12 @@ export interface CommentarySynthesisOpts {
   maxSectionsPerCycle?: number;
   maxCostUsd?: number;
   staleHours?: number;
+  /**
+   * Firm setting "Kanzlei-Gehirn lernt mit". Accepted for a uniform phase
+   * signature but unused: this phase reads published case law from the shared
+   * law sources only, never firm pages.
+   */
+  excludedSources?: ReadonlySet<string>;
   /** Test seam: alternative chat function (bypasses real LLM calls). */
   _chat?: typeof gatewayChat;
 }
@@ -103,24 +109,29 @@ export async function runPhaseLegalCommentarySynthesis(
 
   try {
     // ── 1. Find statute sections with ≥2 linked cases ──────────
-    const sourceFilter = opts.sourceId ? `AND source_id = $1` : "";
-    const sourceParams = opts.sourceId ? [opts.sourceId] : [];
-
-    // Query case_to_statute edges grouped by target statute slug
+    // Commentaries are stored without a firm (subsumio_legal_commentaries has
+    // no source_id) and every firm reads them. So only PUBLISHED case law from
+    // the shared law sources may feed them — never a firm's own matter pages,
+    // whatever its "Kanzlei-Gehirn lernt mit" setting. That also makes
+    // opts.sourceId / opts.excludedSources irrelevant here: law sources are
+    // never firm sources.
     const edges = await engine.executeRaw<{
       target_slug: string;
       edge_count: number;
     }>(
-      `SELECT target_slug, COUNT(*) as edge_count
-       FROM links
-       WHERE link_type = 'case_to_statute'
-         AND target_slug LIKE 'legal/statutes/%'
-         ${sourceFilter}
-       GROUP BY target_slug
+      `SELECT t.slug AS target_slug, COUNT(*)::int AS edge_count
+       FROM links l
+       JOIN pages f ON f.id = l.from_page_id
+       JOIN pages t ON t.id = l.to_page_id
+       WHERE l.link_type = 'case_to_statute'
+         AND t.slug LIKE 'legal/statutes/%'
+         AND f.source_id LIKE 'law-%'
+         AND f.deleted_at IS NULL
+       GROUP BY t.slug
        HAVING COUNT(*) >= 2
        ORDER BY edge_count DESC
-       LIMIT $${opts.sourceId ? 2 : 1}`,
-      opts.sourceId ? [opts.sourceId, maxSections] : [maxSections]
+       LIMIT $1`,
+      [maxSections]
     );
 
     if (edges.length === 0) {
@@ -161,7 +172,8 @@ export async function runPhaseLegalCommentarySynthesis(
       // Fetch statute text
       const statutePage = await engine.executeRaw<{ body: string | null }>(
         `SELECT compiled_truth as body FROM pages
-         WHERE slug = $1 AND deleted_at IS NULL`,
+         WHERE slug = $1 AND source_id LIKE 'law-%' AND deleted_at IS NULL
+         LIMIT 1`,
         [edge.target_slug]
       );
 
@@ -217,8 +229,8 @@ export async function runPhaseLegalCommentarySynthesis(
       }
 
       try {
-        // Fetch linked cases via engine search
-        const linkedCases = await fetchLinkedCases(engine, section.slug, opts.sourceId);
+        // Published case law linked to this section (law sources only)
+        const linkedCases = await fetchLinkedCases(engine, section.slug);
 
         if (linkedCases.length < 2) {
           skipped++;
@@ -326,34 +338,27 @@ export async function runPhaseLegalCommentarySynthesis(
 
 // ── Helper: Fetch linked cases for a statute section ─────────────
 
-async function fetchLinkedCases(
+export async function fetchLinkedCases(
   engine: BrainEngine,
-  statuteSlug: string,
-  sourceId?: string
+  statuteSlug: string
 ): Promise<LinkedCase[]> {
-  // Get case slugs from links
-  const links = await engine.executeRaw<{ from_slug: string }>(
-    `SELECT from_slug FROM links
-     WHERE link_type = 'case_to_statute' AND target_slug = $1
-     LIMIT 20`,
-    [statuteSlug]
-  );
-
-  if (links.length === 0) return [];
-
-  const caseSlugs = links.map((l) => l.from_slug);
-
-  // Fetch case details from pages
+  // Published case law from the shared law sources only (see step 1 above).
   const cases = await engine.executeRaw<{
     slug: string;
     title: string;
     body: string;
     frontmatter: Record<string, unknown> | null;
   }>(
-    `SELECT slug, title, compiled_truth as body, frontmatter FROM pages
-     WHERE slug = ANY($1::text[]) AND deleted_at IS NULL
+    `SELECT f.slug, f.title, f.compiled_truth AS body, f.frontmatter
+     FROM links l
+     JOIN pages f ON f.id = l.from_page_id
+     JOIN pages t ON t.id = l.to_page_id
+     WHERE l.link_type = 'case_to_statute'
+       AND t.slug = $1
+       AND f.source_id LIKE 'law-%'
+       AND f.deleted_at IS NULL
      LIMIT 20`,
-    [caseSlugs]
+    [statuteSlug]
   );
 
   return cases.map((c) => {
@@ -445,7 +450,8 @@ async function callEngineForSynthesis(
 ): Promise<string> {
   try {
     const result = await chat({
-      system: "Du bist ein juristischer Kommentator. Erstelle präzise, strukturierte Kommentierungen basierend auf Gerichtsentscheidungen. Jede Behauptung muss durch ein Urteil belegbar sein.",
+      system:
+        "Du bist ein juristischer Kommentator. Erstelle präzise, strukturierte Kommentierungen basierend auf Gerichtsentscheidungen. Jede Behauptung muss durch ein Urteil belegbar sein.",
       messages: [{ role: "user", content: prompt }],
       maxTokens: 4096,
     });
@@ -453,7 +459,9 @@ async function callEngineForSynthesis(
       return result.text;
     }
   } catch (err) {
-    console.error(`[commentary-synthesis] LLM call failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[commentary-synthesis] LLM call failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
   return fallbackSynthesis(prompt);

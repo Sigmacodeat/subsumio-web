@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Mail, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -37,14 +38,15 @@ const CONTENT = {
   formSubmit: "Nachricht senden",
   formNote: "Ihre Angaben verwenden wir nur zur Beantwortung Ihrer Anfrage.",
   ctaTitle: "Lieber erst ausprobieren?",
-  ctaSub: "Testen Sie Subsumio 14 Tage mit vollem Funktionsumfang — ohne Kreditkarte.",
-  ctaButton: "14 Tage kostenlos testen",
+  ctaSub: "Testen Sie Subsumio 30 Tage mit vollem Funktionsumfang — ohne Kreditkarte.",
+  ctaButton: "30 Tage kostenlos testen",
 } as const;
 
 const ICON_MAP = { Mail, FileText };
 
 export default function ContactPage() {
   const c = CONTENT;
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       <PageHero
@@ -100,25 +102,30 @@ export default function ContactPage() {
           <Reveal variant="up" delay={0.1}>
             <form
               className="space-y-4"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const form = e.currentTarget;
-                const data = new FormData(form);
-                const name = String(data.get("name") ?? "");
-                const email = String(data.get("email") ?? "");
-                const firm = String(data.get("firm") ?? "");
-                const message = String(data.get("message") ?? "");
-                const subject = `Kontaktanfrage — ${name}${firm ? ` (${firm})` : ""}`;
-                const body = [
-                  `Name: ${name}`,
-                  `E-Mail: ${email}`,
-                  firm && `Kanzlei: ${firm}`,
-                  "",
-                  message,
-                ]
-                  .filter(Boolean)
-                  .join("\n");
-                window.location.href = `mailto:hello@subsum.io?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                const data = new FormData(e.currentTarget);
+                const get = (k: string) => String(data.get(k) ?? "").trim() || undefined;
+                setStatus("sending");
+                // Stored and forwarded to the team (src/app/api/concierge/lead).
+                const res = await fetch("/api/concierge/lead", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    kind:
+                      new URLSearchParams(window.location.search).get("plan") === "enterprise"
+                        ? "enterprise"
+                        : "question",
+                    name: get("name"),
+                    email: get("email"),
+                    firm: get("firm"),
+                    message: get("message"),
+                    website: get("website"),
+                    consent: true,
+                    page: window.location.pathname,
+                  }),
+                }).catch(() => null);
+                setStatus(res?.ok ? "sent" : "error");
               }}
             >
               <div className="grid gap-6 sm:grid-cols-2">
@@ -157,6 +164,23 @@ export default function ContactPage() {
                 rows={5}
                 className="w-full rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
               />
+              <input
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute h-0 w-0 opacity-0"
+              />
+              {status === "sent" && (
+                <p role="status" className="text-sm [color:var(--mk-text)]">
+                  Danke! Ihre Nachricht ist bei uns. Wir antworten binnen eines Werktags.
+                </p>
+              )}
+              {status === "error" && (
+                <p role="alert" className="text-sm [color:var(--ds-danger-text)]">
+                  Das hat nicht geklappt. Bitte schreiben Sie uns direkt an hello@subsum.io.
+                </p>
+              )}
               <div className="flex items-center justify-between gap-6">
                 <p className="text-sm [color:var(--mk-text-subtle)]">{c.formNote}</p>
                 <Button
@@ -164,6 +188,7 @@ export default function ContactPage() {
                   size="lg"
                   variant="primary"
                   className="group min-h-[48px] shrink-0"
+                  disabled={status === "sending" || status === "sent"}
                 >
                   {c.formSubmit}
                   <ArrowRight

@@ -473,7 +473,7 @@ export async function addCredits(
   return updated;
 }
 
-// ── Trial credits (14-Tage-Testphase) ───────────────────────────────────
+// ── Trial credits (30-Tage-Testphase) ───────────────────────────────────
 
 /** Owners whose trial grant was already checked in this process (cheap fast path). */
 const trialEnsured = new Set<string>();

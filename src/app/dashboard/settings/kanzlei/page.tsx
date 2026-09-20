@@ -12,6 +12,7 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
+import { BrainLearningCard } from "@/components/dashboard/brain-learning-card";
 
 export default function KanzleiSettingsPage() {
   const { t, lang } = useLang();
@@ -314,6 +315,9 @@ export default function KanzleiSettingsPage() {
           </span>
         )}
       </div>
+
+      {/* Saves on its own (switch), separate from the profile form above. */}
+      <BrainLearningCard />
     </div>
   );
 }

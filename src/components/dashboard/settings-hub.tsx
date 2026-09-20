@@ -79,7 +79,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: Building2,
         href: "/dashboard/settings/kanzlei",
         allowed: LEAD,
-        keywords: "stammdaten adresse uid iban logo rechtsraum",
+        keywords: "stammdaten adresse uid iban logo rechtsraum gehirn lernt mit lernen",
       },
       {
         id: "billing-settings",

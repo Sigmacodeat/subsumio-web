@@ -126,7 +126,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       },
     ],
     ctaTitle: "Starten Sie mit einer abgeschlossenen Akte als Pilot.",
-    ctaSub: "14 Tage testen, keine Kreditkarte.",
+    ctaSub: "30 Tage testen, keine Kreditkarte.",
     ctaButton: "Demo vereinbaren",
   },
   solo: {
@@ -203,8 +203,8 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       },
     ],
     ctaTitle: "Ihre Kanzlei. Ihr Kanzleiwissen.",
-    ctaSub: "14 Tage testen, keine Kreditkarte. Kein Server, keine eigene IT.",
-    ctaButton: "14 Tage kostenlos testen",
+    ctaSub: "30 Tage testen, keine Kreditkarte. Kein Server, keine eigene IT.",
+    ctaButton: "30 Tage kostenlos testen",
   },
   "in-house": {
     slug: "in-house",

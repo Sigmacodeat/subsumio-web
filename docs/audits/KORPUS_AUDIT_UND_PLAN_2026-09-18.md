@@ -147,3 +147,29 @@ Offen, in dieser Reihenfolge:
 | A9  | Qualitätstest               | Fester Satz echter Rechtsfragen mit erwarteter Norm/Entscheidung, vorher/nachher gemessen                                                                               |
 | A10 | Lokale Docker-DB            | Server ist die einzige Quelle; lokale Kopie entfernen (durch den Inhaber)                                                                                               |
 | A11 | Endaudit + Embedding        | Erst wenn A1–A9 grün sind                                                                                                                                               |
+
+## Messung 20.09.2026 — Kennungen (A9)
+
+30 echte Kennungen aus dem Korpus (`server/test/fixtures/at-judikatur-identifiers.jsonl`),
+Stichwortsuche gegen die Produktionsdatenbank, Top-8:
+
+| Art               | Fragen | Treffer Platz 1 | Treffer Top 8 | erwartete Seite in der DB | Suche ohne Ergebnis |
+| ----------------- | ------ | --------------- | ------------- | ------------------------- | ------------------- |
+| Rechtssatznummer  | 12     | 12              | 12            | 12                        | 0                   |
+| ECLI              | 18     | 5               | 5             | 18                        | 13                  |
+
+Rechtssatznummern sind eindeutig und werden zuverlässig gefunden. ECLIs nicht: die
+deutsche Volltextsuche zerlegt `ECLI:AT:OGH0002:2019:RS0132425` in Teile, die auf
+nichts passen — obwohl jede erwartete Seite im Korpus liegt. Behoben in 35e495b778:
+Kennungen werden exakt nachgeschlagen (`findChunksByDecisionIdentifier`, beide
+Engines, Migration 144 indexiert die ECLI) und das Urteil steht vorn. Nach dem
+nächsten Deploy neu messen.
+
+## Offene Punkte 20.09.2026
+
+- Fehlende Urteile holen (OGH ~83 000, VwGH ~222 000, BVwG ~278 000) — die
+  Identitätskorrektur 61be64fcdd macht sie überhaupt erst abrufbar.
+- ~21 000 Landesnormen, die sich über die Bundesländer hinweg überschrieben hatten.
+- Ältere Fassungen datieren: `mark-superseded-versions.ts` berichtet in der
+  Warteschlange, `--apply` schreibt (braucht die Freigabe des Inhabers).
+- Endaudit, dann einmal einbetten (PIPELINE_EMBED_PAUSED wieder auf false) und BM25.

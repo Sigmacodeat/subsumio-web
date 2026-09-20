@@ -3489,6 +3489,10 @@ export const D = {
   "chat.new_session": { de: "Neue Konversation", en: "New conversation" },
   "chat.sessions": { de: "Konversationen", en: "Conversations" },
   "chat.no_sessions": { de: "Keine Konversationen", en: "No conversations" },
+  "chat.err_session_load": {
+    de: "Die Unterhaltung konnte nicht geladen werden.",
+    en: "The conversation could not be loaded.",
+  },
   "chat.session_count": { de: "Nachrichten", en: "messages" },
   "chat.brain_online": { de: "Verbunden", en: "Connected" },
   "chat.brain_offline": { de: "Wissensbasis offline", en: "Knowledge base offline" },
@@ -3858,6 +3862,11 @@ export const D = {
   "billing.current_plan": { de: "Aktueller Plan", en: "Current plan" },
   "billing.free": { de: "Kostenlos", en: "Free" },
   "billing.active": { de: "Aktiv", en: "Active" },
+  "billing.trial": { de: "Testphase", en: "Trial" },
+  "billing.trial_notice": {
+    de: "Sie testen den vollen Kanzlei-Umfang bis {date} (noch {days} Tage). Wählen Sie bis dahin einen Tarif, beginnt die Zahlung erst nach dem Testende. Ohne Tarif wechselt das Konto automatisch auf Community; Ihre Daten bleiben erhalten.",
+    en: "You are trying the full Kanzlei plan until {date} ({days} days left). If you choose a plan before then, billing starts only when the trial ends. Without a plan the account moves to Community automatically; your data stays.",
+  },
   "billing.manage_plan": { de: "Plan verwalten", en: "Manage plan" },
   "billing.referrals": { de: "Empfehlung", en: "referral" },
   "billing.referrals_plural": { de: "Empfehlungen", en: "referrals" },

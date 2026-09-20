@@ -51,6 +51,9 @@ export function productionHybrid(
     .map(([id]) => id);
 }
 
+// The engine's own citation test, so the bake-off gates exactly like search.
+export { isCitationQuery } from "../../core/search/citation-query.ts";
+
 /** Recall@k, MRR@10 and nDCG@10 with binary relevance. */
 export function scoreRanking(
   rankedPages: readonly number[],

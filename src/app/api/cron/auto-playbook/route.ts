@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
 import { getRecipientsByBrain, type EnginePage } from "@/lib/cron-utils";
+import { learningDisabledBrainIds } from "@/lib/brain-learning";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -83,7 +84,16 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let skipped = 0;
   const errors: string[] = [];
 
+  // Firm setting "Kanzlei-Gehirn lernt mit": firms that switched it off get
+  // no automatic playbook updates from their signed contracts.
+  const learningOff = new Set(await learningDisabledBrainIds());
+  let brainsLearningOff = 0;
+
   for (const [brainId] of recipientsByBrain) {
+    if (learningOff.has(brainId)) {
+      brainsLearningOff++;
+      continue;
+    }
     brainsChecked++;
     const contracts = await fetchExecutedContracts(brainId);
     if (contracts.length === 0) continue;
@@ -122,6 +132,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   return NextResponse.json({
     ok: true,
     brains_checked: brainsChecked,
+    brains_learning_off: brainsLearningOff,
     contracts_processed: contractsProcessed,
     playbooks_updated: playbooksUpdated,
     playbooks_staged: playbooksStaged,

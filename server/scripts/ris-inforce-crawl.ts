@@ -11,19 +11,12 @@
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
-const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus audit; contact: hello@subsum.io)" };
+const UA = { "User-Agent": RIS_USER_AGENT };
 // RIS OGD: one connection, 1–2 s between requests. Was 4 parallel workers.
 const CONCURRENCY = 1;
-function politeDelayMs(): number {
-  const now = new Date();
-  const hour = parseInt(
-    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-  );
-  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
-  return day !== "Sat" && day !== "Sun" && hour >= 8 && hour < 18 ? 2000 : 1000;
-}
 const PAGE_SIZE = 100;
 
 const outArg = process.argv.indexOf("--out");
@@ -132,7 +125,7 @@ async function main() {
       const seite = next++;
       if (seite > pages) return;
       const norms = await fetchPage(seite);
-      await new Promise((r) => setTimeout(r, politeDelayMs()));
+      await risMassPause("Normen-Inventar");
       for (const n of norms) {
         buf.push(JSON.stringify(n));
         written++;

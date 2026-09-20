@@ -223,8 +223,8 @@ export const HANDBOOK: HandbookGroup[] = [
             body: "Überfällig, kritisch (höchstens zwei Werktage bis Fristende), Vorfrist erreicht oder in Ordnung.",
           },
           {
-            term: "Kalender-Export",
-            body: "Fristen und Termine exportieren Sie als Kalenderdatei für Outlook, Apple- oder Google-Kalender — mit Erinnerung zur Vorfrist und zwei Tage vor Fristende.",
+            term: "Kalender-Abo und Export",
+            body: "Unter „Kalender-Export“ erzeugen Sie eine persönliche Abo-Adresse. Outlook, Apple- und Google-Kalender halten damit Ihre Fristen selbstständig aktuell. Die Adresse enthält einen persönlichen Schlüssel, gilt wie ein Passwort und lässt sich jederzeit widerrufen. Alternativ laden Sie eine einmalige Kalenderdatei herunter — mit Erinnerung zur Vorfrist und zwei Tage vor Fristende.",
           },
         ],
       },
@@ -485,6 +485,37 @@ export const HANDBOOK: HandbookGroup[] = [
           },
         ],
       },
+      // docs/architecture/BRAIN_LEARNING.md, src/components/dashboard/brain-learning-card.tsx,
+      // src/app/api/settings/brain-learning, src/app/dashboard/settings/memory
+      {
+        id: "kanzlei-gehirn",
+        title: "Kanzlei-Gehirn",
+        lead: "Das Wissen Ihrer Kanzlei wächst mit jeder Akte — und bleibt in Ihrer Kanzlei.",
+        where: "Einstellungen › Kanzleiprofil › Kanzlei-Gehirn lernt mit",
+        href: "/dashboard/settings/kanzlei",
+        facts: [
+          {
+            term: "Was dazulernt",
+            body: "Aus Ihren Dokumenten und Notizen werden Tatsachen und Einschätzungen abgeleitet — kurz nach dem Hochladen und jede Nacht. Der Assistent merkt sich Vorgaben aus Gesprächen; für Prüfleitfäden werden Ergänzungen aus unterzeichneten Verträgen vorgeschlagen, die Sie bestätigen.",
+          },
+          {
+            term: "Wofür",
+            body: "Beim nächsten Mandat finden Sie ähnliche frühere Fälle, Ihre eigenen Schriftsätze und die passende Rechtsprechung aus dem RIS gemeinsam — mit Fundstelle.",
+          },
+          {
+            term: "Abschalten",
+            body: "Administratorinnen und Administratoren schalten „Kanzlei-Gehirn lernt mit“ für die ganze Kanzlei aus. Dokumente bleiben durchsuchbar, der Assistent antwortet weiter; es wird nur nichts Neues mehr automatisch abgeleitet. Bereits Gelerntes bleibt erhalten. Jede Änderung wird protokolliert.",
+          },
+          {
+            term: "Gedächtnis des Assistenten",
+            body: "Was sich der Assistent gemerkt hat, sehen, heften und löschen Sie unter Einstellungen › Gedächtnis des Assistenten. Eigene Vorgaben können Sie dort jederzeit eintragen.",
+          },
+          {
+            term: "Kein Training",
+            body: "Mit Ihren Daten wird kein KI-Modell trainiert. Was Ihr Kanzlei-Gehirn lernt, fließt nicht in das Wissen anderer Kanzleien ein.",
+          },
+        ],
+      },
       // src/app/dashboard/research
       {
         id: "recherche",
@@ -726,6 +757,10 @@ export const HANDBOOK_FAQ: { q: string; a: string }[] = [
     a: "Nein. Der Assistent erstellt Entwürfe. Versendet oder eingebracht wird nur, was Sie selbst freigeben.",
   },
   {
+    q: "Lernt Subsumio aus meinen Akten?",
+    a: "Ihr Kanzlei-Gehirn lernt aus Ihren Akten, damit Sie beim nächsten Mandat auf frühere Arbeit zurückgreifen. Das bleibt in Ihrer Kanzlei, trainiert kein KI-Modell und lässt sich unter Einstellungen › Kanzleiprofil abschalten.",
+  },
+  {
     q: "Kann ich meine Daten mitnehmen?",
     a: "Ja. Der Datenexport liefert Ihre Kontodaten als Datei; Ihre Originaldokumente können Sie jederzeit aus der Akte herunterladen.",
   },
@@ -759,6 +794,8 @@ const ROUTE_CHAPTERS: Array<[prefix: string, chapter: string]> = [
   ["/dashboard/signature", "signatur"],
   ["/dashboard/team", "team"],
   ["/dashboard/import-kanzlei", "import"],
+  ["/dashboard/settings/kanzlei", "kanzlei-gehirn"],
+  ["/dashboard/settings/memory", "kanzlei-gehirn"],
   ["/dashboard/settings", "sicherheit"],
   ["/dashboard/onboarding", "erste-schritte"],
 ];

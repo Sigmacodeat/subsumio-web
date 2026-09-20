@@ -51,6 +51,7 @@ import { createProgress, type ProgressReporter } from "./progress.ts";
 import { getCliOptions, cliOptsToProgressOptions } from "./cli-options.ts";
 import { tryAcquireDbLock, reapDeadHolderLocks, type DbLockHandle } from "./db-lock.ts";
 import { assertValidSourceId } from "./source-id.ts";
+import { LEARNING_PHASES, learningDisabledSources } from "./brain-learning.ts";
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -520,6 +521,15 @@ export interface CycleOpts {
    * Validated via `assertValidSourceId` in `cycleLockIdFor` (defense-in-depth).
    */
   sourceId?: string;
+  /**
+   * Firm setting "Kanzlei-Gehirn lernt mit" (see core/brain-learning.ts).
+   * Unioned with the persisted `sources.config.learning_disabled` flags.
+   * Sources listed here get NO learning phase work (LEARNING_PHASES): phases
+   * that loop over sources or scan brain-wide filter them out, and a cycle
+   * scoped to one of them (sourceId / resolved default) skips those phases
+   * entirely. Housekeeping (embed, orphans, purge, …) is unaffected.
+   */
+  learningExcludedSourceIds?: string[];
 }
 
 // ─── Lock primitives ───────────────────────────────────────────────
@@ -1455,7 +1465,7 @@ async function runPhaseOrphans(engine: BrainEngine): Promise<PhaseResult> {
  */
 export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Promise<CycleReport> {
   const start = performance.now();
-  const phases = opts.phases ?? ALL_PHASES;
+  const requestedPhases = opts.phases ?? ALL_PHASES;
   const dryRun = !!opts.dryRun;
   const pull = !!opts.pull;
   const timestamp = new Date().toISOString();
@@ -1488,6 +1498,25 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
   const cycleSourceId: string | undefined = engine
     ? (opts.sourceId ?? (await resolveSourceForDir(engine, brainDir)))
     : opts.sourceId;
+
+  // Firm setting "Kanzlei-Gehirn lernt mit": sources that switched learning
+  // off. Per-source phases scoped to cycleSourceId (or its 'default' fallback)
+  // are dropped when that source is excluded; brain-wide learning phases get
+  // the set and filter it out themselves.
+  // The persisted per-source flags (sources.config.learning_disabled) always
+  // apply, so autopilot / CLI cycles honour the setting too; the explicit list
+  // from the caller is unioned on top.
+  const learningExcluded: ReadonlySet<string> = new Set([
+    ...(opts.learningExcludedSourceIds ?? []),
+    ...(engine ? await learningDisabledSources(engine) : []),
+  ]);
+  const learningOffHere = learningExcluded.has(cycleSourceId ?? "default");
+  const learningSkipped: CyclePhase[] = learningOffHere
+    ? requestedPhases.filter((p) => LEARNING_PHASES.has(p))
+    : [];
+  const phases = learningOffHere
+    ? requestedPhases.filter((p) => !LEARNING_PHASES.has(p))
+    : requestedPhases;
 
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
 
@@ -2047,6 +2076,7 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
             dryRun,
             yieldDuringPhase: opts.yieldDuringPhase,
             signal: opts.signal,
+            excludedSources: learningExcluded,
           })
         );
         result.duration_ms = duration_ms;
@@ -2093,6 +2123,7 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
             () =>
               runPhaseProposeTakes(calibrationCtx, {
                 repoPath: brainDir ?? undefined,
+                excludedSources: learningExcluded,
               }) as Promise<PhaseResult>
           );
           result.duration_ms = duration_ms;
@@ -2106,7 +2137,10 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
           progress.start("cycle.grade_takes");
           const { runPhaseGradeTakes } = await import("./cycle/grade-takes.ts");
           const { result, duration_ms } = await timePhase(
-            () => runPhaseGradeTakes(calibrationCtx, {}) as Promise<PhaseResult>
+            () =>
+              runPhaseGradeTakes(calibrationCtx, {
+                excludedSources: learningExcluded,
+              }) as Promise<PhaseResult>
           );
           result.duration_ms = duration_ms;
           phaseResults.push(result);
@@ -2163,7 +2197,11 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
         const { runPhaseConversationFactsBackfill } =
           await import("./cycle/conversation-facts-backfill.ts");
         const { result, duration_ms } = await timePhase(() =>
-          runPhaseConversationFactsBackfill(engine, { dryRun, signal: opts.signal })
+          runPhaseConversationFactsBackfill(engine, {
+            dryRun,
+            signal: opts.signal,
+            excludedSources: learningExcluded,
+          })
         );
         result.duration_ms = duration_ms;
         phaseResults.push(result);
@@ -2191,7 +2229,11 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
         progress.start("cycle.enrich_thin");
         const { runPhaseEnrichThin } = await import("./cycle/enrich-thin.ts");
         const { result, duration_ms } = await timePhase(() =>
-          runPhaseEnrichThin(engine, { dryRun, signal: opts.signal })
+          runPhaseEnrichThin(engine, {
+            dryRun,
+            signal: opts.signal,
+            excludedSources: learningExcluded,
+          })
         );
         result.duration_ms = duration_ms;
         phaseResults.push(result);
@@ -2332,6 +2374,7 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
           runPhaseLegalPrecedentLinkage(engine, {
             dryRun,
             ...(cycleSourceId ? { sourceId: cycleSourceId } : {}),
+            excludedSources: learningExcluded,
           })
         );
         result.duration_ms = duration_ms;
@@ -2362,6 +2405,7 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
           runPhaseLegalCommentarySynthesis(engine, {
             dryRun,
             ...(cycleSourceId ? { sourceId: cycleSourceId } : {}),
+            excludedSources: learningExcluded,
           })
         );
         result.duration_ms = duration_ms;
@@ -2392,6 +2436,7 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
           runPhaseEngramMaturation(engine, {
             dryRun,
             ...(opts.signal ? { signal: opts.signal } : {}),
+            excludedSources: learningExcluded,
           })
         );
         result.duration_ms = duration_ms;
@@ -2421,6 +2466,7 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
           runPhaseReconsolidationSweep(engine, {
             dryRun,
             ...(opts.signal ? { signal: opts.signal } : {}),
+            excludedSources: learningExcluded,
           })
         );
         result.duration_ms = duration_ms;
@@ -2615,6 +2661,19 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
         `[cycle] failed to write last_full_cycle_at for source ${opts.sourceId}: ${e instanceof Error ? e.message : String(e)}`
       );
     }
+  }
+
+  // Learning phases dropped for a source whose firm switched learning off.
+  // Reported (after status derivation, so they never change it) so the
+  // report still names every requested phase.
+  for (const p of learningSkipped) {
+    phaseResults.push({
+      phase: p,
+      status: "skipped",
+      duration_ms: 0,
+      summary: "learning switched off for this source (Kanzlei-Gehirn lernt mit)",
+      details: { reason: "learning_disabled" },
+    });
   }
 
   return {

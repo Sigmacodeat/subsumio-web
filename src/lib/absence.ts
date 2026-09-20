@@ -145,6 +145,32 @@ export function reassignRundownItems(
     }));
 }
 
+/**
+ * Who currently stands in for a person, matched by e-mail or by name.
+ *
+ * Deadlines carry the responsible lawyer of the matter, not an assignee of
+ * their own, so nothing can be "moved" to a delegate. The lists instead show
+ * who is standing in while the responsible lawyer is away — which is what a
+ * firm needs to see on the deadline itself.
+ */
+export function activeDelegateFor(
+  person: string | undefined,
+  absences: AbsenceRecord[],
+  now?: Date
+): { name: string; email: string; until: string } | null {
+  if (!person) return null;
+  const needle = person.trim().toLowerCase();
+  if (!needle) return null;
+  const match = absences.find(
+    (a) =>
+      isAbsenceActive(a, now) &&
+      a.status !== "completed" &&
+      (a.user_email.toLowerCase() === needle || a.user_name.trim().toLowerCase() === needle)
+  );
+  if (!match) return null;
+  return { name: match.delegate_name, email: match.delegate_email, until: match.end_date };
+}
+
 export function getActiveDelegate(userEmail: string, absences: AbsenceRecord[]): string | null {
   const active = absences.find((a) => a.user_email === userEmail && isAbsenceActive(a));
   return active?.delegate_email ?? null;

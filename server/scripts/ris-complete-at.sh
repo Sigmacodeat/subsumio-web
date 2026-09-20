@@ -24,6 +24,21 @@ LOG=/root/subsumio-pipeline-logs/ris-complete-at.log
 STATE=/law-corpus/_state
 mkdir -p "$STATE"
 
+# One queue at a time. Starting it twice ran every step twice (2026-09-20:
+# three copies of the norm backfill at once), which wastes RIS requests and
+# fights over the RIS lock. mkdir is atomic; a lock of a dead run is cleared.
+QUEUE_LOCK=/tmp/ris-complete-at.lock
+if ! mkdir "$QUEUE_LOCK" 2>/dev/null; then
+  if [ -f "$QUEUE_LOCK/pid" ] && kill -0 "$(cat "$QUEUE_LOCK/pid")" 2>/dev/null; then
+    echo "=== $(date -u +%FT%TZ) läuft schon (PID $(cat "$QUEUE_LOCK/pid")) — Abbruch" >> "$LOG"
+    exit 0
+  fi
+  rm -rf "$QUEUE_LOCK"
+  mkdir "$QUEUE_LOCK" || exit 1
+fi
+echo $$ > "$QUEUE_LOCK/pid"
+trap 'rm -rf "$QUEUE_LOCK"' EXIT INT TERM
+
 step() {
   echo "=== $(date -u +%FT%TZ) $*" >> "$LOG"
   "$@" >> "$LOG" 2>&1

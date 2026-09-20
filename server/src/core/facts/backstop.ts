@@ -80,6 +80,7 @@ export type FactsBackstopResult =
       queueDepth: number;
       skipped?:
         | "extraction_disabled"
+        | "learning_disabled"
         | "queue_overflow"
         | "queue_shutdown"
         | `eligibility_failed:${string}`;
@@ -90,7 +91,7 @@ export type FactsBackstopResult =
       duplicate: number;
       superseded: number;
       fact_ids: number[];
-      skipped?: "extraction_disabled" | `eligibility_failed:${string}`;
+      skipped?: "extraction_disabled" | "learning_disabled" | `eligibility_failed:${string}`;
     };
 
 interface ParsedPageInput {
@@ -155,6 +156,22 @@ export async function runFactsBackstop(
           superseded: 0,
           fact_ids: [],
           skipped: "extraction_disabled",
+        };
+  }
+
+  // Firm setting "Kanzlei-Gehirn lernt mit" switched off for this source:
+  // the page is stored and searchable, but no facts are derived from it.
+  const { isLearningDisabledForSource } = await import("../brain-learning.ts");
+  if (await isLearningDisabledForSource(ctx.engine, ctx.sourceId)) {
+    return mode === "queue"
+      ? { mode: "queue", enqueued: false, queueDepth: 0, skipped: "learning_disabled" }
+      : {
+          mode: "inline",
+          inserted: 0,
+          duplicate: 0,
+          superseded: 0,
+          fact_ids: [],
+          skipped: "learning_disabled",
         };
   }
 

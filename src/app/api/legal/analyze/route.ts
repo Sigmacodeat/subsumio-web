@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL, enginePatchPage, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
 import { env } from "@/lib/env";
 import { groundCitations } from "@/lib/legal-grounding";
@@ -217,6 +217,10 @@ export const POST = createHandler(
       empty._degraded = true;
       return Response.json(empty, { status: 502 });
     }
+
+    // Charged once the AI step succeeded. Internal calls come from engine
+    // pipelines that settle their own token-based bill (pipeline-reserve).
+    if (!isInternal) void recordCreditConsumption(ctx, "document_analysis", documentCaseSlug);
 
     // ── 3. Grounding + Precedent search (parallel) ──────────────────────
     const rawCitations = Array.isArray(parsed.cited_statutes)

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isBillingConfigured, stripePriceId, BILLABLE_PLANS } from "@/lib/billing/plans";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { stripeTrialEnd } from "@/lib/billing/trial";
 
 const checkoutSchema = z.object({
   plan: z.enum(["pro", "team"]),
@@ -55,6 +56,10 @@ export const POST = createHandler(
       cancel_url: `${origin}/dashboard/billing?status=cancelled`,
       ...(ctx.user.referredBy ? { "metadata[referred_by]": ctx.user.referredBy } : {}),
     });
+    // Buying during the free trial must not cost the remaining trial days:
+    // the first charge falls on the day the trial would have ended.
+    const trialEnd = stripeTrialEnd(ctx.user);
+    if (trialEnd) params.set("subscription_data[trial_end]", String(trialEnd));
 
     const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",

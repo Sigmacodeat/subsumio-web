@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import {
+  isCitationQuery,
   pagesFromChunks,
   pairedBootstrap,
   productionHybrid,
@@ -70,5 +71,16 @@ describe("embedding bake-off metrics", () => {
     const ranked = productionHybrid([1, 2], [9, 2], (id) => cos.get(id) ?? 0);
     expect(ranked[0]).toBe(2); // in both lists → highest RRF
     expect(ranked.indexOf(1)).toBeLessThan(ranked.indexOf(9));
+  });
+  it("recognises citations but not plain questions", () => {
+    expect(isCitationQuery("Was regelt § 1295 ABGB?")).toBe(true);
+    expect(isCitationQuery("Wer ist Unternehmer nach dem UGB?")).toBe(true);
+    expect(isCitationQuery("Was sagt das Mietrechtsgesetz, MRG, dazu?")).toBe(true);
+    expect(isCitationQuery("OGH 1 Ob 23/19x zur Verjährung")).toBe(true);
+    expect(isCitationQuery("VwGH Ra 2019/12/0005")).toBe(true);
+    expect(isCitationQuery("Wie lange habe ich Gewährleistung bei einem Gebrauchtwagen?")).toBe(
+      false
+    );
+    expect(isCitationQuery("Darf mein Vermieter die Kaution einbehalten?")).toBe(false);
   });
 });

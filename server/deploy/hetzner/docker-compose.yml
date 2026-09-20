@@ -329,6 +329,10 @@ services:
       # Pipeline pause flag — when "true", orchestrator reports but starts no jobs.
       # Default false: pipeline runs automatically after deploy.
       PIPELINE_PAUSED: ${PIPELINE_PAUSED:-false}
+      # Embedding pause — while the corpus is still being rebuilt, a re-import
+      # re-chunks documents and throws their vectors away. Everything is
+      # embedded once at the end, after the final audit.
+      PIPELINE_EMBED_PAUSED: ${PIPELINE_EMBED_PAUSED:-false}
       # Unified corpus root — all scripts use this path for law-corpus files
       LAW_CORPUS_ROOT: /law-corpus
       # Config home — must match engine so gbrain config.json is found

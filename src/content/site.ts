@@ -124,7 +124,7 @@ export interface NavContent {
 
 export const NAV: NavContent = {
   signIn: "Anmelden",
-  cta: "14 Tage testen",
+  cta: "30 Tage testen",
   ctaSecondary: "Demo ansehen",
   ctaSecondaryHref: "/superbrain",
   pricingLabel: "Preise",
@@ -437,7 +437,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
   items: [
     {
       q: "Gibt es eine kostenlose Testversion?",
-      a: "Ja. Solo und Kanzlei testen Sie 14 Tage mit vollem Funktionsumfang, ohne Kreditkarte. Wählen Sie danach keinen Tarif, endet der Test automatisch.",
+      a: "Ja. Solo und Kanzlei testen Sie 30 Tage mit vollem Funktionsumfang, ohne Kreditkarte. Wählen Sie danach keinen Tarif, endet der Test automatisch.",
     },
     {
       q: "Kann ich jederzeit den Plan wechseln?",
@@ -500,10 +500,11 @@ export const LANDING = {
     },
     {
       value: "Wochen der Einarbeitung",
-      label: "Neue Kolleginnen und Kollegen brauchen lange, bis sie das Kanzleiwissen selbst finden.",
+      label:
+        "Neue Kolleginnen und Kollegen brauchen lange, bis sie das Kanzleiwissen selbst finden.",
     },
   ],
-  ctaPrimary: "14 Tage kostenlos testen",
+  ctaPrimary: "30 Tage kostenlos testen",
   ctaSecondary: "Live-Demo ansehen",
   demo: {
     windowTitle: "subsumio — fragen",
@@ -676,7 +677,7 @@ export const LANDING = {
     },
     {
       q: "Wo liegen meine Daten — und wie unterstützt Subsumio die Verschwiegenheit?",
-      a: "Sie wählen: Self-Hosting auf eigener Hardware mit eigenen Schlüsseln, oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen nie die EU. Kein Dritter verarbeitet sie ohne ausdrückliche Freigabe. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
+      a: "Sie wählen: Betrieb auf eigener Hardware mit eigenen Schlüsseln oder verwaltete EU-Cloud mit Auftragsverarbeitungsvertrag. Gespeichert werden Ihre Akten in einem Rechenzentrum in der EU. Für eine KI-Antwort geht der benötigte Ausschnitt an den Anbieter des Sprachmodells; er ist im AVV benannt, über EU-Standardvertragsklauseln gebunden und trainiert nicht mit Ihren Daten. Wer auch das ausschließen will, betreibt im Enterprise-Tarif ein eigenes Sprachmodell auf eigener Hardware. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
     },
     {
       q: "Brauche ich IT-Kenntnisse oder eigene Server?",
@@ -684,7 +685,7 @@ export const LANDING = {
     },
     {
       q: "Trainiert Subsumio auf meinen Daten?",
-      a: "Niemals. Ihr Kanzleiwissen gehört Ihnen. On-Premise bleibt alles auf Ihrer Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
+      a: "Nein. Mit Ihren Daten wird kein KI-Modell trainiert. Was Subsumio aus Ihren Akten lernt, bleibt in Ihrem Kanzlei-Gehirn: Es hilft beim nächsten Mandat, fließt aber nicht in das Wissen anderer Kanzleien ein — und Sie können das Mitlernen in den Einstellungen abschalten. On-Premise bleibt alles auf Ihrer Infrastruktur; in der EU-Cloud wird es verschlüsselt und getrennt je Kanzlei verarbeitet.",
     },
     {
       q: "Funktioniert das mit unserer bestehenden Software?",
@@ -700,13 +701,13 @@ export const LANDING = {
     },
     {
       q: "Was kostet Subsumio — und gibt es versteckte Gebühren?",
-      a: "Solo 249 € pro Monat für einen Nutzer, Kanzlei 1.499 € pro Monat inklusive fünf Nutzern, Enterprise auf Anfrage. Beide Tarife sind monatlich kündbar. Nutzungslimits und Mehrverbrauch werden vor Abschluss ausgewiesen und sind in der Übersicht jederzeit sichtbar. 14 Tage gratis, keine Kreditkarte.",
+      a: "Solo 249 € pro Monat für einen Nutzer, Kanzlei 1.499 € pro Monat inklusive fünf Nutzern, Enterprise auf Anfrage. Beide Tarife sind monatlich kündbar. Nutzungslimits und Mehrverbrauch werden vor Abschluss ausgewiesen und sind in der Übersicht jederzeit sichtbar. 30 Tage gratis, keine Kreditkarte.",
     },
   ],
   ctaTitle: "Hören Sie auf zu suchen. Fragen Sie.",
   ctaSub:
-    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Ihr Team ist morgen produktiver.",
-  ctaButton: "14 Tage kostenlos testen",
+    "30 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Ihr Team ist morgen produktiver.",
+  ctaButton: "30 Tage kostenlos testen",
   relatedLinks: [
     {
       label: "Preise & Pläne",
@@ -747,7 +748,7 @@ export const UI_STRINGS: Record<string, string> = {
   footerHostingLine:
     "EU-Cloud oder On-Premise · AVV inklusive · Verschwiegenheit nach § 9 Abs. 2 RAO im Blick",
   noCreditCard: "Keine Kreditkarte",
-  trialDaysFree: "14 Tage gratis · Keine Kreditkarte",
+  trialDaysFree: "30 Tage gratis · Keine Kreditkarte",
   threeMinAnswer: "3 Min. zur ersten belegten Antwort",
   euHosted: "EU-gehostet oder On-Premise",
   seeFullPricing: "Alle Preisdetails ansehen",
@@ -758,7 +759,7 @@ export const UI_STRINGS: Record<string, string> = {
   noGamesSub: "Fixer Monatspreis, monatlich kündbar, Export jederzeit.",
   stillQuestions: "Noch Fragen?",
   writeUs: "Schreiben Sie uns — wir antworten persönlich.",
-  startFree: "14 Tage kostenlos testen",
+  startFree: "30 Tage kostenlos testen",
   seePlans: "Pläne ansehen",
   trustedBy: "Gebaut für Kanzleien in Österreich",
   watchDemo: "Demo ansehen",
@@ -821,7 +822,7 @@ export const UI_STRINGS: Record<string, string> = {
   verticalSeePricing: "Preise ansehen",
   verticalSeeLive: "Live ansehen",
   verticalTrialNote:
-    "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich",
+    "30 Tage kostenlos testen · Keine Kreditkarte erforderlich",
   verticalTrustNote: "EU-Cloud · On-Premise (Enterprise) · DSGVO · § 9 Abs. 2 RAO",
   verticalFeaturesSub:
     "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort mit Fundstelle.",
@@ -874,6 +875,8 @@ export const UI_STRINGS: Record<string, string> = {
   docsClearSearch: "Suche zurücksetzen",
   followContext: "Kontext folgen",
   menuAria: "Menü",
+  /** Kurzform der Haupt-Handlungsaufforderung für die Kopfzeile am Handy. */
+  ctaShort: "Testen",
   dismissAnnouncement: "Mitteilung schließen",
   languageLabel: "Sprache / Language",
   readInGerman: "Auf Deutsch lesen",
@@ -912,7 +915,7 @@ export const UI_STRINGS: Record<string, string> = {
   gapWarning: "⚠ Tagsatzung Do 14 Uhr: Vollmacht fehlt in der Akte",
   worksOffline: "Startet auch ohne Netz",
   installNow: "Subsumio jetzt installieren",
-  getStarted: "14 Tage kostenlos testen",
+  getStarted: "30 Tage kostenlos testen",
   seeFeatures: "Funktionen ansehen",
   pushNotifications: "Push-Benachrichtigungen",
   biometricUnlock: "Biometrische Entsperrung",

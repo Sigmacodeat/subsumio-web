@@ -100,7 +100,27 @@ Vom Mac aus dem Repository, rollt genau den committeten Stand (HEAD) aus:
 ```sh
 sh server/deploy/netcup/deploy-code.sh --build   # nur bauen, Dienste laufen weiter
 sh server/deploy/netcup/deploy-code.sh           # bauen und umschalten
+sh server/deploy/netcup/deploy-code.sh --app     # Web + Engine, Korpus-Pipeline läuft weiter
+sh server/deploy/netcup/deploy-code.sh --web     # nur Web-App
 ```
+
+Es läuft immer nur EIN Deploy: Das Skript legt `/opt/subsumio-deploy.lock` an und gibt die Sperre
+am Ende wieder frei. Ein zweiter Lauf bricht mit der Meldung ab, wer die Sperre hält. Bleibt sie
+nach einem Abbruch liegen, erst prüfen, ob wirklich nichts mehr läuft, dann freigeben:
+
+```sh
+ssh subsumio-netcup 'ps -eo etime,args | grep -E "docker compose|tar -xzf" | grep -v grep'
+ssh subsumio-netcup 'rm -rf /opt/subsumio-deploy.lock'
+```
+
+Vor dem Umschalten prüft das Skript zusätzlich, dass die neue Version vollständig ist und dass
+`/opt/subsumio` noch der Stand ist, gegen den gebaut wurde. Sonst schaltet es nicht um. Genau diese
+Prüfungen fehlten am 20.09.2026, als zwei gleichzeitige Deploys `/opt/subsumio` bis auf einen leeren
+`server`-Ordner geleert haben.
+
+`--app` und `--web` lassen den Pipeline-Container in Ruhe: Ein voller Deploy erzeugt ihn neu und
+bricht damit laufende RIS-Läufe ab, die tagelang dauern können. Vorher prüfen, ob gerade einer
+läuft: `ssh subsumio-netcup docker exec subsumio-engine-corpus-pipeline-1 ps -eo etime,args`.
 
 Das Skript lädt ein `git archive` hoch, übernimmt `.env` und `imports/`, baut web, engine und
 corpus-pipeline und schaltet dann `/opt/subsumio` → `/opt/subsumio-prev` um. Die Engine spielt

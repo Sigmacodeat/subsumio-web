@@ -205,8 +205,8 @@ export default function AbsencePage() {
             {activeCount === 1
               ? "Eine Abwesenheit läuft gerade."
               : `${activeCount} Abwesenheiten laufen gerade.`}{" "}
-            Fristen werden nicht automatisch umgeschrieben — bitte übergeben Sie offene Fristen der
-            Vertretung.
+            Fristen der abwesenden Person tragen in der Fristenliste den Hinweis „Vertretung“.
+            Zuständig bleibt die Akte — die Übergabe selbst besprechen Sie wie gewohnt.
           </p>
         </div>
       )}

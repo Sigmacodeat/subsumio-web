@@ -6,7 +6,7 @@ import { professionalPricing } from "@/content/audiences";
 export const metadata: Metadata = {
   title: "Subsumio Preise — Solo, Kanzlei und Enterprise",
   description:
-    "Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, Enterprise auf Anfrage. Monatlich kündbar, 14 Tage kostenlos testen.",
+    "Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, Enterprise auf Anfrage. Monatlich kündbar, 30 Tage kostenlos testen.",
   alternates: {
     canonical: "/at/pricing",
   },

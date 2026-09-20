@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 
 export const maxDuration = 120;
 
@@ -54,6 +54,7 @@ export const POST = createHandler(
   {
     action: "legal.strategy",
     rateTier: "heavy",
+    credits: "subsumption",
     body: strategySchema,
     audit: (_ctx, body) => ({
       action: "legal.strategy" as const,
@@ -209,6 +210,8 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
           thinkRes.status
         );
       }
+      // Charged once the engine accepted the job (same point as /api/think).
+      void recordCreditConsumption(ctx, "subsumption", body.case_slug);
 
       // The think endpoint returns SSE — collect the answer
       const contentType = thinkRes.headers.get("Content-Type") || "";

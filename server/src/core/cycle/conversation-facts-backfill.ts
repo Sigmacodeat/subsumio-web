@@ -46,6 +46,7 @@ import type { BrainEngine } from "../engine.ts";
 import { BudgetTracker, BudgetExhausted } from "../budget/budget-tracker.ts";
 import { withBudgetTracker } from "../ai/gateway.ts";
 import { listSources } from "../sources-ops.ts";
+import { withoutExcluded } from "../brain-learning.ts";
 import {
   runExtractConversationFactsCore,
   ALLOWED_TYPES,
@@ -57,6 +58,8 @@ import {
 export interface ConversationFactsBackfillPhaseOpts {
   dryRun?: boolean;
   signal?: AbortSignal;
+  /** Firm setting "Kanzlei-Gehirn lernt mit": sources this phase must skip (core/brain-learning.ts). */
+  excludedSources?: ReadonlySet<string>;
 }
 
 /** Phase return shape (matches PhaseResult contract from cycle.ts). */
@@ -168,7 +171,7 @@ export async function runPhaseConversationFactsBackfill(
   const startedAt = Date.now();
   const maxTotalWalltimeMs = cfg.maxTotalWalltimeMin * 60_000;
 
-  const sources = await listSources(engine);
+  const sources = withoutExcluded(await listSources(engine), opts.excludedSources);
   if (sources.length === 0) {
     return {
       phase: "conversation_facts_backfill",

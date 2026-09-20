@@ -141,7 +141,10 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     "openrouter:anthropic/claude-sonnet-4.6",
     { input: 36, cachedInput: 3.6, cacheCreate: 45, output: 180 }
   ),
-  // deep-Tier (Qualitätskontrolle, komplexe Fragen, per Kanzlei-Modellprofil wählbar)
+  // Deep tier in production (model-config.ts TIER_DEFAULTS.deep), and pickable
+  // per work area through the firm's model profile. Missing here meant every
+  // token-billed Opus job fell back to DEFAULT_CREDIT_RATE, which is
+  // Haiku-priced — a fifth of what it costs us.
   "anthropic:claude-opus-5": rateFromCanonical("anthropic:claude-opus-5", {
     input: 60,
     cachedInput: 6,

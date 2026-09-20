@@ -8,6 +8,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { Pool, type PoolConfig } from "pg";
 import { AuthError } from "@/lib/errors";
 import type { OnboardingProgress } from "@/lib/types";
+import { trialEndsAtFrom } from "@/lib/billing/trial";
 
 export type Plan = "free" | "pro" | "team" | "enterprise";
 
@@ -69,6 +70,22 @@ export interface User {
   onboardingCompletedAt?: string | null;
   /** Per-step setup progress for the dashboard guide / checklist. */
   onboardingProgress?: OnboardingProgress;
+  /**
+   * "Kanzlei-Gehirn lernt mit" for a lawyer working alone (no org). The org's
+   * value applies to team members instead. undefined = on (default).
+   * See src/lib/brain-learning.ts.
+   */
+  brainLearning?: boolean;
+  /** End of the free self-service trial (ISO). Resolve limits through
+   *  `effectivePlan` in src/lib/billing/trial.ts, never `plan` alone. */
+  trialEndsAt?: string | null;
+  /** SHA-256 of the secret in the personal calendar feed URL (never the secret
+   *  itself). Set while a subscription link exists, null once revoked. */
+  calendarFeedTokenHash?: string | null;
+  /** When the current calendar feed link was created (ISO). */
+  calendarFeedCreatedAt?: string | null;
+  /** Last time a calendar client fetched the feed (ISO). */
+  calendarFeedLastUsedAt?: string | null;
   createdAt: string;
 }
 
@@ -88,6 +105,13 @@ export interface Org {
    * undefined = "any" (no restriction, prior behavior for every existing org).
    */
   modelPolicy?: "any" | "eu_only";
+  /**
+   * Firm-wide "Kanzlei-Gehirn lernt mit". false = the firm's brain is not
+   * extended automatically (no derived facts/takes, no auto-captured
+   * assistant memories, no auto-playbook updates). undefined = on (default).
+   * Admin-only setting, audit-logged; see src/lib/brain-learning.ts.
+   */
+  brainLearning?: boolean;
   /** The user who holds the subscription and whose credits the team uses.
    *  Defaults to ownerId; stays put when ownership is handed over. */
   billingUserId?: string | null;
@@ -678,6 +702,9 @@ export async function buildNewUser(opts: {
   referredBy?: string | null;
   industry?: string | null;
   jurisdiction?: "DE" | "AT" | "CH" | null;
+  /** Self-service signup: start the free trial. SSO/SCIM accounts join a firm
+   *  that already has a contract and get none. */
+  startTrial?: boolean;
 }): Promise<User> {
   const s = getStore();
   let referralCode = generateReferralCode();
@@ -712,6 +739,7 @@ export async function buildNewUser(opts: {
       teamInvited: false,
       firstQuery: false,
     },
+    trialEndsAt: opts.startTrial ? trialEndsAtFrom() : null,
     createdAt: new Date().toISOString(),
   };
 }

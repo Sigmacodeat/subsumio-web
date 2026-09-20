@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join } from "path";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
 
 function arg(name: string, fb?: string) {
   const i = process.argv.indexOf(`--${name}`);
@@ -64,10 +65,10 @@ const FROM_XML = arg("from-xml");
 // RIS OGD: one connection. Earlier default was 3 parallel workers.
 const CONCURRENCY = Number(arg("concurrency", "1"));
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
-const THROTTLE_MS = Number(arg("throttle-ms", "1000"));
+const THROTTLE_MS = Number(arg("throttle-ms", String(RIS_PAUSE_MS)));
 /** Nach so vielen aufeinanderfolgenden 503 wird der Lauf abgebrochen. */
 const MAX_CONSECUTIVE_503 = Number(arg("max-503", "25"));
-const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
+const UA = { "User-Agent": RIS_USER_AGENT };
 const NS = "{http://www.bka.gv.at}";
 
 type Norm = {
@@ -487,7 +488,7 @@ async function main() {
         }
         xml = readFileSync(p, "utf8");
       } else {
-        if (THROTTLE_MS > 0) await new Promise((r) => setTimeout(r, THROTTLE_MS));
+        if (THROTTLE_MS > 0) await risMassPause("Bundesnormen-XML");
         xml = await fetchXml(n.nor);
       }
       if (!xml) {

@@ -125,12 +125,61 @@ export default function CalendarExportPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | ExportKind>("all");
   const [copied, setCopied] = useState(false);
+  // The subscription link carries its own secret, so Outlook, Google and Apple
+  // can fetch it without a Subsumio login. It is shown once, right after it is
+  // created; afterwards only the fact that one exists is known.
   const [icsSubscriptionUrl, setIcsSubscriptionUrl] = useState("");
+  const [feedActive, setFeedActive] = useState<boolean | null>(null);
+  const [feedCreatedAt, setFeedCreatedAt] = useState<string | null>(null);
+  const [feedBusy, setFeedBusy] = useState(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIcsSubscriptionUrl(`${window.location.origin}/api/legal/deadlines.ics`);
     void loadEvents();
+    void loadFeedStatus();
   }, []);
+
+  async function loadFeedStatus() {
+    try {
+      const res = await api.get<{ data: { active: boolean; createdAt: string | null } }>(
+        "/api/settings/calendar-feed"
+      );
+      setFeedActive(res.data.active);
+      setFeedCreatedAt(res.data.createdAt);
+    } catch {
+      setFeedActive(false);
+    }
+  }
+
+  async function createFeedLink() {
+    setFeedBusy(true);
+    setFeedError(null);
+    try {
+      const res = await api.post<{ data: { url: string } }>("/api/settings/calendar-feed", {});
+      setIcsSubscriptionUrl(res.data.url);
+      setFeedActive(true);
+      setFeedCreatedAt(new Date().toISOString());
+    } catch {
+      setFeedError("Die Adresse konnte nicht erstellt werden. Bitte erneut versuchen.");
+    } finally {
+      setFeedBusy(false);
+    }
+  }
+
+  async function revokeFeedLink() {
+    setFeedBusy(true);
+    setFeedError(null);
+    try {
+      await api.delete("/api/settings/calendar-feed");
+      setIcsSubscriptionUrl("");
+      setFeedActive(false);
+      setFeedCreatedAt(null);
+    } catch {
+      setFeedError("Die Adresse konnte nicht widerrufen werden. Bitte erneut versuchen.");
+    } finally {
+      setFeedBusy(false);
+    }
+  }
 
   async function loadEvents() {
     setLoading(true);
@@ -259,28 +308,69 @@ export default function CalendarExportPage() {
             und zwei Tage vor Fristende mit.
           </p>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Die Adresse ist nur mit Anmeldung bei Subsumio abrufbar. Kalenderprogramme ohne diese
-            Anmeldung (etwa Google Kalender) können sie nicht laden — nutzen Sie dort den
-            Datei-Export.
+            Die Adresse enthält einen persönlichen Schlüssel und ist damit wie ein Passwort zu
+            behandeln: Wer sie kennt, sieht Ihre Fristen samt Aktenbezeichnung. Geben Sie sie nicht
+            weiter und widerrufen Sie sie, wenn ein Gerät abhandenkommt.
           </p>
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs text-[color:var(--ds-text)]">
-              {icsSubscriptionUrl || "…"}
-            </code>
+
+          {icsSubscriptionUrl && (
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs text-[color:var(--ds-text)]">
+                {icsSubscriptionUrl}
+              </code>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={copySubscriptionUrl}
+                className="shrink-0 gap-1.5 whitespace-nowrap"
+              >
+                {copied ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <Copy size={13} aria-hidden="true" />
+                )}
+                {copied ? "Kopiert" : "Adresse kopieren"}
+              </Button>
+            </div>
+          )}
+
+          {icsSubscriptionUrl && (
+            <p className="text-xs text-[color:var(--ds-attention-text)]">
+              Kopieren Sie die Adresse jetzt — sie wird aus Sicherheitsgründen nicht noch einmal
+              angezeigt.
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
             <Button
-              variant="secondary"
+              variant={feedActive ? "secondary" : "primary"}
               size="sm"
-              onClick={copySubscriptionUrl}
-              className="shrink-0 gap-1.5 whitespace-nowrap"
+              disabled={feedBusy}
+              onClick={createFeedLink}
+              className="gap-1.5"
             >
-              {copied ? (
-                <Check size={13} aria-hidden="true" />
-              ) : (
-                <Copy size={13} aria-hidden="true" />
-              )}
-              {copied ? "Kopiert" : "Adresse kopieren"}
+              <CalendarClock size={13} aria-hidden="true" />
+              {feedActive ? "Neue Adresse erzeugen" : "Adresse erzeugen"}
             </Button>
+            {feedActive && (
+              <Button variant="ghost" size="sm" disabled={feedBusy} onClick={revokeFeedLink}>
+                Widerrufen
+              </Button>
+            )}
           </div>
+
+          {feedActive && !icsSubscriptionUrl && (
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              Eine Adresse ist aktiv{feedCreatedAt ? ` (erstellt am ${formatDate(feedCreatedAt)})` : ""}.
+              Eine neue Adresse ersetzt die bisherige; bestehende Abonnements hören dann auf zu
+              aktualisieren.
+            </p>
+          )}
+          {feedError && (
+            <p className="text-xs text-[color:var(--ds-danger-text)]" role="alert">
+              {feedError}
+            </p>
+          )}
         </section>
 
         <section className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">

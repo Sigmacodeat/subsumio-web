@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import {
+  createHandler,
+  apiSuccess,
+  apiError,
+  recordCreditConsumption,
+} from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { engineTranscribe } from "@/lib/engine-llm";
@@ -66,6 +71,9 @@ export const POST = createHandler(
       model: "openai/whisper-1",
     });
     const transcript = result?.text?.trim() ?? "";
+    // `credits` on createHandler only checks the balance. Without this the
+    // transcription would be free forever (see credit-coverage.test.ts).
+    if (transcript) void recordCreditConsumption(ctx, "think", body.case_slug || undefined);
     if (!transcript) {
       return apiError(
         "transcription_failed",

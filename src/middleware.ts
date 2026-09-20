@@ -188,6 +188,11 @@ const API_CSRF_EXEMPT_PATHS = new Set([
   // Same server-to-server authentication as the reservation endpoint; this
   // reconciliation call must remain reachable even after a worker failure.
   "/api/billing/pipeline-settle",
+  // Website concierge: anonymous, session-less, no ambient credentials to
+  // forge — visitors on marketing pages have no CSRF cookie. Abuse is bounded
+  // by per-IP rate limits and (for leads) a honeypot inside the routes.
+  "/api/concierge",
+  "/api/concierge/lead",
 ]);
 
 function isWebhookCsrfExempt(pathname: string): boolean {

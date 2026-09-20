@@ -376,7 +376,10 @@ export function FeatureCommandCenter() {
                 );
               })}
             </div>
-            <div className="relative overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+            {/* A fixed minimum height: the five steps differ in text length, and
+                without it the panel — and the section below it — jumped by about
+                20 px on every switch. */}
+            <div className="relative min-h-[22rem] overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
               {!reduce && (
                 <motion.div
                   key={`focus-${step}`}

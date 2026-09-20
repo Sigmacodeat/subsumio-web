@@ -103,7 +103,7 @@ export default function BenchmarkMethodologyPage() {
         title="Sehen Sie es an Ihren eigenen Akten."
         sub="Starten Sie Ihre 14-tägige Testphase — keine Kreditkarte nötig."
         href="/at/signup"
-        label="14 Tage kostenlos testen"
+        label="30 Tage kostenlos testen"
         secondaryHref="/at/contact"
         secondaryLabel={UI_STRINGS.writeUs}
       />

@@ -151,7 +151,7 @@ export default function CityPage({ params }: { params: Promise<{ slug: string }>
 
             <section className="mb-10 rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-8 text-center">
               <h2 className="mb-3 text-2xl font-bold [color:var(--mk-text)]">
-                14 Tage kostenlos testen
+                30 Tage kostenlos testen
               </h2>
               <p className="mb-6 text-[color:var(--mk-text-muted)]">
                 Keine Kreditkarte. Kein IT-Aufwand. Wenn Subsumio nicht in Woche 1 Zeit spart —
@@ -161,7 +161,7 @@ export default function CityPage({ params }: { params: Promise<{ slug: string }>
                 href="/at/signup"
                 className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-text)] px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
               >
-                14 Tage kostenlos testen
+                30 Tage kostenlos testen
               </Link>
             </section>
 
