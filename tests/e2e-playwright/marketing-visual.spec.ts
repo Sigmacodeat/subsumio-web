@@ -41,7 +41,15 @@ const PUBLIC_PAGES = [
   "/at/privacy",
 ] as const;
 
+// The baselines are local artifacts (.gitignore: the -snapshots folder), and
+// they are platform-specific — a macOS baseline never matches a Linux run.
+// On CI there is therefore no baseline at all, and Playwright fails a missing
+// one by design, so this suite could only ever be red there. It stays a local
+// guard; CI keeps the accessibility and keyboard specs, which do not depend on
+// stored pixels.
 test.describe("Marketing Visual Regression", () => {
+  test.skip(!!process.env.CI, "Referenzbilder sind lokal und plattformabhängig");
+
   for (const path of PUBLIC_PAGES) {
     test(`${path} matches baseline`, async ({ page }) => {
       // Autoplaying product demos and counters would make every run differ.
