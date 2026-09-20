@@ -26,12 +26,22 @@ import {
 } from "@/lib/citation-gate";
 
 // Mock fs.readFile for grounding verification
-vi.mock("node:fs/promises", () => ({
-  readFile: vi.fn(),
-}));
-
-import * as fs from "node:fs/promises";
-const mockReadFile = vi.mocked(fs.readFile);
+// legal-grounding.ts reads the corpus through `import { promises as fs } from
+// "node:fs"` — mocking only "node:fs/promises" left it on the real file system,
+// where the law corpus does not exist, so nothing ever verified.
+const mockReadFile = vi.fn();
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return {
+    ...actual,
+    default: actual,
+    promises: { ...actual.promises, readFile: (...a: unknown[]) => mockReadFile(...a) },
+  };
+});
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, default: actual, readFile: (...a: unknown[]) => mockReadFile(...a) };
+});
 
 // ── Fixtures ───────────────────────────────────────────────────────────
 
