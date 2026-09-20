@@ -109,7 +109,7 @@ export const DEFAULT_ALIASES: Record<string, string> = {
 // gateway default (cheap), answer on Sonnet 5 or — complex only — Opus 5,
 // citation cross-check on Sonnet 5. Fable 5.1 stays opt-in via
 // `gbrain config set models.purpose.<purpose>` for an explicit deep analysis.
-const NATIVE_TIER_DEFAULTS: Record<ModelTier, string> = {
+export const NATIVE_TIER_DEFAULTS: Record<ModelTier, string> = {
   utility: "anthropic:claude-haiku-4-5",
   // v0.43.1: Reasoning tier upgraded from DeepSeek to Sonnet 4.6.
   // DeepSeek-chat is a utility-tier model (classification, extraction) — it
@@ -188,7 +188,7 @@ export const TIER_DEFAULTS: Record<ModelTier, string> = tierDefaultsFor(aiProvid
  * are the route per deployment mode. Anything not listed — including "auto" —
  * resolves to undefined, and think routes by question complexity.
  */
-const USER_MODEL_CHOICES: Record<
+export const USER_MODEL_CHOICES: Record<
   string,
   { native: string; openrouter: string; bedrockEu: string | undefined; tier: ModelTier }
 > = {
