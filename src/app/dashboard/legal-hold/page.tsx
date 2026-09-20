@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Shield, ShieldOff, Lock, Unlock, Loader2, Search, AlertTriangle } from "lucide-react";
+import { Shield, ShieldOff, Lock, Unlock, Loader2, Search, AlertTriangle, X } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,12 @@ import { csrfFetch } from "@/lib/csrf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/lib/utils";
+import { STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
+
+const statusLabel = (status: string) =>
+  STATUS_LABELS_DE[status as CaseStatus] ?? (status === "active" ? "Aktiv" : status);
 
 interface CasePage {
   slug: string;
@@ -75,7 +81,7 @@ export default function LegalHoldPage() {
   const onHoldCount = (cases ?? []).filter((c) => c.legalHold).length;
 
   const toggleHold = useCallback(
-    async (caseSlug: string, hold: boolean, reason: string) => {
+    async (caseSlug: string, caseTitle: string, hold: boolean, reason: string) => {
       setToggling(true);
       try {
         const res = await csrfFetch("/api/cases/legal-hold", {
@@ -92,23 +98,25 @@ export default function LegalHoldPage() {
           type: "success",
           title: hold
             ? isEn
-              ? "Legal Hold activated"
-              : "Legal Hold aktiviert"
+              ? "Legal hold activated"
+              : "Aufbewahrungssperre gesetzt"
             : isEn
-              ? "Legal Hold released"
-              : "Legal Hold aufgehoben",
-          description: caseSlug,
+              ? "Legal hold released"
+              : "Aufbewahrungssperre aufgehoben",
+          description: caseTitle,
           duration: 3000,
         });
         setSelectedSlug(null);
         setHoldReason("");
         void queryClient.invalidateQueries({ queryKey: ["legal-hold-cases"] });
         void queryClient.invalidateQueries({ queryKey: ["legal-holds"] });
-      } catch (err) {
+      } catch {
         addToast({
           type: "error",
           title: isEn ? "Operation failed" : "Vorgang fehlgeschlagen",
-          description: err instanceof Error ? err.message : "Unknown error",
+          description: isEn
+            ? "Please try again."
+            : "Die Sperre wurde nicht geändert. Bitte versuchen Sie es erneut.",
           duration: 5000,
         });
       } finally {
@@ -121,15 +129,15 @@ export default function LegalHoldPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={isEn ? "Legal Hold" : "Legal Hold"}
+        title={isEn ? "Legal hold" : "Aufbewahrungssperre"}
         description={
           isEn
-            ? "Manage litigation holds and preservation orders across all matters. Documents under hold cannot be deleted, archived, or modified."
-            : "Verwaltung von Beweisbeschlüssen und Aufbewahrungsanordnungen für alle Akten. Dokumente unter Hold können nicht gelöscht, archiviert oder geändert werden."
+            ? "Manage litigation holds across all matters. Matters under hold cannot be deleted, archived, or modified."
+            : "Aufbewahrungssperren für alle Akten verwalten. Gesperrte Akten können nicht gelöscht, archiviert oder geändert werden."
         }
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: "Legal Hold" },
+          { label: isEn ? "Legal hold" : "Aufbewahrungssperre" },
         ]}
       />
 
@@ -146,25 +154,32 @@ export default function LegalHoldPage() {
             {cases?.length ?? 0}
           </p>
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
-            <Lock size={16} className="text-[color:var(--ds-danger-text)]" />
-            <span className="text-xs text-[color:var(--ds-danger-text)]">
-              {isEn ? "On hold" : "Unter Hold"}
+            <Lock
+              size={16}
+              className={
+                onHoldCount > 0
+                  ? "text-[color:var(--ds-danger-text)]"
+                  : "text-[color:var(--ds-text-muted)]"
+              }
+            />
+            <span className="text-xs text-[color:var(--ds-text-muted)]">
+              {isEn ? "On hold" : "Gesperrt"}
             </span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-danger-text)] tabular-nums">
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
             {onHoldCount}
           </p>
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
-            <Unlock size={16} className="text-[color:var(--ds-success-text)]" />
-            <span className="text-xs text-[color:var(--ds-success-text)]">
-              {isEn ? "Available" : "Verfügbar"}
+            <Unlock size={16} className="text-[color:var(--ds-text-muted)]" />
+            <span className="text-xs text-[color:var(--ds-text-muted)]">
+              {isEn ? "Not on hold" : "Ohne Sperre"}
             </span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
             {(cases?.length ?? 0) - onHoldCount}
           </p>
         </div>
@@ -180,7 +195,8 @@ export default function LegalHoldPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={isEn ? "Search matters..." : "Akten durchsuchen..."}
+            placeholder={isEn ? "Search matters…" : "Akten durchsuchen …"}
+            aria-label={isEn ? "Search matters" : "Akten durchsuchen"}
             className="pl-9"
           />
         </div>
@@ -190,20 +206,22 @@ export default function LegalHoldPage() {
             className={cn(
               "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
               filter === "on_hold"
-                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             )}
+            aria-pressed={filter === "on_hold"}
           >
-            {isEn ? "On Hold" : "Unter Hold"}
+            {isEn ? "On hold" : "Gesperrt"}
           </button>
           <button
             onClick={() => setFilter("all")}
             className={cn(
               "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
               filter === "all"
-                ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
+                ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             )}
+            aria-pressed={filter === "all"}
           >
             {isEn ? "All" : "Alle"}
           </button>
@@ -212,8 +230,10 @@ export default function LegalHoldPage() {
 
       {/* Case list */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-          <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
+        <div className="space-y-2" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -222,11 +242,13 @@ export default function LegalHoldPage() {
             filter === "on_hold"
               ? isEn
                 ? "No matters under legal hold"
-                : "Keine Akten unter Legal Hold"
+                : "Keine Akte ist gesperrt"
               : isEn
                 ? "No matters found"
                 : "Keine Akten gefunden"
           }
+          actionLabel={filter === "on_hold" ? (isEn ? "Show all matters" : "Alle Akten anzeigen") : undefined}
+          onAction={filter === "on_hold" ? () => setFilter("all") : undefined}
         />
       ) : (
         <div className="space-y-2">
@@ -234,10 +256,10 @@ export default function LegalHoldPage() {
             <div
               key={c.slug}
               className={cn(
-                "flex items-center justify-between rounded-xl border p-4",
+                "flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-[color:var(--ds-surface)] p-4",
                 c.legalHold
-                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
-                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                  ? "border-[color:var(--ds-danger-border)]"
+                  : "border-[color:var(--ds-border)]"
               )}
             >
               <div className="min-w-0 flex-1 space-y-1">
@@ -251,41 +273,44 @@ export default function LegalHoldPage() {
                     {c.title}
                   </span>
                   <Badge variant="default" className="shrink-0 text-xs">
-                    {c.status}
+                    {statusLabel(c.status)}
                   </Badge>
                   {c.legalHold && (
                     <Badge className="shrink-0 border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]">
-                      {isEn ? "HOLD" : "HOLD"}
+                      {isEn ? "On hold" : "Gesperrt"}
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
-                  <span className="truncate">{c.slug}</span>
-                  {c.legalHold && c.reason && <span className="truncate">· {c.reason}</span>}
-                  {c.legalHold && c.setAt && (
-                    <span>
-                      · {new Date(c.setAt).toLocaleDateString(isEn ? "en-GB" : "de-DE")}
-                      {c.setBy && ` · ${c.setBy}`}
-                    </span>
-                  )}
-                </div>
+                {c.legalHold && (c.reason || c.setAt) && (
+                  <div className="flex flex-wrap items-center gap-x-2 text-xs text-[color:var(--ds-text-muted)]">
+                    {c.reason && <span className="truncate">{c.reason}</span>}
+                    {c.setAt && (
+                      <span className="tabular-nums">
+                        {c.reason ? "· " : ""}
+                        {isEn ? "since" : "seit"} {formatDate(c.setAt)}
+                        {c.setBy && ` · ${c.setBy}`}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {selectedSlug === c.slug ? (
                   <>
                     <Input
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
-                      placeholder={isEn ? "Reason for hold..." : "Grund für Hold..."}
+                      placeholder={isEn ? "Reason for hold…" : "Grund der Sperre …"}
+                      aria-label={isEn ? "Reason for hold" : "Grund der Sperre"}
                       className="w-48 text-xs"
                     />
                     <Button
                       size="sm"
                       variant="primary"
-                      className="brand-bg text-xs text-white"
+                      className="text-xs whitespace-nowrap"
                       disabled={toggling}
-                      onClick={() => toggleHold(c.slug, !c.legalHold, holdReason)}
+                      onClick={() => toggleHold(c.slug, c.title, !c.legalHold, holdReason)}
                     >
                       {toggling ? (
                         <Loader2 size={12} className="animate-spin" />
@@ -300,18 +325,19 @@ export default function LegalHoldPage() {
                           : "Aufheben"
                         : isEn
                           ? "Activate"
-                          : "Aktivieren"}
+                          : "Sperre setzen"}
                     </Button>
                     <Button
                       size="sm"
                       variant="secondary"
                       className="text-xs"
+                      aria-label={isEn ? "Cancel" : "Abbrechen"}
                       onClick={() => {
                         setSelectedSlug(null);
                         setHoldReason("");
                       }}
                     >
-                      ✕
+                      <X size={12} />
                     </Button>
                   </>
                 ) : (
@@ -319,7 +345,7 @@ export default function LegalHoldPage() {
                     size="sm"
                     variant="secondary"
                     className={cn(
-                      "text-xs",
+                      "text-xs whitespace-nowrap",
                       c.legalHold
                         ? "border border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                         : "border border-[color:var(--ds-border)]"
@@ -336,7 +362,7 @@ export default function LegalHoldPage() {
                         : "Aufheben"
                       : isEn
                         ? "Place Hold"
-                        : "Hold setzen"}
+                        : "Sperre setzen"}
                   </Button>
                 )}
               </div>
@@ -349,11 +375,10 @@ export default function LegalHoldPage() {
       <div className="flex items-start gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
         <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
         <div className="text-xs text-[color:var(--ds-warning-text)]">
-          <p className="font-medium">{isEn ? "Important" : "Wichtig"}</p>
-          <p className="mt-0.5">
+          <p>
             {isEn
-              ? "Matters under legal hold cannot be deleted, archived, or modified. The retention cron job will skip held matters. All hold actions are audit-logged."
-              : "Akten unter Legal Hold können nicht gelöscht, archiviert oder geändert werden. Der Retention-Cron-Job überspringt gehaltene Akten. Alle Hold-Aktionen werden audit-protokolliert."}
+              ? "The automatic retention clean-up skips matters under hold. Every change to a hold is recorded in the audit log."
+              : "Die automatische Löschung nach Ablauf der Aufbewahrungsfrist überspringt gesperrte Akten. Jede Änderung einer Sperre wird im Prüfprotokoll festgehalten."}
           </p>
         </div>
       </div>

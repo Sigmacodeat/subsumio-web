@@ -239,7 +239,7 @@ export const FEATURES_PAGE: FeaturesContent = {
     },
     {
       q: "Sind meine Daten sicher?",
-      a: "Ihre Daten werden verschlüsselt übertragen und gespeichert und liegen in der EU-Cloud (Hetzner); On-Premise gibt es im Enterprise-Tarif. Auftragsverarbeiter sind im AVV benannt. Ihre Inhalte werden nicht zum Training von Modellen verwendet.",
+      a: "Ihre Daten werden verschlüsselt übertragen und gespeichert und liegen in der EU-Cloud; On-Premise gibt es im Enterprise-Tarif. Auftragsverarbeiter sind im AVV benannt. Ihre Inhalte werden nicht zum Training von Modellen verwendet.",
     },
   ],
 };

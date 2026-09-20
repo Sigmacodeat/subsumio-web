@@ -24,7 +24,7 @@ function makeMockEngine(throws: boolean): BrainEngine {
 
 function makeReq(token?: string): Partial<Request> & { headers: Record<string, string> } {
   return {
-    headers: token ? { "x-subsumio-identity-token": token } : {},
+    headers: token ? { "x-subsumio-identity-token": token, "x-subsumio-source": "tenant-1" } : {},
   } as unknown as Partial<Request> & { headers: Record<string, string> };
 }
 

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { BookOpen, CheckCircle2, Info, RefreshCw } from "lucide-react";
 import { EASE, ClipReveal, GlowCard, VIEWPORT } from "../motion-system";
-import { Section, H2_CTA_CLASS } from "../primitives";
+import { Section, H2_CTA_CLASS, EYEBROW_CLASS } from "../primitives";
 import { accentTile } from "../icons";
 import { reveal, type SuperbrainCopyDe } from "./shared";
 import { resolveIcon } from "../icons";
@@ -45,7 +46,7 @@ export function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <span className="brand-text font-mono text-sm tracking-wider uppercase">
+                        <span className={EYEBROW_CLASS}>
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <h3 className="text-lg font-bold [color:var(--mk-text)] md:text-xl">
@@ -184,10 +185,10 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={VIEWPORT.gentle}
             transition={{ duration: 0.4 }}
-            className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
+            className="mb-4 inline-flex"
           >
             <BookOpen size={14} className="brand-text" />
-            <span className="brand-text font-mono text-sm tracking-wider uppercase">
+            <span className={EYEBROW_CLASS}>
               {t.finetuneBadge}
             </span>
           </motion.div>
@@ -238,7 +239,7 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           <div className="brand-border brand-soft rounded-2xl border p-6 text-center">
             <div className="mb-2 flex items-center justify-center gap-2">
               <Info size={18} className="brand-text" />
-              <span className="brand-text font-mono text-sm tracking-wider uppercase">
+              <span className={EYEBROW_CLASS}>
                 {t.finetuneResultLabel}
               </span>
             </div>

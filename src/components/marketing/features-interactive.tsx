@@ -6,7 +6,8 @@
 // independently.
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { UI_STRINGS } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
@@ -297,10 +298,9 @@ export function FeatureCommandCenter() {
           viewport={VIEWPORT.tight}
           transition={{ duration: 0.4 }}
         >
-          <p className="brand-text mb-3 text-sm font-semibold tracking-[0.16em] uppercase">
-            {UI_STRINGS.inDashboard}
-          </p>
           <SectionHeading
+            align="left"
+            badge={UI_STRINGS.inDashboard}
             title={UI_STRINGS.featuresWorkflowTitle}
             sub={UI_STRINGS.featuresWorkflowSub}
           />

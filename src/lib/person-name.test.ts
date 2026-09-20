@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstNameOf } from "./person-name";
+import { firstNameOf, formalNameOf } from "./person-name";
 
 describe("firstNameOf", () => {
   it("skips academic and professional titles", () => {
@@ -20,5 +20,16 @@ describe("firstNameOf", () => {
     expect(firstNameOf("")).toBe("");
     expect(firstNameOf(null)).toBe("");
     expect(firstNameOf("Dr.")).toBe("Dr.");
+  });
+});
+
+describe("formalNameOf", () => {
+  it("title plus surname", () => {
+    expect(formalNameOf("Dr. Anna Müller")).toBe("Dr. Anna Müller".replace("Anna ", ""));
+    expect(formalNameOf("Mag. Max Berger")).toBe("Mag. Berger");
+  });
+  it("full name without title, email-like names untouched", () => {
+    expect(formalNameOf("Karl Gruber")).toBe("Karl Gruber");
+    expect(formalNameOf("")).toBe("");
   });
 });

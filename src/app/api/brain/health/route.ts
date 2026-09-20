@@ -12,7 +12,9 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/health`, {
+      // The engine's web API has no /api/health (this route always reported
+      // "unreachable"); /api/stats is tenant-scoped and proves the DB answers.
+      const res = await fetch(`${ENGINE_URL}/api/stats`, {
         headers: ctx.headers,
         signal: AbortSignal.timeout(5_000),
       });
@@ -20,7 +22,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json({
         status: data.status ?? "healthy",
-        page_count: data.page_count ?? data.total_pages ?? 0,
+        page_count: data.total_pages ?? data.page_count ?? 0,
         embedding_queue_depth: data.embedding_queue_depth ?? 0,
         last_indexed_at: data.last_indexed_at ?? null,
         vector_index_size: data.vector_index_size ?? null,

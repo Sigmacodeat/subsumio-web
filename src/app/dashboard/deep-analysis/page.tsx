@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Quote,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -22,6 +21,8 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { DocumentPicker, type PickedDocument } from "@/components/legal/document-picker";
+import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface DeepAnalysisCitation {
   slug: string;
@@ -54,6 +55,21 @@ const riskColors: Record<string, string> = {
   critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
 };
 
+const RISK_LABELS: Record<string, string> = {
+  low: "Gering",
+  medium: "Mittel",
+  high: "Hoch",
+  critical: "Kritisch",
+};
+
+/** A document reference for display: the cited title if known, else a readable slug tail. */
+function docLabel(slug: string, titles: Map<string, string>): string {
+  const title = titles.get(slug);
+  if (title) return title;
+  const tail = slug.split("/").pop() ?? slug;
+  return tail.replace(/[-_]+/g, " ");
+}
+
 const riskBorder: Record<string, string> = {
   low: "border-l-[color:var(--ds-success-solid)]",
   medium: "border-l-[color:var(--ds-warning-solid)]",
@@ -61,12 +77,44 @@ const riskBorder: Record<string, string> = {
   critical: "border-l-[color:var(--ds-danger-solid)]",
 };
 
+/** The report as Markdown, for filing in the matter. */
+function reportMarkdown(report: DeepAnalysisReport, docs: PickedDocument[]): string {
+  const titles = new Map(docs.map((d) => [d.slug, d.name]));
+  const lines = [
+    `**Gesamtrisiko:** ${RISK_LABELS[report.overall_risk] ?? report.overall_risk} · ${report.document_count} Dokumente`,
+    "",
+    "## Zusammenfassung",
+    report.executive_summary,
+  ];
+  if (report.findings.length) {
+    lines.push("", "## Befunde");
+    for (const f of report.findings) {
+      lines.push(
+        "",
+        `### ${f.theme} (${RISK_LABELS[f.risk_level] ?? f.risk_level})`,
+        f.description,
+        f.affected_documents.length
+          ? `Betroffen: ${f.affected_documents.map((s) => docLabel(s, titles)).join(", ")}`
+          : ""
+      );
+    }
+  }
+  if (report.cross_document_patterns.length) {
+    lines.push("", "## Dokumentübergreifende Muster", ...report.cross_document_patterns.map((p) => `- ${p}`));
+  }
+  if (report.warnings.length) {
+    lines.push("", "## Hinweise", ...report.warnings.map((w) => `- ${w}`));
+  }
+  return lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n");
+}
+
 export default function DeepAnalysisPage() {
   const { t } = useLang();
   const [report, setReport] = useState<DeepAnalysisReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [slugs, setSlugs] = useState("");
+  const [docs, setDocs] = useState<PickedDocument[]>([]);
+  const [caseSlug, setCaseSlug] = useState("");
   const [prompt, setPrompt] = useState("");
   const [expandedFindings, setExpandedFindings] = useState<Set<number>>(new Set());
   const {
@@ -76,10 +124,7 @@ export default function DeepAnalysisPage() {
   } = useGroundedAnswer();
 
   const run = async () => {
-    const slugList = slugs
-      .split(/[,\n\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const slugList = docs.map((d) => d.slug);
     if (slugList.length === 0) return;
 
     setLoading(true);
@@ -95,8 +140,14 @@ export default function DeepAnalysisPage() {
         }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `HTTP ${res.status}`);
+        setError(
+          res.status === 404
+            ? "Mindestens ein Dokument wurde nicht gefunden. Bitte prüfen Sie die Kennungen."
+            : res.status === 400
+              ? "Bitte prüfen Sie die Eingabe: 1 bis 25 Dokumentkennungen."
+              : "Die Analyse ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut."
+        );
+        return;
       }
       const json = await res.json();
       const data = json.data ?? json;
@@ -107,12 +158,20 @@ export default function DeepAnalysisPage() {
         ...data.cross_document_patterns,
       ].join("\n\n");
       groundReport(groundingText).catch(() => {});
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unbekannter Fehler");
+    } catch {
+      setError(
+        "Die Analyse ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut."
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  const docTitles = new Map<string, string>(
+    (report?.findings ?? []).flatMap((f) =>
+      f.citations.filter((c) => c.title).map((c) => [c.slug, c.title] as [string, string])
+    )
+  );
 
   const toggleFinding = (i: number) => {
     setExpandedFindings((prev) => {
@@ -138,15 +197,12 @@ export default function DeepAnalysisPage() {
       <Card className="p-6">
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Dokument-Kennungen (durch Komma oder Zeilenumbruch getrennt)
-            </label>
-            <textarea
-              value={slugs}
-              onChange={(e) => setSlugs(e.target.value)}
-              placeholder="legal/contracts/vertrag-1, legal/contracts/vertrag-2, ..."
-              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-              rows={3}
+            <DocumentPicker
+              id="deep-analysis-docs"
+              selected={docs}
+              onChange={setDocs}
+              onCaseChange={setCaseSlug}
+              max={25}
               disabled={loading}
             />
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -154,20 +210,23 @@ export default function DeepAnalysisPage() {
             </p>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Analyse-Fokus (optional)</label>
+            <label htmlFor="deep-analysis-focus" className="mb-1.5 block text-sm font-medium">
+              Analyse-Fokus (optional)
+            </label>
             <Input
+              id="deep-analysis-focus"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="z.B. Welche Haftungsrisiken erscheinen übergreifend?"
+              placeholder="z. B. Welche Haftungsrisiken bestehen dokumentübergreifend?"
               disabled={loading}
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={run} disabled={loading || !slugs.trim()}>
+            <Button onClick={run} disabled={loading || docs.length === 0}>
               {loading ? (
                 <>
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Analysiere…
+                  Wird analysiert…
                 </>
               ) : (
                 <>
@@ -181,7 +240,7 @@ export default function DeepAnalysisPage() {
       </Card>
 
       {error && (
-        <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-4">
+        <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
           <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
@@ -193,7 +252,7 @@ export default function DeepAnalysisPage() {
         <>
           {/* Warnings */}
           {report.warnings.length > 0 && (
-            <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-solid)] p-4">
+            <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
                 <div className="text-sm">
@@ -210,25 +269,26 @@ export default function DeepAnalysisPage() {
 
           {/* Summary */}
           <Card className="p-6">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <TrendingUp className="h-5 w-5" />
-                Executive Summary
+                Zusammenfassung
               </h2>
               <div className="flex items-center gap-2">
                 <Badge variant="default" className={riskColors[report.overall_risk]}>
-                  Risiko: {report.overall_risk}
+                  Gesamtrisiko: {RISK_LABELS[report.overall_risk] ?? report.overall_risk}
                 </Badge>
                 <Badge variant="default">{report.document_count} Dokumente</Badge>
+                <SaveToMatterButton
+                  source="deep_analysis"
+                  defaultCase={caseSlug}
+                  defaultTitle="Tiefenanalyse"
+                  content={reportMarkdown(report, docs)}
+                  citations={reportGrounding?.grounded_citations}
+                />
               </div>
             </div>
             <p className="text-sm leading-relaxed">{report.executive_summary}</p>
-            {report.attorney_review_required && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Anwaltliche Prüfung erforderlich
-              </div>
-            )}
             <div className="mt-4">
               <CitationPanel
                 data={
@@ -274,7 +334,8 @@ export default function DeepAnalysisPage() {
                     >
                       <button
                         onClick={() => toggleFinding(i)}
-                        className="flex w-full items-center justify-between p-4 text-left"
+                        aria-expanded={expanded}
+                        className="flex w-full items-center justify-between gap-3 p-4 text-left"
                       >
                         <div className="flex items-center gap-3">
                           {expanded ? (
@@ -285,12 +346,14 @@ export default function DeepAnalysisPage() {
                           <div>
                             <p className="text-sm font-medium">{finding.theme}</p>
                             <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                              {finding.affected_documents.length} Dokumente betroffen
+                              {finding.affected_documents.length === 1
+                                ? "1 Dokument betroffen"
+                                : `${finding.affected_documents.length} Dokumente betroffen`}
                             </p>
                           </div>
                         </div>
                         <Badge variant="default" className={riskColors[finding.risk_level]}>
-                          {finding.risk_level}
+                          {RISK_LABELS[finding.risk_level] ?? finding.risk_level}
                         </Badge>
                       </button>
                       {expanded && (
@@ -306,7 +369,7 @@ export default function DeepAnalysisPage() {
                                 {finding.affected_documents.map((slug, j) => (
                                   <Badge key={j} variant="default" className="text-xs">
                                     <FileText className="mr-1 h-3 w-3" />
-                                    {slug}
+                                    {docLabel(slug, docTitles)}
                                   </Badge>
                                 ))}
                               </div>
@@ -325,7 +388,7 @@ export default function DeepAnalysisPage() {
                                 >
                                   <div className="mb-1 flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
                                     <Quote className="h-3 w-3" />
-                                    {citation.title || citation.slug}
+                                    {citation.title || docLabel(citation.slug, docTitles)}
                                   </div>
                                   <p className="text-sm italic">&ldquo;{citation.quote}&rdquo;</p>
                                 </div>
@@ -343,16 +406,6 @@ export default function DeepAnalysisPage() {
         </>
       )}
 
-      {!report && !loading && !error && (
-        <Card className="flex flex-col items-center justify-center gap-4 p-12">
-          <FileSearch className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
-          <h2 className="text-xl font-semibold">Tiefenanalyse</h2>
-          <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
-            Geben Sie oben die Dokumente an und starten Sie die Analyse. Die KI analysiert alle
-            Dokumente zusammen und erstellt einen Bericht mit übergreifenden Erkenntnissen.
-          </p>
-        </Card>
-      )}
     </div>
   );
 }

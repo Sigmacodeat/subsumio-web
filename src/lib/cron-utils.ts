@@ -232,8 +232,8 @@ export interface ContradictionFinding {
 }
 
 /**
- * Fetch contradiction findings from the engine's latest probe run.
- * Reads eval_contradictions_runs via the think API with find_contradictions tool.
+ * Fetch contradiction findings from the engine's latest probe run
+ * (GET /api/legal/contradictions/latest, source-scoped to this brain).
  * Returns [] on any error (best-effort, don't block the briefing).
  */
 export async function fetchContradictions(
@@ -241,34 +241,39 @@ export async function fetchContradictions(
   limit = 10
 ): Promise<ContradictionFinding[]> {
   try {
-    const headers = engineHeadersForBrain(brainId);
-    headers["Content-Type"] = "application/json";
-    const res = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        prompt: `find_contradictions severity=high,medium limit=${limit}`,
-        tools: ["find_contradictions"],
-        tool_choice: "find_contradictions",
-      }),
+    const res = await fetch(`${ENGINE_URL}/api/legal/contradictions/latest?limit=50`, {
+      headers: engineHeadersForBrain(brainId),
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return [];
-    const data = (await res.json()) as { findings?: Array<Record<string, unknown>> };
-    const findings = Array.isArray(data.findings) ? data.findings : [];
-    return findings.slice(0, limit).map((f) => ({
-      case_slug: String(f.slug ?? f.case_slug ?? ""),
-      severity: (f.severity as "high" | "medium" | "low" | "info") ?? "medium",
-      chunk_a: String(f.a ?? f.chunk_a ?? ""),
-      chunk_b: String(f.b ?? f.chunk_b ?? ""),
-      explanation: f.explanation
-        ? String(f.explanation)
-        : f.reasoning
-          ? String(f.reasoning)
-          : undefined,
-      detected_at: String(f.detected_at ?? f.ran_at ?? new Date().toISOString()),
-    }));
+    const data = (await res.json()) as {
+      findings?: Array<Record<string, unknown>>;
+      last_run?: { ran_at?: string | null } | null;
+    };
+    const ranAt = data.last_run?.ran_at ?? new Date().toISOString();
+    return (Array.isArray(data.findings) ? data.findings : [])
+      .filter((f) => f.severity === "high" || f.severity === "medium")
+      .slice(0, limit)
+      .map((f) => mapContradictionFinding(f, ranAt));
   } catch {
     return [];
   }
+}
+
+/** Engine finding `{severity, axis, a:{slug}, b:{slug}}` → briefing shape. */
+export function mapContradictionFinding(
+  f: Record<string, unknown>,
+  ranAt: string
+): ContradictionFinding {
+  const side = (v: unknown): string =>
+    v && typeof v === "object" ? String((v as { slug?: unknown }).slug ?? "") : String(v ?? "");
+  const sev = f.severity;
+  return {
+    case_slug: side(f.a) || String(f.slug ?? ""),
+    severity: sev === "high" || sev === "medium" || sev === "low" ? sev : "medium",
+    chunk_a: side(f.a),
+    chunk_b: side(f.b),
+    explanation: typeof f.axis === "string" && f.axis ? f.axis : undefined,
+    detected_at: ranAt,
+  };
 }

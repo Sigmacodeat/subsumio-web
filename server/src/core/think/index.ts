@@ -75,6 +75,7 @@ import {
 import { AIConfigError } from "../ai/errors.ts";
 import { normalizeModelId } from "../model-id.ts";
 import { hasAnthropicKey } from "../ai/anthropic-key.ts";
+import { matterScopeAllows } from "../matter-access.ts";
 
 /** Anthropic Messages client interface — same shape used by subagent.ts so test stubs can be shared. */
 export interface ThinkLLMClient {
@@ -404,35 +405,57 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // moderate/simple → reasoning tier (cost savings).
   let modelTier: "deep" | "reasoning" = "deep";
   let modelFallback = "opus";
-  if (!opts.model && (opts.legalMode || opts.taxMode)) {
-    const { classifyLegalComplexity, complexityToTier } = await import("./intent.ts");
-    const complexity = classifyLegalComplexity(opts.question);
-    modelTier = complexityToTier(complexity);
-    if (modelTier === "reasoning") {
-      // v0.43.1: Legal reasoning requires Sonnet-class, not DeepSeek.
-      // DeepSeek lacks the multi-step reasoning for subsumption and
-      // cross-document analysis (BenGER 2026, TruPath Labs 2026).
-      // The reasoning tier default is now Sonnet (model-config.ts);
-      // this fallback aligns with it.
-      modelFallback = "sonnet";
-    }
-    warnings.push(`INTENT_MODEL_ROUTING: complexity=${complexity} tier=${modelTier}`);
-  }
-  if (!opts.model && opts.sourceId) {
-    // The firm's model profile (area "chat") may pin the answer tier; the
-    // chat floor (reasoning) always holds.
-    const { loadModelProfile, effectiveTier } = await import("../model-profile.ts");
-    const profile = await loadModelProfile(engine, opts.sourceId);
-    const profiled = effectiveTier("chat", modelTier, profile) as "deep" | "reasoning";
-    if (profiled !== modelTier) {
-      warnings.push(`MODEL_PROFILE: chat tier ${modelTier} -> ${profiled}`);
-      modelTier = profiled;
-      modelFallback = profiled === "reasoning" ? "sonnet" : "opus";
+  let pickedModel = opts.model;
+
+  // The firm's model profile (area "chat") sets the tier an answer runs on at
+  // minimum. A user's per-question pick may go STRONGER than that, never
+  // weaker, so a firm that requires Sonnet-class answers cannot be undercut
+  // from the chat. Picks outside the picker catalogue (CLI `--model`) carry no
+  // tier and are left untouched. A pinned area tier also CAPS automatic
+  // routing — that is the firm choosing cost over the complexity router.
+  let firmMinimum: "deep" | "reasoning" | null = null;
+  let chatProfile: Awaited<
+    ReturnType<(typeof import("../model-profile.ts"))["loadModelProfile"]>
+  > | null = null;
+  if (opts.sourceId) {
+    const { loadModelProfile, effectiveTier, tierAtLeast } = await import("../model-profile.ts");
+    const { tierForPickableModel } = await import("../model-config.ts");
+    chatProfile = await loadModelProfile(engine, opts.sourceId);
+    firmMinimum = effectiveTier("chat", "reasoning", chatProfile) as "deep" | "reasoning";
+    const pickedTier = tierForPickableModel(pickedModel);
+    if (pickedModel && pickedTier && !tierAtLeast(pickedTier, firmMinimum)) {
+      warnings.push(
+        `MODEL_PROFILE: pick ${pickedModel} below the firm minimum (${firmMinimum}) — ignored`
+      );
+      pickedModel = undefined;
     }
   }
 
+  if (!pickedModel && (opts.legalMode || opts.taxMode)) {
+    const { classifyLegalComplexity, complexityToTier } = await import("./intent.ts");
+    const complexity = classifyLegalComplexity(opts.question);
+    modelTier = complexityToTier(complexity);
+    warnings.push(`INTENT_MODEL_ROUTING: complexity=${complexity} tier=${modelTier}`);
+  }
+  if (!pickedModel && chatProfile) {
+    const { effectiveTier } = await import("../model-profile.ts");
+    const profiled = effectiveTier("chat", modelTier, chatProfile) as "deep" | "reasoning";
+    if (profiled !== modelTier) {
+      warnings.push(`MODEL_PROFILE: chat tier ${modelTier} -> ${profiled}`);
+      modelTier = profiled;
+    }
+  }
+  if (modelTier === "reasoning") {
+    // v0.43.1: Legal reasoning requires Sonnet-class, not DeepSeek.
+    // DeepSeek lacks the multi-step reasoning for subsumption and
+    // cross-document analysis (BenGER 2026, TruPath Labs 2026).
+    // The reasoning tier default is now Sonnet (model-config.ts);
+    // this fallback aligns with it.
+    modelFallback = "sonnet";
+  }
+
   const modelUsed = await resolveModel(engine, {
-    cliFlag: opts.model,
+    cliFlag: pickedModel,
     configKey: "models.think",
     tier: modelTier,
     fallback: modelFallback,
@@ -521,6 +544,10 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     agenticRetrievalEnabled: opts.legalMode === true || opts.taxMode === true,
     queryPlanningEnabled: opts.legalMode === true || opts.taxMode === true,
   });
+  if (gather.diagnostics.pagesRetrievalFailed) {
+    // Surfaced to the lawyer via finalAnswerEvent (think/final-answer.ts).
+    warnings.push("RETRIEVAL_FAILED: page search unavailable — answer is not source-backed");
+  }
 
   // P0-SECR-002: Filter gathered evidence by verified matter scope. Uploaded
   // documents are commonly stored below `documents/...` and linked to a case
@@ -530,13 +557,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   const scope = opts.matterScope;
   if (scope && scope !== "all") {
     const matchesScope = (slug: string, caseSlug?: string) =>
-      scope.some(
-        (prefix) =>
-          slug === prefix ||
-          slug.startsWith(`${prefix}/`) ||
-          caseSlug === prefix ||
-          caseSlug?.startsWith(`${prefix}/`)
-      );
+      matterScopeAllows(scope, slug, caseSlug);
     const evidencePageIds = [
       ...new Set(
         [...gather.pages.map((p) => p.page_id), ...gather.takes.map((t) => t.page_id)].filter(
@@ -1178,7 +1199,14 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
         const ensembleMode: EnsembleMode =
           opts.searchMode === "conservative" ? "strict" : "standard";
         // Extract §-citation strings from the answer text for ensemble verification
-        const citationStrings = response.answer.match(/§\s*\d+[a-z]?\s+[A-Z][A-Za-z]{1,10}/g) ?? [];
+        // "§ 1295 Abs 1 ABGB" must yield the statute "ABGB", not "Abs".
+        const citationStrings = [
+          ...new Set(
+            response.answer.match(
+              /§§?\s*\d+[a-z]?(?:\s+(?:Abs\.?|Absatz|Satz|S\.|Z|Ziff\.?|Nr\.?|lit\.?)\s*\d*[a-z]?)*\s+(?!Abs\b|Satz\b|Nr\b|lit\b)[A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]{1,15}/g
+            ) ?? []
+          ),
+        ];
         if (citationStrings.length > 0) {
           try {
             ensembleVerification = await runEnsembleVerification({

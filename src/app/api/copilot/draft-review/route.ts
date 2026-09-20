@@ -37,7 +37,7 @@ export const GET = createHandler(
     const status = query?.status as DraftReviewResult["reviewStatus"] | undefined;
 
     try {
-      const reviews = await listReviews({ draftSlug, status });
+      const reviews = await listReviews(ctx.headers, { draftSlug, status });
       return NextResponse.json({ reviews });
     } catch (err) {
       log.error(
@@ -86,15 +86,21 @@ export const POST = createHandler(
 
     try {
       if (action === "review" && content && title) {
-        const result = await reviewDraft({
+        const result = await reviewDraft(ctx.headers, {
           content,
           title,
           type: type ?? "document_draft",
           draftSlug,
         });
 
-        // Persist non-blocking
-        persistReviewResult(result, ctx.brainId).catch(() => {});
+        // Persist non-blocking, but never silently: a lost review means the
+        // lawyer's issue tracking for this draft is gone.
+        persistReviewResult(ctx.headers, result, ctx.brainId).catch((err: unknown) =>
+          log.error(
+            "[copilot/draft-review] persist failed:",
+            err instanceof Error ? err.message : String(err)
+          )
+        );
 
         return NextResponse.json({ review: result });
       }
@@ -143,7 +149,7 @@ export const PATCH = createHandler(
     }
 
     try {
-      await updateIssueStatus(reviewId, issueId, status);
+      await updateIssueStatus(ctx.headers, reviewId, issueId, status);
       return NextResponse.json({ ok: true });
     } catch (err) {
       log.error(

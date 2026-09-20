@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOnboardingProgress, useUpdateOnboardingProgress } from "@/lib/queries/auth";
 import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
+import { handbookChapterForRoute } from "@/content/handbook";
 
 interface DashboardGuideProps {
   open: boolean;
@@ -200,6 +201,7 @@ export function DashboardGuide({
   const progressValue = Math.round((completedCount / SETUP_SECTIONS.length) * 100);
 
   const routeHelp = ROUTE_HELP.find((item) => pathname.startsWith(item.match));
+  const handbookChapter = handbookChapterForRoute(pathname);
   const resolvedHelp = routeHelp
     ? {
         title: t(routeHelp.title),
@@ -430,13 +432,26 @@ export function DashboardGuide({
                   </h2>
                 </div>
                 <div className="grid gap-2">
-                  <Link
-                    href="/docs"
+                  {handbookChapter && (
+                    <a
+                      href={`/at/docs#${handbookChapter.id}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
+                      onClick={onClose}
+                    >
+                      Im Handbuch: {handbookChapter.title}
+                    </a>
+                  )}
+                  <a
+                    href="/at/docs"
+                    target="_blank"
+                    rel="noopener"
                     className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
                     onClick={onClose}
                   >
                     {t("cmd.action.help.docs")}
-                  </Link>
+                  </a>
                   <Link
                     href="/dashboard/chat"
                     className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"

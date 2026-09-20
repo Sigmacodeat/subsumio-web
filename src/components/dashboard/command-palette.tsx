@@ -400,7 +400,7 @@ export function CommandPalette({
       id: "help-docs",
       label: t("cmd.action.help.docs"),
       icon: BookOpen,
-      href: "/docs",
+      href: "/at/docs",
       section: t("cmd.section.admin"),
       keywords: "help docs manual anleitung doku",
     });

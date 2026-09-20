@@ -49,31 +49,53 @@ export interface ModelEntry {
   dataResidency: "eu" | "non_eu";
 }
 
+/**
+ * Models a user can pick for answers (chat, research, Copilot). Only models the
+ * engine actually routes: the engine maps these ids in
+ * `server/src/core/model-config.ts` (USER_MODEL_CHOICES). "auto" is not listed
+ * here — it means "no pick", and the engine routes by question complexity
+ * (Sonnet 5, Opus 5 for complex questions). Prices are the provider's list
+ * prices per 1M tokens; they drive the cost hints in the picker.
+ */
 export const AI_MODELS: ModelEntry[] = [
   {
-    id: "claude-opus-4-7",
-    name: "Claude Opus 4.7",
+    id: "claude-sonnet-5",
+    name: "Claude Sonnet 5",
     provider: "anthropic",
-    contextWindow: 200_000,
-    costPer1MInput: 5.0,
-    costPer1MOutput: 25.0,
-    speedRating: 2,
+    contextWindow: 1_000_000,
+    costPer1MInput: 2.0,
+    costPer1MOutput: 10.0,
+    speedRating: 4,
     description:
-      "Highest intelligence for the most complex legal reasoning and multi-document synthesis. Harvey's deep-reasoning model.",
+      "Standard für Rechtsfragen, Entwürfe und Aktenfragen. Gutes Verhältnis von Qualität, Tempo und Kosten.",
     capabilities: ["tool-use", "vision", "extended-thinking"],
     brainScoped: true,
     dataResidency: "non_eu",
   },
   {
-    id: "claude-sonnet-4-6",
-    name: "Claude Sonnet 4.6",
+    id: "claude-opus-5",
+    name: "Claude Opus 5",
     provider: "anthropic",
-    contextWindow: 200_000,
-    costPer1MInput: 3.0,
-    costPer1MOutput: 15.0,
-    speedRating: 4,
+    contextWindow: 1_000_000,
+    costPer1MInput: 5.0,
+    costPer1MOutput: 25.0,
+    speedRating: 3,
     description:
-      "Best balance of intelligence and speed. Default workhorse for legal drafting, analysis, and complex queries.",
+      "Gründlich: Subsumtion, mehrere Gesetze, lange Schriftsätze. Etwa doppelt so teuer wie Sonnet 5.",
+    capabilities: ["tool-use", "vision", "extended-thinking"],
+    brainScoped: true,
+    dataResidency: "non_eu",
+  },
+  {
+    id: "claude-fable-5-1",
+    name: "Claude Fable 5.1",
+    provider: "anthropic",
+    contextWindow: 1_000_000,
+    costPer1MInput: 10.0,
+    costPer1MOutput: 50.0,
+    speedRating: 1,
+    description:
+      "Tiefenanalyse für die schwierigsten Fälle. Stärkstes Modell, langsam und etwa fünfmal so teuer wie Sonnet 5.",
     capabilities: ["tool-use", "vision", "extended-thinking"],
     brainScoped: true,
     dataResidency: "non_eu",
@@ -86,109 +108,24 @@ export const AI_MODELS: ModelEntry[] = [
     costPer1MInput: 1.0,
     costPer1MOutput: 5.0,
     speedRating: 5,
-    description:
-      "Fast and cost-effective. Great for classification, summaries, and high-volume utility tasks.",
-    capabilities: ["tool-use", "vision"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "gpt-5.5",
-    name: "GPT-5.5",
-    provider: "openai",
-    contextWindow: 200_000,
-    costPer1MInput: 4.0,
-    costPer1MOutput: 16.0,
-    speedRating: 3,
-    description:
-      "Strong structured output and citation grounding. Harvey uses it for regulated industries and research-heavy retrieval.",
-    capabilities: ["tool-use", "vision", "structured-output"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "gpt-5",
-    name: "GPT-5",
-    provider: "openai",
-    contextWindow: 200_000,
-    costPer1MInput: 5.0,
-    costPer1MOutput: 20.0,
-    speedRating: 3,
-    description:
-      "Versatile flagship model with strong general reasoning. Good for drafting-intensive work and complex analysis.",
-    capabilities: ["tool-use", "vision"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "gpt-4o-mini",
-    name: "GPT-4o mini",
-    provider: "openai",
-    contextWindow: 128_000,
-    costPer1MInput: 0.15,
-    costPer1MOutput: 0.6,
-    speedRating: 5,
-    description:
-      "Ultra-low-cost model for high-volume, low-latency workloads. Good for classification and extraction.",
-    capabilities: ["tool-use", "vision"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "gemini-3-pro",
-    name: "Gemini 3 Pro",
-    provider: "google",
-    contextWindow: 1_000_000,
-    costPer1MInput: 2.0,
-    costPer1MOutput: 12.0,
-    speedRating: 3,
-    description:
-      "1M-token context with advanced reasoning. Strong for complex multi-document legal analysis and long-context review.",
-    capabilities: ["tool-use", "vision"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "gemini-2.0-flash",
-    name: "Gemini 2.0 Flash",
-    provider: "google",
-    contextWindow: 1_000_000,
-    costPer1MInput: 0.1,
-    costPer1MOutput: 0.4,
-    speedRating: 5,
-    description:
-      "1M-token context at breakthrough pricing. Ideal for whole-brain ingestion and large-document review.",
+    description: "Schnell und günstig für einfache Fragen, Zusammenfassungen und Nachschlagen.",
     capabilities: ["tool-use", "vision"],
     brainScoped: true,
     dataResidency: "non_eu",
   },
   {
     id: "mistral-large-3",
-    name: "Mistral Large 3",
+    name: "Mistral Large",
     provider: "mistral",
-    contextWindow: 256_000,
-    costPer1MInput: 0.5,
-    costPer1MOutput: 1.5,
+    contextWindow: 128_000,
+    costPer1MInput: 2.0,
+    costPer1MOutput: 6.0,
     speedRating: 4,
     description:
-      "EU-hosted flagship (Paris). Apache 2.0, ISO 27001/27701, EU AI Act Code of Practice. Ideal for EU-only Kanzleien and utility-tier tasks.",
-    capabilities: ["tool-use", "structured-output", "vision"],
+      "Europäischer Anbieter. Einzige Wahl, wenn die Kanzlei nur EU-Modelle zulässt; bei komplexer Subsumtion schwächer als Claude.",
+    capabilities: ["tool-use"],
     brainScoped: true,
     dataResidency: "eu",
-  },
-  {
-    id: "zero-entropy-legal-v1",
-    name: "ZeroEntropy Legal v1",
-    provider: "zero-entropy",
-    contextWindow: 64_000,
-    costPer1MInput: 0.5,
-    costPer1MOutput: 1.5,
-    speedRating: 4,
-    description:
-      "Specialized legal-domain model with built-in citation grounding. Optimized for German/EU law.",
-    capabilities: ["citation-grounding", "legal-entities"],
-    brainScoped: true,
-    dataResidency: "non_eu",
   },
 ];
 
@@ -202,6 +139,10 @@ export function isValidModelId(id: string): boolean {
   return MODEL_MAP.has(id);
 }
 
+/** "No pick": the engine chooses by question complexity. */
+export const AUTO_MODEL_ID = "auto";
+
+/** The model the engine's automatic routing uses for normal questions. */
 export const DEFAULT_MODEL_ID = AI_MODELS[0].id;
 
 export function getProviderLabel(provider: ModelProvider): string {
@@ -231,11 +172,11 @@ export function formatContextWindow(tokens: number): string {
 
 export function getSpeedLabel(rating: ModelEntry["speedRating"]): string {
   const labels: Record<number, string> = {
-    1: "Very Slow",
-    2: "Slow",
-    3: "Medium",
-    4: "Fast",
-    5: "Very Fast",
+    1: "Sehr langsam",
+    2: "Langsam",
+    3: "Mittel",
+    4: "Schnell",
+    5: "Sehr schnell",
   };
   return labels[rating] ?? "Unknown";
 }

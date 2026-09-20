@@ -1,5 +1,12 @@
 "use client";
 
+import { formatDate, formatEur } from "@/lib/utils";
+
+/** "3,75 Std." — lawyers read hours with a decimal comma, never "3.75h". */
+function fmtHours(hours: number, lang: string): string {
+  const n = hours.toLocaleString(lang === "en" ? "en-GB" : "de-AT", { maximumFractionDigits: 2 });
+  return lang === "en" ? `${n} h` : `${n} Std.`;
+}
 import { useState, useCallback, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -172,6 +179,10 @@ export function BillingTab() {
     .filter((e) => e.billed)
     .reduce((sum, e) => sum + (e.minutes || 0), 0);
   const billedHours = Math.round((billedMinutes / 60) * 100) / 100;
+  const unbilledMinutes = ctx.timeEntries
+    .filter((e) => e.billable !== false && !e.billed)
+    .reduce((sum, e) => sum + (e.minutes || 0), 0);
+  const unbilledHours = Math.round((unbilledMinutes / 60) * 100) / 100;
   const expenseTotal = ctx.expensesList.reduce(
     (sum, e) => sum + (typeof e.amount === "number" ? e.amount : 0),
     0
@@ -181,44 +192,48 @@ export function BillingTab() {
     .reduce((sum, e) => sum + (typeof e.amount === "number" ? e.amount : 0), 0);
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       <div className="max-w-3xl space-y-4">
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
               <Clock size={14} />
-              <span className="text-xs">{t("cases.detail_time_total")}</span>
+              <span className="text-xs">{lang === "en" ? "Hours total" : "Stunden gesamt"}</span>
             </div>
-            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)]">
-              {totalHours}h
+            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+              {fmtHours(totalHours, lang)}
             </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
               <TrendingUp size={14} />
-              <span className="text-xs">{t("cases.detail_time_billable")}</span>
+              <span className="text-xs">{lang === "en" ? "Billable" : "Davon abrechenbar"}</span>
             </div>
-            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)]">
-              {billableHours}h
+            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+              {fmtHours(billableHours, lang)}
             </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
               <Receipt size={14} />
-              <span className="text-xs">{t("cases.detail_exp_total")}</span>
+              <span className="text-xs">
+                {lang === "en" ? "Expenses total" : "Auslagen gesamt"}
+              </span>
             </div>
-            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)]">
-              {expenseTotal.toFixed(2)} €
+            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+              {formatEur(expenseTotal, lang)}
             </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
               <FileText size={14} />
-              <span className="text-xs">{t("cases.detail_time_billed")}</span>
+              <span className="text-xs">
+                {lang === "en" ? "Already billed" : "Bereits abgerechnet"}
+              </span>
             </div>
-            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)]">
-              {billedHours}h
+            <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+              {fmtHours(billedHours, lang)}
             </div>
           </div>
         </div>
@@ -371,19 +386,17 @@ export function BillingTab() {
                         )}
                       {entry.lawyer && ` · ${entry.lawyer}`}
                       {" · "}
-                      {new Date(entry.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
+                      {formatDate(entry.date)}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {Math.round((entry.minutes / 60) * 100) / 100}h
+                      {fmtHours(Math.round((entry.minutes / 60) * 100) / 100, lang)}
                     </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {entry.rate ? `${entry.rate} €/h` : ""}
+                      {entry.rate
+                        ? `${formatEur(entry.rate, lang)}${lang === "en" ? "/h" : "/Std."}`
+                        : ""}
                     </div>
                   </div>
                   <Badge
@@ -506,14 +519,11 @@ export function BillingTab() {
                       {expense.description}
                     </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {new Date(expense.date).toLocaleDateString(
-                        lang === "en" ? "en-GB" : "de-AT",
-                        { day: "2-digit", month: "2-digit", year: "numeric" }
-                      )}
+                      {formatDate(expense.date)}
                     </div>
                   </div>
                   <div className="shrink-0 text-sm font-medium text-[color:var(--ds-text)]">
-                    {expense.amount.toFixed(2)} €
+                    {formatEur(expense.amount, lang)}
                   </div>
                   <Badge
                     variant={
@@ -561,25 +571,25 @@ export function BillingTab() {
             </span>
             <div className="flex items-center gap-4">
               <span className="text-sm text-[color:var(--ds-text-muted)]">
-                {t("cases.detail_exp_billable")}: {billableExpenses.toFixed(2)} €
+                {lang === "en" ? "Billable" : "Abrechenbar"}: {formatEur(billableExpenses, lang)}
               </span>
               <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {expenseTotal.toFixed(2)} €
+                {formatEur(expenseTotal, lang)}
               </span>
             </div>
           </div>
         </div>
 
         {/* Unbilled Summary */}
-        {(billableHours > 0 || ctx.unbilledExpenses > 0) && (
+        {(unbilledHours > 0 || ctx.unbilledExpenses > 0) && (
           <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
             <div>
               <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
                 {t("billingtab.unbilled_summary")}
               </h3>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                {billableHours}h {t("billingtab.time")} + {ctx.unbilledExpenses.toFixed(2)} €{" "}
-                {t("billingtab.expenses")}
+                {fmtHours(unbilledHours, lang)} {t("billingtab.time")} +{" "}
+                {formatEur(ctx.unbilledExpenses, lang)} {t("billingtab.expenses")}
               </p>
             </div>
             <Button

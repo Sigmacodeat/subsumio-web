@@ -31,6 +31,13 @@ import type { DashboardKey } from "@/content/dashboard";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const CATEGORY_LABEL: Record<string, string> = {
+  UTILITY: "Service-Nachricht",
+  MARKETING: "Marketing",
+  AUTHENTICATION: "Bestätigungscode",
+};
 
 interface WhatsAppTemplate {
   slug: string;
@@ -51,6 +58,13 @@ const STATUS_STYLES: Record<string, string> = {
     "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   rejected:
     "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+};
+
+const TEMPLATE_STATUS_LABEL: Record<string, string> = {
+  draft: "Entwurf",
+  pending: "bei Meta eingereicht",
+  approved: "genehmigt",
+  rejected: "abgelehnt",
 };
 
 const STATUS_ICONS: Record<string, typeof FileText> = {
@@ -84,8 +98,8 @@ export default function WhatsAppTemplatesPage() {
       if (!res.ok) throw new Error("Failed to load templates");
       const data = await res.json();
       setTemplates(data.templates ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("wamplates.error_load"));
+    } catch {
+      setError(t("wamplates.error_load"));
     } finally {
       setLoading(false);
     }
@@ -108,8 +122,8 @@ export default function WhatsAppTemplatesPage() {
       setNewTemplate({ name: "", language: "de", category: "UTILITY", body: "" });
       await reload();
       addToast({ type: "success", title: t("wamplates.toast_created" as DashboardKey) });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("wamplates.error_create"));
+    } catch {
+      setError(t("wamplates.error_create"));
     }
   }
 
@@ -125,8 +139,8 @@ export default function WhatsAppTemplatesPage() {
       setEditing(null);
       await reload();
       addToast({ type: "success", title: t("wamplates.toast_saved" as DashboardKey) });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("wamplates.error_save"));
+    } catch {
+      setError(t("wamplates.error_save"));
     }
   }
 
@@ -141,8 +155,8 @@ export default function WhatsAppTemplatesPage() {
       });
       await reload();
       addToast({ type: "success", title: t("wamplates.toast_deleted" as DashboardKey) });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("wamplates.error_delete"));
+    } catch {
+      setError(t("wamplates.error_delete"));
     }
   }
 
@@ -157,11 +171,7 @@ export default function WhatsAppTemplatesPage() {
           { label: t("wamplates.breadcrumb") },
         ]}
         actions={
-          <Button
-            variant="primary"
-            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
-            onClick={() => setCreating(true)}
-          >
+          <Button size="sm" className="gap-1.5 whitespace-nowrap" onClick={() => setCreating(true)}>
             <Plus size={14} />
             {t("wamplates.btn_create")}
           </Button>
@@ -175,28 +185,30 @@ export default function WhatsAppTemplatesPage() {
       )}
 
       {loading ? (
-        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
+        <div className="space-y-3" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
+        </div>
       ) : (
         <>
           {/* Info box */}
           <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
             <p className="text-sm text-[color:var(--ds-info-text)]">
-              <strong>Wichtig:</strong> WhatsApp-Templates müssen von Meta genehmigt werden, bevor
-              sie außerhalb des 24h-Fensters gesendet werden können. Genehmigte Templates können im
-              Meta Business Manager eingereicht werden. Hier gespeicherte Templates dienen als
-              Vorlagen für das Kanzlei-OS.
+              Vorlagen, die Sie mehr als 24 Stunden nach der letzten Nachricht des Mandanten senden,
+              muss Meta vorher genehmigen. Die Einreichung erfolgt im Meta Business Manager; hier
+              gespeicherte Vorlagen dienen als Textbasis.
             </p>
           </div>
 
           {/* Create form */}
           {creating && (
-            <div className="space-y-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Neues Template
-                </h3>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Neue Vorlage</h3>
                 <button
                   onClick={() => setCreating(false)}
+                  aria-label="Formular schließen"
                   className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                 >
                   <X size={16} />
@@ -204,7 +216,7 @@ export default function WhatsAppTemplatesPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="new-tpl-name" className="text-xs">
-                  Template-Name
+                  Name der Vorlage
                 </Label>
                 <Input
                   id="new-tpl-name"
@@ -244,9 +256,9 @@ export default function WhatsAppTemplatesPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="UTILITY">Utility</SelectItem>
+                      <SelectItem value="UTILITY">Service-Nachricht</SelectItem>
                       <SelectItem value="MARKETING">Marketing</SelectItem>
-                      <SelectItem value="AUTHENTICATION">Authentication</SelectItem>
+                      <SelectItem value="AUTHENTICATION">Bestätigungscode</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -264,11 +276,7 @@ export default function WhatsAppTemplatesPage() {
                   className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
-              <Button
-                variant="primary"
-                className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
-                onClick={createTemplate}
-              >
+              <Button size="sm" className="gap-1.5" onClick={createTemplate}>
                 <Save size={14} />
                 Speichern
               </Button>
@@ -279,7 +287,7 @@ export default function WhatsAppTemplatesPage() {
           {templates.length === 0 && !creating ? (
             <EmptyState
               icon={FileText}
-              title="Noch keine Templates"
+              title="Noch keine Vorlagen"
               description="Legen Sie eine Vorlage an, um wiederkehrende Nachrichten schneller zu versenden."
               actionLabel={t("wamplates.btn_create")}
               onAction={() => setCreating(true)}
@@ -298,10 +306,11 @@ export default function WhatsAppTemplatesPage() {
                       <>
                         <div className="flex items-center justify-between">
                           <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                            Template bearbeiten
+                            Vorlage bearbeiten
                           </h3>
                           <button
                             onClick={() => setEditing(null)}
+                            aria-label="Bearbeitung schließen"
                             className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                           >
                             <X size={16} />
@@ -333,9 +342,9 @@ export default function WhatsAppTemplatesPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="UTILITY">Utility</SelectItem>
+                              <SelectItem value="UTILITY">Service-Nachricht</SelectItem>
                               <SelectItem value="MARKETING">Marketing</SelectItem>
-                              <SelectItem value="AUTHENTICATION">Authentication</SelectItem>
+                              <SelectItem value="AUTHENTICATION">Bestätigungscode</SelectItem>
                             </SelectContent>
                           </Select>
                           <Select
@@ -381,20 +390,24 @@ export default function WhatsAppTemplatesPage() {
                             <Badge
                               variant="default"
                               className={cn(
-                                "border text-xs capitalize",
+                                "border text-xs",
                                 STATUS_STYLES[template.status] ?? STATUS_STYLES.draft
                               )}
                             >
-                              {template.status}
+                              {TEMPLATE_STATUS_LABEL[template.status] ?? template.status}
                             </Badge>
                             <button
                               onClick={() => setEditing(template)}
+                              aria-label={`Vorlage ${template.name} bearbeiten`}
+                              title="Bearbeiten"
                               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-info-text)]"
                             >
                               <Edit3 size={14} />
                             </button>
                             <button
                               onClick={() => deleteTemplate(template.slug)}
+                              aria-label={`Vorlage ${template.name} löschen`}
+                              title="Löschen"
                               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                             >
                               <Trash2 size={14} />
@@ -402,9 +415,15 @@ export default function WhatsAppTemplatesPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                          <span>{template.language.toUpperCase()}</span>
+                          <span>
+                            {template.language === "de"
+                              ? "Deutsch"
+                              : template.language === "en"
+                                ? "Englisch"
+                                : template.language.toUpperCase()}
+                          </span>
                           <span>·</span>
-                          <span>{template.category}</span>
+                          <span>{CATEGORY_LABEL[template.category] ?? template.category}</span>
                         </div>
                         <p className="rounded-lg bg-[color:var(--ds-surface-hover)] px-3 py-2 text-xs text-[color:var(--ds-text)]">
                           {template.body}

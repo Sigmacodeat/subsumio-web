@@ -17,6 +17,9 @@ import {
 } from "@/lib/queries/tabular-review";
 import { TabularReviewProgress } from "@/components/legal/TabularReviewProgress";
 import { TabularReviewGrid } from "@/components/legal/TabularReviewGrid";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDateTime } from "@/lib/utils";
 
 /** UI cap for question columns (the server allows up to 50). */
 const MAX_QUESTIONS = 20;
@@ -39,7 +42,7 @@ interface LastRunInfo {
 }
 
 function TabularReviewPageInner() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { addToast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -141,8 +144,8 @@ function TabularReviewPageInner() {
       });
       openRun(res.run_slug);
       addToast({ type: "success", description: t("tabular.run_started") });
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : t("tabular.error_failed"));
+    } catch {
+      setFormError(t("tabular.error_failed"));
       addToast({ type: "error", description: t("tabular.error_failed") });
     }
   }
@@ -159,7 +162,7 @@ function TabularReviewPageInner() {
     const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const header = [
       t("tabular.col_document"),
-      "Slug",
+      "Kennung",
       t("tabular.col_status"),
       t("tabular.row_error_label"),
       ...run.questions,
@@ -215,7 +218,7 @@ function TabularReviewPageInner() {
       {/* Letzten Run fortsetzen */}
       {!runSlug && lastRun && (
         <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-          <History size={16} className="brand-text shrink-0" />
+          <History size={16} className="shrink-0 text-[color:var(--ds-text-muted)]" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
               {t("tabular.last_run_title")}
@@ -223,19 +226,13 @@ function TabularReviewPageInner() {
             <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
               {lastRun.title}
               {" · "}
-              {new Date(lastRun.saved_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {formatDateTime(lastRun.saved_at)}
             </p>
           </div>
           <Button
             variant="secondary"
             size="sm"
-            className="text-xs"
+            className="text-xs whitespace-nowrap"
             onClick={() => openRun(lastRun.run_slug)}
           >
             {t("tabular.last_run_open")}
@@ -269,7 +266,7 @@ function TabularReviewPageInner() {
                   aria-pressed={sourceMode === mode}
                   className={
                     sourceMode === mode
-                      ? "brand-bg rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                      ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text)] shadow-sm"
                       : "rounded-md px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                   }
                 >
@@ -367,6 +364,7 @@ function TabularReviewPageInner() {
                 value={q}
                 onChange={(e) => setQuestion(i, e.target.value)}
                 placeholder={t("tabular.question_placeholder").replace("{{n}}", String(i + 1))}
+                aria-label={t("tabular.question_placeholder").replace("{{n}}", String(i + 1))}
                 className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
               {questions.length > 1 && (
@@ -390,11 +388,7 @@ function TabularReviewPageInner() {
           )}
         </div>
 
-        <Button
-          onClick={start}
-          disabled={startMutation.isPending}
-          className="brand-bg brand-bg gap-2 text-white"
-        >
+        <Button onClick={start} disabled={startMutation.isPending} className="gap-2">
           {startMutation.isPending ? (
             <Loader2 size={15} className="animate-spin" />
           ) : (
@@ -414,20 +408,15 @@ function TabularReviewPageInner() {
       {runSlug && (
         <section className="space-y-4">
           {runQuery.isLoading ? (
-            <div
-              className="flex items-center justify-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-12 text-sm text-[color:var(--ds-text-muted)]"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 size={16} className="animate-spin" />
-              {t("tabular.run_loading")}
+            <div className="space-y-3" aria-busy="true" aria-label={t("tabular.run_loading")}>
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           ) : runQuery.isError ? (
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={16} className="shrink-0" />
               <span className="min-w-0 flex-1">
                 {t("tabular.run_error_load")}
-                {runQuery.error instanceof Error ? ` — ${runQuery.error.message}` : ""}
               </span>
               <Button variant="secondary" size="sm" className="text-xs" onClick={clearRun}>
                 {t("tabular.run_clear")}
@@ -446,6 +435,13 @@ function TabularReviewPageInner() {
                 onRetryAll={() => retry()}
                 retrying={retryMutation.isPending}
                 onExportCsv={exportCsv}
+              />
+              {/* Grounding invariant (CLAUDE.md): the cell answers are AI output. */}
+              <GroundedOutputPanel
+                text={run.rows
+                  .flatMap((row) => (row.cells ?? []).map((cell) => cell?.answer ?? ""))
+                  .filter(Boolean)
+                  .join("\n\n")}
               />
               <p className="text-xs text-[color:var(--ds-text-muted)]">{t("tabular.disclaimer")}</p>
             </>

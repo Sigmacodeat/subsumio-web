@@ -1,6 +1,20 @@
 import { z } from "zod";
+import { engineThink } from "@/lib/engine-think";
+import {
+  CONFIRMED_TOOLS,
+  consumeToolConfirmation,
+  createToolConfirmation,
+} from "@/lib/copilot-confirmation";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, recordCreditConsumption } from "@/lib/engine";
+import {
+  CREDIT_COSTS,
+  checkCredits,
+  ensureTrialCredits,
+  insufficientCreditsResponse,
+  type CreditOperation,
+} from "@/lib/billing/credits";
+import { env } from "@/lib/env";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { isToolAvailable, getToolList, type ToolConditionContext } from "@/lib/agent-conditionals";
 import { sendMailboxMessage, buildMailDraft } from "@/lib/email/mailbox";
@@ -276,6 +290,9 @@ const toolSchema = z.object({
     "deadline_mark_done",
   ]),
   params: z.record(z.unknown()).default({}),
+  /** "prepare" returns a confirmation token for a tool in CONFIRMED_TOOLS. */
+  mode: z.enum(["prepare", "execute"]).default("execute"),
+  confirmation: z.string().max(2_000).optional(),
 });
 
 // ── Tool Executors ────────────────────────────────────────────────────
@@ -674,18 +691,11 @@ async function executeEmailDraft(
 
     const draftBody = {
       query: `Verfasse eine ${toneMap[params.tone]} E-Mail${safeRecipient ? ` an ${safeRecipient}` : ""} zum Thema "${safeSubject}".${caseContext}${pointsList}\n\nDie E-Mail soll:\n- Eine angemessene Anrede\n- Den Sachverhalt präzise zusammenfassen\n- Klare nächste Schritte nennen\n- Eine professionelle Signatur andeuten\n\nFormat: Betreff + Body`,
-      mode: "balanced",
+      mode: "balanced" as const,
     };
 
-    const res = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(draftBody),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as { answer?: string };
+    // /api/think streams (SSE); engineThink reads the stream and the final answer.
+    const data = await engineThink(ctx.headers, { ...draftBody, timeoutMs: 60_000 });
 
     return {
       success: true,
@@ -732,18 +742,12 @@ async function executeDeadlineExtract(
       frontmatter?: Record<string, unknown>;
     };
 
-    const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        query: `Analysiere das folgende Dokument und extrahiere alle Fristen, Termine und Deadlines. Gib jedes als strukturierten Eintrag zurück (Datum, Art, Beschreibung):\n\n${sanitizeUserInput(page.content.slice(0, 8000))}`,
-        mode: "balanced",
-        signal: AbortSignal.timeout(30_000),
-      }),
+    // /api/think streams (SSE); engineThink reads the stream and the final answer.
+    const thinkData = await engineThink(ctx.headers, {
+      query: `Analysiere das folgende Dokument und extrahiere alle Fristen, Termine und Deadlines. Gib jedes als strukturierten Eintrag zurück (Datum, Art, Beschreibung):\n\n${sanitizeUserInput(page.content.slice(0, 8000))}`,
+      mode: "balanced",
+      timeoutMs: 60_000,
     });
-
-    if (!thinkRes.ok) throw new Error(`HTTP ${thinkRes.status}`);
-    const thinkData = (await thinkRes.json()) as { answer?: string };
 
     return {
       success: true,
@@ -789,18 +793,12 @@ async function executeDocumentSummary(
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const page = (await res.json()) as { slug: string; title: string; content: string };
 
-    const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        query: `Fasse das folgende Dokument in ${params.max_points} Key Points zusammen. Identifiziere kritische Klauseln, Risiken und Handlungsbedarf:\n\n${sanitizeUserInput(page.content.slice(0, 10000))}`,
-        mode: "balanced",
-        signal: AbortSignal.timeout(30_000),
-      }),
+    // /api/think streams (SSE); engineThink reads the stream and the final answer.
+    const thinkData = await engineThink(ctx.headers, {
+      query: `Fasse das folgende Dokument in ${params.max_points} Key Points zusammen. Identifiziere kritische Klauseln, Risiken und Handlungsbedarf:\n\n${sanitizeUserInput(page.content.slice(0, 10000))}`,
+      mode: "balanced",
+      timeoutMs: 60_000,
     });
-
-    if (!thinkRes.ok) throw new Error(`HTTP ${thinkRes.status}`);
-    const thinkData = (await thinkRes.json()) as { answer?: string };
 
     return {
       success: true,
@@ -982,18 +980,12 @@ async function executeClientUpdate(
         "Erstelle eine umfassende Zusammenfassung der Akte für den Mandanten in verständlicher Sprache.",
     };
 
-    const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        query: `${updateTypeMap[params.update_type]}\n\nAKTE: ${sanitizeUserInput(page.title)}\nMandant: ${sanitizeUserInput(String(fm.client_name ?? "—"))}\n\nDokumentinhalt:\n${sanitizeUserInput(page.content.slice(0, 6000))}`,
-        mode: "balanced",
-        signal: AbortSignal.timeout(30_000),
-      }),
+    // /api/think streams (SSE); engineThink reads the stream and the final answer.
+    const thinkData = await engineThink(ctx.headers, {
+      query: `${updateTypeMap[params.update_type]}\n\nAKTE: ${sanitizeUserInput(page.title)}\nMandant: ${sanitizeUserInput(String(fm.client_name ?? "—"))}\n\nDokumentinhalt:\n${sanitizeUserInput(page.content.slice(0, 6000))}`,
+      mode: "balanced",
+      timeoutMs: 60_000,
     });
-
-    if (!thinkRes.ok) throw new Error(`HTTP ${thinkRes.status}`);
-    const thinkData = (await thinkRes.json()) as { answer?: string };
 
     return {
       success: true,
@@ -1032,18 +1024,12 @@ async function executeMeetingTasks(
   params: z.infer<typeof meetingTasksSchema>
 ): Promise<ToolResponse> {
   try {
-    const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        query: `Analysiere die folgenden Besprechungsnotizen und extrahiere:\n1. Aufgaben (Task) mit Assignee und Due Date falls erwähnt\n2. Entscheidungen\n3. Offene Fragen\n\nFormat als strukturierte Liste.\n\nNotizen:\n${sanitizeUserInput(params.notes.slice(0, 6000))}`,
-        mode: "balanced",
-        signal: AbortSignal.timeout(30_000),
-      }),
+    // /api/think streams (SSE); engineThink reads the stream and the final answer.
+    const thinkData = await engineThink(ctx.headers, {
+      query: `Analysiere die folgenden Besprechungsnotizen und extrahiere:\n1. Aufgaben (Task) mit Assignee und Due Date falls erwähnt\n2. Entscheidungen\n3. Offene Fragen\n\nFormat als strukturierte Liste.\n\nNotizen:\n${sanitizeUserInput(params.notes.slice(0, 6000))}`,
+      mode: "balanced",
+      timeoutMs: 60_000,
     });
-
-    if (!thinkRes.ok) throw new Error(`HTTP ${thinkRes.status}`);
-    const thinkData = (await thinkRes.json()) as { answer?: string };
 
     return {
       success: true,
@@ -1963,6 +1949,25 @@ export const GET = createHandler(
 
 // ── Route Handler ─────────────────────────────────────────────────────
 
+/**
+ * What an AI tool costs, the same as its dedicated route (deep-analysis and
+ * case-investigation: subsumption; tabular-review and summaries:
+ * document_analysis). Lookups and navigation are free.
+ */
+const TOOL_CREDITS: Partial<Record<z.infer<typeof toolSchema>["tool"], CreditOperation>> = {
+  deep_analysis: "subsumption",
+  case_investigation: "subsumption",
+  tabular_review: "document_analysis",
+  document_summary: "document_analysis",
+  obligation_extract: "document_analysis",
+  deadline_extract: "deadline_detect",
+  email_draft: "think",
+  client_update: "think",
+  meeting_tasks: "think",
+  translate_text: "think",
+  precedent_search: "think",
+};
+
 export const POST = createHandler(
   {
     action: "copilot.tool",
@@ -1976,9 +1981,12 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    // Agent Conditionals: check tool availability before execution
+    // Agent Conditionals: check tool availability before execution. Matter
+    // tools need a matter: the call carries it as case_slug.
+    const caseParam = body.params.case_slug;
     const condCtx: ToolConditionContext = {
       role: ctx.user.role,
+      hasCaseContext: typeof caseParam === "string" && caseParam.trim().length > 0,
       features: {
         deepAnalysis: true,
         caseInvestigation: true,
@@ -1991,6 +1999,36 @@ export const POST = createHandler(
         `Tool "${body.tool}" is not available for your role or context`,
         403
       );
+    }
+    // Actions that change data or send something run only with a token the
+    // server issued for exactly these parameters (lib/copilot-confirmation.ts).
+    if (CONFIRMED_TOOLS.has(body.tool)) {
+      if (body.mode === "prepare") {
+        const { token, expiresAt } = createToolConfirmation(ctx.user.id, body.tool, body.params);
+        return apiSuccess({ confirmation: token, expires_at: expiresAt, params: body.params });
+      }
+      const check = consumeToolConfirmation(body.confirmation, ctx.user.id, body.tool, body.params);
+      if (!check.ok) {
+        return apiError(
+          "confirmation_required",
+          check.reason === "expired"
+            ? "Die Bestätigung ist abgelaufen. Bitte die Aktion erneut bestätigen."
+            : "Diese Aktion braucht Ihre Bestätigung.",
+          403
+        );
+      }
+    } else if (body.mode === "prepare") {
+      return apiError("invalid_mode", "Diese Aktion braucht keine Bestätigung.", 400);
+    }
+    const creditOp = TOOL_CREDITS[body.tool];
+    if (creditOp && CREDIT_COSTS[creditOp] > 0 && env("SUBSUMIO_E2E") !== "1") {
+      await ensureTrialCredits(ctx.billing.ownerId, ctx.billing.ownerType);
+      const credit = await checkCredits(
+        ctx.billing.ownerId,
+        ctx.billing.ownerType,
+        CREDIT_COSTS[creditOp]
+      );
+      if (!credit.ok) return insufficientCreditsResponse(credit.balance, credit.required);
     }
     try {
       let result: ToolResponse;
@@ -2137,6 +2175,13 @@ export const POST = createHandler(
         result.success
       ) {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });
+      }
+      if (creditOp && result.success) {
+        void recordCreditConsumption(
+          ctx,
+          creditOp,
+          typeof caseParam === "string" ? caseParam : undefined
+        );
       }
 
       return Response.json(result);

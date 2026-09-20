@@ -3,6 +3,7 @@
 // byte-identical copy of engineRequest + listPages. One source of truth here
 // keeps the two chat entry points from drifting (e.g. differing timeouts or
 // matter-scope header handling).
+import { lawyerFacingAnswer } from "./engine-degraded";
 import {
   ENGINE_URL,
   engineHeadersForBrain,
@@ -84,9 +85,9 @@ export async function think(
   const contentType = res.headers.get("Content-Type") || "";
   if (!contentType.includes("text/event-stream")) {
     const data = (await res.json().catch(() => ({}))) as { answer?: string };
-    return data.answer || "Keine Antwort erhalten.";
+    return data.answer ? lawyerFacingAnswer(data.answer) : "Keine Antwort erhalten.";
   }
   if (!res.body) return "Keine Antwort erhalten.";
   const answer = await collectSSEChunks(res.body);
-  return answer.trim() || "Keine Antwort erhalten.";
+  return answer.trim() ? lawyerFacingAnswer(answer.trim()) : "Keine Antwort erhalten.";
 }

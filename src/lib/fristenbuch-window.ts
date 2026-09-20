@@ -1,3 +1,5 @@
+import { daysUntil as localDaysUntil } from "@/lib/utils";
+
 // Time windows for the daily deadline control list (Fristenkontrolle).
 
 export type TimeWindow = "all" | "today" | "7" | "14";
@@ -8,13 +10,13 @@ export interface WindowedDeadline {
   status: string;
 }
 
-/** Whole days from today (UTC) until the date; negative when in the past. */
+/**
+ * Whole calendar days from today until the date (negative when in the past).
+ * Counts in local time: a UTC day boundary would put the control list one day
+ * behind between midnight and 02:00 in Vienna. Unparseable dates yield NaN.
+ */
 export function daysUntil(dateStr: string, now: Date = new Date()): number {
-  const target = new Date(dateStr);
-  const today = new Date(now);
-  target.setUTCHours(0, 0, 0, 0);
-  today.setUTCHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return localDaysUntil(dateStr, now) ?? Number.NaN;
 }
 
 /**

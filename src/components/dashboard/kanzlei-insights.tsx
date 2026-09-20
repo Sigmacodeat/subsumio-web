@@ -16,6 +16,17 @@ import { TrendingUp, Briefcase } from "lucide-react";
 import { usePages } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
 import type { BrainPage } from "@/lib/types";
+import { formatEur } from "@/lib/utils";
+
+/** Axis labels: "0 €", "800 €", "1,2 Tsd. €" — short enough for a 48 px axis. */
+function compactEur(value: number, lang: string): string {
+  return new Intl.NumberFormat(lang === "en" ? "en-GB" : "de-AT", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+    style: "currency",
+    currency: "EUR",
+  }).format(value);
+}
 
 interface MonthlyData {
   month: string;
@@ -89,11 +100,11 @@ export function KanzleiInsights() {
               </span>
             </div>
             <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-              {totalRevenue.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
+              {formatEur(totalRevenue, lang)}
             </span>
           </div>
           <ResponsiveContainer width="100%" height={140}>
-            <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity={0.3} />
@@ -111,7 +122,9 @@ export function KanzleiInsights() {
                 tick={{ fontSize: 10, fill: "var(--ds-text-subtle)" }}
                 axisLine={false}
                 tickLine={false}
-                width={40}
+                width={48}
+                allowDecimals={false}
+                tickFormatter={(v: number) => compactEur(v, lang)}
               />
               <Tooltip
                 contentStyle={{
@@ -121,6 +134,7 @@ export function KanzleiInsights() {
                   fontSize: "11px",
                 }}
                 labelStyle={{ color: "var(--ds-text)" }}
+                formatter={(v) => [formatEur(Number(v), lang), t("insights.revenue")]}
               />
               <Area
                 type="monotone"
@@ -147,7 +161,7 @@ export function KanzleiInsights() {
             </span>
           </div>
           <ResponsiveContainer width="100%" height={140}>
-            <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" vertical={false} />
               <XAxis
                 dataKey="month"
@@ -159,8 +173,9 @@ export function KanzleiInsights() {
                 tick={{ fontSize: 10, fill: "var(--ds-text-subtle)" }}
                 axisLine={false}
                 tickLine={false}
-                width={20}
+                width={28}
                 allowDecimals={false}
+                domain={[0, (max: number) => Math.max(1, max)]}
               />
               <Tooltip
                 contentStyle={{

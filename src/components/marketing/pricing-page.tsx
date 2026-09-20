@@ -3,7 +3,6 @@
 // every section scroll-reveals; value-props use signal-colored tiles.
 
 import { Check, Shield, Clock, Globe, Coins, Zap } from "lucide-react";
-import { professionalPricing } from "@/content/audiences";
 import { PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p } from "@/content/site";
 import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credit-constants";
 import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
@@ -27,7 +26,6 @@ const OPERATION_LABELS: Record<CreditOperation, string> = {
 };
 
 export default function PricingPage() {
-  const pricing = professionalPricing();
   const faq = PRICING_FAQ.items;
   const faqTitle = PRICING_FAQ.title;
   const valueProps = VALUE_PROPS;
@@ -52,10 +50,6 @@ export default function PricingPage() {
       <Section tone="light" className="px-4 pb-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <Reveal variant="up">
-            <div className="mb-9 text-center">
-              <h2 className="text-3xl font-bold [color:var(--mk-text)]">{pricing.title}</h2>
-              <p className="mx-auto mt-3 max-w-3xl [color:var(--mk-text-muted)]">{pricing.sub}</p>
-            </div>
             <PricingGrid />
           </Reveal>
         </div>

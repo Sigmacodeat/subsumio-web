@@ -1,5 +1,7 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDateTime } from "@/lib/utils";
 import { useState, useCallback, useEffect } from "react";
 import { Loader2, Plus, Trash2, Phone, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,8 +136,10 @@ export function PhoneNotesTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20" role="status" aria-live="polite">
-        <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+      <div className="space-y-3" role="status" aria-live="polite">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
       </div>
     );
   }
@@ -231,12 +235,7 @@ export function PhoneNotesTab() {
                       {note.title}
                     </h3>
                     <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                      {new Date(note.occurred_at).toLocaleString("de-DE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateTime(note.occurred_at)}
                     </span>
                   </div>
                   <p className="text-xs text-[color:var(--ds-text-subtle)]">{note.caller}</p>

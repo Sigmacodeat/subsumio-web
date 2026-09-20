@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { PORTAL_SESSION_SLUG } from "@/lib/portal-session";
+import { PortalAppBar } from "@/components/portal/portal-app-bar";
 import {
   FileText,
   Users,
@@ -121,8 +123,32 @@ interface SignableDoc {
 export default function PortalPage() {
   const { lang, t, setLang } = useLang();
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = decodeURIComponent(params.token as string);
+
+  // The link's token becomes a session cookie; the address changes to
+  // /portal/meine-akte so the token leaves the address bar and the history
+  // (lib/portal-session.ts). The portal routes read the cookie from then on.
+  useEffect(() => {
+    if (token === PORTAL_SESSION_SLUG) return;
+    let cancelled = false;
+    fetch("/api/portal/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    })
+      .then((res) => {
+        if (!res.ok || cancelled) return;
+        const search = window.location.search;
+        window.history.replaceState(null, "", `/portal/${PORTAL_SESSION_SLUG}${search}`);
+        router.replace(`/portal/${PORTAL_SESSION_SLUG}${search}`);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token, router]);
   const deepLinkSignSlug = searchParams.get("sign");
   const deepLinkType = searchParams.get("type") as
     | "signature_request"
@@ -514,6 +540,7 @@ export default function PortalPage() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+        <PortalAppBar token={token} />
         {/* Tab Navigation */}
         <div className="flex gap-1 rounded-xl border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]">
           <button
@@ -711,7 +738,7 @@ export default function PortalPage() {
                             </div>
                           </div>
                           {!done && (
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-primary)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] motion-reduce:transition-none">
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-solid)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] motion-reduce:transition-none">
                               <input
                                 type="file"
                                 accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -742,7 +769,7 @@ export default function PortalPage() {
             <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">{t("portal.documents_title")}</h3>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none">
                   <input
                     type="file"
                     accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -802,9 +829,14 @@ export default function PortalPage() {
                         <div className="truncate [color:var(--mk-text)]">
                           {doc.name || t("portal.document_default")}
                         </div>
-                        {doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")) && (
+                        {(doc.slug ||
+                          (doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")))) && (
                           <a
-                            href={doc.url}
+                            href={
+                              doc.slug
+                                ? `/api/portal/document?token=${encodeURIComponent(token)}&slug=${encodeURIComponent(doc.slug)}`
+                                : doc.url
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-[color:var(--brand-text)] hover:underline"
@@ -867,7 +899,7 @@ export default function PortalPage() {
                 <button
                   onClick={() => void sendMessage(caseData.slug)}
                   disabled={sendingMessage || !newMessage.trim()}
-                  className="rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none"
+                  className="rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   {sendingMessage ? "…" : t("portal.send")}
                 </button>
@@ -932,7 +964,7 @@ export default function PortalPage() {
               <button
                 onClick={() => void sendChatMessage()}
                 disabled={chatLoading || !chatInput.trim()}
-                className="rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none"
+                className="rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none"
               >
                 {chatLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>
@@ -1104,6 +1136,16 @@ export default function PortalPage() {
                       </div>
                     )}
                   </div>
+                  {doc.slug && (
+                    <a
+                      href={`/api/portal/document?token=${encodeURIComponent(token)}&slug=${encodeURIComponent(doc.slug)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-xs font-medium text-[color:var(--brand-text)] hover:underline"
+                    >
+                      {t("portal.download")}
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

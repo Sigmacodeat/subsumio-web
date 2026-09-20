@@ -36,6 +36,42 @@ import type { BrainPage } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { WhatsAppInbox } from "@/components/whatsapp/whatsapp-inbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { formatDateTime } from "@/lib/utils";
+
+/** German wording for workflow/identity status values stored in English. */
+const STATUS_DE: Record<string, string> = {
+  pending: "offen",
+  open: "offen",
+  new: "neu",
+  draft: "Entwurf",
+  sent: "gesendet",
+  approved: "freigegeben",
+  rejected: "abgelehnt",
+  executed: "ausgeführt",
+  converted: "in Akte überführt",
+  needs_info: "Rückfrage",
+  conflict_check: "Kollisionsprüfung",
+  accepted: "angenommen",
+  fulfilled: "erfüllt",
+  partially_fulfilled: "teilweise erfüllt",
+  expired: "abgelaufen",
+  active: "aktiv",
+  suspended: "gesperrt",
+  received: "empfangen",
+  processed: "verarbeitet",
+  failed: "fehlgeschlagen",
+};
+const ROLE_DE: Record<string, string> = {
+  lawyer: "Anwalt",
+  assistant: "Kanzleimitarbeiter",
+  client: "Mandant",
+  intake: "Mandatsanfrage",
+};
+function de(map: Record<string, string>, value: string): string {
+  return map[value] ?? value;
+}
 
 interface WhatsAppStatus {
   configured: boolean;
@@ -78,6 +114,7 @@ function text(value: unknown): string {
 
 export default function WhatsAppDashboardPage() {
   const { t } = useLang();
+  const confirm = useConfirm();
   const [status, setStatus] = useState<WhatsAppStatus | null>(null);
   const [events, setEvents] = useState<BrainPage[]>([]);
   const [approvals, setApprovals] = useState<BrainPage[]>([]);
@@ -154,8 +191,8 @@ export default function WhatsAppDashboardPage() {
       );
       setDocuments(docPages.filter((page) => front(page).source === "whatsapp"));
       setCases(casePages);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("whatsapp.err_load"));
+    } catch {
+      setError(t("whatsapp.err_load"));
     } finally {
       setLoading(false);
     }
@@ -188,8 +225,8 @@ export default function WhatsAppDashboardPage() {
       setIdentityName("");
       setIdentityRole("lawyer");
       await reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("whatsapp.err_save_identity"));
+    } catch {
+      setError(t("whatsapp.err_save_identity"));
     } finally {
       setSavingIdentity(false);
     }
@@ -293,8 +330,8 @@ export default function WhatsAppDashboardPage() {
         );
 
       await reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("whatsapp.err_assign_document"));
+    } catch {
+      setError(t("whatsapp.err_assign_document"));
     } finally {
       setAssigningSlug(null);
     }
@@ -371,50 +408,30 @@ export default function WhatsAppDashboardPage() {
       )}
 
       {loading ? (
-        <div
-          className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]"
-          role="status"
-          aria-live="polite"
-        >
-          <Loader2 size={20} className="mr-2 animate-spin" /> {t("whatsapp.loading")}
+        <div className="space-y-3" aria-busy="true" aria-label={t("whatsapp.loading")}>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <Metric
-              label={t("whatsapp.metric_config")}
-              value={status?.configured ? t("whatsapp.metric_ready") : t("whatsapp.metric_open")}
-              ok={Boolean(status?.configured)}
-            />
-            <Metric
-              label={t("whatsapp.metric_pending_approvals")}
-              value={String(pendingApprovals)}
-              warn={pendingApprovals > 0}
-            />
-            <Metric
-              label={t("whatsapp.metric_open_intakes")}
-              value={String(openIntakes)}
-              warn={openIntakes > 0}
-            />
-            <Metric
-              label={t("whatsapp.metric_open_docs")}
-              value={String(openDocumentRequests + unassignedDocuments.length)}
-              warn={openDocumentRequests + unassignedDocuments.length > 0}
-            />
-            <Metric
-              label={t("whatsapp.metric_time")}
-              value={
-                pendingTimeApprovals > 0
-                  ? String(pendingTimeApprovals)
-                  : whatsappMinutes > 0
-                    ? `${whatsappMinutes} min`
-                    : "0"
-              }
-              warn={pendingTimeApprovals > 0}
-            />
-          </div>
+          {/* The four workflow tiles below carry the open counts; no separate KPI row. */}
+          {!status?.configured && (
+            <div
+              role="note"
+              className="flex items-start gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+            >
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              WhatsApp ist noch nicht vollständig eingerichtet. Die technische Einrichtung finden
+              Sie am Ende dieser Seite.
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <WorkflowLink
               href="/dashboard/intake"
               icon={Inbox}
@@ -440,7 +457,9 @@ export default function WhatsAppDashboardPage() {
               href="/dashboard/invoicing"
               icon={Receipt}
               title={t("whatsapp.time_tracking")}
-              value={pendingTimeApprovals > 0 ? String(pendingTimeApprovals) : `${whatsappMinutes}`}
+              value={
+                pendingTimeApprovals > 0 ? String(pendingTimeApprovals) : `${whatsappMinutes} Min.`
+              }
               text={t("whatsapp.time_tracking_desc")}
             />
           </div>
@@ -477,7 +496,7 @@ export default function WhatsAppDashboardPage() {
                 variant="default"
                 className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
               >
-                {activeThreads} {t("whatsapp.active_threads")}
+                {activeThreads} {activeThreads === 1 ? "Gespräch" : "Gespräche"}
               </Badge>
             </div>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
@@ -592,7 +611,8 @@ export default function WhatsAppDashboardPage() {
                           : identity.phoneHash.slice(0, 10)}
                       </div>
                       <div className="text-[color:var(--ds-text-muted)]">
-                        {identity.role} · {identity.status} ·{" "}
+                        {identity.role ? de(ROLE_DE, identity.role) : "—"} ·{" "}
+                        {de(STATUS_DE, identity.status)} ·{" "}
                         {identity.verifiedAt ? t("whatsapp.verified") : t("whatsapp.not_verified")}
                       </div>
                     </div>
@@ -617,7 +637,17 @@ export default function WhatsAppDashboardPage() {
                         size="sm"
                         variant="danger"
                         onClick={() =>
-                          void api.whatsapp.deleteIdentity(identity.id).then(() => reload())
+                          void confirm({
+                            title: "WhatsApp-Nummer entfernen?",
+                            message:
+                              "Nachrichten von dieser Nummer werden danach nicht mehr der Kanzlei zugeordnet.",
+                            confirmLabel: t("whatsapp.delete"),
+                            variant: "danger",
+                          }).then((ok) =>
+                            ok
+                              ? api.whatsapp.deleteIdentity(identity.id).then(() => reload())
+                              : null
+                          )
                         }
                       >
                         {t("whatsapp.delete")}
@@ -633,13 +663,22 @@ export default function WhatsAppDashboardPage() {
             )}
           </div>
 
-          <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-[color:var(--ds-success-text)]" />
+          {/* Technical configuration + raw event log: administrators only, collapsed by default. */}
+          <details className="group space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-2">
+              <ShieldCheck
+                size={16}
+                className="text-[color:var(--ds-text-muted)]"
+                aria-hidden="true"
+              />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {t("whatsapp.setup")}
+                Technische Einrichtung
               </h2>
-            </div>
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                · für Administratoren
+                {status?.configured ? " · eingerichtet" : " · unvollständig"}
+              </span>
+            </summary>
             <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-5">
               <SetupFlag label="Verify Token" ok={Boolean(status?.verifyToken)} />
               <SetupFlag label="App Secret" ok={Boolean(status?.appSecret)} />
@@ -695,16 +734,15 @@ export default function WhatsAppDashboardPage() {
                 {t("whatsapp.no_senders")}
               </p>
             )}
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <LogPanel title={t("whatsapp.events_log")} pages={events} />
-            <WorkflowPanel
-              approvals={approvals}
-              intakes={intakes}
-              documentRequests={documentRequests}
-            />
-          </div>
+          </details>
+
+          <WorkflowPanel
+            approvals={approvals}
+            intakes={intakes}
+            documentRequests={documentRequests}
+          />
         </>
       )}
     </div>
@@ -726,7 +764,7 @@ function WhatsAppDocumentTriage({
   onSelect: (docSlug: string, caseSlug: string) => void;
   onAssign: (doc: BrainPage) => void;
 }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
 
   return (
     <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
@@ -781,9 +819,7 @@ function WhatsAppDocumentTriage({
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
                     <span>{text(fm.document_kind) || text(fm.mime_type) || "WhatsApp"}</span>
                     {Number(fm.size ?? 0) > 0 && <span>{formatBytes(Number(fm.size))}</span>}
-                    {text(fm.uploaded_at) && (
-                      <span>{new Date(text(fm.uploaded_at)).toLocaleString(lang)}</span>
-                    )}
+                    {text(fm.uploaded_at) && <span>{formatDateTime(text(fm.uploaded_at))}</span>}
                     <span className="text-[color:var(--ds-warning-text)]">
                       {t("whatsapp.triage_needs_case")}
                     </span>
@@ -814,30 +850,6 @@ function WhatsAppDocumentTriage({
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  ok,
-  warn,
-}: {
-  label: string;
-  value: string;
-  ok?: boolean;
-  warn?: boolean;
-}) {
-  const color = ok
-    ? "text-[color:var(--ds-success-text)]"
-    : warn
-      ? "text-[color:var(--ds-warning-text)]"
-      : "text-[color:var(--ds-text)]";
-  return (
-    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-      <div className={`text-lg font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
     </div>
   );
 }
@@ -959,9 +971,7 @@ function WorkflowPanel({
 
   return (
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-      <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-        {t("whatsapp.workflow_objects")}
-      </h2>
+      <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Vorgänge aus WhatsApp</h2>
       {rows.length === 0 ? (
         <p className="py-6 text-sm text-[color:var(--ds-text-muted)]">
           {t("whatsapp.no_workflow")}
@@ -986,19 +996,11 @@ function WorkflowPanel({
                       {page.title}
                     </span>
                   </div>
-                  <Badge
-                    variant="default"
-                    className="brand-border brand-soft brand-text border text-xs"
-                  >
-                    {kind}
-                  </Badge>
+                  <span className="shrink-0 text-xs text-[color:var(--ds-text-muted)]">{kind}</span>
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                  {text(fm.status) ||
-                    text(fm.action_type) ||
-                    text(fm.channel) ||
-                    t("whatsapp.status_open")}
-                  {text(fm.source_event_slug) && <span> · {text(fm.source_event_slug)}</span>}
+                  {text(fm.status) ? de(STATUS_DE, text(fm.status)) : t("whatsapp.status_open")}
+                  {page.created_at && <span> · {formatDateTime(page.created_at)}</span>}
                 </div>
               </Link>
             );
@@ -1010,7 +1012,7 @@ function WorkflowPanel({
 }
 
 function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [viewMode, setViewMode] = useState<"flat" | "threads">("flat");
   const [selectedThread, setSelectedThread] = useState<string | null>(null);
 
@@ -1096,8 +1098,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                  <Clock size={10} />{" "}
-                  {new Date(page.created_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                  <Clock size={10} /> {formatDateTime(page.created_at)}
                   {text(fm.intent) && <span> · {text(fm.intent)}</span>}
                 </div>
                 {text(fm.error) && (
@@ -1137,7 +1138,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
                   </span>
                 </div>
                 <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
-                  {new Date(thread.lastAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                  {formatDateTime(thread.lastAt)}
                 </div>
               </button>
             ))}
@@ -1169,9 +1170,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
                             {status}
                           </Badge>
                           <span className="text-xs text-[color:var(--ds-text-muted)]">
-                            {new Date(page.created_at).toLocaleTimeString(
-                              lang === "en" ? "en-GB" : "de-DE"
-                            )}
+                            {formatDateTime(page.created_at)}
                           </span>
                         </div>
                         {page.content && (
@@ -1190,7 +1189,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
               })()
             ) : (
               <p className="py-6 text-center text-xs text-[color:var(--ds-text-muted)]">
-                Thread auswählen
+                Gespräch auswählen
               </p>
             )}
           </div>

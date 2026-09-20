@@ -12,7 +12,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Reply, X, ArrowDown } from "lucide-react";
+import { Reply, X, ArrowDown, Quote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -39,6 +39,8 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
   return t("chat.error_generic");
 }
 import { csrfFetch } from "@/lib/csrf";
+import { synthesisInput } from "@/components/chat/tool-synthesis";
+import { fetchServerSession, saveSessionToServer, shareSession } from "@/lib/chat-server-sync";
 import { buildChatExportMarkdown } from "@/components/chat/chat-export";
 import {
   buildPromptContext,
@@ -55,6 +57,7 @@ import {
   DEFAULT_EXAMPLE_QUERIES_EN,
   type ChatMessage,
   type ChatSession,
+  type AnswerDownReason,
   type ChatFeatures,
   type ChatContextType,
   type Jurisdiction,
@@ -103,6 +106,8 @@ interface ChatPanelProps {
   initialQuery?: string;
   /** Load this session on mount instead of the latest one (panel → fullscreen handoff). */
   initialSessionId?: string;
+  /** Owner of `initialSessionId` when it is a colleague's shared conversation. */
+  initialSessionOwner?: string;
   placeholder?: string;
   onStreamingChange?: (isStreaming: boolean) => void;
   exampleQueries?: string[];
@@ -182,18 +187,9 @@ const TOOL_RULES: ToolDetectionRule[] = [
       tone: (m[4] as "formal" | "neutral" | "urgent") || "formal",
     }),
   },
-  {
-    pattern:
-      /\[TOOL:send_email\s+to="([^"]+)"\s+subject="([^"]+)"(?:\s+text="([^"]*)")?(?:\s+case_slug="([^"]+)")?\]/i,
-    tool: "send_email",
-    label: "chat.tool.send_email",
-    extractParams: (m) => ({
-      to: m[1],
-      subject: m[2],
-      text: m[3] || "",
-      case_slug: m[4] || undefined,
-    }),
-  },
+  // No send_email rule: the Copilot is never offered sending mail, so a
+  // send_email marker can only come from injected text. Mail goes out from
+  // the mailbox after a draft (email_draft).
   {
     pattern: /\[TOOL:deadline_extract\s+document_slug="([^"]+)"\]/i,
     tool: "deadline_extract",
@@ -425,7 +421,9 @@ async function executeToolCall(
   context?: { caseSlug?: string }
 ): Promise<ToolCall> {
   try {
-    const result = await api.copilot.executeTool(toolCall.type, toolCall.params);
+    const result = DESTRUCTIVE_TOOLS.has(toolCall.type)
+      ? await api.copilot.executeConfirmedTool(toolCall.type, toolCall.params)
+      : await api.copilot.executeTool(toolCall.type, toolCall.params);
     const executed: ToolCall = {
       ...toolCall,
       status: result.success ? "completed" : "error",
@@ -486,6 +484,12 @@ async function detectAndExecuteTools(
   return results;
 }
 
+/** The matter's jurisdiction for the prompt; Austrian law when the matter names none. */
+function matterJurisdiction(value: unknown): Jurisdiction {
+  const code = typeof value === "string" ? value.toLowerCase() : "";
+  return code === "de" || code === "ch" || code === "eu" ? code : "at";
+}
+
 function sanitizeSessionMessages(msgs: ChatMessage[]): ChatMessage[] {
   return msgs.map((msg) => {
     let changed = false;
@@ -535,6 +539,8 @@ export interface ChatPanelHandle {
   /** Current session id — used to hand the conversation off to the fullscreen chat. */
   getActiveSessionId: () => string | undefined;
   loadSession: (id: string) => Promise<void>;
+  /** Pin a passage the person marked on the page; the next question is about it. */
+  quoteSelection: (text: string, source?: string) => void;
 }
 
 // AP4: Tool-type → specific follow-up suggestions
@@ -732,6 +738,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     title,
     initialQuery,
     initialSessionId,
+    initialSessionOwner,
     placeholder,
     onStreamingChange,
     exampleQueries: providedExampleQueries,
@@ -772,6 +779,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     []
   );
   const [isStreaming, setIsStreaming] = useState(false);
+  // A passage the person marked on the page ("Markieren & fragen").
+  const [quoted, setQuoted] = useState<{ text: string; source?: string } | null>(null);
   useEffect(() => {
     onStreamingChange?.(isStreaming);
   }, [isStreaming, onStreamingChange]);
@@ -793,6 +802,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   >(undefined);
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("at");
   const [queryMode, setQueryMode] = useState<QueryMode>("deep_matter");
+  const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const [sessionTokens, setSessionTokens] = useState(0);
   const [_isCompact, setIsCompact] = useState(false);
   const [subsumptionMode, setSubsumptionMode] = useState(false);
@@ -841,7 +851,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           const casePage = pages.find((p) => p.slug === ctxSlug);
           if (casePage) {
             const fm = caseFrontmatter(casePage);
-            setJurisdiction(fm.jurisdiction === "eu" ? "eu" : "at");
+            setJurisdiction(matterJurisdiction(fm.jurisdiction));
             // Extract matter vitals for copilot context
             const deadlines = fm.deadlines || [];
             const tasks = fm.tasks || [];
@@ -957,6 +967,30 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           setSessionTokens(sanitized.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
           return;
         }
+        // Not in this browser: a conversation from another device or one a
+        // colleague shared. Load it from the server and keep a local copy.
+        const remote = await fetchServerSession(initialSessionId, initialSessionOwner);
+        if (remote?.messages?.length) {
+          const now = new Date().toISOString();
+          const imported: ChatSession = {
+            id: remote.id,
+            title:
+              remote.owner_name && initialSessionOwner
+                ? `${remote.title} · ${remote.owner_name}`
+                : remote.title,
+            contextType: remote.case_slug ? "case" : "global",
+            caseSlug: remote.case_slug,
+            createdAt: remote.messages[0]?.createdAt ?? now,
+            updatedAt: remote.updated_at || now,
+            messageCount: remote.messages.length,
+          };
+          const msgs: ChatMessage[] = remote.messages.map((m) => ({ ...m }));
+          await createSession(imported);
+          for (const m of msgs) await saveMessage(imported.id, m);
+          setActiveSessionId(imported.id);
+          setMessages((current) => (current.length > 0 ? current : msgs));
+          return;
+        }
       }
       const list = await listSessions({
         caseSlug: selectedCaseSlug || context.caseSlug,
@@ -1023,12 +1057,39 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     }
   }, [messages.length, updateSessionMeta, persistHistory]);
 
+  // Keep the server copy current once an answer is finished (chat-server-sync.ts).
+  useEffect(() => {
+    if (!persistHistory || !activeSessionId || isStreaming || messages.length === 0) return;
+    const timer = window.setTimeout(() => {
+      const msgs = messagesRef.current;
+      void saveSessionToServer({
+        id: activeSessionId,
+        title:
+          msgs[0]?.role === "user"
+            ? autoTitleFromQuery(msgs[0].content)
+            : (title ?? "Unterhaltung"),
+        caseSlug: selectedCaseSlug || context.caseSlug,
+        messages: msgs,
+      });
+    }, 1_500);
+    return () => window.clearTimeout(timer);
+  }, [
+    persistHistory,
+    activeSessionId,
+    isStreaming,
+    messages.length,
+    title,
+    selectedCaseSlug,
+    context.caseSlug,
+  ]);
+
   // Send message
   const handleSend = useCallback(
     async (
       text: string,
       attachments?: Array<{ name: string; slug: string }>,
-      replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null
+      replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null,
+      selection?: { text: string; source?: string } | null
     ) => {
       if (!text.trim() && !attachments?.length) return;
       if (isStreaming) return; // Prevent concurrent streams
@@ -1036,7 +1097,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       const userMsg: ChatMessage = {
         id: generateMessageId(),
         role: "user",
-        content: text,
+        // The marked passage stays visible in the conversation it was asked in.
+        content: selection?.text.trim()
+          ? `> ${selection.text.trim().slice(0, 300).replace(/\s+/g, " ")}${selection.text.trim().length > 300 ? " …" : ""}\n\n${text}`
+          : text,
         createdAt: new Date().toISOString(),
         attachments,
       };
@@ -1087,6 +1151,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         pageLabel: context.pageLabel,
         attachments,
         replyTo,
+        selection,
         userText: text,
         attachmentFetcher: async (slug) => {
           const page = await api.brain.getPage(slug);
@@ -1117,6 +1182,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
+          ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
             toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
@@ -1150,7 +1216,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           isStreaming: false,
           tokensUsed: result.tokens_used,
           latencyMs: result.latency_ms,
-          model: result.model,
+          // The engine reports what it really used (the firm's model profile
+          // can override a pick); fall back to the pick while it is missing.
+          model:
+            result.model ?? (modelOverride && modelOverride !== "auto" ? modelOverride : undefined),
           mode: queryMode,
         };
 
@@ -1224,6 +1293,65 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               window.setTimeout(() => router.push(route), 400);
             }
           }
+
+          // Results of read-only tools go back to the model once, so the
+          // answer is built on them (tool-synthesis.ts).
+          const followUpQuery = navCall ? null : synthesisInput(text, toolCalls);
+          if (followUpQuery && !controller.signal.aborted) {
+            const followMsg: ChatMessage = {
+              id: generateMessageId(),
+              role: "assistant",
+              content: "",
+              isStreaming: true,
+              createdAt: new Date().toISOString(),
+            };
+            const patchFollow = (patch: Partial<ChatMessage>) =>
+              setMessages((m) => m.map((x) => (x.id === followMsg.id ? { ...x, ...patch } : x)));
+            setMessages((m) => [...m, followMsg]);
+            let streamed = "";
+            try {
+              const follow = await api.query.think(buildSafePrompt("", followUpQuery).trim(), {
+                instructions: systemPrompt,
+                mode: queryModeToThinkMode(queryMode),
+                queryMode,
+                caseSlug: selectedCaseSlug || context.caseSlug || undefined,
+                signal: controller.signal,
+                onChunk: (chunk) => {
+                  streamed += chunk;
+                  patchFollow({ content: streamed.replace(/\[TOOL:[^\]]*\]?/gi, "") });
+                },
+              });
+              const followClean = localizeAnswerSections(
+                follow.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim(),
+                lang === "en" ? "en" : "de"
+              );
+              const followDone: ChatMessage = {
+                ...followMsg,
+                content: followClean || "[Keine Auswertung erhalten]",
+                isStreaming: false,
+                citations: follow.citations,
+                gaps: follow.gaps,
+                ...(followClean ? {} : { error: "empty_response" }),
+              };
+              patchFollow(followDone);
+              if (persistHistory && activeSessionId) await saveMessage(activeSessionId, followDone);
+              if (followClean) {
+                (follow._grounding ? Promise.resolve(follow._grounding) : groundAnswer(followClean))
+                  .then((grounding) => {
+                    if (grounding) patchFollow({ grounding });
+                  })
+                  .catch(() => {
+                    // Grounding failure is non-fatal
+                  });
+              }
+            } catch {
+              patchFollow({
+                isStreaming: false,
+                content: streamed || "[Auswertung der Werkzeugergebnisse fehlgeschlagen]",
+                error: "tool_synthesis_failed",
+              });
+            }
+          }
         }
       } catch (err) {
         const isAborted = err instanceof DOMException && err.name === "AbortError";
@@ -1274,6 +1402,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       cases,
       context,
       jurisdiction,
+      modelOverride,
       persistHistory,
       queryMode,
       router,
@@ -1592,6 +1721,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       ) => handleSend(text, options?.attachments, options?.replyTo ?? undefined),
       getActiveSessionId: () => activeSessionId,
       loadSession: handleSelectSession,
+      quoteSelection: (text: string, source?: string) => setQuoted({ text, source }),
     }),
     [handleSend, activeSessionId, handleSelectSession]
   );
@@ -1715,6 +1845,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
+          ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
             toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
@@ -1746,7 +1877,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           isStreaming: false,
           tokensUsed: result.tokens_used,
           latencyMs: result.latency_ms,
-          model: result.model,
+          // The engine reports what it really used (the firm's model profile
+          // can override a pick); fall back to the pick while it is missing.
+          model:
+            result.model ?? (modelOverride && modelOverride !== "auto" ? modelOverride : undefined),
           mode: queryMode,
         };
         setMessages((m) => [...m.slice(0, -1), finalMsg]);
@@ -1854,6 +1988,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       selectedCaseSlug,
       cases,
       context,
+      modelOverride,
       queryMode,
       t,
       isStreaming,
@@ -2032,26 +2167,34 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   }, [messages, title, t, lang]);
 
   // Share chat (read-only link via base64 encoding)
+  // Share: the conversation is saved on the server and shared with colleagues
+  // who may see its matter; the link opens it for them.
   const handleShare = useCallback(async () => {
-    if (messages.length === 0) return;
-    const shareData = {
-      title: title ?? t("chat.title"),
-      messages: messages.map((m) => ({
-        r: m.role,
-        c: m.content,
-        ts: m.createdAt,
-      })),
-      createdAt: new Date().toISOString(),
-    };
-    const encoded = btoa(encodeURIComponent(JSON.stringify(shareData)));
-    const url = `${window.location.origin}/dashboard/chat?shared=${encoded}`;
+    if (messages.length === 0 || !activeSessionId) return;
+    const saved = await saveSessionToServer({
+      id: activeSessionId,
+      title:
+        messages[0]?.role === "user"
+          ? autoTitleFromQuery(messages[0].content)
+          : (title ?? t("chat.title")),
+      caseSlug: selectedCaseSlug || context.caseSlug,
+      messages,
+    });
+    const url = saved ? await shareSession(activeSessionId) : null;
+    if (!url) {
+      setError(
+        lang === "en"
+          ? "The conversation could not be shared."
+          : "Die Unterhaltung konnte nicht geteilt werden."
+      );
+      return;
+    }
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      // Fallback: open in new tab
-      window.open(url, "_blank");
+      window.prompt(lang === "en" ? "Link to the conversation" : "Link zur Unterhaltung", url);
     }
-  }, [messages, title, t]);
+  }, [messages, activeSessionId, title, t, selectedCaseSlug, context.caseSlug, lang]);
 
   // Stable callback wrappers for memoized ChatMessageBubble (avoid inline closures)
   const handleRegenerateById = useCallback(
@@ -2060,6 +2203,40 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   );
   const handleEditById = useCallback((messageId: string) => handleEdit(messageId), [handleEdit]);
   const handleReplyById = useCallback((messageId: string) => handleReply(messageId), [handleReply]);
+
+  // Rate an answer: shown at once, stored on the server with its question and
+  // sources (lib/answer-feedback.ts) and kept on the local message.
+  const handleFeedback = useCallback(
+    (messageId: string, rating: "up" | "down", reason?: AnswerDownReason) => {
+      const msgs = messagesRef.current;
+      const index = msgs.findIndex((m) => m.id === messageId);
+      const answer = msgs[index];
+      if (!answer) return;
+      const question =
+        [...msgs.slice(0, index)].reverse().find((m) => m.role === "user")?.content ?? "";
+      const feedback = { rating, ...(reason ? { reason } : {}) };
+      const rated = { ...answer, feedback };
+      setMessages((m) => m.map((x) => (x.id === messageId ? rated : x)));
+      if (persistHistory && activeSessionId) void saveMessage(activeSessionId, rated);
+      void csrfFetch("/api/copilot/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message_id: messageId,
+          rating,
+          ...(reason ? { reason } : {}),
+          question: question.slice(0, 2_000),
+          answer: answer.content.slice(0, 20_000),
+          citations: (answer.citations ?? []).map((c) => c.slug).slice(0, 50),
+          ...(selectedCaseSlug || context.caseSlug
+            ? { case_slug: selectedCaseSlug || context.caseSlug }
+            : {}),
+          ...(answer.model ? { model: answer.model } : {}),
+        }),
+      }).catch(() => {});
+    },
+    [setMessages, persistHistory, activeSessionId, selectedCaseSlug, context.caseSlug]
+  );
 
   // Follow-up suggestion click: send as new user message
   const handleFollowUp = useCallback(
@@ -2126,6 +2303,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <ChatHeader
         isStreaming={isStreaming}
         features={{
+          modelSelector: resolvedFeatures.modelSelector,
           modeSelector: resolvedFeatures.modeSelector,
           caseSelector: resolvedFeatures.caseSelector,
           jurisdictionSelector: resolvedFeatures.jurisdictionSelector,
@@ -2133,6 +2311,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           tokenWidget: resolvedFeatures.tokenWidget,
           exportChat: resolvedFeatures.exportChat,
         }}
+        modelOverride={modelOverride}
+        onModelChange={setModelOverride}
         queryMode={queryMode}
         onQueryModeChange={setQueryMode}
         jurisdiction={jurisdiction}
@@ -2147,7 +2327,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               .getPage(slug)
               .then((page) => {
                 const fm = caseFrontmatter(page as BrainPage);
-                setJurisdiction(fm.jurisdiction === "eu" ? "eu" : "at");
+                setJurisdiction(matterJurisdiction(fm.jurisdiction));
               })
               .catch((err) =>
                 console.warn(
@@ -2259,6 +2439,12 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                         onToolCancel={handleToolCancel}
                         onToolRetry={handleToolRetry}
                         onFollowUp={handleFollowUp}
+                        onFeedback={msg.role === "assistant" ? handleFeedback : undefined}
+                        saveToMatterCase={
+                          msg.role === "assistant" && !msg.isStreaming
+                            ? selectedCaseSlug || context.caseSlug || ""
+                            : undefined
+                        }
                       />
                     </div>
                   );
@@ -2346,18 +2532,50 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             </div>
           )}
 
+          {/* Marked passage the next question is about */}
+          {quoted && (
+            <div className="flex items-start gap-2 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2 text-xs">
+              <Quote
+                size={12}
+                className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]"
+                aria-hidden="true"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[color:var(--ds-text-subtle)]">
+                  {lang === "en" ? "Asking about" : "Frage zu"}
+                  {quoted.source ? ` · ${quoted.source}` : ""}
+                </span>
+                <span className="line-clamp-3 text-[color:var(--ds-text-muted)]">
+                  „{quoted.text}“
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuoted(null)}
+                className="shrink-0 rounded p-1 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                aria-label={lang === "en" ? "Remove marked passage" : "Markierung entfernen"}
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
           {/* Input area - only in copilot mode */}
           <ChatInput
             onSend={(text, atts) => {
-              handleSend(text, atts, replyTo);
+              handleSend(text, atts, replyTo, quoted);
               setReplyTo(null);
+              setQuoted(null);
             }}
             onStop={handleStop}
             isStreaming={isStreaming}
             placeholder={placeholder}
             features={{
               fileUpload: resolvedFeatures.fileUpload,
+              modelSelector: false,
             }}
+            modelOverride={modelOverride}
+            onModelChange={setModelOverride}
           />
         </>
       )}

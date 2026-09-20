@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback, useEffect } from "react";
 import { Loader2, Plus, Pin, PinOff, Trash2, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/queries/auth";
 import type { BrainPage } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 interface NoteItem {
   slug: string;
@@ -120,8 +121,10 @@ export function NotesTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20" role="status" aria-live="polite">
-        <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+      <div className="space-y-3" role="status" aria-live="polite">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
       </div>
     );
   }
@@ -208,7 +211,7 @@ export function NotesTab() {
                   </div>
                   {note.author && (
                     <p className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)]">
-                      {note.author} · {new Date(note.created_at).toLocaleDateString("de-DE")}
+                      {note.author} · {formatDate(note.created_at)}
                     </p>
                   )}
                   <p className="mt-2 text-sm whitespace-pre-wrap text-[color:var(--ds-text-muted)]">

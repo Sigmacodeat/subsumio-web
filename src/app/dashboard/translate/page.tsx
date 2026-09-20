@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { Languages, Loader2, AlertTriangle, Copy, Check, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import type { DocumentTranslation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -53,7 +52,11 @@ export default function TranslatePage() {
       });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("translate.error_failed"));
+      setError(
+        e instanceof ApiRequestError && e.status === 404
+          ? "Das Dokument wurde nicht gefunden. Bitte prüfen Sie die Dokumentkennung."
+          : "Die Übersetzung ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut."
+      );
     } finally {
       setLoading(false);
     }
@@ -121,13 +124,13 @@ export default function TranslatePage() {
             </select>
           </div>
 
-          <div className="ml-auto flex gap-3">
+          <div className="flex flex-wrap gap-3 sm:ml-auto">
             <label className="flex cursor-pointer items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
               <input
                 type="checkbox"
                 checked={legalTerminology}
                 onChange={(e) => setLegalTerminology(e.target.checked)}
-                className="accent-emerald-600"
+                className="accent-[var(--brand-primary)]"
               />
               Juristische Terminologie
             </label>
@@ -136,7 +139,7 @@ export default function TranslatePage() {
                 type="checkbox"
                 checked={preserveFormatting}
                 onChange={(e) => setPreserveFormatting(e.target.checked)}
-                className="accent-emerald-600"
+                className="accent-[var(--brand-primary)]"
               />
               Formatierung erhalten
             </label>
@@ -144,24 +147,28 @@ export default function TranslatePage() {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2" role="tablist">
           <button
+            role="tab"
+            aria-selected={mode === "text"}
             onClick={() => setMode("text")}
             className={cn(
               "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
               mode === "text"
-                ? "brand-soft brand-text brand-border border"
+                ? "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] shadow-sm"
                 : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
             )}
           >
             Direkter Text
           </button>
           <button
+            role="tab"
+            aria-selected={mode === "slug"}
             onClick={() => setMode("slug")}
             className={cn(
               "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
               mode === "slug"
-                ? "brand-soft brand-text brand-border border"
+                ? "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] shadow-sm"
                 : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
             )}
           >
@@ -174,6 +181,7 @@ export default function TranslatePage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder={t("translate.placeholder_doc_slug")}
+            aria-label={t("translate.placeholder_doc_slug")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
           />
         ) : (
@@ -181,14 +189,15 @@ export default function TranslatePage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("translate.placeholder_text")}
-            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            aria-label={t("translate.placeholder_text")}
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         )}
 
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
+          className="gap-2 whitespace-nowrap"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
           {t("translate.btn_translate")}
@@ -207,8 +216,8 @@ export default function TranslatePage() {
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <Languages size={14} /> {t("translate.result_label")} ({result.source_language} →{" "}
-                {result.target_language})
+                <Languages size={14} /> {t("translate.result_label")} (
+                {result.source_language.toUpperCase()} → {result.target_language.toUpperCase()})
               </h3>
               <Button variant="ghost" size="sm" onClick={copyResult} className="gap-1.5 text-xs">
                 {copied ? (
@@ -216,7 +225,7 @@ export default function TranslatePage() {
                 ) : (
                   <Copy size={12} />
                 )}
-                {copied ? t("translate.btn_copy") : t("translate.btn_copy")}
+                {t("translate.btn_copy")}
               </Button>
             </div>
             <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
@@ -233,12 +242,12 @@ export default function TranslatePage() {
               </h3>
               <div className="space-y-2">
                 {result.glossary.map((g, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm">
-                    <span className="min-w-[120px] font-mono text-[color:var(--ds-text)]">
+                  <div key={i} className="flex flex-wrap items-start gap-x-3 gap-y-1 text-sm">
+                    <span className="min-w-[120px] text-[color:var(--ds-text-muted)]">
                       {g.source_term}
                     </span>
                     <span className="text-[color:var(--ds-text-muted)]">→</span>
-                    <span className="min-w-[120px] font-mono text-[color:var(--ds-success-text)]">
+                    <span className="min-w-[120px] font-medium text-[color:var(--ds-text)]">
                       {g.target_term}
                     </span>
                     {g.note && (
@@ -263,14 +272,6 @@ export default function TranslatePage() {
             </div>
           )}
 
-          {result.attorney_review_required && (
-            <Badge
-              variant="default"
-              className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
-            >
-              Anwaltliche Prüfung der Übersetzung empfohlen
-            </Badge>
-          )}
         </div>
       )}
     </div>

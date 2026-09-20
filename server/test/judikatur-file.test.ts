@@ -4,6 +4,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import {
   buildMarkdown,
+  decisionFileName,
   cleanKeyword,
   decisionTypeOf,
   dokumentnummerOf,
@@ -96,14 +97,33 @@ describe("judikatur-file", () => {
       )
     ).toBe(false);
 
-    rememberOnDisk(
-      existing,
-      "BVWGT_OTHER",
-      "https://x/?Dokumentnummer=BVWGT_OTHER",
-      "2020-01-01-w1",
-      "w1"
-    );
+    rememberOnDisk(existing, "BVWGT_OTHER", "https://x/?Dokumentnummer=BVWGT_OTHER");
     expect(isAlreadyOnDisk(existing, "BVWGT_OTHER", "", "z", "z")).toBe(true);
+  });
+
+  test("another Rechtssatz under the same case number is not taken as present", () => {
+    const dir = mkdtempSync(join(tmpdir(), "jud-"));
+    const rs1 = "JJR_20190326_OGH0002_0100OB00015_19X0000_001";
+    const rs2 = "JJR_20190326_OGH0002_0100OB00015_19X0000_002";
+    const url = (d: string) =>
+      `https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=${d}`;
+    writeFileSync(
+      join(dir, "2019-03-26-10ob15-19x.md"),
+      buildMarkdown({ ...DOC, id: rs1, url: url(rs1) }, "ogh")
+    );
+    const existing = loadExistingDocs(dir);
+    expect(isAlreadyOnDisk(existing, rs2, url(rs2), "2019-03-26-10ob15-19x", "10ob15-19x")).toBe(
+      false
+    );
+    expect(decisionFileName(rs2)).toBe(`${rs2.toLowerCase()}.md`);
+  });
+
+  test("files without a document number are still recognised by name", () => {
+    const dir = mkdtempSync(join(tmpdir(), "jud-"));
+    writeFileSync(join(dir, "2001-05-02-7ob1-01.md"), "---\ntitle: alt\n---\ntext\n");
+    const existing = loadExistingDocs(dir);
+    expect(isAlreadyOnDisk(existing, "X", "", "2001-05-02-7ob1-01", "7ob1-01")).toBe(true);
+    expect(isAlreadyOnDisk(existing, "X", "", "other", "7ob1-01")).toBe(true);
   });
 });
 

@@ -59,11 +59,8 @@ export function OcrErrorBanner({
       });
       addToast({ type: "success", title: t("ocr.retry_success" as DashboardKey) });
       onRetried?.();
-    } catch (err) {
-      addToast({
-        type: "error",
-        title: err instanceof Error ? err.message : t("ocr.retry_error" as DashboardKey),
-      });
+    } catch {
+      addToast({ type: "error", title: t("ocr.retry_error" as DashboardKey) });
     } finally {
       setRetrying(false);
     }
@@ -123,7 +120,7 @@ export function OcrErrorBanner({
       <button
         onClick={() => setDismissed(true)}
         className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-        aria-label="Dismiss"
+        aria-label="Hinweis ausblenden"
       >
         <X size={14} />
       </button>

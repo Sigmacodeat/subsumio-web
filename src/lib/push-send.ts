@@ -1,5 +1,6 @@
 /**
- * Push notification sender — sends via APNs (iOS) or FCM (Android).
+ * Push notification sender — sends via web push (browsers and installed
+ * PWAs, see web-push-core.ts), APNs (iOS) or FCM (Android).
  *
  * Environment variables:
  *   APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID, APNS_PRIVATE_KEY_PATH — for iOS
@@ -10,7 +11,8 @@
  * production credentials are configured.
  */
 
-import { getPushTokensForUser, type PushTokenEntry } from "./push-token-store";
+import { getPushTokensForUser, unregisterPushToken, type PushTokenEntry } from "./push-token-store";
+import { parseWebPushSubscription, sendWebPush } from "@/lib/web-push-core";
 import { logger } from "@/lib/logger";
 
 const log = logger("push-send");
@@ -33,7 +35,19 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
   let sent = 0;
   for (const entry of tokens) {
     try {
-      if (entry.platform === "ios") {
+      if (entry.platform === "web") {
+        // A browser or installed PWA; the token is the push subscription (JSON).
+        const sub = parseWebPushSubscription(entry.token);
+        const result = sub
+          ? await sendWebPush(sub, {
+              title: payload.title,
+              body: payload.body,
+              data: { ...(payload.data ?? {}), url: webPushUrl(payload.data) },
+            })
+          : "gone";
+        if (result === "gone") await unregisterPushToken(userId, entry.token);
+        if (result !== "sent") continue;
+      } else if (entry.platform === "ios") {
         await sendViaAPNs(entry, payload);
       } else {
         await sendViaFCM(entry, payload);
@@ -48,6 +62,15 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
     }
   }
   return sent;
+}
+
+/** Where a click on a web notification leads: the matter when there is one. */
+function webPushUrl(data: Record<string, string> | undefined): string {
+  if (data?.url?.startsWith("/")) return data.url;
+  if (data?.case_slug) {
+    return `/dashboard/cases/${data.case_slug.split("/").map(encodeURIComponent).join("/")}`;
+  }
+  return "/dashboard/notifications";
 }
 
 async function sendViaAPNs(entry: PushTokenEntry, payload: PushPayload): Promise<void> {

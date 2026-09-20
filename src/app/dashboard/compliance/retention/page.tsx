@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, Trash2, CheckCircle2, Shield, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, Trash2, CheckCircle2, Info, Loader2, Archive } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn, formatDate } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/dashboard/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -12,7 +16,7 @@ interface RetentionCase {
   title: string;
   caseNumber: string;
   status: string;
-  closedAt?: string;
+  closedAt: string;
   yearsSinceClosure: number;
   action: "keep" | "review" | "delete";
 }
@@ -25,10 +29,22 @@ interface RetentionCase {
 const RETENTION_YEARS = 7; // § 132 BAO
 const DELETE_GRACE_YEARS = 3;
 
+const CASE_STATUS_LABEL: Record<string, string> = {
+  open: "Offen",
+  active: "Laufend",
+  pending: "Ruhend",
+  closed: "Abgeschlossen",
+  archived: "Archiviert",
+};
+
+const YEAR_MS = 1000 * 60 * 60 * 24 * 365.25;
+
 export default function RetentionPage() {
   const { t } = useLang();
+  const router = useRouter();
   const confirm = useConfirm();
   const [cases, setCases] = useState<RetentionCase[]>([]);
+  const [openCount, setOpenCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -37,32 +53,42 @@ export default function RetentionPage() {
     let cancelled = false;
     async function load() {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+        // listAllPages blättert über die 100er-Grenze der Engine und filtert gelöschte Akten.
+        const pages = await api.brain.listAllPages({ type: "legal_case" });
         if (cancelled) return;
-        const now = new Date();
-        const mapped: RetentionCase[] = pages.map((p) => {
-          const fm = p.frontmatter as Record<string, unknown>;
-          const closedAt = fm.closed_at ? String(fm.closed_at) : undefined;
-          const years = closedAt
-            ? (now.getTime() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365)
-            : 0;
+        const now = Date.now();
+        const closed: RetentionCase[] = [];
+        let running = 0;
+        for (const p of pages) {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          const closedAt = fm.closed_at ? String(fm.closed_at) : "";
+          const closedMs = closedAt ? new Date(closedAt).getTime() : NaN;
+          // Laufende Akten (ohne gültiges Abschlussdatum) unterliegen noch keiner Frist.
+          if (!Number.isFinite(closedMs)) {
+            running++;
+            continue;
+          }
+          const years = Math.max(0, (now - closedMs) / YEAR_MS);
           let action: RetentionCase["action"] = "keep";
           if (years >= RETENTION_YEARS + DELETE_GRACE_YEARS)
             action = "delete"; // ≥ 10 Jahre
           else if (years >= RETENTION_YEARS) action = "review"; // 7–10 Jahre
-          return {
+          closed.push({
             slug: p.slug,
             title: p.title,
-            caseNumber: String(fm.case_number ?? p.slug),
-            status: String(fm.status ?? "open"),
+            caseNumber: String(fm.case_number ?? p.title),
+            status: String(fm.status ?? "closed"),
             closedAt,
-            yearsSinceClosure: Math.round(years * 10) / 10,
+            yearsSinceClosure: Math.floor(years * 10) / 10,
             action,
-          };
-        });
-        if (!cancelled) setCases(mapped.sort((a, b) => b.yearsSinceClosure - a.yearsSinceClosure));
-      } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("retention.error_load"));
+          });
+        }
+        if (!cancelled) {
+          setCases(closed.sort((a, b) => b.yearsSinceClosure - a.yearsSinceClosure));
+          setOpenCount(running);
+        }
+      } catch {
+        if (!cancelled) setLoadError(t("retention.error_load"));
       }
       if (!cancelled) setLoading(false);
     }
@@ -73,102 +99,138 @@ export default function RetentionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const keepCount = cases.filter((c) => c.action === "keep").length + openCount;
   const toReview = cases.filter((c) => c.action === "review");
   const toDelete = cases.filter((c) => c.action === "delete");
 
+  async function handleDelete(c: RetentionCase) {
+    const ok = await confirm({
+      title: t("retention.confirm_title"),
+      message: t("retention.confirm_msg")
+        .replace("{{title}}", c.title)
+        .replace("{{number}}", c.caseNumber),
+      confirmLabel: t("retention.confirm_delete"),
+      cancelLabel: t("retention.confirm_cancel"),
+      variant: "danger",
+    });
+    if (!ok) return;
+    setDeleting(c.slug);
+    setLoadError(null);
+    try {
+      await api.brain.deletePage(c.slug);
+      setCases((prev) => prev.filter((pc) => pc.slug !== c.slug));
+    } catch {
+      setLoadError(t("retention.error_delete"));
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("retention.title")}
         description={t("retention.description")}
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: "Compliance", href: "/dashboard/compliance" },
+          { label: t("compliance.breadcrumb"), href: "/dashboard/compliance" },
           { label: t("retention.breadcrumb") },
         ]}
       />
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
-          <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
-            {cases.filter((c) => c.action === "keep").length}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("retention.stat_keep")}
-          </div>
+      {/* Summary — Farbe nur bei Zahl > 0 */}
+      {loading ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[72px] rounded-xl" />
+          ))}
         </div>
-        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-center">
-          <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">
-            {toReview.length}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("retention.stat_review").replace("{{years}}", String(RETENTION_YEARS))}
-          </div>
-        </div>
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
-          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
-            {toDelete.length}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("retention.stat_delete").replace(
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatTile value={keepCount} label={t("retention.stat_keep")} tone="neutral" />
+          <StatTile
+            value={toReview.length}
+            label={t("retention.stat_review").replace("{{years}}", String(RETENTION_YEARS))}
+            tone="warning"
+          />
+          <StatTile
+            value={toDelete.length}
+            label={t("retention.stat_delete").replace(
               "{{years}}",
               String(RETENTION_YEARS + DELETE_GRACE_YEARS)
             )}
-          </div>
+            tone="danger"
+          />
         </div>
-      </div>
+      )}
 
       {loadError && (
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <AlertTriangle size={16} className="shrink-0" aria-hidden="true" />
           {loadError}
         </div>
       )}
 
       {loading ? (
-        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">
-          {t("retention.loading")}
+        <div className="space-y-2" role="status" aria-label={t("retention.loading")}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
+      ) : cases.length === 0 && !loadError ? (
+        <EmptyState
+          icon={Archive}
+          title="Keine abgeschlossenen Akten"
+          description="Aufbewahrungsfristen beginnen mit dem Abschluss einer Akte. Sobald Sie eine Akte abschließen, erscheint sie hier mit ihrer Frist."
+          actionLabel="Zu den Akten"
+          onAction={() => router.push("/dashboard/cases")}
+        />
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {cases.map((c) => (
-            <div
+            <li
               key={c.slug}
-              className={`flex items-center gap-4 rounded-xl border px-4 py-3 ${
-                c.action === "delete"
-                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
-                  : c.action === "review"
-                    ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
-                    : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              }`}
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center" aria-hidden="true">
                 {c.action === "delete" ? (
-                  <Trash2 size={18} className="text-[color:var(--ds-danger-text)]" />
+                  <Trash2 size={16} className="text-[color:var(--ds-danger-text)]" />
                 ) : c.action === "review" ? (
-                  <AlertTriangle size={18} className="text-[color:var(--ds-warning-text)]" />
+                  <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
                 ) : (
-                  <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
+                  <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-[color:var(--ds-text)]">
+              <div className="min-w-[12rem] flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-[color:var(--ds-text)] tabular-nums">
                     {c.caseNumber}
                   </span>
-                  <span className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {c.status}
+                  <span className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                    {CASE_STATUS_LABEL[c.status] ?? "Abgeschlossen"}
                   </span>
                 </div>
-                <div className="text-xs text-[color:var(--ds-text-muted)]">
-                  {c.title} ·{" "}
-                  {t("retention.years_since").replace("{{years}}", String(c.yearsSinceClosure))}
+                <div className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                  {c.title} · Abgeschlossen am{" "}
+                  <span className="tabular-nums">{formatDate(c.closedAt)}</span> ·{" "}
+                  {t("retention.years_since").replace(
+                    "{{years}}",
+                    c.yearsSinceClosure.toLocaleString("de-AT")
+                  )}
                 </div>
               </div>
               {c.action !== "keep" && (
-                <div className="flex items-center gap-2">
+                <div className="ml-auto flex shrink-0 items-center gap-2">
                   <span
-                    className={`text-xs font-medium ${c.action === "delete" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"}`}
+                    className={cn(
+                      "text-xs font-medium whitespace-nowrap",
+                      c.action === "delete"
+                        ? "text-[color:var(--ds-danger-text)]"
+                        : "text-[color:var(--ds-warning-text)]"
+                    )}
                   >
                     {c.action === "delete"
                       ? t("retention.action_delete")
@@ -176,54 +238,58 @@ export default function RetentionPage() {
                   </span>
                   {c.action === "delete" && (
                     <button
-                      onClick={async () => {
-                        const ok = await confirm({
-                          title: t("retention.confirm_title"),
-                          message: t("retention.confirm_msg")
-                            .replace("{{title}}", c.title)
-                            .replace("{{number}}", c.caseNumber),
-                          confirmLabel: t("retention.confirm_delete"),
-                          cancelLabel: t("retention.confirm_cancel"),
-                          variant: "danger",
-                        });
-                        if (!ok) return;
-                        setDeleting(c.slug);
-                        try {
-                          await api.brain.deletePage(c.slug);
-                          setCases((prev) => prev.filter((pc) => pc.slug !== c.slug));
-                        } catch (e) {
-                          setLoadError(
-                            e instanceof Error ? e.message : t("retention.error_delete")
-                          );
-                        } finally {
-                          setDeleting(null);
-                        }
-                      }}
+                      type="button"
+                      onClick={() => void handleDelete(c)}
                       disabled={deleting === c.slug}
-                      className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                      aria-label={`${t("retention.btn_delete")}: ${c.caseNumber}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] px-2.5 py-1 text-xs whitespace-nowrap text-[color:var(--ds-danger-text)] transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none disabled:opacity-50 motion-reduce:transition-none"
                     >
-                      {deleting === c.slug ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        t("retention.btn_delete")
+                      {deleting === c.slug && (
+                        <Loader2 size={12} className="animate-spin" aria-hidden="true" />
                       )}
+                      {t("retention.btn_delete")}
                     </button>
                   )}
                 </div>
               )}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div className="flex items-start gap-3">
-          <Shield size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
-          <div>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">{t("retention.disclaimer")}</p>
-          </div>
-        </div>
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <Info
+          size={16}
+          className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+          aria-hidden="true"
+        />
+        <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+          {t("retention.disclaimer")}
+        </p>
       </div>
+    </div>
+  );
+}
+
+function StatTile({
+  value,
+  label,
+  tone,
+}: {
+  value: number;
+  label: string;
+  tone: "neutral" | "warning" | "danger";
+}) {
+  const color =
+    value === 0 || tone === "neutral"
+      ? "text-[color:var(--ds-text)]"
+      : tone === "warning"
+        ? "text-[color:var(--ds-warning-text)]"
+        : "text-[color:var(--ds-danger-text)]";
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", color)}>{value}</div>
     </div>
   );
 }

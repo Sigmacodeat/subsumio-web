@@ -4,7 +4,8 @@
 // Pauses on hover. Respects prefers-reduced-motion (shows first item statically).
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { EASE } from "./motion-system";
 
 export default function RotatingBadge({
@@ -31,17 +32,15 @@ export default function RotatingBadge({
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover only pauses the rotation; it exposes nothing a keyboard user cannot already reach, and reduced-motion users get a static first item anyway.
     <div
-      className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)] sm:text-sm"
+      className="mb-7 inline-flex max-w-full items-center gap-3 text-sm font-medium [color:var(--brand-text)]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Static brand dot. It used to pulse forever as a "live" signal — the
-          same borrowed AI-product tell as a blinking cursor, and redundant next
-          to text that already rotates and a progress bar that already runs. */}
-      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
-      {/* h-5 (20px) matches text-sm's 20px line-height. At h-4 the box was 4px
-          shorter than the line, and overflow-hidden — needed for the slide
-          crossfade — clipped every descender ("p" in On-Premise, "g", "y"). */}
+      {/* A hairline instead of a pill: reads as a chapter mark, not a sticker.
+          The rotation carries the motion, so nothing else animates here. */}
+      <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+      {/* h-5 (20px) matches text-sm's 20px line-height; overflow-hidden is
+          needed for the slide crossfade and must not clip descenders. */}
       <div className="relative inline-block h-5 max-w-[calc(100vw-7rem)] min-w-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span
@@ -56,23 +55,7 @@ export default function RotatingBadge({
           </motion.span>
         </AnimatePresence>
       </div>
-      {/* progress bar — visual cue for time until next rotation */}
-      {items.length > 1 && !reduce && (
-        <motion.div
-          key={`prog-${index}-${paused}`}
-          className="ml-1 h-0.5 w-8 overflow-hidden rounded-full [background:var(--brand-border)]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.div
-            className="h-full rounded-full [background:var(--brand-secondary)]"
-            initial={{ width: "0%" }}
-            animate={{ width: paused ? "0%" : "100%" }}
-            transition={{ duration: paused ? 0 : intervalMs / 1000, ease: "linear" }}
-          />
-        </motion.div>
-      )}
+      <span aria-hidden className="h-px w-8 bg-current opacity-50" />
     </div>
   );
 }

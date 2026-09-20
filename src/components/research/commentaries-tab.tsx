@@ -18,14 +18,14 @@ import {
   Scale,
   ArrowLeft,
   Trash2,
-  Brain,
   ExternalLink,
   Gavel,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
-import { cn } from "@/lib/utils";
-import { PageHeader } from "@/components/dashboard/page-header";
+import { cn, formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { CitationPanel } from "@/components/legal/CitationPanel";
@@ -70,14 +70,14 @@ const JURISDICTIONS = [
 
 const COMMENTARY_TYPES = [
   { value: "", label: "Alle" },
-  { value: "synthetic", label: "Synthetisch" },
-  { value: "open_access", label: "Open Access" },
+  { value: "synthetic", label: "KI-erstellt" },
+  { value: "open_access", label: "Frei zugänglich" },
 ];
 
 export default function CommentariesPage() {
   const confirm = useConfirm();
   const { addToast } = useToast();
-  const { t } = useLang();
+  useLang();
   const [commentaries, setCommentaries] = useState<Commentary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -106,8 +106,8 @@ export default function CommentariesPage() {
       });
       setCommentaries((res as unknown as CommentaryListResponse).items ?? []);
       setTotal((res as unknown as CommentaryListResponse).total ?? 0);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+    } catch {
+      setError("Die Kommentierungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
     } finally {
       setLoading(false);
     }
@@ -150,10 +150,12 @@ export default function CommentariesPage() {
       setSynthStatute("");
       setSynthSection("");
       await fetchCommentaries();
-      addToast({ type: "success", description: "Kommentierung synthetisiert" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Synthese fehlgeschlagen");
-      addToast({ type: "error", description: "Synthese fehlgeschlagen" });
+      addToast({ type: "success", description: "Kommentierung erstellt" });
+    } catch {
+      setError(
+        "Der Assistent ist gerade nicht erreichbar. Bitte versuchen Sie es in einigen Minuten erneut."
+      );
+      addToast({ type: "error", description: "Kommentierung konnte nicht erstellt werden" });
     } finally {
       setSynthesizing(false);
     }
@@ -167,8 +169,7 @@ export default function CommentariesPage() {
       setSelectedCommentary(null);
       await fetchCommentaries();
       addToast({ type: "success", description: "Kommentierung gelöscht" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
+    } catch {
       addToast({ type: "error", description: "Löschen fehlgeschlagen" });
     }
   };
@@ -184,61 +185,65 @@ export default function CommentariesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--ds-bg)]">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <PageHeader
-          title={t("comments.title")}
-          description={t("comments.description")}
-          breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("comments.title") }]}
-          actions={
-            <button
-              onClick={() => setShowSynthForm(!showSynthForm)}
-              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--ds-accent)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-            >
-              <Sparkles className="h-4 w-4" />
-              Synthese triggern
-            </button>
-          }
-        />
+    // Embedded in the research page, which owns the page header (one h1 per page).
+    <div>
+      <div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            Kommentierungen zu Paragraphen — frei zugängliche Quellen und KI-erstellte Entwürfe
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowSynthForm(!showSynthForm)}
+            className="gap-2 whitespace-nowrap"
+          >
+            <Sparkles className="h-4 w-4" />
+            Kommentierung erstellen
+          </Button>
+        </div>
 
         {showSynthForm && (
-          <div className="mb-6 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-card)] p-4">
-            <h3 className="mb-3 text-sm font-semibold">Synthetische Kommentierung generieren</h3>
+          <div className="mb-6 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <h3 className="mb-3 text-sm font-semibold">KI-Kommentierung zu einem Paragraphen</h3>
             <div className="flex flex-wrap gap-3">
               <select
                 value={synthJurisdiction}
                 onChange={(e) => setSynthJurisdiction(e.target.value)}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
+                aria-label="Rechtsordnung"
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
               >
-                <option value="at">AT</option>
-                <option value="eu">EU</option>
+                <option value="at">Österreich</option>
+                <option value="eu">EU-Recht</option>
               </select>
               <input
                 type="text"
-                placeholder="Gesetz (z.B. ABGB)"
+                placeholder="Gesetz (z. B. ABGB)"
+                aria-label="Gesetz"
                 value={synthStatute}
                 onChange={(e) => setSynthStatute(e.target.value.toUpperCase())}
-                className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
+                className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
               />
               <input
                 type="text"
-                placeholder="§ (z.B. 823)"
+                placeholder="§ (z. B. 1295)"
+                aria-label="Paragraph"
                 value={synthSection}
                 onChange={(e) => setSynthSection(e.target.value)}
-                className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
+                className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
               />
-              <button
+              <Button
                 onClick={handleSynthesize}
                 disabled={!synthStatute || !synthSection || synthesizing}
-                className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--ds-accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="gap-2 whitespace-nowrap"
               >
                 {synthesizing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Sparkles className="h-4 w-4" />
                 )}
-                Generieren
-              </button>
+                Erstellen
+              </Button>
             </div>
           </div>
         )}
@@ -249,16 +254,18 @@ export default function CommentariesPage() {
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
             <input
               type="text"
-              placeholder="Suche nach §, Gesetz, Schlagwort..."
+              placeholder="Suche nach §, Gesetz, Schlagwort …"
+              aria-label="Kommentierungen durchsuchen"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] py-2 pr-4 pl-10 text-sm"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-4 pl-10 text-sm"
             />
           </div>
           <select
             value={jurisdiction}
             onChange={(e) => setJurisdiction(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
+            aria-label="Rechtsordnung"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
           >
             {JURISDICTIONS.map((j) => (
               <option key={j.value} value={j.value}>
@@ -269,7 +276,8 @@ export default function CommentariesPage() {
           <select
             value={commentaryType}
             onChange={(e) => setCommentaryType(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
+            aria-label="Art der Kommentierung"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
           >
             {COMMENTARY_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
@@ -279,10 +287,11 @@ export default function CommentariesPage() {
           </select>
           <input
             type="text"
-            placeholder="Gesetz (z.B. ABGB)"
+            placeholder="Gesetz (z. B. ABGB)"
+            aria-label="Nach Gesetz filtern"
             value={statuteFilter}
             onChange={(e) => setStatuteFilter(e.target.value.toUpperCase())}
-            className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
+            className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
           />
           <button
             onClick={fetchCommentaries}
@@ -294,21 +303,24 @@ export default function CommentariesPage() {
         </div>
 
         {/* Stats bar */}
-        <div className="mb-4 flex items-center gap-4 text-sm text-[color:var(--ds-text-muted)]">
-          <span>{total} Kommentierungen</span>
-          <span>•</span>
-          <span>{groupedByStatute.length} Gesetze</span>
-          <span>•</span>
-          <span className="inline-flex items-center gap-1">
-            <Brain className="h-3.5 w-3.5" />
-            {commentaries.filter((c) => c.commentary_type === "synthetic").length} synthetisch
-          </span>
-          <span>•</span>
-          <span className="inline-flex items-center gap-1">
-            <FileText className="h-3.5 w-3.5" />
-            {commentaries.filter((c) => c.commentary_type === "open_access").length} Open Access
-          </span>
-        </div>
+        {total > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[color:var(--ds-text-muted)] tabular-nums">
+            <span>{total} Kommentierungen</span>
+            <span>·</span>
+            <span>{groupedByStatute.length} Gesetze</span>
+            <span>·</span>
+            <span className="inline-flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5" />
+              {commentaries.filter((c) => c.commentary_type === "synthetic").length} KI-erstellt
+            </span>
+            <span>·</span>
+            <span className="inline-flex items-center gap-1">
+              <FileText className="h-3.5 w-3.5" />
+              {commentaries.filter((c) => c.commentary_type === "open_access").length} frei
+              zugänglich
+            </span>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -319,8 +331,10 @@ export default function CommentariesPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
+          <div className="space-y-3" aria-busy="true">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            ))}
           </div>
         )}
 
@@ -330,7 +344,7 @@ export default function CommentariesPage() {
             icon={BookOpen}
             title="Keine Kommentierungen gefunden"
             description="Für die aktuellen Filter wurden noch keine Kommentierungen erstellt."
-            actionLabel="Erste Kommentierung synthetisieren"
+            actionLabel="Kommentierung erstellen"
             onAction={() => setShowSynthForm(true)}
           />
         )}
@@ -366,9 +380,10 @@ function CommentaryStatuteGroup({
   const [jur, abbr] = statuteKey.split("/");
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-card)]">
+    <div className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-[color:var(--ds-hover)]"
       >
         {expanded ? (
@@ -376,7 +391,7 @@ function CommentaryStatuteGroup({
         ) : (
           <ChevronRight className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
         )}
-        <Scale className="h-4 w-4 text-[color:var(--ds-accent)]" />
+        <Scale className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
         <span className="font-semibold">{abbr}</span>
         <span className="text-xs text-[color:var(--ds-text-muted)]">
           {jur.toUpperCase()} · {sections.length} §
@@ -390,21 +405,11 @@ function CommentaryStatuteGroup({
               onClick={() => onSelect(c)}
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-[color:var(--ds-hover)]"
             >
-              <span className="w-20 font-mono text-sm">§ {c.section_num}</span>
+              <span className="w-20 shrink-0 text-sm tabular-nums">§&#8239;{c.section_num}</span>
               <span className="flex-1 truncate text-sm text-[color:var(--ds-text-muted)]">
                 {c.title}
               </span>
-              {c.commentary_type === "synthetic" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-category-purple-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-category-purple-text)]">
-                  <Brain className="h-3 w-3" />
-                  Synthetisch
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
-                  <FileText className="h-3 w-3" />
-                  Open Access
-                </span>
-              )}
+              <CommentaryTypeBadge synthetic={c.commentary_type === "synthetic"} />
               {c.case_count > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
                   <Gavel className="h-3 w-3" />
@@ -444,8 +449,8 @@ function CommentaryDetail({
   }, [commentary.id, isSynthetic]);
 
   return (
-    <div className="min-h-screen bg-[color:var(--ds-bg)]">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <div>
+      <div className="max-w-4xl">
         <button
           onClick={onBack}
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -454,32 +459,22 @@ function CommentaryDetail({
           Zurück
         </button>
 
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-card)] p-6">
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6">
           {/* Header */}
-          <div className="mb-6 flex items-start justify-between">
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                {commentary.commentary_type === "synthetic" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-category-purple-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-category-purple-text)]">
-                    <Brain className="h-3 w-3" />
-                    Synthetisch
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
-                    <FileText className="h-3 w-3" />
-                    Open Access
-                  </span>
-                )}
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <CommentaryTypeBadge synthetic={commentary.commentary_type === "synthetic"} />
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  {commentary.jurisdiction.toUpperCase()} · {commentary.statute_abbr} · §{" "}
-                  {commentary.section_num}
+                  {commentary.jurisdiction.toUpperCase()} · {commentary.statute_abbr} ·{" "}
+                  §&#8239;{commentary.section_num}
                 </span>
               </div>
-              <h1 className="text-2xl font-bold">{commentary.title}</h1>
+              {/* h2: the research page owns the only h1. */}
+              <h2 className="font-display text-xl font-semibold">{commentary.title}</h2>
               {commentary.source_name && (
                 <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                   Quelle: {commentary.source_name}
-                  {commentary.source_model && ` · Modell: ${commentary.source_model}`}
                 </p>
               )}
             </div>
@@ -555,12 +550,12 @@ function CommentaryDetail({
           {commentary.key_holdings && commentary.key_holdings.length > 0 && (
             <div className="mt-6 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-4">
               <h3 className="mb-3 text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase">
-                Key Holdings
+                Kernaussagen
               </h3>
               <ul className="space-y-2">
                 {commentary.key_holdings.map((h, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
-                    <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-[color:var(--ds-accent)]" />
+                    <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-[color:var(--ds-text-muted)]" />
                     <span>{h}</span>
                   </li>
                 ))}
@@ -589,7 +584,7 @@ function CommentaryDetail({
                 href={commentary.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-[color:var(--ds-accent)] hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm text-[color:var(--ds-text)] hover:underline"
               >
                 <ExternalLink className="h-4 w-4" />
                 Originalquelle öffnen
@@ -598,23 +593,33 @@ function CommentaryDetail({
           )}
 
           {/* Meta */}
-          <div className="mt-4 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
             {commentary.case_count > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Gavel className="h-3 w-3" />
                 {commentary.case_count} verlinkte Urteile
               </span>
             )}
-            <span>Aktualisiert: {new Date(commentary.updated_at).toLocaleDateString("de-DE")}</span>
-            {commentary.generated_at && (
-              <span>
-                Generiert: {new Date(commentary.generated_at).toLocaleDateString("de-DE")}
-              </span>
-            )}
+            <span>Aktualisiert: {formatDate(commentary.updated_at)}</span>
+            {commentary.generated_at && <span>Erstellt: {formatDate(commentary.generated_at)}</span>}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CommentaryTypeBadge({ synthetic }: { synthetic: boolean }) {
+  return synthetic ? (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]">
+      <Sparkles className="h-3 w-3" />
+      KI-erstellt
+    </span>
+  ) : (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
+      <FileText className="h-3 w-3" />
+      Frei zugänglich
+    </span>
   );
 }
 

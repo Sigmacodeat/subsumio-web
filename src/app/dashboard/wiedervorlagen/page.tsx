@@ -1,40 +1,83 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, Plus } from "lucide-react";
+import { CalendarClock, CheckCircle2, Circle, Loader2, Plus, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
+import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
+
+function openCreateDialog() {
+  window.dispatchEvent(new Event("subsumio:create-wiedervorlage"));
+}
 
 export default function WiedervorlagenPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
+  const { addToast } = useToast();
   const client = useQueryClient();
+  const [busySlug, setBusySlug] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["legal-follow-ups"],
     queryFn: () => api.brain.listPages({ type: "legal_follow_up", limit: 500 }),
   });
+  const casesQuery = useQuery({
+    queryKey: ["wiedervorlagen-cases"],
+    queryFn: () => api.cases.list({ limit: 200 }),
+    staleTime: 60_000,
+  });
+
+  // The create dialog lives in the layout; refresh once it reports a new entry.
+  useEffect(() => {
+    const refresh = () => void client.invalidateQueries({ queryKey: ["legal-follow-ups"] });
+    window.addEventListener("subsumio:practice-data-changed", refresh);
+    return () => window.removeEventListener("subsumio:practice-data-changed", refresh);
+  }, [client]);
+
+  const caseTitles = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of casesQuery.data ?? []) map.set(c.slug, c.title);
+    return map;
+  }, [casesQuery.data]);
+
+  // Offene zuerst (nach Datum), erledigte am Ende.
   const items = useMemo(
     () =>
-      [...(query.data ?? [])].sort((a, b) =>
-        String(a.frontmatter?.date ?? "").localeCompare(String(b.frontmatter?.date ?? ""))
-      ),
+      [...(query.data ?? [])].sort((a, b) => {
+        const doneA = Boolean(a.frontmatter?.completed);
+        const doneB = Boolean(b.frontmatter?.completed);
+        if (doneA !== doneB) return doneA ? 1 : -1;
+        return String(a.frontmatter?.date ?? "").localeCompare(String(b.frontmatter?.date ?? ""));
+      }),
     [query.data]
   );
 
   async function toggle(slug: string, completed: boolean) {
-    await api.brain.updatePage({
-      slug,
-      frontmatter: {
-        completed: !completed,
-        completed_at: !completed ? new Date().toISOString() : null,
-      },
-    });
-    await client.invalidateQueries({ queryKey: ["legal-follow-ups"] });
-    window.dispatchEvent(new Event("subsumio:practice-data-changed"));
+    setBusySlug(slug);
+    try {
+      await api.brain.updatePage({
+        slug,
+        frontmatter: {
+          completed: !completed,
+          completed_at: !completed ? new Date().toISOString() : null,
+        },
+      });
+      await client.invalidateQueries({ queryKey: ["legal-follow-ups"] });
+      window.dispatchEvent(new Event("subsumio:practice-data-changed"));
+    } catch {
+      addToast({
+        type: "error",
+        title: "Wiedervorlage nicht geändert",
+        description: "Bitte versuchen Sie es erneut.",
+      });
+    } finally {
+      setBusySlug(null);
+    }
   }
 
   return (
@@ -42,93 +85,119 @@ export default function WiedervorlagenPage() {
       <PageHeader
         title={t("practice.followup.title")}
         description={t("practice.followup.page_description")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("practice.followup.title") },
+        ]}
         actions={
-          <Button onClick={() => window.dispatchEvent(new Event("subsumio:create-wiedervorlage"))}>
-            <Plus size={15} aria-hidden="true" />
+          <Button size="sm" onClick={openCreateDialog} className="gap-2 whitespace-nowrap">
+            <Plus size={14} aria-hidden="true" />
             {t("practice.followup.new")}
           </Button>
         }
       />
       {query.isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
+        <div className="space-y-2" aria-busy="true">
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
         </div>
       ) : query.isError ? (
         <div
           role="alert"
-          className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
         >
-          {t("common.error")}
+          <span>Die Wiedervorlagen konnten nicht geladen werden.</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void query.refetch()}
+            className="shrink-0 gap-1.5 text-[color:var(--ds-danger-text)]"
+          >
+            <RotateCcw size={13} aria-hidden="true" />
+            Erneut laden
+          </Button>
         </div>
       ) : items.length === 0 ? (
-        <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border)] text-center">
-          <CalendarClock
-            size={36}
-            className="mb-3 text-[color:var(--ds-text-subtle)]"
-            aria-hidden="true"
-          />
-          <p className="font-medium">{t("practice.followup.empty")}</p>
-        </div>
+        <EmptyState
+          icon={CalendarClock}
+          title={t("practice.followup.empty")}
+          description="Legen Sie eine Wiedervorlage an, um sich an einem bestimmten Tag an eine Akte erinnern zu lassen."
+          actionLabel={t("practice.followup.new")}
+          onAction={openCreateDialog}
+        />
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {items.map((item) => {
             const completed = Boolean(item.frontmatter?.completed);
             const date = String(item.frontmatter?.date ?? "");
+            const caseSlug =
+              typeof item.frontmatter?.case_slug === "string" ? item.frontmatter.case_slug : "";
+            const days = daysUntil(date);
+            const overdue = !completed && days !== null && days < 0;
+            const busy = busySlug === item.slug;
             return (
-              <div
+              <li
                 key={item.slug}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4",
-                  completed && "opacity-60"
-                )}
+                className={cn("flex items-center gap-3 px-4 py-3", completed && "opacity-60")}
               >
                 <button
                   type="button"
-                  onClick={() => toggle(item.slug, completed)}
-                  aria-label={t(
+                  onClick={() => void toggle(item.slug, completed)}
+                  disabled={busy}
+                  aria-label={`${t(
                     completed ? "practice.followup.reopen" : "practice.followup.complete"
-                  )}
-                  className="rounded-full p-1 hover:bg-[color:var(--ds-hover)]"
+                  )}: ${item.title}`}
+                  className="shrink-0 rounded-full p-1 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                 >
-                  <CheckCircle2
-                    size={20}
-                    className={
-                      completed
-                        ? "text-[color:var(--ds-success-text)]"
-                        : "text-[color:var(--ds-text-subtle)]"
-                    }
-                  />
+                  {busy ? (
+                    <Loader2 size={20} className="animate-spin text-[color:var(--ds-text-muted)]" />
+                  ) : completed ? (
+                    <CheckCircle2 size={20} className="text-[color:var(--ds-success-text)]" />
+                  ) : (
+                    <Circle size={20} className="text-[color:var(--ds-text-subtle)]" />
+                  )}
                 </button>
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn(
-                      "font-medium text-[color:var(--ds-text)]",
+                      "truncate text-sm font-medium text-[color:var(--ds-text)]",
                       completed && "line-through"
                     )}
                   >
                     {item.title}
                   </p>
-                  {item.frontmatter?.case_slug ? (
-                    <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
-                      {String(item.frontmatter.case_slug)}
-                    </p>
+                  {caseSlug ? (
+                    <Link
+                      href={`/dashboard/cases/${encodeSlugPath(caseSlug)}`}
+                      className="block truncate text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
+                    >
+                      {caseTitles.get(caseSlug) ?? "Akte öffnen"}
+                    </Link>
                   ) : null}
                 </div>
-                <time
-                  className="text-sm text-[color:var(--ds-text-muted)] tabular-nums"
-                  dateTime={date}
-                >
-                  {date
-                    ? new Date(`${date}T12:00:00`).toLocaleDateString(
-                        lang === "en" ? "en-GB" : "de-DE"
-                      )
-                    : "—"}
-                </time>
-              </div>
+                <div className="shrink-0 text-right tabular-nums">
+                  <time
+                    className={cn(
+                      "block text-sm font-medium",
+                      overdue ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"
+                    )}
+                    dateTime={date}
+                  >
+                    {formatDate(date)}
+                  </time>
+                  {!completed && days !== null && (
+                    <span className="text-xs text-[color:var(--ds-text-muted)]">
+                      {days < 0
+                        ? `seit ${-days === 1 ? "gestern" : `${-days} Tagen`} fällig`
+                        : formatDaysUntil(days)}
+                    </span>
+                  )}
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

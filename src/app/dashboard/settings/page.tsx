@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Settings,
-  Key,
-  Database,
-  Zap,
   Copy,
   Check,
   Eye,
@@ -17,24 +13,20 @@ import {
   AlertTriangle,
   ExternalLink,
   Gift,
-  Briefcase,
   Euro,
   Users,
-  Network,
   Languages,
-  Shield,
-  ArrowLeft,
   RefreshCw,
   Trash2,
-  type LucideIcon,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { ENGINE_REPO_INSTALL } from "@/content/site";
 import {
   loadKanzleiSettings,
   saveKanzleiSettings,
@@ -60,57 +52,91 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { AclSettings } from "@/components/dashboard/acl-settings";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
-import type { DashboardKey } from "@/content/dashboard";
 import { SettingsHub } from "@/components/dashboard/settings-hub";
 import { csrfFetch } from "@/lib/csrf";
 
-type SettingsTab = { id: string; labelKey: DashboardKey; icon: LucideIcon; allowed: string[] };
+/**
+ * Detail views reached from the settings hub (`?tab=…`). The hub is the navigation;
+ * a detail view shows one topic with its own title, breadcrumb and one-line description.
+ */
+const TAB_META: Record<
+  string,
+  { title: { de: string; en: string }; desc: { de: string; en: string }; allowed: string[] }
+> = {
+  account: {
+    title: { de: "Mein Konto", en: "My account" },
+    desc: {
+      de: "Plan, Nutzung, Sprache und persönliche Bedienung.",
+      en: "Plan, usage, language and personal preferences.",
+    },
+    allowed: ["admin", "lawyer", "assistant", "client_viewer"],
+  },
+  brain: {
+    title: { de: "Verbindung zum Kanzleiwissen", en: "Knowledge connection" },
+    desc: {
+      de: "Zeigt, ob die Wissensdatenbank Ihrer Kanzlei erreichbar ist.",
+      en: "Shows whether your firm's knowledge base is reachable.",
+    },
+    allowed: ["admin", "lawyer", "assistant"],
+  },
+  dream: {
+    title: { de: "Nächtliche Konsolidierung", en: "Nightly consolidation" },
+    desc: {
+      de: "Räumt das Kanzleiwissen jede Nacht automatisch auf.",
+      en: "Tidies the firm knowledge automatically every night.",
+    },
+    allowed: ["admin", "lawyer"],
+  },
+  kanzlei: {
+    title: { de: "Verrechnung und E-Rechnung", en: "Billing and e-invoicing" },
+    desc: {
+      de: "Stundensätze, Tarif, Zahlungsziel und Versand Ihrer Honorarnoten.",
+      en: "Hourly rates, tariff, payment terms and delivery of your invoices.",
+    },
+    allowed: ["admin", "lawyer", "assistant"],
+  },
+  team: {
+    title: { de: "Rollen im Team", en: "Team roles" },
+    desc: {
+      de: "Legen Sie fest, welche Rolle jedes Teammitglied hat.",
+      en: "Set the role of each team member.",
+    },
+    allowed: ["admin"],
+  },
+  api: {
+    title: { de: "Zugangsschlüssel der KI-Anbieter", en: "AI provider keys" },
+    desc: {
+      de: "Eigene Schlüssel für KI-Anbieter hinterlegen – nur nötig, wenn Ihre Kanzlei eigene Verträge nutzt.",
+      en: "Store your own AI provider keys – only needed if your firm uses its own contracts.",
+    },
+    allowed: ["admin"],
+  },
+  acls: {
+    title: { de: "Zugriffsrechte", en: "Access rights" },
+    desc: {
+      de: "Wer welche Akten und Dokumente sehen darf, einschließlich Sperren bei Interessenkonflikten.",
+      en: "Who may see which matters and documents, including conflict-of-interest walls.",
+    },
+    allowed: ["admin"],
+  },
+  scim: {
+    title: { de: "Benutzerabgleich (SCIM)", en: "User sync (SCIM)" },
+    desc: {
+      de: "Mitarbeiter automatisch aus dem Benutzerverzeichnis Ihrer Kanzlei übernehmen.",
+      en: "Take over staff automatically from your firm's user directory.",
+    },
+    allowed: ["admin"],
+  },
+};
 
-interface SettingsTabGroup {
-  groupKey: DashboardKey;
-  tabs: SettingsTab[];
-}
-
-const TAB_GROUPS: SettingsTabGroup[] = [
-  {
-    groupKey: "settings.group_personal",
-    tabs: [
-      {
-        id: "account",
-        labelKey: "settings.tab_account",
-        icon: Settings,
-        allowed: ["admin", "lawyer", "assistant", "client_viewer"],
-      },
-    ],
-  },
-  {
-    groupKey: "settings.group_firm",
-    tabs: [
-      {
-        id: "brain",
-        labelKey: "settings.tab_brain",
-        icon: Database,
-        allowed: ["admin", "lawyer", "assistant"],
-      },
-      { id: "dream", labelKey: "settings.tab_dream", icon: Zap, allowed: ["admin", "lawyer"] },
-      {
-        id: "kanzlei",
-        labelKey: "settings.tab_kanzlei",
-        icon: Briefcase,
-        allowed: ["admin", "lawyer", "assistant"],
-      },
-      { id: "team", labelKey: "settings.tab_team", icon: Users, allowed: ["admin"] },
-    ],
-  },
-  {
-    groupKey: "settings.group_security",
-    tabs: [
-      { id: "api", labelKey: "settings.tab_api", icon: Key, allowed: ["admin"] },
-      { id: "acls", labelKey: "settings.tab_acls", icon: Shield, allowed: ["admin"] },
-      { id: "scim", labelKey: "settings.tab_scim", icon: Network, allowed: ["admin"] },
-    ],
-  },
-];
+const RATE_AREA_LABELS: Record<string, { de: string; en: string }> = {
+  allgemein: { de: "Allgemein", en: "General" },
+  vertragsrecht: { de: "Vertragsrecht", en: "Contract law" },
+  prozessrecht: { de: "Prozessführung", en: "Litigation" },
+  arbeitsrecht: { de: "Arbeitsrecht", en: "Employment law" },
+  datenschutz: { de: "Datenschutz", en: "Data protection" },
+  steuerrecht: { de: "Steuerrecht", en: "Tax law" },
+};
 
 function MaskedInput({
   value,
@@ -141,6 +167,7 @@ function MaskedInput({
       />
       <div className="absolute right-2 flex items-center gap-1">
         <button
+          type="button"
           onClick={() => setShow(!show)}
           aria-label={show ? "Wert verbergen" : "Wert anzeigen"}
           className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
@@ -149,6 +176,7 @@ function MaskedInput({
         </button>
         {value && (
           <button
+            type="button"
             onClick={copy}
             aria-label="Wert kopieren"
             className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
@@ -205,11 +233,10 @@ export default function SettingsPage() {
 
 function SettingsPageInner() {
   const { t, lang, setLang } = useLang();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<string | null>(() => {
-    const tab = searchParams.get("tab");
-    return tab;
-  });
+  // Derived from the URL so hub links (?tab=…) switch the view on client-side navigation.
+  const activeTab = searchParams.get("tab");
   const [referralUrl, setReferralUrl] = useState("");
   const [referrals, setReferrals] = useState<number | null>(null);
   const [engineStatus, setEngineStatus] = useState<"idle" | "checking" | "online" | "offline">(
@@ -217,13 +244,11 @@ function SettingsPageInner() {
   );
   const [keysSaved, setKeysSaved] = useState(false);
   const [kanzleiSaved, setKanzleiSaved] = useState(false);
-  const [kanzleiSaveError, setKanzleiSaveError] = useState<string | null>(null);
-
-  const [brainUrl, setBrainUrl] = useState(
-    process.env.NEXT_PUBLIC_SUBSUMIO_API_URL || "http://localhost:3001"
-  );
-  const [searchMode, setSearchMode] = useState("balanced");
-  const [dreamEnabled, setDreamEnabled] = useState(false);
+  const [kanzleiSaveError, setKanzleiSaveError] = useState(false);
+  const [keysSaveError, setKeysSaveError] = useState(false);
+  // Full saved settings — the billing form only edits a subset, the rest must survive a save.
+  const savedKanzleiRef = useRef<KanzleiSettings | null>(null);
+  const [dreamDone, setDreamDone] = useState(false);
   const [dreamRunning, setDreamRunning] = useState(false);
   const [dreamError, setDreamError] = useState(false);
   const [singleKeyShortcuts, setSingleKeyShortcuts] = useState(() => {
@@ -247,9 +272,11 @@ function SettingsPageInner() {
   const runDreamCycle = async () => {
     setDreamRunning(true);
     setDreamError(false);
+    setDreamDone(false);
     try {
       const response = await csrfFetch("/api/brain/dream-cycle", { method: "POST" });
       if (!response.ok) throw new Error(String(response.status));
+      setDreamDone(true);
     } catch {
       setDreamError(true);
     } finally {
@@ -335,6 +362,7 @@ function SettingsPageInner() {
   useEffect(() => {
     loadKanzleiSettings()
       .then((saved) => {
+        savedKanzleiRef.current = saved;
         kanzleiForm.reset({
           kanzleiName: saved.kanzleiName,
           anwaltName: saved.anwaltName,
@@ -385,6 +413,11 @@ function SettingsPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsKeysQuery.data]);
 
+  useEffect(() => {
+    if (activeTab === "brain" && engineStatus === "idle") void checkEngineConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   async function checkEngineConnection() {
     setEngineStatus("checking");
     try {
@@ -401,11 +434,14 @@ function SettingsPageInner() {
 
   async function saveApiKeys() {
     const data = apiKeysForm.getValues();
+    setKeysSaveError(false);
     try {
-      await saveKeysMutation.mutateAsync(data);
+      const res = (await saveKeysMutation.mutateAsync(data)) as { ok?: boolean } | undefined;
+      if (!res?.ok) throw new Error("save_failed");
       setKeysSaved(true);
       setTimeout(() => setKeysSaved(false), 2000);
     } catch (err) {
+      setKeysSaveError(true);
       console.error(
         "[settings] failed to save API keys:",
         err instanceof Error ? err.message : String(err)
@@ -414,11 +450,12 @@ function SettingsPageInner() {
   }
 
   async function saveKanzleiProfile() {
-    setKanzleiSaveError(null);
+    setKanzleiSaveError(false);
     const isValid = await kanzleiForm.trigger();
     if (!isValid) return;
     const data = kanzleiForm.getValues();
     const settings: KanzleiSettings = {
+      ...(savedKanzleiRef.current ?? {}),
       kanzleiName: data.kanzleiName,
       anwaltName: data.anwaltName,
       kanzleiAdresse: data.kanzleiAdresse,
@@ -449,191 +486,152 @@ function SettingsPageInner() {
     };
     try {
       await saveKanzleiSettings(settings);
+      savedKanzleiRef.current = settings;
+      kanzleiForm.reset(data);
       setKanzleiSaved(true);
       setTimeout(() => setKanzleiSaved(false), 2000);
-    } catch (err) {
-      setKanzleiSaveError(err instanceof Error ? err.message : t("settings.kanzlei_save_fail"));
+    } catch {
+      setKanzleiSaveError(true);
     }
   }
 
+  const meta = activeTab ? TAB_META[activeTab] : undefined;
+  const tabAllowed = meta ? meta.allowed.includes(userRole) : false;
+  const kanzleiErrors = kanzleiForm.formState.errors;
+
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div
+      className={cn(
+        "mx-auto space-y-6 p-4 md:p-6 lg:p-8",
+        activeTab ? "max-w-[720px]" : "max-w-[1200px]"
+      )}
+    >
       <PageHeader
-        title={t("settings.title")}
-        description={activeTab ? t("settings.desc") : t("settings.hub_desc")}
+        title={meta ? L(meta.title.de, meta.title.en) : t("settings.title")}
+        description={meta ? L(meta.desc.de, meta.desc.en) : t("settings.hub_desc")}
         breadcrumbs={[
           { label: t("nav.overview"), href: "/dashboard" },
-          { label: t("settings.title") },
+          ...(meta
+            ? [
+                { label: t("settings.title"), href: "/dashboard/settings" },
+                { label: L(meta.title.de, meta.title.en) },
+              ]
+            : [{ label: t("settings.title") }]),
         ]}
       />
 
-      {/* Hub view — tile grid when no tab is selected */}
+      {/* Hub view — grouped tiles when no topic is selected */}
       {!activeTab && <SettingsHub userRole={userRole} />}
 
-      {/* Tab view — tab navigation + content when a tab is selected */}
-      {activeTab && (
-        <>
-          {/* Back to hub link */}
-          <Link
-            href="/dashboard/settings"
-            className="inline-flex items-center gap-1.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
-          >
-            <ArrowLeft size={14} />
-            {t("settings.hub_back")}
+      {activeTab && (!meta || (!tabAllowed && meQuery.data)) && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 text-sm text-[color:var(--ds-text-muted)]">
+          {meta
+            ? L(
+                "Diese Einstellung ist Ihrer Rolle nicht freigegeben. Wenden Sie sich an die Kanzleiverwaltung.",
+                "This setting is not available for your role. Please contact your firm administrator."
+              )
+            : L("Diese Einstellung gibt es nicht.", "This setting does not exist.")}{" "}
+          <Link href="/dashboard/settings" className="brand-text hover:underline">
+            {L("Zu allen Einstellungen", "All settings")}
           </Link>
+        </div>
+      )}
 
-          {/* Tab navigation — grouped by audience */}
-          <div
-            className="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] pb-px"
-            role="tablist"
-            aria-label={t("settings.title")}
-          >
-            {TAB_GROUPS.map((group, groupIdx) => {
-              const visibleTabs = group.tabs.filter((tab) => tab.allowed.includes(userRole));
-              if (visibleTabs.length === 0) return null;
-              return (
-                <div key={group.groupKey} className="flex items-center gap-1">
-                  {groupIdx > 0 && (
-                    <span className="mx-1 h-5 w-px bg-[color:var(--ds-border)]" aria-hidden />
-                  )}
-                  <span className="px-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                    {t(group.groupKey)}
-                  </span>
-                  {visibleTabs.map((tab) => {
-                    const Icon = tab.icon;
-                    return (
-                      <button
-                        key={tab.id}
-                        role="tab"
-                        id={`tab-${tab.id}`}
-                        aria-selected={activeTab === tab.id}
-                        aria-controls={`panel-${tab.id}`}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={cn(
-                          "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-                          activeTab === tab.id
-                            ? "brand-text border-[color:var(--brand-primary)]"
-                            : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                        )}
-                      >
-                        <Icon size={15} />
-                        {t(tab.labelKey)}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Brain Settings */}
+      {/* Detail view — one topic */}
+      {activeTab && meta && (tabAllowed || !meQuery.data) && (
+        <>
+          {/* Knowledge connection */}
           {activeTab === "brain" && (
-            <Card role="tabpanel" id="panel-brain" aria-labelledby="tab-brain">
-              <div className="border-b border-[color:var(--ds-border)] p-6">
-                <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                  {t("settings.brain_config")}
-                </h2>
-              </div>
-              <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                <Field label={t("settings.engine_url")} desc={t("settings.engine_url_desc")}>
-                  <Input
-                    value={brainUrl}
-                    onChange={(e) => setBrainUrl(e.target.value)}
-                    placeholder="https://engine.example.com"
-                  />
-                </Field>
-
-                <Field label={t("settings.connection_status")} desc={t("settings.connection_desc")}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle
-                        size={14}
-                        className={
-                          engineStatus === "online"
-                            ? "text-[color:var(--ds-success-text)]"
-                            : "text-[color:var(--ds-warning-text)]"
-                        }
-                      />
+            <Card>
+              <div className="px-6">
+                <Field
+                  label={t("settings.connection_status")}
+                  desc={L(
+                    "Ohne Verbindung können Assistent, Suche und Dokumentanalyse nicht arbeiten.",
+                    "Without a connection the assistant, search and document analysis cannot work."
+                  )}
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    {engineStatus === "checking" || engineStatus === "idle" ? (
+                      <span className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
+                        <RefreshCw size={14} className="animate-spin" aria-hidden />
+                        {t("settings.checking")}
+                      </span>
+                    ) : (
                       <span
+                        role="status"
                         className={cn(
-                          "text-sm",
+                          "flex items-center gap-2 text-sm",
                           engineStatus === "online"
                             ? "text-[color:var(--ds-success-text)]"
                             : "text-[color:var(--ds-warning-text)]"
                         )}
                       >
-                        {engineStatus === "checking"
-                          ? t("settings.checking")
-                          : engineStatus === "online"
-                            ? t("settings.connected")
-                            : t("settings.not_connected")}
+                        {engineStatus === "online" ? (
+                          <CheckCircle2 size={14} aria-hidden />
+                        ) : (
+                          <AlertTriangle size={14} aria-hidden />
+                        )}
+                        {engineStatus === "online"
+                          ? t("settings.connected")
+                          : t("settings.not_connected")}
                       </span>
-                    </div>
-                    <Button variant="secondary" size="sm" onClick={checkEngineConnection}>
-                      {t("settings.connect")}
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={checkEngineConnection}
+                      disabled={engineStatus === "checking"}
+                    >
+                      {L("Erneut prüfen", "Check again")}
                     </Button>
                   </div>
+                  {engineStatus === "offline" && (
+                    <p className="mt-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                      {L(
+                        "Die Wissensdatenbank antwortet nicht. Versuchen Sie es in einigen Minuten erneut; besteht das Problem weiter, informieren Sie den Betreiber Ihrer Subsumio-Installation.",
+                        "The knowledge base is not responding. Try again in a few minutes; if the problem persists, inform the operator of your Subsumio installation."
+                      )}
+                    </p>
+                  )}
                 </Field>
-
-                <Field label={t("settings.search_mode")} desc={t("settings.search_mode_desc")}>
-                  <div className="flex gap-2">
-                    {["conservative", "balanced", "tokenmax"].map((mode) => (
-                      <button
-                        key={mode}
-                        onClick={() => setSearchMode(mode)}
-                        className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-                          searchMode === mode
-                            ? "brand-soft brand-text brand-border"
-                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
-                        )}
-                      >
-                        {mode}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-
-                <Field label={t("settings.start_engine")} desc={t("settings.start_engine_desc")}>
-                  <div className="space-y-2">
-                    {[
-                      `bun install -g ${ENGINE_REPO_INSTALL}`,
-                      "subsumio init --pglite",
-                      "subsumio serve --http --with-worker --port 3001",
-                    ].map((cmd) => (
-                      <div
-                        key={cmd}
-                        className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2.5"
-                      >
-                        <code className="brand-text flex-1 font-mono text-xs">{cmd}</code>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(cmd)}
-                          aria-label={t("aria.copy_command")}
-                          className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
-                        >
-                          <Copy size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </Field>
+                {statsQuery.data && (
+                  <Field
+                    label={L("Umfang", "Size")}
+                    desc={L(
+                      "Anzahl der Einträge im Kanzleiwissen.",
+                      "Number of entries in the firm knowledge."
+                    )}
+                  >
+                    <p className="text-sm text-[color:var(--ds-text)] tabular-nums">
+                      {(statsQuery.data.total_pages ?? 0).toLocaleString("de-AT")}{" "}
+                      {L("Einträge", "entries")}
+                    </p>
+                  </Field>
+                )}
               </div>
             </Card>
           )}
 
           {/* API Keys */}
           {activeTab === "api" && (
-            <Card role="tabpanel" id="panel-api" aria-labelledby="tab-api">
+            <Card>
               <div className="border-b border-[color:var(--ds-border)] p-6">
-                <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                  {t("settings.api_keys")}
-                </h2>
-                <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                  {t("settings.api_keys_desc")}
+                <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                  {L(
+                    "Die Schlüssel werden verschlüsselt auf dem Server gespeichert und danach nur gekürzt angezeigt. Leer lassen, wenn Subsumio die Anbieter für Sie abrechnet.",
+                    "Keys are stored encrypted on the server and shown only truncated afterwards. Leave empty if Subsumio bills the providers for you."
+                  )}
                 </p>
               </div>
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                <Field label={t("settings.openai_key")} desc={t("settings.openai_key_desc")}>
+                <Field
+                  label={L("OpenAI-Schlüssel", "OpenAI key")}
+                  desc={L(
+                    "Für die Aufbereitung von Dokumenten für die Suche.",
+                    "Used to prepare documents for search."
+                  )}
+                >
                   <div className="space-y-2">
                     <MaskedInput
                       value={apiKeysForm.watch("openaiKey")}
@@ -651,7 +649,13 @@ function SettingsPageInner() {
                   </div>
                 </Field>
 
-                <Field label={t("settings.anthropic_key")} desc={t("settings.anthropic_key_desc")}>
+                <Field
+                  label={L("Anthropic-Schlüssel", "Anthropic key")}
+                  desc={L(
+                    "Für Antworten des Assistenten und Entwürfe (Claude-Modelle).",
+                    "Used for assistant answers and drafts (Claude models)."
+                  )}
+                >
                   <div className="space-y-2">
                     <MaskedInput
                       value={apiKeysForm.watch("anthropicKey")}
@@ -670,8 +674,11 @@ function SettingsPageInner() {
                 </Field>
 
                 <Field
-                  label={t("settings.zeroentropy_key")}
-                  desc={t("settings.zeroentropy_key_desc")}
+                  label={L("ZeroEntropy-Schlüssel (optional)", "ZeroEntropy key (optional)")}
+                  desc={L(
+                    "Ordnet Suchtreffer genauer nach Relevanz.",
+                    "Ranks search results more precisely by relevance."
+                  )}
                 >
                   <div className="space-y-2">
                     <MaskedInput
@@ -679,83 +686,75 @@ function SettingsPageInner() {
                       placeholder="ze-..."
                       onChange={(v) => apiKeysForm.setValue("zeroEntropyKey", v)}
                     />
-                    <Badge variant="info" className="text-xs">
-                      {t("settings.zeroentropy_badge")}
-                    </Badge>
                   </div>
                 </Field>
               </div>
-              <div className="border-t border-[color:var(--ds-border)] p-6">
-                <Button variant="glow" size="md" onClick={saveApiKeys}>
-                  {keysSaved ? t("settings.saved") : t("settings.save_keys")}
+              <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--ds-border)] p-6">
+                <Button
+                  variant="glow"
+                  size="md"
+                  onClick={saveApiKeys}
+                  loading={saveKeysMutation.isPending}
+                >
+                  {keysSaved ? t("settings.saved") : L("Schlüssel speichern", "Save keys")}
                 </Button>
+                {keysSaveError && (
+                  <p role="alert" className="text-sm text-[color:var(--ds-danger-text)]">
+                    {L(
+                      "Speichern fehlgeschlagen. Bitte prüfen Sie, dass jeder Schlüssel vollständig eingefügt ist (nicht die gekürzte Anzeige).",
+                      "Saving failed. Please make sure each key is pasted in full (not the truncated display)."
+                    )}
+                  </p>
+                )}
               </div>
             </Card>
           )}
 
-          {/* Dream Cycle */}
+          {/* Nightly consolidation */}
           {activeTab === "dream" && (
-            <Card role="tabpanel" id="panel-dream" aria-labelledby="tab-dream">
-              <div className="border-b border-[color:var(--ds-border)] p-6">
-                <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-[color:var(--ds-warning-text)]" />
-                  <div>
-                    <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                      {t("settings.dream_title")}
-                    </h2>
-                    <p className="text-sm text-[color:var(--ds-text-muted)]">
-                      {t("settings.dream_desc")}
-                    </p>
-                  </div>
-                  <Badge variant={dreamEnabled ? "success" : "warning"} className="ml-auto">
-                    {dreamEnabled ? t("settings.active") : t("settings.inactive")}
-                  </Badge>
-                </div>
-              </div>
+            <Card>
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                <Field label={t("settings.dream_enable")} desc={t("settings.dream_enable_desc")}>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setDreamEnabled(!dreamEnabled)}
-                      className={cn(
-                        "relative h-6 w-10 rounded-full transition-[background-color,border-color,color] motion-reduce:transition-none",
-                        dreamEnabled
-                          ? "bg-[color:var(--ds-warning-solid)]"
-                          : "bg-[color:var(--ds-border)]"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "absolute top-1 h-4 w-4 rounded-full bg-white transition-transform",
-                          dreamEnabled ? "translate-x-5" : "translate-x-1"
-                        )}
-                      />
-                    </button>
-                    <span className="text-sm text-[color:var(--ds-text-muted)]">
-                      {dreamEnabled ? t("settings.dream_running") : t("settings.dream_disabled")}
-                    </span>
-                  </div>
-                </Field>
-                <Field label={t("settings.dream_what")} desc="">
+                <Field
+                  label={L("Was nachts passiert", "What happens overnight")}
+                  desc={L(
+                    "Läuft automatisch täglich um 3:00 Uhr.",
+                    "Runs automatically every day at 3:00 AM."
+                  )}
+                >
                   <ul className="space-y-2">
                     {[
-                      t("settings.dream_task_1"),
-                      t("settings.dream_task_2"),
-                      t("settings.dream_task_3"),
-                      t("settings.dream_task_4"),
-                      t("settings.dream_task_5"),
+                      L(
+                        "Doppelte Einträge zu Personen und Unternehmen erkennen und zusammenführen",
+                        "Detect and merge duplicate entries for people and companies"
+                      ),
+                      L(
+                        "Fehlerhafte Verweise und Zitate reparieren",
+                        "Repair broken references and citations"
+                      ),
+                      L(
+                        "Einträge nach Bedeutung für Ihre laufenden Akten gewichten",
+                        "Weight entries by relevance to your open matters"
+                      ),
+                      L("Widersprüchliche Angaben markieren", "Flag contradictory information"),
+                      L("Aufgaben für den nächsten Tag vorbereiten", "Prepare tasks for the next day"),
                     ].map((item) => (
                       <li
                         key={item}
                         className="flex items-start gap-2 text-sm text-[color:var(--ds-text-muted)]"
                       >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ds-warning-bg)]" />
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ds-border-strong)]" />
                         {item}
                       </li>
                     ))}
                   </ul>
                 </Field>
-                <Field label={t("sidebar.dream_cycle")} desc={t("sidebar.dream_next_scheduled")}>
+                <Field
+                  label={L("Sofort ausführen", "Run now")}
+                  desc={L(
+                    "Nur nötig nach einem größeren Import; kann einige Minuten dauern.",
+                    "Only needed after a large import; can take a few minutes."
+                  )}
+                >
                   <div className="space-y-2">
                     <Button
                       type="button"
@@ -771,6 +770,11 @@ function SettingsPageInner() {
                       />
                       {dreamRunning ? t("sidebar.dream_running") : t("sidebar.dream_run_now")}
                     </Button>
+                    {dreamDone && (
+                      <p role="status" className="text-xs text-[color:var(--ds-success-text)]">
+                        {L("Konsolidierung abgeschlossen.", "Consolidation finished.")}
+                      </p>
+                    )}
                     {dreamError && (
                       <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
                         {t("sidebar.dream_error")}
@@ -785,29 +789,20 @@ function SettingsPageInner() {
           {/* Kanzlei */}
           {activeTab === "kanzlei" && (
             <>
-              <Card role="tabpanel" id="panel-kanzlei" aria-labelledby="tab-kanzlei">
-                <div className="border-b border-[color:var(--ds-border)] p-6">
-                  <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                    {t("settings.kanzlei_title")}
-                  </h2>
-                  <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                    {t("settings.kanzlei_desc")}
+              <Card>
+                <div className="border-b border-[color:var(--ds-border)] px-6 py-4">
+                  <p className="text-sm text-[color:var(--ds-text-muted)]">
+                    {L(
+                      "Anschrift, UID-Nummer und Bankverbindung pflegen Sie im ",
+                      "Address, VAT ID and bank details are maintained in the "
+                    )}
+                    <Link href="/dashboard/settings/kanzlei" className="brand-text hover:underline">
+                      {L("Kanzleiprofil", "firm profile")}
+                    </Link>
+                    .
                   </p>
                 </div>
                 <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                  <Field
-                    id="settings-kanzlei-name"
-                    label={t("settings.kanzlei_name")}
-                    desc={t("settings.kanzlei_name_desc")}
-                  >
-                    <Input
-                      id="settings-kanzlei-name"
-                      error={kanzleiForm.formState.errors.kanzleiName?.message}
-                      {...kanzleiForm.register("kanzleiName")}
-                      placeholder={t("settings.firm_name_placeholder")}
-                    />
-                  </Field>
-
                   <Field
                     id="settings-anwalt-name"
                     label={t("settings.anwalt_name")}
@@ -822,57 +817,11 @@ function SettingsPageInner() {
                   </Field>
 
                   <Field
-                    id="settings-kanzlei-adresse"
-                    label={t("settings.kanzlei_address")}
-                    desc={t("settings.kanzlei_address_desc")}
-                  >
-                    <textarea
-                      id="settings-kanzlei-adresse"
-                      {...kanzleiForm.register("kanzleiAdresse")}
-                      placeholder={t("settings.address_placeholder")}
-                      rows={3}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                    />
-                  </Field>
-
-                  <Field label={t("settings.contact")} desc={t("settings.contact_desc")}>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                      <Input
-                        id="settings-kanzlei-email"
-                        aria-label={t("settings.aria_email")}
-                        {...kanzleiForm.register("kanzleiEmail")}
-                        placeholder="kanzlei@example.com"
-                      />
-                      <Input
-                        id="settings-kanzlei-telefon"
-                        aria-label={t("settings.aria_phone")}
-                        {...kanzleiForm.register("kanzleiTelefon")}
-                        placeholder="+43 ..."
-                      />
-                      <Input
-                        id="settings-kammer-nummer"
-                        aria-label={t("settings.aria_chamber")}
-                        {...kanzleiForm.register("kammerNummer")}
-                        placeholder={t("settings.ph_rak_register")}
-                      />
-                    </div>
-                  </Field>
-
-                  <Field
-                    id="settings-ust-id"
-                    label={t("settings.ust_id")}
-                    desc={t("settings.ust_id_desc")}
-                  >
-                    <Input
-                      id="settings-ust-id"
-                      {...kanzleiForm.register("ustId")}
-                      placeholder="ATU12345678"
-                    />
-                  </Field>
-
-                  <Field
-                    label={t("settings.small_business")}
-                    desc={t("settings.small_business_desc")}
+                    label={L("Kleinunternehmerregelung", "Small-business exemption")}
+                    desc={L(
+                      "Honorarnoten ohne Umsatzsteuer nach § 6 Abs 1 Z 27 UStG.",
+                      "Invoices without VAT under § 6 Abs 1 Z 27 UStG."
+                    )}
                   >
                     <label className="flex items-center gap-2 text-sm">
                       <input
@@ -881,20 +830,30 @@ function SettingsPageInner() {
                         className="h-4 w-4 rounded border-[color:var(--ds-border)]"
                       />
                       <span>
-                        Als Kleinunternehmer behandeln (Tax Category E in XRechnung/ZUGFeRD)
+                        {L(
+                          "Kleinunternehmerregelung anwenden",
+                          "Apply the small-business exemption"
+                        )}
                       </span>
                     </label>
                   </Field>
 
                   <Field
-                    label={t("settings.einvoice_profile")}
-                    desc={t("settings.einvoice_profile_desc")}
+                    label={L("Umfang der E-Rechnung", "E-invoice detail level")}
+                    desc={L(
+                      "Wie viele Angaben die maschinenlesbare Rechnung enthält. Im Zweifel „Basis“.",
+                      "How much detail the machine-readable invoice contains. If unsure, “Basic”."
+                    )}
                   >
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {(["BASIC", "COMFORT", "EXTENDED"] as const).map((prof) => (
                         <button
                           key={prof}
-                          onClick={() => kanzleiForm.setValue("eInvoiceProfile", prof)}
+                          type="button"
+                          aria-pressed={kanzleiForm.watch("eInvoiceProfile") === prof}
+                          onClick={() =>
+                            kanzleiForm.setValue("eInvoiceProfile", prof, { shouldDirty: true })
+                          }
                           className={cn(
                             "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                             kanzleiForm.watch("eInvoiceProfile") === prof
@@ -902,7 +861,11 @@ function SettingsPageInner() {
                               : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
                           )}
                         >
-                          {prof}
+                          {prof === "BASIC"
+                            ? L("Basis", "Basic")
+                            : prof === "COMFORT"
+                              ? L("Erweitert", "Comfort")
+                              : L("Vollständig", "Extended")}
                         </button>
                       ))}
                     </div>
@@ -918,7 +881,11 @@ function SettingsPageInner() {
                       ).map((opt) => (
                         <button
                           key={opt.key}
-                          onClick={() => kanzleiForm.setValue("tarifModell", opt.key)}
+                          type="button"
+                          aria-pressed={tarifModellWatch === opt.key}
+                          onClick={() =>
+                            kanzleiForm.setValue("tarifModell", opt.key, { shouldDirty: true })
+                          }
                           className={cn(
                             "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                             tarifModellWatch === opt.key
@@ -943,9 +910,10 @@ function SettingsPageInner() {
                           <Input
                             type="number"
                             inputMode="numeric"
+                            aria-label={L("Stundensatz in Euro", "Hourly rate in euros")}
                             {...kanzleiForm.register("stundensatz")}
                             placeholder="200"
-                            className="w-32"
+                            className="w-28"
                           />
                           <span className="text-sm text-[color:var(--ds-text-muted)]">
                             {t("settings.per_hour")}
@@ -953,12 +921,13 @@ function SettingsPageInner() {
                           <Input
                             type="number"
                             inputMode="numeric"
+                            aria-label={L("Abrechnungstakt in Minuten", "Billing increment in minutes")}
                             {...kanzleiForm.register("abrechnungstakt")}
                             placeholder="15"
-                            className="ml-2 w-24"
+                            className="w-20 sm:ml-2"
                           />
                           <span className="text-sm text-[color:var(--ds-text-muted)]">
-                            {t("settings.billing_increment")}
+                            {L("Minuten-Takt", "minute increment")}
                           </span>
                         </div>
                       </Field>
@@ -970,20 +939,29 @@ function SettingsPageInner() {
                         <div className="space-y-2">
                           {Object.entries(rechtsgebietSaetzeWatch ?? {}).map(([gebiet, satz]) => (
                             <div key={gebiet} className="flex items-center gap-3">
-                              <span className="w-32 text-sm text-[color:var(--ds-text-muted)] capitalize">
-                                {gebiet}
+                              <span className="w-32 text-sm text-[color:var(--ds-text-muted)]">
+                                {RATE_AREA_LABELS[gebiet]
+                                  ? L(RATE_AREA_LABELS[gebiet].de, RATE_AREA_LABELS[gebiet].en)
+                                  : gebiet}
                               </span>
                               <Euro size={12} className="text-[color:var(--ds-text-muted)]" />
                               <input
                                 type="number"
                                 inputMode="numeric"
+                                aria-label={`${
+                                  RATE_AREA_LABELS[gebiet]
+                                    ? L(RATE_AREA_LABELS[gebiet].de, RATE_AREA_LABELS[gebiet].en)
+                                    : gebiet
+                                }: ${L("Stundensatz in Euro", "hourly rate in euros")}`}
                                 value={String(satz)}
                                 onChange={(e) => {
                                   const updated = {
                                     ...(rechtsgebietSaetzeWatch ?? {}),
                                     [gebiet]: parseInt(e.target.value, 10) || 0,
                                   };
-                                  kanzleiForm.setValue("rechtsgebietSaetze", updated);
+                                  kanzleiForm.setValue("rechtsgebietSaetze", updated, {
+                                    shouldDirty: true,
+                                  });
                                 }}
                                 className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                               />
@@ -1013,29 +991,6 @@ function SettingsPageInner() {
                     </div>
                   )}
 
-                  <Field label={t("settings.bank_details")} desc={t("settings.bank_details_desc")}>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                      <Input
-                        id="settings-bank-name"
-                        aria-label={t("settings.aria_bank")}
-                        {...kanzleiForm.register("bankName")}
-                        placeholder={t("settings.bank_placeholder")}
-                      />
-                      <Input
-                        id="settings-iban"
-                        aria-label={t("settings.aria_iban")}
-                        {...kanzleiForm.register("iban")}
-                        placeholder="IBAN"
-                      />
-                      <Input
-                        id="settings-bic"
-                        aria-label={t("settings.aria_bic")}
-                        {...kanzleiForm.register("bic")}
-                        placeholder="BIC"
-                      />
-                    </div>
-                  </Field>
-
                   <Field
                     id="settings-zahlungsziel-tage"
                     label={t("settings.payment_terms")}
@@ -1061,43 +1016,48 @@ function SettingsPageInner() {
                     desc={t("settings.invoice_footer_desc")}
                   >
                     <textarea
+                      aria-label={t("settings.invoice_footer")}
                       {...kanzleiForm.register("rechnungFooter")}
                       rows={3}
                       className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                   </Field>
 
-                  <Field label={t("settings.smtp_server")} desc={t("settings.smtp_server_desc")}>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+                  <Field
+                    label={L("Versand von Honorarnoten", "Sending invoices")}
+                    desc={L(
+                      "Postausgangsserver (SMTP) Ihres E-Mail-Anbieters, über den Rechnungen an Mandanten gehen. Die Angaben erhalten Sie von Ihrem Anbieter.",
+                      "Outgoing mail server (SMTP) of your e-mail provider used to send invoices to clients. Your provider can give you these details."
+                    )}
+                  >
+                    <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_5.5rem_auto]">
                       <Input
                         id="settings-smtp-host"
                         aria-label={t("settings.aria_smtp_host")}
                         {...kanzleiForm.register("smtpHost")}
                         placeholder="mail.example.com"
-                        className="sm:col-span-2"
                       />
                       <Input
                         id="settings-smtp-port"
                         aria-label={t("settings.aria_smtp_port")}
                         {...kanzleiForm.register("smtpPort")}
                         placeholder="587"
-                        className="w-24"
                       />
-                      <label className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
+                      <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
                         <input
                           type="checkbox"
                           {...kanzleiForm.register("smtpSecure")}
                           className="accent-[var(--brand-primary)]"
                         />
-                        {t("settings.tls")}
+                        {L("Verschlüsselt", "Encrypted")}
                       </label>
                     </div>
                   </Field>
 
                   <Field
                     id="settings-smtp-user"
-                    label={t("settings.smtp_user")}
-                    desc={t("settings.smtp_user_desc")}
+                    label={L("Benutzername für den Versand", "Sending user name")}
+                    desc={L("Meist Ihre E-Mail-Adresse.", "Usually your e-mail address.")}
                   >
                     <Input
                       id="settings-smtp-user"
@@ -1108,7 +1068,7 @@ function SettingsPageInner() {
 
                   <Field
                     id="settings-smtp-password"
-                    label={t("settings.smtp_password")}
+                    label={L("Passwort für den Versand", "Sending password")}
                     desc={t("settings.smtp_password_desc")}
                   >
                     <Input
@@ -1122,7 +1082,10 @@ function SettingsPageInner() {
                   <Field
                     id="settings-email-from"
                     label={t("settings.email_from")}
-                    desc={t("settings.email_from_desc")}
+                    desc={L(
+                      "Diese Adresse sieht der Mandant als Absender.",
+                      "The address the client sees as sender."
+                    )}
                   >
                     <Input
                       id="settings-email-from"
@@ -1133,8 +1096,24 @@ function SettingsPageInner() {
                 </div>
                 <div className="border-t border-[color:var(--ds-border)] p-6">
                   {kanzleiSaveError && (
-                    <p className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
-                      {t("settings.save_fail")} {kanzleiSaveError}
+                    <p role="alert" className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
+                      {L(
+                        "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut.",
+                        "Saving failed. Please try again."
+                      )}
+                    </p>
+                  )}
+                  {(kanzleiErrors.kanzleiName || kanzleiErrors.anwaltName) && (
+                    <p role="alert" className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
+                      {kanzleiErrors.kanzleiName
+                        ? L(
+                            "Bitte tragen Sie zuerst den Kanzleinamen im Kanzleiprofil ein.",
+                            "Please enter the firm name in the firm profile first."
+                          )
+                        : L(
+                            "Bitte geben Sie den Rechnungssteller an.",
+                            "Please enter the invoicing lawyer."
+                          )}
                     </p>
                   )}
                   <Button variant="glow" size="md" onClick={saveKanzleiProfile}>
@@ -1148,13 +1127,14 @@ function SettingsPageInner() {
 
           {/* Team */}
           {activeTab === "team" && (
-            <Card role="tabpanel" id="panel-team" aria-labelledby="tab-team">
-              <div className="border-b border-[color:var(--ds-border)] p-6">
-                <h2 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
-                  {t("settings.team_title")}
-                </h2>
-                <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                  {t("settings.team_desc")}
+            <Card>
+              <div className="border-b border-[color:var(--ds-border)] px-6 py-4">
+                <p className="text-sm text-[color:var(--ds-text-muted)]">
+                  {L("Mitglieder einladen oder entfernen Sie unter ", "Invite or remove members under ")}
+                  <Link href="/dashboard/team" className="brand-text hover:underline">
+                    {L("Team", "Team")}
+                  </Link>
+                  .
                 </p>
               </div>
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
@@ -1173,12 +1153,12 @@ function SettingsPageInner() {
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
                           <span className="text-xs font-semibold text-[color:var(--ds-text-muted)]">
-                            {(member.name ?? "?").charAt(0).toUpperCase()}
+                            {(member.name ?? member.email ?? "?").charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div>
                           <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                            {member.name}
+                            {member.name ?? member.email}
                           </div>
                           <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                             {member.email}
@@ -1186,6 +1166,7 @@ function SettingsPageInner() {
                         </div>
                       </div>
                       <select
+                        aria-label={L(`Rolle von ${member.name ?? member.email}`, `Role of ${member.name ?? member.email}`)}
                         value={member.role}
                         onChange={async (e) => {
                           try {
@@ -1210,7 +1191,7 @@ function SettingsPageInner() {
                         <option value="admin">{t("settings.role_admin")}</option>
                         <option value="lawyer">{t("settings.role_lawyer")}</option>
                         <option value="assistant">{t("settings.role_assistant")}</option>
-                        <option value="client_viewer">{t("settings.role_client_viewer")}</option>
+                        <option value="client_viewer">{L("Mandant (nur lesen)", "Client (read-only)")}</option>
                       </select>
                     </div>
                   ))
@@ -1221,77 +1202,37 @@ function SettingsPageInner() {
 
           {/* ACLs — Document-Level Access Control */}
           {activeTab === "acls" && (
-            <Card role="tabpanel" id="panel-acls" aria-labelledby="tab-acls" className="p-6">
-              <AclSettings />
-            </Card>
+            <AclSettings />
           )}
 
-          {/* SCIM Directory Sync */}
+          {/* SCIM — the full page lives at /dashboard/settings/scim */}
           {activeTab === "scim" && (
-            <Card role="tabpanel" id="panel-scim" aria-labelledby="tab-scim">
-              <div className="border-b border-[color:var(--ds-border)] p-6">
-                <div className="flex items-center gap-3">
-                  <Network size={18} className="text-[color:var(--ds-text-muted)]" />
-                  <div>
-                    <h2 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
-                      {t("settings.scim_title")}
-                    </h2>
-                    <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                      {t("settings.scim_desc")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                <Field label={t("settings.scim_endpoint")} desc={t("settings.scim_endpoint_desc")}>
-                  <code className="block rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
-                    {typeof window !== "undefined" ? window.location.origin : "https://subsum.io"}
-                    /api/scim
-                  </code>
-                </Field>
-                <Field label={t("settings.scim_features")} desc={t("settings.scim_features_desc")}>
-                  <ul className="space-y-2">
-                    {[
-                      t("settings.scim_feature_1"),
-                      t("settings.scim_feature_2"),
-                      t("settings.scim_feature_3"),
-                      t("settings.scim_feature_4"),
-                    ].map((item) => (
-                      <li
-                        key={item}
-                        className="flex items-start gap-2 text-sm text-[color:var(--ds-text-muted)]"
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ds-success-bg)]" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </Field>
-                <Field label={t("settings.scim_manage")} desc={t("settings.scim_manage_desc")}>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/dashboard/settings/scim">{t("settings.scim_manage_button")}</Link>
-                  </Button>
-                </Field>
-              </div>
+            <Card className="flex flex-wrap items-center justify-between gap-4 p-6">
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                {L(
+                  "Einrichtung, Status und Protokoll des Abgleichs finden Sie auf einer eigenen Seite.",
+                  "Setup, status and log of the sync are on a dedicated page."
+                )}
+              </p>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/dashboard/settings/scim">{L("Öffnen", "Open")}</Link>
+              </Button>
             </Card>
           )}
 
           {/* Account */}
           {activeTab === "account" && (
-            <Card role="tabpanel" id="panel-account" aria-labelledby="tab-account">
-              <div className="border-b border-[color:var(--ds-border)] p-6">
-                <h2 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
-                  {t("settings.account_title")}
-                </h2>
-              </div>
+            <Card>
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
                 <Field label={t("settings.plan")} desc={t("settings.plan_desc")}>
                   <div className="flex items-center gap-3">
                     <Badge variant="accent" className="px-3 py-1 text-sm capitalize">
-                      {meQuery.data?.user?.plan ?? "free"}
+                      {(meQuery.data?.user?.plan ?? "free") === "free"
+                        ? L("Kostenlos", "Free")
+                        : meQuery.data?.user?.plan}
                     </Badge>
                     <Button variant="outline" size="sm" asChild>
-                      <Link href="/dashboard/billing">{t("settings.upgrade")}</Link>
+                      <Link href="/dashboard/billing">{L("Plan verwalten", "Manage plan")}</Link>
                     </Button>
                   </div>
                 </Field>
@@ -1303,8 +1244,10 @@ function SettingsPageInner() {
                           {t("settings.usage_pages")}
                         </span>
                         <span className="font-mono text-[color:var(--ds-text)] tabular-nums">
-                          {statsQuery.data?.total_pages ?? 0} /{" "}
-                          {limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).pages}
+                          {(statsQuery.data?.total_pages ?? 0).toLocaleString("de-AT")} /{" "}
+                          {limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).pages.toLocaleString(
+                            "de-AT"
+                          )}
                         </span>
                       </div>
                       {(() => {
@@ -1324,11 +1267,13 @@ function SettingsPageInner() {
                     <div>
                       <div className="mb-1.5 flex justify-between text-xs">
                         <span className="text-[color:var(--ds-text-muted)]">
-                          {t("settings.usage_queries")}
+                          {L("Anfragen an den Assistenten", "Assistant requests")}
                         </span>
                         <span className="font-mono text-[color:var(--ds-text)] tabular-nums">
-                          {statsQuery.data?.total_queries ?? 0} /{" "}
-                          {limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).queriesPerMonth}
+                          {(statsQuery.data?.total_queries ?? 0).toLocaleString("de-AT")} /{" "}
+                          {limitsFor(
+                            (meQuery.data?.user?.plan ?? "free") as Plan
+                          ).queriesPerMonth.toLocaleString("de-AT")}
                         </span>
                       </div>
                       {(() => {
@@ -1351,19 +1296,23 @@ function SettingsPageInner() {
                 </Field>
                 <Field label={t("settings.referral")} desc={t("settings.referral_desc")}>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3">
-                      <Gift size={15} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+                    <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-3">
+                      <Gift size={15} className="shrink-0 text-[color:var(--ds-text-muted)]" />
                       <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                         {t("settings.referral_info")}
                         {referrals !== null && (
-                          <span className="font-medium text-[color:var(--ds-warning-text)]">
+                          <span className="font-medium text-[color:var(--ds-text)]">
                             {" "}
                             {t("settings.referral_so_far")} {referrals}.
                           </span>
                         )}
                       </p>
                     </div>
-                    <MaskedInput value={referralUrl} placeholder={t("settings.referral_loading")} />
+                    {referralUrl ? (
+                      <MaskedInput value={referralUrl} placeholder="" />
+                    ) : meQuery.isLoading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : null}
                     <Link
                       href="/partners"
                       className="brand-text inline-flex items-center gap-1 text-xs hover:underline"
@@ -1375,6 +1324,7 @@ function SettingsPageInner() {
                 <Field label={t("settings.language")} desc={t("settings.language_desc")}>
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => setLang("de")}
                       className={cn(
                         "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
@@ -1388,6 +1338,7 @@ function SettingsPageInner() {
                       Deutsch
                     </button>
                     <button
+                      type="button"
                       onClick={() => setLang("en")}
                       className={cn(
                         "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
@@ -1402,7 +1353,13 @@ function SettingsPageInner() {
                     </button>
                   </div>
                 </Field>
-                <Field label={t("settings.accessibility")} desc={t("settings.accessibility_desc")}>
+                <Field
+                  label={t("settings.accessibility")}
+                  desc={L(
+                    "Tastaturbedienung an Ihre Arbeitsweise anpassen.",
+                    "Adapt keyboard use to the way you work."
+                  )}
+                >
                   <label className="flex cursor-pointer items-center gap-3">
                     <input
                       type="checkbox"
@@ -1414,7 +1371,7 @@ function SettingsPageInner() {
                       className="h-4 w-4 rounded border-[color:var(--ds-border)] accent-[var(--brand-primary)]"
                     />
                     <span className="text-sm text-[color:var(--ds-text)]">
-                      {t("settings.single_key_shortcuts")}
+                      {L("Kürzel mit einzelnen Tasten erlauben", "Allow single-key shortcuts")}
                     </span>
                   </label>
                   <p className="mt-1.5 text-xs text-[color:var(--ds-text-subtle)]">
@@ -1424,7 +1381,7 @@ function SettingsPageInner() {
                 <Field label={t("settings.data_export")} desc={t("settings.data_export_desc")}>
                   <Button variant="outline" size="sm" asChild>
                     <a href="/api/export" download>
-                      {t("settings.export_button")}
+                      {L("Meine Daten herunterladen", "Download my data")}
                     </a>
                   </Button>
                 </Field>

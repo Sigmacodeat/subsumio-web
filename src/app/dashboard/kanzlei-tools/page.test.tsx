@@ -1,11 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { KanzleiTools } from "@/components/legal/kanzlei-tools";
 
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (key: string) => key, lang: "de" }) }));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast: vi.fn() }) }));
 vi.mock("@/lib/api", () => ({
-  api: { brain: { createPage: vi.fn().mockResolvedValue({ slug: "test" }) } },
+  api: {
+    brain: {
+      createPage: vi.fn().mockResolvedValue({ slug: "test" }),
+      listAllPages: vi.fn().mockResolvedValue([]),
+    },
+  },
 }));
 vi.mock("@/lib/queries/auth", () => ({
   useMe: () => ({ data: { user: { jurisdiction: "AT" } } }),
@@ -13,7 +19,11 @@ vi.mock("@/lib/queries/auth", () => ({
 
 describe("KanzleiTools", () => {
   it("exposes Austrian operational tools without retired German calculators", () => {
-    render(<KanzleiTools />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <KanzleiTools />
+      </QueryClientProvider>
+    );
     expect(screen.queryByText("GKG-Rechner")).not.toBeInTheDocument();
     expect(screen.queryByText("Gerichtsverzeichnis")).not.toBeInTheDocument();
     expect(screen.getByText("Fax-Prüfung")).toBeInTheDocument();

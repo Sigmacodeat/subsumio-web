@@ -230,7 +230,7 @@ test.describe("Redesign P3: Activity Sidebar", () => {
     // sidebar) and opens by default on desktop.
     await page.addInitScript(() => {
       try {
-        localStorage.setItem("subsumio-copilot-open", "true");
+        localStorage.setItem("subsumio-copilot-open-v2", "true");
         localStorage.setItem("subsumio-tour-completed", "true");
       } catch {}
     });

@@ -17,13 +17,15 @@ import {
   Scale,
   User,
   Building2,
-  FileText,
   CalendarClock,
   CheckSquare,
   FolderOpen,
   Clock,
   Receipt,
   Upload,
+  Plus,
+  ChevronDown,
+  ShieldCheck,
 } from "lucide-react";
 import { useMatterData, type MatterVitals } from "@/lib/matter-data-context";
 import { useRecentMatters } from "@/lib/use-recent-matters";
@@ -32,12 +34,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, daysUntil, formatDate, formatDaysUntil, formatEur } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const PRIORITY_COLORS: Record<string, StatusColor> = {
   low: "gray",
   medium: "blue",
   high: "amber",
+  urgent: "red",
   critical: "red",
 };
 
@@ -52,10 +61,14 @@ const STATUS_COLORS: Record<string, StatusColor> = {
   archived: "gray",
 };
 
+/** Only priorities that deserve attention get a badge; "Mittel" on every matter is noise. */
+const PRIORITY_FLAGGED = new Set(["high", "urgent", "critical"]);
+
 const PRIORITY_LABELS_DE: Record<string, string> = {
   low: "Niedrig",
   medium: "Mittel",
   high: "Hoch",
+  urgent: "Dringend",
   critical: "Kritisch",
 };
 
@@ -63,6 +76,7 @@ const PRIORITY_LABELS_EN: Record<string, string> = {
   low: "Low",
   medium: "Medium",
   high: "High",
+  urgent: "Urgent",
   critical: "Critical",
 };
 
@@ -106,101 +120,94 @@ function VitalsBar({
   caseSlug: string;
   lang: string;
 }) {
-  const { t } = useLang();
+  const en = lang === "en";
   const encoded = caseSlug.split("/").map(encodeURIComponent).join("/");
   const items = [
     {
       icon: CalendarClock,
-      label: t("matterheader.deadlines"),
-      value: `${vitals.openDeadlineCount}/${vitals.deadlineCount}`,
-      alert: vitals.openDeadlineCount > 0,
+      label: en ? "Open deadlines" : "Offene Fristen",
+      value: String(vitals.openDeadlineCount),
       href: `/dashboard/cases/${encoded}/deadlines`,
     },
     {
       icon: CheckSquare,
-      label: t("matterheader.tasks"),
-      value: `${vitals.openTaskCount}/${vitals.taskCount}`,
-      alert: vitals.openTaskCount > 0,
+      label: en ? "Open tasks" : "Offene Aufgaben",
+      value: String(vitals.openTaskCount),
       href: `/dashboard/cases/${encoded}/deadlines`,
     },
     {
       icon: FolderOpen,
-      label: t("matterheader.docs"),
+      label: en ? "Documents" : "Dokumente",
       value: String(vitals.documentCount),
-      alert: false,
       href: `/dashboard/cases/${encoded}/documents`,
     },
     {
       icon: Clock,
-      label: t("matterheader.hours"),
-      value: vitals.totalHours > 0 ? vitals.totalHours.toFixed(1) : "—",
-      alert: false,
+      label: en ? "Hours" : "Stunden",
+      value:
+        vitals.totalHours > 0
+          ? vitals.totalHours.toLocaleString(en ? "en-GB" : "de-AT", {
+              maximumFractionDigits: 2,
+            })
+          : "—",
       href: `/dashboard/cases/${encoded}/billing`,
     },
     {
       icon: Receipt,
-      label: t("matterheader.expenses"),
-      value: vitals.expenseTotal > 0 ? `${vitals.expenseTotal.toFixed(0)}€` : "—",
-      alert: false,
+      label: en ? "Expenses" : "Auslagen",
+      value: vitals.expenseTotal > 0 ? formatEur(vitals.expenseTotal, lang) : "—",
       href: `/dashboard/cases/${encoded}/billing`,
     },
   ];
 
+  const days = vitals.nextDeadlineDate ? daysUntil(vitals.nextDeadlineDate) : null;
+  const tone =
+    days === null
+      ? ""
+      : days <= 3
+        ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+        : days <= 7
+          ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)]";
+
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[color:var(--ds-border)] px-4 py-2 md:px-6">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[color:var(--ds-border)] px-4 py-2 md:px-6">
+      {vitals.nextDeadlineDate && days !== null && (
+        <Link
+          href={`/dashboard/cases/${encoded}/deadlines`}
+          className={cn(
+            "flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs tabular-nums focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+            tone
+          )}
+        >
+          <CalendarClock size={12} className="shrink-0" aria-hidden="true" />
+          <span>{en ? "Next deadline" : "Nächste Frist"}</span>
+          <span className="font-semibold">{formatDate(vitals.nextDeadlineDate)}</span>
+          <span>· {formatDaysUntil(days)}</span>
+        </Link>
+      )}
       {items.map((item) => {
         const Icon = item.icon;
         return (
           <Link
             key={item.label}
             href={item.href}
-            className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+            className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs whitespace-nowrap transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
           >
             <Icon
               size={12}
-              className={cn(
-                "shrink-0",
-                item.alert
-                  ? "text-[color:var(--ds-warning-text)]"
-                  : "text-[color:var(--ds-text-muted)]"
-              )}
+              className="shrink-0 text-[color:var(--ds-text-subtle)]"
+              aria-hidden="true"
             />
-            <span className="text-[color:var(--ds-text-muted)]">{item.label}:</span>
-            <span
-              className={cn(
-                "font-semibold tabular-nums",
-                item.alert ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text)]"
-              )}
-            >
+            <span className="text-[color:var(--ds-text-muted)]">{item.label}</span>
+            <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
               {item.value}
             </span>
           </Link>
         );
       })}
-      {vitals.nextDeadlineDate && (
-        <div className="flex items-center gap-1.5 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs">
-          <CalendarClock size={12} className="shrink-0 text-[color:var(--ds-warning-text)]" />
-          <span className="font-medium text-[color:var(--ds-warning-text)]">
-            {t("matterheader.next")} {formatDate(vitals.nextDeadlineDate, lang)}
-          </span>
-        </div>
-      )}
     </div>
   );
-}
-
-function formatDate(dateStr: string, lang: string): string {
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
 }
 
 // ── Phase Progress ─────────────────────────────────────────────────────
@@ -212,11 +219,11 @@ interface PhaseDef {
 }
 
 const MATTER_PHASES: PhaseDef[] = [
-  { key: "intake", labelDe: "Intake", labelEn: "Intake" },
+  { key: "intake", labelDe: "Mandatsaufnahme", labelEn: "Intake" },
   { key: "evaluation", labelDe: "Prüfung", labelEn: "Evaluation" },
   { key: "investigation", labelDe: "Ermittlung", labelEn: "Investigation" },
-  { key: "negotiation", labelDe: "Verhandlung", labelEn: "Negotiation" },
-  { key: "litigation", labelDe: "Prozess", labelEn: "Litigation" },
+  { key: "negotiation", labelDe: "Außergerichtlich", labelEn: "Negotiation" },
+  { key: "litigation", labelDe: "Verfahren", labelEn: "Litigation" },
   { key: "trial", labelDe: "Verhandlung", labelEn: "Trial" },
   { key: "settlement", labelDe: "Vergleich", labelEn: "Settlement" },
   { key: "closed", labelDe: "Abgeschlossen", labelEn: "Closed" },
@@ -257,7 +264,7 @@ function PhaseProgress({ phase, lang }: { phase?: string; lang: string }) {
                   className={cn(
                     "h-0.5 w-3 rounded-full",
                     idx <= currentIdx
-                      ? "bg-[color:var(--brand-primary)]"
+                      ? "bg-[color:var(--brand-solid)]"
                       : "bg-[color:var(--ds-border)]"
                   )}
                 />
@@ -327,6 +334,7 @@ export function MatterHeader() {
   const isArchived = !!matter.archivedAt;
   const statusLabels = lang === "en" ? STATUS_LABELS_EN : STATUS_LABELS_DE;
   const priorityLabels = lang === "en" ? PRIORITY_LABELS_EN : PRIORITY_LABELS_DE;
+  const en = lang === "en";
 
   return (
     <div className="sticky top-0 z-30 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
@@ -341,69 +349,67 @@ export function MatterHeader() {
         </Link>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-base font-semibold text-[color:var(--ds-text)] md:text-lg">
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
+            <h1 className="font-display line-clamp-2 text-base font-semibold text-[color:var(--ds-text)] sm:truncate md:text-lg">
               {matter.title}
             </h1>
-            <span className="shrink-0 font-mono text-xs text-[color:var(--ds-text-muted)]">
+            <span className="shrink-0 font-mono text-xs text-[color:var(--ds-text-muted)] tabular-nums">
               {matter.caseNumber}
             </span>
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Badge
-              variant="default"
-              className={cn("text-xs", statusBadgeClasses(STATUS_COLORS[matter.status] || "blue"))}
-            >
-              {statusLabels[matter.status] || matter.status}
-            </Badge>
-            <Badge
-              variant="default"
-              className={cn(
-                "text-xs",
-                statusBadgeClasses(PRIORITY_COLORS[matter.priority] || "blue")
-              )}
-            >
-              {priorityLabels[matter.priority] || matter.priority}
-            </Badge>
-            {matter.clientName && (
-              <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                <User size={11} className="shrink-0" />
-                {matter.clientName}
-              </span>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--ds-text-muted)]">
+            {/* Status/priority only when they say something beyond the default */}
+            {matter.status !== "open" && (
+              <Badge
+                variant="default"
+                className={cn(
+                  "text-xs",
+                  statusBadgeClasses(STATUS_COLORS[matter.status] || "gray")
+                )}
+              >
+                {statusLabels[matter.status] || matter.status}
+              </Badge>
             )}
-            {matter.opponentName && (
-              <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                <Scale size={11} className="shrink-0" />
-                {matter.opponentName}
+            {PRIORITY_FLAGGED.has(matter.priority) && (
+              <Badge
+                variant="default"
+                className={cn(
+                  "text-xs",
+                  statusBadgeClasses(PRIORITY_COLORS[matter.priority] || "amber")
+                )}
+              >
+                {priorityLabels[matter.priority] || matter.priority}
+              </Badge>
+            )}
+            {(matter.clientName || matter.opponentName) && (
+              <span className="flex min-w-0 items-center gap-1">
+                <User size={11} className="shrink-0" aria-hidden="true" />
+                <span className="truncate">
+                  {matter.clientName || (en ? "Client missing" : "Mandant fehlt")}
+                  {matter.opponentName ? (
+                    <>
+                      <span className="text-[color:var(--ds-text-subtle)]"> ./. </span>
+                      {matter.opponentName}
+                    </>
+                  ) : null}
+                </span>
               </span>
             )}
             {matter.courtName && (
-              <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                <Building2 size={11} className="shrink-0" />
+              <span className="flex items-center gap-1">
+                <Building2 size={11} className="shrink-0" aria-hidden="true" />
                 {matter.courtName}
               </span>
             )}
-            {matter.jurisdiction && (
-              <span
-                className={cn(
-                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium",
-                  matter.jurisdiction === "de"
-                    ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
-                    : matter.jurisdiction === "at"
-                      ? "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
-                      : matter.jurisdiction === "ch"
-                        ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                        : "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]"
-                )}
-              >
-                <Globe size={11} className="shrink-0" />
-                {matter.jurisdiction.toUpperCase()}
-              </span>
-            )}
             {matter.legalArea && (
-              <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                <FileText size={11} className="shrink-0" />
+              <span className="flex items-center gap-1">
+                <Scale size={11} className="shrink-0" aria-hidden="true" />
                 {matter.legalArea}
+                {matter.jurisdiction && matter.jurisdiction !== "at" ? (
+                  <span className="text-[color:var(--ds-text-subtle)]">
+                    · {matter.jurisdiction.toUpperCase()}
+                  </span>
+                ) : null}
               </span>
             )}
             {matter.tags.slice(0, 3).map((tag) => (
@@ -418,20 +424,66 @@ export function MatterHeader() {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions: one "Hinzufügen" menu instead of four buttons, plus pin/portal */}
         <div className="flex shrink-0 items-center gap-1">
+          {!isArchived && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 gap-1.5 whitespace-nowrap"
+                  aria-label={en ? "Add to this matter" : "Zu dieser Akte hinzufügen"}
+                >
+                  <Plus size={14} aria-hidden="true" />
+                  <span className="hidden sm:inline">{en ? "Add" : "Hinzufügen"}</span>
+                  <ChevronDown size={12} aria-hidden="true" className="hidden sm:inline" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {ACTIONS.map(({ event, icon: Icon, labelDe, labelEn }) => (
+                  <DropdownMenuItem
+                    key={event}
+                    onSelect={() =>
+                      window.dispatchEvent(
+                        new CustomEvent(event, { detail: { caseSlug: matter.slug } })
+                      )
+                    }
+                  >
+                    <Icon size={14} aria-hidden="true" />
+                    {en ? labelEn : labelDe}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => togglePin(matter.slug)}
             title={pinned ? t("matterheader.unpin") : t("matterheader.pin")}
+            aria-label={pinned ? t("matterheader.unpin") : t("matterheader.pin")}
+            aria-pressed={pinned}
             className="h-8 w-8 p-0"
           >
             {pinned ? <PinOff size={15} /> : <Pin size={15} />}
           </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+            <Link
+              href={`/dashboard/matter-access?case=${encodeURIComponent(matter.slug)}`}
+              title={en ? "Access & sharing" : "Zugriff & Freigaben"}
+              aria-label={en ? "Access & sharing" : "Zugriff & Freigaben"}
+            >
+              <ShieldCheck size={15} />
+            </Link>
+          </Button>
           {matter.portalEnabled && (
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
-              <Link href={`/dashboard/client-portal`} title={t("matterheader.client_portal")}>
+              <Link
+                href={`/dashboard/client-portal`}
+                title={t("matterheader.client_portal")}
+                aria-label={t("matterheader.client_portal")}
+              >
                 <Globe size={15} />
               </Link>
             </Button>
@@ -447,39 +499,6 @@ export function MatterHeader() {
           )}
         </div>
       </div>
-
-      {!isArchived && (
-        <div
-          className="flex items-center gap-2 overflow-x-auto border-t border-[color:var(--ds-border)] px-4 py-2 md:px-6"
-          role="group"
-          aria-label={lang === "en" ? "Matter actions" : "Aktionen für diese Akte"}
-        >
-          <span className="hidden shrink-0 text-xs font-medium text-[color:var(--ds-text-muted)] sm:inline">
-            {lang === "en" ? "Add:" : "Hinzufügen:"}
-          </span>
-          {ACTIONS.map(({ event, icon: Icon, labelDe, labelEn }, index) => {
-            const label = lang === "en" ? labelEn : labelDe;
-            return (
-              <Button
-                key={event}
-                type="button"
-                variant={index === 0 ? "primary" : "outline"}
-                size="sm"
-                className="h-11 shrink-0 gap-2 px-3"
-                onClick={() =>
-                  window.dispatchEvent(
-                    new CustomEvent(event, { detail: { caseSlug: matter.slug } })
-                  )
-                }
-                aria-label={`${label} ${lang === "en" ? "add to this matter" : "zu dieser Akte hinzufügen"}`}
-              >
-                <Icon size={15} aria-hidden="true" />
-                {label}
-              </Button>
-            );
-          })}
-        </div>
-      )}
 
       {/* Row 2: Vitals Bar — key counts at-a-glance */}
       {matter.vitals && <VitalsBar vitals={matter.vitals} caseSlug={matter.slug} lang={lang} />}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight, Brain } from "lucide-react";
 import { EASE, ClipReveal, GlowCard, AnimatedCounter, VIEWPORT } from "../motion-system";
-import { Section, H2_CTA_CLASS } from "../primitives";
+import { Section, H2_CTA_CLASS, EYEBROW_CLASS } from "../primitives";
 import { reveal, type SuperbrainCopyDe } from "./shared";
 import { resolveIcon } from "../icons";
 
@@ -179,9 +180,9 @@ export function OursSection({ t }: { t: SuperbrainCopyDe }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={VIEWPORT.gentle}
             transition={{ duration: 0.4 }}
-            className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
+            className="mb-4 inline-flex"
           >
-            <span className="brand-text font-mono text-sm tracking-wider uppercase">
+            <span className={EYEBROW_CLASS}>
               {"Die Lösung"}
             </span>
           </motion.div>

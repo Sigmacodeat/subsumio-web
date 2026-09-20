@@ -40,6 +40,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import {
+  daysUntil,
+  formatDate as formatDateOnly,
+  formatDateTime,
+  formatDaysUntil,
+} from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
 import {
@@ -90,7 +96,7 @@ async function loadOperations(): Promise<OperationsData> {
   const response = await fetch("/api/dashboard/operations?limit=500", {
     signal: AbortSignal.timeout(15_000),
   });
-  if (!response.ok) throw new Error("Operationsdaten konnten nicht geladen werden.");
+  if (!response.ok) throw new Error("Vorgänge konnten nicht geladen werden.");
   const payload = (await response.json()) as { data?: OperationsData };
   return payload.data ?? { items: [], counts: {}, generatedAt: new Date().toISOString() };
 }
@@ -150,9 +156,9 @@ function statusLabel(
   const labels: Record<string, string> = {
     received: "Empfangen",
     stored: "Gespeichert",
-    ocr: "OCR/Extraktion",
-    embedding: "Embedding",
-    embedded: "Copilot-bereit",
+    ocr: "Texterkennung",
+    embedding: "Wird aufbereitet",
+    embedded: "Für den Assistenten bereit",
     running: currentLayer
       ? lang === "en"
         ? `Analyzing (step ${currentLayer}/7)`
@@ -161,7 +167,7 @@ function statusLabel(
         ? "Running"
         : "Läuft",
     awaiting_review: "Anwaltliche Prüfung",
-    needs_human_review: "Menschliche Prüfung",
+    needs_human_review: "Prüfung erforderlich",
     completed: "Abgeschlossen",
     completed_with_warnings: "Mit Warnungen",
     revised: "Überarbeitet",
@@ -171,7 +177,30 @@ function statusLabel(
     open: "Offen",
     scheduled: "Geplant",
   };
-  return labels[stage] ?? stage;
+  return labels[stage] ?? "—";
+}
+
+const PRIORITY_LABEL: Record<string, { de: string; en: string }> = {
+  critical: { de: "Kritisch", en: "Critical" },
+  high: { de: "Hoch", en: "High" },
+  medium: { de: "Mittel", en: "Medium" },
+  low: { de: "Niedrig", en: "Low" },
+};
+
+function priorityLabel(priority: string, lang: string): string {
+  const entry = PRIORITY_LABEL[priority] ?? PRIORITY_LABEL.low;
+  return lang === "en" ? entry.en : entry.de;
+}
+
+/** Fälligkeit: Datum plus Abstand („in 3 Tagen“, „seit 2 Tagen überfällig“). */
+function dueLabel(iso: string, lang: string): string {
+  // Reine Datumsfristen (00:00 Uhr) ohne Uhrzeit anzeigen.
+  const d = new Date(iso);
+  const dateOnly = !Number.isNaN(d.getTime()) && d.getHours() === 0 && d.getMinutes() === 0;
+  const date = dateOnly ? formatDateOnly(iso) : formatDate(iso, lang);
+  if (lang === "en") return date;
+  const rel = formatDaysUntil(daysUntil(iso));
+  return rel ? `${date} · ${rel}` : date;
 }
 
 function itemHref(item: WorkItem): string {
@@ -181,19 +210,8 @@ function itemHref(item: WorkItem): string {
   return meta.href;
 }
 
-function formatDate(iso: string | undefined, lang: string): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
+function formatDate(iso: string | undefined, _lang: string): string {
+  return formatDateTime(iso);
 }
 
 export default function OperationsCockpitPageWrapper({
@@ -362,14 +380,17 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
       }
       return { previous };
     },
-    onError: (err, params, context) => {
+    onError: (_err, _params, context) => {
       if (context?.previous) {
         queryClient.setQueryData(QUERY_KEY, context.previous);
       }
       addToast({
         type: "error",
         title: lang === "en" ? "Action failed" : "Aktion fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unknown error",
+        description:
+          lang === "en"
+            ? "The decision could not be saved. Please try again."
+            : "Die Entscheidung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
         duration: 5000,
       });
     },
@@ -389,7 +410,6 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
             : lang === "en"
               ? "Rejected"
               : "Abgelehnt",
-        description: params.actionSlug,
         duration: 3000,
       });
     },
@@ -463,14 +483,17 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
       }
       return { previous };
     },
-    onError: (err, _params, context) => {
+    onError: (_err, _params, context) => {
       if (context?.previous) {
         queryClient.setQueryData(QUERY_KEY, context.previous);
       }
       addToast({
         type: "error",
-        title: lang === "en" ? "Retry failed" : "Retry fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unknown error",
+        title: lang === "en" ? "Retry failed" : "Erneute Verarbeitung fehlgeschlagen",
+        description:
+          lang === "en"
+            ? "The document could not be requeued. Please try again later."
+            : "Das Dokument konnte nicht erneut eingereiht werden. Bitte versuchen Sie es später erneut.",
         duration: 5000,
       });
     },
@@ -479,11 +502,10 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ["kanzlei-operations"] });
     },
-    onSuccess: (_data, params) => {
+    onSuccess: () => {
       addToast({
         type: "success",
-        title: lang === "en" ? "Retry started" : "Retry gestartet",
-        description: params.slug,
+        title: lang === "en" ? "Retry started" : "Verarbeitung neu gestartet",
         duration: 3000,
       });
     },
@@ -707,10 +729,10 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
     return (
       <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
-          title={lang === "en" ? "Operations Cockpit" : "Kanzlei-Operations-Cockpit"}
+          title={lang === "en" ? "Open items" : "Offene Vorgänge"}
           breadcrumbs={[
             { label: lang === "en" ? "Dashboard" : "Übersicht", href: "/dashboard" },
-            { label: lang === "en" ? "Operations" : "Operationen" },
+            { label: lang === "en" ? "Open items" : "Vorgänge" },
           ]}
         />
         <Skeleton className="h-12 w-full rounded-lg" />
@@ -724,10 +746,10 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
     return (
       <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
-          title={lang === "en" ? "Operations Cockpit" : "Kanzlei-Operations-Cockpit"}
+          title={lang === "en" ? "Open items" : "Offene Vorgänge"}
           breadcrumbs={[
             { label: lang === "en" ? "Dashboard" : "Übersicht", href: "/dashboard" },
-            { label: lang === "en" ? "Operations" : "Operationen" },
+            { label: lang === "en" ? "Open items" : "Vorgänge" },
           ]}
         />
         <div
@@ -737,8 +759,8 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           <AlertTriangle size={18} className="shrink-0" />
           <span>
             {lang === "en"
-              ? "Operations data could not be loaded."
-              : "Operationsdaten konnten nicht geladen werden."}
+              ? "Open items could not be loaded. Please try again."
+              : "Die Vorgänge konnten nicht geladen werden. Bitte versuchen Sie es erneut."}
           </span>
           <Button
             variant="ghost"
@@ -760,15 +782,15 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={lang === "en" ? "Operations Cockpit" : "Kanzlei-Operations-Cockpit"}
+        title={lang === "en" ? "Open items" : "Offene Vorgänge"}
         description={
           lang === "en"
             ? "All open work items across your matters — communications, documents, case analysis, approvals, deadlines, appointments."
-            : "Alle offenen Vorgänge über Ihre Akten — Kommunikation, Dokumente, Fallanalyse, Freigaben, Fristen, Termine."
+            : "Alles, was in Ihren Akten auf Sie wartet: Nachrichten, Dokumentprüfungen, Fallanalysen, Freigaben, Fristen und Termine."
         }
         breadcrumbs={[
           { label: lang === "en" ? "Dashboard" : "Übersicht", href: "/dashboard" },
-          { label: lang === "en" ? "Operations" : "Operationen" },
+          { label: lang === "en" ? "Open items" : "Vorgänge" },
         ]}
       />
 
@@ -794,15 +816,15 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
         />
         <SummaryStat
           icon={AlertTriangle}
-          label={lang === "en" ? "Failed" : "Fehlgeschlagen"}
+          label={lang === "en" ? "Processing failed" : "Verarbeitung fehlgeschlagen"}
           value={failedCount}
-          tone={failedCount > 0 ? "danger" : "success"}
+          tone="danger"
         />
       </div>
 
       {/* Kind filter tabs */}
       <div
-        className="flex flex-wrap gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5"
+        className="flex gap-1.5 overflow-x-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5"
         role="tablist"
         aria-label={lang === "en" ? "Filter by type" : "Nach Typ filtern"}
       >
@@ -817,20 +839,16 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
               onClick={() => setKindFilter(tab.key)}
               className={
                 isActive
-                  ? "inline-flex items-center gap-1.5 rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
-                  : "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
+                  ? "inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium whitespace-nowrap text-[color:var(--ds-text)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
+                  : "inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
               }
             >
               {tab.label}
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                  isActive
-                    ? "bg-[color:var(--brand-primary)] text-white"
-                    : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-subtle)]"
-                }`}
-              >
-                {tab.count}
-              </span>
+              {tab.count > 0 && (
+                <span className="rounded-full bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] tabular-nums">
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -901,7 +919,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           }
         >
           <AlertTriangle size={12} />
-          {lang === "en" ? "Failed only" : "Nur fehlgeschlagene"}
+          {lang === "en" ? "Failed only" : "Nur Verarbeitungsfehler"}
         </button>
         {/* Sort selector */}
         <div className="flex items-center gap-1.5">
@@ -913,9 +931,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
             aria-label={lang === "en" ? "Sort by" : "Sortieren nach"}
           >
             <option value="priority">{lang === "en" ? "Priority" : "Priorität"}</option>
-            <option value="attention">
-              {lang === "en" ? "Needs attention" : "Needs Attention"}
-            </option>
+            <option value="attention">{lang === "en" ? "Needs attention" : "Dringlichkeit"}</option>
             <option value="due">{lang === "en" ? "Due date" : "Frist"}</option>
             <option value="created">{lang === "en" ? "Created" : "Erstellt"}</option>
           </select>
@@ -928,7 +944,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           >
             <X size={12} />
             {lang === "en" ? "Clear filters" : "Filter zurücksetzen"}
-            <span className="text-[10px]">({activeFilterCount})</span>
+            <span className="text-[10px] tabular-nums">({activeFilterCount})</span>
           </button>
         )}
       </div>
@@ -977,19 +993,19 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
               {focusMode === "top3" ? (
                 <span className="inline-flex items-center gap-1.5">
                   <Focus size={14} className="text-[color:var(--ds-warning-text)]" />
-                  {lang === "en" ? "Focus — Top 3" : "Fokus — Top 3"}
+                  {lang === "en" ? "Focus — top 3" : "Fokus — die 3 dringendsten"}
                 </span>
               ) : (
                 <span>
                   {lang === "en" ? "Work items" : "Vorgänge"}
-                  <span className="ml-2 text-[color:var(--ds-text-muted)]">
-                    ({filtered.length})
+                  <span className="ml-2 text-[color:var(--ds-text-muted)] tabular-nums">
+                    {filtered.length}
                   </span>
                 </span>
               )}
             </span>
             {query.data?.generatedAt && (
-              <span className="text-[10px] font-normal text-[color:var(--ds-text-subtle)]">
+              <span className="text-[10px] font-normal text-[color:var(--ds-text-subtle)] tabular-nums">
                 {lang === "en" ? "Updated" : "Aktualisiert"}{" "}
                 {formatDate(query.data.generatedAt, lang)}
               </span>
@@ -1005,7 +1021,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                   {dueFilter === "today" && allItems.length > 0
                     ? lang === "en"
                       ? "Nothing due today."
-                      : "Nichts fällig heute."
+                      : "Heute ist nichts fällig."
                     : allItems.length === 0
                       ? lang === "en"
                         ? "No open work items."
@@ -1017,15 +1033,15 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                 <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                   {dueFilter === "today" && allItems.length > 0
                     ? lang === "en"
-                      ? "A quiet day — enjoy it."
-                      : "Ein ruhiger Tag — geniessen Sie ihn."
+                      ? "Overdue and today's items appear here."
+                      : "Überfällige und heute fällige Vorgänge erscheinen hier."
                     : allItems.length === 0
                       ? lang === "en"
                         ? "All caught up — nothing to do right now."
-                        : "Alles erledigt — aktuell nichts zu tun."
+                        : "Neue Nachrichten, Prüfungen, Freigaben und Fristen erscheinen hier automatisch."
                       : lang === "en"
                         ? "Try adjusting or clearing your filters."
-                        : "Filter anpassen oder zurücksetzen."}
+                        : "Passen Sie die Filter an oder setzen Sie sie zurück."}
                 </p>
               </div>
               {dueFilter === "today" && allItems.length > 0 ? (
@@ -1074,7 +1090,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               toggleSelect(item.id, (e as unknown as MouseEvent).shiftKey)
                             }
                             onCheckedChange={() => {}}
-                            aria-label={lang === "en" ? "Select item" : "Item auswählen"}
+                            aria-label={`${lang === "en" ? "Select" : "Auswählen"}: ${item.title}`}
                             className="shrink-0"
                           />
                         )}
@@ -1091,13 +1107,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                               {item.title}
                             </p>
-                            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                              {item.caseSlug && (
-                                <>
-                                  <span className="truncate">{item.caseSlug}</span>
-                                  <span aria-hidden="true">·</span>
-                                </>
-                              )}
+                            <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-[color:var(--ds-text-muted)]">
                               <span>{meta?.label ?? item.kind}</span>
                               {item.dueAt && (
                                 <>
@@ -1116,15 +1126,17 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                                         aria-hidden="true"
                                       />
                                     )}
-                                    {formatDate(item.dueAt, lang)}
+                                    {dueLabel(item.dueAt, lang)}
                                   </span>
                                 </>
                               )}
-                              {isFailed && item.error && (
+                              {isFailed && (
                                 <>
                                   <span aria-hidden="true">·</span>
                                   <span className="truncate text-[color:var(--ds-danger-text)]">
-                                    {item.error}
+                                    {lang === "en"
+                                      ? "Processing failed"
+                                      : "Verarbeitung fehlgeschlagen"}
                                   </span>
                                 </>
                               )}
@@ -1134,7 +1146,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             variant="default"
                             className={`shrink-0 text-[10px] ${PRIORITY_STYLE[item.priority] ?? PRIORITY_STYLE.low}`}
                           >
-                            {item.priority}
+                            {priorityLabel(item.priority, lang)}
                           </Badge>
                         </Link>
                         {isApproval && (
@@ -1144,7 +1156,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               disabled={isBusy}
                               onClick={() => decideApproval(item.id, "approved")}
                               aria-label={lang === "en" ? "Approve" : "Freigeben"}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
                             >
                               {isBusy ? (
                                 <Loader2 size={14} className="animate-spin" />
@@ -1157,7 +1169,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               disabled={isBusy}
                               onClick={() => decideApproval(item.id, "rejected")}
                               aria-label={lang === "en" ? "Reject" : "Ablehnen"}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
                             >
                               <X size={14} />
                             </button>
@@ -1173,7 +1185,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               retryMutation.mutate({ slug: item.id });
                             }}
                             aria-label={lang === "en" ? "Retry" : "Erneut versuchen"}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
                           >
                             {isBusy ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -1225,7 +1237,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             toggleSelect(item.id, (e as unknown as MouseEvent).shiftKey)
                           }
                           onCheckedChange={() => {}}
-                          aria-label={lang === "en" ? "Select item" : "Item auswählen"}
+                          aria-label={`${lang === "en" ? "Select" : "Auswählen"}: ${item.title}`}
                           className="shrink-0"
                         />
                       )}
@@ -1243,14 +1255,9 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                               {item.title}
                             </span>
-                            {item.caseSlug && (
-                              <span className="hidden shrink-0 font-mono text-[10px] text-[color:var(--ds-text-subtle)] sm:inline">
-                                {item.caseSlug}
-                              </span>
-                            )}
                           </div>
-                          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[color:var(--ds-text-muted)]">
-                            <span className="truncate">{meta?.label ?? item.kind}</span>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[color:var(--ds-text-muted)]">
+                            <span>{meta?.label ?? item.kind}</span>
                             <span aria-hidden="true">·</span>
                             <span>
                               {statusLabel(
@@ -1278,15 +1285,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                                   ) : (
                                     <Clock size={10} aria-hidden="true" />
                                   )}
-                                  {formatDate(item.dueAt, lang)}
-                                </span>
-                              </>
-                            )}
-                            {isFailed && item.error && (
-                              <>
-                                <span aria-hidden="true">·</span>
-                                <span className="truncate text-[color:var(--ds-danger-text)]">
-                                  {item.error}
+                                  {dueLabel(item.dueAt, lang)}
                                 </span>
                               </>
                             )}
@@ -1296,7 +1295,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                           variant="default"
                           className={`shrink-0 text-[10px] ${PRIORITY_STYLE[item.priority] ?? PRIORITY_STYLE.low}`}
                         >
-                          {item.priority}
+                          {priorityLabel(item.priority, lang)}
                         </Badge>
                       </Link>
                       {isApproval && (
@@ -1306,7 +1305,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             disabled={isBusy}
                             onClick={() => decideApproval(item.id, "approved")}
                             aria-label={lang === "en" ? "Approve" : "Freigeben"}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
                           >
                             {isBusy ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -1319,7 +1318,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             disabled={isBusy}
                             onClick={() => decideApproval(item.id, "rejected")}
                             aria-label={lang === "en" ? "Reject" : "Ablehnen"}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
                           >
                             <X size={14} />
                           </button>
@@ -1335,7 +1334,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             retryMutation.mutate({ slug: item.id });
                           }}
                           aria-label={lang === "en" ? "Retry" : "Erneut versuchen"}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {isBusy ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -1392,7 +1391,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
             <p className="text-xs text-[color:var(--ds-text-muted)]">
               {lang === "en"
                 ? "Please provide a reason for rejecting this approval. The reason will be audit-logged."
-                : "Bitte geben Sie einen Grund für die Ablehnung an. Der Grund wird audit-protokolliert."}
+                : "Bitte geben Sie einen Grund für die Ablehnung an. Er wird im Prüfprotokoll festgehalten."}
             </p>
             {rejectDialog && (
               <p className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-xs text-[color:var(--ds-text)]">
@@ -1403,9 +1402,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder={
-                lang === "en"
-                  ? "Rejection reason (required)..."
-                  : "Ablehnungsgrund (erforderlich)..."
+                lang === "en" ? "Rejection reason (required)..." : "Ablehnungsgrund (erforderlich)"
               }
               className="min-h-[80px] resize-none"
               autoFocus
@@ -1460,21 +1457,25 @@ function SummaryStat({
   tone: "default" | "danger" | "warning" | "success";
 }) {
   const toneClass =
-    tone === "danger"
-      ? "text-[color:var(--ds-danger-text)]"
-      : tone === "warning"
-        ? "text-[color:var(--ds-warning-text)]"
-        : tone === "success"
-          ? "text-[color:var(--ds-success-text)]"
-          : "text-[color:var(--ds-text)]";
+    value === 0
+      ? "text-[color:var(--ds-text)]"
+      : tone === "danger"
+        ? "text-[color:var(--ds-danger-text)]"
+        : tone === "warning"
+          ? "text-[color:var(--ds-warning-text)]"
+          : tone === "success"
+            ? "text-[color:var(--ds-success-text)]"
+            : "text-[color:var(--ds-text)]";
   const iconToneClass =
-    tone === "danger"
-      ? "text-[color:var(--ds-danger-text)]"
-      : tone === "warning"
-        ? "text-[color:var(--ds-warning-text)]"
-        : tone === "success"
-          ? "text-[color:var(--ds-success-text)]"
-          : "text-[color:var(--brand-primary)]";
+    value === 0
+      ? "text-[color:var(--ds-text-muted)]"
+      : tone === "danger"
+        ? "text-[color:var(--ds-danger-text)]"
+        : tone === "warning"
+          ? "text-[color:var(--ds-warning-text)]"
+          : tone === "success"
+            ? "text-[color:var(--ds-success-text)]"
+            : "text-[color:var(--ds-text-muted)]";
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-center justify-between">

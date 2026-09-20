@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { CHAT_TEMPLATES, CHAT_TEMPLATES_EN, type ChatTemplate } from "@/components/chat/chat-types";
+import { ModelSelector } from "@/components/dashboard/model-selector";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
 import { VoiceToPromptButton } from "@/components/dashboard/voice-to-prompt-button";
@@ -21,8 +22,11 @@ interface ChatInputProps {
   placeholder?: string;
   features?: {
     fileUpload?: boolean;
+    modelSelector?: boolean;
   };
   className?: string;
+  modelOverride?: string;
+  onModelChange?: (model: string | undefined) => void;
 }
 
 export function ChatInput({
@@ -33,6 +37,8 @@ export function ChatInput({
   placeholder,
   features,
   className,
+  modelOverride,
+  onModelChange,
 }: ChatInputProps) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Array<{ name: string; slug: string }>>([]);
@@ -203,7 +209,7 @@ export function ChatInput({
               ? "border-[color:var(--ds-danger-solid)]"
               : nearLimit
                 ? "border-amber-400/60"
-                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-ring)]"
+                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-ring)] focus-within:ring-2 focus-within:ring-[color:var(--ds-ring)]/40"
           )}
         >
           {/* Textarea */}
@@ -319,6 +325,15 @@ export function ChatInput({
               className="h-11 w-11 shrink-0 sm:h-7 sm:w-7"
             />
 
+            {/* Model selector */}
+            {features?.modelSelector && onModelChange && (
+              <ModelSelector
+                selectedModelId={modelOverride}
+                onSelect={onModelChange}
+                variant="compact"
+              />
+            )}
+
             {/* Spacer pushes send/stop to the far right */}
             <div className="flex-1" />
 
@@ -344,7 +359,7 @@ export function ChatInput({
                 onClick={handleSubmit}
                 disabled={!canSend}
                 className={cn(
-                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
+                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-solid)] text-white transition-[background-color,transform,opacity] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--brand-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
                   overLimit && "bg-[color:var(--ds-danger-solid)]"
                 )}
                 aria-label={t("chat.send")}

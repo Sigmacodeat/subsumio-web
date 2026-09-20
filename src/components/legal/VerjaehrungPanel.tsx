@@ -139,10 +139,10 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
       setShowCreate(false);
       setClaimLabel("");
       await load();
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
-        title: err instanceof Error ? err.message : "Fehler beim Anlegen",
+        title: "Fehler beim Anlegen",
       });
     } finally {
       setBusy(false);
@@ -171,10 +171,10 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
       setEventReason("");
       setEventEndDate("");
       await load();
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
-        title: err instanceof Error ? err.message : "Fehler beim Hinzufügen",
+        title: "Fehler beim Hinzufügen",
       });
     } finally {
       setBusy(false);

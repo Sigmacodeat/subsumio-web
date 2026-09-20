@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate, formatDateTime } from "@/lib/utils";
 import {
   CalendarClock,
   Briefcase,
@@ -20,12 +21,12 @@ import type { DashboardKey } from "@/content/dashboard";
 
 export function ActivityTab() {
   const ctx = useMatterDetail();
-  const { t, lang } = useLang();
+  const { t } = useLang();
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       {/* Timeline */}
       <div className="max-w-3xl space-y-4">
         <div className="mb-4 flex items-center gap-2">
@@ -48,10 +49,7 @@ export function ActivityTab() {
             <div className="brand-soft absolute -left-4 h-2 w-2 rounded-full" />
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
               <div className="text-xs text-[color:var(--ds-text-muted)]">
-                {new Date(caseData.createdAt).toLocaleDateString(
-                  lang === "en" ? "en-GB" : "de-AT",
-                  { day: "2-digit", month: "2-digit", year: "numeric" }
-                )}
+                {formatDate(caseData.createdAt)}
               </div>
               <div className="text-sm text-[color:var(--ds-text)]">
                 {t("cases.detail_timeline_case_created")}
@@ -69,9 +67,7 @@ export function ActivityTab() {
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
                     {ev.timestamp || ev.date
-                      ? new Date(ev.timestamp || ev.date || "").toLocaleString(
-                          lang === "en" ? "en-GB" : "de-DE"
-                        )
+                      ? formatDateTime(ev.timestamp || ev.date || "")
                       : "—"}
                   </div>
                   {ev.type === "status_change" && (
@@ -93,9 +89,7 @@ export function ActivityTab() {
               <div className="absolute -left-4 h-2 w-2 rounded-full bg-[color:var(--ds-warning-solid)]" />
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
-                  {new Date(caseData.updatedAt).toLocaleDateString(
-                    lang === "en" ? "en-GB" : "de-DE"
-                  )}
+                  {formatDate(caseData.updatedAt)}
                 </div>
                 <div className="text-sm text-[color:var(--ds-text)]">
                   {t("cases.detail_timeline_status_changed")}{" "}
@@ -112,9 +106,7 @@ export function ActivityTab() {
               <div className="absolute -left-4 h-2 w-2 rounded-full bg-[color:var(--ds-success-solid)]" />
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
-                  {new Date(caseData.strategy.generatedAt || caseData.updatedAt).toLocaleDateString(
-                    lang === "en" ? "en-GB" : "de-DE"
-                  )}
+                  {formatDate(caseData.strategy.generatedAt || caseData.updatedAt)}
                 </div>
                 <div className="text-sm text-[color:var(--ds-text)]">
                   {t("cases.detail_timeline_strategy_generated")}
@@ -325,7 +317,7 @@ export function ActivityTab() {
                       </div>
                       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         {entry.actor} ·{" "}
-                        {new Date(entry.at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                        {formatDateTime(entry.at)}
                       </div>
                     </div>
                   </div>

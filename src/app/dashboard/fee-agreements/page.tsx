@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, Wallet, AlertTriangle, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Plus, Loader2, Wallet } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { RowSkeleton } from "@/components/dashboard/skeleton";
+import { csrfFetch } from "@/lib/csrf";
+import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
+import { encodeSlugPath, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +20,25 @@ import type { FeeAgreement, BudgetStatus } from "@/lib/fee-agreements";
 import { FEE_MODEL_LABELS, computeBudgetStatus } from "@/lib/fee-agreements";
 
 const ALERT_COLORS: Record<string, string> = {
-  none: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
-  warning: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  none: "",
+  warning:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  critical:
+    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
 };
+
+interface CaseOption {
+  slug: string;
+  title: string;
+  caseNumber?: string;
+  timeEntries: TimeEntry[];
+}
 
 export default function FeeAgreementsPage() {
   const { addToast } = useToast();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [agreements, setAgreements] = useState<FeeAgreement[]>([]);
+  const [cases, setCases] = useState<CaseOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -38,8 +54,19 @@ export default function FeeAgreementsPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "fee_agreement", limit: 200 });
-      setAgreements(pages.map((p) => p.frontmatter as unknown as FeeAgreement));
+      const batch = await api.brain.batchListPages(["fee_agreement", "legal_case"], 200);
+      setAgreements((batch["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement));
+      setCases(
+        (batch["legal_case"] ?? []).map((p) => {
+          const fm = caseFrontmatter(p);
+          return {
+            slug: p.slug,
+            title: p.title,
+            caseNumber: fm.case_number,
+            timeEntries: fm.time_entries ?? [],
+          };
+        })
+      );
     } catch {
       addToast({ type: "error", title: t("fee.err_load") });
     } finally {
@@ -58,7 +85,7 @@ export default function FeeAgreementsPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/fee-agreements", {
+      const res = await csrfFetch("/api/fee-agreements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,8 +118,21 @@ export default function FeeAgreementsPage() {
     }
   };
 
+  const caseFor = (slug: string) => cases.find((c) => c.slug === slug);
+  const caseLabel = (slug: string) => {
+    const c = caseFor(slug);
+    if (!c) return slug.split("/").pop() ?? slug;
+    return c.caseNumber ? `${c.caseNumber} – ${c.title}` : c.title;
+  };
+
+  /** Budget-Auslastung aus den erfassten abrechenbaren Zeiten der Akte. */
   const computeStatus = (ag: FeeAgreement): BudgetStatus => {
-    return computeBudgetStatus(ag, { minutes: 0, billedAmount: 0 });
+    const entries = (caseFor(ag.case_slug)?.timeEntries ?? []).filter((e) => e.billable !== false);
+    const value = entries.reduce(
+      (sum, e) => sum + ((Number(e.minutes) || 0) / 60) * (Number(e.rate) || ag.hourly_rate || 0),
+      0
+    );
+    return computeBudgetStatus(ag, { minutes: 0, billedAmount: value });
   };
 
   return (
@@ -105,8 +145,8 @@ export default function FeeAgreementsPage() {
           { label: t("fee.title") },
         ]}
         actions={
-          <Button onClick={() => setShowCreate(!showCreate)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button size="sm" className="whitespace-nowrap" onClick={() => setShowCreate(!showCreate)}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
             {t("fee.new")}
           </Button>
         }
@@ -114,19 +154,28 @@ export default function FeeAgreementsPage() {
 
       {showCreate && (
         <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-          <h2 className="font-semibold">{t("fee.create_title")}</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("fee.create_title")}</h2>
           <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <Label>{t("claim.case_slug")} *</Label>
-              <Input
+            <div className="space-y-1">
+              <Label htmlFor="fee-case">Akte *</Label>
+              <select
+                id="fee-case"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2 text-sm"
                 value={form.case_slug}
                 onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
-                placeholder="legal/cases/2026-001"
-              />
+              >
+                <option value="">Akte auswählen</option>
+                {cases.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.caseNumber ? `${c.caseNumber} – ${c.title}` : c.title}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div>
-              <Label>{t("fee.model")}</Label>
+            <div className="space-y-1">
+              <Label htmlFor="fee-model">{t("fee.model")}</Label>
               <select
+                id="fee-model"
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2 text-sm"
                 value={form.model}
                 onChange={(e) =>
@@ -143,56 +192,61 @@ export default function FeeAgreementsPage() {
               </select>
             </div>
             <div>
-              <Label>{t("fee.hourly_rate")}</Label>
+              <Label htmlFor="fee-rate">{t("fee.hourly_rate")}</Label>
               <Input
+                id="fee-rate"
                 type="number"
-                inputMode="numeric"
+                inputMode="decimal"
                 value={form.hourly_rate}
                 onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
                 disabled={form.model !== "hourly" && form.model !== "capped"}
               />
             </div>
             <div>
-              <Label>{t("fee.flat_amount")}</Label>
+              <Label htmlFor="fee-flat">{t("fee.flat_amount")}</Label>
               <Input
+                id="fee-flat"
                 type="number"
-                inputMode="numeric"
+                inputMode="decimal"
                 value={form.flat_amount}
                 onChange={(e) => setForm({ ...form, flat_amount: e.target.value })}
                 disabled={form.model !== "flat"}
               />
             </div>
             <div>
-              <Label>{t("fee.budget_cap")}</Label>
+              <Label htmlFor="fee-cap">{t("fee.budget_cap")}</Label>
               <Input
+                id="fee-cap"
                 type="number"
-                inputMode="numeric"
+                inputMode="decimal"
                 value={form.budget_cap}
                 onChange={(e) => setForm({ ...form, budget_cap: e.target.value })}
               />
             </div>
             <div>
-              <Label>{t("fee.rvg_area")}</Label>
+              <Label htmlFor="fee-area">{t("fee.rvg_area")}</Label>
               <Input
+                id="fee-area"
                 value={form.rvg_area}
                 onChange={(e) => setForm({ ...form, rvg_area: e.target.value })}
                 placeholder="z. B. TP 3A RATG"
               />
             </div>
             <div className="md:col-span-2">
-              <Label>{t("fee.notes")}</Label>
+              <Label htmlFor="fee-notes">{t("fee.notes")}</Label>
               <Input
+                id="fee-notes"
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={create} disabled={saving}>
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button size="sm" onClick={create} disabled={saving || !form.case_slug}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {t("fee.save")}
             </Button>
-            <Button variant="secondary" onClick={() => setShowCreate(false)}>
+            <Button size="sm" variant="ghost" onClick={() => setShowCreate(false)}>
               {t("fee.cancel")}
             </Button>
           </div>
@@ -200,62 +254,62 @@ export default function FeeAgreementsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-          <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
-        </div>
+        <RowSkeleton count={3} />
       ) : agreements.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] p-12 text-center text-[color:var(--ds-text-muted)]">
-          <Wallet className="mx-auto mb-3 h-12 w-12 opacity-40" />
-          <p>{t("fee.empty")}</p>
-        </div>
+        !showCreate && (
+          <EmptyState
+            icon={Wallet}
+            title={t("fee.empty")}
+            description="Hinterlegen Sie je Akte das vereinbarte Honorarmodell und optional ein Budget. Ab 80 % Auslastung erscheint eine Warnung."
+            actionLabel={t("fee.new")}
+            onAction={() => setShowCreate(true)}
+          />
+        )
       ) : (
-        <div className="space-y-3">
+        <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {agreements.map((ag) => {
             const status = computeStatus(ag);
+            const hasBudget = Boolean(status.budget_cap);
             return (
-              <div
-                key={ag.id}
-                className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{ag.case_slug}</span>
-                    <Badge variant="default">{FEE_MODEL_LABELS[ag.model].de}</Badge>
-                    {ag.budget_cap && (
-                      <Badge className={ALERT_COLORS[status.alert_level]}>
-                        <AlertTriangle className="mr-1 inline h-3 w-3" />
-                        {status.alert_level === "none"
-                          ? "Im Budget"
-                          : status.alert_level === "warning"
-                            ? "80% erreicht"
-                            : "Budget überschritten"}
+              <li key={ag.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/dashboard/cases/${encodeSlugPath(ag.case_slug)}`}
+                      className="truncate text-sm font-medium text-[color:var(--ds-text)] hover:underline"
+                    >
+                      {caseLabel(ag.case_slug)}
+                    </Link>
+                    <Badge variant="default" className="text-xs">
+                      {FEE_MODEL_LABELS[ag.model]?.de ?? ag.model}
+                    </Badge>
+                    {hasBudget && status.alert_level !== "none" && (
+                      <Badge className={`border text-xs ${ALERT_COLORS[status.alert_level]}`}>
+                        {status.alert_level === "warning" ? "80 % erreicht" : "Budget überschritten"}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
-                    {ag.hourly_rate && <span>Stundensatz: {ag.hourly_rate} €</span>}
-                    {ag.flat_amount && <span>Pauschale: {ag.flat_amount} €</span>}
-                    {ag.budget_cap && <span>Deckel: {ag.budget_cap} €</span>}
-                    {ag.rvg_area && <span>Tarif: {ag.rvg_area}</span>}
+                  <div className="flex flex-wrap items-center gap-x-4 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                    {ag.hourly_rate ? <span>Stundensatz {formatEur(ag.hourly_rate, lang)}</span> : null}
+                    {ag.flat_amount ? <span>Pauschale {formatEur(ag.flat_amount, lang)}</span> : null}
+                    {ag.budget_cap ? <span>Budget {formatEur(ag.budget_cap, lang)}</span> : null}
+                    {ag.rvg_area ? <span>Tarif {ag.rvg_area}</span> : null}
                   </div>
                 </div>
-                {ag.budget_cap && (
-                  <div className="text-right">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
-                      <span className="text-lg font-semibold">
-                        {Math.round(status.utilization * 100)}%
-                      </span>
+                {hasBudget && (
+                  <div className="shrink-0 text-right">
+                    <div className="text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">
+                      {Math.round(status.utilization * 100)} %
                     </div>
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("fee.utilization")}
+                    <p className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                      {formatEur(status.total_value, lang)} von {formatEur(status.budget_cap ?? 0, lang)}
                     </p>
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

@@ -67,12 +67,15 @@ export const DEFAULT_SOURCE_BOOSTS: Record<string, number> = {
  * Hard-excludes — slug prefixes that should never enter search results
  * (unless explicitly opted-in via include_slug_prefixes).
  *
- * These are genuine noise: test fixtures, binary attachments, raw sidecars.
+ * These are genuine noise: test fixtures, binary attachments, raw sidecars —
+ * plus `chat-sessions/`, the stored Copilot conversations: they are a record
+ * of past answers, never evidence for a new one, and a private conversation
+ * must not surface in a colleague's search.
  * `archive/` is deliberately NOT here (issue #1777) — it holds high-signal
  * historical content users expect to find, so it is DEMOTED via
  * DEFAULT_SOURCE_BOOSTS (`archive/`: 0.5) instead of hidden.
  */
-export const DEFAULT_HARD_EXCLUDES: string[] = ["test/", "attachments/", ".raw/"];
+export const DEFAULT_HARD_EXCLUDES: string[] = ["test/", "attachments/", ".raw/", "chat-sessions/"];
 
 /**
  * The jurisdictions the statute corpus is partitioned into. A statute page's

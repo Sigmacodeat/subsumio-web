@@ -52,8 +52,8 @@ export function ActIntelligencePanel({ caseSlug }: { caseSlug: string }) {
   }, [caseSlug]);
   if (loading)
     return (
-      <div className="text-xs text-[color:var(--ds-text-muted)]">
-        Aktenintelligenz wird geladen…
+      <div role="status" aria-live="polite" className="h-0">
+        <span className="sr-only">Aktenanalyse wird geladen</span>
       </div>
     );
   if (!report) return null;
@@ -64,8 +64,7 @@ export function ActIntelligencePanel({ caseSlug }: { caseSlug: string }) {
     <section className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-center gap-2">
         <Brain size={18} className="brand-text" />
-        <h3 className="font-semibold">Aktenintelligenz im Brain</h3>
-        <Badge variant="info">Snapshot aktiv</Badge>
+        <h3 className="font-semibold">Aktenanalyse</h3>
       </div>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
         <Metric icon={FileText} label="Dokumente" value={report.metrics.total} />
@@ -112,12 +111,12 @@ export function ActIntelligencePanel({ caseSlug }: { caseSlug: string }) {
           className="brand-text hover:underline"
           href={`/dashboard/brain/${encode(`pipeline/state-${caseSlug}`)}`}
         >
-          Pipeline-State öffnen
+          Analyseprotokoll öffnen
         </Link>
       </div>
       <p className="text-xs text-[color:var(--ds-text-muted)]">
-        Copilot verwendet denselben Akten-Slug und aktiven Snapshot. Forensische Antworten bleiben
-        auf Dokument, Seite und ON rückführbar.
+        Der Assistent arbeitet mit demselben Analysestand. Antworten bleiben auf Dokument, Seite und
+        Ordnungsnummer rückführbar.
       </p>
     </section>
   );

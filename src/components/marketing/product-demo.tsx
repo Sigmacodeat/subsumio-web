@@ -11,7 +11,8 @@
 // `scene` makes it controlled (scroll story); without it the demo autoplays.
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import {
   Bell,
   Briefcase,
@@ -165,7 +166,7 @@ export default function ProductDemo({
                   />
                   {item.label}
                   {item.key === "intake" && (
-                    <span className="ml-auto rounded-full bg-[color:var(--brand-primary)] px-1.5 text-[9px] font-semibold text-white">
+                    <span className="ml-auto rounded-full bg-[color:var(--brand-solid)] px-1.5 text-[9px] font-semibold text-white">
                       1
                     </span>
                   )}
@@ -242,7 +243,7 @@ export default function ProductDemo({
               <span
                 className={`h-1.5 rounded-full transition-[width,background-color] duration-[var(--ds-duration-normal)] ${
                   s === current
-                    ? "w-5 bg-[color:var(--brand-primary)]"
+                    ? "w-5 bg-[color:var(--brand-solid)]"
                     : "w-1.5 bg-[color:var(--ds-text-subtle)] group-hover:bg-[color:var(--ds-text-muted)]"
                 }`}
               />
@@ -328,7 +329,7 @@ function MatterScene() {
     <div className="flex h-full flex-col gap-2.5">
       <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-display text-[14px] font-semibold tracking-[-0.01em]">
+          <span className="text-[14px] font-semibold tracking-[-0.01em]">
             {d.matter}
           </span>
           <span className="font-mono text-[10px] text-[color:var(--ds-text-subtle)]">
@@ -405,7 +406,7 @@ function DeadlineScene({ animate }: { animate: boolean }) {
     <div className="flex h-full flex-col gap-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="font-display text-[15px] font-semibold tracking-[-0.01em]">
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">
             Fristen &amp; Termine
           </div>
           <div className="text-[11px] text-[color:var(--ds-text-muted)]">{d.deadlineSummary}</div>

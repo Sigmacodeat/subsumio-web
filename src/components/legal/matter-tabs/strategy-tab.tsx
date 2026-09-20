@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDate, formatDateTime } from "@/lib/utils";
+import { sourceLabel, urgencyLabel } from "./format";
 import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -152,7 +154,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
         <p className="py-2 text-sm text-[color:var(--ds-text-muted)]">
           {lang === "en"
             ? "No litigation-economics analyses yet. They are generated automatically when the case analysis pipeline runs after document upload."
-            : "Noch keine Prozess-Ökonomie-Analysen. Sie entstehen automatisch, wenn die Aktenanalyse nach dem Dokumenten-Upload läuft."}
+            : "Noch keine Prozess-Ökonomie-Analysen. Sie entstehen automatisch, wenn die Aktenanalyse nach dem Hochladen von Dokumenten läuft."}
         </p>
       ) : (
         <div className="space-y-2">
@@ -187,9 +189,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
                     {lang === "en" ? a.hintEn : a.hintDe}
                   </span>
                   <span className="ml-auto shrink-0 text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(page.updated_at).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
+                    {formatDate(page.updated_at)}
                   </span>
                 </button>
                 {isOpen && (
@@ -241,10 +241,8 @@ export function StrategyTab() {
         router.push(
           `/dashboard/cases/${encodeURIComponent(caseSlug)}/investigation/${encodeURIComponent(result.run_id)}`
         );
-      } catch (err) {
-        ctx.setSaveError(
-          err instanceof Error ? err.message : "Sachverhaltsprüfung konnte nicht gestartet werden"
-        );
+      } catch {
+        ctx.setSaveError("Sachverhaltsprüfung konnte nicht gestartet werden");
       } finally {
         setInvestigationLoading(false);
       }
@@ -326,7 +324,7 @@ export function StrategyTab() {
   ];
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       {/* Proactive Case Insights + Brain Quality (migrated from former AI-Tab) */}
       <div className="max-w-3xl">
         <Suspense
@@ -380,12 +378,12 @@ export function StrategyTab() {
                         }
                         className="text-[10px]"
                       >
-                        {sd.urgency}
+                        {urgencyLabel(sd.urgency, lang)}
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                      {sd.due_date}
-                      {sd.source_quote && (
+                      <span className="tabular-nums">{formatDate(sd.due_date)}</span>
+                      {sd.source_quote && sd.source_quote !== sd.title && (
                         <span className="ml-1 italic">
                           — &quot;{sd.source_quote.slice(0, 120)}&quot;
                         </span>
@@ -398,17 +396,15 @@ export function StrategyTab() {
                       size="sm"
                       disabled={isArchived}
                       onClick={async () => {
-                        const entry = {
-                          title: sd.title,
-                          due_date: sd.due_date,
-                          status: "pending" as const,
-                          type: "deadline",
-                          source: sd.source,
-                        };
-                        const updated = [...ctx.deadlinesList, entry];
-                        ctx.setDeadlinesList(updated);
-                        await ctx.saveCaseUpdate({ deadlines: updated });
-                        await ctx.confirmSuggestedDeadline(originalIndex, true);
+                        try {
+                          await ctx.confirmSuggestedDeadline(originalIndex, true);
+                        } catch (err) {
+                          ctx.setSaveError(
+                            err instanceof Error
+                              ? err.message
+                              : "Frist konnte nicht übernommen werden."
+                          );
+                        }
                       }}
                       className="h-7 px-2 text-xs"
                     >
@@ -419,7 +415,17 @@ export function StrategyTab() {
                       variant="ghost"
                       size="sm"
                       disabled={isArchived}
-                      onClick={() => ctx.confirmSuggestedDeadline(originalIndex, false)}
+                      onClick={() =>
+                        ctx
+                          .confirmSuggestedDeadline(originalIndex, false)
+                          .catch((err: unknown) =>
+                            ctx.setSaveError(
+                              err instanceof Error
+                                ? err.message
+                                : "Fristvorschlag konnte nicht verworfen werden."
+                            )
+                          )
+                      }
                       className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={12} />
@@ -451,7 +457,7 @@ export function StrategyTab() {
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                      {lang === "en" ? "Source:" : "Quelle:"} {sp.source}
+                      {lang === "en" ? "Source:" : "Quelle:"} {sourceLabel(sp.source)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
@@ -506,13 +512,7 @@ export function StrategyTab() {
             </div>
             {ctx.probeLastRun && (
               <span className="text-xs text-[color:var(--ds-text-muted)]">
-                {t("strategytab.last_probe")}{" "}
-                {new Date(ctx.probeLastRun).toLocaleDateString(lang === "en" ? "en-US" : "de-DE", {
-                  day: "2-digit",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {t("strategytab.last_probe")} {formatDateTime(ctx.probeLastRun)}
               </span>
             )}
           </div>
@@ -609,10 +609,8 @@ export function StrategyTab() {
                   try {
                     await api.legal.contradictionsCheck(caseData.slug);
                     window.location.reload();
-                  } catch (err) {
-                    ctx.setSaveError(
-                      err instanceof Error ? err.message : "Widerspruchsprüfung fehlgeschlagen"
-                    );
+                  } catch {
+                    ctx.setSaveError("Widerspruchsprüfung fehlgeschlagen");
                   }
                 }}
                 className="text-xs"
@@ -761,6 +759,7 @@ export function StrategyTab() {
               features={{
                 caseSelector: false,
                 jurisdictionSelector: true,
+                modelSelector: true,
                 modeSelector: true,
                 fileUpload: true,
                 sessionHistory: true,

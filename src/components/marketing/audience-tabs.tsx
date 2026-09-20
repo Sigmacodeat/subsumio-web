@@ -7,7 +7,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight } from "lucide-react";
 import { p, UI_STRINGS } from "@/content/site";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@/content/solutions";
 import { ICONS } from "./icons";
 import { EASE } from "./motion-system";
+import { EYEBROW_CLASS } from "./typography";
 
 export default function AudienceTabs() {
   const [active, setActive] = useState<SolutionSlug>(SOLUTION_SLUGS[0]);
@@ -66,12 +68,12 @@ export default function AudienceTabs() {
             transition={{ duration: 0.25, ease: EASE.out }}
             className="rounded-2xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-10"
           >
-            <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold">
-              {content.badge}
-            </span>
-            <h3 className="mb-3 [font-family:var(--font-display)] text-xl font-bold tracking-tight [color:var(--mk-text)] md:text-2xl">
-              {content.h1a} <span className="brand-text">{content.h1b}</span>
-            </h3>
+            <p className={`mb-4 ${EYEBROW_CLASS}`}>{content.badge}</p>
+            {/* h2: the audience band has no other heading, and the site's h2
+                rule sets it in the serif — an Inter h3 faked the italic. */}
+            <h2 className="mb-3 [font-family:var(--font-display)] text-2xl leading-tight font-medium tracking-[-0.015em] text-balance [color:var(--mk-text)] md:text-[2rem]">
+              {content.h1a} <span className="gradient-text">{content.h1b}</span>
+            </h2>
             <p className="mb-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {content.sub}
             </p>

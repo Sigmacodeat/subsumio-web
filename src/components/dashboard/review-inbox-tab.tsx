@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Send,
   UserPlus,
+  RefreshCw,
   X,
   Zap,
 } from "lucide-react";
@@ -22,8 +23,10 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { useRealtime } from "@/lib/realtime";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
@@ -102,6 +105,16 @@ const TYPE_BADGE: Record<ReviewItem["type"], string> = {
     "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
 };
 
+const ACTION_BTN =
+  "inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none disabled:opacity-50 motion-reduce:transition-none";
+
+const URGENCY_LABEL: Record<string, { de: string; en: string }> = {
+  critical: { de: "Kritisch", en: "Critical" },
+  high: { de: "Hoch", en: "High" },
+  medium: { de: "Mittel", en: "Medium" },
+  low: { de: "Niedrig", en: "Low" },
+};
+
 const PRIORITY_STYLES: Record<string, string> = {
   high: "border-l-2 border-l-[color:var(--ds-danger-solid)]",
   medium: "border-l-2 border-l-[color:var(--ds-warning-solid)]",
@@ -109,25 +122,11 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 function timeLabel(lang: Lang, value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const now = Date.now();
-  const diff = now - date.getTime();
-  if (diff < 60_000) return lang === "en" ? "just now" : "gerade eben";
-  if (diff < 3_600_000) {
-    const mins = Math.floor(diff / 60_000);
-    return lang === "en" ? `${mins}m ago` : `vor ${mins} Min`;
+  if (lang === "en") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-GB");
   }
-  if (diff < 86_400_000) {
-    const hrs = Math.floor(diff / 3_600_000);
-    return lang === "en" ? `${hrs}h ago` : `vor ${hrs} Std`;
-  }
-  return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatRelativeTime(value);
 }
 
 const I18N: Record<string, { de: string; en: string }> = {
@@ -136,12 +135,21 @@ const I18N: Record<string, { de: string; en: string }> = {
   doc_requests: { de: "Dokumente", en: "Documents" },
   submissions: { de: "Eingänge", en: "Submissions" },
   parties: { de: "Parteien", en: "Parties" },
-  facts: { de: "Fakten", en: "Facts" },
+  facts: { de: "Tatsachen", en: "Facts" },
+  empty_title: { de: "Nichts zu prüfen", en: "Nothing to review" },
   empty: {
-    de: "Keine offenen Review-Items. Alle Aktenpost ist bearbeitet.",
-    en: "No open review items. All case mail is processed.",
+    de: "Alle Fristvorschläge, Mandanteneingänge und Tatsachen sind bearbeitet.",
+    en: "All suggested deadlines, client submissions and facts are processed.",
   },
-  error: { de: "Review-Items konnten nicht geladen werden.", en: "Failed to load review items." },
+  empty_filtered: {
+    de: "In dieser Kategorie ist nichts offen.",
+    en: "Nothing open in this category.",
+  },
+  show_all: { de: "Alle anzeigen", en: "Show all" },
+  error: {
+    de: "Die offenen Einträge konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    en: "Failed to load review items.",
+  },
   to_case: { de: "Zur Akte", en: "To case" },
   approve: { de: "Übernehmen", en: "Approve" },
   reject: { de: "Verwerfen", en: "Reject" },
@@ -164,6 +172,7 @@ const I18N: Record<string, { de: string; en: string }> = {
   toast_portal_copied: { de: "Portal-Link kopiert", en: "Portal link copied" },
   toast_error: { de: "Aktion fehlgeschlagen", en: "Action failed" },
   ai_suggestion: { de: "KI-Vorschlag", en: "AI suggestion" },
+  due_date: { de: "Frist:", en: "Due:" },
   days_overdue: { de: "Tage überfällig", en: "days overdue" },
   days: { de: "Tage", en: "days" },
 };
@@ -178,6 +187,7 @@ export function ReviewInboxTab() {
   const { addToast } = useToast();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<ReviewType>("all");
+  const [editedDates, setEditedDates] = useState<Record<string, string>>({});
 
   const reviewQuery = useQuery({
     queryKey: ["review-inbox"],
@@ -209,52 +219,21 @@ export function ReviewInboxTab() {
         | "party_assertion"
         | "import_document";
       item: ReviewItem;
+      /** Lawyer-edited deadline date (suggested_deadline approve only). */
+      dueDate?: string;
     }) => {
       const { type, action, item } = params;
       if (type === "suggested_deadline") {
         if (item.arrayIndex !== null && item.caseSlug) {
-          const reviewStatus = action === "approve" ? "approved" : "rejected";
-          // Patch the case frontmatter to mark the suggested deadline as confirmed
-          await fetch(`/api/pages/${encodeURIComponent(item.caseSlug)}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              frontmatter: {
-                suggested_deadlines: {
-                  [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
-                },
-              },
-              merge: true,
-            }),
-          }).then((res) => res.json());
-          // When approved, auto-create a legal_deadline page so it appears in calendar + deadlines list
-          if (action === "approve" && item.dueDate) {
-            try {
-              await fetch("/api/pages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  slug: `legal/deadlines/${Date.now()}-${item.caseSlug.split("/").pop()}`,
-                  title: item.title,
-                  type: "legal_deadline",
-                  frontmatter: {
-                    case_slug: item.caseSlug,
-                    due_date: item.dueDate,
-                    title: item.title,
-                    status: "pending",
-                    urgency: item.urgency || "medium",
-                    source: item.source || "ai",
-                    source_quote: item.sourceQuote || null,
-                    review_status: "approved",
-                    auto_created: true,
-                    created_at: new Date().toISOString(),
-                  },
-                }),
-              });
-            } catch {
-              /* best effort — deadline page creation is non-blocking */
-            }
-          }
+          // Server-side, atomic: the deadline is written and checked BEFORE
+          // the suggestion is marked approved (src/lib/legal/deadline-decision.ts).
+          await decideDeadlineSuggestion({
+            caseSlug: item.caseSlug,
+            index: item.arrayIndex,
+            action: action === "approve" ? "approve" : "reject",
+            dueDate:
+              action === "approve" ? (params.dueDate ?? item.dueDate ?? undefined) : undefined,
+          });
           return { ok: true };
         }
         return api.brain.updatePage({
@@ -383,8 +362,11 @@ export function ReviewInboxTab() {
         title: tr(toastMap[variables.action] || "toast_approved", lang),
       });
     },
-    onError: () => {
-      addToast({ type: "error", title: tr("toast_error", lang) });
+    onError: (err) => {
+      addToast({
+        type: "error",
+        title: err instanceof Error && err.message ? err.message : tr("toast_error", lang),
+      });
     },
   });
 
@@ -447,7 +429,7 @@ export function ReviewInboxTab() {
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-xs font-medium",
                     isActive
-                      ? "brand-bg text-white"
+                      ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                       : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
                   )}
                 >
@@ -474,19 +456,31 @@ export function ReviewInboxTab() {
           <AlertTriangle size={32} className="text-[color:var(--ds-text-muted)]" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">{tr("error", lang)}</p>
           <Button variant="ghost" size="sm" onClick={() => void reviewQuery.refetch()}>
-            <Loader2 size={14} className="mr-2" />
-            {lang === "en" ? "Retry" : "Erneut"}
+            <RefreshCw size={14} className="mr-2" aria-hidden="true" />
+            {lang === "en" ? "Retry" : "Erneut laden"}
           </Button>
         </div>
       )}
 
       {/* Empty */}
-      {!loading && !error && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <ClipboardCheck size={32} className="text-[color:var(--ds-success-text)]" />
-          <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">{tr("empty", lang)}</p>
-        </div>
-      )}
+      {!loading &&
+        !error &&
+        filtered.length === 0 &&
+        (filter !== "all" ? (
+          <EmptyState
+            icon={ClipboardCheck}
+            title={tr("empty_title", lang)}
+            description={tr("empty_filtered", lang)}
+            actionLabel={tr("show_all", lang)}
+            onAction={() => setFilter("all")}
+          />
+        ) : (
+          <EmptyState
+            icon={ClipboardCheck}
+            title={tr("empty_title", lang)}
+            description={tr("empty", lang)}
+          />
+        ))}
 
       {/* Review items list */}
       {!loading && !error && filtered.length > 0 && (
@@ -501,7 +495,9 @@ export function ReviewInboxTab() {
           {filtered.map((item) => {
             const Icon = TYPE_ICON[item.type];
             const typeLabel = TYPE_LABEL[item.type];
-            const busy = actionMutation.isPending;
+            // Spinner only on the row being processed; all rows stay disabled meanwhile.
+            const busy = actionMutation.isPending && actionMutation.variables?.item.id === item.id;
+            const locked = actionMutation.isPending;
             return (
               <div
                 key={item.id}
@@ -532,7 +528,7 @@ export function ReviewInboxTab() {
                             : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                         )}
                       >
-                        {item.urgency}
+                        {URGENCY_LABEL[item.urgency]?.[lang === "en" ? "en" : "de"] ?? item.urgency}
                       </span>
                     )}
                     {item.confidence && (
@@ -580,8 +576,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -591,10 +587,7 @@ export function ReviewInboxTab() {
                           {tr("send", lang)}
                         </button>
                         {item.portalUrl && (
-                          <button
-                            onClick={() => copyPortalUrl(item)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                          >
+                          <button onClick={() => copyPortalUrl(item)} className={ACTION_BTN}>
                             <ArrowUpRight size={12} />
                             {tr("copy_portal", lang)}
                           </button>
@@ -610,8 +603,8 @@ export function ReviewInboxTab() {
                             item,
                           })
                         }
-                        disabled={busy}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                        disabled={locked}
+                        className={ACTION_BTN}
                       >
                         {busy ? (
                           <Loader2 size={12} className="animate-spin" />
@@ -623,15 +616,32 @@ export function ReviewInboxTab() {
                     )}
                     {item.type === "suggested_deadline" && (
                       <>
+                        <label className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
+                          {tr("due_date", lang)}
+                          <input
+                            type="date"
+                            aria-label={tr("due_date", lang)}
+                            value={editedDates[item.id] ?? item.dueDate ?? ""}
+                            onChange={(e) =>
+                              setEditedDates((prev) => ({ ...prev, [item.id]: e.target.value }))
+                            }
+                            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text)]"
+                          />
+                        </label>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
-                              type: item.type,
-                              action: "approve",
-                              item,
-                            })
+                            void actionMutation
+                              .mutateAsync({
+                                type: item.type,
+                                action: "approve",
+                                item,
+                                dueDate: editedDates[item.id] ?? item.dueDate ?? undefined,
+                              })
+                              .catch(() => {
+                                /* surfaced via onError toast */
+                              })
                           }
-                          disabled={busy}
+                          disabled={locked || !(editedDates[item.id] ?? item.dueDate)}
                           className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
@@ -649,8 +659,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
                           {tr("reject", lang)}
@@ -667,8 +677,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -685,15 +695,15 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
                           ) : (
                             <FileText size={12} />
                           )}
-                          {lang === "en" ? "Import" : "Dokumente"}
+                          {lang === "en" ? "Import as document" : "Als Dokument übernehmen"}
                         </button>
                       </>
                     )}
@@ -707,8 +717,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -725,8 +735,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
                           {tr("reject", lang)}
@@ -743,8 +753,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -761,8 +771,8 @@ export function ReviewInboxTab() {
                               item,
                             })
                           }
-                          disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          disabled={locked}
+                          className={ACTION_BTN}
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />

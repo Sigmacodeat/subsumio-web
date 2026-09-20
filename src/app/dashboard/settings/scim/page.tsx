@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Users,
   UserMinus,
   UserPlus,
   UserCheck,
@@ -20,7 +19,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useScimStatus, useScimSync, type SyncStatus } from "@/lib/queries/scim";
 import { useMe } from "@/lib/queries/auth";
@@ -29,23 +29,16 @@ import { useLang } from "@/lib/use-lang";
 function StatCard({
   label,
   value,
-  icon: Icon,
-  color,
 }: {
   label: string;
   value: number | string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  color: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", color)}>
-        <Icon size={18} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">{value}</p>
-        <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
-      </div>
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }
@@ -67,11 +60,11 @@ function ConfigRow({
       </div>
       {configured ? (
         <Badge variant="success" className="shrink-0">
-          <CheckCircle2 size={12} /> Aktiv
+          Aktiv
         </Badge>
       ) : (
         <Badge variant="warning" className="shrink-0">
-          <XCircle size={12} /> Nicht konfiguriert
+          Nicht eingerichtet
         </Badge>
       )}
     </div>
@@ -103,6 +96,7 @@ function CopyableField({
         <button
           onClick={copy}
           disabled={!value}
+          aria-label={`${label} kopieren`}
           className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
         >
           {copied ? (
@@ -117,7 +111,7 @@ function CopyableField({
 }
 
 function SyncLogView({ status }: { status: SyncStatus }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const result = status.lastSyncResult;
   if (!result && !status.lastSyncAt) {
     return (
@@ -137,29 +131,29 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           <Clock size={14} />
           {t("scim.last_sync")}{" "}
           <span className="font-medium text-[color:var(--ds-text)]">
-            {new Date(status.lastSyncAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+            {formatDateTime(status.lastSyncAt)}
           </span>
         </div>
       )}
 
       {result && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Erstellt</p>
-              <p className="text-lg font-semibold text-[color:var(--ds-success-text)] tabular-nums">
+              <p className="text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">
                 {result.usersCreated}
               </p>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Aktualisiert</p>
-              <p className="text-lg font-semibold text-[color:var(--ds-info-text)] tabular-nums">
+              <p className="text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">
                 {result.usersUpdated}
               </p>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Deaktiviert</p>
-              <p className="text-lg font-semibold text-[color:var(--ds-warning-text)] tabular-nums">
+              <p className="text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">
                 {result.usersDeactivated}
               </p>
             </div>
@@ -199,12 +193,8 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           )}
 
           <div className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
-            <p>
-              Start: {new Date(result.startedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
-            </p>
-            <p>
-              Ende: {new Date(result.completedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
-            </p>
+            <p className="tabular-nums">Beginn: {formatDateTime(result.startedAt)}</p>
+            <p className="tabular-nums">Ende: {formatDateTime(result.completedAt)}</p>
           </div>
         </>
       )}
@@ -213,11 +203,10 @@ function SyncLogView({ status }: { status: SyncStatus }) {
 }
 
 export default function ScimSettingsPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const meQuery = useMe();
   const statusQuery = useScimStatus();
   const syncMutation = useScimSync();
-  const [showBearerToken, setShowBearerToken] = useState(false);
 
   const userRole = meQuery.data?.user?.role ?? "lawyer";
   const status = statusQuery.data?.data;
@@ -227,8 +216,16 @@ export default function ScimSettingsPage() {
   // RBAC: Only admin can access this page
   if (userRole !== "admin") {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader title={t("scim.title")} description={t("scim.description")} />
+      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title="Benutzerabgleich (SCIM)"
+          description={t("scim.description")}
+          breadcrumbs={[
+            { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+            { label: t("scim.breadcrumb_settings"), href: "/dashboard/settings" },
+            { label: t("scim.breadcrumb_scim") },
+          ]}
+        />
         <Card>
           <div className="p-10 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--ds-danger-bg)]">
@@ -238,8 +235,8 @@ export default function ScimSettingsPage() {
               {t("scim.access_denied")}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("scim.admin_only")}</p>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard/settings" className="mt-4">
+            <Button variant="outline" size="sm" className="mt-4" asChild>
+              <Link href="/dashboard/settings">
                 {t("scim.back_to_settings")}
               </Link>
             </Button>
@@ -252,95 +249,84 @@ export default function ScimSettingsPage() {
   const scimBaseUrl = `${typeof window !== "undefined" ? window.location.origin : "https://subsum.io"}/api/scim`;
   const bearerTokenConfigured = status?.configured ?? false;
   const workosConfigured = status?.workosDirectorySyncConfigured ?? false;
+  const anyConfigured = bearerTokenConfigured || workosConfigured;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={t("scim.title")}
-        description={t("scim.description_full")}
+        title="Benutzerabgleich (SCIM)"
+        description="Übernimmt Mitarbeiter und Rollen automatisch aus dem Benutzerverzeichnis Ihrer Kanzlei (z. B. Microsoft Entra ID)."
         breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("scim.breadcrumb_settings"), href: "/dashboard/settings" },
           { label: t("scim.breadcrumb_scim") },
         ]}
         actions={
+          workosConfigured ? (
           <Button
             variant="glow"
             size="md"
             onClick={() => syncMutation.mutate()}
-            disabled={isSyncing || !workosConfigured}
-            className="shrink-0"
+            disabled={isSyncing}
+            className="shrink-0 whitespace-nowrap"
           >
             <RefreshCw size={15} className={cn(isSyncing && "animate-spin")} />
             {isSyncing ? t("scim.sync_syncing") : t("scim.sync_manual")}
           </Button>
+          ) : undefined
         }
       />
 
       {/* Status Overview */}
       {isLoading ? (
-        <Card>
-          <div className="p-10 text-center">
-            <RefreshCw
-              size={20}
-              className="mx-auto animate-spin text-[color:var(--ds-text-muted)]"
-            />
-            <p className="mt-2 text-sm text-[color:var(--ds-text-muted)]">
-              {t("scim.loading_status")}
-            </p>
-          </div>
-        </Card>
+        <div className="space-y-3" role="status" aria-label={t("scim.loading_status")}>
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </div>
       ) : (
         <>
-          {/* Stats */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
-            <StatCard
-              label="SCIM-Benutzer gesamt"
-              value={status?.totalScimUsers ?? 0}
-              icon={Users}
-              color="bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
-            />
-            <StatCard
-              label={t("scim.label_active_users")}
-              value={status?.activeScimUsers ?? 0}
-              icon={UserCheck}
-              color="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-            />
-            <StatCard
-              label={t("scim.label_disabled_users")}
-              value={status?.deactivatedScimUsers ?? 0}
-              icon={UserMinus}
-              color="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
-            />
-            <StatCard
-              label="Gruppen (letzter Sync)"
-              value={status?.lastSyncResult?.groupsProcessed ?? 0}
-              icon={FolderTree}
-              color="bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]"
-            />
-          </div>
+          {/* Stats — only meaningful once a directory is connected */}
+          {anyConfigured && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <StatCard label={t("scim.label_active_users")} value={status?.activeScimUsers ?? 0} />
+              <StatCard
+                label={t("scim.label_disabled_users")}
+                value={status?.deactivatedScimUsers ?? 0}
+              />
+              <StatCard
+                label="Gruppen (letzter Abgleich)"
+                value={status?.lastSyncResult?.groupsProcessed ?? 0}
+              />
+            </div>
+          )}
 
           {/* Configuration */}
           <Card>
             <div className="border-b border-[color:var(--ds-border)] p-6">
-              <h2 className="text-base font-semibold text-[color:var(--ds-text)]">Konfiguration</h2>
+              <h2 className="text-base font-semibold text-[color:var(--ds-text)]">Einrichtung</h2>
               <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                {t("scim.endpoint_status")}
+                Die Zugangsdaten hinterlegt der Betreiber Ihrer Subsumio-Installation auf dem
+                Server; hier sehen Sie, ob sie vorhanden sind.
               </p>
             </div>
             <div className="px-6">
               <ConfigRow
-                label="SCIM Bearer Token"
+                label="Zugangsschlüssel für das Benutzerverzeichnis"
                 configured={bearerTokenConfigured}
                 detail={
                   bearerTokenConfigured
-                    ? t("scim.bearer_configured")
-                    : t("scim.bearer_not_configured")
+                    ? "Ihr Benutzerverzeichnis kann Mitarbeiter an Subsumio übertragen."
+                    : "Noch nicht hinterlegt – bitte beim Betreiber anfragen."
                 }
               />
               <ConfigRow
-                label="WorkOS Directory Sync"
+                label="Automatischer Abgleich über WorkOS"
                 configured={workosConfigured}
-                detail={workosConfigured ? t("scim.configured") : t("scim.not_configured")}
+                detail={
+                  workosConfigured
+                    ? "Subsumio holt Änderungen regelmäßig selbst ab."
+                    : "Optional; nur nötig, wenn Ihr Verzeichnis über WorkOS angebunden wird."
+                }
               />
             </div>
           </Card>
@@ -349,35 +335,18 @@ export default function ScimSettingsPage() {
           <Card>
             <div className="border-b border-[color:var(--ds-border)] p-6">
               <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                {t("scim.workos_setup")}
+                Angaben für Ihre IT
               </h2>
               <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                {t("scim.workos_setup_desc")}
+                Diese Adresse trägt Ihre IT im Benutzerverzeichnis ein.
               </p>
             </div>
             <div className="px-6">
               <CopyableField
-                label="SCIM Base URL"
+                label="Adresse für Ihr Benutzerverzeichnis (SCIM-Basis-URL)"
                 value={scimBaseUrl}
                 placeholder="https://subsum.io/api/scim"
               />
-              <CopyableField
-                label="SCIM Bearer Token"
-                value={
-                  showBearerToken
-                    ? process.env.NEXT_PUBLIC_SCIM_TOKEN_PREVIEW || "••••••••"
-                    : "••••••••"
-                }
-                placeholder={t("settings.scim.ph_token")}
-              />
-              <div className="py-3">
-                <button
-                  onClick={() => setShowBearerToken(!showBearerToken)}
-                  className="brand-text text-xs hover:underline"
-                >
-                  {showBearerToken ? t("scim.token_hide") : t("scim.token_show")}
-                </button>
-              </div>
               <div className="border-t border-[color:var(--ds-border)] py-3">
                 <a
                   href="https://workos.com/docs/directory-sync"
@@ -385,7 +354,7 @@ export default function ScimSettingsPage() {
                   rel="noopener noreferrer"
                   className="brand-text inline-flex items-center gap-1 text-xs hover:underline"
                 >
-                  WorkOS Directory Sync Dokumentation <ExternalLink size={10} />
+                  Anleitung von WorkOS (englisch) <ExternalLink size={10} />
                 </a>
               </div>
             </div>
@@ -397,18 +366,16 @@ export default function ScimSettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                    {t("scim.sync_log")}
+                    Letzter Abgleich
                   </h2>
                   <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                    {t("scim.sync_log_desc")}
+                    Ergebnis und etwaige Fehler des letzten Abgleichs.
                   </p>
                 </div>
                 {status?.lastSyncAt && (
                   <Badge variant="info" className="shrink-0">
                     <Clock size={11} />
-                    {new Date(status.lastSyncAt).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
+                    {formatDate(status.lastSyncAt)}
                   </Badge>
                 )}
               </div>
@@ -420,30 +387,30 @@ export default function ScimSettingsPage() {
           <Card>
             <div className="border-b border-[color:var(--ds-border)] p-6">
               <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                {t("scim.how_it_works")}
+                So funktioniert der Abgleich
               </h2>
             </div>
             <div className="space-y-3 px-6 py-4">
               {[
                 {
                   icon: UserPlus,
-                  text: t("scim.feature_auto_provision"),
-                  color: "text-[color:var(--ds-success-text)]",
+                  text: "Neue Mitarbeiter im Verzeichnis erhalten automatisch einen Zugang zu Subsumio.",
+                  color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
                   icon: UserCheck,
-                  text: t("scim.feature_auto_update"),
-                  color: "text-[color:var(--ds-info-text)]",
+                  text: "Änderungen an Name, E-Mail-Adresse oder Rolle werden übernommen.",
+                  color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
                   icon: UserMinus,
-                  text: t("scim.feature_auto_deprovision"),
-                  color: "text-[color:var(--ds-warning-text)]",
+                  text: "Ausgeschiedene Mitarbeiter werden gesperrt, nicht gelöscht – ihre Spuren im Änderungsprotokoll bleiben erhalten.",
+                  color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
                   icon: FolderTree,
-                  text: t("scim.feature_group_sync"),
-                  color: "text-[color:var(--ds-category-purple-text)]",
+                  text: "Gruppen aus dem Verzeichnis werden als Gruppen in Subsumio übernommen.",
+                  color: "text-[color:var(--ds-text-muted)]",
                 },
               ].map((item, i) => {
                 const Icon = item.icon;
@@ -467,10 +434,8 @@ export default function ScimSettingsPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle size={16} className="text-[color:var(--ds-danger-text)]" />
                 <p className="text-sm text-[color:var(--ds-danger-text)]">
-                  Sync fehlgeschlagen:{" "}
-                  {syncMutation.error instanceof Error
-                    ? syncMutation.error.message
-                    : "Unbekannter Fehler"}
+                  Der Abgleich ist fehlgeschlagen. Bitte prüfen Sie die Einrichtung oder versuchen
+                  Sie es später erneut.
                 </p>
               </div>
             </div>

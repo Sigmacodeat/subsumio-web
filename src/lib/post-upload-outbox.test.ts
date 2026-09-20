@@ -42,6 +42,35 @@ describe("post-upload outbox", () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain("/legal/post-upload-tasks/analyze/");
   });
 
+  it("never revives a finished task (no paid re-analysis on reconcile sweeps)", async () => {
+    for (const status of ["done", "exhausted", "blocked"]) {
+      const fetchMock = vi.fn().mockResolvedValue(Response.json({ frontmatter: { status } }));
+      vi.stubGlobal("fetch", fetchMock);
+      await enqueuePostUploadTask(
+        { doc_slug: "documents/a.pdf", brain_id: "brain-1", task_type: "analyze" },
+        "brain-1"
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1); // the GET only, no upsert
+    }
+  });
+
+  it("an explicit user retry (force) re-enqueues a finished task", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ frontmatter: { status: "done" } }))
+      .mockResolvedValueOnce(Response.json({ ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    await enqueuePostUploadTask(
+      { doc_slug: "documents/a.pdf", brain_id: "brain-1", task_type: "analyze" },
+      "brain-1",
+      { force: true }
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const body = JSON.parse(String(fetchMock.mock.calls[1][1].body));
+    expect(body.frontmatter.status).toBe("pending");
+    expect(body.frontmatter.attempts).toBe(0);
+  });
+
   it("enqueueAllPostUploadTasks creates analyze + reconcile_case + contradiction when case_slug is provided", async () => {
     const fetchMock = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       const u = String(url);

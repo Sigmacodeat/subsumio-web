@@ -5,7 +5,6 @@ import { createCronHandler } from "@/lib/api-handler";
 import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { createDocumentRequestNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
-import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +17,7 @@ interface DocumentRequestItem {
 }
 
 interface DocumentRequestFm {
+  recipient_phone?: string;
   type: "document_request";
   case_slug: string;
   status: string;
@@ -127,32 +127,29 @@ export const GET = createCronHandler(async (_req) => {
           }
         }
 
-        // WhatsApp reminder
-        try {
-          const identityStore = getWhatsAppIdentityStore();
-          const orgId = recipients.find((r) => r.orgId)?.orgId;
-          if (orgId) {
-            const identities = await identityStore.listByOrg(orgId);
-            const identity = identities[0];
-            if (identity?.phone) {
-              const phone = normalizePhone(identity.phone);
-              const itemList = openItems.map((i) => `• ${i.label}`).join("\n");
-              const freeform = `Erinnerung: Bitte laden Sie folgende Unterlagen hoch:\n${itemList}${
-                fm.portal_url ? `\n\nPortal: ${fm.portal_url}` : ""
-              }`;
-              await sendProactiveMessage({
-                to: phone,
-                brainId,
-                scope: "client_reminder",
-                freeform,
-              });
-            }
+        // WhatsApp reminder — only to the number the request was made for.
+        // (It used to go to the firm's first WhatsApp identity, i.e. to
+        // whoever happened to be registered first.)
+        const recipientPhone =
+          typeof fm.recipient_phone === "string" ? normalizePhone(fm.recipient_phone) : "";
+        if (recipientPhone) {
+          try {
+            const itemList = openItems.map((i) => `• ${i.label}`).join("\n");
+            const freeform = `Erinnerung: Bitte laden Sie folgende Unterlagen hoch:\n${itemList}${
+              fm.portal_url ? `\n\nPortal: ${fm.portal_url}` : ""
+            }`;
+            await sendProactiveMessage({
+              to: recipientPhone,
+              brainId,
+              scope: "client_reminder",
+              freeform,
+            });
+          } catch (err) {
+            report.details.push({
+              slug: page.slug,
+              reason: `whatsapp_failed: ${err instanceof Error ? err.message : String(err)}`,
+            });
           }
-        } catch (err) {
-          report.details.push({
-            slug: page.slug,
-            reason: `whatsapp_failed: ${err instanceof Error ? err.message : String(err)}`,
-          });
         }
 
         // Update reminder tracking

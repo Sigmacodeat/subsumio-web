@@ -11,16 +11,19 @@ import {
   Lock,
   Loader2,
   Info,
+  Bot,
   Archive,
   ClipboardCheck,
   EyeOff,
   Database,
   FileClock,
+  ThumbsUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Skeleton } from "@/components/dashboard/skeleton";
 
 type CheckStatus = "ok" | "warn" | "fail";
 
@@ -279,7 +282,7 @@ export default function CompliancePage() {
         ]}
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         <HubLink
           href="/dashboard/verfahrensdoku"
           icon={ClipboardCheck}
@@ -292,25 +295,35 @@ export default function CompliancePage() {
         />
         <HubLink href="/dashboard/anonymize" icon={EyeOff} label={t("nav.anonymize")} />
         <HubLink href="/dashboard/data-export" icon={Database} label={t("nav.data_export")} />
+        <HubLink href="/dashboard/compliance/ai-act" icon={Bot} label="KI-Verordnung" />
+        <HubLink
+          href="/dashboard/compliance/answer-quality"
+          icon={ThumbsUp}
+          label="Antwortqualität"
+        />
       </div>
 
       {/* Honest framing: this is a maintained checklist, not an automated audit */}
       <div
-        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
+        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
         role="note"
       >
         <Info
           size={16}
-          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
           aria-hidden="true"
         />
-        <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
+        <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
           {t("compliance.disclaimer")}
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2" role="tablist" aria-label={t("aria.compliance_area")}>
+      <div
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0"
+        role="tablist"
+        aria-label={t("aria.compliance_area")}
+      >
         <button
           role="tab"
           id="tab-dsgvo"
@@ -318,9 +331,9 @@ export default function CompliancePage() {
           aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("dsgvo")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+            "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
             activeTab === "dsgvo"
-              ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+              ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
@@ -334,9 +347,9 @@ export default function CompliancePage() {
           aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("gwg")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+            "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
             activeTab === "gwg"
-              ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+              ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
@@ -350,9 +363,9 @@ export default function CompliancePage() {
           aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("gobd")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+            "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
             activeTab === "gobd"
-              ? "brand-soft brand-border brand-text"
+              ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
@@ -367,28 +380,13 @@ export default function CompliancePage() {
         id="tabpanel-compliance"
         aria-labelledby={`tab-${activeTab}`}
         tabIndex={0}
-        className="focus-visible:outline-none"
+        className="space-y-3 focus-visible:outline-none"
       >
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
-            <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{okCount}</div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("compliance.status_ok")}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-center">
-            <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">{warnCount}</div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("compliance.status_warn")}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
-            <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{failCount}</div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("compliance.status_fail")}
-            </div>
-          </div>
+        {/* Stats — Farbe nur, wenn die Zahl > 0 ist */}
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile value={okCount} label={t("compliance.status_ok")} tone="success" />
+          <StatTile value={warnCount} label={t("compliance.status_warn")} tone="warning" />
+          <StatTile value={failCount} label={t("compliance.status_fail")} tone="danger" />
         </div>
 
         {/* Save state */}
@@ -404,12 +402,10 @@ export default function CompliancePage() {
 
         {/* Checks list */}
         {loading ? (
-          <div
-            className="flex items-center justify-center py-20"
-            role="status"
-            aria-label={t("aria.checklist_loading")}
-          >
-            <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
+          <div className="space-y-2" role="status" aria-label={t("aria.checklist_loading")}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
           </div>
         ) : (
           <div className="space-y-2">
@@ -421,13 +417,8 @@ export default function CompliancePage() {
                   onClick={() => cycleStatus(check.id)}
                   aria-label={`${check.label} — ${t("aria.status")}: ${STATUS_LABEL[status](t)}. ${t("compliance.aria_change")}`}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
-                    status === "ok"
-                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] hover:border-[color:var(--ds-success-border)]"
-                      : status === "warn"
-                        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] hover:border-[color:var(--ds-warning-border)]"
-                        : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] hover:border-[color:var(--ds-danger-border)]"
+                    "flex w-full items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color,border-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]"
                   )}
                 >
                   <div className="mt-0.5 shrink-0" aria-hidden="true">
@@ -440,7 +431,7 @@ export default function CompliancePage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium text-[color:var(--ds-text)]">
                         {check.label}
                       </span>
@@ -459,6 +450,8 @@ export default function CompliancePage() {
                       </Badge>
                     </div>
                     <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                      <span className="text-[color:var(--ds-text-subtle)]">{check.category}</span>
+                      {" · "}
                       {check.description}
                     </p>
                   </div>
@@ -468,6 +461,31 @@ export default function CompliancePage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function StatTile({
+  value,
+  label,
+  tone,
+}: {
+  value: number;
+  label: string;
+  tone: "success" | "warning" | "danger";
+}) {
+  const color =
+    value === 0
+      ? "text-[color:var(--ds-text)]"
+      : tone === "success"
+        ? "text-[color:var(--ds-success-text)]"
+        : tone === "warning"
+          ? "text-[color:var(--ds-warning-text)]"
+          : "text-[color:var(--ds-danger-text)]";
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", color)}>{value}</div>
     </div>
   );
 }
@@ -486,7 +504,7 @@ function HubLink({
       href={href}
       className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
     >
-      <Icon size={15} className="shrink-0" />
+      <Icon size={15} className="shrink-0" aria-hidden="true" />
       <span className="truncate">{label}</span>
     </Link>
   );

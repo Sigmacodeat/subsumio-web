@@ -1,175 +1,158 @@
 "use client";
 
-import { FileText, Download, ExternalLink, CheckCircle2, Copy } from "lucide-react";
+import { Download, CheckCircle2, Copy, KeyRound } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
-import { useState } from "react";
+
+const MANIFEST_URL = "https://subsum.io/word-addin/manifest.xml";
+
+/**
+ * Was das Add-in (public/word-addin/taskpane.js) tatsächlich kann —
+ * nur Funktionen aufführen, die dort umgesetzt sind.
+ */
+const FEATURES: { title: string; desc: string }[] = [
+  {
+    title: "Markierten Text prüfen",
+    desc: "Vertragsanalyse, Zusammenfassung, Pflichten und Risiken zum in Word markierten Text.",
+  },
+  {
+    title: "Vertragsentwurf und Überarbeitung",
+    desc: "Entwurf nach Ihrer Anweisung erstellen oder markierten Vertrag überarbeiten und ins Dokument einfügen.",
+  },
+  {
+    title: "Aus der Akte arbeiten",
+    desc: "Aktenüberblick laden und eine Chronologie der Akte direkt ins Dokument einfügen.",
+  },
+  {
+    title: "In Subsumio ablegen",
+    desc: "Markierten Text als Dokument in einer Akte oder im Kanzleiwissen speichern.",
+  },
+];
+
+function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span
+        aria-hidden
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-xs font-semibold text-[color:var(--ds-text)] tabular-nums"
+      >
+        {n}
+      </span>
+      <div className="min-w-0 text-sm text-[color:var(--ds-text-muted)]">
+        <p className="font-medium text-[color:var(--ds-text)]">{title}</p>
+        <div className="mt-0.5 text-xs leading-relaxed">{children}</div>
+      </div>
+    </li>
+  );
+}
 
 export default function WordAddinPage() {
   const { t } = useLang();
   const [copied, setCopied] = useState(false);
 
-  const manifestUrl = "https://subsum.io/word-addin/manifest.xml";
-  const taskpaneUrl = "https://subsum.io/word-addin/taskpane.html";
-
-  function copyManifestUrl() {
-    void navigator.clipboard.writeText(manifestUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copyManifestUrl() {
+    try {
+      await navigator.clipboard.writeText(MANIFEST_URL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* Kopieren nicht erlaubt — die Adresse bleibt markierbar sichtbar. */
+    }
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("wordaddin.title")}
-        description={t("wordaddin.desc")}
+        description="Arbeiten Sie mit Subsumio direkt in Microsoft Word — Texte prüfen, Verträge entwerfen und Ergebnisse in der Akte ablegen."
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("wordaddin.breadcrumb") },
         ]}
       />
 
-      {/* Hero */}
-      <div className="rounded-2xl border border-[color:var(--ds-border)] bg-gradient-to-br from-[color:var(--ds-surface)] to-[color:var(--ds-surface-2)] p-6">
-        <div className="flex items-start gap-4">
-          <div className="brand-soft brand-border flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border">
-            <FileText size={28} className="brand-text" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-[color:var(--ds-text)]">
-              {t("wordaddin.hero_title")}
-            </h2>
-            <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-              {t("wordaddin.hero_desc")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Features */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {[
-          {
-            title: t("wordaddin.f1_title"),
-            desc: t("wordaddin.f1_desc"),
-          },
-          {
-            title: t("wordaddin.f2_title"),
-            desc: t("wordaddin.f2_desc"),
-          },
-          { title: t("wordaddin.f3_title"), desc: t("wordaddin.f3_desc") },
-          { title: t("wordaddin.f4_title"), desc: t("wordaddin.f4_desc") },
-        ].map((f) => (
-          <div
-            key={f.title}
-            className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
-          >
-            <div className="mb-1 flex items-center gap-2">
-              <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
-              <h3 className="text-sm font-medium text-[color:var(--ds-text)]">{f.title}</h3>
-            </div>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">{f.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Installation */}
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-          {t("wordaddin.install_title")}
-        </h3>
-
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <div className="brand-soft brand-border brand-text flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
-              1
-            </div>
-            <div className="text-sm text-[color:var(--ds-text-muted)]">
-              <p className="font-medium text-[color:var(--ds-text)]">
-                {t("wordaddin.step1_title")}
-              </p>
-              <p className="mt-0.5 text-xs">{t("wordaddin.step1_desc")}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <code className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 font-mono text-xs text-[color:var(--ds-text)]">
-                  {manifestUrl}
-                </code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label={t("wordaddin.copy_url")}
-                  onClick={copyManifestUrl}
-                  className="gap-1 text-xs"
-                >
-                  {copied ? (
-                    <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
-                  ) : (
-                    <Copy size={12} />
-                  )}
-                </Button>
+      <section className="space-y-3">
+        <h2 className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+          Funktionen
+        </h2>
+        <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          {FEATURES.map((f) => (
+            <li key={f.title} className="flex gap-3 p-4">
+              <CheckCircle2
+                size={14}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+              />
+              <div>
+                <h3 className="text-sm font-medium text-[color:var(--ds-text)]">{f.title}</h3>
+                <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{f.desc}</p>
               </div>
-            </div>
-          </div>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          Ergebnisse des Assistenten sind Entwürfe und vor der Verwendung anwaltlich zu prüfen.
+          Läuft mit Microsoft 365 und Office 2021 oder neuer.
+        </p>
+      </section>
 
-          <div className="flex gap-3">
-            <div className="brand-soft brand-border brand-text flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
-              2
+      <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 md:p-5">
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {t("wordaddin.install_title")}
+        </h2>
+        <ol className="space-y-4">
+          <Step n={1} title="Adresse des Add-ins kopieren">
+            <p>Diese Adresse benötigt Word, um das Add-in zu laden.</p>
+            <div className="mt-2 flex min-w-0 items-center gap-2">
+              <code className="min-w-0 truncate rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 font-mono text-xs text-[color:var(--ds-text)]">
+                {MANIFEST_URL}
+              </code>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={copied ? "Kopiert" : "Adresse kopieren"}
+                title="Adresse kopieren"
+                onClick={copyManifestUrl}
+              >
+                {copied ? (
+                  <CheckCircle2
+                    size={12}
+                    aria-hidden
+                    className="text-[color:var(--ds-success-text)]"
+                  />
+                ) : (
+                  <Copy size={12} aria-hidden />
+                )}
+              </Button>
             </div>
-            <div className="text-sm text-[color:var(--ds-text-muted)]">
-              <p className="font-medium text-[color:var(--ds-text)]">
-                {t("wordaddin.step2_title")}
-              </p>
-              <p className="mt-0.5 text-xs">{t("wordaddin.step2_desc")}</p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="brand-soft brand-border brand-text flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
-              3
-            </div>
-            <div className="text-sm text-[color:var(--ds-text-muted)]">
-              <p className="font-medium text-[color:var(--ds-text)]">
-                {t("wordaddin.step3_title")}
-              </p>
-              <p className="mt-0.5 text-xs">
-                {t("wordaddin.step3_desc")}{" "}
-                <Link href="/dashboard/api-keys" className="brand-text hover:underline">
-                  {t("wordaddin.step3_link")}
-                </Link>{" "}
-                {t("wordaddin.step3_after")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Links */}
-      <div className="flex flex-wrap gap-3">
-        <Button variant="outline" className="gap-2" asChild>
-          <a href={manifestUrl} download>
-            <Download size={15} /> {t("wordaddin.download_manifest")}
-          </a>
-        </Button>
-        <Button variant="outline" className="gap-2" asChild>
-          <a href={taskpaneUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink size={15} /> {t("wordaddin.open_taskpane")}
-          </a>
-        </Button>
-        <Button variant="outline" className="gap-2" asChild>
-          <Link href="/dashboard/api-keys">
-            <FileText size={15} /> {t("wordaddin.gen_token")}
-          </Link>
-        </Button>
-      </div>
-
-      <Badge
-        variant="default"
-        className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
-      >
-        {t("wordaddin.version_badge")}
-      </Badge>
+          </Step>
+          <Step n={2} title="In Word hinzufügen">
+            <p>
+              Word → Registerkarte „Einfügen“ → „Add-ins“ → „Mein Add-in hochladen“ → Adresse
+              einfügen oder die heruntergeladene Datei auswählen.
+            </p>
+            <Button variant="outline" size="sm" className="mt-2 gap-2 whitespace-nowrap" asChild>
+              <a href={MANIFEST_URL} download>
+                <Download size={13} aria-hidden /> Add-in-Datei herunterladen
+              </a>
+            </Button>
+          </Step>
+          <Step n={3} title="Mit Ihrem Konto verbinden">
+            <p>
+              Erstellen Sie einen Zugangsschlüssel und fügen Sie ihn im Add-in unter „Verbinden“
+              ein. Der Schlüssel wird nur einmal angezeigt.
+            </p>
+            <Button variant="primary" size="sm" className="mt-2 gap-2 whitespace-nowrap" asChild>
+              <Link href="/dashboard/api-keys">
+                <KeyRound size={13} aria-hidden /> Zugangsschlüssel erstellen
+              </Link>
+            </Button>
+          </Step>
+        </ol>
+      </section>
     </div>
   );
 }

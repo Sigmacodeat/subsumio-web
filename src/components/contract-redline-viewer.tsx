@@ -112,7 +112,7 @@ function parseRedlineResponse(text: string): RedlineClause[] {
       original: "",
       revised: text,
       risk: "medium",
-      reason: "AI-generierte Überarbeitung",
+      reason: "KI-generierte Überarbeitung",
     });
   }
 
@@ -223,10 +223,11 @@ export function ContractRedlineViewer({
       setActiveClause(0);
       if (rcpt) setReceipt(rcpt);
       addToast({ type: "success", title: `${parsed.length} Klauseln analysiert` });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Redline-Analyse fehlgeschlagen";
+    } catch {
+      const msg =
+        "Die Vertragsüberarbeitung ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut.";
       setError(msg);
-      addToast({ type: "error", title: msg });
+      addToast({ type: "error", title: "Überarbeitung fehlgeschlagen" });
     } finally {
       setLoading(false);
     }
@@ -251,7 +252,7 @@ export function ContractRedlineViewer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `redline-${Date.now()}.md`;
+    a.download = `vertrag-aenderungen-${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -262,12 +263,12 @@ export function ContractRedlineViewer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `accepted-redline-${Date.now()}.md`;
+    a.download = `vertrag-angenommene-fassung-${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
     addToast({
       type: "success",
-      title: `Akzeptierte Version exportiert (${acceptedCount}/${clauses.length} Klauseln)`,
+      title: `Angenommene Fassung exportiert (${acceptedCount}/${clauses.length} Klauseln)`,
     });
   }
 
@@ -309,14 +310,14 @@ export function ContractRedlineViewer({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
-          <div className="brand-soft brand-border flex h-10 w-10 items-center justify-center rounded-xl border">
-            <GitCompare size={20} className="brand-text" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+            <GitCompare size={20} className="text-[color:var(--ds-text-muted)]" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-              Contract Redline
+              Vertragsüberarbeitung
             </h2>
             <div className="flex items-center gap-2">
               <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -327,7 +328,7 @@ export function ContractRedlineViewer({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {clauses.length > 0 && (
             <>
               <Button variant="ghost" size="sm" onClick={copyRedline} className="gap-1.5 text-xs">
@@ -345,7 +346,7 @@ export function ContractRedlineViewer({
                 className="gap-1.5 text-xs"
               >
                 <Download size={14} />
-                Redline
+                Änderungen
               </Button>
               <Button
                 variant="ghost"
@@ -354,7 +355,7 @@ export function ContractRedlineViewer({
                 className="gap-1.5 text-xs"
               >
                 <FileCheck2 size={14} />
-                Akzeptiert ({acceptedCount}/{clauses.length})
+                Angenommene Fassung ({acceptedCount}/{clauses.length})
               </Button>
             </>
           )}
@@ -371,16 +372,18 @@ export function ContractRedlineViewer({
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6 py-3">
-        <div className="flex gap-1.5">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Perspektive">
           {(["client", "counterparty", "neutral"] as const).map((p) => (
             <button
               key={p}
+              role="radio"
+              aria-checked={perspective === p}
               onClick={() => setPerspective(p)}
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.97] motion-reduce:transition-none",
                 perspective === p
-                  ? "brand-soft brand-border brand-text"
+                  ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               )}
             >
@@ -401,13 +404,13 @@ export function ContractRedlineViewer({
           className="gap-2 text-xs"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <PenTool size={14} />}
-          {loading ? "Analysiere…" : "Redline starten"}
+          {loading ? "Wird analysiert…" : "Überarbeitung starten"}
         </Button>
       </div>
 
       {/* Risk Summary + Bulk Actions */}
       {clauses.length > 0 && (
-        <div className="flex items-center gap-4 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6 py-2.5">
+        <div className="flex flex-wrap items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2.5 md:px-6">
           <span className="text-xs text-[color:var(--ds-text-muted)]">
             {clauses.length} Klauseln
           </span>
@@ -438,7 +441,7 @@ export function ContractRedlineViewer({
           <div className="flex-1" />
           {reviewedCount > 0 && (
             <span className="text-xs text-[color:var(--ds-text-muted)]">
-              {reviewedCount}/{clauses.length} reviewed
+              {reviewedCount}/{clauses.length} geprüft
             </span>
           )}
           <button
@@ -457,7 +460,7 @@ export function ContractRedlineViewer({
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 md:p-6">
         {error && (
           <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]">
             <AlertTriangle size={16} className="shrink-0" />
@@ -467,17 +470,17 @@ export function ContractRedlineViewer({
 
         {!loading && !redlineText && !error && (
           <div className="mx-auto max-w-2xl space-y-4 py-20 text-center">
-            <div className="brand-soft brand-border mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border">
-              <GitCompare size={28} className="brand-text" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+              <GitCompare size={28} className="text-[color:var(--ds-text-muted)]" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 Vertragsredaktion starten
               </h3>
               <p className="mx-auto mt-1 max-w-md text-xs text-[color:var(--ds-text-muted)]">
-                Der Assistent analysiert den Vertrag clause-by-clause, identifiziert Risiken und
-                schlägt überarbeitete Formulierungen vor.
-                {playbookSlug && ` Playbook: ${playbookSlug}`}
+                Der Assistent prüft den Vertrag Klausel für Klausel, benennt Risiken und schlägt
+                überarbeitete Formulierungen vor.
+                {playbookSlug && " Grundlage ist der gewählte Prüfleitfaden."}
               </p>
             </div>
             <Button variant="primary" size="sm" onClick={runRedline} className="gap-2">
@@ -493,7 +496,7 @@ export function ContractRedlineViewer({
               <div className="mb-3 flex items-center gap-2" role="status" aria-live="polite">
                 <Loader2 size={14} className="brand-text animate-spin" />
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  Streaming Analyse…
+                  Analyse läuft …
                 </span>
               </div>
               <pre className="max-h-96 overflow-auto font-mono text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
@@ -521,7 +524,7 @@ export function ContractRedlineViewer({
                     "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
                     riskCfg.border,
                     isActive && "ring-2 ring-[color:var(--brand-primary)]/40 ring-offset-0",
-                    clause.accepted === true && "ring-1 ring-emerald-500/30",
+                    clause.accepted === true && "ring-1 ring-[color:var(--ds-success-border)]",
                     clause.accepted === false && "opacity-60"
                   )}
                 >
@@ -606,8 +609,8 @@ export function ContractRedlineViewer({
                         {/* Revised with diff highlighting */}
                         <div className="bg-[color:var(--ds-hover)]/30 p-4">
                           <div className="mb-2 flex items-center gap-1.5">
-                            <PenTool size={12} className="text-[color:var(--brand-secondary)]" />
-                            <span className="text-xs font-semibold tracking-wide text-[color:var(--brand-secondary)] uppercase">
+                            <PenTool size={12} className="text-[color:var(--ds-text-muted)]" />
+                            <span className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
                               Überarbeitet
                             </span>
                           </div>
@@ -632,7 +635,7 @@ export function ContractRedlineViewer({
                           className={cn(
                             "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                             clause.accepted === true
-                              ? "border border-[color:var(--ds-success-border)] bg-emerald-500/15 text-[color:var(--ds-success-text)]"
+                              ? "border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                               : "border border-transparent text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                           )}
                         >
@@ -643,7 +646,7 @@ export function ContractRedlineViewer({
                           className={cn(
                             "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                             clause.accepted === false
-                              ? "border border-[color:var(--ds-danger-border)] bg-red-500/15 text-[color:var(--ds-danger-text)]"
+                              ? "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                               : "border border-transparent text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                           )}
                         >
@@ -654,7 +657,8 @@ export function ContractRedlineViewer({
                           <button
                             onClick={() => setActiveClause(idx - 1)}
                             className="rounded p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                            title="Vorherige (↑)"
+                            title="Vorherige Klausel (↑)"
+                            aria-label="Vorherige Klausel"
                           >
                             <ArrowUp size={12} />
                           </button>
@@ -663,7 +667,8 @@ export function ContractRedlineViewer({
                           <button
                             onClick={() => setActiveClause(idx + 1)}
                             className="rounded p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                            title="Nächste (↓)"
+                            title="Nächste Klausel (↓)"
+                            aria-label="Nächste Klausel"
                           >
                             <ArrowDown size={12} />
                           </button>
@@ -706,7 +711,7 @@ function DiffRenderer({ tokens, side }: { tokens: DiffToken[]; side: "original" 
           return (
             <span
               key={i}
-              className="rounded bg-red-500/15 px-0.5 text-[color:var(--ds-danger-text)] line-through"
+              className="rounded bg-[color:var(--ds-danger-bg)] px-0.5 text-[color:var(--ds-danger-text)] line-through"
             >
               {token.text}
             </span>
@@ -716,7 +721,7 @@ function DiffRenderer({ tokens, side }: { tokens: DiffToken[]; side: "original" 
           return (
             <span
               key={i}
-              className="rounded bg-emerald-500/15 px-0.5 text-[color:var(--ds-success-text)]"
+              className="rounded bg-[color:var(--ds-success-bg)] px-0.5 text-[color:var(--ds-success-text)]"
             >
               {token.text}
             </span>

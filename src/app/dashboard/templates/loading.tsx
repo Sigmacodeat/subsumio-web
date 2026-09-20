@@ -1,9 +1,5 @@
-import { Loader2 } from "lucide-react";
+import { PageSkeleton } from "@/components/dashboard/skeleton";
 
 export default function Loading() {
-  return (
-    <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-      <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
-    </div>
-  );
+  return <PageSkeleton />;
 }

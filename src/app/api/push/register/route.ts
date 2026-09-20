@@ -1,15 +1,23 @@
 import { createHandler } from "@/lib/api-handler";
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import { registerPushToken, unregisterPushToken } from "@/lib/push-token-store";
+import { parseWebPushSubscription, webPushPublicKey } from "@/lib/web-push-core";
 import { logger } from "@/lib/logger";
 
 const log = logger("push-register");
 
 const registerSchema = z.object({
-  token: z.string().min(10),
-  platform: z.enum(["ios", "android"]),
-  deviceId: z.string().optional(),
+  /** Device token (ios/android) or the browser's push subscription as JSON (web). */
+  token: z.string().min(10).max(4_000),
+  platform: z.enum(["ios", "android", "web"]),
+  deviceId: z.string().max(200).optional(),
 });
+
+/** Whether web push is available, and the key browsers subscribe with. */
+export const GET = createHandler({ action: "push.register", rateTier: "standard" }, async () =>
+  Response.json({ public_key: webPushPublicKey() })
+);
 
 export const POST = createHandler(
   {
@@ -24,7 +32,16 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const { token, platform, deviceId } = body;
+    const { token, platform } = body;
+    let deviceId = body.deviceId;
+    if (platform === "web") {
+      // Only real push services; one entry per browser (keyed by its endpoint).
+      const sub = parseWebPushSubscription(token);
+      if (!sub) {
+        return Response.json({ error: "invalid_subscription" }, { status: 400 });
+      }
+      deviceId = `web:${createHash("sha256").update(sub.endpoint).digest("hex").slice(0, 32)}`;
+    }
 
     await registerPushToken(ctx.user.id, token, platform, deviceId);
 

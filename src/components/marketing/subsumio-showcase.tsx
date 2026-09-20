@@ -7,7 +7,8 @@
 // SEO-indexable; this file owns only the presentation + motion.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import {
   Paperclip,
   Mic,
@@ -24,7 +25,7 @@ import {
   Smile,
   Send,
 } from "lucide-react";
-import { Section, H2_CTA_CLASS } from "./primitives";
+import { Section, H2_CTA_CLASS, EYEBROW_CLASS } from "./primitives";
 import { ICONS, accentTile } from "./icons";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -41,7 +42,7 @@ const COPY = {
       icon: Clock,
       color: "emerald",
       t: "Zeit & Auslagen in Sekunden",
-      d: '"Zeit 0,5h Akte Müller, Telefonat" → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.',
+      d: "„Zeit 0,5 h Akte Müller, Telefonat“ wird erfasst und der Akte zugeordnet; ein Tipp bestätigt.",
     },
     {
       icon: Paperclip,
@@ -65,7 +66,7 @@ const COPY = {
   phoneHeader: "Subsumio-Assistent",
   phoneStatus: "online",
   chat: [
-    { from: "user", text: "Zeit 0,5h Akte Müller, Telefonat Gegenseite" },
+    { from: "user", text: "Zeit 0,5 h Akte Müller, Telefonat Gegenseite" },
     {
       from: "bot",
       text: "✓ Zeitbuchung 0,5 h · Akte Müller · Telefonat\nBestätigen?",
@@ -623,10 +624,7 @@ export function WhatsAppSpotlight({ children }: { children?: React.ReactNode }) 
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
           <motion.div {...reveal(0, reduce)}>
-            <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
-              {c.waEyebrow}
-            </span>
+            <p className={`mb-5 ${EYEBROW_CLASS}`}>{c.waEyebrow}</p>
           </motion.div>
           <motion.div {...reveal(1, reduce)}>
             <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.waTitle}</h2>
@@ -675,9 +673,9 @@ export function FeatureBento() {
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
       <motion.div {...reveal(0, reduce)} className="mb-14 text-center">
-        <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium">
+        <p className={`mb-4 justify-center after:h-px after:w-6 after:bg-current after:opacity-50 after:content-[''] ${EYEBROW_CLASS}`}>
           {c.bentoEyebrow}
-        </span>
+        </p>
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.bentoTitle}</h2>
         <p className="mx-auto max-w-2xl text-lg text-pretty [color:var(--mk-text-muted)]">
           {c.bentoSub}

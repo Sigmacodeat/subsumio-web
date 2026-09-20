@@ -336,6 +336,62 @@ export function usePipelineEstimate(opts: { pages?: number; parts?: number; tier
   });
 }
 
+// ── AI Model Preference ──
+
+export interface ModelPreferenceResponse {
+  models: Array<{
+    id: string;
+    name: string;
+    provider: string;
+    contextWindow: number;
+    costPer1MInput: number;
+    costPer1MOutput: number;
+    speedRating: number;
+    description: string;
+    capabilities: string[];
+    brainScoped: boolean;
+    dataResidency: "eu" | "non_eu";
+  }>;
+  preferredModelId: string;
+  preferredModel: {
+    id: string;
+    name: string;
+    provider: string;
+    contextWindow: number;
+    costPer1MInput: number;
+    costPer1MOutput: number;
+    speedRating: number;
+    description: string;
+    capabilities: string[];
+    brainScoped: boolean;
+    dataResidency: "eu" | "non_eu";
+  } | null;
+  brainId: string;
+  modelPolicy: "any" | "eu_only";
+}
+
+export function useModelPreference() {
+  return useQuery({
+    queryKey: ["settings", "model"],
+    queryFn: () => apiGet<{ data: ModelPreferenceResponse }>("/api/settings/model"),
+  });
+}
+
+export function useUpdateModelPreference() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (modelId: string) =>
+      csrfFetch("/api/settings/model", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelId }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["settings", "model"] });
+    },
+  });
+}
+
 // ── Firm model profile (KI-Modelle) ──
 
 export class ModelProfileSaveError extends Error {

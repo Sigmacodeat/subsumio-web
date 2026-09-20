@@ -50,6 +50,8 @@ export interface QueryResponse {
   /** Model the engine answered with, e.g. "anthropic:claude-sonnet-5". */
   model?: string;
   _grounding?: GroundingMetadata;
+  /** True when verification replaced the streamed draft with `answer`. */
+  answer_revised?: boolean;
 }
 
 export interface Citation {

@@ -102,7 +102,7 @@ export function CaseInsightsPanel({ caseSlug, className }: CaseInsightsPanelProp
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="brand-text" />
             <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {lang === "en" ? "Case Insights" : "Akten-Insights"}
+              {lang === "en" ? "Case alerts" : "Hinweise zur Akte"}
             </span>
             {criticalCount > 0 && (
               <Badge variant="danger" className="text-[10px]">
@@ -122,7 +122,7 @@ export function CaseInsightsPanel({ caseSlug, className }: CaseInsightsPanelProp
             onClick={refetch}
             disabled={loading}
             className="h-7 px-2"
-            aria-label={lang === "en" ? "Refresh insights" : "Insights aktualisieren"}
+            aria-label={lang === "en" ? "Refresh alerts" : "Hinweise aktualisieren"}
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           </Button>
@@ -152,7 +152,7 @@ export function CaseInsightsPanel({ caseSlug, className }: CaseInsightsPanelProp
             <p className="text-xs text-[color:var(--ds-text-muted)]">
               {lang === "en"
                 ? "No insights for this case — everything looks current."
-                : "Keine Insights für diese Akte — alles aktuell."}
+                : "Keine offenen Hinweise zu dieser Akte."}
             </p>
           </div>
         )}

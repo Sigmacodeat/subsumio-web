@@ -219,10 +219,11 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <li>Optional: Dienst zur verteilten Ratenbegrenzung</li>
       </ul>
       <p className="mt-2">
-        Aktuelle Anbieter: Hosting über EU-Rechenzentren (Hetzner, DE); KI-Sprachmodelle und
-        Suchfunktionen über OpenRouter (US, EU-Standardvertragsklauseln); Zahlung über Stripe (US,
-        EU-Standardvertragsklauseln); E-Mail über Resend (US, EU-Standardvertragsklauseln). Alle
-        Auftragsverarbeiter sind durch AVV gebunden.
+        Aktuelle Anbieter: Hosting über ein EU-Rechenzentrum (netcup GmbH, Rechenzentrum Wien, AT);
+        KI-Sprachmodelle über Anthropic (Anthropic PBC, US, EU-Standardvertragsklauseln) und, als
+        Ausweichweg sowie für Suchfunktionen, über OpenRouter (US, EU-Standardvertragsklauseln);
+        Zahlung über Stripe (US, EU-Standardvertragsklauseln); E-Mail über Resend (US,
+        EU-Standardvertragsklauseln). Alle Auftragsverarbeiter sind durch AVV gebunden.
       </p>
 
       <H2>8. Speicherdauer</H2>
@@ -451,11 +452,12 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         ersetzender Unterauftragsverarbeiter und gibt ihm die Möglichkeit zum Widerspruch.
       </p>
       <p>
-        (2) Aktuelle Unterauftragsverarbeiter: Hosting (Hetzner, DE/EU); Anbieter von
-        KI-Sprachmodellen und Suchfunktionen (OpenRouter, US — EU-Standardvertragsklauseln); Zahlung
-        (Stripe, US — EU-Standardvertragsklauseln); E-Mail (Resend, US —
-        EU-Standardvertragsklauseln); optionaler Dienst zur Ratenbegrenzung (Upstash, US —
-        EU-Standardvertragsklauseln).
+        (2) Aktuelle Unterauftragsverarbeiter: Hosting (netcup GmbH, Rechenzentrum Wien, AT/EU);
+        Anbieter von KI-Sprachmodellen (Anthropic PBC, US — EU-Standardvertragsklauseln); Anbieter
+        von KI-Sprachmodellen als Ausweichweg und von Suchfunktionen (OpenRouter, US —
+        EU-Standardvertragsklauseln); Zahlung (Stripe, US — EU-Standardvertragsklauseln); E-Mail
+        (Resend, US — EU-Standardvertragsklauseln); optionaler Dienst zur Ratenbegrenzung (Upstash,
+        US — EU-Standardvertragsklauseln).
       </p>
       <p>
         (3) Bei Unterauftragsverarbeitern außerhalb des EWR erfolgen Übermittlungen auf Basis von
@@ -499,7 +501,7 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Verfügbarkeit:</strong> Health-Checks,
-          Auto-Restart, Hetzner EU-Rechenzentren.
+          Auto-Restart, EU-Rechenzentrum in Wien.
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Pseudonymisierung:</strong> Interne IDs wo

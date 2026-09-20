@@ -427,7 +427,7 @@ export function MobileTabBar({
                 strokeWidth={copilotActive ? 2.5 : 2}
               />
               {copilotActive && (
-                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
+                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--brand-solid)]" />
               )}
             </div>
             <span className="text-xs leading-none font-medium">{t("copilot.copilot")}</span>

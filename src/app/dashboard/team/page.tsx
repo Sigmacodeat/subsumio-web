@@ -11,7 +11,6 @@ import {
   Crown,
   AlertCircle,
   CheckCircle,
-  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +24,8 @@ import {
   useLeaveOrg,
 } from "@/lib/queries/settings";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Skeleton, RowSkeleton } from "@/components/dashboard/skeleton";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface Member {
   id: string;
@@ -70,6 +71,7 @@ export default function TeamPage() {
   const inviteMutation = useInviteMemberOrg();
   const removeMutation = useRemoveMemberOrg();
   const leaveMutation = useLeaveOrg();
+  const confirm = useConfirm();
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -93,17 +95,24 @@ export default function TeamPage() {
   if (loading) {
     return (
       <div
-        className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-muted)]"
+        className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8"
         role="status"
-        aria-live="polite"
+        aria-label={t("team.loading")}
       >
-        <Loader2 size={14} className="animate-spin" aria-hidden /> {t("team.loading")}
+        <div className="space-y-2.5">
+          <Skeleton className="h-3 w-32 rounded" />
+          <Skeleton className="h-8 w-40 rounded-lg" />
+          <Skeleton className="h-4 w-80 max-w-full rounded" />
+        </div>
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          <RowSkeleton count={3} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("nav.team")}
         description={t("team.description")}
@@ -136,13 +145,14 @@ export default function TeamPage() {
             className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
             aria-hidden
           />
-          <p className="text-sm [color:var(--mk-text-subtle)]">{notice}</p>
+          <p className="text-sm text-[color:var(--ds-success-text)]">{notice}</p>
         </div>
       )}
       {devJoinUrl && (
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3.5">
           <p className="mb-1.5 text-xs text-[color:var(--ds-warning-text)]">
-            Mail-Provider nicht konfiguriert — gib der Person diesen Einladungs-Link direkt:
+            Der E-Mail-Versand ist noch nicht eingerichtet. Bitte senden Sie der eingeladenen
+            Person diesen Einladungslink selbst zu:
           </p>
           <code className="brand-text text-xs break-all">{devJoinUrl}</code>
         </div>
@@ -161,7 +171,7 @@ export default function TeamPage() {
               {t("team.create_desc")}
             </p>
             <form
-              className="flex flex-col gap-3 sm:flex-row"
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
               onSubmit={async (e) => {
                 e.preventDefault();
                 setError(null);
@@ -175,8 +185,10 @@ export default function TeamPage() {
                 }
               }}
             >
-              <label className="flex-1">
-                <span className="sr-only">Team-Name</span>
+              <label className="flex-1 space-y-1.5">
+                <span className="block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  Name des Teams, etwa der Kanzleiname
+                </span>
                 <Input
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
@@ -186,7 +198,7 @@ export default function TeamPage() {
                   maxLength={80}
                 />
               </label>
-              <Button type="submit" variant="glow" disabled={busy}>
+              <Button type="submit" variant="glow" disabled={busy} className="whitespace-nowrap">
                 Erstellen
               </Button>
             </form>
@@ -201,8 +213,8 @@ export default function TeamPage() {
                   {state.org.name}
                 </h2>
                 <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                  {state.members?.length ?? 0} Mitglied
-                  {(state.members?.length ?? 0) !== 1 ? "er" : ""} · gemeinsames Brain
+                  <span className="tabular-nums">{state.members?.length ?? 0}</span> Mitglied
+                  {(state.members?.length ?? 0) !== 1 ? "er" : ""} · gemeinsames Kanzleiwissen
                 </p>
               </div>
               {state.isOwner && <Badge>Inhaber</Badge>}
@@ -237,12 +249,19 @@ export default function TeamPage() {
                         disabled={busy}
                         aria-label={`${m.name} entfernen`}
                         onClick={async () => {
+                          const ok = await confirm({
+                            title: "Mitglied entfernen",
+                            message: `${m.name} verliert den Zugriff auf das gemeinsame Kanzleiwissen des Teams und arbeitet danach wieder im persönlichen Kanzleiwissen.`,
+                            confirmLabel: "Entfernen",
+                            variant: "danger",
+                          });
+                          if (!ok) return;
                           setError(null);
                           setNotice(null);
                           try {
                             await removeMutation.mutateAsync(m.id);
                             setNotice(
-                              "Mitglied entfernt — es arbeitet ab sofort wieder im eigenen Brain."
+                              `${m.name} wurde entfernt und arbeitet ab sofort wieder im persönlichen Kanzleiwissen.`
                             );
                           } catch (err) {
                             handleErr(err);
@@ -267,6 +286,10 @@ export default function TeamPage() {
                     Mitglied einladen
                   </h3>
                 </div>
+                <p className="text-sm text-[color:var(--ds-text-muted)]">
+                  Die eingeladene Person erhält per E-Mail einen Link, mit dem sie dem Team
+                  beitritt. Der Link ist 7 Tage gültig.
+                </p>
                 <form
                   className="flex flex-col gap-3 sm:flex-row"
                   onSubmit={async (e) => {
@@ -292,7 +315,7 @@ export default function TeamPage() {
                       inputMode="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="kollegin@kanzlei.de"
+                      placeholder="kollegin@kanzlei.at"
                       required
                     />
                   </label>
@@ -319,11 +342,20 @@ export default function TeamPage() {
                 size="sm"
                 disabled={busy}
                 onClick={async () => {
+                  const ok = await confirm({
+                    title: "Team verlassen",
+                    message: state.isOwner
+                      ? "Wenn Sie als Inhaber das Team verlassen, wird das Team aufgelöst."
+                      : "Sie verlieren den Zugriff auf das gemeinsame Kanzleiwissen des Teams.",
+                    confirmLabel: "Verlassen",
+                    variant: "danger",
+                  });
+                  if (!ok) return;
                   setError(null);
                   setNotice(null);
                   try {
                     await leaveMutation.mutateAsync();
-                    setNotice("Du hast das Team verlassen.");
+                    setNotice("Sie haben das Team verlassen.");
                   } catch (err) {
                     handleErr(err);
                   }

@@ -1,5 +1,13 @@
 import { describe, test, expect } from "vitest";
-import { cn, formatDate, formatRelativeTime, truncate, slugify } from "./utils";
+import {
+  cn,
+  daysUntil,
+  formatDate,
+  formatDaysUntil,
+  formatRelativeTime,
+  truncate,
+  slugify,
+} from "./utils";
 
 describe("cn", () => {
   test("merges class names", () => {
@@ -41,6 +49,28 @@ describe("formatDate", () => {
   });
 });
 
+describe("formatDate robustness", () => {
+  test("renders a dash instead of Invalid Date", () => {
+    expect(formatDate("not a date")).toBe("—");
+    expect(formatDate(null)).toBe("—");
+  });
+});
+
+describe("daysUntil / formatDaysUntil", () => {
+  const now = new Date(2026, 8, 19, 23, 30);
+  test("counts calendar days, not 24h blocks", () => {
+    expect(daysUntil("2026-09-20", now)).toBe(1);
+    expect(daysUntil("2026-09-19", now)).toBe(0);
+    expect(daysUntil("2026-09-17", now)).toBe(-2);
+  });
+  test("words", () => {
+    expect(formatDaysUntil(0)).toBe("heute");
+    expect(formatDaysUntil(1)).toBe("morgen");
+    expect(formatDaysUntil(5)).toBe("in 5 Tagen");
+    expect(formatDaysUntil(-3)).toBe("seit 3 Tagen überfällig");
+  });
+});
+
 describe("formatRelativeTime", () => {
   test("returns 'gerade eben' for current time", () => {
     const now = new Date().toISOString();
@@ -49,17 +79,17 @@ describe("formatRelativeTime", () => {
 
   test("returns minutes for recent past", () => {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    expect(formatRelativeTime(fiveMinAgo)).toBe("vor 5m");
+    expect(formatRelativeTime(fiveMinAgo)).toBe("vor 5 Minuten");
   });
 
   test("returns hours for past within a day", () => {
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-    expect(formatRelativeTime(threeHoursAgo)).toBe("vor 3h");
+    expect(formatRelativeTime(threeHoursAgo)).toBe("vor 3 Stunden");
   });
 
   test("returns days for past within a week", () => {
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-    expect(formatRelativeTime(twoDaysAgo)).toBe("vor 2d");
+    expect(formatRelativeTime(twoDaysAgo)).toBe("vor 2 Tagen");
   });
 
   test("returns formatted date for past beyond a week", () => {

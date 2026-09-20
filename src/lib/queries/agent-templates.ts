@@ -21,17 +21,25 @@ export type AgentRole =
   | "custom";
 
 export const AGENT_ROLES: { value: AgentRole; label: string; description: string }[] = [
-  { value: "planning", label: "Planungs-Agent", description: "Rundown, Briefing, Fristen-Planung" },
-  { value: "review", label: "Review-Agent", description: "Vertrags-Check, Qualitätskontrolle" },
-  { value: "summary", label: "Summary-Agent", description: "Zusammenfassungen, Digests, Berichte" },
+  { value: "planning", label: "Planung", description: "Tagesübersicht, Briefing, Fristenplanung" },
+  { value: "review", label: "Prüfung", description: "Vertragsprüfung, Qualitätskontrolle" },
+  {
+    value: "summary",
+    label: "Zusammenfassung",
+    description: "Zusammenfassungen, Übersichten, Berichte",
+  },
   {
     value: "research",
-    label: "Recherche-Agent",
-    description: "Recherche, Präzedenzfälle, Quellen",
+    label: "Recherche",
+    description: "Recherche, Rechtsprechung, Quellen",
   },
-  { value: "draft", label: "Drafting-Agent", description: "Schriftsätze, Anträge, Verträge" },
-  { value: "supervisor", label: "Supervisor", description: "Orchestriert andere Agenten" },
-  { value: "custom", label: "Spezial-Agent", description: "Custom Use-Case" },
+  { value: "draft", label: "Entwurf", description: "Schriftsätze, Anträge, Verträge" },
+  {
+    value: "supervisor",
+    label: "Koordination",
+    description: "Verteilt Teilaufgaben und führt Ergebnisse zusammen",
+  },
+  { value: "custom", label: "Individuell", description: "Eigener Anwendungsfall" },
 ];
 
 export interface AgentTemplate {
@@ -64,27 +72,27 @@ export interface AgentTemplateInput {
 export const SPECIALISTS = [
   {
     value: "legal-researcher",
-    label: "Legal Researcher",
+    label: "Recherche",
     description: "Recherche zu Rechtsfragen mit exakten Zitaten",
   },
   {
     value: "legal-analyst",
-    label: "Legal Analyst",
+    label: "Fallanalyse",
     description: "Bewertung von Fällen, Chancen/Risiko-Analyse",
   },
   {
     value: "legal-strategist",
-    label: "Legal Strategist",
-    description: "Prozessstrategie, Settlement-Empfehlungen",
+    label: "Strategie",
+    description: "Prozessstrategie, Vergleichsempfehlungen",
   },
   {
     value: "legal-drafter",
-    label: "Legal Drafter",
+    label: "Schriftsatzentwurf",
     description: "Formulierung von Schriftsätzen, Anträgen, Verträgen",
   },
   {
     value: "legal-deadline-extractor",
-    label: "Deadline Extractor",
+    label: "Fristen-Erkennung",
     description: "Extraktion von Fristen und Terminen aus Dokumenten",
   },
 ] as const;

@@ -33,6 +33,7 @@ import { stripHtmlComplete } from "./backfill-utils";
 import {
   buildMarkdown,
   decisionTypeOf,
+  decisionFileName,
   isAlreadyOnDisk,
   loadExistingDocs,
   rememberOnDisk,
@@ -481,7 +482,7 @@ async function fullScanCourt(
           yearSkipped++;
           continue;
         }
-        rememberOnDisk(existing, id, item.url, fileKey, slugAz);
+        rememberOnDisk(existing, id, item.url);
         totalFetched++;
         yearCount++;
 
@@ -506,7 +507,7 @@ async function fullScanCourt(
           title: item.title,
         };
 
-        const filename = `${fileKey}.md`;
+        const filename = decisionFileName(id);
         const filepath = join(outDir, filename);
         writeFileSync(filepath, buildMarkdown(doc, courtKey), "utf-8");
         totalWritten++;

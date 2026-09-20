@@ -2,20 +2,17 @@
 
 import { useState } from "react";
 import {
-  ShieldCheck,
   AlertTriangle,
   XCircle,
   CheckCircle,
-  FileText,
-  Eye,
-  Users,
-  Info,
+  Circle,
   ChevronDown,
   ChevronRight,
-  ExternalLink,
 } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { cn } from "@/lib/utils";
 
 interface ConformityItem {
   id: string;
@@ -29,62 +26,64 @@ interface ConformityItem {
 const CONFORMITY_ITEMS: ConformityItem[] = [
   {
     id: "art11",
-    article: "Art. 11 EU AI Act",
+    article: "Art. 11 KI-VO",
     reqKey: "aiact.req.art11",
     status: "partial",
-    evidence: "CLAUDE.md, AUDIT.md, docs/PRODUCT_CAPABILITIES.md",
+    evidence: "Interne Produkt- und Systembeschreibung (auf Anfrage)",
     noteKey: "aiact.note.art11",
   },
   {
     id: "art13",
-    article: "Art. 13 EU AI Act",
+    article: "Art. 13 KI-VO",
     reqKey: "aiact.req.art13",
     status: "compliant",
-    evidence: "AIActConformityBanner-Komponente in allen Legal-AI-Outputs",
+    evidence: "KI-Hinweis an KI-Ausgaben",
     noteKey: "aiact.note.art13",
   },
   {
     id: "art14",
-    article: "Art. 14 EU AI Act",
+    article: "Art. 14 KI-VO",
     reqKey: "aiact.req.art14",
     status: "compliant",
-    evidence: "Human-Review-Gate in Legal-Routes, Citation-Gate, Release-Gate",
+    evidence:
+      "Anwaltliche Freigabe vor Schreibaktionen, Belegprüfung der Zitate, Qualitätsprüfung vor jeder Version",
     noteKey: "aiact.note.art14",
   },
   {
     id: "art15",
-    article: "Art. 15 EU AI Act",
+    article: "Art. 15 KI-VO",
     reqKey: "aiact.req.art15",
     status: "partial",
-    evidence: "RAG-Eval, Brain-Quality-Eval, Citation-Gate, Security-Headers",
+    evidence:
+      "Laufende Qualitätsmessung der Recherche, Belegprüfung der Zitate, Sicherheitsmaßnahmen der Web-Anwendung",
     noteKey: "aiact.note.art15",
   },
   {
     id: "art52",
-    article: "Art. 52 EU AI Act",
+    article: "Art. 50 KI-VO",
     reqKey: "aiact.req.art52",
     status: "compliant",
-    evidence: "AI-Notice in allen User-facing KI-Outputs",
+    evidence: "Kennzeichnung „KI-Entwurf — anwaltlich zu prüfen“ an KI-Ausgaben",
     noteKey: "aiact.note.art52",
   },
   {
     id: "art9",
-    article: "Art. 9 EU AI Act",
+    article: "Art. 9 KI-VO",
     reqKey: "aiact.req.art9",
     status: "pending",
     noteKey: "aiact.note.art9",
   },
   {
     id: "art17",
-    article: "Art. 17 EU AI Act",
+    article: "Art. 17 KI-VO",
     reqKey: "aiact.req.art17",
     status: "partial",
-    evidence: "CI/CD, E2E-Tests, RAG-Eval, Release-Gates",
+    evidence: "Automatisierte Tests und Qualitätsprüfung vor jeder Version",
     noteKey: "aiact.note.art17",
   },
   {
     id: "art26",
-    article: "Art. 26 EU AI Act",
+    article: "Art. 26 KI-VO",
     reqKey: "aiact.req.art26",
     status: "partial",
     noteKey: "aiact.note.art26",
@@ -97,33 +96,30 @@ function getStatusConfig(t: TFunc) {
   return {
     compliant: {
       icon: CheckCircle,
-      color: "var(--ds-success-text)",
+      tone: "text-[color:var(--ds-success-text)]",
       label: t("aiact.status_compliant"),
-      bg: "var(--ds-success-bg)",
-      border: "var(--ds-success-border)",
     },
     partial: {
       icon: AlertTriangle,
-      color: "var(--ds-warning-text)",
+      tone: "text-[color:var(--ds-warning-text)]",
       label: t("aiact.status_partial"),
-      bg: "var(--ds-warning-bg)",
-      border: "var(--ds-warning-border)",
     },
     pending: {
-      icon: AlertTriangle,
-      color: "var(--accent-premium)",
+      icon: Circle,
+      tone: "text-[color:var(--ds-text-muted)]",
       label: t("aiact.status_pending"),
-      bg: "var(--accent-premium-soft)",
-      border: "var(--accent-premium-border)",
     },
     not_started: {
       icon: XCircle,
-      color: "var(--ds-danger-text)",
+      tone: "text-[color:var(--ds-danger-text)]",
       label: t("aiact.status_not_started"),
-      bg: "var(--ds-danger-bg)",
-      border: "var(--ds-danger-border)",
     },
   } as const;
+}
+
+/** Der Schlüssel aiact.implemented trägt ein Emoji — in der Produktoberfläche ohne. */
+function stripEmoji(text: string): string {
+  return text.replace(/^[\u2705\u2714\uFE0F\s]+/u, "");
 }
 
 export default function AIActConformityPage() {
@@ -145,90 +141,65 @@ export default function AIActConformityPage() {
   const pendingCount = CONFORMITY_ITEMS.filter(
     (i) => i.status === "pending" || i.status === "not_started"
   ).length;
-  const totalCount = CONFORMITY_ITEMS.length;
+
+  const techDoc = [
+    { label: t("aiact.tech_doc.1"), done: true, where: t("aiact.tech_doc.1.where") },
+    { label: t("aiact.tech_doc.2"), done: false, where: t("aiact.tech_doc.2.where") },
+    { label: t("aiact.tech_doc.3"), done: true, where: t("aiact.tech_doc.3.where") },
+    { label: t("aiact.tech_doc.4"), done: true, where: t("aiact.tech_doc.4.where") },
+    { label: t("aiact.tech_doc.5"), done: false, where: t("aiact.tech_doc.5.where") },
+    { label: t("aiact.tech_doc.6"), done: false, where: t("aiact.tech_doc.6.where") },
+  ];
+
+  const oversight = [
+    { title: "Belegprüfung der Zitate", desc: t("aiact.oversight.citation.desc") },
+    { title: "Anwaltliche Prüfung", desc: t("aiact.oversight.review.desc") },
+    { title: "Kennzeichnung von KI-Ausgaben", desc: t("aiact.oversight.notice.desc") },
+    { title: "Qualitätsprüfung vor jeder Version", desc: t("aiact.oversight.release.desc") },
+    { title: "Prüfprotokoll", desc: t("aiact.oversight.audit.desc") },
+    { title: "Anbieter-Richtlinien", desc: t("aiact.oversight.ethical.desc") },
+  ];
+
+  const certs = [
+    { cert: "SOC 2 Type II", status: t("aiact.cert.soc2.status"), eta: "Q2 2027" },
+    { cert: "ISO/IEC 27001:2022", status: t("aiact.cert.iso27001.status"), eta: "Q3 2027" },
+    {
+      cert: "ISO/IEC 42001:2023 (KI-Managementsystem)",
+      status: t("aiact.cert.iso42001.status"),
+      eta: "Q3 2027",
+    },
+    { cert: "DSGVO-Konformitätserklärung", status: t("aiact.cert.gdpr.status"), eta: "Q4 2026" },
+  ];
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" style={{ maxWidth: 800, margin: "0 auto", padding: "24px 20px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <ShieldCheck size={22} style={{ color: "var(--accent-premium)" }} />
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)" }}>
-            {t("aiact.title")}
-          </h1>
-        </div>
-        <p style={{ fontSize: 13, color: "var(--ds-text-muted)", lineHeight: 1.6 }}>
-          {t("aiact.intro")}
-        </p>
-        <div
-          style={{
-            marginTop: 8,
-            padding: "8px 12px",
-            background: "var(--ds-warning-bg)",
-            border: "1px solid var(--ds-warning-border)",
-            borderRadius: 6,
-            fontSize: 12,
-            color: "var(--ds-warning-text)",
-          }}
-        >
-          <strong>{t("aiact.notice")}</strong>
-        </div>
-      </div>
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={t("aiact.title")}
+        description={t("aiact.intro")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("compliance.breadcrumb"), href: "/dashboard/compliance" },
+          { label: "KI-Verordnung" },
+        ]}
+      />
 
-      {/* Status Overview */}
-      <Section title={t("aiact.section_overview")} icon={<Info size={15} />}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <StatCard
-            value={compliantCount}
-            label={t("aiact.stat_compliant")}
-            color="var(--ds-success-text)"
-            borderColor="var(--ds-success-border)"
-          />
-          <StatCard
-            value={partialCount}
-            label={t("aiact.stat_partial")}
-            color="var(--ds-warning-text)"
-            borderColor="var(--ds-warning-border)"
-          />
-          <StatCard
-            value={pendingCount}
-            label={t("aiact.stat_pending")}
-            color="var(--accent-premium)"
-            borderColor="var(--accent-premium-border)"
-          />
-        </div>
-        <div
-          style={{
-            background: "var(--ds-surface)",
-            borderRadius: 6,
-            height: 8,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              background: `linear-gradient(90deg, var(--ds-success-text) ${(compliantCount / totalCount) * 100}%, var(--ds-warning-text) ${(compliantCount / totalCount) * 100}% ${((compliantCount + partialCount) / totalCount) * 100}%, var(--accent-premium) ${((compliantCount + partialCount) / totalCount) * 100}%)`,
-            }}
-          />
+      <p
+        role="note"
+        className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
+      >
+        {t("aiact.notice")}
+      </p>
+
+      <Section title={t("aiact.section_overview")}>
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard value={compliantCount} label={t("aiact.stat_compliant")} tone="success" />
+          <StatCard value={partialCount} label={t("aiact.stat_partial")} tone="warning" />
+          <StatCard value={pendingCount} label={t("aiact.stat_pending")} tone="neutral" />
         </div>
       </Section>
 
-      {/* Classification */}
-      <Section title={t("aiact.section_classification")} icon={<FileText size={15} />}>
-        <p
-          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
-        >
-          {t("aiact.class_intro")}
-        </p>
-        <div style={{ display: "grid", gap: 8 }}>
+      <Section title={t("aiact.section_classification")} intro={t("aiact.class_intro")}>
+        <dl className="divide-y divide-[color:var(--ds-border)] border-y border-[color:var(--ds-border)]">
           <ClassificationRow
             label={t("aiact.class_category")}
             value={t("aiact.class_category_val")}
@@ -240,438 +211,213 @@ export default function AIActConformityPage() {
             label={t("aiact.class_no_autonomy")}
             value={t("aiact.class_no_autonomy_val")}
           />
-        </div>
+        </dl>
       </Section>
 
-      {/* Technical Documentation */}
-      <Section title={t("aiact.section_tech_doc")} icon={<FileText size={15} />}>
-        <div style={{ display: "grid", gap: 6 }}>
-          {[
-            { label: t("aiact.tech_doc.1"), done: true, where: t("aiact.tech_doc.1.where") },
-            { label: t("aiact.tech_doc.2"), done: false, where: t("aiact.tech_doc.2.where") },
-            { label: t("aiact.tech_doc.3"), done: true, where: t("aiact.tech_doc.3.where") },
-            { label: t("aiact.tech_doc.4"), done: true, where: t("aiact.tech_doc.4.where") },
-            { label: t("aiact.tech_doc.5"), done: false, where: t("aiact.tech_doc.5.where") },
-            { label: t("aiact.tech_doc.6"), done: false, where: t("aiact.tech_doc.6.where") },
-          ].map((item) => (
-            <div
-              key={item.label}
-              style={{
-                display: "flex",
-                gap: 8,
-                alignItems: "flex-start",
-                padding: "6px 0",
-                borderBottom: "1px solid var(--ds-border)",
-              }}
-            >
+      <Section title={t("aiact.section_tech_doc")}>
+        <ul className="divide-y divide-[color:var(--ds-border)] border-y border-[color:var(--ds-border)]">
+          {techDoc.map((item) => (
+            <li key={item.label} className="flex items-start gap-2.5 py-2">
               {item.done ? (
                 <CheckCircle
                   size={14}
-                  style={{ color: "var(--ds-success-text)", flexShrink: 0, marginTop: 1 }}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+                  aria-label="Vorhanden"
                 />
               ) : (
                 <AlertTriangle
                   size={14}
-                  style={{ color: "var(--ds-warning-text)", flexShrink: 0, marginTop: 1 }}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                  aria-label="Offen"
                 />
               )}
-              <div>
-                <div style={{ fontSize: 12, color: "var(--ds-text)" }}>{item.label}</div>
-                <div style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>{item.where}</div>
+              <div className="min-w-0">
+                <div className="text-sm text-[color:var(--ds-text)]">{item.label}</div>
+                <div className="text-xs text-[color:var(--ds-text-subtle)]">{item.where}</div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </Section>
 
-      {/* Human Oversight */}
-      <Section title={t("aiact.section_oversight")} icon={<Eye size={15} />}>
-        <p
-          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
-        >
-          {t("aiact.oversight_intro")}
-        </p>
-        <div style={{ display: "grid", gap: 8 }}>
-          {[
-            {
-              title: "Citation-Gate",
-              desc: t("aiact.oversight.citation.desc"),
-              status: t("aiact.implemented"),
-            },
-            {
-              title: "Human Review Queue",
-              desc: t("aiact.oversight.review.desc"),
-              status: t("aiact.implemented"),
-            },
-            {
-              title: "AI-Notice in Outputs",
-              desc: t("aiact.oversight.notice.desc"),
-              status: t("aiact.implemented"),
-            },
-            {
-              title: "Release-Gate",
-              desc: t("aiact.oversight.release.desc"),
-              status: t("aiact.implemented"),
-            },
-            {
-              title: "Audit-Trail",
-              desc: t("aiact.oversight.audit.desc"),
-              status: t("aiact.implemented"),
-            },
-            {
-              title: "Ethical-Wall",
-              desc: t("aiact.oversight.ethical.desc"),
-              status: t("aiact.implemented"),
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              style={{
-                padding: "8px 10px",
-                background: "var(--ds-surface)",
-                border: "1px solid var(--ds-border)",
-                borderRadius: 6,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text)" }}>
-                  {item.title}
-                </div>
-                <span
-                  style={{ fontSize: 11, color: "var(--ds-success-text)", whiteSpace: "nowrap" }}
-                >
-                  {item.status}
+      <Section title={t("aiact.section_oversight")} intro={t("aiact.oversight_intro")}>
+        <ul className="divide-y divide-[color:var(--ds-border)] rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          {oversight.map((item) => (
+            <li key={item.title} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm font-medium text-[color:var(--ds-text)]">{item.title}</div>
+                <span className="text-xs whitespace-nowrap text-[color:var(--ds-success-text)]">
+                  {stripEmoji(t("aiact.implemented"))}
                 </span>
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--ds-text-subtle)",
-                  marginTop: 3,
-                  lineHeight: 1.5,
-                }}
-              >
+              <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                 {item.desc}
-              </div>
-            </div>
+              </p>
+            </li>
           ))}
-        </div>
+        </ul>
       </Section>
 
-      {/* Transparency */}
-      <Section title={t("aiact.section_transparency")} icon={<Users size={15} />}>
-        <p
-          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
-        >
-          {t("aiact.transparency_intro")}
-        </p>
-        <div
-          style={{
-            padding: "10px 12px",
-            background: "var(--accent-premium-soft)",
-            border: "1px solid var(--accent-premium-border)",
-            borderRadius: 6,
-            marginBottom: 12,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--accent-premium)",
-              marginBottom: 4,
-            }}
-          >
+      <Section title={t("aiact.section_transparency")} intro={t("aiact.transparency_intro")}>
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="mb-2 text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
             {t("aiact.banner_example")}
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 11,
-              color: "var(--ds-text-muted)",
-              padding: "6px 8px",
-              background: "var(--ds-surface-2)",
-              borderRadius: 4,
-            }}
-          >
-            <ShieldCheck size={12} style={{ color: "var(--accent-premium)" }} />
+          <div className="rounded-lg bg-[color:var(--ds-surface-2)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">
             {t("aiact.banner_text")}
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6 }}>
+        <p className="mt-3 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
           {t("aiact.transparency_desc")}
-        </div>
+        </p>
       </Section>
 
-      {/* Conformity Status Detail */}
-      <Section title={t("aiact.section_detail")} icon={<ShieldCheck size={15} />}>
-        <div style={{ display: "grid", gap: 8 }}>
+      <Section title={t("aiact.section_detail")}>
+        <ul className="divide-y divide-[color:var(--ds-border)] rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {CONFORMITY_ITEMS.map((item) => {
             const cfg = STATUS_CONFIG[item.status];
             const Icon = cfg.icon;
             const isOpen = expanded.has(item.id);
             return (
-              <div
-                key={item.id}
-                style={{ border: `1px solid ${cfg.border}`, borderRadius: 6, overflow: "hidden" }}
-              >
+              <li key={item.id}>
                 <button
+                  type="button"
                   onClick={() => toggle(item.id)}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "9px 12px",
-                    background: cfg.bg,
-                    border: "none",
-                    cursor: "pointer",
-                  }}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                 >
-                  <Icon size={13} style={{ color: cfg.color, flexShrink: 0 }} />
-                  <div style={{ flex: 1, textAlign: "left" }}>
-                    <span style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginRight: 6 }}>
-                      {item.article}
-                    </span>
-                    <span style={{ fontSize: 12, color: "var(--ds-text)", fontWeight: 500 }}>
+                  <Icon size={14} className={cn("shrink-0", cfg.tone)} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-[color:var(--ds-text)]">
                       {t(item.reqKey as DashboardKey)}
-                    </span>
+                    </div>
+                    <div className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                      {item.article}
+                    </div>
                   </div>
-                  <span style={{ fontSize: 11, color: cfg.color, fontWeight: 600, marginRight: 4 }}>
+                  <span className={cn("text-xs font-medium whitespace-nowrap", cfg.tone)}>
                     {cfg.label}
                   </span>
                   {isOpen ? (
-                    <ChevronDown size={12} style={{ color: "var(--ds-text-muted)" }} />
+                    <ChevronDown
+                      size={14}
+                      className="shrink-0 text-[color:var(--ds-text-muted)]"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <ChevronRight size={12} style={{ color: "var(--ds-text-muted)" }} />
+                    <ChevronRight
+                      size={14}
+                      className="shrink-0 text-[color:var(--ds-text-muted)]"
+                      aria-hidden="true"
+                    />
                   )}
                 </button>
                 {isOpen && (
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      background: "var(--ds-surface)",
-                      borderTop: `1px solid ${cfg.border}`,
-                    }}
-                  >
+                  <div className="space-y-2 border-t border-[color:var(--ds-border)] px-4 py-3">
                     {item.evidence && (
-                      <div style={{ marginBottom: 6 }}>
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "var(--ds-text-subtle)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.4px",
-                            marginBottom: 2,
-                          }}
-                        >
+                      <div>
+                        <div className="text-xs tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                           {t("aiact.evidence")}
                         </div>
-                        <div style={{ fontSize: 12, color: "var(--ds-text)" }}>{item.evidence}</div>
+                        <div className="text-sm text-[color:var(--ds-text)]">{item.evidence}</div>
                       </div>
                     )}
                     {item.noteKey && (
                       <div>
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "var(--ds-text-subtle)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.4px",
-                            marginBottom: 2,
-                          }}
-                        >
+                        <div className="text-xs tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                           {t("aiact.note_label")}
                         </div>
-                        <div style={{ fontSize: 12, color: "var(--ds-text-muted)" }}>
+                        <div className="text-sm text-[color:var(--ds-text-muted)]">
                           {t(item.noteKey as DashboardKey)}
                         </div>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </Section>
 
-      {/* Certification Roadmap Link */}
-      <Section title={t("aiact.section_roadmap")} icon={<ShieldCheck size={15} />}>
-        <p
-          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
-        >
-          {t("aiact.roadmap_intro")}
-        </p>
-        <div style={{ display: "grid", gap: 8 }}>
-          {[
-            {
-              cert: "SOC 2 Type II",
-              status: t("aiact.cert.soc2.status"),
-              eta: "Q2 2027",
-              color: "var(--accent-premium)",
-            },
-            {
-              cert: "ISO 27001:2022",
-              status: t("aiact.cert.iso27001.status"),
-              eta: "Q3 2027",
-              color: "var(--accent-premium)",
-            },
-            {
-              cert: "ISO 42001:2023 (AI Management)",
-              status: t("aiact.cert.iso42001.status"),
-              eta: "Q3 2027",
-              color: "var(--accent-premium)",
-            },
-            {
-              cert: "DSGVO-Konformitätserklärung",
-              status: t("aiact.cert.gdpr.status"),
-              eta: "Q4 2026",
-              color: "var(--ds-warning-text)",
-            },
-          ].map((item) => (
-            <div
-              key={item.cert}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                padding: "8px 10px",
-                background: "var(--ds-surface)",
-                border: "1px solid var(--ds-border)",
-                borderRadius: 6,
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text)" }}>
-                  {item.cert}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>{item.status}</div>
+      <Section title={t("aiact.section_roadmap")} intro={t("aiact.roadmap_intro")}>
+        <ul className="divide-y divide-[color:var(--ds-border)] rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          {certs.map((item) => (
+            <li key={item.cert} className="flex items-start justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-[color:var(--ds-text)]">{item.cert}</div>
+                <div className="text-xs text-[color:var(--ds-text-subtle)]">{item.status}</div>
               </div>
-              <span
-                style={{ fontSize: 11, color: item.color, whiteSpace: "nowrap", marginLeft: 12 }}
-              >
-                ETA: {item.eta}
+              <span className="text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] tabular-nums">
+                Ziel: {item.eta}
               </span>
-            </div>
+            </li>
           ))}
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <a
-            href="/docs/CERTIFICATION_ROADMAP.md"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              color: "var(--accent-premium)",
-              textDecoration: "none",
-            }}
-          >
-            <ExternalLink size={12} /> {t("aiact.roadmap_link")}
-          </a>
-        </div>
+        </ul>
       </Section>
 
-      {/* Footer */}
-      <div
-        style={{
-          marginTop: 24,
-          padding: "12px 14px",
-          background: "var(--ds-surface)",
-          borderRadius: 6,
-          border: "1px solid var(--ds-border)",
-          fontSize: 11,
-          color: "var(--ds-text-subtle)",
-        }}
-      >
+      <p className="border-t border-[color:var(--ds-border)] pt-4 text-xs text-[color:var(--ds-text-subtle)]">
         {t("aiact.footer")}{" "}
-        <a href="mailto:compliance@subsum.io" style={{ color: "var(--accent-premium)" }}>
+        <a href="mailto:compliance@subsum.io" className="brand-text hover:underline">
           compliance@subsum.io
         </a>
-      </div>
+      </p>
     </div>
   );
 }
 
 function Section({
   title,
-  icon,
+  intro,
   children,
 }: {
   title: string;
-  icon: React.ReactNode;
+  intro?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 12,
-          paddingBottom: 8,
-          borderBottom: "1px solid var(--ds-border)",
-        }}
-      >
-        <div style={{ color: "var(--accent-premium)" }}>{icon}</div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--ds-text)" }}>{title}</h2>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+          {title}
+        </h2>
+        {intro && (
+          <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">{intro}</p>
+        )}
       </div>
       {children}
-    </div>
+    </section>
   );
 }
 
 function StatCard({
   value,
   label,
-  color,
-  borderColor,
+  tone,
 }: {
   value: number;
   label: string;
-  color: string;
-  borderColor: string;
+  tone: "success" | "warning" | "neutral";
 }) {
+  const color =
+    value === 0 || tone === "neutral"
+      ? "text-[color:var(--ds-text)]"
+      : tone === "success"
+        ? "text-[color:var(--ds-success-text)]"
+        : "text-[color:var(--ds-warning-text)]";
   return (
-    <div
-      style={{
-        padding: "12px",
-        background: "var(--ds-surface)",
-        border: `1px solid ${borderColor}`,
-        borderRadius: 6,
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 24, fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginTop: 2 }}>{label}</div>
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", color)}>{value}</div>
     </div>
   );
 }
 
 function ClassificationRow({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        padding: "6px 0",
-        borderBottom: "1px solid var(--ds-border)",
-      }}
-    >
-      <span style={{ fontSize: 12, color: "var(--ds-text-subtle)" }}>{label}</span>
-      <span style={{ fontSize: 12, color: "var(--ds-text)", textAlign: "right", maxWidth: "55%" }}>
-        {value}
-      </span>
+    <div className="flex flex-col gap-0.5 py-2 sm:flex-row sm:justify-between sm:gap-4">
+      <dt className="text-xs text-[color:var(--ds-text-subtle)]">{label}</dt>
+      <dd className="text-sm text-[color:var(--ds-text)] sm:max-w-[60%] sm:text-right">{value}</dd>
     </div>
   );
 }

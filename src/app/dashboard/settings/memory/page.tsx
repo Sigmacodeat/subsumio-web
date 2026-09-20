@@ -9,7 +9,6 @@ import {
   Search,
   Plus,
   Loader2,
-  RefreshCw,
   Tag,
   Clock,
 } from "lucide-react";
@@ -17,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
@@ -48,15 +48,16 @@ const TYPE_KEYS: Record<string, string> = {
   case_note: "memory.type_case_note",
 };
 
-const SOURCE_KEYS: Record<string, string> = {
-  user_explicit: "memory.source_manual",
-  inferred: "memory.source_inferred",
-  system: "memory.source_agent",
+const SOURCE_LABELS: Record<string, { de: string; en: string }> = {
+  user_explicit: { de: "Manuell angelegt", en: "Added manually" },
+  inferred: { de: "Automatisch erkannt", en: "Detected automatically" },
+  system: { de: "Vom Assistenten", en: "From the assistant" },
 };
 
 export default function MemoryManagementPage() {
   const { addToast } = useToast();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,6 +115,14 @@ export default function MemoryManagementPage() {
 
   const handleDelete = useCallback(
     async (id: string) => {
+      if (
+        !window.confirm(
+          lang === "en"
+            ? "Delete this memory? The assistant will no longer use it."
+            : "Diese Erinnerung löschen? Der Assistent verwendet sie danach nicht mehr."
+        )
+      )
+        return;
       try {
         await api.memory.delete(id);
         setMemories((m) => m.filter((mem) => mem.id !== id));
@@ -122,7 +131,7 @@ export default function MemoryManagementPage() {
         addToast({ title: t("memory.err_delete"), type: "error" });
       }
     },
-    [addToast, t]
+    [addToast, t, lang]
   );
 
   const handleCreate = useCallback(async () => {
@@ -154,80 +163,71 @@ export default function MemoryManagementPage() {
     total: memories.length,
     pinned: memories.filter((m) => m.pinned).length,
     superseded: memories.filter((m) => m.supersededBy).length,
-    inferred: memories.filter((m) => m.source === "inferred").length,
-    agent: memories.filter((m) => m.source === "system").length,
+    automatic: memories.filter((m) => m.source === "inferred" || m.source === "system").length,
   };
+  const hasMemories = memories.length > 0;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title={t("memory.page_title")}
-        description={t("memory.desc")}
+        title={L("Gedächtnis des Assistenten", "Assistant memory")}
+        description={L(
+          "Vorgaben, Fakten und Anweisungen, die der Assistent in allen Gesprächen berücksichtigt.",
+          "Preferences, facts and instructions the assistant applies in every conversation."
+        )}
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("settings.title" as never), href: "/dashboard/settings" },
           { label: t("memory.breadcrumb_memory") },
         ]}
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={loadMemories} disabled={loading}>
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-              {t("memory.refresh")}
-            </Button>
-            <Button size="sm" onClick={() => setShowCreateForm(!showCreateForm)}>
-              <Plus className="h-4 w-4" />
-              {t("memory.new_btn")}
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            className="whitespace-nowrap"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            <Plus className="h-4 w-4" />
+            {t("memory.new_btn")}
+          </Button>
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Card className="p-4">
-          <div className="text-2xl font-bold">{stats.total}</div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">{t("memory.stat_total")}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-accent-text)]">
-            {stats.pinned}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">
-            {t("memory.stat_pinned")}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">
-            {stats.inferred}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">
-            {t("memory.stat_inferred")}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">
-            {stats.agent}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">{t("memory.stat_agent")}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-text-muted)]">
-            {stats.superseded}
-          </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">
-            {t("memory.stat_superseded")}
-          </div>
-        </Card>
-      </div>
+      {hasMemories && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {[
+            { label: t("memory.stat_total"), value: stats.total },
+            { label: t("memory.stat_pinned"), value: stats.pinned },
+            { label: L("Automatisch erkannt", "Detected automatically"), value: stats.automatic },
+          ].map((kpi) => (
+            <Card key={kpi.label} className="p-4">
+              <div className="text-xs text-[color:var(--ds-text-muted)]">{kpi.label}</div>
+              <div className="mt-1 text-2xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+                {kpi.value}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {showCreateForm && (
-        <Card className="mb-6 p-4">
-          <h3 className="mb-3 text-sm font-semibold">{t("memory.new_title")}</h3>
+        <Card className="p-4">
+          <h2 className="mb-1 text-sm font-semibold">{t("memory.new_title")}</h2>
+          <p className="mb-3 text-xs text-[color:var(--ds-text-muted)]">
+            {L(
+              "Beispiel: Bezeichnung „Anrede“, Inhalt „Schriftsätze immer mit ‚Sehr geehrte Damen und Herren‘ beginnen“.",
+              "Example: label “Salutation”, content “Always open briefs with ‘Dear Sir or Madam’”."
+            )}
+          </p>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
-                {t("memory.type_label")}
+              <label
+                htmlFor="memory-type"
+                className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]"
+              >
+                {L("Art", "Kind")}
               </label>
               <select
+                id="memory-type"
                 className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
                 value={newMemory.type}
                 onChange={(e) => setNewMemory((m) => ({ ...m, type: e.target.value }))}
@@ -240,20 +240,28 @@ export default function MemoryManagementPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
-                {t("memory.key_label")}
+              <label
+                htmlFor="memory-key"
+                className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]"
+              >
+                {L("Bezeichnung", "Label")}
               </label>
               <Input
-                placeholder={t("memory.key_placeholder")}
+                id="memory-key"
+                placeholder={L("z. B. Anrede", "e.g. Salutation")}
                 value={newMemory.key}
                 onChange={(e) => setNewMemory((m) => ({ ...m, key: e.target.value }))}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
-                {t("memory.value_label")}
+              <label
+                htmlFor="memory-value"
+                className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]"
+              >
+                {L("Inhalt", "Content")}
               </label>
               <Input
+                id="memory-value"
                 placeholder={t("memory.value_placeholder")}
                 value={newMemory.value}
                 onChange={(e) => setNewMemory((m) => ({ ...m, value: e.target.value }))}
@@ -275,11 +283,13 @@ export default function MemoryManagementPage() {
         </Card>
       )}
 
-      <div className="mb-4 flex gap-2">
+      {(hasMemories || searchResults) && (
+      <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
           <Input
-            placeholder={t("memory.search_placeholder")}
+            aria-label={L("Erinnerungen durchsuchen", "Search memories")}
+            placeholder={L("Erinnerungen durchsuchen …", "Search memories …")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -292,7 +302,7 @@ export default function MemoryManagementPage() {
           ) : (
             <Search className="h-4 w-4" />
           )}
-          Suchen
+          {L("Suchen", "Search")}
         </Button>
         {searchResults && (
           <Button
@@ -302,12 +312,14 @@ export default function MemoryManagementPage() {
               setSearchQuery("");
             }}
           >
-            Zurücksetzen
+            {L("Zurücksetzen", "Reset")}
           </Button>
         )}
       </div>
+      )}
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      {hasMemories && (
+      <div className="flex flex-wrap items-center gap-2">
         {["all", "preference", "fact", "topic", "instruction", "case_note"].map((type) => (
           <button
             key={type}
@@ -315,7 +327,7 @@ export default function MemoryManagementPage() {
             className={cn(
               "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
               filterType === type
-                ? "bg-[color:var(--brand-primary)] text-white"
+                ? "bg-[color:var(--brand-solid)] text-white"
                 : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
             )}
           >
@@ -336,18 +348,32 @@ export default function MemoryManagementPage() {
           {t("memory.show_superseded")}
         </label>
       </div>
+      )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-          <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
+        <div className="space-y-2" role="status" aria-label={L("Wird geladen", "Loading")}>
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Brain}
-          title={searchResults ? "Keine Suchergebnisse" : "Noch keine Erinnerungen gespeichert"}
-          description={
-            searchResults ? undefined : "Der Assistent lernt automatisch aus Ihren Nachrichten."
+          title={
+            searchResults
+              ? L("Keine Treffer", "No matches")
+              : L("Noch keine Erinnerungen gespeichert", "No memories yet")
           }
+          description={
+            searchResults
+              ? L("Versuchen Sie einen anderen Suchbegriff.", "Try a different search term.")
+              : L(
+                  "Legen Sie Vorgaben an, die der Assistent immer beachten soll – etwa Anrede, Zitierweise oder Tonfall.",
+                  "Add rules the assistant should always follow, such as salutation, citation style or tone."
+                )
+          }
+          actionLabel={searchResults ? undefined : t("memory.new_btn")}
+          onAction={searchResults ? undefined : () => setShowCreateForm(true)}
         />
       ) : (
         <div className="space-y-2">
@@ -362,8 +388,10 @@ export default function MemoryManagementPage() {
               <button
                 onClick={() => handlePin(memory.id, memory.pinned)}
                 className="mt-0.5 shrink-0 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-accent-text)]"
-                title={memory.pinned ? "Loslösen" : "Anpinnen"}
-                aria-label={memory.pinned ? "Loslösen" : "Anpinnen"}
+                title={memory.pinned ? L("Nicht mehr anheften", "Unpin") : L("Anheften", "Pin")}
+                aria-label={
+                  memory.pinned ? L("Nicht mehr anheften", "Unpin") : L("Anheften", "Pin")
+                }
               >
                 {memory.pinned ? (
                   <Pin className="h-4 w-4 fill-current text-[color:var(--ds-accent-text)]" />
@@ -378,9 +406,9 @@ export default function MemoryManagementPage() {
                     {TYPE_KEYS[memory.type] ? t(TYPE_KEYS[memory.type] as never) : memory.type}
                   </Badge>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {SOURCE_KEYS[memory.source]
-                      ? t(SOURCE_KEYS[memory.source] as never)
-                      : memory.source}
+                    {SOURCE_LABELS[memory.source]
+                      ? SOURCE_LABELS[memory.source][lang === "en" ? "en" : "de"]
+                      : null}
                   </span>
                   {memory.supersededBy && (
                     <Badge variant="default" className="shrink-0 text-[10px] opacity-60">
@@ -414,16 +442,14 @@ export default function MemoryManagementPage() {
                 {(memory.validFrom || memory.validTo) && (
                   <div className="mt-1 flex items-center gap-1 text-[10px] text-[color:var(--ds-text-muted)]">
                     <Clock className="h-2.5 w-2.5" />
-                    {memory.validFrom &&
-                      `ab ${new Date(memory.validFrom).toLocaleDateString("de-DE")}`}
+                    {memory.validFrom && `${L("ab", "from")} ${formatDate(memory.validFrom)}`}
                     {memory.validFrom && memory.validTo && " — "}
-                    {memory.validTo &&
-                      `bis ${new Date(memory.validTo).toLocaleDateString("de-DE")}`}
+                    {memory.validTo && `${L("bis", "until")} ${formatDate(memory.validTo)}`}
                   </div>
                 )}
 
-                <div className="mt-1 text-[10px] text-[color:var(--ds-text-muted)]">
-                  {new Date(memory.updatedAt).toLocaleString("de-DE")}
+                <div className="mt-1 text-[10px] text-[color:var(--ds-text-muted)] tabular-nums">
+                  {L("Zuletzt geändert", "Last changed")} {formatDateTime(memory.updatedAt)}
                 </div>
               </div>
 

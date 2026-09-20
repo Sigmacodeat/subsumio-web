@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import DocsPage from "@/components/marketing/docs-page";
+import HandbookPage from "@/components/marketing/handbook/handbook-page";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
+  title: "Handbuch — so arbeiten Sie mit Subsumio",
   description:
-    "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Arbeitsabläufe dahinter.",
+    "Das Subsumio Handbuch: Akten, Fristen und Fristenrechner, Erinnerungen, Kalender mit Terminkollisionen, Kollisionsprüfung nach § 10 RAO, Assistent mit Fundstellen, RATG-Honorar, Treuhand und Sicherheit — mit Ansichten aus dem Produkt.",
   alternates: {
     canonical: "/at/docs",
   },
   openGraph: {
-    title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
+    title: "Handbuch — so arbeiten Sie mit Subsumio",
     description:
-      "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Arbeitsabläufe dahinter.",
+      "Das Subsumio Handbuch: Akten, Fristen und Fristenrechner, Erinnerungen, Kalender mit Terminkollisionen, Kollisionsprüfung nach § 10 RAO, Assistent mit Fundstellen, RATG-Honorar, Treuhand und Sicherheit — mit Ansichten aus dem Produkt.",
     url: "/at/docs",
     type: "website",
   },
@@ -27,7 +27,7 @@ export default function Page() {
           { name: "Handbuch", url: "/at/docs" },
         ])}
       />
-      <DocsPage />
+      <HandbookPage />
     </>
   );
 }

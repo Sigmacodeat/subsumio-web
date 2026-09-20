@@ -102,7 +102,7 @@ export function deriveMatterWorkflowActions(
         priority: "high",
         title: `${pendingDocuments.length} Dokument${pendingDocuments.length === 1 ? "" : "e"} verarbeiten oder prüfen`,
         description:
-          "OCR, Klassifikation und Extraktion abschließen, bevor daraus Strategie abgeleitet wird.",
+          "Texterkennung und Auswertung abschließen, bevor daraus eine Strategie abgeleitet wird.",
       });
     }
   }

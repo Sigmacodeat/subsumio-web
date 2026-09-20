@@ -13,11 +13,12 @@ import {
   Settings,
   ExternalLink,
   Plus,
-  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -92,16 +93,18 @@ const STATUS_CONFIG: Record<
 };
 
 export default function SignaturePage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   usePortalVisitEvents();
   const [requests, setRequests] = useState<SignatureRequest[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [sendReq, setSendReq] = useState<SignatureRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   async function loadRequests() {
     setLoading(true);
+    setLoadError(null);
     try {
       const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
       setRequests(
@@ -123,7 +126,7 @@ export default function SignaturePage() {
         })
       );
     } catch {
-      setNotice(t("sig.err_load"));
+      setLoadError(t("sig.err_load"));
     } finally {
       setLoading(false);
     }
@@ -153,14 +156,14 @@ export default function SignaturePage() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard/settings"
-              className="flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none sm:min-h-0"
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none sm:min-h-0"
             >
               <Settings size={14} />
               {t("sig.btn_configure")}
             </Link>
             <Button
               variant="primary"
-              className="brand-bg gap-2 text-sm text-white"
+              className="gap-2 whitespace-nowrap"
               onClick={() => setQuickCreateOpen(true)}
             >
               <Plus size={14} />
@@ -185,9 +188,15 @@ export default function SignaturePage() {
         </div>
       </div>
 
+      {loadError && (
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
+          {loadError}
+        </div>
+      )}
+
       {notice && (
         <div
-          className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3 text-sm text-[color:var(--ds-info-text)]"
+          className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]"
           role="status"
         >
           {notice}
@@ -200,40 +209,27 @@ export default function SignaturePage() {
         onOpenChange={setQuickCreateOpen}
         onCreated={() => {
           setNotice(t("signature.quick_created"));
-          (async () => {
-            const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
-            setRequests(
-              sigPages.map((p) => {
-                const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-                return {
-                  id: p.slug,
-                  documentName: String(fm.document_name ?? p.title),
-                  recipientName: String(fm.recipient_name ?? "—"),
-                  recipientEmail: String(fm.recipient_email ?? "—"),
-                  status: String(fm.status ?? "draft") as SignatureRequest["status"],
-                  sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
-                  signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
-                  expiresAt: String(fm.expires_at ?? p.created_at),
-                };
-              })
-            );
-          })();
+          // Same mapping as the initial load — keeps case/contact links, so the
+          // send action stays available for the new request.
+          void loadRequests();
         }}
       />
 
       {/* List */}
       {loading ? (
-        <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--brand-primary)]" />
+        <div className="space-y-2" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
-      ) : requests.length === 0 ? (
-        <div className="space-y-4 py-20 text-center">
-          <FileSignature size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <div>
-            <p className="text-[color:var(--ds-text-muted)]">{t("sig.empty")}</p>
-            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">{t("sig.empty_hint")}</p>
-          </div>
-        </div>
+      ) : requests.length === 0 && !loadError ? (
+        <EmptyState
+          icon={FileSignature}
+          title={t("sig.empty")}
+          description={t("sig.empty_hint")}
+          actionLabel={t("signature.btn_request")}
+          onAction={() => setQuickCreateOpen(true)}
+        />
       ) : (
         <div className="space-y-2">
           {requests.map((req) => {
@@ -242,7 +238,7 @@ export default function SignaturePage() {
             return (
               <div
                 key={req.id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--brand-primary)]/30 motion-reduce:transition-none"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[border-color] duration-[var(--ds-duration-fast)] hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none"
               >
                 <div
                   className={cn(
@@ -253,7 +249,7 @@ export default function SignaturePage() {
                   <Icon size={18} className={cfg.iconClass} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[color:var(--ds-text)]">
                       {req.documentName}
                     </span>
@@ -261,13 +257,9 @@ export default function SignaturePage() {
                       {t(cfg.label as never)}
                     </Badge>
                   </div>
-                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                  <div className="mt-0.5 text-xs break-words text-[color:var(--ds-text-muted)]">
                     {req.recipientName} · {req.recipientEmail} · {t("sig.valid_until")}{" "}
-                    {new Date(req.expiresAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    <span className="tabular-nums">{formatDate(req.expiresAt)}</span>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

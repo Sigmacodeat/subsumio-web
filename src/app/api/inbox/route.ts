@@ -84,6 +84,8 @@ export const GET = createHandler(
 
     for (const page of pagesByType.portal_message ?? []) {
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      // The firm's own portal replies are outgoing, not inbox items.
+      if (fm.sender === "lawyer") continue;
       messages.push({
         slug: String(page.slug ?? ""),
         title: String(page.title ?? ""),

@@ -16,10 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { useMe, use2FASetup, use2FAVerify, use2FADisable, use2FAQrCode } from "@/lib/queries/auth";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/use-lang";
 
 export default function SecuritySettingsPage() {
   const { t, lang } = useLang();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const [step, setStep] = useState<"idle" | "setup" | "verify">("idle");
   const [qrUrl, setQrUrl] = useState("");
   const [token, setToken] = useState("");
@@ -85,8 +87,13 @@ export default function SecuritySettingsPage() {
       const data = await setupMutation.mutateAsync();
       setQrUrl(data.qrData);
       setStep("setup");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("settings.security.error_2fa"));
+    } catch {
+      setError(
+        L(
+          "Die Einrichtung konnte nicht gestartet werden. Bitte versuchen Sie es in einigen Minuten erneut.",
+          "Setup could not be started. Please try again in a few minutes."
+        )
+      );
     }
   }
 
@@ -99,15 +106,20 @@ export default function SecuritySettingsPage() {
       if (data.backupCodes) {
         setBackupCodes(data.backupCodes);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("settings.security.error_2fa"));
+    } catch {
+      setError(
+        L(
+          "Der Code wurde nicht akzeptiert. Bitte geben Sie den aktuell angezeigten Code aus Ihrer Authenticator-App ein.",
+          "The code was not accepted. Please enter the code currently shown in your authenticator app."
+        )
+      );
     }
   }
 
   async function disable2FA() {
     setError(null);
     if (!disablePassword) {
-      setError("Bitte geben Sie Ihr Passwort ein");
+      setError(L("Bitte geben Sie Ihr Passwort ein.", "Please enter your password."));
       return;
     }
     try {
@@ -116,29 +128,45 @@ export default function SecuritySettingsPage() {
       setStep("idle");
       setShowDisableDialog(false);
       setDisablePassword("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("settings.security.error_2fa"));
+    } catch {
+      setError(
+        L(
+          "Die Zwei-Faktor-Anmeldung konnte nicht deaktiviert werden. Bitte prüfen Sie Ihr Passwort.",
+          "Two-factor sign-in could not be disabled. Please check your password."
+        )
+      );
     }
   }
 
+  const header = (
+    <PageHeader
+      title={t("settings.security.title")}
+      description={L(
+        "Schützen Sie Ihre Anmeldung mit einem zweiten Faktor aus einer Authenticator-App.",
+        "Protect your sign-in with a second factor from an authenticator app."
+      )}
+      breadcrumbs={[
+        { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+        { label: t("settings.title"), href: "/dashboard/settings" },
+        { label: t("settings.security.breadcrumb") },
+      ]}
+    />
+  );
+
   if (loading) {
     return (
-      <div
-        className="mx-auto flex max-w-2xl items-center justify-center p-6 py-20"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+        {header}
+        <div role="status" aria-label={L("Wird geladen", "Loading")}>
+          <Skeleton className="h-28 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title={t("settings.security.title")}
-        description={t("settings.security.section_2fa")}
-      />
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      {header}
 
       {orgRequires2FA && !enabled && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
@@ -148,11 +176,16 @@ export default function SecuritySettingsPage() {
           />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
-              2FA von Ihrer Kanzlei vorgeschrieben
+              {L(
+                "Ihre Kanzlei schreibt die Zwei-Faktor-Anmeldung vor",
+                "Your firm requires two-factor sign-in"
+              )}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Dein Administrator hat 2FA für alle Teammitglieder verpflichtend aktiviert. Bitte
-              richte Zwei-Faktor-Authentifizierung ein, um Zugriff zu behalten.
+              {L(
+                "Ihre Kanzleiverwaltung hat die Zwei-Faktor-Anmeldung für alle Mitglieder verpflichtend gemacht. Bitte richten Sie sie jetzt ein, damit Ihr Zugang erhalten bleibt.",
+                "Your firm administrator has made two-factor sign-in mandatory for all members. Please set it up now to keep your access."
+              )}
             </p>
           </div>
         </div>
@@ -164,10 +197,13 @@ export default function SecuritySettingsPage() {
             <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
             <div className="flex-1">
               <p className="text-sm font-medium text-[color:var(--ds-success-text)]">
-                2FA ist aktiviert
+                {L("Zwei-Faktor-Anmeldung ist aktiv", "Two-factor sign-in is active")}
               </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Dein Account ist durch TOTP geschützt.
+                {L(
+                  "Bei jeder Anmeldung wird zusätzlich ein Code aus Ihrer Authenticator-App abgefragt.",
+                  "Each sign-in also asks for a code from your authenticator app."
+                )}
               </p>
             </div>
             <Button
@@ -192,11 +228,13 @@ export default function SecuritySettingsPage() {
                 />
                 <div>
                   <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
-                    Backup-Codes — sicher speichern!
+                    {L("Notfall-Codes sicher aufbewahren", "Store your backup codes safely")}
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    Diese Codes werden nur einmal angezeigt. Bewahren Sie sie an einem sicheren Ort
-                    auf. Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
+                    {L(
+                      "Diese Codes werden nur einmal angezeigt. Jeder Code ersetzt einmalig den Code aus der App, etwa wenn Ihr Telefon verloren geht.",
+                      "These codes are shown only once. Each code replaces the app code once, for example if you lose your phone."
+                    )}
                   </p>
                 </div>
               </div>
@@ -224,9 +262,7 @@ export default function SecuritySettingsPage() {
                 ) : (
                   <KeyRound size={14} />
                 )}
-                {copied
-                  ? t("settings.security.toast_password_changed")
-                  : t("settings.security.btn_revoke_session")}
+                {copied ? L("Kopiert", "Copied") : L("Codes kopieren", "Copy codes")}
               </Button>
             </div>
           )}
@@ -240,7 +276,7 @@ export default function SecuritySettingsPage() {
                 />
                 <div>
                   <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
-                    2FA deaktivieren
+                    {t("settings.security.btn_disable_2fa")}
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                     Bitte bestätigen Sie mit Ihrem Passwort, dass Sie die Zwei-Faktor-Anmeldung
@@ -250,15 +286,21 @@ export default function SecuritySettingsPage() {
               </div>
               <input
                 type="password"
+                aria-label={t("settings.security.ph_password")}
                 placeholder={t("settings.security.ph_password")}
                 value={disablePassword}
                 onChange={(e) => setDisablePassword(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") disable2FA();
                 }}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:ring-2 focus:ring-red-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 autoFocus
               />
+              {error && (
+                <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                  {error}
+                </p>
+              )}
               <div className="flex justify-end gap-2">
                 <Button
                   variant="ghost"
@@ -291,24 +333,22 @@ export default function SecuritySettingsPage() {
       ) : (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-start gap-3">
-            <KeyRound size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+            <KeyRound size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]" />
             <div>
-              <p className="text-sm font-medium text-[color:var(--ds-text)]">
-                Zwei-Faktor-Authentifizierung (2FA)
-              </p>
+              <h2 className="text-sm font-medium text-[color:var(--ds-text)]">
+                {t("settings.security.section_2fa")}
+              </h2>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Schützen Sie Ihr Konto mit einem zeitbasierten Einmalcode (TOTP). Scannen Sie den
-                QR-Code mit einer Authenticator-App (z.B. Google Authenticator, Authy).
+                {L(
+                  "Zusätzlich zum Passwort wird bei der Anmeldung ein sechsstelliger Code aus einer Authenticator-App abgefragt (z. B. Microsoft Authenticator, Google Authenticator).",
+                  "In addition to your password, sign-in asks for a six-digit code from an authenticator app (e.g. Microsoft Authenticator, Google Authenticator)."
+                )}
               </p>
             </div>
           </div>
 
           {step === "idle" && (
-            <Button
-              variant="primary"
-              className="gap-2 bg-[color:var(--ds-warning-solid)] text-sm text-white hover:bg-[color:var(--ds-warning-solid)]"
-              onClick={startSetup}
-            >
+            <Button variant="primary" className="gap-2 text-sm" onClick={startSetup}>
               <QrCode size={14} />
               {t("settings.security.btn_enable_2fa")}
             </Button>
@@ -317,25 +357,34 @@ export default function SecuritySettingsPage() {
           {step === "setup" && (
             <div className="space-y-3">
               <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center">
-                <p className="text-xs text-[color:var(--ds-text-muted)]">QR-Code scannen:</p>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {L(
+                    "Scannen Sie den QR-Code mit Ihrer Authenticator-App und geben Sie den angezeigten Code ein.",
+                    "Scan the QR code with your authenticator app and enter the code it shows."
+                  )}
+                </p>
                 <QRCodeSVG data={qrUrl} size={180} />
               </div>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder="6-stelliger Code"
+                  onChange={(e) => setToken(e.target.value.replace(/\D/g, ""))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  aria-label={L("Sechsstelliger Code", "Six-digit code")}
+                  placeholder={L("6-stelliger Code", "6-digit code")}
                   maxLength={6}
                   className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-center text-sm tracking-widest text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-warning-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <Button
                   variant="primary"
-                  className="bg-[color:var(--ds-warning-solid)] text-sm text-white hover:bg-[color:var(--ds-warning-solid)]"
+                  className="text-sm whitespace-nowrap"
                   onClick={verify}
-                  disabled={token.length !== 6}
+                  disabled={token.length !== 6 || verifyMutation.isPending}
+                  loading={verifyMutation.isPending}
                 >
-                  {t("settings.security.btn_change_password")}
+                  {L("Bestätigen", "Confirm")}
                 </Button>
               </div>
             </div>
@@ -355,7 +404,9 @@ export default function SecuritySettingsPage() {
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
           <div className="flex items-center gap-2">
             <Globe size={16} className="text-[color:var(--ds-text-muted)]" />
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">IP-Allowlist</h3>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {L("Zugriff nur aus freigegebenen Netzen (IP-Allowlist)", "IP allowlist")}
+            </h2>
             {ipAllowlistEnabled ? (
               <Badge variant="default" className="text-xs">
                 {lang === "en" ? "Active" : "Aktiv"}
@@ -368,14 +419,7 @@ export default function SecuritySettingsPage() {
           </div>
 
           {ipAllowlistLoading ? (
-            <div
-              className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 size={12} className="animate-spin" />
-              {lang === "en" ? "Loading…" : "Lädt…"}
-            </div>
+            <Skeleton className="h-10 w-full" />
           ) : (
             <>
               <p className="text-xs text-[color:var(--ds-text-muted)]">{ipAllowlistNote}</p>
@@ -422,7 +466,7 @@ export default function SecuritySettingsPage() {
   );
 }
 
-/** QR-Code renderer — generates a real QR code SVG via the otpauth+qrcode libraries (server-side API call). Falls back to a deterministic grid pattern only if the API call fails. */
+/** QR-Code renderer — real QR code SVG from the server; neutral placeholder while loading. */
 function QRCodeSVG({ data, size }: { data: string; size: number }) {
   const qrQuery = use2FAQrCode(data, size);
   const svg = qrQuery.data ?? null;
@@ -432,36 +476,17 @@ function QRCodeSVG({ data, size }: { data: string; size: number }) {
       <div
         className="inline-block rounded border border-[color:var(--ds-border)] bg-white p-2"
         style={{ width: size + 16, height: size + 16 }}
-        title={data}
         dangerouslySetInnerHTML={{ __html: svg }}
       />
     );
   }
 
-  // Fallback: deterministic grid pattern while the real QR loads or if the API is unavailable
+  // While the real QR code loads (or if it cannot be generated) show a neutral placeholder —
+  // never a fake pattern that looks scannable.
   return (
-    <div
-      className="inline-block animate-pulse rounded border border-[color:var(--ds-border)] bg-white"
+    <Skeleton
+      className="mx-auto inline-block rounded border border-[color:var(--ds-border)]"
       style={{ width: size, height: size }}
-      title={data}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {Array.from({ length: 25 }).map((_, y) =>
-          Array.from({ length: 25 }).map((_, x) => {
-            const hash = (x * 7 + y * 13 + data.length * 3) % 2;
-            return (
-              <rect
-                key={`${x}-${y}`}
-                x={x * (size / 25)}
-                y={y * (size / 25)}
-                width={size / 25}
-                height={size / 25}
-                fill={hash === 0 ? "#000" : "#fff"}
-              />
-            );
-          })
-        )}
-      </svg>
-    </div>
+    />
   );
 }

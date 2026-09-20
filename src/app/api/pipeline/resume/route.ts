@@ -1,46 +1,33 @@
-import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
-import { apiError, apiSuccess } from "@/lib/api-response";
-import { ENGINE_URL } from "@/lib/engine";
+import { POST as triggerPipeline } from "@/app/api/legal/trigger-pipeline/route";
+import { NextRequest } from "next/server";
+import { apiError } from "@/lib/api-response";
 
 export const maxDuration = 60;
 
-const resumePipelineSchema = z.object({
-  case_slug: z.string().min(1).max(200),
-  resume_from_layer: z.number().int().min(1).max(10).optional(),
-});
-
-export const POST = createHandler(
-  {
-    action: "brain.write",
-    rateTier: "heavy",
-    body: resumePipelineSchema,
-    audit: (_ctx, body) => ({
-      action: "case.update" as const,
-      entityType: "case",
-      details: { case_slug: body.case_slug, pipeline_resume: true },
-    }),
-  },
-  async (ctx, body, _query, _req) => {
-    const res = await fetch(`${ENGINE_URL}/api/pipeline/resume`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        case_slug: body.case_slug,
-        resume_from_layer: body.resume_from_layer ?? 3,
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      return apiError("pipeline_resume_failed", errText || `Engine ${res.status}`, res.status);
-    }
-
-    const data = await res.json().catch(() => ({}));
-    return apiSuccess({
-      status: data.status ?? "resumed",
-      case_slug: body.case_slug,
-    });
+/**
+ * Resume a case analysis from a layer (review-queue "Fortsetzen").
+ *
+ * The engine has no /api/pipeline/resume — this used to proxy into a 404 and
+ * the button always failed. Resuming is a pipeline trigger with
+ * `resume_from_layer`, and it must go through the same route that reserves
+ * credits and signs the billing owner.
+ */
+export async function POST(req: NextRequest, routeCtx: Parameters<typeof triggerPipeline>[1]) {
+  const body = (await req.json().catch(() => null)) as {
+    case_slug?: unknown;
+    resume_from_layer?: unknown;
+  } | null;
+  if (!body || typeof body.case_slug !== "string" || !body.case_slug.trim()) {
+    return apiError("case_slug_required", "case_slug fehlt", 400);
   }
-);
+  const layer =
+    typeof body.resume_from_layer === "number" && Number.isInteger(body.resume_from_layer)
+      ? Math.min(Math.max(body.resume_from_layer, 1), 6)
+      : 3;
+  const forwarded = new NextRequest(new URL("/api/legal/trigger-pipeline", req.url), {
+    method: "POST",
+    headers: req.headers,
+    body: JSON.stringify({ case_slug: body.case_slug.trim(), resume_from_layer: layer }),
+  });
+  return triggerPipeline(forwarded, routeCtx);
+}

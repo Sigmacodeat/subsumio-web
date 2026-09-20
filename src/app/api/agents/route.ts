@@ -7,11 +7,19 @@ const log = logger("api/agents");
 
 export const maxDuration = 300;
 
+// Strict: the model, the critic and the budget are server policy, not user
+// input (was `.passthrough()` — a user could pick any vendor model, skip the
+// critic and lift the spend cap).
 const agentsPostSchema = z
   .object({
     prompt: z.string().min(1, "prompt_required").max(10_000, "prompt_too_long"),
+    force_specialists: z.array(z.string().max(60)).max(4).optional(),
+    model: z.string().max(80).optional(),
+    // Accepted for client compatibility and IGNORED: the critic always runs
+    // for user-started agent runs.
+    skip_critic: z.boolean().optional(),
   })
-  .passthrough();
+  .strict();
 
 export const GET = createHandler(
   {
@@ -50,6 +58,7 @@ export const POST = createHandler(
   {
     action: "agent.write",
     rateTier: "heavy",
+    credits: "agent",
     body: agentsPostSchema,
     audit: (ctx, body) => ({
       action: "agent.supervisor_run" as const,
@@ -62,7 +71,12 @@ export const POST = createHandler(
       const upstream = await fetch(`${ENGINE_URL}/api/agents/supervisor`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          prompt: body.prompt,
+          ...(body.force_specialists ? { force_specialists: body.force_specialists } : {}),
+          // Catalogue id only; the engine maps it (unknown ids are ignored).
+          ...(body.model ? { supervisor_model: body.model } : {}),
+        }),
         signal: AbortSignal.timeout(15_000),
       });
 

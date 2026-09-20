@@ -14,6 +14,7 @@
  * If any stage flags a citation, the result includes the flag + which stage caught it.
  */
 
+import { TIER_DEFAULTS } from "./model-config.ts";
 import { chat as gatewayChat, type ChatOpts, type ChatResult } from "./ai/gateway.ts";
 
 // ── Types ───────────────────────────────────────────────────────
@@ -72,13 +73,13 @@ export interface EnsembleVerifyResult {
 
 // ── Models for ensemble ───────────────────────────────────────────────
 
-const ENSEMBLE_MODELS = [
-  "openrouter:openai/gpt-4o",
-  "openrouter:anthropic/claude-3.5-sonnet",
-  "openrouter:x-ai/grok-4.3",
-];
+// Routed through the configured model tiers instead of hardcoded vendor IDs:
+// the verifier sees the retrieved context (client documents included), so it
+// must follow the same provider policy as every other model call — no
+// side-channel to a vendor the deployment did not choose.
+const ENSEMBLE_MODELS = [TIER_DEFAULTS.reasoning, TIER_DEFAULTS.deep];
 
-const PARAPHRASE_MODEL = "openrouter:openai/gpt-4o-mini";
+const PARAPHRASE_MODEL = TIER_DEFAULTS.utility;
 
 // ── Stage 3: Paraphrase Judge ─────────────────────────────────────────
 

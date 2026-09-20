@@ -132,6 +132,11 @@ function maxTier(a: ModelTier, b: SelectableTier): ModelTier {
   return TIER_RANK[a] >= TIER_RANK[b] ? a : b;
 }
 
+/** True when `tier` is at least as strong as `floor`. */
+export function tierAtLeast(tier: ModelTier, floor: ModelTier): boolean {
+  return TIER_RANK[tier] >= TIER_RANK[floor];
+}
+
 const SPECIALIST_AREA = new Map<string, ModelArea>();
 const PURPOSE_AREA = new Map<string, ModelArea>();
 for (const def of Object.values(MODEL_AREA_DEFS)) {

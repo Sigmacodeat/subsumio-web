@@ -1,6 +1,8 @@
 import { z } from "zod";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { portalToken } from "@/lib/portal-session";
+import { ENGINE_URL } from "@/lib/engine";
+import { resolvePortalAccess } from "@/lib/portal-access";
+import { portalMessageSlugPrefix } from "@/lib/portal-messages";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 
@@ -22,32 +24,25 @@ export const POST = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, body, _query) => {
-    const payload = await verifyPortalToken(body.token);
-    if (!payload) {
-      return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
-    }
-    if (!payload.brain_id) {
-      return apiError(
-        "new_portal_link_required",
-        "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.",
-        403
-      );
-    }
+    const access = await resolvePortalAccess(portalToken(req, body.token));
+    if (access instanceof Response) return access;
 
+    const text = body.message.trim();
     try {
-      const slug = `portal-message/${payload.case_slug}/${Date.now()}`;
       const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...engineHeadersForBrain(payload.brain_id) },
+        headers: { "Content-Type": "application/json", ...access.headers },
         body: JSON.stringify({
-          slug,
+          slug: `${portalMessageSlugPrefix(access.caseSlug)}${Date.now()}`,
           title: `Nachricht vom Mandanten`,
           type: "portal_message",
-          content: body.message.trim(),
+          content: text,
           frontmatter: {
             type: "portal_message",
-            case_slug: payload.case_slug,
+            case_slug: access.caseSlug,
             sender: "client",
+            // Page listings carry no content; the inbox reads the text from here.
+            message: text,
             created_at: new Date().toISOString(),
           },
         }),

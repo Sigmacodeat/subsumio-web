@@ -891,7 +891,9 @@ function DeadlineCardsDisplay({
   const handleMarkDone = async (slug: string) => {
     setMarkingSlug(slug);
     try {
-      const result = await api.copilot.executeTool("deadline_mark_done", { deadline_slug: slug });
+      const result = await api.copilot.executeConfirmedTool("deadline_mark_done", {
+        deadline_slug: slug,
+      });
       if (result.success) {
         setDoneSlugs((prev) => new Set(prev).add(slug));
         addToast({ type: "success", title: t("chat.deadline.mark_done" as never) });
@@ -969,7 +971,9 @@ function ClientOverviewDisplay({
   const handleMarkDone = async (slug: string) => {
     setMarkingSlug(slug);
     try {
-      const result = await api.copilot.executeTool("deadline_mark_done", { deadline_slug: slug });
+      const result = await api.copilot.executeConfirmedTool("deadline_mark_done", {
+        deadline_slug: slug,
+      });
       if (result.success) {
         setDoneSlugs((prev) => new Set(prev).add(slug));
         addToast({ type: "success", title: t("chat.deadline.mark_done" as never) });

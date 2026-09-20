@@ -27,7 +27,7 @@ function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElem
   return (
     <h3
       className={cn(
-        "font-display text-base leading-tight font-semibold tracking-normal text-[color:var(--ds-text)]",
+        "text-base leading-tight font-semibold tracking-normal text-[color:var(--ds-text)]",
         className
       )}
       {...props}

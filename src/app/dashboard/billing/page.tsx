@@ -29,6 +29,7 @@ import { CreditCard as CreditCardWidget } from "@/components/dashboard/credit-ca
 import { useLang } from "@/lib/use-lang";
 import { getModelById, formatCost } from "@/lib/model-config";
 import { csrfFetch } from "@/lib/csrf";
+import { Skeleton } from "@/components/dashboard/skeleton";
 
 interface ModelBreakdownRow {
   modelId: string;
@@ -57,8 +58,20 @@ function UsageCard() {
 
   if (!usage) return null;
 
+  const monthLabel = (() => {
+    const m = /^(\d{4})-(\d{2})$/.exec(usage.month ?? "");
+    if (!m) return usage.month;
+    return new Intl.DateTimeFormat(lang === "en" ? "en-GB" : "de-AT", {
+      month: "long",
+      year: "numeric",
+    }).format(new Date(Number(m[1]), Number(m[2]) - 1, 1));
+  })();
   const rows = [
-    { label: `Queries (${usage.month})`, used: usage.queries, max: usage.limits.queriesPerMonth },
+    {
+      label: `${lang === "en" ? "AI requests" : "KI-Anfragen"} (${monthLabel})`,
+      used: usage.queries,
+      max: usage.limits.queriesPerMonth,
+    },
     ...(stats
       ? [{ label: t("billing.pages_in_brain"), used: stats.total_pages, max: usage.limits.pages }]
       : []),
@@ -130,7 +143,7 @@ function ModelBreakdownCard() {
           <div className="flex items-center gap-2.5">
             <Cpu size={16} className="brand-text" aria-hidden />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {t("billing.model_usage")} ({usage.month})
+              {t("billing.model_usage")}
             </h2>
           </div>
           <span className="text-xs text-[color:var(--ds-text-muted)]">
@@ -188,20 +201,6 @@ function ModelBreakdownCard() {
                     className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                     style={{ width: `${pct}%` }}
                   />
-                </div>
-                <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
-                  <span>
-                    {Math.round(row.inputTokens / 1000).toLocaleString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
-                    K in
-                  </span>
-                  <span>
-                    {Math.round(row.outputTokens / 1000).toLocaleString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
-                    K out
-                  </span>
                 </div>
               </div>
             );
@@ -281,7 +280,7 @@ function BillingInner() {
         window.location.assign(data.url);
         return;
       }
-      setNotice(data?.error ?? t("billing.portal_failed"));
+      setNotice(t("billing.portal_failed"));
     } catch {
       setNotice(t("billing.network_error"));
     }
@@ -289,6 +288,8 @@ function BillingInner() {
   }
 
   const currentPlan = me?.user?.plan ?? "free";
+  const currentPlanName =
+    BILLING_PLANS_DISPLAY.find((p) => p.id === currentPlan)?.name ?? currentPlan;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -350,8 +351,8 @@ function BillingInner() {
               {t("billing.current_plan")}
             </p>
             <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-[color:var(--ds-text)] capitalize">
-                {currentPlan}
+              <span className="text-xl font-bold text-[color:var(--ds-text)]">
+                {currentPlanName}
               </span>
               <Badge variant={currentPlan === "free" ? "default" : "accent"}>
                 {currentPlan === "free" ? t("billing.free") : t("billing.active")}
@@ -373,8 +374,8 @@ function BillingInner() {
             )}
           </div>
           {typeof me?.referrals === "number" && (
-            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
-              <Gift size={16} className="text-[color:var(--ds-warning-text)]" />
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-3">
+              <Gift size={16} className="text-[color:var(--ds-text-muted)]" aria-hidden="true" />
               <div>
                 <p className="text-sm font-semibold text-[color:var(--ds-text)]">
                   {me.referrals}{" "}
@@ -449,7 +450,15 @@ function BillingInner() {
 
 export default function BillingPage() {
   return (
-    <Suspense fallback={<div className="p-6" />}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" aria-busy="true">
+          <Skeleton className="h-16 w-72 rounded-lg" />
+          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
+      }
+    >
       <BillingInner />
     </Suspense>
   );

@@ -5,27 +5,74 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
+/** Parses a date value; a bare `YYYY-MM-DD` is a calendar day in local time, not UTC midnight. */
+export function parseDateValue(date: string | Date | null | undefined): Date | null {
+  if (date === null || date === undefined || date === "") return null;
+  if (date instanceof Date) return Number.isNaN(date.getTime()) ? null : date;
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
+  const d = day ? new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3])) : new Date(date);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** `TT.MM.JJJJ`; unparseable values render as "—" instead of "Invalid Date". */
+export function formatDate(date: string | Date | null | undefined): string {
+  const d = parseDateValue(date);
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("de-AT", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(d);
+}
+
+/** `TT.MM.JJJJ, HH:MM` */
+export function formatDateTime(date: string | Date | null | undefined): string {
+  const d = parseDateValue(date);
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
+/** Whole calendar days from today to `date` (negative = past). */
+export function daysUntil(
+  date: string | Date | null | undefined,
+  now: Date = new Date()
+): number | null {
+  const d = parseDateValue(date);
+  if (!d) return null;
+  const a = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const b = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.round((b - a) / 86_400_000);
+}
+
+/** Relative wording for deadlines: "heute", "morgen", "in 5 Tagen", "seit 2 Tagen überfällig". */
+export function formatDaysUntil(days: number | null): string {
+  if (days === null) return "";
+  if (days === 0) return "heute";
+  if (days === 1) return "morgen";
+  if (days === -1) return "seit gestern überfällig";
+  if (days < 0) return `seit ${-days} Tagen überfällig`;
+  return `in ${days} Tagen`;
 }
 
 export function formatRelativeTime(date: string | Date): string {
-  const now = new Date();
-  const d = new Date(date);
-  const diff = now.getTime() - d.getTime();
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
+  const d = parseDateValue(date);
+  if (!d) return "—";
+  const diff = Date.now() - d.getTime();
+  const minutes = Math.floor(diff / 60_000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (days > 7) return formatDate(date);
-  if (days > 0) return `vor ${days}d`;
-  if (hours > 0) return `vor ${hours}h`;
-  if (minutes > 0) return `vor ${minutes}m`;
+  if (days > 7) return formatDate(d);
+  if (days > 1) return `vor ${days} Tagen`;
+  if (days === 1) return "gestern";
+  if (hours > 0) return hours === 1 ? "vor 1 Stunde" : `vor ${hours} Stunden`;
+  if (minutes > 0) return minutes === 1 ? "vor 1 Minute" : `vor ${minutes} Minuten`;
   return "gerade eben";
 }
 

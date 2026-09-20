@@ -18,7 +18,14 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import {
+  cn,
+  daysUntil as daysUntilDate,
+  formatDate,
+  formatDateTime,
+  formatDaysUntil,
+} from "@/lib/utils";
+import { sourceLabel, urgencyLabel } from "./format";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
@@ -57,7 +64,7 @@ export function DeadlinesTasksTab() {
   const slug = ctx.slug;
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       {/* Deadline Form — collapsed by default (Progressive Disclosure) */}
       <div className="max-w-3xl space-y-4">
         {!showDeadlineForm ? (
@@ -299,12 +306,6 @@ export function DeadlinesTasksTab() {
                 {t("cases.detail_dl_ai_title")}
               </span>
             </div>
-            <Badge
-              variant="default"
-              className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
-            >
-              Beta
-            </Badge>
           </div>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
             {t("cases.detail_dl_ai_desc")}
@@ -418,8 +419,11 @@ export function DeadlinesTasksTab() {
               {t("casesdetail.ai_deadlines")}
             </div>
             {caseData.suggestedDeadlines
-              .filter((sd) => !sd.confirmed)
-              .map((sd, i) => (
+              .map((sd, i) => ({ sd, i }))
+              // Keep the ORIGINAL index: filtering first and mapping the
+              // filtered position confirmed the wrong suggestion.
+              .filter(({ sd }) => !sd.confirmed)
+              .map(({ sd, i }) => (
                 <div
                   key={i}
                   className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2"
@@ -427,11 +431,16 @@ export function DeadlinesTasksTab() {
                   <div className="min-w-0">
                     <div className="text-sm text-[color:var(--ds-text)]">{sd.title}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {sd.due_date} · {sd.urgency}
-                      {sd.source_quote && (
+                      <span className="tabular-nums">{formatDate(sd.due_date)}</span>
+                      {sd.urgency ? ` · ${urgencyLabel(sd.urgency, lang)}` : ""}
+                      {sd.source_quote && sd.source_quote !== sd.title && (
                         <span className="mt-0.5 block italic">&bdquo;{sd.source_quote}&ldquo;</span>
                       )}
-                      <span className="mt-0.5 block">Quelle: {sd.source}</span>
+                      {sd.source && (
+                        <span className="mt-0.5 block">
+                          {lang === "en" ? "Source" : "Quelle"}: {sourceLabel(sd.source)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -441,18 +450,15 @@ export function DeadlinesTasksTab() {
                       disabled={caseData?.status === "archived"}
                       className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       onClick={async () => {
-                        const entry: DeadlineEntry = {
-                          id: `dl-${Date.now()}`,
-                          title: sd.title,
-                          due_date: sd.due_date,
-                          type: "custom" as DeadlineEntry["type"],
-                          status: "pending",
-                          review_status: "unreviewed",
-                        };
-                        const updated = [...ctx.deadlinesList, entry];
-                        ctx.setDeadlinesList(updated);
-                        ctx.saveCaseUpdate({ deadlines: updated });
-                        await ctx.confirmSuggestedDeadline(i, true);
+                        try {
+                          await ctx.confirmSuggestedDeadline(i, true);
+                        } catch (err) {
+                          ctx.setSaveError(
+                            err instanceof Error
+                              ? err.message
+                              : "Frist konnte nicht übernommen werden."
+                          );
+                        }
                       }}
                     >
                       <Check size={12} /> {t("casesdetail.accept")}
@@ -462,7 +468,17 @@ export function DeadlinesTasksTab() {
                       size="sm"
                       disabled={caseData?.status === "archived"}
                       className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
-                      onClick={() => ctx.confirmSuggestedDeadline(i, false)}
+                      onClick={() =>
+                        ctx
+                          .confirmSuggestedDeadline(i, false)
+                          .catch((err: unknown) =>
+                            ctx.setSaveError(
+                              err instanceof Error
+                                ? err.message
+                                : "Fristvorschlag konnte nicht verworfen werden."
+                            )
+                          )
+                      }
                     >
                       <X size={12} /> {t("casesdetail.reject")}
                     </Button>
@@ -486,12 +502,7 @@ export function DeadlinesTasksTab() {
         ) : (
           <div className="space-y-2">
             {ctx.deadlinesList.map((dl, i) => {
-              const dlDate = new Date(dl.due_date || Date.now());
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const daysUntil = Math.ceil(
-                (dlDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-              );
+              const daysUntil = daysUntilDate(dl.due_date) ?? 0;
               const isOverdue = daysUntil < 0;
               const isCritical = daysUntil >= 0 && daysUntil <= 3;
               const isWarning = daysUntil > 3 && daysUntil <= 7;
@@ -626,22 +637,14 @@ export function DeadlinesTasksTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
-                    <span>
-                      {dlDate.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                    <span className="text-[color:var(--ds-text)] tabular-nums">
+                      {formatDate(dl.due_date)}
                     </span>
-                    {!isOverdue && status !== "done" && (
-                      <span className={cfg.color}>
-                        ({daysUntil} {t("cases.detail_dl_days")})
-                      </span>
-                    )}
-                    {isOverdue && (
-                      <span className="text-[color:var(--ds-danger-text)]">
-                        ({Math.abs(daysUntil)} {t("cases.detail_dl_days_overdue")})
+                    {status !== "done" && (
+                      <span
+                        className={isOverdue ? "text-[color:var(--ds-danger-text)]" : cfg.color}
+                      >
+                        {formatDaysUntil(daysUntil)}
                       </span>
                     )}
                     {dl.type && (
@@ -693,10 +696,7 @@ export function DeadlinesTasksTab() {
                         className="flex items-center gap-0.5 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                       >
                         <Clock size={10} />
-                        Vorfrist:{" "}
-                        {new Date(dl.vorfrist_date).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
-                        )}
+                        Vorfrist: {formatDate(dl.vorfrist_date)}
                       </Badge>
                     )}
                     {dl.erv_zustelldatum && (
@@ -704,10 +704,7 @@ export function DeadlinesTasksTab() {
                         variant="default"
                         className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
-                        ERV:{" "}
-                        {new Date(dl.erv_zustelldatum).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
-                        )}
+                        ERV: {formatDate(dl.erv_zustelldatum)}
                       </Badge>
                     )}
                   </div>
@@ -725,8 +722,7 @@ export function DeadlinesTasksTab() {
                     <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                       {t("cases.detail_dl_reviewed_by")}{" "}
                       {dl.reviewed_by || t("cases.detail_dl_firm")}{" "}
-                      {t("cases.detail_dl_reviewed_at")}{" "}
-                      {new Date(dl.reviewed_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                      {t("cases.detail_dl_reviewed_at")} {formatDateTime(dl.reviewed_at)}
                     </p>
                   )}
                   <div className="mt-3 border-t border-[color:var(--ds-border)]/50 pt-3">

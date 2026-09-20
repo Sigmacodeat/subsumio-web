@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { engineComplete } from "@/lib/engine-llm";
 
 export const maxDuration = 60;
 
@@ -96,30 +96,16 @@ Antworte präzise und strukturiert. Beziehe dich auf konkrete Zeilen und Werte.
 Wenn die Frage nicht beantwortet werden kann, erkläre warum.
 Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`;
 
-    const engineRes = await fetch(`${ENGINE_URL}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        prompt,
-        brain_id: ctx.brainId,
-        model: "anthropic:claude-sonnet-4-6",
-        max_turns: 5,
-      }),
-      signal: AbortSignal.timeout(30_000),
+    const completion = await engineComplete(ctx.headers, {
+      purpose: "review_table.ask",
+      tier: "reasoning",
+      prompt,
+      maxTokens: 2_000,
+      timeoutMs: 45_000,
     });
-
-    if (!engineRes.ok) {
-      const answer = generateSimpleAnswer(
-        body.query,
-        body.columns,
-        body.rows,
-        body.table_title ?? ""
-      );
-      return Response.json({ answer });
-    }
-
-    const result = await engineRes.json();
-    const answer = String(result.response ?? result.text ?? result.answer ?? "");
+    const answer =
+      completion?.text.trim() ||
+      generateSimpleAnswer(body.query, body.columns, body.rows, body.table_title ?? "");
     return Response.json({ answer });
   }
 );

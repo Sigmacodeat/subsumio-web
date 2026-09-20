@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Clock, Check, X, Loader2, Timer, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Clock, Check, X, Loader2, Pencil } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { RowSkeleton } from "@/components/dashboard/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { encodeSlugPath, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { CaseSelect } from "@/components/legal/case-select";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { getActivityLabel, formatDuration, type TimeSuggestion } from "@/lib/passive-time";
+import { draftError, draftFrom, type TimeDraft as Draft } from "@/lib/time-suggestion-draft";
 
 export default function TimeSuggestionsPage() {
   const { addToast } = useToast();
@@ -18,6 +27,15 @@ export default function TimeSuggestionsPage() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(false);
+  // Suggestions are personal (built from the user's own activity): show only
+  // the signed-in user's, never a colleague's.
+  const myEmail = (useMe().data?.user?.email as string | undefined)?.toLowerCase();
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [editing, setEditing] = useState<string | null>(null);
+
+  const draftFor = (s: TimeSuggestion) => drafts[s.id] ?? draftFrom(s);
+  const patchDraft = (s: TimeSuggestion, patch: Partial<Draft>) =>
+    setDrafts((prev) => ({ ...prev, [s.id]: { ...draftFor(s), ...patch } }));
 
   const load = useCallback(async () => {
     try {
@@ -36,8 +54,9 @@ export default function TimeSuggestionsPage() {
   useEffect(() => {
     void load();
     void fetch("/api/time-tracking/passive-preference")
-      .then((response) => response.json())
-      .then((data) => setEnabled(data.data?.enabled === true));
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => setEnabled(data?.data?.enabled === true))
+      .catch(() => setEnabled(false));
   }, [load]);
 
   async function togglePassiveTime() {
@@ -52,42 +71,85 @@ export default function TimeSuggestionsPage() {
     setEnabled(next);
     addToast({
       type: "success",
-      title: next ? "Passive Zeiterfassung aktiviert" : "Passive Zeiterfassung pausiert",
+      title: next ? "Zeitvorschläge eingeschaltet" : "Zeitvorschläge ausgeschaltet",
     });
   }
 
   async function acceptSuggestion(suggestion: TimeSuggestion) {
+    const draft = draftFor(suggestion);
+    const invalid = draftError(draft);
+    if (invalid) {
+      setEditing(suggestion.id);
+      addToast({ type: "error", title: invalid });
+      return;
+    }
+    const minutes = Number(draft.minutes);
+    const modified =
+      draft.case_slug !== (suggestion.case_slug ?? "") ||
+      minutes !== suggestion.duration_minutes ||
+      draft.description.trim() !== suggestion.description ||
+      !draft.billable;
     setActing(suggestion.id);
+    let entryId: string | undefined;
     try {
-      // Create a time entry from the suggestion
-      await api.time.create({
+      const entry = await api.time.create({
         date: suggestion.date,
-        minutes: suggestion.duration_minutes,
-        description: suggestion.description,
-        case_slug: suggestion.case_slug ?? "",
-        billable: true,
+        minutes,
+        description: draft.description.trim(),
+        case_slug: draft.case_slug,
+        billable: draft.billable,
       });
+      entryId = entry.id;
+    } catch (e) {
+      console.error("[time-suggestions] accept failed:", e instanceof Error ? e.message : e);
+      addToast({
+        type: "error",
+        title: "Vorschlag konnte nicht übernommen werden",
+        description: "Bitte versuchen Sie es erneut oder erfassen Sie die Zeit manuell.",
+      });
+      setActing(null);
+      return;
+    }
 
-      // Mark suggestion as accepted
-      const updated = { ...suggestion, status: "accepted" as const };
+    // The entry is booked. Record that on the suggestion so it cannot be
+    // booked twice; if this write fails the booking still stands.
+    const updated: TimeSuggestion = {
+      ...suggestion,
+      status: modified ? "modified" : "accepted",
+      case_slug: draft.case_slug,
+      duration_minutes: minutes,
+      description: draft.description.trim(),
+    };
+    try {
       await api.brain.createPage({
         slug: `legal/time-suggestions/${suggestion.id}`,
         title: `Zeitvorschlag: ${suggestion.date} ${suggestion.start_time}-${suggestion.end_time}`,
         type: "time_suggestion",
-        frontmatter: updated as unknown as Record<string, unknown>,
+        frontmatter: {
+          ...(updated as unknown as Record<string, unknown>),
+          time_entry_id: entryId,
+          original: modified
+            ? {
+                case_slug: suggestion.case_slug ?? null,
+                duration_minutes: suggestion.duration_minutes,
+                description: suggestion.description,
+              }
+            : undefined,
+        },
       });
-
-      setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
       addToast({ type: "success", title: "Zeiteintrag übernommen" });
     } catch (e) {
+      console.error("[time-suggestions] mark failed:", e instanceof Error ? e.message : e);
       addToast({
         type: "error",
-        title: "Fehler",
-        description: e instanceof Error ? e.message : undefined,
+        title: "Zeit gebucht, Vorschlag nicht aktualisiert",
+        description:
+          "Der Zeiteintrag ist gespeichert. Bitte übernehmen Sie diesen Vorschlag nicht noch einmal.",
       });
-    } finally {
-      setActing(null);
     }
+    setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
+    setEditing(null);
+    setActing(null);
   }
 
   async function rejectSuggestion(suggestion: TimeSuggestion) {
@@ -104,17 +166,21 @@ export default function TimeSuggestionsPage() {
       setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
       addToast({ type: "success", title: "Vorschlag abgelehnt" });
     } catch (e) {
+      console.error("[time-suggestions] reject failed:", e instanceof Error ? e.message : e);
       addToast({
         type: "error",
-        title: "Fehler",
-        description: e instanceof Error ? e.message : undefined,
+        title: "Vorschlag konnte nicht abgelehnt werden",
+        description: "Bitte versuchen Sie es erneut.",
       });
     } finally {
       setActing(null);
     }
   }
 
-  const pending = suggestions.filter((s) => s.status === "suggested");
+  const mine = myEmail
+    ? suggestions.filter((s) => (s.user_email ?? "").toLowerCase() === myEmail)
+    : [];
+  const pending = mine.filter((s) => s.status === "suggested");
   const totalMinutes = pending.reduce((acc, s) => acc + s.duration_minutes, 0);
 
   return (
@@ -128,88 +194,70 @@ export default function TimeSuggestionsPage() {
         ]}
       />
 
-      <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div>
-          <p className="text-sm font-medium">Persönliches Opt-in</p>
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <div className="min-w-0">
+          <label htmlFor="passive-time" className="text-sm font-medium text-[color:var(--ds-text)]">
+            Zeitvorschläge für mich erstellen
+          </label>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Nur bei Aktivierung verarbeitet der Nachtlauf Ihre Aktivitätssignale.
+            {enabled
+              ? "Aktiv: Ihre Arbeit an Akten wird nachts zu Vorschlägen gebündelt. Nichts wird ohne Ihre Übernahme gebucht."
+              : "Aus: Es werden keine Aktivitäten ausgewertet. Nach dem Einschalten bündelt ein nächtlicher Lauf Ihre Arbeit an Akten zu Vorschlägen."}
           </p>
         </div>
-        <Button
-          variant={enabled ? "secondary" : "primary"}
-          onClick={() => void togglePassiveTime()}
-        >
-          {enabled ? "Pausieren" : "Aktivieren"}
-        </Button>
+        <Switch
+          id="passive-time"
+          checked={enabled}
+          onCheckedChange={() => void togglePassiveTime()}
+        />
       </div>
 
       {/* Summary */}
       {pending.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-              <Clock size={12} /> Offene Vorschläge
-            </div>
-            <div className="mt-1 text-lg font-bold text-[color:var(--ds-text)]">
-              {pending.length}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-              <Timer size={12} /> Gesamtzeit
-            </div>
-            <div className="mt-1 text-lg font-bold text-[color:var(--ds-text)]">
-              {formatDuration(totalMinutes)}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-              <TrendingUp size={12} /> Hohe Konfidenz
-            </div>
-            <div className="mt-1 text-lg font-bold text-[color:var(--ds-text)]">
-              {pending.filter((s) => s.confidence === "high").length}
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <SuggStat label="Offene Vorschläge" value={String(pending.length)} />
+          <SuggStat label="Vorgeschlagene Zeit" value={formatDuration(totalMinutes)} />
+          <SuggStat
+            label="Gut belegt"
+            value={String(pending.filter((s) => s.confidence === "high").length)}
+          />
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+      {loading || !myEmail ? (
+        <div role="status" aria-label="Vorschläge werden geladen">
+          <RowSkeleton count={4} />
         </div>
-      ) : suggestions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
-          <Clock size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm font-medium text-[color:var(--ds-text)]">Keine Zeitvorschläge</p>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Vorschläge werden automatisch aus Ihren Aktivitäten generiert.
-          </p>
-        </div>
+      ) : mine.length === 0 ? (
+        <EmptyState
+          icon={Clock}
+          title="Keine Zeitvorschläge"
+          description={
+            enabled
+              ? "Sobald Sie an Akten arbeiten, erscheinen hier am nächsten Morgen Vorschläge zum Übernehmen."
+              : "Schalten Sie die Zeitvorschläge ein, um aus Ihrer Aktenarbeit Buchungsvorschläge zu erhalten."
+          }
+          actionLabel={enabled ? undefined : "Einschalten"}
+          onAction={enabled ? undefined : () => void togglePassiveTime()}
+        />
       ) : (
-        <div className="space-y-2">
-          {suggestions.map((s) => {
+        <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          {mine.map((s) => {
             const isPending = s.status === "suggested";
+            const draft = draftFor(s);
+            // A suggestion without a matter opens straight in edit mode.
+            const isEditing = isPending && (editing === s.id || !s.case_slug);
             return (
-              <div
+              <li
                 key={s.id}
-                className={`flex items-start gap-3 rounded-xl border bg-[color:var(--ds-surface)] px-4 py-3 ${
-                  isPending
-                    ? "border-[color:var(--ds-border)]"
-                    : "border-[color:var(--ds-border)] opacity-60"
-                }`}
+                className={`flex items-start gap-3 px-4 py-3 ${isPending ? "" : "opacity-60"}`}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
-                  <Clock size={14} className="text-[color:var(--ds-text-muted)]" />
-                </div>
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {s.date} · {s.start_time}–{s.end_time}
+                    <span className="text-sm font-medium text-[color:var(--ds-text)] tabular-nums">
+                      {formatDate(s.date)} · {s.start_time}–{s.end_time}
                     </span>
-                    <Badge
-                      variant="default"
-                      className="brand-soft brand-border brand-text border text-xs"
-                    >
+                    <Badge variant="default" className="border text-xs tabular-nums">
                       {formatDuration(s.duration_minutes)}
                     </Badge>
                     <Badge
@@ -218,12 +266,20 @@ export default function TimeSuggestionsPage() {
                     >
                       {getActivityLabel(s.activity_type)}
                     </Badge>
-                    {s.confidence === "high" && (
+                    {isPending && s.confidence === "high" && (
                       <Badge
                         variant="default"
                         className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
-                        Hohe Konfidenz
+                        Gut belegt
+                      </Badge>
+                    )}
+                    {s.status === "modified" && (
+                      <Badge
+                        variant="default"
+                        className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
+                      >
+                        Geändert übernommen
                       </Badge>
                     )}
                     {s.status === "accepted" && (
@@ -231,21 +287,37 @@ export default function TimeSuggestionsPage() {
                         variant="default"
                         className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
-                        <Check size={10} className="mr-1 inline" /> Übernommen
+                        Übernommen
                       </Badge>
                     )}
                     {s.status === "rejected" && (
-                      <Badge
-                        variant="default"
-                        className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
-                      >
-                        <X size={10} className="mr-1 inline" /> Abgelehnt
+                      <Badge variant="default" className="border text-xs text-[color:var(--ds-text-muted)]">
+                        Abgelehnt
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-[color:var(--ds-text-muted)]">{s.description}</p>
-                  {s.case_slug && (
-                    <p className="text-xs text-[color:var(--ds-info-text)]">Akte: {s.case_slug}</p>
+                  {isEditing ? (
+                    <TimeDraftEditor
+                      id={s.id}
+                      draft={draft}
+                      suggestedCase={s.case_slug}
+                      onChange={(patch) => patchDraft(s, patch)}
+                    />
+                  ) : (
+                    <>
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">{s.description}</p>
+                      {s.case_slug && (
+                        <p className="text-xs text-[color:var(--ds-text-muted)]">
+                          Akte:{" "}
+                          <Link
+                            href={`/dashboard/cases/${encodeSlugPath(s.case_slug)}`}
+                            className="text-[color:var(--ds-text)] underline-offset-2 hover:underline"
+                          >
+                            {s.case_slug.split("/").pop()}
+                          </Link>
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
                 {isPending && (
@@ -253,33 +325,125 @@ export default function TimeSuggestionsPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-7 gap-1 px-2 text-xs"
-                      disabled={acting === s.id}
+                      className="whitespace-nowrap"
+                      disabled={acting === s.id || draftError(draft) !== null}
+                      title={draftError(draft) ?? undefined}
                       onClick={() => void acceptSuggestion(s)}
                     >
                       {acting === s.id ? (
-                        <Loader2 size={12} className="animate-spin" />
+                        <Loader2 size={12} className="animate-spin" aria-hidden="true" />
                       ) : (
-                        <Check size={12} />
+                        <Check size={12} aria-hidden="true" />
                       )}
                       Übernehmen
                     </Button>
+                    {!isEditing && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Vorschlag vor dem Übernehmen ändern"
+                        title="Ändern"
+                        disabled={acting === s.id}
+                        onClick={() => setEditing(s.id)}
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2 text-xs"
+                      size="icon"
+                      aria-label="Vorschlag ablehnen"
+                      title="Ablehnen"
                       disabled={acting === s.id}
                       onClick={() => void rejectSuggestion(s)}
                     >
-                      <X size={12} />
+                      <X size={14} />
                     </Button>
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
+    </div>
+  );
+}
+
+function TimeDraftEditor({
+  id,
+  draft,
+  suggestedCase,
+  onChange,
+}: {
+  id: string;
+  draft: Draft;
+  suggestedCase?: string;
+  onChange: (patch: Partial<Draft>) => void;
+}) {
+  const error = draftError(draft);
+  return (
+    <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,2fr)_7rem]">
+      <div className="space-y-1 sm:col-span-2">
+        <label htmlFor={`ts-case-${id}`} className="text-xs text-[color:var(--ds-text-muted)]">
+          Akte{suggestedCase ? "" : " (nicht erkannt, bitte wählen)"}
+        </label>
+        <CaseSelect
+          id={`ts-case-${id}`}
+          value={draft.case_slug}
+          onChange={(case_slug) => onChange({ case_slug })}
+        />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor={`ts-desc-${id}`} className="text-xs text-[color:var(--ds-text-muted)]">
+          Tätigkeit
+        </label>
+        <Input
+          id={`ts-desc-${id}`}
+          value={draft.description}
+          maxLength={500}
+          onChange={(e) => onChange({ description: e.target.value })}
+        />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor={`ts-min-${id}`} className="text-xs text-[color:var(--ds-text-muted)]">
+          Minuten
+        </label>
+        <Input
+          id={`ts-min-${id}`}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={1440}
+          step={1}
+          value={draft.minutes}
+          onChange={(e) => onChange({ minutes: e.target.value })}
+          className="tabular-nums"
+        />
+      </div>
+      <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text)] sm:col-span-2">
+        <input
+          type="checkbox"
+          checked={draft.billable}
+          onChange={(e) => onChange({ billable: e.target.checked })}
+          className="h-4 w-4 accent-[color:var(--brand-primary)]"
+        />
+        Abrechenbar
+      </label>
+      {error && (
+        <p role="alert" className="text-xs text-[color:var(--ds-danger-text)] sm:col-span-2">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SuggStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</div>
     </div>
   );
 }

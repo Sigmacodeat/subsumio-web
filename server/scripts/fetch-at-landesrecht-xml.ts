@@ -8,14 +8,14 @@
  * - 62% sind "Paragraph" docs (§ 1, § 2, etc. = Gesetzestext) → FETCHEN
  * - ~106.380 einzigartige Gesetze (nach Gesetzesnummer)
  * - XML hat ct="text" blocks mit Gesetzestext
- * - Organisiert in Ordnern nach Gesetzesnummer (wie at-normen)
+ * - Organisiert in Ordnern nach Bundesland und Gesetzesnummer (tir/gnr-10000001/p-1.md)
  *
  * Strategie:
  * 1. API paginieren (100 pro Seite)
  * 2. Nur "Paragraph" Docs fetchen (spart 38% der Requests)
  * 3. XML-URL aus API-Response verwenden (nicht konstruiert)
- * 4. Nach Gesetzesnummer in Unterordnern organisieren
- * 5. Bei 5 concurrent + 200ms throttle: ~1.9 Stunden
+ * 4. Nach Bundesland und Gesetzesnummer in Unterordnern organisieren
+ * 5. Eine Verbindung, 1 s Pause je Abruf (RIS-OGD-Regeln): ~31 Stunden für alles
  *
  * Fehlerbehandlung:
  * - 503/429: Exponential backoff, max 25 consecutive before abort
@@ -29,11 +29,12 @@
  *   bun scripts/fetch-at-landesrecht-xml.ts --page 50      # Resume ab Seite 50
  */
 
-import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { landOfDocId } from "./normalize/normalize-corpus";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Landesrecht";
 /** Vorhandene Dateien überschreiben — nötig nach jeder Extraktor-Korrektur. */
@@ -63,6 +64,8 @@ const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hell
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
 const OUT_DIR = join(_corpusRoot, "at-landesrecht");
+/** Every state-law paragraph in force at RIS, one JSON line each (reconcile-ris.ts). */
+const INVENTORY = join(_corpusRoot, "_state", "ris-landesrecht-inforce.jsonl");
 
 function arg(name: string, fb?: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -351,6 +354,10 @@ async function main() {
   let totalSkippedNorm = 0;
   let totalFailed = 0;
   let totalProcessed = 0;
+  // A complete scan (from page 1 to the end) also yields the inventory of
+  // paragraphs in force; a partial one must not overwrite it.
+  const inventory: string[] = [];
+  let reachedEnd = false;
 
   for (let page = START_PAGE; page <= MAX_PAGES; page++) {
     if (aborted) {
@@ -371,6 +378,7 @@ async function main() {
 
     if (refs.length === 0) {
       console.log(`\nPage ${page}: no results — reached end.`);
+      reachedEnd = true;
       break;
     }
 
@@ -419,6 +427,16 @@ async function main() {
       if (lr?.Bundesland) lrMeta.bundesland = lr.Bundesland;
 
       pageDocs.push({ docId, title, xmlUrl, lrMeta, eli, gn, apa, fileKey: key });
+      inventory.push(
+        JSON.stringify({
+          id: docId,
+          land: landOfDocId(docId),
+          gnr: gn || null,
+          apa,
+          key,
+          from: lrkons?.Inkrafttretensdatum ?? null,
+        })
+      );
     }
 
     if (pageDocs.length === 0) {
@@ -437,7 +455,12 @@ async function main() {
             const doc = queue.shift()!;
 
             // Build file key: gn-folder/key.md (like at-normen)
-            const folderName = doc.gn ? `gnr-${doc.gn}` : "no-gn";
+            // The states number their laws independently (Gesetzesnummer
+            // 10000001 exists in Burgenland, Upper Austria, Salzburg, Tyrol …),
+            // so the state is part of the path. Without it the paragraphs of
+            // different states' laws overwrote each other.
+            const land = landOfDocId(doc.docId) ?? "unbekannt";
+            const folderName = `${land}/${doc.gn ? `gnr-${doc.gn}` : "no-gn"}`;
             const fullKey = `${folderName}/${doc.fileKey}`;
 
             // BUG FIX: Use fullKey (folder/key) not just fileKey —
@@ -527,8 +550,15 @@ async function main() {
       );
     }
 
-    // Small delay between pages
-    await new Promise((r) => setTimeout(r, 100));
+    // Pause between search pages (RIS OGD: 1–2 s between requests)
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  if (reachedEnd && START_PAGE === 1 && LIMIT === 0 && !aborted) {
+    mkdirSync(dirname(INVENTORY), { recursive: true });
+    writeFileSync(`${INVENTORY}.tmp`, inventory.join("\n") + "\n");
+    renameSync(`${INVENTORY}.tmp`, INVENTORY);
+    console.log(`  Inventar: ${inventory.length} geltende Landesnormen → ${INVENTORY}`);
   }
 
   console.log(`\n═══════════════════════════════════════════════════════════`);

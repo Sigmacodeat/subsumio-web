@@ -25,7 +25,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { PageHeader } from "@/components/dashboard/page-header";
 import type {
   SourceRegistryEntry,
@@ -107,7 +108,7 @@ const AUTHORITY_CONFIG: Record<AuthorityTier, { labelKey: DashboardKey; badge: s
   commercial: {
     labelKey: "sources.auth_commercial",
     badge:
-      "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)] border-[color:var(--ds-category-purple-border)]",
+      "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] border-[color:var(--ds-border)]",
   },
 };
 
@@ -128,7 +129,6 @@ function SourceCard({
   refreshing: string | null;
   t: TFunc;
 }) {
-  const { lang } = useLang();
   const [expanded, setExpanded] = useState(false);
   const statusCfg = STATUS_CONFIG[source.status];
   const typeCfg = TYPE_CONFIG[source.type];
@@ -194,9 +194,7 @@ function SourceCard({
             {source.last_sync_at && (
               <span>
                 {t("sources.sync_label")}{" "}
-                {new Date(source.last_sync_at).toLocaleDateString(
-                  lang === "en" ? "en-GB" : "de-DE"
-                )}
+                {formatDate(source.last_sync_at)}
               </span>
             )}
           </div>
@@ -204,7 +202,7 @@ function SourceCard({
           {source.last_error && (
             <p className="mt-1.5 flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={11} />
-              {source.last_error}
+              Der letzte Abgleich ist fehlgeschlagen. Bitte später erneut abgleichen.
             </p>
           )}
 
@@ -218,7 +216,8 @@ function SourceCard({
             <div className="mt-2">
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="brand-text flex items-center gap-1 text-xs hover:underline"
+                aria-expanded={expanded}
+                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
               >
                 {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 {source.diff_log.length} {t("sources.changes_since_sync")}
@@ -246,11 +245,9 @@ function SourceCard({
                             ? t("sources.diff_modified")
                             : t("sources.diff_removed")}
                       </span>
-                      <span className="font-mono">{diff.statute_code}</span>
+                      <span className="tabular-nums">{diff.statute_code}</span>
                       <span className="text-[color:var(--ds-text-subtle)]">
-                        {new Date(diff.detected_at).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
-                        )}
+                        {formatDate(diff.detected_at)}
                       </span>
                     </div>
                   ))}
@@ -302,21 +299,24 @@ function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc 
       value: registry.error,
       color: "text-[color:var(--ds-danger-text)]",
     },
-    {
-      label: t("sources.stat_unknown"),
-      value: registry.unknown,
-      color: "text-[color:var(--ds-text-muted)]",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {stats.map((s) => (
         <div
           key={s.label}
           className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center"
         >
-          <p className={cn("text-2xl font-bold", s.color)}>{s.value}</p>
+          {/* No colour at zero (design standard). */}
+          <p
+            className={cn(
+              "text-2xl font-bold tabular-nums",
+              s.value > 0 ? s.color : "text-[color:var(--ds-text)]"
+            )}
+          >
+            {s.value}
+          </p>
           <p className="text-xs text-[color:var(--ds-text-muted)]">{s.label}</p>
         </div>
       ))}
@@ -360,8 +360,8 @@ export default function SourcesPage() {
         `${result.label}: ${result.sync_summary?.imported ?? 0} ${t("sources.docs_count")} synchronisiert.`
       );
       await loadSources();
-    } catch (e) {
-      setRefreshError(e instanceof Error ? e.message : t("sources.sync_failed"));
+    } catch {
+      setRefreshError(t("sources.sync_failed"));
     } finally {
       setRefreshing(null);
     }
@@ -374,7 +374,7 @@ export default function SourcesPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `source-registry-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `rechtsquellen-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -427,7 +427,8 @@ export default function SourcesPage() {
       {(error || refreshError) && (
         <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <XCircle size={16} className="shrink-0" />
-          {error || refreshError}
+          {refreshError ??
+            "Die Rechtsquellen konnten nicht geladen werden. Bitte versuchen Sie es erneut."}
         </div>
       )}
 
@@ -440,7 +441,7 @@ export default function SourcesPage() {
         <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
           {t("sources.filter")}
         </span>
-        <span className="brand-soft brand-text rounded-lg px-2 py-1 text-xs font-medium">
+        <span className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs font-medium text-[color:var(--ds-text)]">
           {t("norms.jurisdiction_at")}
         </span>
         <select
@@ -483,15 +484,13 @@ export default function SourcesPage() {
       {loading ? (
         <PageSkeleton rows={5} className="p-0" />
       ) : filteredSources.length === 0 ? (
-        <div className="space-y-4 py-20 text-center">
-          <Database size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <div>
-            <p className="text-[color:var(--ds-text-muted)]">{t("sources.empty")}</p>
-            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-              {t("sources.empty_hint")}
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={Database}
+          title={t("sources.empty")}
+          description={t("sources.empty_hint")}
+          actionLabel={t("sources.refresh")}
+          onAction={() => void loadSources()}
+        />
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([type, sources]) => {
@@ -534,7 +533,7 @@ export default function SourcesPage() {
         <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
           {t("sources.about_desc")}
         </p>
-        <div className="flex items-center gap-4 pt-1 text-xs text-[color:var(--ds-text-muted)]">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-[color:var(--ds-text-muted)]">
           <span className="flex items-center gap-1">
             <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />
             {t("sources.fresh_hint")}

@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
-import { AI_NOTICE, AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
+import { AI_FRONTMATTER } from "@/lib/ai-act";
 import { CitationPanel } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { answerProseOnly } from "@/lib/answer-sections";
@@ -175,11 +175,10 @@ export default function DraftingPage() {
         title: t("drafting.enqueued_ok"),
         description: t("drafting.enqueued_desc"),
       });
-    } catch (err) {
+    } catch {
       addToast({
         type: "error",
         title: t("drafting.enqueued_error"),
-        description: err instanceof Error ? err.message : undefined,
       });
     } finally {
       setEnqueuing(false);
@@ -363,12 +362,8 @@ export default function DraftingPage() {
       setDraftSaved(slug);
       addToast({ type: "success", description: t("drafting.saved_default") });
       return slug;
-    } catch (e) {
-      setDraftSaved(
-        e instanceof Error
-          ? `${t("drafting.error_prefix")}: ${e.message}`
-          : t("drafting.error_save")
-      );
+    } catch {
+      setDraftSaved(`${t("drafting.error_prefix")}: ${t("drafting.error_save")}`);
       addToast({ type: "error", description: t("drafting.error_save") });
       return null;
     } finally {
@@ -401,7 +396,7 @@ export default function DraftingPage() {
       });
       setDraftSaved(`approval:${actionSlug}`);
       addToast({ type: "success", description: "Entwurf zur Freigabe eingereicht" });
-    } catch (e) {
+    } catch {
       if (draftSlug) {
         try {
           await api.brain.deletePage(draftSlug);
@@ -409,11 +404,7 @@ export default function DraftingPage() {
           // Best-effort cleanup — draft may remain as orphan
         }
       }
-      setDraftSaved(
-        e instanceof Error
-          ? `${t("drafting.error_prefix")}: ${e.message}`
-          : t("drafting.error_submit")
-      );
+      setDraftSaved(`${t("drafting.error_prefix")}: ${t("drafting.error_submit")}`);
     } finally {
       setSubmitting(false);
     }
@@ -493,8 +484,8 @@ export default function DraftingPage() {
             </label>
             <Input
               {...register("legalBasis")}
-              placeholder="z.B. § 1295 ABGB"
-              aria-label="z.B. § 1295 ABGB"
+              placeholder="z. B. § 1295 ABGB"
+              aria-label="Rechtsgrundlage"
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
@@ -567,7 +558,7 @@ export default function DraftingPage() {
           <Button
             type="submit"
             variant="primary"
-            className="brand-bg brand-bg gap-2 text-white"
+            className="gap-2 whitespace-nowrap"
             disabled={!canGenerate || generating}
           >
             {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -591,14 +582,11 @@ export default function DraftingPage() {
 
       {/* Result */}
       {result && (
-        <div className="brand-border brand-soft space-y-3 rounded-xl border p-4">
+        <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="brand-text text-xs font-medium">{t("drafting.saved_default")}</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]">
-                {AI_BADGE_LABEL}
-              </span>
-            </div>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("drafting.saved_default")}: {template.label}
+            </h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => saveDraftToBrain(result)}
@@ -660,9 +648,6 @@ export default function DraftingPage() {
             }}
             compact
           />
-          <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
-            {AI_NOTICE}
-          </p>
           {draftSaved && (
             <p
               className={cn(
@@ -678,7 +663,9 @@ export default function DraftingPage() {
                 ? draftSaved
                 : draftSaved.startsWith("approval:")
                   ? t("drafting.approval_msg")
-                  : `${t("drafting.saved_msg")}: ${draftSaved}`}
+                  : formData.selectedCaseSlug
+                    ? `${t("drafting.saved_msg")} — der Entwurf ist in der Akte abgelegt.`
+                    : `${t("drafting.saved_msg")}.`}
             </p>
           )}
         </div>

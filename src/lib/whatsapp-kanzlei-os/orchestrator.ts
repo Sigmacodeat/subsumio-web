@@ -307,6 +307,7 @@ export async function orchestrateWhatsAppMessage(
     }
   }
 
+  let clientIngestReply = "";
   if (isClientRole(sender.role)) {
     const clientMedia =
       isMediaMessage(message) && message.type !== "voice"
@@ -330,6 +331,7 @@ export async function orchestrateWhatsAppMessage(
         status: "routed",
       };
     }
+    clientIngestReply = clientIngest.reply;
   }
 
   if (!canAutoRouteWhatsApp({ risk, senderRole: sender.role })) {
@@ -357,6 +359,7 @@ export async function orchestrateWhatsAppMessage(
           status: "draft",
           sourceEventSlug: event.slug,
           includePortalLink: true,
+          recipientPhone: phoneFromText(normalizedText),
         });
         const written = await writeDocumentRequest(sender.brainId, request, deps.fetchImpl);
         targetSlug = written.slug;
@@ -412,6 +415,17 @@ export async function orchestrateWhatsAppMessage(
       actionSlug: approvalRecord.slug,
       notificationEvent,
       status: "pending_approval",
+    };
+  }
+
+  // Client numbers never reach the lawyer handlers below: those attach files
+  // to matters and run firm commands. An unverified client's file or a stray
+  // confirmation ends here with the verification notice or the safe reply.
+  if (isClientRole(sender.role)) {
+    return {
+      reply: clientIngestReply || safeClientReply(),
+      eventSlug: event.slug,
+      status: "routed",
     };
   }
 

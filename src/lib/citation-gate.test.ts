@@ -220,6 +220,23 @@ describe("createCitationGateStream", () => {
     expect(output).toContain("corpus_checked");
   });
 
+  it("grounds the verified final_answer, not the streamed draft", async () => {
+    vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
+    const events = [
+      'data: {"chunk":"Entwurf nach § 999 BGB"}\n\n',
+      'data: {"final_answer":"Endfassung nach § 433 BGB","citations":[],"gaps":[]}\n\n',
+      "data: [DONE]\n\n",
+    ];
+    const output = await readStream(createCitationGateStream(makeSSEStream(events)));
+    const finalLine = output.split("\n").find((l) => l.includes("final_answer"))!;
+    const parsed = JSON.parse(finalLine.slice(6)) as {
+      grounding: { grounded_citations: Array<{ paragraph?: string; raw?: string }> };
+    };
+    const cited = JSON.stringify(parsed.grounding.grounded_citations);
+    expect(cited).toContain("433");
+    expect(cited).not.toContain("999");
+  });
+
   it("handles empty stream gracefully", async () => {
     const stream = createCitationGateStream(makeSSEStream([]));
     const output = await readStream(stream);

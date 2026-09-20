@@ -58,6 +58,7 @@ import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { validateCronAuth } from "@/lib/cron-auth";
 import { timingSafeCompare } from "@/lib/crypto-utils";
 import { env } from "@/lib/env";
+import { resolveRequestId, withRequestId } from "@/lib/request-context";
 import { verifyApiKey } from "@/lib/auth/api-key-auth";
 import { isOpsHost, isPlatformOperator } from "@/lib/auth/platform-operator";
 import { hit } from "@/lib/auth/rate-limit";
@@ -277,7 +278,16 @@ export function createHandler<
     req: NextRequest
   ) => Promise<Response>
 ): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
-  return async (req: NextRequest, routeContext: RouteContext) => {
+  return (req: NextRequest, routeContext: RouteContext) => {
+    const requestId = resolveRequestId(req?.headers?.get?.("x-request-id"));
+    return withRequestId(requestId, () => runHandler(req, routeContext, requestId));
+  };
+
+  async function runHandler(
+    req: NextRequest,
+    routeContext: RouteContext,
+    requestId: string
+  ): Promise<Response> {
     // Attach params from Next.js route context to req so handlers can access them
     if (routeContext?.params) {
       (req as unknown as RouteContext).params = routeContext.params;
@@ -506,6 +516,8 @@ export function createHandler<
     }
 
     // 5. Handler execution
+    // Correlation: every engine call made with ctx.headers carries the id.
+    ctx.headers = { ...ctx.headers, "x-request-id": requestId };
     let response: Response;
     try {
       response = await handler(ctx, body, query, req);
@@ -550,7 +562,7 @@ export function createHandler<
     }
 
     return withCorsHeaders(response, options.cors ?? false, req);
-  };
+  }
 }
 
 /**

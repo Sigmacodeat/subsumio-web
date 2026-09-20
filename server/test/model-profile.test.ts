@@ -11,7 +11,7 @@ import { MinionQueue } from "../src/core/minions/queue.ts";
 import { EMBEDDED_SPECIALISTS } from "../src/core/minions/specialist-defs.ts";
 import { makeSubagentHandler, type MessagesClient } from "../src/core/minions/handlers/subagent.ts";
 import type { MinionJobContext, ToolDef } from "../src/core/minions/types.ts";
-import { TIER_DEFAULTS } from "../src/core/model-config.ts";
+import { TIER_DEFAULTS, tierForPickableModel } from "../src/core/model-config.ts";
 import {
   MODEL_AREAS,
   MODEL_AREA_DEFS,
@@ -27,6 +27,7 @@ import {
   parseStoredProfile,
   resolveSpecialistTier,
   saveModelProfile,
+  tierAtLeast,
   validateProfileUpdate,
   type ModelProfile,
 } from "../src/core/model-profile.ts";
@@ -162,6 +163,38 @@ describe("parseStoredProfile (read path, lenient)", () => {
     expect(p.areas.qualitaet).toBe("auto");
     expect(p.updated_by).toBe("user-1");
     expect(Object.keys(p.areas).sort()).toEqual([...MODEL_AREAS].sort());
+  });
+});
+
+describe("a user's per-question pick vs the firm minimum", () => {
+  // think/index.ts lets a chat pick go stronger than the firm's chat setting,
+  // never weaker. These are the two pieces that decision is made of.
+  const firmMinimum = (profile: ModelProfile) => effectiveTier("chat", "reasoning", profile);
+
+  test("tiers are known for every model the chat picker offers", () => {
+    expect(tierForPickableModel("anthropic:claude-haiku-4-5")).toBe("utility");
+    expect(tierForPickableModel("anthropic:claude-sonnet-5")).toBe("reasoning");
+    expect(tierForPickableModel("anthropic:claude-opus-5")).toBe("deep");
+    expect(tierForPickableModel("anthropic:claude-fable-5-1")).toBe("deep");
+    expect(tierForPickableModel("openrouter:anthropic/claude-opus-5")).toBe("deep");
+    // CLI --model and anything outside the catalogue stays untouched.
+    expect(tierForPickableModel("some:custom-model")).toBeUndefined();
+    expect(tierForPickableModel(undefined)).toBeUndefined();
+  });
+
+  test("default profile: Haiku is refused for chat, Sonnet and Opus pass", () => {
+    const floor = firmMinimum(defaultModelProfile());
+    expect(floor).toBe("reasoning");
+    expect(tierAtLeast(tierForPickableModel("anthropic:claude-haiku-4-5")!, floor)).toBe(false);
+    expect(tierAtLeast(tierForPickableModel("anthropic:claude-sonnet-5")!, floor)).toBe(true);
+    expect(tierAtLeast(tierForPickableModel("anthropic:claude-opus-5")!, floor)).toBe(true);
+  });
+
+  test("firm pinned to deep: only deep-tier picks pass", () => {
+    const floor = firmMinimum(profileWith({ chat: "deep" }));
+    expect(floor).toBe("deep");
+    expect(tierAtLeast(tierForPickableModel("anthropic:claude-sonnet-5")!, floor)).toBe(false);
+    expect(tierAtLeast(tierForPickableModel("anthropic:claude-opus-5")!, floor)).toBe(true);
   });
 });
 

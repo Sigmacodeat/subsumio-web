@@ -1,3 +1,4 @@
+import type { MatterGrant } from "@/lib/matter-access";
 /**
  * Typen für die Legal-Frontmatter-Strukturen, die Akten-, Fristen-,
  * Rechnungs- und Portal-Seiten aus Brain-Pages lesen. Eine Stelle für den
@@ -186,8 +187,10 @@ export interface PermissionInfo {
   privileged?: boolean;
   /** Ob ein Legal Hold aktiv ist. */
   legal_hold?: boolean;
-  /** Sichtbarkeitseinschränkung: 'full' = alle im Team, 'restricted' = nur allowed_users, 'confidential' = nur Owner. */
+  /** 'full' = ganze Kanzlei nach Rolle, 'restricted' = Aktenteam, Freigaben und Admins, 'confidential' = nur Aktenteam und Freigaben (siehe matter-access.ts). */
   visibility?: "full" | "restricted" | "confidential";
+  /** Befristbare Einzelfreigaben (Lesen/Schreiben) für Kolleg:innen. */
+  grants?: MatterGrant[];
 }
 
 /** Phase A: Zusätzlicher Gegner für mehrgleisige Fälle (Amtshaftung mit mehreren Verantwortlichen). */

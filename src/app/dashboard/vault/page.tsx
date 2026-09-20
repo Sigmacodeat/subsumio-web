@@ -54,6 +54,7 @@ import { CappedResultsNotice } from "@/components/dashboard/capped-results-notic
 import { EmptyState } from "@/components/dashboard/empty-state";
 import type { DashboardKey } from "@/content/dashboard";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { formatDate } from "@/lib/utils";
 
 const DOCS_LIMIT = 200;
 
@@ -115,6 +116,7 @@ function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, strin
     legal_case: t("vault.type_legal_case"),
     legal_contract: t("vault.type_legal_contract"),
     legal_document: t("vault.type_legal_document"),
+    document: t("vault.type_legal_document"),
     court_decision: t("vault.type_court_decision"),
     invoice: t("vault.type_invoice"),
     contact: t("vault.type_contact"),
@@ -122,21 +124,39 @@ function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, strin
   };
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  legal_case: "brand-soft brand-border brand-text",
-  legal_contract:
-    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  legal_document:
-    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-  court_decision:
-    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-  invoice:
-    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-  contact:
-    "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]",
-  evidence:
-    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+/** Risk levels of the deep analysis, in the firm's language. */
+const RISK_LABELS: Record<string, string> = {
+  low: "Gering",
+  medium: "Mittel",
+  high: "Hoch",
+  critical: "Kritisch",
 };
+
+/** Plain-language failure for the AI surfaces — never the raw provider text. */
+const AI_UNAVAILABLE =
+  "Der Assistent ist gerade nicht erreichbar. Bitte versuchen Sie es in einigen Minuten erneut.";
+
+/**
+ * Page types that are records or internal bookkeeping, not documents: cases,
+ * contacts, deadlines, invoices, settings and the upload pipeline's own task
+ * pages. They have their own screens and must not appear in the document list.
+ */
+const NON_DOCUMENT_TYPES = new Set([
+  "legal_case",
+  "contact",
+  "legal_contact",
+  "legal_deadline",
+  "invoice",
+  "kanzlei_settings",
+  "agent_action",
+  "signature_request",
+  "dictation_entry",
+]);
+
+function isDocumentPage(page: BrainPage): boolean {
+  const type = page.type || "legal_document";
+  return !NON_DOCUMENT_TYPES.has(type) && !type.startsWith("post_upload_task");
+}
 
 function parseDoc(page: BrainPage): VaultDoc {
   const fm = page.frontmatter ?? {};
@@ -150,7 +170,8 @@ function parseDoc(page: BrainPage): VaultDoc {
     createdAt:
       ((page as unknown as Record<string, unknown>).createdAt as string) ||
       ((page as unknown as Record<string, unknown>).created_at as string) ||
-      new Date().toISOString(),
+      page.updated_at ||
+      "",
     content: page.content || "",
     extractionStatus: (fm.extraction_status as string) || undefined,
     extractionMethod: (fm.extraction_method as string) || undefined,
@@ -246,16 +267,16 @@ export default function VaultPage() {
     try {
       const pages = await api.brain.listPages({ limit: DOCS_LIMIT });
       setCapped(pages.length >= DOCS_LIMIT);
-      const nextDocs = pages.map(parseDoc);
+      const nextDocs = pages.filter(isDocumentPage).map(parseDoc);
       setDocs(nextDocs);
       await setCache(OFFLINE_KEYS.vault, nextDocs);
-    } catch (err) {
+    } catch {
       const cached = await getCache<VaultDoc[]>(OFFLINE_KEYS.vault);
       if (cached) {
         setDocs(cached);
         setLoadError(t("vault.err_cloud_unreachable"));
       } else {
-        setLoadError(err instanceof Error ? err.message : t("vault.err_load_failed"));
+        setLoadError(t("vault.err_load_failed"));
       }
     } finally {
       setLoading(false);
@@ -292,7 +313,7 @@ export default function VaultPage() {
     const timer = setTimeout(async () => {
       try {
         const pages = await api.brain.listPages({ q, limit: DOCS_LIMIT });
-        if (!cancelled) setSearchResults(pages.map(parseDoc));
+        if (!cancelled) setSearchResults(pages.filter(isDocumentPage).map(parseDoc));
       } catch {
         // Fall back to filtering the already-loaded docs client-side below.
         if (!cancelled) setSearchResults(null);
@@ -386,8 +407,8 @@ export default function VaultPage() {
         ns.delete(slug);
         return ns;
       });
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : t("vault.err_delete_failed"));
+    } catch {
+      setLoadError(t("vault.err_delete_failed"));
     }
   }
 
@@ -422,14 +443,14 @@ export default function VaultPage() {
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"
-                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                className="gap-2 whitespace-nowrap"
                 onClick={() => setShowReview(!showReview)}
               >
                 <Table2 size={14} /> {t("vault.bulk_review_count")} ({selectedSlugs.size})
               </Button>
               <Button
                 variant="glow"
-                className="gap-2"
+                className="gap-2 whitespace-nowrap"
                 onClick={() => setShowDeepAnalysis(!showDeepAnalysis)}
               >
                 <Sparkles size={14} /> {t("vault.deep_analysis" as DashboardKey)} (
@@ -531,6 +552,7 @@ export default function VaultPage() {
             <button
               type="button"
               onClick={() => setShowReview(false)}
+              aria-label="Schließen"
               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
               <X size={16} />
@@ -547,11 +569,13 @@ export default function VaultPage() {
                 <Input
                   {...reviewForm.form.register(`questions.${i}`)}
                   placeholder={`${t("vault.question_placeholder")} ${i + 1}`}
+                  aria-label={`${t("vault.question_placeholder")} ${i + 1}`}
                   className="flex-1 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                 />
                 <button
                   type="button"
                   onClick={() => remove(i)}
+                  aria-label={`Frage ${i + 1} entfernen`}
                   className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <X size={14} />
@@ -581,7 +605,7 @@ export default function VaultPage() {
               <Button
                 type="button"
                 variant="secondary"
-                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                className="gap-2 whitespace-nowrap"
                 onClick={() => {
                   const csv = [
                     ["Dokument", ...reviewResult.questions].join(";"),
@@ -593,7 +617,7 @@ export default function VaultPage() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `vault-review-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.download = `dokumentenpruefung-${new Date().toISOString().slice(0, 10)}.csv`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
@@ -674,6 +698,7 @@ export default function VaultPage() {
                 setDeepAnalysisResult(null);
                 setDeepAnalysisError(null);
               }}
+              aria-label="Schließen"
               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
               <X size={16} />
@@ -692,17 +717,18 @@ export default function VaultPage() {
             </label>
             <Input
               value={deepAnalysisPrompt}
+              aria-label={t("vault.deep_analysis_prompt" as DashboardKey)}
               onChange={(e) => setDeepAnalysisPrompt(e.target.value)}
               placeholder={
                 lang === "en"
                   ? "e.g. Identify liability risks and compliance gaps across these documents"
-                  : "z.B. Identifiziere Haftungsrisiken und Compliance-Lücken über alle Dokumente"
+                  : "z. B. Haftungsrisiken und Compliance-Lücken über alle Dokumente ermitteln"
               }
             />
             <p className="text-xs text-[color:var(--ds-text-subtle)]">
               {lang === "en"
                 ? "Generates a narrative report with cross-document insights, themes, and risks — every claim grounded with verbatim citations."
-                : "Generiert einen narrativen Bericht mit übergreifenden Erkenntnissen, Themen und Risiken — jeder Anspruch mit wörtlichen Zitaten belegt."}
+                : "Erstellt einen Bericht mit dokumentübergreifenden Erkenntnissen, Themen und Risiken — jede Aussage mit wörtlichem Zitat belegt."}
             </p>
           </div>
 
@@ -718,10 +744,8 @@ export default function VaultPage() {
                   prompt: deepAnalysisPrompt || undefined,
                 });
                 setDeepAnalysisResult(result);
-              } catch (e) {
-                setDeepAnalysisError(
-                  e instanceof Error ? e.message : t("vault.deep_analysis_failed")
-                );
+              } catch {
+                setDeepAnalysisError(AI_UNAVAILABLE);
               } finally {
                 setDeepAnalysisLoading(false);
               }
@@ -770,7 +794,7 @@ export default function VaultPage() {
                   }
                   className="text-xs"
                 >
-                  {deepAnalysisResult.overall_risk}
+                  {RISK_LABELS[deepAnalysisResult.overall_risk] ?? deepAnalysisResult.overall_risk}
                 </Badge>
                 <span className="text-xs text-[color:var(--ds-text-subtle)]">
                   {deepAnalysisResult.document_count}{" "}
@@ -823,7 +847,7 @@ export default function VaultPage() {
                           }
                           className="text-xs"
                         >
-                          {f.risk_level}
+                          {RISK_LABELS[f.risk_level] ?? f.risk_level}
                         </Badge>
                         <span className="text-xs font-medium text-[color:var(--ds-text)]">
                           {f.theme}
@@ -880,14 +904,6 @@ export default function VaultPage() {
                 </div>
               )}
 
-              {/* Attorney review notice */}
-              {deepAnalysisResult.attorney_review_required && (
-                <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                  {lang === "en"
-                    ? "⚠ This automated analysis does not replace attorney review."
-                    : "⚠ Diese automatisierte Analyse ersetzt keine anwaltliche Prüfung."}
-                </p>
-              )}
             </div>
           )}
         </div>
@@ -913,23 +929,23 @@ export default function VaultPage() {
             />
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Filter size={15} className="text-[color:var(--ds-text-subtle)]" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter size={15} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]" aria-label={t("vault.all_types")}>
+            <SelectTrigger className="w-full sm:w-[170px]" aria-label={t("vault.all_types")}>
               <SelectValue placeholder={t("vault.all_types")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("vault.all_types")}</SelectItem>
               {allTypes.map((tp) => (
                 <SelectItem key={tp} value={tp}>
-                  {TYPE_LABELS[tp] || tp}
+                  {TYPE_LABELS[tp] || tp.replace(/_/g, " ")}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={tagFilter} onValueChange={setTagFilter}>
-            <SelectTrigger className="w-[160px]" aria-label={t("vault.all_tags")}>
+            <SelectTrigger className="w-full sm:w-[150px]" aria-label={t("vault.all_tags")}>
               <SelectValue placeholder={t("vault.all_tags")} />
             </SelectTrigger>
             <SelectContent>
@@ -942,7 +958,10 @@ export default function VaultPage() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]" aria-label={t("vault.status_all" as DashboardKey)}>
+            <SelectTrigger
+              className="w-full sm:w-[150px]"
+              aria-label={t("vault.status_all" as DashboardKey)}
+            >
               <SelectValue placeholder={t("vault.status_all" as DashboardKey)} />
             </SelectTrigger>
             <SelectContent>
@@ -1046,14 +1065,14 @@ export default function VaultPage() {
                     />
                     <Badge
                       variant="default"
-                      className={`border text-xs ${TYPE_COLORS[doc.type] || "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"}`}
+                      className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                     >
-                      {TYPE_LABELS[doc.type] || doc.type}
+                      {TYPE_LABELS[doc.type] || t("vault.type_legal_document")}
                     </Badge>
                     {doc.docTypeLabel && (
                       <Badge
                         variant="default"
-                        className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
+                        className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         {doc.docTypeLabel}
                       </Badge>
@@ -1064,22 +1083,17 @@ export default function VaultPage() {
                         className={`border text-xs ${
                           doc.jurisdictionUnverified
                             ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
-                            : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                            : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
                         }`}
                         title={
-                          doc.jurisdictionConfidence !== undefined
-                            ? `Confidence: ${Math.round(doc.jurisdictionConfidence * 100)}%`
-                            : undefined
+                          doc.jurisdictionUnverified
+                            ? "Rechtsordnung automatisch erkannt, nicht bestätigt"
+                            : doc.jurisdictionConfidence !== undefined
+                              ? `Rechtsordnung automatisch erkannt (Sicherheit ${Math.round(doc.jurisdictionConfidence * 100)} %)`
+                              : undefined
                         }
                       >
                         {doc.jurisdiction.toUpperCase()}
-                        {doc.jurisdictionUnverified && " ⚠"}
-                        {doc.jurisdictionConfidence !== undefined &&
-                          !doc.jurisdictionUnverified && (
-                            <span className="ml-0.5 opacity-60">
-                              {Math.round(doc.jurisdictionConfidence * 100)}%
-                            </span>
-                          )}
                       </Badge>
                     )}
                     {doc.gzLeitzahl && (
@@ -1096,15 +1110,20 @@ export default function VaultPage() {
                           doc.gzValidated === true
                             ? "GZ strukturell validiert"
                             : doc.gzBefundeCount
-                              ? `${doc.gzBefundeCount} Befunde`
+                              ? `GZ mit ${doc.gzBefundeCount} Auffälligkeiten`
                               : "GZ nicht validiert"
                         }
                       >
-                        {doc.gzValidated === true ? "✓ " : doc.gzBefundeCount ? "⚠ " : ""}
                         {doc.gzLeitzahl}
                       </Badge>
                     )}
-                    {doc.extractionStatus && doc.extractionStatus !== "ready" && (
+                    {/* Failed extractions get the banner below — no second badge saying the same. */}
+                    {doc.extractionStatus &&
+                      doc.extractionStatus !== "ready" &&
+                      doc.extractionStatus !== "failed" &&
+                      doc.extractionStatus !== "error" &&
+                      doc.extractionStatus !== "ocr_failed" &&
+                      doc.extractionStatus !== "partial" && (
                       <Badge
                         variant="default"
                         className={`border text-xs ${
@@ -1128,7 +1147,7 @@ export default function VaultPage() {
                             : doc.extractionStatus === "ocr_needed"
                               ? lang === "en"
                                 ? "OCR needed"
-                                : "OCR nötig"
+                                : "Texterkennung nötig"
                               : doc.extractionStatus}
                       </Badge>
                     )}
@@ -1147,7 +1166,7 @@ export default function VaultPage() {
                         variant="default"
                         className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
-                        {t("vault.part_of" as DashboardKey)} {doc.partOf.split("/").pop()}
+                        {t("vault.part_of" as DashboardKey)} Sammeldokument
                       </Badge>
                     )}
                   </div>
@@ -1197,21 +1216,16 @@ export default function VaultPage() {
                 <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
                   <span className="flex items-center gap-1">
                     <Clock size={10} />
-                    {new Date(doc.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDate(doc.createdAt)}
                   </span>
                   <span className="flex items-center gap-2">
                     {doc.caseSlug && (
                       <Link
                         href={`/dashboard/brain/${encodeURIComponent(doc.caseSlug)}`}
                         className="flex items-center gap-1 hover:text-[color:var(--brand-primary)]"
-                        title={doc.caseSlug}
                       >
                         <Briefcase size={10} />
-                        {doc.caseSlug.split("/").pop()}
+                        Akte
                       </Link>
                     )}
                     {doc.size ? <span>{formatFileSize(doc.size)}</span> : null}

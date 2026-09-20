@@ -28,7 +28,8 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { sourceLabel } from "./format";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail, STATUS_CONFIG } from "@/lib/matter-detail-context";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
@@ -83,8 +84,11 @@ export function OverviewTab() {
           `/dashboard/cases/${encodeURIComponent(caseSlug)}/investigation/${encodeURIComponent(result.run_id)}`
         );
       } catch (err) {
+        console.error("[case-investigation] start failed:", err);
         ctx.setSaveError(
-          err instanceof Error ? err.message : "Sachverhaltsprüfung konnte nicht gestartet werden"
+          lang === "en"
+            ? "The fact review could not be started. Please try again."
+            : "Die Sachverhaltsprüfung konnte nicht gestartet werden. Bitte versuchen Sie es erneut."
         );
       } finally {
         setInvestigationLoading(false);
@@ -123,14 +127,15 @@ export function OverviewTab() {
   const caseData = ctx.caseData;
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       <ActIntelligencePanel caseSlug={caseData.slug} />
-      {/* Quick actions bar — max 3 primary + "More" dropdown (Hick's Law) */}
+      {/* Quick actions: one visible secondary action + "Weitere Aktionen" menu.
+          The only primary on this view is the cockpit's next step below. */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Primary action 1: AI Strategy */}
         <Button
-          variant="primary"
-          className="brand-bg gap-2 text-sm text-white"
+          variant="secondary"
+          className="gap-2 text-sm whitespace-nowrap"
           onClick={() => {
             ctx.navigateToTab("strategy");
             ctx.setQuery(t("cases.detail_qb_strategy"));
@@ -139,29 +144,13 @@ export function OverviewTab() {
           <Lightbulb size={14} />
           {t("cases.detail_btn_strategy")}
         </Button>
-        {/* Primary action 2: Status Change */}
-        <Button
-          variant="secondary"
-          disabled={ctx.userRole !== "admin" && ctx.userRole !== "lawyer"}
-          className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-          onClick={() => ctx.setShowStatusDialog(true)}
-        >
-          <ChevronRight size={14} />
-          {t("cases.detail_btn_status_change")}
-        </Button>
-        {/* Primary action 3: Email */}
-        <Button
-          variant="secondary"
-          className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-          onClick={() => ctx.setShowEmailDialog(true)}
-        >
-          <Mail size={14} />
-          {t("email.compose_title")}
-        </Button>
-
         {/* More actions dropdown — secondary actions (Progressive Disclosure) */}
         <div className="relative ml-auto" ref={moreActionsRef}>
           <button
+            type="button"
+            aria-expanded={moreActionsOpen}
+            aria-haspopup="menu"
+            aria-label={lang === "en" ? "More actions" : "Weitere Aktionen"}
             onClick={() => setMoreActionsOpen((v) => !v)}
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none md:text-sm",
@@ -170,11 +159,38 @@ export function OverviewTab() {
                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             )}
           >
-            <MoreHorizontal size={14} className="shrink-0" />
-            <span className="hidden sm:inline">{t("overviewtab.more")}</span>
+            <MoreHorizontal size={14} className="shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">
+              {lang === "en" ? "More actions" : "Weitere Aktionen"}
+            </span>
           </button>
           {moreActionsOpen && (
-            <div className="absolute top-full right-0 mt-1 min-w-[200px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1 shadow-lg">
+            <div className="absolute top-full right-0 z-20 mt-1 min-w-[220px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1 shadow-[var(--ds-shadow-2)]">
+              {/* Status change */}
+              <button
+                type="button"
+                disabled={ctx.userRole !== "admin" && ctx.userRole !== "lawyer"}
+                onClick={() => {
+                  ctx.setShowStatusDialog(true);
+                  setMoreActionsOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none md:text-sm"
+              >
+                <ChevronRight size={14} className="shrink-0" />
+                {t("cases.detail_btn_status_change")}
+              </button>
+              {/* E-mail from the matter */}
+              <button
+                type="button"
+                onClick={() => {
+                  ctx.setShowEmailDialog(true);
+                  setMoreActionsOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none md:text-sm"
+              >
+                <Mail size={14} className="shrink-0" />
+                {t("email.compose_title")}
+              </button>
               {/* Assess Chances → Strategy tab */}
               <button
                 onClick={() => {
@@ -469,7 +485,9 @@ export function OverviewTab() {
                   <div className="min-w-0">
                     <span className="text-sm text-[color:var(--ds-text)]">{sp.name}</span>
                     <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
-                      {sp.role} · Quelle: {sp.source}
+                      {[sp.role, sp.source ? `Quelle: ${sourceLabel(sp.source)}` : ""]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -819,8 +837,12 @@ export function OverviewTab() {
                   },
                 });
               } catch (err) {
+                // Provider/engine messages are not lawyer copy — log, show plain text.
+                console.error("[strategy] generation failed:", err);
                 ctx.setSaveError(
-                  err instanceof Error ? err.message : "Strategie-Generierung fehlgeschlagen"
+                  lang === "en"
+                    ? "The strategy draft could not be created. Please try again later."
+                    : "Der Strategieentwurf konnte nicht erstellt werden. Bitte versuchen Sie es später erneut."
                 );
               } finally {
                 ctx.setStrategyLoading(false);
@@ -950,11 +972,7 @@ export function OverviewTab() {
                     )}
                   </div>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(entry.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDate(entry.date)}
                     {entry.invoice_number ? ` · ${entry.invoice_number}` : ""}
                   </span>
                 </div>

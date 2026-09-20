@@ -15,6 +15,7 @@
  * step can render them into distinct <pages> / <takes> blocks for the prompt.
  */
 
+import { TIER_DEFAULTS } from "../model-config.ts";
 import type { BrainEngine, TakeHit, Take } from "../engine.ts";
 import { hybridSearch } from "../search/hybrid.ts";
 import type { SearchResult } from "../types.ts";
@@ -90,6 +91,8 @@ export interface ThinkGatherResult {
     takesFromVector: number;
     graphHits: number;
     questionSanitizedFor: "expansion" | "none";
+    /** The page search threw — results are empty because retrieval is down. */
+    pagesRetrievalFailed?: boolean;
   };
 }
 
@@ -151,6 +154,10 @@ export async function runGather(
     opts.jurisdiction as "de" | "at" | undefined,
   );
 
+  // Set when the page stream threw (DB/search outage). An empty result set
+  // must not be mistaken for "the corpus has nothing on this".
+  let pagesRetrievalFailed = false;
+
   // Stream 1: hybrid page search.
   // Priority: query planning (LLM decomposes + routes) > agentic retrieval
   // (multi-round with completeness check) > standard hybrid search.
@@ -183,7 +190,7 @@ export async function runGather(
                   llmRerank: {
                     enabled: true,
                     topNIn: 25,
-                    model: "openrouter:deepseek/deepseek-chat",
+                    model: TIER_DEFAULTS.utility,
                     timeoutMs: 15000,
                   },
                 }
@@ -191,6 +198,7 @@ export async function runGather(
           })
   ).catch((e) => {
     process.stderr.write(`[think.gather] hybrid stream failed: ${(e as Error).message}\n`);
+    pagesRetrievalFailed = true;
     return [] as SearchResult[];
   });
 
@@ -308,6 +316,7 @@ export async function runGather(
       takesFromVector: takesVec.length,
       graphHits: allGraphSlugs.length,
       questionSanitizedFor: sanitizedQuestion === opts.question ? "none" : "expansion",
+      pagesRetrievalFailed,
     },
   };
 }
@@ -334,7 +343,13 @@ export function renderPagesBlock(pages: SearchResult[], excerptLen = 600): strin
         passageStart != null && passageEnd != null
           ? ` passage_start="${passageStart}" passage_end="${passageEnd}"`
           : "";
-      return `<page slug="${slug}" rank="${idx + 1}"${offsetAttrs}>\n${excerpt}\n</page>`;
+      // A document must not be able to close its own data block and inject
+      // text that reads as prompt structure (`</page>`, `<takes>`, …).
+      const safeExcerpt = excerpt.replace(
+        /<(\/?)(pages?|takes?|graph|untrusted-user-input)\b/gi,
+        "&lt;$1$2"
+      );
+      return `<page slug="${slug}" rank="${idx + 1}"${offsetAttrs}>\n${safeExcerpt}\n</page>`;
     })
     .join("\n\n");
 }

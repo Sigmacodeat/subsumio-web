@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import CommentThread from "@/components/legal/CommentThread";
@@ -61,7 +61,7 @@ export function EvidenceTab() {
   const slug = ctx.slug;
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       {/* Evidence Position Summary */}
       <div className="max-w-3xl space-y-4">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -262,10 +262,7 @@ export function EvidenceTab() {
                   <div className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
                     {doc.kind ?? t("cases.detail_ev_type_document")} ·{" "}
-                    {new Date(doc.uploadedAt).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-AT",
-                      { day: "2-digit", month: "2-digit", year: "numeric" }
-                    )}
+                    {formatDate(doc.uploadedAt)}
                   </div>
                 </div>
                 {(doc.slug || doc.url) && (
@@ -310,7 +307,7 @@ export function EvidenceTab() {
                 ctx.setShowEvidenceForm(true);
               }
             }}
-            className="gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+            className="shrink-0 gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs whitespace-nowrap text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
           >
             <Plus size={13} />
             {ctx.showEvidenceForm || ctx.editingEvidenceIndex !== null

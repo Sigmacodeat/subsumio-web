@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion, type Transition } from "framer-motion";
+import { motion, type Transition } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { EASE } from "@/components/marketing/motion-system";
 
 // Re-export EASE so dashboard components use the same easing curves as marketing.

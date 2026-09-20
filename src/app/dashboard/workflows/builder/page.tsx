@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
 import {
   Save,
-  ArrowLeft,
   Plus,
   Trash2,
   X,
@@ -15,11 +15,16 @@ import {
   Zap,
   Eye,
   Edit3,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
-import Link2 from "next/link";
+import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -28,7 +33,6 @@ interface WorkflowStep {
   type: StepType;
   label: string;
   prompt: string;
-  model?: string;
   x: number;
   y: number;
   dependsOn?: string; // id of parent step
@@ -51,11 +55,15 @@ type StepType =
   | "obligation"
   | "redline";
 
+/** Server-side limit (POST /api/agent-templates). */
+const MAX_STEPS = 10;
+const CARD_W = 200;
+
 // ── Step Palette Config ───────────────────────────────────────────────
 
 const STEP_TYPES: {
   type: StepType;
-  labelKey: string;
+  labelKey: DashboardKey;
   icon: React.ReactNode;
   color: string;
   prompt: string;
@@ -107,14 +115,14 @@ const STEP_TYPES: {
     labelKey: "builder.step.webhook",
     icon: <Zap size={14} />,
     color: "var(--ds-warning-text)",
-    prompt: "",
+    prompt: "Übergib das Ergebnis an das angebundene Kanzleisystem.",
   },
   {
     type: "email",
     labelKey: "builder.step.email",
     icon: <Mail size={14} />,
     color: "var(--accent-premium)",
-    prompt: "",
+    prompt: "Bereite das Ergebnis als E-Mail-Entwurf zur Freigabe vor.",
   },
   {
     type: "obligation",
@@ -128,7 +136,7 @@ const STEP_TYPES: {
     labelKey: "builder.step.redline",
     icon: <Edit3 size={14} />,
     color: "var(--ds-danger-text)",
-    prompt: "Erstelle einen Redline für den folgenden Vertrag:",
+    prompt: "Erstelle eine Änderungsfassung (Redline) für den folgenden Vertrag:",
   },
 ];
 
@@ -138,11 +146,15 @@ const getStepConfig = (type: StepType) => STEP_TYPES.find((s) => s.type === type
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
+const fieldLabel = "text-xs font-medium text-[color:var(--ds-text-muted)]";
+const fieldControl =
+  "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1";
+
 // ── Main Component ────────────────────────────────────────────────────
 
 export default function WorkflowBuilderPage() {
   const { t } = useLang();
-  const [meta, setMeta] = useState<WorkflowMeta>({ name: "Neuer Workflow", description: "" });
+  const [meta, setMeta] = useState<WorkflowMeta>({ name: "", description: "" });
   const [steps, setSteps] = useState<WorkflowStep[]>([]);
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [dragging, setDragging] = useState<{
@@ -151,24 +163,30 @@ export default function WorkflowBuilderPage() {
     offsetY: number;
   } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // ── Step Operations ──────────────────────────────────────────────────
 
   const addStep = useCallback(
     (type: StepType) => {
+      if (steps.length >= MAX_STEPS) {
+        setSaveError(`Ein Ablauf kann höchstens ${MAX_STEPS} Schritte enthalten.`);
+        return;
+      }
       const cfg = getStepConfig(type);
       const newStep: WorkflowStep = {
         id: uid(),
         type,
-        label: t(cfg.labelKey as import("@/content/dashboard").DashboardKey),
+        label: t(cfg.labelKey),
         prompt: cfg.prompt,
-        x: 80 + (steps.length % 3) * 200,
-        y: 80 + Math.floor(steps.length / 3) * 150,
+        x: 32 + (steps.length % 3) * (CARD_W + 32),
+        y: 32 + Math.floor(steps.length / 3) * 140,
       };
       setSteps((prev) => [...prev, newStep]);
       setSelectedStep(newStep.id);
+      setSaveError(null);
     },
     [steps.length, t]
   );
@@ -238,46 +256,64 @@ export default function WorkflowBuilderPage() {
     .map((s) => {
       const parent = steps.find((p) => p.id === s.dependsOn);
       if (!parent) return null;
-      const x1 = parent.x + 100,
-        y1 = parent.y + 36;
-      const x2 = s.x + 100,
+      const x1 = parent.x + CARD_W / 2,
+        y1 = parent.y + 96;
+      const x2 = s.x + CARD_W / 2,
         y2 = s.y;
-      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
       return (
         <g key={`${parent.id}-${s.id}`}>
           <path
-            d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
+            d={`M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`}
             fill="none"
-            stroke="var(--accent-premium)"
+            stroke="var(--ds-border-strong)"
             strokeWidth="2"
-            strokeOpacity="0.6"
           />
           <polygon
-            points={`${x2},${y2} ${x2 - 6},${y2 - 6} ${x2 + 6},${y2 - 6}`}
-            fill="var(--accent-premium)"
-            fillOpacity="0.6"
+            points={`${x2},${y2} ${x2 - 5},${y2 - 7} ${x2 + 5},${y2 - 7}`}
+            fill="var(--ds-border-strong)"
           />
         </g>
       );
     });
 
+  const canvasWidth = Math.max(720, ...steps.map((s) => s.x + CARD_W + 32));
+  const canvasHeight = Math.max(480, ...steps.map((s) => s.y + 160));
+
   // ── Save ──────────────────────────────────────────────────────────────
 
   const save = async () => {
+    setSaveError(null);
+    const name = meta.name.trim();
+    if (!name) {
+      setSaveError("Bitte geben Sie dem Ablauf einen Namen.");
+      return;
+    }
+    if (steps.length === 0) {
+      setSaveError("Fügen Sie mindestens einen Schritt hinzu.");
+      return;
+    }
+    const emptyStep = steps.find((s) => !s.prompt.trim());
+    if (emptyStep) {
+      setSelectedStep(emptyStep.id);
+      setSaveError(`Der Schritt „${emptyStep.label}" braucht eine Anweisung.`);
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
-        name: meta.name,
-        description: meta.description,
+        name,
+        description: meta.description.trim(),
         prompt_template: steps.map((s) => s.prompt).join("\n\n"),
-        steps: steps
-          .map((s) => ({
+        steps: steps.map((s) => {
+          const dep = s.dependsOn ? steps.findIndex((p) => p.id === s.dependsOn) : -1;
+          return {
             id: s.id,
             specialist: s.type,
             prompt: s.prompt,
-            depends_on: s.dependsOn ? steps.findIndex((p) => p.id === s.dependsOn) : undefined,
-          }))
-          .filter((s) => s !== null),
+            ...(dep >= 0 ? { depends_on: dep } : {}),
+          };
+        }),
       };
       const res = await csrfFetch("/api/agent-templates", {
         method: "POST",
@@ -286,10 +322,10 @@ export default function WorkflowBuilderPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch {
-      setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error("[workflow-builder] save failed:", err instanceof Error ? err.message : err);
+      setSaveError("Der Ablauf konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.");
     } finally {
       setSaving(false);
     }
@@ -297,498 +333,319 @@ export default function WorkflowBuilderPage() {
 
   const selected = steps.find((s) => s.id === selectedStep);
   const stepConfig = selected ? getStepConfig(selected.type) : null;
+  const title = t("workflows.builder.open");
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        background: "var(--ds-bg)",
-        color: "var(--ds-text)",
-        overflow: "hidden",
-      }}
-    >
-      <h1 className="sr-only">{t("nav.workflows")}</h1>
-      {/* Top Bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "10px 16px",
-          borderBottom: "1px solid var(--ds-border)",
-          background: "var(--ds-surface)",
-          flexShrink: 0,
-        }}
-      >
-        <Link2 href="/dashboard/workflows">
-          <Button variant="ghost" size="sm" style={{ gap: 4 }}>
-            <ArrowLeft size={14} /> {t("builder.back")}
-          </Button>
-        </Link2>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-          <input
+    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={title}
+        description="Stellen Sie Arbeitsschritte zu einem Ablauf zusammen und speichern Sie ihn als wiederverwendbare Vorlage."
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("workflows.breadcrumb"), href: "/dashboard/workflows" },
+          { label: title },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" asChild className="whitespace-nowrap">
+              <Link href="/dashboard/workflows">{t("workflows.cancel")}</Link>
+            </Button>
+            <Button onClick={save} disabled={saving} className="whitespace-nowrap">
+              {saving ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : saveStatus === "saved" ? (
+                <CheckCircle size={14} aria-hidden="true" />
+              ) : (
+                <Save size={14} aria-hidden="true" />
+              )}
+              {saveStatus === "saved" ? "Gespeichert" : "Ablauf speichern"}
+            </Button>
+          </div>
+        }
+      />
+
+      {saveError && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2.5 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <AlertTriangle size={15} className="shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1">{saveError}</span>
+          <button
+            type="button"
+            onClick={() => setSaveError(null)}
+            aria-label="Meldung schließen"
+            className="rounded p-1 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {saveStatus === "saved" && (
+        <p
+          role="status"
+          className="rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-2.5 text-sm text-[color:var(--ds-success-text)]"
+        >
+          Der Ablauf wurde als Vorlage gespeichert. Sie starten ihn unter{" "}
+          <Link href="/dashboard/agents" className="underline">
+            Assistenten › Vorlagen
+          </Link>
+          .
+        </p>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="wf-name" className={fieldLabel}>
+            Name des Ablaufs
+          </Label>
+          <Input
+            id="wf-name"
             value={meta.name}
             onChange={(e) => setMeta((m) => ({ ...m, name: e.target.value }))}
-            aria-label={t("builder.workflow_name")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--ds-text)",
-              fontSize: 15,
-              fontWeight: 600,
-              outline: "none",
-              minWidth: 200,
-            }}
-            placeholder={t("workflows.builder.ph_name")}
+            placeholder="z. B. Mietvertrag prüfen und Fristen notieren"
           />
-          <input
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="wf-desc" className={fieldLabel}>
+            {t("builder.workflow_description")}
+          </Label>
+          <Input
+            id="wf-desc"
             value={meta.description}
             onChange={(e) => setMeta((m) => ({ ...m, description: e.target.value }))}
-            aria-label={t("builder.workflow_description")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--ds-text-subtle)",
-              fontSize: 12,
-              outline: "none",
-              flex: 1,
-            }}
             placeholder={t("workflows.builder.ph_desc")}
           />
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={save}
-            disabled={saving}
-            aria-label={t("builder.save")}
-            style={{ gap: 4 }}
-          >
-            <Save size={14} />
-            {saving ? "Speichern…" : saveStatus === "saved" ? "Gespeichert ✓" : "Speichern"}
-          </Button>
-        </div>
       </div>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Left Palette */}
-        <div
-          style={{
-            width: 180,
-            borderRight: "1px solid var(--ds-border)",
-            background: "var(--ds-surface)",
-            padding: "12px 8px",
-            overflowY: "auto",
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10,
-              color: "var(--ds-text-subtle)",
-              textTransform: "uppercase",
-              letterSpacing: "0.4px",
-              marginBottom: 8,
-              padding: "0 4px",
-            }}
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[11.5rem_minmax(0,1fr)_16rem]">
+        {/* Palette */}
+        <section aria-labelledby="wf-palette-title" className="min-w-0">
+          <h2
+            id="wf-palette-title"
+            className="mb-2 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase"
           >
-            Steps
+            Schritt hinzufügen
+          </h2>
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-1">
+            {STEP_TYPES.map((s) => (
+              <button
+                key={s.type}
+                type="button"
+                onClick={() => addStep(s.type)}
+                className="flex min-w-0 items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-left text-xs text-[color:var(--ds-text)] transition-[background-color,border-color] duration-[var(--ds-duration-fast)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+              >
+                <span style={{ color: s.color }} aria-hidden="true">
+                  {s.icon}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{t(s.labelKey)}</span>
+                <Plus size={12} className="shrink-0 opacity-50" aria-hidden="true" />
+              </button>
+            ))}
           </div>
-          {STEP_TYPES.map((s) => (
-            <button
-              key={s.type}
-              onClick={() => addStep(s.type)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 8px",
-                border: "1px solid var(--ds-border)",
-                borderRadius: 6,
-                background: "none",
-                color: "var(--ds-text)",
-                cursor: "pointer",
-                fontSize: 12,
-                marginBottom: 4,
-                textAlign: "left",
-                transition: "all 0.1s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = s.color)}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--ds-border)")}
-            >
-              <span style={{ color: s.color }}>{s.icon}</span>
-              <span>{t(s.labelKey as import("@/content/dashboard").DashboardKey)}</span>
-              <Plus size={11} style={{ marginLeft: "auto", opacity: 0.5 }} />
-            </button>
-          ))}
-        </div>
+        </section>
 
         {/* Canvas */}
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Pointer-driven drag-and-drop canvas; clicking empty canvas only clears the selection (steps remain editable via the inspector). */}
-        <div
-          ref={canvasRef}
-          style={{
-            flex: 1,
-            position: "relative",
-            overflow: "auto",
-            background:
-              "radial-gradient(circle at 50% 50%, var(--ds-surface-2) 0%, var(--ds-bg) 100%)",
-            cursor: dragging ? "grabbing" : "default",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setSelectedStep(null);
-          }}
-        >
-          {/* Grid pattern */}
-          <svg
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              pointerEvents: "none",
-            }}
-          >
-            <defs>
-              <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                <path
-                  d="M 32 0 L 0 0 0 32"
-                  fill="none"
-                  stroke="var(--ds-border)"
-                  strokeWidth="0.5"
-                  opacity="0.5"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-            {arrows}
-          </svg>
-
-          {/* Empty state */}
-          {steps.length === 0 && (
+        <section aria-label="Arbeitsfläche" className="min-w-0">
+          <div className="h-[520px] overflow-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Pointer-driven drag-and-drop canvas; clicking empty canvas only clears the selection (steps remain editable via the inspector). */}
             <div
+              ref={canvasRef}
+              className="relative"
               style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%,-50%)",
-                textAlign: "center",
-                color: "var(--ds-text-subtle)",
+                width: canvasWidth,
+                height: canvasHeight,
+                cursor: dragging ? "grabbing" : "default",
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setSelectedStep(null);
               }}
             >
-              <Zap size={32} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
-              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Workflow bauen</div>
-              <div style={{ fontSize: 12 }}>Steps aus der linken Palette ziehen oder klicken</div>
-            </div>
-          )}
-
-          {/* Step Cards */}
-          {steps.map((step) => {
-            const cfg = getStepConfig(step.type);
-            const isSelected = step.id === selectedStep;
-            return (
-              <div
-                key={step.id}
-                role="button"
-                tabIndex={0}
-                className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
-                onKeyDown={(e) => {
-                  if (e.target !== e.currentTarget) return;
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSelectedStep(step.id);
-                  }
-                }}
-                onMouseDown={(e) => onMouseDown(e, step.id)}
-                style={{
-                  position: "absolute",
-                  left: step.x,
-                  top: step.y,
-                  width: 200,
-                  background: "var(--ds-surface)",
-                  border: `2px solid ${isSelected ? cfg.color : "var(--ds-border)"}`,
-                  borderRadius: 8,
-                  cursor: "grab",
-                  userSelect: "none",
-                  boxShadow: isSelected
-                    ? `0 0 0 1px ${cfg.color}30, 0 4px 16px rgba(0,0,0,0.4)`
-                    : "0 2px 8px rgba(0,0,0,0.3)",
-                  zIndex: isSelected ? 10 : 1,
-                }}
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                aria-hidden="true"
               >
-                {/* Step Header */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 10px",
-                    borderBottom: "1px solid var(--ds-border)",
-                  }}
-                >
-                  <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text)", flex: 1 }}>
-                    {step.label}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteStep(step.id);
-                    }}
-                    aria-label={t("builder.delete_step")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "var(--ds-danger-text)",
-                      padding: 2,
-                      display: "flex",
-                      borderRadius: 4,
-                    }}
-                    className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-                {/* Step Body */}
-                <div
-                  style={{
-                    padding: "6px 10px",
-                    fontSize: 11,
-                    color: "var(--ds-text-subtle)",
-                    lineHeight: 1.4,
-                    maxHeight: 40,
-                    overflow: "hidden",
-                  }}
-                >
-                  {step.prompt
-                    ? step.prompt.slice(0, 60) + (step.prompt.length > 60 ? "…" : "")
-                    : "Keine Anweisungen"}
-                </div>
-                {/* Connector dots */}
-                <div
-                  style={{
-                    height: 10,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "flex-end",
-                    paddingBottom: 4,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: cfg.color,
-                      opacity: 0.6,
-                    }}
+                <defs>
+                  <pattern id="wf-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path
+                      d="M 32 0 L 0 0 0 32"
+                      fill="none"
+                      stroke="var(--ds-border)"
+                      strokeWidth="0.5"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#wf-grid)" />
+                {arrows}
+              </svg>
+
+              {steps.length === 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                  <Zap
+                    size={28}
+                    className="mb-3 text-[color:var(--ds-text-subtle)]"
+                    aria-hidden="true"
                   />
+                  <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                    Noch keine Schritte
+                  </p>
+                  <p className="mt-1 max-w-xs text-xs text-[color:var(--ds-text-muted)]">
+                    Wählen Sie links einen Schritt. Die Reihenfolge legen Sie im Feld „
+                    {t("builder.depends_on")}“ fest.
+                  </p>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
 
-        {/* Right Properties Panel */}
-        {selected && stepConfig && (
-          <div
-            style={{
-              width: 260,
-              borderLeft: "1px solid var(--ds-border)",
-              background: "var(--ds-surface)",
-              padding: 14,
-              overflowY: "auto",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 14,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ color: stepConfig.color }}>{stepConfig.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{selected.label}</span>
-              </div>
-              <button
-                onClick={() => setSelectedStep(null)}
-                aria-label={t("builder.close_inspector")}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--ds-text-subtle)",
-                  borderRadius: 4,
-                }}
-                className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
-              >
-                <X size={14} />
-              </button>
+              {steps.map((step, idx) => {
+                const cfg = getStepConfig(step.type);
+                const isSelected = step.id === selectedStep;
+                return (
+                  <div
+                    key={step.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    aria-label={`Schritt ${idx + 1}: ${step.label}`}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedStep(step.id);
+                      }
+                    }}
+                    onMouseDown={(e) => onMouseDown(e, step.id)}
+                    className={cn(
+                      "absolute cursor-grab rounded-lg border-2 bg-[color:var(--ds-surface)] select-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+                      isSelected
+                        ? "z-10 shadow-[var(--ds-shadow-2)]"
+                        : "z-[1] border-[color:var(--ds-border)] shadow-[var(--ds-shadow-1)]"
+                    )}
+                    style={{
+                      left: step.x,
+                      top: step.y,
+                      width: CARD_W,
+                      borderColor: isSelected ? cfg.color : undefined,
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 border-b border-[color:var(--ds-border)] px-2.5 py-2">
+                      <span className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                        {idx + 1}
+                      </span>
+                      <span style={{ color: cfg.color }} aria-hidden="true">
+                        {cfg.icon}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[color:var(--ds-text)]">
+                        {step.label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteStep(step.id);
+                        }}
+                        aria-label={`${step.label} entfernen`}
+                        className="rounded p-0.5 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                    <p className="line-clamp-3 px-2.5 py-2 text-xs leading-snug text-[color:var(--ds-text-muted)]">
+                      {step.prompt || "Noch keine Anweisung"}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-
-            <div style={{ marginBottom: 10 }}>
-              <label
-                style={{
-                  fontSize: 10,
-                  color: "var(--ds-text-subtle)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
-                  display: "block",
-                  marginBottom: 4,
-                }}
-              >
-                Name
-              </label>
-              <input
-                value={selected.label}
-                onChange={(e) => updateStep(selected.id, { label: e.target.value })}
-                style={{
-                  width: "100%",
-                  background: "var(--ds-bg)",
-                  border: "1px solid var(--ds-border)",
-                  borderRadius: 5,
-                  padding: "6px 8px",
-                  color: "var(--ds-text)",
-                  fontSize: 12,
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 10 }}>
-              <label
-                style={{
-                  fontSize: 10,
-                  color: "var(--ds-text-subtle)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
-                  display: "block",
-                  marginBottom: 4,
-                }}
-              >
-                Anweisung / Prompt
-              </label>
-              <textarea
-                value={selected.prompt}
-                onChange={(e) => updateStep(selected.id, { prompt: e.target.value })}
-                rows={5}
-                style={{
-                  width: "100%",
-                  background: "var(--ds-surface-2)",
-                  border: "1px solid var(--ds-border)",
-                  borderRadius: 5,
-                  padding: "6px 8px",
-                  color: "var(--ds-text)",
-                  fontSize: 12,
-                  resize: "vertical",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 10 }}>
-              <label
-                style={{
-                  fontSize: 10,
-                  color: "var(--ds-text-subtle)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
-                  display: "block",
-                  marginBottom: 4,
-                }}
-              >
-                {t("builder.depends_on")}
-              </label>
-              <select
-                value={selected.dependsOn ?? ""}
-                onChange={(e) =>
-                  updateStep(selected.id, { dependsOn: e.target.value || undefined })
-                }
-                style={{
-                  width: "100%",
-                  background: "var(--ds-bg)",
-                  border: "1px solid var(--ds-border)",
-                  borderRadius: 5,
-                  padding: "6px 8px",
-                  color: "var(--ds-text)",
-                  fontSize: 12,
-                }}
-              >
-                <option value="">— Kein vorheriger Step —</option>
-                {steps
-                  .filter((s) => s.id !== selected.id)
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: 10 }}>
-              <label
-                style={{
-                  fontSize: 10,
-                  color: "var(--ds-text-subtle)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
-                  display: "block",
-                  marginBottom: 4,
-                }}
-              >
-                Modell (optional)
-              </label>
-              <select
-                value={selected.model ?? ""}
-                onChange={(e) => updateStep(selected.id, { model: e.target.value || undefined })}
-                style={{
-                  width: "100%",
-                  background: "var(--ds-bg)",
-                  border: "1px solid var(--ds-border)",
-                  borderRadius: 5,
-                  padding: "6px 8px",
-                  color: "var(--ds-text)",
-                  fontSize: 12,
-                }}
-              >
-                <option value="">Standard (aus Org-Einstellungen)</option>
-                <option value="claude-opus-4-8">Claude Opus 4.8 (Höchste Qualität)</option>
-                <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Ausgewogen)</option>
-                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Schnell)</option>
-              </select>
-            </div>
-
-            <button
-              onClick={() => deleteStep(selected.id)}
-              aria-label={t("builder.delete_step")}
-              className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
-              style={{
-                width: "100%",
-                padding: "8px",
-                background: "var(--ds-danger-soft)",
-                border: "1px solid var(--ds-danger-border)",
-                borderRadius: 5,
-                color: "var(--ds-danger-text)",
-                fontSize: 12,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 5,
-              }}
-            >
-              <Trash2 size={12} /> {t("builder.delete_step")}
-            </button>
           </div>
-        )}
+        </section>
+
+        {/* Inspector */}
+        <aside aria-label="Schritt bearbeiten" className="min-w-0">
+          {selected && stepConfig ? (
+            <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-[color:var(--ds-text)]">
+                  <span style={{ color: stepConfig.color }} aria-hidden="true">
+                    {stepConfig.icon}
+                  </span>
+                  <span className="truncate">{selected.label}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedStep(null)}
+                  aria-label={t("builder.close_inspector")}
+                  className="rounded p-1 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="wf-step-name" className={fieldLabel}>
+                  Bezeichnung
+                </Label>
+                <input
+                  id="wf-step-name"
+                  value={selected.label}
+                  onChange={(e) => updateStep(selected.id, { label: e.target.value })}
+                  className={fieldControl}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="wf-step-prompt" className={fieldLabel}>
+                  Anweisung an den Assistenten
+                </Label>
+                <textarea
+                  id="wf-step-prompt"
+                  value={selected.prompt}
+                  onChange={(e) => updateStep(selected.id, { prompt: e.target.value })}
+                  rows={5}
+                  className={cn(fieldControl, "resize-y")}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="wf-step-dep" className={fieldLabel}>
+                  {t("builder.depends_on")}
+                </Label>
+                <select
+                  id="wf-step-dep"
+                  value={selected.dependsOn ?? ""}
+                  onChange={(e) =>
+                    updateStep(selected.id, { dependsOn: e.target.value || undefined })
+                  }
+                  className={fieldControl}
+                >
+                  <option value="">Kein vorheriger Schritt</option>
+                  {steps
+                    .filter((s) => s.id !== selected.id)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => deleteStep(selected.id)}
+                className="w-full text-[color:var(--ds-danger-text)]"
+              >
+                <Trash2 size={13} aria-hidden="true" />
+                Schritt entfernen
+              </Button>
+            </div>
+          ) : (
+            <p className="rounded-xl border border-dashed border-[color:var(--ds-border-strong)] p-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              Wählen Sie einen Schritt auf der Arbeitsfläche, um Bezeichnung, Anweisung und
+              Reihenfolge festzulegen.
+            </p>
+          )}
+        </aside>
       </div>
     </div>
   );

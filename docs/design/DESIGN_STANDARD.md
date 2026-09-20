@@ -42,10 +42,18 @@ generischen KI-Chatprodukts.
 
 ## 4. Typografie und Formatierung
 
-- Überschriften: Space Grotesk (`font-display`); Fließtext Inter; Kennungen, Aktenzeichen,
-  Beträge und Datumsangaben mit `tnum` (tabellarische Ziffern).
+- Schrift (seit 19.09.2026, nach Marktanalyse Harvey/Mercury/Attio): **Newsreader** (Serif, `font-display`)
+  nur für Seitentitel h1, Website-Headlines h1/h2 und große Grüße; **Inter** mit optischer Größe für
+  alles andere inkl. h2–h6 im Produkt und alle Zahlen; Space Grotesk ist gestrichen (gilt als
+  „KI-generisch“). Auch die Wortmarke steht in Newsreader: eine Serifenfamilie für alles.
+  Ziffern sind standardmäßig proportional (`tnum` verbreitert in Inter auch den Bindestrich);
+  tabellarische Ziffern nur in Tabellen, `time`, Code und über `tabular-nums`.
+- Website-Kennzahlen in Newsreader (groß, Gewicht 400), Abschnitts-Dachzeilen als Kapitälchen
+  mit Haarlinie (`EYEBROW_CLASS`), keine Pillen-Badges; Symbolkacheln einfarbig Sapphire.
 - Datum: `TT.MM.JJJJ`; relative Angabe daneben („in 28 Tagen") nur bei Fristen.
-- Beträge: `1.234,50 €` (de-AT), immer mit Nachkommastellen.
+- Beträge: `€ 1.234,50` (österreichische Schreibweise über `formatEur`), immer mit Nachkommastellen.
+- Fristabstände: `formatDaysUntil` („heute“, „morgen“, „in 5 Tagen“, „seit 2 Tagen überfällig“) — nie „18T“ oder „in 5“.
+- Ungültige Daten zeigen „—“ (`formatDate`), nie „Invalid Date“; Engine-Diagnosen nie roh (`lawyerFacingAnswer`).
 - Rechtsquellen: `§ 464 Abs 1 ZPO` (schmales Leerzeichen nach §, kein Punkt nach Abs).
 - Kein `ALL CAPS` außer Abschnitts-Labels; keine Versalien-Tippfehler („AKTSDETAILS").
 
@@ -64,8 +72,8 @@ generischen KI-Chatprodukts.
   „Rechnung erstellen").
 - Badges: ein Wort, semantische Farbe, keine Doppelungen mit gleicher Aussage
   („Review offen" + „Ungeprüft").
-- Assistenten-Panel: standardmäßig eingeklappt auf Seiten, die selbst ein Gespräch zeigen
-  (Assistent), und auf schmalen Viewports; keine zwei identischen Gesprächsflächen
+- Assistenten-Panel: standardmäßig eingeklappt (offen erst ab 1680 px Fensterbreite) und nie neben
+  der Seite „Assistent“; keine zwei identischen Gesprächsflächen
   nebeneinander.
 - Dark Mode: jede Fläche über Tokens, keine festen Farben.
 - Farbwelt „Sapphire & Signet" (seit 17.09.2026): Brand-Blau Hue 222 (`--brand-600` hell,
@@ -87,3 +95,18 @@ Jede Seite gilt als fertig, wenn: `h1` vorhanden, Sie-Form, kein Jargon, Skeleto
 
 - Error definiert, Aktionen ≤ 3, Screenshot Desktop hell / Mobil dunkel abgelegt und der
   Konsolen-Sweep sauber ist. Protokoll: `docs/design/DESIGN_AUDIT_2026-09.md`.
+
+## 8. Premium-System (19.09.2026)
+
+- **Eine Akzentfarbe:** Sapphire für Aktionen und Links; Gold nur als Signet (Wortmarke, 1–2 Stellen je Seite),
+  als Text `--accent-premium` (accent-700, ≥ 4.5:1). Navigations-Icons neutral, keine Bereichsfarben.
+- **Flächen vs. Text:** `--brand-solid` für gefüllte Flächen mit weißer Schrift (hell brand-600, dunkel
+  brand-500), `--brand-primary` für Links/Text (dunkel brand-350). Nie `bg-[--brand-primary]` für Buttons.
+- **Kontrast (gemessen im Browser, `qa/contrast.mjs`):** Text ≥ 4.5:1 auf bg/surface/surface-2/hover in
+  hell und dunkel; Eingabefeld-Rahmen `--ds-control-border` ≥ 3:1 (WCAG 1.4.11); Haarlinie `--ds-border`
+  nur dekorativ. Platzhalter in `--ds-text-subtle`.
+- **Tiefe:** Schatten mehrschichtig und navy getönt (Umgebungs- + Führungslicht); Stufe 1 ruhende Karte,
+  2 angehoben, 3 Menü/Dialog. Dunkel: feine Lichtkante oben statt harter Schatten.
+- **Dunkelmodus:** entsättigtes Navy (Sättigung ≈ 12–16 %), Tiefe über Helligkeit.
+- **Bewegung:** Seitenwechsel 120 ms ausblenden, 210 ms mit 6 px einblenden (ease-out); bei reduzierter
+  Bewegung nur Deckkraft. Nur `opacity`/`transform` animieren.

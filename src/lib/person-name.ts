@@ -19,3 +19,18 @@ export function firstNameOf(name: string | null | undefined): string {
   // Only titles supplied ("Dr."): better the whole string than a bare title.
   return tokens.join(" ");
 }
+
+/**
+ * Formal address for a greeting: academic title plus surname ("Dr. Müller",
+ * "Mag. Berger"); without a title, the full name. Austrian practice addresses
+ * lawyers by title — "Guten Morgen, Anna" would be too familiar in the product.
+ */
+export function formalNameOf(name: string | null | undefined): string {
+  const tokens = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return "";
+  const titles = tokens.filter((t) => TITLE_TOKEN.test(t.replace(/[()]/g, "")));
+  const rest = tokens.filter((t) => !TITLE_TOKEN.test(t.replace(/[()]/g, "")));
+  if (rest.length === 0) return tokens.join(" ");
+  if (titles.length === 0) return rest.join(" ").replace(/,$/, "");
+  return `${titles.join(" ")} ${rest[rest.length - 1].replace(/,$/, "")}`;
+}

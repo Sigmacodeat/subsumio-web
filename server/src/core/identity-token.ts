@@ -19,6 +19,7 @@
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { matterScopeAllows } from "./matter-access.ts";
 
 /** Matter scope: "all" (no filtering) or array of allowed case-slug prefixes. */
 export type MatterScope = string[] | "all";
@@ -135,8 +136,5 @@ export function filterResultsByMatterScope<T extends { slug?: string }>(
   if (!scope) return results;
   if (scope === "all") return results;
   if (scope.length === 0) return [];
-  return results.filter((r) => {
-    const slug = r.slug ?? "";
-    return scope.some((prefix) => slug === prefix || slug.startsWith(`${prefix}/`));
-  });
+  return results.filter((r) => matterScopeAllows(scope, r.slug ?? ""));
 }

@@ -22,6 +22,7 @@ import { useRealtime } from "@/lib/realtime";
 import { usePresence } from "@/lib/use-presence";
 import { useMutationQueue } from "@/lib/use-mutation";
 import { api } from "@/lib/api";
+import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { csrfFetch } from "@/lib/csrf";
 import { isOnline, enqueueMutation, enqueueFileUpload, getCache } from "@/lib/offline-store";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
@@ -251,7 +252,11 @@ interface MatterDetailContextValue {
   // Core handlers
   saveCaseUpdate: (updates: Partial<CaseDetail>) => Promise<void>;
   refreshCaseData: () => Promise<void>;
-  confirmSuggestedDeadline: (index: number, confirmed: boolean) => Promise<void>;
+  confirmSuggestedDeadline: (
+    index: number,
+    confirmed: boolean,
+    opts?: { dueDate?: string }
+  ) => Promise<void>;
   confirmSuggestedParty: (index: number, confirmed: boolean) => Promise<void>;
 
   // Utilities
@@ -580,37 +585,25 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   // ── Confirm suggested deadline ──────────────────────────────────────
 
   const confirmSuggestedDeadline = useCallback(
-    async (index: number, confirmed: boolean) => {
+    async (index: number, confirmed: boolean, opts?: { dueDate?: string }) => {
       if (!caseData?.suggestedDeadlines) return;
       if (caseData.status === "archived") {
         setSaveError(t("casesdetail.archived_msg"));
         return;
       }
-      const updated = caseData.suggestedDeadlines.map((sd, i) =>
-        i === index
-          ? {
-              ...sd,
-              confirmed: true,
-              review_status: confirmed ? ("approved" as const) : ("rejected" as const),
-            }
-          : sd
-      );
-      setCaseData({ ...caseData, suggestedDeadlines: updated });
-      try {
-        const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
-        await csrfFetch(`/api/pages/${slugPath}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "If-Match": String(caseData.version || 0),
-          },
-          body: JSON.stringify({ frontmatter: { suggested_deadlines: updated }, merge: true }),
-        });
-      } catch {
-        /* best effort */
-      }
+      // Server-side and atomic (src/lib/legal/deadline-decision.ts): the
+      // legal_deadline page is written and checked BEFORE the suggestion is
+      // marked approved. Errors propagate so callers never report success
+      // for a Frist that did not reach the Fristenbuch.
+      await decideDeadlineSuggestion({
+        caseSlug: caseData.slug,
+        index,
+        action: confirmed ? "approve" : "reject",
+        dueDate: opts?.dueDate,
+      });
+      await refreshCaseData();
     },
-    [caseData, t]
+    [caseData, t, refreshCaseData]
   );
 
   // ── Confirm suggested party ─────────────────────────────────────────

@@ -285,7 +285,7 @@ export function NormReaderPanel() {
               href={norm.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[color:var(--brand-primary)] px-3 py-2 text-sm font-medium text-white transition-[background-color] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[color:var(--brand-solid)] px-3 py-2 text-sm font-medium text-white transition-[background-color] hover:bg-[color:var(--brand-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none"
             >
               Amtliche Fassung {officialSourceIn(norm.source_url)}
               <ExternalLink size={13} aria-hidden="true" />

@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { isOnline } from "@/lib/offline-store";
@@ -39,7 +39,7 @@ interface DocJurisdiction {
 
 export function DocumentsTab() {
   const ctx = useMatterDetail();
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -141,7 +141,7 @@ export function DocumentsTab() {
   const caseData = ctx.caseData;
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4">
       {(qesResult === "signed" || qesResult === "failed") && (
         <div
           role={qesResult === "failed" ? "alert" : "status"}
@@ -299,7 +299,7 @@ export function DocumentsTab() {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={ctx.uploadOverallProgress}
-            aria-label="Gesamtfortschritt Upload"
+            aria-label="Gesamtfortschritt Hochladen"
           >
             <div
               className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
@@ -508,9 +508,9 @@ export function DocumentsTab() {
                           ctx.setShowLinkDialog(false);
                           ctx.setLinkSearchQuery("");
                           ctx.setLinkSearchResults([]);
-                        } catch (err) {
+                        } catch {
                           ctx.setUploadError(
-                            err instanceof Error ? err.message : t("casesdetail.link_failed")
+                            t("casesdetail.link_failed")
                           );
                         }
                       }}
@@ -642,10 +642,7 @@ export function DocumentsTab() {
                     })()}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(doc.uploadedAt).toLocaleDateString(
-                      lang === "en" ? "en-GB" : "de-AT",
-                      { day: "2-digit", month: "2-digit", year: "numeric" }
-                    )}
+                    {formatDate(doc.uploadedAt)}
                     {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ""}
                   </div>
                 </div>

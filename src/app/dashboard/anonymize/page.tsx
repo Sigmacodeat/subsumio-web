@@ -39,8 +39,10 @@ export default function AnonymizePage() {
       const res = await api.legal.anonymize(input);
       setResult(res);
       addToast({ type: "success", description: "Text anonymisiert" });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("anonymize.error"));
+    } catch {
+      setError(
+        "Die Anonymisierung ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut."
+      );
       addToast({ type: "error", description: t("anonymize.error") });
     } finally {
       setLoading(false);
@@ -68,19 +70,23 @@ export default function AnonymizePage() {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Eingabe */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+          <label
+            htmlFor="anonymize-input"
+            className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+          >
             Original
           </label>
           <textarea
+            id="anonymize-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t("anonymize.placeholder_input")}
-            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <Button
             onClick={run}
             disabled={loading || !input.trim()}
-            className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
+            className="gap-2 whitespace-nowrap"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
             {t("anonymize.btn_run")}
@@ -90,20 +96,24 @@ export default function AnonymizePage() {
         {/* Ergebnis */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+            <label
+              htmlFor="anonymize-output"
+              className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+            >
               Anonymisiert
             </label>
             {result && (
               <button
                 onClick={copyResult}
-                className="flex items-center gap-1.5 text-xs text-[color:var(--ds-success-text)] hover:underline"
+                className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
-                {copied ? t("anonymize.btn_run") : t("anonymize.btn_run")}
+                {copied ? "Kopiert" : "Kopieren"}
               </button>
             )}
           </div>
           <textarea
+            id="anonymize-output"
             readOnly
             value={result?.anonymized ?? ""}
             placeholder={t("anonymize.placeholder_output")}
@@ -128,7 +138,7 @@ export default function AnonymizePage() {
               <Badge
                 key={type}
                 variant="default"
-                className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
+                className="text-xs"
               >
                 {TYPE_LABELS[type] ? t(TYPE_LABELS[type]) : type}: {n}
               </Badge>
@@ -137,16 +147,15 @@ export default function AnonymizePage() {
               variant="default"
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-border)] text-xs text-[color:var(--ds-text-muted)]"
             >
-              {result.llm_used
-                ? "Namen via KI erkannt"
-                : "nur Muster-Erkennung (kein KI-Schlüssel)"}
+              {result.llm_used ? "Namen mit KI erkannt" : "Namen nur über Muster erkannt"}
             </Badge>
           </div>
 
           {result.replacements.length > 0 && (
             <details className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
               <summary className="cursor-pointer px-4 py-3 text-sm text-[color:var(--ds-text)] select-none">
-                Re-Identifikations-Mapping ({result.replacements.length}) — nur für Berechtigte
+                Zuordnung Platzhalter → Original ({result.replacements.length}) — nur für
+                Berechtigte
               </summary>
               <div className="max-h-72 overflow-y-auto px-4 pb-3">
                 <table className="w-full text-xs">
@@ -159,7 +168,7 @@ export default function AnonymizePage() {
                   <tbody className="font-mono">
                     {result.replacements.map((r, i) => (
                       <tr key={i} className="border-t border-[color:var(--ds-border)]/60">
-                        <td className="py-1 pr-4 whitespace-nowrap text-[color:var(--ds-success-text)]">
+                        <td className="py-1 pr-4 whitespace-nowrap text-[color:var(--ds-text)]">
                           {r.placeholder}
                         </td>
                         <td className="py-1 break-all text-[color:var(--ds-text-muted)]">

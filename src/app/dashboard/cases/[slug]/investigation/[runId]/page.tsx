@@ -33,7 +33,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { useToast } from "@/components/ui/toast";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 import type {
   CaseInvestigationResult,
   CaseInvestigationContradiction,
@@ -184,7 +184,8 @@ export default function InvestigationPage({
         // Non-fatal — quotes will show placeholder
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unbekannter Fehler");
+      console.error("[investigation] load failed:", e);
+      setError("Bitte prüfen Sie die Verbindung und versuchen Sie es erneut.");
     } finally {
       setLoading(false);
     }
@@ -272,10 +273,10 @@ export default function InvestigationPage({
         });
         setShowDismissInput(null);
         setDismissReason((prev) => ({ ...prev, [contradictionId]: "" }));
-      } catch (e) {
+      } catch {
         addToast({
           title: "Fehler beim Speichern",
-          description: e instanceof Error ? e.message : "Unbekannter Fehler",
+          description: "Ihre Bewertung wurde nicht gespeichert. Bitte versuchen Sie es erneut.",
           type: "error",
         });
       } finally {
@@ -294,10 +295,10 @@ export default function InvestigationPage({
       <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title="Sachverhaltsprüfung"
-          description="Widersprüche, Beweislücken und Fragen werden geladen…"
+          description="Widersprüche, Beweislücken und offene Fragen aus den Aktendokumenten."
           breadcrumbs={[
             { label: "Übersicht", href: "/dashboard" },
-            { label: "Fälle", href: "/dashboard/cases" },
+            { label: "Akten", href: "/dashboard/cases" },
             { label: "Sachverhaltsprüfung" },
           ]}
         />
@@ -330,7 +331,7 @@ export default function InvestigationPage({
           title="Sachverhaltsprüfung"
           breadcrumbs={[
             { label: "Übersicht", href: "/dashboard" },
-            { label: "Fälle", href: "/dashboard/cases" },
+            { label: "Akten", href: "/dashboard/cases" },
             { label: "Sachverhaltsprüfung" },
           ]}
         />
@@ -369,17 +370,19 @@ export default function InvestigationPage({
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Sachverhaltsprüfung"
-        description={`Fall ${caseSlugDecoded} · ${result.claims_count} Behauptungen geprüft`}
+        description={`${result.claims_count} Tatsachenbehauptungen aus den Aktendokumenten geprüft.`}
         breadcrumbs={[
           { label: "Übersicht", href: "/dashboard" },
-          { label: "Fälle", href: "/dashboard/cases" },
-          { label: caseSlugDecoded, href: `/dashboard/cases/${slug}` },
+          { label: "Akten", href: "/dashboard/cases" },
+          { label: "Akte", href: `/dashboard/cases/${encodeSlugPath(caseSlugDecoded)}` },
           { label: "Sachverhaltsprüfung" },
         ]}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/dashboard/cases/${slug}`}>Zurück zum Fall</Link>
+              <Link href={`/dashboard/cases/${encodeSlugPath(caseSlugDecoded)}`}>
+                Zurück zur Akte
+              </Link>
             </Button>
           </div>
         }
@@ -452,7 +455,7 @@ export default function InvestigationPage({
               className={cn(
                 "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] active:scale-[0.98] motion-reduce:transition-none",
                 isActive
-                  ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                  ? "bg-[color:var(--brand-solid)] text-white shadow-sm"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
               )}
               aria-pressed={isActive}
@@ -1025,7 +1028,7 @@ function FilterChip({
       className={cn(
         "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] active:scale-[0.97] motion-reduce:transition-none",
         active
-          ? "bg-[color:var(--brand-primary)] text-white"
+          ? "bg-[color:var(--brand-solid)] text-white"
           : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
       )}
       aria-pressed={active}

@@ -5,7 +5,6 @@ import { useCspNonce } from "@/components/providers/csp-nonce";
 import { THEME_INIT_SCRIPT } from "@/lib/theme-init-script";
 import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
-import { styleForIndustry } from "@/lib/industry-theme";
 const CommandPalette = dynamic(
   () => import("@/components/dashboard/command-palette").then((m) => m.CommandPalette),
   { ssr: false }
@@ -49,11 +48,9 @@ const CopilotSidebar = dynamic(
   () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center p-8" role="status" aria-live="polite">
-        <span className="text-xs text-[color:var(--ds-text-muted)]">Assistent wird geladen…</span>
-      </div>
-    ),
+    // The panel chunk also loads while the panel is closed; a text placeholder
+    // then showed up as a stray column next to the page.
+    loading: () => null,
   }
 );
 import { Sidebar } from "@/components/dashboard/sidebar";
@@ -280,8 +277,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   // Persist copilot panel state
   useEffect(() => {
-    const stored = localStorage.getItem("subsumio-copilot-open");
-    setCopilotOpen(stored !== null ? stored === "true" : window.innerWidth >= 768);
+    const stored = localStorage.getItem("subsumio-copilot-open-v2");
+    // Default closed: on a 1440 px laptop an open panel leaves ~800 px for registers
+    // and cuts table columns. Only wide monitors start with it open.
+    setCopilotOpen(stored !== null ? stored === "true" : window.innerWidth >= 1680);
   }, [setCopilotOpen]);
   useEffect(() => {
     if (!copilotPersistenceReady.current) {
@@ -289,7 +288,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      localStorage.setItem("subsumio-copilot-open", String(copilotOpen));
+      localStorage.setItem("subsumio-copilot-open-v2", String(copilotOpen));
     } catch {}
   }, [copilotOpen]);
   useEffect(() => {
@@ -644,10 +643,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="flex h-screen overflow-hidden bg-[color:var(--ds-bg)] text-[color:var(--ds-text)]"
-      style={{
-        ...styleForIndustry(industry),
-        ...(supportSession ? { paddingTop: SUPPORT_BANNER_HEIGHT } : null),
-      }}
+      // Brand colours come from the theme tokens in globals.css (light: brand-600,
+      // dark: brand-400). The legacy per-industry inline style pinned brand-500
+      // for both themes — links were 2.8:1 on the dark surface.
+      style={supportSession ? { paddingTop: SUPPORT_BANNER_HEIGHT } : undefined}
       data-industry={industry ?? "core"}
       data-app="dashboard"
       data-theme={theme}
@@ -678,7 +677,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Skip-to-content link for keyboard users */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[color:var(--ds-text)] focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-solid)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[color:var(--ds-text)] focus:shadow-lg"
       >
         {t("layout.skip_to_content")}
       </a>
@@ -750,10 +749,16 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               /* Page roots centre with mx-auto; as flex items that would make them
                  content-sized (phone overflow), so every direct child is forced to full width. */
               className="flex min-h-0 min-w-0 flex-1 flex-col [&>*]:w-full"
-              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
-              transition={overlayTransition}
+              /* Page change: the old page fades out quickly (120 ms, no movement),
+                 the new one fades in with a 6 px rise (210 ms, ease-out) — the
+                 Next.js view-transition guidance. Reduced motion: opacity only. */
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.21, ease: [0.22, 1, 0.36, 1] },
+              }}
+              exit={{ opacity: 0, transition: { duration: 0.12, ease: [0.4, 0, 1, 1] } }}
             >
               {/* Gate children on the /api/me round-trip: until it resolves we
                   can't know whether the onboarding redirect fires, and the

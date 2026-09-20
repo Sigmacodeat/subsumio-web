@@ -53,9 +53,9 @@ export function BerufungsAgentStepper({
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none",
                       "motion-reduce:transition-none",
                       isActive &&
-                        "scale-110 border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--brand-primary-foreground)]",
+                        "scale-110 border-[color:var(--brand-primary)] bg-[color:var(--brand-solid)] text-[color:var(--brand-primary-foreground)]",
                       isComplete &&
-                        "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--brand-primary-foreground)]",
+                        "border-[color:var(--brand-primary)] bg-[color:var(--brand-solid)] text-[color:var(--brand-primary-foreground)]",
                       !isActive &&
                         !isComplete &&
                         "border-[color:var(--ds-text-muted)]/30 text-[color:var(--ds-text-muted)]"
@@ -83,7 +83,7 @@ export function BerufungsAgentStepper({
                   <div
                     className={cn(
                       "mx-2 hidden h-px w-8 sm:block lg:w-16",
-                      isComplete ? "bg-[color:var(--brand-primary)]" : "bg-border"
+                      isComplete ? "bg-[color:var(--brand-solid)]" : "bg-border"
                     )}
                     aria-hidden="true"
                   />

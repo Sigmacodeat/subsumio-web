@@ -1408,7 +1408,7 @@ function TrackingTimeline({
                 </div>
                 {i < steps.length - 1 && (
                   <div
-                    className={`h-px w-4 ${step.done ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--ds-border)]"}`}
+                    className={`h-px w-4 ${step.done ? "bg-[color:var(--brand-solid)]" : "bg-[color:var(--ds-border)]"}`}
                   />
                 )}
               </div>

@@ -511,7 +511,7 @@ export default function LitigationFlowPage() {
                       key={p}
                       className={`h-2 flex-1 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none ${
                         isDone
-                          ? "bg-[color:var(--brand-primary)]"
+                          ? "bg-[color:var(--brand-solid)]"
                           : isCurrent
                             ? "brand-bg"
                             : "bg-[color:var(--ds-hover)]"
@@ -696,7 +696,7 @@ export default function LitigationFlowPage() {
                       key={i}
                       className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
                     >
-                      <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-solid)]" />
                       <span>{t(`litigation.phase_${h.phase}` as DashboardKey)}</span>
                       <span>
                         ·{" "}

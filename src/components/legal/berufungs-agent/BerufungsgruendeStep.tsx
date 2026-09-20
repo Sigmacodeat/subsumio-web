@@ -124,7 +124,7 @@ function SortableGrund({
             "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.97] motion-reduce:transition-none",
             "focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
             grund.selected
-              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--brand-primary-foreground)]"
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-solid)] text-[color:var(--brand-primary-foreground)]"
               : "border-[color:var(--ds-text-muted)]/30 hover:border-[color:var(--brand-primary)]/50"
           )}
         >

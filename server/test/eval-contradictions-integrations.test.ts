@@ -148,6 +148,45 @@ function mkReport(
   };
 }
 
+describe("find_contradictions source isolation", () => {
+  test("remote caller only sees pairs whose both pages are in its sources", async () => {
+    await writeRunRow(
+      engine,
+      mkReport({
+        run_id: "iso1",
+        findings: [
+          { severity: "high", axis: "a", slugA: "companies/acme", slugB: "people/alice" },
+          { severity: "high", axis: "b", slugA: "companies/acme", slugB: "foreign/secret" },
+        ],
+      }),
+      1000
+    );
+    await engine.executeRaw(
+      `INSERT INTO sources (id, name) VALUES ('kanzlei-a', 'kanzlei-a') ON CONFLICT DO NOTHING`
+    );
+    for (const slug of ["companies/acme", "people/alice"]) {
+      await engine.putPage(
+        slug,
+        { type: "note", title: slug, compiled_truth: "x" } as never,
+        {
+          sourceId: "kanzlei-a",
+        } as never
+      );
+    }
+    const op = operationsByName["find_contradictions"];
+    const remoteCtx = { ...mkCtx(), remote: true, sourceId: "kanzlei-a" };
+    const result = (await op.handler(remoteCtx, {})) as {
+      contradictions: Array<{ a: { slug: string }; b: { slug: string } }>;
+    };
+    expect(result.contradictions.length).toBe(1);
+    expect(result.contradictions[0]!.b.slug).toBe("people/alice");
+    const other = (await op.handler({ ...mkCtx(), remote: true, sourceId: "kanzlei-b" }, {})) as {
+      contradictions: unknown[];
+    };
+    expect(other.contradictions).toEqual([]);
+  });
+});
+
 describe("M3 find_contradictions MCP op", () => {
   test("op is registered with read scope", () => {
     const op = operationsByName["find_contradictions"];

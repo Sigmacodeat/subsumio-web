@@ -23,7 +23,7 @@ export const SCHEMA_VERSION = 1;
 //    is also read from the RIS body sections, and RIS ELI URLs fill `eli`.
 // 3: doc_id comes from the RIS URL the text was fetched from; API links become
 //    document links; literal "\t" escapes are removed from metadata.
-export const NORMALIZER_VERSION = 3;
+export const NORMALIZER_VERSION = 4;
 
 /** Dokumentklasse — ersetzt die 8 konkurrierenden type-Felder. */
 export type DocClass = "statute" | "decision" | "literature";

@@ -13,19 +13,17 @@ import {
   Loader2,
   Database,
   GitBranch,
-  TrendingUp,
   Scale,
   FileText,
   ArrowLeft,
   RefreshCw,
   Sparkles,
-  Brain,
-  Zap,
-  CheckCircle,
-  Clock,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useLang } from "@/lib/use-lang";
+import { cn, formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 interface SearchResult {
   id: string;
@@ -89,13 +87,6 @@ interface PipelineResultData {
   total_duration_ms: number;
 }
 
-interface EmbeddingStatus {
-  available: boolean;
-  model?: string;
-  dimensions?: number;
-  error?: string;
-}
-
 interface CitationNode {
   id: string;
   reference: string;
@@ -152,20 +143,32 @@ const TREATMENT_COLORS: Record<string, string> = {
   unknown: "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)]",
 };
 
+// Same vocabulary as the commentaries tab.
 const TREATMENT_LABELS: Record<string, { de: string; en: string }> = {
-  good_law: { de: "Good Law", en: "Good Law" },
-  bad_law: { de: "Bad Law", en: "Bad Law" },
-  at_risk: { de: "At Risk", en: "At Risk" },
+  good_law: { de: "Gültig", en: "Good law" },
+  bad_law: { de: "Überholt", en: "Bad law" },
+  at_risk: { de: "Angreifbar", en: "At risk" },
   mixed: { de: "Gemischt", en: "Mixed" },
   unknown: { de: "Unbekannt", en: "Unknown" },
 };
 
+/** How a later decision treats the cited one. */
+const CITE_TREATMENT_LABELS: Record<string, string> = {
+  positive: "bestätigend",
+  negative: "ablehnend",
+  neutral: "neutral",
+  distinguishing: "abgrenzend",
+  overruled: "überholt",
+  unknown: "unbekannt",
+};
+
+const SEARCH_UNAVAILABLE =
+  "Die Suche ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut.";
+
 export default function JudgementsDbPage() {
-  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
-  const [mode, setMode] = useState<"hybrid" | "bm25_only">("bm25_only");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -173,18 +176,8 @@ export default function JudgementsDbPage() {
   const [pipelineMode, setPipelineMode] = useState(false);
   const [pipelineResult, setPipelineResult] = useState<PipelineResultData | null>(null);
   const [pipelineLoading, setPipelineLoading] = useState(false);
-  const [embeddingStatus, setEmbeddingStatus] = useState<EmbeddingStatus | null>(null);
-  const [embedLoading, setEmbedLoading] = useState(false);
-  const [graphEmbeddingStatus, setGraphEmbeddingStatus] = useState<{
-    total_embeddings: number;
-    avg_neighbours: number | null;
-    last_computed: string | null;
-  } | null>(null);
-  const [graphLoading, setGraphLoading] = useState(false);
   const [pipelineGraphSearch, setPipelineGraphSearch] = useState(false);
   const [pipelineValidation, setPipelineValidation] = useState(true);
-  const [reranked, setReranked] = useState(false);
-  const [rerankModel, setRerankModel] = useState("");
   const [filters, setFilters] = useState({
     jurisdiction: "at",
     court: "",
@@ -210,8 +203,6 @@ export default function JudgementsDbPage() {
     setLoading(true);
     setError(null);
     setPipelineResult(null);
-    setReranked(false);
-    setRerankModel("");
     try {
       const params = new URLSearchParams({ q: query, ...filters, rerank: String(rerank) });
       const res = await fetch(`/api/legal/judgements-db?${params}`);
@@ -219,11 +210,8 @@ export default function JudgementsDbPage() {
       const data = await res.json();
       setResults(data.results || []);
       setTotal(data.total || 0);
-      setMode(data.mode || "bm25_only");
-      setReranked(data.reranked || false);
-      setRerankModel(data.rerank_model || "");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Search failed");
+    } catch {
+      setError(SEARCH_UNAVAILABLE);
       setResults([]);
     } finally {
       setLoading(false);
@@ -253,55 +241,12 @@ export default function JudgementsDbPage() {
       setPipelineResult(data);
       setResults(data.retrieval_results || []);
       setTotal(data.retrieval_results?.length || 0);
-      setMode("hybrid");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Pipeline failed");
+    } catch {
+      setError(SEARCH_UNAVAILABLE);
     } finally {
       setPipelineLoading(false);
     }
-  }, [query, filters, pipelineGraphSearch, pipelineValidation]);
-
-  const loadEmbeddingStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/legal/judgements-db/import?action=embed_status");
-      if (res.ok) {
-        const data = await res.json();
-        setEmbeddingStatus(data);
-      }
-    } catch {
-      // Non-critical
-    }
-  }, []);
-
-  const loadGraphEmbeddingStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/legal/judgements-db/graph-embeddings?action=status");
-      if (res.ok) {
-        const data = await res.json();
-        setGraphEmbeddingStatus(data);
-      }
-    } catch {
-      // Non-critical
-    }
-  }, []);
-
-  const triggerGraphEmbedding = useCallback(async () => {
-    setGraphLoading(true);
-    try {
-      const res = await fetch("/api/legal/judgements-db/graph-embeddings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "compute", hops: "2", sampleSize: "10", batchSize: "100" }),
-      });
-      if (res.ok) {
-        await loadGraphEmbeddingStatus();
-      }
-    } catch {
-      // Non-critical
-    } finally {
-      setGraphLoading(false);
-    }
-  }, [loadGraphEmbeddingStatus]);
+  }, [query, pipelineGraphSearch, pipelineValidation]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -315,25 +260,6 @@ export default function JudgementsDbPage() {
     }
   }, []);
 
-  const triggerEmbedding = useCallback(async () => {
-    setEmbedLoading(true);
-    try {
-      const res = await fetch("/api/legal/judgements-db/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "embed", batchSize: "50", maxItems: "500" }),
-      });
-      if (res.ok) {
-        await loadEmbeddingStatus();
-        await loadStats();
-      }
-    } catch {
-      // Non-critical
-    } finally {
-      setEmbedLoading(false);
-    }
-  }, [loadEmbeddingStatus, loadStats]);
-
   const loadDetail = useCallback(async (id: string) => {
     setSelectedId(id);
     setDetailLoading(true);
@@ -342,18 +268,19 @@ export default function JudgementsDbPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setDetail(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load detail");
+    } catch {
+      setSelectedId(null);
+      setError("Die Entscheidung konnte nicht geladen werden. Bitte versuchen Sie es erneut.");
     } finally {
       setDetailLoading(false);
     }
   }, []);
 
+  // Embedding/graph maintenance (formerly shown here) is operator work and
+  // belongs in the operator console, not on the lawyer's research page.
   useEffect(() => {
     loadStats();
-    loadEmbeddingStatus();
-    loadGraphEmbeddingStatus();
-  }, [loadStats, loadEmbeddingStatus, loadGraphEmbeddingStatus]);
+  }, [loadStats]);
 
   // ── Detail View ─────────────────────────────────────────────────
 
@@ -377,8 +304,10 @@ export default function JudgementsDbPage() {
 
   if (selectedId && detailLoading) {
     return (
-      <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
-        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
+      <div className="space-y-3" aria-busy="true">
+        <Skeleton className="h-6 w-2/3 rounded" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     );
   }
@@ -386,37 +315,24 @@ export default function JudgementsDbPage() {
   // ── Search View ─────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col p-4 md:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
-        <Database className="h-6 w-6 text-[color:var(--brand-primary)]" />
-        <div>
-          <h1 className="text-xl font-semibold text-[color:var(--ds-text)]">
-            {t("judgements_db.title")}
-          </h1>
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Semantische Suche · Citation Graph · Treatment Validation
-          </p>
-        </div>
-      </div>
+    // Embedded in the research page, which owns the page header (one h1 per page).
+    <div className="flex flex-col">
+      <p className="mb-4 text-xs text-[color:var(--ds-text-muted)]">
+        Entscheidungsdatenbank mit Zitationsnetz und Prüfung der Fortgeltung
+      </p>
 
       {/* Stats Bar */}
       {stats && (
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
           <StatCard
             icon={<Database className="h-4 w-4" />}
-            label="Urteile"
-            value={stats.total.toLocaleString("de-DE")}
-          />
-          <StatCard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Embeddings"
-            value={stats.embedded.toLocaleString("de-DE")}
+            label="Entscheidungen"
+            value={stats.total.toLocaleString("de-AT")}
           />
           <StatCard
             icon={<GitBranch className="h-4 w-4" />}
             label="Mit Zitationen"
-            value={stats.withCitations.toLocaleString("de-DE")}
+            value={stats.withCitations.toLocaleString("de-AT")}
           />
           <StatCard
             icon={<Scale className="h-4 w-4" />}
@@ -426,192 +342,98 @@ export default function JudgementsDbPage() {
         </div>
       )}
 
-      {/* Embedding Status */}
-      {embeddingStatus && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2">
-          <div className="flex items-center gap-2 text-xs">
-            {embeddingStatus.available ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-[color:var(--ds-success-text)]" />
-                <span className="text-[color:var(--ds-text-muted)]">
-                  Embedding:{" "}
-                  <span className="font-medium text-[color:var(--ds-text)]">
-                    {embeddingStatus.model}
-                  </span>{" "}
-                  · {embeddingStatus.dimensions}d
-                </span>
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="h-4 w-4 text-[color:var(--ds-attention-text)]" />
-                <span className="text-[color:var(--ds-text-muted)]">
-                  Embedding nicht verfügbar: {embeddingStatus.error}
-                </span>
-              </>
-            )}
-          </div>
-          {embeddingStatus.available && (
-            <button
-              onClick={triggerEmbedding}
-              disabled={embedLoading}
-              className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)]"
-            >
-              {embedLoading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Zap className="h-3 w-3" />
-              )}
-              Embeddings generieren
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Graph Embedding Status */}
-      {graphEmbeddingStatus && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2">
-          <div className="flex items-center gap-2 text-xs">
-            <GitBranch className="h-4 w-4 text-[color:var(--ds-info-text)]" />
-            <span className="text-[color:var(--ds-text-muted)]">
-              GraphSAGE:{" "}
-              <span className="font-medium text-[color:var(--ds-text)]">
-                {graphEmbeddingStatus.total_embeddings.toLocaleString("de-DE")}
-              </span>{" "}
-              Embeddings
-              {graphEmbeddingStatus.avg_neighbours !== null && (
-                <> · Ø {graphEmbeddingStatus.avg_neighbours.toFixed(1)} Nachbarn</>
-              )}
-              {graphEmbeddingStatus.last_computed && (
-                <>
-                  {" "}
-                  · zuletzt{" "}
-                  {new Date(graphEmbeddingStatus.last_computed).toLocaleDateString("de-DE")}
-                </>
-              )}
-            </span>
-          </div>
-          <button
-            onClick={triggerGraphEmbedding}
-            disabled={graphLoading}
-            className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)]"
-          >
-            {graphLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <GitBranch className="h-3 w-3" />
-            )}
-            Graph berechnen
-          </button>
-        </div>
-      )}
-
       {/* Search Bar */}
-      <div className="mb-4 flex gap-2">
-        <div className="relative flex-1">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <div className="relative min-w-[12rem] flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (pipelineMode ? runPipelineSearch() : search())}
-            placeholder="Suche nach Schlagwort, Aktenzeichen, Thema..."
+            placeholder="Suche nach Schlagwort, Geschäftszahl, Thema …"
+            aria-label="Entscheidungen durchsuchen"
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-4 pl-10 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
-        <button
+        <Button
+          variant="secondary"
           onClick={() => setShowFilters(!showFilters)}
-          className={cn(
-            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
-            showFilters
-              ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
-              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
-          )}
+          aria-pressed={showFilters}
+          className="gap-2 whitespace-nowrap"
         >
           <Filter className="h-4 w-4" />
           Filter
-        </button>
-        {/* Pipeline Mode Toggle */}
-        <button
-          onClick={() => setPipelineMode(!pipelineMode)}
-          className={cn(
-            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
-            pipelineMode
-              ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
-              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
-          )}
-          title="Multi-Agent Pipeline: Query-Routing → Retrieval → Validation → Synthesis"
-        >
-          <Brain className="h-4 w-4" />
-          Pipeline
-        </button>
-        {/* Reranking Toggle */}
-        <button
-          onClick={() => setRerank(!rerank)}
-          className={cn(
-            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
-            rerank
-              ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
-              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
-          )}
-          title="Cross-Encoder Reranking der Top-K Ergebnisse"
-        >
-          <Sparkles className="h-4 w-4" />
-          Rerank
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={pipelineMode ? runPipelineSearch : search}
           disabled={(pipelineMode ? pipelineLoading : loading) || !query.trim()}
-          className="flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-4 py-2.5 text-sm font-medium text-[color:var(--ds-text)] disabled:opacity-50"
+          className="gap-2 whitespace-nowrap"
         >
           {(pipelineMode ? pipelineLoading : loading) ? (
             <Loader2 className="h-4 w-4 animate-spin" />
-          ) : pipelineMode ? (
-            <Brain className="h-4 w-4" />
           ) : (
             <Search className="h-4 w-4" />
           )}
-          {pipelineMode ? "Pipeline" : "Suchen"}
-        </button>
+          Suchen
+        </Button>
       </div>
 
-      {/* Pipeline Options */}
-      {pipelineMode && (
-        <div className="mb-4 flex items-center gap-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2">
-          <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-            Pipeline-Optionen:
-          </span>
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+      {/* Search options */}
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[color:var(--ds-text-muted)]">
+        <label className="flex cursor-pointer items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={pipelineMode}
+            onChange={(e) => setPipelineMode(e.target.checked)}
+            className="h-3.5 w-3.5 rounded accent-[var(--brand-primary)]"
+          />
+          Mit KI-Zusammenfassung
+        </label>
+        {pipelineMode ? (
+          <>
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={pipelineGraphSearch}
+                onChange={(e) => setPipelineGraphSearch(e.target.checked)}
+                className="h-3.5 w-3.5 rounded accent-[var(--brand-primary)]"
+              />
+              Zitationsnetz einbeziehen
+            </label>
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={pipelineValidation}
+                onChange={(e) => setPipelineValidation(e.target.checked)}
+                className="h-3.5 w-3.5 rounded accent-[var(--brand-primary)]"
+              />
+              Fortgeltung prüfen
+            </label>
+          </>
+        ) : (
+          <label className="flex cursor-pointer items-center gap-1.5">
             <input
               type="checkbox"
-              checked={pipelineGraphSearch}
-              onChange={(e) => setPipelineGraphSearch(e.target.checked)}
-              className="h-3.5 w-3.5 rounded"
+              checked={rerank}
+              onChange={(e) => setRerank(e.target.checked)}
+              className="h-3.5 w-3.5 rounded accent-[var(--brand-primary)]"
             />
-            <GitBranch className="h-3 w-3" />
-            Graph Search
+            Treffer mit KI nach Relevanz ordnen
           </label>
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs">
-            <input
-              type="checkbox"
-              checked={pipelineValidation}
-              onChange={(e) => setPipelineValidation(e.target.checked)}
-              className="h-3.5 w-3.5 rounded"
-            />
-            <CheckCircle2 className="h-3 w-3" />
-            Citation Validation
-          </label>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Filters */}
       {showFilters && (
         <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4 sm:grid-cols-2 md:grid-cols-4">
-          <div className="brand-soft brand-text rounded border px-3 py-2 text-sm">
-            🇦🇹 Österreich
+          <div className="rounded border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)]">
+            Österreich
           </div>
           <input
             type="text"
             placeholder="Gericht"
+            aria-label="Gericht"
             value={filters.court}
             onChange={(e) => setFilters({ ...filters, court: e.target.value })}
             className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -619,29 +441,32 @@ export default function JudgementsDbPage() {
           <select
             value={filters.courtLevel}
             onChange={(e) => setFilters({ ...filters, courtLevel: e.target.value })}
+            aria-label="Instanz"
             className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           >
             <option value="">Alle Instanzen</option>
-            <option value="supreme">Obergericht</option>
-            <option value="appeals">Berufungsgericht</option>
+            <option value="supreme">Höchstgericht</option>
+            <option value="appeals">Rechtsmittelgericht</option>
             <option value="specialized">Fachgericht</option>
-            <option value="district">Amtsgericht</option>
+            <option value="district">Bezirksgericht</option>
           </select>
           <select
             value={filters.treatmentStatus}
             onChange={(e) => setFilters({ ...filters, treatmentStatus: e.target.value })}
+            aria-label="Fortgeltung"
             className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           >
-            <option value="">Alle Behandlungen</option>
-            <option value="good_law">Good Law</option>
-            <option value="bad_law">Bad Law</option>
-            <option value="at_risk">At Risk</option>
+            <option value="">Jede Fortgeltung</option>
+            <option value="good_law">Gültig</option>
+            <option value="bad_law">Überholt</option>
+            <option value="at_risk">Angreifbar</option>
             <option value="mixed">Gemischt</option>
             <option value="unknown">Unbekannt</option>
           </select>
           <input
             type="date"
             placeholder="Von"
+            aria-label="Entscheidungsdatum von"
             value={filters.dateFrom}
             onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
             className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -649,6 +474,7 @@ export default function JudgementsDbPage() {
           <input
             type="date"
             placeholder="Bis"
+            aria-label="Entscheidungsdatum bis"
             value={filters.dateTo}
             onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
             className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -669,38 +495,33 @@ export default function JudgementsDbPage() {
         {pipelineResult && <PipelinePanel result={pipelineResult} />}
 
         {results.length > 0 && (
-          <div className="mb-2 flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
-            <span>
-              {total} Treffer · Modus:{" "}
-              {mode === "hybrid" ? "Hybrid (BM25 + Vector + Citation)" : "BM25 (Volltext)"}
-              {reranked && " · Reranked"}
-              {rerankModel && ` (${rerankModel})`}
-            </span>
+          <div className="mb-2 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+            {total} Treffer
+          </div>
+        )}
+
+        {(loading || pipelineLoading) && results.length === 0 && (
+          <div className="space-y-2" aria-busy="true">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
           </div>
         )}
 
         {results.length === 0 && !loading && !pipelineLoading && query && (
-          <div className="flex flex-col items-center justify-center py-12 text-[color:var(--ds-text-muted)]">
-            <Search className="mb-3 h-10 w-10 opacity-30" />
-            <p className="text-sm">Keine Treffer — versuchen Sie eine andere Suchanfrage.</p>
-          </div>
+          <EmptyState
+            icon={Search}
+            title="Keine Treffer"
+            description="Versuchen Sie eine andere Suchanfrage oder lockern Sie die Filter."
+            actionLabel="Suche zurücksetzen"
+            onAction={() => setQuery("")}
+          />
         )}
 
         {results.length === 0 && !loading && !pipelineLoading && !query && (
           <div className="flex flex-col items-center justify-center py-12 text-[color:var(--ds-text-muted)]">
             <Landmark className="mb-3 h-10 w-10 opacity-30" />
-            <p className="text-sm">Suchen Sie nach Urteilen, Aktenzeichen oder Rechtsgebieten.</p>
-            <p className="mt-1 text-xs">Hybrid-Suche: BM25 + Vector + Citation Graph</p>
-            {rerank && (
-              <p className="text-xs text-[color:var(--brand-primary)]">
-                Cross-Encoder Reranking aktiv
-              </p>
-            )}
-            {pipelineMode && (
-              <p className="text-xs text-[color:var(--brand-primary)]">
-                Multi-Agent Pipeline aktiv
-              </p>
-            )}
+            <p className="text-sm">Suchen Sie nach Entscheidungen, Geschäftszahlen oder Rechtsgebieten.</p>
           </div>
         )}
 
@@ -719,12 +540,12 @@ export default function JudgementsDbPage() {
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]">
         {icon}
       </div>
       <div>
         <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
-        <p className="text-lg font-semibold text-[color:var(--ds-text)]">{value}</p>
+        <p className="text-lg font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</p>
       </div>
     </div>
   );
@@ -737,11 +558,11 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)]/50 hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
+      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2">
             <span className="text-sm font-medium text-[color:var(--ds-text)]">{result.court}</span>
             {result.file_number && (
               <span className="text-xs text-[color:var(--ds-text-muted)]">
@@ -749,8 +570,8 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
               </span>
             )}
             {result.decision_date && (
-              <span className="text-xs text-[color:var(--ds-text-muted)]">
-                · {new Date(result.decision_date).toLocaleDateString("de-DE")}
+              <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                · {formatDate(result.decision_date)}
               </span>
             )}
           </div>
@@ -762,7 +583,7 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
               {result.snippet}
             </p>
           )}
-          <div className="mt-2 flex items-center gap-3 text-xs">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
             <span className={cn("flex items-center gap-1 rounded px-2 py-0.5", treatmentColor)}>
               <TreatmentIcon className="h-3 w-3" />
               {TREATMENT_LABELS[result.treatment_status]?.de ?? result.treatment_status}
@@ -773,19 +594,13 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
                 {result.citation_count} Zitate
               </span>
             )}
-            {result.source === "hybrid" && (
-              <span className="flex items-center gap-1 text-[color:var(--ds-info-text)]">
-                <TrendingUp className="h-3 w-3" />
-                Hybrid
-              </span>
-            )}
             {result.rerank_score !== undefined && (
               <span
-                className="flex items-center gap-1 text-[color:var(--ds-category-purple-text)]"
+                className="flex items-center gap-1 text-[color:var(--ds-text-muted)] tabular-nums"
                 title={result.rerank_reason}
               >
                 <Sparkles className="h-3 w-3" />
-                {result.rerank_score.toFixed(1)}/10
+                Relevanz {result.rerank_score.toFixed(1).replace(".", ",")}/10
               </span>
             )}
           </div>
@@ -797,130 +612,31 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
 }
 
 function PipelinePanel({ result }: { result: PipelineResultData }) {
-  const agentIcons: Record<string, typeof Brain> = {
-    router: Brain,
-    retrieval: Search,
-    validation: CheckCircle2,
-    synthesis: Sparkles,
-  };
-
-  const agentLabels: Record<string, string> = {
-    router: "Query Router",
-    retrieval: "Retrieval",
-    validation: "Validation",
-    synthesis: "Synthesis",
-  };
-
+  // Run steps, routing and timings are technical telemetry — not shown to lawyers.
   return (
     <div className="mb-6 space-y-4">
-      {/* Pipeline Steps */}
-      <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
-            <Brain className="h-4 w-4 text-[color:var(--brand-primary)]" />
-            Multi-Agent Pipeline
-          </h3>
-          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-            <Clock className="h-3 w-3" />
-            {(result.total_duration_ms / 1000).toFixed(1)}s
-          </span>
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
-          {result.steps.map((step, i) => {
-            const Icon = agentIcons[step.agent] ?? Brain;
-            const label = agentLabels[step.agent] ?? step.agent;
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "rounded border p-2 text-xs",
-                  step.status === "done" &&
-                    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-solid)]",
-                  step.status === "error" &&
-                    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)]",
-                  step.status === "running" &&
-                    "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-solid)]",
-                  step.status === "pending" &&
-                    "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
-                )}
-              >
-                <div className="flex items-center gap-1.5" role="status" aria-live="polite">
-                  <Icon className="h-3 w-3" />
-                  <span className="font-medium text-[color:var(--ds-text)]">{label}</span>
-                  {step.status === "running" && <Loader2 className="h-3 w-3 animate-spin" />}
-                  {step.status === "done" && (
-                    <CheckCircle className="h-3 w-3 text-[color:var(--ds-success-text)]" />
-                  )}
-                  {step.status === "error" && (
-                    <XCircle className="h-3 w-3 text-[color:var(--ds-danger-text)]" />
-                  )}
-                </div>
-                {step.duration_ms !== undefined && (
-                  <p className="mt-0.5 text-[color:var(--ds-text-muted)]">
-                    {(step.duration_ms / 1000).toFixed(1)}s
-                  </p>
-                )}
-                {step.error && (
-                  <p className="mt-0.5 truncate text-[color:var(--ds-danger-text)]">{step.error}</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Routing Info */}
-      {result.routing && (
-        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-            Query Routing
-          </h4>
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded bg-[color:var(--brand-primary)]/10 px-2 py-0.5 font-medium text-[color:var(--brand-primary)]">
-              {result.routing.intent}
-            </span>
-            <span className="rounded bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-[color:var(--ds-text-muted)]">
-              Strategy: {result.routing.search_strategy}
-            </span>
-            {result.routing.legal_concepts.map((concept, i) => (
-              <span
-                key={i}
-                className="rounded bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-[color:var(--ds-text-muted)]"
-              >
-                {concept}
-              </span>
-            ))}
-          </div>
-          {result.routing.expanded_query !== result.query && (
-            <p className="mt-2 text-xs text-[color:var(--ds-text-muted)] italic">
-              Expanded: &quot;{result.routing.expanded_query}&quot;
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Validation Summary */}
       {result.validation_summary && (
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-            Citation Validation
+            Fortgeltung der gefundenen Entscheidungen
           </h4>
-          <div className="flex gap-4 text-xs">
+          <div className="flex flex-wrap gap-4 text-xs tabular-nums">
             <span className="flex items-center gap-1 text-[color:var(--ds-success-text)]">
               <CheckCircle2 className="h-3 w-3" />
-              {result.validation_summary.good_law} Good Law
+              {result.validation_summary.good_law} gültig
             </span>
             <span className="flex items-center gap-1 text-[color:var(--ds-danger-text)]">
               <XCircle className="h-3 w-3" />
-              {result.validation_summary.bad_law} Bad Law
+              {result.validation_summary.bad_law} überholt
             </span>
             <span className="flex items-center gap-1 text-[color:var(--ds-attention-text)]">
               <AlertTriangle className="h-3 w-3" />
-              {result.validation_summary.at_risk} At Risk
+              {result.validation_summary.at_risk} angreifbar
             </span>
             <span className="flex items-center gap-1 text-[color:var(--ds-neutral-text)]">
               <HelpCircle className="h-3 w-3" />
-              {result.validation_summary.unknown} Unknown
+              {result.validation_summary.unknown} unbekannt
             </span>
           </div>
         </div>
@@ -930,28 +646,32 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
       {result.answer && (
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h4 className="mb-2 flex items-center gap-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-            <Sparkles className="h-3 w-3 text-[color:var(--brand-primary)]" />
-            Synthesized Answer
+            <Sparkles className="h-3 w-3" />
+            KI-Zusammenfassung
           </h4>
-          <div className="prose prose-sm max-w-none text-sm leading-relaxed whitespace-pre-wrap">
+          <div className="prose prose-sm max-w-none text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
             {result.answer}
           </div>
+          {/* Grounding invariant (CLAUDE.md): every AI answer carries the citation panel. */}
+          <GroundedOutputPanel text={result.answer} className="mt-3" />
         </div>
       )}
 
       {/* Citations */}
       {result.citations.length > 0 && (
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">Citations</h4>
+          <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Herangezogene Entscheidungen
+          </h4>
           <div className="space-y-1">
             {result.citations.slice(0, 10).map((cite, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
+              <div key={i} className="flex items-center justify-between gap-2 text-xs">
                 <span className="truncate">
                   [{i + 1}] {cite.court} — {cite.title}
                   {cite.file_number && ` (${cite.file_number})`}
                 </span>
                 <span className="ml-2 shrink-0 text-[color:var(--ds-text-muted)]">
-                  {cite.treatment}
+                  {TREATMENT_LABELS[cite.treatment]?.de ?? cite.treatment}
                 </span>
               </div>
             ))}
@@ -976,7 +696,7 @@ function DetailPanel({
   const [validating, setValidating] = useState(false);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col p-4 md:p-6 lg:p-8">
+    <div className="flex flex-col">
       {/* Back */}
       <button
         onClick={onBack}
@@ -988,15 +708,18 @@ function DetailPanel({
 
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
           <Scale className="h-4 w-4" />
           {detail.court}
           {detail.file_number && <span>— {detail.file_number}</span>}
           {detail.decision_date && (
-            <span>· {new Date(detail.decision_date).toLocaleDateString("de-DE")}</span>
+            <span className="tabular-nums">· {formatDate(detail.decision_date)}</span>
           )}
         </div>
-        <h1 className="mt-2 text-xl font-semibold text-[color:var(--ds-text)]">{detail.title}</h1>
+        {/* h2: the research page owns the only h1. */}
+        <h2 className="font-display mt-2 text-xl font-semibold text-[color:var(--ds-text)]">
+          {detail.title}
+        </h2>
         {detail.ecli && (
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">ECLI: {detail.ecli}</p>
         )}
@@ -1004,7 +727,7 @@ function DetailPanel({
 
       {/* Treatment Status */}
       <div className={cn("mb-6 rounded-lg border p-4", treatmentColor)}>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <TreatmentIcon className="h-5 w-5" />
             <span className="font-medium text-[color:var(--ds-text)]">
@@ -1018,14 +741,14 @@ function DetailPanel({
               setValidating(false);
             }}
             disabled={validating}
-            className="flex items-center gap-1 rounded border px-2 py-1 text-xs hover:bg-white/50 dark:hover:bg-black/30"
+            className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
           >
             {validating ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <RefreshCw className="h-3 w-3" />
             )}
-            Validieren
+            Fortgeltung prüfen
           </button>
         </div>
         {detail.treatment_summary && <p className="mt-2 text-sm">{detail.treatment_summary}</p>}
@@ -1068,7 +791,7 @@ function DetailPanel({
             {detail.content.slice(0, 5000)}
             {detail.content.length > 5000 && (
               <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
-                ... ({detail.content.length - 5000} weitere Zeichen)
+                … (weitere {detail.content.length - 5000} Zeichen nicht angezeigt)
               </p>
             )}
           </div>
@@ -1127,18 +850,18 @@ function CitationItem({ cite }: { cite: CitationNode; direction: "outgoing" | "i
 
   return (
     <div className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-xs text-[color:var(--ds-text)]">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="font-medium text-[color:var(--ds-text)]">{cite.reference}</span>
         <span
           className={cn("font-medium", treatmentColors[cite.treatment] ?? treatmentColors.unknown)}
         >
-          {cite.treatment}
+          {CITE_TREATMENT_LABELS[cite.treatment] ?? cite.treatment}
         </span>
       </div>
       {(cite.court || cite.decision_date) && (
         <p className="mt-1 text-[color:var(--ds-text-muted)]">
           {cite.court}
-          {cite.decision_date && ` · ${new Date(cite.decision_date).toLocaleDateString("de-DE")}`}
+          {cite.decision_date && ` · ${formatDate(cite.decision_date)}`}
         </p>
       )}
       {cite.context && (

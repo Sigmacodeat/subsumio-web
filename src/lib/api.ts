@@ -24,6 +24,7 @@ import type {
   TabularReviewStartRequest,
   TabularReviewStartResponse,
 } from "./types";
+import { lawyerFacingAnswer } from "@/lib/engine-degraded";
 import type { CitationSupportResult, GroundingMetadata } from "./citation-gate-client";
 import type { NormReading } from "./legal-grounding";
 import type { SourceRegistryResponse } from "./source-registry";
@@ -86,8 +87,11 @@ interface ThinkOptions {
   instructions?: string;
   queryMode?: QueryMode;
   caseSlug?: string;
+  model?: string;
   signal?: AbortSignal;
   onChunk?: (chunk: string) => void;
+  /** Verification replaced the streamed draft; the argument is the final text. */
+  onRevised?: (finalAnswer: string) => void;
 }
 
 // Auth endpoints are consumed by older UI code with shape-specific property access.
@@ -540,7 +544,9 @@ export const api = {
       onChunk?: (chunk: string) => void
     ): Promise<QueryResponse> {
       const options =
-        typeof modeOrOptions === "string" ? { mode: modeOrOptions, onChunk } : modeOrOptions;
+        typeof modeOrOptions === "string"
+          ? ({ mode: modeOrOptions, onChunk } as ThinkOptions)
+          : modeOrOptions;
       const mode = options.mode ?? "balanced";
       const res = await csrfFetch(`${BASE_URL}/api/think`, {
         method: "POST",
@@ -551,6 +557,7 @@ export const api = {
           mode,
           query_mode: options.queryMode,
           case_slug: options.caseSlug,
+          ...(options.model && options.model !== "auto" ? { model: options.model } : {}),
         }),
         // SSE stream — use 5 min timeout (matches maxDuration=300) when
         // caller doesn't provide a signal. Default 30s would kill the stream.
@@ -593,8 +600,23 @@ export const api = {
           return;
         }
         if (typeof parsed.chunk === "string") {
-          result.answer += parsed.chunk;
-          options.onChunk?.(parsed.chunk);
+          const chunk = result.answer === "" ? lawyerFacingAnswer(parsed.chunk) : parsed.chunk;
+          result.answer += chunk;
+          options.onChunk?.(chunk);
+        }
+        // Verification regenerated the answer after streaming: the final text
+        // replaces the streamed draft (callers render result.answer at the end).
+        if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+          result.answer = lawyerFacingAnswer(parsed.final_answer);
+          result.answer_revised = true;
+          options.onRevised?.(result.answer);
+        }
+        // Verification regenerated the answer after streaming: the final text
+        // replaces the streamed draft (callers render result.answer at the end).
+        if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+          result.answer = parsed.final_answer;
+          result.answer_revised = true;
+          options.onRevised?.(result.answer);
         }
         if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
         if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
@@ -605,7 +627,8 @@ export const api = {
         }
         if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
         if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
-        // The model the engine actually answered with (after the firm's model profile).
+        // The model the engine actually answered with. It can differ from the
+        // pick when the firm's model profile requires a stronger one.
         if (typeof parsed.model === "string") result.model = parsed.model;
       });
 
@@ -1526,6 +1549,11 @@ export const api = {
             if (typeof parsed.chunk === "string") {
               content += parsed.chunk;
               input.onChunk?.(parsed.chunk);
+            }
+            // Verification regenerated the draft after streaming — the final
+            // text replaces what was streamed.
+            if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+              content = parsed.final_answer;
             }
             // The citation gate (createEngineProxy citationGate:true) attaches
             // `grounding` to the same SSE event that carries `citations`.
@@ -2929,9 +2957,25 @@ export const api = {
   },
 
   copilot: {
+    /**
+     * Runs a Copilot tool. Tools that change data or send something need the
+     * person's confirmation first: the server issues a token for exactly
+     * these parameters (lib/copilot-confirmation.ts). Call this only once the
+     * person confirmed — the click is the confirmation.
+     */
+    async executeConfirmedTool(tool: string, params: Record<string, unknown>) {
+      const prepared = await request<{ confirmation: string } | { data: { confirmation: string } }>(
+        "/api/copilot/tools",
+        { method: "POST", body: JSON.stringify({ tool, params, mode: "prepare" }) }
+      );
+      const confirmation =
+        "confirmation" in prepared ? prepared.confirmation : prepared.data.confirmation;
+      return api.copilot.executeTool(tool, params, confirmation);
+    },
     executeTool(
       tool: string,
-      params: Record<string, unknown>
+      params: Record<string, unknown>,
+      confirmation?: string
     ): Promise<{
       success: boolean;
       data?: unknown;
@@ -2976,7 +3020,7 @@ export const api = {
     }> {
       return request("/api/copilot/tools", {
         method: "POST",
-        body: JSON.stringify({ tool, params }),
+        body: JSON.stringify({ tool, params, ...(confirmation ? { confirmation } : {}) }),
       });
     },
   },

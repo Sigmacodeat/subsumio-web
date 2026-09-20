@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import {
-  Bot,
   Plus,
   Search,
   Trash2,
@@ -21,7 +20,17 @@ import {
   Zap,
   Edit3,
   Wand2,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useAgentTemplates,
   useCreateAgentTemplate,
@@ -29,14 +38,13 @@ import {
   useDeleteAgentTemplate,
   useRunAgentTemplate,
   SPECIALISTS,
-  MODEL_OPTIONS,
   AGENT_ROLES,
   type AgentRole,
   type AgentTemplate,
   type AgentStep,
   type AgentTemplateInput,
 } from "@/lib/queries/agent-templates";
-import { useLang } from "@/lib/use-lang";
+import { Button } from "@/components/ui/button";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -76,6 +84,11 @@ function templateToForm(t: AgentTemplate): BuilderForm {
     force_specialists: t.force_specialists ?? [],
     skip_critic: t.skip_critic ?? false,
   };
+}
+
+/** Fachbezeichnung einer Teilaufgabe; interne Kennungen erscheinen nie roh. */
+function specialistLabel(value: string): string {
+  return SPECIALISTS.find((s) => s.value === value)?.label ?? "Teilaufgabe";
 }
 
 function formToInput(form: BuilderForm): AgentTemplateInput {
@@ -132,7 +145,7 @@ function StepEditor({
         <div className="rounded-lg border border-dashed border-[color:var(--ds-border)] py-6 text-center">
           <Zap size={20} className="mx-auto mb-2 text-[color:var(--ds-border)]" />
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Keine Steps definiert. Der Supervisor decomponiert automatisch.
+            Keine Schritte festgelegt — der Assistent teilt die Aufgabe selbst auf.
           </p>
         </div>
       )}
@@ -142,13 +155,20 @@ function StepEditor({
           key={step.id}
           className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
         >
-          <div className="flex items-center gap-2">
-            <GripVertical size={14} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
-            <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">#{idx + 1}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <GripVertical
+              size={14}
+              className="shrink-0 text-[color:var(--ds-text-subtle)]"
+              aria-hidden="true"
+            />
+            <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+              {idx + 1}.
+            </span>
             <select
+              aria-label={`Fachbereich für Schritt ${idx + 1}`}
               value={step.specialist}
               onChange={(e) => updateStep(idx, { specialist: e.target.value })}
-              className="focus:brand-border flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="focus:brand-border min-w-0 flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               {SPECIALISTS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -165,12 +185,12 @@ function StepEditor({
                   })
                 }
                 className="focus:brand-border w-28 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                title="Abhängigkeit von vorherigem Step"
+                aria-label={`Reihenfolge für Schritt ${idx + 1}`}
               >
-                <option value="">Parallel</option>
+                <option value="">Gleichzeitig</option>
                 {steps.slice(0, idx).map((_, i) => (
                   <option key={i} value={i}>
-                    Nach #{i + 1}
+                    Nach Schritt {i + 1}
                   </option>
                 ))}
               </select>
@@ -178,6 +198,7 @@ function StepEditor({
             <button
               onClick={() => moveStep(idx, -1)}
               disabled={idx === 0}
+              aria-label={`Schritt ${idx + 1} nach oben`}
               className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
             >
               <ChevronUp size={14} />
@@ -185,6 +206,7 @@ function StepEditor({
             <button
               onClick={() => moveStep(idx, 1)}
               disabled={idx === steps.length - 1}
+              aria-label={`Schritt ${idx + 1} nach unten`}
               className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
             >
               <ChevronDown size={14} />
@@ -200,7 +222,8 @@ function StepEditor({
           <textarea
             value={step.prompt}
             onChange={(e) => updateStep(idx, { prompt: e.target.value })}
-            placeholder="Prompt für diesen Step..."
+            placeholder="Anweisung für diesen Schritt …"
+            aria-label={`Anweisung für Schritt ${idx + 1}`}
             rows={2}
             className="focus:brand-border w-full resize-y rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
@@ -211,8 +234,8 @@ function StepEditor({
         onClick={addStep}
         className="hover:brand-border flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
       >
-        <Plus size={14} />
-        Step hinzufügen
+        <Plus size={14} aria-hidden="true" />
+        Schritt hinzufügen
       </button>
     </div>
   );
@@ -239,8 +262,11 @@ function TemplateCard({
   onRun: () => void;
   isRunning: boolean;
 }) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const confirm = useConfirm();
   const stepCount = template.steps?.length ?? 0;
+  const roleLabel = template.role
+    ? (AGENT_ROLES.find((r) => r.value === template.role)?.label ?? null)
+    : null;
 
   return (
     <div
@@ -254,81 +280,69 @@ function TemplateCard({
       }}
       role="button"
       tabIndex={0}
+      aria-pressed={isSelected}
       className={cn(
-        "w-full cursor-pointer rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+        "w-full cursor-pointer rounded-lg border p-3 text-left transition-[background-color,border-color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
         isSelected
           ? "brand-soft brand-border"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
       )}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <Wand2 size={14} className="brand-text shrink-0" />
-          <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-            {template.name}
-          </span>
-        </div>
+        <span className="min-w-0 truncate text-sm font-medium text-[color:var(--ds-text)]">
+          {template.name}
+        </span>
         <div className="flex shrink-0 items-center gap-0.5">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onRun();
             }}
             disabled={isRunning}
-            className="brand-soft brand-text brand-border hover:brand-bg/30 rounded-md border p-1.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
-            title="Agent ausführen"
-            aria-label="Agent ausführen"
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none disabled:opacity-40 motion-reduce:transition-none"
+            aria-label={`${template.name} ausführen`}
           >
             {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-            title="Bearbeiten"
-            aria-label="Bearbeiten"
-          >
-            <Edit3 size={13} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDuplicate();
-            }}
-            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-            title="Duplizieren"
-            aria-label="Duplizieren"
-          >
-            <Copy size={13} />
-          </button>
-          {confirmDelete ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmDelete(false);
-                onDelete();
-              }}
-              className="rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-1.5 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
-              title="Wirklich löschen"
-              aria-label="Wirklich löschen"
-            >
-              <Trash2 size={13} />
-            </button>
-          ) : (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmDelete(true);
-              }}
-              className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
-              title="Löschen"
-              aria-label="Löschen"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                aria-label={`Weitere Aktionen für ${template.name}`}
+              >
+                <MoreHorizontal size={13} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onSelect={onEdit}>
+                <Edit3 size={13} className="mr-2" aria-hidden="true" />
+                Bearbeiten
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onDuplicate}>
+                <Copy size={13} className="mr-2" aria-hidden="true" />
+                Duplizieren
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-[color:var(--ds-danger-text)]"
+                onSelect={async () => {
+                  const ok = await confirm({
+                    title: "Vorlage löschen?",
+                    message: `„${template.name}" wird gelöscht. Bereits gestartete Aufträge bleiben erhalten.`,
+                    confirmLabel: "Löschen",
+                    variant: "danger",
+                  });
+                  if (ok) onDelete();
+                }}
+              >
+                <Trash2 size={13} className="mr-2" aria-hidden="true" />
+                Löschen
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       {template.description && (
@@ -336,33 +350,16 @@ function TemplateCard({
           {template.description}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-2">
-        {template.role && (
-          <span className="brand-soft brand-text brand-border rounded-full border px-1.5 py-0.5 text-xs font-medium">
-            {AGENT_ROLES.find((r) => r.value === template.role)?.label ?? template.role}
-          </span>
-        )}
-        {template.model && (
-          <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
-            {template.model}
-          </span>
-        )}
-        {stepCount > 0 && (
-          <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
-            {stepCount} Step{stepCount > 1 ? "s" : ""}
-          </span>
-        )}
-        {template.force_specialists && template.force_specialists.length > 0 && (
-          <span className="rounded-full bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-warning-text)]">
-            {template.force_specialists.length} Specialists
-          </span>
-        )}
-        {template.skip_critic && (
-          <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
-            No Critic
-          </span>
-        )}
-      </div>
+      {(roleLabel || stepCount > 0) && (
+        <p className="text-xs text-[color:var(--ds-text-subtle)]">
+          {[
+            roleLabel,
+            stepCount > 0 ? `${stepCount} ${stepCount === 1 ? "Schritt" : "Schritte"}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
     </div>
   );
 }
@@ -441,16 +438,15 @@ function RunDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="agent-run-dialog-title"
-        className="w-full max-w-lg space-y-4 rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl"
+        className="w-full max-w-lg space-y-4 rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-[var(--ds-shadow-3)]"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Play size={18} className="brand-text" />
             <h3
               id="agent-run-dialog-title"
               className="text-base font-semibold text-[color:var(--ds-text)]"
             >
-              Agent starten
+              Vorlage ausführen
             </h3>
           </div>
           <button
@@ -462,15 +458,16 @@ function RunDialog({
           </button>
         </div>
         <p className="text-sm text-[color:var(--ds-text-muted)]">
-          <span className="font-medium text-[color:var(--ds-text)]">{template.name}</span> wird
-          ausgeführt. Optional können Sie eine Eingabe mitgeben, die an das Prompt-Template
-          angehängt wird.
+          <span className="font-medium text-[color:var(--ds-text)]">{template.name}</span> wird als
+          neuer Auftrag gestartet. Optional können Sie ergänzende Angaben mitgeben, etwa die
+          betroffene Akte oder Schwerpunkte.
         </p>
         <textarea
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Optionale Eingabe für den Agenten..."
+          placeholder="Optionale Angaben zum Auftrag …"
+          aria-label="Optionale Angaben zum Auftrag"
           rows={4}
           className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
@@ -487,7 +484,7 @@ function RunDialog({
             className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
           >
             {isRunning ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-            {isRunning ? "Starte..." : "Starten"}
+            Starten
           </button>
         </div>
       </div>
@@ -498,7 +495,6 @@ function RunDialog({
 // ── Main Agent Builder Component ──────────────────────────────
 
 export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number) => void }) {
-  const { lang, t } = useLang();
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -567,27 +563,28 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
   const handleSave = useCallback(async () => {
     setError(null);
     if (!form.name.trim()) {
-      setError("Name ist erforderlich");
+      setError("Bitte geben Sie einen Namen ein.");
       return;
     }
     if (!form.prompt_template.trim()) {
-      setError("Prompt-Template ist erforderlich");
+      setError("Bitte beschreiben Sie die Arbeitsanweisung.");
       return;
     }
     try {
       if (isNew) {
         const result = await createMutation.mutateAsync(formToInput(form));
-        setSuccessMsg("Agent-Template erstellt");
+        setSuccessMsg("Vorlage angelegt");
         setEditing(false);
         setIsNew(false);
         setSelectedSlug(result.slug);
       } else if (selected) {
         await updateMutation.mutateAsync({ slug: selected.slug, ...formToInput(form) });
-        setSuccessMsg("Agent-Template aktualisiert");
+        setSuccessMsg("Vorlage gespeichert");
         setEditing(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen");
+      console.error("[agent-builder] save failed:", err instanceof Error ? err.message : err);
+      setError("Speichern nicht möglich. Bitte versuchen Sie es erneut.");
     }
   }, [form, isNew, selected, createMutation, updateMutation]);
 
@@ -599,10 +596,14 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           name: `${template.name} (Kopie)`,
         };
         const result = await createMutation.mutateAsync(dupInput);
-        setSuccessMsg("Template dupliziert");
+        setSuccessMsg("Vorlage dupliziert");
         setSelectedSlug(result.slug);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Duplizieren fehlgeschlagen");
+        console.error(
+          "[agent-builder] duplicate failed:",
+          err instanceof Error ? err.message : err
+        );
+        setError("Duplizieren nicht möglich. Bitte versuchen Sie es erneut.");
       }
     },
     [createMutation]
@@ -618,9 +619,10 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           setEditing(false);
           setIsNew(false);
         }
-        setSuccessMsg("Template gelöscht");
+        setSuccessMsg("Vorlage gelöscht");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
+        console.error("[agent-builder] delete failed:", err instanceof Error ? err.message : err);
+        setError("Löschen nicht möglich. Bitte versuchen Sie es erneut.");
       }
     },
     [deleteMutation, selectedSlug]
@@ -636,9 +638,10 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
         if (result.jobId && onRunComplete) {
           onRunComplete(result.jobId);
         }
-        setSuccessMsg(`Agent gestartet (Job #${result.jobId})`);
+        setSuccessMsg(`Auftrag Nr. ${result.jobId} gestartet`);
       } catch (err) {
-        setRunError(err instanceof Error ? err.message : "Starten fehlgeschlagen");
+        console.error("[agent-builder] run failed:", err instanceof Error ? err.message : err);
+        setRunError("Der Auftrag konnte nicht gestartet werden. Bitte versuchen Sie es erneut.");
       }
     },
     [runMutation, onRunComplete]
@@ -653,73 +656,73 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
   const savePending = createMutation.isPending || updateMutation.isPending;
   const isRunning = runMutation.isPending;
 
+  const editTemplate = useCallback((template: AgentTemplate) => {
+    setSelectedSlug(template.slug);
+    setForm(templateToForm(template));
+    setIsNew(false);
+    setEditing(true);
+    setError(null);
+  }, []);
+
+  const label = "text-xs font-medium text-[color:var(--ds-text-muted)]";
+  const control =
+    "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1";
+  const sectionTitle =
+    "text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase";
+
   // ── Render ──────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
-      {/* Left: Template List */}
-      <div className="flex w-80 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-        {/* Header + Search */}
-        <div className="space-y-3 border-b border-[color:var(--ds-border)] p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wand2 size={16} className="brand-text" />
-              <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Agent Templates</h2>
-            </div>
-            <button
-              onClick={handleNew}
-              className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
-            >
-              <Plus size={14} />
-              Neu
-            </button>
-          </div>
-          <div className="relative">
-            <Search
-              size={14}
-              className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-            />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Suchen..."
-              className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-            />
-          </div>
+    <div className="grid min-w-0 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+      {/* Links: Vorlagenliste */}
+      <div className="min-w-0 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className={sectionTitle}>Vorlagen</h2>
+          <button
+            type="button"
+            onClick={handleNew}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+          >
+            <Plus size={14} aria-hidden="true" />
+            Neue Vorlage
+          </button>
+        </div>
+        <div className="relative">
+          <Search
+            size={14}
+            className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+            aria-hidden="true"
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Vorlagen durchsuchen …"
+            aria-label="Vorlagen durchsuchen"
+            className={cn(control, "py-1.5 pl-8 text-xs")}
+          />
         </div>
 
-        {/* Template List */}
-        <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
+        <div className="space-y-1.5">
           {templatesQuery.isLoading && templates.length === 0 && (
-            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
-              <Loader2 size={20} className="brand-text animate-spin" />
+            <div className="space-y-2" role="status" aria-label="Wird geladen">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
             </div>
           )}
 
           {templatesQuery.error && (
             <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]">
-              <AlertCircle size={14} />
-              Templates nicht ladbar
+              <AlertCircle size={14} aria-hidden="true" />
+              Vorlagen konnten nicht geladen werden. Bitte laden Sie die Seite neu.
             </div>
           )}
 
-          {!templatesQuery.isLoading && templates.length === 0 && (
-            <div className="py-12 text-center">
-              <Bot size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
-              <p className="mb-1 text-sm text-[color:var(--ds-text-muted)]">
-                Keine Agent-Templates
-              </p>
-              <p className="mb-4 text-xs text-[color:var(--ds-text-subtle)]">
-                Erstellen Sie Ihren ersten eigenen Agenten
-              </p>
-              <button
-                onClick={handleNew}
-                className="brand-soft brand-text brand-border hover:brand-bg/30 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
-              >
-                <Plus size={14} />
-                Neues Template
-              </button>
-            </div>
+          {!templatesQuery.isLoading && !templatesQuery.error && templates.length === 0 && (
+            <p className="rounded-lg border border-dashed border-[color:var(--ds-border-strong)] px-3 py-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              {search
+                ? "Keine Vorlage passt zu Ihrer Suche."
+                : "Noch keine Vorlagen. Legen Sie wiederkehrende Aufträge einmal an und starten Sie sie danach mit einem Klick."}
+            </p>
           )}
 
           {templates.map((template) => (
@@ -732,7 +735,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 setEditing(false);
                 setIsNew(false);
               }}
-              onEdit={handleEdit}
+              onEdit={() => editTemplate(template)}
               onDuplicate={() => handleDuplicate(template)}
               onDelete={() => handleDelete(template.slug)}
               onRun={() => handleRunClick(template)}
@@ -742,452 +745,355 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
         </div>
       </div>
 
-      {/* Right: Editor / Detail */}
-      <div className="flex flex-1 flex-col overflow-hidden bg-[color:var(--ds-bg)]">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] p-4">
+      {/* Rechts: Bearbeiten / Ansicht */}
+      <div className="min-w-0 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="min-w-0 truncate text-base font-semibold text-[color:var(--ds-text)]">
+            {editing
+              ? isNew
+                ? "Neue Vorlage"
+                : "Vorlage bearbeiten"
+              : selected
+                ? selected.name
+                : "Vorlage auswählen"}
+          </h2>
           <div className="flex items-center gap-2">
             {editing ? (
               <>
-                <Edit3 size={16} className="brand-text" />
-                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {isNew ? "Neues Agent-Template" : "Template bearbeiten"}
-                </h2>
-              </>
-            ) : selected ? (
-              <>
-                <Wand2 size={16} className="brand-text" />
-                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {selected.name}
-                </h2>
-              </>
-            ) : (
-              <>
-                <Wand2 size={16} className="brand-text" />
-                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Agent Builder</h2>
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {error && (
-              <div className="flex items-center gap-1.5 text-xs text-[color:var(--ds-danger-text)]">
-                <AlertCircle size={13} />
-                <span>{error}</span>
-              </div>
-            )}
-            {successMsg && !error && (
-              <div className="flex items-center gap-1.5 text-xs text-[color:var(--ds-success-text)]">
-                <CheckCircle size={13} />
-                <span>{successMsg}</span>
-              </div>
-            )}
-            {editing ? (
-              <>
-                <button
-                  onClick={handleCancel}
-                  disabled={savePending}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
-                >
-                  <X size={14} />
+                <Button variant="ghost" size="sm" onClick={handleCancel} disabled={savePending}>
                   Abbrechen
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={savePending}
-                  className="brand-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
-                >
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={savePending}>
                   {savePending ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                   ) : (
-                    <Save size={14} />
+                    <Save size={14} aria-hidden="true" />
                   )}
                   Speichern
-                </button>
+                </Button>
               </>
             ) : selected ? (
               <>
-                <button
-                  onClick={() => handleRunClick(selected)}
-                  disabled={isRunning}
-                  className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
-                >
-                  {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-                  Ausführen
-                </button>
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-                >
-                  <Edit3 size={14} />
+                <Button variant="secondary" size="sm" onClick={handleEdit}>
+                  <Edit3 size={14} aria-hidden="true" />
                   Bearbeiten
-                </button>
+                </Button>
+                <Button size="sm" onClick={() => handleRunClick(selected)} disabled={isRunning}>
+                  {isRunning ? (
+                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Play size={14} aria-hidden="true" />
+                  )}
+                  Ausführen
+                </Button>
               </>
-            ) : (
-              <button
-                onClick={handleNew}
-                className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
-              >
-                <Plus size={14} />
-                Neues Template
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {!editing && !selected && (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <Wand2 size={48} className="mb-4 text-[color:var(--ds-border)]" />
-              <h3 className="mb-2 text-lg font-semibold text-[color:var(--ds-text)]">
-                Agent Builder
-              </h3>
-              <p className="mb-6 max-w-md text-sm text-[color:var(--ds-text-muted)]">
-                Erstellen Sie eigene Agenten mit Prompt-Vorlagen, Modellauswahl und
-                Arbeitsschritten. Speichern Sie wiederverwendbare Agenten-Definitionen und starten
-                Sie sie mit einem Klick.
-              </p>
-              <button
-                onClick={handleNew}
-                className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-[0.97] motion-reduce:transition-none"
+        {error && (
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+          >
+            <AlertCircle size={13} aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        )}
+        {successMsg && !error && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-2 text-xs text-[color:var(--ds-success-text)]"
+          >
+            <CheckCircle size={13} aria-hidden="true" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {!editing && !selected && (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] px-6 py-14 text-center">
+            <Wand2
+              size={28}
+              className="mb-3 text-[color:var(--ds-text-subtle)]"
+              aria-hidden="true"
+            />
+            <p className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Wiederkehrende Aufträge als Vorlage
+            </p>
+            <p className="mt-1.5 max-w-md text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              Legen Sie Arbeitsanweisung und Arbeitsschritte einmal fest und starten Sie den Auftrag
+              danach mit einem Klick.
+            </p>
+            <Button size="sm" className="mt-5" onClick={handleNew}>
+              <Plus size={14} aria-hidden="true" />
+              Vorlage anlegen
+            </Button>
+          </div>
+        )}
+
+        {editing && (
+          <div className="max-w-2xl space-y-5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 md:p-5">
+            <div className="space-y-1.5">
+              <label htmlFor="ab-name" className={label}>
+                Name <span className="text-[color:var(--ds-danger-text)]">*</span>
+              </label>
+              <input
+                id="ab-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="z. B. Mietvertrag prüfen"
+                className={control}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="ab-desc" className={label}>
+                Beschreibung
+              </label>
+              <input
+                id="ab-desc"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Wofür die Vorlage gedacht ist"
+                className={control}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="ab-role" className={label}>
+                Art der Aufgabe
+              </label>
+              <select
+                id="ab-role"
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value as AgentRole | "" })}
+                className={control}
               >
-                <Plus size={16} />
-                Erstes Template erstellen
-              </button>
+                <option value="">Automatisch (aus dem Namen)</option>
+                {AGENT_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label} — {r.description}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                Bestimmt, unter welcher Kategorie Ergebnisse in Berichten erscheinen.
+              </p>
             </div>
-          )}
 
-          {editing && (
-            <div className="mx-auto max-w-2xl space-y-5">
-              {/* Name */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Name <span className="text-[color:var(--ds-danger-text)]">*</span>
-                </label>
+            <div className="space-y-1.5">
+              <label htmlFor="ab-prompt" className={label}>
+                Arbeitsanweisung <span className="text-[color:var(--ds-danger-text)]">*</span>
+              </label>
+              <textarea
+                id="ab-prompt"
+                value={form.prompt_template}
+                onChange={(e) => setForm({ ...form, prompt_template: e.target.value })}
+                placeholder="Beschreiben Sie, was der Assistent tun soll, z. B.: Mietvertrag auf unzulässige Klauseln nach MRG prüfen und Fristen notieren."
+                rows={7}
+                className={cn(control, "resize-y")}
+              />
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                Mit {"{{eingabe}}"} fügen Sie die Angaben ein, die beim Start mitgegeben werden.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className={label}>Arbeitsschritte</span>
+                <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                  Optional — ohne Schritte teilt der Assistent die Aufgabe selbst auf
+                </span>
+              </div>
+              <StepEditor steps={form.steps} onChange={(steps) => setForm({ ...form, steps })} />
+            </div>
+
+            <fieldset className="space-y-1.5">
+              <legend className={label}>Fachbereiche fest einbinden</legend>
+              <div className="flex flex-wrap gap-2">
+                {SPECIALISTS.map((s) => {
+                  const active = form.force_specialists.includes(s.value);
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => {
+                        const next = active
+                          ? form.force_specialists.filter((v) => v !== s.value)
+                          : [...form.force_specialists, s.value];
+                        setForm({ ...form, force_specialists: next });
+                      }}
+                      className={cn(
+                        "rounded-lg border px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
+                        active
+                          ? "brand-soft brand-text brand-border"
+                          : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                      )}
+                      title={s.description}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                Gewählte Fachbereiche werden immer eingebunden; festgelegte Arbeitsschritte
+                entfallen dann.
+              </p>
+            </fieldset>
+
+            <div className="space-y-1.5">
+              <label htmlFor="ab-playbook" className={label}>
+                Playbook (optional)
+              </label>
+              <div className="relative">
+                <FileText
+                  size={14}
+                  className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                  aria-hidden="true"
+                />
                 <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="z.B. Vertrags-Review Agent"
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  id="ab-playbook"
+                  value={form.playbook_ref}
+                  onChange={(e) => setForm({ ...form, playbook_ref: e.target.value })}
+                  placeholder="z. B. playbooks/vertrags-review"
+                  className={cn(control, "pl-8")}
                 />
               </div>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                Kennung eines Playbooks aus dem Kanzleiwissen, das als zusätzliche Vorgabe dient.
+              </p>
+            </div>
 
-              {/* Description */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Beschreibung
-                </label>
-                <input
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Kurze Beschreibung des Agenten..."
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                />
-              </div>
-
-              {/* Agent Role */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  {t("builder.role_label")}
-                </label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value as AgentRole | "" })}
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                >
-                  <option value="">{t("builder.role_auto")}</option>
-                  {AGENT_ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label} — {r.description}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  {t("builder.role_hint")}
-                </p>
-              </div>
-
-              {/* Model */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Modell
-                </label>
-                <select
-                  value={form.model}
-                  onChange={(e) => setForm({ ...form, model: e.target.value })}
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                >
-                  {MODEL_OPTIONS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Prompt Template */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Prompt-Template <span className="text-[color:var(--ds-danger-text)]">*</span>
-                </label>
-                <textarea
-                  value={form.prompt_template}
-                  onChange={(e) => setForm({ ...form, prompt_template: e.target.value })}
-                  placeholder="Du bist ein Legal AI Agent. Deine Aufgabe ist es..."
-                  rows={8}
-                  className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                />
-                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  Der Prompt wird an den Supervisor gesendet. Verwenden Sie Variablen wie{" "}
-                  {"{{eingabe}}"} für dynamische Werte.
-                </p>
-              </div>
-
-              {/* Steps / Workflow */}
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                    Workflow Steps
-                  </label>
-                  <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                    Optional — leer = Auto-Dekomposition
-                  </span>
-                </div>
-                <StepEditor steps={form.steps} onChange={(steps) => setForm({ ...form, steps })} />
-              </div>
-
-              {/* Force Specialists */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Force Specialists
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {SPECIALISTS.map((s) => {
-                    const active = form.force_specialists.includes(s.value);
-                    return (
-                      <button
-                        key={s.value}
-                        onClick={() => {
-                          const next = active
-                            ? form.force_specialists.filter((v) => v !== s.value)
-                            : [...form.force_specialists, s.value];
-                          setForm({ ...form, force_specialists: next });
-                        }}
-                        className={cn(
-                          "rounded-lg border px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-                          active
-                            ? "brand-soft brand-text brand-border"
-                            : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                        )}
-                        title={s.description}
-                      >
-                        {s.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  Überschreibt die Auto-Dekomposition. Steps werden ignoriert, wenn Specialists
-                  forciert werden.
-                </p>
-              </div>
-
-              {/* Playbook Reference */}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Playbook-Referenz
-                </label>
-                <div className="relative">
-                  <FileText
-                    size={14}
-                    className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-                  />
-                  <input
-                    value={form.playbook_ref}
-                    onChange={(e) => setForm({ ...form, playbook_ref: e.target.value })}
-                    placeholder="z.B. playbooks/vertrags-review"
-                    className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-8 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                  />
-                </div>
-                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  Brain-Page-Slug mit zusätzlichem Kontext für den Agenten.
-                </p>
-              </div>
-
-              {/* Skip Critic */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setForm({ ...form, skip_critic: !form.skip_critic })}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!form.skip_critic}
+                aria-labelledby="ab-critic-label"
+                onClick={() => setForm({ ...form, skip_critic: !form.skip_critic })}
+                className={cn(
+                  "relative mt-0.5 h-5 w-10 shrink-0 rounded-full transition-[background-color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+                  !form.skip_critic ? "brand-bg" : "bg-[color:var(--ds-border-strong)]"
+                )}
+              >
+                <span
                   className={cn(
-                    "relative h-5 w-10 rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
-                    form.skip_critic ? "brand-bg" : "bg-[color:var(--ds-border)]"
+                    "absolute top-0.5 h-4 w-4 rounded-full bg-[color:var(--ds-surface)] transition-[left] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
+                    !form.skip_critic ? "left-5" : "left-0.5"
                   )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
-                      form.skip_critic ? "left-5" : "left-0.5"
-                    )}
-                  />
-                </button>
-                <div>
-                  <span className="text-sm text-[color:var(--ds-text)]">
-                    Critic-Phase überspringen
-                  </span>
-                  <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                    Deaktiviert die Qualitätsprüfung durch den Critic-Agenten.
-                  </p>
-                </div>
+                />
+              </button>
+              <div>
+                <span id="ab-critic-label" className="text-sm text-[color:var(--ds-text)]">
+                  Abschließende Qualitätsprüfung
+                </span>
+                <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                  Ein zweiter Durchgang prüft das Ergebnis auf Lücken und Widersprüche, bevor es
+                  angezeigt wird.
+                </p>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {!editing && selected && (
-            <div className="mx-auto max-w-2xl space-y-5">
-              {/* Description */}
-              {selected.description && (
-                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                    Beschreibung
-                  </h4>
-                  <p className="text-sm leading-relaxed text-[color:var(--ds-text)]">
-                    {selected.description}
-                  </p>
+        {!editing && selected && (
+          <div className="max-w-2xl space-y-5">
+            {selected.description && (
+              <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                {selected.description}
+              </p>
+            )}
+
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {selected.role && (
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                  <dt className="mb-1 text-xs text-[color:var(--ds-text-muted)]">
+                    Art der Aufgabe
+                  </dt>
+                  <dd className="text-sm font-medium text-[color:var(--ds-text)]">
+                    {AGENT_ROLES.find((r) => r.value === selected.role)?.label ?? "Individuell"}
+                  </dd>
                 </div>
               )}
-
-              {/* Metadata */}
-              <div className="grid grid-cols-2 gap-3">
-                {selected.role && (
-                  <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                    <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">
-                      {t("builder.role_label")}
-                    </div>
-                    <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {AGENT_ROLES.find((r) => r.value === selected.role)?.label ?? selected.role}
-                    </div>
-                  </div>
-                )}
-                {selected.model && (
-                  <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                    <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Modell</div>
-                    <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                      {selected.model}
-                    </div>
-                  </div>
-                )}
-                {selected.playbook_ref && (
-                  <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                    <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Playbook</div>
-                    <div className="truncate font-mono text-sm text-[color:var(--ds-text)]">
-                      {selected.playbook_ref}
-                    </div>
-                  </div>
-                )}
-                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                  <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Critic</div>
-                  <div className="text-sm text-[color:var(--ds-text)]">
-                    {selected.skip_critic ? "Deaktiviert" : "Aktiviert"}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                  <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Steps</div>
-                  <div className="text-sm text-[color:var(--ds-text)]">
-                    {selected.steps?.length ?? 0}
-                  </div>
-                </div>
+              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                <dt className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Qualitätsprüfung</dt>
+                <dd className="text-sm text-[color:var(--ds-text)]">
+                  {selected.skip_critic ? "Aus" : "Ein"}
+                </dd>
               </div>
-
-              {/* Prompt Template */}
-              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Prompt-Template
-                </h4>
-                <pre className="max-h-80 overflow-y-auto font-mono text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
-                  {selected.prompt_template}
-                </pre>
+              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                <dt className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Arbeitsschritte</dt>
+                <dd className="text-sm text-[color:var(--ds-text)] tabular-nums">
+                  {selected.steps?.length ? selected.steps.length : "automatisch"}
+                </dd>
               </div>
+            </dl>
 
-              {/* Steps */}
-              {selected.steps && selected.steps.length > 0 && (
-                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h4 className="mb-3 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                    Workflow Steps
-                  </h4>
-                  <div className="space-y-2">
-                    {selected.steps.map((step, idx) => (
-                      <div
-                        key={step.id}
-                        className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2"
-                      >
-                        <span className="mt-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
-                          #{idx + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="brand-text text-xs font-medium">
-                              {step.specialist}
-                            </span>
-                            {step.depends_on !== undefined && (
-                              <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                                → nach #{step.depends_on + 1}
-                              </span>
-                            )}
-                          </div>
-                          <p className="line-clamp-3 text-xs text-[color:var(--ds-text-muted)]">
-                            {step.prompt}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <section className="space-y-2">
+              <h3 className={sectionTitle}>Arbeitsanweisung</h3>
+              <p className="max-h-80 overflow-y-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                {selected.prompt_template}
+              </p>
+            </section>
 
-              {/* Force Specialists */}
-              {selected.force_specialists && selected.force_specialists.length > 0 && (
-                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                    Force Specialists
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selected.force_specialists.map((s) => (
-                      <span
-                        key={s}
-                        className="brand-soft brand-text brand-border rounded-lg border px-2 py-1 text-xs"
-                      >
-                        {s}
+            {selected.steps && selected.steps.length > 0 && (
+              <section className="space-y-2">
+                <h3 className={sectionTitle}>Arbeitsschritte</h3>
+                <ol className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+                  {selected.steps.map((step, idx) => (
+                    <li key={step.id} className="flex items-start gap-3 p-3">
+                      <span className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                        {idx + 1}.
                       </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                            {specialistLabel(step.specialist)}
+                          </span>
+                          {step.depends_on !== undefined && (
+                            <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                              nach Schritt {step.depends_on + 1}
+                            </span>
+                          )}
+                        </div>
+                        <p className="line-clamp-3 text-xs text-[color:var(--ds-text-muted)]">
+                          {step.prompt}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
 
-              {/* Timestamps */}
-              <div className="flex items-center gap-4 pt-2 text-xs text-[color:var(--ds-text-muted)]">
-                {selected.created_at && (
-                  <span>
-                    Erstellt:{" "}
-                    {new Date(selected.created_at).toLocaleString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
-                  </span>
-                )}
-                {selected.updated_at && (
-                  <span>
-                    Aktualisiert:{" "}
-                    {new Date(selected.updated_at).toLocaleString(
-                      lang === "en" ? "en-GB" : "de-DE"
-                    )}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+            {selected.force_specialists && selected.force_specialists.length > 0 && (
+              <section className="space-y-2">
+                <h3 className={sectionTitle}>Fest eingebundene Fachbereiche</h3>
+                <p className="text-sm text-[color:var(--ds-text)]">
+                  {selected.force_specialists.map(specialistLabel).join(", ")}
+                </p>
+              </section>
+            )}
+
+            {selected.playbook_ref && (
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Playbook:{" "}
+                <span className="text-[color:var(--ds-text)]">{selected.playbook_ref}</span>
+              </p>
+            )}
+
+            <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+              {selected.created_at && <span>Angelegt: {formatDateTime(selected.created_at)}</span>}
+              {selected.updated_at && (
+                <span>Aktualisiert: {formatDateTime(selected.updated_at)}</span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Run Dialog */}
       {runTarget && (
         <RunDialog
           template={runTarget}
@@ -1200,15 +1106,18 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
         />
       )}
 
-      {/* Run Error Toast */}
       {runError && (
-        <div className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-xl bg-[color:var(--ds-danger-text)] px-4 py-3 text-sm text-white shadow-2xl">
-          <AlertCircle size={16} />
+        <div
+          role="alert"
+          className="fixed right-4 bottom-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)] shadow-[var(--ds-shadow-3)]"
+        >
+          <AlertCircle size={16} className="shrink-0" aria-hidden="true" />
           {runError}
           <button
+            type="button"
             onClick={() => setRunError(null)}
-            aria-label="Fehlermeldung schließen"
-            className="ml-2 hover:opacity-70"
+            aria-label="Meldung schließen"
+            className="ml-2 shrink-0 hover:opacity-70"
           >
             <X size={14} />
           </button>

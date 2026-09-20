@@ -30,6 +30,8 @@ import type { ChatContextType } from "@/components/chat/chat-types";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
+import { useCopilotFocus } from "@/lib/copilot-focus";
+import { SelectionAsk } from "@/components/chat/selection-ask";
 
 // ── Dashboard-Seiten-Kontext-Map ─────────────────────────────────────
 // Bildet bekannte Dashboard-Routen auf einen lesbaren Seitentitel ab.
@@ -639,6 +641,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     };
   }, [open, mobileOpen, pathname, t, lang]);
 
+  const focus = useCopilotFocus();
   const routeContext: {
     type: ChatContextType;
     caseSlug?: string;
@@ -698,13 +701,18 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       }
     }
 
+    // A page showing one document announces it (lib/copilot-focus.ts); the
+    // Copilot then reads that document and the matter it belongs to.
+    const matter = caseSlug ?? focus?.caseSlug;
     return {
-      type: (caseSlug ? "case" : "global") as ChatContextType,
-      caseSlug,
-      pageSlug: undefined,
-      pageLabel,
+      type: (matter ? "case" : focus ? "brain_page" : "global") as ChatContextType,
+      caseSlug: matter,
+      pageSlug: focus?.slug,
+      pageLabel: focus?.title
+        ? `${pageLabel ? `${pageLabel} · ` : ""}${lang === "en" ? "Open document" : "Offenes Dokument"}: ${focus.title}`
+        : pageLabel,
     };
-  }, [pathname, lang, dashboardSnapshot]);
+  }, [pathname, lang, dashboardSnapshot, focus]);
 
   const pageExampleQueries = useMemo(() => {
     if (!pathname) return undefined;
@@ -815,12 +823,30 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     });
   }, []);
 
+  // "Markieren & fragen": open the Copilot with the marked passage pinned.
+  const handleAskSelection = useCallback(
+    (text: string) => {
+      window.dispatchEvent(new Event("subsumio:copilot:open"));
+      let attempts = 0;
+      const pin = () => {
+        if (chatRef.current) chatRef.current.quoteSelection(text, focus?.title);
+        else if (attempts++ < 30) window.setTimeout(pin, 100);
+      };
+      pin();
+    },
+    [focus?.title]
+  );
+
   const visibleAlerts = useMemo(
     () => proactiveAlerts.filter((a) => !dismissedAlerts.has(`${a.label}-${a.query}`)),
     [proactiveAlerts, dismissedAlerts]
   );
   return (
     <>
+      <SelectionAsk
+        onAsk={handleAskSelection}
+        label={lang === "en" ? "Ask Copilot" : "Copilot fragen"}
+      />
       {/* Mobile overlay */}
       <motion.div
         initial={false}
@@ -844,7 +870,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <motion.div
         ref={drawerRef}
         initial={false}
-        animate={{ x: mobileOpen ? 0 : "100%" }}
+        // Closed: removed from layout once the slide-out ends. A fixed drawer parked at
+        // translateX(100%) still widened the page to 780 px on phones.
+        animate={
+          mobileOpen
+            ? { x: 0, display: "block" }
+            : { x: "100%", transitionEnd: { display: "none" } }
+        }
         transition={panelTransition}
         drag={mobileOpen && !reduceMotion ? "x" : false}
         dragDirectionLock
@@ -1001,8 +1033,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               className={cn(
                 "ml-auto h-full w-1.5 transition-[width,background-color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
                 isResizing
-                  ? "w-2 bg-[var(--brand-primary)]"
-                  : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[var(--brand-primary)]"
+                  ? "w-2 bg-[color:var(--brand-solid)]"
+                  : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[color:var(--brand-solid)]"
               )}
             />
           </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, CheckCircle2, Loader2, Shield, MapPin } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   loadKanzleiSettings,
   saveKanzleiSettings,
@@ -10,12 +11,15 @@ import {
 } from "@/lib/kanzlei-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { csrfFetch } from "@/lib/csrf";
 
 export default function KanzleiSettingsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const [settings, setSettings] = useState<KanzleiSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -25,13 +29,13 @@ export default function KanzleiSettingsPage() {
         setSettings({ ...s, rechtsraumCountry: "AT", rechtsraumState: "AT" });
         setLoading(false);
       })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : t("settings.kanzlei.error_save"));
+      .catch(() => {
+        setLoadFailed(true);
         setLoading(false);
       });
-  }, [t]);
+  }, []);
 
-  const update = (field: keyof KanzleiSettings, value: string) => {
+  const update = (field: keyof KanzleiSettings, value: string | boolean) => {
     setSettings((s) => (s ? { ...s, [field]: value } : s));
     setSaved(false);
   };
@@ -39,13 +43,12 @@ export default function KanzleiSettingsPage() {
   async function handleSave() {
     if (!settings || saving) return;
     setSaving(true);
-    setError(null);
+    setSaveFailed(false);
     try {
       await saveKanzleiSettings(settings);
-      // Sync jurisdiction to User model so engineContext() can set the
-      // x-subsumio-jurisdiction header for jurisdiction-scoped law search.
+      // Sync jurisdiction to the user record so jurisdiction-scoped law search works.
       if (settings.rechtsraumCountry) {
-        await fetch("/api/settings/jurisdiction", {
+        await csrfFetch("/api/settings/jurisdiction", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jurisdiction: settings.rechtsraumCountry }),
@@ -53,253 +56,318 @@ export default function KanzleiSettingsPage() {
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("settings.kanzlei.error_save"));
+    } catch {
+      setSaveFailed(true);
     } finally {
       setSaving(false);
     }
   }
 
+  const header = (
+    <PageHeader
+      title={L("Kanzleiprofil", "Firm profile")}
+      description={L(
+        "Stammdaten Ihrer Kanzlei, die auf Rechnungen, Briefen und Schriftsätzen erscheinen.",
+        "Your firm's master data as it appears on invoices, letters and briefs."
+      )}
+      breadcrumbs={[
+        { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+        { label: t("settings.title"), href: "/dashboard/settings" },
+        { label: L("Kanzleiprofil", "Firm profile") },
+      ]}
+    />
+  );
+
   if (loading) {
     return (
-      <div
-        className="mx-auto flex max-w-3xl items-center gap-2 p-6 text-[color:var(--ds-text-muted)]"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 size={16} className="animate-spin" /> {t("retention.loading")}
+      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+        {header}
+        <div className="space-y-3" role="status" aria-label={L("Wird geladen", "Loading")}>
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
 
   if (!settings) {
     return (
-      <div className="mx-auto max-w-3xl p-6 text-[color:var(--ds-danger-text)]">
-        {error ?? t("kanzlei.err_load")}
+      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+        {header}
+        <div
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          {loadFailed
+            ? t("kanzlei.err_load")
+            : L("Keine Kanzleidaten vorhanden.", "No firm data available.")}{" "}
+          {L("Bitte laden Sie die Seite neu.", "Please reload the page.")}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title={t("settings.kanzlei.title")}
-        description={t("settings.kanzlei.description")}
-      />
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      {header}
 
-      {error && (
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Section
+        title={L("Kanzlei und Anschrift", "Firm and address")}
+        description={L(
+          "Erscheint im Briefkopf und auf jeder Rechnung.",
+          "Shown in the letterhead and on every invoice."
+        )}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field
+              id="k-name"
+              label={t("kanzlei.firm_name")}
+              value={settings.kanzleiName}
+              onChange={(v) => update("kanzleiName", v)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Field
+              id="k-street"
+              label={t("kanzlei.street")}
+              value={settings.street ?? ""}
+              onChange={(v) => update("street", v)}
+            />
+          </div>
           <Field
-            label={t("kanzlei.firm_name")}
-            value={settings.kanzleiName}
-            onChange={(v) => update("kanzleiName", v)}
+            id="k-zip"
+            label={L("PLZ", "Postcode")}
+            value={settings.zip ?? ""}
+            onChange={(v) => update("zip", v)}
           />
           <Field
-            label={t("kanzlei.street")}
-            value={settings.street ?? ""}
-            onChange={(v) => update("street", v)}
-          />
-          <Field label="PLZ" value={settings.zip ?? ""} onChange={(v) => update("zip", v)} />
-          <Field
+            id="k-city"
             label={t("kanzlei.city")}
             value={settings.city ?? ""}
             onChange={(v) => update("city", v)}
           />
           <Field
+            id="k-phone"
             label={t("kanzlei.phone")}
             value={settings.kanzleiTelefon ?? ""}
             onChange={(v) => update("kanzleiTelefon", v)}
           />
           <Field
-            label="E-Mail"
+            id="k-email"
+            label={L("E-Mail", "E-mail")}
             value={settings.kanzleiEmail ?? ""}
             onChange={(v) => update("kanzleiEmail", v)}
           />
-          <Field
-            label={t("kanzlei.website")}
-            value={settings.website ?? ""}
-            onChange={(v) => update("website", v)}
-          />
-          <Field label="USt-IdNr" value={settings.ustId} onChange={(v) => update("ustId", v)} />
-          <Field
-            label={t("kanzlei.tax_id")}
-            value={settings.taxNumber ?? ""}
-            onChange={(v) => update("taxNumber", v)}
-          />
-          <Field
-            label={t("kanzlei.bank")}
-            value={settings.bankName ?? ""}
-            onChange={(v) => update("bankName", v)}
-          />
-          <Field label="IBAN" value={settings.iban ?? ""} onChange={(v) => update("iban", v)} />
-          <Field label="BIC" value={settings.bic ?? ""} onChange={(v) => update("bic", v)} />
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2">
             <Field
-              label={t("kanzlei.logo_url")}
+              id="k-website"
+              label={t("kanzlei.website")}
+              value={settings.website ?? ""}
+              onChange={(v) => update("website", v)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Field
+              id="k-logo"
+              label={L("Logo (Webadresse, optional)", "Logo (web address, optional)")}
+              hint={L(
+                "Adresse eines Bildes Ihres Logos; es wird im Kopf von Rechnungen verwendet.",
+                "Address of an image of your logo; used in the invoice header."
+              )}
               value={settings.logoUrl ?? ""}
               onChange={(v) => update("logoUrl", v)}
             />
           </div>
         </div>
+      </Section>
 
-        <div className="flex items-center gap-3 pt-2">
-          <Button
-            className="gap-2 bg-[color:var(--brand-primary)] text-sm text-white hover:bg-[color:var(--brand-primary)]/90"
-            onClick={() => void handleSave()}
-            disabled={saving}
-            loading={saving}
-          >
-            {!saving && <Save size={14} />}
-            {t("settings.kanzlei.btn_save")}
-          </Button>
-          {saved && (
-            <span className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]">
-              <CheckCircle2 size={14} />
-              {t("settings.kanzlei.toast_saved")}
-            </span>
-          )}
+      <Section
+        title={L("Steuer und Bankverbindung", "Tax and bank details")}
+        description={L(
+          "Pflichtangaben auf Honorarnoten nach § 11 UStG.",
+          "Mandatory information on invoices under § 11 UStG."
+        )}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field
+            id="k-uid"
+            label={L("UID-Nummer", "VAT ID")}
+            value={settings.ustId}
+            onChange={(v) => update("ustId", v)}
+          />
+          <Field
+            id="k-taxno"
+            label={t("kanzlei.tax_id")}
+            value={settings.taxNumber ?? ""}
+            onChange={(v) => update("taxNumber", v)}
+          />
+          <div className="sm:col-span-2">
+            <Field
+              id="k-bank"
+              label={t("kanzlei.bank")}
+              value={settings.bankName ?? ""}
+              onChange={(v) => update("bankName", v)}
+            />
+          </div>
+          <Field
+            id="k-iban"
+            label="IBAN"
+            value={settings.iban ?? ""}
+            onChange={(v) => update("iban", v)}
+          />
+          <Field id="k-bic" label="BIC" value={settings.bic ?? ""} onChange={(v) => update("bic", v)} />
         </div>
-      </div>
+      </Section>
 
-      {/* Security: 2FA enforcement */}
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <div className="flex items-center gap-2">
-          <Shield size={16} className="text-[color:var(--ds-warning-text)]" />
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            {t("settings.security.title")}
-          </h2>
-        </div>
+      <Section
+        title={L("Anmeldung im Team", "Team sign-in")}
+        description={L(
+          "Gilt für alle Mitglieder Ihrer Kanzlei.",
+          "Applies to every member of your firm."
+        )}
+      >
         <label htmlFor="require2fa" className="flex cursor-pointer items-start gap-3">
           <input
             id="require2fa"
             type="checkbox"
             checked={settings.require2FA ?? false}
-            onChange={(e) => {
-              setSettings((s) => (s ? { ...s, require2FA: e.target.checked } : s));
-              setSaved(false);
-            }}
-            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-amber-600"
+            onChange={(e) => update("require2FA", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
           />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              2FA für alle Teammitglieder verpflichtend
+              {L(
+                "Zwei-Faktor-Anmeldung für alle verpflichtend",
+                "Require two-factor sign-in for everyone"
+              )}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Alle Kanzlei-Mitglieder müssen Zwei-Faktor-Authentifizierung aktivieren. Wird beim
-              nächsten Login erzwungen.
+              {L(
+                "Jedes Mitglied muss bei der nächsten Anmeldung einen Code aus einer Authenticator-App einrichten.",
+                "Every member must set up a code from an authenticator app at their next sign-in."
+              )}
             </p>
           </div>
         </label>
-        <div className="flex items-center gap-3 pt-2">
-          <Button
-            className="gap-2 bg-[color:var(--brand-primary)] text-sm text-white hover:bg-[color:var(--brand-primary)]/90"
-            onClick={() => void handleSave()}
-            disabled={saving}
-            loading={saving}
-          >
-            {!saving && <Save size={14} />}
-            {t("settings.kanzlei.btn_save")}
-          </Button>
-          {saved && (
-            <span className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]">
-              <CheckCircle2 size={14} />
-              {t("settings.kanzlei.toast_saved")}
-            </span>
-          )}
-        </div>
-      </div>
+      </Section>
 
-      {/* Rechtsraum: Land + Bundesland/Kanton */}
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-[color:var(--ds-info-text)]" />
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Rechtsraum</h2>
-        </div>
-        <p className="text-xs text-[color:var(--ds-text-muted)]">
-          Der österreichische Rechtsraum steuert Quellenisolation und Fristenberechnung. Gesetzliche
-          Grundlagen und Feiertage sind im konkreten Verfahren anwaltlich zu prüfen.
-        </p>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Section
+        title={L("Rechtsraum", "Jurisdiction")}
+        description={L(
+          "Bestimmt, welche Rechtsquellen durchsucht und welche Feiertage bei Fristen berücksichtigt werden. Derzeit ist Österreich (bundesweit) fest eingestellt.",
+          "Determines which legal sources are searched and which public holidays count for deadlines. Currently fixed to Austria (federal)."
+        )}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <label
               htmlFor="rechtsraum-country"
               className="text-xs text-[color:var(--ds-text-muted)]"
             >
-              Land
+              {L("Land", "Country")}
             </label>
             <select
               id="rechtsraum-country"
               value="AT"
               disabled
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
             >
               <option value="AT">Österreich</option>
             </select>
           </div>
           <div className="space-y-1">
             <label htmlFor="rechtsraum-state" className="text-xs text-[color:var(--ds-text-muted)]">
-              Geltungsbereich
+              {L("Geltungsbereich", "Scope")}
             </label>
             <select
               id="rechtsraum-state"
               value="AT"
               disabled
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
             >
               <option value="AT">Österreich (bundesweit)</option>
             </select>
           </div>
         </div>
-        <div className="flex items-center gap-3 pt-2">
-          <Button
-            className="gap-2 bg-[color:var(--brand-primary)] text-sm text-white hover:bg-[color:var(--brand-primary)]/90"
-            onClick={() => void handleSave()}
-            disabled={saving}
-            loading={saving}
+      </Section>
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--ds-border)] pt-4">
+        <Button onClick={() => void handleSave()} disabled={saving} loading={saving}>
+          {t("settings.kanzlei.btn_save")}
+        </Button>
+        {saved && (
+          <span
+            role="status"
+            className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]"
           >
-            {!saving && <Save size={14} />}
-            {t("settings.kanzlei.btn_save")}
-          </Button>
-          {saved && (
-            <span className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]">
-              <CheckCircle2 size={14} />
-              {t("settings.kanzlei.toast_saved")}
-            </span>
-          )}
-        </div>
+            <CheckCircle2 size={14} aria-hidden />
+            {t("settings.kanzlei.toast_saved")}
+          </span>
+        )}
+        {saveFailed && (
+          <span role="alert" className="text-sm text-[color:var(--ds-danger-text)]">
+            {L(
+              "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut.",
+              "Saving failed. Please try again."
+            )}
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+      <div>
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+        {description && (
+          <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+            {description}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function Field({
+  id,
   label,
+  hint,
   value,
   onChange,
 }: {
+  id: string;
   label: string;
+  hint?: string;
   value: string;
   onChange: (v: string) => void;
 }) {
-  const fieldId = `field-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="space-y-1">
-      <label htmlFor={fieldId} className="text-xs text-[color:var(--ds-text-muted)]">
+      <label htmlFor={id} className="text-xs text-[color:var(--ds-text-muted)]">
         {label}
       </label>
       <input
-        id={fieldId}
+        id={id}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
+      {hint && <p className="text-xs text-[color:var(--ds-text-subtle)]">{hint}</p>}
     </div>
   );
 }

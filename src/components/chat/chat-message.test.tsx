@@ -227,3 +227,50 @@ describe("ChatMessageBubble", () => {
     expect(screen.getByText("Tipp")).toBeInTheDocument();
   });
 });
+
+describe("ChatMessageBubble — answer rating", () => {
+  const answer: ChatMessage = {
+    id: "a1",
+    role: "assistant",
+    content: "Die Berufungsfrist beträgt vier Wochen.",
+    createdAt: "2026-09-19T10:00:00Z",
+  };
+
+  it("rates an answer and asks why after a down vote", () => {
+    const onFeedback = vi.fn();
+    const { rerender } = render(
+      <ChatMessageBubble
+        message={answer}
+        features={{ messageActions: true }}
+        onFeedback={onFeedback}
+      />
+    );
+    fireEvent.click(screen.getByLabelText("Hilfreiche Antwort"));
+    expect(onFeedback).toHaveBeenCalledWith("a1", "up");
+
+    rerender(
+      <ChatMessageBubble
+        message={{ ...answer, feedback: { rating: "down" } }}
+        features={{ messageActions: true }}
+        onFeedback={onFeedback}
+      />
+    );
+    expect(screen.getByLabelText("Nicht hilfreiche Antwort")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.click(screen.getByText("Quelle fehlt"));
+    expect(onFeedback).toHaveBeenLastCalledWith("a1", "down", "missing_source");
+  });
+
+  it("offers no rating on the user's own messages", () => {
+    render(
+      <ChatMessageBubble
+        message={{ ...answer, id: "u1", role: "user" }}
+        features={{ messageActions: true }}
+        onFeedback={vi.fn()}
+      />
+    );
+    expect(screen.queryByLabelText("Hilfreiche Antwort")).toBeNull();
+  });
+});

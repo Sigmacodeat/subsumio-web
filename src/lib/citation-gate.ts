@@ -4,6 +4,7 @@
  * Client code MUST NOT import from this file — use citation-gate-client.ts instead.
  */
 
+import { ASSISTANT_UNAVAILABLE_MESSAGE, isDegradedAnswer } from "./engine-degraded";
 import {
   groundCitations,
   groundLiteratureCitations,
@@ -180,7 +181,18 @@ export function createCitationGateStream(
               const parsed = JSON.parse(data) as Record<string, unknown>;
 
               if (typeof parsed.chunk === "string") {
+                // Engine diagnostics ("(no LLM available — …)") never reach the lawyer.
+                if (answerText === "" && isDegradedAnswer(parsed.chunk)) {
+                  parsed.chunk = ASSISTANT_UNAVAILABLE_MESSAGE;
+                  parsed.degraded = true;
+                }
                 answerText += parsed.chunk;
+              }
+
+              // The engine replaced the streamed draft after verification —
+              // ground the text the lawyer will actually read.
+              if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+                answerText = parsed.final_answer;
               }
 
               if (parsed.citations !== undefined) {

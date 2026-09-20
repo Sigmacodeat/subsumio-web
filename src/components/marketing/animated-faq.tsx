@@ -5,7 +5,8 @@
 // Single-open: opening one item closes the previous one smoothly.
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ChevronDown } from "lucide-react";
 import { EASE, StaggerContainer, StaggerItem } from "./motion-system";
 

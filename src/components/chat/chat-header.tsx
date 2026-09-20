@@ -28,6 +28,7 @@ import type { Jurisdiction, ChatSession } from "@/components/chat/chat-types";
 interface ChatHeaderProps {
   isStreaming?: boolean;
   features: {
+    modelSelector: boolean;
     modeSelector: boolean;
     caseSelector: boolean;
     jurisdictionSelector: boolean;
@@ -35,6 +36,8 @@ interface ChatHeaderProps {
     tokenWidget: boolean;
     exportChat: boolean;
   };
+  modelOverride?: string;
+  onModelChange: (model: string | undefined) => void;
   queryMode: QueryMode;
   onQueryModeChange: (mode: QueryMode) => void;
   jurisdiction: Jurisdiction;
@@ -71,11 +74,13 @@ export function ChatHeader(props: ChatHeaderProps) {
   useEffect(() => setActiveCaseSlug(props.selectedCaseSlug), [props.selectedCaseSlug]);
   // Agent-level 3-state toggle: Auto/Fast/Deep
   const agentMode =
-    props.queryMode === "conservative"
-      ? "fast"
-      : props.queryMode === "deep_matter"
-        ? "deep"
-        : "auto";
+    props.modelOverride === "auto"
+      ? "auto"
+      : props.queryMode === "conservative"
+        ? "fast"
+        : props.queryMode === "deep_matter"
+          ? "deep"
+          : "auto";
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   const stats = statsQuery.data;
@@ -381,10 +386,13 @@ export function ChatHeader(props: ChatHeaderProps) {
                   key={mode.value}
                   onClick={() => {
                     if (mode.value === "auto") {
+                      props.onModelChange("auto");
                       props.onQueryModeChange("balanced");
                     } else if (mode.value === "fast") {
+                      props.onModelChange("auto");
                       props.onQueryModeChange("conservative");
                     } else if (mode.value === "deep") {
+                      props.onModelChange("auto");
                       props.onQueryModeChange("deep_matter");
                     }
                   }}

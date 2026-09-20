@@ -4,7 +4,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Scale, AlertCircle } from "lucide-react";
+import { Scale, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLang } from "@/lib/use-lang";
@@ -34,12 +34,11 @@ export default function InvestigationLauncherPage() {
         `/dashboard/cases/${encodeURIComponent(caseSlug)}/investigation/${encodeURIComponent(result.run_id)}`
       );
     } catch (err) {
+      console.error("[investigation] start failed:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : lang === "en"
-            ? "Investigation could not be started."
-            : "Sachverhaltsprüfung konnte nicht gestartet werden."
+        lang === "en"
+          ? "The fact review could not be started. Please try again later."
+          : "Die Sachverhaltsprüfung konnte nicht gestartet werden. Bitte versuchen Sie es später erneut."
       );
       setLoading(false);
     }
@@ -74,9 +73,10 @@ export default function InvestigationLauncherPage() {
         <Button
           onClick={startInvestigation}
           disabled={loading}
-          className="gap-2 bg-[color:var(--brand-primary)] text-white hover:bg-[color:var(--brand-primary-hover)]"
+          loading={loading}
+          className="gap-2 whitespace-nowrap"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scale className="h-4 w-4" />}
+          {!loading && <Scale className="h-4 w-4" aria-hidden="true" />}
           {lang === "en" ? "Start new investigation" : "Neue Sachverhaltsprüfung starten"}
         </Button>
       </Card>

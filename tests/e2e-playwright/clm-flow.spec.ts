@@ -106,7 +106,7 @@ test.describe("CLM flow", () => {
     const generate = page.getByRole("button", { name: /lawsuit generate|klage generieren/i });
     await expect(generate).toBeEnabled();
     await generate.click();
-    await expect(page.getByText("KI-generiert · zu prüfen", { exact: true }).first()).toBeVisible({
+    await expect(page.getByText("Anwaltlich zu prüfen", { exact: true }).first()).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole("button", { name: /copy|kopieren/i })).toBeVisible();

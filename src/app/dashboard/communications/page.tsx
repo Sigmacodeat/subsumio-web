@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -22,7 +23,18 @@ import {
   AlertTriangle,
   Ban,
   Loader2,
+  MoreHorizontal,
+  Reply,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { useSidebarBadges } from "@/lib/queries/sidebar-badges";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { triageBatch, type TriageInput, type TriageCard } from "@/lib/triage";
@@ -32,7 +44,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReviewInboxTab } from "@/components/dashboard/review-inbox-tab";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatRelativeTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage } from "@/lib/types";
@@ -63,6 +75,8 @@ interface UnifiedMessage {
   caseSlug?: string;
   createdAt: string;
   read?: boolean;
+  /** A client's portal message the firm can answer in the portal. */
+  portalReplyable?: boolean;
 }
 
 const CHANNEL_ICON: Record<UnifiedMessage["channel"], React.ElementType> = {
@@ -138,7 +152,13 @@ function extractMessages(pagesByType: Record<string, BrainPage[]>): UnifiedMessa
       title: page.title,
       channel: "portal",
       body: (page.content as string) || (fm.message as string) || "",
-      sender: (fm.sender as string) || (fm.author as string) || "Mandant",
+      sender:
+        fm.sender === "lawyer"
+          ? `Kanzlei${fm.author ? ` (${String(fm.author)})` : ""}`
+          : fm.sender === "client" || !fm.sender
+            ? "Mandant"
+            : String(fm.sender),
+      portalReplyable: fm.sender !== "lawyer" && typeof fm.case_slug === "string",
       caseSlug: fm.case_slug as string | undefined,
       createdAt: (fm.created_at as string) || "",
       read: fm.read as boolean | undefined,
@@ -184,25 +204,19 @@ function extractMessages(pagesByType: Record<string, BrainPage[]>): UnifiedMessa
 }
 
 function timeLabel(lang: Lang, value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const now = Date.now();
-  const diff = now - date.getTime();
-  if (diff < 60_000) return lang === "en" ? "just now" : "gerade eben";
-  if (diff < 3_600_000) {
-    const mins = Math.floor(diff / 60_000);
-    return lang === "en" ? `${mins}m ago` : `vor ${mins} Min`;
+  // formatRelativeTime renders German wording and falls back to TT.MM.JJJJ after a week.
+  if (lang === "en") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-GB");
   }
-  if (diff < 86_400_000) {
-    const hrs = Math.floor(diff / 3_600_000);
-    return lang === "en" ? `${hrs}h ago` : `vor ${hrs} Std`;
-  }
-  return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatRelativeTime(value);
+}
+
+/** Triage deadlines arrive as TT.MM.JJJJ or ISO; normalise to TT.MM.JJJJ. */
+function deadlineLabel(value: string): string {
+  if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(value)) return value;
+  const out = formatDate(value);
+  return out === "—" ? value : out;
 }
 
 const I18N: Record<string, { de: string; en: string }> = {
@@ -214,23 +228,31 @@ const I18N: Record<string, { de: string; en: string }> = {
   refresh: { de: "Aktualisieren", en: "Refresh" },
   all: { de: "Alle", en: "All" },
   search_placeholder: { de: "Nachrichten durchsuchen…", en: "Search messages…" },
+  empty_title: { de: "Keine Nachrichten", en: "No messages" },
   empty: {
-    de: "Keine Nachrichten vorhanden. Sobald WhatsApp-, E-Mail- oder Portal-Nachrichten eingehen, erscheinen sie hier.",
-    en: "No messages yet. Once WhatsApp, email or portal messages arrive, they will appear here.",
+    de: "Sobald WhatsApp-, E-Mail- oder Portal-Nachrichten eingehen, erscheinen sie hier.",
+    en: "Once WhatsApp, email or portal messages arrive, they will appear here.",
   },
+  empty_filtered: {
+    de: "Keine Nachricht entspricht Kanal oder Suchbegriff.",
+    en: "No message matches the channel or search term.",
+  },
+  empty_review_action: { de: "Eingang prüfen", en: "Review intake" },
+  empty_connect_action: { de: "E-Mails importieren", en: "Import emails" },
   error: { de: "Nachrichten konnten nicht geladen werden.", en: "Failed to load messages." },
   unread: { de: "ungelesen", en: "unread" },
   to_case: { de: "Zur Akte", en: "To case" },
   mark_read: { de: "Als gelesen markieren", en: "Mark as read" },
   mark_unread: { de: "Als ungelesen markieren", en: "Mark as unread" },
-  triage_title: { de: "KI-Triage", en: "AI Triage" },
-  triage_accept: { de: "Akzeptieren", en: "Accept" },
-  triage_reject: { de: "Ablehnen", en: "Reject" },
-  triage_dismiss: { de: "Verwerfen", en: "Dismiss" },
+  triage_title: { de: "Dringlichkeit", en: "Urgency" },
+  triage_accept: { de: "Einordnung übernehmen", en: "Accept" },
+  triage_reject: { de: "Einordnung ablehnen", en: "Reject" },
+  triage_dismiss: { de: "Nachricht verwerfen", en: "Dismiss" },
+  more_actions: { de: "Weitere Aktionen", en: "More actions" },
   triage_deadline: { de: "Frist erstellen", en: "Create deadline" },
   triage_assign: { de: "Akte zuweisen", en: "Assign to case" },
   toast_read: { de: "Nachrichtenstatus aktualisiert", en: "Message status updated" },
-  toast_triage: { de: "Triage-Aktion ausgeführt", en: "Triage action completed" },
+  toast_triage: { de: "Einordnung gespeichert", en: "Triage action completed" },
   toast_error: { de: "Aktion fehlgeschlagen", en: "Action failed" },
 };
 
@@ -248,16 +270,39 @@ export default function CommunicationsPage() {
   const [assignTarget, setAssignTarget] = useState<UnifiedMessage | null>(null);
   const [assignCase, setAssignCase] = useState("");
   const [assignBusy, setAssignBusy] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<UnifiedMessage | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyBusy, setReplyBusy] = useState(false);
   const [view, setView] = useState<View>("messages");
   const [channel, setChannel] = useState<Channel>("all");
   const [search, setSearch] = useState("");
 
   // Deep link: /dashboard/communications?view=review opens the review inbox
   // directly (used by sidebar badge + dashboard action banner).
+  const explicitView = useRef(false);
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("view");
-    if (requested === "review" || requested === "messages") setView(requested);
+    if (requested === "review" || requested === "messages") {
+      explicitView.current = true;
+      setView(requested);
+    }
   }, []);
+
+  // The sidebar badge on "Kommunikation" counts open review-inbox items, not
+  // messages. Surface that same number on the "Eingang prüfen" segment.
+  const router = useRouter();
+  const badgesQuery = useSidebarBadges();
+  // Same query key as ReviewInboxTab, so the list is fetched once and the count
+  // on the segment always matches what the tab shows. The sidebar badge is only
+  // a fallback while the list loads (its server-side count can differ).
+  const reviewQuery = useQuery({
+    queryKey: ["review-inbox"],
+    queryFn: () => api.reviewInbox.list(),
+    staleTime: 30_000,
+  });
+  const reviewCount = reviewQuery.data
+    ? (reviewQuery.data.items?.length ?? 0)
+    : (badgesQuery.data?.["/dashboard/communications"]?.count ?? 0);
 
   const batchQuery = useQuery({
     queryKey: ["communications", "batch"],
@@ -332,6 +377,36 @@ export default function CommunicationsPage() {
     queryFn: () => api.cases.list({ limit: 200 }),
   });
 
+  async function sendPortalReply() {
+    const text = replyText.trim();
+    if (!replyTarget?.caseSlug || !text) return;
+    setReplyBusy(true);
+    try {
+      const res = await csrfFetch("/api/portal/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case_slug: replyTarget.caseSlug, message: text }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(
+          json?.error?.message ?? json?.message ?? "Antwort konnte nicht gesendet werden"
+        );
+      }
+      addToast({ type: "success", title: "Antwort steht im Mandantenportal" });
+      setReplyTarget(null);
+      setReplyText("");
+      await batchQuery.refetch();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Antwort konnte nicht gesendet werden",
+      });
+    } finally {
+      setReplyBusy(false);
+    }
+  }
+
   async function assignToCase(msg: UnifiedMessage, caseSlug: string) {
     if (!caseSlug) return;
     setAssignBusy(true);
@@ -370,6 +445,22 @@ export default function CommunicationsPage() {
       String(b.createdAt).localeCompare(String(a.createdAt))
     );
   }, [batchQuery.data, mailQuery.data]);
+
+  // Opened without ?view: when there are no messages but items await review,
+  // show the review inbox so the sidebar badge leads somewhere meaningful.
+  const autoSwitched = useRef(false);
+  useEffect(() => {
+    if (explicitView.current || autoSwitched.current) return;
+    if (batchQuery.isLoading || mailQuery.isLoading || reviewQuery.isLoading) return;
+    autoSwitched.current = true;
+    if (allMessages.length === 0 && reviewCount > 0) setView("review");
+  }, [
+    allMessages.length,
+    reviewCount,
+    batchQuery.isLoading,
+    mailQuery.isLoading,
+    reviewQuery.isLoading,
+  ]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: allMessages.length };
@@ -423,9 +514,19 @@ export default function CommunicationsPage() {
     { key: "portal", icon: User, label: lang === "en" ? "Portal" : "Portal" },
   ];
 
-  const VIEW_TABS: Array<{ key: View; label: string; icon: React.ElementType }> = [
-    { key: "messages", label: lang === "en" ? "Messages" : "Nachrichten", icon: InboxIcon },
-    { key: "review", label: lang === "en" ? "Review" : "Eingang prüfen", icon: ClipboardCheck },
+  const VIEW_TABS: Array<{ key: View; label: string; icon: React.ElementType; count: number }> = [
+    {
+      key: "messages",
+      label: lang === "en" ? "Messages" : "Nachrichten",
+      icon: InboxIcon,
+      count: allMessages.length,
+    },
+    {
+      key: "review",
+      label: lang === "en" ? "Review" : "Eingang prüfen",
+      icon: ClipboardCheck,
+      count: reviewCount,
+    },
   ];
 
   return (
@@ -457,22 +558,34 @@ export default function CommunicationsPage() {
       />
 
       {/* View toggle: Messages vs Review */}
-      <div className="flex items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-1">
+      <div
+        role="tablist"
+        aria-label={lang === "en" ? "View" : "Ansicht"}
+        className="inline-flex items-center gap-0.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-0.5"
+      >
         {VIEW_TABS.map((tab) => {
           const isActive = view === tab.key;
           return (
             <button
               key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => setView(tab.key)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-[background-color,color,box-shadow] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
                 isActive
-                  ? "brand-bg text-white"
-                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  ? "bg-[color:var(--ds-surface)] font-medium text-[color:var(--ds-text)] shadow-sm"
+                  : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               )}
             >
-              <tab.icon size={15} />
+              <tab.icon size={14} aria-hidden="true" />
               {tab.label}
+              {tab.count > 0 && (
+                <span className="rounded-full bg-[color:var(--ds-surface-2)] px-1.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -484,49 +597,42 @@ export default function CommunicationsPage() {
       {/* Messages view */}
       {view === "messages" && (
         <>
-          {/* Info banner */}
-          <div
-            className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
-            role="note"
-          >
-            <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-            <p className="brand-text text-xs leading-relaxed">{tr("description", lang)}</p>
-          </div>
-
-          {/* Channel tabs */}
-          <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--ds-border)]">
-            {tabs.map((tab) => {
-              const isActive = channel === tab.key;
-              const count = counts[tab.key] || 0;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setChannel(isActive ? "all" : tab.key)}
-                  className={cn(
-                    "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
-                    isActive
-                      ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
-                      : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                  )}
-                >
-                  <tab.icon size={15} />
-                  {tab.label}
-                  {count > 0 && (
-                    <span
-                      className={cn(
-                        "rounded-full px-1.5 py-0.5 text-xs font-medium",
-                        isActive
-                          ? "brand-bg text-white"
-                          : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
-                      )}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Channel tabs — only once there is something to filter */}
+          {(loading || allMessages.length > 0) && (
+            <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--ds-border)]">
+              {tabs.map((tab) => {
+                const isActive = channel === tab.key;
+                const count = counts[tab.key] || 0;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setChannel(isActive ? "all" : tab.key)}
+                    className={cn(
+                      "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                      isActive
+                        ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
+                        : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                    )}
+                  >
+                    <tab.icon size={15} />
+                    {tab.label}
+                    {count > 0 && (
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-xs font-medium",
+                          isActive
+                            ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                            : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Search */}
           {!loading && allMessages.length > 0 && (
@@ -547,7 +653,7 @@ export default function CommunicationsPage() {
                 <button
                   onClick={() => setSearch("")}
                   className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
-                  aria-label="Clear search"
+                  aria-label={lang === "en" ? "Clear search" : "Suche leeren"}
                 >
                   <X size={15} />
                 </button>
@@ -577,23 +683,50 @@ export default function CommunicationsPage() {
           )}
 
           {/* Empty state */}
-          {!loading && !error && filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <InboxIcon size={32} className="text-[color:var(--ds-text-muted)]" />
-              <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">
-                {tr("empty", lang)}
-              </p>
-            </div>
-          )}
+          {!loading &&
+            !error &&
+            filtered.length === 0 &&
+            (allMessages.length > 0 ? (
+              <EmptyState
+                icon={Search}
+                title={tr("empty_title", lang)}
+                description={tr("empty_filtered", lang)}
+                actionLabel={lang === "en" ? "Reset filter" : "Filter zurücksetzen"}
+                onAction={() => {
+                  setSearch("");
+                  setChannel("all");
+                }}
+              />
+            ) : reviewCount > 0 ? (
+              <EmptyState
+                icon={InboxIcon}
+                title={tr("empty_title", lang)}
+                description={
+                  lang === "en"
+                    ? `${reviewCount} items are waiting for review.`
+                    : `${reviewCount} ${reviewCount === 1 ? "Eintrag wartet" : "Einträge warten"} auf Ihre Prüfung.`
+                }
+                actionLabel={tr("empty_review_action", lang)}
+                onAction={() => setView("review")}
+              />
+            ) : (
+              <EmptyState
+                icon={InboxIcon}
+                title={tr("empty_title", lang)}
+                description={tr("empty", lang)}
+                actionLabel={tr("empty_connect_action", lang)}
+                onAction={() => router.push("/dashboard/email-import")}
+              />
+            ))}
 
-          {/* KI-Triage Summary Banner */}
+          {/* Urgency summary (rule-based classification, lib/triage) */}
           {!loading &&
             !error &&
             filtered.length > 0 &&
             triageSummary.critical + triageSummary.high > 0 && (
               <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Zap size={16} className="brand-text" />
+                  <Zap size={16} className="text-[color:var(--ds-text-muted)]" aria-hidden="true" />
                   <span className="text-sm font-semibold text-[color:var(--ds-text)]">
                     {tr("triage_title", lang)}
                   </span>
@@ -658,7 +791,7 @@ export default function CommunicationsPage() {
                           {lang === "en" ? chLabel.en : chLabel.de}
                         </span>
                         {!msg.read && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-primary)]" />
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-solid)]" />
                         )}
                         {card && (
                           <span
@@ -678,7 +811,7 @@ export default function CommunicationsPage() {
                         {card?.deadline && (
                           <span className="flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
                             <AlertTriangle size={10} />
-                            {card.deadline}
+                            {deadlineLabel(card.deadline)}
                           </span>
                         )}
                         <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
@@ -702,38 +835,26 @@ export default function CommunicationsPage() {
                             <ArrowUpRight size={11} />
                           </Link>
                         )}
+                        {msg.channel === "portal" && msg.portalReplyable && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyTarget(msg);
+                              setReplyText("");
+                            }}
+                            className="inline-flex items-center gap-1 text-[color:var(--brand-primary)] hover:underline"
+                          >
+                            <Reply size={11} aria-hidden="true" />
+                            {lang === "en" ? "Reply in portal" : "Im Portal antworten"}
+                          </button>
+                        )}
                       </div>
                       {/* Triage Actions */}
                       {card && (
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          <button
-                            onClick={() =>
-                              void triageActionMutation.mutateAsync({
-                                slug: msg.slug,
-                                action: "accept",
-                              })
-                            }
-                            disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
-                          >
-                            <CheckCircle2 size={12} />
-                            {tr("triage_accept", lang)}
-                          </button>
-                          <button
-                            onClick={() =>
-                              void triageActionMutation.mutateAsync({
-                                slug: msg.slug,
-                                action: "reject",
-                              })
-                            }
-                            disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
-                          >
-                            <Ban size={12} />
-                            {tr("triage_reject", lang)}
-                          </button>
                           {card.deadline && (
                             <button
+                              type="button"
                               onClick={() =>
                                 void triageActionMutation.mutateAsync({
                                   slug: msg.slug,
@@ -743,34 +864,74 @@ export default function CommunicationsPage() {
                                 })
                               }
                               disabled={triageActionMutation.isPending}
-                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-2 py-1 text-xs text-[color:var(--ds-attention-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-attention-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none"
                             >
-                              <Clock size={12} />
+                              <Clock size={12} aria-hidden="true" />
                               {tr("triage_deadline", lang)}
                             </button>
                           )}
-                          <button
-                            onClick={() =>
-                              void triageActionMutation.mutateAsync({
-                                slug: msg.slug,
-                                action: "dismiss",
-                              })
-                            }
-                            disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
-                          >
-                            <X size={12} />
-                            {tr("triage_dismiss", lang)}
-                          </button>
                           {!msg.caseSlug && (
                             <button
+                              type="button"
                               onClick={() => setAssignTarget(msg)}
-                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none"
                             >
-                              <ArrowUpRight size={12} />
+                              <ArrowUpRight size={12} aria-hidden="true" />
                               {tr("triage_assign", lang)}
                             </button>
                           )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void triageActionMutation.mutateAsync({
+                                slug: msg.slug,
+                                action: "accept",
+                              })
+                            }
+                            disabled={triageActionMutation.isPending}
+                            className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none"
+                          >
+                            <CheckCircle2 size={12} aria-hidden="true" />
+                            {tr("triage_accept", lang)}
+                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={tr("more_actions", lang)}
+                                title={tr("more_actions", lang)}
+                                className="rounded-md p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                              >
+                                <MoreHorizontal size={14} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem
+                                disabled={triageActionMutation.isPending}
+                                onSelect={() =>
+                                  void triageActionMutation.mutateAsync({
+                                    slug: msg.slug,
+                                    action: "reject",
+                                  })
+                                }
+                              >
+                                <Ban size={13} className="mr-2" aria-hidden="true" />
+                                {tr("triage_reject", lang)}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={triageActionMutation.isPending}
+                                onSelect={() =>
+                                  void triageActionMutation.mutateAsync({
+                                    slug: msg.slug,
+                                    action: "dismiss",
+                                  })
+                                }
+                              >
+                                <X size={13} className="mr-2" aria-hidden="true" />
+                                {tr("triage_dismiss", lang)}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       )}
                     </div>
@@ -796,6 +957,54 @@ export default function CommunicationsPage() {
           )}
         </>
       )}
+
+      {/* Reply in the client portal */}
+      <Dialog
+        open={!!replyTarget}
+        onOpenChange={(open) => !open && !replyBusy && setReplyTarget(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {lang === "en" ? "Reply in the client portal" : "Im Mandantenportal antworten"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {replyTarget?.body && (
+              <blockquote className="line-clamp-4 border-l-2 border-[color:var(--ds-border)] pl-3 text-xs text-[color:var(--ds-text-muted)]">
+                {replyTarget.body}
+              </blockquote>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="portal-reply">{lang === "en" ? "Your reply" : "Ihre Antwort"}</Label>
+              <Textarea
+                id="portal-reply"
+                rows={6}
+                maxLength={5000}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              />
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                {lang === "en"
+                  ? "The client sees this reply in the portal's message tab."
+                  : "Die Mandantin oder der Mandant sieht die Antwort im Nachrichten-Tab des Portals."}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReplyTarget(null)} disabled={replyBusy}>
+              {lang === "en" ? "Cancel" : "Abbrechen"}
+            </Button>
+            <Button
+              onClick={() => void sendPortalReply()}
+              disabled={replyBusy || !replyText.trim()}
+            >
+              {replyBusy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+              {lang === "en" ? "Send" : "Senden"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Assign to Case Dialog */}
       <Dialog open={!!assignTarget} onOpenChange={(open) => !open && setAssignTarget(null)}>

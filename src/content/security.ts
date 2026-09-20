@@ -34,7 +34,7 @@ export interface SecurityContent {
 export const SECURITY: SecurityContent = {
   metaTitle: "Subsumio Sicherheit — Datenschutz für Kanzleien in Österreich",
   metaDesc:
-    "EU-Cloud (Hetzner) mit AVV oder On-Premise im Enterprise-Tarif. Kein Training mit Mandantendaten, Zugriffsrechte pro Nutzer und Akte, automatisiert getestet.",
+    "EU-Cloud mit AVV oder On-Premise im Enterprise-Tarif. Kein Training mit Mandantendaten, Zugriffsrechte pro Nutzer und Akte, automatisiert getestet.",
   badge: "Sicherheit & Datenschutz",
   h1a: "Mandantendaten gehören der Kanzlei.",
   h1b: "Deshalb bleiben sie unter Ihrer Kontrolle.",
@@ -76,7 +76,7 @@ export const SECURITY: SecurityContent = {
     {
       title: "Verwaltete EU-Cloud (Solo, Kanzlei, Enterprise)",
       points: [
-        "EU-Hosting (Hetzner) mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
+        "EU-Hosting mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
         "Auftragsverarbeiter sind im AVV benannt",
         "Verschlüsselung bei Übertragung und Speicherung",
         "Löschanfragen an einer Stelle erledigt",
@@ -107,7 +107,7 @@ export const SECURITY: SecurityContent = {
     {
       icon: "Server",
       label: "EU-Hosting",
-      sub: "Rechenzentren in der EU (Hetzner)",
+      sub: "Rechenzentren in der EU",
     },
     {
       icon: "FileCheck",
@@ -154,7 +154,7 @@ export const SECURITY: SecurityContent = {
   faq: [
     {
       q: "Wo genau liegen meine Daten?",
-      a: "In der EU-Cloud: in Rechenzentren in der EU (Hetzner); der Standort ist im AVV benannt, ebenso der Anbieter des Sprachmodells, an den Anfragen für KI-Antworten gehen. On-Premise (Enterprise): auf Ihren eigenen Servern.",
+      a: "In der EU-Cloud: in Rechenzentren in der EU; der Standort ist im AVV benannt, ebenso der Anbieter des Sprachmodells, an den Anfragen für KI-Antworten gehen. On-Premise (Enterprise): auf Ihren eigenen Servern.",
     },
     {
       q: "Können Subsumio-Mitarbeiter meine Akten lesen?",

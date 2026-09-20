@@ -236,7 +236,7 @@ export const copy = {
       {
         icon: "Globe",
         title: "EU-Cloud oder On-Premise",
-        desc: "EU-Cloud (Hetzner) – oder On-Premise im Enterprise-Tarif.",
+        desc: "EU-Cloud – oder On-Premise im Enterprise-Tarif.",
       },
       {
         icon: "Eye",
@@ -305,7 +305,7 @@ export const copy = {
     faq: [
       {
         q: "Was passiert nachts mit meinen Daten?",
-        a: "Das SuperBrain geht die Dokumente durch, die tagsüber neu in Ihre Akten gekommen sind: Tatsachen werden erfasst, mit dem bestehenden Kanzleiwissen zusammengeführt und auf Widersprüche geprüft. Ihre Daten liegen dabei in der EU-Cloud (Hetzner) oder, im Enterprise-Tarif, On-Premise. Der Ablauf wird protokolliert.",
+        a: "Das SuperBrain geht die Dokumente durch, die tagsüber neu in Ihre Akten gekommen sind: Tatsachen werden erfasst, mit dem bestehenden Kanzleiwissen zusammengeführt und auf Widersprüche geprüft. Ihre Daten liegen dabei in der EU-Cloud oder, im Enterprise-Tarif, On-Premise. Der Ablauf wird protokolliert.",
       },
       {
         q: "Kann ich die nächtliche Prüfung abschalten oder einschränken?",

@@ -13,6 +13,7 @@ import { userJurisdiction } from "@/lib/citation-gate-client";
 import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
+import { resolveModelChoice } from "@/lib/model-choice";
 import { createHash } from "node:crypto";
 
 import { logger } from "@/lib/logger";
@@ -27,6 +28,8 @@ const thinkSchema = z.object({
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
   query_mode: z.enum(["conservative", "balanced", "deep_matter"]).default("balanced"),
   case_slug: z.string().optional(),
+  /** The user's model pick from the chat (catalogue id); clamped by the firm's chat floor. */
+  model: z.string().max(100).optional(),
 });
 
 export const POST = createHandler(
@@ -51,12 +54,14 @@ export const POST = createHandler(
       const safeBody = sanitizeObjectStrings(body);
 
       const engineMode = mapQueryModeToEngineMode(body.query_mode);
+      const model = await resolveModelChoice(ctx.user.id, body.model);
       const payload = {
         query: safeBody.query,
         ...(safeBody.instructions ? { instructions: safeBody.instructions } : {}),
         mode: engineMode,
         case_slug: safeBody.case_slug,
         query_mode: body.query_mode,
+        ...(model ? { model } : {}),
       };
 
       const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(

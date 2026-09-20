@@ -13,6 +13,8 @@ import {
   Pencil,
   Download,
   Reply,
+  ThumbsDown,
+  ThumbsUp,
   Lightbulb,
   Volume2,
   VolumeX,
@@ -24,9 +26,10 @@ import { linkCitationsInHtml } from "@/lib/citation-gate-client";
 import { useLang } from "@/lib/use-lang";
 import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
-import { type ChatMessage } from "@/components/chat/chat-types";
+import { type AnswerDownReason, type ChatMessage } from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
 import { modelDisplayName } from "@/lib/model-display";
+import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -43,7 +46,18 @@ interface ChatMessageBubbleProps {
   onToolCancel?: (toolCallId: string) => void;
   onToolRetry?: (toolCallId: string) => void;
   onFollowUp?: (query: string) => void;
+  /** Rate an assistant answer; a down vote may carry a reason. */
+  onFeedback?: (messageId: string, rating: "up" | "down", reason?: AnswerDownReason) => void;
+  /** Offer "In Akte speichern" on finished answers; preselects this matter ("" = choose). */
+  saveToMatterCase?: string;
 }
+
+const DOWN_REASONS: Array<{ value: AnswerDownReason; de: string; en: string }> = [
+  { value: "wrong", de: "Falsch", en: "Wrong" },
+  { value: "missing_source", de: "Quelle fehlt", en: "Source missing" },
+  { value: "incomplete", de: "Unvollständig", en: "Incomplete" },
+  { value: "other", de: "Anderes", en: "Other" },
+];
 
 function ChatMessageBubbleInner({
   message,
@@ -56,6 +70,8 @@ function ChatMessageBubbleInner({
   onToolCancel,
   onToolRetry,
   onFollowUp,
+  onFeedback,
+  saveToMatterCase,
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [showExplain, setShowExplain] = useState(false);
@@ -202,7 +218,11 @@ function ChatMessageBubbleInner({
           <CitationPanel
             data={
               {
-                citations: message.citations?.map((c) => ({ slug: c.slug, title: c.title })),
+                citations: message.citations?.map((c) => ({
+                  slug: c.slug,
+                  title: c.title,
+                  quote: c.quote,
+                })),
                 gaps: message.gaps,
                 grounding: message.grounding,
                 isStreaming: false,
@@ -262,9 +282,34 @@ function ChatMessageBubbleInner({
           </div>
         )}
 
-        {/* Action buttons (show on hover) */}
+        {/* Why an answer was unhelpful — asked once after a down vote */}
+        {!isUser &&
+          onFeedback &&
+          message.feedback?.rating === "down" &&
+          !message.feedback.reason && (
+            <div
+              className="flex flex-wrap items-center gap-1.5 text-[11px]"
+              role="group"
+              aria-label={lang === "en" ? "What was wrong?" : "Was war nicht gut?"}
+            >
+              <span className="text-[color:var(--ds-text-subtle)]">
+                {lang === "en" ? "What was wrong?" : "Was war nicht gut?"}
+              </span>
+              {DOWN_REASONS.map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => onFeedback(message.id, "down", r.value)}
+                  className="rounded-full border border-[color:var(--ds-border)] px-2 py-0.5 text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                >
+                  {lang === "en" ? r.en : r.de}
+                </button>
+              ))}
+            </div>
+          )}
+
+        {/* Action buttons: on hover, when focused with the keyboard, and always on touch screens */}
         {features?.messageActions && !message.isStreaming && (
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-[var(--ds-duration-normal)] group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-[var(--ds-duration-normal)] group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
             <button
               onClick={handleCopy}
               className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
@@ -323,6 +368,54 @@ function ChatMessageBubbleInner({
               >
                 <Reply size={12} />
               </button>
+            )}
+            {!isUser && onFeedback && !message.error && (
+              <>
+                <button
+                  onClick={() => onFeedback(message.id, "up")}
+                  className={cn(
+                    "inline-flex h-7 w-7 items-center justify-center rounded-lg transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                    message.feedback?.rating === "up"
+                      ? "text-[color:var(--brand-primary)]"
+                      : "text-[color:var(--ds-text-subtle)]"
+                  )}
+                  aria-label={lang === "en" ? "Helpful answer" : "Hilfreiche Antwort"}
+                  aria-pressed={message.feedback?.rating === "up"}
+                >
+                  <ThumbsUp size={12} />
+                </button>
+                <button
+                  onClick={() => onFeedback(message.id, "down")}
+                  className={cn(
+                    "inline-flex h-7 w-7 items-center justify-center rounded-lg transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                    message.feedback?.rating === "down"
+                      ? "text-[color:var(--ds-danger-text)]"
+                      : "text-[color:var(--ds-text-subtle)]"
+                  )}
+                  aria-label={lang === "en" ? "Unhelpful answer" : "Nicht hilfreiche Antwort"}
+                  aria-pressed={message.feedback?.rating === "down"}
+                >
+                  <ThumbsDown size={12} />
+                </button>
+              </>
+            )}
+            {!isUser && saveToMatterCase !== undefined && !message.error && message.content && (
+              <SaveToMatterButton
+                source="chat"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-lg p-0 text-[color:var(--ds-text-subtle)]"
+                defaultCase={saveToMatterCase}
+                defaultTitle={
+                  message.content
+                    .replace(/[#*_>`]/g, "")
+                    .trim()
+                    .split("\n")[0]
+                    .slice(0, 80) || "KI-Antwort"
+                }
+                content={message.content}
+                citations={message.grounding?.grounded_citations}
+              />
             )}
             {onExport && (
               <button

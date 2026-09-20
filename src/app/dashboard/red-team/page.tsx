@@ -15,6 +15,7 @@ import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
 import { unwrapApiBody } from "@/lib/api-body";
+import { CaseSelect } from "@/components/legal/case-select";
 const SEVERITY_COLORS: Record<string, string> = {
   high: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
@@ -103,11 +104,11 @@ export default function RedTeamPage() {
         </h2>
         <div className="grid gap-3">
           <div>
-            <Label>{t("redteam.case_slug")} *</Label>
-            <Input
+            <Label htmlFor="redteam-case">{t("redteam.case_slug")} *</Label>
+            <CaseSelect
+              id="redteam-case"
               value={form.case_slug}
-              onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
-              placeholder="legal/cases/2026-001"
+              onChange={(case_slug) => setForm({ ...form, case_slug })}
             />
           </div>
           <div>

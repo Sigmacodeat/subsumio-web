@@ -871,7 +871,7 @@ function TourOverlay({
               <span
                 className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ${
                   i === currentStep
-                    ? "w-6 bg-[color:var(--brand-primary)]"
+                    ? "w-6 bg-[color:var(--brand-solid)]"
                     : i < currentStep
                       ? "w-1.5 bg-[color:var(--brand-primary)]/50"
                       : "w-1.5 bg-[color:var(--ds-border)]"

@@ -17,23 +17,23 @@ vi.mock("@/components/ui/toast", () => ({
 describe("ContractRedlineViewer", () => {
   test("renders header with title", () => {
     render(<ContractRedlineViewer originalText="test" />);
-    expect(screen.getByText("Contract Redline")).toBeDefined();
+    expect(screen.getByText("Vertragsüberarbeitung")).toBeDefined();
   });
 
   test("shows empty state when no analysis has been run", () => {
     render(<ContractRedlineViewer originalText="test contract text" />);
-    expect(screen.getByText("Redline starten")).toBeDefined();
+    expect(screen.getByText("Überarbeitung starten")).toBeDefined();
   });
 
   test("disables run button when originalText is empty", () => {
     render(<ContractRedlineViewer originalText="" />);
-    const button = screen.getByText("Redline starten").closest("button");
+    const button = screen.getByText("Überarbeitung starten").closest("button");
     expect(button?.disabled).toBe(true);
   });
 
   test("enables run button when originalText has content", () => {
     render(<ContractRedlineViewer originalText="some contract" />);
-    const button = screen.getByText("Redline starten").closest("button");
+    const button = screen.getByText("Überarbeitung starten").closest("button");
     expect(button?.disabled).toBe(false);
   });
 

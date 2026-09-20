@@ -169,10 +169,10 @@ export function MatterWorkflowCockpit() {
         type: "success",
         title: `${reviewedDeadlines.length} Frist${reviewedDeadlines.length === 1 ? "" : "en"} in den Aktenkalender übernommen${vorfristCount > 0 ? ` (${vorfristCount} Vorfrist${vorfristCount === 1 ? "" : "en"} zusätzlich)` : ""}`,
       });
-    } catch (error) {
+    } catch {
       addToast({
         type: "error",
-        title: error instanceof Error ? error.message : "Kalendersynchronisierung fehlgeschlagen",
+        title: "Kalendersynchronisierung fehlgeschlagen",
       });
     } finally {
       setSyncing(false);
@@ -265,7 +265,7 @@ export function MatterWorkflowCockpit() {
             )}
           >
             <FileSearch size={13} aria-hidden="true" />
-            Superbrain: {score}% verstanden
+            Aktenverständnis {score} %
           </Badge>
         )}
       </div>

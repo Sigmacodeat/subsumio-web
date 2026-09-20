@@ -15,6 +15,7 @@ import { triageMessage, type TriageInput } from "@/lib/triage";
 import { dispatchWebhookEvent } from "@/lib/webhook-dispatch";
 import { createAutonomousTaskNotification } from "@/lib/comments";
 import { getStore } from "@/lib/auth/store";
+import { enqueuePostUploadTask } from "@/lib/post-upload-outbox";
 import { logger } from "@/lib/logger";
 
 const log = logger("autonomous-engine");
@@ -148,11 +149,16 @@ async function autonomousEngineHandler(_req: NextRequest): Promise<Response> {
 
 async function executeTask(
   task: AutonomousTask,
-  headers: HeadersInit
+  _systemHeaders: HeadersInit
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
 }> {
+  // The queue lives in the system brain, but every task acts on ONE firm's
+  // data: execute with that firm's headers. The system brain's headers read
+  // and wrote the wrong source (fail-closed engines rejected them outright).
+  if (!task.brain_id) throw new Error("task without brain_id");
+  const headers = engineHeadersForBrain(task.brain_id);
   switch (task.task_type) {
     case "deadline_followup":
       return await executeDeadlineFollowup(task, headers);
@@ -354,42 +360,41 @@ async function executeInboxTriage(
 
 async function executeDocumentAnalysis(
   task: AutonomousTask,
-  headers: HeadersInit
+  _headers: HeadersInit
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
 }> {
-  // Analyze document
   const { document_id, case_slug } = task.payload;
-
-  // Trigger analysis via engine API
-  const res = await fetch(`${ENGINE_URL}/api/legal/trigger-pipeline`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      doc_slug: document_id,
-      case_slug,
-    }),
-    signal: AbortSignal.timeout(30_000),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Analysis failed: ${res.status}`);
+  if (typeof document_id !== "string" || !document_id) {
+    throw new Error("document_id missing");
   }
+  // Analysis runs through the post-upload outbox: the same idempotent, billed
+  // path as an upload (the old call targeted a non-existent engine route and
+  // failed every minute). Scoped to the TASK's brain, never the system brain.
+  await enqueuePostUploadTask(
+    {
+      doc_slug: document_id,
+      case_slug: typeof case_slug === "string" ? case_slug : undefined,
+      brain_id: task.brain_id,
+      task_type: "analyze",
+    },
+    task.brain_id
+  );
 
   return {
     requiresApproval: false,
     data: {
       document_id,
       case_slug,
-      message: "Document analysis triggered",
+      message: "Document analysis queued",
     },
   };
 }
 
 async function executeWorkflowStart(
   task: AutonomousTask,
-  headers: HeadersInit
+  _headers: HeadersInit
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
@@ -413,14 +418,22 @@ async function executeWorkflowStart(
     };
   }
 
-  // Start workflow via API
-  const res = await fetch(`${ENGINE_URL}/api/workflows`, {
+  // Start the workflow as a supervisor agent run in the TASK's brain, with the
+  // standard spend cap (the old /api/workflows route never existed).
+  if (typeof prompt !== "string" || !prompt.trim()) {
+    throw new Error("workflow prompt missing");
+  }
+  const res = await fetch(`${ENGINE_URL}/api/agents/supervisor`, {
     method: "POST",
-    headers,
+    headers: { ...engineHeadersForBrain(task.brain_id), "Content-Type": "application/json" },
     body: JSON.stringify({
-      template_id,
-      case_slug,
-      prompt,
+      prompt: [
+        `Workflow: ${String(template_id ?? "custom")}`,
+        typeof case_slug === "string" && case_slug ? `Akte: ${case_slug}` : "",
+        prompt,
+      ]
+        .filter(Boolean)
+        .join("\n"),
     }),
     signal: AbortSignal.timeout(30_000),
   });

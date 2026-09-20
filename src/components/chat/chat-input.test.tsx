@@ -36,6 +36,20 @@ vi.mock("framer-motion", () => ({
   AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
+vi.mock("@/components/dashboard/model-selector", () => ({
+  ModelSelector: ({
+    selectedModelId,
+    onSelect,
+  }: {
+    selectedModelId?: string;
+    onSelect?: (id: string) => void;
+  }) => (
+    <button data-testid="model-selector" onClick={() => onSelect?.("gpt-4")}>
+      {selectedModelId ?? "Model"}
+    </button>
+  ),
+}));
+
 vi.mock("@/lib/api", () => ({
   api: {
     upload: {
@@ -59,7 +73,7 @@ function renderChatInput(props: Partial<React.ComponentProps<typeof ChatInput>> 
       isStreaming={false}
       disabled={false}
       placeholder="Nachricht eingeben…"
-      features={{ fileUpload: true }}
+      features={{ fileUpload: true, modelSelector: true }}
       {...props}
     />
   );
@@ -215,6 +229,13 @@ describe("ChatInput", () => {
     await waitFor(() => {
       expect(textarea).toHaveValue("Hallo Spracheingabe");
     });
+  });
+
+  it("selects a model via ModelSelector", async () => {
+    const onModelChange = vi.fn();
+    renderChatInput({ onModelChange });
+    fireEvent.click(screen.getByTestId("model-selector"));
+    await waitFor(() => expect(onModelChange).toHaveBeenCalledWith("gpt-4"));
   });
 
   it("does not send while IME is composing on Enter", async () => {

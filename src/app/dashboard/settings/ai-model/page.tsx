@@ -130,6 +130,7 @@ export default function AIModelSettingsPage() {
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden />
         <div className="space-y-1.5 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
           <p>{t("settings.aimodel.intro")}</p>
+          <p>{t("settings.aimodel.per_user_hint")}</p>
           <p className="text-xs text-[color:var(--ds-text-subtle)]">
             {updatedAt
               ? data.updatedByName

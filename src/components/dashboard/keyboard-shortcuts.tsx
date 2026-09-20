@@ -178,7 +178,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
                           className={cn(
                             "relative h-6 w-11 shrink-0 rounded-full transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                             singleKeyEnabled
-                              ? "bg-[color:var(--brand-primary)]"
+                              ? "bg-[color:var(--brand-solid)]"
                               : "bg-[color:var(--ds-border)]"
                           )}
                         >

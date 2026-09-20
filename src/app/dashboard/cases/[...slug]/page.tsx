@@ -3,15 +3,16 @@
 import {
   Loader2,
   Briefcase,
-  ArrowLeft,
   AlertTriangle,
   Archive,
   RotateCcw,
   PauseCircle,
 } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 // Direct file import — the matter-tabs barrel re-exports all 10 tabs, which
@@ -21,8 +22,10 @@ import { OverviewTab } from "@/components/legal/matter-tabs/overview-tab";
 // Lazy-load non-default tabs: only one tab renders at a time.
 // OverviewTab stays eager (the default view).
 const tabFallback = (
-  <div className="flex h-40 items-center justify-center" role="status" aria-live="polite">
-    <Loader2 size={20} className="brand-text animate-spin" />
+  <div className="space-y-3" role="status" aria-live="polite">
+    <Skeleton className="h-5 w-48" />
+    <Skeleton className="h-24 w-full" />
+    <Skeleton className="h-24 w-full" />
   </div>
 );
 const DocumentsTab = dynamic(
@@ -90,26 +93,27 @@ export type { CaseDetail } from "@/lib/matter-detail-types";
 export default function CaseDetailPage() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const router = useRouter();
 
   if (ctx.loading) {
-    return (
-      <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
-        <Loader2 size={24} className="brand-text animate-spin" />
-      </div>
-    );
+    return <div className="mx-auto w-full max-w-[1200px] p-4 md:p-6">{tabFallback}</div>;
   }
 
   if (!ctx.caseData) {
+    // The header above already names the problem; this offers the way back.
     return (
-      <div className="flex h-full flex-col items-center justify-center space-y-4">
-        <Briefcase size={48} className="text-[color:var(--ds-border)]" />
-        <p className="text-[color:var(--ds-text-muted)]">{t("cases.detail_not_found")}</p>
-        <Button variant="primary" className="brand-bg brand-bg gap-2 text-white" asChild>
-          <Link href="/dashboard/cases">
-            <ArrowLeft size={16} />
-            {t("cases.detail_back")}
-          </Link>
-        </Button>
+      <div className="mx-auto w-full max-w-[720px] p-4 md:p-6">
+        <EmptyState
+          icon={Briefcase}
+          title={t("cases.detail_not_found")}
+          description={
+            lang === "en"
+              ? "The matter may have been archived or you may not have access to it."
+              : "Die Akte wurde möglicherweise archiviert, oder Ihnen fehlt die Berechtigung."
+          }
+          actionLabel={t("cases.detail_back")}
+          onAction={() => router.push("/dashboard/cases")}
+        />
       </div>
     );
   }
@@ -117,9 +121,9 @@ export default function CaseDetailPage() {
   const { caseData, activeTab } = ctx;
 
   return (
-    <div className="mx-auto flex h-full max-w-[1200px] min-w-0 flex-col space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto flex h-full w-full max-w-[1200px] min-w-0 flex-col">
       {/* Save errors / conflict warnings / archived banner */}
-      <div aria-live="assertive">
+      <div aria-live="assertive" className="empty:hidden">
         {ctx.saveError && (
           <div
             className="flex items-center gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-6 py-2 text-sm text-[color:var(--ds-danger-text)]"
@@ -152,8 +156,8 @@ export default function CaseDetailPage() {
             <Archive size={14} aria-hidden="true" className="shrink-0" />
             <span>
               {lang === "en"
-                ? `Archived${caseData.archivedAt ? ` on ${new Date(caseData.archivedAt).toLocaleDateString("en-GB")}` : ""}${caseData.archivedBy ? ` by ${caseData.archivedBy}` : ""}`
-                : `Archiviert${caseData.archivedAt ? ` am ${new Date(caseData.archivedAt).toLocaleDateString("de-DE")}` : ""}${caseData.archivedBy ? ` von ${caseData.archivedBy}` : ""}`}
+                ? `Archived${caseData.archivedAt ? ` on ${formatDate(caseData.archivedAt)}` : ""}${caseData.archivedBy ? ` by ${caseData.archivedBy}` : ""}`
+                : `Archiviert${caseData.archivedAt ? ` am ${formatDate(caseData.archivedAt)}` : ""}${caseData.archivedBy ? ` von ${caseData.archivedBy}` : ""}`}
             </span>
             {ctx.userRole === "admin" || ctx.userRole === "lawyer" ? (
               <div className="ml-auto flex items-center gap-1">
@@ -184,7 +188,7 @@ export default function CaseDetailPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="min-w-0 flex-1 overflow-x-auto overflow-y-auto p-4 md:p-6 lg:p-8">
+      <div className="min-w-0 flex-1 p-4 md:p-6">
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "activity" && <ActivityTab />}
         {activeTab === "documents" && <DocumentsTab />}
@@ -209,12 +213,12 @@ export default function CaseDetailPage() {
           "phone-notes",
           "emails",
         ].includes(activeTab) && (
-          <div className="flex h-full flex-col items-center justify-center space-y-3 py-20">
-            <AlertTriangle size={32} className="text-[color:var(--ds-border)]" />
-            <p className="text-sm text-[color:var(--ds-text-muted)]">
-              {t("casesdetail.tab_unavailable")}
-            </p>
-          </div>
+          <EmptyState
+            icon={AlertTriangle}
+            title={t("casesdetail.tab_unavailable")}
+            actionLabel={t("cases.detail_back")}
+            onAction={() => router.push("/dashboard/cases")}
+          />
         )}
       </div>
     </div>

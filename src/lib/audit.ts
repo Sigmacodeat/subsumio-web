@@ -368,6 +368,7 @@ export async function listAuditLogs(opts: {
   brainId: string;
   action?: string;
   entityType?: string;
+  entityId?: string;
   from?: string;
   to?: string;
   limit?: number;
@@ -388,6 +389,10 @@ export async function listAuditLogs(opts: {
       if (opts?.entityType) {
         conditions.push(`entity_type = $${paramIdx++}`);
         params.push(opts.entityType);
+      }
+      if (opts?.entityId) {
+        conditions.push(`entity_id = $${paramIdx++}`);
+        params.push(opts.entityId);
       }
       if (opts?.from) {
         conditions.push(`created_at >= $${paramIdx++}`);
@@ -462,6 +467,7 @@ export async function listAuditLogs(opts: {
     return entries.filter((e) => {
       if (opts?.action && !e.action.includes(opts.action)) return false;
       if (opts?.entityType && e.entityType !== opts.entityType) return false;
+      if (opts?.entityId && e.entityId !== opts.entityId) return false;
       if (opts?.from && e.timestamp < opts.from) return false;
       if (opts?.to && e.timestamp > opts.to) return false;
       return true;

@@ -6,6 +6,7 @@ import { Search, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { navForIndustry } from "@/components/dashboard/sidebar";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { useMe } from "@/lib/queries/auth";
 import type { DashboardKey } from "@/content/dashboard";
 
@@ -96,19 +97,22 @@ export default function DirectoryPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("directory.search_placeholder")}
+          aria-label={t("directory.search_placeholder")}
           className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           autoFocus
         />
       </div>
 
-      <div className="text-xs text-[color:var(--ds-text-muted)]">
-        {filtered.length} / {allEntries.length} {t("directory.items")}
-      </div>
+      {query.trim() && (
+        <div className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+          {filtered.length} / {allEntries.length} {t("directory.items")}
+        </div>
+      )}
 
       <div className="space-y-6">
         {grouped.map(([sectionKey, entries]) => (
           <div key={sectionKey}>
-            <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
+            <h2 className="mb-3 text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
               {t(sectionKey as DashboardKey)}
             </h2>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -129,9 +133,12 @@ export default function DirectoryPage() {
           </div>
         ))}
         {filtered.length === 0 && (
-          <div className="py-12 text-center text-sm text-[color:var(--ds-text-muted)]">
-            {t("directory.no_results")}
-          </div>
+          <EmptyState
+            icon={Search}
+            title={t("directory.no_results")}
+            actionLabel="Suche leeren"
+            onAction={() => setQuery("")}
+          />
         )}
       </div>
     </div>

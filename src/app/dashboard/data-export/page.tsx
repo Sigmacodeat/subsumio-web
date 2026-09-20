@@ -3,14 +3,51 @@
 import { useState, useRef } from "react";
 import { Download, FileJson, Shield, Loader2, Database, Upload, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/queries/auth";
-import { useDataExportBackup } from "@/lib/queries/settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
+/** Anwaltsverständliche Namen der exportierten Datensatzarten. */
+const TYPE_LABELS: Record<string, string> = {
+  legal_case: "Akten",
+  legal_contact: "Kontakte",
+  invoice: "Rechnungen",
+  deadline: "Fristen",
+  legal_deadline: "Fristen",
+  document_draft: "Entwürfe",
+  signature_request: "Signaturanfragen",
+  agent_action: "Freigaben",
+  audit_log: "Protokolleinträge",
+  judgement: "Entscheidungen",
+};
+
+type RestorePage = {
+  slug: string;
+  title: string;
+  type?: string;
+  content?: string;
+  frontmatter?: Record<string, unknown>;
+};
+
+function downloadJson(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+const today = () => new Date().toISOString().split("T")[0];
+
 export default function DataExportPage() {
   const { t } = useLang();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
@@ -24,7 +61,6 @@ export default function DataExportPage() {
 
   const meQuery = useMe();
   const isAdmin = meQuery.data?.user?.role === "admin";
-  const backupQuery = useDataExportBackup();
 
   async function exportData() {
     setLoading(true);
@@ -33,174 +69,230 @@ export default function DataExportPage() {
       const data = (await api.dataExport.gdpr()) as {
         statistics?: { total_pages?: number; by_type?: Record<string, number> };
       };
-
       setStats({
         total: data.statistics?.total_pages ?? 0,
         byType: data.statistics?.by_type ?? {},
       });
-
-      // Download as JSON file
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `subsumio-export-${new Date().toISOString().split("T")[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("dataexport.error_export"));
+      downloadJson(data, `subsumio-export-${today()}.json`);
+    } catch {
+      setError("Der Export konnte nicht erstellt werden. Bitte versuchen Sie es erneut.");
     } finally {
       setLoading(false);
     }
   }
 
+  async function createBackup() {
+    setBackupLoading(true);
+    setBackupError(null);
+    try {
+      const res = await fetch("/api/data-export/backup", {
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!res.ok) throw new Error("backup_failed");
+      const data = await res.json();
+      downloadJson(data, `subsumio-sicherung-${today()}.json`);
+    } catch {
+      setBackupError(
+        "Die Sicherung konnte nicht erstellt werden. Bitte versuchen Sie es in einigen Minuten erneut."
+      );
+    } finally {
+      setBackupLoading(false);
+    }
+  }
+
+  async function restoreFromFile(file: File) {
+    setRestoreNotice(null);
+    setBackupError(null);
+    let pages: RestorePage[] = [];
+    try {
+      const data = JSON.parse(await file.text());
+      pages = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.pages)
+          ? data.pages
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
+    } catch {
+      setBackupError("Die Datei ist keine gültige Sicherungsdatei von Subsumio.");
+      return;
+    }
+    // Nur Einträge mit Inhalt einspielen — ein leerer Inhalt würde vorhandene Texte löschen.
+    const restorable = pages.filter(
+      (p) => p?.slug && p?.title && typeof p.content === "string" && p.content.trim().length > 0
+    );
+    if (restorable.length === 0) {
+      setBackupError(
+        "Diese Datei enthält keine Dokumenttexte und kann deshalb nicht eingespielt werden. Bestehende Einträge bleiben unverändert."
+      );
+      return;
+    }
+    const ok = await confirm({
+      title: "Sicherung einspielen",
+      message: `${restorable.length} ${restorable.length === 1 ? "Eintrag wird" : "Einträge werden"} eingespielt. Vorhandene Einträge mit derselben Kennung werden dabei überschrieben.`,
+      confirmLabel: "Einspielen",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setRestoreLoading(true);
+    let restored = 0;
+    let failed = 0;
+    for (const page of restorable) {
+      try {
+        await api.brain.createPage({
+          slug: page.slug,
+          title: page.title,
+          type: page.type,
+          content: page.content,
+          frontmatter: page.frontmatter,
+        });
+        restored++;
+      } catch {
+        failed++;
+      }
+    }
+    setRestoreLoading(false);
+    setRestoreNotice(
+      failed > 0
+        ? `${restored} Einträge wiederhergestellt, ${failed} konnten nicht eingespielt werden.`
+        : `${restored} ${restored === 1 ? "Eintrag" : "Einträge"} wiederhergestellt.`
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("dataexport.title")}
-        description={t("dataexport.description")}
+        description="Laden Sie die strukturierten Daten Ihrer Kanzlei in einem maschinenlesbaren Format herunter."
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("dataexport.breadcrumb") },
         ]}
       />
 
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 md:p-5">
         <div className="flex items-start gap-3">
-          <Shield size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
+          <Shield
+            size={18}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+          />
           <div>
-            <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              Ihre Daten gehören Ihnen
-            </p>
-            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Nach Art. 20 DSGVO haben Sie das Recht, Ihre personenbezogenen Daten in einem
-              strukturierten, gängigen und maschinenlesbaren Format zu erhalten. Der Export umfasst
-              alle Ihre Akten, Kontakte, Rechnungen, Fristen, Zeiten, Auslagen und Dokumente aus
-              Ihrem Kanzleiwissen.
+            <h2 className="text-sm font-medium text-[color:var(--ds-text)]">
+              Datenexport nach Art. 20 DSGVO
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              Der Export enthält Akten, Kontakte, Rechnungen, Fristen, Entwürfe,
+              Signaturanfragen, Freigaben, Protokolleinträge und gespeicherte Entscheidungen —
+              jeweils mit Titel und strukturierten Angaben als JSON-Datei. Dokumenttexte und
+              hochgeladene Dateien sind nicht enthalten.
             </p>
           </div>
         </div>
 
         <Button
           variant="primary"
-          className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-sm text-white hover:bg-[color:var(--signal-success-800)]"
+          className="gap-2 whitespace-nowrap"
           onClick={exportData}
           disabled={loading || !isAdmin}
-          title={isAdmin ? undefined : "Nur Kanzlei-Admins können den Kanzlei-Export erstellen."}
         >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          {loading ? t("dataexport.btn_exporting") : t("dataexport.btn_json")}
+          {loading ? (
+            <Loader2 size={14} className="animate-spin" aria-hidden />
+          ) : (
+            <Download size={14} aria-hidden />
+          )}
+          {loading ? "Export wird erstellt …" : "Export herunterladen"}
         </Button>
         {!meQuery.isLoading && !isAdmin && (
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Der Export enthält alle Akten der Kanzlei und kann nur von Kanzlei-Admins erstellt
-            werden. Ihre eigenen Kontodaten exportieren Sie unter Einstellungen → Konto.
+            Der Export enthält Daten der gesamten Kanzlei und kann nur von der
+            Kanzleiverwaltung erstellt werden. Ihre eigenen Kontodaten exportieren Sie unter
+            Einstellungen → Konto.
           </p>
         )}
-      </div>
 
-      {error && (
-        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
-          {error}
-        </div>
-      )}
-
-      {stats && (
-        <div className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
-          <div className="flex items-center gap-2">
-            <FileJson size={16} className="text-[color:var(--ds-success-text)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-success-text)]">
-              Export erfolgreich
-            </span>
+        {error && (
+          <div
+            role="alert"
+            className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+          >
+            {error}
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-            <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-              <div className="text-xl font-bold text-[color:var(--ds-text)]">{stats.total}</div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamt</div>
+        )}
+
+        {stats && (
+          <div
+            role="status"
+            className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
+          >
+            <div className="flex items-center gap-2">
+              <FileJson size={14} aria-hidden className="text-[color:var(--ds-success-text)]" />
+              <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                Export heruntergeladen — <span className="tabular-nums">{stats.total}</span>{" "}
+                Einträge
+              </span>
             </div>
-            {Object.entries(stats.byType).map(([type, count]) => (
-              <div
-                key={type}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center"
-              >
-                <div className="text-xl font-bold text-[color:var(--ds-text)]">{count}</div>
-                <div className="text-xs text-[color:var(--ds-text-muted)]">{type}</div>
-              </div>
-            ))}
+            {Object.keys(stats.byType).length > 0 && (
+              <p className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                {Object.entries(stats.byType)
+                  .map(([type, count]) => `${TYPE_LABELS[type] ?? "Sonstige"}: ${count}`)
+                  .join(" · ")}
+              </p>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </section>
 
-      {/* Admin-Only: Full Backup */}
+      {/* Nur Kanzleiverwaltung: Sicherung */}
       {isAdmin && (
-        <div className="brand-border brand-soft/5 space-y-4 rounded-xl border p-4">
+        <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 md:p-5">
           <div className="flex items-start gap-3">
-            <Database size={18} className="brand-text mt-0.5 shrink-0" />
+            <Database
+              size={18}
+              aria-hidden
+              className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+            />
             <div>
-              <p className="text-sm font-medium text-[color:var(--ds-text)]">Voll-Backup (Admin)</p>
-              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Exportiert ALLE Brain-Pages als vollständiges JSON-Backup. Nützlich für Migrationen,
-                Compliance-Archivierung und Disaster Recovery.
+              <h2 className="text-sm font-medium text-[color:var(--ds-text)]">
+                Verzeichnis-Sicherung
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                Lädt eine Liste aller Einträge Ihres Kanzleiwissens mit Titel, Kennung und
+                strukturierten Angaben herunter — etwa für die Archivierung oder einen
+                Anbieterwechsel. Dokumenttexte sind darin nicht enthalten.
               </p>
             </div>
           </div>
           <Button
             variant="outline"
-            className="brand-border brand-text brand-bg/10 gap-2 text-sm"
-            onClick={async () => {
-              setBackupLoading(true);
-              setBackupError(null);
-              try {
-                const data =
-                  backupQuery.data ??
-                  (await fetch("/api/data-export/backup", {
-                    signal: AbortSignal.timeout(30_000),
-                  }).then((r) => r.json()));
-                const blob = new Blob([JSON.stringify(data, null, 2)], {
-                  type: "application/json",
-                });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `subsumio-backup-${new Date().toISOString().split("T")[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-              } catch (e) {
-                setBackupError(e instanceof Error ? e.message : t("dataexport.error_backup"));
-              } finally {
-                setBackupLoading(false);
-              }
-            }}
+            className="gap-2 whitespace-nowrap"
+            onClick={createBackup}
             disabled={backupLoading}
           >
             {backupLoading ? (
-              <Loader2 size={14} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" aria-hidden />
             ) : (
-              <Download size={14} />
+              <Download size={14} aria-hidden />
             )}
-            {backupLoading ? t("dataexport.btn_backing_up") : t("dataexport.btn_backup")}
+            {backupLoading ? "Sicherung wird erstellt …" : "Sicherung herunterladen"}
           </Button>
-          {backupError && (
-            <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
-              {backupError}
-            </div>
-          )}
 
-          {/* Restore */}
+          {/* Einspielen */}
           <div className="border-t border-[color:var(--ds-border)] pt-4">
             <div className="flex items-start gap-3">
-              <Upload size={18} className="brand-text mt-0.5 shrink-0" />
+              <Upload
+                size={18}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+              />
               <div className="flex-1">
-                <p className="text-sm font-medium text-[color:var(--ds-text)]">
-                  Backup einspielen (Restore)
-                </p>
-                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                  Stellt ein zuvor erstelltes Voll-Backup wieder her. Vorhandene Pages mit gleichem
-                  Slug werden überschrieben.
+                <h3 className="text-sm font-medium text-[color:var(--ds-text)]">
+                  Sicherung einspielen
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                  Spielt Einträge aus einer Sicherungsdatei wieder ein. Nur Einträge mit
+                  Dokumenttext werden übernommen; vorhandene Einträge mit derselben Kennung werden
+                  überschrieben. Vor dem Einspielen fragen wir nach.
                 </p>
               </div>
             </div>
@@ -209,66 +301,46 @@ export default function DataExportPage() {
               type="file"
               accept="application/json,.json"
               className="hidden"
+              aria-label="Sicherungsdatei auswählen"
               onChange={async (e) => {
                 const file = e.target.files?.[0];
-                if (!file) return;
-                setRestoreLoading(true);
-                setRestoreNotice(null);
-                setBackupError(null);
-                try {
-                  const text = await file.text();
-                  const data = JSON.parse(text);
-                  const pages: Array<{
-                    slug: string;
-                    title: string;
-                    type?: string;
-                    content?: string;
-                    frontmatter?: Record<string, unknown>;
-                  }> = Array.isArray(data) ? data : (data.pages ?? []);
-                  let restored = 0;
-                  for (const page of pages) {
-                    if (!page.slug || !page.title) continue;
-                    await api.brain.createPage({
-                      slug: page.slug,
-                      title: page.title,
-                      type: page.type,
-                      content: page.content,
-                      frontmatter: page.frontmatter,
-                    });
-                    restored++;
-                  }
-                  setRestoreNotice(`${restored} Pages wiederhergestellt.`);
-                } catch (err) {
-                  setBackupError(
-                    err instanceof Error ? err.message : t("dataexport.error_restore")
-                  );
-                } finally {
-                  setRestoreLoading(false);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                if (file) await restoreFromFile(file);
               }}
             />
             <Button
               variant="outline"
-              className="brand-border brand-text brand-bg/10 mt-3 gap-2 text-sm"
+              className="mt-3 gap-2 whitespace-nowrap"
               onClick={() => fileInputRef.current?.click()}
               disabled={restoreLoading}
             >
               {restoreLoading ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={14} className="animate-spin" aria-hidden />
               ) : (
-                <Upload size={14} />
+                <Upload size={14} aria-hidden />
               )}
-              {restoreLoading ? t("dataexport.btn_restoring") : t("dataexport.btn_restore")}
+              {restoreLoading ? "Wird eingespielt …" : "Sicherungsdatei auswählen"}
             </Button>
             {restoreNotice && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]">
-                <CheckCircle2 size={14} />
+              <div
+                role="status"
+                className="mt-3 flex items-center gap-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]"
+              >
+                <CheckCircle2 size={14} aria-hidden />
                 {restoreNotice}
               </div>
             )}
           </div>
-        </div>
+
+          {backupError && (
+            <div
+              role="alert"
+              className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+            >
+              {backupError}
+            </div>
+          )}
+        </section>
       )}
     </div>
   );

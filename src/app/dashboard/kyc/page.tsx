@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Loader2, Plus, ShieldCheck, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +53,7 @@ const RISK_FACTORS = [
 ] as const;
 type RiskKey = (typeof RISK_FACTORS)[number][0];
 
-const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("de-AT") : "—");
+const fmtDate = (iso?: string) => formatDate(iso);
 const selectClass =
   "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm";
 
@@ -68,7 +71,10 @@ async function send(url: string, method: string, body: unknown) {
     missing?: string[];
   } | null;
   if (!res.ok) {
-    const err = new Error(json?.message || json?.error || `HTTP ${res.status}`) as Error & {
+    // Server messages for this route are German domain texts; never show a bare status code.
+    const err = new Error(
+      json?.message || "Die Aktion konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut."
+    ) as Error & {
       missing?: string[];
     };
     err.missing = json?.details?.missing ?? json?.missing;
@@ -153,8 +159,8 @@ export default function KYCPage() {
       const c = cases.find((x) => x.slug === slug);
       if (!c)
         return slug.startsWith("legal/intake") || slug.includes("intake")
-          ? `Mandatsanfrage ${slug.split("/").pop()}`
-          : slug;
+          ? "Mandatsanfrage"
+          : "Akte";
       const nr = caseFrontmatter(c).case_number;
       return nr ? `${nr} – ${c.title}` : c.title;
     },
@@ -390,29 +396,24 @@ export default function KYCPage() {
         </form>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div
+        className={draft ? "grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : "grid gap-6"}
+      >
         <section aria-label="Prüfungen" className="space-y-2">
           {loading ? (
-            <div className="flex justify-center py-20" role="status" aria-live="polite">
-              <Loader2
-                size={24}
-                className="animate-spin text-[color:var(--ds-text-muted)]"
-                aria-hidden
-              />
+            <div className="space-y-2" aria-busy="true">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+              ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
-              <ShieldCheck
-                size={32}
-                className="mb-3 text-[color:var(--ds-text-muted)]"
-                aria-hidden
-              />
-              <p className="text-sm font-medium">Noch keine Identitätsprüfungen</p>
-              <p className="mt-1 max-w-sm text-xs text-[color:var(--ds-text-muted)]">
-                Legen Sie für jede neue Partei eine Prüfung an, bevor Sie den Auftrag annehmen (§ 8b
-                RAO).
-              </p>
-            </div>
+            <EmptyState
+              icon={ShieldCheck}
+              title="Noch keine Identitätsprüfungen"
+              description="Legen Sie für jede neue Partei eine Prüfung an, bevor Sie den Auftrag annehmen (§ 8b RAO)."
+              actionLabel="Identitätsprüfung anlegen"
+              onAction={() => setShowCreate(true)}
+            />
           ) : (
             items.map((v) => (
               <button
@@ -877,7 +878,7 @@ export default function KYCPage() {
                     .reverse()
                     .map((h, i) => (
                       <li key={i}>
-                        {new Date(h.at).toLocaleString("de-AT")} · {h.by} ·{" "}
+                        {formatDateTime(h.at)} · {h.by} ·{" "}
                         {
                           {
                             created: "angelegt",

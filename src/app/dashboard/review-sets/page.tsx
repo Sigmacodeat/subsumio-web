@@ -29,8 +29,11 @@ import {
   Loader2,
   FileText,
 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import type { BrainPage } from "@/lib/types";
 import {
-  DECISION_COLORS,
   REVIEW_DECISION_LABELS_DE,
   PRIVILEGE_TYPE_LABELS_DE,
   REDACTION_CODE_LABELS_DE,
@@ -57,6 +60,18 @@ interface ReviewSet {
     updated_at?: string;
   };
 }
+
+/** Decision colours through the semantic tokens (no fixed hex values). */
+const DECISION_TOKEN: Record<ReviewDecision, string> = {
+  responsive: "var(--ds-success-text)",
+  non_responsive: "var(--ds-text-muted)",
+  privileged: "var(--ds-warning-text)",
+  redact: "var(--ds-danger-text)",
+  withhold: "var(--ds-info-text)",
+};
+
+/** Plain-language failure text — never the raw server message. */
+const SAVE_FAILED = "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.";
 
 const DECISIONS: ReviewDecision[] = [
   "responsive",
@@ -85,7 +100,8 @@ const REDACTIONS: RedactionCode[] = [
 export default function ReviewSetsPage() {
   const { t } = useLang();
   const confirm = useConfirm();
-  const _lang = useLang().lang;
+  const { addToast } = useToast();
+  const [cases, setCases] = useState<BrainPage[]>([]);
 
   const [sets, setSets] = useState<ReviewSet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +111,6 @@ export default function ReviewSetsPage() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newCaseSlug, setNewCaseSlug] = useState("");
@@ -103,9 +118,22 @@ export default function ReviewSetsPage() {
   const [newBatesPrefix, setNewBatesPrefix] = useState("");
   const [newBatesStart, setNewBatesStart] = useState(1);
 
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+  const showToast = useCallback(
+    (msg: string) => addToast({ type: "success", title: msg }),
+    [addToast]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    api.cases
+      .list({ limit: 200 })
+      .then((list) => {
+        if (!cancelled) setCases(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const loadSets = useCallback(async () => {
@@ -114,8 +142,8 @@ export default function ReviewSetsPage() {
     try {
       const data = await api.legal.reviewSets.list({ limit: 100 });
       setSets(data as unknown as ReviewSet[]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError("Die Prüfsets konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
     } finally {
       setLoading(false);
     }
@@ -166,8 +194,8 @@ export default function ReviewSetsPage() {
       setNewBatesPrefix("");
       setNewBatesStart(1);
       await loadSets();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
@@ -182,8 +210,8 @@ export default function ReviewSetsPage() {
     try {
       await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
       await loadSets();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
@@ -198,8 +226,8 @@ export default function ReviewSetsPage() {
     try {
       await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
       await loadSets();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
@@ -214,8 +242,8 @@ export default function ReviewSetsPage() {
     try {
       await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
       await loadSets();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
@@ -227,8 +255,9 @@ export default function ReviewSetsPage() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `privilege-log-${selectedSet.slug.replace(/\//g, "-")}.csv`;
+    a.download = `privilegienverzeichnis-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   async function handleDelete() {
@@ -241,30 +270,27 @@ export default function ReviewSetsPage() {
       showToast(t("review_sets.success_deleted" as DashboardKey));
       setSelectedSlug(null);
       await loadSets();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      setError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading && sets.length === 0) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center" role="status" aria-live="polite">
-        <Loader2 className="h-6 w-6 animate-spin text-[color:var(--brand-primary)]" />
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("review_sets.title" as DashboardKey)}
         description={t("review_sets.description" as DashboardKey)}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("review_sets.title" as DashboardKey) },
+        ]}
         actions={
           <Button
             variant="primary"
-            className="brand-bg gap-2 text-sm text-white"
+            className="gap-2 whitespace-nowrap"
             onClick={() => setShowCreate(true)}
           >
             <Plus size={14} />
@@ -277,17 +303,16 @@ export default function ReviewSetsPage() {
         <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertCircle size={16} />
           {error}
-          <button className="ml-auto text-xs underline" onClick={() => setError(null)}>
+          <button
+            className="ml-auto rounded px-1 text-base leading-none"
+            onClick={() => setError(null)}
+            aria-label="Hinweis schließen"
+          >
             ×
           </button>
         </div>
       )}
 
-      {toast && (
-        <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] shadow-lg">
-          {toast}
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -300,6 +325,7 @@ export default function ReviewSetsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("review_sets.search" as DashboardKey)}
+            aria-label={t("review_sets.search" as DashboardKey)}
             className="pl-9"
           />
         </div>
@@ -326,22 +352,26 @@ export default function ReviewSetsPage() {
         </Button>
       </div>
 
+      {loading && sets.length === 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
       {!loading && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border)] py-16 text-center">
-          <FileSearch size={32} className="mb-3 text-[color:var(--ds-text-subtle)]" />
-          <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">
-            {t("review_sets.empty" as DashboardKey)}
-          </p>
-          <Button
-            variant="primary"
-            className="brand-bg mt-4 gap-2 text-sm text-white"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} />
-            {t("review_sets.new" as DashboardKey)}
-          </Button>
-        </div>
+        <EmptyState
+          icon={FileSearch}
+          title={
+            sets.length === 0
+              ? t("review_sets.empty" as DashboardKey)
+              : "Keine Prüfsets für diese Auswahl."
+          }
+          actionLabel={sets.length === 0 ? t("review_sets.new" as DashboardKey) : undefined}
+          onAction={sets.length === 0 ? () => setShowCreate(true) : undefined}
+        />
       )}
 
       {/* Set cards */}
@@ -360,7 +390,7 @@ export default function ReviewSetsPage() {
               <button
                 key={s.slug}
                 onClick={() => setSelectedSlug(s.slug)}
-                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,box-shadow] duration-[var(--ds-duration-fast)] hover:border-[color:var(--ds-border-strong)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -382,11 +412,19 @@ export default function ReviewSetsPage() {
                     {stats.total} {t("review_sets.documents" as DashboardKey)}
                   </span>
                 </div>
-                <div className="mt-3 flex gap-3 text-xs">
-                  <span className="text-[color:var(--ds-success-text)]">{stats.responsive} ✓</span>
-                  <span className="text-[color:var(--ds-warning-text)]">{stats.privileged} ⚠</span>
-                  <span className="text-[color:var(--ds-danger-text)]">{stats.redacted} ✗</span>
-                  <span className="text-[color:var(--ds-text-subtle)]">{stats.unreviewed} ?</span>
+                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                  <span>
+                    {stats.responsive} {t("review_sets.stats_responsive" as DashboardKey)}
+                  </span>
+                  <span>
+                    {stats.privileged} {t("review_sets.stats_privileged" as DashboardKey)}
+                  </span>
+                  <span>
+                    {stats.redacted} {t("review_sets.stats_redacted" as DashboardKey)}
+                  </span>
+                  <span>
+                    {stats.unreviewed} {t("review_sets.stats_unreviewed" as DashboardKey)}
+                  </span>
                 </div>
               </button>
             );
@@ -508,12 +546,13 @@ export default function ReviewSetsPage() {
                         </label>
                         <select
                           value={doc.decision}
+                          aria-label={`${t("review_sets.decision" as DashboardKey)}: ${doc.title}`}
                           onChange={(e) =>
                             handleDocDecision(doc.slug, e.target.value as ReviewDecision)
                           }
                           disabled={saving}
                           className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs"
-                          style={{ color: DECISION_COLORS[doc.decision] }}
+                          style={{ color: DECISION_TOKEN[doc.decision] }}
                         >
                           {DECISIONS.map((d) => (
                             <option key={d} value={d}>
@@ -528,6 +567,7 @@ export default function ReviewSetsPage() {
                         </label>
                         <select
                           value={doc.privilegeType}
+                          aria-label={`${t("review_sets.privilege_type" as DashboardKey)}: ${doc.title}`}
                           onChange={(e) =>
                             handleDocPrivilege(doc.slug, e.target.value as PrivilegeType)
                           }
@@ -547,6 +587,7 @@ export default function ReviewSetsPage() {
                         </label>
                         <select
                           value={doc.redactionCode ?? ""}
+                          aria-label={`${t("review_sets.redaction_code" as DashboardKey)}: ${doc.title}`}
                           onChange={(e) =>
                             handleDocRedaction(doc.slug, e.target.value as RedactionCode)
                           }
@@ -585,17 +626,26 @@ export default function ReviewSetsPage() {
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder={t("reviewsets.ph_name")}
+                aria-label={t("review_sets.title_label" as DashboardKey)}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                 {t("review_sets.case" as DashboardKey)}
               </label>
-              <Input
+              <select
                 value={newCaseSlug}
                 onChange={(e) => setNewCaseSlug(e.target.value)}
-                placeholder="case-slug"
-              />
+                aria-label={t("review_sets.case" as DashboardKey)}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              >
+                <option value="">Ohne Aktenbezug</option>
+                {cases.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
@@ -604,7 +654,7 @@ export default function ReviewSetsPage() {
               <Input
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="..."
+                aria-label={t("review_sets.description_label" as DashboardKey)}
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -615,6 +665,7 @@ export default function ReviewSetsPage() {
                 <Input
                   value={newBatesPrefix}
                   onChange={(e) => setNewBatesPrefix(e.target.value)}
+                  aria-label={t("review_sets.bates_prefix" as DashboardKey)}
                   placeholder="SUB-"
                 />
               </div>
@@ -627,6 +678,7 @@ export default function ReviewSetsPage() {
                   inputMode="numeric"
                   value={newBatesStart}
                   onChange={(e) => setNewBatesStart(Number(e.target.value))}
+                  aria-label={t("review_sets.bates_start" as DashboardKey)}
                 />
               </div>
             </div>
@@ -637,7 +689,6 @@ export default function ReviewSetsPage() {
             </Button>
             <Button
               variant="primary"
-              className="brand-bg text-white"
               onClick={handleCreate}
               disabled={saving || !newTitle}
             >

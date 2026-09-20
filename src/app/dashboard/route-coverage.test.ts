@@ -23,6 +23,7 @@ const COMMAND_PALETTE_PATH = join(process.cwd(), "src/components/dashboard/comma
 const EMBEDDED_ROUTES = new Set([
   "litigation-analytics", // linked from analytics hub page
   "adoption-analytics", // linked from analytics hub page + settings hub
+  "matter-access", // per matter, linked from the matter header (needs ?case=)
 ]);
 
 // Routes that are sub-pages of other routes (not standalone pages needing nav entry).

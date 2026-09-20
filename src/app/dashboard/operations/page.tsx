@@ -4,13 +4,13 @@ import { engineHeadersForBrain } from "@/lib/engine";
 import { fetchOperationsData, type OperationsData } from "@/lib/operations-data";
 import OperationsCockpit from "./operations-cockpit";
 
-export const metadata = { title: "Operations Cockpit" };
+export const metadata = { title: "Offene Vorgänge" };
 export const dynamic = "force-dynamic";
 
 export default async function OperationsPage() {
   const user = await getSessionUser();
   if (!user) {
-    redirect("/login");
+    redirect("/at/login");
   }
 
   // Fetch initial data server-side for instant first paint.

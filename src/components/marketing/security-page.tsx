@@ -196,7 +196,7 @@ export default function SecurityPage() {
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]"
         >
-          <h2 className="mb-2 text-sm font-bold [color:var(--mk-text)]">{t.disclosureTitle}</h2>
+          <h3 className="mb-2 text-sm font-bold [color:var(--mk-text)]">{t.disclosureTitle}</h3>
           <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{t.disclosureText}</p>
         </Reveal>
       </Section>

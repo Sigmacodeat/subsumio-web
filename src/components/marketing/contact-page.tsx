@@ -10,7 +10,7 @@ import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system
 const CONTENT = {
   badge: "Kontakt",
   h1a: "Sprechen Sie mit unserem Team.",
-  h1b: "Wir antworten innerhalb eines Werktages.",
+  h1b: "Antwort binnen eines Werktags.",
   sub: "Fragen zu Subsumio, On-Premise, dem Enterprise-Tarif oder einer Partnerschaft? Schreiben Sie uns.",
   channelsTitle: "So erreichen Sie uns",
   channels: [

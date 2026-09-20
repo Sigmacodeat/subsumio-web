@@ -75,25 +75,25 @@ describe("CitationLink", () => {
 });
 
 describe("GroundingBadge", () => {
-  it("shows 'Corpus nicht geprüft' when corpusChecked is false", () => {
+  it("shows 'Rechtsquellen nicht geprüft' when corpusChecked is false", () => {
     render(<GroundingBadge verified={0} unverified={0} corpusChecked={false} />);
-    expect(screen.getByText("Corpus nicht geprüft")).toBeTruthy();
+    expect(screen.getByText("Rechtsquellen nicht geprüft")).toBeTruthy();
   });
 
   it("shows verified count badge when verified > 0", () => {
     render(<GroundingBadge verified={3} unverified={0} corpusChecked={true} />);
-    expect(screen.getByText("3 verifiziert")).toBeTruthy();
+    expect(screen.getByText("3 geprüft")).toBeTruthy();
   });
 
   it("shows unverified count badge when unverified > 0", () => {
     render(<GroundingBadge verified={0} unverified={2} corpusChecked={true} />);
-    expect(screen.getByText("2 nicht verifiziert")).toBeTruthy();
+    expect(screen.getByText("2 ungeprüft")).toBeTruthy();
   });
 
   it("shows both badges when both > 0", () => {
     render(<GroundingBadge verified={3} unverified={2} corpusChecked={true} />);
-    expect(screen.getByText("3 verifiziert")).toBeTruthy();
-    expect(screen.getByText("2 nicht verifiziert")).toBeTruthy();
+    expect(screen.getByText("3 geprüft")).toBeTruthy();
+    expect(screen.getByText("2 ungeprüft")).toBeTruthy();
   });
 
   it("renders nothing when both counts are 0 and corpus was checked", () => {
@@ -216,17 +216,17 @@ describe("AttorneyReviewWarning", () => {
 
   it("renders warning when unverified citations exist", () => {
     render(<AttorneyReviewWarning verified={2} unverified={1} />);
-    expect(screen.getByText(/1 Zitat nicht im Corpus verifiziert/)).toBeTruthy();
+    expect(screen.getByText(/1 Zitat nicht in den Rechtsquellen gefunden/)).toBeTruthy();
   });
 
   it("uses plural for multiple unverified citations", () => {
     render(<AttorneyReviewWarning verified={0} unverified={3} />);
-    expect(screen.getByText(/3 Zitate nicht im Corpus verifiziert/)).toBeTruthy();
+    expect(screen.getByText(/3 Zitate nicht in den Rechtsquellen gefunden/)).toBeTruthy();
   });
 
   it("renders warning when no corpus check was done", () => {
     render(<AttorneyReviewWarning verified={0} unverified={0} />);
-    expect(screen.getByText(/Keine Corpus-Prüfung durchgeführt/)).toBeTruthy();
+    expect(screen.getByText(/Keine Prüfung gegen die Rechtsquellen/)).toBeTruthy();
   });
 
   it("has role='alert' for accessibility", () => {

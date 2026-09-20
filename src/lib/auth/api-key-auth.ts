@@ -16,7 +16,7 @@ import { hashApiKey } from "@/lib/api-keys";
 import { getApiKeyStore, type StoredApiKey } from "@/lib/api-key-store";
 import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
 import { env } from "@/lib/env";
-import type { EngineContext } from "@/lib/engine";
+import { addCallerIdentity, type EngineContext } from "@/lib/engine";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/auth/api-key-auth");
@@ -67,6 +67,7 @@ export async function verifyApiKey(
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+  addCallerIdentity(headers, brainId, user);
 
   // Fire-and-forget: update lastUsedAt
   store

@@ -48,7 +48,8 @@ export const ENGINE_URL = CONFIGURED_ENGINE_URL || "http://localhost:3001";
  */
 function createSignedIdentityToken(
   sourceId: string,
-  matterScope: string[] | "all"
+  matterScope: string[] | "all",
+  caller?: { userId: string; role: string; orgId?: string | null }
 ): string | undefined {
   const secret = env("SUBSUMIO_WEB_API_KEY");
   if (!secret) return undefined;
@@ -57,6 +58,13 @@ function createSignedIdentityToken(
   const payload = JSON.stringify({
     sourceId,
     matterScope,
+    ...(caller
+      ? {
+          userId: caller.userId,
+          role: caller.role,
+          ...(caller.orgId ? { orgId: caller.orgId } : {}),
+        }
+      : {}),
     exp: Math.floor(Date.now() / 1000) + 300, // 5 min TTL
   });
   const payloadB64 = Buffer.from(payload, "utf8").toString("base64url");
@@ -188,7 +196,28 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (user.jurisdiction) {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;
   }
+  addCallerIdentity(headers, brainId, effectiveUser);
   return { headers, brainId, plan, user: effectiveUser, billing, supportSession };
+}
+
+/**
+ * Signs who is calling into the engine headers, so the engine applies the
+ * matter access rules (walls, restricted matters, grants — see
+ * server/src/core/matter-access.ts) to this person. Every engine call made
+ * on behalf of a signed-in user or an API key carries it.
+ */
+export function addCallerIdentity(
+  headers: Record<string, string>,
+  brainId: string,
+  user: Pick<User, "id" | "role" | "orgId">
+): Record<string, string> {
+  const token = createSignedIdentityToken(brainId, "all", {
+    userId: user.id,
+    role: user.role,
+    orgId: user.orgId,
+  });
+  if (token) headers["x-subsumio-identity-token"] = token;
+  return headers;
 }
 
 /**

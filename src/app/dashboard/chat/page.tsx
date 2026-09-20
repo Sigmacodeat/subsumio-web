@@ -20,6 +20,7 @@ function ChatPageInner() {
   const pageSlug = searchParams.get("page") ?? undefined;
   const initialQuery = searchParams.get("q") ?? undefined;
   const initialSessionId = searchParams.get("session") ?? undefined;
+  const initialSessionOwner = searchParams.get("owner") ?? undefined;
   const contextType = caseSlug ? "case" : pageSlug ? "brain_page" : "global";
 
   return (
@@ -29,6 +30,7 @@ function ChatPageInner() {
         context={{ type: contextType, caseSlug, pageSlug }}
         initialQuery={initialQuery}
         initialSessionId={initialSessionId}
+        initialSessionOwner={initialSessionOwner}
         className="flex-1"
         features={{ modeSelector: true }}
       />

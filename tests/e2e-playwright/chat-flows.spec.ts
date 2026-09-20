@@ -46,7 +46,7 @@ async function openChat(page: import("@playwright/test").Page) {
   // flaky under cold dev compiles).
   await page.addInitScript(() => {
     try {
-      localStorage.setItem("subsumio-copilot-open", "true");
+      localStorage.setItem("subsumio-copilot-open-v2", "true");
       localStorage.setItem("subsumio-tour-completed", "true");
     } catch {}
   });

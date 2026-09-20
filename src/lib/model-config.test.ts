@@ -4,6 +4,7 @@ import {
   getModelById,
   isValidModelId,
   DEFAULT_MODEL_ID,
+  AUTO_MODEL_ID,
   getProviderLabel,
   formatCost,
   formatContextWindow,
@@ -45,30 +46,26 @@ describe("AI_MODELS", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  test("includes Claude Sonnet 4", () => {
-    const sonnet = AI_MODELS.find((m) => m.id === "claude-sonnet-4-6");
-    expect(sonnet).toBeDefined();
-    expect(sonnet!.provider).toBe("anthropic");
+  test("offers only models the engine routes", () => {
+    expect(AI_MODELS.map((m) => m.id)).toEqual([
+      "claude-sonnet-5",
+      "claude-opus-5",
+      "claude-fable-5-1",
+      "claude-haiku-4-5",
+      "mistral-large-3",
+    ]);
   });
 
-  test("includes GPT-5.5", () => {
-    const gpt = AI_MODELS.find((m) => m.id === "gpt-5.5");
-    expect(gpt).toBeDefined();
-    expect(gpt!.provider).toBe("openai");
-  });
-
-  test("includes Gemini 2.0 Flash with 1M context", () => {
-    const gemini = AI_MODELS.find((m) => m.id === "gemini-2.0-flash");
-    expect(gemini).toBeDefined();
-    expect(gemini!.contextWindow).toBe(1_000_000);
+  test("never lists 'auto' as a model", () => {
+    expect(isValidModelId(AUTO_MODEL_ID)).toBe(false);
   });
 });
 
 describe("getModelById", () => {
   test("returns model for valid ID", () => {
-    const model = getModelById("claude-sonnet-4-6");
+    const model = getModelById("claude-sonnet-5");
     expect(model).toBeDefined();
-    expect(model!.name).toBe("Claude Sonnet 4.6");
+    expect(model!.name).toBe("Claude Sonnet 5");
   });
 
   test("returns undefined for unknown ID", () => {
@@ -82,7 +79,7 @@ describe("getModelById", () => {
 
 describe("isValidModelId", () => {
   test("returns true for valid model ID", () => {
-    expect(isValidModelId("claude-sonnet-4-6")).toBe(true);
+    expect(isValidModelId("claude-sonnet-5")).toBe(true);
   });
 
   test("returns false for unknown model ID", () => {
@@ -182,24 +179,24 @@ describe("formatContextWindow", () => {
 });
 
 describe("getSpeedLabel", () => {
-  test("returns 'Very Slow' for rating 1", () => {
-    expect(getSpeedLabel(1)).toBe("Very Slow");
+  test("returns 'Sehr langsam' for rating 1", () => {
+    expect(getSpeedLabel(1)).toBe("Sehr langsam");
   });
 
-  test("returns 'Slow' for rating 2", () => {
-    expect(getSpeedLabel(2)).toBe("Slow");
+  test("returns 'Langsam' for rating 2", () => {
+    expect(getSpeedLabel(2)).toBe("Langsam");
   });
 
-  test("returns 'Medium' for rating 3", () => {
-    expect(getSpeedLabel(3)).toBe("Medium");
+  test("returns 'Mittel' for rating 3", () => {
+    expect(getSpeedLabel(3)).toBe("Mittel");
   });
 
-  test("returns 'Fast' for rating 4", () => {
-    expect(getSpeedLabel(4)).toBe("Fast");
+  test("returns 'Schnell' for rating 4", () => {
+    expect(getSpeedLabel(4)).toBe("Schnell");
   });
 
-  test("returns 'Very Fast' for rating 5", () => {
-    expect(getSpeedLabel(5)).toBe("Very Fast");
+  test("returns 'Sehr schnell' for rating 5", () => {
+    expect(getSpeedLabel(5)).toBe("Sehr schnell");
   });
 });
 

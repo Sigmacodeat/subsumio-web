@@ -48,6 +48,9 @@ import {
   type ReconciliationStatus,
 } from "@/lib/trust-accounting";
 import { caseFrontmatter } from "@/lib/legal-types";
+import { formatDate } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/dashboard/skeleton";
 import type { BrainPage } from "@/lib/types";
 
 interface TrustAccount {
@@ -81,11 +84,29 @@ const TX_TYPES: Exclude<BookableTrustType, "reversal">[] = [
 ];
 
 function formatCurrency(amount: number, currency: string = "EUR"): string {
-  return new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(amount);
+  return new Intl.NumberFormat("de-AT", { style: "currency", currency }).format(
+    Number.isFinite(amount) ? amount : 0
+  );
+}
+
+/**
+ * Error → Klartext. Server-side refusals for bookings are already German
+ * sentences and stay as they are; rate limits, network failures and technical
+ * codes are replaced with a plain explanation.
+ */
+function plainError(err: unknown, fallback: string): string {
+  const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  if (!msg) return fallback;
+  if (/too many|rate.?limit|slow down|429/i.test(msg))
+    return "Zu viele Anfragen in kurzer Zeit. Bitte warten Sie einen Moment und laden Sie die Seite neu.";
+  if (/failed to fetch|network|timeout|ECONN|HTTP \d|^[a-z0-9_.]+$|[{}]|internal/i.test(msg))
+    return fallback;
+  if (/\b(the|please|error|not|cannot|invalid)\b/i.test(msg)) return fallback;
+  return msg;
 }
 
 export default function TrustAccountingPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const confirm = useConfirm();
 
   const [accounts, setAccounts] = useState<TrustAccount[]>([]);
@@ -135,7 +156,8 @@ export default function TrustAccountingPage() {
       const data = await api.legal.trustAccounts.list({ limit: 100 });
       setAccounts(data as unknown as TrustAccount[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      console.error("[trust] load failed:", err instanceof Error ? err.message : err);
+      setError(plainError(err, "Die Treuhandkonten konnten nicht geladen werden. Bitte laden Sie die Seite neu."));
     } finally {
       setLoading(false);
     }
@@ -211,7 +233,7 @@ export default function TrustAccountingPage() {
       setNewMatter("");
       await loadAccounts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(plainError(err, "Das Konto konnte nicht angelegt werden. Bitte versuchen Sie es erneut."));
     } finally {
       setSaving(false);
     }
@@ -240,7 +262,7 @@ export default function TrustAccountingPage() {
       await loadAccounts();
     } catch (err) {
       // Stay in the dialog and say why the booking was refused.
-      setTxError(err instanceof Error ? err.message : String(err));
+      setTxError(plainError(err, "Die Buchung wurde nicht gespeichert. Bitte versuchen Sie es erneut."));
     } finally {
       setSaving(false);
     }
@@ -267,7 +289,7 @@ export default function TrustAccountingPage() {
       showToast("Buchung storniert.");
       await loadAccounts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(plainError(err, "Das Storno wurde nicht gespeichert. Bitte versuchen Sie es erneut."));
     } finally {
       setSaving(false);
     }
@@ -326,7 +348,7 @@ export default function TrustAccountingPage() {
       setReconcileStep("done");
       await loadAccounts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(plainError(err, "Die Abstimmung wurde nicht gespeichert. Bitte versuchen Sie es erneut."));
     } finally {
       setSaving(false);
     }
@@ -343,7 +365,7 @@ export default function TrustAccountingPage() {
       setSelectedSlug(null);
       await loadAccounts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(plainError(err, "Das Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."));
     } finally {
       setSaving(false);
     }
@@ -355,16 +377,8 @@ export default function TrustAccountingPage() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `trust-${selectedAccount.slug.replace(/\//g, "-")}.csv`;
+    a.download = `anderkonto-${selectedAccount.slug.replace(/\//g, "-")}.csv`;
     a.click();
-  }
-
-  if (loading && accounts.length === 0) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center" role="status" aria-live="polite">
-        <Loader2 className="h-6 w-6 animate-spin text-[color:var(--brand-primary)]" />
-      </div>
-    );
   }
 
   return (
@@ -372,35 +386,55 @@ export default function TrustAccountingPage() {
       <PageHeader
         title={t("trust.title" as DashboardKey)}
         description={t("trust.description" as DashboardKey)}
+        breadcrumbs={[
+          { label: "Übersicht", href: "/dashboard" },
+          { label: t("trust.title" as DashboardKey) },
+        ]}
         actions={
           <Button
             variant="primary"
-            className="brand-bg gap-2 text-sm text-white"
+            size="sm"
+            className="whitespace-nowrap"
             onClick={() => setShowCreate(true)}
           >
-            <Plus size={14} />
+            <Plus size={14} aria-hidden="true" />
             {t("trust.new" as DashboardKey)}
           </Button>
         }
       />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
-          <AlertCircle size={16} />
-          {error}
-          <button className="ml-auto text-xs underline" onClick={() => setError(null)}>
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <AlertCircle size={16} className="shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1">{error}</span>
+          <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void loadAccounts()}>
+            Erneut laden
+          </Button>
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-xs"
+            aria-label="Hinweis schließen"
+            onClick={() => setError(null)}
+          >
             ×
           </button>
         </div>
       )}
 
       {toast && (
-        <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] shadow-lg">
+        <div
+          role="status"
+          className="fixed right-6 bottom-6 z-50 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] shadow-[var(--ds-shadow-2)]"
+        >
           {toast}
         </div>
       )}
 
-      {/* Filters */}
+      {/* Filters — only once there is something to filter */}
+      {accounts.length > 0 && (
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search
@@ -423,23 +457,34 @@ export default function TrustAccountingPage() {
           <RefreshCw size={14} />
         </Button>
       </div>
+      )}
 
-      {/* Empty state */}
-      {!loading && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border)] py-16 text-center">
-          <Wallet size={32} className="mb-3 text-[color:var(--ds-text-subtle)]" />
-          <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">
-            {t("trust.empty" as DashboardKey)}
-          </p>
-          <Button
-            variant="primary"
-            className="brand-bg mt-4 gap-2 text-sm text-white"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} />
-            {t("trust.new" as DashboardKey)}
-          </Button>
+      {/* Loading */}
+      {loading && accounts.length === 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Konten werden geladen">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[132px] rounded-xl" />
+          ))}
         </div>
+      )}
+
+      {/* Empty state — never while a load error is showing */}
+      {!loading && !error && filtered.length === 0 && (
+        search ? (
+          <EmptyState
+            icon={Wallet}
+            title="Keine passenden Konten"
+            description="Kein Konto entspricht Ihrer Suche nach Bezeichnung, Kontonummer oder Mandant."
+          />
+        ) : (
+          <EmptyState
+            icon={Wallet}
+            title={t("trust.empty" as DashboardKey)}
+            description="Legen Sie Ihr Anderkonto an und buchen Sie Fremdgeld je Akte — mit fortlaufender Nummerierung und Quartalsabstimmung."
+            actionLabel={t("trust.new" as DashboardKey)}
+            onAction={() => setShowCreate(true)}
+          />
+        )
       )}
 
       {/* Account cards */}
@@ -476,7 +521,7 @@ export default function TrustAccountingPage() {
                     {t(`trust.status_${fm.status ?? "active"}` as DashboardKey)}
                   </Badge>
                   <span
-                    className={`text-sm font-bold ${isOverdrawn ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-success-text)]"}`}
+                    className={`text-sm font-semibold tabular-nums ${isOverdrawn ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"}`}
                   >
                     {formatCurrency(balance, fm.currency)}
                   </span>
@@ -526,7 +571,7 @@ export default function TrustAccountingPage() {
                   {t("trust.current_balance" as DashboardKey)}
                 </div>
                 <div
-                  className={`mt-1 text-lg font-bold ${(selectedAccount.frontmatter?.current_balance ?? 0) < 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-success-text)]"}`}
+                  className={`mt-1 text-lg font-semibold tabular-nums ${(selectedAccount.frontmatter?.current_balance ?? 0) < 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"}`}
                 >
                   {formatCurrency(
                     selectedAccount.frontmatter?.current_balance ?? 0,
@@ -662,14 +707,7 @@ export default function TrustAccountingPage() {
                           <span>{TRANSACTION_TYPE_LABELS_DE[tx.type]}</span>
                           <span>
                             ·{" "}
-                            {new Date(tx.date).toLocaleDateString(
-                              lang === "en" ? "en-GB" : "de-AT",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              }
-                            )}
+                            {formatDate(tx.date)}
                           </span>
                           <span>· {caseTitle(tx.matterSlug)}</span>
                           {tx.reference && <span>· {tx.reference}</span>}
@@ -713,7 +751,7 @@ export default function TrustAccountingPage() {
             {reconciliations.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Abstimmungen (Reconciliation)
+                  Abstimmungen
                 </h4>
                 {reconciliations
                   .slice()
@@ -735,7 +773,7 @@ export default function TrustAccountingPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                            {new Date(rec.date).toLocaleDateString("de-DE")}
+                            {formatDate(rec.date)}
                           </span>
                           <Badge
                             variant="default"
@@ -1017,7 +1055,7 @@ export default function TrustAccountingPage() {
                     step="0.01"
                     value={reconcileBankBalance}
                     onChange={(e) => setReconcileBankBalance(Number(e.target.value))}
-                    placeholder="0.00"
+                    placeholder="0,00"
                   />
                 </div>
                 <div>
@@ -1027,7 +1065,7 @@ export default function TrustAccountingPage() {
                   <Input
                     value={reconcileNotes}
                     onChange={(e) => setReconcileNotes(e.target.value)}
-                    placeholder="z.B. Kontoauszug vom ..."
+                    placeholder="z. B. Kontoauszug vom 30.09."
                   />
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 text-xs">
