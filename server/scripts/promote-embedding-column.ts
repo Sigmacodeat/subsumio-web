@@ -32,6 +32,9 @@ const { values } = parseArgs({
     column: { type: "string" },
     check: { type: "boolean", default: false },
     indexes: { type: "boolean", default: false },
+    blocking: { type: "boolean", default: false },
+    "work-mem": { type: "string", default: "8GB" },
+    "parallel-workers": { type: "string", default: "4" },
     yes: { type: "boolean", default: false },
     "allow-partial": { type: "boolean", default: false },
     "signature-batch": { type: "string", default: "20000" },
@@ -44,7 +47,10 @@ if (values.help || !values.column) {
   console.log(
     "Usage: promote-embedding-column.ts --column <name> [--check | --indexes | --yes]\n" +
       "  --check     nur berichten, nichts ändern\n" +
-      "  --indexes   die Indizes auf der Ersatzspalte nebenläufig bauen (Stunden)\n" +
+      "  --indexes   die Indizes auf der Ersatzspalte bauen (Stunden)\n" +
+      "              --blocking          schneller, sperrt aber Schreibzugriffe\n" +
+      "              --work-mem 8GB      Speicher für den Bau\n" +
+      "              --parallel-workers 4  nur zusammen mit --blocking wirksam\n" +
       "  --yes       umschalten (verlangt fertige Spalte und fertige Indizes)"
   );
   process.exit(values.help ? 0 : 1);
@@ -65,29 +71,34 @@ const INDEXES = [
   {
     scaffold: `idx_chunks_${COLUMN}_hnsw`,
     live: "idx_chunks_embedding",
-    ddl: `CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_chunks_${COLUMN}_hnsw"
+    ddl: (conc: string) => `CREATE INDEX ${conc} IF NOT EXISTS "idx_chunks_${COLUMN}_hnsw"
             ON content_chunks USING hnsw ("${COLUMN}" vector_cosine_ops)`,
     note: "Vektorindex (baut am längsten)",
   },
   {
     scaffold: `idx_chunks_${COLUMN}_open`,
     live: "idx_chunks_embedding_null",
-    ddl: `CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_chunks_${COLUMN}_open"
+    ddl: (conc: string) => `CREATE INDEX ${conc} IF NOT EXISTS "idx_chunks_${COLUMN}_open"
             ON content_chunks (page_id, chunk_index) WHERE "${COLUMN}" IS NULL`,
     note: "offene Chunks",
   },
   {
     scaffold: `idx_chunks_${COLUMN}_stale`,
     live: "content_chunks_stale_idx",
-    ddl: `CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_chunks_${COLUMN}_stale"
+    ddl: (conc: string) => `CREATE INDEX ${conc} IF NOT EXISTS "idx_chunks_${COLUMN}_stale"
             ON content_chunks (page_id, chunk_index) WHERE "${COLUMN}" IS NULL`,
     note: "veraltete Chunks",
   },
 ];
 
+interface ReservedConn {
+  executeRaw(sql: string, params?: unknown[]): Promise<unknown[]>;
+}
+
 interface Engine {
   executeRaw(sql: string, params?: unknown[]): Promise<unknown[]>;
   transaction<T>(fn: (tx: Engine) => Promise<T>): Promise<T>;
+  withReservedConnection<T>(fn: (conn: ReservedConn) => Promise<T>): Promise<T>;
   disconnect(): Promise<void>;
   connect(cfg: unknown): Promise<void>;
   setConfig?(key: string, value: string): Promise<void>;
@@ -176,18 +187,42 @@ async function main() {
   }
 
   if (values.indexes) {
-    for (const ix of INDEXES) {
-      if (await indexExists(engine, ix.scaffold)) {
-        console.log(`  übersprungen (vorhanden): ${ix.scaffold}`);
-        continue;
+    const workMem = values["work-mem"] as string;
+    const parallel = Number(values["parallel-workers"]);
+    const blocking = values.blocking as boolean;
+
+    // The HNSW graph for four million vectors is tens of gigabytes. pgvector
+    // builds it in memory when it fits in maintenance_work_mem and falls back
+    // to a much slower on-disk pass when it does not, so the setting decides
+    // between hours and days. It must hold for the CREATE INDEX itself, which
+    // is why this runs on a reserved connection: a SET sent through the pool
+    // would land on whichever backend answered it.
+    //
+    // CONCURRENTLY keeps the corpus pipeline writing, but Postgres refuses to
+    // parallelise it. --blocking trades write availability for the parallel
+    // workers, which is the right trade inside a maintenance window.
+    console.log(
+      blocking
+        ? `Bau mit ${parallel} Arbeitern, Speicher ${workMem} — Schreibzugriffe auf content_chunks sind währenddessen gesperrt.`
+        : `Nebenläufiger Bau, Speicher ${workMem} — die Pipeline schreibt weiter, dafür ohne Parallelität.`
+    );
+
+    await engine.withReservedConnection(async (conn) => {
+      await conn.executeRaw(`SET maintenance_work_mem = '${workMem}'`);
+      await conn.executeRaw(
+        `SET max_parallel_maintenance_workers = ${blocking ? parallel : 0}`
+      );
+      for (const ix of INDEXES) {
+        if (await indexExists(engine, ix.scaffold)) {
+          console.log(`  übersprungen (vorhanden): ${ix.scaffold}`);
+          continue;
+        }
+        console.log(`  baue ${ix.scaffold} — ${ix.note}…`);
+        const t = Date.now();
+        await conn.executeRaw(ix.ddl(blocking ? "" : "CONCURRENTLY"));
+        console.log(`  ✓ ${ix.scaffold} in ${((Date.now() - t) / 60000).toFixed(1)} min`);
       }
-      console.log(`  baue ${ix.scaffold} — ${ix.note}…`);
-      const t = Date.now();
-      // CONCURRENTLY cannot run inside a transaction block; executeRaw is
-      // autocommit, and search keeps using the old indexes meanwhile.
-      await engine.executeRaw(ix.ddl);
-      console.log(`  ✓ ${ix.scaffold} in ${((Date.now() - t) / 60000).toFixed(1)} min`);
-    }
+    });
     await engine.disconnect();
     return;
   }
