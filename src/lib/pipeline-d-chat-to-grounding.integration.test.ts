@@ -133,6 +133,11 @@ describe("Pipeline D: Chat → Intent → Routing → Citation → Grounding", (
 
     const grounding = await groundAnswerCitations(LEGAL_ANSWER);
 
+    // Without this the test can pass by reading the real corpus off the
+    // developer's disk (SUBSUMIO_LAW_CORPUS_DIR in .env.local) while the mock
+    // silently misses — which is exactly how a broken mock stayed unnoticed.
+    expect(mockReadFile).toHaveBeenCalled();
+
     expect(grounding.corpus_checked).toBe(true);
     expect(grounding.grounded_citations.length).toBeGreaterThanOrEqual(3);
     expect(grounding.analyzed_at).toBeTruthy();
