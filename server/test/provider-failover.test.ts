@@ -4,7 +4,8 @@
  * request errors are not. Hermetic via __setChatTransportForTests.
  */
 
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
+import { setEnvForFile } from "./helpers/with-env.ts";
 import { __setChatTransportForTests, chat, type ChatResult } from "../src/core/ai/gateway.ts";
 import {
   isProviderFailure,
@@ -95,7 +96,6 @@ describe("providerFailoverModel", () => {
 });
 
 describe("chat() provider failover", () => {
-  const saved = process.env.OPENROUTER_API_KEY;
   const calls: string[] = [];
   const ok = (model: string): ChatResult =>
     ({
@@ -105,14 +105,23 @@ describe("chat() provider failover", () => {
       usage: { input_tokens: 1, output_tokens: 1 },
     }) as unknown as ChatResult;
 
+  // The key has to exist for the whole file, and beforeEach/afterEach cannot
+  // be wrapped in withEnv — so the value is set once through the helper and
+  // released again after the last test.
+  let releaseEnv: (() => void) | undefined;
+
+  beforeAll(() => {
+    releaseEnv = setEnvForFile({ OPENROUTER_API_KEY: "sk-or-test" });
+  });
+  afterAll(() => {
+    releaseEnv?.();
+  });
+
   beforeEach(() => {
-    process.env.OPENROUTER_API_KEY = "sk-or-test";
     calls.length = 0;
   });
   afterEach(() => {
     __setChatTransportForTests(null);
-    if (saved === undefined) delete process.env.OPENROUTER_API_KEY;
-    else process.env.OPENROUTER_API_KEY = saved;
   });
 
   test("empty Anthropic balance → same model via OpenRouter, answer returned", async () => {

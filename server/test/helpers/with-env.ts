@@ -69,3 +69,43 @@ export async function withEnv<T>(
     }
   }
 }
+
+/**
+ * File-scoped variant of {@link withEnv} for suites whose whole setup needs a
+ * variable — a server mounted in `beforeAll`, for instance. `withEnv` cannot
+ * wrap a lifecycle hook, and hand-rolled save/restore in `beforeAll`/`afterAll`
+ * is what the isolation lint flags, because a thrown setup leaks the value into
+ * every later file of the same process.
+ *
+ * Use:
+ *   let release: (() => void) | undefined;
+ *   beforeAll(() => { release = setEnvForFile({ API_KEY: "test" }); });
+ *   afterAll(() => release?.());
+ */
+export function setEnvForFile(overrides: Record<string, string | undefined>): () => void {
+  const prior: Record<string, string | undefined> = {};
+  for (const key of Object.keys(overrides)) {
+    prior[key] = process.env[key];
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+  let released = false;
+  return () => {
+    // Idempotent: a second call (afterAll plus an explicit release) must not
+    // undo a value another file set in the meantime.
+    if (released) return;
+    released = true;
+    for (const [key, value] of Object.entries(prior)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  };
+}

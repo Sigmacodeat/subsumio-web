@@ -6,6 +6,7 @@
  * silent routing changes when TIER_DEFAULTS or specialist-defs are modified.
  */
 
+import { withEnv } from "./helpers/with-env.ts";
 import { describe, it, expect } from "bun:test";
 import { EMBEDDED_SPECIALISTS, resolveSpecialist } from "../src/core/minions/specialist-defs.ts";
 import { TIER_DEFAULTS, isAnthropicProvider } from "../src/core/model-config.ts";
@@ -218,14 +219,14 @@ describe("user model choice from the web app", () => {
 describe("OpenRouter reasoning effort cap", () => {
   it("is off unless configured, and only touches Claude 5-class models", async () => {
     const { applyReasoningEffort } = await import("../src/core/ai/gateway.ts");
-    const prev = process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT;
-    try {
-      delete process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT;
+
+    await withEnv({ SUBSUMIO_OPENROUTER_REASONING_EFFORT: undefined }, () => {
       const off: Record<string, unknown> = { model: "anthropic/claude-sonnet-5" };
       expect(applyReasoningEffort(off)).toBe(false);
       expect(off.reasoning).toBeUndefined();
+    });
 
-      process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT = "medium";
+    await withEnv({ SUBSUMIO_OPENROUTER_REASONING_EFFORT: "medium" }, () => {
       const sonnet: Record<string, unknown> = { model: "anthropic/claude-sonnet-5" };
       expect(applyReasoningEffort(sonnet)).toBe(true);
       expect(sonnet.reasoning).toEqual({ effort: "medium" });
@@ -239,9 +240,6 @@ describe("OpenRouter reasoning effort cap", () => {
       };
       expect(applyReasoningEffort(explicit)).toBe(false);
       expect(explicit.reasoning).toEqual({ effort: "high" });
-    } finally {
-      if (prev === undefined) delete process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT;
-      else process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT = prev;
-    }
+    });
   });
 });

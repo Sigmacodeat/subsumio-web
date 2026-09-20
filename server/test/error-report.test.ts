@@ -1,4 +1,5 @@
 import { describe, test, expect, afterEach } from "bun:test";
+import { withEnv } from "./helpers/with-env.ts";
 import {
   parseDsn,
   buildEnvelope,
@@ -7,7 +8,6 @@ import {
 } from "../src/core/error-report.ts";
 
 afterEach(() => {
-  delete process.env.SENTRY_DSN;
   _resetErrorReportForTests();
 });
 
@@ -47,19 +47,20 @@ describe("error-report", () => {
   });
 
   test("posts to Sentry when a DSN is set", async () => {
-    process.env.SENTRY_DSN = "https://k@example.test/9";
-    const original = globalThis.fetch;
-    let url = "";
-    globalThis.fetch = (async (u: string) => {
-      url = u;
-      return new Response("");
-    }) as unknown as typeof fetch;
-    try {
-      reportError(new Error("x"), { kind: "t" });
-      await new Promise((r) => setTimeout(r, 0));
-      expect(url).toBe("https://example.test/api/9/envelope/");
-    } finally {
-      globalThis.fetch = original;
-    }
+    await withEnv({ SENTRY_DSN: "https://k@example.test/9" }, async () => {
+      const original = globalThis.fetch;
+      let url = "";
+      globalThis.fetch = (async (u: string) => {
+        url = u;
+        return new Response("");
+      }) as unknown as typeof fetch;
+      try {
+        reportError(new Error("x"), { kind: "t" });
+        await new Promise((r) => setTimeout(r, 0));
+        expect(url).toBe("https://example.test/api/9/envelope/");
+      } finally {
+        globalThis.fetch = original;
+      }
+    });
   });
 });

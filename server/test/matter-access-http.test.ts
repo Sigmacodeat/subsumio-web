@@ -6,6 +6,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import express from "express";
 import type { Server } from "node:http";
+import { setEnvForFile } from "./helpers/with-env.ts";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { mountWebApi, invalidateMatterAccess } from "../src/commands/web-api.ts";
 import { createIdentityToken } from "../src/core/identity-token.ts";
@@ -15,7 +16,7 @@ const SOURCE = "firm-a";
 let engine: PGLiteEngine;
 let server: Server;
 let base = "";
-let prevKey: string | undefined;
+let releaseEnv: (() => void) | undefined;
 
 function headers(userId: string, role: string, extra: Record<string, string> = {}) {
   return {
@@ -39,8 +40,7 @@ async function getPage(h: Record<string, string>, slug: string) {
 }
 
 beforeAll(async () => {
-  prevKey = process.env.SUBSUMIO_WEB_API_KEY;
-  process.env.SUBSUMIO_WEB_API_KEY = SECRET;
+  releaseEnv = setEnvForFile({ SUBSUMIO_WEB_API_KEY: SECRET });
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();
@@ -79,8 +79,7 @@ beforeAll(async () => {
 afterAll(async () => {
   server?.close();
   await engine?.disconnect();
-  if (prevKey === undefined) delete process.env.SUBSUMIO_WEB_API_KEY;
-  else process.env.SUBSUMIO_WEB_API_KEY = prevKey;
+  releaseEnv?.();
 });
 
 describe("matter access over HTTP", () => {
