@@ -26,7 +26,7 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { getUserAgent, proxyFetchOptions } from "./ris-proxy";
-import { risBulkPause } from "./ris-policy.ts";
+import { risMassPause } from "./ris-pace.ts";
 
 const DRY = process.argv.includes("--dry-run");
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
@@ -148,7 +148,7 @@ async function main() {
     // Courts — count level.
     for (const c of COURT_SOURCES) {
       const ris = await hits(`${API}/Judikatur?Applikation=${c.applikation}&DokumenteProSeite=Ten`);
-      await risBulkPause();
+      await risMassPause("reconcile-ris");
       const [counts] = await q(
         `SELECT count(*)::int AS alle,
                 count(*) FILTER (WHERE frontmatter->>'doc_id' ~ '^J[A-Z]R_')::int AS rs,

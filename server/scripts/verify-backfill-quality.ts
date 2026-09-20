@@ -26,6 +26,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "fs";
 import { join, dirname, relative } from "path";
 import { fileURLToPath } from "url";
+import { risPause } from "./ris-pace";
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
@@ -424,7 +425,7 @@ async function reFetchAndCompare(
 
     // RIS rate limiting
     if (isRIS) {
-      await new Promise((r) => setTimeout(r, 1500));
+      await risPause();
     }
   } catch (e) {
     result.match = "fetch_failed";

@@ -17,6 +17,8 @@
  * Bun's fetch() natively supports HTTP proxies via the `proxy` option.
  */
 
+import { RIS_USER_AGENT } from "./ris-pace";
+
 interface ProxyEntry {
   url: string;
   label: string;
@@ -48,22 +50,13 @@ const _proxies: ProxyEntry[] = (() => {
 })();
 
 /** Delay per proxy connection (ms). */
-export const PROXY_DELAY_MS = parseInt(
-  process.env.RIS_PROXY_DELAY ?? "1500",
-  10
-);
+export const PROXY_DELAY_MS = parseInt(process.env.RIS_PROXY_DELAY ?? "1500", 10);
 
 /** Manual concurrency override (optional). */
-const _proxyConcurrency = parseInt(
-  process.env.RIS_PROXY_CONCURRENCY ?? "0",
-  10
-);
+const _proxyConcurrency = parseInt(process.env.RIS_PROXY_CONCURRENCY ?? "0", 10);
 
 /** Quarantine duration in seconds. */
-const QUARANTINE_S = parseInt(
-  process.env.RIS_PROXY_QUARANTINE_S ?? "300",
-  10
-);
+const QUARANTINE_S = parseInt(process.env.RIS_PROXY_QUARANTINE_S ?? "300", 10);
 
 /** Whether any proxies are configured. */
 export function hasProxies(): boolean {
@@ -108,9 +101,7 @@ function nextActiveProxy(): ProxyEntry | undefined {
   const active = _proxies.filter((p) => p.quarantinedUntil <= now);
   if (active.length === 0) {
     // All quarantined — reset the one with the earliest quarantine expiry
-    const earliest = _proxies.reduce((a, b) =>
-      a.quarantinedUntil < b.quarantinedUntil ? a : b
-    );
+    const earliest = _proxies.reduce((a, b) => (a.quarantinedUntil < b.quarantinedUntil ? a : b));
     earliest.quarantinedUntil = 0;
     console.warn(`[ris-proxy] All proxies quarantined — force-unquarantining ${earliest.label}`);
     return earliest;
@@ -167,14 +158,7 @@ export function reportProxyFailure(): void {
   }
 }
 
-/**
- * The one User-Agent every RIS request sends. It is the string named in
- * our bulk-download notice to ris.it@bka.gv.at, so RIS can attribute the
- * traffic; browser look-alike agents would defeat that and breach the OGD
- * rules (ris-policy.ts).
- */
-export const RIS_USER_AGENT = "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)";
-
+/** The one RIS User-Agent (see ris-pace.ts) — never a browser disguise. */
 export function getUserAgent(): string {
   return RIS_USER_AGENT;
 }
@@ -188,9 +172,8 @@ export function proxyStatus(): string {
   return _proxies
     .map((p) => {
       const status = p.quarantinedUntil > now ? "QUARANTINED" : "active";
-      const sr = p.totalRequests > 0
-        ? `${Math.round(100 * (1 - p.failures / p.totalRequests))}%`
-        : "n/a";
+      const sr =
+        p.totalRequests > 0 ? `${Math.round(100 * (1 - p.failures / p.totalRequests))}%` : "n/a";
       return `  ${p.label}: ${status} (reqs=${p.totalRequests}, fails=${p.failures}, sr=${sr})`;
     })
     .join("\n");
@@ -208,11 +191,9 @@ export function logProxyConfig(): void {
         `quarantine=${QUARANTINE_S}s`
     );
     for (const p of _proxies) {
-      console.log(`  → ${p.label}: ${p.url.replace(/:[^:@]+@/, ':****@')}`);
+      console.log(`  → ${p.label}: ${p.url.replace(/:[^:@]+@/, ":****@")}`);
     }
   } else {
-    console.log(
-      "[ris-proxy] No proxies configured — direct connection, concurrency=1"
-    );
+    console.log("[ris-proxy] No proxies configured — direct connection, concurrency=1");
   }
 }

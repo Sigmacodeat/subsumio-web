@@ -28,7 +28,7 @@ import { getUserAgent, proxyFetchOptions } from "./ris-proxy";
 import { atomicWrite, contentMatchesDocument, risXmlToText } from "./backfill-utils";
 import { extractRisReferences } from "../src/core/ingestion/connectors/legal-judgements.ts";
 import { dokumentnummerOf } from "./judikatur-file";
-import { risBulkPause } from "./ris-policy.ts";
+import { risMassPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 
@@ -175,7 +175,7 @@ async function main() {
           url.searchParams.set("EntscheidungsdatumBis", `${year}-12-31`);
           const res = await risGet(url.toString());
           requests++;
-          await risBulkPause();
+          await risMassPause("Entscheidungstexte");
           if (!res) break;
           const refs = extractRisReferences((await res.json()) as Record<string, unknown>);
           for (const ref of refs)
@@ -189,7 +189,7 @@ async function main() {
             `https://www.ris.bka.gv.at/Dokumente/${cfg.applikation}/${t.dokNr}/${t.dokNr}.xml`
           );
           requests++;
-          await risBulkPause();
+          await risMassPause("Entscheidungstexte");
           const xml = xmlRes ? await xmlRes.text() : "";
           const text = xml ? risXmlToText(xml) : "";
           // Identity guard: the text must name its own case number.

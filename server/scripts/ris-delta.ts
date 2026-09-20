@@ -31,7 +31,7 @@
 
 import { fetchWithRetry } from "./backfill-utils";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
-import { risBulkPause } from "./ris-policy.ts";
+import { risPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const RIS_UA = { "User-Agent": getUserAgent() };
@@ -456,9 +456,8 @@ export async function fetchDelta(
   let pagesFetched = 0;
 
   for (let page = 1; page <= maxPages; page++) {
-    // Rate-limit: 200ms delay between pages (RIS OGD polite crawling)
-    // RIS OGD: 1–2 s between requests (was 200 ms).
-    if (page > 1) await risBulkPause();
+    // RIS OGD: at most 0.5 requests/s (was 200 ms).
+    if (page > 1) await risPause();
     const result = await fetchDeltaPage(app.endpoint, app.applikation, imRisSeit, page);
     if (!result) {
       // Fehler nach allen Retries — abbrechen, Cursor nicht updaten

@@ -127,7 +127,7 @@ export const D = {
   "nav.chat_analytics": { de: "Chat-Analytics", en: "Chat Analytics" },
   "nav.chat_compare": { de: "Modell-Vergleich", en: "Model Comparison" },
   "nav.agents": { de: "Assistenten-Aufträge", en: "Agents" },
-  "nav.approvals": { de: "Freigaben", en: "Approvals" },
+  "nav.approvals": { de: "KI-Aktionen", en: "AI actions" },
   "nav.workflows": { de: "Abläufe", en: "Workflows" },
   "nav.brain": { de: "Kanzleiwissen", en: "Knowledge Base" },
   "nav.graph": { de: "Beziehungsnetz", en: "Graph" },
@@ -191,6 +191,7 @@ export const D = {
   "nav.whatsapp": { de: "WhatsApp", en: "WhatsApp" },
   "nav.whatsapp_templates": { de: "WhatsApp-Vorlagen", en: "WhatsApp Templates" },
   "nav.intake": { de: "Posteingang", en: "Inbox" },
+  "nav.approvals_hub": { de: "Freigaben", en: "Approvals" },
   "nav.document_requests": { de: "Dokumentenanfragen", en: "Document Requests" },
   "nav.import_kanzlei": { de: "Kanzlei-Import", en: "Firm Import" },
   "nav.corpus_pipeline": { de: "Korpus-Pipeline", en: "Corpus pipeline" },
@@ -249,6 +250,10 @@ export const D = {
   "nav.tooltip.research": {
     de: "Rechtsprechung, Gesetze und Normen recherchieren",
     en: "Research case law, statutes and regulations",
+  },
+  "nav.tooltip.approvals_hub": {
+    de: "Alles, was auf Ihre Entscheidung wartet",
+    en: "Everything waiting for your decision",
   },
   "nav.tooltip.intake": {
     de: "Neue Mandanten und Eingänge erfassen",
@@ -3481,6 +3486,10 @@ export const D = {
   "chat.new_session": { de: "Neue Konversation", en: "New conversation" },
   "chat.sessions": { de: "Konversationen", en: "Conversations" },
   "chat.no_sessions": { de: "Keine Konversationen", en: "No conversations" },
+  "chat.err_session_load": {
+    de: "Die Unterhaltung konnte nicht geladen werden.",
+    en: "The conversation could not be loaded.",
+  },
   "chat.session_count": { de: "Nachrichten", en: "messages" },
   "chat.brain_online": { de: "Verbunden", en: "Connected" },
   "chat.brain_offline": { de: "Wissensbasis offline", en: "Knowledge base offline" },
@@ -3510,7 +3519,7 @@ export const D = {
     en: "An error occurred. Please try again.",
   },
   "chat.error_engine": {
-    de: "Die Subsumio-Dienst ist nicht erreichbar. Bitte später erneut versuchen.",
+    de: "Der Subsumio-Dienst ist nicht erreichbar. Bitte später erneut versuchen.",
     en: "The engine is unreachable. Please try again later.",
   },
   "chat.error_quota": {
@@ -3571,7 +3580,7 @@ export const D = {
   },
   "upload.info_hint": { de: "Hinweis:", en: "Note:" },
   "upload.info_hint_body": {
-    de: "Die Subsumio-Dienst muss laufen",
+    de: "Der Subsumio-Dienst muss laufen",
     en: "The Subsumio engine must be running",
   },
   "upload.files_count": { de: "Datei", en: "file" },
@@ -3614,12 +3623,12 @@ export const D = {
   "upload.error_failed": { de: "Hochladen fehlgeschlagen", en: "Upload failed" },
 
   // ── Approvals page ──
-  "approvals.title": { de: "Freigaben", en: "Approvals" },
+  "approvals.title": { de: "KI-Aktionen freigeben", en: "Approve AI actions" },
   "approvals.desc": {
     de: "Vorschläge des Assistenten werden erst wirksam, wenn eine berechtigte Person sie freigibt",
     en: "Four-eyes principle — assistant/agent proposals only take effect after approval by a second person",
   },
-  "approvals.breadcrumb": { de: "Freigaben", en: "Approvals" },
+  "approvals.breadcrumb": { de: "KI-Aktionen", en: "AI actions" },
   "approvals.notice": {
     de: "Risikoreiche Aktionen (Schriftsatz freigeben, Frist notieren, Buchung, Versand) werden nicht autonom wirksam. Sie landen hier und brauchen die Freigabe einer zweiten Person — berufsrechtliche Letztverantwortung + EU-AI-Act-Aufsichtspflicht (Annex III).",
     en: "Risky actions (release brief, note deadline, booking, dispatch) do not take effect autonomously. They appear here and require approval by a second person — professional ultimate responsibility + EU AI Act oversight duty (Annex III).",
@@ -4770,7 +4779,7 @@ export const D = {
   },
   "upload.hint_label": { de: "Hinweis:", en: "Note:" },
   "upload.hint_desc": {
-    de: "Die Subsumio-Dienst muss laufen",
+    de: "Der Subsumio-Dienst muss laufen",
     en: "The Subsumio engine must be running",
   },
   "upload.mode_case": { de: "Dokument zu Akte", en: "Document to case" },

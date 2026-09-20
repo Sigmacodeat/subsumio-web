@@ -28,6 +28,7 @@ import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { type AnswerDownReason, type ChatMessage } from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
+import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -46,6 +47,8 @@ interface ChatMessageBubbleProps {
   onFollowUp?: (query: string) => void;
   /** Rate an assistant answer; a down vote may carry a reason. */
   onFeedback?: (messageId: string, rating: "up" | "down", reason?: AnswerDownReason) => void;
+  /** Offer "In Akte speichern" on finished answers; preselects this matter ("" = choose). */
+  saveToMatterCase?: string;
 }
 
 const DOWN_REASONS: Array<{ value: AnswerDownReason; de: string; en: string }> = [
@@ -67,6 +70,7 @@ function ChatMessageBubbleInner({
   onToolRetry,
   onFollowUp,
   onFeedback,
+  saveToMatterCase,
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [showExplain, setShowExplain] = useState(false);
@@ -393,6 +397,24 @@ function ChatMessageBubbleInner({
                   <ThumbsDown size={12} />
                 </button>
               </>
+            )}
+            {!isUser && saveToMatterCase !== undefined && !message.error && message.content && (
+              <SaveToMatterButton
+                source="chat"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-lg p-0 text-[color:var(--ds-text-subtle)]"
+                defaultCase={saveToMatterCase}
+                defaultTitle={
+                  message.content
+                    .replace(/[#*_>`]/g, "")
+                    .trim()
+                    .split("\n")[0]
+                    .slice(0, 80) || "KI-Antwort"
+                }
+                content={message.content}
+                citations={message.grounding?.grounded_citations}
+              />
             )}
             {onExport && (
               <button

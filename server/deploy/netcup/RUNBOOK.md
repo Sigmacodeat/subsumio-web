@@ -100,7 +100,13 @@ Vom Mac aus dem Repository, rollt genau den committeten Stand (HEAD) aus:
 ```sh
 sh server/deploy/netcup/deploy-code.sh --build   # nur bauen, Dienste laufen weiter
 sh server/deploy/netcup/deploy-code.sh           # bauen und umschalten
+sh server/deploy/netcup/deploy-code.sh --app     # Web + Engine, Korpus-Pipeline läuft weiter
+sh server/deploy/netcup/deploy-code.sh --web     # nur Web-App
 ```
+
+`--app` und `--web` lassen den Pipeline-Container in Ruhe: Ein voller Deploy erzeugt ihn neu und
+bricht damit laufende RIS-Läufe ab, die tagelang dauern können. Vorher prüfen, ob gerade einer
+läuft: `ssh subsumio-netcup docker exec subsumio-engine-corpus-pipeline-1 ps -eo etime,args`.
 
 Das Skript lädt ein `git archive` hoch, übernimmt `.env` und `imports/`, baut web, engine und
 corpus-pipeline und schaltet dann `/opt/subsumio` → `/opt/subsumio-prev` um. Die Engine spielt

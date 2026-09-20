@@ -1,5 +1,6 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
+import { loadApprovalSummary, type ApprovalCategoryKey } from "@/lib/approval-summary";
 
 interface BadgeCounts {
   [href: string]: { count: number; variant: "danger" | "warning" | "info" };
@@ -68,33 +69,19 @@ export const GET = createHandler(
     cacheMaxAge: 30,
   },
   async (ctx, _body, _query, _req) => {
-    const [
-      deadlines,
-      intake,
-      bea,
-      beaMessages,
-      reviews,
-      agentActions,
-      signatures,
-      docs,
-      legalDocs,
-      invoices,
-      submissions,
-      casePages,
-    ] = await Promise.all([
-      fetchPagesByType(ctx.headers, "legal_deadline", 100),
-      fetchPagesByType(ctx.headers, "intake_request", 50),
-      fetchPagesByType(ctx.headers, "bea_draft", 50),
-      fetchPagesByType(ctx.headers, "bea_message", 50),
-      fetchPagesByType(ctx.headers, "review_item", 50),
-      fetchPagesByType(ctx.headers, "agent_action", 50),
-      fetchPagesByType(ctx.headers, "signature_request", 50),
-      fetchPagesByType(ctx.headers, "document", 100),
-      fetchPagesByType(ctx.headers, "legal_document", 100),
-      fetchPagesByType(ctx.headers, "invoice", 50),
-      fetchPagesByType(ctx.headers, "client_submission", 50),
-      fetchPagesByType(ctx.headers, "legal_case", 100),
-    ]);
+    const approvalsPromise = loadApprovalSummary(ctx.headers, ctx.user.email).catch(() => null);
+    const [deadlines, intake, bea, beaMessages, signatures, docs, legalDocs, invoices] =
+      await Promise.all([
+        fetchPagesByType(ctx.headers, "legal_deadline", 100),
+        fetchPagesByType(ctx.headers, "intake_request", 50),
+        fetchPagesByType(ctx.headers, "bea_draft", 50),
+        fetchPagesByType(ctx.headers, "bea_message", 50),
+        fetchPagesByType(ctx.headers, "signature_request", 50),
+        fetchPagesByType(ctx.headers, "document", 100),
+        fetchPagesByType(ctx.headers, "legal_document", 100),
+        fetchPagesByType(ctx.headers, "invoice", 50),
+      ]);
+    const approvals = await approvalsPromise;
 
     const badges: BadgeCounts = {};
 
@@ -121,12 +108,27 @@ export const GET = createHandler(
       badges["/dashboard/intake"] = { count: inboxCount, variant: "info" };
     }
 
-    // Reviews — pending
-    const reviewCount = [...reviews, ...agentActions].filter((p) =>
-      isOpenStatus(((p.frontmatter ?? {}) as Record<string, unknown>).status)
-    ).length;
-    if (reviewCount > 0) {
-      badges["/dashboard/review-queue"] = { count: reviewCount, variant: "warning" };
+    // Approvals — one number for everything waiting for a decision, plus the
+    // per-list counts. All come from the same summary the lists use, so a
+    // badge never promises items its page does not show.
+    if (approvals) {
+      const byKey = new Map(approvals.categories.map((c) => [c.key, c]));
+      const count = (...keys: ApprovalCategoryKey[]) =>
+        keys.reduce((n, k) => n + (byKey.get(k)?.count ?? 0), 0);
+      if (approvals.total > 0) {
+        badges["/dashboard/freigaben"] = {
+          count: approvals.total,
+          variant: approvals.urgent > 0 ? "danger" : "warning",
+        };
+      }
+      const inbox = count("deadlines", "client_input", "requests");
+      if (inbox > 0) badges["/dashboard/communications"] = { count: inbox, variant: "warning" };
+      const actions = count("agent_actions");
+      if (actions > 0) badges["/dashboard/approvals"] = { count: actions, variant: "warning" };
+      const analyses = count("analyses");
+      if (analyses > 0) badges["/dashboard/review-queue"] = { count: analyses, variant: "warning" };
+      const time = count("time");
+      if (time > 0) badges["/dashboard/time-suggestions"] = { count: time, variant: "info" };
     }
 
     // Signatures — pending
@@ -169,43 +171,6 @@ export const GET = createHandler(
     ).length;
     if (invoiceCount > 0) {
       badges["/dashboard/invoicing"] = { count: invoiceCount, variant: "warning" };
-    }
-
-    // Review Inbox — unreviewed items from client submissions + case frontmatter
-    let reviewInboxCount = 0;
-    for (const p of submissions) {
-      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-      const rs = String(fm.review_status ?? "");
-      if (rs !== "reviewed" && rs !== "imported") reviewInboxCount++;
-    }
-    for (const p of casePages) {
-      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-      const sds = Array.isArray(fm.suggested_deadlines)
-        ? (fm.suggested_deadlines as Array<Record<string, unknown>>)
-        : [];
-      for (const sd of sds) {
-        if (!sd.confirmed && sd.review_status !== "approved" && sd.review_status !== "rejected")
-          reviewInboxCount++;
-      }
-      const parties = Array.isArray(fm.suggested_parties)
-        ? (fm.suggested_parties as Array<Record<string, unknown>>)
-        : [];
-      for (const party of parties) {
-        if (
-          !party.confirmed &&
-          party.review_status !== "approved" &&
-          party.review_status !== "rejected"
-        )
-          reviewInboxCount++;
-      }
-      const facts = Array.isArray(fm.facts) ? (fm.facts as Array<Record<string, unknown>>) : [];
-      for (const fact of facts) {
-        const rs = String(fact.review_status ?? "pending");
-        if (rs === "pending") reviewInboxCount++;
-      }
-    }
-    if (reviewInboxCount > 0) {
-      badges["/dashboard/communications"] = { count: reviewInboxCount, variant: "warning" };
     }
 
     return apiSuccess(badges);

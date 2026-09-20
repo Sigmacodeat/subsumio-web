@@ -12,7 +12,7 @@
  *   bun scripts/backfill-judikatur-normen.ts --court all --from 1900
  *   bun scripts/backfill-judikatur-normen.ts --court ogh --dry-run
  *
- * RIS OGD rules: one connection, 2 s between requests, bulk window (ris-lock + ris-policy).
+ * RIS OGD rules: one connection, 1–2 s between requests (ris-lock + delay).
  * Resumable: finished court/year pairs are recorded in the state file.
  */
 
@@ -31,7 +31,7 @@ import {
   patchCanonicalNormen,
   patchRawNormen,
 } from "./judikatur-file";
-import { risBulkPause } from "./ris-policy.ts";
+import { risMassPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 
@@ -155,7 +155,7 @@ async function main() {
         for (let page = 1; page <= 5000; page++) {
           const refs = await risPage(cfg.applikation, year, page);
           requests++;
-          await risBulkPause();
+          await risMassPause("Normen-Nachtrag");
           if (!refs || refs.length === 0) break;
           for (const ref of refs) {
             const item = mapRisReference(ref, new Date());

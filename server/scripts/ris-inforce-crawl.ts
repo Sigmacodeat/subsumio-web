@@ -11,10 +11,11 @@
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
-const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
-// RIS OGD: one connection, 2 s between requests, bulk window (ris-policy.ts).
+const UA = { "User-Agent": RIS_USER_AGENT };
+// RIS OGD: one connection, 1–2 s between requests. Was 4 parallel workers.
 const CONCURRENCY = 1;
 const PAGE_SIZE = 100;
 
@@ -92,7 +93,7 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
     });
   } catch (err) {
     if (attempt < 4) {
-      await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
+      await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
       return fetchPage(seite, attempt + 1);
     }
     console.error(`  ! Seite ${seite} nach 5 Versuchen aufgegeben: ${String(err)}`);
@@ -124,7 +125,7 @@ async function main() {
       const seite = next++;
       if (seite > pages) return;
       const norms = await fetchPage(seite);
-      await risBulkPause();
+      await risMassPause("Normen-Inventar");
       for (const n of norms) {
         buf.push(JSON.stringify(n));
         written++;

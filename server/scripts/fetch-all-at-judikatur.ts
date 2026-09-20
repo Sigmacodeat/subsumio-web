@@ -39,11 +39,11 @@ import {
   rememberOnDisk,
   type JudikaturDoc,
 } from "./judikatur-file";
-import { risBulkPause } from "./ris-policy.ts";
+import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
-const RETRY_BASE_MS = 2000; // never below the RIS 2 s pause
+const RETRY_BASE_MS = 1000;
 
 /** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
 function isRisOffHours(): boolean {
@@ -492,11 +492,11 @@ async function fullScanCourt(
           console.log(`  [${totalWritten}] ${year} — ${doc.court} ${doc.az}`);
         }
 
-        if (!skipText) await risBulkPause();
+        if (!skipText) await risMassPause("Judikatur-Abruf");
       }
 
       if (refs.length < 100) break;
-      await risBulkPause();
+      await risMassPause("Judikatur-Abruf");
     }
 
     if (yearCount > 0 || yearSkipped > 0) {
@@ -544,9 +544,7 @@ async function main() {
     console.log(`✅ Off-hours reached. Starting downloads.`);
   }
 
-  console.log(
-    `\n📋 RIS OGD Rate Limiting: 2000ms between requests, single connection, bulk window 20–5 h / weekends / holidays`
-  );
+  console.log(`\n📋 RIS OGD Rate Limiting: ${RIS_PAUSE_MS}ms between requests, single connection`);
   console.log(`   Prior notification: ris.it@bka.gv.at (for mass downloads)\n`);
 
   const courtsToRun =

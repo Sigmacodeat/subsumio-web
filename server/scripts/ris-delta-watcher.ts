@@ -55,6 +55,7 @@ import {
 } from "./judikatur-file";
 import { landOfDocId } from "./normalize/normalize-corpus";
 import { buildTextMarkdown, textRefsOf } from "./fetch-entscheidungstexte";
+import { RIS_PAUSE_MS } from "./ris-pace";
 import {
   fetchWithRetry,
   risXmlToText,
@@ -63,7 +64,6 @@ import {
   validateFetchedText,
   contentMatchesDocument,
 } from "./backfill-utils";
-import { risBulkPause } from "./ris-policy.ts";
 
 // ── Config ─────────────────────────────────────────────────────────────
 
@@ -215,7 +215,7 @@ function markiereZumImport(pfad: string, art: "edit" | "create" = "edit"): void 
 
 async function fetchXml(url: string): Promise<string | null> {
   // One document per pause — the watcher fetched back to back before.
-  await risBulkPause();
+  await new Promise((r) => setTimeout(r, RIS_PAUSE_MS));
   const proxyOpts = proxyFetchOptions();
   const res = await fetchWithRetry(url, {
     headers: RIS_UA,

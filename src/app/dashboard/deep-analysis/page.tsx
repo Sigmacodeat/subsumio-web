@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import {
   FileSearch,
@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { DocumentPicker, type PickedDocument } from "@/components/legal/document-picker";
+import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface DeepAnalysisCitation {
   slug: string;
@@ -75,12 +77,58 @@ const riskBorder: Record<string, string> = {
   critical: "border-l-[color:var(--ds-danger-solid)]",
 };
 
+/** The report as Markdown, for filing in the matter. */
+function reportMarkdown(report: DeepAnalysisReport, docs: PickedDocument[]): string {
+  const titles = new Map(docs.map((d) => [d.slug, d.name]));
+  const lines = [
+    `**Gesamtrisiko:** ${RISK_LABELS[report.overall_risk] ?? report.overall_risk} · ${report.document_count} Dokumente`,
+    "",
+    "## Zusammenfassung",
+    report.executive_summary,
+  ];
+  if (report.findings.length) {
+    lines.push("", "## Befunde");
+    for (const f of report.findings) {
+      lines.push(
+        "",
+        `### ${f.theme} (${RISK_LABELS[f.risk_level] ?? f.risk_level})`,
+        f.description,
+        f.affected_documents.length
+          ? `Betroffen: ${f.affected_documents.map((s) => docLabel(s, titles)).join(", ")}`
+          : ""
+      );
+    }
+  }
+  if (report.cross_document_patterns.length) {
+    lines.push("", "## Dokumentübergreifende Muster", ...report.cross_document_patterns.map((p) => `- ${p}`));
+  }
+  if (report.warnings.length) {
+    lines.push("", "## Hinweise", ...report.warnings.map((w) => `- ${w}`));
+  }
+  return lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n");
+}
+
+/** The run as the status route reports it. */
+interface RunStatus {
+  run_slug: string;
+  status: "queued" | "running" | "done" | "failed" | "cancelled";
+  phase: "queued" | "loading" | "analysing" | "grounding" | "finished";
+  phase_label: string;
+  document_count: number;
+  report: DeepAnalysisReport | null;
+  error: string | null;
+  cancel_requested: boolean;
+  cancel_too_late: boolean;
+}
+
 export default function DeepAnalysisPage() {
   const { t } = useLang();
   const [report, setReport] = useState<DeepAnalysisReport | null>(null);
   const [loading, setLoading] = useState(false);
+  const [run_, setRun] = useState<RunStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [slugs, setSlugs] = useState("");
+  const [docs, setDocs] = useState<PickedDocument[]>([]);
+  const [caseSlug, setCaseSlug] = useState("");
   const [prompt, setPrompt] = useState("");
   const [expandedFindings, setExpandedFindings] = useState<Set<number>>(new Set());
   const {
@@ -89,50 +137,111 @@ export default function DeepAnalysisPage() {
     groundAnswer: groundReport,
   } = useGroundedAnswer();
 
+  // The analysis runs as a background job: the result survives a closed tab,
+  // and a run that has not reached the model can be stopped.
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopPolling = () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = null;
+  };
+  useEffect(() => () => stopPolling(), []);
+
+  const applyRun = useCallback(
+    (status: RunStatus) => {
+      setRun(status);
+      if (status.status === "done" && status.report) {
+        setReport(status.report);
+        const groundingText = [
+          status.report.executive_summary,
+          ...status.report.findings.map((f) => f.description),
+          ...status.report.cross_document_patterns,
+        ].join("\n\n");
+        groundReport(groundingText).catch(() => {});
+      }
+      if (status.status === "done" || status.status === "failed" || status.status === "cancelled") {
+        stopPolling();
+        setLoading(false);
+        if (status.status === "failed") {
+          setError(
+            status.error
+              ? `Die Analyse ist fehlgeschlagen: ${status.error}`
+              : "Die Analyse ist fehlgeschlagen."
+          );
+        }
+      }
+    },
+    [groundReport]
+  );
+
+  const poll = useCallback(
+    async (runSlug: string) => {
+      const id = runSlug.split("/").pop() ?? runSlug;
+      try {
+        const res = await fetch(`/api/legal/deep-analysis/run/${encodeURIComponent(id)}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        applyRun((json.data ?? json) as RunStatus);
+      } catch {
+        // keep polling: a single failed poll is not a failed run
+      }
+    },
+    [applyRun]
+  );
+
   const run = async () => {
-    const slugList = slugs
-      .split(/[,\n\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const slugList = docs.map((d) => d.slug);
     if (slugList.length === 0) return;
 
     setLoading(true);
     setError(null);
     setReport(null);
+    setRun(null);
     try {
-      const res = await csrfFetch("/api/legal/deep-analysis", {
+      const res = await csrfFetch("/api/legal/deep-analysis/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slugs: slugList,
           ...(prompt ? { prompt } : {}),
+          ...(caseSlug ? { case_slug: caseSlug } : {}),
         }),
       });
       if (!res.ok) {
+        setLoading(false);
         setError(
           res.status === 404
-            ? "Mindestens ein Dokument wurde nicht gefunden. Bitte prüfen Sie die Kennungen."
+            ? "Mindestens ein Dokument wurde nicht gefunden."
             : res.status === 400
-              ? "Bitte prüfen Sie die Eingabe: 1 bis 25 Dokumentkennungen."
-              : "Die Analyse ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut."
+              ? "Bitte wählen Sie 1 bis 25 Dokumente."
+              : res.status === 503
+                ? "Die KI ist gerade nicht erreichbar. Bitte später erneut versuchen."
+                : "Die Analyse konnte nicht gestartet werden. Bitte später erneut versuchen."
         );
         return;
       }
       const json = await res.json();
-      const data = json.data ?? json;
-      setReport(data);
-      const groundingText = [
-        data.executive_summary,
-        ...data.findings.map((f: DeepAnalysisFinding) => f.description),
-        ...data.cross_document_patterns,
-      ].join("\n\n");
-      groundReport(groundingText).catch(() => {});
+      const status = (json.data ?? json) as RunStatus;
+      applyRun(status);
+      stopPolling();
+      pollRef.current = setInterval(() => void poll(status.run_slug), 3000);
     } catch {
-      setError(
-        "Die Analyse ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut."
-      );
-    } finally {
       setLoading(false);
+      setError("Die Analyse konnte nicht gestartet werden. Bitte später erneut versuchen.");
+    }
+  };
+
+  const cancelRun = async () => {
+    if (!run_) return;
+    const id = run_.run_slug.split("/").pop() ?? run_.run_slug;
+    try {
+      const res = await csrfFetch(`/api/legal/deep-analysis/run/${encodeURIComponent(id)}/cancel`, {
+        method: "POST",
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      applyRun((json.data ?? json) as RunStatus);
+    } catch {
+      // the run keeps going; the next poll shows its state
     }
   };
 
@@ -166,21 +275,16 @@ export default function DeepAnalysisPage() {
       <Card className="p-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="deep-analysis-docs" className="mb-1.5 block text-sm font-medium">
-              Dokumentkennungen (durch Komma oder Zeilenumbruch getrennt)
-            </label>
-            <textarea
+            <DocumentPicker
               id="deep-analysis-docs"
-              value={slugs}
-              onChange={(e) => setSlugs(e.target.value)}
-              placeholder="legal/contracts/vertrag-1, legal/contracts/vertrag-2, ..."
-              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-              rows={3}
+              selected={docs}
+              onChange={setDocs}
+              onCaseChange={setCaseSlug}
+              max={25}
               disabled={loading}
             />
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Maximal 25 Dokumente pro Analyse. Einfacher: Dokumente unter „Dokumente“ auswählen
-              und dort „Tiefenanalyse“ starten.
+              Maximal 25 Dokumente pro Analyse.
             </p>
           </div>
           <div>
@@ -195,12 +299,27 @@ export default function DeepAnalysisPage() {
               disabled={loading}
             />
           </div>
-          <div className="flex justify-end">
-            <Button onClick={run} disabled={loading || !slugs.trim()}>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {loading && run_ && (
+              <p
+                aria-live="polite"
+                className="mr-auto flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]"
+              >
+                <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                {run_.phase_label} · {run_.document_count} Dokumente. Sie können die Seite
+                verlassen; das Ergebnis bleibt gespeichert.
+              </p>
+            )}
+            {loading && run_ && !run_.cancel_requested && (
+              <Button variant="ghost" onClick={() => void cancelRun()}>
+                Abbrechen
+              </Button>
+            )}
+            <Button onClick={run} disabled={loading || docs.length === 0}>
               {loading ? (
                 <>
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Wird analysiert…
+                  Läuft …
                 </>
               ) : (
                 <>
@@ -210,6 +329,18 @@ export default function DeepAnalysisPage() {
               )}
             </Button>
           </div>
+          {run_?.status === "cancelled" && (
+            <p className="text-sm text-[color:var(--ds-text-muted)]">
+              Die Analyse wurde abgebrochen, bevor das Modell gestartet ist. Es sind keine Kosten
+              entstanden.
+            </p>
+          )}
+          {run_?.cancel_too_late && (
+            <p className="text-sm text-[color:var(--ds-text-muted)]">
+              Der Abbruch kam zu spät: Das Modell hatte bereits geantwortet. Das Ergebnis steht
+              unten und wurde berechnet.
+            </p>
+          )}
         </div>
       </Card>
 
@@ -253,6 +384,13 @@ export default function DeepAnalysisPage() {
                   Gesamtrisiko: {RISK_LABELS[report.overall_risk] ?? report.overall_risk}
                 </Badge>
                 <Badge variant="default">{report.document_count} Dokumente</Badge>
+                <SaveToMatterButton
+                  source="deep_analysis"
+                  defaultCase={caseSlug}
+                  defaultTitle="Tiefenanalyse"
+                  content={reportMarkdown(report, docs)}
+                  citations={reportGrounding?.grounded_citations}
+                />
               </div>
             </div>
             <p className="text-sm leading-relaxed">{report.executive_summary}</p>
