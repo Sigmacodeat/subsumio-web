@@ -104,8 +104,21 @@ describe("Pipeline D: Chat → Intent → Routing → Citation → Grounding", (
     expect(paragraphs.some((p) => p.includes("195"))).toBe(true);
 
     // ── Stage 4: Ground citations against corpus ──────────────────────
+    // The mock has to look like a real corpus file. lookupCorpusParagraph
+    // reads the norm under its "## § N" heading — a prose sentence mentioning
+    // the paragraph matches nothing, so grounding verified zero citations and
+    // this test failed for that reason alone, not because of the pipeline.
     mockReadFile.mockResolvedValue(
-      "Die Pflichten aus dem Kaufvertrag werden in § 433 BGB geregelt."
+      [
+        "## § 195 Regelmäßige Verjährungsfrist",
+        "Die regelmäßige Verjährungsfrist beträgt drei Jahre.",
+        "",
+        "## § 433 Vertragstypische Pflichten beim Kaufvertrag",
+        "Durch den Kaufvertrag wird der Verkäufer einer Sache verpflichtet, dem Käufer die Sache zu übergeben und das Eigentum an der Sache zu verschaffen.",
+        "",
+        "## § 437 Rechte des Käufers bei Mängeln",
+        "Ist die Sache mangelhaft, kann der Käufer Nacherfüllung verlangen, vom Vertrag zurücktreten oder den Kaufpreis mindern.",
+      ].join("\n")
     );
 
     const grounding = await groundAnswerCitations(LEGAL_ANSWER);
@@ -114,9 +127,10 @@ describe("Pipeline D: Chat → Intent → Routing → Citation → Grounding", (
     expect(grounding.grounded_citations.length).toBeGreaterThanOrEqual(3);
     expect(grounding.analyzed_at).toBeTruthy();
 
-    // At least some citations should be verified (mock returns content)
+    // Every cited paragraph stands in the mocked corpus file, so all of them
+    // verify — a weaker "> 0" hid the fact that none of them did.
     const verifiedCount = grounding.citations_verified;
-    expect(verifiedCount).toBeGreaterThan(0);
+    expect(verifiedCount).toBeGreaterThanOrEqual(3);
   });
 
   test("pipeline: routing handles malformed LLM response gracefully", () => {
