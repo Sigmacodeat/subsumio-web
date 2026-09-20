@@ -63,7 +63,9 @@ export default function FeaturesPage() {
             <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
             <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
               <GraphHero />
-              <p className="mt-2 text-center font-mono text-sm [color:var(--mk-text-subtle)]">
+              {/* -muted, not -subtle: on the glass panel the subtle tone only
+                  reached 3.5:1, below the 4.5:1 a caption needs. */}
+              <p className="mt-2 text-center font-mono text-sm [color:var(--mk-text-muted)]">
                 {UI_STRINGS.featuresGraphCaption}
               </p>
             </div>
