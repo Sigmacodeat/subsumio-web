@@ -26,8 +26,14 @@ const ACCEPTED_EVENTS = ["case.created", "deadline.due", "invoice.paid", "email.
 /**
  * POST /api/webhook/incoming
  *
- * Empfängt Webhooks von Drittanbietern (Zapier, beA, etc.)
- * Authentifizierung via X-API-Key Header.
+ * Nimmt Ereignisse von Drittanbietern (Zapier, beA, …) entgegen.
+ * Authentifizierung über den Kopfzeilen-Eintrag X-API-Key.
+ *
+ * Der Schlüssel ist installationsweit, nicht kanzleibezogen — ein Ereignis
+ * lässt sich daher keiner Kanzlei zuordnen und wird nur protokolliert. Die
+ * Antwort sagt das auch: sie versprach früher "queued for processing",
+ * obwohl nichts verarbeitet wurde. Eine echte Verarbeitung braucht zuerst
+ * kanzleibezogene Schlüssel.
  */
 function verifyWebhookKey(provided: string): boolean {
   const expected = env("SUBSUMIO_WEBHOOK_API_KEY");
@@ -68,14 +74,15 @@ export const POST = createPublicHandler(
       return NextResponse.json({ success: true, dedup: true, received: event });
     }
 
-    // Log and return success (processing is async)
-    log.debug("webhook received", { event });
+    log.info("webhook received (logged only)", { event, eventId: eventId || undefined });
     if (eventId) await idempotency.markProcessed(eventId, event);
     return NextResponse.json({
       success: true,
       received: event,
+      processed: false,
       timestamp: new Date().toISOString(),
-      message: "Webhook received and queued for processing",
+      message:
+        "Ereignis angenommen und protokolliert. Eine automatische Verarbeitung in einer Akte findet derzeit nicht statt.",
     });
   }
 );

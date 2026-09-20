@@ -41,6 +41,20 @@ interface AnalysisResult {
   changes?: string[];
   understanding?: string;
   facts?: string;
+  /** Slugs or citations the answer is based on, when the API supplies them. */
+  sources?: string[];
+  citations?: Array<{ slug?: string; title?: string; source?: string }>;
+}
+
+/** Readable source labels from whatever shape the API returned. */
+function sourcesOf(result: AnalysisResult): string[] {
+  if (Array.isArray(result.sources)) return result.sources.filter(Boolean);
+  if (Array.isArray(result.citations)) {
+    return result.citations
+      .map((c) => c.title || c.slug || c.source || "")
+      .filter((s): s is string => Boolean(s));
+  }
+  return [];
 }
 
 const API_BASE = "https://subsum.io";
@@ -213,7 +227,9 @@ async function analyzeSelection() {
     const result = await apiPost<AnalysisResult>("/api/legal/analyze", { text, mode: "contract" });
     renderTextResult(
       "analyzeResult",
-      result.summary ?? result.text ?? "Keine Analyse zurückgegeben."
+      result.summary ?? result.text ?? "Keine Analyse zurückgegeben.",
+      false,
+      { sources: sourcesOf(result) }
     );
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Analyse fehlgeschlagen.", false);
@@ -232,7 +248,12 @@ async function summarizeSelection() {
       return;
     }
     const result = await apiPost<AnalysisResult>("/api/legal/summarize", { text });
-    renderTextResult("summarizeResult", result.summary ?? result.text ?? "Keine Zusammenfassung.");
+    renderTextResult(
+      "summarizeResult",
+      result.summary ?? result.text ?? "Keine Zusammenfassung.",
+      false,
+      { sources: sourcesOf(result) }
+    );
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Zusammenfassung fehlgeschlagen.", false);
   } finally {
@@ -252,7 +273,7 @@ async function extractObligations() {
     const result = await apiPost<AnalysisResult>("/api/legal/obligation-extract", { text });
     const obligations = result.obligations ?? [];
     if (obligations.length === 0) {
-      renderTextResult("obligResult", "Keine Pflichten gefunden.");
+      renderTextResult("obligResult", "Keine Pflichten gefunden.", false, { ai: false });
       return;
     }
     const el = document.getElementById("obligResult")!;
@@ -267,7 +288,7 @@ async function extractObligations() {
       </div>
     `
       )
-      .join("");
+      .join("") + aiNoticeHtml(sourcesOf(result));
     el.style.display = "block";
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Extraktion fehlgeschlagen.", false);
@@ -311,6 +332,7 @@ async function checkRisks() {
       `
         )
         .join("")}
+      ${aiNoticeHtml(sourcesOf(result))}
     `;
     el.style.display = "block";
   } catch (e) {
@@ -342,7 +364,7 @@ async function draftContract() {
       template_type: template || undefined,
     });
     const text = result.text ?? result.markdown ?? "";
-    renderTextResult("draftResult", text, true);
+    renderTextResult("draftResult", text, true, { sources: sourcesOf(result) });
     document.getElementById("insertDraftBtn")!.style.display = "block";
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Entwurf fehlgeschlagen.", false, "contractStatus");
@@ -392,6 +414,7 @@ async function redlineContract() {
     el.innerHTML = `
       <div style="font-size:11px;color:#8a8aa8;margin-bottom:6px">${changes.length} Änderungen identifiziert</div>
       <div style="font-size:12px;line-height:1.5">${escapeHtml(redlined).replace(/\n/g, "<br>")}</div>
+      ${aiNoticeHtml(sourcesOf(result))}
     `;
     el.style.display = "block";
     document.getElementById("insertRedlineBtn")!.style.display = "block";
@@ -436,7 +459,9 @@ async function loadCaseContext() {
     );
     renderTextResult(
       "contextResult",
-      result.understanding ?? result.summary ?? result.facts ?? "Kein Kontext verfügbar."
+      result.understanding ?? result.summary ?? result.facts ?? "Kein Kontext verfügbar.",
+      false,
+      { sources: sourcesOf(result) }
     );
   } catch (e) {
     showStatus(
@@ -545,11 +570,39 @@ async function saveAsBrainPage() {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function renderTextResult(containerId: string, text: string, storeRaw = false) {
+/**
+ * Every AI answer in the task pane carries the same notice as the dashboard
+ * (EU AI Act Art. 50): it is a draft a lawyer has to check. The pane showed
+ * bare model output before, which is exactly what the rest of the product is
+ * built to prevent. Sources are listed when the API returns them.
+ */
+const AI_NOTICE = "KI-generierter Entwurf — anwaltlich zu prüfen und freizugeben.";
+
+function aiNoticeHtml(sources?: string[]): string {
+  const list =
+    sources && sources.length > 0
+      ? `<div style="margin-top:6px;font-size:11px;color:#9a9ab8">Quellen: ${sources
+          .slice(0, 6)
+          .map((s) => escapeHtml(s))
+          .join(" · ")}</div>`
+      : `<div style="margin-top:6px;font-size:11px;color:#9a9ab8">Ohne Fundstellen — bitte gegen die Akte prüfen.</div>`;
+  return `<div style="margin-top:10px;padding:8px 10px;border:1px solid #4a4a6a;border-radius:6px;background:#2a2a40">
+    <div style="font-size:11px;font-weight:600;color:#e0b341">${AI_NOTICE}</div>
+    ${list}
+  </div>`;
+}
+
+function renderTextResult(
+  containerId: string,
+  text: string,
+  storeRaw = false,
+  options: { ai?: boolean; sources?: string[] } = {}
+) {
   const el = document.getElementById(containerId);
   if (!el) return;
   if (storeRaw) el.dataset.raw = text;
-  el.innerHTML = `<div style="font-size:12px;line-height:1.6;color:#c0c0d8">${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
+  const notice = options.ai === false ? "" : aiNoticeHtml(options.sources);
+  el.innerHTML = `<div style="font-size:12px;line-height:1.6;color:#c0c0d8">${escapeHtml(text).replace(/\n/g, "<br>")}</div>${notice}`;
   el.style.display = "block";
 }
 

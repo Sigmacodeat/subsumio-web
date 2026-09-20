@@ -25,7 +25,10 @@ export const GET = createHandler(
         "legal_case",
         "legal_contact",
         "invoice",
-        "deadline",
+        // The pages are written as "legal_deadline"; the old "deadline" type
+        // matched nothing, so an export contained no deadlines at all.
+        "legal_deadline",
+        "appointment",
         "document_draft",
         "signature_request",
         "agent_action",
