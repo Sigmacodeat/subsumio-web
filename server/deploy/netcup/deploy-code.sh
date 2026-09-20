@@ -5,6 +5,7 @@
 #   sh server/deploy/netcup/deploy-code.sh            # build and switch
 #   sh server/deploy/netcup/deploy-code.sh --build    # build only, no switch
 #   sh server/deploy/netcup/deploy-code.sh --web      # web app only, pipeline keeps running
+#   sh server/deploy/netcup/deploy-code.sh --app      # web + engine, pipeline keeps running
 #
 # The server folder /opt/subsumio is always a clean copy of one commit — no git
 # checkout, no leftovers from earlier versions. What lives only on the server
@@ -30,6 +31,14 @@ BUILD="web engine corpus-pipeline"
 if [ "${1:-}" = "--web" ]; then
   APP_SERVICES="web cron backup"
   BUILD="web"
+fi
+# --app: like a full deploy, but the corpus pipeline is left alone. Use it
+# while a multi-day RIS fetch is running — the pipeline container keeps its
+# open files from the previous release folder and finishes its work; the next
+# full deploy picks up the new code for it.
+if [ "${1:-}" = "--app" ]; then
+  APP_SERVICES="engine web cron backup"
+  BUILD="web engine"
 fi
 
 build_only=0
