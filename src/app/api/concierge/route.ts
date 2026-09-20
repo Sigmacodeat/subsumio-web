@@ -11,7 +11,7 @@ import { z } from "zod";
 import { createPublicHandler } from "@/lib/api-handler";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { engineHeadersForBrain } from "@/lib/engine";
-import { engineComplete, engineStream, isEngineLLMAvailable } from "@/lib/engine-llm";
+import { engineStream, isEngineLLMAvailable } from "@/lib/engine-llm";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { runConciergeTurnStream, type ConciergeReply, type StreamFn } from "@/lib/concierge/agent";
@@ -55,17 +55,14 @@ const MODEL_OPTS = {
   timeoutMs: 40_000,
 };
 
-/** Stream from the engine; fall back to a single completion when the engine
- *  has no streaming endpoint (older deployment) or the stream breaks before
- *  anything arrived. */
+/** One streamed completion through the engine gateway. */
 const stream: StreamFn = async ({ system, messages }, onChunk) => {
-  const headers = engineHeadersForBrain(conciergeBrain());
-  const streamed = await engineStream(headers, { ...MODEL_OPTS, system, messages }, onChunk);
-  if (streamed) return { text: streamed.text, model: streamed.model };
-  const result = await engineComplete(headers, { ...MODEL_OPTS, system, messages });
-  if (!result) return null;
-  onChunk(result.text);
-  return { text: result.text, model: result.model };
+  const result = await engineStream(
+    engineHeadersForBrain(conciergeBrain()),
+    { ...MODEL_OPTS, system, messages },
+    onChunk
+  );
+  return result ? { text: result.text, model: result.model } : null;
 };
 
 export const POST = createPublicHandler(
