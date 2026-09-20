@@ -24,7 +24,7 @@
 import { parseArgs } from "util";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
-import { noiseFilterSql } from "../src/core/embedding-run.ts";
+import { noiseFilterSql, promotionVerdict } from "../src/core/embedding-run.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -199,31 +199,25 @@ async function main() {
     return;
   }
 
-  if (Number(stray?.cnt ?? 0) > 0) {
-    console.error("Abbruch: die Spalte hält Vektoren eines anderen Modells.");
-    process.exit(1);
+  const missingIndexes: string[] = [];
+  for (const ix of INDEXES) {
+    if (!(await indexExists(engine, ix.scaffold))) missingIndexes.push(ix.scaffold);
   }
-  if (Number(open?.cnt ?? 0) > 0 && !values["allow-partial"]) {
-    console.error(
-      `Abbruch: ${Number(open?.cnt).toLocaleString("de-AT")} Chunks sind noch nicht eingebettet.\n` +
-        `Erst den Lauf zu Ende bringen, oder bewusst --allow-partial setzen.`
-    );
+  const verdict = promotionVerdict({
+    signature,
+    filledRows: Number(filled?.cnt ?? 0),
+    openCandidates: Number(open?.cnt ?? 0),
+    strayModelRows: Number(stray?.cnt ?? 0),
+    missingIndexes,
+    scaffoldType: scaffold.t,
+    liveType: live?.t,
+    allowPartial: values["allow-partial"] as boolean,
+  });
+  for (const w of verdict.warnings) console.warn(`Hinweis: ${w}`);
+  if (verdict.blockers.length > 0) {
+    console.error("Abbruch — nichts geändert:");
+    for (const b of verdict.blockers) console.error(`  · ${b}`);
     process.exit(1);
-  }
-  const missing = [];
-  for (const ix of INDEXES) if (!(await indexExists(engine, ix.scaffold))) missing.push(ix.scaffold);
-  if (missing.length > 0) {
-    console.error(
-      `Abbruch: es fehlen die Indizes ${missing.join(", ")}.\n` +
-        `Erst "--indexes" laufen lassen; ohne sie wäre die Suche nach dem Umschalten unbrauchbar.`
-    );
-    process.exit(1);
-  }
-  if (live && live.t.replace(/\s/g, "") !== scaffold.t.replace(/\s/g, "")) {
-    console.warn(
-      `Hinweis: die Ersatzspalte ist ${scaffold.t}, die bisherige ${live.t}. ` +
-        `Das Schema deklariert vector(1536) — prüfe migrate.ts, bevor die nächste Migration läuft.`
-    );
   }
 
   console.log("Schalte um…");

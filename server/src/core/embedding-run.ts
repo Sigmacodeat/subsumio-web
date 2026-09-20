@@ -92,3 +92,104 @@ export async function wrapWithPageContext(
     wrapChunkForEmbedding(c.chunk_text, prefixByPage.get(c.page_id) ?? null, c.chunk_source)
   );
 }
+
+// ---- Promotion safety -------------------------------------------------
+
+/** What the database says about a scaffold column about to be promoted. */
+export interface PromotionState {
+  /** Model signature read off the column comment; absent means not ours. */
+  signature?: string;
+  /** Rows that already carry a vector in the scaffold column. */
+  filledRows: number;
+  /** Embeddable rows still empty (live pages, above the noise threshold). */
+  openCandidates: number;
+  /** Rows whose recorded model is not the column's signature. */
+  strayModelRows: number;
+  /** Indexes the live column carries that the scaffold does not have yet. */
+  missingIndexes: string[];
+  /** `format_type` of scaffold and live column, e.g. "vector(1536)". */
+  scaffoldType?: string;
+  liveType?: string;
+  /** Operator accepted promoting before every chunk is embedded. */
+  allowPartial: boolean;
+}
+
+export interface PromotionVerdict {
+  /** Reasons to refuse. Empty means the swap may proceed. */
+  blockers: string[];
+  /** Worth saying out loud, but not a reason to stop. */
+  warnings: string[];
+}
+
+/**
+ * Whether a scaffold column may take the live column's place.
+ *
+ * The swap drops the column search runs on, so it is the one step in the
+ * model migration that cannot be undone by running something again. These
+ * checks are what stands between a finished migration and a product that
+ * answers nothing — which is why they live here, tested, rather than as
+ * inline ifs in a script that runs once.
+ */
+export function promotionVerdict(state: PromotionState): PromotionVerdict {
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  const n = (x: number) => x.toLocaleString("de-AT");
+
+  if (!state.signature) {
+    blockers.push(
+      "Die Spalte trägt keine Modell-Signatur — sie stammt nicht aus einem Embedding-Lauf."
+    );
+  }
+
+  // An empty column would take search down completely, and --allow-partial
+  // must not be a way to do that by accident.
+  if (state.filledRows === 0) {
+    blockers.push(
+      "Die Ersatzspalte ist leer. Sie an die Stelle der Live-Spalte zu setzen hieße, " +
+        "die Suche abzuschalten."
+    );
+  }
+
+  if (state.strayModelRows > 0) {
+    blockers.push(
+      `${n(state.strayModelRows)} Zeilen halten Vektoren eines anderen Modells. ` +
+        "Vektoren zweier Modelle in einer Spalte ergeben keinen Abstand, sondern Rauschen."
+    );
+  }
+
+  if (state.openCandidates > 0) {
+    if (!state.allowPartial) {
+      blockers.push(
+        `${n(state.openCandidates)} Chunks sind noch nicht eingebettet. ` +
+          "Erst den Lauf zu Ende bringen, oder bewusst --allow-partial setzen."
+      );
+    } else {
+      const total = state.filledRows + state.openCandidates;
+      const share = total > 0 ? (state.openCandidates / total) * 100 : 0;
+      warnings.push(
+        `${n(state.openCandidates)} Chunks (${share.toLocaleString("de-AT", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        })} %) bleiben ohne Vektor und ` +
+          "sind nach dem Umschalten für die Vektorsuche unsichtbar."
+      );
+    }
+  }
+
+  if (state.missingIndexes.length > 0) {
+    blockers.push(
+      `Es fehlen die Indizes ${state.missingIndexes.join(", ")}. Ohne sie durchsucht die ` +
+        "Datenbank nach dem Umschalten Millionen Vektoren einzeln."
+    );
+  }
+
+  const tidy = (t?: string) => t?.replace(/\s/g, "");
+  if (state.scaffoldType && state.liveType && tidy(state.scaffoldType) !== tidy(state.liveType)) {
+    warnings.push(
+      `Die Ersatzspalte ist ${state.scaffoldType}, die bisherige ${state.liveType}. ` +
+        "Das Schema deklariert vector(1536) — vor der nächsten Migration prüfen."
+    );
+  }
+
+  return { blockers, warnings };
+}
