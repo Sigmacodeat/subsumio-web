@@ -28,6 +28,17 @@ import {
 import { assertChunkModelConsistency } from "../src/core/embedding-consistency-guard.ts";
 import { randomUUID } from "node:crypto";
 
+/**
+ * Chunks too short to carry a legal statement. Measured on 2026-09-20: 47,941
+ * live chunks fall under this, almost all of them list artefacts — "Kein RS",
+ * "vgl", or a bare citation header ("TE OGH 1986-06-17 10 Os 38/86"). Embedded
+ * they cost money and return as noise on unrelated questions.
+ */
+const MIN_EMBED_CHARS = 80;
+
+/** The SQL predicate for it, so every candidate query uses the same rule. */
+const NOISE_FILTER = `length(btrim(c.chunk_text)) >= ${MIN_EMBED_CHARS}`;
+
 // pgvector expects "[1,2,3,...]" string format, not JSON
 function toVectorStr(arr: Float32Array): string {
   return "[" + Array.from(arr).join(",") + "]";
@@ -191,11 +202,11 @@ async function main() {
   if (DRY_RUN) {
     const countResult = SOURCE_FILTER
       ? await engine.executeRaw(
-          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.deleted_at IS NULL AND p.source_id = $1`,
+          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.deleted_at IS NULL AND ${NOISE_FILTER} AND p.source_id = $1`,
           [SOURCE_FILTER]
         )
       : await engine.executeRaw(
-          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.deleted_at IS NULL`
+          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.deleted_at IS NULL AND ${NOISE_FILTER}`
         );
     const pendingCount = Number((countResult[0] as { cnt: number }).cnt);
     console.log(
@@ -226,6 +237,7 @@ async function main() {
              WHERE c.embedding IS NULL
                AND p.source_id = $4
                AND p.deleted_at IS NULL
+               AND ${NOISE_FILTER}
                AND (
                  c.model NOT LIKE 'embedding-claim:%'
                  OR c.embedded_at IS NULL
@@ -251,6 +263,7 @@ async function main() {
              JOIN pages p ON c.page_id = p.id
              WHERE c.embedding IS NULL
                AND p.deleted_at IS NULL
+               AND ${NOISE_FILTER}
                AND (
                  c.model NOT LIKE 'embedding-claim:%'
                  OR c.embedded_at IS NULL
