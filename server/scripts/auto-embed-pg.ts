@@ -18,31 +18,17 @@ import { buildGatewayConfig } from "../src/core/ai/build-gateway-config.ts";
 import { configureGateway } from "../src/core/ai/gateway.ts";
 import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts";
 import {
-  buildContextualPrefix,
-  buildLegalContextualPrefix,
-  isCourtDecisionPage,
-  isLegalPage,
-  sanitizeTitle,
-  wrapChunkForEmbedding,
-} from "../src/core/embedding-context.ts";
+  noiseFilterSql,
+  toVectorStr,
+  wrapWithPageContext,
+  type PendingChunk,
+} from "../src/core/embedding-run.ts";
 import { assertChunkModelConsistency } from "../src/core/embedding-consistency-guard.ts";
 import { randomUUID } from "node:crypto";
 
-/**
- * Chunks too short to carry a legal statement. Measured on 2026-09-20: 47,941
- * live chunks fall under this, almost all of them list artefacts — "Kein RS",
- * "vgl", or a bare citation header ("TE OGH 1986-06-17 10 Os 38/86"). Embedded
- * they cost money and return as noise on unrelated questions.
- */
-const MIN_EMBED_CHARS = 80;
-
-/** The SQL predicate for it, so every candidate query uses the same rule. */
-const NOISE_FILTER = `length(btrim(c.chunk_text)) >= ${MIN_EMBED_CHARS}`;
-
-// pgvector expects "[1,2,3,...]" string format, not JSON
-function toVectorStr(arr: Float32Array): string {
-  return "[" + Array.from(arr).join(",") + "]";
-}
+/** The rule and the wrapping live in core/embedding-run.ts, so the run that
+ *  fills a second column for a model switch builds byte-identical texts. */
+const NOISE_FILTER = noiseFilterSql("c");
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -103,13 +89,6 @@ function logError(msg: string): void {
   console.error(msg);
 }
 
-interface PendingChunk {
-  id: number;
-  chunk_text: string;
-  chunk_source: string | null;
-  page_id: number;
-}
-
 async function releaseClaim(
   engine: Awaited<ReturnType<typeof createEngine>>,
   claim: string,
@@ -122,46 +101,6 @@ async function releaseClaim(
      SET model = $3, embedded_at = NULL
      WHERE id = ANY($1::int[]) AND model = $2 AND embedding IS NULL`,
     [ids, claim, targetSignature]
-  );
-}
-
-/**
- * The same page context the import path puts in front of every chunk
- * ("<context>AT ABGB § 1295 | Allgemeines bürgerliches Gesetzbuch</context>").
- * Without it § 138 ABGB and § 138 BGB, or two VwGH decisions with identical
- * boilerplate, embed to nearly the same vector.
- */
-async function wrapWithPageContext(
-  engine: { executeRaw(sql: string, params?: unknown[]): Promise<unknown[]> },
-  chunks: PendingChunk[]
-): Promise<string[]> {
-  const pageIds = [...new Set(chunks.map((c) => c.page_id))];
-  const rows = (await engine.executeRaw(
-    `SELECT id, title, type, frontmatter FROM pages WHERE id = ANY($1::int[])`,
-    [pageIds]
-  )) as Array<{
-    id: number;
-    title: string | null;
-    type: string | null;
-    frontmatter: Record<string, unknown> | null;
-  }>;
-  const prefixByPage = new Map<number, string | null>();
-  for (const p of rows) {
-    const fm = p.frontmatter ?? {};
-    const safeTitle = sanitizeTitle(p.title ?? "");
-    const legal =
-      isLegalPage(fm) ||
-      isCourtDecisionPage(fm) ||
-      ["law", "statute", "court_decision", "judgement"].includes(p.type ?? "");
-    prefixByPage.set(
-      p.id,
-      legal
-        ? buildLegalContextualPrefix(safeTitle, fm, null)
-        : buildContextualPrefix(safeTitle, null)
-    );
-  }
-  return chunks.map((c) =>
-    wrapChunkForEmbedding(c.chunk_text, prefixByPage.get(c.page_id) ?? null, c.chunk_source)
   );
 }
 
