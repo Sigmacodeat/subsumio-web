@@ -77,13 +77,12 @@ nur Österreich). Das Hilfe-Panel im Produkt verlinkt pro Seite das passende Kap
 
 ## 5. Offen (Entscheidung oder Serverarbeit nötig)
 
-1. **Rechtsprechungs-Fallback erfindet Entscheidungen** (`research/rechtsprechung-tab.tsx`): findet die Suche
-   nichts, erzeugt ein KI-Fallback Urteile mit GZ/ECLI. Jetzt als „KI-Vorschlag, ungeprüft“ markiert; Empfehlung:
-   Fallback entfernen oder gegen RIS abgleichen.
+1. ~~**Rechtsprechungs-Fallback erfindet Entscheidungen**~~ Erledigt am 19.09.: Der Fallback ist entfernt,
+   die Suche zeigt nur Kanzleiwissen und RIS-Treffer.
 2. **Kalender-Abo (.ics) verlangt Anmeldung** — Outlook/Google können es nicht abonnieren; nötig ist eine
    Abo-Adresse mit eigenem Schlüssel. Bis dahin: Export-Datei (Handbuch beschreibt nur das).
 3. **Urlaubsvertretung leitet Fristen nicht weiter** (`forwardDeadlines` wird nirgends aufgerufen).
-4. **Badge-Zählung „Eingang prüfen“** (`api/dashboard/badges`) weicht von `api/review-inbox` ab.
+4. ~~**Badge-Zählung „Eingang prüfen“** (`api/dashboard/badges`) weicht von `api/review-inbox` ab.~~ Erledigt (0b80bdd5a6): Badges und Listen zählen aus `src/lib/approval-summary.ts`; neue Seite `/dashboard/freigaben`.
 5. Mobile Tabellenkarten (`DataTable`) zeigen ein leeres Auswahlkästchen.
 6. Server-Texte „im Brain“ in `server/src/core/legal/conflict-check.ts` (UI übersetzt sie bereits).
 7. Rechnungs-E-Mail mit PDF nicht gegen einen echten SMTP-Server geprüft (lokal kein Mailserver).

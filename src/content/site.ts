@@ -875,6 +875,8 @@ export const UI_STRINGS: Record<string, string> = {
   docsClearSearch: "Suche zurücksetzen",
   followContext: "Kontext folgen",
   menuAria: "Menü",
+  /** Kurzform der Haupt-Handlungsaufforderung für die Kopfzeile am Handy. */
+  ctaShort: "Testen",
   dismissAnnouncement: "Mitteilung schließen",
   languageLabel: "Sprache / Language",
   readInGerman: "Auf Deutsch lesen",
