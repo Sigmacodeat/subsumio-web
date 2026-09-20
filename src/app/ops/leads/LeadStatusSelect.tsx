@@ -13,6 +13,18 @@ const OPTIONS = [
 export default function LeadStatusSelect({ id, status }: { id: string; status: string }) {
   const [value, setValue] = useState(status);
   const [error, setError] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
+  async function remove() {
+    if (!window.confirm("Diese Anfrage endgültig löschen? (Art. 17 DSGVO)")) return;
+    const res = await csrfFetch("/api/admin/leads", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    }).catch(() => null);
+    if (res?.ok) setDeleted(true);
+    else setError(true);
+  }
 
   async function change(next: string) {
     const previous = value;
@@ -27,6 +39,10 @@ export default function LeadStatusSelect({ id, status }: { id: string; status: s
       setValue(previous);
       setError(true);
     }
+  }
+
+  if (deleted) {
+    return <span className="text-xs text-[color:var(--ds-text-subtle)]">gelöscht</span>;
   }
 
   return (
@@ -46,6 +62,13 @@ export default function LeadStatusSelect({ id, status }: { id: string; status: s
           </option>
         ))}
       </select>
+      <button
+        type="button"
+        onClick={() => void remove()}
+        className="mt-1 block text-xs text-[color:var(--ds-text-subtle)] underline underline-offset-2 hover:text-[color:var(--ds-danger-text)]"
+      >
+        Löschen
+      </button>
       {error && (
         <p role="alert" className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
           Nicht gespeichert

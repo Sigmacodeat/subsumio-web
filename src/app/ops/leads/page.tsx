@@ -32,6 +32,16 @@ export default async function OpsLeadsPage() {
         breadcrumbs={[{ label: "Betreiber-Konsole", href: "/ops" }, { label: "Anfragen" }]}
       />
 
+      {answeredPct !== null && answeredPct < 75 && stats.turns >= 20 && (
+        <p
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4 text-sm text-[color:var(--ds-warning-text)]"
+        >
+          Nur {answeredPct} % der Chat-Fragen konnten belegt beantwortet werden. Die Liste unten
+          zeigt, welche Inhalte auf der Website fehlen.
+        </p>
+      )}
+
       <section aria-labelledby="chat-quality" className="grid gap-4 sm:grid-cols-3">
         <h2 id="chat-quality" className="sr-only">
           Qualität des Website-Chats, letzte 30 Tage
