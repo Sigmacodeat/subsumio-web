@@ -24,20 +24,34 @@ import { tmpdir } from "os";
 
 const LOCK_DIR = join(tmpdir(), "subsumio-ris-lock");
 const LOCK_FILE = "lock";
-const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes — RIS backfills can run long
 const POLL_MS = 2000;
 const LOG_EVERY_MS = 30_000;
 
 let heldByThisProcess = false;
 
-function isProcessAlive(pid: number): boolean {
+/**
+ * Is the holder still running? Only a dead holder releases the lock.
+ *
+ * There used to be a 30-minute age limit as well, so a long RIS run lost its
+ * lock to the next job while it was still fetching — two RIS jobs at once,
+ * which the OGD rules forbid (and which happened twice on 2026-09-20).
+ * The command line is compared too, so a recycled PID does not keep a lock
+ * alive forever.
+ */
+function holderAlive(pid: number, command: string): boolean {
   try {
     // Signal 0 checks existence without actually sending a signal.
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
   }
+  try {
+    const cmdline = readFileSync(`/proc/${pid}/cmdline`, "utf-8").replace(/\0/g, " ").trim();
+    if (cmdline && command) return cmdline.includes(command.split(" ")[0]);
+  } catch {
+    /* no /proc (macOS) — the signal check has to do */
+  }
+  return true;
 }
 
 function readLockData(): { pid: number; acquired_at: number; command: string } | null {
@@ -60,8 +74,7 @@ function clearStaleLockIfAny(): void {
     }
     return;
   }
-  const stale = !isProcessAlive(data.pid) || Date.now() - data.acquired_at > STALE_THRESHOLD_MS;
-  if (stale) {
+  if (!holderAlive(data.pid, data.command)) {
     try {
       rmSync(LOCK_DIR, { recursive: true, force: true });
     } catch {
@@ -73,8 +86,8 @@ function clearStaleLockIfAny(): void {
 /**
  * Block until the RIS lock is acquired by this process. Polls indefinitely
  * (no timeout) — RIS backfills are expected to queue behind each other
- * rather than fail. Stale locks (dead PID, or held past `STALE_THRESHOLD_MS`)
- * are cleaned up automatically.
+ * rather than fail. A lock whose holder process is gone is cleaned up; a
+ * lock held by a running job is waited out, however long it takes.
  */
 export async function acquireRisLock(): Promise<void> {
   let lastLog = 0;

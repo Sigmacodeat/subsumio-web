@@ -22,6 +22,7 @@ import {
   extractRisReferences,
   mapRisReference,
 } from "../src/core/ingestion/connectors/legal-judgements.ts";
+import { risPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
@@ -203,7 +204,7 @@ async function scanCourt(
         if (refs.length === 0) break;
 
         // 1 req/sec rate limit
-        await new Promise((r) => setTimeout(r, 1000));
+        await risPause();
 
         // Batch upsert
         const rows: Array<{

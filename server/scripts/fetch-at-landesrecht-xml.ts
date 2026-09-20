@@ -35,6 +35,7 @@ import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { landOfDocId } from "./normalize/normalize-corpus";
+import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Landesrecht";
 /** Vorhandene Dateien überschreiben — nötig nach jeder Extraktor-Korrektur. */
@@ -44,7 +45,7 @@ const XML_BASE = "https://www.ris.bka.gv.at/Dokumente/Landesnormen";
 // RIS OGD: one connection, ~1 s between requests. Was 5 parallel workers
 // without the shared lock.
 const CONCURRENCY = Number(arg("concurrency", "1"));
-const THROTTLE_MS = Number(arg("throttle-ms", "1000"));
+const THROTTLE_MS = Number(arg("throttle-ms", String(RIS_PAUSE_MS)));
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
 const MAX_CONSECUTIVE_503 = Number(arg("max-503", "25"));
 const PAGE_SIZE = "OneHundred";
@@ -59,7 +60,7 @@ const FASSUNG_VOM = arg("fassung-vom", new Date().toISOString().slice(0, 10));
 const KEEP_XML = arg("keep-xml");
 const MIN_TEXT_LENGTH = 20; // Skip docs with less than 20 chars of law text
 
-const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
+const UA = { "User-Agent": RIS_USER_AGENT };
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
@@ -536,7 +537,7 @@ async function main() {
               );
             }
 
-            await new Promise((r) => setTimeout(r, THROTTLE_MS));
+            await risMassPause("Landesrecht-XML");
           }
         })()
       );
@@ -550,8 +551,8 @@ async function main() {
       );
     }
 
-    // Pause between search pages (RIS OGD: 1–2 s between requests)
-    await new Promise((r) => setTimeout(r, 1000));
+    // Pause between search pages (RIS OGD: at most 0.5 requests/s)
+    await risMassPause("Landesrecht-XML");
   }
 
   if (reachedEnd && START_PAGE === 1 && LIMIT === 0 && !aborted) {
