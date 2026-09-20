@@ -14,7 +14,8 @@ import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
 import { resolveModelChoice } from "@/lib/model-choice";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { attachUsageToBooking } from "@/lib/billing/credits";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/think");
@@ -30,6 +31,51 @@ const thinkSchema = z.object({
   case_slug: z.string().optional(),
   model: z.string().optional(),
 });
+
+/**
+ * Passes the stream through untouched and, when the engine's final `usage`
+ * event goes by, completes the credit booking with model and tokens.
+ */
+function meterUsage(
+  stream: ReadableStream<Uint8Array>,
+  bookingKey: string
+): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  return stream.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        buffer += decoder.decode(chunk, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ") || !line.includes('"usage"')) continue;
+          try {
+            const event = JSON.parse(line.slice(6)) as {
+              usage?: {
+                model?: string;
+                input_tokens?: number;
+                output_tokens?: number;
+                cost_usd?: number;
+              };
+            };
+            if (!event.usage) continue;
+            void attachUsageToBooking(bookingKey, {
+              modelId: event.usage.model ?? null,
+              inputTokens: event.usage.input_tokens,
+              outputTokens: event.usage.output_tokens,
+            }).catch((err) =>
+              log.warn("[think] usage booking failed:", err instanceof Error ? err.message : err)
+            );
+          } catch {
+            // not the event we are looking for
+          }
+        }
+      },
+    })
+  );
+}
 
 export const POST = createHandler(
   {
@@ -47,7 +93,11 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     void recordQuery(ctx.brainId);
     void recordQuota(ctx, "queries");
-    void recordCreditConsumption(ctx, "think", body.case_slug);
+    // Booked up front so an abandoned answer is still paid for; the engine
+    // reports what it actually consumed at the end of the stream, and the
+    // booking is completed with it (measured cost per credit, not estimated).
+    const bookingKey = `think-${randomUUID()}`;
+    void recordCreditConsumption(ctx, "think", body.case_slug, undefined, bookingKey);
 
     try {
       const safeBody = sanitizeObjectStrings(body);
@@ -95,9 +145,12 @@ export const POST = createHandler(
       });
 
       return apiStream(
-        createCitationGateStream(intercepted, {
-          fallbackJurisdiction: userJurisdiction(jurisdiction),
-        }),
+        meterUsage(
+          createCitationGateStream(intercepted, {
+            fallbackJurisdiction: userJurisdiction(jurisdiction),
+          }),
+          bookingKey
+        ),
         {
           contentType: upstream.headers.get("Content-Type") || "text/event-stream",
           aiGenerated: true,

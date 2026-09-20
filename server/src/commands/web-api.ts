@@ -3309,14 +3309,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     "/api/llm/stream",
     express.json({ limit: "2mb" }),
     async (req: Request, res: Response) => {
-      const { streamUtilityCompletion, UtilityCompletionError } = await import(
-        "../core/ai/utility-complete.ts"
-      );
+      const { streamUtilityCompletion, UtilityCompletionError } =
+        await import("../core/ai/utility-complete.ts");
       try {
-        const events = streamUtilityCompletion(
-          engine,
-          (req.body ?? {}) as Record<string, unknown>
-        );
+        const events = streamUtilityCompletion(engine, (req.body ?? {}) as Record<string, unknown>);
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
         res.setHeader("Cache-Control", "no-cache, no-transform");
         res.setHeader("Connection", "keep-alive");
@@ -3395,12 +3391,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         });
         if (!upstream.ok) {
           const detail = await upstream.text().catch(() => "");
-          res
-            .status(502)
-            .json({
-              error: "transcription_failed",
-              message: detail.slice(0, 300) || `HTTP ${upstream.status}`,
-            });
+          res.status(502).json({
+            error: "transcription_failed",
+            message: detail.slice(0, 300) || `HTTP ${upstream.status}`,
+          });
           return;
         }
         const data = (await upstream.json().catch(() => ({}))) as {
@@ -3493,33 +3487,42 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const jurisdiction = (caseJurHeader ?? userJurHeader)?.toUpperCase();
 
       const thinkStartTime = Date.now();
+      // Meter the whole answer: every model call inside think (planner,
+      // answer, citation cross-check, a regeneration) records into this
+      // tracker, so the caller learns what the action really cost instead of
+      // guessing. See the final "usage" event below.
+      const { BudgetTracker } = await import("../core/budget/budget-tracker.ts");
+      const { withBudgetTracker } = await import("../core/ai/gateway.ts");
+      const meter = new BudgetTracker({ label: "api.think" });
       // What the browser has already seen. The citation guardrail and
       // cross-verify may REPLACE the answer after streaming finished; the
       // final event then carries the verified text (see finalAnswerEvent).
       let streamedAnswer = "";
-      const result = await runThink(engine, {
-        question: query,
-        ...(instructions ? { instructions } : {}),
-        ...(pickedModel ? { model: pickedModel } : {}),
-        remote: false,
-        sourceId,
-        // Federate reads across the tenant's source + shared statute corpus so
-        // the answer can retrieve and cite the actual law, not just the firm's docs.
-        ...(readSourcesFor(req) ? { allowedSources: readSourcesFor(req) } : {}),
-        searchMode,
-        matterScope,
-        aclGroups,
-        // Activate legal mode when the attorney has a jurisdiction set —
-        // this enables the citation guardrail, cross-verify, and the
-        // legal-aware system prompt with statute citation discipline.
-        legalMode: true,
-        jurisdiction,
-        // Real-time token streaming: each text delta fires an SSE chunk event.
-        onStreamChunk: (text) => {
-          streamedAnswer += text;
-          res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
-        },
-      });
+      const result = await withBudgetTracker(meter, () =>
+        runThink(engine, {
+          question: query,
+          ...(instructions ? { instructions } : {}),
+          ...(pickedModel ? { model: pickedModel } : {}),
+          remote: false,
+          sourceId,
+          // Federate reads across the tenant's source + shared statute corpus so
+          // the answer can retrieve and cite the actual law, not just the firm's docs.
+          ...(readSourcesFor(req) ? { allowedSources: readSourcesFor(req) } : {}),
+          searchMode,
+          matterScope,
+          aclGroups,
+          // Activate legal mode when the attorney has a jurisdiction set —
+          // this enables the citation guardrail, cross-verify, and the
+          // legal-aware system prompt with statute citation discipline.
+          legalMode: true,
+          jurisdiction,
+          // Real-time token streaming: each text delta fires an SSE chunk event.
+          onStreamChunk: (text) => {
+            streamedAnswer += text;
+            res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+          },
+        })
+      );
 
       // P0-SECR-002: Filter citations by matter_scope — only include
       // citations whose slug falls within the caller's allowed matters.
@@ -3583,6 +3586,21 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           warnings,
           trace_id: traceId,
           ...finalAnswerEvent(streamedAnswer, result.answer, warnings),
+        })}\n\n`
+      );
+      // What this answer actually consumed — the caller books it against the
+      // action instead of estimating (web: recordCreditConsumption).
+      const spent = meter.snapshot();
+      res.write(
+        `data: ${JSON.stringify({
+          usage: {
+            model: result.modelUsed,
+            calls: spent.callsRecorded,
+            input_tokens: spent.inputTokens,
+            output_tokens: spent.outputTokens,
+            cost_usd: Number(spent.cumulativeCostUsd.toFixed(6)),
+            models: spent.models,
+          },
         })}\n\n`
       );
       res.write("data: [DONE]\n\n");
@@ -9342,11 +9360,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
       const body = (req.body ?? {}) as { jurisdictions?: unknown; compare_live?: unknown };
       const wanted = Array.isArray(body.jurisdictions)
-        ? body.jurisdictions.filter((j): j is "at" | "de" | "ch" => j === "at" || j === "de" || j === "ch")
+        ? body.jurisdictions.filter(
+            (j): j is "at" | "de" | "ch" => j === "at" || j === "de" || j === "ch"
+          )
         : (["at", "de", "ch"] as const);
-      const { LEGAL_SOURCE_BY_JURISDICTION, AT_LAW_SOURCES_STATUTES } = await import(
-        "../core/legal/jurisdiction.ts"
-      );
+      const { LEGAL_SOURCE_BY_JURISDICTION, AT_LAW_SOURCES_STATUTES } =
+        await import("../core/legal/jurisdiction.ts");
       const jurisdictions: Record<string, unknown> = {};
       for (const jurisdiction of wanted) {
         // Statutes live in the law sources, not in "default" (AT is split
@@ -9368,7 +9387,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           jurisdiction,
           compare_corpus: true,
           compare_live: body.compare_live === true,
-        })) as { statutes?: Array<{ statute_id: string; status: string; brain_version_date?: string | null; corpus_version_date?: string | null; live_version_date?: string | null }> };
+        })) as {
+          statutes?: Array<{
+            statute_id: string;
+            status: string;
+            brain_version_date?: string | null;
+            corpus_version_date?: string | null;
+            live_version_date?: string | null;
+          }>;
+        };
         const statutes = r.statutes ?? [];
         jurisdictions[jurisdiction] = {
           checked: statutes.length,

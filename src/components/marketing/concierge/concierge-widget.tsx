@@ -250,9 +250,10 @@ export default function ConciergeWidget() {
             render(shown);
           } else if (event.type === "final") {
             closed = true;
-            // `replace` means the checked answer differs from what was shown.
-            const sentences = event.replace || shown.length === 0 ? event.reply.sentences : shown;
-            render(sentences, {
+            // The final reply is authoritative: it holds every checked
+            // sentence, including the last one, which is never streamed (it
+            // can still grow while the model writes).
+            render(event.reply.sentences, {
               nextStep: event.reply.nextStep,
               suggestions: event.reply.suggestions,
               redacted: event.reply.redacted,

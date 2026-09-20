@@ -585,6 +585,39 @@ export interface DeductResult {
   required: number;
 }
 
+/**
+ * Fill in model and tokens on a booking that was made before the work ran
+ * (the chat books its credit up front, the usage only exists at the end).
+ * Best-effort: a missed update costs a measurement, never a charge.
+ */
+export async function attachUsageToBooking(
+  idempotencyKey: string,
+  usage: {
+    modelId?: string | null;
+    inputTokens?: number;
+    cachedTokens?: number;
+    outputTokens?: number;
+  }
+): Promise<void> {
+  const pool = getSharedPgPool();
+  if (!pool) return;
+  await pool.query(
+    `UPDATE subsumio_credit_transactions
+        SET model_id = COALESCE($2, model_id),
+            input_tokens = COALESCE($3, input_tokens),
+            cached_tokens = COALESCE($4, cached_tokens),
+            output_tokens = COALESCE($5, output_tokens)
+      WHERE idempotency_key = $1`,
+    [
+      idempotencyKey,
+      usage.modelId ?? null,
+      usage.inputTokens ?? null,
+      usage.cachedTokens ?? null,
+      usage.outputTokens ?? null,
+    ]
+  );
+}
+
 export async function deductCredits(
   ownerId: string,
   ownerType: OwnerType,
@@ -594,6 +627,15 @@ export async function deductCredits(
     caseSlug?: string;
     /** Required for retry-safe, server-side settlements. */
     idempotencyKey?: string;
+    /** What the action really consumed. Fixed-price operations used to book a
+     *  credit with no model and no tokens, so the real cost behind a credit
+     *  could not be measured — only estimated. */
+    usage?: {
+      modelId?: string | null;
+      inputTokens?: number;
+      cachedTokens?: number;
+      outputTokens?: number;
+    };
   }
 ): Promise<DeductResult> {
   if (amount <= 0) return { ok: true, balance: 0, required: 0 };
@@ -656,8 +698,9 @@ export async function deductCredits(
         try {
           await client.query(
             `INSERT INTO subsumio_credit_transactions
-               (owner_id, owner_type, type, amount, balance_after, operation, case_slug, idempotency_key)
-             VALUES ($1, $2, 'consumption', $3, $4, $5, $6, $7)`,
+               (owner_id, owner_type, type, amount, balance_after, operation, case_slug,
+                idempotency_key, model_id, input_tokens, cached_tokens, output_tokens)
+             VALUES ($1, $2, 'consumption', $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
             [
               ownerId,
               ownerType,
@@ -666,6 +709,10 @@ export async function deductCredits(
               opts?.operation ?? null,
               opts?.caseSlug ?? null,
               opts?.idempotencyKey ?? null,
+              opts?.usage?.modelId ?? null,
+              opts?.usage?.inputTokens ?? null,
+              opts?.usage?.cachedTokens ?? null,
+              opts?.usage?.outputTokens ?? null,
             ]
           );
         } catch (insertErr: unknown) {

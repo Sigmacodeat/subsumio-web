@@ -74,6 +74,31 @@ describe("redaction", () => {
     expect(r.text).toContain(`[${kind} entfernt]`);
   });
 
+  test.each([
+    ["Mandant Huber ./. Meier GmbH ist unsere Akte", "Name"],
+    ["In der Akte Huber gegen Meier GmbH brauche ich Hilfe", "Name"],
+    ["Kann Frau Dr. Gruber das auch nutzen?", "Name"],
+    ["Wir vertreten Klientin Maria Gruber", "Name"],
+  ])("Namen: %s", (input, kind) => {
+    const r = redact(input);
+    expect(r.removed).toContain(kind);
+    expect(r.text).toContain("[Name entfernt]");
+  });
+
+  test("keeps the role word so the sentence still reads", () => {
+    expect(redact("Mandant Huber ruft an").text).toBe("Mandant [Name entfernt] ruft an");
+  });
+
+  test.each([
+    "Wie schlägt sich Subsumio gegen Harvey?",
+    "Vergleich Subsumio gegen AI:ssociate bitte",
+    "Schützt das gegen Fristversäumnis?",
+    "Wie funktioniert die Kollisionsprüfung gegen bestehende Mandate?",
+    "Gilt das auch für die Kanzlei Müller & Partner?",
+  ])("kein Fehlalarm: %s", (q) => {
+    expect(redact(q)).toEqual({ text: q, removed: [] });
+  });
+
   test("leaves product questions alone", () => {
     const q = "Was kostet der Kanzlei-Tarif mit 5 Nutzern für 14 Tage?";
     expect(redact(q)).toEqual({ text: q, removed: [] });

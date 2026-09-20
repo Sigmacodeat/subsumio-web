@@ -422,6 +422,47 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     return sendSse(res, responseChunks);
   }
 
+  // ── Utility completions, streamed and whole (website concierge) ─────
+  if ((path === "/api/llm/stream" || path === "/api/llm/complete") && req.method === "POST") {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}") as { purpose?: string };
+    // A concierge-shaped answer: sentences with the id of a real knowledge
+    // chunk, so the claim check keeps them.
+    const answer = JSON.stringify({
+      intent: "pricing",
+      sentences: [
+        { text: "Der Tarif Solo kostet 249 € pro Monat.", sources: ["pricing-overview"] },
+        { text: "Der Tarif Kanzlei kostet 1.499 € pro Monat.", sources: ["pricing-overview"] },
+      ],
+      next_step: "show_pricing",
+      suggestions: ["Wie funktioniert die Testphase?"],
+      profile: {},
+    });
+    const result = {
+      text: answer,
+      model: "mock:model",
+      provider: "mock",
+      stop_reason: "end_turn",
+      usage: { input_tokens: 1200, output_tokens: 90 },
+      latency_ms: 5,
+      purpose: body.purpose ?? "mock",
+      tier: "reasoning",
+    };
+    if (path === "/api/llm/complete") return sendJson(res, 200, result);
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+    });
+    for (let i = 0; i < answer.length; i += 40) {
+      res.write(`data: ${JSON.stringify({ type: "text", text: answer.slice(i, i + 40) })}\n\n`);
+    }
+    res.write(`data: ${JSON.stringify({ type: "done", result })}\n\n`);
+    res.write("data: [DONE]\n\n");
+    return res.end();
+  }
+
   // ── Legal: conflict-check ───────────────────────────────────────────
   if (path === "/api/legal/conflict-check" && req.method === "POST") {
     const raw = await readBody(req);

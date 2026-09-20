@@ -106,7 +106,7 @@ jobs:
       - run: bun install
       - run: bunx playwright install --with-deps chromium
       - name: Run Playwright a11y + keyboard + visual tests
-        run: bun run test:e2e -- --grep "accessibility|a11y|keyboard|Keyboard|visual|Visual"
+        run: bun run test:e2e -- --grep "accessibility|a11y|keyboard|Keyboard|visual|Visual|concierge"
         env:
           CI: "true"
 

@@ -512,17 +512,27 @@ export async function recordQuota(
  * Fire-and-forget; errors are logged but not thrown.
  * Credits are only deducted after the operation succeeds (no charge for failed queries).
  */
+export interface ActionUsage {
+  modelId?: string | null;
+  inputTokens?: number;
+  cachedTokens?: number;
+  outputTokens?: number;
+}
+
 export async function recordCreditConsumption(
   ctx: GuardedContext,
   operation: CreditOperation,
-  caseSlug?: string
+  caseSlug?: string,
+  usage?: ActionUsage,
+  /** Pass one when the usage is only known later — see attachUsageToBooking. */
+  idempotencyKey?: string
 ): Promise<void> {
   const cost = CREDIT_COSTS[operation];
   if (cost <= 0) return;
   const ownerType: OwnerType = ctx.billing.ownerType;
   const ownerId = ctx.billing.ownerId;
   try {
-    await deductCredits(ownerId, ownerType, cost, { operation, caseSlug });
+    await deductCredits(ownerId, ownerType, cost, { operation, caseSlug, usage, idempotencyKey });
     // Budget Alert prüfen (50%/75%/90% wie OpenAI) — non-blocking.
     // Fire-and-forget: don't fail the operation if the alert fails.
     const { balance } = await getBalance(ownerId, ownerType);

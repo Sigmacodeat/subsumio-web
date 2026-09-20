@@ -105,7 +105,14 @@ Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`
       timeoutMs: 45_000,
     });
     // Only a model answer costs a credit; the offline fallback is free.
-    if (completion?.text.trim()) void recordCreditConsumption(ctx, "think");
+    if (completion?.text.trim()) {
+      void recordCreditConsumption(ctx, "think", undefined, {
+        modelId: completion.model,
+        inputTokens: completion.usage?.input_tokens,
+        cachedTokens: completion.usage?.cache_read_tokens,
+        outputTokens: completion.usage?.output_tokens,
+      });
+    }
     const answer =
       completion?.text.trim() ||
       generateSimpleAnswer(body.query, body.columns, body.rows, body.table_title ?? "");

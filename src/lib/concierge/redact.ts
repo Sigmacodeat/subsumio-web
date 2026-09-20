@@ -18,7 +18,28 @@ const RULES: Array<{ kind: string; re: RegExp }> = [
   { kind: "Telefon", re: /\b0\d{2,4}[\s/-]?\d{3,}[\s/-]?\d{2,}\b/g },
   // Dates of birth written out ("geb. 12.03.1980", "geboren am 1.2.1975")
   { kind: "Geburtsdatum", re: /\bgeb(?:\.|oren)(?:\s+am)?\s+\d{1,2}\.\s?\d{1,2}\.\s?\d{2,4}/gi },
+  // Party formula of a matter: "Huber ./. Meier GmbH". The "./." is unambiguous.
+  {
+    kind: "Name",
+    re: /\b[A-ZÄÖÜ][\wäöüß-]+(?:\s+(?:GmbH|AG|KG|OG|GesmbH|e\.?U\.?))?\s*\.\/\.\s*[A-ZÄÖÜ][\wäöüß-]+(?:\s+(?:GmbH|AG|KG|OG|GesmbH|e\.?U\.?))?/g,
+  },
+  // "gegen" only inside a matter context — otherwise "Subsumio gegen Harvey"
+  // (a comparison question) would be redacted and the answer would suffer.
+  {
+    kind: "Name",
+    re: /\b(?:Akte|Verfahren|Klage|Mandat|Sache[n]?|Causa|Prozess|Streit)\s+(?:von\s+)?[A-ZÄÖÜ][\wäöüß-]+(?:\s+(?:GmbH|AG|KG|OG|GesmbH|e\.?U\.?))?\s+gegen\s+[A-ZÄÖÜ][\wäöüß-]+(?:\s+(?:GmbH|AG|KG|OG|GesmbH|e\.?U\.?))?/g,
+  },
+  // A person introduced by their role or title: "Mandant Huber", "Frau Dr. Meier",
+  // "Klientin Maria Gruber". The role word stays, the name goes.
+  {
+    kind: "Name",
+    re: /\b(Mandant(?:in)?|Klient(?:in)?|Gegner(?:in)?|Kläger(?:in)?|Beklagte[rn]?|Herr|Frau|Hr\.|Fr\.)\s+(?:(?:Dr|Mag|DI|Ing|Prof|MMag)\.?\s+)*[A-ZÄÖÜ][\wäöüß-]{1,}(?:\s+[A-ZÄÖÜ][\wäöüß-]{1,})?/g,
+  },
 ];
+
+/** Role words kept in place so the sentence still reads ("Mandant [Name entfernt]"). */
+const KEEP_ROLE =
+  /^(Mandant(?:in)?|Klient(?:in)?|Gegner(?:in)?|Kläger(?:in)?|Beklagte[rn]?|Herr|Frau|Hr\.|Fr\.|Akte|Verfahren|Klage|Mandat|Sache[n]?|Causa|Prozess|Streit)\s+/;
 
 export interface RedactionResult {
   text: string;
@@ -30,9 +51,10 @@ export function redact(input: string): RedactionResult {
   let text = input;
   const removed = new Set<string>();
   for (const { kind, re } of RULES) {
-    text = text.replace(re, () => {
+    text = text.replace(re, (match) => {
       removed.add(kind);
-      return `[${kind} entfernt]`;
+      const role = kind === "Name" ? (match.match(KEEP_ROLE)?.[0] ?? "") : "";
+      return `${role}[${kind} entfernt]`;
     });
   }
   return { text, removed: [...removed] };
