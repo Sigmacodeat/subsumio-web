@@ -3486,6 +3486,10 @@ export const D = {
   "chat.new_session": { de: "Neue Konversation", en: "New conversation" },
   "chat.sessions": { de: "Konversationen", en: "Conversations" },
   "chat.no_sessions": { de: "Keine Konversationen", en: "No conversations" },
+  "chat.err_session_load": {
+    de: "Die Unterhaltung konnte nicht geladen werden.",
+    en: "The conversation could not be loaded.",
+  },
   "chat.session_count": { de: "Nachrichten", en: "messages" },
   "chat.brain_online": { de: "Verbunden", en: "Connected" },
   "chat.brain_offline": { de: "Wissensbasis offline", en: "Knowledge base offline" },

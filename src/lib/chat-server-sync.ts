@@ -70,6 +70,23 @@ export async function saveSessionToServer(input: {
   }
 }
 
+/**
+ * The conversations the server keeps for this user (and those colleagues
+ * shared), newest first — without their messages. Empty on any failure: the
+ * local list stays usable.
+ */
+export async function listServerSessions(caseSlug?: string): Promise<ServerChatSession[]> {
+  try {
+    const params = new URLSearchParams(caseSlug ? { case_slug: caseSlug } : {});
+    const res = await fetch(`/api/chat/sessions${params.size ? `?${params}` : ""}`);
+    if (!res.ok) return [];
+    const body = unwrapApiBody<{ sessions?: ServerChatSession[] }>(await res.json());
+    return Array.isArray(body?.sessions) ? body.sessions : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchServerSession(
   id: string,
   owner?: string
