@@ -2731,10 +2731,18 @@ export async function hybridSearch(
     }
     // T3/T4 — alias hop + evidence stamp even without an embedding provider
     // (the named-thing fix is most valuable exactly when vector is unavailable).
-    const noEmbedHopped = await applyAliasHop(engine, dedupResults(noEmbedResults), query, {
-      sourceId: opts?.sourceId,
-      sourceIds: opts?.sourceIds,
-    });
+    // as_of must hold on every return path. Without it, a query for the law
+    // as it stood on a given date returned the newer version too — exactly on
+    // the paths taken when no embedding provider is reachable.
+    const noEmbedHopped = await applyAliasHop(
+      engine,
+      selectLegalVersionsAsOf(dedupResults(noEmbedResults), opts?.asOfDate),
+      query,
+      {
+        sourceId: opts?.sourceId,
+        sourceIds: opts?.sourceIds,
+      }
+    );
     stampEvidence(noEmbedHopped);
     const noEmbedSliced = noEmbedHopped.slice(offset, offset + limit);
     // v0.32.3 search-lite: budget enforcement on the no-embedding-provider path.
@@ -2980,10 +2988,15 @@ export async function hybridSearch(
       await runPostFusionStages(engine, fallbackResults, postFusionOpts);
       fallbackResults.sort(byScoreDescSlugAsc);
     }
-    const kwHopped = await applyAliasHop(engine, dedupResults(fallbackResults), query, {
-      sourceId: opts?.sourceId,
-      sourceIds: opts?.sourceIds,
-    });
+    const kwHopped = await applyAliasHop(
+      engine,
+      selectLegalVersionsAsOf(dedupResults(fallbackResults), opts?.asOfDate),
+      query,
+      {
+        sourceId: opts?.sourceId,
+        sourceIds: opts?.sourceIds,
+      }
+    );
     stampEvidence(kwHopped);
     const kwSliced = kwHopped.slice(offset, offset + limit);
     // v0.32.3 search-lite: budget enforcement on the keyword-fallback path too.

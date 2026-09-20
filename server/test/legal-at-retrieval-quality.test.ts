@@ -25,6 +25,7 @@ import { hybridSearch } from "../src/core/search/hybrid.ts";
 import { runRetrievalQuality, type SearchFn } from "../src/eval/retrieval-quality/harness.ts";
 import {
   seedLegalAtCorpus,
+  legalAtCorpusAvailable,
   LEGAL_AT_QUESTIONS,
   LEGAL_AT_GOLD,
 } from "./fixtures/retrieval-quality/legal-at/corpus.ts";
@@ -36,7 +37,12 @@ import type { ChunkInput } from "../src/core/types.ts";
 
 let eng: PGLiteEngine;
 
+// The seeding reads the real corpus, so it must not run when the corpus is
+// missing — a top-level hook runs even when every describe below is skipped.
+const CORPUS_AVAILABLE = legalAtCorpusAvailable();
+
 beforeAll(async () => {
+  if (!CORPUS_AVAILABLE) return;
   eng = new PGLiteEngine();
   await eng.connect({});
   await eng.initSchema();
@@ -44,7 +50,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  await eng.disconnect();
+  await eng?.disconnect();
 });
 
 const searchFn =
@@ -79,7 +85,10 @@ async function measurePurity(jurisdiction?: string): Promise<{ leaks: string[]; 
   return { leaks, total: LEGAL_AT_GOLD.length };
 }
 
-describe("legal-AT retrieval quality (Phase 2)", () => {
+// These evals read the real 18 GB law corpus from disk. A CI runner does not
+// carry it, so without this guard the job could only ever be red — the same
+// pattern corpus-meta.freshness.test.ts already uses.
+describe.skipIf(!CORPUS_AVAILABLE)("legal-AT retrieval quality (Phase 2)", () => {
   test("gold set is non-trivial and its ground truth exists in the corpus", async () => {
     // seedLegalAtCorpus already threw if any § was missing; this pins size.
     expect(LEGAL_AT_QUESTIONS.length).toBeGreaterThanOrEqual(12);
@@ -155,7 +164,7 @@ function draftSectionBody(file: string, ref: string): string {
 const draftSlugOf = (r: { jur: "at" | "de"; file: string; abbr: string; ref: string }) =>
   `legal/statutes/${r.jur}/${r.abbr}/p-${r.ref}`;
 
-describe("legal-AT draft question batch eval", () => {
+describe.skipIf(!CORPUS_AVAILABLE)("legal-AT draft question batch eval", () => {
   let draftEng: PGLiteEngine;
 
   beforeAll(async () => {

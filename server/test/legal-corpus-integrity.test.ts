@@ -27,7 +27,7 @@
  */
 
 import { describe, test, expect } from "bun:test";
-import { readFileSync, readdirSync, statSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
 import {
@@ -36,7 +36,14 @@ import {
 } from "../src/core/legal/corpus-policy.ts";
 import { STATUTE_JURISDICTIONS } from "../src/core/search/source-boost.ts";
 
-const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS =
+  process.env.SUBSUMIO_LAW_CORPUS_DIR ||
+  process.env.LAW_CORPUS_ROOT ||
+  join(import.meta.dir, "..", "..", "law-corpus");
+
+// The checks read the real statute corpus from disk. A CI runner does not
+// carry it (18 GB), so without this guard the job could only ever be red.
+const CORPUS_AVAILABLE = existsSync(join(CORPUS, "at", "abgb.md"));
 const COUNTRIES = ["at", "de", "ch", "eu"] as const;
 
 /**
@@ -117,10 +124,11 @@ function scanCorpus(): Scan[] {
   return out;
 }
 
-const SCAN = scanCorpus();
+// Scanning at module level would throw before any skip takes effect.
+const SCAN = CORPUS_AVAILABLE ? scanCorpus() : [];
 const byPath = new Map(SCAN.map((s) => [s.path, s]));
 
-describe("legal-corpus integrity (Phase 0)", () => {
+describe.skipIf(!CORPUS_AVAILABLE)("legal-corpus integrity (Phase 0)", () => {
   test("corpus is non-trivial (>= 120 statute files scanned)", () => {
     expect(SCAN.length).toBeGreaterThanOrEqual(120);
   });
@@ -232,7 +240,7 @@ describe("legal-corpus integrity (Phase 0)", () => {
   // would never be hard-excluded from a foreign-jurisdiction query, silently
   // re-opening the leak Phase 1 sealed. This guard makes that drift impossible.
   describe("jurisdiction filter ↔ corpus directory sync", () => {
-    const diskJurisdictions = readdirSync(CORPUS)
+    const diskJurisdictions = (CORPUS_AVAILABLE ? readdirSync(CORPUS) : [])
       .filter((name) => {
         try {
           return statSync(join(CORPUS, name)).isDirectory();

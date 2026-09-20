@@ -19,7 +19,7 @@
  * seeder's existence check keeps every addition honest.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { splitStatute } from "../../../../src/core/legal/split-statute.ts";
@@ -28,7 +28,15 @@ import type { ChunkInput } from "../../../../src/core/types.ts";
 import type { NamedThingQuestion } from "../../../../src/eval/retrieval-quality/harness.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CORPUS = join(__dirname, "..", "..", "..", "..", "..", "law-corpus");
+const CORPUS =
+  process.env.SUBSUMIO_LAW_CORPUS_DIR ||
+  process.env.LAW_CORPUS_ROOT ||
+  join(__dirname, "..", "..", "..", "..", "..", "law-corpus");
+
+/** Whether the real corpus is on this machine — CI runners do not carry it. */
+export function legalAtCorpusAvailable(): boolean {
+  return existsSync(join(CORPUS, "at", "abgb.md"));
+}
 
 /** A statute reference resolvable to a real corpus §. */
 interface Ref {
