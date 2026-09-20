@@ -39,35 +39,11 @@ import {
   rememberOnDisk,
   type JudikaturDoc,
 } from "./judikatur-file";
+import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
-
-/**
- * RIS OGD rate limiting — COMPLIANT with BKA guidelines.
- *
- * BKA requires:
- *   - 1–2 seconds between API page requests
- *   - Single connection (no parallel requests)
- *   - Large downloads outside business hours (18:00–06:00) or weekends
- *   - Prior notification to ris.it@bka.gv.at for mass downloads
- *
- * See: https://www.ris.bka.gv.at/UI/Ogd.aspx
- *
- * Business hours: Mon–Fri 08:00–18:00 CET → 2000ms (conservative)
- * Off-hours / weekends → 1000ms (still within 1-2s range)
- */
-function politeDelayMs(): number {
-  const now = new Date();
-  const cetHour = parseInt(
-    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-  );
-  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
-  const isWeekend = day === "Sat" || day === "Sun";
-  const isBusinessHours = !isWeekend && cetHour >= 8 && cetHour < 18;
-  return isBusinessHours ? 2000 : 1000;
-}
 
 /** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
 function isRisOffHours(): boolean {
@@ -516,11 +492,11 @@ async function fullScanCourt(
           console.log(`  [${totalWritten}] ${year} — ${doc.court} ${doc.az}`);
         }
 
-        if (!skipText) await new Promise((r) => setTimeout(r, politeDelayMs()));
+        if (!skipText) await risMassPause("Judikatur-Abruf");
       }
 
       if (refs.length < 100) break;
-      await new Promise((r) => setTimeout(r, politeDelayMs()));
+      await risMassPause("Judikatur-Abruf");
     }
 
     if (yearCount > 0 || yearSkipped > 0) {
@@ -568,9 +544,7 @@ async function main() {
     console.log(`✅ Off-hours reached. Starting downloads.`);
   }
 
-  console.log(
-    `\n📋 RIS OGD Rate Limiting: ${politeDelayMs()}ms between requests, single connection`
-  );
+  console.log(`\n📋 RIS OGD Rate Limiting: ${RIS_PAUSE_MS}ms between requests, single connection`);
   console.log(`   Prior notification: ris.it@bka.gv.at (for mass downloads)\n`);
 
   const courtsToRun =

@@ -331,7 +331,10 @@ class ProposeTakesPhase extends BaseCyclePhase {
       limit: pageLimit,
       sort: "updated_desc",
     };
-    const pages: Page[] = await engine.listPages(pageFilters);
+    const excluded = opts.excludedSources;
+    const pages: Page[] = (await engine.listPages(pageFilters)).filter(
+      (p) => !excluded || excluded.size === 0 || !excluded.has(p.source_id)
+    );
 
     if (opts.reporter) {
       opts.reporter.start("propose_takes.pages" as never, pages.length);

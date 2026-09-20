@@ -152,7 +152,7 @@ export const VERTICALS: Record<VerticalSlug, VerticalContent> = {
     ],
     ctaTitle: "Die Akte kennt die Antwort. Jetzt auch Sie.",
     ctaSub:
-      "Starten Sie mit einem abgeschlossenen Mandat als Pilot. 14 Tage testen, keine Kreditkarte.",
-    ctaButton: "14 Tage kostenlos testen",
+      "Starten Sie mit einem abgeschlossenen Mandat als Pilot. 30 Tage testen, keine Kreditkarte.",
+    ctaButton: "30 Tage kostenlos testen",
   },
 };

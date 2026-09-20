@@ -44,6 +44,9 @@ export const HANDLER_DEFAULT_TIMEOUT_MS: Readonly<Record<string, number>> = {
   // Tabular Review (async): up to 500 documents × one chat call each,
   // worker-pool concurrency ≤ 8 — large runs can exceed 30 min.
   "tabular-review": SIXTY_MIN_MS,
+  // Deep Analysis (async): one chat call over up to 25 documents, plus
+  // queue wait under a provider lease.
+  "deep-analysis": SIXTY_MIN_MS,
 };
 
 /**

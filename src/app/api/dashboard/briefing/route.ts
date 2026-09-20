@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isDegradedAnswer } from "@/lib/engine-degraded";
 import { uiLanguageSchema } from "@/lib/api-validation";
-import { ENGINE_URL } from "@/lib/engine";
+import { engineComplete } from "@/lib/engine-llm";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { DEFAULT_TYPES, fetchPagesByTypes } from "@/lib/cockpit";
 import type { BrainPage } from "@/lib/types";
@@ -254,53 +254,23 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
   return parts.join("\n");
 }
 
+// Three sentences from counts that are already known: one small completion on
+// the utility tier. It used to run the full /api/think pipeline (retrieval,
+// answer model, citation cross-check) — about 50× the cost, on every
+// dashboard visit, for free accounts too.
 async function generateNarrative(
   headers: Record<string, string>,
   prompt: string
 ): Promise<string | null> {
-  try {
-    const res = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ query: prompt, mode: "balanced", query_mode: "balanced" }),
-      signal: AbortSignal.timeout(45_000),
-    });
-    if (!res.ok) return null;
-
-    const contentType = res.headers.get("Content-Type") || "";
-    if (contentType.includes("text/event-stream")) {
-      let answer = "";
-      const reader = res.body?.getReader();
-      if (!reader) return null;
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (typeof parsed.chunk === "string") answer += parsed.chunk;
-            } catch {
-              // ignore non-JSON lines
-            }
-          }
-        }
-      }
-      return answer && !isDegradedAnswer(answer) ? answer : null;
-    }
-
-    const data = await res.json();
-    return typeof data.answer === "string" && !isDegradedAnswer(data.answer) ? data.answer : null;
-  } catch {
-    return null;
-  }
+  const result = await engineComplete(headers, {
+    purpose: "cockpit_briefing",
+    tier: "utility",
+    prompt,
+    maxTokens: 300,
+    timeoutMs: 20_000,
+  });
+  const answer = result?.text.trim();
+  return answer && !isDegradedAnswer(answer) ? answer : null;
 }
 
 function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {

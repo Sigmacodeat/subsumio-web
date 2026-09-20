@@ -52,6 +52,8 @@ function lookupRerankerRecipeDefaultTimeout(modelStr: string | undefined): numbe
   return recipe?.touchpoints?.reranker?.default_timeout_ms;
 }
 
+export type KeywordArmMode = "always" | "citations";
+
 export type SearchMode = "conservative" | "balanced" | "tokenmax";
 
 export const SEARCH_MODES: ReadonlyArray<SearchMode> = Object.freeze([
@@ -274,6 +276,17 @@ export interface ModeBundle {
   /** v0.43 — max hops for relational traversal. Default 2, hard-capped at 3. */
   relational_retrieval_depth: number;
   /**
+   * When the keyword arm joins the fusion. 'always' (every query) is the
+   * historical behavior. 'citations' fuses it only for queries that cite a
+   * source (§, abbreviation, case number — search/citation-query.ts) or when
+   * the vector arm returned nothing; plain-language questions rank on the
+   * vector arm alone. Measured on the Austrian-law bake-off: 'always' halves
+   * nDCG@10 for plain questions. Needs a fully embedded corpus — with
+   * 'citations' a chunk without a vector is unreachable for plain questions.
+   * Override: SearchOpts.keywordArm → `search.keyword_arm` → mode bundle.
+   */
+  keyword_arm: KeywordArmMode;
+  /**
    * v0.46 — cognitive tier priority cascade. When on, post-fusion stage
    * boosts Mental Models (synthesis/concept/analysis/guide) over
    * Observations (meeting/note/email/...) over Raw Facts (person/company/
@@ -357,6 +370,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // matches graph_signals posture). Power users opt in per-call.
     relationalRetrieval: false,
     relational_retrieval_depth: 2,
+    keyword_arm: "always" as KeywordArmMode,
     autocut_jump: 0.2,
     // v0.46 — cognitive tier OFF for conservative (minimal surface, matches
     // graph_signals posture). Power users opt in per-call or via config.
@@ -422,6 +436,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // ships default-false everywhere if the gate flags any regression).
     relationalRetrieval: true,
     relational_retrieval_depth: 2,
+    keyword_arm: "always" as KeywordArmMode,
     autocut_jump: 0.2,
     // v0.46 — cognitive tier ON for balanced. Mental Models (synthesis/
     // concept/analysis/guide) get a conservative 1.08x nudge over
@@ -483,6 +498,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // v0.43 — relational recall ON for tokenmax (max-recall tier).
     relationalRetrieval: true,
     relational_retrieval_depth: 2,
+    keyword_arm: "always" as KeywordArmMode,
     autocut_jump: 0.2,
     // v0.46 — cognitive tier ON for tokenmax (power-user tier, same as
     // balanced). The cascade is a ranking nudge, not a recall change —
@@ -545,6 +561,7 @@ export interface SearchKeyOverrides {
   // v0.43 — relational recall overrides.
   relationalRetrieval?: boolean;
   relational_retrieval_depth?: number;
+  keyword_arm?: KeywordArmMode;
   autocut_jump?: number;
   // v0.46 — cognitive tier priority cascade.
   cognitive_tier?: boolean;
@@ -601,6 +618,7 @@ export interface SearchPerCallOpts {
   // v0.43 — relational recall per-call overrides.
   relationalRetrieval?: boolean;
   relational_retrieval_depth?: number;
+  keyword_arm?: KeywordArmMode;
   // v0.46 — cognitive tier priority cascade per-call overrides.
   cognitive_tier?: boolean;
   cognitive_tier3_boost?: number;
@@ -702,6 +720,7 @@ export function resolveSearchMode(input: ResolveSearchModeInput): ResolvedSearch
     // v0.43 — relational recall resolved via the same pick chain.
     relationalRetrieval: pick("relationalRetrieval"),
     relational_retrieval_depth: pick("relational_retrieval_depth"),
+    keyword_arm: pick("keyword_arm"),
     // v0.46 — cognitive tier priority cascade.
     cognitive_tier: pick("cognitive_tier"),
     cognitive_tier3_boost: pick("cognitive_tier3_boost"),
@@ -839,7 +858,9 @@ export function attributeKnob<K extends keyof ModeBundle>(
 // filters narrow the candidate SQL (see sql-ranking.ts buildLegalMetadataClause),
 // so a filtered read must never be served an unfiltered or differently-filtered
 // cache row — same contamination class as jurisdiction/asOfDate above.
-export const KNOBS_HASH_VERSION = 15;
+// bump 15→16: keyword_arm. A vector-only ranking ('citations' on a plain
+// question) must never be served to a fused lookup or vice versa.
+export const KNOBS_HASH_VERSION = 16;
 
 /**
  * v0.36 (D8 / CDX-2) — second-arg context for the cache key. The
@@ -993,6 +1014,8 @@ export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): s
     `la=${ctx?.legalArea ?? "all"}`,
     `ddf=${ctx?.decisionDateFrom ?? "none"}`,
     `ddt=${ctx?.decisionDateTo ?? "none"}`,
+    // v=16: keyword-arm gating.
+    `kwa=${knobs.keyword_arm ?? "always"}`,
   ];
   const h = createHash("sha256");
   h.update(parts.join("|"));
@@ -1171,6 +1194,9 @@ export function loadOverridesFromConfig(
     if (Number.isFinite(n) && n >= 1 && n <= 3) out.relational_retrieval_depth = n;
   }
 
+  const kwa = get("search.keyword_arm");
+  if (kwa === "always" || kwa === "citations") out.keyword_arm = kwa;
+
   // v0.46 — cognitive tier priority cascade.
   const ct = get("search.cognitive_tier");
   if (ct !== undefined) {
@@ -1238,6 +1264,7 @@ export const SEARCH_MODE_CONFIG_KEYS: ReadonlyArray<string> = Object.freeze([
   // v0.43 relational recall
   "search.relational_retrieval",
   "search.relational_retrieval_depth",
+  "search.keyword_arm",
   "search.autocut_jump",
   // v0.46 cognitive tier priority cascade
   "search.cognitive_tier",

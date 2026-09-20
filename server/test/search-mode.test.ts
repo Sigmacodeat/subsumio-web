@@ -80,6 +80,7 @@ describe("SEARCH_MODES + MODE_BUNDLES canonical shape", () => {
       // v0.43 — relational recall OFF for conservative.
       relationalRetrieval: false,
       relational_retrieval_depth: 2,
+      keyword_arm: "always",
       // v0.46 — cognitive tier OFF for conservative.
       cognitive_tier: false,
       cognitive_tier3_boost: 1.08,
@@ -118,6 +119,7 @@ describe("SEARCH_MODES + MODE_BUNDLES canonical shape", () => {
       // v0.43 — relational recall ON for balanced.
       relationalRetrieval: true,
       relational_retrieval_depth: 2,
+      keyword_arm: "always",
       // v0.46 — cognitive tier ON for balanced.
       cognitive_tier: true,
       cognitive_tier3_boost: 1.08,
@@ -154,6 +156,7 @@ describe("SEARCH_MODES + MODE_BUNDLES canonical shape", () => {
       // v0.43 — relational recall ON for tokenmax.
       relationalRetrieval: true,
       relational_retrieval_depth: 2,
+      keyword_arm: "always",
       // v0.46 — cognitive tier ON for tokenmax.
       cognitive_tier: true,
       cognitive_tier3_boost: 1.08,
@@ -427,7 +430,8 @@ describe("knobsHash determinism + cross-mode separation (CDX-4)", () => {
     // 12→13: as-of-date (asof=) for historical legal cutoff isolation.
     // 13→14: legal-class isolation (jurisdiction-scoped statute reads).
     // 14→15: v0.48 legal metadata filters (court/legalArea/decisionDate).
-    expect(KNOBS_HASH_VERSION).toBe(15);
+    // 15→16: keyword-arm gating (kwa=).
+    expect(KNOBS_HASH_VERSION).toBe(16);
   });
 
   test("T1 (codex): floor_ratio set vs unset produces DIFFERENT hashes (cache contamination prevention)", () => {
@@ -611,7 +615,7 @@ describe("v0.40.4 — graph_signals knob", () => {
 
 describe("v0.42.3.0 — autocut knobs", () => {
   test("KNOBS_HASH_VERSION is 15 (12→13 as-of-date; 13→14 legal-class isolation; 14→15 legal metadata filters)", () => {
-    expect(KNOBS_HASH_VERSION).toBe(15);
+    expect(KNOBS_HASH_VERSION).toBe(16);
   });
 
   test("bundle defaults: conservative off, balanced/tokenmax on @0.20", () => {

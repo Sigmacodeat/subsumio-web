@@ -17,7 +17,7 @@ import { computeActivation, shouldBackfill } from "../engram-maturation.ts";
 
 export async function runPhaseEngramMaturation(
   engine: BrainEngine,
-  opts: { dryRun: boolean; signal?: AbortSignal }
+  opts: { dryRun: boolean; signal?: AbortSignal; excludedSources?: ReadonlySet<string> }
 ): Promise<PhaseResult> {
   if (opts.dryRun) {
     return {
@@ -31,7 +31,8 @@ export async function runPhaseEngramMaturation(
 
   try {
     const { listSources } = await import("../sources-ops.ts");
-    const sources = await listSources(engine);
+    const { withoutExcluded } = await import("../brain-learning.ts");
+    const sources = withoutExcluded(await listSources(engine), opts.excludedSources);
 
     let totalMatured = 0;
     let totalBackfilled = 0;

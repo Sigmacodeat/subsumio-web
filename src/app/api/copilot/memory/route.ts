@@ -12,6 +12,7 @@ import {
   type MemoryType,
 } from "@/lib/copilot-memory";
 import { extractMemoriesWithLLM, isLLMExtractionAvailable } from "@/lib/copilot-memory-llm";
+import { isFirmLearningEnabled } from "@/lib/brain-learning";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/copilot/memory");
@@ -90,6 +91,21 @@ export const POST = createHandler(
     };
 
     try {
+      // Firm setting "Kanzlei-Gehirn lernt mit" switched off: the assistant
+      // captures nothing on its own. Entries a person types in on purpose
+      // (source "user_explicit") are still saved.
+      const automatic =
+        action === "infer" ||
+        action === "agent_action" ||
+        (action === "create" && source !== undefined && source !== "user_explicit");
+      if (automatic && !(await isFirmLearningEnabled(ctx.user))) {
+        return NextResponse.json({
+          inferred: [],
+          superseded: [],
+          skipped: "learning_disabled",
+        });
+      }
+
       // Infer memories from a user message
       if (action === "infer" && message) {
         // P0.1: Use LLM-based extraction when available, fall back to regex

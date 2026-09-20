@@ -433,11 +433,29 @@ function SettingsPageInner() {
   }
 
   async function saveApiKeys() {
-    const data = apiKeysForm.getValues();
+    // Only changed fields go to the server. The untouched ones still hold the
+    // masked value from the last load, and sending those back would have been
+    // rejected as an invalid key — or stored as one.
+    const values = apiKeysForm.getValues();
+    const dirty = apiKeysForm.formState.dirtyFields;
+    const data = Object.fromEntries(
+      (Object.keys(values) as Array<keyof ApiKeysFormData>)
+        .filter((field) => dirty[field])
+        .map((field) => [field, values[field]])
+    ) as Partial<ApiKeysFormData>;
+    if (Object.keys(data).length === 0) {
+      setKeysSaved(true);
+      setTimeout(() => setKeysSaved(false), 2000);
+      return;
+    }
     setKeysSaveError(false);
     try {
-      const res = (await saveKeysMutation.mutateAsync(data)) as { ok?: boolean } | undefined;
+      const res = (await saveKeysMutation.mutateAsync(data as ApiKeysFormData)) as
+        | { ok?: boolean }
+        | undefined;
       if (!res?.ok) throw new Error("save_failed");
+      // Reload so every field shows the stored mask again, not the plaintext.
+      void settingsKeysQuery.refetch();
       setKeysSaved(true);
       setTimeout(() => setKeysSaved(false), 2000);
     } catch (err) {

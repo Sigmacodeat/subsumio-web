@@ -137,7 +137,10 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     // Red-Team, War-Room, Signature, Online-Booking, Dictation,
     // DACH-First, 32-Layer Pipeline) die kein Konkurrent hat.
     monthly_seat_price: 249,
-    included_credit: 60,
+    // 300 credits ≈ 300 normal questions a month. At 0.09–0.32 € model cost
+    // per question the gross margin stays above 60 % even when a firm uses
+    // every credit on the expensive model (see docs/KOSTEN_CREDITS_ANALYSE_2026-09-19.md).
+    included_credit: 300,
     // 12× markup → 91.7% margin on usage
     // Begründung: 32-Layer Pipeline (vs. 3-10 bei Konkurrentenz),
     // Ensemble Critic, Contradiction Detection, Knowledge Graph,
@@ -171,7 +174,8 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     // Kollisionsprüfung, Legal-Hold,
     // War-Room, Red-Team, White-Label, Custom Agents, API.
     monthly_seat_price: 299,
-    included_credit: 200,
+    // Per seat; 5 seats = 1.500 credits a month (same margin reasoning as solo).
+    included_credit: 300,
     // 18× markup → 94.4% margin on usage (über Irys 93%)
     // Premium für: 32-Layer Pipeline + Ensemble Critic (3-Modell),
     // 12 Unique Features, DACH-First, White-Label, Custom Agents.

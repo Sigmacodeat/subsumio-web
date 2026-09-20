@@ -293,7 +293,19 @@ export function ChatHeader(props: ChatHeaderProps) {
                                 {new Date(s.updatedAt).toLocaleDateString(
                                   lang === "en" ? "en-GB" : "de-DE"
                                 )}
-                                {s.lastPreview && ` · ${s.lastPreview.slice(0, 40)}`}
+                                {s.remote
+                                  ? ` · ${
+                                      s.remote.shared
+                                        ? lang === "en"
+                                          ? `shared by ${s.remote.ownerName}`
+                                          : `geteilt von ${s.remote.ownerName}`
+                                        : lang === "en"
+                                          ? "from another device"
+                                          : "von einem anderen Gerät"
+                                    }`
+                                  : s.lastPreview
+                                    ? ` · ${s.lastPreview.slice(0, 40)}`
+                                    : ""}
                               </p>
                               {s.tags && s.tags.length > 0 && (
                                 <div className="mt-1 flex flex-wrap gap-1">
@@ -310,7 +322,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                               )}
                             </button>
                             <div className="flex shrink-0 items-center gap-0.5">
-                              {props.onTogglePin && (
+                              {props.onTogglePin && !s.remote && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -326,7 +338,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                   <Pin size={11} fill={s.pinned ? "currentColor" : "none"} />
                                 </button>
                               )}
-                              {props.onDeleteSession && (
+                              {props.onDeleteSession && !s.remote && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

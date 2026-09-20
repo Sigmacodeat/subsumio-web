@@ -713,17 +713,19 @@ export function MarketingNav() {
                     />
                   </Link>
                 </Button>
-                {/* Compact CTA icon for xs screens — styled span, not a
-                    nested <button>, so the anchor stays the only
-                    interactive element (valid HTML + a11y). */}
+                {/* Compact CTA for xs screens — a short word, not a bare
+                    chevron: an arrow alone said nothing about where it leads.
+                    Styled span, not a nested <button>, so the anchor stays the
+                    only interactive element (valid HTML + a11y). */}
                 <Link href={p("/signup")} className="sm:hidden" aria-label={nav.cta}>
                   <span
                     aria-hidden
                     className={cn(
                       buttonVariants({ variant: "primary", size: "sm" }),
-                      "group min-h-[36px] px-3"
+                      "group min-h-[36px] gap-1 px-3 whitespace-nowrap"
                     )}
                   >
+                    {UI_STRINGS.ctaShort}
                     <ChevronRight
                       size={16}
                       className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"

@@ -356,3 +356,22 @@ describe("credit-rate-card", () => {
     });
   });
 });
+
+describe("every model the engine routes to has its own rate", () => {
+  test("no tier default falls back to the Haiku-priced default", async () => {
+    const { TIER_DEFAULTS } = await import("../../../server/src/core/model-config");
+    const { CANONICAL_PRICING } = await import("../../../server/src/core/model-pricing");
+    for (const [tier, modelId] of Object.entries(TIER_DEFAULTS)) {
+      expect(
+        CREDIT_RATE_CARD[modelId],
+        `${tier} → ${modelId} fehlt in der Rate Card`
+      ).toBeDefined();
+      const canonical = CANONICAL_PRICING[modelId];
+      if (canonical) {
+        // 12× markup over the canonical price (RATE_CARD_MARGIN).
+        expect(CREDIT_RATE_CARD[modelId].input).toBeCloseTo(canonical.input * 12, 4);
+        expect(CREDIT_RATE_CARD[modelId].output).toBeCloseTo(canonical.output * 12, 4);
+      }
+    }
+  });
+});

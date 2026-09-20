@@ -6,7 +6,7 @@ export const copy = {
       eyebrow: "Das Subsumio SuperBrain",
       title: "Über Nacht geprüft.\nAm Morgen wissen Sie, was sich in Ihren Akten geändert hat.",
       sub: "Das SuperBrain ist das Gedächtnis hinter Subsumio. Jede Nacht geht es die neuen Dokumente Ihrer Kanzlei durch und führt sie mit dem bestehenden Kanzleiwissen zusammen. Am Morgen sehen Sie in Ihrer Übersicht, was aufgefallen ist: neue Widersprüche, anstehende Fristen, fehlende Unterlagen.",
-      cta: "14 Tage kostenlos testen",
+      cta: "30 Tage kostenlos testen",
       ctaSecondary: "Funktionen ansehen",
     },
     stats: [
@@ -174,6 +174,52 @@ export const copy = {
       },
     ],
     cycleNote: "Automatisch · jede Nacht · protokolliert",
+    // ── KANZLEI-GEHIRN LERNT MIT ──
+    // Belege: docs/architecture/BRAIN_LEARNING.md (Schalter, was er steuert,
+    // was weiterläuft), src/components/dashboard/brain-learning-card.tsx.
+    learningBadge: "Kanzlei-Gehirn",
+    learningTitle: "Ihr Kanzlei-Gehirn lernt mit – nur für Ihre Kanzlei",
+    learningSub:
+      "Jedes Dokument, jede Notiz und jedes Mandat erweitert das Wissen Ihrer Kanzlei. Beim nächsten Fall finden Sie frühere Mandate mit ähnlichem Sachverhalt, Ihre eigenen Schriftsätze und die passende Rechtsprechung aus dem RIS – mit Fundstelle. Dieses Wissen liegt in dem Bereich Ihrer Kanzlei, auf den nur Sie und Ihr Team zugreifen.",
+    learningPoints: [
+      {
+        icon: "Database",
+        title: "Aus Dokumenten wird Wissen",
+        desc: "Aus Schriftsätzen, E-Mails und Notizen werden Tatsachen und Einschätzungen abgeleitet und mit dem bestehenden Kanzleiwissen verknüpft – jede mit Verweis auf das Ausgangsdokument.",
+      },
+      {
+        icon: "ScanSearch",
+        title: "Ähnliche frühere Mandate finden",
+        desc: "Die Suche findet vergleichbare Sachverhalte auch dann, wenn damals andere Worte verwendet wurden – über alle Akten, für die Sie berechtigt sind.",
+      },
+      {
+        icon: "Scale",
+        title: "Eigene Arbeit und Rechtsprechung zusammen",
+        desc: "Der Assistent antwortet aus Ihren Akten und aus Gesetzen und Entscheidungen im RIS und nennt zu beidem die Fundstelle, damit Sie zitieren und nachprüfen können.",
+      },
+      {
+        icon: "PenTool",
+        title: "Ihre Arbeitsweise",
+        desc: "Der Assistent merkt sich Vorgaben aus Gesprächen. Für Ihre Prüfleitfäden werden Ergänzungen aus unterzeichneten Verträgen vorgeschlagen – übernommen wird nur, was Sie bestätigen.",
+      },
+    ],
+    learningSwitchTitle: "Ein Schalter für die ganze Kanzlei",
+    learningSwitchOn: {
+      label: "Eingeschaltet (Voreinstellung)",
+      desc: "Das Kanzleiwissen wird aus Ihrer laufenden Arbeit automatisch erweitert – nach dem Hochladen und jede Nacht.",
+    },
+    learningSwitchOff: {
+      label: "Ausgeschaltet",
+      desc: "Ihre Dokumente bleiben gespeichert und voll durchsuchbar, der Assistent antwortet wie gewohnt. Es wird nur nichts Neues mehr automatisch abgeleitet. Bereits Gelerntes bleibt erhalten.",
+    },
+    learningSwitchNote:
+      "Administratorinnen und Administratoren schalten es unter Einstellungen › Kanzleiprofil. Jede Änderung wird protokolliert.",
+    learningNeverTitle: "Was dabei nie passiert",
+    learningNever: [
+      "Mit Ihren Daten wird kein KI-Modell trainiert – auch nicht, wenn das Kanzlei-Gehirn mitlernt.",
+      "Was Ihr Kanzlei-Gehirn lernt, fließt nicht in das Wissen anderer Kanzleien ein.",
+      "Andere Kanzleien sehen Ihr Kanzleiwissen nicht.",
+    ],
     // ── COMPARISON ──
     compareTitle: "Allgemeine KI-Werkzeuge und das SuperBrain im Vergleich",
     compareSub: "Vier Punkte, die Sie im Test selbst nachprüfen können.",
@@ -266,7 +312,7 @@ export const copy = {
       {
         icon: "Database",
         title: "Kanzleiwissen",
-        desc: "Was in einem Mandat erarbeitet wurde, steht beim nächsten wieder zur Verfügung – im Rahmen der Zugriffsrechte Ihrer Kanzlei.",
+        desc: "Was in einem Mandat erarbeitet wurde, steht beim nächsten wieder zur Verfügung – auch ähnliche frühere Fälle und Ihre eigenen Schriftsätze, im Rahmen der Zugriffsrechte Ihrer Kanzlei.",
       },
       {
         icon: "Network",
@@ -301,15 +347,19 @@ export const copy = {
     securityLink: "Sicherheit im Detail",
     // ── FAQ ──
     faqTitle: "Häufige Fragen",
-    faqSub: "Fünf Fragen, die Kanzleien vor dem Test stellen.",
+    faqSub: "Sechs Fragen, die Kanzleien vor dem Test stellen.",
     faq: [
       {
         q: "Was passiert nachts mit meinen Daten?",
         a: "Das SuperBrain geht die Dokumente durch, die tagsüber neu in Ihre Akten gekommen sind: Tatsachen werden erfasst, mit dem bestehenden Kanzleiwissen zusammengeführt und auf Widersprüche geprüft. Ihre Daten liegen dabei in der EU-Cloud oder, im Enterprise-Tarif, On-Premise. Der Ablauf wird protokolliert.",
       },
       {
-        q: "Kann ich die nächtliche Prüfung abschalten oder einschränken?",
-        a: "Welche Akten in die nächtliche Prüfung einbezogen werden und ob sie für einzelne Bereiche ausgesetzt werden kann, klären wir mit Ihnen im Onboarding.",
+        q: "Lernt Subsumio aus meinen Akten – und wird damit KI trainiert?",
+        a: "Ihr Kanzlei-Gehirn lernt aus Ihren Akten: Tatsachen, Einschätzungen und Verknüpfungen werden abgeleitet und stehen Ihnen beim nächsten Mandat zur Verfügung. Das bleibt im Bereich Ihrer Kanzlei. Ein KI-Modell wird damit nicht trainiert, und nichts davon fließt in das Wissen anderer Kanzleien ein.",
+      },
+      {
+        q: "Kann ich das Mitlernen abschalten?",
+        a: "Ja. Unter Einstellungen › Kanzleiprofil schalten Administratorinnen und Administratoren „Kanzlei-Gehirn lernt mit“ für die ganze Kanzlei aus. Dokumente bleiben durchsuchbar und der Assistent antwortet weiter; es wird nur nichts Neues mehr automatisch abgeleitet. Was sich der Assistent gemerkt hat, sehen und löschen Sie unter Einstellungen › Gedächtnis des Assistenten.",
       },
       {
         q: "Wer sieht meine Daten?",
@@ -317,7 +367,7 @@ export const copy = {
       },
       {
         q: "Was kostet es?",
-        a: "Das SuperBrain ist in jedem Tarif enthalten: Solo 249 €/Monat (1 Nutzer), Kanzlei 1.499 €/Monat inkl. 5 Nutzer, Enterprise auf Anfrage. Mehrverbrauch wird vorab ausgewiesen. Sie können 14 Tage kostenlos testen, ohne Kreditkarte.",
+        a: "Das SuperBrain ist in jedem Tarif enthalten: Solo 249 €/Monat (1 Nutzer), Kanzlei 1.499 €/Monat inkl. 5 Nutzer, Enterprise auf Anfrage. Mehrverbrauch wird vorab ausgewiesen. Sie können 30 Tage kostenlos testen, ohne Kreditkarte.",
       },
       {
         q: "Was, wenn Subsumio sich irrt?",
@@ -326,12 +376,12 @@ export const copy = {
     ],
     pricingLink: "Preise ansehen",
     // ── STICKY CTA ──
-    stickyCtaText: "14 Tage kostenlos testen",
+    stickyCtaText: "30 Tage kostenlos testen",
     stickyCtaHint: "Ohne Kreditkarte",
     ctaTitle: "Testen Sie das SuperBrain mit Ihren eigenen Akten",
     ctaSub:
       "Ab der ersten Akte baut sich Ihr Kanzleiwissen auf. Nach der ersten Nacht sehen Sie, was dem SuperBrain aufgefallen ist.",
-    ctaButton: "14 Tage kostenlos testen",
+    ctaButton: "30 Tage kostenlos testen",
     ctaContact: "Schreiben Sie uns – wir antworten persönlich.",
   },
 };

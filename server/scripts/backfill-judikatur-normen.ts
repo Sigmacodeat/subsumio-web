@@ -31,6 +31,7 @@ import {
   patchCanonicalNormen,
   patchRawNormen,
 } from "./judikatur-file";
+import { risMassPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 
@@ -59,15 +60,6 @@ const courtArg = arg("--court") ?? "all";
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 const STATE = join(ROOT, "_normalized", "_state", "backfill-judikatur-normen.json");
 
-function politeDelayMs(): number {
-  const now = new Date();
-  const hour = parseInt(
-    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-  );
-  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
-  const business = day !== "Sat" && day !== "Sun" && hour >= 8 && hour < 18;
-  return business ? 2000 : 1000;
-}
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function risPage(
@@ -129,7 +121,10 @@ function writeAtomic(path: string, content: string) {
   // Short temp name in the same directory: some RIS file names are already
   // near the 255-byte limit (one OGH decision lists 24 case numbers), so
   // appending a suffix to the name failed with ENAMETOOLONG.
-  const tmp = join(dirname(path), `.normen-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`);
+  const tmp = join(
+    dirname(path),
+    `.normen-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`
+  );
   writeFileSync(tmp, content, "utf8");
   renameSync(tmp, path);
 }
@@ -160,7 +155,7 @@ async function main() {
         for (let page = 1; page <= 5000; page++) {
           const refs = await risPage(cfg.applikation, year, page);
           requests++;
-          await sleep(politeDelayMs());
+          await risMassPause("Normen-Nachtrag");
           if (!refs || refs.length === 0) break;
           for (const ref of refs) {
             const item = mapRisReference(ref, new Date());
@@ -191,7 +186,9 @@ async function main() {
                 }
               } catch (err) {
                 writeErrors++;
-                console.error(`  Schreibfehler ${p.slice(-80)}: ${err instanceof Error ? err.message.slice(0, 120) : err}`);
+                console.error(
+                  `  Schreibfehler ${p.slice(-80)}: ${err instanceof Error ? err.message.slice(0, 120) : err}`
+                );
               }
             }
             for (const id of ids) missing.delete(id);

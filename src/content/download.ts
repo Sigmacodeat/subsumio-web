@@ -94,5 +94,5 @@ export const DOWNLOAD: DownloadContent = {
   ],
   ctaTitle: "Jetzt installieren. In der nächsten Verhandlung nutzen.",
   ctaSub: "In wenigen Minuten installiert — auf dem Gerät, das Sie gerade in der Hand halten.",
-  ctaButton: "14 Tage kostenlos testen",
+  ctaButton: "30 Tage kostenlos testen",
 };

@@ -203,7 +203,26 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Modelle frei oder betreiben ein lokales Modell.
       </p>
 
-      <H2>7. Auftragsverarbeiter und Empfänger</H2>
+      <H2>7. Chat auf dieser Website</H2>
+      <p>
+        Der Assistent auf dieser Website beantwortet Fragen zum Produkt anhand der Inhalte dieser
+        Website. Ihre Nachricht wird dafür an den Anbieter des KI-Sprachmodells übermittelt
+        (Abschnitt 8). Wir speichern den Gesprächsverlauf ohne IP-Adresse unter einer zufälligen
+        Sitzungskennung, um die Antwortqualität zu prüfen und fehlende Inhalte zu erkennen;
+        erkennbare personenbezogene Daten (E-Mail-Adressen, Telefonnummern, Aktenzeichen, IBAN,
+        Sozialversicherungs- und Geburtsdaten) werden vor Speicherung und vor der Übermittlung an
+        das Modell automatisch entfernt. Bitte geben Sie im Chat keine Mandantendaten ein. Die
+        Verläufe werden nach 90 Tagen gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO
+        (berechtigtes Interesse an Beantwortung von Anfragen und Verbesserung des Angebots).
+      </p>
+      <p className="mt-2">
+        Fragen Sie im Chat einen Rückruf oder einen Termin an, verarbeiten wir die von Ihnen
+        angegebenen Kontaktdaten samt Ihrer Anfrage und dem bisherigen, bereinigten Gesprächsverlauf
+        zur Bearbeitung Ihrer Anfrage (Art. 6 Abs. 1 lit. b DSGVO, vorvertragliche Maßnahmen). Eine
+        Nutzung für Werbung ohne Ihre gesonderte Einwilligung erfolgt nicht.
+      </p>
+
+      <H2>8. Auftragsverarbeiter und Empfänger</H2>
       <p>
         Je nach Konfiguration können folgende Kategorien eingebunden sein (alle mit AVV;
         Drittland-Transfers nur auf Basis von EU-Standardvertragsklauseln, Art. 46 DSGVO):
@@ -226,14 +245,14 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         EU-Standardvertragsklauseln). Alle Auftragsverarbeiter sind durch AVV gebunden.
       </p>
 
-      <H2>8. Speicherdauer</H2>
+      <H2>9. Speicherdauer</H2>
       <p>
         Kontodaten für die Vertragsdauer; Löschung nach Kündigung, soweit keine
         Aufbewahrungspflichten (§ 132 BAO) entgegenstehen. Inhalte werden auf Ihre Weisung bzw. mit
         Vertragsende gelöscht. Server-Logs werden 14 Tage aufbewahrt.
       </p>
 
-      <H2>9. Ihre Rechte</H2>
+      <H2>10. Ihre Rechte</H2>
       <p>
         Sie haben Rechte auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17),
         Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO).
@@ -244,7 +263,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Barichgasse 40–42, 1030 Wien, dsb.gv.at.
       </p>
 
-      <H2>10. Änderungen</H2>
+      <H2>11. Änderungen</H2>
       <p>Maßgeblich ist die jeweils auf dieser Seite veröffentlichte Fassung.</p>
 
       <LegalLinks home={home} exclude="privacy" lang={lang} />

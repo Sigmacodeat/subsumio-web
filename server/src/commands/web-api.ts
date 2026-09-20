@@ -7985,6 +7985,166 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
+  // ── Deep Analysis, async arm ────────────────────────────────────────
+  // The synchronous route above blocks for minutes and loses its result when
+  // the tab closes. These three keep the run on the server: start enqueues a
+  // `deep-analysis` job behind a run-state page, the GET polls it, cancel
+  // stops a run that has not reached the model yet.
+  app.post(
+    "/api/legal/deep-analysis/start",
+    express.json({ limit: "256kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const slugs = (Array.isArray(body.slugs) ? body.slugs : [])
+          .map((s) => String(s).trim())
+          .filter(Boolean)
+          .slice(0, 25);
+        if (slugs.length === 0) {
+          res
+            .status(400)
+            .json({ error: "missing_slugs", message: "At least one document slug is required." });
+          return;
+        }
+        const caseSlug =
+          typeof body.case_slug === "string" && body.case_slug.trim()
+            ? body.case_slug.trim()
+            : null;
+        if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
+        for (const s of slugs) assertMatterScope(req.matterScope, s, caseSlug ?? undefined);
+        const prompt = typeof body.prompt === "string" ? body.prompt.slice(0, 2000) : "";
+        const jurisdiction = typeof body.jurisdiction === "string" ? body.jurisdiction : "all";
+        const sourceId = requestSourceId(req);
+
+        const { isAvailable } = await import("../core/ai/gateway.ts");
+        if (!isAvailable("chat")) {
+          res.status(503).json({
+            error: "llm_unavailable",
+            message: "Die Tiefenanalyse benötigt einen konfigurierten Chat-Provider.",
+          });
+          return;
+        }
+
+        // Titles for the run page (best effort; the slug stays the identity).
+        const titleRows = await engine.executeRaw<{ slug: string; title: string }>(
+          `SELECT slug, title FROM pages
+            WHERE slug = ANY($1::text[]) AND source_id = $2 AND deleted_at IS NULL`,
+          [slugs, sourceId]
+        );
+        const titles = new Map(titleRows.map((r) => [r.slug, r.title]));
+        const docs = slugs.map((slug) => ({ slug, title: titles.get(slug) || slug }));
+
+        const {
+          newDeepAnalysisRunState,
+          writeDeepAnalysisRun,
+          patchDeepAnalysisRun,
+          deepAnalysisRunSummary,
+          DEEP_ANALYSIS_SLUG_PREFIX,
+        } = await import("../core/legal/deep-analysis-run.ts");
+        const runId = `${new Date().toISOString().replace(/[-:]/g, "").replace("T", "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
+        const runSlug = `${DEEP_ANALYSIS_SLUG_PREFIX}${runId}`;
+        const state = newDeepAnalysisRunState({
+          run_slug: runSlug,
+          title:
+            typeof body.title === "string" && body.title.trim()
+              ? body.title.trim().slice(0, 200)
+              : `Tiefenanalyse ${new Date().toISOString().slice(0, 10)}`,
+          docs,
+          prompt: prompt || null,
+          jurisdiction,
+          case_slug: caseSlug,
+          source_id: sourceId,
+          ...(req.userId ? { created_by_user_id: req.userId } : {}),
+          ...(req.matterScope !== undefined ? { matter_scope: req.matterScope } : {}),
+          ...(req.aclGroups !== undefined ? { acl_groups: req.aclGroups } : {}),
+        });
+        // Page first, so the worker always finds the state.
+        await writeDeepAnalysisRun(engine, state);
+
+        const queue = new MinionQueue(engine);
+        const job = await queue.add(
+          "deep-analysis",
+          { run_slug: runSlug, _source_id: sourceId },
+          { timeout_ms: 30 * 60 * 1000, max_attempts: 2, max_stalled: 2 },
+          { allowProtectedSubmit: true }
+        );
+        const withJob = await patchDeepAnalysisRun(engine, runSlug, sourceId, (s) => {
+          s.job_id = String(job.id);
+        });
+        res.json({
+          ...deepAnalysisRunSummary(withJob ?? state),
+          job_id: String(job.id),
+          document_count: docs.length,
+        });
+      } catch (e) {
+        legalErr(res, "deep_analysis_start", e);
+      }
+    }
+  );
+
+  app.get("/api/legal/deep-analysis/run/{*slug}", async (req: Request, res: Response) => {
+    try {
+      const slugParam = (req.params as Record<string, unknown>).slug;
+      const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      const { readDeepAnalysisRun, deepAnalysisRunSummary, DEEP_ANALYSIS_SLUG_PREFIX } =
+        await import("../core/legal/deep-analysis-run.ts");
+      if (!slug || !slug.startsWith(DEEP_ANALYSIS_SLUG_PREFIX)) {
+        apiError(res, 404, "run_not_found");
+        return;
+      }
+      const sourceId = requestSourceId(req);
+      const state = await readDeepAnalysisRun(engine, slug, sourceId);
+      if (!state) {
+        apiError(res, 404, "run_not_found");
+        return;
+      }
+      if (state.case_slug) assertMatterScope(req.matterScope, state.case_slug);
+      res.json(deepAnalysisRunSummary(state));
+    } catch (e) {
+      legalErr(res, "deep_analysis_status", e);
+    }
+  });
+
+  app.post(
+    "/api/legal/deep-analysis/run/{*slug}/cancel",
+    express.json({ limit: "16kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const slugParam = (req.params as Record<string, unknown>).slug;
+        const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+        const {
+          readDeepAnalysisRun,
+          patchDeepAnalysisRun,
+          deepAnalysisRunSummary,
+          DEEP_ANALYSIS_SLUG_PREFIX,
+        } = await import("../core/legal/deep-analysis-run.ts");
+        if (!slug || !slug.startsWith(DEEP_ANALYSIS_SLUG_PREFIX)) {
+          apiError(res, 404, "run_not_found");
+          return;
+        }
+        const sourceId = requestSourceId(req);
+        const existing = await readDeepAnalysisRun(engine, slug, sourceId);
+        if (!existing) {
+          apiError(res, 404, "run_not_found");
+          return;
+        }
+        if (existing.case_slug) assertMatterScope(req.matterScope, existing.case_slug);
+        const state = await patchDeepAnalysisRun(engine, slug, sourceId, (s) => {
+          s.cancel_requested = true;
+          // Not started yet: end it here, so a queued job never spends.
+          if (s.status === "queued") {
+            s.status = "cancelled";
+            s.phase = "finished";
+            s.finished_at = new Date().toISOString();
+          }
+        });
+        res.json(state ? deepAnalysisRunSummary(state) : { error: "run_not_found" });
+      } catch (e) {
+        legalErr(res, "deep_analysis_cancel", e);
+      }
+    }
+  );
+
   // Contract Portfolio Insights (G3+G7): Cross-contract analytics with
   // clause frequencies, outlier detection, risk distribution, obligation
   // summary, and negotiation patterns. Source-scoped.
@@ -9202,16 +9362,82 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
-  app.post("/api/admin/dream", async (req: Request, res: Response) => {
+  // Firm setting "Kanzlei-Gehirn lernt mit" (core/brain-learning.ts). The web
+  // server calls this with the firm's own server-set x-subsumio-source when
+  // an admin flips the switch; the flag is persisted on that source and read
+  // by every learning chokepoint (cycle, post-upload consolidation, facts).
+  app.get("/api/brain/learning", async (req: Request, res: Response) => {
     try {
-      const { runDream } = await import("../commands/dream.ts");
-      const report = await runDream(engine, ["--json"]);
-      res.json(report);
+      const { isLearningDisabledForSource } = await import("../core/brain-learning.ts");
+      const sourceId = requestSourceId(req);
+      res.json({
+        source_id: sourceId,
+        enabled: !(await isLearningDisabledForSource(engine, sourceId)),
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
-      res.status(500).json({ error: "dream_failed", message: msg });
+      res.status(500).json({ error: "learning_read_failed", message: msg });
     }
   });
+
+  app.put(
+    "/api/brain/learning",
+    express.json({ limit: "16kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const enabled = (req.body as { enabled?: unknown } | undefined)?.enabled;
+        if (typeof enabled !== "boolean") {
+          apiError(res, 400, "invalid_body", "enabled (boolean) is required");
+          return;
+        }
+        const sourceId = requestSourceId(req);
+        // Shared law sources and the host 'default' source are not a firm.
+        if (sourceId === "default" || sourceId.startsWith("law-")) {
+          apiError(res, 400, "not_a_firm_source");
+          return;
+        }
+        const { setSourceLearning } = await import("../core/brain-learning.ts");
+        await setSourceLearning(engine, sourceId, enabled);
+        res.json({ source_id: sourceId, enabled });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "learning_update_failed", message: msg });
+      }
+    }
+  );
+
+  app.post(
+    "/api/admin/dream",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const { runDream } = await import("../commands/dream.ts");
+        // The nightly web cron sends the COMPLETE list of firms that switched
+        // "Kanzlei-Gehirn lernt mit" off. Reconcile the persisted flags to it
+        // first (self-heals a lost single update), then run the cycle — which
+        // skips learning phases for every flagged source.
+        const rawList = (req.body as { learning_excluded_sources?: unknown } | undefined)
+          ?.learning_excluded_sources;
+        let learningExcludedSourceIds: string[] = [];
+        let learningReconcile: { disabled: number; cleared: number } | undefined;
+        if (Array.isArray(rawList)) {
+          const { parseLearningExcludedSources, reconcileLearningDisabled } =
+            await import("../core/brain-learning.ts");
+          learningExcludedSourceIds = parseLearningExcludedSources(rawList);
+          learningReconcile = await reconcileLearningDisabled(engine, learningExcludedSourceIds);
+        }
+        const report = await runDream(engine, ["--json"], { learningExcludedSourceIds });
+        res.json(
+          learningReconcile && report && typeof report === "object"
+            ? { ...report, learning_reconcile: learningReconcile }
+            : report
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "dream_failed", message: msg });
+      }
+    }
+  );
 
   // Latest contradiction-probe findings, source-scoped. Web callers
   // (contradiction-probe route, daily briefing) used to POST a pseudo-prompt

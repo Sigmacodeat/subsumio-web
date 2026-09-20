@@ -540,7 +540,12 @@ async function runDrain(
 
 export async function runDream(
   engine: BrainEngine | null,
-  args: string[]
+  args: string[],
+  /**
+   * Programmatic-only overrides (not reachable from argv). The web API passes
+   * the firms that switched "Kanzlei-Gehirn lernt mit" off here.
+   */
+  overrides: { learningExcludedSourceIds?: string[] } = {}
 ): Promise<CycleReport | void> {
   const opts = parseArgs(args);
 
@@ -630,6 +635,9 @@ export async function runDream(
     synthFrom: opts.from ?? undefined,
     synthTo: opts.to ?? undefined,
     synthBypassDreamGuard: opts.bypassDreamGuard,
+    ...(overrides.learningExcludedSourceIds && overrides.learningExcludedSourceIds.length > 0
+      ? { learningExcludedSourceIds: overrides.learningExcludedSourceIds }
+      : {}),
   });
 
   if (opts.json) {

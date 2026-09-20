@@ -296,6 +296,19 @@ export const api = {
     return request<T>(path);
   },
 
+  /** POST to an own API route that has no dedicated client method yet. */
+  post<T>(path: string, body?: unknown): Promise<T> {
+    return requestUncached<T>(path, {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    });
+  },
+
+  /** DELETE on an own API route that has no dedicated client method yet. */
+  delete<T>(path: string): Promise<T> {
+    return requestUncached<T>(path, { method: "DELETE" });
+  },
+
   brain: {
     stats(): Promise<BrainStats> {
       return request("/api/stats");
@@ -659,6 +672,9 @@ export const api = {
         reminder_sent_at?: string;
         calculation_note?: string;
         responsible?: string;
+        /** Stand-in while the responsible lawyer is away (Urlaubsvertretung). */
+        deputy?: string;
+        deputy_until?: string;
         completed_at?: string;
         completed_by?: string;
       }>;

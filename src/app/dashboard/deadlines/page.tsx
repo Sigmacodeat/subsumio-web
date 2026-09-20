@@ -81,6 +81,8 @@ interface DeadlineItem {
   secondCheckBy?: string;
   secondCheckAt?: string;
   ervZustelldatum?: string;
+  /** Stand-in while the responsible lawyer is away (Urlaubsvertretung). */
+  deputy?: string;
 }
 
 const TYPE_CONFIG: Record<string, DashboardKey> = {
@@ -356,6 +358,7 @@ export default function DeadlinesPage() {
         secondCheckBy: f.second_check_by,
         secondCheckAt: f.second_check_at,
         ervZustelldatum: f.erv_zustelldatum,
+        deputy: f.deputy,
       }));
 
       // Appointments are not part of the fristen read-model — load separately
@@ -717,6 +720,8 @@ export default function DeadlinesPage() {
           d.caseTitle,
           d.law,
           d.ervZustelldatum ? `zugestellt ${formatDate(d.ervZustelldatum)}` : null,
+          // The responsible lawyer is away: the row names who stands in.
+          d.deputy ? `Vertretung: ${d.deputy}` : null,
         ].filter(Boolean);
         return (
           <div className="min-w-0">

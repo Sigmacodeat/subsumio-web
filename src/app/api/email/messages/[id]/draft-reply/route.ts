@@ -1,4 +1,4 @@
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 import { getMailMessage } from "@/lib/email/mailbox";
 import { caseAccessForUser } from "@/lib/email/case-link";
@@ -29,6 +29,7 @@ export const POST = createHandler(
   {
     action: "brain.read",
     rateTier: "heavy",
+    credits: "think",
     audit: () => ({ action: "email.draft_reply" as const, entityType: "email_message" }),
   },
   async (ctx, _body, _query, req) => {
@@ -71,6 +72,7 @@ export const POST = createHandler(
       timeoutMs: 45_000,
     });
     if (!result?.text) return apiError("draft_failed", "Entwurf konnte nicht erstellt werden", 502);
+    void recordCreditConsumption(ctx, "think");
     return Response.json({ draft: result.text.trim(), aiGenerated: true });
   }
 );

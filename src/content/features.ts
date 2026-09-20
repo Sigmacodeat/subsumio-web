@@ -221,8 +221,8 @@ export const FEATURES_PAGE: FeaturesContent = {
     },
   ],
   ctaTitle: "Bereit, es in Ihrer Kanzlei zu sehen?",
-  ctaSub: "14 Tage testen, keine Kreditkarte.",
-  ctaButton: "14 Tage kostenlos testen",
+  ctaSub: "30 Tage testen, keine Kreditkarte.",
+  ctaButton: "30 Tage kostenlos testen",
   faqTitle: "Fragen, beantwortet",
   faq: [
     {

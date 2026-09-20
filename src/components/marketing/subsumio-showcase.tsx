@@ -133,7 +133,13 @@ export function PhoneCopilot() {
     incoming: "#1f2c34",
     outgoing: "#005c4b",
     text: "#e9edef",
-    meta: "#8696a0",
+    // WhatsApp's own meta grey is #8696a0 and only reaches 2.6:1 on the chat
+    // background — too faint to read in a marketing mock. Same character,
+    // enough contrast.
+    meta: "#a7b7c0",
+    /** Meta text on the green outgoing bubble — the neutral grey only makes
+     *  3.9:1 there. */
+    metaOnOutgoing: "#cfe6de",
     read: "#53a9c6",
     accent: "#25d366",
     input: "#1f2c34",
@@ -151,6 +157,7 @@ export function PhoneCopilot() {
   const [readStatus, setReadStatus] = useState<Record<number, "sent" | "delivered" | "read">>({});
   const [fadingOut, setFadingOut] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputViewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (reduce) {
@@ -309,6 +316,15 @@ export function PhoneCopilot() {
       });
     }
   }, [visibleCount, isTyping]);
+
+  // The input keeps a fixed height of two lines and scrolls to the caret, the
+  // way a real input does once the text no longer fits. Letting it grow made
+  // the phone — and with it the whole section and everything below — move down
+  // by about 50 px while the demo typed.
+  useEffect(() => {
+    const el = inputViewRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [inputText]);
 
   const typingLabel = UI_STRINGS.typingLabel;
 
@@ -485,14 +501,17 @@ export function PhoneCopilot() {
                           For file/chips: in-flow below the attachment. */}
                       {("file" in m && m.file) || ("chips" in m && m.chips) ? (
                         <div className="mt-1 flex items-center justify-end gap-0.5">
-                          <span className="text-[10px]" style={{ color: WA.meta }}>
+                          <span
+                            className="text-[10px]"
+                            style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
+                          >
                             {times[i] ?? ""}
                           </span>
                           {isUser && readStatus[i] === "sent" && (
-                            <Check size={11} style={{ color: WA.meta }} />
+                            <Check size={11} style={{ color: WA.metaOnOutgoing }} />
                           )}
                           {isUser && readStatus[i] === "delivered" && (
-                            <CheckCheck size={11} style={{ color: WA.meta }} />
+                            <CheckCheck size={11} style={{ color: WA.metaOnOutgoing }} />
                           )}
                           {isUser && readStatus[i] === "read" && (
                             <CheckCheck size={11} style={{ color: WA.read }} />
@@ -500,14 +519,17 @@ export function PhoneCopilot() {
                         </div>
                       ) : (
                         <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
-                          <span className="text-[10px]" style={{ color: WA.meta }}>
+                          <span
+                            className="text-[10px]"
+                            style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
+                          >
                             {times[i] ?? ""}
                           </span>
                           {isUser && readStatus[i] === "sent" && (
-                            <Check size={11} style={{ color: WA.meta }} />
+                            <Check size={11} style={{ color: WA.metaOnOutgoing }} />
                           )}
                           {isUser && readStatus[i] === "delivered" && (
-                            <CheckCheck size={11} style={{ color: WA.meta }} />
+                            <CheckCheck size={11} style={{ color: WA.metaOnOutgoing }} />
                           )}
                           {isUser && readStatus[i] === "read" && (
                             <CheckCheck size={11} style={{ color: WA.read }} />
@@ -555,30 +577,37 @@ export function PhoneCopilot() {
           </div>
 
           {/* WhatsApp input bar — shows user typing + send/mic toggle.
-              Real WhatsApp wraps typed text across multiple lines; the bar grows
-              vertically and the send/mic button stays anchored to the bottom. */}
+              Its height is fixed at two lines: a bar that grows with the text
+              would push the section (and the rest of the page) down while the
+              demo types. Longer text scrolls to the caret instead. */}
           <div className="relative z-10 flex items-end gap-2 bg-[#1f2c34] px-2 py-2">
             <div
               className="flex flex-1 items-end gap-2 rounded-full px-3 py-1.5"
               style={{ background: WA.inputField }}
             >
               <Smile size={20} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
-              <span
-                className="min-w-0 flex-1 py-1 text-[13px] leading-snug break-words whitespace-pre-wrap"
-                style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
+              <div
+                ref={inputViewRef}
+                className="my-1 h-[34px] min-w-0 flex-1 overflow-hidden"
+                style={{ scrollbarWidth: "none" }}
               >
-                {isUserTyping && inputText ? inputText : UI_STRINGS.messageLabel}
-                {isUserTyping && inputText && (
-                  <motion.span
-                    animate={{ opacity: [1, 0, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                    className="ml-0.5 inline-block"
-                    style={{ color: WA.text }}
-                  >
-                    |
-                  </motion.span>
-                )}
-              </span>
+                <span
+                  className="block text-[13px] leading-[17px] break-words whitespace-pre-wrap"
+                  style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
+                >
+                  {isUserTyping && inputText ? inputText : UI_STRINGS.messageLabel}
+                  {isUserTyping && inputText && (
+                    <motion.span
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                      className="ml-0.5 inline-block"
+                      style={{ color: WA.text }}
+                    >
+                      |
+                    </motion.span>
+                  )}
+                </span>
+              </div>
               <Paperclip size={18} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
               <Camera size={18} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
             </div>

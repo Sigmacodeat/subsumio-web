@@ -12,6 +12,8 @@
  *   cohere     — direct EU endpoint (COHERE_API_KEY)
  */
 
+import { queryInstructionFor } from "../../core/ai/embedding-instructions.ts";
+
 export type EmbedRoute = "openrouter" | "voyage" | "cohere";
 
 export interface BakeoffModel {
@@ -35,8 +37,8 @@ export interface BakeoffModel {
   openWeights: boolean;
 }
 
-const QWEN_INSTRUCTION =
-  "Instruct: Given a legal question about Austrian law, retrieve the statute sections or court decisions that answer it\nQuery: ";
+// The engine's own prefix, so the bake-off measures exactly what production sends.
+const QWEN_INSTRUCTION = queryInstructionFor("qwen/qwen3-embedding-8b")!;
 
 export const BAKEOFF_MODELS: BakeoffModel[] = [
   {

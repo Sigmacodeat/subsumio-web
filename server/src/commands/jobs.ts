@@ -1914,8 +1914,14 @@ export async function registerBuiltinHandlers(
   const { makeTabularReviewHandler } = await import("../core/minions/handlers/tabular-review.ts");
   worker.register("tabular-review", makeTabularReviewHandler({ engine }));
 
+  // Async arm of Deep Analysis: the web-api start route persists a
+  // deep_analysis_run page, then enqueues this job for the long chat call
+  // over all documents. PROTECTED via PROTECTED_JOB_NAMES.
+  const { makeDeepAnalysisHandler } = await import("../core/minions/handlers/deep-analysis.ts");
+  worker.register("deep-analysis", makeDeepAnalysisHandler({ engine }));
+
   process.stderr.write(
-    "[minion worker] subagent + supervisor + legal-pipeline + extract-document + tabular-review handlers enabled\n"
+    "[minion worker] subagent + supervisor + legal-pipeline + extract-document + tabular-review + deep-analysis handlers enabled\n"
   );
 
   // ============================================================

@@ -124,7 +124,10 @@ export default function ProductDemo({
         role="img"
         aria-label={d.ariaLabel}
         inert
-        className="grid min-h-[430px] grid-cols-1 sm:grid-cols-[196px_minmax(0,1fr)]"
+        // A fixed height, not a minimum: the scenes differ in height, and the
+        // tallest one used to stretch the frame mid-cycle, which moved the hero
+        // and everything below it down by ~40 px.
+        className="grid h-[470px] grid-cols-1 sm:grid-cols-[196px_minmax(0,1fr)]"
       >
         {/* ── Sidebar (real labels, icons and active style) ── */}
         <aside className="hidden flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] sm:flex">

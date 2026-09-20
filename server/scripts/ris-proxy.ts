@@ -17,6 +17,8 @@
  * Bun's fetch() natively supports HTTP proxies via the `proxy` option.
  */
 
+import { RIS_USER_AGENT } from "./ris-pace";
+
 interface ProxyEntry {
   url: string;
   label: string;
@@ -48,22 +50,13 @@ const _proxies: ProxyEntry[] = (() => {
 })();
 
 /** Delay per proxy connection (ms). */
-export const PROXY_DELAY_MS = parseInt(
-  process.env.RIS_PROXY_DELAY ?? "1500",
-  10
-);
+export const PROXY_DELAY_MS = parseInt(process.env.RIS_PROXY_DELAY ?? "1500", 10);
 
 /** Manual concurrency override (optional). */
-const _proxyConcurrency = parseInt(
-  process.env.RIS_PROXY_CONCURRENCY ?? "0",
-  10
-);
+const _proxyConcurrency = parseInt(process.env.RIS_PROXY_CONCURRENCY ?? "0", 10);
 
 /** Quarantine duration in seconds. */
-const QUARANTINE_S = parseInt(
-  process.env.RIS_PROXY_QUARANTINE_S ?? "300",
-  10
-);
+const QUARANTINE_S = parseInt(process.env.RIS_PROXY_QUARANTINE_S ?? "300", 10);
 
 /** Whether any proxies are configured. */
 export function hasProxies(): boolean {
@@ -108,9 +101,7 @@ function nextActiveProxy(): ProxyEntry | undefined {
   const active = _proxies.filter((p) => p.quarantinedUntil <= now);
   if (active.length === 0) {
     // All quarantined — reset the one with the earliest quarantine expiry
-    const earliest = _proxies.reduce((a, b) =>
-      a.quarantinedUntil < b.quarantinedUntil ? a : b
-    );
+    const earliest = _proxies.reduce((a, b) => (a.quarantinedUntil < b.quarantinedUntil ? a : b));
     earliest.quarantinedUntil = 0;
     console.warn(`[ris-proxy] All proxies quarantined — force-unquarantining ${earliest.label}`);
     return earliest;
@@ -167,24 +158,9 @@ export function reportProxyFailure(): void {
   }
 }
 
-/**
- * Get the User-Agent header.
- * When using proxies, we vary the UA to look like real browsers.
- */
+/** The one RIS User-Agent (see ris-pace.ts) — never a browser disguise. */
 export function getUserAgent(): string {
-  if (hasProxies()) {
-    const uas = [
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Safari/605.1.15",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0",
-    ];
-    return uas[Math.floor(Math.random() * uas.length)];
-  }
-  return "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)";
+  return RIS_USER_AGENT;
 }
 
 /**
@@ -196,9 +172,8 @@ export function proxyStatus(): string {
   return _proxies
     .map((p) => {
       const status = p.quarantinedUntil > now ? "QUARANTINED" : "active";
-      const sr = p.totalRequests > 0
-        ? `${Math.round(100 * (1 - p.failures / p.totalRequests))}%`
-        : "n/a";
+      const sr =
+        p.totalRequests > 0 ? `${Math.round(100 * (1 - p.failures / p.totalRequests))}%` : "n/a";
       return `  ${p.label}: ${status} (reqs=${p.totalRequests}, fails=${p.failures}, sr=${sr})`;
     })
     .join("\n");
@@ -216,11 +191,9 @@ export function logProxyConfig(): void {
         `quarantine=${QUARANTINE_S}s`
     );
     for (const p of _proxies) {
-      console.log(`  → ${p.label}: ${p.url.replace(/:[^:@]+@/, ':****@')}`);
+      console.log(`  → ${p.label}: ${p.url.replace(/:[^:@]+@/, ":****@")}`);
     }
   } else {
-    console.log(
-      "[ris-proxy] No proxies configured — direct connection, concurrency=1"
-    );
+    console.log("[ris-proxy] No proxies configured — direct connection, concurrency=1");
   }
 }

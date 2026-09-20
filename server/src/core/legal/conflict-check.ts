@@ -297,7 +297,7 @@ export async function conflictCheck(
     explanation = `"${name}" ist in ${deduped.length === 1 ? "einer Akte" : `${deduped.length} Einträgen`} bekannt. Kein Konflikt erkennbar.`;
   } else {
     severity = "none";
-    explanation = `"${name}" ist in keiner Akte bekannt. Kein Konflikt im Brain erkennbar.`;
+    explanation = `"${name}" ist in keiner Akte bekannt. Kein Konflikt im Kanzleiwissen erkennbar.`;
   }
 
   return {

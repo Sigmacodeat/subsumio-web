@@ -14,6 +14,8 @@ describe("handbook", () => {
     expect(handbookChapterForRoute("/dashboard/kollisionspruefung")?.title).toBe(
       "Kollisionsprüfung"
     );
+    expect(handbookChapterForRoute("/dashboard/settings/kanzlei")?.id).toBe("kanzlei-gehirn");
+    expect(handbookChapterForRoute("/dashboard/settings/security")?.id).toBe("sicherheit");
     expect(handbookChapterForRoute("/dashboard/unknown")).toBeNull();
   });
 

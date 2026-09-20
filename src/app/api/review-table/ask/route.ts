@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { engineComplete } from "@/lib/engine-llm";
 
 export const maxDuration = 60;
@@ -65,6 +65,7 @@ export const POST = createHandler(
   {
     action: "brain.read",
     rateTier: "heavy",
+    credits: "think",
     body: postSchema,
     audit: (_ctx, body) => ({
       action: "review_table.ask" as const,
@@ -103,6 +104,8 @@ Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`
       maxTokens: 2_000,
       timeoutMs: 45_000,
     });
+    // Only a model answer costs a credit; the offline fallback is free.
+    if (completion?.text.trim()) void recordCreditConsumption(ctx, "think");
     const answer =
       completion?.text.trim() ||
       generateSimpleAnswer(body.query, body.columns, body.rows, body.table_title ?? "");

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL } from "@/lib/engine";
+import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
 import { createHandler } from "@/lib/api-handler";
 import { computeDeadlineStatus, normalizeFristenbuchStatus } from "@/lib/legal-deadlines";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -58,6 +59,10 @@ export interface Frist {
   calculation_note?: string;
   /** Responsible lawyer of the matter (case frontmatter own_lawyer_name). */
   responsible?: string;
+  /** Who stands in while the responsible lawyer is away (Urlaubsvertretung). */
+  deputy?: string;
+  /** Last day of that absence, ISO date. */
+  deputy_until?: string;
   /** Erledigungsvermerk: when and by whom the deadline was completed. */
   completed_at?: string;
   completed_by?: string;
@@ -145,6 +150,7 @@ export const GET = createHandler(
       fristen.push(f);
     };
     const responsibleByCase = new Map<string, string>();
+    const absenceRecords: AbsenceRecord[] = [];
     const titleByCase = new Map<string, string>();
 
     // ── Source 1: Engine Fristenbuch ──────────────────────────────────────
@@ -190,10 +196,18 @@ export const GET = createHandler(
       // All matters and deadlines, in batches; deleted deadlines are left out.
       const fetchPagesByType = async (type: string): Promise<BrainPage[]> =>
         (await listEnginePages(ctx.headers, type, 10_000)) as unknown as BrainPage[];
-      const [deadlinePages, casePages] = await Promise.all([
+      const [deadlinePages, casePages, absencePages] = await Promise.all([
         fetchPagesByType("legal_deadline"),
         fetchPagesByType("legal_case"),
+        fetchPagesByType("absence_record"),
       ]);
+      // Deadlines have no assignee of their own — they inherit the matter's
+      // responsible lawyer. While that lawyer is away, the deadline names the
+      // stand-in instead of silently staying with someone on holiday.
+      for (const page of absencePages) {
+        const record = page.frontmatter as unknown as AbsenceRecord | undefined;
+        if (record?.user_email) absenceRecords.push(record);
+      }
       for (const casePage of casePages) {
         const lawyer = str(casePage.frontmatter?.own_lawyer_name);
         if (lawyer) responsibleByCase.set(casePage.slug, lawyer);
@@ -316,6 +330,15 @@ export const GET = createHandler(
     for (const f of fristen) {
       if (f.case_slug && !f.responsible) f.responsible = responsibleByCase.get(f.case_slug);
       if (f.case_slug && !f.case_title) f.case_title = titleByCase.get(f.case_slug);
+      const deputy = activeDelegateFor(
+        f.responsible,
+        absenceRecords,
+        heute ? new Date(heute) : undefined
+      );
+      if (deputy) {
+        f.deputy = deputy.name;
+        f.deputy_until = deputy.until;
+      }
     }
 
     // ── Filter by status ──────────────────────────────────────────────────

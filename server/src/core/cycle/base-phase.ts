@@ -55,6 +55,12 @@ export interface BasePhaseOpts {
   budgetUsd?: number;
   /** Optional injected BudgetMeter (tests). When set, replaces the default constructed one. */
   meter?: BudgetMeter;
+  /**
+   * Firm setting "Kanzlei-Gehirn lernt mit": sources whose material this
+   * phase must not learn from (see core/brain-learning.ts). Subclasses that
+   * scan across sources filter these out.
+   */
+  excludedSources?: ReadonlySet<string>;
 }
 
 export abstract class BaseCyclePhase {

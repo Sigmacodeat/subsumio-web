@@ -34,6 +34,7 @@ import type { PageType } from "../types.ts";
 import { BudgetExhausted } from "../budget/budget-tracker.ts";
 import { isAvailable } from "../ai/gateway.ts";
 import { listSources } from "../sources-ops.ts";
+import { withoutExcluded } from "../brain-learning.ts";
 import {
   runEnrichCore,
   DEFAULT_TYPES,
@@ -45,6 +46,8 @@ import {
 export interface EnrichThinPhaseOpts {
   dryRun?: boolean;
   signal?: AbortSignal;
+  /** Firm setting "Kanzlei-Gehirn lernt mit": sources this phase must skip (core/brain-learning.ts). */
+  excludedSources?: ReadonlySet<string>;
 }
 
 export interface EnrichThinPhaseResult {
@@ -175,7 +178,7 @@ export async function runPhaseEnrichThin(
   }
 
   const maxTotalWalltimeMs = cfg.maxTotalWalltimeMin * 60_000;
-  const sources = await listSources(engine);
+  const sources = withoutExcluded(await listSources(engine), opts.excludedSources);
   if (sources.length === 0) {
     return {
       phase: "enrich_thin",

@@ -6,13 +6,16 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { engineComplete } from "@/lib/engine-llm";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
-import { clientIp } from "@/lib/auth/rate-limit";
+import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { groundAnswerCitations } from "@/lib/citation-gate";
 import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
 import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/portal/chat");
+
+/** Model answers per matter and day in the client portal (≈ 1–3 € model cost at most). */
+const PORTAL_CHAT_DAILY_LIMIT = 30;
 
 const chatSchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -124,6 +127,22 @@ export const POST = createPublicHandler(
         grounding: emptyGroundingMetadata(),
         escalated: false,
       });
+    }
+
+    // Client questions are not billed to the firm's credits, so their model
+    // cost is bounded here instead: a daily cap per matter, on top of the
+    // per-IP minute limit (a client can change IPs, not matters).
+    const daily = await hit(
+      `portal-chat-day:${payload.brain_id}:${payload.case_slug}`,
+      PORTAL_CHAT_DAILY_LIMIT,
+      24 * 60 * 60_000
+    );
+    if (!daily.ok) {
+      return apiError(
+        "daily_limit_reached",
+        "Für heute sind keine weiteren Fragen möglich. Bitte wenden Sie sich direkt an Ihre Kanzlei.",
+        429
+      );
     }
 
     const headers = engineHeadersForBrain(payload.brain_id);

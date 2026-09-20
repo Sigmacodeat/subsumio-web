@@ -91,6 +91,12 @@ function isRisOffHours(): boolean {
 const args = process.argv.slice(2);
 const LOOP = args.includes("--loop");
 const REPORT_ONLY = args.includes("--report-only");
+/**
+ * Embedding off while the corpus is still being rebuilt: a re-import
+ * re-chunks the document, which throws its vectors away. Everything is
+ * embedded once at the end, after the final audit.
+ */
+const EMBED_PAUSED = /^(1|true|yes)$/i.test(process.env.PIPELINE_EMBED_PAUSED ?? "");
 const SAMPLE_CHECK = args.includes("--sample-check");
 const intervalIdx = args.indexOf("--interval");
 const INTERVAL_S = intervalIdx >= 0 ? parseInt(args[intervalIdx + 1], 10) : 600;
@@ -2052,7 +2058,9 @@ async function cycle(): Promise<void> {
       ) || "0",
       10
     );
-    if (currentPendingEmbeds > 0 && !embedRunning && !REPORT_ONLY) {
+    if (EMBED_PAUSED) {
+      embedAction = `pausiert (${currentPendingEmbeds} offen, EMBED_PAUSED=1)`;
+    } else if (currentPendingEmbeds > 0 && !embedRunning && !REPORT_ONLY) {
       startProcess(
         "auto-embed",
         ["scripts/auto-embed-pg.ts", "--batch-size", "100"],

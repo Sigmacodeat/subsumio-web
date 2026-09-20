@@ -234,8 +234,13 @@ export function buildLegalContextualPrefix(
   // abbreviation it is the only hint which law they belong to.
   const legalArea = firstLegalArea(frontmatter.legal_area);
 
+  // State law: nine states have a law on the same subject in near-identical
+  // words, so the state is what tells them apart ("AT Tirol TBO § 5").
+  const region = str("region");
+
   const parts: string[] = [];
   if (jurisdiction) parts.push(jurisdiction.toUpperCase());
+  if (region) parts.push(region);
   // Abbreviations keep their spelling: lawyers write and search "StFWG",
   // "GewO", "EStG", never "STFWG".
   if (abbreviation) parts.push(abbreviation);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 
 export const maxDuration = 120;
 
@@ -44,6 +44,7 @@ export const POST = createHandler(
   {
     action: "legal.opponent_simulation",
     rateTier: "heavy",
+    credits: "subsumption",
     body: opponentSchema,
     audit: (_ctx, body) => ({
       action: "legal.opponent_simulation" as const,
@@ -153,6 +154,8 @@ Identifiziere 3-8 konkrete Schwachstellen. Sortiere nach Severity (kritisch zuer
             controller.close();
             return;
           }
+          // Charged once the engine accepted the job (same point as /api/think).
+          void recordCreditConsumption(ctx, "subsumption", body.case_slug);
 
           const contentType = thinkRes.headers.get("Content-Type") || "";
           if (contentType.includes("text/event-stream") && thinkRes.body) {

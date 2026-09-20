@@ -40,7 +40,13 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
 }
 import { csrfFetch } from "@/lib/csrf";
 import { synthesisInput } from "@/components/chat/tool-synthesis";
-import { fetchServerSession, saveSessionToServer, shareSession } from "@/lib/chat-server-sync";
+import { mergeSessionLists } from "@/components/chat/chat-session-merge";
+import {
+  fetchServerSession,
+  listServerSessions,
+  saveSessionToServer,
+  shareSession,
+} from "@/lib/chat-server-sync";
 import { buildChatExportMarkdown } from "@/components/chat/chat-export";
 import {
   buildPromptContext,
@@ -921,8 +927,15 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const refreshSessions = useCallback(async () => {
     if (!persistHistory) return;
     const generation = ++refreshSessionsGenerationRef.current;
-    const list = await listSessions({
-      caseSlug: selectedCaseSlug || context.caseSlug,
+    const caseFilter = selectedCaseSlug || context.caseSlug;
+    const [list, remote] = await Promise.all([
+      listSessions({ caseSlug: caseFilter, contextType: context.type }),
+      // Conversations that live only on the server: written on another device,
+      // or shared by a colleague. Without them a device change shows no history.
+      listServerSessions(caseFilter),
+    ]);
+    const merged = mergeSessionLists(list, remote, {
+      caseSlug: caseFilter,
       contextType: context.type,
     });
     // Stale-response guard: if selectedCaseSlug/context.caseSlug/context.type
@@ -931,7 +944,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     // now-stale result instead of overwriting the sessions list with the
     // wrong matter's threads.
     if (generation === refreshSessionsGenerationRef.current) {
-      setSessions(list);
+      setSessions(merged);
     }
   }, [persistHistory, selectedCaseSlug, context.caseSlug, context.type]);
 
@@ -969,26 +982,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }
         // Not in this browser: a conversation from another device or one a
         // colleague shared. Load it from the server and keep a local copy.
-        const remote = await fetchServerSession(initialSessionId, initialSessionOwner);
-        if (remote?.messages?.length) {
-          const now = new Date().toISOString();
-          const imported: ChatSession = {
-            id: remote.id,
-            title:
-              remote.owner_name && initialSessionOwner
-                ? `${remote.title} · ${remote.owner_name}`
-                : remote.title,
-            contextType: remote.case_slug ? "case" : "global",
-            caseSlug: remote.case_slug,
-            createdAt: remote.messages[0]?.createdAt ?? now,
-            updatedAt: remote.updated_at || now,
-            messageCount: remote.messages.length,
-          };
-          const msgs: ChatMessage[] = remote.messages.map((m) => ({ ...m }));
-          await createSession(imported);
-          for (const m of msgs) await saveMessage(imported.id, m);
-          setActiveSessionId(imported.id);
-          setMessages((current) => (current.length > 0 ? current : msgs));
+        const imported = await importRemoteSession(initialSessionId, initialSessionOwner);
+        if (imported) {
+          setActiveSessionId(initialSessionId);
+          setMessages((current) => (current.length > 0 ? current : imported));
           return;
         }
       }
@@ -1692,18 +1689,62 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     refreshSessions();
   }, [t, context, refreshSessions, selectedCaseSlug, isStreaming, setMessages]);
 
+  /**
+   * Fetch a conversation that is only on the server (another device, or a
+   * colleague's shared one) and keep a local copy. Returns its messages.
+   */
+  const importRemoteSession = useCallback(
+    async (id: string, ownerId?: string): Promise<ChatMessage[] | null> => {
+      const remote = await fetchServerSession(id, ownerId);
+      if (!remote?.messages?.length) return null;
+      const now = new Date().toISOString();
+      const imported: ChatSession = {
+        id: remote.id,
+        title:
+          remote.shared && remote.owner_name
+            ? `${remote.title} · ${remote.owner_name}`
+            : remote.title,
+        contextType: remote.case_slug ? "case" : "global",
+        caseSlug: remote.case_slug,
+        createdAt: remote.messages[0]?.createdAt ?? now,
+        updatedAt: remote.updated_at || now,
+        messageCount: remote.messages.length,
+      };
+      const msgs: ChatMessage[] = remote.messages.map((m) => ({ ...m }));
+      await createSession(imported);
+      for (const m of msgs) await saveMessage(imported.id, m);
+      return msgs;
+    },
+    []
+  );
+
   // Select session
   const handleSelectSession = useCallback(
     async (id: string) => {
       if (isStreaming) return; // Prevent session switch during active stream
+      const entry = sessions.find((session) => session.id === id);
       setActiveSessionId(id);
+      setError(null);
+      if (entry?.remote) {
+        const imported = await importRemoteSession(
+          id,
+          entry.remote.shared ? entry.remote.ownerId : undefined
+        );
+        if (!imported) {
+          setError(t("chat.err_session_load"));
+          return;
+        }
+        setMessages(imported);
+        setSessionTokens(0);
+        refreshSessions();
+        return;
+      }
       const msgs = await loadMessages(id);
       const sanitizedMsgs = sanitizeSessionMessages(msgs);
       setMessages(sanitizedMsgs);
       setSessionTokens(sanitizedMsgs.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
-      setError(null);
     },
-    [isStreaming, setMessages]
+    [isStreaming, setMessages, sessions, importRemoteSession, refreshSessions, t]
   );
 
   useImperativeHandle(
@@ -2354,7 +2395,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           onClick={() => setSubsumptionMode(false)}
           className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
             !subsumptionMode
-              ? "bg-[var(--brand-primary)] text-white"
+              ? "bg-[color:var(--brand-solid)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
           } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >
@@ -2364,7 +2405,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           onClick={() => setSubsumptionMode(true)}
           className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
             subsumptionMode
-              ? "bg-[var(--brand-primary)] text-white"
+              ? "bg-[color:var(--brand-solid)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
           } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >

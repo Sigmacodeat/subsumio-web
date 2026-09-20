@@ -171,6 +171,11 @@ export interface ChatSession {
   lastPreview?: string;
   pinned?: boolean;
   tags?: string[];
+  /**
+   * Not in this browser: the conversation is only on the server — written from
+   * another device, or shared by a colleague. Opening it fetches and caches it.
+   */
+  remote?: { ownerId: string; ownerName: string; shared: boolean };
 }
 
 export interface ChatFeatures {

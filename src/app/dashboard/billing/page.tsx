@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { BILLING_PLANS_DISPLAY } from "@/lib/billing/plans";
+import { TRIAL_PLAN, isTrialActive, trialDaysLeft } from "@/lib/billing/trial";
+import type { Plan } from "@/lib/auth/store";
 import { useMe } from "@/lib/queries/auth";
 import { useUsage, useCheckout } from "@/lib/queries/settings";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -222,6 +224,7 @@ interface Me {
     plan: string;
     referralCode: string;
     stripeCustomerId?: string | null;
+    trialEndsAt?: string | null;
   } | null;
   referrals?: number;
 }
@@ -288,8 +291,12 @@ function BillingInner() {
   }
 
   const currentPlan = me?.user?.plan ?? "free";
-  const currentPlanName =
-    BILLING_PLANS_DISPLAY.find((p) => p.id === currentPlan)?.name ?? currentPlan;
+  const trialUser = me?.user
+    ? { plan: me.user.plan as Plan, trialEndsAt: me.user.trialEndsAt ?? null }
+    : null;
+  const onTrial = trialUser ? isTrialActive(trialUser) : false;
+  const shownPlan = onTrial ? TRIAL_PLAN : currentPlan;
+  const currentPlanName = BILLING_PLANS_DISPLAY.find((p) => p.id === shownPlan)?.name ?? shownPlan;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -354,10 +361,24 @@ function BillingInner() {
               <span className="text-xl font-bold text-[color:var(--ds-text)]">
                 {currentPlanName}
               </span>
-              <Badge variant={currentPlan === "free" ? "default" : "accent"}>
-                {currentPlan === "free" ? t("billing.free") : t("billing.active")}
+              <Badge variant={onTrial ? "warning" : currentPlan === "free" ? "default" : "accent"}>
+                {onTrial
+                  ? t("billing.trial")
+                  : currentPlan === "free"
+                    ? t("billing.free")
+                    : t("billing.active")}
               </Badge>
             </div>
+            {onTrial && trialUser && (
+              <p className="mt-2 max-w-xl text-sm text-[color:var(--ds-text-muted)]">
+                {t("billing.trial_notice")
+                  .replace(
+                    "{date}",
+                    new Date(trialUser.trialEndsAt as string).toLocaleDateString("de-AT")
+                  )
+                  .replace("{days}", String(trialDaysLeft(trialUser)))}
+              </p>
+            )}
             {me?.user && (
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{me.user.email}</p>
             )}
