@@ -52,10 +52,18 @@ function norm(s: string): string {
   return s
     .replace(/<[^>]+>/g, " ")
     .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
-    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
-    .replace(/&auml;/g, "ä").replace(/&ouml;/g, "ö").replace(/&uuml;/g, "ü")
-    .replace(/&Auml;/g, "Ä").replace(/&Ouml;/g, "Ö").replace(/&Uuml;/g, "Ü")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&auml;/g, "ä")
+    .replace(/&ouml;/g, "ö")
+    .replace(/&uuml;/g, "ü")
+    .replace(/&Auml;/g, "Ä")
+    .replace(/&Ouml;/g, "Ö")
+    .replace(/&Uuml;/g, "Ü")
     .replace(/&szlig;/g, "ß")
     .replace(/\s+/g, " ")
     .trim();
@@ -75,7 +83,11 @@ function textknoten(xml: string): string[] {
   nutz = nutz
     .replace(/<kzinhalt>[\s\S]*?<\/kzinhalt>/g, " ")
     .replace(/<fzinhalt>[\s\S]*?<\/fzinhalt>/g, " ");
-  return [...nutz.matchAll(/<(absatz|listelem|ueberschrift|schluss|schlussteil|td)\b[^>]*>([\s\S]*?)<\/\1>/g)]
+  return [
+    ...nutz.matchAll(
+      /<(absatz|listelem|ueberschrift|schluss|schlussteil|td)\b[^>]*>([\s\S]*?)<\/\1>/g
+    ),
+  ]
     .map((m) => norm(m[2]))
     .filter((s) => s.length >= 30 && !DRUCK.test(s));
 }
@@ -88,7 +100,10 @@ function mdIndex(): Map<string, string> {
     const dir = stack.pop()!;
     for (const e of readdirSync(dir)) {
       const p = join(dir, e);
-      if (statSync(p).isDirectory()) { stack.push(p); continue; }
+      if (statSync(p).isDirectory()) {
+        stack.push(p);
+        continue;
+      }
       if (!e.endsWith(".md")) continue;
       const kopf = readFileSync(p, "utf8").slice(0, 2000);
       const id = kopf.match(/^(?:doc_id|nor_id|id):\s*"?(?:ris-)?([A-Z]{2,4}\d+)/m)?.[1];
@@ -110,16 +125,26 @@ console.log(`XML-Ablage:  ${xmls.length.toLocaleString("de")} Dateien`);
 console.log(`md-Index:    ${idx.size.toLocaleString("de")} Dokumente`);
 console.log(`Schwelle:    ${(SCHWELLE * 100).toFixed(0)} % fehlende Knoten\n`);
 
-let geprueft = 0, ohneMd = 0, ohneText = 0, unvollstaendig = 0;
-let knotenGes = 0, knotenFehl = 0;
+let geprueft = 0,
+  ohneMd = 0,
+  ohneText = 0,
+  unvollstaendig = 0;
+let knotenGes = 0,
+  knotenFehl = 0;
 const funde: { md: string; fehlt: number; ges: number; bsp: string }[] = [];
 
 for (const x of xmls) {
   const nor = x.split("/").pop()!.replace(".xml", "");
   const md = idx.get(nor);
-  if (!md) { ohneMd++; continue; }
+  if (!md) {
+    ohneMd++;
+    continue;
+  }
   const teile = textknoten(readFileSync(x, "utf8"));
-  if (!teile.length) { ohneText++; continue; }
+  if (!teile.length) {
+    ohneText++;
+    continue;
+  }
   const unser = readFileSync(md, "utf8").replace(/\s+/g, " ");
   geprueft++;
   // Präfix-Vergleich statt Volltext: Zeilenumbrüche und Einrückung
@@ -130,7 +155,12 @@ for (const x of xmls) {
   if (fehlend.length / teile.length > SCHWELLE) {
     unvollstaendig++;
     if (funde.length < 20) {
-      funde.push({ md, fehlt: fehlend.length, ges: teile.length, bsp: fehlend[0]?.slice(0, 90) ?? "" });
+      funde.push({
+        md,
+        fehlt: fehlend.length,
+        ges: teile.length,
+        bsp: fehlend[0]?.slice(0, 90) ?? "",
+      });
     }
   }
   if (geprueft % 5000 === 0) process.stderr.write(`\r  ${geprueft.toLocaleString("de")} …`);
@@ -139,9 +169,15 @@ process.stderr.write("\r");
 
 const pc = (v: number, n: number) => `${((100 * v) / Math.max(n, 1)).toFixed(3)} %`;
 console.log("─".repeat(70));
-console.log(`geprüft:                  ${geprueft.toLocaleString("de")} Dokumente / ${knotenGes.toLocaleString("de")} Normtext-Knoten`);
-console.log(`unvollständig (>${(SCHWELLE * 100).toFixed(0)} %):     ${unvollstaendig}   (${pc(unvollstaendig, geprueft)})`);
-console.log(`fehlende Knoten gesamt:   ${knotenFehl.toLocaleString("de")}   (${pc(knotenFehl, knotenGes)})`);
+console.log(
+  `geprüft:                  ${geprueft.toLocaleString("de")} Dokumente / ${knotenGes.toLocaleString("de")} Normtext-Knoten`
+);
+console.log(
+  `unvollständig (>${(SCHWELLE * 100).toFixed(0)} %):     ${unvollstaendig}   (${pc(unvollstaendig, geprueft)})`
+);
+console.log(
+  `fehlende Knoten gesamt:   ${knotenFehl.toLocaleString("de")}   (${pc(knotenFehl, knotenGes)})`
+);
 console.log(`ohne md-Datei:            ${ohneMd}     ohne Textknoten: ${ohneText}`);
 
 if (funde.length) {

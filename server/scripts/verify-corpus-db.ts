@@ -18,12 +18,22 @@
 import { $ } from "bun";
 
 const args = process.argv.slice(2);
-const arg = (n: string, d?: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
+const arg = (n: string, d?: string) => {
+  const i = args.indexOf(n);
+  return i >= 0 ? args[i + 1] : d;
+};
 const DB = arg("--db", "subsumio_law_v2")!;
 
-const base = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
-if (!base) { console.error("Keine DB-URL in server/.env gefunden."); process.exit(1); }
+const base = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
+if (!base) {
+  console.error("Keine DB-URL in server/.env gefunden.");
+  process.exit(1);
+}
 // Datenbanknamen generisch tauschen — nicht auf "subsumio_law" fest verdrahten.
 // Sobald server/.env auf die neue Datenbank zeigt, träfe ein fester Name nicht
 // mehr zu und das Skript prüfte still die falsche Datenbank.
@@ -272,12 +282,18 @@ async function main() {
   const pages = await q("select count(*) from pages");
   const chunks = await q("select count(*) from content_chunks");
   const sources = await q("select count(distinct source_id) from pages");
-  console.log(`Pages ${Number(pages).toLocaleString("de-AT")}   Chunks ${Number(chunks).toLocaleString("de-AT")}   Quellen ${sources}\n`);
+  console.log(
+    `Pages ${Number(pages).toLocaleString("de-AT")}   Chunks ${Number(chunks).toLocaleString("de-AT")}   Quellen ${sources}\n`
+  );
 
   let failed = 0;
   for (const c of CHECKS) {
     let v: string;
-    try { v = await q(c.sql); } catch (e) { v = "FEHLER"; }
+    try {
+      v = await q(c.sql);
+    } catch (e) {
+      v = "FEHLER";
+    }
     const pass = v !== "FEHLER" && c.ok(v);
     if (!pass) failed++;
     console.log(`${pass ? "✓" : "✗"}  ${c.name.padEnd(38)} ${v}`);

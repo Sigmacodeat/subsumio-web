@@ -445,7 +445,8 @@ export function RciidCaseContextForm({
                 className="w-28 text-xs"
               />
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 step="0.00000001"
                 value={ta.amount_btc ?? ""}
                 onChange={(e) => updateTargetAddress(i, "amount_btc", e.target.value)}
@@ -485,7 +486,8 @@ export function RciidCaseContextForm({
                 onChange={(v) => updateVictimDeposit(i, "address", v)}
               />
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 step="0.00000001"
                 value={vd.amount_btc || ""}
                 onChange={(e) =>

@@ -32,11 +32,7 @@ import { expandLegalQuery } from "./legal-query-expand.ts";
 import { expandConceptQuery } from "../legal/concept-map.ts";
 import { AT_LAW_SOURCES_STATUTES, LEGAL_SOURCE_BY_JURISDICTION } from "../legal/jurisdiction.ts";
 
-export type QueryIntent =
-  | "statute_lookup"
-  | "case_analysis"
-  | "internal_doc_search"
-  | "mixed";
+export type QueryIntent = "statute_lookup" | "case_analysis" | "internal_doc_search" | "mixed";
 
 export interface SubQuery {
   /** The refined search query for this sub-query. */
@@ -78,9 +74,7 @@ export interface QueryPlannerResult {
  *
  * Fail-open: returns a single-query plan on any error.
  */
-export async function planQuery(
-  opts: QueryPlannerOpts
-): Promise<QueryPlan> {
+export async function planQuery(opts: QueryPlannerOpts): Promise<QueryPlan> {
   const jurisdiction = opts.jurisdiction ?? "unbekannt";
 
   try {
@@ -170,7 +164,7 @@ export async function executeQueryPlan(
     // Expand the sub-query with legal synonyms + concept-map §-hints
     const expanded = expandConceptQuery(
       expandLegalQuery(sq.query),
-      jurisdiction as "de" | "at" | undefined,
+      jurisdiction as "de" | "at" | undefined
     );
 
     // Determine source scoping based on source_type
@@ -280,20 +274,28 @@ export function validateSubQueries(
   defaultJurisdiction?: string
 ): SubQuery[] {
   if (!Array.isArray(raw) || raw.length === 0) {
-    return [{ query: originalQuery, source_type: "all", ...(defaultJurisdiction ? { jurisdiction: defaultJurisdiction } : {}) }];
+    return [
+      {
+        query: originalQuery,
+        source_type: "all",
+        ...(defaultJurisdiction ? { jurisdiction: defaultJurisdiction } : {}),
+      },
+    ];
   }
 
   const result: SubQuery[] = [];
   for (const item of raw.slice(0, 3)) {
     if (typeof item !== "object" || item === null) continue;
     const obj = item as Record<string, unknown>;
-    const query = typeof obj.query === "string" && obj.query.trim().length > 0
-      ? obj.query.trim()
-      : originalQuery;
+    const query =
+      typeof obj.query === "string" && obj.query.trim().length > 0
+        ? obj.query.trim()
+        : originalQuery;
     const sourceType = validateSourceType(obj.source_type);
-    const jurisdiction = typeof obj.jurisdiction === "string" && obj.jurisdiction.trim().length > 0
-      ? obj.jurisdiction.trim().toLowerCase()
-      : defaultJurisdiction;
+    const jurisdiction =
+      typeof obj.jurisdiction === "string" && obj.jurisdiction.trim().length > 0
+        ? obj.jurisdiction.trim().toLowerCase()
+        : defaultJurisdiction;
     result.push({
       query,
       source_type: sourceType,
@@ -303,7 +305,13 @@ export function validateSubQueries(
 
   return result.length > 0
     ? result
-    : [{ query: originalQuery, source_type: "all", ...(defaultJurisdiction ? { jurisdiction: defaultJurisdiction } : {}) }];
+    : [
+        {
+          query: originalQuery,
+          source_type: "all",
+          ...(defaultJurisdiction ? { jurisdiction: defaultJurisdiction } : {}),
+        },
+      ];
 }
 
 export function validateSourceType(value: unknown): SubQuery["source_type"] {
@@ -333,7 +341,7 @@ function resolveSourceScope(
   if (sourceType === "internal") {
     // If the caller has sourceIds, filter out law-* sources
     if (opts.sourceIds) {
-      const internalOnly = opts.sourceIds.filter(sid => !sid.startsWith("law-"));
+      const internalOnly = opts.sourceIds.filter((sid) => !sid.startsWith("law-"));
       if (internalOnly.length > 0) return { sourceIds: internalOnly };
     }
     if (opts.sourceId && !opts.sourceId.startsWith("law-")) {

@@ -117,9 +117,7 @@ function loadCorpus(dir: string, sourceId: string): CorpusFile[] {
   if (!existsSync(corpusDir)) {
     throw new Error(`corpus dir not found: ${corpusDir}`);
   }
-  const files = readdirSync(corpusDir).filter(
-    (f) => f.endsWith(".md") && !f.startsWith(".")
-  );
+  const files = readdirSync(corpusDir).filter((f) => f.endsWith(".md") && !f.startsWith("."));
   const out: CorpusFile[] = [];
   for (const file of files) {
     const content = readFileSync(join(corpusDir, file), "utf-8");
@@ -143,7 +141,8 @@ const AT_QUESTIONS: JurisdictionQuestion[] = [
   },
   {
     question_id: "at-iso-002",
-    question: "Innerhalb welcher Frist verjährt ein Schadenersatzanspruch ab Kenntnis von Schaden und Schädiger?",
+    question:
+      "Innerhalb welcher Frist verjährt ein Schadenersatzanspruch ab Kenntnis von Schaden und Schädiger?",
     expected_slug: "abgb",
     legal_area: "abgb",
     jurisdiction: "AT",
@@ -447,9 +446,7 @@ async function main() {
   const scenarios: IsolationReport["scenarios"] = [];
   for (const jur of ["AT", "DE"] as const) {
     for (const testedWith of ["AT", "DE"] as const) {
-      const subset = results.filter(
-        (r) => r.jurisdiction === jur && r.tested_with === testedWith
-      );
+      const subset = results.filter((r) => r.jurisdiction === jur && r.tested_with === testedWith);
       const n = subset.length;
       if (n === 0) continue;
       const hitAt5 = subset.filter((r) => r.hit_at_5).length / n;
@@ -469,12 +466,12 @@ async function main() {
   // Aggregate: same-jur Hit@5 and cross-jur contamination
   const sameResults = results.filter((r) => r.same_jurisdiction);
   const crossResults = results.filter((r) => !r.same_jurisdiction);
-  const sameHitAt5 = sameResults.length > 0
-    ? sameResults.filter((r) => r.hit_at_5).length / sameResults.length
-    : 0;
-  const crossContamination = crossResults.length > 0
-    ? crossResults.filter((r) => r.hit_at_5).length / crossResults.length
-    : 0;
+  const sameHitAt5 =
+    sameResults.length > 0 ? sameResults.filter((r) => r.hit_at_5).length / sameResults.length : 0;
+  const crossContamination =
+    crossResults.length > 0
+      ? crossResults.filter((r) => r.hit_at_5).length / crossResults.length
+      : 0;
 
   const report: IsolationReport = {
     schema_version: 1,
@@ -492,17 +489,19 @@ async function main() {
   process.stderr.write(`\n[jurisdiction-isolation] RESULTS\n`);
   for (const s of scenarios) {
     if (s.same_jurisdiction) {
-      process.stderr.write(
-        `  ${s.name}: Hit@5=${(s.hit_at_5 * 100).toFixed(1)}% (n=${s.n})\n`
-      );
+      process.stderr.write(`  ${s.name}: Hit@5=${(s.hit_at_5 * 100).toFixed(1)}% (n=${s.n})\n`);
     } else {
       process.stderr.write(
         `  ${s.name}: Contamination=${(s.contamination_rate * 100).toFixed(1)}% (n=${s.n})\n`
       );
     }
   }
-  process.stderr.write(`\n  Aggregate Same-Jur Hit@5:   ${(sameHitAt5 * 100).toFixed(1)}% (target ≥90%)\n`);
-  process.stderr.write(`  Aggregate Cross-Contamination: ${(crossContamination * 100).toFixed(1)}% (target ≤10%)\n`);
+  process.stderr.write(
+    `\n  Aggregate Same-Jur Hit@5:   ${(sameHitAt5 * 100).toFixed(1)}% (target ≥90%)\n`
+  );
+  process.stderr.write(
+    `  Aggregate Cross-Contamination: ${(crossContamination * 100).toFixed(1)}% (target ≤10%)\n`
+  );
   process.stderr.write(`  PASS: ${report.aggregate.pass ? "YES ✅" : "NO ❌"}\n`);
 
   // Write output

@@ -16,6 +16,7 @@ Die Klägerin beantragt Schadenersatz von 15.000 Euro für Reparaturkosten und N
 ## Beweisaufnahme
 
 Folgende Zeugen wurden benannt:
+
 - Zeuge Franz Gruber als Unfallzeuge — er beobachtete den Unfall von der gegenüberliegenden Straßenseite und bestätigte, dass der Beklagte bei Rotlight in die Kreuzung fuhr.
 - Zeugin Anna Maier als Sachverständige — sie erstattete ein Gutachten über die Reparaturkosten und den Wiederbeschaffungswert des Fahrzeugs.
 

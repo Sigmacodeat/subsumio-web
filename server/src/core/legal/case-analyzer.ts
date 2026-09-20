@@ -107,7 +107,7 @@ Antworte als JSON:
   } catch {
     // Fail-open: try heuristic extraction via concept-map
     const mappings = findConceptMappings(facts, jurisdiction as "de" | "at" | undefined);
-    const issues: LegalIssue[] = mappings.map(m => ({
+    const issues: LegalIssue[] = mappings.map((m) => ({
       description: m.terms[0],
       area: "unknown",
       law: m.law,
@@ -138,12 +138,12 @@ export async function retrieveStatutesForIssues(
     // Build a search query from the issue
     let query = issue.description;
     if (issue.law && issue.sections && issue.sections.length > 0) {
-      const sectionStrs = issue.sections.map(s => `§ ${s}`).join(" ");
+      const sectionStrs = issue.sections.map((s) => `§ ${s}`).join(" ");
       query = `${query} ${sectionStrs} ${issue.law}`;
     }
     query = expandConceptQuery(
       expandLegalQuery(query),
-      opts?.jurisdiction as "de" | "at" | undefined,
+      opts?.jurisdiction as "de" | "at" | undefined
     );
 
     try {

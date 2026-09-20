@@ -8,7 +8,11 @@
  * Usage: bun scripts/sync-statutes-de.ts [--json]
  */
 
-import { runAmendmentCheck, buildFreshnessSummary, type Jurisdiction } from "../../src/lib/statute-freshness";
+import {
+  runAmendmentCheck,
+  buildFreshnessSummary,
+  type Jurisdiction,
+} from "../../src/lib/statute-freshness";
 
 const STATUTES = [
   { jurisdiction: "DE" as Jurisdiction, statuteCode: "BGB" },
@@ -45,7 +49,9 @@ async function main() {
   }
 
   console.log(`\n[sync-statutes-de] Done: ${allAmendments.length} total amendments`);
-  console.log(`  Freshness: ${summary.fresh}/${summary.total_statutes} fresh, ${summary.stale} stale`);
+  console.log(
+    `  Freshness: ${summary.fresh}/${summary.total_statutes} fresh, ${summary.stale} stale`
+  );
 
   if (jsonOutput) {
     console.log(JSON.stringify({ reports, summary }, null, 2));

@@ -361,9 +361,9 @@ export default function CalendarExportPage() {
 
           {feedActive && !icsSubscriptionUrl && (
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              Eine Adresse ist aktiv{feedCreatedAt ? ` (erstellt am ${formatDate(feedCreatedAt)})` : ""}.
-              Eine neue Adresse ersetzt die bisherige; bestehende Abonnements hören dann auf zu
-              aktualisieren.
+              Eine Adresse ist aktiv
+              {feedCreatedAt ? ` (erstellt am ${formatDate(feedCreatedAt)})` : ""}. Eine neue
+              Adresse ersetzt die bisherige; bestehende Abonnements hören dann auf zu aktualisieren.
             </p>
           )}
           {feedError && (

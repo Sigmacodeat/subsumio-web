@@ -76,8 +76,7 @@ function parseTemplate(page: BrainPage): TemplateItem {
     body: page.content || "",
     variables: Array.isArray(fm.variables) ? (fm.variables as TemplateItem["variables"]) : [],
     isBuiltin: Boolean(fm.is_builtin),
-    createdAt:
-      ((page as unknown as Record<string, unknown>).created_at as string) || "",
+    createdAt: ((page as unknown as Record<string, unknown>).created_at as string) || "",
   };
 }
 
@@ -471,7 +470,6 @@ export default function TemplateLibraryPage() {
             </DialogTitle>
           </DialogHeader>
           <div>
-
             <div className="space-y-4">
               {/* Title */}
               <div className="space-y-2">

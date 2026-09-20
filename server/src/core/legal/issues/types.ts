@@ -370,19 +370,22 @@ export interface IssueQuery {
 /**
  * Patch for partial updates to a LegalIssue.
  */
-export type LegalIssuePatch = Partial<Pick<LegalIssue,
-  | "title"
-  | "status"
-  | "risk"
-  | "conclusion"
-  | "notes"
-  | "element_assessments"
-  | "supporting_facts"
-  | "opposing_facts"
-  | "missing_facts"
-  | "assumptions"
-  | "updated_at"
->>;
+export type LegalIssuePatch = Partial<
+  Pick<
+    LegalIssue,
+    | "title"
+    | "status"
+    | "risk"
+    | "conclusion"
+    | "notes"
+    | "element_assessments"
+    | "supporting_facts"
+    | "opposing_facts"
+    | "missing_facts"
+    | "assumptions"
+    | "updated_at"
+  >
+>;
 
 // ── JSON Schema ───────────────────────────────────────────────────────
 
@@ -396,10 +399,22 @@ export const LEGAL_ISSUE_JSON_SCHEMA = {
   title: "LegalIssue",
   type: "object",
   required: [
-    "id", "title", "jurisdiction", "as_of_date", "source_snapshot",
-    "applicable_rules", "required_elements", "element_assessments",
-    "supporting_facts", "opposing_facts", "missing_facts",
-    "assumptions", "status", "risk", "created_at", "updated_at",
+    "id",
+    "title",
+    "jurisdiction",
+    "as_of_date",
+    "source_snapshot",
+    "applicable_rules",
+    "required_elements",
+    "element_assessments",
+    "supporting_facts",
+    "opposing_facts",
+    "missing_facts",
+    "assumptions",
+    "status",
+    "risk",
+    "created_at",
+    "updated_at",
   ],
   properties: {
     id: { type: "string", minLength: 1 },
@@ -438,8 +453,15 @@ export const LEGAL_ISSUE_JSON_SCHEMA = {
     EvidenceSpan: {
       type: "object",
       required: [
-        "id", "source_slug", "jurisdiction", "start_offset", "end_offset",
-        "text", "content_hash", "verification", "extracted_at",
+        "id",
+        "source_slug",
+        "jurisdiction",
+        "start_offset",
+        "end_offset",
+        "text",
+        "content_hash",
+        "verification",
+        "extracted_at",
       ],
       properties: {
         id: { type: "string", minLength: 1 },
@@ -494,8 +516,14 @@ export const LEGAL_ISSUE_JSON_SCHEMA = {
     ApplicableRule: {
       type: "object",
       required: [
-        "id", "law", "section", "jurisdiction", "description",
-        "required_elements", "source_slug", "statute_text",
+        "id",
+        "law",
+        "section",
+        "jurisdiction",
+        "description",
+        "required_elements",
+        "source_slug",
+        "statute_text",
       ],
       properties: {
         id: { type: "string", minLength: 1 },

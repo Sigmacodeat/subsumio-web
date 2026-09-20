@@ -108,7 +108,8 @@ describe("legal-decision chunker", () => {
       /## Rechtssatz\n/,
       `## Rechtssatz\n${"Der Oberste Gerichtshof hat erwogen, dass die Revision berechtigt ist. ".repeat(400)}\n`
     );
-    for (const c of chunkLegalDecision(long, BASE_META)) expect(c.text.length).toBeLessThanOrEqual(3600);
+    for (const c of chunkLegalDecision(long, BASE_META))
+      expect(c.text.length).toBeLessThanOrEqual(3600);
   });
 
   it("emits entscheidungstext chunks for each TE entry", () => {

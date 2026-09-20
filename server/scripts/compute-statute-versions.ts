@@ -81,7 +81,7 @@ async function main() {
   const sourceFilter = SOURCE_FILTER ? `AND source_id = $1` : "";
   const params = SOURCE_FILTER ? [SOURCE_FILTER] : [];
 
-  const groups = await engine.executeRaw(
+  const groups = (await engine.executeRaw(
     `SELECT 
        source_id,
        frontmatter->>'abbreviation' as abk,
@@ -95,7 +95,7 @@ async function main() {
      HAVING COUNT(*) > 1
      ORDER BY version_count DESC`,
     params
-  ) as Array<{ source_id: string; abk: string; para: string; version_count: number }>;
+  )) as Array<{ source_id: string; abk: string; para: string; version_count: number }>;
 
   console.log(`Found ${groups.length} version groups with >1 version`);
 
@@ -112,7 +112,7 @@ async function main() {
 
   for (const g of groups) {
     // Get all versions of this (source, abk, para), ordered by effective_date
-    const versions = await engine.executeRaw(
+    const versions = (await engine.executeRaw(
       `SELECT 
          id, slug, 
          frontmatter->>'id' as frontmatter_id,
@@ -124,7 +124,7 @@ async function main() {
          AND frontmatter->>'paragraph' = $3
        ORDER BY effective_date ASC`,
       [g.source_id, g.abk, g.para]
-    ) as VersionRow[];
+    )) as VersionRow[];
 
     if (versions.length <= 1) {
       totalSkipped++;
@@ -136,8 +136,8 @@ async function main() {
     if (DRY_RUN) {
       console.log(
         `  ${g.abk} ${g.para}: ${versions.length} versions → ` +
-        `current=${versions[versions.length - 1].slug} ` +
-        `(${versions[versions.length - 1].effective_date?.toISOString().split("T")[0]})`
+          `current=${versions[versions.length - 1].slug} ` +
+          `(${versions[versions.length - 1].effective_date?.toISOString().split("T")[0]})`
       );
       totalCurrent++;
       totalSuperseded += versions.length - 1;
@@ -175,7 +175,7 @@ async function main() {
   //    (single-version pages are trivially current)
   if (!DRY_RUN) {
     // Find single-version (source, abk, para) groups
-    const singleGroups = await engine.executeRaw(
+    const singleGroups = (await engine.executeRaw(
       `SELECT source_id,
               frontmatter->>'abbreviation' as abk,
               frontmatter->>'paragraph' as para
@@ -186,7 +186,7 @@ async function main() {
        GROUP BY source_id, frontmatter->>'abbreviation', frontmatter->>'paragraph'
        HAVING COUNT(*) = 1`,
       params
-    ) as Array<{ source_id: string; abk: string; para: string }>;
+    )) as Array<{ source_id: string; abk: string; para: string }>;
 
     let singleCount = 0;
     for (const g of singleGroups) {
@@ -206,7 +206,7 @@ async function main() {
 
   // 4. Summary
   if (!DRY_RUN) {
-    const summary = await engine.executeRaw(
+    const summary = (await engine.executeRaw(
       `SELECT 
          COUNT(*) FILTER (WHERE is_current = true) as current,
          COUNT(*) FILTER (WHERE is_current = false) as superseded,
@@ -215,7 +215,7 @@ async function main() {
        FROM pages 
        WHERE frontmatter->>'abbreviation' IS NOT NULL ${sourceFilter}`,
       params
-    ) as Array<{ current: number; superseded: number; unmarked: number; total: number }>;
+    )) as Array<{ current: number; superseded: number; unmarked: number; total: number }>;
 
     const s = summary[0];
     console.log("");

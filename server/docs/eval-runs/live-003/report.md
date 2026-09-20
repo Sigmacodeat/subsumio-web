@@ -20,30 +20,30 @@ Critical Pass Rate: 0.0%
 Weighted Avg Score: 0.000
 
 --- Judge Status Distribution ---
-  pass: 0
-  fail: 0
-  uncertain: 0
-  not_judgeable: 0
-  judge_error: 0
+pass: 0
+fail: 0
+uncertain: 0
+not_judgeable: 0
+judge_error: 0
 
 --- Verification States ---
 
 --- By Jurisdiction ---
-  AT: 0/7 all-pass (0.0%)
+AT: 0/7 all-pass (0.0%)
 
 --- By Legal Area ---
 
 --- By Workflow ---
 
 --- Cost Metrics ---
-  Total Tokens: 36321
-  Total Cost: $0.0059
-  Avg Latency: 83.1s
-
+Total Tokens: 36321
+Total Cost: $0.0059
+Avg Latency: 83.1s
 
 --- Per-Task Results ---
 
 ## gold-at-lit-001 — Berufung — Frist und Begründung nach § 401 ZPO [DRAFT]
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -58,6 +58,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ✅ **auto-citation_grounded_v2** (critical) — All § citations are grounded in context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (73 German function words detected)
@@ -70,6 +71,7 @@ Weighted Avg Score: 0.000
 - ✅ **crit-010** — Das Memorandum kommt korrekt zum Ergebnis, dass die Berufung fristgerecht eingebracht wurde. Es berücksichtigt sowohl die reguläre Frist gemäß § 461 Abs. 2 ZPO-AT als auch die Hemmung der Frist gemäß § 222 Abs. 1 ZPO-AT während des Zeitraums vom 15.07. bis 17.08. Die Berechnung der Fristverlängerung ist korrekt dargestellt und führt zu dem Schluss, dass die Berufung innerhalb der verlängerten Frist eingereicht wurde.
 
 ## gold-at-lit-002 — Klagebeantwortung — Inhalt und Frist nach § 243 ZPO [DRAFT]
+
 - **Workflow**: schriftsatz_entwurf
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -84,6 +86,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ✅ **auto-citation_grounded_v2** (critical) — All § citations are grounded in context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (63 German function words detected)
@@ -96,6 +99,7 @@ Weighted Avg Score: 0.000
 - ✅ **crit-010** — Die Ausgabe formuliert das Bestreiten der Forderung substantiiert und nicht pauschal. Es werden konkrete Gründe für das Bestreiten angeführt, wie die fehlende Schlüssigkeit der Klage gemäß § 226 ZPO-AT und das vollumfängliche Bestreiten der Forderung gemäß § 239 ZPO-AT. Zudem werden Beweismittel angeboten, um das Bestreiten zu untermauern.
 
 ## gold-at-lit-003 — Amtshaftung — Schaden durch Amtswalterhandlung [DRAFT]
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -110,6 +114,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ✅ **auto-citation_grounded_v2** (critical) — All § citations are grounded in context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (81 German function words detected)
@@ -122,6 +127,7 @@ Weighted Avg Score: 0.000
 - ✅ **crit-010** — Das Memorandum kommt zum korrekten Ergebnis, dass die Gemeinde G nach § 1 AHG schadenersatzpflichtig ist. Die Ausführung basiert auf den relevanten Bestimmungen des ABGB (§ 1294, § 1332) und zeigt eine klare rechtliche Argumentation auf, die das Verschulden des Beamten, die Zurechnung zur Gemeinde, die Rechtswidrigkeit, Kausalität und den ersatzfähigen Schaden behandelt.
 
 ## gold-at-lit-004 — Verjährung — Dreijährige Verjährung nach § 1489 ABGB [DRAFT]
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -136,6 +142,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ✅ **auto-citation_grounded_v2** (critical) — All § citations are grounded in context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (85 German function words detected)
@@ -148,6 +155,7 @@ Weighted Avg Score: 0.000
 - ❌ **crit-010** — Die KI-Ausgabe kommt zum Ergebnis, dass die Forderung nicht verjährt ist, da die regelmäßige Verjährungsfrist von 30 Jahren gilt. Jedoch ist das Kriterium spezifisch darauf ausgerichtet, ob die Forderung gemäß der dreijährigen Verjährung nach § 1489 ABGB verjährt ist, was nicht der Fall ist. Die Ausgabe erkennt nicht, dass die Frage auf die dreijährige Verjährung abzielt und kommt daher zu einem falschen Ergebnis.
 
 ## gold-at-lit-005 — Schadenersatz — Personenschaden nach § 1311 ABGB [DRAFT]
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -162,6 +170,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ✅ **auto-citation_grounded_v2** (critical) — All § citations are grounded in context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (63 German function words detected)
@@ -174,6 +183,7 @@ Weighted Avg Score: 0.000
 - ✅ **crit-010** — Die Ausgabe stellt das Verschulden des A korrekt dar, indem sie den Rotlichtverstoß gemäß § 38 Abs 5 StVO als Verstoß gegen die gebotene Sorgfalt und damit als Verschulden iSd § 1295 ABGB qualifiziert. Die rechtliche Begründung ist klar und stützt sich auf die relevanten Gesetzesstellen und die Rechtsprechung des OGH.
 
 ## gold-at-lit-006 — Eigentumsklage — Herausgabe nach § 366 ABGB [DRAFT]
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -188,6 +198,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ✅ **auto-citation_grounded_v2** (critical) — All § citations are grounded in context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (86 German function words detected)
@@ -200,6 +211,7 @@ Weighted Avg Score: 0.000
 - ❌ **crit-010** — Das Memorandum kommt zwar formal zum Ergebnis, dass E einen Herausgabeanspruch gegen B hat, jedoch wird dieses Ergebnis nicht korrekt auf der Grundlage des Kontexts begründet. Insbesondere wird § 366 ABGB zwar zitiert, jedoch wird § 366 ABGB falsch angewendet. Gemäß § 366 ABGB steht das Recht zur Herausgabe demjenigen nicht zu, der eine Sache zur Zeit, da er noch nicht Eigentümer war, in seinem eigenen Namen veräußert, in der Folge aber das Eigentum derselben erlangt hat. Dies ist jedoch hier nicht der Fall. Die Ausgabe führt diese Regelung nicht korrekt aus. Die Ausgabe berücksichtigt auch nicht vollständig die Parallelregelungen insbesondere von § 367 ABGB.
 
 ## gold-at-lit-007 — Werkvertrag — Mängelgewährleistung nach §§ 1165, 1170 ABGB [DRAFT]
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT (draft — excluded from aggregates)
 - **All-pass**: ❌
@@ -214,6 +226,7 @@ Weighted Avg Score: 0.000
 - **Corpus hash**: n/a
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 4 ungrounded citation(s): Citation "§ 1151 ABGB" not found in retrieved context; Citation "§ 922 ABGB" not found in retrieved context; Citation "§ 933 ABGB" not found in retrieved context; Citation "§ 932 ABGB" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (78 German function words detected)

@@ -96,7 +96,8 @@ const HIGH_THRESHOLD = 0.8;
 const MEDIUM_THRESHOLD = 0.5;
 
 /** Sentence pattern for legal claims — matches sentences with normative language or § references */
-const CLAIM_SENTENCE_RX = /[^.!?]*\b(?:muss|ist|gilt|kann|hat|sind|wird|darf|soll|wird\s+nicht|kann\s+nicht)\b[^.!?]*[.!?]/gi;
+const CLAIM_SENTENCE_RX =
+  /[^.!?]*\b(?:muss|ist|gilt|kann|hat|sind|wird|darf|soll|wird\s+nicht|kann\s+nicht)\b[^.!?]*[.!?]/gi;
 
 /** §-citation pattern within a sentence */
 const CITATION_IN_SENTENCE_RX = /§+\s*\d+/;
@@ -147,7 +148,8 @@ export function decomposeClaims(answer: string): string[] {
  * Returns normalized citations like "§ 433 BGB", "§ 12 Abs. 1 AO".
  */
 function extractClaimCitations(claim: string): string[] {
-  const pattern = /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
+  const pattern =
+    /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
   const citations: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(claim)) !== null) {
@@ -242,8 +244,9 @@ function claimCitationsVerified(
   if (claimCites.length === 0) return false;
   // All of the claim's citations must be in the verified list
   return claimCites.every((c) =>
-    crossVerifyResult.verified_citations.some((vc) =>
-      vc.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(vc.toLowerCase())
+    crossVerifyResult.verified_citations.some(
+      (vc) =>
+        vc.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(vc.toLowerCase())
     )
   );
 }
@@ -306,7 +309,7 @@ function computeClaimConfidence(
   const noGuardrailScore = 1 - Math.min(guardrailFlags * 0.3, 1);
   const noHedgingScore = hedgingDetected ? 0 : 1;
   const crossVerifyScore = crossVerifyResult
-    ? (citationVerified && crossVerifyFlags === 0)
+    ? citationVerified && crossVerifyFlags === 0
       ? 1
       : crossVerifyFlags > 0
         ? 0
@@ -374,14 +377,7 @@ export function computeDocumentConfidence(input: ConfidenceInput): DocumentConfi
   }
 
   const claimConfidences = claims.map((claim, idx) =>
-    computeClaimConfidence(
-      claim,
-      idx,
-      context,
-      guardrailResult,
-      crossVerifyResult,
-      retrievedSlugs
-    )
+    computeClaimConfidence(claim, idx, context, guardrailResult, crossVerifyResult, retrievedSlugs)
   );
 
   // Weighted mean: claims with citations weigh 2x (they're verifiable assertions)
@@ -445,7 +441,8 @@ export function computeECE(samples: CalibrationSample[], numBins = 10): number {
       (s) => s.predicted_confidence >= lower && s.predicted_confidence < upper
     );
     if (binSamples.length === 0) continue;
-    const avgConf = binSamples.reduce((sum, s) => sum + s.predicted_confidence, 0) / binSamples.length;
+    const avgConf =
+      binSamples.reduce((sum, s) => sum + s.predicted_confidence, 0) / binSamples.length;
     const avgAcc = binSamples.reduce((sum, s) => sum + s.actual_correctness, 0) / binSamples.length;
     bins.push({ samples: binSamples, avgConf, avgAcc });
   }

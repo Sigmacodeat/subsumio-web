@@ -30,14 +30,21 @@ import { readFileSync, writeFileSync, readdirSync, statSync, unlinkSync, mkdirSy
 import { join, relative } from "path";
 
 const args = process.argv.slice(2);
-const arg = (n: string, d?: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
+const arg = (n: string, d?: string) => {
+  const i = args.indexOf(n);
+  return i >= 0 ? args[i + 1] : d;
+};
 const CORPUS = arg("--corpus");
 const APPLY = args.includes("--apply");
 
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
 const MANIFEST_DIR = join(CORPUS_ROOT, "_dedupe-manifests");
 
-if (!CORPUS) { console.error("--corpus <name> erforderlich"); process.exit(1); }
+if (!CORPUS) {
+  console.error("--corpus <name> erforderlich");
+  process.exit(1);
+}
 
 const RE_CHROME = /Accesskey \d|Seitenbereiche:|Zur Navigationsleiste|Zum Seitenanfang/;
 const RE_STUB = /Volltext nicht abrufbar/;
@@ -53,8 +60,13 @@ function walk(dir: string): string[] {
 }
 
 interface Cand {
-  path: string; rel: string; docNr: string;
-  chrome: boolean; stub: boolean; substance: number; fields: number;
+  path: string;
+  rel: string;
+  docNr: string;
+  chrome: boolean;
+  stub: boolean;
+  substance: number;
+  fields: number;
 }
 
 function inspect(path: string, srcDir: string): Cand | null {
@@ -64,20 +76,33 @@ function inspect(path: string, srcDir: string): Cand | null {
   // Ein Muster wie [A-Za-z0-9_]+ bricht am % ab und verschmilzt 155
   // verschiedene Grazer Gesetze zu einer Scheingruppe "GEMRE_ST_60101_Pr".
   // Deshalb bis zum Trennzeichen lesen und danach dekodieren.
-  const m = text.match(/Dokumentnummer=([^&"'\s]+)/) ?? text.match(/^document_id:\s*"?([^"\n]+)"?/m);
+  const m =
+    text.match(/Dokumentnummer=([^&"'\s]+)/) ?? text.match(/^document_id:\s*"?([^"\n]+)"?/m);
   if (!m) return null;
   let docNr: string;
-  try { docNr = decodeURIComponent(m[1]); } catch { docNr = m[1]; }
+  try {
+    docNr = decodeURIComponent(m[1]);
+  } catch {
+    docNr = m[1];
+  }
   const fmEnd = text.indexOf("\n---", 4);
   const fm = fmEnd > 0 ? text.slice(0, fmEnd) : "";
   const body = fmEnd > 0 ? text.slice(fmEnd + 4) : text;
   const substance = body
-    .split("\n").filter((l) => !/^#{1,6}\s/.test(l)).join(" ")
-    .replace(/https?:\/\/\S+/g, " ").replace(/\s+/g, " ").trim().length;
+    .split("\n")
+    .filter((l) => !/^#{1,6}\s/.test(l))
+    .join(" ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim().length;
   return {
-    path, rel: relative(srcDir, path), docNr,
-    chrome: RE_CHROME.test(body), stub: RE_STUB.test(body),
-    substance, fields: (fm.match(/^[a-z_]+:/gm) ?? []).length,
+    path,
+    rel: relative(srcDir, path),
+    docNr,
+    chrome: RE_CHROME.test(body),
+    stub: RE_STUB.test(body),
+    substance,
+    fields: (fm.match(/^[a-z_]+:/gm) ?? []).length,
   };
 }
 
@@ -110,14 +135,18 @@ function main() {
 
   for (const f of files) {
     const c = inspect(f, srcDir);
-    if (!c) { noId++; continue; }
+    if (!c) {
+      noId++;
+      continue;
+    }
     const g = groups.get(c.docNr) ?? [];
     g.push(c);
     groups.set(c.docNr, g);
   }
 
   const lines: string[] = [`# Dedupe-Manifest ${CORPUS} — ${new Date().toISOString()}`, ""];
-  let dupGroups = 0, toDelete: Cand[] = [];
+  let dupGroups = 0,
+    toDelete: Cand[] = [];
 
   for (const [docNr, cands] of groups) {
     if (cands.length < 2) continue;
@@ -126,9 +155,13 @@ function main() {
     const drop = cands.filter((c) => c.path !== keep.path);
     toDelete.push(...drop);
     lines.push(`## ${docNr}`);
-    lines.push(`  BEHALTEN  ${keep.rel}  (Substanz=${keep.substance}, Felder=${keep.fields}${keep.chrome ? ", CHROME" : ""})`);
+    lines.push(
+      `  BEHALTEN  ${keep.rel}  (Substanz=${keep.substance}, Felder=${keep.fields}${keep.chrome ? ", CHROME" : ""})`
+    );
     for (const d of drop)
-      lines.push(`  LÖSCHEN   ${d.rel}  (Substanz=${d.substance}, Felder=${d.fields}${d.chrome ? ", CHROME" : ""}${d.stub ? ", STUB" : ""})`);
+      lines.push(
+        `  LÖSCHEN   ${d.rel}  (Substanz=${d.substance}, Felder=${d.fields}${d.chrome ? ", CHROME" : ""}${d.stub ? ", STUB" : ""})`
+      );
     lines.push("");
   }
 
@@ -147,7 +180,9 @@ function main() {
   // Warnung: löschen wir irgendwo die inhaltlich BESSERE Fassung?
   const risky = toDelete.filter((c) => !c.chrome && !c.stub && c.substance > 2000);
   if (risky.length) {
-    console.log(`\n⚠ ${risky.length} Löschkandidaten haben >2000 Zeichen Substanztext — Stichprobe:`);
+    console.log(
+      `\n⚠ ${risky.length} Löschkandidaten haben >2000 Zeichen Substanztext — Stichprobe:`
+    );
     for (const r of risky.slice(0, 5)) console.log(`    ${r.rel} (${r.substance})`);
   }
 

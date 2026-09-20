@@ -193,8 +193,7 @@ function SourceCard({
             )}
             {source.last_sync_at && (
               <span>
-                {t("sources.sync_label")}{" "}
-                {formatDate(source.last_sync_at)}
+                {t("sources.sync_label")} {formatDate(source.last_sync_at)}
               </span>
             )}
           </div>

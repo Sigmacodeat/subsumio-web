@@ -81,18 +81,14 @@ describe("applyLegalAuthorityBoost", () => {
   });
 
   it("does not boost foreign jurisdiction statutes", () => {
-    const results = [
-      makeResult("legal/statutes/at/abgb/p-1", 1.0),
-    ];
+    const results = [makeResult("legal/statutes/at/abgb/p-1", 1.0)];
     applyLegalAuthorityBoost(results, "de");
     expect(results[0].score).toBe(1.0);
     expect(results[0].legal_authority_boost).toBeUndefined();
   });
 
   it("skips non-finite scores", () => {
-    const results = [
-      makeResult("legal/statutes/de/bgb/p-138", NaN),
-    ];
+    const results = [makeResult("legal/statutes/de/bgb/p-138", NaN)];
     applyLegalAuthorityBoost(results, "de");
     expect(results[0].score).toBeNaN();
   });

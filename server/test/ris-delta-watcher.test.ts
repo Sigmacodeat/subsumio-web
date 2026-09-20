@@ -3,7 +3,8 @@ import { buildJudikaturMarkdown, buildStatuteMarkdown } from "../scripts/ris-del
 import { mapToCanonical, parseRaw } from "../scripts/normalize/normalize-corpus.ts";
 import type { DeltaDocument } from "../scripts/ris-delta.ts";
 
-const XML = "<risdok><nutzdaten><absatz>Der Rechtssatz lautet so und nicht anders.</absatz></nutzdaten></risdok>";
+const XML =
+  "<risdok><nutzdaten><absatz>Der Rechtssatz lautet so und nicht anders.</absatz></nutzdaten></risdok>";
 
 // Shape of a RIS OGD v2.6 Judikatur search hit for an OGH Rechtssatz.
 const RAW = {
@@ -76,7 +77,13 @@ describe("ris-delta-watcher", () => {
 
   test("statutes carry the abbreviation", () => {
     const md = buildStatuteMarkdown(
-      doc({ id: "NOR40000001", applikation: "BrKons", abkuerzung: "ABGB", artikelParagraphAnlage: "§ 1295", kurztitel: "Allgemeines bürgerliches Gesetzbuch" }),
+      doc({
+        id: "NOR40000001",
+        applikation: "BrKons",
+        abkuerzung: "ABGB",
+        artikelParagraphAnlage: "§ 1295",
+        kurztitel: "Allgemeines bürgerliches Gesetzbuch",
+      }),
       XML
     );
     expect(md).toContain('abbreviation: "ABGB"');

@@ -38,12 +38,18 @@ const KEY_LAWS: { gnr: string; name: string; abbr: string }[] = [
   { gnr: "10003317", name: "EU-Wettbewerbsgesetz", abbr: "UWG/EWG" },
 ];
 
-async function fetchRisNormCount(gnr: string): Promise<{ norms: number; kurztitel: string; typ: string; inkraft: string; ausserKraft?: string } | null> {
+async function fetchRisNormCount(gnr: string): Promise<{
+  norms: number;
+  kurztitel: string;
+  typ: string;
+  inkraft: string;
+  ausserKraft?: string;
+} | null> {
   const url = `${RIS_API}?Applikation=BrKons&Gesetzesnummer=${gnr}&DokumenteProSeite=OneHundred&Seitennummer=1`;
   try {
     const res = await fetch(url, { headers: RIS_UA });
     if (!res.ok) return null;
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     const result = data?.OgdSearchResult?.OgdDocumentResults;
     let refs = result?.OgdDocumentReference;
     if (!refs) return null;
@@ -70,8 +76,13 @@ async function main() {
 
   // ── 1. Corpus scan ──────────────────────────────────────────
   const corpusDir = "law-corpus/at";
-  const files = readdirSync(corpusDir).filter(f => f.endsWith(".md"));
-  const corpus: { name: string; frontmatter: Record<string, string>; contentLength: number; gnr?: string }[] = [];
+  const files = readdirSync(corpusDir).filter((f) => f.endsWith(".md"));
+  const corpus: {
+    name: string;
+    frontmatter: Record<string, string>;
+    contentLength: number;
+    gnr?: string;
+  }[] = [];
 
   for (const f of files) {
     const content = readFileSync(join(corpusDir, f), "utf-8");
@@ -99,40 +110,130 @@ async function main() {
 
   // ── 2. RIS API field schema ─────────────────────────────────
   const risFields = [
-    { path: "Metadaten.Technisch.ID", type: "string", dbMapping: "pages.slug (derived)", status: "✅" },
-    { path: "Metadaten.Technisch.Applikation", type: "string", dbMapping: "N/A (always BrKons)", status: "—" },
+    {
+      path: "Metadaten.Technisch.ID",
+      type: "string",
+      dbMapping: "pages.slug (derived)",
+      status: "✅",
+    },
+    {
+      path: "Metadaten.Technisch.Applikation",
+      type: "string",
+      dbMapping: "N/A (always BrKons)",
+      status: "—",
+    },
     { path: "Metadaten.Technisch.Organ", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "Metadaten.Allgemein.Geaendert", type: "date", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "Metadaten.Allgemein.Veroeffentlicht", type: "date", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "Metadaten.Allgemein.DokumentUrl", type: "url", dbMapping: "pages.frontmatter.source_url", status: "✅" },
-    { path: "Metadaten.Bundesrecht.Kurztitel", type: "string", dbMapping: "pages.frontmatter.title", status: "✅" },
-    { path: "Metadaten.Bundesrecht.Titel", type: "string (HTML)", dbMapping: "NOT MAPPED", status: "❌" },
+    {
+      path: "Metadaten.Allgemein.Veroeffentlicht",
+      type: "date",
+      dbMapping: "NOT MAPPED",
+      status: "❌",
+    },
+    {
+      path: "Metadaten.Allgemein.DokumentUrl",
+      type: "url",
+      dbMapping: "pages.frontmatter.source_url",
+      status: "✅",
+    },
+    {
+      path: "Metadaten.Bundesrecht.Kurztitel",
+      type: "string",
+      dbMapping: "pages.frontmatter.title",
+      status: "✅",
+    },
+    {
+      path: "Metadaten.Bundesrecht.Titel",
+      type: "string (HTML)",
+      dbMapping: "NOT MAPPED",
+      status: "❌",
+    },
     { path: "Metadaten.Bundesrecht.Eli", type: "url", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.Kundmachungsorgan", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.Typ", type: "string (G/V/BG/BVG)", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.Dokumenttyp", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.ArtikelParagraphAnlage", type: "string", dbMapping: "content_chunks.paragraph_ref", status: "✅" },
-    { path: "BrKons.Paragraphnummer", type: "string", dbMapping: "content_chunks.paragraph_ref", status: "✅" },
-    { path: "BrKons.Artikelnummer", type: "string", dbMapping: "content_chunks.paragraph_ref", status: "✅" },
+    {
+      path: "BrKons.ArtikelParagraphAnlage",
+      type: "string",
+      dbMapping: "content_chunks.paragraph_ref",
+      status: "✅",
+    },
+    {
+      path: "BrKons.Paragraphnummer",
+      type: "string",
+      dbMapping: "content_chunks.paragraph_ref",
+      status: "✅",
+    },
+    {
+      path: "BrKons.Artikelnummer",
+      type: "string",
+      dbMapping: "content_chunks.paragraph_ref",
+      status: "✅",
+    },
     { path: "BrKons.Anlagennummer", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.StammnormPublikationsorgan", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
+    {
+      path: "BrKons.StammnormPublikationsorgan",
+      type: "string",
+      dbMapping: "NOT MAPPED",
+      status: "❌",
+    },
     { path: "BrKons.StammnormBgblnummer", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.NovellenPublikationsorgan", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
+    {
+      path: "BrKons.NovellenPublikationsorgan",
+      type: "string",
+      dbMapping: "NOT MAPPED",
+      status: "❌",
+    },
     { path: "BrKons.NovellenBgblnummer", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.NovellenBeziehung", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.Inkrafttretensdatum", type: "date (YYYY-MM-DD)", dbMapping: "legal_source_versions.version_date", status: "✅" },
-    { path: "BrKons.Ausserkrafttretensdatum", type: "date (YYYY-MM-DD)", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.Indizes.item", type: "string or string[]", dbMapping: "NOT MAPPED", status: "❌" },
+    {
+      path: "BrKons.Inkrafttretensdatum",
+      type: "date (YYYY-MM-DD)",
+      dbMapping: "legal_source_versions.version_date",
+      status: "✅",
+    },
+    {
+      path: "BrKons.Ausserkrafttretensdatum",
+      type: "date (YYYY-MM-DD)",
+      dbMapping: "NOT MAPPED",
+      status: "❌",
+    },
+    {
+      path: "BrKons.Indizes.item",
+      type: "string or string[]",
+      dbMapping: "NOT MAPPED",
+      status: "❌",
+    },
     { path: "BrKons.Schlagworte", type: "string (HTML)", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.Aenderung", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.Abkuerzung", type: "string", dbMapping: "pages.frontmatter.abbreviation", status: "✅" },
+    {
+      path: "BrKons.Abkuerzung",
+      type: "string",
+      dbMapping: "pages.frontmatter.abbreviation",
+      status: "✅",
+    },
     { path: "BrKons.Anmerkung", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.Beachte", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
     { path: "BrKons.Uebergangsrecht", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.Gesetzesnummer", type: "string (numeric)", dbMapping: "pages.frontmatter.gesetzesnummer", status: "⚠️ Missing in 230 files" },
+    {
+      path: "BrKons.Gesetzesnummer",
+      type: "string (numeric)",
+      dbMapping: "pages.frontmatter.gesetzesnummer",
+      status: "⚠️ Missing in 230 files",
+    },
     { path: "BrKons.AlteDokumentnummer", type: "string", dbMapping: "NOT MAPPED", status: "❌" },
-    { path: "BrKons.GesamteRechtsvorschriftUrl", type: "url", dbMapping: "pages.frontmatter.source_url", status: "✅" },
-    { path: "Dokumentliste.ContentReference.Urls.ContentUrl[]", type: "array", dbMapping: "N/A (content fetched separately)", status: "—" },
+    {
+      path: "BrKons.GesamteRechtsvorschriftUrl",
+      type: "url",
+      dbMapping: "pages.frontmatter.source_url",
+      status: "✅",
+    },
+    {
+      path: "Dokumentliste.ContentReference.Urls.ContentUrl[]",
+      type: "array",
+      dbMapping: "N/A (content fetched separately)",
+      status: "—",
+    },
   ];
 
   // ── 3. Key laws comparison ──────────────────────────────────
@@ -158,14 +259,16 @@ async function main() {
     });
 
     const status = corpusFile ? (hasGnrField ? "✅" : "⚠️ ") : "❌";
-    console.log(`  ${status} ${law.abbr.padEnd(10)} gnr=${law.gnr}  RIS: ${ris?.norms || "?"} norms  corpus: ${corpusFile?.name || "MISSING"}`);
+    console.log(
+      `  ${status} ${law.abbr.padEnd(10)} gnr=${law.gnr}  RIS: ${ris?.norms || "?"} norms  corpus: ${corpusFile?.name || "MISSING"}`
+    );
     await new Promise((r) => setTimeout(r, 300));
   }
 
   // ── 4. Corpus-wide stats ────────────────────────────────────
-  const withExplicitGnr = corpus.filter(c => c.frontmatter.gesetzesnummer).length;
-  const withGnrFromUrl = corpus.filter(c => !c.frontmatter.gesetzesnummer && c.gnr).length;
-  const withoutAnyGnr = corpus.filter(c => !c.gnr).length;
+  const withExplicitGnr = corpus.filter((c) => c.frontmatter.gesetzesnummer).length;
+  const withGnrFromUrl = corpus.filter((c) => !c.frontmatter.gesetzesnummer && c.gnr).length;
+  const withoutAnyGnr = corpus.filter((c) => !c.gnr).length;
 
   // ── 5. Print report ─────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════════════════════");
@@ -178,10 +281,10 @@ async function main() {
   console.log(`     With gnr from source_url:     ${withGnrFromUrl}`);
   console.log(`     Without any gnr:              ${withoutAnyGnr}`);
 
-  const matched = keyLawResults.filter(r => r.inCorpus).length;
-  const missing = keyLawResults.filter(r => !r.inCorpus).length;
-  const withExplicit = keyLawResults.filter(r => r.hasExplicitGnr).length;
-  const withImplicit = keyLawResults.filter(r => r.inCorpus && !r.hasExplicitGnr).length;
+  const matched = keyLawResults.filter((r) => r.inCorpus).length;
+  const missing = keyLawResults.filter((r) => !r.inCorpus).length;
+  const withExplicit = keyLawResults.filter((r) => r.hasExplicitGnr).length;
+  const withImplicit = keyLawResults.filter((r) => r.inCorpus && !r.hasExplicitGnr).length;
 
   console.log("\n  2. KEY LAWS (24 checked)");
   console.log(`     In corpus:                    ${matched}/${KEY_LAWS.length}`);
@@ -191,7 +294,7 @@ async function main() {
 
   if (missing > 0) {
     console.log("\n     MISSING LAWS:");
-    for (const r of keyLawResults.filter(r => !r.inCorpus)) {
+    for (const r of keyLawResults.filter((r) => !r.inCorpus)) {
       console.log(`       ❌ ${r.abbr} (${r.gnr}): ${r.risKurztitel} — ${r.risNorms} norms`);
     }
   }
@@ -203,17 +306,25 @@ async function main() {
     console.log(`     ${f.path.padEnd(45)} | ${f.dbMapping.padEnd(35)} | ${f.status}`);
   }
 
-  const mapped = risFields.filter(f => f.status === "✅").length;
-  const unmapped = risFields.filter(f => f.status === "❌").length;
-  const partial = risFields.filter(f => f.status.includes("⚠️")).length;
-  console.log(`\n     Summary: ${mapped} mapped, ${partial} partial, ${unmapped} unmapped, ${risFields.length - mapped - unmapped - partial} N/A`);
+  const mapped = risFields.filter((f) => f.status === "✅").length;
+  const unmapped = risFields.filter((f) => f.status === "❌").length;
+  const partial = risFields.filter((f) => f.status.includes("⚠️")).length;
+  console.log(
+    `\n     Summary: ${mapped} mapped, ${partial} partial, ${unmapped} unmapped, ${risFields.length - mapped - unmapped - partial} N/A`
+  );
 
   console.log("\n  4. CRITICAL FINDINGS");
   console.log("     ❌ 230 corpus files lack explicit `gesetzesnummer` in frontmatter");
   console.log("        → gnr is extractable from source_url for most, but not stored as field");
   console.log("        → Impact: Cannot reliably match corpus to RIS API by gnr");
   console.log("     ❌ " + missing + " key laws missing from corpus entirely");
-  console.log("        → " + keyLawResults.filter(r => !r.inCorpus).map(r => r.abbr).join(", "));
+  console.log(
+    "        → " +
+      keyLawResults
+        .filter((r) => !r.inCorpus)
+        .map((r) => r.abbr)
+        .join(", ")
+  );
   console.log("     ❌ " + unmapped + " RIS metadata fields have no DB mapping");
   console.log("        → Key missing: Typ (G/V/BG), Kundmachungsorgan, Indizes, Schlagworte");
   console.log("        → These are stored in frontmatter JSONB but not as queryable columns");
@@ -231,10 +342,10 @@ async function main() {
     },
     keyLaws: keyLawResults,
     risFieldMapping: risFields,
-    missingLaws: keyLawResults.filter(r => !r.inCorpus),
+    missingLaws: keyLawResults.filter((r) => !r.inCorpus),
     metadataGaps: {
       missingExplicitGnr: withImplicit,
-      unmappedRisFields: risFields.filter(f => f.status === "❌").map(f => f.path),
+      unmappedRisFields: risFields.filter((f) => f.status === "❌").map((f) => f.path),
     },
   };
   writeFileSync("/tmp/ris-audit-final.json", JSON.stringify(report, null, 2));

@@ -186,7 +186,9 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
         method: "POST",
       });
       await load(created.id);
-      setMessage("Hochladen abgeschlossen. Bereitschaft und Problemdateien können jetzt geprüft werden.");
+      setMessage(
+        "Hochladen abgeschlossen. Bereitschaft und Problemdateien können jetzt geprüft werden."
+      );
     } catch {
       setMessage("Aktenimport fehlgeschlagen");
     } finally {

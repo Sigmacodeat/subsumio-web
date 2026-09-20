@@ -277,8 +277,8 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                       )}
                       {!gc.verified && gc.category !== "judikatur" && (
                         <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]">
-                          Nicht in den Rechtsquellen gefunden — möglicherweise falsch zitiert oder außerhalb des
-                          abgedeckten Rechtskreises.
+                          Nicht in den Rechtsquellen gefunden — möglicherweise falsch zitiert oder
+                          außerhalb des abgedeckten Rechtskreises.
                         </p>
                       )}
                     </div>
@@ -370,7 +370,9 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
           {/* Grounding timestamp */}
           {hasGrounding && data.grounding!.analyzed_at && (
             <div className="border-t border-[color:var(--ds-border)] pt-1 text-xs text-[color:var(--ds-text-subtle)]">
-              {lang === "en" ? "Checked against legal sources on" : "Gegen die Rechtsquellen geprüft am"}{" "}
+              {lang === "en"
+                ? "Checked against legal sources on"
+                : "Gegen die Rechtsquellen geprüft am"}{" "}
               {formatDateTime(data.grounding!.analyzed_at)}
             </div>
           )}

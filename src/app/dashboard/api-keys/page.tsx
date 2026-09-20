@@ -285,8 +285,8 @@ export default function ApiKeysPage() {
           <code className="font-mono text-[color:var(--ds-text)]">
             Authorization: Bearer sk_live_…
           </code>{" "}
-          mit. Es erhält damit dieselben Rechte wie Ihr Benutzerkonto, begrenzt auf die
-          Berechtigung des Schlüssels. Widerrufen Sie Schlüssel, die nicht mehr gebraucht werden.
+          mit. Es erhält damit dieselben Rechte wie Ihr Benutzerkonto, begrenzt auf die Berechtigung
+          des Schlüssels. Widerrufen Sie Schlüssel, die nicht mehr gebraucht werden.
         </p>
       </section>
     </div>

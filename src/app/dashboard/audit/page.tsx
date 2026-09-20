@@ -710,7 +710,11 @@ export default function AuditLogPage() {
                     return (
                       <>
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
-                          <Icon size={15} aria-hidden className="text-[color:var(--ds-text-muted)]" />
+                          <Icon
+                            size={15}
+                            aria-hidden
+                            className="text-[color:var(--ds-text-muted)]"
+                          />
                         </div>
                         <div>
                           <div
@@ -782,7 +786,8 @@ export default function AuditLogPage() {
                     Technische Angaben
                   </summary>
                   <p className="mt-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                    Vom System gespeicherte Rohdaten zu diesem Vorgang, unverändert für Nachweiszwecke.
+                    Vom System gespeicherte Rohdaten zu diesem Vorgang, unverändert für
+                    Nachweiszwecke.
                   </p>
                   <pre className="mt-1.5 overflow-x-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 font-mono text-xs break-all whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {JSON.stringify(selectedEntry.details, null, 2)}

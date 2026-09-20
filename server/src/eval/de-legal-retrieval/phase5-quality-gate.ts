@@ -111,12 +111,15 @@ interface Phase5Report {
   refine_llm_errors: number;
   judge_errors: number;
   // Per-area
-  per_area: Record<string, {
-    n: number;
-    judge_avg_score: number;
-    judge_correct_rate: number;
-    hallucination_rate: number;
-  }>;
+  per_area: Record<
+    string,
+    {
+      n: number;
+      judge_avg_score: number;
+      judge_correct_rate: number;
+      hallucination_rate: number;
+    }
+  >;
   // PDF test
   pdf_results: PdfTestResult[];
   pdf_summary: {
@@ -147,25 +150,43 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--judge-model" && i + 1 < args.length) { out.judgeModel = args[++i]; continue; }
-    if (a === "--generate-model" && i + 1 < args.length) { out.generateModel = args[++i]; continue; }
-    if (a === "--limit" && i + 1 < args.length) { out.limit = parseInt(args[++i], 10); continue; }
-    if (a === "--skip-pdf") { out.skipPdf = true; continue; }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--judge-model" && i + 1 < args.length) {
+      out.judgeModel = args[++i];
+      continue;
+    }
+    if (a === "--generate-model" && i + 1 < args.length) {
+      out.generateModel = args[++i];
+      continue;
+    }
+    if (a === "--limit" && i + 1 < args.length) {
+      out.limit = parseInt(args[++i], 10);
+      continue;
+    }
+    if (a === "--skip-pdf") {
+      out.skipPdf = true;
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/de-legal-retrieval/phase5-quality-gate.ts <fixture.jsonl> [options]\n` +
-        `  --output PATH         Write JSONL results to PATH\n` +
-        `  --judge-model MODEL   Judge model (default: openai:gpt-5.4)\n` +
-        `  --generate-model MODEL  Generate model (default: openrouter:deepseek/deepseek-chat)\n` +
-        `  --limit N             Only run first N questions\n` +
-        `  --skip-pdf            Skip PDF extraction test\n`
+          `  --output PATH         Write JSONL results to PATH\n` +
+          `  --judge-model MODEL   Judge model (default: openai:gpt-5.4)\n` +
+          `  --generate-model MODEL  Generate model (default: openrouter:deepseek/deepseek-chat)\n` +
+          `  --limit N             Only run first N questions\n` +
+          `  --skip-pdf            Skip PDF extraction test\n`
       );
       process.exit(0);
     }
     if (!a.startsWith("--") && !out.fixturePath) out.fixturePath = a;
   }
-  if (!out.fixturePath) { process.stderr.write("Error: fixture path required\n"); process.exit(1); }
+  if (!out.fixturePath) {
+    process.stderr.write("Error: fixture path required\n");
+    process.exit(1);
+  }
   return out;
 }
 
@@ -173,10 +194,18 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function loadFixture(path: string): DeLegalQuestion[] {
   const raw = readFileSync(path, "utf-8");
-  return raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => JSON.parse(l));
+  return raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
+    .map((l) => JSON.parse(l));
 }
 
-interface CorpusFile { slug: string; content: string; abbreviation: string; }
+interface CorpusFile {
+  slug: string;
+  content: string;
+  abbreviation: string;
+}
 
 function loadLawCorpus(): CorpusFile[] {
   const corpusDir = join(REPO_ROOT, "law-corpus/de");
@@ -216,15 +245,20 @@ const EMBEDDING_COLUMN = {
 // ─── LLM Client ──────────────────────────────────────────────────────────
 
 interface LLMClient {
-  create: (params: {
-    model: string;
-    max_tokens: number;
-    system: string;
-    messages: Array<{ role: string; content: string }>;
-  }, callOpts?: { signal?: AbortSignal }) => Promise<{ content: Array<{ type: string; text: string }> }>;
+  create: (
+    params: {
+      model: string;
+      max_tokens: number;
+      system: string;
+      messages: Array<{ role: string; content: string }>;
+    },
+    callOpts?: { signal?: AbortSignal }
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
 }
 
-async function createLLMClient(model: string): Promise<{ client: LLMClient; resolvedModel: string }> {
+async function createLLMClient(
+  model: string
+): Promise<{ client: LLMClient; resolvedModel: string }> {
   const isOpenRouter = model.startsWith("openrouter:");
   const isOpenAI = model.startsWith("openai:");
   const isAnthropic = model.startsWith("anthropic:");
@@ -242,10 +276,16 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
         create: async (params, callOpts) => {
           const messages: Array<{ role: string; content: string }> = [];
           if (params.system) messages.push({ role: "system", content: params.system });
-          for (const m of params.messages ?? []) messages.push({ role: m.role, content: m.content });
-          const res = await client.chat.completions.create({
-            model: resolvedModel, max_tokens: params.max_tokens, messages: messages as any,
-          }, { signal: callOpts?.signal });
+          for (const m of params.messages ?? [])
+            messages.push({ role: m.role, content: m.content });
+          const res = await client.chat.completions.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              messages: messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           const text = res.choices?.[0]?.message?.content ?? "";
           return { content: [{ type: "text", text }] };
         },
@@ -263,10 +303,16 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
         create: async (params, callOpts) => {
           const messages: Array<{ role: string; content: string }> = [];
           if (params.system) messages.push({ role: "system", content: params.system });
-          for (const m of params.messages ?? []) messages.push({ role: m.role, content: m.content });
-          const res = await client.chat.completions.create({
-            model: resolvedModel, max_tokens: params.max_tokens, messages: messages as any,
-          }, { signal: callOpts?.signal });
+          for (const m of params.messages ?? [])
+            messages.push({ role: m.role, content: m.content });
+          const res = await client.chat.completions.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              messages: messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           const text = res.choices?.[0]?.message?.content ?? "";
           return { content: [{ type: "text", text }] };
         },
@@ -282,12 +328,15 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
     return {
       client: {
         create: async (params, callOpts) => {
-          const res = await client.messages.create({
-            model: resolvedModel,
-            max_tokens: params.max_tokens,
-            system: params.system,
-            messages: params.messages as any,
-          }, { signal: callOpts?.signal });
+          const res = await client.messages.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              system: params.system,
+              messages: params.messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           return { content: res.content as any };
         },
       },
@@ -302,11 +351,46 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
 
 function isGermanAnswer(text: string): boolean {
   const germanWords = [
-    "der", "die", "das", "und", "ist", "wird", "nach", "bei", "von", "mit",
-    "auf", "für", "zu", "über", "aus", "dem", "den", "des", "ein", "eine",
-    "einer", "eines", "einem", "einen", "nicht", "auch", "nur", "noch",
-    "bereits", "jedoch", "allerdings", "dabei", "daher", "somit", "gemäß",
-    "Absatz", "Satz", "bzw", "hinsichtlich", "vorausgesetzt",
+    "der",
+    "die",
+    "das",
+    "und",
+    "ist",
+    "wird",
+    "nach",
+    "bei",
+    "von",
+    "mit",
+    "auf",
+    "für",
+    "zu",
+    "über",
+    "aus",
+    "dem",
+    "den",
+    "des",
+    "ein",
+    "eine",
+    "einer",
+    "eines",
+    "einem",
+    "einen",
+    "nicht",
+    "auch",
+    "nur",
+    "noch",
+    "bereits",
+    "jedoch",
+    "allerdings",
+    "dabei",
+    "daher",
+    "somit",
+    "gemäß",
+    "Absatz",
+    "Satz",
+    "bzw",
+    "hinsichtlich",
+    "vorausgesetzt",
   ];
   const lower = text.toLowerCase();
   let matches = 0;
@@ -331,11 +415,17 @@ function referencesLaw(text: string, legalArea: string): boolean {
 
 function isGrounded(text: string, context: string): boolean {
   const contextWords = new Set(
-    context.replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ").split(/\s+/)
-      .filter((w) => w.length >= 5).map((w) => w.toLowerCase())
+    context
+      .replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 5)
+      .map((w) => w.toLowerCase())
   );
-  const answerWords = text.replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ").split(/\s+/)
-    .filter((w) => w.length >= 5).map((w) => w.toLowerCase());
+  const answerWords = text
+    .replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 5)
+    .map((w) => w.toLowerCase());
   let grounded = 0;
   for (const w of answerWords) if (contextWords.has(w)) grounded++;
   return answerWords.length > 0 && grounded / answerWords.length >= 0.2;
@@ -343,15 +433,17 @@ function isGrounded(text: string, context: string): boolean {
 
 // ─── Context assembly ────────────────────────────────────────────────────
 
-function assembleContext(results: Array<{ slug: string; title: string; chunk_text: string; score: number }>): string {
+function assembleContext(
+  results: Array<{ slug: string; title: string; chunk_text: string; score: number }>
+): string {
   const blocks: string[] = [];
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     blocks.push(
       `--- Rechtsquelle ${i + 1} ---\n` +
-      `Gesetz: ${r.title}\n` +
-      `Relevanz: ${(r.score * 100).toFixed(1)}%\n` +
-      `Text:\n${r.chunk_text}\n`
+        `Gesetz: ${r.title}\n` +
+        `Relevanz: ${(r.score * 100).toFixed(1)}%\n` +
+        `Text:\n${r.chunk_text}\n`
     );
   }
   return blocks.join("\n");
@@ -371,7 +463,10 @@ const GENERATE_SYSTEM =
   `6. Halte die Antwort prägnant (max. 3-5 Sätze).\n`;
 
 async function generateAnswer(
-  client: LLMClient, model: string, question: string, context: string
+  client: LLMClient,
+  model: string,
+  question: string,
+  context: string
 ): Promise<string> {
   const userPrompt =
     `Frage: ${question}\n\n` +
@@ -380,10 +475,16 @@ async function generateAnswer(
     `Zitiere den relevanten Paragraphen. Antworte auf Deutsch.`;
 
   const response = await client.create({
-    model, max_tokens: 512, system: GENERATE_SYSTEM,
+    model,
+    max_tokens: 512,
+    system: GENERATE_SYSTEM,
     messages: [{ role: "user", content: userPrompt }],
   });
-  return response.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+  return response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
 }
 
 // ─── Layer 2: Self-Refine ────────────────────────────────────────────────
@@ -400,7 +501,11 @@ const REFINE_SYSTEM =
   `gib sie unverändert aus. Füge keine Erklärung der Änderungen hinzu — nur die finale Antwort.`;
 
 async function refineAnswer(
-  client: LLMClient, model: string, question: string, context: string, initialAnswer: string
+  client: LLMClient,
+  model: string,
+  question: string,
+  context: string,
+  initialAnswer: string
 ): Promise<{ refined: string; changed: boolean }> {
   const userPrompt =
     `Frage: ${question}\n\n` +
@@ -410,10 +515,16 @@ async function refineAnswer(
     `Gib die verbesserte (oder unveränderte) Antwort aus.`;
 
   const response = await client.create({
-    model, max_tokens: 512, system: REFINE_SYSTEM,
+    model,
+    max_tokens: 512,
+    system: REFINE_SYSTEM,
     messages: [{ role: "user", content: userPrompt }],
   });
-  const refined = response.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+  const refined = response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
   const changed = refined !== initialAnswer && refined.length > 0;
   return { refined: refined || initialAnswer, changed };
 }
@@ -442,7 +553,11 @@ interface JudgeResult {
 }
 
 async function judgeAnswer(
-  client: LLMClient, model: string, question: string, context: string, answer: string
+  client: LLMClient,
+  model: string,
+  question: string,
+  context: string,
+  answer: string
 ): Promise<JudgeResult> {
   const userPrompt =
     `Frage: ${question}\n\n` +
@@ -451,10 +566,16 @@ async function judgeAnswer(
     `Bewerte die Antwort gemäß den Kriterien. Ausgabe NUR als JSON.`;
 
   const response = await client.create({
-    model, max_tokens: 256, system: JUDGE_SYSTEM,
+    model,
+    max_tokens: 256,
+    system: JUDGE_SYSTEM,
     messages: [{ role: "user", content: userPrompt }],
   });
-  const raw = response.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+  const raw = response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
 
   // Parse JSON from response (handle markdown code blocks)
   let jsonStr = raw;
@@ -511,10 +632,17 @@ async function runPdfExtractionTest(
 
     if (!existsSync(filePath)) {
       const r: PdfTestResult = {
-        fixture_file: file, file_size: 0, extraction_success: false,
-        extracted_text_length: 0, extracted_text_preview: "",
-        import_success: false, search_success: false, search_results: 0,
-        search_query: query, top_slug: "", error: "File not found",
+        fixture_file: file,
+        file_size: 0,
+        extraction_success: false,
+        extracted_text_length: 0,
+        extracted_text_preview: "",
+        import_success: false,
+        search_success: false,
+        search_results: 0,
+        search_query: query,
+        top_slug: "",
+        error: "File not found",
       };
       results.push(r);
       if (emitter) emitter.emit({ kind: "pdf_result", ...r } as any);
@@ -528,7 +656,9 @@ async function runPdfExtractionTest(
       const extracted = await extractDocumentText(buf, ext, { filename: file });
       const textLen = extracted.text.length;
       const preview = extracted.text.slice(0, 200).replace(/\n/g, " ");
-      process.stderr.write(`  extracted: ${textLen} chars, ${extracted.warnings.length} warnings\n`);
+      process.stderr.write(
+        `  extracted: ${textLen} chars, ${extracted.warnings.length} warnings\n`
+      );
       process.stderr.write(`  preview: ${preview.slice(0, 100)}...\n`);
 
       // Import into engine
@@ -549,7 +679,9 @@ async function runPdfExtractionTest(
       if (importOk) {
         try {
           const searchResults = await hybridSearch(engine, query, {
-            limit: 5, autocut: false, embeddingColumn: EMBEDDING_COLUMN,
+            limit: 5,
+            autocut: false,
+            embeddingColumn: EMBEDDING_COLUMN,
           });
           searchCount = searchResults.length;
           searchOk = searchCount > 0;
@@ -577,10 +709,17 @@ async function runPdfExtractionTest(
     } catch (err: any) {
       process.stderr.write(`  EXTRACTION ERROR: ${err.message}\n`);
       const r: PdfTestResult = {
-        fixture_file: file, file_size: buf.length, extraction_success: false,
-        extracted_text_length: 0, extracted_text_preview: "",
-        import_success: false, search_success: false, search_results: 0,
-        search_query: query, top_slug: "", error: err.message,
+        fixture_file: file,
+        file_size: buf.length,
+        extraction_success: false,
+        extracted_text_length: 0,
+        extracted_text_preview: "",
+        import_success: false,
+        search_success: false,
+        search_results: 0,
+        search_query: query,
+        top_slug: "",
+        error: err.message,
       };
       results.push(r);
       if (emitter) emitter.emit({ kind: "pdf_result", ...r } as any);
@@ -600,7 +739,9 @@ async function main() {
   let testQuestions = questions;
   if (opts.limit && opts.limit > 0) testQuestions = questions.slice(0, opts.limit);
 
-  process.stderr.write(`[phase5] loaded ${testQuestions.length} questions, ${corpusFiles.length} corpus files\n`);
+  process.stderr.write(
+    `[phase5] loaded ${testQuestions.length} questions, ${corpusFiles.length} corpus files\n`
+  );
   process.stderr.write(`[phase5] generate: ${opts.generateModel}\n`);
   process.stderr.write(`[phase5] judge: ${opts.judgeModel}\n`);
 
@@ -678,7 +819,9 @@ async function main() {
     // Step 1: Hybrid search
     try {
       const searchResults = await hybridSearch(engine, question, {
-        limit: 5, autocut: false, embeddingColumn: EMBEDDING_COLUMN,
+        limit: 5,
+        autocut: false,
+        embeddingColumn: EMBEDDING_COLUMN,
       });
       const rankedSlugs = searchResults.map((r) => r.slug);
       result.top_slugs = rankedSlugs.slice(0, 8);
@@ -690,7 +833,10 @@ async function main() {
       } else {
         const context = assembleContext(
           searchResults.slice(0, 5).map((r) => ({
-            slug: r.slug, title: r.title, chunk_text: r.chunk_text, score: r.score,
+            slug: r.slug,
+            title: r.title,
+            chunk_text: r.chunk_text,
+            score: r.score,
           }))
         );
 
@@ -710,7 +856,13 @@ async function main() {
         // Layer 2: Self-Refine
         if (result.initial_answer) {
           try {
-            const { refined, changed } = await refineAnswer(genClient, genModel, question, context, result.initial_answer);
+            const { refined, changed } = await refineAnswer(
+              genClient,
+              genModel,
+              question,
+              context,
+              result.initial_answer
+            );
             result.refined_answer = refined;
             result.refine_changes = changed;
             process.stderr.write(` refine=${changed ? "CHANGED" : "same"}(${refined.length}ch)`);
@@ -725,13 +877,21 @@ async function main() {
         const answerToJudge = result.refined_answer || result.initial_answer;
         if (answerToJudge) {
           try {
-            const judgeRes = await judgeAnswer(judgeClient, judgeModel, question, context, answerToJudge);
+            const judgeRes = await judgeAnswer(
+              judgeClient,
+              judgeModel,
+              question,
+              context,
+              answerToJudge
+            );
             result.judge_score = judgeRes.score;
             result.judge_correct = judgeRes.correct;
             result.judge_hallucination = judgeRes.hallucination;
             result.judge_issues = judgeRes.issues;
             result.judge_feedback = judgeRes.feedback;
-            process.stderr.write(` judge=${judgeRes.score}/10 ${judgeRes.correct ? "✓" : "✗"} ${judgeRes.hallucination ? "HALLU" : ""}`);
+            process.stderr.write(
+              ` judge=${judgeRes.score}/10 ${judgeRes.correct ? "✓" : "✗"} ${judgeRes.hallucination ? "HALLU" : ""}`
+            );
           } catch (err: any) {
             result.judge_error = String(err?.message ?? err);
             process.stderr.write(` JUDGE-ERROR`);
@@ -784,7 +944,8 @@ async function main() {
     judge_avg_score: results.reduce((s, r) => s + r.judge_score, 0) / n,
     judge_correct_rate: results.filter((r) => r.judge_correct).length / n,
     judge_hallucination_rate: results.filter((r) => r.judge_hallucination).length / n,
-    judge_correct_and_grounded_rate: results.filter((r) => r.judge_correct && r.heuristic_grounded).length / n,
+    judge_correct_and_grounded_rate:
+      results.filter((r) => r.judge_correct && r.heuristic_grounded).length / n,
     refine_change_rate: results.filter((r) => r.refine_changes).length / n,
     refine_improved_rate: 0, // Will calculate below
     retrieval_errors: results.filter((r) => r.retrieval_error).length,
@@ -804,18 +965,34 @@ async function main() {
   // Print summary
   process.stderr.write(`\n[phase5] ═══ QUALITY GATE SUMMARY ═══\n`);
   process.stderr.write(`  Questions:             ${results.length}\n`);
-  process.stderr.write(`  Retrieval Hit@5:       ${(report.retrieval_hit_at_5 * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `  Retrieval Hit@5:       ${(report.retrieval_hit_at_5 * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  Heuristic Metrics:\n`);
-  process.stderr.write(`    German answers:      ${(report.heuristic_german_rate * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    References law (§):  ${(report.heuristic_references_law_rate * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Grounded:            ${(report.heuristic_grounded_rate * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `    German answers:      ${(report.heuristic_german_rate * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    References law (§):  ${(report.heuristic_references_law_rate * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Grounded:            ${(report.heuristic_grounded_rate * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  LLM-as-Judge Metrics:\n`);
   process.stderr.write(`    Avg judge score:     ${report.judge_avg_score.toFixed(2)}/10\n`);
-  process.stderr.write(`    Correct (≥7/10):     ${(report.judge_correct_rate * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Hallucination rate:  ${(report.judge_hallucination_rate * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Correct + Grounded:  ${(report.judge_correct_and_grounded_rate * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `    Correct (≥7/10):     ${(report.judge_correct_rate * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Hallucination rate:  ${(report.judge_hallucination_rate * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Correct + Grounded:  ${(report.judge_correct_and_grounded_rate * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  Self-Refine Metrics:\n`);
-  process.stderr.write(`    Answers refined:     ${(report.refine_change_rate * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `    Answers refined:     ${(report.refine_change_rate * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  Errors:\n`);
   process.stderr.write(`    Retrieval:           ${report.retrieval_errors}\n`);
   process.stderr.write(`    Generate LLM:        ${report.initial_llm_errors}\n`);
@@ -836,7 +1013,9 @@ async function main() {
     process.stderr.write(`    Import OK: ${report.pdf_summary.import_success}\n`);
     process.stderr.write(`    Search OK: ${report.pdf_summary.search_success}\n`);
     for (const r of pdfResults) {
-      process.stderr.write(`    ${r.fixture_file}: extract=${r.extraction_success} import=${r.import_success} search=${r.search_success} (${r.extracted_text_length}ch)${r.error ? ` ERROR: ${r.error}` : ""}\n`);
+      process.stderr.write(
+        `    ${r.fixture_file}: extract=${r.extraction_success} import=${r.import_success} search=${r.search_success} (${r.extracted_text_length}ch)${r.error ? ` ERROR: ${r.error}` : ""}\n`
+      );
     }
   }
 
@@ -848,21 +1027,33 @@ async function main() {
     if (r.refine_changes) {
       process.stderr.write(`    Refined: ${r.refined_answer.slice(0, 200)}...\n`);
     }
-    process.stderr.write(`    Judge: ${r.judge_score}/10 ${r.judge_correct ? "✓" : "✗"} ${r.judge_hallucination ? "HALLU" : ""}\n`);
+    process.stderr.write(
+      `    Judge: ${r.judge_score}/10 ${r.judge_correct ? "✓" : "✗"} ${r.judge_hallucination ? "HALLU" : ""}\n`
+    );
     if (r.judge_feedback) process.stderr.write(`    Feedback: ${r.judge_feedback.slice(0, 200)}\n`);
-    if (r.judge_issues.length > 0) process.stderr.write(`    Issues: ${r.judge_issues.join("; ")}\n`);
+    if (r.judge_issues.length > 0)
+      process.stderr.write(`    Issues: ${r.judge_issues.join("; ")}\n`);
   }
 
   // Verdict
   const judgePass = report.judge_correct_rate >= 0.8;
   const hallucinationPass = report.judge_hallucination_rate <= 0.1;
-  const pdfPass = pdfResults.length === 0 || (report.pdf_summary.extraction_success === pdfResults.length && report.pdf_summary.search_success === pdfResults.length);
+  const pdfPass =
+    pdfResults.length === 0 ||
+    (report.pdf_summary.extraction_success === pdfResults.length &&
+      report.pdf_summary.search_success === pdfResults.length);
 
   process.stderr.write(`\n[phase5] ═══ FINAL VERDICT ═══\n`);
-  process.stderr.write(`  Judge correct (≥80%):     ${judgePass ? "✅ PASS" : "❌ FAIL"} (${(report.judge_correct_rate * 100).toFixed(1)}%)\n`);
-  process.stderr.write(`  Hallucination (≤10%):     ${hallucinationPass ? "✅ PASS" : "❌ FAIL"} (${(report.judge_hallucination_rate * 100).toFixed(1)}%)\n`);
+  process.stderr.write(
+    `  Judge correct (≥80%):     ${judgePass ? "✅ PASS" : "❌ FAIL"} (${(report.judge_correct_rate * 100).toFixed(1)}%)\n`
+  );
+  process.stderr.write(
+    `  Hallucination (≤10%):     ${hallucinationPass ? "✅ PASS" : "❌ FAIL"} (${(report.judge_hallucination_rate * 100).toFixed(1)}%)\n`
+  );
   process.stderr.write(`  PDF pipeline:             ${pdfPass ? "✅ PASS" : "❌ FAIL"}\n`);
-  process.stderr.write(`  Overall:                  ${judgePass && hallucinationPass && pdfPass ? "✅ ALL PASS" : "❌ FAILURES"}\n`);
+  process.stderr.write(
+    `  Overall:                  ${judgePass && hallucinationPass && pdfPass ? "✅ ALL PASS" : "❌ FAILURES"}\n`
+  );
 
   if (emitter) {
     emitter.emit({ kind: "final_report", ...report } as any);

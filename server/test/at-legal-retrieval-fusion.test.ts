@@ -25,11 +25,7 @@ describe("AT legal retrieval fusion", () => {
       [hit("corroborated"), hit("expanded-only")],
       3
     );
-    expect(fused.map((r) => r.slug)).toEqual([
-      "corroborated",
-      "original-only",
-      "expanded-only",
-    ]);
+    expect(fused.map((r) => r.slug)).toEqual(["corroborated", "original-only", "expanded-only"]);
   });
 
   test("preserves original-query priority for one-sided results", () => {

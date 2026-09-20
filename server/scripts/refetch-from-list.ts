@@ -36,8 +36,12 @@ function extractText(xml: string): { text: string; meta: Record<string, string> 
     const plain = inner
       .replace(/<[^>]+>/g, " ")
       .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!plain) continue;
@@ -73,7 +77,9 @@ function readDocId(filePath: string): string | null {
       if (m2) return m2[2];
     }
     return null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function readFrontmatter(filePath: string): { fm: string; body: string } | null {
@@ -82,7 +88,9 @@ function readFrontmatter(filePath: string): { fm: string; body: string } | null 
     const m = content.match(/^---\n([\s\S]*?)\n---\n?/);
     if (!m) return null;
     return { fm: m[1], body: content.slice(m[0].length) };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function slugToPath(slug: string): string | null {
@@ -119,12 +127,18 @@ async function fetchXml(docId: string, slug: string): Promise<string | null> {
         continue;
       }
       if (!res.ok) {
-        if (attempt < 4) { await new Promise((r) => setTimeout(r, 500)); continue; }
+        if (attempt < 4) {
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
         return null;
       }
       return await res.text();
     } catch {
-      if (attempt < 4) { await new Promise((r) => setTimeout(r, 500)); continue; }
+      if (attempt < 4) {
+        await new Promise((r) => setTimeout(r, 500));
+        continue;
+      }
       return null;
     }
   }
@@ -137,7 +151,12 @@ async function main() {
   const done = new Set<string>();
   if (RESUME && existsSync(OUT)) {
     for (const l of readFileSync(OUT, "utf8").split("\n")) {
-      try { const j = JSON.parse(l); if (j.slug) done.add(j.slug); } catch { /* */ }
+      try {
+        const j = JSON.parse(l);
+        if (j.slug) done.add(j.slug);
+      } catch {
+        /* */
+      }
     }
     console.log(`[resume] ${done.size} Slugs bereits verarbeitet`);
   }
@@ -145,7 +164,10 @@ async function main() {
   const todo = slugs.filter((s) => !done.has(s));
   console.log(`Zu refetchen: ${todo.length} von ${slugs.length}${DRY ? " (DRY RUN)" : ""}`);
 
-  let refetched = 0, unchanged = 0, failed = 0, notFound = 0;
+  let refetched = 0,
+    unchanged = 0,
+    failed = 0,
+    notFound = 0;
 
   for (let i = 0; i < todo.length; i++) {
     const slug = todo[i];
@@ -203,12 +225,17 @@ async function main() {
 
     if (!DRY) {
       writeFileSync(filePath, newContent);
-      appendFileSync(OUT, JSON.stringify({ slug, status: "refetched", docId, oldHash, newHash }) + "\n");
+      appendFileSync(
+        OUT,
+        JSON.stringify({ slug, status: "refetched", docId, oldHash, newHash }) + "\n"
+      );
     }
     refetched++;
 
     if ((i + 1) % 100 === 0) {
-      console.log(`  ${i + 1}/${todo.length}  refetched=${refetched} unchanged=${unchanged} failed=${failed} notFound=${notFound}`);
+      console.log(
+        `  ${i + 1}/${todo.length}  refetched=${refetched} unchanged=${unchanged} failed=${failed} notFound=${notFound}`
+      );
     }
   }
 

@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  parseEvalOutput,
-  runEval,
-  type EvalDataset,
-} from "../src/core/legal/eval-framework.ts";
+import { parseEvalOutput, runEval, type EvalDataset } from "../src/core/legal/eval-framework.ts";
 
 const DATASET: EvalDataset = {
   specialist_name: "test-specialist",

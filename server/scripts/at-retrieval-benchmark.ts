@@ -75,13 +75,13 @@ function parseArgs(argv: string[]) {
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun scripts/at-retrieval-benchmark.ts [options]\n` +
-        `  --engine URL       Engine URL (default: http://127.0.0.1:3131)\n` +
-        `  --api-key KEY      API key (default: $SUBSUMIO_WEB_API_KEY)\n` +
-        `  --source ID        Tenant source (default: law-at)\n` +
-        `  --fixture PATH     Question fixture (default: test/fixtures/at-legal-retrieval.jsonl)\n` +
-        `  --output PATH      Output JSONL (default: /tmp/at-benchmark-results.jsonl)\n` +
-        `  --limit N          Only first N questions\n` +
-        `  --top-k K          Top-K results per query (default: 8)\n`
+          `  --engine URL       Engine URL (default: http://127.0.0.1:3131)\n` +
+          `  --api-key KEY      API key (default: $SUBSUMIO_WEB_API_KEY)\n` +
+          `  --source ID        Tenant source (default: law-at)\n` +
+          `  --fixture PATH     Question fixture (default: test/fixtures/at-legal-retrieval.jsonl)\n` +
+          `  --output PATH      Output JSONL (default: /tmp/at-benchmark-results.jsonl)\n` +
+          `  --limit N          Only first N questions\n` +
+          `  --top-k K          Top-K results per query (default: 8)\n`
       );
       process.exit(0);
     }
@@ -204,7 +204,9 @@ async function main() {
   const questions = loadFixture(opts.fixturePath);
   const testQs = opts.limit > 0 ? questions.slice(0, opts.limit) : questions;
 
-  process.stderr.write(`[at-bench] ${testQs.length} questions, engine=${opts.engineUrl}, source=${opts.source}\n`);
+  process.stderr.write(
+    `[at-bench] ${testQs.length} questions, engine=${opts.engineUrl}, source=${opts.source}\n`
+  );
 
   if (existsSync(opts.outputPath)) writeFileSync(opts.outputPath, "");
 

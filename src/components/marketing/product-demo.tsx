@@ -332,9 +332,7 @@ function MatterScene() {
     <div className="flex h-full flex-col gap-2.5">
       <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[14px] font-semibold tracking-[-0.01em]">
-            {d.matter}
-          </span>
+          <span className="text-[14px] font-semibold tracking-[-0.01em]">{d.matter}</span>
           <span className="font-mono text-[10px] text-[color:var(--ds-text-subtle)]">
             {d.matterNumber}
           </span>
@@ -409,9 +407,7 @@ function DeadlineScene({ animate }: { animate: boolean }) {
     <div className="flex h-full flex-col gap-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-[15px] font-semibold tracking-[-0.01em]">
-            Fristen &amp; Termine
-          </div>
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">Fristen &amp; Termine</div>
           <div className="text-[11px] text-[color:var(--ds-text-muted)]">{d.deadlineSummary}</div>
         </div>
         <Button variant="primary" size="sm" className="h-7 gap-1 px-2.5 text-[11px]" tabIndex={-1}>

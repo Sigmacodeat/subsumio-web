@@ -30,48 +30,56 @@ const mockChat: ChatFn = mock(async (opts) => {
   // Paraphrase judge (routed via the utility tier): verify all except
   // "§ 999 BGB" (non-existent)
   if (opts.model === TIER_DEFAULTS.utility || opts.model?.includes("gpt-4o-mini")) {
-    return makeResult(JSON.stringify({
-      citations: citations.map((c: string) => ({
-        citation: c,
-        verified: !c.includes("999"),
-        confidence: c.includes("999") ? 0.1 : 0.9,
-        issue: c.includes("999") ? "§ nicht im Kontext gefunden" : undefined,
-      })),
-    }));
+    return makeResult(
+      JSON.stringify({
+        citations: citations.map((c: string) => ({
+          citation: c,
+          verified: !c.includes("999"),
+          confidence: c.includes("999") ? 0.1 : 0.9,
+          issue: c.includes("999") ? "§ nicht im Kontext gefunden" : undefined,
+        })),
+      })
+    );
   }
 
   // Ensemble models: each model has slightly different behavior
   if (opts.model?.includes("gpt-4o")) {
-    return makeResult(JSON.stringify({
-      citations: citations.map((c: string) => ({
-        citation: c,
-        verified: true,
-        confidence: 0.95,
-        reason: "Im Kontext gefunden",
-      })),
-    }));
+    return makeResult(
+      JSON.stringify({
+        citations: citations.map((c: string) => ({
+          citation: c,
+          verified: true,
+          confidence: 0.95,
+          reason: "Im Kontext gefunden",
+        })),
+      })
+    );
   }
 
   if (opts.model?.includes("claude")) {
-    return makeResult(JSON.stringify({
-      citations: citations.map((c: string) => ({
-        citation: c,
-        verified: !c.includes("999"),
-        confidence: c.includes("999") ? 0.1 : 0.9,
-        reason: c.includes("999") ? "Nicht im Kontext" : "Verifiziert",
-      })),
-    }));
+    return makeResult(
+      JSON.stringify({
+        citations: citations.map((c: string) => ({
+          citation: c,
+          verified: !c.includes("999"),
+          confidence: c.includes("999") ? 0.1 : 0.9,
+          reason: c.includes("999") ? "Nicht im Kontext" : "Verifiziert",
+        })),
+      })
+    );
   }
 
   if (opts.model?.includes("grok")) {
-    return makeResult(JSON.stringify({
-      citations: citations.map((c: string) => ({
-        citation: c,
-        verified: !c.includes("999") && !c.includes("434"),
-        confidence: c.includes("999") || c.includes("434") ? 0.2 : 0.85,
-        reason: c.includes("999") ? "Fingiert" : c.includes("434") ? "Falsche Anwendung" : "OK",
-      })),
-    }));
+    return makeResult(
+      JSON.stringify({
+        citations: citations.map((c: string) => ({
+          citation: c,
+          verified: !c.includes("999") && !c.includes("434"),
+          confidence: c.includes("999") || c.includes("434") ? 0.2 : 0.85,
+          reason: c.includes("999") ? "Fingiert" : c.includes("434") ? "Falsche Anwendung" : "OK",
+        })),
+      })
+    );
   }
 
   return makeResult("{}");
@@ -90,10 +98,16 @@ const invalidJsonChat: ChatFn = mock(async () => ({
   providerId: "mock",
 }));
 
-const ENSEMBLE_TEST_MODELS = ["openrouter:openai/gpt-4o", "openrouter:anthropic/claude-3.5-sonnet", "openrouter:x-ai/grok-4.3"];
+const ENSEMBLE_TEST_MODELS = [
+  "openrouter:openai/gpt-4o",
+  "openrouter:anthropic/claude-3.5-sonnet",
+  "openrouter:x-ai/grok-4.3",
+];
 
-const TEST_ANSWER = "Gemäß § 433 BGB ist der Verkäufer verpflichtet, die Sache zu übergeben. § 999 BGB regelt die Pflichten des Käufers.";
-const TEST_CONTEXT = "§ 433 BGB: Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben. § 434 BGB: Sachmangel.";
+const TEST_ANSWER =
+  "Gemäß § 433 BGB ist der Verkäufer verpflichtet, die Sache zu übergeben. § 999 BGB regelt die Pflichten des Käufers.";
+const TEST_CONTEXT =
+  "§ 433 BGB: Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben. § 434 BGB: Sachmangel.";
 const TEST_CITATIONS = ["§ 433 BGB", "§ 999 BGB"];
 
 describe("runParaphraseJudge", () => {
@@ -151,7 +165,13 @@ describe("runEnsembleStrict", () => {
   });
 
   test("handles model failures gracefully", async () => {
-    const results = await runEnsembleStrict("test", "context", ["§ 1 BGB"], ["model1", "model2"], failingChat);
+    const results = await runEnsembleStrict(
+      "test",
+      "context",
+      ["§ 1 BGB"],
+      ["model1", "model2"],
+      failingChat
+    );
     expect(results.length).toBe(1);
     // All models failed → 0 votes → not verified (no majority)
     expect(results[0].votes.length).toBe(0);
@@ -182,12 +202,12 @@ describe("runEnsembleVerification", () => {
 
   test("runs stages 1+2+3 in standard mode", async () => {
     const result = await runEnsembleVerification(baseOpts);
-    
+
     expect(result.stages_run).toContain(1);
     expect(result.stages_run).toContain(2);
     expect(result.stages_run).toContain(3);
     expect(result.stages_run).not.toContain(4);
-    
+
     // § 999 should be flagged by stage 3
     const c999 = result.citations.find((c) => c.citation === "§ 999 BGB");
     expect(c999).toBeDefined();
@@ -200,7 +220,7 @@ describe("runEnsembleVerification", () => {
       ...baseOpts,
       ensembleMode: "strict",
     });
-    
+
     expect(result.stages_run).toContain(4);
     expect(result.models_used.length).toBeGreaterThan(1);
     expect(result.estimated_cost).toBeGreaterThan(0);
@@ -218,7 +238,7 @@ describe("runEnsembleVerification", () => {
         },
       ],
     });
-    
+
     const c999 = result.citations.find((c) => c.citation === "§ 999 BGB");
     expect(c999).toBeDefined();
     expect(c999!.flags.some((f) => f.stage === 1)).toBe(true);
@@ -242,7 +262,7 @@ describe("runEnsembleVerification", () => {
         flagged_citations: ["§ 999 BGB"],
       },
     });
-    
+
     const c999 = result.citations.find((c) => c.citation === "§ 999 BGB");
     expect(c999!.flags.some((f) => f.stage === 2)).toBe(true);
     expect(c999!.verified).toBe(false);
@@ -254,7 +274,7 @@ describe("runEnsembleVerification", () => {
       citations: ["§ 433 BGB"],
       answer: "§ 433 BGB regelt die Übergabe.",
     });
-    
+
     expect(result.clean).toBe(true);
     const c433 = result.citations.find((c) => c.citation === "§ 433 BGB");
     expect(c433!.verified).toBe(true);

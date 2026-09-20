@@ -216,9 +216,7 @@ describe("WP1: readSourcesFor — Case > User > Fail-Closed jurisdiction", () =>
     const userJurUpper = userJur?.toUpperCase();
     const jur = caseJurUpper ?? userJurUpper;
     if (jur && JURISDICTION_LAW_SOURCES[jur]) {
-      const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) =>
-        SHARED_READ_SOURCES.includes(s)
-      );
+      const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => SHARED_READ_SOURCES.includes(s));
       return [...new Set([ownSource, ...scoped])];
     }
     // Fail-closed: no jurisdiction → only own source

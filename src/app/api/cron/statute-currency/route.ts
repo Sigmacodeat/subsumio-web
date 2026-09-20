@@ -38,21 +38,21 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   const checkResult = (await checkRes.json()) as {
     result?: {
-      jurisdictions?: Record<string, {
-        checked?: number;
-        current?: number;
-        outdated?: number;
-        unknown?: number;
-        outdated_laws?: Array<{ statute: string; db_version: string; live_version: string }>;
-      }>;
+      jurisdictions?: Record<
+        string,
+        {
+          checked?: number;
+          current?: number;
+          outdated?: number;
+          unknown?: number;
+          outdated_laws?: Array<{ statute: string; db_version: string; live_version: string }>;
+        }
+      >;
     };
   };
 
   const jurisdictions = checkResult.result?.jurisdictions ?? {};
-  const totalOutdated = Object.values(jurisdictions).reduce(
-    (sum, j) => sum + (j.outdated ?? 0),
-    0
-  );
+  const totalOutdated = Object.values(jurisdictions).reduce((sum, j) => sum + (j.outdated ?? 0), 0);
 
   // Step 2: If outdated laws found, trigger law-sync to reimport
   let syncResult = null;

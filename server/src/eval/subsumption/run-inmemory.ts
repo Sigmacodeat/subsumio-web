@@ -454,15 +454,58 @@ ${context}`;
 
       // Section + Conclusion evaluation (T2.2 audit)
       const sectionNum = (c.expected_section ?? "").replace(/§\s*/, "");
-      const sectionHit = !c.expected_section ||
+      const sectionHit =
+        !c.expected_section ||
         answerLower.includes(c.expected_section.toLowerCase()) ||
         answerLower.includes(`§ ${sectionNum}`) ||
         answerLower.includes(`§${sectionNum}`);
       const conclusionLower = c.expected_conclusion.toLowerCase();
-      const conclusionKeyTerms = conclusionLower
-        .match(/[\p{L}]{4,}/gu)?.filter(t => !["nach","ist","kann","wird","hat","haben","nicht","auch","sich","wenn","dann","oder","und","als","den","des","dem","der","die","das","ein","eine","einer","eines","einem","mit","zu","von","für","auf","bei","dies","diese","dieser","dieses"].includes(t)) ?? [];
-      const conclusionMatchedTerms = conclusionKeyTerms.filter(t => answerLower.includes(t));
-      const conclusionHit = conclusionKeyTerms.length > 0 &&
+      const conclusionKeyTerms =
+        conclusionLower
+          .match(/[\p{L}]{4,}/gu)
+          ?.filter(
+            (t) =>
+              ![
+                "nach",
+                "ist",
+                "kann",
+                "wird",
+                "hat",
+                "haben",
+                "nicht",
+                "auch",
+                "sich",
+                "wenn",
+                "dann",
+                "oder",
+                "und",
+                "als",
+                "den",
+                "des",
+                "dem",
+                "der",
+                "die",
+                "das",
+                "ein",
+                "eine",
+                "einer",
+                "eines",
+                "einem",
+                "mit",
+                "zu",
+                "von",
+                "für",
+                "auf",
+                "bei",
+                "dies",
+                "diese",
+                "dieser",
+                "dieses",
+              ].includes(t)
+          ) ?? [];
+      const conclusionMatchedTerms = conclusionKeyTerms.filter((t) => answerLower.includes(t));
+      const conclusionHit =
+        conclusionKeyTerms.length > 0 &&
         conclusionMatchedTerms.length / conclusionKeyTerms.length >= 0.5;
 
       const pass = lawHit && hallucinationRate <= 0.3 && keywordMatchRate >= 0.4 && sectionHit;
@@ -551,8 +594,8 @@ ${context}`;
       `  Guardrail Pass:         ${guardrailPassCount}/${n} (${((guardrailPassCount / n) * 100).toFixed(1)}%)\n` +
       `  Guardrail Regenerated:  ${guardrailRegenCount}/${n} (${((guardrailRegenCount / n) * 100).toFixed(1)}%)\n` +
       `  Pass Rate:              ${(passRate * 100).toFixed(1)}%\n` +
-    `  Section Hit Rate:       ${(sectionHitRate * 100).toFixed(1)}%\n` +
-    `  Conclusion Hit Rate:    ${(conclusionHitRate * 100).toFixed(1)}%\n`
+      `  Section Hit Rate:       ${(sectionHitRate * 100).toFixed(1)}%\n` +
+      `  Conclusion Hit Rate:    ${(conclusionHitRate * 100).toFixed(1)}%\n`
   );
 
   if (opts.outputPath) {

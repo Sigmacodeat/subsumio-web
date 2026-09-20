@@ -14,11 +14,7 @@
  */
 
 import { createHash } from "node:crypto";
-import {
-  type Jurisdiction,
-  isOfficialSource,
-  OFFICIAL_SOURCE_PATTERNS,
-} from "./corpus-receipt.ts";
+import { type Jurisdiction, isOfficialSource, OFFICIAL_SOURCE_PATTERNS } from "./corpus-receipt.ts";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -114,9 +110,7 @@ export interface RuleReceiptValidationError {
  * Validate a LegalRuleReceipt for completeness and correctness.
  * Returns an array of validation errors (empty = valid).
  */
-export function validateRuleReceipt(
-  receipt: LegalRuleReceipt
-): RuleReceiptValidationError[] {
+export function validateRuleReceipt(receipt: LegalRuleReceipt): RuleReceiptValidationError[] {
   const errors: RuleReceiptValidationError[] = [];
   const { rule_key: key } = receipt;
 
@@ -287,9 +281,7 @@ export function registerRuleReceipt(receipt: LegalRuleReceipt): void {
   const errors = validateRuleReceipt(receipt);
   if (errors.length > 0) {
     const msgs = errors.map((e) => `  - ${e.field}: ${e.message}`).join("\n");
-    throw new Error(
-      `Cannot register invalid rule receipt "${receipt.rule_key}":\n${msgs}`
-    );
+    throw new Error(`Cannot register invalid rule receipt "${receipt.rule_key}":\n${msgs}`);
   }
   if (ruleReceiptRegistry.has(receipt.rule_key)) {
     throw new Error(`Duplicate rule_key "${receipt.rule_key}" in registry`);

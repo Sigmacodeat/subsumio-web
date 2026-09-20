@@ -15,7 +15,9 @@ describe("ProactiveAlerts", () => {
         t={t}
         onQuery={onQuery}
         onDismiss={onDismiss}
-        alerts={[{ label: "Deadline", query: "Zeige Fristen", severity: "urgent", icon: "deadline" }]}
+        alerts={[
+          { label: "Deadline", query: "Zeige Fristen", severity: "urgent", icon: "deadline" },
+        ]}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: /Deadline/i }));

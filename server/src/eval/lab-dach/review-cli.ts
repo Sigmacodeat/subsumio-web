@@ -24,11 +24,15 @@ import * as readline from "node:readline";
 
 import type { Task } from "./types.ts";
 import { ALL_SAMPLE_TASKS } from "./sample-tasks.ts";
-import { assertNoHoldout, buildReviewQueue, persistHumanVerdict, computeQueueStats, type ReviewQueueItem, type HumanVerdict } from "./review-queue.ts";
 import {
-  crossJudgeSession,
-  type ModelConfig,
-} from "./cross-judge.ts";
+  assertNoHoldout,
+  buildReviewQueue,
+  persistHumanVerdict,
+  computeQueueStats,
+  type ReviewQueueItem,
+  type HumanVerdict,
+} from "./review-queue.ts";
+import { crossJudgeSession, type ModelConfig } from "./cross-judge.ts";
 import type { ChatOpts, ChatResult } from "./rubric-judge.ts";
 
 // ── Default Model Configs ─────────────────────────────────────────────
@@ -54,7 +58,8 @@ const MODEL_B: ModelConfig = {
 
 function mockChatFn(opts: ChatOpts): Promise<ChatResult> {
   const userContent = opts.messages[0]?.content ?? "";
-  const isJudge = userContent.includes("## Kriterium") || userContent.includes("Bewerte dieses Kriterium");
+  const isJudge =
+    userContent.includes("## Kriterium") || userContent.includes("Bewerte dieses Kriterium");
 
   let text: string;
   if (isJudge) {
@@ -99,7 +104,9 @@ Die rechtliche Würdigung führt zu einem klaren Ergebnis.`
 
 // ── Mock Grounding (all citations verified in mock mode) ──────────────
 
-function mockGroundCitations(citations: Array<{ code: string; paragraph: string }>): Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>> {
+function mockGroundCitations(
+  citations: Array<{ code: string; paragraph: string }>
+): Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>> {
   return Promise.resolve(
     citations.map((c) => ({
       code: c.code,
@@ -147,7 +154,9 @@ export async function runReviewFlow(argv: string[]): Promise<void> {
   const args = parseReviewArgs(argv);
 
   if (!args.reviewer && !args.queuePath) {
-    console.error("Error: --reviewer <name> is required for human verdicts (or use --queue to resume)");
+    console.error(
+      "Error: --reviewer <name> is required for human verdicts (or use --queue to resume)"
+    );
     process.exit(1);
   }
 
@@ -214,13 +223,18 @@ export async function runReviewFlow(argv: string[]): Promise<void> {
     const queueDir = args.outputDir ?? "/tmp/lab-dach-review";
     mkdirSync(queueDir, { recursive: true });
     const queueFile = join(queueDir, "queue.json");
-    writeFileSync(queueFile, JSON.stringify({ items: queue, created_at: new Date().toISOString() }, null, 2));
+    writeFileSync(
+      queueFile,
+      JSON.stringify({ items: queue, created_at: new Date().toISOString() }, null, 2)
+    );
     console.log(`\n  Queue saved to: ${queueFile}`);
   }
 
   // 3. Queue stats
   const stats = computeQueueStats(queue);
-  console.log(`\n  Queue: ${stats.total} items (${stats.pending} pending, ${stats.resolved} resolved)`);
+  console.log(
+    `\n  Queue: ${stats.total} items (${stats.pending} pending, ${stats.resolved} resolved)`
+  );
   console.log(`  By reason:`, stats.by_reason);
   console.log(`  Disagreements: ${stats.by_disagreement}`);
 
@@ -251,22 +265,35 @@ export async function runReviewFlow(argv: string[]): Promise<void> {
       console.log(item.task.prompt.slice(0, 500));
       console.log("\n--- ANSWER A (model: " + item.answer_a.model_config.label + ") ---");
       console.log(item.answer_a.text.slice(0, 800));
-      console.log("\nGrounding A:", item.answer_a.grounding.all_verified ? "ALL VERIFIED" : "HAS UNVERIFIED");
+      console.log(
+        "\nGrounding A:",
+        item.answer_a.grounding.all_verified ? "ALL VERIFIED" : "HAS UNVERIFIED"
+      );
       console.log("\n--- ANSWER B (model: " + item.answer_b.model_config.label + ") ---");
       console.log(item.answer_b.text.slice(0, 800));
-      console.log("\nGrounding B:", item.answer_b.grounding.all_verified ? "ALL VERIFIED" : "HAS UNVERIFIED");
+      console.log(
+        "\nGrounding B:",
+        item.answer_b.grounding.all_verified ? "ALL VERIFIED" : "HAS UNVERIFIED"
+      );
 
       console.log("\n--- JUDGE A (by " + item.judge_a.criteria[0]?.judge_model.label + ") ---");
       for (const cr of item.judge_a.criteria.slice(0, 3)) {
-        console.log(`  [${cr.verdict.status}] ${cr.criterion_id}: ${cr.verdict.reasoning.slice(0, 150)}`);
+        console.log(
+          `  [${cr.verdict.status}] ${cr.criterion_id}: ${cr.verdict.reasoning.slice(0, 150)}`
+        );
       }
 
       console.log("\n--- JUDGE B (by " + item.judge_b.criteria[0]?.judge_model.label + ") ---");
       for (const cr of item.judge_b.criteria.slice(0, 3)) {
-        console.log(`  [${cr.verdict.status}] ${cr.criterion_id}: ${cr.verdict.reasoning.slice(0, 150)}`);
+        console.log(
+          `  [${cr.verdict.status}] ${cr.criterion_id}: ${cr.verdict.reasoning.slice(0, 150)}`
+        );
       }
 
-      const decision = await askQuestion(rl, "\nYour verdict [pass_a/pass_b/pass_both/fail_both/edit/skip]: ");
+      const decision = await askQuestion(
+        rl,
+        "\nYour verdict [pass_a/pass_b/pass_both/fail_both/edit/skip]: "
+      );
 
       if (decision === "skip") {
         item.status = "skipped";
@@ -295,7 +322,9 @@ export async function runReviewFlow(argv: string[]): Promise<void> {
       item.human_verdict = verdict;
       verdicts.push({ item, verdict });
 
-      console.log(`  ✓ Persisted: ${result.task_id} (split: ${result.split}, created: ${result.created})`);
+      console.log(
+        `  ✓ Persisted: ${result.task_id} (split: ${result.split}, created: ${result.created})`
+      );
     }
 
     rl.close();
@@ -342,12 +371,14 @@ export async function runReviewFlow(argv: string[]): Promise<void> {
           reviewer_type: v.verdict.reviewer_type,
           split: v.verdict.split,
         })),
-        resolved_tasks: [...existingTasks.values()].filter((t) => t.review_status === "approved").map((t) => ({
-          id: t.id,
-          split: t.split,
-          reviewed_by: t.reviewed_by,
-          reviewer_type: "human_jurist" as const,
-        })),
+        resolved_tasks: [...existingTasks.values()]
+          .filter((t) => t.review_status === "approved")
+          .map((t) => ({
+            id: t.id,
+            split: t.split,
+            reviewed_by: t.reviewed_by,
+            reviewer_type: "human_jurist" as const,
+          })),
       },
       null,
       2

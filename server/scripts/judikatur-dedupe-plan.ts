@@ -50,7 +50,12 @@ function frontmatter(path: string): Record<string, string> {
 }
 
 function normEcli(s: string): string {
-  return s.toLowerCase().replace(/^ecli[-:]/, "").replace(/[:.]/g, "-").replace(/-+/g, "-").trim();
+  return s
+    .toLowerCase()
+    .replace(/^ecli[-:]/, "")
+    .replace(/[:.]/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
 }
 
 function analyseCourt(dir: string) {
@@ -58,8 +63,8 @@ function analyseCourt(dir: string) {
   if (!existsSync(full)) return null;
   const files = readdirSync(full).filter((f) => f.endsWith(".md"));
 
-  const byKeyDate = new Map<string, string>();   // "<az>|<datum>" → Datei
-  const byEcliDate = new Map<string, string>();  // normalisierte ECLI → Datum-Datei
+  const byKeyDate = new Map<string, string>(); // "<az>|<datum>" → Datei
+  const byEcliDate = new Map<string, string>(); // normalisierte ECLI → Datum-Datei
   const byKeyAz = new Map<string, string>();
   const ecliFiles: string[] = [];
   /**
@@ -135,7 +140,9 @@ function analyseCourt(dir: string) {
 
 function main() {
   const courts = readdirSync(CORPUS_ROOT).filter((d) => d.startsWith("at-judikatur-"));
-  const results = courts.map(analyseCourt).filter(Boolean) as NonNullable<ReturnType<typeof analyseCourt>>[];
+  const results = courts.map(analyseCourt).filter(Boolean) as NonNullable<
+    ReturnType<typeof analyseCourt>
+  >[];
   results.sort((a, b) => b.dupAz + b.dupEcli - (a.dupAz + a.dupEcli));
 
   console.log("╔════════════════════════════════════════════════════════════════════════╗");
@@ -145,7 +152,9 @@ function main() {
   console.log(
     `  ${"Gericht".padEnd(10)}${H("datum", 9)}${H("dup-az", 9)}${H("dup-ecli", 10)}${H("Rechtssätze", 13)}${H("sonst behalten", 16)}`
   );
-  console.log(`  ${"-".repeat(10)}${"-".repeat(9)}${"-".repeat(9)}${"-".repeat(10)}${"-".repeat(13)}${"-".repeat(16)}`);
+  console.log(
+    `  ${"-".repeat(10)}${"-".repeat(9)}${"-".repeat(9)}${"-".repeat(10)}${"-".repeat(13)}${"-".repeat(16)}`
+  );
 
   let totDup = 0;
   let totKeep = 0;
@@ -158,8 +167,12 @@ function main() {
       `  ${r.dir.replace("at-judikatur-", "").padEnd(10)}${H(String(r.dateFiles), 9)}${H(String(r.dupAz), 9)}${H(String(r.dupEcli), 10)}${H(String(r.keepRechtssaetze), 13)}${H(String(keepOther), 16)}`
     );
   }
-  console.log(`  ${"-".repeat(10)}${"-".repeat(9)}${"-".repeat(9)}${"-".repeat(10)}${"-".repeat(13)}${"-".repeat(16)}`);
-  console.log(`  ${"SUMME".padEnd(10)}${H("", 9)}${H(String(results.reduce((a, r) => a + r.dupAz, 0)), 9)}${H(String(results.reduce((a, r) => a + r.dupEcli, 0)), 10)}${H(String(results.reduce((a, r) => a + r.keepRechtssaetze, 0)), 13)}${H(String(results.reduce((a, r) => a + r.keepAzOnly + r.keepEcliUnmatched + r.keepNumbered, 0)), 16)}`);
+  console.log(
+    `  ${"-".repeat(10)}${"-".repeat(9)}${"-".repeat(9)}${"-".repeat(10)}${"-".repeat(13)}${"-".repeat(16)}`
+  );
+  console.log(
+    `  ${"SUMME".padEnd(10)}${H("", 9)}${H(String(results.reduce((a, r) => a + r.dupAz, 0)), 9)}${H(String(results.reduce((a, r) => a + r.dupEcli, 0)), 10)}${H(String(results.reduce((a, r) => a + r.keepRechtssaetze, 0)), 13)}${H(String(results.reduce((a, r) => a + r.keepAzOnly + r.keepEcliUnmatched + r.keepNumbered, 0)), 16)}`
+  );
 
   // Merge-Nutzen an einer Stichprobe belegen
   console.log("\n  ÜBERNEHMBARE FELDER (Stichprobe je Gericht, max. 50 Paare)\n");
@@ -190,7 +203,9 @@ function main() {
 
   console.log("\n  PLAN");
   console.log(`    1. ${totDup} Paare: Zusatzfelder der Dublette → Datum-Datei übernehmen`);
-  console.log(`    2. ${totDup} Dubletten-Dateien entfernen (Text liegt sauberer in der Datum-Variante)`);
+  console.log(
+    `    2. ${totDup} Dubletten-Dateien entfernen (Text liegt sauberer in der Datum-Variante)`
+  );
   console.log(`    3. ${totKeep} Dateien BEHALTEN — Rechtssätze und eigenständige Dokumente`);
   console.log(`    4. DB: die zu 1./2. gehörenden Seiten (type='judikatur') löschen`);
   console.log("\n  Dieses Skript schreibt nichts. Ausführung erfolgt getrennt nach Freigabe.");

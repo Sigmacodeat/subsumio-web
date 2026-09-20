@@ -50,19 +50,49 @@ function makeModelAnswer(text: string = "answer text"): ModelAnswer {
 
 function makeCrossJudgeResult(
   overrides?: Partial<CrossJudgeResult>,
-  criteria?: Array<{ criterion_id: string; passed: boolean; severity: "low" | "medium" | "high" | "critical" }>
+  criteria?: Array<{
+    criterion_id: string;
+    passed: boolean;
+    severity: "low" | "medium" | "high" | "critical";
+  }>
 ): CrossJudgeResult {
   const baseCriteria = criteria ?? [
     {
       criterion_id: "crit-001",
-      criterion: { id: "crit-001", description: "test", check_type: "llm_judge", critical: false, severity: "low" as const } as Criterion,
+      criterion: {
+        id: "crit-001",
+        description: "test",
+        check_type: "llm_judge",
+        critical: false,
+        severity: "low" as const,
+      } as Criterion,
       severity: "low" as const,
-      verdict: { status: "pass" as const, passed: true, reasoning: "ok", confidence: 0.9, evidence_quotes: [], raw_response: "", model: "test" as const },
+      verdict: {
+        status: "pass" as const,
+        passed: true,
+        reasoning: "ok",
+        confidence: 0.9,
+        evidence_quotes: [],
+        raw_response: "",
+        model: "test" as const,
+      },
       grounding_passed: true,
       grounding_overrode: false,
       passed: true,
-      judge_model: { vendor: "openai", model_id: "gpt", label: "gpt", max_tokens: 1024, temperature: 0 },
-      answer_model: { vendor: "anthropic", model_id: "claude", label: "opus", max_tokens: 1024, temperature: 0 },
+      judge_model: {
+        vendor: "openai",
+        model_id: "gpt",
+        label: "gpt",
+        max_tokens: 1024,
+        temperature: 0,
+      },
+      answer_model: {
+        vendor: "anthropic",
+        model_id: "claude",
+        label: "opus",
+        max_tokens: 1024,
+        temperature: 0,
+      },
     },
   ];
 
@@ -124,8 +154,14 @@ describe("buildReviewQueue", () => {
         task: makeTask({ id: "t1", split: "dev" }),
         answer_a: makeModelAnswer(),
         answer_b: makeModelAnswer(),
-        judge_a: makeCrossJudgeResult({ needs_review: true, review_reasons: ["critical_criterion_requires_human"] }),
-        judge_b: makeCrossJudgeResult({ needs_review: true, review_reasons: ["critical_criterion_requires_human"] }),
+        judge_a: makeCrossJudgeResult({
+          needs_review: true,
+          review_reasons: ["critical_criterion_requires_human"],
+        }),
+        judge_b: makeCrossJudgeResult({
+          needs_review: true,
+          review_reasons: ["critical_criterion_requires_human"],
+        }),
         disagreement: false,
         needs_review: true,
         review_reasons: ["critical_criterion_requires_human"],

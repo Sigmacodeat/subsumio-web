@@ -196,9 +196,7 @@ describe("legal-corpus integrity (Phase 0)", () => {
     // regardless of file health.
     const recovered = [...QUARANTINE].filter(
       (p) =>
-        QUARANTINED_LEGAL_SOURCE_REASONS[p] === "degraded" &&
-        byPath.has(p) &&
-        !stubToday.has(p)
+        QUARANTINED_LEGAL_SOURCE_REASONS[p] === "degraded" && byPath.has(p) && !stubToday.has(p)
     );
     expect(recovered, "these files are healthy now — delete them from QUARANTINE").toEqual([]);
   });

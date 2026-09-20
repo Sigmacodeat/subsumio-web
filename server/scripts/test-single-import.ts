@@ -58,4 +58,7 @@ Dies ist ein Test-Paragraph.
   console.log("8. Done.");
 }
 
-main().catch((e) => { console.error("FATAL:", e); process.exit(1); });
+main().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(1);
+});

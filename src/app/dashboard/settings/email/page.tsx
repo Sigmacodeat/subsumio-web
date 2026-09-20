@@ -136,7 +136,8 @@ export default function EmailSettingsPage() {
         addToast({
           type: "error",
           title: "Anmeldung nicht möglich",
-          description: "Der Anbieter ist derzeit nicht erreichbar. Bitte versuchen Sie es später erneut.",
+          description:
+            "Der Anbieter ist derzeit nicht erreichbar. Bitte versuchen Sie es später erneut.",
         });
         return;
       }

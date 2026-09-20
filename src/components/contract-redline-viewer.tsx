@@ -495,9 +495,7 @@ export function ContractRedlineViewer({
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="mb-3 flex items-center gap-2" role="status" aria-live="polite">
                 <Loader2 size={14} className="brand-text animate-spin" />
-                <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  Analyse läuft …
-                </span>
+                <span className="text-xs text-[color:var(--ds-text-muted)]">Analyse läuft …</span>
               </div>
               <pre className="max-h-96 overflow-auto font-mono text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                 {redlineText}

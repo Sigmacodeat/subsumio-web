@@ -66,9 +66,7 @@ export function ActivityTab() {
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {ev.timestamp || ev.date
-                      ? formatDateTime(ev.timestamp || ev.date || "")
-                      : "—"}
+                    {ev.timestamp || ev.date ? formatDateTime(ev.timestamp || ev.date || "") : "—"}
                   </div>
                   {ev.type === "status_change" && (
                     <span className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
@@ -316,8 +314,7 @@ export function ActivityTab() {
                         </Badge>
                       </div>
                       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                        {entry.actor} ·{" "}
-                        {formatDateTime(entry.at)}
+                        {entry.actor} · {formatDateTime(entry.at)}
                       </div>
                     </div>
                   </div>

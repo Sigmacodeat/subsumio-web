@@ -96,7 +96,9 @@ export default function ControllingPage() {
       } catch (e) {
         console.error("[controlling] load failed:", e instanceof Error ? e.message : e);
         if (!cancelled)
-          setLoadError("Die Kennzahlen konnten nicht geladen werden. Bitte laden Sie die Seite neu.");
+          setLoadError(
+            "Die Kennzahlen konnten nicht geladen werden. Bitte laden Sie die Seite neu."
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -280,7 +282,9 @@ function CtrlStat({ label, value, sub }: { label: string; value: string; sub?: s
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
       <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</div>
+      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+        {value}
+      </div>
       {sub && <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{sub}</div>}
     </div>
   );

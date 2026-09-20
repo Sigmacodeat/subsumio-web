@@ -3,16 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
-import {
-  BookOpen,
-  Search,
-  ArrowLeft,
-  ChevronRight,
-  Scale,
-  Globe,
-  Copy,
-  Check,
-} from "lucide-react";
+import { BookOpen, Search, ArrowLeft, ChevronRight, Scale, Globe, Copy, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -279,7 +270,11 @@ function NormsPageInner() {
           </div>
           <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
             {detailLoading ? (
-              <div className="space-y-2 py-1" aria-busy="true" aria-label={t("norms.loading_detail")}>
+              <div
+                className="space-y-2 py-1"
+                aria-busy="true"
+                aria-label={t("norms.loading_detail")}
+              >
                 <Skeleton className="h-3 w-full rounded" />
                 <Skeleton className="h-3 w-11/12 rounded" />
                 <Skeleton className="h-3 w-4/5 rounded" />

@@ -115,7 +115,10 @@ export const GET = createHandler(
           description:
             "Sicherung aller Einträge des Kanzleiwissens samt Texten — für Umzug oder Archivierung",
           ...(engineError
-            ? { warning: "Sicherung ist unvollständig — die Engine war währenddessen nicht erreichbar" }
+            ? {
+                warning:
+                  "Sicherung ist unvollständig — die Engine war währenddessen nicht erreichbar",
+              }
             : {}),
           ...(truncated
             ? {

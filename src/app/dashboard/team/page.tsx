@@ -3,15 +3,7 @@
 import { useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
-import {
-  Users,
-  Mail,
-  Trash2,
-  LogOut,
-  Crown,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
+import { Users, Mail, Trash2, LogOut, Crown, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -151,8 +143,8 @@ export default function TeamPage() {
       {devJoinUrl && (
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3.5">
           <p className="mb-1.5 text-xs text-[color:var(--ds-warning-text)]">
-            Der E-Mail-Versand ist noch nicht eingerichtet. Bitte senden Sie der eingeladenen
-            Person diesen Einladungslink selbst zu:
+            Der E-Mail-Versand ist noch nicht eingerichtet. Bitte senden Sie der eingeladenen Person
+            diesen Einladungslink selbst zu:
           </p>
           <code className="brand-text text-xs break-all">{devJoinUrl}</code>
         </div>

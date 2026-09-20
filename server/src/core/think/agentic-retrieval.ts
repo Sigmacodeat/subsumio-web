@@ -18,7 +18,11 @@ import type { BrainEngine } from "../engine.ts";
 import type { SearchResult } from "../types.ts";
 import { hybridSearch } from "../search/hybrid.ts";
 import { expandLegalQuery } from "../think/legal-query-expand.ts";
-import { expandConceptQuery, findConceptMappings, extractSectionNumbers } from "../legal/concept-map.ts";
+import {
+  expandConceptQuery,
+  findConceptMappings,
+  extractSectionNumbers,
+} from "../legal/concept-map.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
 
 export interface AgenticRetrievalOpts {
@@ -65,12 +69,13 @@ function heuristicCompleteness(
   for (const mapping of expectedMappings) {
     for (const section of mapping.sections) {
       const sectionStr = String(section);
-      const found = results.some(r =>
-        r.chunk_text?.includes(`§ ${sectionStr}`) ||
-        r.chunk_text?.includes(`§${sectionStr}`) ||
-        r.slug?.includes(`p-${sectionStr}`) ||
-        r.slug?.includes(`art-${sectionStr}`) ||
-        r.title?.includes(`§ ${sectionStr}`)
+      const found = results.some(
+        (r) =>
+          r.chunk_text?.includes(`§ ${sectionStr}`) ||
+          r.chunk_text?.includes(`§${sectionStr}`) ||
+          r.slug?.includes(`p-${sectionStr}`) ||
+          r.slug?.includes(`art-${sectionStr}`) ||
+          r.title?.includes(`§ ${sectionStr}`)
       );
       if (!found) {
         missing.push(`§ ${sectionStr} ${mapping.law}`);
@@ -132,11 +137,7 @@ Reichen diese Auszüge aus? Was fehlt spezifisch?`;
  * Refine the query for round 2 based on missing terms.
  * Appends missing §-numbers and legal terms.
  */
-function refineQuery(
-  originalQuery: string,
-  missing: string[],
-  jurisdiction?: string
-): string {
+function refineQuery(originalQuery: string, missing: string[], jurisdiction?: string): string {
   const base = expandLegalQuery(originalQuery);
   const conceptExpanded = expandConceptQuery(base, jurisdiction as "de" | "at" | undefined);
   const missingTerms = missing.slice(0, 5).join(" ");
@@ -161,7 +162,7 @@ export async function agenticRetrieval(
   // Round 1: Standard search
   const query1 = expandConceptQuery(
     expandLegalQuery(opts.question),
-    opts.jurisdiction as "de" | "at" | undefined,
+    opts.jurisdiction as "de" | "at" | undefined
   );
 
   const results1 = await hybridSearch(engine, query1, {
@@ -183,11 +184,7 @@ export async function agenticRetrieval(
   let useLLM = opts.llmCompletenessCheck !== false;
 
   if (useLLM) {
-    const llmResult = await llmCompletenessCheck(
-      opts.question,
-      results1,
-      opts.completenessModel,
-    );
+    const llmResult = await llmCompletenessCheck(opts.question, results1, opts.completenessModel);
     missing = llmResult.missing;
     if (llmResult.complete && missing.length === 0) {
       return { results: results1, rounds, totalRounds: 1, refined: false };

@@ -55,7 +55,9 @@ export default function FeeAgreementsPage() {
   const load = useCallback(async () => {
     try {
       const batch = await api.brain.batchListPages(["fee_agreement", "legal_case"], 200);
-      setAgreements((batch["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement));
+      setAgreements(
+        (batch["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement)
+      );
       setCases(
         (batch["legal_case"] ?? []).map((p) => {
           const fm = caseFrontmatter(p);
@@ -145,7 +147,11 @@ export default function FeeAgreementsPage() {
           { label: t("fee.title") },
         ]}
         actions={
-          <Button size="sm" className="whitespace-nowrap" onClick={() => setShowCreate(!showCreate)}>
+          <Button
+            size="sm"
+            className="whitespace-nowrap"
+            onClick={() => setShowCreate(!showCreate)}
+          >
             <Plus className="h-4 w-4" aria-hidden="true" />
             {t("fee.new")}
           </Button>
@@ -154,7 +160,9 @@ export default function FeeAgreementsPage() {
 
       {showCreate && (
         <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("fee.create_title")}</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            {t("fee.create_title")}
+          </h2>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="fee-case">Akte *</Label>
@@ -285,13 +293,19 @@ export default function FeeAgreementsPage() {
                     </Badge>
                     {hasBudget && status.alert_level !== "none" && (
                       <Badge className={`border text-xs ${ALERT_COLORS[status.alert_level]}`}>
-                        {status.alert_level === "warning" ? "80 % erreicht" : "Budget überschritten"}
+                        {status.alert_level === "warning"
+                          ? "80 % erreicht"
+                          : "Budget überschritten"}
                       </Badge>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                    {ag.hourly_rate ? <span>Stundensatz {formatEur(ag.hourly_rate, lang)}</span> : null}
-                    {ag.flat_amount ? <span>Pauschale {formatEur(ag.flat_amount, lang)}</span> : null}
+                    {ag.hourly_rate ? (
+                      <span>Stundensatz {formatEur(ag.hourly_rate, lang)}</span>
+                    ) : null}
+                    {ag.flat_amount ? (
+                      <span>Pauschale {formatEur(ag.flat_amount, lang)}</span>
+                    ) : null}
                     {ag.budget_cap ? <span>Budget {formatEur(ag.budget_cap, lang)}</span> : null}
                     {ag.rvg_area ? <span>Tarif {ag.rvg_area}</span> : null}
                   </div>
@@ -302,7 +316,8 @@ export default function FeeAgreementsPage() {
                       {Math.round(status.utilization * 100)} %
                     </div>
                     <p className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                      {formatEur(status.total_value, lang)} von {formatEur(status.budget_cap ?? 0, lang)}
+                      {formatEur(status.total_value, lang)} von{" "}
+                      {formatEur(status.budget_cap ?? 0, lang)}
                     </p>
                   </div>
                 )}

@@ -272,7 +272,9 @@ export async function runE2E(opts: {
     console.log(`  All-pass: ${result.rubric.all_pass}`);
     console.log(`  Criteria: ${result.rubric.criteria_passed}/${result.rubric.criteria_total}`);
     console.log(`  Critical: ${result.rubric.critical_passed}/${result.rubric.critical_total}`);
-    console.log(`  Cost: $${result.cost_usd.toFixed(4)} (cumulative: $${cumulativeCostUsd.toFixed(4)})`);
+    console.log(
+      `  Cost: $${result.cost_usd.toFixed(4)} (cumulative: $${cumulativeCostUsd.toFixed(4)})`
+    );
     if (result.error) console.log(`  Error: ${result.error}`);
 
     // Budget guard (live mode only)

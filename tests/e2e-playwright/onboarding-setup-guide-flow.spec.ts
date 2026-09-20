@@ -37,7 +37,9 @@ async function signUpViaApi(page: import("@playwright/test").Page) {
 }
 
 async function getCsrfToken(page: import("@playwright/test").Page) {
-  return (await page.context().cookies()).find((cookie) => cookie.name === "sb_csrf")?.value ?? null;
+  return (
+    (await page.context().cookies()).find((cookie) => cookie.name === "sb_csrf")?.value ?? null
+  );
 }
 
 async function getOnboardingProgress(page: import("@playwright/test").Page) {
@@ -132,7 +134,9 @@ test.describe("Onboarding Setup Guide Flow", () => {
     });
 
     // Open guide (help button in topbar — aria-label "Hilfe" or similar)
-    const helpButton = page.locator('button[aria-label*="Hilfe"], button[aria-label*="Help"]').first();
+    const helpButton = page
+      .locator('button[aria-label*="Hilfe"], button[aria-label*="Help"]')
+      .first();
     if (await helpButton.isVisible().catch(() => false)) {
       await helpButton.click();
       await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 });

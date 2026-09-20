@@ -182,10 +182,10 @@ export default function DataExportPage() {
               Datenexport nach Art. 20 DSGVO
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Der Export enthält Akten, Kontakte, Rechnungen, Fristen, Entwürfe,
-              Signaturanfragen, Freigaben, Protokolleinträge und gespeicherte Entscheidungen —
-              jeweils mit Titel und strukturierten Angaben als JSON-Datei. Dokumenttexte und
-              hochgeladene Dateien sind nicht enthalten.
+              Der Export enthält Akten, Kontakte, Rechnungen, Fristen, Entwürfe, Signaturanfragen,
+              Freigaben, Protokolleinträge und gespeicherte Entscheidungen — jeweils mit Titel und
+              strukturierten Angaben als JSON-Datei. Dokumenttexte und hochgeladene Dateien sind
+              nicht enthalten.
             </p>
           </div>
         </div>
@@ -205,9 +205,8 @@ export default function DataExportPage() {
         </Button>
         {!meQuery.isLoading && !isAdmin && (
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Der Export enthält Daten der gesamten Kanzlei und kann nur von der
-            Kanzleiverwaltung erstellt werden. Ihre eigenen Kontodaten exportieren Sie unter
-            Einstellungen → Konto.
+            Der Export enthält Daten der gesamten Kanzlei und kann nur von der Kanzleiverwaltung
+            erstellt werden. Ihre eigenen Kontodaten exportieren Sie unter Einstellungen → Konto.
           </p>
         )}
 

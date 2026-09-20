@@ -61,13 +61,16 @@ const INJECTION_PATTERNS: PatternDef[] = [
   {
     category: "role_override",
     severity: "high",
-    pattern: /(?:you\s+are\s+now|act\s+as|pretend\s+to\s+be|simulate\s+being)\s+(?:DAN|a\s+different\s+AI|an? unrestricted|an? unfiltered|jailbreak|evil|chaos)/gi,
-    sanitize: (m) => m.replace(/(?:you\s+are\s+now|act\s+as|pretend\s+to\s+be|simulate\s+being)/gi, "[REDACTED]"),
+    pattern:
+      /(?:you\s+are\s+now|act\s+as|pretend\s+to\s+be|simulate\s+being)\s+(?:DAN|a\s+different\s+AI|an? unrestricted|an? unfiltered|jailbreak|evil|chaos)/gi,
+    sanitize: (m) =>
+      m.replace(/(?:you\s+are\s+now|act\s+as|pretend\s+to\s+be|simulate\s+being)/gi, "[REDACTED]"),
   },
   {
     category: "role_override",
     severity: "high",
-    pattern: /(?:ignore|disregard|forget)\s+(?:all\s+)?(?:previous|prior|above)\s+(?:instructions?|prompts?|rules?|guidelines?)/gi,
+    pattern:
+      /(?:ignore|disregard|forget)\s+(?:all\s+)?(?:previous|prior|above)\s+(?:instructions?|prompts?|rules?|guidelines?)/gi,
     sanitize: (m) => "[REDACTED: INJECTION ATTEMPT]",
   },
   {
@@ -80,20 +83,23 @@ const INJECTION_PATTERNS: PatternDef[] = [
   {
     category: "instruction_ignore",
     severity: "high",
-    pattern: /(?:don'?t|do\s+not|never)\s+(?:follow|apply|use|respect)\s+(?:your|the)\s+(?:rules?|instructions?|guidelines?|system\s+prompt)/gi,
+    pattern:
+      /(?:don'?t|do\s+not|never)\s+(?:follow|apply|use|respect)\s+(?:your|the)\s+(?:rules?|instructions?|guidelines?|system\s+prompt)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   {
     category: "instruction_ignore",
     severity: "medium",
-    pattern: /(?:override|bypass|skip|circumvent)\s+(?:the\s+)?(?:safety|content|guardrail|filter|restriction)/gi,
+    pattern:
+      /(?:override|bypass|skip|circumvent)\s+(?:the\s+)?(?:safety|content|guardrail|filter|restriction)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   // System prompt leakage
   {
     category: "system_prompt_leak",
     severity: "medium",
-    pattern: /(?:show|reveal|print|display|output)\s+(?:me\s+)?(?:your|the)\s+(?:system\s+)?(?:prompt|instructions?|rules?|guidelines?)/gi,
+    pattern:
+      /(?:show|reveal|print|display|output)\s+(?:me\s+)?(?:your|the)\s+(?:system\s+)?(?:prompt|instructions?|rules?|guidelines?)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   {
@@ -143,32 +149,37 @@ const INJECTION_PATTERNS: PatternDef[] = [
   {
     category: "jailbreak_pattern",
     severity: "high",
-    pattern: /DAN\s*mode|do\s+anything\s+now|STAN\s*mode|AIM\s*mode|developer\s+mode|maintenance\s+mode/gi,
+    pattern:
+      /DAN\s*mode|do\s+anything\s+now|STAN\s*mode|AIM\s*mode|developer\s+mode|maintenance\s+mode/gi,
     sanitize: (m) => "[REDACTED]",
   },
   {
     category: "jailbreak_pattern",
     severity: "high",
-    pattern: /(?:I\s+am|this\s+is)\s+(?:your|the)\s+(?:creator|developer|admin|administrator|master)/gi,
+    pattern:
+      /(?:I\s+am|this\s+is)\s+(?:your|the)\s+(?:creator|developer|admin|administrator|master)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   {
     category: "jailbreak_pattern",
     severity: "medium",
-    pattern: /(?:unrestricted|unfiltered|uncensored|no\s+limits?|no\s+restrictions?)\s+(?:mode|AI|response|output)/gi,
+    pattern:
+      /(?:unrestricted|unfiltered|uncensored|no\s+limits?|no\s+restrictions?)\s+(?:mode|AI|response|output)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   // Data exfiltration
   {
     category: "data_exfiltration",
     severity: "high",
-    pattern: /(?:send|post|transmit|exfiltrate|upload)\s+(?:this|the|all)\s+(?:data|information|content|document)s?\s*(?:content|data|information)?\s+to\s+(?:https?:\/\/|ftp|@)/gi,
+    pattern:
+      /(?:send|post|transmit|exfiltrate|upload)\s+(?:this|the|all)\s+(?:data|information|content|document)s?\s*(?:content|data|information)?\s+to\s+(?:https?:\/\/|ftp|@)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   {
     category: "data_exfiltration",
     severity: "medium",
-    pattern: /(?:include|add|append)\s+(?:your|the)\s+(?:API\s+key|secret|password|token|credentials?)\s+in\s+(?:your|the)\s+(?:response|answer|output)/gi,
+    pattern:
+      /(?:include|add|append)\s+(?:your|the)\s+(?:API\s+key|secret|password|token|credentials?)\s+in\s+(?:your|the)\s+(?:response|answer|output)/gi,
     sanitize: (m) => "[REDACTED]",
   },
   // Prompt leakage via markdown

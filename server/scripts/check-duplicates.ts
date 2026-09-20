@@ -127,4 +127,7 @@ async function main() {
   console.log("\nDone.");
 }
 
-main().catch((e) => { console.error("FATAL:", e); process.exit(1); });
+main().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(1);
+});

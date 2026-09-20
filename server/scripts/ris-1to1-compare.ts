@@ -65,7 +65,7 @@ async function fetchRisLaw(gnr: string): Promise<{ meta: RisLawMeta; norms: any[
     try {
       const res = await fetch(url, { headers: RIS_UA });
       if (!res.ok) break;
-      const data = await res.json() as any;
+      const data = (await res.json()) as any;
       const result = data?.OgdSearchResult?.OgdDocumentResults;
       let refs = result?.OgdDocumentReference;
       if (!refs) break;
@@ -107,16 +107,22 @@ async function fetchRisLaw(gnr: string): Promise<{ meta: RisLawMeta; norms: any[
   return { meta, norms: allNorms };
 }
 
-function findCorpusFile(gnr: string): { name: string; frontmatter: Record<string, string>; contentLength: number } | null {
+function findCorpusFile(
+  gnr: string
+): { name: string; frontmatter: Record<string, string>; contentLength: number } | null {
   const corpusDir = "law-corpus/at";
-  const files = readdirSync(corpusDir).filter(f => f.endsWith(".md"));
+  const files = readdirSync(corpusDir).filter((f) => f.endsWith(".md"));
   for (const f of files) {
     const content = readFileSync(join(corpusDir, f), "utf-8");
     const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
     if (!fmMatch) continue;
     const fm = fmMatch[1];
     // Match by explicit gesetzesnummer field OR by gnr in source_url
-    if (fm.includes(`gesetzesnummer: ${gnr}`) || fm.includes(`gesetzesnummer: "${gnr}"`) || fm.includes(`/${gnr}/`)) {
+    if (
+      fm.includes(`gesetzesnummer: ${gnr}`) ||
+      fm.includes(`gesetzesnummer: "${gnr}"`) ||
+      fm.includes(`/${gnr}/`)
+    ) {
       const fields: Record<string, string> = {};
       for (const line of fm.split("\n")) {
         const m = line.match(/^(\w+):\s*(.*)$/);
@@ -163,7 +169,9 @@ async function main() {
     }
 
     const status = mismatches.length === 0 ? "✅ MATCH" : `⚠️  ${mismatches.length} issues`;
-    console.log(` ${status} — corpus: ${corpus.name} (${(corpus.contentLength / 1024).toFixed(0)} KB), RIS: ${ris.meta.anzahlNormen} norms, Typ: ${ris.meta.typ}`);
+    console.log(
+      ` ${status} — corpus: ${corpus.name} (${(corpus.contentLength / 1024).toFixed(0)} KB), RIS: ${ris.meta.anzahlNormen} norms, Typ: ${ris.meta.typ}`
+    );
 
     results.push({
       name,
@@ -183,10 +191,10 @@ async function main() {
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log("  SUMMARY");
   console.log("═══════════════════════════════════════════════════════════");
-  const matched = results.filter(r => r.status === "match").length;
-  const missing = results.filter(r => r.status === "missing_from_corpus").length;
-  const mismatched = results.filter(r => r.status === "mismatch").length;
-  const notInRis = results.filter(r => r.status === "not_in_ris").length;
+  const matched = results.filter((r) => r.status === "match").length;
+  const missing = results.filter((r) => r.status === "missing_from_corpus").length;
+  const mismatched = results.filter((r) => r.status === "mismatch").length;
+  const notInRis = results.filter((r) => r.status === "not_in_ris").length;
   console.log(`  Total checked:          ${results.length}`);
   console.log(`  ✅ Matched:              ${matched}`);
   console.log(`  ⚠️  Mismatched:           ${mismatched}`);
@@ -195,20 +203,22 @@ async function main() {
 
   if (mismatched > 0) {
     console.log("\n  MISMATCH DETAILS:");
-    for (const r of results.filter(r => r.status === "mismatch")) {
+    for (const r of results.filter((r) => r.status === "mismatch")) {
       console.log(`    ${r.name} (${r.gnr}): ${r.mismatches.join(", ")}`);
     }
   }
 
   if (missing > 0) {
     console.log("\n  MISSING FROM CORPUS:");
-    for (const r of results.filter(r => r.status === "missing_from_corpus")) {
-      console.log(`    ${r.name} (${r.gnr}): ${r.risMeta.kurztitel} — ${r.risMeta.anzahlNormen} norms`);
+    for (const r of results.filter((r) => r.status === "missing_from_corpus")) {
+      console.log(
+        `    ${r.name} (${r.gnr}): ${r.risMeta.kurztitel} — ${r.risMeta.anzahlNormen} norms`
+      );
     }
   }
 
   // Print full RIS metadata for first matched law
-  const firstMatch = results.find(r => r.status === "match" || r.status === "mismatch");
+  const firstMatch = results.find((r) => r.status === "match" || r.status === "mismatch");
   if (firstMatch) {
     console.log(`\n=== FULL RIS METADATA: ${firstMatch.name} ===`);
     console.log(JSON.stringify(firstMatch.risMeta, null, 2));

@@ -54,7 +54,9 @@ const searchFn =
     return results.map((r) => r.slug);
   };
 
-function overall(qs: Array<{ hit_at_1: boolean; hit_at_3: boolean; reciprocal_rank: number; recall_at_k: number }>) {
+function overall(
+  qs: Array<{ hit_at_1: boolean; hit_at_3: boolean; reciprocal_rank: number; recall_at_k: number }>
+) {
   const n = qs.length || 1;
   return {
     hit1: qs.filter((q) => q.hit_at_1).length / n,
@@ -172,21 +174,29 @@ describe("legal-AT draft question batch eval", () => {
         seen.add(slug);
         const sourceId = `law-${r.jur}`;
         const body = draftSectionBody(r.file, r.ref);
-        await draftEng.putPage(slug, {
-          type: "law",
-          title: slug,
-          compiled_truth: body,
-          timeline: "",
-          frontmatter: { jurisdiction: r.jur, abbreviation: r.abbr, paragraph: r.ref },
-        }, { sourceId });
-        await draftEng.upsertChunks(slug, [
+        await draftEng.putPage(
+          slug,
           {
-            chunk_index: 0,
-            chunk_text: body,
-            chunk_source: "compiled_truth",
-            token_count: body.split(/\s+/).length,
+            type: "law",
+            title: slug,
+            compiled_truth: body,
+            timeline: "",
+            frontmatter: { jurisdiction: r.jur, abbreviation: r.abbr, paragraph: r.ref },
           },
-        ] satisfies ChunkInput[], { sourceId });
+          { sourceId }
+        );
+        await draftEng.upsertChunks(
+          slug,
+          [
+            {
+              chunk_index: 0,
+              chunk_text: body,
+              chunk_source: "compiled_truth",
+              token_count: body.split(/\s+/).length,
+            },
+          ] satisfies ChunkInput[],
+          { sourceId }
+        );
       }
     }
   }, 120_000);
@@ -210,12 +220,20 @@ describe("legal-AT draft question batch eval", () => {
     }
 
     const draftSearchFn: SearchFn = async (q) => {
-      const results = await hybridSearch(draftEng, q, { limit: 10, expansion: false, jurisdiction: "at" });
+      const results = await hybridSearch(draftEng, q, {
+        limit: 10,
+        expansion: false,
+        jurisdiction: "at",
+      });
       return results.map((r) => r.slug);
     };
 
-    let totalHit1 = 0, totalHit3 = 0, totalMrr = 0, totalN = 0;
-    const domainResults: { domain: string; n: number; hit1: number; hit3: number; mrr: number }[] = [];
+    let totalHit1 = 0,
+      totalHit3 = 0,
+      totalMrr = 0,
+      totalN = 0;
+    const domainResults: { domain: string; n: number; hit1: number; hit3: number; mrr: number }[] =
+      [];
     let allLeaks: string[] = [];
 
     for (const [domain, entries] of byDomain) {
@@ -234,7 +252,11 @@ describe("legal-AT draft question batch eval", () => {
 
       // Purity check per domain
       for (const e of entries) {
-        const results = await hybridSearch(draftEng, e.query, { limit: 10, expansion: false, jurisdiction: "at" });
+        const results = await hybridSearch(draftEng, e.query, {
+          limit: 10,
+          expansion: false,
+          jurisdiction: "at",
+        });
         const foreign = results
           .map((r) => r.slug)
           .filter((s) => s.startsWith("legal/statutes/") && !s.startsWith("legal/statutes/at/"));
@@ -249,7 +271,12 @@ describe("legal-AT draft question batch eval", () => {
     // eslint-disable-next-line no-console
     console.log(
       `\n[Draft batch eval | jurisdiction=at]\n` +
-        domainResults.map((d) => `  ${d.domain}: n=${d.n}, hit@1=${(d.hit1 * 100).toFixed(1)}%, hit@3=${(d.hit3 * 100).toFixed(1)}%, MRR=${d.mrr.toFixed(3)}`).join("\n") +
+        domainResults
+          .map(
+            (d) =>
+              `  ${d.domain}: n=${d.n}, hit@1=${(d.hit1 * 100).toFixed(1)}%, hit@3=${(d.hit3 * 100).toFixed(1)}%, MRR=${d.mrr.toFixed(3)}`
+          )
+          .join("\n") +
         `\n  ── OVERALL: n=${totalN}, hit@1=${(overallHit1 * 100).toFixed(1)}%, hit@3=${(overallHit3 * 100).toFixed(1)}%, MRR=${overallMrr.toFixed(3)}\n` +
         `  jurisdiction-purity: ${allLeaks.length === 0 ? "100.0%" : `${((1 - allLeaks.length / totalN) * 100).toFixed(1)}% (${allLeaks.length} leaks)`}\n`
     );
@@ -260,9 +287,15 @@ describe("legal-AT draft question batch eval", () => {
     // 70%). The floors catch regressions; RAISING them is the improvement
     // roadmap (per-domain target: 0.8+ after human review of weak drafts).
     const overallH3 = domainResults.reduce((a, d) => a + d.hit3 * d.n, 0) / totalN;
-    expect(overallH3, `overall hit@3 ${(overallH3 * 100).toFixed(1)}% < 80%`).toBeGreaterThanOrEqual(0.8);
+    expect(
+      overallH3,
+      `overall hit@3 ${(overallH3 * 100).toFixed(1)}% < 80%`
+    ).toBeGreaterThanOrEqual(0.8);
     for (const d of domainResults) {
-      expect(d.hit3, `${d.domain} hit@3 ${(d.hit3 * 100).toFixed(1)}% < 60%`).toBeGreaterThanOrEqual(0.6);
+      expect(
+        d.hit3,
+        `${d.domain} hit@3 ${(d.hit3 * 100).toFixed(1)}% < 60%`
+      ).toBeGreaterThanOrEqual(0.6);
     }
     // Purity is absolute
     expect(allLeaks, `purity breached:\n${allLeaks.join("\n")}`).toEqual([]);

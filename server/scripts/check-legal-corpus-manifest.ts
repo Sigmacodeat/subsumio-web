@@ -7,7 +7,7 @@
  *   bun run server/scripts/check-legal-corpus-manifest.ts --report-only
  */
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isQuarantinedLegalSource } from "../src/core/legal/corpus-policy.ts";
 
@@ -35,11 +35,24 @@ function frontmatter(raw: string): Record<string, string> {
   return out;
 }
 
+// The corpus is not part of the repository (tens of GB, see
+// docs/architecture — it lives beside the checkout or on the server). Without
+// it there is nothing to validate, so skip instead of crashing on ENOENT:
+// a CI runner that never has the corpus must not fail this gate forever.
+if (!existsSync(ROOT)) {
+  console.log(
+    `check:legal-corpus: skipped — no corpus at ${ROOT}. ` +
+      `Set LAW_CORPUS_ROOT to validate a corpus checkout.`
+  );
+  process.exit(0);
+}
+
 const errors: string[] = [];
 const entries: Entry[] = [];
 let quarantined = 0;
 for (const jurisdiction of JURISDICTIONS) {
   const dir = join(ROOT, jurisdiction);
+  if (!existsSync(dir)) continue;
   for (const file of readdirSync(dir)) {
     if (!file.endsWith(".md")) continue;
     const relative = `${jurisdiction}/${file}`;

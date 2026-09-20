@@ -159,10 +159,8 @@ export default function LandingHero() {
               );
             })}
           </motion.div>
-
         </div>
       </div>
-
     </Section>
   );
 }

@@ -277,7 +277,6 @@ export default function ReviewSetsPage() {
     }
   }
 
-
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -312,7 +311,6 @@ export default function ReviewSetsPage() {
           </button>
         </div>
       )}
-
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -687,11 +685,7 @@ export default function ReviewSetsPage() {
             <Button variant="ghost" onClick={() => setShowCreate(false)}>
               {t("review_sets.cancel" as DashboardKey)}
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreate}
-              disabled={saving || !newTitle}
-            >
+            <Button variant="primary" onClick={handleCreate} disabled={saving || !newTitle}>
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (

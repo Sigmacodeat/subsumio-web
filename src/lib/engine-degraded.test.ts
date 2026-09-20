@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { ASSISTANT_UNAVAILABLE_MESSAGE, isDegradedAnswer, lawyerFacingAnswer } from "./engine-degraded";
+import {
+  ASSISTANT_UNAVAILABLE_MESSAGE,
+  isDegradedAnswer,
+  lawyerFacingAnswer,
+} from "./engine-degraded";
 
 describe("engine degraded answers", () => {
   test("detects the engine stub", () => {

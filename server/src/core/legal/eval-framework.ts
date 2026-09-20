@@ -99,12 +99,7 @@ interface EvalQueue {
   getJob(id: number): Promise<EvalJob | null>;
 }
 
-const TERMINAL_EVAL_STATUSES = new Set<EvalJobStatus>([
-  "completed",
-  "failed",
-  "dead",
-  "cancelled",
-]);
+const TERMINAL_EVAL_STATUSES = new Set<EvalJobStatus>(["completed", "failed", "dead", "cancelled"]);
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

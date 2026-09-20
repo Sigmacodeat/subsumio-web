@@ -11,10 +11,7 @@ async function main() {
   await engine.connect(toEngineConfig(cfg));
 
   // What sources exist?
-  const sources = (await engine.executeRaw(
-    `SELECT id FROM sources ORDER BY id`,
-    []
-  )) as any[];
+  const sources = (await engine.executeRaw(`SELECT id FROM sources ORDER BY id`, [])) as any[];
   console.log("=== All sources ===");
   for (const r of sources) console.log(`  ${r.id}`);
 
@@ -34,7 +31,7 @@ async function main() {
   console.log(`\n=== Statute pages (sample) ===`);
   for (const r of statutes) console.log(`  ${r.source_id}: ${r.slug} (${r.cnt})`);
 
-  // Check pages with 'at' in slug  
+  // Check pages with 'at' in slug
   const atSlugs = (await engine.executeRaw(
     `SELECT slug FROM pages WHERE slug LIKE '%/at/%' LIMIT 10`,
     []
@@ -45,4 +42,7 @@ async function main() {
   await engine.disconnect();
 }
 
-main().catch((e) => { console.error("FATAL:", e); process.exit(1); });
+main().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(1);
+});

@@ -26,13 +26,7 @@ import { useScimStatus, useScimSync, type SyncStatus } from "@/lib/queries/scim"
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | string;
-}) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
@@ -236,9 +230,7 @@ export default function ScimSettingsPage() {
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("scim.admin_only")}</p>
             <Button variant="outline" size="sm" className="mt-4" asChild>
-              <Link href="/dashboard/settings">
-                {t("scim.back_to_settings")}
-              </Link>
+              <Link href="/dashboard/settings">{t("scim.back_to_settings")}</Link>
             </Button>
           </div>
         </Card>
@@ -263,16 +255,16 @@ export default function ScimSettingsPage() {
         ]}
         actions={
           workosConfigured ? (
-          <Button
-            variant="glow"
-            size="md"
-            onClick={() => syncMutation.mutate()}
-            disabled={isSyncing}
-            className="shrink-0 whitespace-nowrap"
-          >
-            <RefreshCw size={15} className={cn(isSyncing && "animate-spin")} />
-            {isSyncing ? t("scim.sync_syncing") : t("scim.sync_manual")}
-          </Button>
+            <Button
+              variant="glow"
+              size="md"
+              onClick={() => syncMutation.mutate()}
+              disabled={isSyncing}
+              className="shrink-0 whitespace-nowrap"
+            >
+              <RefreshCw size={15} className={cn(isSyncing && "animate-spin")} />
+              {isSyncing ? t("scim.sync_syncing") : t("scim.sync_manual")}
+            </Button>
           ) : undefined
         }
       />

@@ -390,8 +390,8 @@ export async function runBookMirrorCmd(engine: BrainEngine, args: string[]): Pro
   const targetSlug = `media/books/${flags.slug}-personalized`;
 
   // Resolve model via tier system when not explicitly provided.
-  const resolvedModel = flags.model ??
-    await resolveModel(engine, { tier: "deep", fallback: TIER_DEFAULTS.deep });
+  const resolvedModel =
+    flags.model ?? (await resolveModel(engine, { tier: "deep", fallback: TIER_DEFAULTS.deep }));
 
   process.stderr.write(
     `\ngbrain book-mirror — plan\n` +

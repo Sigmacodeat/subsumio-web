@@ -5,10 +5,7 @@ import { SignaturePad } from "./signature-pad";
 describe("SignaturePad", () => {
   it("renders draw tab as default", () => {
     render(<SignaturePad />);
-    expect(screen.getByRole("tab", { name: /zeichnen/i })).toHaveAttribute(
-      "data-state",
-      "active"
-    );
+    expect(screen.getByRole("tab", { name: /zeichnen/i })).toHaveAttribute("data-state", "active");
   });
 
   it("renders canvas with correct aria-label", () => {
@@ -45,9 +42,7 @@ describe("SignaturePad", () => {
     render(<SignaturePad onChange={handleChange} defaultMode="type" />);
     const input = screen.getByPlaceholderText(/vor- und nachname/i);
     fireEvent.change(input, { target: { value: "" } });
-    expect(handleChange).toHaveBeenCalledWith(
-      expect.objectContaining({ empty: true })
-    );
+    expect(handleChange).toHaveBeenCalledWith(expect.objectContaining({ empty: true }));
   });
 
   it("has sr-only status region for screen readers", () => {

@@ -72,7 +72,9 @@ describe("v0.13.0 — Frontmatter relationship indexing migration", () => {
     // Backfill extract goes through the stderr-capturing wrapper (still bare
     // `gbrain` so the canonical shim on PATH wins). Quote-agnostic: Prettier
     // may normalize single→double quotes.
-    expect(src).toMatch(/runGbrainSubprocess\(["']gbrain extract links --source db --include-frontmatter["']/);
+    expect(src).toMatch(
+      /runGbrainSubprocess\(["']gbrain extract links --source db --include-frontmatter["']/
+    );
     // Stats readback still shells out (reads stdout); bare gbrain.
     expect(src).toMatch(/execSync\(["']gbrain call get_stats["']/);
   });

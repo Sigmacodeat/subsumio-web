@@ -17,7 +17,7 @@ import {
  */
 type OptimisticUpdater<TQueryFnData, TVariables> = (
   oldData: TQueryFnData | undefined,
-  variables: TVariables,
+  variables: TVariables
 ) => TQueryFnData | undefined;
 
 /**
@@ -35,7 +35,10 @@ interface UseOptimisticMutationOptions<
   TVariables = unknown,
   TContext = unknown,
   TQueryFnData = unknown,
-> extends Omit<UseMutationOptions<TData, TError, TVariables, TContext>, "onMutate" | "onError" | "onSettled"> {
+> extends Omit<
+  UseMutationOptions<TData, TError, TVariables, TContext>,
+  "onMutate" | "onError" | "onSettled"
+> {
   /**
    * Query-Key des Caches der optimistisch aktualisiert wird.
    * Für Multi-Query-Updates `targets` verwenden.
@@ -151,15 +154,22 @@ export function useOptimisticMutation<
   TContext = unknown,
   TQueryFnData = unknown,
 >(
-  options: UseOptimisticMutationOptions<TData, TError, TVariables, TContext, TQueryFnData>,
+  options: UseOptimisticMutationOptions<TData, TError, TVariables, TContext, TQueryFnData>
 ): UseMutationResult<TData, TError, TVariables, { rollback: () => void; hadSnapshot: boolean }> {
   const queryClient = useQueryClient();
   const { queryKey, updater, targets, invalidates, onError, onSuccess, ...rest } = options;
 
   // Targets auflösen: explizite targets > single queryKey+updater.
-  const effectiveTargets: OptimisticTarget<TVariables>[] = targets ?? (queryKey && updater
-    ? [{ queryKey, updater: updater as unknown as (oldData: unknown, variables: TVariables) => unknown }]
-    : []);
+  const effectiveTargets: OptimisticTarget<TVariables>[] =
+    targets ??
+    (queryKey && updater
+      ? [
+          {
+            queryKey,
+            updater: updater as unknown as (oldData: unknown, variables: TVariables) => unknown,
+          },
+        ]
+      : []);
 
   // Invalidates: explizit > alle target queryKeys.
   const effectiveInvalidates = invalidates ?? effectiveTargets.map((t) => t.queryKey);
@@ -168,7 +178,7 @@ export function useOptimisticMutation<
   // sonst läuft die Mutation ohne Cache-Update und ohne Invalidierung.
   if (effectiveTargets.length === 0 && effectiveInvalidates.length === 0) {
     throw new Error(
-      "useOptimisticMutation: mindestens eines von `targets`, `queryKey`+`updater`, `invalidates` muss gesetzt sein",
+      "useOptimisticMutation: mindestens eines von `targets`, `queryKey`+`updater`, `invalidates` muss gesetzt sein"
     );
   }
 

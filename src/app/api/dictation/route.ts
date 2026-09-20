@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  createHandler,
-  apiSuccess,
-  apiError,
-  recordCreditConsumption,
-} from "@/lib/api-handler";
+import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { engineTranscribe } from "@/lib/engine-llm";

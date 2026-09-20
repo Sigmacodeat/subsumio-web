@@ -24,14 +24,15 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     // Fetch the POA from the engine
-    const res = await fetch(
-      `${ENGINE_URL}/api/pages?type=power_of_attorney&limit=500`,
-      { headers: ctx.headers, signal: AbortSignal.timeout(10_000) }
-    );
+    const res = await fetch(`${ENGINE_URL}/api/pages?type=power_of_attorney&limit=500`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
     const data = await res.json();
-    const pages: Array<{ slug: string; frontmatter: PowerOfAttorney }> =
-      Array.isArray(data) ? data : (data.pages ?? []);
+    const pages: Array<{ slug: string; frontmatter: PowerOfAttorney }> = Array.isArray(data)
+      ? data
+      : (data.pages ?? []);
     const poaPage = pages.find((p) => p.frontmatter?.id === body.poa_id);
     if (!poaPage) return apiError("not_found", "Vollmacht nicht gefunden", 404);
 

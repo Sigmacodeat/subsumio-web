@@ -277,9 +277,10 @@ async function extractObligations() {
       return;
     }
     const el = document.getElementById("obligResult")!;
-    el.innerHTML = obligations
-      .map(
-        (o) => `
+    el.innerHTML =
+      obligations
+        .map(
+          (o) => `
       <div class="oblig-item risk-${o.risk ?? "low"}">
         <div class="oblig-type">${escapeHtml(o.type)}</div>
         <div class="oblig-party">Partei: ${escapeHtml(o.party)}</div>
@@ -287,8 +288,8 @@ async function extractObligations() {
         ${o.deadline ? `<div class="oblig-deadline">Frist: ${escapeHtml(o.deadline)}</div>` : ""}
       </div>
     `
-      )
-      .join("") + aiNoticeHtml(sourcesOf(result));
+        )
+        .join("") + aiNoticeHtml(sourcesOf(result));
     el.style.display = "block";
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Extraktion fehlgeschlagen.", false);

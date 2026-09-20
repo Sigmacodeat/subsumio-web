@@ -51,301 +51,287 @@ function buildSvgPath(points: Array<{ x: number; y: number }>): string {
   return d;
 }
 
-export const SignaturePad = React.forwardRef<
-  HTMLDivElement,
-  SignaturePadProps
->(function SignaturePad(
-  {
-    onChange,
-    defaultMode = "draw",
-    typedNamePlaceholder = "Vor- und Nachname",
-    canvasAriaLabel = "Signatur-Zeichenfläche",
-    instructions = "Zeichnen Sie mit Finger, Maus oder Stift im Feld unten. Alternativ können Sie Ihren Namen tippen.",
-    className,
-    disabled = false,
-  },
-  ref
-) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const [mode, setMode] = React.useState<"draw" | "type">(defaultMode);
-  const [isDrawing, setIsDrawing] = React.useState(false);
-  const [paths, setPaths] = React.useState<string[]>([]);
-  const [currentPoints, setCurrentPoints] = React.useState<
-    Array<{ x: number; y: number }>
-  >([]);
-  const [typedName, setTypedName] = React.useState("");
-  const [isEmpty, setIsEmpty] = React.useState(true);
-  const [statusMessage, setStatusMessage] = React.useState(
-    "Signatur ist leer"
-  );
-
-  // ── Canvas helpers (defined first so setupCanvas can depend on them) ──
-  const drawPath = React.useCallback((ctx: CanvasRenderingContext2D, d: string) => {
-    if (!d) return;
-    const cmds = d.split(" ");
-    ctx.beginPath();
-    let i = 0;
-    while (i < cmds.length) {
-      const cmd = cmds[i];
-      if (cmd === "M") {
-        ctx.moveTo(parseFloat(cmds[i + 1]), parseFloat(cmds[i + 2]));
-        i += 3;
-      } else if (cmd === "L") {
-        ctx.lineTo(parseFloat(cmds[i + 1]), parseFloat(cmds[i + 2]));
-        i += 3;
-      } else {
-        i++;
-      }
-    }
-    ctx.stroke();
-  }, []);
-
-  const redrawAll = React.useCallback(
-    (
-      ctx: CanvasRenderingContext2D,
-      allPaths: string[],
-      rect: DOMRect
-    ) => {
-      ctx.clearRect(0, 0, rect.width, rect.height);
-      for (const pathD of allPaths) {
-        drawPath(ctx, pathD);
-      }
+export const SignaturePad = React.forwardRef<HTMLDivElement, SignaturePadProps>(
+  function SignaturePad(
+    {
+      onChange,
+      defaultMode = "draw",
+      typedNamePlaceholder = "Vor- und Nachname",
+      canvasAriaLabel = "Signatur-Zeichenfläche",
+      instructions = "Zeichnen Sie mit Finger, Maus oder Stift im Feld unten. Alternativ können Sie Ihren Namen tippen.",
+      className,
+      disabled = false,
     },
-    [drawPath]
-  );
+    ref
+  ) {
+    const canvasRef = React.useRef<HTMLCanvasElement>(null);
+    const [mode, setMode] = React.useState<"draw" | "type">(defaultMode);
+    const [isDrawing, setIsDrawing] = React.useState(false);
+    const [paths, setPaths] = React.useState<string[]>([]);
+    const [currentPoints, setCurrentPoints] = React.useState<Array<{ x: number; y: number }>>([]);
+    const [typedName, setTypedName] = React.useState("");
+    const [isEmpty, setIsEmpty] = React.useState(true);
+    const [statusMessage, setStatusMessage] = React.useState("Signatur ist leer");
 
-  // ── Canvas setup: handle DPR + resize ──
-  const setupCanvas = React.useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = 2;
-    ctx.strokeStyle =
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--ds-text")
-        .trim() || "#1a1a1a";
-    redrawAll(ctx, paths, rect);
-  }, [paths, redrawAll]);
+    // ── Canvas helpers (defined first so setupCanvas can depend on them) ──
+    const drawPath = React.useCallback((ctx: CanvasRenderingContext2D, d: string) => {
+      if (!d) return;
+      const cmds = d.split(" ");
+      ctx.beginPath();
+      let i = 0;
+      while (i < cmds.length) {
+        const cmd = cmds[i];
+        if (cmd === "M") {
+          ctx.moveTo(parseFloat(cmds[i + 1]), parseFloat(cmds[i + 2]));
+          i += 3;
+        } else if (cmd === "L") {
+          ctx.lineTo(parseFloat(cmds[i + 1]), parseFloat(cmds[i + 2]));
+          i += 3;
+        } else {
+          i++;
+        }
+      }
+      ctx.stroke();
+    }, []);
 
-  React.useEffect(() => {
-    if (mode === "draw") setupCanvas();
-  }, [mode, setupCanvas]);
+    const redrawAll = React.useCallback(
+      (ctx: CanvasRenderingContext2D, allPaths: string[], rect: DOMRect) => {
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        for (const pathD of allPaths) {
+          drawPath(ctx, pathD);
+        }
+      },
+      [drawPath]
+    );
 
-  React.useEffect(() => {
-    const handleResize = () => {
+    // ── Canvas setup: handle DPR + resize ──
+    const setupCanvas = React.useCallback(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 2;
+      ctx.strokeStyle =
+        getComputedStyle(document.documentElement).getPropertyValue("--ds-text").trim() ||
+        "#1a1a1a";
+      redrawAll(ctx, paths, rect);
+    }, [paths, redrawAll]);
+
+    React.useEffect(() => {
       if (mode === "draw") setupCanvas();
+    }, [mode, setupCanvas]);
+
+    React.useEffect(() => {
+      const handleResize = () => {
+        if (mode === "draw") setupCanvas();
+      };
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, [mode, setupCanvas]);
+
+    // ── Pointer drawing ──
+    const getPointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [mode, setupCanvas]);
 
-  // ── Pointer drawing ──
-  const getPointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+    const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (disabled) return;
+      e.preventDefault();
+      canvasRef.current?.setPointerCapture(e.pointerId);
+      setIsDrawing(true);
+      const pos = getPointerPos(e);
+      setCurrentPoints([pos]);
     };
-  };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (disabled) return;
-    e.preventDefault();
-    canvasRef.current?.setPointerCapture(e.pointerId);
-    setIsDrawing(true);
-    const pos = getPointerPos(e);
-    setCurrentPoints([pos]);
-  };
+    const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!isDrawing || disabled) return;
+      e.preventDefault();
+      const pos = getPointerPos(e);
+      setCurrentPoints((prev) => {
+        if (prev.length >= MAX_POINTS) return prev;
+        const next = [...prev, pos];
+        // Draw incremental segment
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx && prev.length > 0) {
+            const last = prev[prev.length - 1];
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+          }
+        }
+        return next;
+      });
+    };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || disabled) return;
-    e.preventDefault();
-    const pos = getPointerPos(e);
-    setCurrentPoints((prev) => {
-      if (prev.length >= MAX_POINTS) return prev;
-      const next = [...prev, pos];
-      // Draw incremental segment
+    const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (disabled) return;
+      e.preventDefault();
+      canvasRef.current?.releasePointerCapture(e.pointerId);
+      setIsDrawing(false);
+      if (currentPoints.length > 0) {
+        const path = buildSvgPath(currentPoints);
+        setPaths((prev) => [...prev, path]);
+        setCurrentPoints([]);
+      }
+    };
+
+    const handleClear = () => {
+      if (disabled) return;
+      setPaths([]);
+      setCurrentPoints([]);
+      setTypedName("");
+      setIsEmpty(true);
+      setStatusMessage("Signatur ist leer");
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext("2d");
-        if (ctx && prev.length > 0) {
-          const last = prev[prev.length - 1];
-          ctx.beginPath();
-          ctx.moveTo(last.x, last.y);
-          ctx.lineTo(pos.x, pos.y);
-          ctx.stroke();
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      onChange?.({ paths: [], dataUrl: "", mode, empty: true });
+    };
+
+    // ── Emit changes ──
+    React.useEffect(() => {
+      if (mode === "draw") {
+        const empty = paths.length === 0 && currentPoints.length === 0;
+        setIsEmpty(empty);
+        setStatusMessage(empty ? "Signatur ist leer" : "Signatur erfasst");
+        if (!empty) {
+          const canvas = canvasRef.current;
+          const dataUrl = canvas?.toDataURL("image/png") ?? "";
+          onChange?.({ paths, dataUrl, mode: "draw", empty: false });
         }
+      } else {
+        const empty = typedName.trim().length === 0;
+        setIsEmpty(empty);
+        setStatusMessage(empty ? "Name ist leer" : "Name erfasst");
+        onChange?.({
+          paths: [],
+          dataUrl: typedName,
+          mode: "type",
+          empty,
+        });
       }
-      return next;
-    });
-  };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paths, currentPoints, typedName, mode]);
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (disabled) return;
-    e.preventDefault();
-    canvasRef.current?.releasePointerCapture(e.pointerId);
-    setIsDrawing(false);
-    if (currentPoints.length > 0) {
-      const path = buildSvgPath(currentPoints);
-      setPaths((prev) => [...prev, path]);
-      setCurrentPoints([]);
-    }
-  };
+    return (
+      <div ref={ref} className={cn("space-y-3", className)}>
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "draw" | "type")}>
+          <TabsList className="w-full">
+            <TabsTrigger value="draw" className="flex-1 gap-1.5" disabled={disabled}>
+              <PenLine size={14} />
+              Zeichnen
+            </TabsTrigger>
+            <TabsTrigger value="type" className="flex-1 gap-1.5" disabled={disabled}>
+              <Keyboard size={14} />
+              Namen tippen
+            </TabsTrigger>
+          </TabsList>
 
-  const handleClear = () => {
-    if (disabled) return;
-    setPaths([]);
-    setCurrentPoints([]);
-    setTypedName("");
-    setIsEmpty(true);
-    setStatusMessage("Signatur ist leer");
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    onChange?.({ paths: [], dataUrl: "", mode, empty: true });
-  };
-
-  // ── Emit changes ──
-  React.useEffect(() => {
-    if (mode === "draw") {
-      const empty = paths.length === 0 && currentPoints.length === 0;
-      setIsEmpty(empty);
-      setStatusMessage(empty ? "Signatur ist leer" : "Signatur erfasst");
-      if (!empty) {
-        const canvas = canvasRef.current;
-        const dataUrl = canvas?.toDataURL("image/png") ?? "";
-        onChange?.({ paths, dataUrl, mode: "draw", empty: false });
-      }
-    } else {
-      const empty = typedName.trim().length === 0;
-      setIsEmpty(empty);
-      setStatusMessage(empty ? "Name ist leer" : "Name erfasst");
-      onChange?.({
-        paths: [],
-        dataUrl: typedName,
-        mode: "type",
-        empty,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paths, currentPoints, typedName, mode]);
-
-  return (
-    <div ref={ref} className={cn("space-y-3", className)}>
-      <Tabs value={mode} onValueChange={(v) => setMode(v as "draw" | "type")}>
-        <TabsList className="w-full">
-          <TabsTrigger value="draw" className="flex-1 gap-1.5" disabled={disabled}>
-            <PenLine size={14} />
-            Zeichnen
-          </TabsTrigger>
-          <TabsTrigger value="type" className="flex-1 gap-1.5" disabled={disabled}>
-            <Keyboard size={14} />
-            Namen tippen
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="draw" className="mt-3">
-          <div className="relative">
-            <canvas
-              ref={canvasRef}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              role="img"
-              aria-label={canvasAriaLabel}
-              aria-describedby="sigpad-instructions sigpad-status"
-              tabIndex={0}
-              className={cn(
-                "min-h-[180px] w-full touch-none rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2",
-                disabled && "cursor-not-allowed opacity-50",
-                !disabled && "cursor-crosshair"
+          <TabsContent value="draw" className="mt-3">
+            <div className="relative">
+              <canvas
+                ref={canvasRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                role="img"
+                aria-label={canvasAriaLabel}
+                aria-describedby="sigpad-instructions sigpad-status"
+                tabIndex={0}
+                className={cn(
+                  "min-h-[180px] w-full touch-none rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
+                  "focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none",
+                  disabled && "cursor-not-allowed opacity-50",
+                  !disabled && "cursor-crosshair"
+                )}
+              />
+              {isEmpty && mode === "draw" && (
+                <div
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[color:var(--ds-text-muted)]"
+                  aria-hidden="true"
+                >
+                  Hier unterschreiben
+                </div>
               )}
-            />
-            {isEmpty && mode === "draw" && (
-              <div
-                className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[color:var(--ds-text-muted)]"
-                aria-hidden="true"
+            </div>
+          </TabsContent>
+
+          <TabsContent value="type" className="mt-3">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="sigpad-typed-name"
+                className="text-xs text-[color:var(--ds-text-muted)]"
               >
-                Hier unterschreiben
-              </div>
+                Name als Unterschrift
+              </Label>
+              <Input
+                id="sigpad-typed-name"
+                value={typedName}
+                onChange={(e) => setTypedName(e.target.value)}
+                placeholder={typedNamePlaceholder}
+                disabled={disabled}
+                autoComplete="name"
+                className="min-h-11 text-base sm:min-h-0 sm:text-sm"
+                aria-describedby="sigpad-instructions sigpad-status"
+              />
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Der getippte Name wird als elektronische Unterschrift gespeichert.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <p id="sigpad-instructions" className="sr-only">
+          {instructions}
+        </p>
+        <p id="sigpad-status" className="sr-only" role="status" aria-live="polite">
+          {statusMessage}
+        </p>
+
+        <div className="flex items-center justify-between">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleClear}
+            disabled={disabled || isEmpty}
+            className="gap-1.5 active:scale-[0.98]"
+            aria-label="Signatur löschen"
+          >
+            <Eraser size={14} />
+            Löschen
+          </Button>
+          <span
+            className={cn(
+              "text-xs",
+              isEmpty ? "text-[color:var(--ds-text-muted)]" : "text-[color:var(--ds-success-text)]"
             )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="type" className="mt-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="sigpad-typed-name" className="text-xs text-[color:var(--ds-text-muted)]">
-              Name als Unterschrift
-            </Label>
-            <Input
-              id="sigpad-typed-name"
-              value={typedName}
-              onChange={(e) => setTypedName(e.target.value)}
-              placeholder={typedNamePlaceholder}
-              disabled={disabled}
-              autoComplete="name"
-              className="min-h-11 text-base sm:min-h-0 sm:text-sm"
-              aria-describedby="sigpad-instructions sigpad-status"
-            />
-            <p className="text-xs text-[color:var(--ds-text-muted)]">
-              Der getippte Name wird als elektronische Unterschrift gespeichert.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      <p id="sigpad-instructions" className="sr-only">
-        {instructions}
-      </p>
-      <p
-        id="sigpad-status"
-        className="sr-only"
-        role="status"
-        aria-live="polite"
-      >
-        {statusMessage}
-      </p>
-
-      <div className="flex items-center justify-between">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={handleClear}
-          disabled={disabled || isEmpty}
-          className="gap-1.5 active:scale-[0.98]"
-          aria-label="Signatur löschen"
-        >
-          <Eraser size={14} />
-          Löschen
-        </Button>
-        <span
-          className={cn(
-            "text-xs",
-            isEmpty
-              ? "text-[color:var(--ds-text-muted)]"
-              : "text-[color:var(--ds-success-text)]"
-          )}
-          aria-hidden="true"
-        >
-          {isEmpty ? "Nicht erfasst" : "Erfasst"}
-        </span>
+            aria-hidden="true"
+          >
+            {isEmpty ? "Nicht erfasst" : "Erfasst"}
+          </span>
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);

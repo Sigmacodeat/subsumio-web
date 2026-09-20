@@ -451,7 +451,11 @@ export default function ContractsPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <Button onClick={runReview} disabled={reviewLoading} className="gap-2 whitespace-nowrap">
+            <Button
+              onClick={runReview}
+              disabled={reviewLoading}
+              className="gap-2 whitespace-nowrap"
+            >
               {reviewLoading ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
@@ -532,7 +536,9 @@ export default function ContractsPage() {
           )}
           {reviewResult && reviewResult.rows.length > 0 && (
             <GroundedOutputPanel
-              text={reviewResult.rows.flatMap((r) => r.cells.map((cell) => cell.answer)).join("\n\n")}
+              text={reviewResult.rows
+                .flatMap((r) => r.cells.map((cell) => cell.answer))
+                .join("\n\n")}
               citations={reviewResult.rows.flatMap((r) => r.cells.flatMap((c) => c.citations))}
             />
           )}
@@ -568,7 +574,9 @@ export default function ContractsPage() {
               <BarChart3 size={14} className="text-[color:var(--ds-text-muted)]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[color:var(--ds-text)] tabular-nums">{contracts.length}</p>
+              <p className="text-lg font-bold text-[color:var(--ds-text)] tabular-nums">
+                {contracts.length}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("contracts.count_label")}
               </p>

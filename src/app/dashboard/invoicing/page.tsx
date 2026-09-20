@@ -109,10 +109,7 @@ interface InvoicingCache {
   cases: InvoiceCase[];
 }
 
-const STATUS_CONFIG: Record<
-  string,
-  { labelKey: DashboardKey; color: StatusColor }
-> = {
+const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: StatusColor }> = {
   draft: { labelKey: "inv.status_draft", color: "gray" },
   sent: { labelKey: "inv.status_sent", color: "blue" },
   paid: { labelKey: "inv.status_paid", color: "emerald" },
@@ -175,7 +172,8 @@ export default function InvoicingPage() {
   ) {
     setStatusMessageText(text);
     setStatusTone(tone);
-    if (text && ms) setTimeout(() => setStatusMessageText((cur) => (cur === text ? null : cur)), ms);
+    if (text && ms)
+      setTimeout(() => setStatusMessageText((cur) => (cur === text ? null : cur)), ms);
   }
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("lawyer");
@@ -526,7 +524,10 @@ export default function InvoicingPage() {
       const data = await res.json();
       if (!res.ok || !data.ok) {
         setStatusMessage(
-          invoiceErrorText(data.error, `${label} konnte nicht erstellt werden. Bitte versuchen Sie es erneut.`),
+          invoiceErrorText(
+            data.error,
+            `${label} konnte nicht erstellt werden. Bitte versuchen Sie es erneut.`
+          ),
           "error",
           6000
         );
@@ -541,7 +542,11 @@ export default function InvoicingPage() {
       URL.revokeObjectURL(url);
       setStatusMessage(`${label}-Datei heruntergeladen.`, "success", 3000);
     } catch (err) {
-      setStatusMessage(`${label} konnte nicht erstellt werden. Bitte versuchen Sie es erneut.`, "error", 6000);
+      setStatusMessage(
+        `${label} konnte nicht erstellt werden. Bitte versuchen Sie es erneut.`,
+        "error",
+        6000
+      );
       console.error("[e-invoice] generate failed:", err);
     }
   }
@@ -585,7 +590,10 @@ export default function InvoicingPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setStatusMessage(
-          invoiceErrorText(data.error, "ZUGFeRD-PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut."),
+          invoiceErrorText(
+            data.error,
+            "ZUGFeRD-PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+          ),
           "error",
           6000
         );
@@ -600,7 +608,11 @@ export default function InvoicingPage() {
       URL.revokeObjectURL(url);
       setStatusMessage("ZUGFeRD-PDF heruntergeladen.", "success", 3000);
     } catch (err) {
-      setStatusMessage("ZUGFeRD-PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut.", "error", 6000);
+      setStatusMessage(
+        "ZUGFeRD-PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+        "error",
+        6000
+      );
       console.error("[e-invoice] zugferd failed:", err);
     }
   }
@@ -882,7 +894,12 @@ export default function InvoicingPage() {
                 e.target.value = "";
               }}
             />
-            <Button variant="primary" size="sm" className="whitespace-nowrap" onClick={() => setQuickCreateOpen(true)}>
+            <Button
+              variant="primary"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => setQuickCreateOpen(true)}
+            >
               <Plus size={14} aria-hidden="true" />
               {t("inv.create")}
             </Button>
@@ -897,15 +914,28 @@ export default function InvoicingPage() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="whitespace-nowrap" aria-label={en ? "Related areas" : "Verwandte Bereiche"}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  aria-label={en ? "Related areas" : "Verwandte Bereiche"}
+                >
                   <MoreHorizontal size={14} aria-hidden="true" />
                   {en ? "More" : "Mehr"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <HubMenuLink href="/dashboard/fee-agreements" icon={FileText} label={t("nav.fee_agreements")} />
+                <HubMenuLink
+                  href="/dashboard/fee-agreements"
+                  icon={FileText}
+                  label={t("nav.fee_agreements")}
+                />
                 <HubMenuLink href="/dashboard/fibu" icon={FileSpreadsheet} label={t("nav.fibu")} />
-                <HubMenuLink href="/dashboard/controlling" icon={BarChart3} label={t("nav.controlling")} />
+                <HubMenuLink
+                  href="/dashboard/controlling"
+                  icon={BarChart3}
+                  label={t("nav.controlling")}
+                />
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -1119,7 +1149,10 @@ export default function InvoicingPage() {
                         <FileText size={13} />
                         {t("inv.download_pdf")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => void printInvoice(inv)} className="gap-2 text-xs">
+                      <DropdownMenuItem
+                        onClick={() => void printInvoice(inv)}
+                        className="gap-2 text-xs"
+                      >
                         <Printer size={13} />
                         {t("inv.print")}
                       </DropdownMenuItem>
@@ -1167,7 +1200,7 @@ export default function InvoicingPage() {
                         <FileText size={13} />
                         ZUGFeRD-PDF
                       </DropdownMenuItem>
-                      {canManage && (inv.status !== "paid" && inv.status !== "cancelled") && (
+                      {canManage && inv.status !== "paid" && inv.status !== "cancelled" && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

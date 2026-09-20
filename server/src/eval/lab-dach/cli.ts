@@ -61,12 +61,27 @@ function parseArgs(argv: string[]): {
   const judgeModelId = getArgValue(args, "--judge-model");
   const judgeProvider = getArgValue(args, "--judge-provider");
   const splitStr = getArgValue(args, "--split");
-  const split = (splitStr === "dev" || splitStr === "test" || splitStr === "holdout") ? splitStr : undefined;
+  const split =
+    splitStr === "dev" || splitStr === "test" || splitStr === "holdout" ? splitStr : undefined;
   const goldTasks = getArgValue(args, "--gold-tasks");
   const holdoutPath = getArgValue(args, "--holdout-path");
   const retrievalStr = getArgValue(args, "--retrieval");
   const retrieval = retrievalStr === "live" || retrievalStr === "file" ? retrievalStr : undefined;
-  return { mockMode, taskId, corpusRoot, outputDir, modelId, provider, maxCostUsd, judgeModelId, judgeProvider, split, goldTasks, holdoutPath, retrieval };
+  return {
+    mockMode,
+    taskId,
+    corpusRoot,
+    outputDir,
+    modelId,
+    provider,
+    maxCostUsd,
+    judgeModelId,
+    judgeProvider,
+    split,
+    goldTasks,
+    holdoutPath,
+    retrieval,
+  };
 }
 
 function getArgValue(args: string[], flag: string): string | undefined {
@@ -124,7 +139,21 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { mockMode, taskId, corpusRoot, outputDir, modelId, provider, maxCostUsd, judgeModelId, judgeProvider, split, goldTasks, holdoutPath, retrieval } = parseArgs(args);
+  const {
+    mockMode,
+    taskId,
+    corpusRoot,
+    outputDir,
+    modelId,
+    provider,
+    maxCostUsd,
+    judgeModelId,
+    judgeProvider,
+    split,
+    goldTasks,
+    holdoutPath,
+    retrieval,
+  } = parseArgs(args);
 
   // Determine task set
   let tasks: Task[];
@@ -132,7 +161,12 @@ async function main(): Promise<void> {
     tasks = ALL_SAMPLE_TASKS.filter((t) => t.id === taskId);
     if (tasks.length === 0) {
       // Try gold tasks
-      const allGold = [...GOLD_DE_LITIGATION, ...GOLD_DE_CRIMINAL, ...GOLD_AT_LITIGATION, ...ALL_GOLD_CH];
+      const allGold = [
+        ...GOLD_DE_LITIGATION,
+        ...GOLD_DE_CRIMINAL,
+        ...GOLD_AT_LITIGATION,
+        ...ALL_GOLD_CH,
+      ];
       tasks = allGold.filter((t) => t.id === taskId);
       if (tasks.length === 0) {
         console.error(`Unknown task: ${taskId}`);
@@ -147,7 +181,7 @@ async function main(): Promise<void> {
       "de-litigation": GOLD_DE_LITIGATION,
       "de-criminal": GOLD_DE_CRIMINAL,
       "ch-all": ALL_GOLD_CH,
-      "all": [...GOLD_DE_LITIGATION, ...GOLD_DE_CRIMINAL, ...GOLD_AT_LITIGATION, ...ALL_GOLD_CH],
+      all: [...GOLD_DE_LITIGATION, ...GOLD_DE_CRIMINAL, ...GOLD_AT_LITIGATION, ...ALL_GOLD_CH],
     };
     tasks = goldSets[goldTasks] ?? ALL_SAMPLE_TASKS;
     if (tasks === ALL_SAMPLE_TASKS && goldTasks !== "sample") {
@@ -186,10 +220,16 @@ async function main(): Promise<void> {
 
   // Resolve retrieval backend. Default: live (real engine) in non-mock, file in mock.
   const retrievalMode = retrieval ?? (mockMode ? "file" : "live");
-  console.log(`  Retrieval: ${retrievalMode === "live" ? "live engine (hybrid search)" : "file fallback (naive grep)"}`);
+  console.log(
+    `  Retrieval: ${retrievalMode === "live" ? "live engine (hybrid search)" : "file fallback (naive grep)"}`
+  );
 
   // For live mode: configure gateway and create adapter
-  let chatFn: ((opts: import("./rubric-judge.ts").ChatOpts) => Promise<import("./rubric-judge.ts").ChatResult>) | undefined;
+  let chatFn:
+    | ((
+        opts: import("./rubric-judge.ts").ChatOpts
+      ) => Promise<import("./rubric-judge.ts").ChatResult>)
+    | undefined;
   let adapterStats: import("./gateway-adapter.ts").GatewayAdapterStats | undefined;
   if (!mockMode) {
     const gatewayConfig: AIGatewayConfig = {
@@ -264,7 +304,9 @@ async function main(): Promise<void> {
     console.log(`  Total cost: $${runResult.total_cost_usd.toFixed(4)}`);
   }
   if (runResult.total_tokens) {
-    console.log(`  Total tokens: ${runResult.total_tokens.input.toLocaleString()} in / ${runResult.total_tokens.output.toLocaleString()} out`);
+    console.log(
+      `  Total tokens: ${runResult.total_tokens.input.toLocaleString()} in / ${runResult.total_tokens.output.toLocaleString()} out`
+    );
   }
   if (runResult.provider_errors && runResult.provider_errors.length > 0) {
     console.log(`  Provider errors: ${runResult.provider_errors.length}`);

@@ -47,16 +47,34 @@ const EXCLUDE_ABBRS = new Set(["MSchG", "NAG", "KAG", "VVG"]);
  *  label. Filtering these prevents non-statute files from polluting
  *  the citation graph. */
 const GENERIC_ABBR_VALUES = new Set([
-  "ADR", "Abkommen", "Akademischer", "Akkreditierung", "Allgemeine",
-  "ADN", "Abgabe", "Abschluss", "Abkürzung", "Abschaffung",
-  "Abfallnachweisverordnung", "Agrarstrukturstatistik-Verordnung",
-  "Abgeltung", "Aliquotierungsverordnung", "Alkoholsteuergesetz",
-  "Akkreditierungszeichenverordnung", "Akkreditierungsgesetz",
-  "Akkreditierungsversicherungsverordnung", "Aerosolpackungsverordnung",
-  "Abfallbehandlungspflichten", "Abfallbehandlungspflichtenverordnung",
-  "Abfallverbrennungsverordnung", "Abfallverzeichnisverordnung",
-  "Abfallwirtschaftsgesetz", "Abgeltungsv", "Abgrenzungsverordnung",
-  "Adressregisterverordnung", "ADV-Form-Verordnung",
+  "ADR",
+  "Abkommen",
+  "Akademischer",
+  "Akkreditierung",
+  "Allgemeine",
+  "ADN",
+  "Abgabe",
+  "Abschluss",
+  "Abkürzung",
+  "Abschaffung",
+  "Abfallnachweisverordnung",
+  "Agrarstrukturstatistik-Verordnung",
+  "Abgeltung",
+  "Aliquotierungsverordnung",
+  "Alkoholsteuergesetz",
+  "Akkreditierungszeichenverordnung",
+  "Akkreditierungsgesetz",
+  "Akkreditierungsversicherungsverordnung",
+  "Aerosolpackungsverordnung",
+  "Abfallbehandlungspflichten",
+  "Abfallbehandlungspflichtenverordnung",
+  "Abfallverbrennungsverordnung",
+  "Abfallverzeichnisverordnung",
+  "Abfallwirtschaftsgesetz",
+  "Abgeltungsv",
+  "Abgrenzungsverordnung",
+  "Adressregisterverordnung",
+  "ADV-Form-Verordnung",
   "Aerosolpackungslagerungsverordnung",
 ]);
 
@@ -227,9 +245,7 @@ function generateAtFilesAndAbbrs(): {
   abbrs: Record<string, string>;
 } {
   const atDir = join(CORPUS, "at");
-  const allFiles = readdirSync(atDir).filter(
-    (f) => f.endsWith(".md") && !f.includes("/")
-  );
+  const allFiles = readdirSync(atDir).filter((f) => f.endsWith(".md") && !f.includes("/"));
   const allBases = new Set(allFiles.map((f) => f.replace(/\.md$/, "")));
 
   // ALL .md files go into FILES — within-statute edge extraction doesn't
@@ -292,7 +308,9 @@ function generateAtFilesAndAbbrs(): {
     }
   }
 
-  console.log(`  Frontmatter-Scan: ${files.length} Dateien, ${abbrAccepted} Abkuerzungen akzeptiert, ${abbrSkipped} uebersprungen (fail-closed)`);
+  console.log(
+    `  Frontmatter-Scan: ${files.length} Dateien, ${abbrAccepted} Abkuerzungen akzeptiert, ${abbrSkipped} uebersprungen (fail-closed)`
+  );
   return { files, abbrs };
 }
 

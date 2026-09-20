@@ -215,11 +215,15 @@ export function persistHumanVerdict(
   const exists = existingTasks.has(taskId);
 
   // The reference output is the jurist's chosen/edited answer
-  const referenceOutput = verdict.edited_text ??
-    (verdict.decision === "pass_a" ? item.answer_a.text :
-     verdict.decision === "pass_b" ? item.answer_b.text :
-     verdict.decision === "pass_both" ? item.answer_a.text : // prefer A on both-pass
-     "");
+  const referenceOutput =
+    verdict.edited_text ??
+    (verdict.decision === "pass_a"
+      ? item.answer_a.text
+      : verdict.decision === "pass_b"
+        ? item.answer_b.text
+        : verdict.decision === "pass_both"
+          ? item.answer_a.text // prefer A on both-pass
+          : "");
 
   // Build the updated/new task
   const task: Task = {

@@ -30,33 +30,42 @@ interface TestCase {
 const TEST_CASES: TestCase[] = [
   {
     id: "ab-001",
-    question: "Welche Anspruchsgrundlage gilt für Schmerzensgeld bei einer Körperverletzung im österreichischen Recht?",
+    question:
+      "Welche Anspruchsgrundlage gilt für Schmerzensgeld bei einer Körperverletzung im österreichischen Recht?",
     expected_paragraphs: ["§ 1325 ABGB"],
-    context: "Der Mandant erlitt bei einem Verkehrsunfall Prellungen und eine HWS-Distorsion. Der Beklagte fuhr bei Rot über die Kreuzung.",
+    context:
+      "Der Mandant erlitt bei einem Verkehrsunfall Prellungen und eine HWS-Distorsion. Der Beklagte fuhr bei Rot über die Kreuzung.",
   },
   {
     id: "ab-002",
-    question: "Wie lange ist die reguläre Verjährungsfrist für Schadenersatzansprüche im deutschen Recht?",
+    question:
+      "Wie lange ist die reguläre Verjährungsfrist für Schadenersatzansprüche im deutschen Recht?",
     expected_paragraphs: ["§ 195 BGB"],
-    context: "Der Mandant wurde am 15.03.2024 in einen Verkehrsunfall verwickelt und möchte Schadenersatz geltend machen.",
+    context:
+      "Der Mandant wurde am 15.03.2024 in einen Verkehrsunfall verwickelt und möchte Schadenersatz geltend machen.",
   },
   {
     id: "ab-003",
-    question: "Unter welchen Voraussetzungen haftet ein Arbeitgeber für Schäden, die sein Arbeitnehmer verursacht hat?",
+    question:
+      "Unter welchen Voraussetzungen haftet ein Arbeitgeber für Schäden, die sein Arbeitnehmer verursacht hat?",
     expected_paragraphs: ["§ 1313a ABGB", "§ 1313 ABGB"],
-    context: "Ein Lieferantenausfahrer verursachte beim Ausliefern einen Parkschaden an einem fremden Fahrzeug.",
+    context:
+      "Ein Lieferantenausfahrer verursachte beim Ausliefern einen Parkschaden an einem fremden Fahrzeug.",
   },
   {
     id: "ab-004",
     question: "Was ist die Verjährungsfrist für Steuerstraftaten in Österreich?",
     expected_paragraphs: ["§ 209 BAO", "§ 57 StGB"],
-    context: "Ein Mandant wird beschuldigt, über mehrere Jahre hinweg Umsatzsteuer nicht abgeführt zu haben.",
+    context:
+      "Ein Mandant wird beschuldigt, über mehrere Jahre hinweg Umsatzsteuer nicht abgeführt zu haben.",
   },
   {
     id: "ab-005",
-    question: "Welche Voraussetzungen müssen für einen Unterlassungsanspruch im Wettbewerbsrecht vorliegen?",
+    question:
+      "Welche Voraussetzungen müssen für einen Unterlassungsanspruch im Wettbewerbsrecht vorliegen?",
     expected_paragraphs: ["§ 1 UWG"],
-    context: "Ein Konkurrent verwendet irreführende Werbeaussagen über die Qualität seiner Produkte.",
+    context:
+      "Ein Konkurrent verwendet irreführende Werbeaussagen über die Qualität seiner Produkte.",
   },
 ];
 
@@ -93,7 +102,9 @@ interface ModelResult {
 
 function extractParagraphs(text: string): string[] {
   const paragraphs: string[] = [];
-  const matches = text.matchAll(/§\s*(\d+[a-z]?)\s+(ABGB|BGB|StGB|ZPO|HGB|AO|BAO|EStG|KStG|UStG|StPO|VwGO|BVG|GG|OR|UWG)/gi);
+  const matches = text.matchAll(
+    /§\s*(\d+[a-z]?)\s+(ABGB|BGB|StGB|ZPO|HGB|AO|BAO|EStG|KStG|UStG|StPO|VwGO|BVG|GG|OR|UWG)/gi
+  );
   for (const m of matches) {
     paragraphs.push(`§ ${m[1]} ${m[2].toUpperCase()}`);
   }
@@ -101,9 +112,26 @@ function extractParagraphs(text: string): string[] {
 }
 
 function isGermanAnswer(text: string): boolean {
-  const germanWords = ["der", "die", "das", "und", "ist", "wird", "nach", "bei", "von", "mit", "auf", "für", "den", "dem", "eine", "ein"];
+  const germanWords = [
+    "der",
+    "die",
+    "das",
+    "und",
+    "ist",
+    "wird",
+    "nach",
+    "bei",
+    "von",
+    "mit",
+    "auf",
+    "für",
+    "den",
+    "dem",
+    "eine",
+    "ein",
+  ];
   const words = text.toLowerCase().split(/\s+/);
-  const germanCount = words.filter(w => germanWords.includes(w.replace(/[^\wäöüß]/g, ""))).length;
+  const germanCount = words.filter((w) => germanWords.includes(w.replace(/[^\wäöüß]/g, ""))).length;
   return germanCount >= 4;
 }
 
@@ -111,11 +139,7 @@ function referencesLaw(text: string): boolean {
   return /§\s*\d+/.test(text);
 }
 
-async function runModel(
-  client: OpenAI,
-  model: string,
-  testCase: TestCase,
-): Promise<ModelResult> {
+async function runModel(client: OpenAI, model: string, testCase: TestCase): Promise<ModelResult> {
   const start = Date.now();
   try {
     const response = await client.chat.completions.create({
@@ -138,17 +162,17 @@ async function runModel(
     // Pricing per 1M tokens
     const pricing: Record<string, { input: number; output: number }> = {
       "deepseek/deepseek-chat": { input: 0.14, output: 0.28 },
-      "xai/grok-4.3": { input: 1.25, output: 2.50 },
+      "xai/grok-4.3": { input: 1.25, output: 2.5 },
     };
     const p = pricing[model] ?? { input: 0.14, output: 0.28 };
     const cost = (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;
 
     const found = extractParagraphs(answer);
-    const expected = testCase.expected_paragraphs.map(p => p.toUpperCase());
-    const foundUpper = found.map(p => p.toUpperCase());
-    const correct = foundUpper.filter(p => expected.includes(p));
-    const missing = expected.filter(p => !foundUpper.includes(p));
-    const hallucinated = foundUpper.filter(p => !expected.includes(p));
+    const expected = testCase.expected_paragraphs.map((p) => p.toUpperCase());
+    const foundUpper = found.map((p) => p.toUpperCase());
+    const correct = foundUpper.filter((p) => expected.includes(p));
+    const missing = expected.filter((p) => !foundUpper.includes(p));
+    const hallucinated = foundUpper.filter((p) => !expected.includes(p));
 
     return {
       model,
@@ -238,16 +262,16 @@ async function runPhase6C(): Promise<void> {
   console.log();
 
   for (const model of models) {
-    const results = allResults.filter(r => r.model === model.id);
+    const results = allResults.filter((r) => r.model === model.id);
     const totalCorrect = results.reduce((s, r) => s + r.paragraphs_correct.length, 0);
     const totalExpected = results.reduce((s, r) => s + r.paragraphs_expected.length, 0);
     const totalHalluc = results.reduce((s, r) => s + r.paragraphs_hallucinated.length, 0);
     const totalCost = results.reduce((s, r) => s + r.cost_usd, 0);
     const avgLatency = results.reduce((s, r) => s + r.latency_ms, 0) / results.length;
-    const germanRate = results.filter(r => r.is_german).length / results.length;
-    const lawRefRate = results.filter(r => r.references_law).length / results.length;
+    const germanRate = results.filter((r) => r.is_german).length / results.length;
+    const lawRefRate = results.filter((r) => r.references_law).length / results.length;
     const accuracy = totalExpected > 0 ? (totalCorrect / totalExpected) * 100 : 0;
-    const errorCount = results.filter(r => r.error).length;
+    const errorCount = results.filter((r) => r.error).length;
 
     console.log(`  ${model.label} (${model.id}):`);
     console.log(`    §-accuracy:       ${accuracy.toFixed(1)}% (${totalCorrect}/${totalExpected})`);
@@ -261,20 +285,26 @@ async function runPhase6C(): Promise<void> {
   }
 
   // ── Verdict ─────────────────────────────────────────────────
-  const deepseekResults = allResults.filter(r => r.model === "deepseek/deepseek-chat");
-  const grokResults = allResults.filter(r => r.model === "xai/grok-4.3");
+  const deepseekResults = allResults.filter((r) => r.model === "deepseek/deepseek-chat");
+  const grokResults = allResults.filter((r) => r.model === "xai/grok-4.3");
 
-  const deepseekAccuracy = deepseekResults.reduce((s, r) => s + r.paragraphs_correct.length, 0) /
+  const deepseekAccuracy =
+    deepseekResults.reduce((s, r) => s + r.paragraphs_correct.length, 0) /
     deepseekResults.reduce((s, r) => s + r.paragraphs_expected.length, 0);
-  const grokAccuracy = grokResults.reduce((s, r) => s + r.paragraphs_correct.length, 0) /
+  const grokAccuracy =
+    grokResults.reduce((s, r) => s + r.paragraphs_correct.length, 0) /
     grokResults.reduce((s, r) => s + r.paragraphs_expected.length, 0);
 
   console.log("  Verdict:");
   if (grokAccuracy > deepseekAccuracy) {
-    console.log(`    ✅ Grok 4.3 wins on §-accuracy (${(grokAccuracy * 100).toFixed(1)}% vs ${(deepseekAccuracy * 100).toFixed(1)}%)`);
+    console.log(
+      `    ✅ Grok 4.3 wins on §-accuracy (${(grokAccuracy * 100).toFixed(1)}% vs ${(deepseekAccuracy * 100).toFixed(1)}%)`
+    );
     console.log(`    → Deep tier (Grok 4.3) is correctly assigned for critical legal reasoning`);
   } else if (deepseekAccuracy > grokAccuracy) {
-    console.log(`    ⚠️  DeepSeek V4 Flash wins on §-accuracy (${(deepseekAccuracy * 100).toFixed(1)}% vs ${(grokAccuracy * 100).toFixed(1)}%)`);
+    console.log(
+      `    ⚠️  DeepSeek V4 Flash wins on §-accuracy (${(deepseekAccuracy * 100).toFixed(1)}% vs ${(grokAccuracy * 100).toFixed(1)}%)`
+    );
     console.log(`    → Consider re-evaluating deep tier assignment`);
   } else {
     console.log(`    🤝 Tie on §-accuracy (${(deepseekAccuracy * 100).toFixed(1)}%)`);

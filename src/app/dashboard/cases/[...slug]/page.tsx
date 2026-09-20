@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Loader2,
-  Briefcase,
-  AlertTriangle,
-  Archive,
-  RotateCcw,
-  PauseCircle,
-} from "lucide-react";
+import { Loader2, Briefcase, AlertTriangle, Archive, RotateCcw, PauseCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";

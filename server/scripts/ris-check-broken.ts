@@ -7,7 +7,7 @@ import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 const corpusDir = "law-corpus/at";
-const files = readdirSync(corpusDir).filter(f => f.endsWith(".md"));
+const files = readdirSync(corpusDir).filter((f) => f.endsWith(".md"));
 
 let broken = 0;
 let normal = 0;
@@ -17,7 +17,10 @@ const brokenFiles: string[] = [];
 for (const f of files) {
   const content = readFileSync(join(corpusDir, f), "utf-8");
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
-  if (!fmMatch) { noFm++; continue; }
+  if (!fmMatch) {
+    noFm++;
+    continue;
+  }
   const fm = fmMatch[1].trim();
   const afterFm = content.slice(fmMatch[0].length);
   if (afterFm.match(/^title:\s/) && fm.match(/^content_hash:/)) {

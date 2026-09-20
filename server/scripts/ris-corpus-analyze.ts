@@ -7,7 +7,7 @@ import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 const corpusDir = "law-corpus/at";
-const files = readdirSync(corpusDir).filter(f => f.endsWith(".md"));
+const files = readdirSync(corpusDir).filter((f) => f.endsWith(".md"));
 
 let withExplicitGnr = 0;
 let withGnrInPath = 0;
@@ -21,11 +21,17 @@ const noGnrFiles: { name: string; sourceUrl?: string; title?: string }[] = [];
 for (const f of files) {
   const content = readFileSync(join(corpusDir, f), "utf-8");
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!fmMatch) { noFrontmatter++; continue; }
+  if (!fmMatch) {
+    noFrontmatter++;
+    continue;
+  }
   const fm = fmMatch[1];
 
   const hasGnr = fm.match(/gesetzesnummer:\s*"?(\d+)"?/);
-  if (hasGnr) { withExplicitGnr++; continue; }
+  if (hasGnr) {
+    withExplicitGnr++;
+    continue;
+  }
 
   const urlMatch = fm.match(/source_url:\s*"?([^"\n]+)"?/);
   const titleMatch = fm.match(/title:\s*"?([^"\n]+)"?/);
@@ -35,8 +41,14 @@ for (const f of files) {
   if (sourceUrl) {
     const gnrInPath = sourceUrl.match(/\/(\d{8})\//);
     const gnrInParam = sourceUrl.match(/Gesetzesnummer=(\d+)/);
-    if (gnrInPath) { withGnrInPath++; continue; }
-    if (gnrInParam) { withGnrInParam++; continue; }
+    if (gnrInPath) {
+      withGnrInPath++;
+      continue;
+    }
+    if (gnrInParam) {
+      withGnrInParam++;
+      continue;
+    }
     noGnrFiles.push({ name: f, sourceUrl, title });
     withoutAnyGnr++;
   } else {
@@ -52,7 +64,7 @@ console.log("With explicit gesetzesnummer:", withExplicitGnr);
 console.log("With gnr in source_url path:", withGnrInPath);
 console.log("With gnr in OGD API URL param:", withGnrInParam);
 console.log("Without any gnr:", withoutAnyGnr);
-console.log("  - has source_url but no gnr pattern:", noGnrFiles.filter(f => f.sourceUrl).length);
+console.log("  - has source_url but no gnr pattern:", noGnrFiles.filter((f) => f.sourceUrl).length);
 console.log("  - no source_url at all:", noSourceUrl);
 console.log("No frontmatter:", noFrontmatter);
 

@@ -29,8 +29,12 @@ const OUT = "/tmp/refetch-defective-landesrecht.jsonl";
 const CORPUS_ROOT = join(import.meta.dir, "..", "..", "law-corpus");
 const RAW_DIR = join(CORPUS_ROOT, "at-landesrecht");
 
-const DB_URL = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
+const DB_URL = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
 
 // extractText mit listelem+schluss Fix (identisch zu ris-xml-fetch-normen.ts)
 function extractText(xml: string): { text: string; meta: Record<string, string> } {
@@ -46,8 +50,12 @@ function extractText(xml: string): { text: string; meta: Record<string, string> 
     const plain = inner
       .replace(/<[^>]+>/g, " ")
       .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!plain) continue;
@@ -80,7 +88,9 @@ function readDocId(filePath: string): string | null {
       if (docM2) return docM2[1];
     }
     return null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function readFrontmatter(filePath: string): { fm: string; body: string } | null {
@@ -89,7 +99,9 @@ function readFrontmatter(filePath: string): { fm: string; body: string } | null 
     const m = content.match(/^---\n([\s\S]*?)\n---\n?/);
     if (!m) return null;
     return { fm: m[1], body: content.slice(m[0].length) };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function fetchXml(docId: string): Promise<string | null> {
@@ -102,12 +114,18 @@ async function fetchXml(docId: string): Promise<string | null> {
         continue;
       }
       if (!res.ok) {
-        if (attempt < 4) { await new Promise((r) => setTimeout(r, 500)); continue; }
+        if (attempt < 4) {
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
         return null;
       }
       return await res.text();
     } catch {
-      if (attempt < 4) { await new Promise((r) => setTimeout(r, 500)); continue; }
+      if (attempt < 4) {
+        await new Promise((r) => setTimeout(r, 500));
+        continue;
+      }
       return null;
     }
   }
@@ -117,12 +135,20 @@ async function fetchXml(docId: string): Promise<string | null> {
 async function main() {
   const sql = `select distinct slug from corpus_defects where source_id = 'law-at-landesrecht' and defect_type = 'inner_truncation'`;
   const raw = (await $`psql ${DB_URL} -tAF$'\x1f' -c ${sql}`.quiet()).stdout.toString();
-  const slugs = raw.split("\n").filter(Boolean).map((l) => l.split("\x1f")[0]);
+  const slugs = raw
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => l.split("\x1f")[0]);
 
   const done = new Set<string>();
   if (RESUME && existsSync(OUT)) {
     for (const l of readFileSync(OUT, "utf8").split("\n")) {
-      try { const j = JSON.parse(l); if (j.slug) done.add(j.slug); } catch { /* */ }
+      try {
+        const j = JSON.parse(l);
+        if (j.slug) done.add(j.slug);
+      } catch {
+        /* */
+      }
     }
     console.log(`[resume] ${done.size} Slugs bereits verarbeitet`);
   }
@@ -131,7 +157,10 @@ async function main() {
   const n = LIMIT > 0 ? Math.min(todo.length, LIMIT) : todo.length;
   console.log(`Zu refetchen: ${n} von ${slugs.length} defekten Slugs${DRY ? " (DRY RUN)" : ""}`);
 
-  let refetched = 0, unchanged = 0, failed = 0, notFound = 0;
+  let refetched = 0,
+    unchanged = 0,
+    failed = 0,
+    notFound = 0;
 
   for (let i = 0; i < n; i++) {
     const slug = todo[i];
@@ -190,12 +219,24 @@ async function main() {
 
     if (!DRY) {
       writeFileSync(filePath, newContent);
-      appendFileSync(OUT, JSON.stringify({ slug, status: "refetched", docId, oldHash, newHash, addedChars: text.length - fm.body.length }) + "\n");
+      appendFileSync(
+        OUT,
+        JSON.stringify({
+          slug,
+          status: "refetched",
+          docId,
+          oldHash,
+          newHash,
+          addedChars: text.length - fm.body.length,
+        }) + "\n"
+      );
     }
     refetched++;
 
     if ((i + 1) % 100 === 0) {
-      console.log(`  ${i + 1}/${n}  refetched=${refetched} unchanged=${unchanged} failed=${failed} notFound=${notFound}`);
+      console.log(
+        `  ${i + 1}/${n}  refetched=${refetched} unchanged=${unchanged} failed=${failed} notFound=${notFound}`
+      );
     }
   }
 

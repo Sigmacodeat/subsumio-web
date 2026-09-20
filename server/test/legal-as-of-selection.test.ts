@@ -3,7 +3,7 @@ import { selectLegalVersionsAsOf } from "../src/core/search/hybrid.ts";
 import type { SearchResult } from "../src/core/types.ts";
 
 const hit = (slug: string, score: number): SearchResult =>
-  ({ slug, score, chunk_id: score, chunk_index: 0, chunk_text: slug } as SearchResult);
+  ({ slug, score, chunk_id: score, chunk_index: 0, chunk_text: slug }) as SearchResult;
 
 describe("historical legal version selection", () => {
   test("selects the latest archived version before the cutoff", () => {

@@ -242,9 +242,7 @@ export function BadgePill({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <span className={`mb-6 ${EYEBROW_CLASS} ${className}`}>{children}</span>
-  );
+  return <span className={`mb-6 ${EYEBROW_CLASS} ${className}`}>{children}</span>;
 }
 
 /** Standard hero subtitle paragraph. */
@@ -619,7 +617,7 @@ export function StatCard({
 
   return (
     <div className="text-center">
-      <p className="mb-3 [font-family:var(--font-display)] text-5xl leading-none font-normal tracking-[-0.025em] tabular-nums [color:var(--mk-text)] md:text-6xl">
+      <p className="mb-3 [font-family:var(--font-display)] text-5xl leading-none font-normal tracking-[-0.025em] [color:var(--mk-text)] tabular-nums md:text-6xl">
         {isNumeric ? (
           <AnimatedCounter
             to={num}

@@ -509,9 +509,7 @@ export function DocumentsTab() {
                           ctx.setLinkSearchQuery("");
                           ctx.setLinkSearchResults([]);
                         } catch {
-                          ctx.setUploadError(
-                            t("casesdetail.link_failed")
-                          );
+                          ctx.setUploadError(t("casesdetail.link_failed"));
                         }
                       }}
                       className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${alreadyLinked ? "cursor-not-allowed border-[color:var(--ds-border)] opacity-50" : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"} active:scale-[0.97]`}

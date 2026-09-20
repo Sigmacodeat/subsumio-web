@@ -25,8 +25,12 @@ const TYPE = args.find((a) => a.startsWith("--type="))?.split("=")[1];
 const DRY = args.includes("--dry-run");
 
 // ── DB ─────────────────────────────────────────────────────────────────
-const DB_URL = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
+const DB_URL = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
 const URL_ = DB_URL.replace(/\/[^/?]+(\?|$)/, "/subsumio_law_v2$1");
 
 // ── SQL ────────────────────────────────────────────────────────────────
@@ -38,7 +42,9 @@ const SQL = `
 DELETE FROM corpus_defects ${TYPE ? `WHERE defect_type = '${TYPE}'` : ""};
 
 -- 1. PDF-Artifact: www.ris.bka.gv.at, Seite X von Y, etc.
-${!TYPE || TYPE === "pdf_artifact" ? `
+${
+  !TYPE || TYPE === "pdf_artifact"
+    ? `
 INSERT INTO corpus_defects (page_id, slug, source_id, defect_type, severity, detail)
 SELECT DISTINCT
   p.id, p.slug, p.source_id,
@@ -54,10 +60,14 @@ WHERE p.deleted_at IS NULL ${sourceFilter}
     OR c.chunk_text ~ 'Bundesrecht konsolidiert'
   )
 ON CONFLICT (page_id, defect_type) DO NOTHING;
-` : ""}
+`
+    : ""
+}
 
 -- 2. abrupt_end: Text endet mitten im Satz
-${!TYPE || TYPE === "abrupt_end" ? `
+${
+  !TYPE || TYPE === "abrupt_end"
+    ? `
 WITH page_text AS (
   SELECT
     p.id as page_id, p.slug, p.source_id,
@@ -80,10 +90,14 @@ WHERE length(trim(pt.full_text)) > 200
     AND trim(pt.full_text) ~ '(OGH|VwGH|VfGH|BVWG|AsylGH|LVwG|UVS|DSK|UBAS|GBK|DOK|RS\\d|JUS\\d|Vgl auch|vgl\\. auch|nur T[0-9])\\s*$')
   AND trim(pt.full_text) !~ '(?:^|\\s)(der|die|das|und|oder|im|in|zu|von|mit|auf|für|ist|bei|nach|vor|seit|ab|bis|als|wie|wenn|dass|daß|sowie|beziehungsweise)\\s*$'
 ON CONFLICT (page_id, defect_type) DO NOTHING;
-` : ""}
+`
+    : ""
+}
 
 -- 3. html_entities: HTML-Entities im Text
-${!TYPE || TYPE === "html_entities" ? `
+${
+  !TYPE || TYPE === "html_entities"
+    ? `
 INSERT INTO corpus_defects (page_id, slug, source_id, defect_type, severity, detail)
 SELECT DISTINCT
   p.id, p.slug, p.source_id,
@@ -94,10 +108,14 @@ JOIN content_chunks c ON c.page_id = p.id
 WHERE p.deleted_at IS NULL ${sourceFilter}
   AND c.chunk_text ~ '&nbsp;|&amp;|&lt;|&gt;|&quot;|&apos;|&#\\d+;'
 ON CONFLICT (page_id, defect_type) DO NOTHING;
-` : ""}
+`
+    : ""
+}
 
 -- 4. spoken_numbers: Ausgeschriebene Paragraphenangaben
-${!TYPE || TYPE === "spoken_numbers" ? `
+${
+  !TYPE || TYPE === "spoken_numbers"
+    ? `
 INSERT INTO corpus_defects (page_id, slug, source_id, defect_type, severity, detail)
 SELECT DISTINCT
   p.id, p.slug, p.source_id,
@@ -108,10 +126,14 @@ JOIN content_chunks c ON c.page_id = p.id
 WHERE p.deleted_at IS NULL ${sourceFilter}
   AND c.chunk_text ~ 'Paragraph \\d+,|Absatz \\d+,|Ziffer \\d+,'
 ON CONFLICT (page_id, defect_type) DO NOTHING;
-` : ""}
+`
+    : ""
+}
 
 -- 5. mojibake: Kodierungsreste
-${!TYPE || TYPE === "mojibake" ? `
+${
+  !TYPE || TYPE === "mojibake"
+    ? `
 INSERT INTO corpus_defects (page_id, slug, source_id, defect_type, severity, detail)
 SELECT DISTINCT
   p.id, p.slug, p.source_id,
@@ -122,7 +144,9 @@ JOIN content_chunks c ON c.page_id = p.id
 WHERE p.deleted_at IS NULL ${sourceFilter}
   AND c.chunk_text ~ '[Ãâ][¤¶¼Ÿ€™]|â€|'
 ON CONFLICT (page_id, defect_type) DO NOTHING;
-` : ""}
+`
+    : ""
+}
 `;
 
 // ── Main ───────────────────────────────────────────────────────────────
@@ -155,8 +179,11 @@ async function main() {
   console.log(`Scan fertig in ${duration}s`);
 
   // Ergebnis anzeigen
-  const summary = (await $`psql ${URL_} -tAF| -c ${"select defect_type, count(*) from corpus_defects group by 1 order by 2 desc"}`.quiet())
-    .stdout.toString().trim();
+  const summary = (
+    await $`psql ${URL_} -tAF| -c ${"select defect_type, count(*) from corpus_defects group by 1 order by 2 desc"}`.quiet()
+  ).stdout
+    .toString()
+    .trim();
 
   console.log("\nDefekte:");
   for (const line of summary.split("\n")) {

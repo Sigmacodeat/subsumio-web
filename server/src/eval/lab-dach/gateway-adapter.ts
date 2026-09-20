@@ -15,7 +15,11 @@
  * is not involved.
  */
 
-import { chat as gatewayChat, type ChatOpts as GatewayChatOpts, type ChatResult as GatewayChatResult } from "../../core/ai/gateway.ts";
+import {
+  chat as gatewayChat,
+  type ChatOpts as GatewayChatOpts,
+  type ChatResult as GatewayChatResult,
+} from "../../core/ai/gateway.ts";
 import { computeTurnCost } from "../../core/cost-ledger.ts";
 import type { ChatOpts, ChatResult } from "./rubric-judge.ts";
 

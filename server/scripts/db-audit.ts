@@ -89,13 +89,11 @@ async function main() {
     []
   )) as any[];
   console.log("\n=== All legal slug patterns (top 30) ===");
-  for (const r of legalPatterns) console.log(`  ${r.slug_prefix} (source: ${r.source_id}): ${r.cnt}`);
+  for (const r of legalPatterns)
+    console.log(`  ${r.slug_prefix} (source: ${r.source_id}): ${r.cnt}`);
 
   // 7. Total page count
-  const total = (await engine.executeRaw(
-    `SELECT count(*) as cnt FROM pages`,
-    []
-  )) as any[];
+  const total = (await engine.executeRaw(`SELECT count(*) as cnt FROM pages`, [])) as any[];
   console.log(`\n=== Total pages in DB ===`);
   for (const r of total) console.log(`  ${r.cnt}`);
 
@@ -130,4 +128,7 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
 }
 
-main().catch((e) => { console.error("FATAL:", e); process.exit(1); });
+main().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(1);
+});

@@ -15,7 +15,8 @@ async function main() {
     `SELECT DISTINCT split_part(slug, '/', 4) as abbr
      FROM pages
      WHERE source_id = 'law-at' AND slug LIKE 'legal/statutes/at/%'
-     ORDER BY abbr`, []
+     ORDER BY abbr`,
+    []
   )) as any[];
 
   console.log(`=== ${laws.length} laws in DB ===`);
@@ -23,14 +24,16 @@ async function main() {
 
   // Check existing links
   const links = (await engine.executeRaw(
-    `SELECT count(*) as cnt, link_type FROM links GROUP BY link_type`, []
+    `SELECT count(*) as cnt, link_type FROM links GROUP BY link_type`,
+    []
   )) as any[];
   console.log("\n=== Existing links ===");
   for (const l of links) console.log(`  ${l.link_type}: ${l.cnt}`);
 
   // Check if any judikatur-cites links exist
   const jc = (await engine.executeRaw(
-    `SELECT count(*) as cnt FROM links WHERE link_type = 'judikatur-cites'`, []
+    `SELECT count(*) as cnt FROM links WHERE link_type = 'judikatur-cites'`,
+    []
   )) as any[];
   console.log(`\njudikatur-cites links: ${jc[0].cnt}`);
 
@@ -38,11 +41,15 @@ async function main() {
   const jp = (await engine.executeRaw(
     `SELECT source_id, count(*) as cnt FROM pages
      WHERE source_id LIKE 'law-at-judikatur%'
-     GROUP BY source_id ORDER BY source_id`, []
+     GROUP BY source_id ORDER BY source_id`,
+    []
   )) as any[];
   console.log("\n=== Judikatur pages ===");
   for (const p of jp) console.log(`  ${p.source_id}: ${p.cnt}`);
 
   await engine.disconnect();
 }
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

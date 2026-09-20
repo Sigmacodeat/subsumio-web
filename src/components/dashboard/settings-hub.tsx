@@ -502,7 +502,11 @@ export function SettingsHub({ userRole }: { userRole: string }) {
       )}
 
       {groups.map((group) => (
-        <section key={group.id} aria-labelledby={`settings-group-${group.id}`} className="space-y-3">
+        <section
+          key={group.id}
+          aria-labelledby={`settings-group-${group.id}`}
+          className="space-y-3"
+        >
           <h2
             id={`settings-group-${group.id}`}
             className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase"

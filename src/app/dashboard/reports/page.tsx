@@ -203,7 +203,11 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-            <CalendarCheck size={18} className="text-[color:var(--ds-text-muted)]" aria-hidden="true" />
+            <CalendarCheck
+              size={18}
+              className="text-[color:var(--ds-text-muted)]"
+              aria-hidden="true"
+            />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -416,7 +420,10 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div className="flex items-center gap-2">
             {statusIcon(job.status)}
-            <h2 id="report-detail-title" className="text-sm font-semibold text-[color:var(--ds-text)]">
+            <h2
+              id="report-detail-title"
+              className="text-sm font-semibold text-[color:var(--ds-text)]"
+            >
               {roleLabel(job.role, t)}{" "}
               <span className="font-mono text-[color:var(--ds-text-subtle)]">#{job.id}</span>
             </h2>
@@ -619,7 +626,7 @@ export default function ReportsPage() {
       {/* Tabs */}
       <div
         role="tablist"
-        className="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] [scrollbar-width:none]"
+        className="flex [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)]"
       >
         {tabs.map((tabItem) => {
           const Icon = tabItem.icon;
@@ -631,7 +638,7 @@ export default function ReportsPage() {
               aria-selected={tab === tabItem.id}
               onClick={() => setTab(tabItem.id)}
               className={cn(
-                "flex shrink-0 items-center gap-2 border-b-2 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 tab === tabItem.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

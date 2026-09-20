@@ -903,7 +903,6 @@ export default function VaultPage() {
                   </ul>
                 </div>
               )}
-
             </div>
           )}
         </div>
@@ -1124,33 +1123,33 @@ export default function VaultPage() {
                       doc.extractionStatus !== "error" &&
                       doc.extractionStatus !== "ocr_failed" &&
                       doc.extractionStatus !== "partial" && (
-                      <Badge
-                        variant="default"
-                        className={`border text-xs ${
-                          doc.extractionStatus === "failed" || doc.extractionStatus === "error"
-                            ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                        <Badge
+                          variant="default"
+                          className={`border text-xs ${
+                            doc.extractionStatus === "failed" || doc.extractionStatus === "error"
+                              ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                              : doc.extractionStatus === "processing" ||
+                                  doc.extractionStatus === "uploaded"
+                                ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                                : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                          }`}
+                        >
+                          {doc.extractionStatus === "failed" || doc.extractionStatus === "error"
+                            ? lang === "en"
+                              ? "Extraction failed"
+                              : t("vault.extraction_failed")
                             : doc.extractionStatus === "processing" ||
                                 doc.extractionStatus === "uploaded"
-                              ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
-                              : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
-                        }`}
-                      >
-                        {doc.extractionStatus === "failed" || doc.extractionStatus === "error"
-                          ? lang === "en"
-                            ? "Extraction failed"
-                            : t("vault.extraction_failed")
-                          : doc.extractionStatus === "processing" ||
-                              doc.extractionStatus === "uploaded"
-                            ? lang === "en"
-                              ? "Processing…"
-                              : t("vault.processing")
-                            : doc.extractionStatus === "ocr_needed"
                               ? lang === "en"
-                                ? "OCR needed"
-                                : "Texterkennung nötig"
-                              : doc.extractionStatus}
-                      </Badge>
-                    )}
+                                ? "Processing…"
+                                : t("vault.processing")
+                              : doc.extractionStatus === "ocr_needed"
+                                ? lang === "en"
+                                  ? "OCR needed"
+                                  : "Texterkennung nötig"
+                                : doc.extractionStatus}
+                        </Badge>
+                      )}
                     {doc.isSplitParent && (
                       <Badge
                         variant="default"

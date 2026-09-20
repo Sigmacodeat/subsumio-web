@@ -75,7 +75,9 @@ export default function LegalInsurancePage() {
       setItems(j.data?.items ?? []);
     } catch (err) {
       console.error("[rsv] load failed:", err instanceof Error ? err.message : err);
-      setLoadError("Die Deckungsanfragen konnten nicht geladen werden. Bitte laden Sie die Seite neu.");
+      setLoadError(
+        "Die Deckungsanfragen konnten nicht geladen werden. Bitte laden Sie die Seite neu."
+      );
     } finally {
       setLoading(false);
     }
@@ -248,7 +250,11 @@ export default function LegalInsurancePage() {
               {tr("workspace.rsv.ready")}
             </h2>
             <Button variant="outline" size="sm" onClick={() => void copyEmail()}>
-              {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+              {copied ? (
+                <Check size={14} aria-hidden="true" />
+              ) : (
+                <Copy size={14} aria-hidden="true" />
+              )}
               {copied ? "Kopiert" : "Text kopieren"}
             </Button>
           </div>

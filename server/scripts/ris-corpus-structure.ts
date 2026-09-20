@@ -49,15 +49,24 @@ async function fetchRisMeta(gnr: string): Promise<RisMeta | null> {
   const url = `${RIS_API}?Applikation=BrKons&Gesetzesnummer=${gnr}&DokumenteProSeite=OneHundred&Seitennummer=1`;
   try {
     const res = await fetch(url, { headers: RIS_UA });
-    if (!res.ok) { risCache.set(gnr, null); return null; }
-    const data = await res.json() as any;
+    if (!res.ok) {
+      risCache.set(gnr, null);
+      return null;
+    }
+    const data = (await res.json()) as any;
     const result = data?.OgdSearchResult?.OgdDocumentResults;
     let refs = result?.OgdDocumentReference;
-    if (!refs) { risCache.set(gnr, null); return null; }
+    if (!refs) {
+      risCache.set(gnr, null);
+      return null;
+    }
     if (!Array.isArray(refs)) refs = [refs];
     const bund = refs[0]?.Data?.Metadaten?.Bundesrecht;
     const brKons = bund?.BrKons;
-    if (!brKons) { risCache.set(gnr, null); return null; }
+    if (!brKons) {
+      risCache.set(gnr, null);
+      return null;
+    }
     const hits = result?.Hits?.["#text"];
     const meta: RisMeta = {
       gesetzesnummer: brKons.Gesetzesnummer,
@@ -86,7 +95,7 @@ async function lookupGnrByTitle(title: string): Promise<RisMeta | null> {
   try {
     const res = await fetch(url, { headers: RIS_UA });
     if (!res.ok) return null;
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     let refs = data?.OgdSearchResult?.OgdDocumentResults?.OgdDocumentReference;
     if (!refs) return null;
     if (!Array.isArray(refs)) refs = [refs];
@@ -106,7 +115,10 @@ async function lookupGnrByTitle(title: string): Promise<RisMeta | null> {
       if (info.kurztitel.toLowerCase().trim() === titleLower) return await fetchRisMeta(gnr);
     }
     for (const [gnr, info] of byGnr) {
-      if (info.kurztitel.toLowerCase().startsWith(titleLower) || titleLower.startsWith(info.kurztitel.toLowerCase())) {
+      if (
+        info.kurztitel.toLowerCase().startsWith(titleLower) ||
+        titleLower.startsWith(info.kurztitel.toLowerCase())
+      ) {
         return await fetchRisMeta(gnr);
       }
     }
@@ -151,24 +163,45 @@ function analyzeFile(content: string): FileStructure {
 
 function buildFrontmatter(fm: Record<string, string>): string {
   const order = [
-    "title", "type", "jurisdiction", "abbreviation", "gesetzesnummer",
-    "typ", "kundmachungsorgan", "inkrafttretensdatum", "ausserkrafttretensdatum",
-    "version_date", "retrieved_at", "source_url", "eli",
-    "content_hash", "license",
+    "title",
+    "type",
+    "jurisdiction",
+    "abbreviation",
+    "gesetzesnummer",
+    "typ",
+    "kundmachungsorgan",
+    "inkrafttretensdatum",
+    "ausserkrafttretensdatum",
+    "version_date",
+    "retrieved_at",
+    "source_url",
+    "eli",
+    "content_hash",
+    "license",
   ];
   const lines: string[] = ["---"];
   const seen = new Set<string>();
   for (const key of order) {
     if (fm[key] !== undefined && fm[key] !== "") {
       const val = fm[key];
-      const needsQuoting = val.includes(":") || val.includes("#") || val.includes('"') || val.includes("—") || val.includes("–");
+      const needsQuoting =
+        val.includes(":") ||
+        val.includes("#") ||
+        val.includes('"') ||
+        val.includes("—") ||
+        val.includes("–");
       lines.push(`${key}: ${needsQuoting ? `"${val.replace(/"/g, '\\"')}"` : val}`);
       seen.add(key);
     }
   }
   for (const [key, val] of Object.entries(fm)) {
     if (!seen.has(key) && val !== undefined && val !== "") {
-      const needsQuoting = val.includes(":") || val.includes("#") || val.includes('"') || val.includes("—") || val.includes("–");
+      const needsQuoting =
+        val.includes(":") ||
+        val.includes("#") ||
+        val.includes('"') ||
+        val.includes("—") ||
+        val.includes("–");
       lines.push(`${key}: ${needsQuoting ? `"${val.replace(/"/g, '\\"')}"` : val}`);
     }
   }
@@ -186,21 +219,40 @@ function extractGnrFromUrl(url: string): string | undefined {
 
 function enrichWithRis(fm: Record<string, string>, ris: RisMeta): boolean {
   let changed = false;
-  if (!fm.typ && ris.typ) { fm.typ = ris.typ; changed = true; }
-  if (!fm.kundmachungsorgan && ris.kundmachungsorgan) { fm.kundmachungsorgan = ris.kundmachungsorgan; changed = true; }
-  if (!fm.inkrafttretensdatum && ris.inkrafttretensdatum) { fm.inkrafttretensdatum = ris.inkrafttretensdatum; changed = true; }
-  if (!fm.ausserkrafttretensdatum && ris.ausserkrafttretensdatum) { fm.ausserkrafttretensdatum = ris.ausserkrafttretensdatum; changed = true; }
-  if (!fm.eli && ris.eli) { fm.eli = ris.eli; changed = true; }
+  if (!fm.typ && ris.typ) {
+    fm.typ = ris.typ;
+    changed = true;
+  }
+  if (!fm.kundmachungsorgan && ris.kundmachungsorgan) {
+    fm.kundmachungsorgan = ris.kundmachungsorgan;
+    changed = true;
+  }
+  if (!fm.inkrafttretensdatum && ris.inkrafttretensdatum) {
+    fm.inkrafttretensdatum = ris.inkrafttretensdatum;
+    changed = true;
+  }
+  if (!fm.ausserkrafttretensdatum && ris.ausserkrafttretensdatum) {
+    fm.ausserkrafttretensdatum = ris.ausserkrafttretensdatum;
+    changed = true;
+  }
+  if (!fm.eli && ris.eli) {
+    fm.eli = ris.eli;
+    changed = true;
+  }
   return changed;
 }
 
 async function main() {
   console.log("╔══════════════════════════════════════════════════════════╗");
   console.log("║  RIS Corpus Structurator — Fix & Enrich Every File       ║");
-  console.log(`║  Mode: ${DRY ? "DRY RUN                    " : "WRITE                       "}   ║`);
+  console.log(
+    `║  Mode: ${DRY ? "DRY RUN                    " : "WRITE                       "}   ║`
+  );
   console.log("╚══════════════════════════════════════════════════════════╝\n");
 
-  const files = readdirSync(corpusDir).filter(f => f.endsWith(".md")).sort();
+  const files = readdirSync(corpusDir)
+    .filter((f) => f.endsWith(".md"))
+    .sort();
   const toProcess = LIMIT > 0 ? files.slice(0, LIMIT) : files;
 
   const stats = {
@@ -254,7 +306,10 @@ async function main() {
     if (!gnr) {
       const titleFromFilename = filename.replace(/\.md$/, "").replace(/-/g, " ").trim();
       const searchTitle = fm.title
-        ? fm.title.replace(/^.*?—\s*/, "").replace(/\(.*?\)/g, "").trim()
+        ? fm.title
+            .replace(/^.*?—\s*/, "")
+            .replace(/\(.*?\)/g, "")
+            .trim()
         : titleFromFilename;
 
       process.stdout.write(`  [${i + 1}/${toProcess.length}] 🔍 ${filename.slice(0, 50)}...`);
@@ -279,7 +334,9 @@ async function main() {
     if (gnr) {
       risMeta = await fetchRisMeta(gnr);
       if (!risMeta) {
-        process.stdout.write(`  [${i + 1}/${toProcess.length}] 📊 ${filename.slice(0, 50)}... fetching RIS meta...`);
+        process.stdout.write(
+          `  [${i + 1}/${toProcess.length}] 📊 ${filename.slice(0, 50)}... fetching RIS meta...`
+        );
         risMeta = await fetchRisMeta(gnr);
         console.log(risMeta ? ` ✅` : ` ❌`);
         await new Promise((r) => setTimeout(r, 300));
@@ -309,7 +366,9 @@ async function main() {
     // Step 6: Write
     const newContent = newFm + body;
     if (DRY) {
-      console.log(`  [${i + 1}/${toProcess.length}] 📝 DRY — would write ${filename} (${structure.type})`);
+      console.log(
+        `  [${i + 1}/${toProcess.length}] 📝 DRY — would write ${filename} (${structure.type})`
+      );
     } else {
       writeFileSync(filepath, newContent);
       stats.written++;

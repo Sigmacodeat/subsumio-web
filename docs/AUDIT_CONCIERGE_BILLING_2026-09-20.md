@@ -8,33 +8,33 @@ Drei Lücken habe ich im Zuge dieses Audits gleich geschlossen (Abschnitt 3).
 
 ## 1. Was geprüft wurde und hält
 
-| Bereich | Nachweis |
-|---|---|
-| Testphase | 30 Tage, eine Quelle für die Dauer, Kauf während des Tests rechnet erst ab Testende ab; Tests pinnen Texte gegen die Konstante |
+| Bereich                        | Nachweis                                                                                                                                                                   |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Testphase                      | 30 Tage, eine Quelle für die Dauer, Kauf während des Tests rechnet erst ab Testende ab; Tests pinnen Texte gegen die Konstante                                             |
 | Kein Leck mehr bei KI-Aktionen | Jede Route bucht Credits ab oder steht mit Begründung auf der Ausnahmeliste — `src/app/api/credit-coverage.test.ts`, mit einer absichtlich fehlerhaften Route gegengeprüft |
-| Kontingente | Tarif-Text, Anfragenlimit und Guthaben sagen dieselbe Zahl (Test), Marge > 60 % auch bei Vollnutzung |
-| Chat-Antworten | Live gegen Sonnet 5: 24/24 Katalogfragen belegt beantwortet, kein erfundener Preis, nichts gestrichen, 6/6 Angriffe abgewehrt, ≈ 0,01 $ pro Antwort |
-| Belegprüfung | Erfundene Preise, fremde Quellen, Paraphrasen ohne Deckung und hängende Anschlüsse werden entfernt — je ein Test |
-| Rechtsberatung | Feste Absage, unabhängig vom Modell |
-| Datensparsamkeit im Chat | Aktenzeichen, E-Mail, Telefon, IBAN, SVNR, Geburtsdatum werden vor Modell und Protokoll entfernt; Protokoll ohne IP, 90 Tage |
-| Bedienbarkeit | Tastatur, Fokusführung, Vorlesehilfen, Handy- und Desktop-Ansicht headless geprüft |
-| Betreibersicht | `/ops/leads`: Anfragen, Anteil belegter Antworten, Fragen ohne Antwort |
+| Kontingente                    | Tarif-Text, Anfragenlimit und Guthaben sagen dieselbe Zahl (Test), Marge > 60 % auch bei Vollnutzung                                                                       |
+| Chat-Antworten                 | Live gegen Sonnet 5: 24/24 Katalogfragen belegt beantwortet, kein erfundener Preis, nichts gestrichen, 6/6 Angriffe abgewehrt, ≈ 0,01 $ pro Antwort                        |
+| Belegprüfung                   | Erfundene Preise, fremde Quellen, Paraphrasen ohne Deckung und hängende Anschlüsse werden entfernt — je ein Test                                                           |
+| Rechtsberatung                 | Feste Absage, unabhängig vom Modell                                                                                                                                        |
+| Datensparsamkeit im Chat       | Aktenzeichen, E-Mail, Telefon, IBAN, SVNR, Geburtsdatum werden vor Modell und Protokoll entfernt; Protokoll ohne IP, 90 Tage                                               |
+| Bedienbarkeit                  | Tastatur, Fokusführung, Vorlesehilfen, Handy- und Desktop-Ansicht headless geprüft                                                                                         |
+| Betreibersicht                 | `/ops/leads`: Anfragen, Anteil belegter Antworten, Fragen ohne Antwort                                                                                                     |
 
 ## 2. Was fehlt für „Verkaufsstart“ (nach Dringlichkeit)
 
-| # | Lücke | Wirkung | Aufwand |
-|---|---|---|---|
-| P1 | **Kein Streaming im Chat.** Antworten brauchen gemessen 3,5–8 s, sichtbar ist nur „Suche in unseren Inhalten …“. Marktübliche Vertriebs-Chats schreiben mit. | Besucher brechen ab | mittel |
-| P1 | **Falsche Aussage auf der Startseite**: „Mandantendaten verlassen nie die EU“, während Anthropic (US, Standardvertragsklauseln) als Unterauftragsverarbeiter gelistet ist. Der Chat zitiert die Website wörtlich. | Rechtliches Risiko, Vertrauensschaden | klein (Text) |
-| P1 | **Keine Erinnerung vor Testende** für Konten ohne gewählten Tarif. | Verlorene Abschlüsse | klein |
-| P2 | **Kosten pro Aktion werden nicht gemessen.** Festpreis-Aktionen schreiben Modell und Tokens nicht mit; gehört ins KI-Gateway. | Marge bleibt geschätzt | mittel |
-| P2 | **Guthaben-Prüfung vor, Abzug nach der Arbeit.** Parallel abgeschickte Aufträge passieren alle die Prüfung (gebremst nur durch 30 Anfragen/Minute). | Überziehung möglich | mittel |
-| P2 | **Namen werden nicht geschwärzt.** Nur strukturierte Kennungen. Schreibt jemand „Mandant Huber ./. Meier“, steht das im Protokoll. | Berufsrecht | mittel |
-| P3 | Kontaktanfragen sind nicht in Auskunft und Löschung der DSGVO-Werkzeuge enthalten (nur Konten). | Manuelle Bearbeitung | klein |
-| P3 | Dokumentanalyse kostet fest 2 Credits, unabhängig von der Seitenzahl. | Marge bei großen Akten | klein |
-| P3 | Modellwahl pro Arbeitsbereich liegt auf einem Branch (45 Commits zurück), ohne Credit-Faktoren je Stufe. | Entscheidung offen | mittel |
-| P3 | Kein automatischer Alarm, wenn der Chat reihenweise „keine belegte Auskunft“ antwortet. Zahlen stehen nur in `/ops/leads`. | Späte Reaktion | klein |
-| P3 | Kein E2E-Test des Chatfensters in der CI (nur manuell headless geprüft). | Regression fällt spät auf | klein |
+| #   | Lücke                                                                                                                                                                                                             | Wirkung                               | Aufwand      |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------ |
+| P1  | **Kein Streaming im Chat.** Antworten brauchen gemessen 3,5–8 s, sichtbar ist nur „Suche in unseren Inhalten …“. Marktübliche Vertriebs-Chats schreiben mit.                                                      | Besucher brechen ab                   | mittel       |
+| P1  | **Falsche Aussage auf der Startseite**: „Mandantendaten verlassen nie die EU“, während Anthropic (US, Standardvertragsklauseln) als Unterauftragsverarbeiter gelistet ist. Der Chat zitiert die Website wörtlich. | Rechtliches Risiko, Vertrauensschaden | klein (Text) |
+| P1  | **Keine Erinnerung vor Testende** für Konten ohne gewählten Tarif.                                                                                                                                                | Verlorene Abschlüsse                  | klein        |
+| P2  | **Kosten pro Aktion werden nicht gemessen.** Festpreis-Aktionen schreiben Modell und Tokens nicht mit; gehört ins KI-Gateway.                                                                                     | Marge bleibt geschätzt                | mittel       |
+| P2  | **Guthaben-Prüfung vor, Abzug nach der Arbeit.** Parallel abgeschickte Aufträge passieren alle die Prüfung (gebremst nur durch 30 Anfragen/Minute).                                                               | Überziehung möglich                   | mittel       |
+| P2  | **Namen werden nicht geschwärzt.** Nur strukturierte Kennungen. Schreibt jemand „Mandant Huber ./. Meier“, steht das im Protokoll.                                                                                | Berufsrecht                           | mittel       |
+| P3  | Kontaktanfragen sind nicht in Auskunft und Löschung der DSGVO-Werkzeuge enthalten (nur Konten).                                                                                                                   | Manuelle Bearbeitung                  | klein        |
+| P3  | Dokumentanalyse kostet fest 2 Credits, unabhängig von der Seitenzahl.                                                                                                                                             | Marge bei großen Akten                | klein        |
+| P3  | Modellwahl pro Arbeitsbereich liegt auf einem Branch (45 Commits zurück), ohne Credit-Faktoren je Stufe.                                                                                                          | Entscheidung offen                    | mittel       |
+| P3  | Kein automatischer Alarm, wenn der Chat reihenweise „keine belegte Auskunft“ antwortet. Zahlen stehen nur in `/ops/leads`.                                                                                        | Späte Reaktion                        | klein        |
+| P3  | Kein E2E-Test des Chatfensters in der CI (nur manuell headless geprüft).                                                                                                                                          | Regression fällt spät auf             | klein        |
 
 ## 3. Im Audit gefunden und sofort behoben (Commit 1a83a7c124)
 

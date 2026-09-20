@@ -72,7 +72,11 @@ describe("GET /api/legal/deadlines.ics", () => {
       .mockResolvedValueOnce(Response.json([]))
       .mockResolvedValueOnce(
         Response.json([
-          { slug: "legal/cases/a", title: "Novak", frontmatter: { deadlines: [{ title: "Replik", due_date: "2026-10-01" }] } },
+          {
+            slug: "legal/cases/a",
+            title: "Novak",
+            frontmatter: { deadlines: [{ title: "Replik", due_date: "2026-10-01" }] },
+          },
         ])
       );
 

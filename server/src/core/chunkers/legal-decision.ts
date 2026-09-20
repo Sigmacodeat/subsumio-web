@@ -145,13 +145,9 @@ export function chunkLegalDecision(
   // Strip RIS-OGD boilerplate footer that fetchers append to every document.
   // Pattern: "\n---\n*Quelle: [RIS-OGD](https://www.ris.bka.gv.at/...)*"
   // This URL noise pollutes embeddings and chunk text — remove before chunking.
-  const stripped = body.replace(
-    /\n---\n\*Quelle:\s*\[RIS-OGD\]\([^)]*\)\*\s*$/i,
-    ""
-  ).replace(
-    /\n---\n\*Quelle:\s*\[[^\]]*\]\([^)]*\)\*\s*$/i,
-    ""
-  );
+  const stripped = body
+    .replace(/\n---\n\*Quelle:\s*\[RIS-OGD\]\([^)]*\)\*\s*$/i, "")
+    .replace(/\n---\n\*Quelle:\s*\[[^\]]*\]\([^)]*\)\*\s*$/i, "");
   const trimmed = stripped.trim();
   if (!trimmed) return [];
 
@@ -233,13 +229,18 @@ export function chunkLegalDecision(
   // artifacts where case numbers are replaced with commas, e.g. "## Spruch\n, ,").
   for (const sec of sections) {
     if (
-      (sec.role === "sachverhalt" || sec.role === "entscheidungsgruende" || sec.role === "tenor" || sec.role === "text") &&
+      (sec.role === "sachverhalt" ||
+        sec.role === "entscheidungsgruende" ||
+        sec.role === "tenor" ||
+        sec.role === "text") &&
       sec.text.trim()
     ) {
       // Skip sections that are only punctuation/commas/whitespace (RIS anonymization)
       if (/^[,;\s.]+$/.test(sec.text.trim())) continue;
       // Map "text" role to "entscheidungsgruende" for the chunk_role
-      const role = (sec.role === "text" ? "entscheidungsgruende" : sec.role) as LegalDecisionChunkMetadata["chunk_role"];
+      const role = (
+        sec.role === "text" ? "entscheidungsgruende" : sec.role
+      ) as LegalDecisionChunkMetadata["chunk_role"];
       const text = sec.text.trim();
       if (text.length <= DECISION_MAX_CHARS && countCJKAwareWords(text) <= DECISION_CHUNK_SIZE) {
         chunks.push({

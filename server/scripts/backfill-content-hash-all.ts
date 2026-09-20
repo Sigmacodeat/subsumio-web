@@ -25,7 +25,12 @@ function computeContentHash(text: string): string {
   return createHash("sha256").update(text.trim()).digest("hex").slice(0, 16);
 }
 
-function processFile(filePath: string): { file: string; hash: string; added: boolean; error?: string } {
+function processFile(filePath: string): {
+  file: string;
+  hash: string;
+  added: boolean;
+  error?: string;
+} {
   const content = readFileSync(filePath, "utf-8");
 
   // Skip if already has content_hash
@@ -99,7 +104,9 @@ async function main() {
   console.log("=== PER CORPUS ===");
   for (const [corpus, stats] of Object.entries(byCorpus).sort()) {
     if (stats.added > 0) {
-      console.log(`  ${corpus.padEnd(30)} added=${stats.added} skipped=${stats.skipped} errors=${stats.errors}`);
+      console.log(
+        `  ${corpus.padEnd(30)} added=${stats.added} skipped=${stats.skipped} errors=${stats.errors}`
+      );
     }
   }
 

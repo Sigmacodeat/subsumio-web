@@ -279,7 +279,9 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
     // Federated READ sources (law corpus) — threaded into ctx.auth.allowedSources
     // so sourceScopeOpts() returns {sourceIds: [...]} for scoped search access.
     ...(deps.sourceIds && deps.sourceIds.length > 0
-      ? { auth: { token: "", clientId: "", scopes: [], allowedSources: deps.sourceIds } as AuthInfo }
+      ? {
+          auth: { token: "", clientId: "", scopes: [], allowedSources: deps.sourceIds } as AuthInfo,
+        }
       : {}),
     jobId: deps.jobId,
     subagentId: deps.subagentId,

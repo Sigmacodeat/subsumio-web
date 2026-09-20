@@ -103,6 +103,8 @@ describe("planQuery", () => {
     const plan = await planQuery({ question: "Was sagt § 138 BGB?" });
     expect(plan.sub_queries.length).toBeGreaterThanOrEqual(1);
     expect(plan.sub_queries[0].query.length).toBeGreaterThan(0);
-    expect(["statute_lookup", "case_analysis", "internal_doc_search", "mixed"]).toContain(plan.intent);
+    expect(["statute_lookup", "case_analysis", "internal_doc_search", "mixed"]).toContain(
+      plan.intent
+    );
   });
 });

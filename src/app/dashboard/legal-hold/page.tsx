@@ -247,7 +247,9 @@ export default function LegalHoldPage() {
                 ? "No matters found"
                 : "Keine Akten gefunden"
           }
-          actionLabel={filter === "on_hold" ? (isEn ? "Show all matters" : "Alle Akten anzeigen") : undefined}
+          actionLabel={
+            filter === "on_hold" ? (isEn ? "Show all matters" : "Alle Akten anzeigen") : undefined
+          }
           onAction={filter === "on_hold" ? () => setFilter("all") : undefined}
         />
       ) : (

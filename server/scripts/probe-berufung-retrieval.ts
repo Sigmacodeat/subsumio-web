@@ -32,11 +32,15 @@ async function main() {
       console.log(`\n### ${p.label}`);
       console.log(`Query: ${p.query.slice(0, 90)}${p.query.length > 90 ? "…" : ""}`);
       results.forEach((r, i) => {
-        console.log(`  [${i + 1}] ${r.slug}  (${r.law ?? "-"} ${r.paragraph ?? ""})  score=${r.score.toFixed(3)}`);
+        console.log(
+          `  [${i + 1}] ${r.slug}  (${r.law ?? "-"} ${r.paragraph ?? ""})  score=${r.score.toFixed(3)}`
+        );
       });
       const zpo401 = results.findIndex((r) => /zpo\/p-401\b/.test(r.slug));
       const stpo = results.findIndex((r) => /stpo/i.test(r.slug));
-      console.log(`  → ZPO §401 rank: ${zpo401 >= 0 ? zpo401 + 1 : "MISS"} | StPO present at rank: ${stpo >= 0 ? stpo + 1 : "no"}`);
+      console.log(
+        `  → ZPO §401 rank: ${zpo401 >= 0 ? zpo401 + 1 : "MISS"} | StPO present at rank: ${stpo >= 0 ? stpo + 1 : "no"}`
+      );
     }
   } finally {
     await handle.disconnect();

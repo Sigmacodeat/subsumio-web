@@ -5,11 +5,7 @@
  */
 
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import {
-  __setChatTransportForTests,
-  chat,
-  type ChatResult,
-} from "../src/core/ai/gateway.ts";
+import { __setChatTransportForTests, chat, type ChatResult } from "../src/core/ai/gateway.ts";
 import {
   isProviderFailure,
   openRouterEquivalent,
@@ -24,10 +20,18 @@ function apiError(status: number, message: string): Error {
 
 describe("openRouterEquivalent", () => {
   test("maps current Claude models to their OpenRouter slugs", () => {
-    expect(openRouterEquivalent("anthropic:claude-sonnet-5")).toBe("openrouter:anthropic/claude-sonnet-5");
-    expect(openRouterEquivalent("anthropic:claude-opus-5")).toBe("openrouter:anthropic/claude-opus-5");
-    expect(openRouterEquivalent("anthropic:claude-fable-5-1")).toBe("openrouter:anthropic/claude-fable-5.1");
-    expect(openRouterEquivalent("anthropic:claude-haiku-4-5")).toBe("openrouter:anthropic/claude-haiku-4.5");
+    expect(openRouterEquivalent("anthropic:claude-sonnet-5")).toBe(
+      "openrouter:anthropic/claude-sonnet-5"
+    );
+    expect(openRouterEquivalent("anthropic:claude-opus-5")).toBe(
+      "openrouter:anthropic/claude-opus-5"
+    );
+    expect(openRouterEquivalent("anthropic:claude-fable-5-1")).toBe(
+      "openrouter:anthropic/claude-fable-5.1"
+    );
+    expect(openRouterEquivalent("anthropic:claude-haiku-4-5")).toBe(
+      "openrouter:anthropic/claude-haiku-4.5"
+    );
     expect(openRouterEquivalent("anthropic:claude-haiku-4-5-20251001")).toBe(
       "openrouter:anthropic/claude-haiku-4.5"
     );
@@ -42,7 +46,11 @@ describe("openRouterEquivalent", () => {
 
 describe("isProviderFailure", () => {
   test("account and availability failures fail over", () => {
-    expect(isProviderFailure(apiError(400, "Your credit balance is too low to access the Anthropic API."))).toBe(true);
+    expect(
+      isProviderFailure(
+        apiError(400, "Your credit balance is too low to access the Anthropic API.")
+      )
+    ).toBe(true);
     expect(isProviderFailure(apiError(401, "invalid x-api-key"))).toBe(true);
     expect(isProviderFailure(apiError(429, "rate_limit_error"))).toBe(true);
     expect(isProviderFailure(apiError(529, "overloaded_error"))).toBe(true);
@@ -61,7 +69,9 @@ describe("isProviderFailure", () => {
     expect(isProviderFailure(apiError(400, "messages: prefill not supported"))).toBe(false);
     expect(isProviderFailure(apiError(404, "model not found"))).toBe(false);
     expect(isProviderFailure(apiError(422, "invalid tool schema"))).toBe(false);
-    expect(isProviderFailure(Object.assign(new Error("aborted"), { name: "AbortError" }))).toBe(false);
+    expect(isProviderFailure(Object.assign(new Error("aborted"), { name: "AbortError" }))).toBe(
+      false
+    );
   });
 });
 
@@ -72,7 +82,9 @@ describe("providerFailoverModel", () => {
     expect(providerFailoverModel("anthropic:claude-sonnet-5", credit, KEYED)).toBe(
       "openrouter:anthropic/claude-sonnet-5"
     );
-    expect(providerFailoverModel("anthropic:claude-sonnet-5", credit, {} as NodeJS.ProcessEnv)).toBeNull();
+    expect(
+      providerFailoverModel("anthropic:claude-sonnet-5", credit, {} as NodeJS.ProcessEnv)
+    ).toBeNull();
     expect(
       providerFailoverModel("anthropic:claude-sonnet-5", credit, {
         ...KEYED,
@@ -86,7 +98,12 @@ describe("chat() provider failover", () => {
   const saved = process.env.OPENROUTER_API_KEY;
   const calls: string[] = [];
   const ok = (model: string): ChatResult =>
-    ({ text: `answer from ${model}`, model, stopReason: "end", usage: { input_tokens: 1, output_tokens: 1 } }) as unknown as ChatResult;
+    ({
+      text: `answer from ${model}`,
+      model,
+      stopReason: "end",
+      usage: { input_tokens: 1, output_tokens: 1 },
+    }) as unknown as ChatResult;
 
   beforeEach(() => {
     process.env.OPENROUTER_API_KEY = "sk-or-test";
@@ -101,10 +118,14 @@ describe("chat() provider failover", () => {
   test("empty Anthropic balance → same model via OpenRouter, answer returned", async () => {
     __setChatTransportForTests(async (opts) => {
       calls.push(opts.model!);
-      if (opts.model!.startsWith("anthropic:")) throw apiError(400, "Your credit balance is too low");
+      if (opts.model!.startsWith("anthropic:"))
+        throw apiError(400, "Your credit balance is too low");
       return ok(opts.model!);
     });
-    const res = await chat({ model: "anthropic:claude-haiku-4-5", messages: [{ role: "user", content: "Hallo" }] });
+    const res = await chat({
+      model: "anthropic:claude-haiku-4-5",
+      messages: [{ role: "user", content: "Hallo" }],
+    });
     expect(calls).toEqual(["anthropic:claude-haiku-4-5", "openrouter:anthropic/claude-haiku-4.5"]);
     expect(res.text).toBe("answer from openrouter:anthropic/claude-haiku-4.5");
   });

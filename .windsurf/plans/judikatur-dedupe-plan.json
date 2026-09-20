@@ -5,13 +5,7 @@
     "duplicates": 24444,
     "keep": 122645
   },
-  "mergeFields": [
-    "normen",
-    "entscheidungsart",
-    "document_id",
-    "dokumenttyp",
-    "source_url"
-  ],
+  "mergeFields": ["normen", "entscheidungsart", "document_id", "dokumenttyp", "source_url"],
   "courts": [
     {
       "dir": "at-judikatur-uvs",

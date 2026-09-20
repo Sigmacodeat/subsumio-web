@@ -94,7 +94,13 @@ const TEST_CASES: E2ETestCase[] = [
     test_id: "e2e-003",
     case_file: "kowalski-gegen-immobilien-gmbh-klage.md",
     question: "Welche Mängel wurden in der Wohnung im Fall Kowalski festgestellt?",
-    expected_keywords: ["Feuchtigkeitsschäden", "Bad", "Heizung", "Wohnzimmer", "Fensterdichtungen"],
+    expected_keywords: [
+      "Feuchtigkeitsschäden",
+      "Bad",
+      "Heizung",
+      "Wohnzimmer",
+      "Fensterdichtungen",
+    ],
     description: "Mängelliste aus Klageschrift extrahieren",
   },
   {
@@ -173,11 +179,19 @@ function formatReport(results: E2ETestResult[]): string {
     const status = r.passed ? "✅" : "❌";
     lines.push(`  ${status} ${r.test_id}: ${r.description}`);
     lines.push(`     Question: ${r.question}`);
-    lines.push(`     Import: ${r.import_success ? "✓" : "✗"} | Retrieval: ${r.retrieval_success ? `✓ (${r.result_count} results)` : "✗"} | Synthesis: ${r.synthesis_success ? `✓ (${r.answer_length} chars)` : "✗"}`);
-    lines.push(`     Guardrail: ${r.guardrail_passed ? "✓ PASS" : "✗ FLAGGED"}${r.guardrail_flags.length > 0 ? ` [${r.guardrail_flags.join(", ")}]` : ""}`);
-    lines.push(`     Keywords: ${r.keywords_found.length}/${r.keywords_found.length + r.keywords_missing.length} found${r.keywords_missing.length > 0 ? ` (missing: ${r.keywords_missing.join(", ")})` : ""}`);
+    lines.push(
+      `     Import: ${r.import_success ? "✓" : "✗"} | Retrieval: ${r.retrieval_success ? `✓ (${r.result_count} results)` : "✗"} | Synthesis: ${r.synthesis_success ? `✓ (${r.answer_length} chars)` : "✗"}`
+    );
+    lines.push(
+      `     Guardrail: ${r.guardrail_passed ? "✓ PASS" : "✗ FLAGGED"}${r.guardrail_flags.length > 0 ? ` [${r.guardrail_flags.join(", ")}]` : ""}`
+    );
+    lines.push(
+      `     Keywords: ${r.keywords_found.length}/${r.keywords_found.length + r.keywords_missing.length} found${r.keywords_missing.length > 0 ? ` (missing: ${r.keywords_missing.join(", ")})` : ""}`
+    );
     if (r.frist_check) {
-      lines.push(`     Frist: ${r.frist_check.fristart} expected=${r.frist_check.expected} computed=${r.frist_check.computed} ${r.frist_check.match ? "✓" : "✗"}`);
+      lines.push(
+        `     Frist: ${r.frist_check.fristart} expected=${r.frist_check.expected} computed=${r.frist_check.computed} ${r.frist_check.match ? "✓" : "✗"}`
+      );
     }
     if (r.error) {
       lines.push(`     ERROR: ${r.error}`);
@@ -217,22 +231,37 @@ async function main() {
   const { loadConfig, toEngineConfig } = await import("../../core/config.ts");
   const { createEngine } = await import("../../core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../../core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine } = await import("../../core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine } =
+    await import("../../core/ai/gateway.ts");
   const { importFromContent } = await import("../../core/import-file.ts");
   const { chat: gatewayChat } = await import("../../core/ai/gateway.ts");
 
   const cfg = loadConfig();
   if (!cfg) {
-    throw new Error("No engine configured. Set DATABASE_URL / ~/.gbrain/config.json before running this eval.");
+    throw new Error(
+      "No engine configured. Set DATABASE_URL / ~/.gbrain/config.json before running this eval."
+    );
   }
   configureGateway(buildGatewayConfig(cfg));
 
   process.stderr.write(`[e2e-pipeline] connecting to engine...\n`);
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
-  try { await reconfigureGatewayWithEngine(engine); } catch { /* non-fatal */ }
+  try {
+    await reconfigureGatewayWithEngine(engine);
+  } catch {
+    /* non-fatal */
+  }
 
-  const CASE_FILES_DIR = join(resolve(import.meta.dir), "..", "..", "..", "test", "fixtures", "akten");
+  const CASE_FILES_DIR = join(
+    resolve(import.meta.dir),
+    "..",
+    "..",
+    "..",
+    "test",
+    "fixtures",
+    "akten"
+  );
   const EVAL_SOURCE_ID = "eval-akten";
 
   // Step 1: Import all case files
@@ -257,7 +286,10 @@ async function main() {
         await importFromContent(engine, slug, content, { sourceId: EVAL_SOURCE_ID });
         process.stderr.write(`[e2e-pipeline] imported ${slug}\n`);
       } catch (err: any) {
-        if (String(err?.message ?? err).includes("duplicate") || String(err?.message ?? err).includes("exists")) {
+        if (
+          String(err?.message ?? err).includes("duplicate") ||
+          String(err?.message ?? err).includes("exists")
+        ) {
           process.stderr.write(`[e2e-pipeline] already exists: ${slug}\n`);
         } else {
           process.stderr.write(`[e2e-pipeline] ERROR importing ${slug}: ${err?.message}\n`);
@@ -382,11 +414,12 @@ async function main() {
           result.keywords_found = kwCheck.found;
           result.keywords_missing = kwCheck.missing;
           result.content_match = kwCheck.missing.length === 0;
-
         } catch (err: any) {
           result.error = `Synthesis error: ${err?.message}`;
           results.push(result);
-          process.stderr.write(`[e2e-pipeline] ${tc.test_id} FAIL: synthesis error: ${err?.message}\n`);
+          process.stderr.write(
+            `[e2e-pipeline] ${tc.test_id} FAIL: synthesis error: ${err?.message}\n`
+          );
           continue;
         }
       } else {
@@ -406,7 +439,9 @@ async function main() {
         // Extract the ausloeser from the case file content
         const caseContent = readFileSync(join(CASE_FILES_DIR, tc.case_file), "utf-8");
         // Look for Zustellung date pattern
-        const dateMatch = caseContent.match(/Zustellung.*?am\s+(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/i);
+        const dateMatch = caseContent.match(
+          /Zustellung.*?am\s+(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/i
+        );
         let ausloeser = "";
         if (dateMatch) {
           ausloeser = `${dateMatch[3]}-${dateMatch[2].padStart(2, "0")}-${dateMatch[1].padStart(2, "0")}`;
@@ -459,13 +494,16 @@ async function main() {
     appendFileSync(outputPath, JSON.stringify(r) + "\n");
   }
   const passed = results.filter((r) => r.passed).length;
-  appendFileSync(outputPath, JSON.stringify({
-    kind: "summary",
-    total: results.length,
-    passed,
-    failed: results.length - passed,
-    gate: { passed: passed === results.length, target: "100% pass" },
-  }) + "\n");
+  appendFileSync(
+    outputPath,
+    JSON.stringify({
+      kind: "summary",
+      total: results.length,
+      passed,
+      failed: results.length - passed,
+      gate: { passed: passed === results.length, target: "100% pass" },
+    }) + "\n"
+  );
   process.stderr.write(`[e2e-pipeline] output written to ${outputPath}\n`);
 
   await engine.disconnect();

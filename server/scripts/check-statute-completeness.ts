@@ -74,7 +74,8 @@ async function main() {
     }
 
     // Extract versionDate and gesetzesnummer from frontmatter for each file
-    const statutes: { abbr: string; versionDate: string | null; gesetzesnummer: string | null }[] = [];
+    const statutes: { abbr: string; versionDate: string | null; gesetzesnummer: string | null }[] =
+      [];
     for (const file of files) {
       const raw = readFileSync(join(dirPath, file), "utf-8");
       const fmMatch = raw.match(/^---\n([\s\S]*?)\n---/);
@@ -172,14 +173,18 @@ async function main() {
           live_version: null,
           status: "error",
         });
-        console.log(`  ❌ ${abbr.padEnd(20)} — Fehler: ${e instanceof Error ? e.message : String(e)}`);
+        console.log(
+          `  ❌ ${abbr.padEnd(20)} — Fehler: ${e instanceof Error ? e.message : String(e)}`
+        );
       }
 
       // Rate limit
       await new Promise((r) => setTimeout(r, 300));
     }
 
-    console.log(`\n  ${jur.toUpperCase()} Zusammenfassung: ${current} aktuell, ${outdated} veraltet, ${notFound} nicht gefunden, ${errors} Fehler`);
+    console.log(
+      `\n  ${jur.toUpperCase()} Zusammenfassung: ${current} aktuell, ${outdated} veraltet, ${notFound} nicht gefunden, ${errors} Fehler`
+    );
   }
 
   // Final summary

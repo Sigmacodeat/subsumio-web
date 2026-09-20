@@ -27,6 +27,6 @@ export function useMediaQuery(query: string, serverFallback = false): boolean {
       typeof window !== "undefined" && window.matchMedia
         ? window.matchMedia(query).matches
         : serverFallback,
-    () => serverFallback,
+    () => serverFallback
   );
 }

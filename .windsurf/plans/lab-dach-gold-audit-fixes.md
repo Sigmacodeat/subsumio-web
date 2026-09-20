@@ -1,6 +1,7 @@
 # LAB-DACH Gold Task Audit — Implementation Blueprint
 
 ## Ziel
+
 Behebung von 4 Audit-Befunden zu Holdout-Security, Future-Timestamps, CH-Draft-Status und CI-Guard.
 
 ---
@@ -8,9 +9,11 @@ Behebung von 4 Audit-Befunden zu Holdout-Security, Future-Timestamps, CH-Draft-S
 ## WP1: Holdout aus dem Repo entfernen
 
 ### Ziel
+
 Kein Holdout-Klartext im Repo. SHA-256-Manifest zur Integritätsprüfung. Runner lädt Holdout nur bei `--holdout-path`.
 
 ### Dateien
+
 - **NEW**: `server/src/eval/lab-dach/holdout/holdout-manifest.json` — Task-IDs + SHA-256 Hashes (bereits generiert)
 - **REPLACE**: `server/src/eval/lab-dach/holdout/gold-tasks-holdout.ts` — Stub: exportiert leeres Array + Manifest-Referenz
 - **MODIFY**: `server/src/eval/lab-dach/public-benchmark.ts` — entferne `GOLD_HOLDOUT` Import, füge `loadHoldoutTasks(path)` hinzu, `getAllHoldoutTasks()` returns `[]`
@@ -18,6 +21,7 @@ Kein Holdout-Klartext im Repo. SHA-256-Manifest zur Integritätsprüfung. Runner
 - **MODIFY**: `server/src/eval/lab-dach/cli.ts` — `--holdout-path` CLI Flag
 
 ### Manifest-Daten (bereits computed)
+
 ```json
 {
   "seal_hash": "16951aae957cbd9381eecfe99deda5fe07e29654738b7f6285853580ba18ad11",
@@ -35,6 +39,7 @@ Kein Holdout-Klartext im Repo. SHA-256-Manifest zur Integritätsprüfung. Runner
 ```
 
 ### Stub-File (`gold-tasks-holdout.ts`)
+
 ```typescript
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -56,7 +61,13 @@ export interface HoldoutManifest {
   generated_at: string;
   task_count: number;
   seal_hash: string;
-  tasks: Array<{ id: string; title: string; jurisdiction: string; legal_area: string; hash: string }>;
+  tasks: Array<{
+    id: string;
+    title: string;
+    jurisdiction: string;
+    legal_area: string;
+    hash: string;
+  }>;
 }
 
 export function loadHoldoutTasks(path: string): Task[] {
@@ -66,16 +77,19 @@ export function loadHoldoutTasks(path: string): Task[] {
 ```
 
 ### `public-benchmark.ts` Änderungen
+
 - Remove `import { GOLD_HOLDOUT } from "./holdout/gold-tasks-holdout.ts"`
 - Import from stub instead: `import { GOLD_HOLDOUT, loadHoldoutTasks, loadHoldoutManifest, type HoldoutManifest } from "./holdout/gold-tasks-holdout.ts"`
 - `getAllHoldoutTasks()` returns `GOLD_HOLDOUT` (empty by default)
 - Add `loadHoldoutTasksFromPath(path: string): Task[]` that loads external file + verifies against manifest
 
 ### `e2e-harness.ts` Änderungen
+
 - Add `holdoutPath?: string` to `runE2E` opts
 - If `holdoutPath` provided, load holdout tasks from that path and append to task list
 
 ### `cli.ts` Änderungen
+
 - Add `--holdout-path <path>` CLI argument
 - Pass to `runE2E` opts
 
@@ -84,12 +98,15 @@ export function loadHoldoutTasks(path: string): Task[] {
 ## WP2: CI-Guard Test
 
 ### Ziel
+
 Test failt, wenn Task-Inhalte mit `split: "holdout"` im Repo-Baum liegen.
 
 ### Dateien
+
 - **MODIFY**: `server/src/eval/lab-dach/gold-tasks.test.ts` — neuer Test-Block
 
 ### Test-Logik
+
 ```typescript
 describe("CI-Guard: No holdout cleartext in repo", () => {
   it("no .ts file in lab-dach/ should contain holdout task prompts or reference outputs", () => {
@@ -113,9 +130,11 @@ describe("CI-Guard: No holdout cleartext in repo", () => {
 ## WP3: Zukunfts-Zeitstempel bereinigen
 
 ### Ziel
+
 Alle `reviewed_at` mit Zukunftswert → `null`, `review_status` → `"draft"`.
 
 ### Betroffene Dateien (alle haben `reviewed_at: "2026-07-15T10:00:00Z"`)
+
 1. `gold-tasks-de-litigation.ts` — `REVIEWER.reviewed_at` + alle `review_status: "approved"` → `"draft"`
 2. `gold-tasks-de-criminal.ts` — `R.reviewed_at` + alle `review_status: "approved"` → `"draft"`
 3. `gold-tasks-at-litigation.ts` — `R.reviewed_at` + alle `review_status: "approved"` → `"draft"`
@@ -123,14 +142,17 @@ Alle `reviewed_at` mit Zukunftswert → `null`, `review_status` → `"draft"`.
 5. `holdout/gold-tasks-holdout.ts` — wird durch Stub ersetzt (keine Timestamps mehr)
 
 ### Type-Änderung
+
 - `ReviewerInfo.reviewed_at`: `string` → `string | null`
 
 ### `validateGoldTask` Änderung
+
 - Wenn `review_status === "draft"`: `reviewer.reviewed_at` darf `null` sein
 - Wenn `review_status === "approved"`: `reviewer.reviewed_at` muss gesetzt sein
 - `review_status` darf `"draft"` oder `"approved"` sein (nicht mehr nur `"approved"`)
 
 ### Pro Datei
+
 - Reviewer-Objekt: `reviewed_at: "2026-07-15T10:00:00Z"` → `reviewed_at: null`
 - Alle Task-Objekte: `review_status: "approved"` → `review_status: "draft"`
 - `reviewed_by` Feld entfernen (wird durch `review_status: "draft"` impliziert)
@@ -141,24 +163,29 @@ Alle `reviewed_at` mit Zukunftswert → `null`, `review_status` → `"draft"`.
 ## WP4: CH-Goldtasks als Draft in Reports
 
 ### Ziel
+
 CH-Tasks in jeder Report-/Publikationsfläche als Draft ausweisen, aus Aggregat-Metriken ausschließen.
 
 ### Dateien
+
 - **MODIFY**: `server/src/eval/lab-dach/scoring.ts` — `computeAggregateScore`: CH-Tasks aus Aggregaten ausschließen
 - **MODIFY**: `server/src/eval/lab-dach/report.ts` — CH-Tasks als Draft markieren
 - **MODIFY**: `server/src/eval/lab-dach/public-benchmark.ts` — `generateMarkdownReport`: CH-Draft-Warning
 
 ### `scoring.ts` Änderungen
+
 - `computeAggregateScore`: Filter `task.jurisdiction !== "CH"` für Haupt-Aggregate
 - Separate `draft_tasks` Sektion: CH-Tasks werden gelistet aber nicht in `total_tasks`, `all_pass_count` etc. gezählt
 - `by_jurisdiction`: CH wird separat als `(draft)` markiert
 - Neues Feld: `excluded_draft_count: number` und `excluded_draft_tasks: string[]`
 
 ### `report.ts` Änderungen
+
 - `generateFullReport`: Zusätzlicher Header "⚠️ CH tasks excluded from aggregate metrics (draft status)"
 - Per-Task Sektion: `[DRAFT]` Marker für CH-Tasks
 
 ### `public-benchmark.ts` Änderungen
+
 - `generateMarkdownReport`: Warning falls CH-Tasks in Results enthalten
 - `AggregateMetricsExport`: `excluded_draft_tasks` Feld
 
@@ -167,9 +194,11 @@ CH-Tasks in jeder Report-/Publikationsfläche als Draft ausweisen, aus Aggregat-
 ## WP5: Tests aktualisieren
 
 ### Dateien
+
 - **MODIFY**: `server/src/eval/lab-dach/gold-tasks.test.ts`
 
 ### Änderungen
+
 1. `validateGoldTask` Tests: erlaube `review_status: "draft"` mit `reviewed_at: null`
 2. "every gold task should have review_status 'approved'" → `"draft"` (oder split: DE/AT="draft", CH="draft")
 3. "every gold task should have reviewer metadata" → `reviewed_at` darf `null` sein für draft
@@ -193,6 +222,7 @@ CH-Tasks in jeder Report-/Publikationsfläche als Draft ausweisen, aus Aggregat-
 ---
 
 ## Definition of Done
+
 - [x] Kein Holdout-Klartext im Repo
 - [x] CI-Guard aktiv (Test failt bei Holdout-Klartext)
 - [x] Keine Zukunfts-Provenienz (reviewed_at=null, status=draft)

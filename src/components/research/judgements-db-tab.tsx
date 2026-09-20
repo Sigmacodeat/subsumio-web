@@ -521,7 +521,9 @@ export default function JudgementsDbPage() {
         {results.length === 0 && !loading && !pipelineLoading && !query && (
           <div className="flex flex-col items-center justify-center py-12 text-[color:var(--ds-text-muted)]">
             <Landmark className="mb-3 h-10 w-10 opacity-30" />
-            <p className="text-sm">Suchen Sie nach Entscheidungen, Geschäftszahlen oder Rechtsgebieten.</p>
+            <p className="text-sm">
+              Suchen Sie nach Entscheidungen, Geschäftszahlen oder Rechtsgebieten.
+            </p>
           </div>
         )}
 

@@ -177,7 +177,10 @@ describe("provenanceToJSON", () => {
 
 describe("edge cases", () => {
   test("very long passage is truncated to window", () => {
-    const longText = "Lorem ipsum dolor sit amet. ".repeat(50) + " § 433 BGB regelt die Pflichten. " + "Lorem ipsum dolor sit amet. ".repeat(50);
+    const longText =
+      "Lorem ipsum dolor sit amet. ".repeat(50) +
+      " § 433 BGB regelt die Pflichten. " +
+      "Lorem ipsum dolor sit amet. ".repeat(50);
     const pagesBlock = `<page slug="test/long" rank="1">${longText}</page>`;
     const answer = "§ 433 BGB regelt die Pflichten.";
     const result = buildProvenance(answer, pagesBlock);

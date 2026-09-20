@@ -23,7 +23,14 @@ export const deepseek: Recipe = {
   },
   touchpoints: {
     chat: {
-      models: ["deepseek-chat", "deepseek-reasoner", "deepseek-v3.2", "deepseek-v3.2-exp", "deepseek-v4-flash", "deepseek-v4-pro"],
+      models: [
+        "deepseek-chat",
+        "deepseek-reasoner",
+        "deepseek-v3.2",
+        "deepseek-v3.2-exp",
+        "deepseek-v4-flash",
+        "deepseek-v4-pro",
+      ],
       supports_tools: true,
       supports_subagent_loop: true,
       supports_prompt_cache: false,

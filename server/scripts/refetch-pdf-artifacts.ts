@@ -26,51 +26,166 @@ import { $ } from "bun";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
-const SOURCE = args.find((a) => a.startsWith("--source="))?.split("=")[1]
-  ?? args[args.indexOf("--source") + 1];
-const BATCH_SIZE = parseInt(args.find((a) => a.startsWith("--batch-size="))?.split("=")[1] ?? "100", 10);
-const SLEEP_MS = parseInt(args.find((a) => a.startsWith("--sleep-ms="))?.split("=")[1] ?? "200", 10);
+const SOURCE =
+  args.find((a) => a.startsWith("--source="))?.split("=")[1] ?? args[args.indexOf("--source") + 1];
+const BATCH_SIZE = parseInt(
+  args.find((a) => a.startsWith("--batch-size="))?.split("=")[1] ?? "100",
+  10
+);
+const SLEEP_MS = parseInt(
+  args.find((a) => a.startsWith("--sleep-ms="))?.split("=")[1] ?? "200",
+  10
+);
 const LIMIT = parseInt(args.find((a) => a.startsWith("--limit="))?.split("=")[1] ?? "0", 10);
 
 const CORPUS_ROOT = `${process.cwd()}/law-corpus`;
 
 // ── DB ─────────────────────────────────────────────────────────────────
-const DB_URL = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
+const DB_URL = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
 const DB_NAME = "subsumio_law_v2";
 const URL_ = DB_URL.replace(/\/[^/?]+(\?|$)/, `/${DB_NAME}$1`);
 
 // ── Source-ID → Korpus-Verzeichnis + RIS-Typ ────────────────────────────
 interface SourceConfig {
-  corpusDir: string;      // law-corpus/<dir>
-  risType: string;        // Dokumente/<type>/ Pfad
-  slugPrefix: string;     // legal/statutes/at/... oder legal/judikatur/at/...
-  slugStrip: string;      // Was vom Slug abgeschnitten wird
+  corpusDir: string; // law-corpus/<dir>
+  risType: string; // Dokumente/<type>/ Pfad
+  slugPrefix: string; // legal/statutes/at/... oder legal/judikatur/at/...
+  slugStrip: string; // Was vom Slug abgeschnitten wird
 }
 
 const SOURCE_CONFIG: Record<string, SourceConfig> = {
-  "law-at-gemeinden": { corpusDir: "at-gemeinden", risType: "Gemeinderecht", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
-  "law-at-bezirke": { corpusDir: "at-bezirke", risType: "Bvb", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
-  "law-at-bmerl": { corpusDir: "at-bmerl", risType: "Erlaesse", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
-  "law-at-judikatur-dok": { corpusDir: "at-judikatur-dok", risType: "Dok", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-avsv": { corpusDir: "at-avsv", risType: "Avsv", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
-  "law-at-avn": { corpusDir: "at-avn", risType: "Avn", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
-  "law-at-landesrecht": { corpusDir: "at-landesrecht", risType: "Landesnormen", slugPrefix: "legal/statutes/at/landesrecht/", slugStrip: "legal/statutes/at/landesrecht/" },
-  "law-at-normen": { corpusDir: "at-normen", risType: "Bundesnormen", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
-  "law-at": { corpusDir: "at", risType: "Bundesnormen", slugPrefix: "legal/statutes/at/", slugStrip: "legal/statutes/at/" },
+  "law-at-gemeinden": {
+    corpusDir: "at-gemeinden",
+    risType: "Gemeinderecht",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
+  "law-at-bezirke": {
+    corpusDir: "at-bezirke",
+    risType: "Bvb",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
+  "law-at-bmerl": {
+    corpusDir: "at-bmerl",
+    risType: "Erlaesse",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
+  "law-at-judikatur-dok": {
+    corpusDir: "at-judikatur-dok",
+    risType: "Dok",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-avsv": {
+    corpusDir: "at-avsv",
+    risType: "Avsv",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
+  "law-at-avn": {
+    corpusDir: "at-avn",
+    risType: "Avn",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
+  "law-at-landesrecht": {
+    corpusDir: "at-landesrecht",
+    risType: "Landesnormen",
+    slugPrefix: "legal/statutes/at/landesrecht/",
+    slugStrip: "legal/statutes/at/landesrecht/",
+  },
+  "law-at-normen": {
+    corpusDir: "at-normen",
+    risType: "Bundesnormen",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
+  "law-at": {
+    corpusDir: "at",
+    risType: "Bundesnormen",
+    slugPrefix: "legal/statutes/at/",
+    slugStrip: "legal/statutes/at/",
+  },
   // Judikatur
-  "law-at-judikatur-gbk": { corpusDir: "at-judikatur-gbk", risType: "Gbk", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-lvwg": { corpusDir: "at-judikatur-lvwg", risType: "Lvwg", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-asylgh": { corpusDir: "at-judikatur-asylgh", risType: "Asylgh", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-dsk": { corpusDir: "at-judikatur-dsk", risType: "Dsk", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-bvwg": { corpusDir: "at-judikatur-bvwg", risType: "Bvwg", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-vfgh": { corpusDir: "at-judikatur-vfgh", risType: "Vfgh", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-vwgh": { corpusDir: "at-judikatur-vwgh", risType: "Vwgh", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-uvs": { corpusDir: "at-judikatur-uvs", risType: "Uvs", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-ogh": { corpusDir: "at-judikatur", risType: "Justiz", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-ubas": { corpusDir: "at-judikatur-ubas", risType: "Ubas", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-pvak": { corpusDir: "at-judikatur-pvak", risType: "Pvak", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
-  "law-at-judikatur-umse": { corpusDir: "at-judikatur-umse", risType: "Umse", slugPrefix: "legal/judikatur/at/", slugStrip: "legal/judikatur/at/" },
+  "law-at-judikatur-gbk": {
+    corpusDir: "at-judikatur-gbk",
+    risType: "Gbk",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-lvwg": {
+    corpusDir: "at-judikatur-lvwg",
+    risType: "Lvwg",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-asylgh": {
+    corpusDir: "at-judikatur-asylgh",
+    risType: "Asylgh",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-dsk": {
+    corpusDir: "at-judikatur-dsk",
+    risType: "Dsk",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-bvwg": {
+    corpusDir: "at-judikatur-bvwg",
+    risType: "Bvwg",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-vfgh": {
+    corpusDir: "at-judikatur-vfgh",
+    risType: "Vfgh",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-vwgh": {
+    corpusDir: "at-judikatur-vwgh",
+    risType: "Vwgh",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-uvs": {
+    corpusDir: "at-judikatur-uvs",
+    risType: "Uvs",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-ogh": {
+    corpusDir: "at-judikatur",
+    risType: "Justiz",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-ubas": {
+    corpusDir: "at-judikatur-ubas",
+    risType: "Ubas",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-pvak": {
+    corpusDir: "at-judikatur-pvak",
+    risType: "Pvak",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
+  "law-at-judikatur-umse": {
+    corpusDir: "at-judikatur-umse",
+    risType: "Umse",
+    slugPrefix: "legal/judikatur/at/",
+    slugStrip: "legal/judikatur/at/",
+  },
 };
 
 // ── XML-Text-Extraktion ────────────────────────────────────────────────
@@ -214,7 +329,8 @@ async function main() {
   console.log("");
 
   // 1. Defekte aus DB lesen
-  const DEFECT_TYPE = args.find((a) => a.startsWith("--defect-type="))?.split("=")[1] ?? "pdf_artifact";
+  const DEFECT_TYPE =
+    args.find((a) => a.startsWith("--defect-type="))?.split("=")[1] ?? "pdf_artifact";
   const sourceFilter = SOURCE ? `and p.source_id = '${SOURCE}'` : "";
   const limitFilter = LIMIT > 0 ? `limit ${LIMIT}` : "";
   const sql = `select distinct p.slug, p.source_id
@@ -251,7 +367,11 @@ async function main() {
   console.log("");
 
   // 3. Refetch
-  let refetched = 0, unchanged = 0, failed = 0, noXml = 0, notFound = 0;
+  let refetched = 0,
+    unchanged = 0,
+    failed = 0,
+    noXml = 0,
+    notFound = 0;
   const logPath = "/tmp/refetch-pdf-artifacts.jsonl";
   writeFileSync(logPath, "");
 
@@ -262,7 +382,8 @@ async function main() {
     if (!config) {
       noXml++;
       appendLog(logPath, { slug: entry.slug, status: "no_config", source: entry.sourceId });
-      if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+      if ((i + 1) % 100 === 0)
+        printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
       continue;
     }
 
@@ -270,7 +391,8 @@ async function main() {
     if (!existsSync(filePath)) {
       notFound++;
       appendLog(logPath, { slug: entry.slug, status: "not_found", path: filePath });
-      if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+      if ((i + 1) % 100 === 0)
+        printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
       continue;
     }
 
@@ -278,7 +400,8 @@ async function main() {
     if (!docId) {
       failed++;
       appendLog(logPath, { slug: entry.slug, status: "no_docid" });
-      if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+      if ((i + 1) % 100 === 0)
+        printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
       continue;
     }
 
@@ -287,8 +410,14 @@ async function main() {
       const response = await fetch(xmlUrl);
       if (!response.ok) {
         failed++;
-        appendLog(logPath, { slug: entry.slug, status: "fetch_failed", code: response.status, url: xmlUrl });
-        if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+        appendLog(logPath, {
+          slug: entry.slug,
+          status: "fetch_failed",
+          code: response.status,
+          url: xmlUrl,
+        });
+        if ((i + 1) % 100 === 0)
+          printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
         continue;
       }
 
@@ -298,7 +427,8 @@ async function main() {
       if (!text.trim() || text.trim().length < 20) {
         failed++;
         appendLog(logPath, { slug: entry.slug, status: "empty_text" });
-        if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+        if ((i + 1) % 100 === 0)
+          printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
         continue;
       }
 
@@ -320,14 +450,16 @@ async function main() {
       if (oldHash === newHash) {
         unchanged++;
         appendLog(logPath, { slug: entry.slug, status: "unchanged" });
-        if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+        if ((i + 1) % 100 === 0)
+          printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
         continue;
       }
 
       if (DRY) {
         refetched++;
         appendLog(logPath, { slug: entry.slug, status: "dry_run", oldHash, newHash });
-        if ((i + 1) % 100 === 0) printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
+        if ((i + 1) % 100 === 0)
+          printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
         continue;
       }
 
@@ -375,10 +507,19 @@ function appendLog(path: string, entry: Record<string, unknown>) {
   }
 }
 
-function printProgress(done: number, total: number, refetched: number, unchanged: number, failed: number, noXml: number) {
+function printProgress(
+  done: number,
+  total: number,
+  refetched: number,
+  unchanged: number,
+  failed: number,
+  noXml: number
+) {
   const pct = ((100 * done) / total).toFixed(1);
-  const rate = (done / (process.uptime())).toFixed(1);
-  console.log(`  ${done}/${total} (${pct}%)  refetched=${refetched} unchanged=${unchanged} failed=${failed} noXml=${noXml}  ${rate}/s`);
+  const rate = (done / process.uptime()).toFixed(1);
+  console.log(
+    `  ${done}/${total} (${pct}%)  refetched=${refetched} unchanged=${unchanged} failed=${failed} noXml=${noXml}  ${rate}/s`
+  );
 }
 
 function sleep(ms: number) {

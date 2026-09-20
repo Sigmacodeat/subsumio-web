@@ -217,7 +217,12 @@ export default function KanzleiSettingsPage() {
             value={settings.iban ?? ""}
             onChange={(v) => update("iban", v)}
           />
-          <Field id="k-bic" label="BIC" value={settings.bic ?? ""} onChange={(v) => update("bic", v)} />
+          <Field
+            id="k-bic"
+            label="BIC"
+            value={settings.bic ?? ""}
+            onChange={(v) => update("bic", v)}
+          />
         </div>
       </Section>
 

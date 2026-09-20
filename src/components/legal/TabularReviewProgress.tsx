@@ -98,10 +98,7 @@ export function TabularReviewProgress({ run, onRetryAll, retrying }: TabularRevi
               {run.title}
             </h3>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tabular.run_created").replace(
-                "{{date}}",
-                formatDateTime(run.created_at)
-              )}
+              {t("tabular.run_created").replace("{{date}}", formatDateTime(run.created_at))}
             </p>
           </div>
         </div>
@@ -188,8 +185,8 @@ export function TabularReviewProgress({ run, onRetryAll, retrying }: TabularRevi
         <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <XCircle size={16} className="mt-0.5 shrink-0" />
           <span>
-            Die Auswertung ist fehlgeschlagen. Bitte starten Sie sie erneut oder versuchen Sie es
-            in einigen Minuten noch einmal.
+            Die Auswertung ist fehlgeschlagen. Bitte starten Sie sie erneut oder versuchen Sie es in
+            einigen Minuten noch einmal.
           </span>
         </div>
       )}

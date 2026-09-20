@@ -36,7 +36,10 @@ const UNDO = process.argv.includes("--undo");
 const REPAIR = process.argv.includes("--repair");
 const COURT = arg("court");
 const PLAN = arg("plan", ".windsurf/plans/judikatur-dedupe-plan.json")!;
-const DB_URL = arg("db", process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain")!;
+const DB_URL = arg(
+  "db",
+  process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
+)!;
 const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 const QUARANTINE = join(CORPUS_ROOT, "_quarantine");
 
@@ -47,7 +50,10 @@ const SLUG_PREFIX: Record<string, { prefix: string; sourceId: string }> = {
   "at-judikatur-vwgh": { prefix: "legal/judikatur/at/vwgh", sourceId: "law-at-judikatur-vwgh" },
   "at-judikatur-bvwg": { prefix: "legal/judikatur/at/bvwg", sourceId: "law-at-judikatur-bvwg" },
   "at-judikatur-lvwg": { prefix: "legal/judikatur/at/lvwg", sourceId: "law-at-judikatur-lvwg" },
-  "at-judikatur-asylgh": { prefix: "legal/judikatur/at/asylgh", sourceId: "law-at-judikatur-asylgh" },
+  "at-judikatur-asylgh": {
+    prefix: "legal/judikatur/at/asylgh",
+    sourceId: "law-at-judikatur-asylgh",
+  },
   "at-judikatur-uvs": { prefix: "legal/judikatur/at/uvs", sourceId: "law-at-judikatur-uvs" },
   "at-judikatur-dsk": { prefix: "legal/judikatur/at/dsk", sourceId: "law-at-judikatur-dsk" },
   "at-judikatur-gbk": { prefix: "legal/judikatur/at/gbk", sourceId: "law-at-judikatur-gbk" },
@@ -102,7 +108,9 @@ async function undo(sql: postgres.Sql) {
     WHERE deleted_at IS NOT NULL AND frontmatter->>'dedupe_removed' = 'true'
   `;
   console.log(`  ${moved} Dateien zurückverschoben, ${res.count} DB-Seiten reaktiviert.`);
-  console.log("  Hinweis: gemergte Frontmatter-Felder bleiben — sie sind additiv und schaden nicht.");
+  console.log(
+    "  Hinweis: gemergte Frontmatter-Felder bleiben — sie sind additiv und schaden nicht."
+  );
 }
 
 /**
@@ -114,7 +122,9 @@ async function repair(sql: postgres.Sql) {
     console.log("Keine Quarantäne vorhanden — nichts zu reparieren.");
     return;
   }
-  console.log(APPLY ? "REPARATUR (--apply)\n" : "REPARATUR — Probelauf, es wird nichts geändert.\n");
+  console.log(
+    APPLY ? "REPARATUR (--apply)\n" : "REPARATUR — Probelauf, es wird nichts geändert.\n"
+  );
   let total = 0;
   for (const dir of readdirSync(QUARANTINE)) {
     const cfg = SLUG_PREFIX[dir];
@@ -122,7 +132,9 @@ async function repair(sql: postgres.Sql) {
       console.log(`  ! ${dir}: kein slugPrefix bekannt — übersprungen`);
       continue;
     }
-    const slugs = readdirSync(join(QUARANTINE, dir)).map((f) => `${cfg.prefix}/${f.replace(/\.md$/, "")}`);
+    const slugs = readdirSync(join(QUARANTINE, dir)).map(
+      (f) => `${cfg.prefix}/${f.replace(/\.md$/, "")}`
+    );
     let offen = 0;
     for (let i = 0; i < slugs.length; i += 1000) {
       const batch = slugs.slice(i, i + 1000);
@@ -143,7 +155,9 @@ async function repair(sql: postgres.Sql) {
       }
     }
     total += offen;
-    console.log(`  ${dir.replace("at-judikatur-", "").padEnd(10)} Quarantäne ${String(slugs.length).padStart(7)} · offene DB-Seiten ${String(offen).padStart(7)}`);
+    console.log(
+      `  ${dir.replace("at-judikatur-", "").padEnd(10)} Quarantäne ${String(slugs.length).padStart(7)} · offene DB-Seiten ${String(offen).padStart(7)}`
+    );
   }
   console.log(`\n  ${APPLY ? "Nachgezogen" : "Offen"}: ${total} DB-Seiten`);
   if (!APPLY) console.log("  Mit --repair --apply ausführen.");
@@ -167,7 +181,11 @@ async function main() {
   const plan = JSON.parse(readFileSync(PLAN, "utf-8")) as { courts: Court[] };
   const courts = plan.courts.filter((c) => (COURT ? c.dir === `at-judikatur-${COURT}` : true));
 
-  console.log(APPLY ? "AUSFÜHRUNG (--apply)\n" : "PROBELAUF — es wird nichts geändert. Mit --apply ausführen.\n");
+  console.log(
+    APPLY
+      ? "AUSFÜHRUNG (--apply)\n"
+      : "PROBELAUF — es wird nichts geändert. Mit --apply ausführen.\n"
+  );
 
   let merged = 0;
   let fieldsAdded = 0;
@@ -213,7 +231,10 @@ async function main() {
         }
         if (add.length > 0) {
           if (APPLY) {
-            writeFileSync(datePath, `---\n${dateParts.fm}\n${add.join("\n")}\n---\n${dateParts.body}`);
+            writeFileSync(
+              datePath,
+              `---\n${dateParts.fm}\n${add.join("\n")}\n---\n${dateParts.body}`
+            );
           }
           cMerged++;
           cFields += add.length;
@@ -267,7 +288,10 @@ async function main() {
   console.log(`  DB-Seiten soft-deleted: ${softDeleted}`);
   if (missingFile > 0) console.log(`  Übersprungen (Datei fehlt): ${missingFile}`);
   if (!APPLY) console.log("\n  Nichts geändert. Mit --apply ausführen, mit --undo zurücknehmen.");
-  else console.log(`\n  Quarantäne: ${QUARANTINE}\n  Rückgängig: bun run server/scripts/judikatur-dedupe-apply.ts --undo`);
+  else
+    console.log(
+      `\n  Quarantäne: ${QUARANTINE}\n  Rückgängig: bun run server/scripts/judikatur-dedupe-apply.ts --undo`
+    );
 
   await sql.end();
 }

@@ -415,9 +415,7 @@ function TabularReviewPageInner() {
           ) : runQuery.isError ? (
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={16} className="shrink-0" />
-              <span className="min-w-0 flex-1">
-                {t("tabular.run_error_load")}
-              </span>
+              <span className="min-w-0 flex-1">{t("tabular.run_error_load")}</span>
               <Button variant="secondary" size="sm" className="text-xs" onClick={clearRun}>
                 {t("tabular.run_clear")}
               </Button>

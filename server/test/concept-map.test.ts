@@ -20,7 +20,7 @@ describe("concept-map", () => {
     test("finds DE Sittenwidrigkeit → § 138 BGB", () => {
       const results = findConceptMappings("Wer haftet bei Sittenwidrigkeit?", "de");
       expect(results.length).toBeGreaterThan(0);
-      const bgb = results.find(r => r.law === "BGB");
+      const bgb = results.find((r) => r.law === "BGB");
       expect(bgb).toBeDefined();
       expect(bgb!.sections).toContain(138);
     });
@@ -28,30 +28,30 @@ describe("concept-map", () => {
     test("finds AT Sittenwidrigkeit → § 879 ABGB", () => {
       const results = findConceptMappings("Sittenwidrigkeit nach AT Recht", "at");
       expect(results.length).toBeGreaterThan(0);
-      const abgb = results.find(r => r.law === "ABGB");
+      const abgb = results.find((r) => r.law === "ABGB");
       expect(abgb).toBeDefined();
       expect(abgb!.sections).toContain(879);
     });
 
     test("finds DE Betrug → § 263 StGB", () => {
       const results = findConceptMappings("Betrug strafbar", "de");
-      const stgb = results.find(r => r.law === "StGB");
+      const stgb = results.find((r) => r.law === "StGB");
       expect(stgb).toBeDefined();
       expect(stgb!.sections).toContain(263);
     });
 
     test("finds DE Gerichtsstand → ZPO", () => {
       const results = findConceptMappings("Gerichtsstand der unerlaubten Handlung", "de");
-      const zpo = results.find(r => r.law === "ZPO");
+      const zpo = results.find((r) => r.law === "ZPO");
       expect(zpo).toBeDefined();
       expect(zpo!.sections).toContain(32);
     });
 
     test("respects jurisdiction filter", () => {
       const deResults = findConceptMappings("Kaufmann", "de");
-      expect(deResults.every(r => r.jurisdiction === "de")).toBe(true);
+      expect(deResults.every((r) => r.jurisdiction === "de")).toBe(true);
       const atResults = findConceptMappings("Kaufmann", "at");
-      expect(atResults.every(r => r.jurisdiction === "at")).toBe(true);
+      expect(atResults.every((r) => r.jurisdiction === "at")).toBe(true);
     });
 
     test("returns empty for non-legal query", () => {

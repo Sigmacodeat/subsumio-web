@@ -367,7 +367,7 @@ export default function PrecedentSearchPage() {
                   {r.caseRef && (
                     <a
                       href={`/dashboard/cases/${encodeURIComponent(r.caseRef)}`}
-                      className="mt-2 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] inline-flex items-center gap-1 text-xs hover:underline"
+                      className="mt-2 inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
                     >
                       <CheckCircle2 size={12} /> {t("precedent.to_case")}
                     </a>

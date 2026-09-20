@@ -153,10 +153,10 @@ Offen, in dieser Reihenfolge:
 30 echte Kennungen aus dem Korpus (`server/test/fixtures/at-judikatur-identifiers.jsonl`),
 Stichwortsuche gegen die Produktionsdatenbank, Top-8:
 
-| Art               | Fragen | Treffer Platz 1 | Treffer Top 8 | erwartete Seite in der DB | Suche ohne Ergebnis |
-| ----------------- | ------ | --------------- | ------------- | ------------------------- | ------------------- |
-| Rechtssatznummer  | 12     | 12              | 12            | 12                        | 0                   |
-| ECLI              | 18     | 5               | 5             | 18                        | 13                  |
+| Art              | Fragen | Treffer Platz 1 | Treffer Top 8 | erwartete Seite in der DB | Suche ohne Ergebnis |
+| ---------------- | ------ | --------------- | ------------- | ------------------------- | ------------------- |
+| Rechtssatznummer | 12     | 12              | 12            | 12                        | 0                   |
+| ECLI             | 18     | 5               | 5             | 18                        | 13                  |
 
 Rechtssatznummern sind eindeutig und werden zuverlässig gefunden. ECLIs nicht: die
 deutsche Volltextsuche zerlegt `ECLI:AT:OGH0002:2019:RS0132425` in Teile, die auf

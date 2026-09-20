@@ -37,7 +37,8 @@ const TEST_CASES: TestCase[] = [
   // AT cases
   {
     id: "at-001",
-    question: "Welche Anspruchsgrundlage gilt für Schmerzensgeld bei einer Körperverletzung nach österreichischem Recht?",
+    question:
+      "Welche Anspruchsgrundlage gilt für Schmerzensgeld bei einer Körperverletzung nach österreichischem Recht?",
     jurisdiction: "AT",
     expected_paragraphs: ["1325"],
     expected_laws: ["ABGB"],
@@ -46,7 +47,8 @@ const TEST_CASES: TestCase[] = [
   },
   {
     id: "at-002",
-    question: "Unter welchen Voraussetzungen haftet der Bund für Amtshaftung? Nennen Sie die einschlägigen Paragraphen.",
+    question:
+      "Unter welchen Voraussetzungen haftet der Bund für Amtshaftung? Nennen Sie die einschlägigen Paragraphen.",
     jurisdiction: "AT",
     expected_paragraphs: [],
     expected_laws: ["AHG"],
@@ -65,7 +67,8 @@ const TEST_CASES: TestCase[] = [
   // DE cases
   {
     id: "de-001",
-    question: "Wie lange ist die reguläre Verjährungsfrist für Schadenersatzansprüche im deutschen Recht?",
+    question:
+      "Wie lange ist die reguläre Verjährungsfrist für Schadenersatzansprüche im deutschen Recht?",
     jurisdiction: "DE",
     expected_paragraphs: ["195"],
     expected_laws: ["BGB"],
@@ -93,7 +96,8 @@ const TEST_CASES: TestCase[] = [
   },
   {
     id: "ch-002",
-    question: "Welche Strafen sieht das Schweizerische Strafgesetzbuch für vorsätzliche Tötung vor?",
+    question:
+      "Welche Strafen sieht das Schweizerische Strafgesetzbuch für vorsätzliche Tötung vor?",
     jurisdiction: "CH",
     expected_paragraphs: [],
     expected_laws: ["StGB"],
@@ -139,11 +143,7 @@ interface TestComparison {
   };
 }
 
-async function runQuery(
-  query: string,
-  jurisdiction: string,
-  model: string
-): Promise<ModelResult> {
+async function runQuery(query: string, jurisdiction: string, model: string): Promise<ModelResult> {
   const start = Date.now();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -210,7 +210,11 @@ async function runQuery(
         }
       }
     } else {
-      const data = (await res.json()) as { answer?: string; warnings?: string[]; citations?: unknown[] };
+      const data = (await res.json()) as {
+        answer?: string;
+        warnings?: string[];
+        citations?: unknown[];
+      };
       answer = data.answer ?? "";
       if (data.warnings) warnings.push(...data.warnings);
       citations = data.citations?.length ?? 0;
@@ -258,7 +262,8 @@ function extractLaws(text: string): string[] {
 }
 
 function isGerman(text: string): boolean {
-  const germanIndicators = /\b(der|die|das|und|ist|wird|nach|gemäß|laut|zufolge|Absatz|Paragraph|Artikel|Gesetz|Recht|Anspruch|Schaden|Haftung|Verjährung)\b/i;
+  const germanIndicators =
+    /\b(der|die|das|und|ist|wird|nach|gemäß|laut|zufolge|Absatz|Paragraph|Artikel|Gesetz|Recht|Anspruch|Schaden|Haftung|Verjährung)\b/i;
   return germanIndicators.test(text);
 }
 
@@ -311,7 +316,11 @@ async function main() {
 
     // Run DeepSeek
     console.log("  Running DeepSeek V4 Flash...");
-    const dsResult = await runQuery(tc.question, tc.jurisdiction, "openrouter:deepseek/deepseek-chat");
+    const dsResult = await runQuery(
+      tc.question,
+      tc.jurisdiction,
+      "openrouter:deepseek/deepseek-chat"
+    );
 
     // Run Grok
     console.log("  Running Grok 4.3...");
@@ -364,22 +373,41 @@ async function main() {
     results.push(comparison);
 
     // Print summary
-    console.log(`  DeepSeek: ${dsResult.latency_ms}ms, ${dsResult.answer.length} chars, §§ found: ${dsFoundParagraphs.length}/${tc.expected_paragraphs.length}, forbidden: ${dsForbidden.length}`);
-    console.log(`  Grok:     ${grokResult.latency_ms}ms, ${grokResult.answer.length} chars, §§ found: ${grokFoundParagraphs.length}/${tc.expected_paragraphs.length}, forbidden: ${grokForbidden.length}`);
-    console.log(`  DS warnings: ${dsResult.warnings.length > 0 ? dsResult.warnings.join(", ") : "none"}`);
-    console.log(`  Grok warnings: ${grokResult.warnings.length > 0 ? grokResult.warnings.join(", ") : "none"}`);
+    console.log(
+      `  DeepSeek: ${dsResult.latency_ms}ms, ${dsResult.answer.length} chars, §§ found: ${dsFoundParagraphs.length}/${tc.expected_paragraphs.length}, forbidden: ${dsForbidden.length}`
+    );
+    console.log(
+      `  Grok:     ${grokResult.latency_ms}ms, ${grokResult.answer.length} chars, §§ found: ${grokFoundParagraphs.length}/${tc.expected_paragraphs.length}, forbidden: ${grokForbidden.length}`
+    );
+    console.log(
+      `  DS warnings: ${dsResult.warnings.length > 0 ? dsResult.warnings.join(", ") : "none"}`
+    );
+    console.log(
+      `  Grok warnings: ${grokResult.warnings.length > 0 ? grokResult.warnings.join(", ") : "none"}`
+    );
     console.log();
   }
 
   // Aggregate
-  const dsAccuracy = results.filter((r) => r.metrics.deepseek.found_paragraphs.length > 0).length / results.length;
-  const grokAccuracy = results.filter((r) => r.metrics.grok.found_paragraphs.length > 0).length / results.length;
-  const dsHallucinationRate = results.filter((r) => r.metrics.deepseek.hallucinated_paragraphs.length > 0).length / results.length;
-  const grokHallucinationRate = results.filter((r) => r.metrics.grok.hallucinated_paragraphs.length > 0).length / results.length;
-  const dsContaminationRate = results.filter((r) => r.metrics.deepseek.forbidden_laws_found.length > 0).length / results.length;
-  const grokContaminationRate = results.filter((r) => r.metrics.grok.forbidden_laws_found.length > 0).length / results.length;
-  const dsAvgLatency = results.reduce((s, r) => s + r.metrics.deepseek.latency_ms, 0) / results.length;
-  const grokAvgLatency = results.reduce((s, r) => s + r.metrics.grok.latency_ms, 0) / results.length;
+  const dsAccuracy =
+    results.filter((r) => r.metrics.deepseek.found_paragraphs.length > 0).length / results.length;
+  const grokAccuracy =
+    results.filter((r) => r.metrics.grok.found_paragraphs.length > 0).length / results.length;
+  const dsHallucinationRate =
+    results.filter((r) => r.metrics.deepseek.hallucinated_paragraphs.length > 0).length /
+    results.length;
+  const grokHallucinationRate =
+    results.filter((r) => r.metrics.grok.hallucinated_paragraphs.length > 0).length /
+    results.length;
+  const dsContaminationRate =
+    results.filter((r) => r.metrics.deepseek.forbidden_laws_found.length > 0).length /
+    results.length;
+  const grokContaminationRate =
+    results.filter((r) => r.metrics.grok.forbidden_laws_found.length > 0).length / results.length;
+  const dsAvgLatency =
+    results.reduce((s, r) => s + r.metrics.deepseek.latency_ms, 0) / results.length;
+  const grokAvgLatency =
+    results.reduce((s, r) => s + r.metrics.grok.latency_ms, 0) / results.length;
   const dsGermanRate = results.filter((r) => r.metrics.deepseek.is_german).length / results.length;
   const grokGermanRate = results.filter((r) => r.metrics.grok.is_german).length / results.length;
 
@@ -388,21 +416,48 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════════");
   console.log(`  Metric                  DeepSeek V4 Flash    Grok 4.3`);
   console.log(`  ─────────────────────── ──────────────────── ───────────`);
-  console.log(`  §-Accuracy              ${(dsAccuracy * 100).toFixed(1)}%                ${(grokAccuracy * 100).toFixed(1)}%`);
-  console.log(`  Hallucination Rate      ${(dsHallucinationRate * 100).toFixed(1)}%                ${(grokHallucinationRate * 100).toFixed(1)}%`);
-  console.log(`  Jurisdiction Contam.    ${(dsContaminationRate * 100).toFixed(1)}%                ${(grokContaminationRate * 100).toFixed(1)}%`);
-  console.log(`  German Language Rate    ${(dsGermanRate * 100).toFixed(1)}%                ${(grokGermanRate * 100).toFixed(1)}%`);
-  console.log(`  Avg Latency             ${(dsAvgLatency / 1000).toFixed(1)}s                  ${(grokAvgLatency / 1000).toFixed(1)}s`);
+  console.log(
+    `  §-Accuracy              ${(dsAccuracy * 100).toFixed(1)}%                ${(grokAccuracy * 100).toFixed(1)}%`
+  );
+  console.log(
+    `  Hallucination Rate      ${(dsHallucinationRate * 100).toFixed(1)}%                ${(grokHallucinationRate * 100).toFixed(1)}%`
+  );
+  console.log(
+    `  Jurisdiction Contam.    ${(dsContaminationRate * 100).toFixed(1)}%                ${(grokContaminationRate * 100).toFixed(1)}%`
+  );
+  console.log(
+    `  German Language Rate    ${(dsGermanRate * 100).toFixed(1)}%                ${(grokGermanRate * 100).toFixed(1)}%`
+  );
+  console.log(
+    `  Avg Latency             ${(dsAvgLatency / 1000).toFixed(1)}s                  ${(grokAvgLatency / 1000).toFixed(1)}s`
+  );
   console.log(`  Cost per 1M tokens      $0.14/$0.28           $1.25/$2.50`);
   console.log();
 
   // Write results
   const outputPath = "/tmp/ab-model-comparison-results.json";
-  await Bun.write(outputPath, JSON.stringify({ results, summary: {
-    dsAccuracy, grokAccuracy, dsHallucinationRate, grokHallucinationRate,
-    dsContaminationRate, grokContaminationRate, dsAvgLatency, grokAvgLatency,
-    dsGermanRate, grokGermanRate,
-  } }, null, 2));
+  await Bun.write(
+    outputPath,
+    JSON.stringify(
+      {
+        results,
+        summary: {
+          dsAccuracy,
+          grokAccuracy,
+          dsHallucinationRate,
+          grokHallucinationRate,
+          dsContaminationRate,
+          grokContaminationRate,
+          dsAvgLatency,
+          grokAvgLatency,
+          dsGermanRate,
+          grokGermanRate,
+        },
+      },
+      null,
+      2
+    )
+  );
   console.log(`Results written to ${outputPath}`);
 }
 

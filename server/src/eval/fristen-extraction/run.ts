@@ -94,7 +94,8 @@ const EXPECTED_FRISTEN: ExpectedFrist[] = [
     ausloeser: "2026-03-16", // ERV: folgender Werktag nach 15.3. (Sonntag)
     expected_fristende: "2026-04-13",
     expected_vorfrist: "2026-04-03",
-    notes: "§ 7 Abs 4 VwGVG, 4 Wochen. Vorfrist 7 Tage vor 13.4. = 6.4. (Ostermontag!) → zurück auf Fr 3.4.",
+    notes:
+      "§ 7 Abs 4 VwGVG, 4 Wochen. Vorfrist 7 Tage vor 13.4. = 6.4. (Ostermontag!) → zurück auf Fr 3.4.",
   },
   // Pichler gegen Gemeinde — Bescheidbeschwerde 4 Wochen ab Zustellung 17.2.2026
   // (Zustellung ohne Nachweis am 12.2. → 3. Werktag = 17.2.)
@@ -224,7 +225,9 @@ function formatReport(results: FristResult[]): string {
     lines.push(`     Auslöser: ${r.ausloeser} | Fristart: ${r.fristart_key}`);
     lines.push(`     Expected: ${r.expected_fristende} | Got: ${r.computed_fristende}`);
     if (r.expected_vorfrist || r.computed_vorfrist !== "ERROR") {
-      lines.push(`     Vorfrist: expected=${r.expected_vorfrist ?? "—"} got=${r.computed_vorfrist}`);
+      lines.push(
+        `     Vorfrist: expected=${r.expected_vorfrist ?? "—"} got=${r.computed_vorfrist}`
+      );
     }
     if (r.hinweise.length > 0) {
       lines.push(`     Hinweise: ${r.hinweise.join("; ")}`);
@@ -255,7 +258,9 @@ async function main() {
   });
 
   process.stderr.write("[fristen-eval] starting Fristen-Extraktion Benchmark\n");
-  process.stderr.write(`[fristen-eval] test cases: ${EXPECTED_FRISTEN.length} case-file + ${VHFZ_TEST_CASES.length} vhfZ = ${EXPECTED_FRISTEN.length + VHFZ_TEST_CASES.length} total\n`);
+  process.stderr.write(
+    `[fristen-eval] test cases: ${EXPECTED_FRISTEN.length} case-file + ${VHFZ_TEST_CASES.length} vhfZ = ${EXPECTED_FRISTEN.length + VHFZ_TEST_CASES.length} total\n`
+  );
 
   const allTests = [...EXPECTED_FRISTEN, ...VHFZ_TEST_CASES];
   const results: FristResult[] = [];
@@ -281,13 +286,16 @@ async function main() {
     appendFileSync(outputPath, JSON.stringify(r) + "\n");
   }
   const passed = results.filter((r) => r.match && r.vorfrist_match).length;
-  appendFileSync(outputPath, JSON.stringify({
-    kind: "summary",
-    total: results.length,
-    passed,
-    failed: results.length - passed,
-    gate: { passed: passed === results.length, target: "100% correct" },
-  }) + "\n");
+  appendFileSync(
+    outputPath,
+    JSON.stringify({
+      kind: "summary",
+      total: results.length,
+      passed,
+      failed: results.length - passed,
+      gate: { passed: passed === results.length, target: "100% correct" },
+    }) + "\n"
+  );
   process.stderr.write(`[fristen-eval] output written to ${outputPath}\n`);
 
   if (passed < results.length) process.exit(1);

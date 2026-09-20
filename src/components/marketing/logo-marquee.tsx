@@ -4,13 +4,7 @@
 // trust chips, labelled legal duties as "certifications", and moved text a
 // reader was trying to read. A still, four-column register reads as evidence.
 
-import {
-  Scale,
-  ShieldCheck,
-  Server,
-  Plug,
-  type LucideIcon,
-} from "lucide-react";
+import { Scale, ShieldCheck, Server, Plug, type LucideIcon } from "lucide-react";
 import { UI_STRINGS } from "@/content/site";
 import { EYEBROW_CLASS } from "./typography";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
@@ -82,7 +76,7 @@ export default function LogoMarquee() {
             const Icon = group.icon;
             return (
               <StaggerItem key={group.title}>
-                <div className="border-t pt-5 [border-color:var(--mk-border-strong)]">
+                <div className="border-t [border-color:var(--mk-border-strong)] pt-5">
                   <p className="mb-4 flex items-center gap-2 text-sm font-semibold [color:var(--mk-text)]">
                     <Icon size={16} aria-hidden className="[color:var(--brand-text)]" />
                     {group.title}

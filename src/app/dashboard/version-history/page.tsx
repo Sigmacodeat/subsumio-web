@@ -59,36 +59,39 @@ export default function VersionHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const loadHistory = useCallback(async (target: string) => {
-    setLoading(true);
-    setError(null);
-    setSearched(true);
-    setCandidates([]);
-    try {
-      const [pageData, auditData] = await Promise.all([
-        api.brain.getPage(target).catch(() => null),
-        fetch("/api/audit?entityType=page&limit=200", { signal: AbortSignal.timeout(30_000) })
-          .then((r) => (r.ok ? r.json() : { entries: [] }))
-          .catch(() => ({ entries: [] })),
-      ]);
+  const loadHistory = useCallback(
+    async (target: string) => {
+      setLoading(true);
+      setError(null);
+      setSearched(true);
+      setCandidates([]);
+      try {
+        const [pageData, auditData] = await Promise.all([
+          api.brain.getPage(target).catch(() => null),
+          fetch("/api/audit?entityType=page&limit=200", { signal: AbortSignal.timeout(30_000) })
+            .then((r) => (r.ok ? r.json() : { entries: [] }))
+            .catch(() => ({ entries: [] })),
+        ]);
 
-      if (pageData) {
-        setPage(pageData as BrainPage);
-        const allEntries = (auditData as { entries?: AuditEntry[] }).entries ?? [];
-        const filtered = allEntries.filter((e) => e.entityId === target);
-        setEntries(filtered);
-      } else {
-        setPage(null);
-        const allEntries = (auditData as { entries?: AuditEntry[] }).entries ?? [];
-        const filtered = allEntries.filter((e) => e.entityId === target);
-        setEntries(filtered);
+        if (pageData) {
+          setPage(pageData as BrainPage);
+          const allEntries = (auditData as { entries?: AuditEntry[] }).entries ?? [];
+          const filtered = allEntries.filter((e) => e.entityId === target);
+          setEntries(filtered);
+        } else {
+          setPage(null);
+          const allEntries = (auditData as { entries?: AuditEntry[] }).entries ?? [];
+          const filtered = allEntries.filter((e) => e.entityId === target);
+          setEntries(filtered);
+        }
+      } catch {
+        setError(t("vhist.err_load"));
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      setError(t("vhist.err_load"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+    },
+    [t]
+  );
 
   // Lawyers search by title; an exact identifier still works as before.
   const search = useCallback(async () => {

@@ -83,10 +83,22 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--top-k" && i + 1 < args.length) { out.topK = parseInt(args[++i], 10); continue; }
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--append") { out.append = true; continue; }
-    if (a === "--by-type") { out.byType = true; continue; }
+    if (a === "--top-k" && i + 1 < args.length) {
+      out.topK = parseInt(args[++i], 10);
+      continue;
+    }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--append") {
+      out.append = true;
+      continue;
+    }
+    if (a === "--by-type") {
+      out.byType = true;
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/de-legal-retrieval-live/run.ts <fixture.jsonl> [options]\n` +
@@ -97,7 +109,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       );
       process.exit(0);
     }
-    if (!a.startsWith("--") && !out.fixturePath) { out.fixturePath = a; continue; }
+    if (!a.startsWith("--") && !out.fixturePath) {
+      out.fixturePath = a;
+      continue;
+    }
   }
   if (!out.fixturePath) {
     process.stderr.write("Error: fixture path required\n");

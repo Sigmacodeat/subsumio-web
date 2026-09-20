@@ -754,7 +754,10 @@ function SettingsPageInner() {
                         "Weight entries by relevance to your open matters"
                       ),
                       L("Widersprüchliche Angaben markieren", "Flag contradictory information"),
-                      L("Aufgaben für den nächsten Tag vorbereiten", "Prepare tasks for the next day"),
+                      L(
+                        "Aufgaben für den nächsten Tag vorbereiten",
+                        "Prepare tasks for the next day"
+                      ),
                     ].map((item) => (
                       <li
                         key={item}
@@ -939,7 +942,10 @@ function SettingsPageInner() {
                           <Input
                             type="number"
                             inputMode="numeric"
-                            aria-label={L("Abrechnungstakt in Minuten", "Billing increment in minutes")}
+                            aria-label={L(
+                              "Abrechnungstakt in Minuten",
+                              "Billing increment in minutes"
+                            )}
                             {...kanzleiForm.register("abrechnungstakt")}
                             placeholder="15"
                             className="w-20 sm:ml-2"
@@ -1148,7 +1154,10 @@ function SettingsPageInner() {
             <Card>
               <div className="border-b border-[color:var(--ds-border)] px-6 py-4">
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  {L("Mitglieder einladen oder entfernen Sie unter ", "Invite or remove members under ")}
+                  {L(
+                    "Mitglieder einladen oder entfernen Sie unter ",
+                    "Invite or remove members under "
+                  )}
                   <Link href="/dashboard/team" className="brand-text hover:underline">
                     {L("Team", "Team")}
                   </Link>
@@ -1184,7 +1193,10 @@ function SettingsPageInner() {
                         </div>
                       </div>
                       <select
-                        aria-label={L(`Rolle von ${member.name ?? member.email}`, `Role of ${member.name ?? member.email}`)}
+                        aria-label={L(
+                          `Rolle von ${member.name ?? member.email}`,
+                          `Role of ${member.name ?? member.email}`
+                        )}
                         value={member.role}
                         onChange={async (e) => {
                           try {
@@ -1209,7 +1221,9 @@ function SettingsPageInner() {
                         <option value="admin">{t("settings.role_admin")}</option>
                         <option value="lawyer">{t("settings.role_lawyer")}</option>
                         <option value="assistant">{t("settings.role_assistant")}</option>
-                        <option value="client_viewer">{L("Mandant (nur lesen)", "Client (read-only)")}</option>
+                        <option value="client_viewer">
+                          {L("Mandant (nur lesen)", "Client (read-only)")}
+                        </option>
                       </select>
                     </div>
                   ))
@@ -1219,9 +1233,7 @@ function SettingsPageInner() {
           )}
 
           {/* ACLs — Document-Level Access Control */}
-          {activeTab === "acls" && (
-            <AclSettings />
-          )}
+          {activeTab === "acls" && <AclSettings />}
 
           {/* SCIM — the full page lives at /dashboard/settings/scim */}
           {activeTab === "scim" && (
@@ -1263,9 +1275,9 @@ function SettingsPageInner() {
                         </span>
                         <span className="font-mono text-[color:var(--ds-text)] tabular-nums">
                           {(statsQuery.data?.total_pages ?? 0).toLocaleString("de-AT")} /{" "}
-                          {limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).pages.toLocaleString(
-                            "de-AT"
-                          )}
+                          {limitsFor(
+                            (meQuery.data?.user?.plan ?? "free") as Plan
+                          ).pages.toLocaleString("de-AT")}
                         </span>
                       </div>
                       {(() => {

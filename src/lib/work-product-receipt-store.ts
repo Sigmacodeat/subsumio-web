@@ -124,10 +124,9 @@ export async function getReceipt(
          WHERE receipt_id = $1 AND brain_id = $2`,
         [receiptId, brainId]
       )
-    : await p.query(
-        `SELECT receipt FROM subsumio_work_product_receipts WHERE receipt_id = $1`,
-        [receiptId]
-      );
+    : await p.query(`SELECT receipt FROM subsumio_work_product_receipts WHERE receipt_id = $1`, [
+        receiptId,
+      ]);
   if (res.rows.length === 0) return null;
   return rowToReceipt(res.rows[0] as Record<string, unknown>);
 }

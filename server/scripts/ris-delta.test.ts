@@ -19,7 +19,8 @@ const BRKONS_REF = {
       Allgemein: {
         Geaendert: "2026-08-01T00:00:00",
         Veroeffentlicht: null,
-        DokumentUrl: "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40060075/NOR40060075.html",
+        DokumentUrl:
+          "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40060075/NOR40060075.html",
       },
       Bundesrecht: {
         Kurztitel: "Allgemeines bürgerliches Gesetzbuch",
@@ -36,8 +37,14 @@ const BRKONS_REF = {
         ContentType: "MainDocument",
         Urls: {
           ContentUrl: [
-            { DataType: "Xml", Url: "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40060075/NOR40060075.xml" },
-            { DataType: "Html", Url: "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40060075/NOR40060075.html" },
+            {
+              DataType: "Xml",
+              Url: "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40060075/NOR40060075.xml",
+            },
+            {
+              DataType: "Html",
+              Url: "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40060075/NOR40060075.html",
+            },
           ],
         },
       },
@@ -52,7 +59,8 @@ const BRKONS_AUSSERKRAFT_REF = {
       Allgemein: {
         Geaendert: "2026-07-15T00:00:00",
         Veroeffentlicht: null,
-        DokumentUrl: "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR12345678/NOR12345678.html",
+        DokumentUrl:
+          "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR12345678/NOR12345678.html",
       },
       Bundesrecht: {
         Kurztitel: "Alte Verordnung (aufgehoben)",
@@ -80,7 +88,8 @@ const LRKONS_REF = {
       Allgemein: {
         Geaendert: "2026-08-10T00:00:00",
         Veroeffentlicht: null,
-        DokumentUrl: "https://www.ris.bka.gv.at/Dokumente/Landesnormen/NOR50012345/NOR50012345.html",
+        DokumentUrl:
+          "https://www.ris.bka.gv.at/Dokumente/Landesnormen/NOR50012345/NOR50012345.html",
       },
       Landesrecht: {
         Kurztitel: "Wiener Baugesetz",
@@ -238,14 +247,19 @@ describe("ris-delta: parseRef Edge Cases", () => {
   });
 
   it("gibt null zurück wenn changedAt (Geaendert/Veroeffentlicht) fehlt", () => {
-    expect(parseRef({
-      Data: {
-        Metadaten: {
-          Technisch: { ID: "NOR123" },
-          Allgemein: {},
+    expect(
+      parseRef(
+        {
+          Data: {
+            Metadaten: {
+              Technisch: { ID: "NOR123" },
+              Allgemein: {},
+            },
+          },
         },
-      },
-    }, "BrKons")).toBeNull();
+        "BrKons"
+      )
+    ).toBeNull();
   });
 });
 

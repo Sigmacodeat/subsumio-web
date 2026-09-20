@@ -7,12 +7,7 @@
  * @module server/src/core/legal/issues/store
  */
 
-import type {
-  LegalIssue,
-  LegalIssuePatch,
-  IssueQuery,
-  IssueValidationResult,
-} from "./types.ts";
+import type { LegalIssue, LegalIssuePatch, IssueQuery, IssueValidationResult } from "./types.ts";
 import type { Jurisdiction } from "../corpus-receipt.ts";
 
 // ── Store Interface ───────────────────────────────────────────────────
@@ -109,10 +104,7 @@ export class InMemoryIssueStore implements IssueStore {
 
   async create(issue: LegalIssue): Promise<LegalIssue> {
     if (this.issues.has(issue.id)) {
-      throw new IssueStoreError(
-        `Issue with id "${issue.id}" already exists`,
-        "ALREADY_EXISTS"
-      );
+      throw new IssueStoreError(`Issue with id "${issue.id}" already exists`, "ALREADY_EXISTS");
     }
     // Store a copy to prevent external mutation
     const stored = structuredClone(issue);
@@ -220,7 +212,9 @@ export class InMemoryIssueStore implements IssueStore {
  */
 export class PgIssueStore implements IssueStore {
   constructor(
-    private pool: { query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> }
+    private pool: {
+      query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }>;
+    }
   ) {}
 
   async create(issue: LegalIssue): Promise<LegalIssue> {
@@ -248,17 +242,18 @@ export class PgIssueStore implements IssueStore {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("duplicate key") || msg.includes("unique constraint")) {
-        throw new IssueStoreError(`Issue with id "${issue.id}" already exists`, "ALREADY_EXISTS", err);
+        throw new IssueStoreError(
+          `Issue with id "${issue.id}" already exists`,
+          "ALREADY_EXISTS",
+          err
+        );
       }
       throw new IssueStoreError(`Failed to create issue: ${msg}`, "INTERNAL", err);
     }
   }
 
   async getById(id: string): Promise<LegalIssue | null> {
-    const result = await this.pool.query(
-      `SELECT data FROM legal_issues WHERE id = $1`,
-      [id]
-    );
+    const result = await this.pool.query(`SELECT data FROM legal_issues WHERE id = $1`, [id]);
     if (!result.rows[0]?.data) return null;
     return JSON.parse(result.rows[0].data as string) as LegalIssue;
   }
@@ -328,24 +323,16 @@ export class PgIssueStore implements IssueStore {
       `UPDATE legal_issues
        SET title = $1, status = $2, risk = $3, data = $4, updated_at = $5
        WHERE id = $6`,
-      [
-        merged.title,
-        merged.status,
-        merged.risk,
-        JSON.stringify(merged),
-        merged.updated_at,
-        id,
-      ]
+      [merged.title, merged.status, merged.risk, JSON.stringify(merged), merged.updated_at, id]
     );
 
     return merged;
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.pool.query(
-      `DELETE FROM legal_issues WHERE id = $1 RETURNING id`,
-      [id]
-    );
+    const result = await this.pool.query(`DELETE FROM legal_issues WHERE id = $1 RETURNING id`, [
+      id,
+    ]);
     return result.rows.length > 0;
   }
 
@@ -418,9 +405,9 @@ export class PgIssueStore implements IssueStore {
  * Create an IssueStore from a connection pool.
  * Returns a PgIssueStore for real database connections.
  */
-export function createIssueStore(
-  pool: { query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> }
-): IssueStore {
+export function createIssueStore(pool: {
+  query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }>;
+}): IssueStore {
   return new PgIssueStore(pool);
 }
 

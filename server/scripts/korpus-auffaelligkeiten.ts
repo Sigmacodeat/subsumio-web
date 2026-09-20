@@ -48,13 +48,19 @@ interface Regel {
 
 /** Substanztext: ohne Überschriften, Leerraum vereinheitlicht. */
 const substanz = (s: string) =>
-  s.split("\n").filter((l) => !/^#{1,6}\s/.test(l)).join(" ").replace(/\s+/g, " ").trim();
+  s
+    .split("\n")
+    .filter((l) => !/^#{1,6}\s/.test(l))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const REGELN: Regel[] = [
   {
     code: "kodierung_kaputt",
     schwere: "defective",
-    erklaerung: "Falsch dekodierte Umlaute — der Text ist als Latin-1 gelesen worden statt als UTF-8.",
+    erklaerung:
+      "Falsch dekodierte Umlaute — der Text ist als Latin-1 gelesen worden statt als UTF-8.",
     pruefe(body) {
       // Mojibake-Signaturen. NICHT nach einzelnen Zeichen suchen: "Ã" kommt in
       // portugiesischen Eigennamen legitim vor. Erst die Paarung mit einem
@@ -100,7 +106,8 @@ const REGELN: Regel[] = [
   {
     code: "nur_bildverweis",
     schwere: "needs_review",
-    erklaerung: "Der Inhalt liegt bei RIS nur als Grafik vor — nicht durchsuchbar, nicht zitierbar.",
+    erklaerung:
+      "Der Inhalt liegt bei RIS nur als Grafik vor — nicht durchsuchbar, nicht zitierbar.",
     pruefe(body) {
       const s = substanz(body);
       if (s.length === 0) return null;
@@ -108,8 +115,13 @@ const REGELN: Regel[] = [
       if (bilder === 0) return null;
       // Nur melden, wenn kaum Text NEBEN den Bildverweisen steht — sonst
       // schlägt jede Anlage an, die eine Abbildung erwähnt.
-      const ohneBilder = s.replace(/\/Dokumente\/[^\s]+\.(jpg|jpeg|png|gif|tif)/gi, " ").replace(/\s+/g, " ").trim();
-      return ohneBilder.length < 120 ? `${bilder} Bildverweise, nur ${ohneBilder.length} Zeichen Text` : null;
+      const ohneBilder = s
+        .replace(/\/Dokumente\/[^\s]+\.(jpg|jpeg|png|gif|tif)/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return ohneBilder.length < 120
+        ? `${bilder} Bildverweise, nur ${ohneBilder.length} Zeichen Text`
+        : null;
     },
   },
   {
@@ -123,7 +135,9 @@ const REGELN: Regel[] = [
       // Mediendiensteanbieter müssen barrierefreie Angebote schaffen. Alle 126
       // Treffer im Bundesrecht kamen von diesem einen Wort, keiner von einer
       // echten Navigationsmarke. Ein Rechtsbegriff taugt nicht als Müllsignal.
-      const treffer = s.match(/\b(Zur Navigation|Zum Inhalt springen|Druckansicht|Zum Seitenanfang|Sitemap|Cookie-Einstellungen)\b/g);
+      const treffer = s.match(
+        /\b(Zur Navigation|Zum Inhalt springen|Druckansicht|Zum Seitenanfang|Sitemap|Cookie-Einstellungen)\b/g
+      );
       return treffer && treffer.length >= 2 ? `${treffer.length} Navigationsmarken` : null;
     },
   },
@@ -183,7 +197,11 @@ interface Fund {
 
 function pruefeDatei(abs: string, rel: string): Fund[] {
   let roh: string;
-  try { roh = readFileSync(abs, "utf-8"); } catch { return []; }
+  try {
+    roh = readFileSync(abs, "utf-8");
+  } catch {
+    return [];
+  }
   const m = roh.match(/^---\n([\s\S]*?)\n---\n?/);
   const body = m ? roh.slice(m[0].length) : roh;
   const fm: Record<string, string> = {};
@@ -202,50 +220,82 @@ function pruefeDatei(abs: string, rel: string): Fund[] {
 // ── Eichung ───────────────────────────────────────────────────────────────
 if (EICHEN) {
   const faelle: [string, string, string | null][] = [
-    ["sauberer Normtext",
-     "# § 1 ABGB\n\n§ 1. Der Inbegriff der Gesetze, wodurch die Rechte bestimmt werden, macht das Recht aus.",
-     null],
-    ["Aufzählung ohne Schlusspunkt (Fehlalarm-Falle)",
-     "# Anl. 1\n\n" + "Warenverzeichnis: ".padEnd(210, "x") + " Schreibkreide, Zeichenkohle, Schneiderkreide",
-     null],
-    ["Maßangabe am Ende (Fehlalarm-Falle)",
-     "# Anl. 3\n\n" + "Tafelgrößen nach Norm: ".padEnd(210, "y") + " 960 x 470 mm",
-     null],
-    ["kaputte Kodierung",
-     "# § 5\n\nDie BehÃ¶rde hat die MaÃŸnahme zu prÃ¼fen und die AntrÃ¤ge zu erledigen.",
-     "kodierung_kaputt"],
-    ["Ersatzzeichen",
-     "# § 7\n\nDer Betrag von 100 � ist zu entrichten.",
-     "ersatzzeichen"],
-    ["Platzhalter",
-     "# RS\n\nKein RS.",
-     "platzhalter_statt_inhalt"],
-    ["nur Bildverweise",
-     "# Anl. 2\n\n/Dokumente/Bundesnormen/NOR1/image001.jpg\n/Dokumente/Bundesnormen/NOR1/image002.jpg",
-     "nur_bildverweis"],
-    ["echter Satzabbruch (endet auf Artikel)",
-     "# § 9\n\n" + "Die Behörde hat bei der Beurteilung der Zumutbarkeit insbesondere zu berücksichtigen, ".padEnd(230, "z") + " wobei der",
-     "text_bricht_ab"],
-    ["Satzabbruch auf Konjunktion",
-     "# § 11\n\n" + "Der Antrag ist abzuweisen, sofern die Voraussetzungen nicht vorliegen ".padEnd(210, "q") + " und",
-     "text_bricht_ab"],
-    ["Nebensatz mit Verb am Ende (Fehlalarm-Falle)",
-     "# Anl. 16\n\n" + "Die Ausbildungsdauer wird um ein Semester ".padEnd(215, "n") + " verkürzt, sofern das wissenschaftliche Modul absolviert wird",
-     null],
-    ["Rechtsbegriff Barrierefreiheit (Fehlalarm-Falle)",
-     "# § 30b AMD-G\n\nBarrierefreiheit\n\n§ 30b. (1) Mediendiensteanbieter haben dafür zu sorgen, dass die Barrierefreiheit ihrer Angebote schrittweise erhöht wird.",
-     null],
-    ["vollständige Warenliste (Fehlalarm-Falle)",
-     "# Anl. 7\n\n" + "Zolltarifnummern und Warenbezeichnungen: ".padEnd(215, "w") + " Pastellstifte, Zeichenkohle, Schneiderkreide",
-     null],
+    [
+      "sauberer Normtext",
+      "# § 1 ABGB\n\n§ 1. Der Inbegriff der Gesetze, wodurch die Rechte bestimmt werden, macht das Recht aus.",
+      null,
+    ],
+    [
+      "Aufzählung ohne Schlusspunkt (Fehlalarm-Falle)",
+      "# Anl. 1\n\n" +
+        "Warenverzeichnis: ".padEnd(210, "x") +
+        " Schreibkreide, Zeichenkohle, Schneiderkreide",
+      null,
+    ],
+    [
+      "Maßangabe am Ende (Fehlalarm-Falle)",
+      "# Anl. 3\n\n" + "Tafelgrößen nach Norm: ".padEnd(210, "y") + " 960 x 470 mm",
+      null,
+    ],
+    [
+      "kaputte Kodierung",
+      "# § 5\n\nDie BehÃ¶rde hat die MaÃŸnahme zu prÃ¼fen und die AntrÃ¤ge zu erledigen.",
+      "kodierung_kaputt",
+    ],
+    ["Ersatzzeichen", "# § 7\n\nDer Betrag von 100 � ist zu entrichten.", "ersatzzeichen"],
+    ["Platzhalter", "# RS\n\nKein RS.", "platzhalter_statt_inhalt"],
+    [
+      "nur Bildverweise",
+      "# Anl. 2\n\n/Dokumente/Bundesnormen/NOR1/image001.jpg\n/Dokumente/Bundesnormen/NOR1/image002.jpg",
+      "nur_bildverweis",
+    ],
+    [
+      "echter Satzabbruch (endet auf Artikel)",
+      "# § 9\n\n" +
+        "Die Behörde hat bei der Beurteilung der Zumutbarkeit insbesondere zu berücksichtigen, ".padEnd(
+          230,
+          "z"
+        ) +
+        " wobei der",
+      "text_bricht_ab",
+    ],
+    [
+      "Satzabbruch auf Konjunktion",
+      "# § 11\n\n" +
+        "Der Antrag ist abzuweisen, sofern die Voraussetzungen nicht vorliegen ".padEnd(210, "q") +
+        " und",
+      "text_bricht_ab",
+    ],
+    [
+      "Nebensatz mit Verb am Ende (Fehlalarm-Falle)",
+      "# Anl. 16\n\n" +
+        "Die Ausbildungsdauer wird um ein Semester ".padEnd(215, "n") +
+        " verkürzt, sofern das wissenschaftliche Modul absolviert wird",
+      null,
+    ],
+    [
+      "Rechtsbegriff Barrierefreiheit (Fehlalarm-Falle)",
+      "# § 30b AMD-G\n\nBarrierefreiheit\n\n§ 30b. (1) Mediendiensteanbieter haben dafür zu sorgen, dass die Barrierefreiheit ihrer Angebote schrittweise erhöht wird.",
+      null,
+    ],
+    [
+      "vollständige Warenliste (Fehlalarm-Falle)",
+      "# Anl. 7\n\n" +
+        "Zolltarifnummern und Warenbezeichnungen: ".padEnd(215, "w") +
+        " Pastellstifte, Zeichenkohle, Schneiderkreide",
+      null,
+    ],
   ];
-  let ok = 0, fehl = 0;
+  let ok = 0,
+    fehl = 0;
   console.log("Eichung der Regeln\n");
   for (const [name, text, erwartet] of faelle) {
     const funde = pruefeDatei0(text);
     const codes = funde.map((f) => f.code);
     const bestanden = erwartet === null ? codes.length === 0 : codes.includes(erwartet);
-    console.log(`  ${bestanden ? "✓" : "✗"} ${name.padEnd(44)} ${codes.length ? codes.join(", ") : "unauffällig"}`);
+    console.log(
+      `  ${bestanden ? "✓" : "✗"} ${name.padEnd(44)} ${codes.length ? codes.join(", ") : "unauffällig"}`
+    );
     bestanden ? ok++ : fehl++;
   }
   console.log(`\n  ${ok} bestanden, ${fehl} fehlgeschlagen`);
@@ -265,9 +315,15 @@ function pruefeDatei0(roh: string): Fund[] {
 }
 
 // ── Scan ──────────────────────────────────────────────────────────────────
-if (!KORPUS) { console.error("--korpus <name> oder --eichen"); process.exit(2); }
+if (!KORPUS) {
+  console.error("--korpus <name> oder --eichen");
+  process.exit(2);
+}
 const wurzel = join(WURZEL, KORPUS);
-if (!existsSync(wurzel)) { console.error(`${wurzel} existiert nicht`); process.exit(2); }
+if (!existsSync(wurzel)) {
+  console.error(`${wurzel} existiert nicht`);
+  process.exit(2);
+}
 
 function alleDateien(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -301,21 +357,25 @@ const jeCode = new Map<string, Fund[]>();
 for (const f of alle) (jeCode.get(f.code) ?? jeCode.set(f.code, []).get(f.code)!).push(f);
 
 console.log("─".repeat(74));
-console.log(`${"Auffälligkeit".padEnd(28)}${"Schwere".padEnd(16)}${"Treffer".padStart(9)}${"Anteil".padStart(10)}`);
+console.log(
+  `${"Auffälligkeit".padEnd(28)}${"Schwere".padEnd(16)}${"Treffer".padStart(9)}${"Anteil".padStart(10)}`
+);
 console.log("─".repeat(74));
 for (const r of REGELN) {
   const f = jeCode.get(r.code) ?? [];
   if (!f.length) continue;
   console.log(
     `${r.code.padEnd(28)}${r.schwere.padEnd(16)}${String(f.length).padStart(9)}` +
-    `${((100 * f.length) / dateien.length).toFixed(3).padStart(9)}%`
+      `${((100 * f.length) / dateien.length).toFixed(3).padStart(9)}%`
   );
   console.log(`  ${f[0].pfad.slice(-58)}`);
   console.log(`     ${f[0].beleg.slice(0, 96)}`);
 }
 console.log("─".repeat(74));
 const betroffen = new Set(alle.map((f) => f.pfad)).size;
-console.log(`betroffene Dokumente: ${betroffen.toLocaleString("de")} von ${dateien.length.toLocaleString("de")} (${((100 * betroffen) / dateien.length).toFixed(3)} %)`);
+console.log(
+  `betroffene Dokumente: ${betroffen.toLocaleString("de")} von ${dateien.length.toLocaleString("de")} (${((100 * betroffen) / dateien.length).toFixed(3)} %)`
+);
 
 if (!SCHREIBEN) {
   console.log(`\nNichts geschrieben. Mit --schreiben landen die Funde im Dashboard.`);
@@ -327,15 +387,22 @@ if (!SCHREIBEN) {
 const bestand: Record<string, unknown> = existsSync(FLAGS)
   ? JSON.parse(readFileSync(FLAGS, "utf-8"))
   : {};
-let neu = 0, uebersprungen = 0;
+let neu = 0,
+  uebersprungen = 0;
 for (const [pfad, funde] of Object.entries(
-  alle.reduce<Record<string, Fund[]>>((acc, f) => ((acc[f.pfad] ??= []).push(f), acc), {}),
+  alle.reduce<Record<string, Fund[]>>((acc, f) => ((acc[f.pfad] ??= []).push(f), acc), {})
 )) {
-  if (bestand[pfad]) { uebersprungen++; continue; }
+  if (bestand[pfad]) {
+    uebersprungen++;
+    continue;
+  }
   const schwer = funde.some((f) => f.schwere === "defective");
   bestand[pfad] = {
     flag: schwer ? "defective" : "needs_review",
-    note: funde.map((f) => `${f.code}: ${f.beleg}`).join(" | ").slice(0, 400),
+    note: funde
+      .map((f) => `${f.code}: ${f.beleg}`)
+      .join(" | ")
+      .slice(0, 400),
     flaggedBy: "auto-scan",
     flaggedAt: new Date().toISOString(),
   };

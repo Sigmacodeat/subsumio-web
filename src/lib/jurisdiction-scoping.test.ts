@@ -22,9 +22,7 @@ function readSourcesForImpl(
   // Case > User > Fail-Closed
   const jur = caseJur ?? userJur;
   if (jur && JURISDICTION_LAW_SOURCES[jur]) {
-    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) =>
-      sharedSources.includes(s)
-    );
+    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => sharedSources.includes(s));
     return [...new Set([ownSource, ...scoped])];
   }
   // Fail-closed: no jurisdiction determined → only own source, NO law corpus

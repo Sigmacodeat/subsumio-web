@@ -235,14 +235,10 @@ export async function runPhaseLegalDeadlineMonitor(
     let done = 0; // explicitly marked done
     let undated = 0; // no parseable date → can't classify
 
-    const flagged: Array<{ slug: string; title: string; due_date: string; status: FristStatus }> = [];
+    const flagged: Array<{ slug: string; title: string; due_date: string; status: FristStatus }> =
+      [];
 
-    const tally = (
-      slug: string,
-      label: string,
-      iso: string | null,
-      markedDone: boolean
-    ): void => {
+    const tally = (slug: string, label: string, iso: string | null, markedDone: boolean): void => {
       if (markedDone) {
         done++;
         return;
