@@ -347,6 +347,10 @@ async function main() {
     cursor.totalQualityFail = 0;
     cursor.qualityFailures = [];
   }
+  // Counters for THIS run. The cursor's totals survive across runs, so the
+  // completeness check below has to compare like with like — mixing them
+  // reported "-115350 Dateien nicht zugeordnet" on a corpus that was fine.
+  const run = { imported: 0, skipped: 0, errors: 0 };
   console.log(`Cursor: ${alreadyImported.size} already imported, resuming from last file.`);
   console.log("");
 
@@ -477,6 +481,7 @@ async function main() {
       if (stats.size > MAX_FILE_SIZE) {
         batchSkipped++;
         cursor.totalSkipped++;
+        run.skipped++;
         cursor.totalQualityFail++;
         cursor.qualityFailures.push({
           file: filePath,
@@ -492,6 +497,7 @@ async function main() {
       if (content.trim().length === 0) {
         batchSkipped++;
         cursor.totalSkipped++;
+        run.skipped++;
         continue;
       }
 
@@ -500,6 +506,7 @@ async function main() {
       if (!content.includes("content_hash:")) {
         batchSkipped++;
         cursor.totalSkipped++;
+        run.skipped++;
         cursor.totalQualityFail++;
         cursor.qualityFailures.push({ file: filePath, reason: "missing content_hash" });
         continue;
@@ -508,6 +515,7 @@ async function main() {
       if (content.includes("not_digitalized: true")) {
         batchSkipped++;
         cursor.totalSkipped++;
+        run.skipped++;
         continue;
       }
       // 3. Must not have encoding artifacts (Ã prefix = mojibake)
@@ -523,6 +531,7 @@ async function main() {
       ) {
         batchSkipped++;
         cursor.totalSkipped++;
+        run.skipped++;
         cursor.totalQualityFail++;
         cursor.qualityFailures.push({ file: filePath, reason: "encoding artifacts (mojibake)" });
         continue;
@@ -539,6 +548,7 @@ async function main() {
       if (body.length < 50 && !isRisLegalPage) {
         batchSkipped++;
         cursor.totalSkipped++;
+        run.skipped++;
         cursor.totalQualityFail++;
         cursor.qualityFailures.push({
           file: filePath,
@@ -560,17 +570,20 @@ async function main() {
         // no frontmatter.id). Count it as skipped, not imported, so the
         // 1:1 completeness accounting stays accurate.
         cursor.totalSkipped++;
+        run.skipped++;
         batchSkipped++;
       } else if (result.status === "error") {
         // Defensive: importFromContent returned an error status without
         // throwing. Count it as an error, not imported.
         cursor.totalErrors++;
+        run.errors++;
         batchErrors++;
         if (batchErrors <= 10 || batchErrors % 100 === 0) {
           console.error(`  ! [import error] ${slug}: ${result.error ?? "unknown"}`);
         }
       } else {
         cursor.totalImported++;
+        run.imported++;
         batchImported++;
         ingestEvents.push({
           source_id: SOURCE_ID,
@@ -584,6 +597,7 @@ async function main() {
     } catch (e) {
       batchErrors++;
       cursor.totalErrors++;
+      run.errors++;
       const msg = e instanceof Error ? e.message : String(e);
       if (batchErrors <= 10 || batchErrors % 100 === 0) {
         console.error(`  ERROR [${slug}]: ${msg}`);
@@ -629,21 +643,21 @@ async function main() {
   // Wenn die Summe nicht aufgeht, sind Dateien stillschweigend verloren gegangen.
   const totalOnDisk = allFiles.length;
   const alreadyInCursor = allFiles.length - toImport.length;
-  const totalImported = cursor.totalImported;
-  const totalSkipped = cursor.totalSkipped;
-  const totalErrors = cursor.totalErrors;
-  const accountedFor = alreadyInCursor + totalImported + totalSkipped + totalErrors;
+  const accountedFor = alreadyInCursor + run.imported + run.skipped + run.errors;
   const complete = accountedFor === totalOnDisk;
 
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`  IMPORT COMPLETE`);
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`Total on disk:    ${totalOnDisk}`);
-  console.log(`Already in cursor:${alreadyInCursor}`);
-  console.log(`Total imported:   ${totalImported}`);
-  console.log(`Total errors:     ${totalErrors}`);
-  console.log(`Total skipped:    ${totalSkipped}`);
+  console.log(`Total on disk:      ${totalOnDisk}`);
+  console.log(`Already in cursor:  ${alreadyInCursor}`);
+  console.log(`Imported this run:  ${run.imported}`);
+  console.log(`Errors this run:    ${run.errors}`);
+  console.log(`Skipped this run:   ${run.skipped}`);
+  console.log(
+    `Cursor totals:      ${cursor.totalImported} importiert / ${cursor.totalSkipped} übersprungen / ${cursor.totalErrors} Fehler (alle Läufe)`
+  );
   console.log(`Quality failures: ${cursor.totalQualityFail}`);
   console.log(`Duration:         ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
   console.log(`Cursor saved:     ${CURSOR_FILE}`);
