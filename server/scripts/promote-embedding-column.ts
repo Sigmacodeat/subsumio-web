@@ -87,6 +87,7 @@ const INDEXES = [
 
 interface Engine {
   executeRaw(sql: string, params?: unknown[]): Promise<unknown[]>;
+  transaction<T>(fn: (tx: Engine) => Promise<T>): Promise<T>;
   disconnect(): Promise<void>;
   connect(cfg: unknown): Promise<void>;
   setConfig?(key: string, value: string): Promise<void>;
@@ -227,32 +228,32 @@ async function main() {
 
   console.log("Schalte um…");
   const t0 = Date.now();
-  // ONE statement string on ONE pooled connection. executeRaw takes a fresh
-  // connection per call, so a BEGIN sent on its own would not wrap the
-  // statements that follow — the drop could commit without the renames and
-  // leave the table with no embedding column at all.
+  // engine.transaction, not a hand-written BEGIN: executeRaw takes a fresh
+  // pooled connection per call, so a BEGIN sent on its own would not wrap
+  // what follows — the drop could commit without the renames and leave the
+  // table with no embedding column at all. postgres.js refuses a bare BEGIN
+  // on a pooled connection for that very reason.
   //
   // Dropping the columns takes their indexes with them; both drop and
   // rename are catalog operations, so the 98 GB table is never rewritten.
-  const renames = INDEXES.map(
-    (ix) => `ALTER INDEX "${ix.scaffold}" RENAME TO "${ix.live}";`
-  ).join("\n    ");
   try {
-    await engine.executeRaw(`
-    BEGIN;
-    SET LOCAL lock_timeout = '30s';
-    ALTER TABLE content_chunks
-      DROP COLUMN embedding,
-      DROP COLUMN model,
-      DROP COLUMN embedded_at;
-    ALTER TABLE content_chunks RENAME COLUMN "${COLUMN}" TO embedding;
-    ALTER TABLE content_chunks RENAME COLUMN "${MODEL_COL}" TO model;
-    ALTER TABLE content_chunks RENAME COLUMN "${AT_COL}" TO embedded_at;
-    ${renames}
-    DROP INDEX IF EXISTS "idx_chunks_${COLUMN}_null";
-    COMMENT ON COLUMN content_chunks.embedding IS NULL;
-    COMMIT;
-  `);
+    await engine.transaction(async (tx) => {
+      await tx.executeRaw(`SET LOCAL lock_timeout = '30s'`);
+      await tx.executeRaw(
+        `ALTER TABLE content_chunks
+           DROP COLUMN embedding,
+           DROP COLUMN model,
+           DROP COLUMN embedded_at`
+      );
+      await tx.executeRaw(`ALTER TABLE content_chunks RENAME COLUMN "${COLUMN}" TO embedding`);
+      await tx.executeRaw(`ALTER TABLE content_chunks RENAME COLUMN "${MODEL_COL}" TO model`);
+      await tx.executeRaw(`ALTER TABLE content_chunks RENAME COLUMN "${AT_COL}" TO embedded_at`);
+      for (const ix of INDEXES) {
+        await tx.executeRaw(`ALTER INDEX "${ix.scaffold}" RENAME TO "${ix.live}"`);
+      }
+      await tx.executeRaw(`DROP INDEX IF EXISTS "idx_chunks_${COLUMN}_null"`);
+      await tx.executeRaw(`COMMENT ON COLUMN content_chunks.embedding IS NULL`);
+    });
   } catch (e) {
     console.error("Umschalten fehlgeschlagen, nichts geändert:", e);
     process.exit(1);

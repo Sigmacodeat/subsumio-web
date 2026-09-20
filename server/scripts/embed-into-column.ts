@@ -48,6 +48,8 @@ const { values } = parseArgs({
     model: { type: "string" },
     dims: { type: "string" },
     "batch-size": { type: "string", default: "128" },
+    "id-from": { type: "string" },
+    "id-to": { type: "string" },
     create: { type: "boolean", default: false },
     "dry-run": { type: "boolean", default: false },
     "max-errors": { type: "string", default: "10" },
@@ -60,7 +62,8 @@ const { values } = parseArgs({
 if (values.help || !values.column) {
   console.log(
     "Usage: embed-into-column.ts --column <name> [--model <provider:model> --dims <n> --create]\n" +
-      "                            [--batch-size 128] [--source <id>] [--dry-run]"
+      "                            [--batch-size 128] [--source <id>] [--dry-run]\n" +
+      "                            [--id-from N --id-to M]   # ein Arbeiter je Id-Fenster"
   );
   process.exit(values.help ? 0 : 1);
 }
@@ -70,6 +73,9 @@ const BATCH_SIZE = Number(values["batch-size"]);
 const MAX_ERRORS = Number(values["max-errors"]);
 const DRY_RUN = values["dry-run"] as boolean;
 const SOURCE_FILTER = values.source;
+/** Id window, so several workers can share the table without claiming rows. */
+const ID_FROM = values["id-from"] ? Number(values["id-from"]) : 0;
+const ID_TO = values["id-to"] ? Number(values["id-to"]) : undefined;
 
 /** Registry keys are SQL identifiers; refuse anything that is not. */
 if (!/^[a-z_][a-z0-9_]*$/.test(COLUMN)) {
@@ -84,6 +90,7 @@ const COMMENT_TAG = "subsumio:embedding-signature=";
 
 interface Engine {
   executeRaw(sql: string, params?: unknown[]): Promise<unknown[]>;
+  transaction<T>(fn: (tx: Engine) => Promise<T>): Promise<T>;
   disconnect(): Promise<void>;
   connect(cfg: unknown): Promise<void>;
 }
@@ -120,27 +127,30 @@ async function columnType(engine: Engine): Promise<string | undefined> {
 
 async function createColumns(engine: Engine, dims: number, signature: string): Promise<void> {
   console.log(`[create] Spalten anlegen (vector(${dims}))…`);
-  // One statement string, so it runs on ONE pooled connection: executeRaw
-  // takes a fresh connection per call, and a BEGIN sent separately would
-  // not be the same transaction as the ALTER.
+  // engine.transaction, not a hand-written BEGIN: executeRaw takes a fresh
+  // pooled connection per call, and postgres.js refuses a bare BEGIN on a
+  // pooled connection for exactly that reason.
   //
   // Adding nullable columns is a catalog change, but it still needs a brief
-  // exclusive lock. The corpus pipeline writes to this table all day, so a
+  // exclusive lock. The corpus pipeline writes to this table all day, so the
   // timeout makes the ALTER give up rather than queue — with every later
   // write queueing behind it.
-  await engine.executeRaw(`
-    BEGIN;
-    SET LOCAL lock_timeout = '5s';
-    ALTER TABLE content_chunks
-      ADD COLUMN IF NOT EXISTS "${COLUMN}" vector(${dims}),
-      ADD COLUMN IF NOT EXISTS "${MODEL_COL}" text,
-      ADD COLUMN IF NOT EXISTS "${AT_COL}" timestamptz;
-    COMMENT ON COLUMN content_chunks."${COLUMN}" IS '${COMMENT_TAG}${signature}';
-    COMMIT;
-  `);
+  await engine.transaction(async (tx) => {
+    await tx.executeRaw(`SET LOCAL lock_timeout = '5s'`);
+    await tx.executeRaw(
+      `ALTER TABLE content_chunks
+         ADD COLUMN IF NOT EXISTS "${COLUMN}" vector(${dims}),
+         ADD COLUMN IF NOT EXISTS "${MODEL_COL}" text,
+         ADD COLUMN IF NOT EXISTS "${AT_COL}" timestamptz`
+    );
+    await tx.executeRaw(
+      `COMMENT ON COLUMN content_chunks."${COLUMN}" IS '${COMMENT_TAG}${signature}'`
+    );
+  });
   // The run walks ids ascending and only looks at rows still empty; without
   // this, every batch would re-scan the rows that stay empty on purpose
-  // (noise, deleted pages). CONCURRENTLY so the pipeline keeps writing.
+  // (noise, deleted pages). CONCURRENTLY — and therefore outside any
+  // transaction — so the pipeline keeps writing.
   console.log(`[create] Teilindex für die offenen Zeilen (nebenläufig)…`);
   await engine.executeRaw(
     `CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_chunks_${COLUMN}_null"
@@ -207,6 +217,8 @@ async function main() {
   console.log(`Modell:      ${model}`);
   console.log(`Dimensionen: ${dims}`);
   console.log(`Quelle:      ${SOURCE_FILTER ?? "alle"}`);
+  if (ID_FROM || ID_TO !== undefined)
+    console.log(`Id-Fenster:  ${ID_FROM + 1} … ${ID_TO ?? "Ende"}`);
   console.log(`Probelauf:   ${DRY_RUN ? "ja" : "nein"}`);
   console.log("");
 
@@ -262,21 +274,22 @@ async function main() {
   }
 
   const NOISE = noiseFilterSql("c");
-  const countParams = SOURCE_FILTER ? [SOURCE_FILTER] : [];
+  // Deliberately without the join to pages: counting 5.4 million chunks
+  // against their pages took over three minutes at every start, and this
+  // number only drives the progress line. It is an upper bound — it still
+  // counts the rows that stay empty on purpose (noise, deleted pages).
   const open = await one<{ cnt: string }>(
     engine,
-    `SELECT count(*) AS cnt
-       FROM content_chunks c JOIN pages p ON p.id = c.page_id
-      WHERE c."${COLUMN}" IS NULL AND p.deleted_at IS NULL AND ${NOISE}
-        ${SOURCE_FILTER ? "AND p.source_id = $1" : ""}`,
-    countParams
+    `SELECT count(*) AS cnt FROM content_chunks c
+      WHERE c."${COLUMN}" IS NULL AND c.id > $1 ${ID_TO !== undefined ? "AND c.id <= $2" : ""}`,
+    ID_TO !== undefined ? [ID_FROM, ID_TO] : [ID_FROM]
   );
   const done = await one<{ cnt: string }>(
     engine,
     `SELECT count(*) AS cnt FROM content_chunks WHERE "${COLUMN}" IS NOT NULL`
   );
   const total = Number(open?.cnt ?? 0);
-  console.log(`Offen: ${total.toLocaleString("de-AT")} Chunks`);
+  console.log(`Offen: höchstens ${total.toLocaleString("de-AT")} Chunks`);
   console.log(`Bereits in dieser Spalte: ${Number(done?.cnt ?? 0).toLocaleString("de-AT")}`);
 
   if (DRY_RUN || total === 0) {
@@ -308,7 +321,7 @@ async function main() {
   }
   console.log(`[probe] Modell liefert ${dims} Dimensionen — passt.\n`);
 
-  let cursor = 0;
+  let cursor = ID_FROM;
   let processed = 0;
   let errors = 0;
   let consecutiveErrors = 0;
@@ -319,11 +332,14 @@ async function main() {
     const params: unknown[] = SOURCE_FILTER
       ? [BATCH_SIZE, cursor, SOURCE_FILTER]
       : [BATCH_SIZE, cursor];
+    if (ID_TO !== undefined) params.push(ID_TO);
+    const upper = ID_TO !== undefined ? `AND c.id <= $${params.length}` : "";
     const rows = (await engine.executeRaw(
       `SELECT c.id, c.chunk_text, c.chunk_source, c.page_id
          FROM content_chunks c JOIN pages p ON p.id = c.page_id
         WHERE c."${COLUMN}" IS NULL
           AND c.id > $2
+          ${upper}
           AND p.deleted_at IS NULL
           AND ${NOISE}
           ${SOURCE_FILTER ? "AND p.source_id = $3" : ""}
@@ -336,7 +352,7 @@ async function main() {
       if (sweep) break;
       // Rows that arrived below the cursor while the run was going.
       sweep = true;
-      cursor = 0;
+      cursor = ID_FROM;
       console.log("Nachlauf für zwischenzeitlich importierte Chunks…");
       continue;
     }
