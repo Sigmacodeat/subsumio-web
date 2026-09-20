@@ -15,10 +15,23 @@ const CORPUS_ROOT = "/Users/msc/subsumio-web/law-corpus";
 const envContent = readFileSync("/Users/msc/subsumio-web/server/.env", "utf-8");
 const dbUrl = envContent.match(/DATABASE_URL=(.+)/)?.[1]?.trim() ?? "";
 
-const sql = postgres(dbUrl, { max: 2, idle_timeout: 20, connect_timeout: 10, ssl: false, onnotice: () => {} });
+const sql = postgres(dbUrl, {
+  max: 2,
+  idle_timeout: 20,
+  connect_timeout: 10,
+  ssl: false,
+  onnotice: () => {},
+});
 
 // ── 1. Inventory all source files ────────────────────────────────────────────
-interface SourceFile { path: string; baseSlug: string; statSlug: string; size: number; jurisdiction: string; abbr: string; }
+interface SourceFile {
+  path: string;
+  baseSlug: string;
+  statSlug: string;
+  size: number;
+  jurisdiction: string;
+  abbr: string;
+}
 function inventoryCorpus(): SourceFile[] {
   const files: SourceFile[] = [];
   for (const jur of ["de", "at", "ch", "eu"]) {
@@ -38,7 +51,9 @@ function inventoryCorpus(): SourceFile[] {
           abbr,
         });
       }
-    } catch (e) { console.log(`  [WARN] Could not read ${dir}: ${e}`); }
+    } catch (e) {
+      console.log(`  [WARN] Could not read ${dir}: ${e}`);
+    }
   }
   return files;
 }
@@ -78,12 +93,16 @@ async function main() {
   console.log("=== legal/statutes/ format (new, split import) ===");
   console.log(`Distinct base slugs: ${statBases.length}`);
   for (const [slug, row] of statBaseMap)
-    console.log(`  ${slug}: ${row.page_count} pages, ${((Number(row.total_content)||0)/1024).toFixed(1)} KB, source=${row.source_id}`);
+    console.log(
+      `  ${slug}: ${row.page_count} pages, ${((Number(row.total_content) || 0) / 1024).toFixed(1)} KB, source=${row.source_id}`
+    );
 
   console.log(`\n=== law/ format (old, monolith import) ===`);
   console.log(`Distinct base slugs: ${lawBases.length}`);
   for (const [slug, row] of lawBaseMap)
-    console.log(`  ${slug}: ${row.page_count} pages, ${((Number(row.total_content)||0)/1024).toFixed(1)} KB, source=${row.source_id}`);
+    console.log(
+      `  ${slug}: ${row.page_count} pages, ${((Number(row.total_content) || 0) / 1024).toFixed(1)} KB, source=${row.source_id}`
+    );
 
   // ── 4. Gap analysis: truly missing laws ───────────────────────────────────
   console.log("\n=== Gap Analysis (both formats) ===\n");
@@ -109,13 +128,17 @@ async function main() {
   if (missing.length > 0) {
     console.log("\n--- Truly Missing Laws ---");
     for (const m of missing)
-      console.log(`  [${m.jurisdiction.toUpperCase()}] ${m.abbr} (${(m.size/1024).toFixed(1)} KB) — slug: ${m.statSlug}`);
+      console.log(
+        `  [${m.jurisdiction.toUpperCase()}] ${m.abbr} (${(m.size / 1024).toFixed(1)} KB) — slug: ${m.statSlug}`
+      );
   }
 
   if (inBoth.length > 0) {
     console.log("\n--- Duplicated Laws (in both formats — old law/ should be deleted) ---");
     for (const d of inBoth)
-      console.log(`  [${d.jurisdiction.toUpperCase()}] ${d.abbr} — law/: ${lawBaseMap.get(d.baseSlug)?.page_count} pages, legal/statutes/: ${statBaseMap.get(d.statSlug)?.page_count} pages`);
+      console.log(
+        `  [${d.jurisdiction.toUpperCase()}] ${d.abbr} — law/: ${lawBaseMap.get(d.baseSlug)?.page_count} pages, legal/statutes/: ${statBaseMap.get(d.statSlug)?.page_count} pages`
+      );
   }
 
   // ── 5. Delete old duplicate law/X/Y/N slugs (brain_817d98c8) ──────────────
@@ -131,8 +154,7 @@ async function main() {
     WHERE type = 'law' AND slug LIKE 'law/%' AND slug NOT LIKE 'legal/statutes/%'
     GROUP BY source_id ORDER BY cnt DESC
   `;
-  for (const row of oldBySource)
-    console.log(`  source_id="${row.source_id}": ${row.cnt} pages`);
+  for (const row of oldBySource) console.log(`  source_id="${row.source_id}": ${row.cnt} pages`);
 
   // Delete old law/ format pages and their chunks
   console.log("\nDeleting old law/ format pages + chunks...");
@@ -169,11 +191,16 @@ async function main() {
       byJur[m.jurisdiction].push(m);
     }
     for (const [jur, files] of Object.entries(byJur)) {
-      console.log(`  ${jur.toUpperCase()}: ${files.length} laws — ${files.map(f => f.abbr).join(", ")}`);
+      console.log(
+        `  ${jur.toUpperCase()}: ${files.length} laws — ${files.map((f) => f.abbr).join(", ")}`
+      );
     }
   }
 
   await sql.end();
 }
 
-main().catch(err => { console.error("Failed:", err); process.exit(1); });
+main().catch((err) => {
+  console.error("Failed:", err);
+  process.exit(1);
+});

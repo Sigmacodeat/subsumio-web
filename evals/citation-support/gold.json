@@ -34,10 +34,7 @@
       "expected": "partial",
       "answer": "Nach § 1489 ABGB verjähren Schadenersatzansprüche in drei Jahren ab Kenntnis, gegenüber Verbrauchern jedoch erst nach fünf Jahren.",
       "rationale": "Dreijahresfrist gedeckt; Verbraucher-Fünfjahresfrist steht nicht in § 1489.",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "split": "dev"
     },
     {
@@ -93,10 +90,7 @@
       "expected": "partial",
       "answer": "Nach § 1096 ABGB ist der Mieter bei Unbrauchbarkeit vom Zins befreit und kann zusätzlich verschuldensunabhängig Schadenersatz verlangen.",
       "rationale": "Zinsbefreiung gedeckt; verschuldensunabhängiger Schadenersatz nicht.",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "split": "dev"
     },
     {
@@ -196,10 +190,7 @@
       "expected": "partial",
       "answer": "Nach § 933 ABGB beträgt die Gewährleistungsfrist bei beweglichen Sachen zwei Jahre, und der Käufer muss den Mangel binnen 14 Tagen rügen.",
       "rationale": "Frist gedeckt; Rügepflicht steht nicht in § 933 (vgl § 377 UGB).",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "split": "dev"
     },
     {
@@ -266,10 +257,7 @@
       "expected": "partial",
       "answer": "Nach § 1325 ABGB sind bei Körperverletzung Heilungskosten und Schmerzengeld zu ersetzen, Schmerzengeld allerdings nur bei grobem Verschulden.",
       "rationale": "Ersatzposten gedeckt; Einschränkung auf grobes Verschulden steht nicht in § 1325.",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "split": "dev"
     },
     {
@@ -425,10 +413,7 @@
       "expected": "partial",
       "answer": "Nach § 1320 ABGB haftet der Tierhalter, wenn er die Verwahrung nicht nachweist, allerdings nur bis 50.000 Euro.",
       "rationale": "Haftung gedeckt; Höchstbetrag steht nicht in § 1320.",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ]
+      "acceptable": ["partial", "unsupported"]
     },
     {
       "id": "h-kschg1-ok",

@@ -237,9 +237,7 @@ export default function OnboardingPage() {
             <div
               key={s}
               className={`h-1.5 flex-1 rounded-full transition-[background-color] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
-                i <= currentIdx
-                  ? "bg-[color:var(--brand-solid)]"
-                  : "bg-[color:var(--ds-border)]"
+                i <= currentIdx ? "bg-[color:var(--brand-solid)]" : "bg-[color:var(--ds-border)]"
               }`}
             />
           ))}

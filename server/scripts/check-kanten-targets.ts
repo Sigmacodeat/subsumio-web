@@ -27,24 +27,87 @@ const SOURCE_DIRS: Record<string, string> = {
 const sourcesToRun = ALL_SOURCES ? Object.keys(SOURCE_DIRS) : [sourceKey];
 
 const JUDIKATUR_CODE_MAP: Record<string, string> = {
-  StGB: "stgb", ABGB: "abgb", ZPO: "zpo", EO: "eo", AHG: "ahg",
-  ArbVG: "arbvg", StPO: "stpo", AußStrG: "au-strg", DSG: "dsg",
-  AngG: "angg", IO: "io", KSchG: "kschg", MRG: "mrg", EheG: "eheg",
-  GmbHG: "gmbhg", UGB: "ugb", ASVG: "asvg", AVG: "avg", GewO: "gewo",
-  StVO: "stvo", VStG: "vstg", JGG: "jgg", GOG: "gog",
-  WRG: "wrg", JN: "jn", SMG: "smg", AZG: "azg", ZustG: "zustg",
-  PatG: "patg", RAO: "rao", AMG: "amg", BAO: "bao", UrhG: "urhg",
-  BDG: "bdg", WEG: "weg", BUAG: "buag", VbVG: "vbvg", AktG: "aktg",
-  ALVG: "alvg", ARG: "arg", AsylG: "asylg", AufenthG: "aufenthg",
-  AuslBG: "auslbg", AVRAG: "avrag", AWG: "awg", BBG: "bbg", BewG: "bewg",
-  BVerGG: "bvergg", "B-VG": "b-vg", ChemG: "chemg", ECG: "ecg",
-  "E-GovG": "e-govg", Eiwog: "eiwog", EPG: "epig", EstG: "estg",
-  ForstG: "forstg", FPG: "fpg", GebG: "gebg", GlBG: "glbg", GWG: "gwg",
-  KAG: "kag", KartG: "kartg", KStG: "kstg", MedienG: "medieng",
-  MSchG: "mschg", "N-G": "n-g", PStG: "pstg", SPG: "spg", StBG: "stbg",
-  StRegG: "stregg", TilgG: "tilgg", TKG: "tkg", TschG: "tschg",
-  UStG: "ustg", VKGG: "vkgg", VVG: "vvg", WaffG: "waffg",
-  GlbG: "glbg", StbG: "stbg", UWG: "uwg", VKgG: "vkgg",
+  StGB: "stgb",
+  ABGB: "abgb",
+  ZPO: "zpo",
+  EO: "eo",
+  AHG: "ahg",
+  ArbVG: "arbvg",
+  StPO: "stpo",
+  AußStrG: "au-strg",
+  DSG: "dsg",
+  AngG: "angg",
+  IO: "io",
+  KSchG: "kschg",
+  MRG: "mrg",
+  EheG: "eheg",
+  GmbHG: "gmbhg",
+  UGB: "ugb",
+  ASVG: "asvg",
+  AVG: "avg",
+  GewO: "gewo",
+  StVO: "stvo",
+  VStG: "vstg",
+  JGG: "jgg",
+  GOG: "gog",
+  WRG: "wrg",
+  JN: "jn",
+  SMG: "smg",
+  AZG: "azg",
+  ZustG: "zustg",
+  PatG: "patg",
+  RAO: "rao",
+  AMG: "amg",
+  BAO: "bao",
+  UrhG: "urhg",
+  BDG: "bdg",
+  WEG: "weg",
+  BUAG: "buag",
+  VbVG: "vbvg",
+  AktG: "aktg",
+  ALVG: "alvg",
+  ARG: "arg",
+  AsylG: "asylg",
+  AufenthG: "aufenthg",
+  AuslBG: "auslbg",
+  AVRAG: "avrag",
+  AWG: "awg",
+  BBG: "bbg",
+  BewG: "bewg",
+  BVerGG: "bvergg",
+  "B-VG": "b-vg",
+  ChemG: "chemg",
+  ECG: "ecg",
+  "E-GovG": "e-govg",
+  Eiwog: "eiwog",
+  EPG: "epig",
+  EstG: "estg",
+  ForstG: "forstg",
+  FPG: "fpg",
+  GebG: "gebg",
+  GlBG: "glbg",
+  GWG: "gwg",
+  KAG: "kag",
+  KartG: "kartg",
+  KStG: "kstg",
+  MedienG: "medieng",
+  MSchG: "mschg",
+  "N-G": "n-g",
+  PStG: "pstg",
+  SPG: "spg",
+  StBG: "stbg",
+  StRegG: "stregg",
+  TilgG: "tilgg",
+  TKG: "tkg",
+  TschG: "tschg",
+  UStG: "ustg",
+  VKGG: "vkgg",
+  VVG: "vvg",
+  WaffG: "waffg",
+  GlbG: "glbg",
+  StbG: "stbg",
+  UWG: "uwg",
+  VKgG: "vkgg",
 };
 
 const targetSlugs = new Set<string>();
@@ -55,7 +118,7 @@ for (const src of sourcesToRun) {
   const dir = join(import.meta.dir, "..", "..", "law-corpus", SOURCE_DIRS[src]);
   let files: string[];
   try {
-    files = readdirSync(dir).filter(f => f.endsWith(".md"));
+    files = readdirSync(dir).filter((f) => f.endsWith(".md"));
   } catch {
     console.log(`  ${src}: directory not found, skipping`);
     continue;
@@ -98,10 +161,9 @@ const BATCH = 500;
 
 for (let i = 0; i < slugList.length; i += BATCH) {
   const batch = slugList.slice(i, i + BATCH);
-  const rows = await engine.executeRaw(
-    "SELECT slug FROM pages WHERE slug = ANY($1)",
-    [batch]
-  ) as any[];
+  const rows = (await engine.executeRaw("SELECT slug FROM pages WHERE slug = ANY($1)", [
+    batch,
+  ])) as any[];
   const foundSet = new Set(rows.map((r: any) => r.slug));
   for (const slug of batch) {
     if (foundSet.has(slug)) existing++;

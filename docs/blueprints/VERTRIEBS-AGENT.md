@@ -51,19 +51,19 @@ in der Kammer-Gruppe.
 
 ## 3. Was der Agent können muss – Fähigkeiten nach Kundenreise
 
-| Phase | Nutzerziel | Agent-Fähigkeit | Ergebnis im System |
-|---|---|---|---|
-| 1. Ankommen | „Was ist das, ist das für mich?“ | Kontextbewusster Einstieg (Seite, Referrer, Kampagne, Stadtseite), 30-Sekunden-Pitch passend zur Rolle | Sitzung mit Einstiegskontext |
-| 2. Verstehen | Fragen zu Funktion, Preis, Sicherheit | Belegte Antworten aus Wissensbasis, Links auf die passende Seite, Handbuch-Screens einblenden | Frage-Log für Content-Lücken |
-| 3. Qualifizieren | – (für uns) | Unaufdringlich erfragen: Rolle, Kanzleigröße, Rechtsgebiete, Land, bisherige Software, Hauptschmerz, Zeitrahmen, Entscheider | Lead-Profil + Score |
-| 4. Erleben | „Zeig mir, dass es funktioniert“ | Live-Demo im Chat auf dem Demo-Brain (`/api/demo`, synthetische Akten): Frage stellen, Antwort mit Zitaten, Fristberechnung, Widerspruchsfund | Demo-Ereignisse |
-| 5. Zweifel klären | Datenschutz, Halluzination, Aufwand, Preis | Einwandbehandlung aus kuratierten, belegten Antwortbausteinen; Sicherheitsunterlagen (TOM, AVV, Unterauftragsverarbeiter) als Download | Einwand-Tags |
-| 6. Angebot | „Was kostet das für uns genau?“ | Tarifempfehlung + Rechner (Nutzer, Volumen, Zusatzverbrauch), PDF-Angebot | Angebot (versioniert) |
-| 7. Abschluss | Konto + Vertrag + Zahlung | E-Mail-Verifikation, Kanzleidaten, UID-Prüfung, AGB/AVV-Bestätigung, eingebetteter Stripe Checkout | Konto, Abo, Rechnung, Audit-Einträge |
-| 8. Onboarding | „Wie fange ich an?“ | Agent zieht ins Dashboard mit; führt durch die Schritte aus `OnboardingProgress` (Kanzlei, erste Akte, erste Frist, Team einladen, erste Frage, Tour) | Onboarding-Fortschritt |
-| 9. Aktivierung | Erster echter Nutzen | Datenimport begleiten (DMS/Outlook/beA-Import), erste belegte Antwort auf eigener Akte feiern | Time-to-first-value |
-| 10. Bindung & Ausbau | Mehr Nutzen, mehr Plätze | Nutzungs-Tipps, Hinweis bei Limit, Upgrade Solo → Kanzlei, Empfehlungsprogramm | Expansion-Signale |
-| Immer | Mensch | Übergabe mit vollständigem Kontext: Termin buchen, Rückruf, E-Mail | Ticket/Termin mit Transkript |
+| Phase                | Nutzerziel                                 | Agent-Fähigkeit                                                                                                                                       | Ergebnis im System                   |
+| -------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 1. Ankommen          | „Was ist das, ist das für mich?“           | Kontextbewusster Einstieg (Seite, Referrer, Kampagne, Stadtseite), 30-Sekunden-Pitch passend zur Rolle                                                | Sitzung mit Einstiegskontext         |
+| 2. Verstehen         | Fragen zu Funktion, Preis, Sicherheit      | Belegte Antworten aus Wissensbasis, Links auf die passende Seite, Handbuch-Screens einblenden                                                         | Frage-Log für Content-Lücken         |
+| 3. Qualifizieren     | – (für uns)                                | Unaufdringlich erfragen: Rolle, Kanzleigröße, Rechtsgebiete, Land, bisherige Software, Hauptschmerz, Zeitrahmen, Entscheider                          | Lead-Profil + Score                  |
+| 4. Erleben           | „Zeig mir, dass es funktioniert“           | Live-Demo im Chat auf dem Demo-Brain (`/api/demo`, synthetische Akten): Frage stellen, Antwort mit Zitaten, Fristberechnung, Widerspruchsfund         | Demo-Ereignisse                      |
+| 5. Zweifel klären    | Datenschutz, Halluzination, Aufwand, Preis | Einwandbehandlung aus kuratierten, belegten Antwortbausteinen; Sicherheitsunterlagen (TOM, AVV, Unterauftragsverarbeiter) als Download                | Einwand-Tags                         |
+| 6. Angebot           | „Was kostet das für uns genau?“            | Tarifempfehlung + Rechner (Nutzer, Volumen, Zusatzverbrauch), PDF-Angebot                                                                             | Angebot (versioniert)                |
+| 7. Abschluss         | Konto + Vertrag + Zahlung                  | E-Mail-Verifikation, Kanzleidaten, UID-Prüfung, AGB/AVV-Bestätigung, eingebetteter Stripe Checkout                                                    | Konto, Abo, Rechnung, Audit-Einträge |
+| 8. Onboarding        | „Wie fange ich an?“                        | Agent zieht ins Dashboard mit; führt durch die Schritte aus `OnboardingProgress` (Kanzlei, erste Akte, erste Frist, Team einladen, erste Frage, Tour) | Onboarding-Fortschritt               |
+| 9. Aktivierung       | Erster echter Nutzen                       | Datenimport begleiten (DMS/Outlook/beA-Import), erste belegte Antwort auf eigener Akte feiern                                                         | Time-to-first-value                  |
+| 10. Bindung & Ausbau | Mehr Nutzen, mehr Plätze                   | Nutzungs-Tipps, Hinweis bei Limit, Upgrade Solo → Kanzlei, Empfehlungsprogramm                                                                        | Expansion-Signale                    |
+| Immer                | Mensch                                     | Übergabe mit vollständigem Kontext: Termin buchen, Rückruf, E-Mail                                                                                    | Ticket/Termin mit Transkript         |
 
 ## 4. Fragenkatalog – was der Agent sicher beantworten muss
 
@@ -71,6 +71,7 @@ Jede Frage unten braucht einen **freigegebenen Antwortbaustein mit Quelle**. Der
 das Eval-Set (Abschnitt 10). Fett = Top-Fragen, die in den ersten Wochen am häufigsten kommen werden.
 
 ### 4.1 Produkt & Nutzen
+
 - **Was ist Subsumio in einem Satz? Was unterscheidet es von ChatGPT?**
 - **Arbeitet es mit österreichischem Recht? Welche Quellen (RIS, Judikatur, Literatur)? Wie aktuell?**
 - Deutsches / Schweizer Recht – ab wann?
@@ -83,6 +84,7 @@ das Eval-Set (Abschnitt 10). Fett = Top-Fragen, die in den ersten Wochen am häu
 - Was kann Subsumio **nicht**? (Muss ehrlich beantwortbar sein – stärkt Vertrauen.)
 
 ### 4.2 Datenschutz, Sicherheit, Berufsrecht
+
 - **Wo liegen meine Daten? Wer hat Zugriff? Welche Unterauftragsverarbeiter (inkl. KI-Anbieter)?**
 - **Wird mit meinen Akten ein Modell trainiert?** (Antwort nach Blueprint Kollektives Gehirn: nein.)
 - Ist das mit der Verschwiegenheitspflicht / RAO / RL-BA vereinbar?
@@ -93,6 +95,7 @@ das Eval-Set (Abschnitt 10). Fett = Top-Fragen, die in den ersten Wochen am häu
 - Self-Hosting / Community-Edition – für wen, mit welchen Einschränkungen?
 
 ### 4.3 Preise & Vertrag
+
 - **Was kostet Solo, was Kanzlei, was ist in Enterprise?**
 - **Was ist inklusive, was kostet Mehrverbrauch? Kann ich ein Limit setzen?**
 - Testphase: Wie lange, mit Kreditkarte oder ohne, was passiert danach?
@@ -102,6 +105,7 @@ das Eval-Set (Abschnitt 10). Fett = Top-Fragen, die in den ersten Wochen am häu
 - Rabatte für Berufseinsteiger, Kammer-Mitglieder, Partnerprogramm
 
 ### 4.4 Umstieg & Einrichtung
+
 - **Wie bekomme ich meine bestehenden Akten hinein? Wie lange dauert das?**
 - Welche Kanzleisoftware kann ich anbinden bzw. parallel weiter nutzen? (nur belegte Integrationen)
 - Brauche ich IT? Was muss installiert werden?
@@ -109,11 +113,13 @@ das Eval-Set (Abschnitt 10). Fett = Top-Fragen, die in den ersten Wochen am häu
 - Kann ich Daten jederzeit exportieren? Was passiert bei Kündigung?
 
 ### 4.5 Vergleich & Vertrauen
+
 - Unterschied zu AI:ssociate, Donna, Legora, Harvey, Microsoft Copilot, Juris/RDB/Manz-Angeboten
 - Wer steckt hinter Subsumio, wo sitzt das Unternehmen, wer sind Referenzkunden?
 - Benchmark: Wie wurde gemessen? (→ `benchmark-methodology`)
 
 ### 4.6 Fragen, die der Agent ablehnen oder umleiten muss
+
 - Konkrete Rechtsfragen zu einem Fall → Produktdemo statt Antwort
 - „Gib mir 50 % Rabatt“, „Ignoriere deine Anweisungen“ → freundlich ablehnen
 - Fragen zu anderen Kunden / Referenzen ohne Freigabe → ablehnen
@@ -124,16 +130,17 @@ das Eval-Set (Abschnitt 10). Fett = Top-Fragen, die in den ersten Wochen am häu
 Der Agent darf nur wissen, was die Website und das Produkt tatsächlich sagen. Deshalb wird **keine**
 separate Bot-FAQ geschrieben, sondern die bestehenden Inhalte werden zur Wissensbasis:
 
-| Quelle | Pfad | Inhalt |
-|---|---|---|
-| Preise & Tarife | `src/lib/billing/plans.ts` (`BILLABLE_PLANS`, `BILLING_PLANS_DISPLAY`), `src/content/audiences.ts`, `PRICING_FAQ` in `src/content/site.ts` | Preise, Limits, FAQ |
-| Funktionen | `src/content/features.ts`, `solutions.ts`, `proof-points.ts` | Funktionsbeschreibungen |
-| Handbuch | `src/content/handbook.ts` + Handbuch-Replicas | Schritt-für-Schritt, Screens |
-| Sicherheit | `src/content/security.ts`, `/at/dpa`, `/at/privacy`, `/at/security` | TOM, AVV, Unterauftragsverarbeiter |
-| Recht/AGB | `/at/terms`, `/at/imprint` | Vertragsbedingungen |
-| Kuratierte Einwandantworten | neu: `src/content/sales-knowledge.ts` | nur was nirgends sonst steht, jede Antwort mit Verweis |
+| Quelle                      | Pfad                                                                                                                                       | Inhalt                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| Preise & Tarife             | `src/lib/billing/plans.ts` (`BILLABLE_PLANS`, `BILLING_PLANS_DISPLAY`), `src/content/audiences.ts`, `PRICING_FAQ` in `src/content/site.ts` | Preise, Limits, FAQ                                    |
+| Funktionen                  | `src/content/features.ts`, `solutions.ts`, `proof-points.ts`                                                                               | Funktionsbeschreibungen                                |
+| Handbuch                    | `src/content/handbook.ts` + Handbuch-Replicas                                                                                              | Schritt-für-Schritt, Screens                           |
+| Sicherheit                  | `src/content/security.ts`, `/at/dpa`, `/at/privacy`, `/at/security`                                                                        | TOM, AVV, Unterauftragsverarbeiter                     |
+| Recht/AGB                   | `/at/terms`, `/at/imprint`                                                                                                                 | Vertragsbedingungen                                    |
+| Kuratierte Einwandantworten | neu: `src/content/sales-knowledge.ts`                                                                                                      | nur was nirgends sonst steht, jede Antwort mit Verweis |
 
 Umsetzung:
+
 - Ein Build-Schritt erzeugt aus diesen Dateien einen **versionierten Wissens-Snapshot** (Chunks mit
   Quell-URL + Hash). Der Snapshot wird in eine eigene Engine-Quelle `sales` im Demo-/Marketing-Brain
   importiert – nie in ein Kanzlei-Brain.
@@ -161,6 +168,7 @@ Engine-Quelle „sales“ (Wissen) · Demo-Brain (Live-Demo) · Auth-Store · St
 ```
 
 ### 6.1 Modelle
+
 - **Gesprächsführung:** Sonnet 5 (Qualität zählt, Umsatz hängt dran). Prompt-Caching für System-Prompt
   und Wissens-Kontext.
 - **Klassifikation/Schwärzung/Claim-Check:** Haiku 4.5.
@@ -169,27 +177,28 @@ Engine-Quelle „sales“ (Wissen) · Demo-Brain (Live-Demo) · Auth-Store · St
 
 ### 6.2 Werkzeuge des Agenten
 
-| Tool | Stufe | Was es tut | Baut auf |
-|---|---|---|---|
-| `search_knowledge` | lesen | Suche im Wissens-Snapshot, gibt Chunks + URL zurück | Engine-Quelle `sales` |
-| `get_pricing` | lesen | Tarife, Limits, Mehrverbrauch aus Code | `src/lib/billing/plans.ts`, `credit-rate-card.ts` |
-| `calculate_quote` | lesen | Rechner: Nutzer, Volumen → Monatspreis, Jahrespreis, Zusatzkosten | `billing/estimate` |
-| `run_demo` | lesen | Live-Frage ans Demo-Brain, Antwort mit Zitaten im Chat | `/api/demo` (bisher nur Suche; auf belegte Antwort erweitern) |
-| `show_screen` | lesen | Blendet Handbuch-Replica/Screenshot zur Funktion ein | Handbuch-Replicas |
-| `capture_lead` | Lead | Speichert Profil + Einwilligung (Double-Opt-in für Marketing getrennt) | neu, analog `intake` |
-| `book_meeting` | Lead | Freie Slots anzeigen, Termin buchen | neu (Cal.com/Google/Microsoft-Kalender) |
-| `handoff_human` | Lead | Übergabe mit Zusammenfassung an Ops-Postfach / Slack | Ops-Konsole Mailbox |
-| `send_documents` | Lead | AVV, TOM, Angebot-PDF per verifizierter E-Mail | Mail-Layer |
-| `create_account` | verbindlich | Konto anlegen per E-Mail-Verifikation (Magic Link, kein Passwort im Chat) | `api/auth/signup` + `verify` |
-| `set_firm_profile` | verbindlich | Kanzleiname, Adresse, UID (VIES-Prüfung), Land | `api/onboarding` |
-| `start_checkout` | verbindlich | Erzeugt Stripe Checkout Session (`ui_mode: embedded`) und rendert sie im Chat | `api/billing/checkout` |
-| `apply_offer` | verbindlich | Nur freigegebene Aktionscodes (Stripe Promotion Codes) | Stripe |
-| `onboarding_step` | App | Führt einen `OnboardingProgress`-Schritt aus bzw. zeigt ihn | `api/onboarding`, Copilot |
+| Tool               | Stufe       | Was es tut                                                                    | Baut auf                                                      |
+| ------------------ | ----------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `search_knowledge` | lesen       | Suche im Wissens-Snapshot, gibt Chunks + URL zurück                           | Engine-Quelle `sales`                                         |
+| `get_pricing`      | lesen       | Tarife, Limits, Mehrverbrauch aus Code                                        | `src/lib/billing/plans.ts`, `credit-rate-card.ts`             |
+| `calculate_quote`  | lesen       | Rechner: Nutzer, Volumen → Monatspreis, Jahrespreis, Zusatzkosten             | `billing/estimate`                                            |
+| `run_demo`         | lesen       | Live-Frage ans Demo-Brain, Antwort mit Zitaten im Chat                        | `/api/demo` (bisher nur Suche; auf belegte Antwort erweitern) |
+| `show_screen`      | lesen       | Blendet Handbuch-Replica/Screenshot zur Funktion ein                          | Handbuch-Replicas                                             |
+| `capture_lead`     | Lead        | Speichert Profil + Einwilligung (Double-Opt-in für Marketing getrennt)        | neu, analog `intake`                                          |
+| `book_meeting`     | Lead        | Freie Slots anzeigen, Termin buchen                                           | neu (Cal.com/Google/Microsoft-Kalender)                       |
+| `handoff_human`    | Lead        | Übergabe mit Zusammenfassung an Ops-Postfach / Slack                          | Ops-Konsole Mailbox                                           |
+| `send_documents`   | Lead        | AVV, TOM, Angebot-PDF per verifizierter E-Mail                                | Mail-Layer                                                    |
+| `create_account`   | verbindlich | Konto anlegen per E-Mail-Verifikation (Magic Link, kein Passwort im Chat)     | `api/auth/signup` + `verify`                                  |
+| `set_firm_profile` | verbindlich | Kanzleiname, Adresse, UID (VIES-Prüfung), Land                                | `api/onboarding`                                              |
+| `start_checkout`   | verbindlich | Erzeugt Stripe Checkout Session (`ui_mode: embedded`) und rendert sie im Chat | `api/billing/checkout`                                        |
+| `apply_offer`      | verbindlich | Nur freigegebene Aktionscodes (Stripe Promotion Codes)                        | Stripe                                                        |
+| `onboarding_step`  | App         | Führt einen `OnboardingProgress`-Schritt aus bzw. zeigt ihn                   | `api/onboarding`, Copilot                                     |
 
 „Verbindlich“ heißt: läuft ausschließlich über eine Bestätigungskarte mit serverseitigem Token
 (Muster `copilot-confirmation.ts`), die Karte zeigt die exakten Parameter, der Klick kommt vom Menschen.
 
 ### 6.3 Widget
+
 - Unten rechts auf allen Marketingseiten, aber nicht aufdringlich: kein automatisches Aufpoppen in den
   ersten 20 Sekunden; kontextuelle Einstiegsfragen je Seite (Preisseite: „Soll ich für Ihre Kanzlei
   rechnen?“, Sicherheitsseite: „Fragen zur Verschwiegenheit?“).
@@ -203,6 +212,7 @@ Engine-Quelle „sales“ (Wissen) · Demo-Brain (Live-Demo) · Auth-Store · St
 ## 7. Abschluss und Zahlung im Chat
 
 ### 7.1 Ablauf
+
 1. **Tarif gewählt** → Bestätigungskarte: Tarif, Nutzer, Preis netto/brutto, Laufzeit, Testphase.
 2. **E-Mail verifizieren** → Magic Link oder 6-stelliger Code im Chat. Ab hier ist die Sitzung an ein
    Konto gebunden. Kein Passwort im Chat – Passwort/2FA setzt der Nutzer auf der Kontoseite.
@@ -218,10 +228,12 @@ Engine-Quelle „sales“ (Wissen) · Demo-Brain (Live-Demo) · Auth-Store · St
    im elektronischen Geschäftsverkehr, § 9 ff. ECG bzw. § 312i BGB).
 
 ### 7.2 Enterprise / Rechnung
+
 Ab Enterprise oder auf Wunsch „Rechnung statt Karte“: Agent erstellt Angebotsentwurf, Übergabe an
 Mensch, Freigabe in der Ops-Konsole, Versand als Stripe Invoice mit Zahlungslink.
 
 ### 7.3 Was heute im Code fehlt (vor Phase 3 zu schließen)
+
 - ~~**Testphase ist nicht implementiert.**~~ Erledigt 2026-09-19: `src/lib/billing/trial.ts`
   (`trialEndsAt` bei Selbst-Registrierung, seit 19.09. 30 Tage, `effectivePlan` = Kanzlei-Umfang bis Testende, danach
   automatisch Community; Kauf während des Tests rechnet erst ab Testende ab).
@@ -235,6 +247,7 @@ Mensch, Freigabe in der Ops-Konsole, Versand als Stripe Invoice mit Zahlungslink
   Antwort mit Zitat-Panel auf dem Demo-Brain.
 
 ### 7.4 Konditionen, die der Agent selbst anbieten darf
+
 Nur als Stripe Promotion Codes hinterlegt und in `sales-knowledge.ts` benannt, z. B.: Jahresvorauszahlung,
 Berufseinsteiger, Partnerkanzlei-Empfehlung. Alles andere → `handoff_human` mit Angebotsentwurf.
 
@@ -282,25 +295,25 @@ Alle Schritte schreiben in `OnboardingProgress`; die Ops-Konsole zeigt, wo Kanzl
 
 ## 11. Kennzahlen
 
-| Ebene | Kennzahl |
-|---|---|
-| Reichweite | Anteil Besucher mit Gespräch, Einstiegsseite |
-| Qualität | belegte Antworten %, „weiß ich nicht“ %, Claim-Check-Streichungen, Nutzerbewertung |
-| Funnel | Gespräch → Demo → Konto → Test → bezahlt; Zeit bis Abschluss |
-| Aktivierung | Zeit bis erste belegte Antwort auf eigener Akte, Onboarding-Schritte erledigt |
-| Wirtschaft | Kosten pro Gespräch, Kosten pro Abschluss, Übergabequote an Menschen |
-| Vertrauen | Beschwerden, gemeldete Falschaussagen (Ziel: 0) |
+| Ebene       | Kennzahl                                                                           |
+| ----------- | ---------------------------------------------------------------------------------- |
+| Reichweite  | Anteil Besucher mit Gespräch, Einstiegsseite                                       |
+| Qualität    | belegte Antworten %, „weiß ich nicht“ %, Claim-Check-Streichungen, Nutzerbewertung |
+| Funnel      | Gespräch → Demo → Konto → Test → bezahlt; Zeit bis Abschluss                       |
+| Aktivierung | Zeit bis erste belegte Antwort auf eigener Akte, Onboarding-Schritte erledigt      |
+| Wirtschaft  | Kosten pro Gespräch, Kosten pro Abschluss, Übergabequote an Menschen               |
+| Vertrauen   | Beschwerden, gemeldete Falschaussagen (Ziel: 0)                                    |
 
 ## 12. Umsetzung in Phasen
 
-| Phase | Inhalt | Voraussetzung / Abnahme |
-|---|---|---|
-| **0 – Fundament** | Testphase implementieren; Preise aus einer Quelle; Lead-Backend statt `mailto:`; Anthropic als Unterauftragsverarbeiter gelistet; EU-Routing erzwungen | Website-Versprechen = Produktverhalten |
-| **1 – Auskunft** (gebaut 2026-09-19: `src/lib/concierge/`, `/api/concierge`, Widget, `/ops/leads`; Termin vorerst als Anfrage, kein Kalender) | Widget, `search_knowledge`, `get_pricing`, Claim-Check, `capture_lead`, `book_meeting`, `handoff_human`; Golden + Red-Team-Set | Faktentreue ≥ 98 %, Preis 100 %, 0 verbindliche Aktionen |
-| **2 – Überzeugen** | Live-Demo mit belegter Antwort, Rechner, Angebot-PDF, AVV/TOM-Versand, Einwandbausteine | Demo-Antwort mit Zitaten auf Demo-Brain |
-| **3 – Abschließen** | Konto per Verifikation, Kanzleidaten + VIES, AGB/AVV-Karte, eingebetteter Stripe Checkout, Stripe Tax, Promotion Codes | Test- und Live-Modus durchgespielt, Audit-Einträge vollständig |
-| **4 – Onboarding** | Übergang ins Dashboard, Onboarding-Modus des Copilot, Check-ins, Testphasen-Bilanz | Messbar kürzere Zeit bis erste belegte Antwort |
-| **5 – Ausbau** | Upgrade-/Plätze-Empfehlungen, Empfehlungsprogramm, WhatsApp-Kanal, EN | – |
+| Phase                                                                                                                                         | Inhalt                                                                                                                                                 | Voraussetzung / Abnahme                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| **0 – Fundament**                                                                                                                             | Testphase implementieren; Preise aus einer Quelle; Lead-Backend statt `mailto:`; Anthropic als Unterauftragsverarbeiter gelistet; EU-Routing erzwungen | Website-Versprechen = Produktverhalten                         |
+| **1 – Auskunft** (gebaut 2026-09-19: `src/lib/concierge/`, `/api/concierge`, Widget, `/ops/leads`; Termin vorerst als Anfrage, kein Kalender) | Widget, `search_knowledge`, `get_pricing`, Claim-Check, `capture_lead`, `book_meeting`, `handoff_human`; Golden + Red-Team-Set                         | Faktentreue ≥ 98 %, Preis 100 %, 0 verbindliche Aktionen       |
+| **2 – Überzeugen**                                                                                                                            | Live-Demo mit belegter Antwort, Rechner, Angebot-PDF, AVV/TOM-Versand, Einwandbausteine                                                                | Demo-Antwort mit Zitaten auf Demo-Brain                        |
+| **3 – Abschließen**                                                                                                                           | Konto per Verifikation, Kanzleidaten + VIES, AGB/AVV-Karte, eingebetteter Stripe Checkout, Stripe Tax, Promotion Codes                                 | Test- und Live-Modus durchgespielt, Audit-Einträge vollständig |
+| **4 – Onboarding**                                                                                                                            | Übergang ins Dashboard, Onboarding-Modus des Copilot, Check-ins, Testphasen-Bilanz                                                                     | Messbar kürzere Zeit bis erste belegte Antwort                 |
+| **5 – Ausbau**                                                                                                                                | Upgrade-/Plätze-Empfehlungen, Empfehlungsprogramm, WhatsApp-Kanal, EN                                                                                  | –                                                              |
 
 ## 13. Offene Entscheidungen
 

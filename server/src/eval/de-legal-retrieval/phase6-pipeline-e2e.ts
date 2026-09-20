@@ -25,7 +25,8 @@ const SYNTHETIC_CASE = {
   verfahrenstyp: "zivil" as const,
   // Minimal forensic report — simulates Layer 3 output
   forensic_report: {
-    sachverhalt: "Der Mandant (Kläger) wurde am 15.03.2024 vom Beklagten in einem Verkehrsunfall am Linzer Hauptplatz gerammt. Der Beklagte fuhr bei Rot über die Kreuzung. Sachschaden am Fahrzeug: €4.500, Personenschaden (Prellungen, HWS-Distorsion): €2.000 Schmerzensgeld.",
+    sachverhalt:
+      "Der Mandant (Kläger) wurde am 15.03.2024 vom Beklagten in einem Verkehrsunfall am Linzer Hauptplatz gerammt. Der Beklagte fuhr bei Rot über die Kreuzung. Sachschaden am Fahrzeug: €4.500, Personenschaden (Prellungen, HWS-Distorsion): €2.000 Schmerzensgeld.",
     ansprueche: [
       { typ: "Sachschaden", betrag: 4500, paragraph: "§ 1311 ABGB" },
       { typ: "Schmerzensgeld", betrag: 2000, paragraph: "§ 1325 ABGB" },
@@ -37,9 +38,9 @@ const SYNTHETIC_CASE = {
   },
   // Expected §§ that law-matcher should find
   expected_paragraphs: [
-    "§ 1311 ABGB",  // Schadenersatz (Verschuldenshaftung)
-    "§ 1325 ABGB",  // Schmerzensgeld
-    "§ 1295 ABGB",  // Schadenersatz bei Verkehrsunfall
+    "§ 1311 ABGB", // Schadenersatz (Verschuldenshaftung)
+    "§ 1325 ABGB", // Schmerzensgeld
+    "§ 1295 ABGB", // Schadenersatz bei Verkehrsunfall
   ],
 };
 
@@ -59,7 +60,7 @@ interface SpecialistResult {
 async function runSpecialistViaSubagent(
   specialistName: string,
   prompt: string,
-  engine: any,
+  engine: any
 ): Promise<string> {
   // This would normally go through the MinionQueue → subagent handler.
   // For the E2E harness, we simulate the specialist call by directly
@@ -74,14 +75,19 @@ async function runSpecialistViaSubagent(
   // The harness is a manual test script — wire to your engine's LLM call.
   throw new Error(
     "E2E harness requires engine wiring. Run with: gbrain agent run --specialist " +
-    specialistName + ' --prompt "' + prompt.slice(0, 80) + '..."'
+      specialistName +
+      ' --prompt "' +
+      prompt.slice(0, 80) +
+      '..."'
   );
 }
 
 function extractParagraphs(text: string): string[] {
   const paragraphs: string[] = [];
   // Match patterns like "§ 1311 ABGB", "§ 1325 ABGB", "§ 1295 ABGB"
-  const matches = text.matchAll(/§\s*(\d+[a-z]?)\s+(ABGB|BGB|StGB|ZPO|HGB|AO|EStG|KStG|UStG|StPO|VwGO|BVG|GG|OR)/gi);
+  const matches = text.matchAll(
+    /§\s*(\d+[a-z]?)\s+(ABGB|BGB|StGB|ZPO|HGB|AO|EStG|KStG|UStG|StPO|VwGO|BVG|GG|OR)/gi
+  );
   for (const m of matches) {
     paragraphs.push(`§ ${m[1]} ${m[2]}`);
   }
@@ -110,8 +116,8 @@ async function runPhase6B(): Promise<void> {
     const lmResult = await runSpecialistViaSubagent("law-matcher", lmPrompt, null);
     const found = extractParagraphs(lmResult);
     const expected = SYNTHETIC_CASE.expected_paragraphs;
-    const missing = expected.filter(p => !found.includes(p));
-    const hallucinated = found.filter(p => !expected.includes(p));
+    const missing = expected.filter((p) => !found.includes(p));
+    const hallucinated = found.filter((p) => !expected.includes(p));
 
     results.push({
       specialist: "law-matcher",
@@ -126,7 +132,9 @@ async function runPhase6B(): Promise<void> {
     });
     console.log(`│  Found: ${found.join(", ")}`);
     console.log(`│  Missing: ${missing.length === 0 ? "none ✅" : missing.join(", ")}`);
-    console.log(`│  Hallucinated: ${hallucinated.length === 0 ? "none ✅" : hallucinated.join(", ")}`);
+    console.log(
+      `│  Hallucinated: ${hallucinated.length === 0 ? "none ✅" : hallucinated.join(", ")}`
+    );
   } catch (e) {
     console.log(`│  ERROR: ${(e as Error).message}`);
     results.push({
@@ -153,7 +161,7 @@ async function runPhase6B(): Promise<void> {
       case_slug: SYNTHETIC_CASE.case_slug,
       jurisdiction: SYNTHETIC_CASE.jurisdiction,
       forensic_report: SYNTHETIC_CASE.forensic_report,
-      legal_grounding_map: SYNTHETIC_CASE.expected_paragraphs.map(p => ({
+      legal_grounding_map: SYNTHETIC_CASE.expected_paragraphs.map((p) => ({
         paragraph: p,
         claim: "Schadenersatzanspruch aus Verkehrsunfall",
         confidence: "hoch",
@@ -200,7 +208,7 @@ async function runPhase6B(): Promise<void> {
       case_slug: SYNTHETIC_CASE.case_slug,
       jurisdiction: SYNTHETIC_CASE.jurisdiction,
       forensic_report: SYNTHETIC_CASE.forensic_report,
-      legal_grounding_map: SYNTHETIC_CASE.expected_paragraphs.map(p => ({
+      legal_grounding_map: SYNTHETIC_CASE.expected_paragraphs.map((p) => ({
         paragraph: p,
         claim: "Schadenersatz",
       })),
@@ -243,7 +251,7 @@ async function runPhase6B(): Promise<void> {
   console.log("═══════════════════════════════════════════════════════════════");
   console.log();
 
-  const passed = results.filter(r => r.success).length;
+  const passed = results.filter((r) => r.success).length;
   const failed = results.length - passed;
 
   console.log(`  Specialists tested: ${results.length}`);
@@ -253,7 +261,9 @@ async function runPhase6B(): Promise<void> {
 
   for (const r of results) {
     const status = r.success ? "✅ PASS" : "❌ FAIL";
-    console.log(`  ${status}  ${r.specialist.padEnd(25)} tier=${r.tier.padEnd(10)} model=${r.model}`);
+    console.log(
+      `  ${status}  ${r.specialist.padEnd(25)} tier=${r.tier.padEnd(10)} model=${r.model}`
+    );
     if (r.paragraphs_missing.length > 0) {
       console.log(`           Missing §§: ${r.paragraphs_missing.join(", ")}`);
     }

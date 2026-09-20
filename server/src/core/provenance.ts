@@ -64,7 +64,8 @@ export interface ProvenanceResult {
  */
 export function parseContextChunks(pagesBlock: string): SourceChunk[] {
   const chunks: SourceChunk[] = [];
-  const pageRegex = /<page\s+slug="([^"]+)"\s+rank="(\d+)"(?:\s+passage_start="(\d+)")?(?:\s+passage_end="(\d+)")?>([\s\S]*?)<\/page>/g;
+  const pageRegex =
+    /<page\s+slug="([^"]+)"\s+rank="(\d+)"(?:\s+passage_start="(\d+)")?(?:\s+passage_end="(\d+)")?>([\s\S]*?)<\/page>/g;
   let match: RegExpExecArray | null;
   while ((match = pageRegex.exec(pagesBlock)) !== null) {
     const slug = match[1];
@@ -146,7 +147,8 @@ function extractPassageForCitation(
  * Extract §-citations from a claim sentence.
  */
 function extractClaimCitations(claim: string): string[] {
-  const pattern = /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
+  const pattern =
+    /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
   const citations: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(claim)) !== null) {
@@ -185,7 +187,11 @@ function assessRelevance(
   const claimWords = claim
     .toLowerCase()
     .split(/\s+/)
-    .filter((w) => w.length > 4 && !["muss", "ist", "gilt", "kann", "hat", "sind", "wird", "darf", "soll"].includes(w));
+    .filter(
+      (w) =>
+        w.length > 4 &&
+        !["muss", "ist", "gilt", "kann", "hat", "sind", "wird", "darf", "soll"].includes(w)
+    );
   const passageLower = passage.toLowerCase();
   const overlap = claimWords.filter((w) => passageLower.includes(w));
   if (overlap.length >= 3) return "paraphrase";
@@ -203,10 +209,7 @@ function assessRelevance(
  * @param pagesBlock - The context block (XML-tagged pages)
  * @returns ProvenanceResult with links and unsupported claims
  */
-export function buildProvenance(
-  answer: string,
-  pagesBlock: string
-): ProvenanceResult {
+export function buildProvenance(answer: string, pagesBlock: string): ProvenanceResult {
   const chunks = parseContextChunks(pagesBlock);
   const claims = decomposeClaims(answer);
   const links: ProvenanceLink[] = [];
@@ -262,7 +265,9 @@ export function buildProvenance(
  */
 export function provenanceSummary(result: ProvenanceResult): string {
   const lines: string[] = [];
-  lines.push(`Provenance Chain — ${result.links.length} links, ${result.unsupported_claims.length} unsupported claims`);
+  lines.push(
+    `Provenance Chain — ${result.links.length} links, ${result.unsupported_claims.length} unsupported claims`
+  );
   lines.push("");
 
   for (const link of result.links) {

@@ -46,9 +46,7 @@ export function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <span className={EYEBROW_CLASS}>
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
+                        <span className={EYEBROW_CLASS}>{String(i + 1).padStart(2, "0")}</span>
                         <h3 className="text-lg font-bold [color:var(--mk-text)] md:text-xl">
                           {layer.title}
                         </h3>
@@ -188,9 +186,7 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
             className="mb-4 inline-flex"
           >
             <BookOpen size={14} className="brand-text" />
-            <span className={EYEBROW_CLASS}>
-              {t.finetuneBadge}
-            </span>
+            <span className={EYEBROW_CLASS}>{t.finetuneBadge}</span>
           </motion.div>
           <ClipReveal>
             <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.finetuneTitle}</h2>
@@ -239,9 +235,7 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           <div className="brand-border brand-soft rounded-2xl border p-6 text-center">
             <div className="mb-2 flex items-center justify-center gap-2">
               <Info size={18} className="brand-text" />
-              <span className={EYEBROW_CLASS}>
-                {t.finetuneResultLabel}
-              </span>
+              <span className={EYEBROW_CLASS}>{t.finetuneResultLabel}</span>
             </div>
             <p className="text-sm leading-relaxed [color:var(--mk-text)] md:text-base">
               {t.finetuneResult}

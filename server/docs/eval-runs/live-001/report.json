@@ -1126,9 +1126,7 @@
       "started_at": "2026-07-14T09:05:09.371Z",
       "completed_at": "2026-07-14T09:09:28.912Z",
       "verification_state": "NEEDS_HUMAN_REVIEW",
-      "warnings": [
-        "ungrounded_citation: Citation \"§ 335 BDG\" not found in retrieved context"
-      ],
+      "warnings": ["ungrounded_citation: Citation \"§ 335 BDG\" not found in retrieved context"],
       "mode": "live",
       "latency_p50_ms": 42321,
       "latency_p95_ms": 42321

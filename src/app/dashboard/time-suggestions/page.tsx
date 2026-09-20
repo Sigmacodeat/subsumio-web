@@ -291,7 +291,10 @@ export default function TimeSuggestionsPage() {
                       </Badge>
                     )}
                     {s.status === "rejected" && (
-                      <Badge variant="default" className="border text-xs text-[color:var(--ds-text-muted)]">
+                      <Badge
+                        variant="default"
+                        className="border text-xs text-[color:var(--ds-text-muted)]"
+                      >
                         Abgelehnt
                       </Badge>
                     )}
@@ -443,7 +446,9 @@ function SuggStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
       <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</div>
+      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+        {value}
+      </div>
     </div>
   );
 }

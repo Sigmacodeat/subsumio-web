@@ -401,7 +401,8 @@ export default function FibuPage() {
               Zahlungslink erstellen
             </h2>
             <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-              Erzeugt einen EPC-QR-Code (SEPA-Überweisung), den der Mandant mit der Banking-App scannt.
+              Erzeugt einen EPC-QR-Code (SEPA-Überweisung), den der Mandant mit der Banking-App
+              scannt.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -479,7 +480,12 @@ export default function FibuPage() {
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               Zahlungslink erstellen
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setShowPaymentLink(false)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowPaymentLink(false)}
+            >
               Abbrechen
             </Button>
           </div>
@@ -604,7 +610,9 @@ function FibuStat({
       >
         {value}
       </div>
-      {sub && <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">{sub}</div>}
+      {sub && (
+        <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">{sub}</div>
+      )}
     </div>
   );
 }

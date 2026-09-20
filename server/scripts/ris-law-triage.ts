@@ -31,16 +31,25 @@ function arg(name: string, fb?: string) {
   return i > -1 ? process.argv[i + 1] : fb;
 }
 const RIS_FILE = arg("ris", "/tmp/ris-inforce.jsonl")!;
-const DB_URL = arg("db", process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain")!;
+const DB_URL = arg(
+  "db",
+  process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
+)!;
 const LIMIT = Number(arg("limit", "0"));
 const ONLY_NAMED = !process.argv.includes("--all-laws");
 const JSON_OUT = arg("json");
 const CORPUS = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 
 function slugify(s: string): string {
-  return s.toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+  return s
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
 }
 
 /**
@@ -55,9 +64,12 @@ function normKey(apa: string | null): string | null {
   if (!apa) return null;
   const s = apa.trim();
   if (/^§+\s*0\s*$/.test(s)) return null;
-  let m = s.match(/^§+\s*([0-9]+[a-zA-Z]*)/); if (m) return `p-${m[1].toLowerCase()}`;
-  m = s.match(/^Art\.?\s*([0-9]+[a-zA-Z]*)/i); if (m) return `art-${m[1].toLowerCase()}`;
-  m = s.match(/^Anl\.?\s*([0-9]+[a-zA-Z]*)/i); if (m) return `anl-${m[1].toLowerCase()}`;
+  let m = s.match(/^§+\s*([0-9]+[a-zA-Z]*)/);
+  if (m) return `p-${m[1].toLowerCase()}`;
+  m = s.match(/^Art\.?\s*([0-9]+[a-zA-Z]*)/i);
+  if (m) return `art-${m[1].toLowerCase()}`;
+  m = s.match(/^Anl\.?\s*([0-9]+[a-zA-Z]*)/i);
+  if (m) return `anl-${m[1].toLowerCase()}`;
   return null;
 }
 
@@ -71,7 +83,10 @@ async function main() {
     const n = JSON.parse(line);
     if (!n.gnr) continue;
     let l = laws.get(n.gnr);
-    if (!l) { l = { gnr: n.gnr, abk: n.abk ?? null, titel: n.kurztitel ?? "", soll: new Set() }; laws.set(n.gnr, l); }
+    if (!l) {
+      l = { gnr: n.gnr, abk: n.abk ?? null, titel: n.kurztitel ?? "", soll: new Set() };
+      laws.set(n.gnr, l);
+    }
     if (!l.abk && n.abk) l.abk = n.abk;
     const k = normKey(n.apa);
     if (k) l.soll.add(k);
@@ -82,8 +97,11 @@ async function main() {
   list.sort((a, b) => b.soll.size - a.soll.size);
   if (LIMIT > 0) list = list.slice(0, LIMIT);
 
-  console.log(`RIS-Sollbestand: ${laws.size} Gesetze, geprüft werden ${list.length}` +
-    (ONLY_NAMED ? " (nur mit Abkürzung)" : "") + "\n");
+  console.log(
+    `RIS-Sollbestand: ${laws.size} Gesetze, geprüft werden ${list.length}` +
+      (ONLY_NAMED ? " (nur mit Abkürzung)" : "") +
+      "\n"
+  );
 
   // ── 2. Datenbank: welche Normen liegen je Gesetz? ─────────────────
   const sql = postgres(DB_URL, { max: 3, idle_timeout: 20 });
@@ -106,8 +124,17 @@ async function main() {
     for (const d of readdirSync(normenRoot)) {
       const p = join(normenRoot, d);
       try {
-        diskByDir.set(d, new Set(readdirSync(p).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))));
-      } catch { /* kein Verzeichnis */ }
+        diskByDir.set(
+          d,
+          new Set(
+            readdirSync(p)
+              .filter((f) => f.endsWith(".md"))
+              .map((f) => f.replace(/\.md$/, ""))
+          )
+        );
+      } catch {
+        /* kein Verzeichnis */
+      }
     }
   }
 
@@ -132,9 +159,15 @@ async function main() {
     zaehler[status]++;
 
     out.push({
-      gnr: l.gnr, abk: l.abk, titel: l.titel, dir,
-      soll: l.soll.size, in_db: l.soll.size - fehltInDb.length,
-      fehlt: fehltInDb.length, auf_platte: davonAufPlatte.length, braucht_ris: brauchtRis.length,
+      gnr: l.gnr,
+      abk: l.abk,
+      titel: l.titel,
+      dir,
+      soll: l.soll.size,
+      in_db: l.soll.size - fehltInDb.length,
+      fehlt: fehltInDb.length,
+      auf_platte: davonAufPlatte.length,
+      braucht_ris: brauchtRis.length,
       status,
       ris_keys: brauchtRis.slice(0, 200),
     });
@@ -149,7 +182,9 @@ async function main() {
   console.log("  ── GESETZE ──");
   console.log(`    OK          ${String(zaehler.OK).padStart(5)}  nichts zu tun`);
   console.log(`    IMPORT      ${String(zaehler.IMPORT).padStart(5)}  liegt fertig auf der Platte`);
-  console.log(`    TEILIMPORT  ${String(zaehler.TEILIMPORT).padStart(5)}  teils Platte, Rest aus RIS`);
+  console.log(
+    `    TEILIMPORT  ${String(zaehler.TEILIMPORT).padStart(5)}  teils Platte, Rest aus RIS`
+  );
   console.log(`    FETCH       ${String(zaehler.FETCH).padStart(5)}  muss aus RIS`);
   console.log("\n  ── NORMEN ──");
   console.log(`    RIS-Soll:            ${sollGesamt}`);
@@ -158,20 +193,38 @@ async function main() {
   console.log(`    muss aus RIS:        ${ris}  (${((ris / sollGesamt) * 100).toFixed(1)} %)`);
 
   console.log("\n  ── GRÖSSTE LÜCKEN (Top 20) ──");
-  for (const x of out.filter((x) => x.fehlt > 0).sort((a, b) => b.fehlt - a.fehlt).slice(0, 20)) {
-    console.log(`    ${x.status.padEnd(11)} ${String(x.fehlt).padStart(5)} fehlen von ${String(x.soll).padStart(5)}  ${(x.abk ?? "–").padEnd(14)} ${x.titel.slice(0, 45)}`);
+  for (const x of out
+    .filter((x) => x.fehlt > 0)
+    .sort((a, b) => b.fehlt - a.fehlt)
+    .slice(0, 20)) {
+    console.log(
+      `    ${x.status.padEnd(11)} ${String(x.fehlt).padStart(5)} fehlen von ${String(x.soll).padStart(5)}  ${(x.abk ?? "–").padEnd(14)} ${x.titel.slice(0, 45)}`
+    );
   }
 
   if (JSON_OUT) {
-    writeFileSync(JSON_OUT, JSON.stringify({
-      timestamp: new Date().toISOString(),
-      summary: { gesetze: zaehler, normen: { soll: sollGesamt, in_db: inDb, auf_platte: platte, braucht_ris: ris } },
-      laws: out,
-    }, null, 2));
+    writeFileSync(
+      JSON_OUT,
+      JSON.stringify(
+        {
+          timestamp: new Date().toISOString(),
+          summary: {
+            gesetze: zaehler,
+            normen: { soll: sollGesamt, in_db: inDb, auf_platte: platte, braucht_ris: ris },
+          },
+          laws: out,
+        },
+        null,
+        2
+      )
+    );
     console.log(`\n  ✓ ${JSON_OUT}`);
   }
 
   await sql.end();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

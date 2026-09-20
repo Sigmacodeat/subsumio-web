@@ -415,8 +415,11 @@ export function loadConfig(): GBrainConfig | null {
     ...(process.env.ZEROENTROPY_API_KEY
       ? { zeroentropy_api_key: process.env.ZEROENTROPY_API_KEY }
       : {}),
-    ...(process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL
-      ? { embedding_model: (process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL)! }
+    ...((process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL)
+      ? {
+          embedding_model: (process.env.SUBSUMIO_EMBEDDING_MODEL ??
+            process.env.GBRAIN_EMBEDDING_MODEL)!,
+        }
       : {}),
     ...((process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS)
       ? {

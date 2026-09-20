@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import {
-  Brain,
-  Pin,
-  PinOff,
-  Trash2,
-  Search,
-  Plus,
-  Loader2,
-  Tag,
-  Clock,
-} from "lucide-react";
+import { Brain, Pin, PinOff, Trash2, Search, Plus, Loader2, Tag, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -284,70 +274,70 @@ export default function MemoryManagementPage() {
       )}
 
       {(hasMemories || searchResults) && (
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
-          <Input
-            aria-label={L("Erinnerungen durchsuchen", "Search memories")}
-            placeholder={L("Erinnerungen durchsuchen …", "Search memories …")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="pl-9"
-          />
-        </div>
-        <Button onClick={handleSearch} disabled={searching || !searchQuery.trim()}>
-          {searching ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
-          {L("Suchen", "Search")}
-        </Button>
-        {searchResults && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchResults(null);
-              setSearchQuery("");
-            }}
-          >
-            {L("Zurücksetzen", "Reset")}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+            <Input
+              aria-label={L("Erinnerungen durchsuchen", "Search memories")}
+              placeholder={L("Erinnerungen durchsuchen …", "Search memories …")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="pl-9"
+            />
+          </div>
+          <Button onClick={handleSearch} disabled={searching || !searchQuery.trim()}>
+            {searching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            {L("Suchen", "Search")}
           </Button>
-        )}
-      </div>
+          {searchResults && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchResults(null);
+                setSearchQuery("");
+              }}
+            >
+              {L("Zurücksetzen", "Reset")}
+            </Button>
+          )}
+        </div>
       )}
 
       {hasMemories && (
-      <div className="flex flex-wrap items-center gap-2">
-        {["all", "preference", "fact", "topic", "instruction", "case_note"].map((type) => (
-          <button
-            key={type}
-            onClick={() => setFilterType(type)}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-              filterType === type
-                ? "bg-[color:var(--brand-solid)] text-white"
-                : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
-            )}
-          >
-            {type === "all"
-              ? t("memory.type_all")
-              : TYPE_KEYS[type]
-                ? t(TYPE_KEYS[type] as never)
-                : type}
-          </button>
-        ))}
-        <label className="ml-auto flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
-          <input
-            type="checkbox"
-            checked={showSuperseded}
-            onChange={(e) => setShowSuperseded(e.target.checked)}
-            className="rounded"
-          />
-          {t("memory.show_superseded")}
-        </label>
-      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {["all", "preference", "fact", "topic", "instruction", "case_note"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                filterType === type
+                  ? "bg-[color:var(--brand-solid)] text-white"
+                  : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+              )}
+            >
+              {type === "all"
+                ? t("memory.type_all")
+                : TYPE_KEYS[type]
+                  ? t(TYPE_KEYS[type] as never)
+                  : type}
+            </button>
+          ))}
+          <label className="ml-auto flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
+            <input
+              type="checkbox"
+              checked={showSuperseded}
+              onChange={(e) => setShowSuperseded(e.target.checked)}
+              className="rounded"
+            />
+            {t("memory.show_superseded")}
+          </label>
+        </div>
       )}
 
       {loading ? (

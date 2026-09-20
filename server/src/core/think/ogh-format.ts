@@ -25,17 +25,13 @@ export function formatOghTitle(raw: string): string {
   // The date prefix (YYYY-MM-DD or YYYY MM DD) is stripped first.
 
   // Remove date prefix: "2026 03 25 " or "2026-03-25-"
-  const withoutDate = raw
-    .replace(/^\d{4}[-\s]\d{2}[-\s]\d{2}[-\s]?/, "")
-    .trim();
+  const withoutDate = raw.replace(/^\d{4}[-\s]\d{2}[-\s]\d{2}[-\s]?/, "").trim();
 
   if (!withoutDate) return raw;
 
   // Parse the docket number: "1ob61-51" or "1ob61 51" or "1ob6151"
   // Pattern: {number}{senat_code}{reg_num}[-\s]{year}[letter]?
-  const match = withoutDate.match(
-    /^(\d+)([a-z]+)(\d+)[-\s]?(\d+[a-z]?)$/i
-  );
+  const match = withoutDate.match(/^(\d+)([a-z]+)(\d+)[-\s]?(\d+[a-z]?)$/i);
 
   if (!match) return raw;
 

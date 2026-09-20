@@ -42,8 +42,7 @@ const TEST_CASES: TestCase[] = [
   },
   {
     id: "at-002-schadenersatz",
-    question:
-      "Wie ist der Schadenersatz nach § 1311 ABGB geregelt? Was sagt der OGH dazu?",
+    question: "Wie ist der Schadenersatz nach § 1311 ABGB geregelt? Was sagt der OGH dazu?",
     jurisdiction: "AT",
     expected_laws: ["ABGB"],
     expected_keywords: ["1311", "Schadenersatz", "ABGB"],
@@ -52,8 +51,7 @@ const TEST_CASES: TestCase[] = [
   },
   {
     id: "at-003-verjaehrung",
-    question:
-      "Was regelt § 1489 ABGB über die Verjährung von Schadenersatzansprüchen?",
+    question: "Was regelt § 1489 ABGB über die Verjährung von Schadenersatzansprüchen?",
     jurisdiction: "AT",
     expected_laws: ["ABGB"],
     expected_keywords: ["verjäh", "1489", "ABGB"],
@@ -210,10 +208,14 @@ async function runTestCase(tc: TestCase): Promise<TestResult> {
     }
 
     // Check guardrail warnings — SSE stream may deliver them in final chunk
-    const hasGuardrailPass = result.warnings.some((w) => w.includes("GUARDRAIL") || w.includes("CROSS_VERIFY"));
+    const hasGuardrailPass = result.warnings.some(
+      (w) => w.includes("GUARDRAIL") || w.includes("CROSS_VERIFY")
+    );
     if (!hasGuardrailPass) {
       // Not fatal — guardrail may not fire if answer is clean
-      result.warnings.push("NOTE: No guardrail/cross-verify warnings in stream (may be clean pass)");
+      result.warnings.push(
+        "NOTE: No guardrail/cross-verify warnings in stream (may be clean pass)"
+      );
     }
 
     result.passed = errors.length === 0 && result.answer_length > 100;

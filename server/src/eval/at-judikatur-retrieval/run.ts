@@ -75,15 +75,36 @@ interface ParsedArgs {
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
-  const out: ParsedArgs = { fixturePath: "", topK: 8, append: false, byArea: false, llmRerank: false };
+  const out: ParsedArgs = {
+    fixturePath: "",
+    topK: 8,
+    append: false,
+    byArea: false,
+    llmRerank: false,
+  };
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--top-k" && i + 1 < args.length) { out.topK = parseInt(args[++i], 10); continue; }
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--append") { out.append = true; continue; }
-    if (a === "--by-area") { out.byArea = true; continue; }
-    if (a === "--llm-rerank") { out.llmRerank = true; continue; }
+    if (a === "--top-k" && i + 1 < args.length) {
+      out.topK = parseInt(args[++i], 10);
+      continue;
+    }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--append") {
+      out.append = true;
+      continue;
+    }
+    if (a === "--by-area") {
+      out.byArea = true;
+      continue;
+    }
+    if (a === "--llm-rerank") {
+      out.llmRerank = true;
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/at-judikatur-retrieval/run.ts <fixture.jsonl> [options]\n` +
@@ -97,20 +118,32 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
     if (!a.startsWith("--") && !out.fixturePath) out.fixturePath = a;
   }
-  if (!out.fixturePath) { process.stderr.write("Error: fixture path required\n"); process.exit(1); }
+  if (!out.fixturePath) {
+    process.stderr.write("Error: fixture path required\n");
+    process.exit(1);
+  }
   return out;
 }
 
 function loadFixture(path: string): JudikaturQuestion[] {
   const raw = readFileSync(path, "utf-8");
-  return raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => JSON.parse(l));
+  return raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
+    .map((l) => JSON.parse(l));
 }
 
 class JsonlEmitter {
-  constructor(private path: string, private append: boolean) {
+  constructor(
+    private path: string,
+    private append: boolean
+  ) {
     if (!append && existsSync(path)) writeFileSync(path, "");
   }
-  emit(obj: Record<string, unknown>): void { appendFileSync(this.path, JSON.stringify(obj) + "\n"); }
+  emit(obj: Record<string, unknown>): void {
+    appendFileSync(this.path, JSON.stringify(obj) + "\n");
+  }
 }
 
 async function main() {
@@ -127,7 +160,8 @@ async function main() {
   const { loadConfig, toEngineConfig } = await import("../../core/config.ts");
   const { createEngine } = await import("../../core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../../core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine } = await import("../../core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine } =
+    await import("../../core/ai/gateway.ts");
 
   const cfg = loadConfig();
   if (!cfg) throw new Error("No engine configured. Set DATABASE_URL / ~/.gbrain/config.json.");
@@ -136,7 +170,11 @@ async function main() {
   process.stderr.write(`[at-judikatur-retrieval] connecting to configured engine...\n`);
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
-  try { await reconfigureGatewayWithEngine(engine); } catch { /* non-fatal */ }
+  try {
+    await reconfigureGatewayWithEngine(engine);
+  } catch {
+    /* non-fatal */
+  }
 
   const results: QuestionResult[] = [];
   let qIdx = 0;
@@ -153,13 +191,22 @@ async function main() {
           embeddingModel: "openrouter:openai/text-embedding-3-small",
         },
         ...(opts.llmRerank
-          ? { llmRerank: { enabled: true, topNIn: 25, model: "openrouter:deepseek/deepseek-chat", timeoutMs: 30000 } }
+          ? {
+              llmRerank: {
+                enabled: true,
+                topNIn: 25,
+                model: "openrouter:deepseek/deepseek-chat",
+                timeoutMs: 30000,
+              },
+            }
           : {}),
       });
 
       const rankedSlugs = searchResults.map((r) => r.slug);
       if (rankedSlugs.length === 0) {
-        process.stderr.write(`[at-judikatur-retrieval] WARNING: empty results for "${q.question}" (${q.question_id})\n`);
+        process.stderr.write(
+          `[at-judikatur-retrieval] WARNING: empty results for "${q.question}" (${q.question_id})\n`
+        );
       }
 
       const firstHit = rankedSlugs.indexOf(q.expected_slug);
@@ -183,15 +230,28 @@ async function main() {
 
       const pct = Math.round((qIdx / questions.length) * 100);
       const hit = firstHit >= 0 ? "✓" : "✗";
-      process.stderr.write(`[at-judikatur-retrieval] ${qIdx}/${questions.length} (${pct}%) ${hit} ${q.question_id}\n`);
+      process.stderr.write(
+        `[at-judikatur-retrieval] ${qIdx}/${questions.length} (${pct}%) ${hit} ${q.question_id}\n`
+      );
     } catch (err: any) {
       results.push({
-        question_id: q.question_id, question: q.question, legal_area: q.legal_area,
-        question_type: q.question_type, expected_slug: q.expected_slug,
-        rank: 0, hit_at_1: false, hit_at_3: false, hit_at_5: false, hit_at_8: false,
-        reciprocal_rank: 0, top_slugs: [], error: String(err?.message ?? err),
+        question_id: q.question_id,
+        question: q.question,
+        legal_area: q.legal_area,
+        question_type: q.question_type,
+        expected_slug: q.expected_slug,
+        rank: 0,
+        hit_at_1: false,
+        hit_at_3: false,
+        hit_at_5: false,
+        hit_at_8: false,
+        reciprocal_rank: 0,
+        top_slugs: [],
+        error: String(err?.message ?? err),
       });
-      process.stderr.write(`[at-judikatur-retrieval] ${qIdx}/${questions.length} ${q.question_id} (error: ${err?.message})\n`);
+      process.stderr.write(
+        `[at-judikatur-retrieval] ${qIdx}/${questions.length} ${q.question_id} (error: ${err?.message})\n`
+      );
     }
   }
 
@@ -206,7 +266,8 @@ async function main() {
   for (const [area, list] of byArea) {
     const n = list.length;
     areas.push({
-      legal_area: area, n,
+      legal_area: area,
+      n,
       hit_at_1: list.filter((r) => r.hit_at_1).length / n,
       hit_at_3: list.filter((r) => r.hit_at_3).length / n,
       hit_at_5: list.filter((r) => r.hit_at_5).length / n,
@@ -236,20 +297,20 @@ async function main() {
   process.stderr.write(`\n[at-judikatur-retrieval] RESULTS (${n} questions, top-k=${opts.topK})\n`);
   process.stderr.write(
     `  Hit@1=${(report.aggregate.hit_at_1 * 100).toFixed(1)}% ` +
-    `Hit@3=${(report.aggregate.hit_at_3 * 100).toFixed(1)}% ` +
-    `Hit@5=${(report.aggregate.hit_at_5 * 100).toFixed(1)}% ` +
-    `Hit@8=${(report.aggregate.hit_at_8 * 100).toFixed(1)}% ` +
-    `MRR=${report.aggregate.mrr.toFixed(3)}\n`
+      `Hit@3=${(report.aggregate.hit_at_3 * 100).toFixed(1)}% ` +
+      `Hit@5=${(report.aggregate.hit_at_5 * 100).toFixed(1)}% ` +
+      `Hit@8=${(report.aggregate.hit_at_8 * 100).toFixed(1)}% ` +
+      `MRR=${report.aggregate.mrr.toFixed(3)}\n`
   );
   if (opts.byArea) {
     for (const a of areas) {
       process.stderr.write(
         `  ${a.legal_area} (n=${a.n}): ` +
-        `Hit@1=${(a.hit_at_1 * 100).toFixed(1)}% ` +
-        `Hit@3=${(a.hit_at_3 * 100).toFixed(1)}% ` +
-        `Hit@5=${(a.hit_at_5 * 100).toFixed(1)}% ` +
-        `Hit@8=${(a.hit_at_8 * 100).toFixed(1)}% ` +
-        `MRR=${a.mrr.toFixed(3)}\n`
+          `Hit@1=${(a.hit_at_1 * 100).toFixed(1)}% ` +
+          `Hit@3=${(a.hit_at_3 * 100).toFixed(1)}% ` +
+          `Hit@5=${(a.hit_at_5 * 100).toFixed(1)}% ` +
+          `Hit@8=${(a.hit_at_8 * 100).toFixed(1)}% ` +
+          `MRR=${a.mrr.toFixed(3)}\n`
       );
     }
   }
@@ -258,9 +319,13 @@ async function main() {
     const emitter = new JsonlEmitter(opts.outputPath, opts.append);
     for (const r of results) emitter.emit(r as unknown as Record<string, unknown>);
     emitter.emit({
-      schema_version: 1, kind: "summary",
-      benchmark: report.benchmark, total: report.total, top_k: report.top_k,
-      aggregate: report.aggregate, areas: report.areas,
+      schema_version: 1,
+      kind: "summary",
+      benchmark: report.benchmark,
+      total: report.total,
+      top_k: report.top_k,
+      aggregate: report.aggregate,
+      areas: report.areas,
     });
     process.stderr.write(`[at-judikatur-retrieval] output written to ${opts.outputPath}\n`);
   }
@@ -269,4 +334,7 @@ async function main() {
   process.stderr.write(`[at-judikatur-retrieval] done.\n`);
 }
 
-main().catch((err) => { console.error("Fatal:", err); process.exit(1); });
+main().catch((err) => {
+  console.error("Fatal:", err);
+  process.exit(1);
+});

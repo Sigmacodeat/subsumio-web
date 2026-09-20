@@ -261,8 +261,7 @@ export function EvidenceTab() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {doc.kind ?? t("cases.detail_ev_type_document")} ·{" "}
-                    {formatDate(doc.uploadedAt)}
+                    {doc.kind ?? t("cases.detail_ev_type_document")} · {formatDate(doc.uploadedAt)}
                   </div>
                 </div>
                 {(doc.slug || doc.url) && (

@@ -68,24 +68,26 @@ export default function LandingPage() {
               {/* Left: the question, held in place while the answers scroll by */}
               <Reveal variant="upScale" className="lg:sticky lg:top-28 lg:self-start">
                 <p className={`mb-5 ${EYEBROW_CLASS}`}>Ausgangslage</p>
-                <h2 className={`mb-5 ${H2_CTA_CLASS}`}>
-                  {(t as { painTitle: string }).painTitle}
-                </h2>
+                <h2 className={`mb-5 ${H2_CTA_CLASS}`}>{(t as { painTitle: string }).painTitle}</h2>
                 <p className="max-w-md text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
                   {(t as { painSub: string }).painSub}
                 </p>
               </Reveal>
               {/* Right: a numbered register — editorial, no card chrome */}
-              <StaggerContainer as="ol" className="border-t [border-color:var(--mk-border)]" stagger={0.08}>
+              <StaggerContainer
+                as="ol"
+                className="border-t [border-color:var(--mk-border)]"
+                stagger={0.08}
+              >
                 {(t as { pains: { value: string; label: string }[] }).pains.map((pain, i) => {
                   const Icon = PAIN_ICONS[i];
                   return (
                     <StaggerItem
                       as="li"
                       key={pain.label}
-                      className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-5 border-b py-7 [border-color:var(--mk-border)] md:grid-cols-[3rem_minmax(0,1fr)_auto] md:py-8"
+                      className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-5 border-b [border-color:var(--mk-border)] py-7 md:grid-cols-[3rem_minmax(0,1fr)_auto] md:py-8"
                     >
-                      <span className="pt-1 font-mono text-sm tabular-nums [color:var(--mk-text-subtle)]">
+                      <span className="pt-1 font-mono text-sm [color:var(--mk-text-subtle)] tabular-nums">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <div>

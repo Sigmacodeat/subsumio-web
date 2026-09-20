@@ -1061,8 +1061,8 @@ export function PipelinePanel({
                                 </div>
                               ))}
                               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                                Nach der Korrektur wird die Aufarbeitung ab Schritt 3 (Sachverhaltsanalyse) mit
-                                den korrigierten Rollen fortgesetzt.
+                                Nach der Korrektur wird die Aufarbeitung ab Schritt 3
+                                (Sachverhaltsanalyse) mit den korrigierten Rollen fortgesetzt.
                               </p>
                             </div>
                           )}
@@ -1369,7 +1369,8 @@ export function PipelinePanel({
               ))}
               {limitationExpiredClaims.length === 0 && limitationUrgentClaims.length === 0 && (
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Details nicht verfügbar — vollständige Verjährungsprüfung in den Ergebnissen von Schritt 5 öffnen.
+                  Details nicht verfügbar — vollständige Verjährungsprüfung in den Ergebnissen von
+                  Schritt 5 öffnen.
                 </p>
               )}
             </div>

@@ -29,24 +29,88 @@ function arg(name: string, fb?: string) {
   return i > -1 ? process.argv[i + 1] : fb;
 }
 
-const FIXTURE = arg("fixture", join(import.meta.dir, "..", "test", "fixtures", "at-legal-retrieval.jsonl"))!;
-const DB_URL = arg("db", process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain")!;
+const FIXTURE = arg(
+  "fixture",
+  join(import.meta.dir, "..", "test", "fixtures", "at-legal-retrieval.jsonl")
+)!;
+const DB_URL = arg(
+  "db",
+  process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
+)!;
 const LABEL = arg("label", "baseline")!;
-const OUT = arg("out", join(import.meta.dir, "..", "..", ".windsurf", "plans", `at-retrieval-${LABEL}.json`))!;
+const OUT = arg(
+  "out",
+  join(import.meta.dir, "..", "..", ".windsurf", "plans", `at-retrieval-${LABEL}.json`)
+)!;
 const TOPK = Number(arg("topk", "8"));
 
-type Q = { question_id: string; question: string; expected_slug: string; legal_area: string; question_type: string };
+type Q = {
+  question_id: string;
+  question: string;
+  expected_slug: string;
+  legal_area: string;
+  question_type: string;
+};
 
 /**
  * Die Frage in eine websearch_to_tsquery-taugliche Form bringen. Fragewörter
  * und Füllwörter tragen nichts bei und verwässern den Treffer.
  */
 const STOPP = new Set([
-  "wer", "was", "wie", "wann", "wo", "warum", "welche", "welcher", "welches", "welchen",
-  "ist", "sind", "hat", "haben", "wird", "werden", "kann", "können", "muss", "müssen",
-  "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer", "einem", "einen",
-  "und", "oder", "aber", "für", "mit", "von", "zu", "im", "in", "auf", "an", "bei",
-  "sich", "man", "es", "er", "sie", "dass", "ob", "nach", "aus", "über", "unter",
+  "wer",
+  "was",
+  "wie",
+  "wann",
+  "wo",
+  "warum",
+  "welche",
+  "welcher",
+  "welches",
+  "welchen",
+  "ist",
+  "sind",
+  "hat",
+  "haben",
+  "wird",
+  "werden",
+  "kann",
+  "können",
+  "muss",
+  "müssen",
+  "der",
+  "die",
+  "das",
+  "den",
+  "dem",
+  "des",
+  "ein",
+  "eine",
+  "einer",
+  "einem",
+  "einen",
+  "und",
+  "oder",
+  "aber",
+  "für",
+  "mit",
+  "von",
+  "zu",
+  "im",
+  "in",
+  "auf",
+  "an",
+  "bei",
+  "sich",
+  "man",
+  "es",
+  "er",
+  "sie",
+  "dass",
+  "ob",
+  "nach",
+  "aus",
+  "über",
+  "unter",
 ]);
 
 function toQuery(frage: string): string {
@@ -65,7 +129,9 @@ async function main() {
     process.exit(1);
   }
   const fragen: Q[] = readFileSync(FIXTURE, "utf-8")
-    .trim().split("\n").filter((l) => l.trim() && !l.startsWith("#"))
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
     .map((l) => JSON.parse(l));
 
   const sql = postgres(DB_URL, { max: 2, idle_timeout: 20 });
@@ -74,7 +140,12 @@ async function main() {
   console.log(`  ${fragen.length} Fragen, Top-${TOPK}\n`);
 
   const results: any[] = [];
-  let h1 = 0, h3 = 0, h5 = 0, hk = 0, mrrSum = 0, leer = 0;
+  let h1 = 0,
+    h3 = 0,
+    h5 = 0,
+    hk = 0,
+    mrrSum = 0,
+    leer = 0;
 
   for (const q of fragen) {
     const suchtext = toQuery(q.question);
@@ -104,9 +175,12 @@ async function main() {
     mrrSum += mrr;
 
     results.push({
-      question_id: q.question_id, legal_area: q.legal_area,
-      expected_slug: q.expected_slug, rank: idx < 0 ? null : idx + 1,
-      top_slugs: slugs.slice(0, 5), mrr,
+      question_id: q.question_id,
+      legal_area: q.legal_area,
+      expected_slug: q.expected_slug,
+      rank: idx < 0 ? null : idx + 1,
+      top_slugs: slugs.slice(0, 5),
+      mrr,
     });
   }
 
@@ -131,20 +205,44 @@ async function main() {
   }
   console.log("\n  ── nach Rechtsgebiet (Hit@5) ──");
   for (const [a, v] of Object.entries(perArea).sort((x, y) => y[1].n - x[1].n)) {
-    console.log(`    ${a.padEnd(16)} ${String(v.hit5).padStart(3)}/${String(v.n).padEnd(3)}  ${((v.hit5 / v.n) * 100).toFixed(0)} %`);
+    console.log(
+      `    ${a.padEnd(16)} ${String(v.hit5).padStart(3)}/${String(v.n).padEnd(3)}  ${((v.hit5 / v.n) * 100).toFixed(0)} %`
+    );
   }
 
-  writeFileSync(OUT, JSON.stringify({
-    label: LABEL, timestamp: new Date().toISOString(),
-    methode: "postgres websearch_to_tsquery('german') über pages.search_vector, source_id=law-at",
-    hinweis: "Nur lexikalisch — nicht die produktive Hybrid-Suche. Vergleichbar nur mit Läufen derselben Methode.",
-    fixture: FIXTURE, fragen: n, topk: TOPK,
-    metrics: { hit_at_1: h1, hit_at_3: h3, hit_at_5: h5, [`hit_at_${TOPK}`]: hk, mrr: mrrSum / n, ohne_treffer: leer },
-    results,
-  }, null, 2));
+  writeFileSync(
+    OUT,
+    JSON.stringify(
+      {
+        label: LABEL,
+        timestamp: new Date().toISOString(),
+        methode:
+          "postgres websearch_to_tsquery('german') über pages.search_vector, source_id=law-at",
+        hinweis:
+          "Nur lexikalisch — nicht die produktive Hybrid-Suche. Vergleichbar nur mit Läufen derselben Methode.",
+        fixture: FIXTURE,
+        fragen: n,
+        topk: TOPK,
+        metrics: {
+          hit_at_1: h1,
+          hit_at_3: h3,
+          hit_at_5: h5,
+          [`hit_at_${TOPK}`]: hk,
+          mrr: mrrSum / n,
+          ohne_treffer: leer,
+        },
+        results,
+      },
+      null,
+      2
+    )
+  );
   console.log(`\n  ✓ ${OUT}`);
 
   await sql.end();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

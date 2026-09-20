@@ -194,11 +194,7 @@ export default function TranslatePage() {
           />
         )}
 
-        <Button
-          onClick={run}
-          disabled={loading || !canRun}
-          className="gap-2 whitespace-nowrap"
-        >
+        <Button onClick={run} disabled={loading || !canRun} className="gap-2 whitespace-nowrap">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
           {t("translate.btn_translate")}
         </Button>
@@ -271,7 +267,6 @@ export default function TranslatePage() {
               ))}
             </div>
           )}
-
         </div>
       )}
     </div>

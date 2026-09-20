@@ -4,9 +4,7 @@
   "gold_version": 2,
   "gold_hash": "825972096c019a4d",
   "code_sha": "4a75ef9295-dirty",
-  "models": [
-    "anthropic:claude-haiku-4-5-20251001"
-  ],
+  "models": ["anthropic:claude-haiku-4-5-20251001"],
   "tier": "utility",
   "all": {
     "n": 46,
@@ -134,10 +132,7 @@
       "id": "vj-1489-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "unsupported",
       "reason": "Der Quelltext regelt grundsätzlich eine dreijährige Verjährung ab Kenntnis und eine 30-jährige Verjährung in bestimmten Fällen, enthält aber keine Sonderregelung für Verbraucher mit fünfjähriger Verjährung.",
       "ms": 1167
@@ -178,10 +173,7 @@
       "id": "mi-1096-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "partial",
       "reason": "Der Quelltext regelt die Zinsbefreiung bei Unbrauchbarkeit, sagt aber nichts über einen zusätzlichen Schadensersatzanspruch, der darin behauptet wird.",
       "ms": 1215
@@ -254,10 +246,7 @@
       "id": "gw-933-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "partial",
       "reason": "Die Aussage ist teilweise richtig: § 933 ABGB regelt tatsächlich eine Gewährleistungsfrist von zwei Jahren bei beweglichen Sachen, aber die Aussage zur 14-Tage-Rügefrist wird durch den Quelltext nicht gestützt – dieser enthält keine solche ",
       "ms": 1560
@@ -306,10 +295,7 @@
       "id": "kv-1325-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "unsupported",
       "reason": "Der Quelltext regelt keine Beschränkung des Schmerzengeldanspruchs auf Fälle groben Verschuldens, sondern gewährt Schmerzengeld ohne Verschuldensabstufung.",
       "ms": 1274
@@ -422,10 +408,7 @@
       "id": "h-1320-overreach",
       "split": "holdout",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "unsupported",
       "reason": "Der Quelltext enthält keine Regelung zu einer Haftungsobergrenze von 50.000 Euro; er regelt nur die Haftungsverantwortung des Tierhalters und die Beweislastumkehr.",
       "ms": 1282

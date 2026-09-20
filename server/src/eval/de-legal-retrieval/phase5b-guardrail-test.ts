@@ -101,25 +101,43 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--judge-model" && i + 1 < args.length) { out.judgeModel = args[++i]; continue; }
-    if (a === "--generate-model" && i + 1 < args.length) { out.generateModel = args[++i]; continue; }
-    if (a === "--limit" && i + 1 < args.length) { out.limit = parseInt(args[++i], 10); continue; }
-    if (a === "--max-regen" && i + 1 < args.length) { out.maxRegenerations = parseInt(args[++i], 10); continue; }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--judge-model" && i + 1 < args.length) {
+      out.judgeModel = args[++i];
+      continue;
+    }
+    if (a === "--generate-model" && i + 1 < args.length) {
+      out.generateModel = args[++i];
+      continue;
+    }
+    if (a === "--limit" && i + 1 < args.length) {
+      out.limit = parseInt(args[++i], 10);
+      continue;
+    }
+    if (a === "--max-regen" && i + 1 < args.length) {
+      out.maxRegenerations = parseInt(args[++i], 10);
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/de-legal-retrieval/phase5b-guardrail-test.ts <fixture.jsonl> [options]\n` +
-        `  --output PATH         Write JSONL results to PATH\n` +
-        `  --judge-model MODEL   Judge model (default: openrouter:openai/gpt-4o)\n` +
-        `  --generate-model MODEL  Generate model (default: openrouter:deepseek/deepseek-chat)\n` +
-        `  --limit N             Only run first N questions\n` +
-        `  --max-regen N         Max regenerations after guardrail flag (default: 2)\n`
+          `  --output PATH         Write JSONL results to PATH\n` +
+          `  --judge-model MODEL   Judge model (default: openrouter:openai/gpt-4o)\n` +
+          `  --generate-model MODEL  Generate model (default: openrouter:deepseek/deepseek-chat)\n` +
+          `  --limit N             Only run first N questions\n` +
+          `  --max-regen N         Max regenerations after guardrail flag (default: 2)\n`
       );
       process.exit(0);
     }
     if (!a.startsWith("--") && !out.fixturePath) out.fixturePath = a;
   }
-  if (!out.fixturePath) { process.stderr.write("Error: fixture path required\n"); process.exit(1); }
+  if (!out.fixturePath) {
+    process.stderr.write("Error: fixture path required\n");
+    process.exit(1);
+  }
   return out;
 }
 
@@ -127,10 +145,18 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function loadFixture(path: string): DeLegalQuestion[] {
   const raw = readFileSync(path, "utf-8");
-  return raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => JSON.parse(l));
+  return raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
+    .map((l) => JSON.parse(l));
 }
 
-interface CorpusFile { slug: string; content: string; abbreviation: string; }
+interface CorpusFile {
+  slug: string;
+  content: string;
+  abbreviation: string;
+}
 
 function loadLawCorpus(): CorpusFile[] {
   const corpusDir = join(REPO_ROOT, "law-corpus/de");
@@ -170,15 +196,20 @@ const EMBEDDING_COLUMN = {
 // ─── LLM Client ──────────────────────────────────────────────────────────
 
 interface LLMClient {
-  create: (params: {
-    model: string;
-    max_tokens: number;
-    system: string;
-    messages: Array<{ role: string; content: string }>;
-  }, callOpts?: { signal?: AbortSignal }) => Promise<{ content: Array<{ type: string; text: string }> }>;
+  create: (
+    params: {
+      model: string;
+      max_tokens: number;
+      system: string;
+      messages: Array<{ role: string; content: string }>;
+    },
+    callOpts?: { signal?: AbortSignal }
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
 }
 
-async function createLLMClient(model: string): Promise<{ client: LLMClient; resolvedModel: string }> {
+async function createLLMClient(
+  model: string
+): Promise<{ client: LLMClient; resolvedModel: string }> {
   const isOpenRouter = model.startsWith("openrouter:");
   const isOpenAI = model.startsWith("openai:");
 
@@ -195,10 +226,16 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
         create: async (params, callOpts) => {
           const messages: Array<{ role: string; content: string }> = [];
           if (params.system) messages.push({ role: "system", content: params.system });
-          for (const m of params.messages ?? []) messages.push({ role: m.role, content: m.content });
-          const res = await client.chat.completions.create({
-            model: resolvedModel, max_tokens: params.max_tokens, messages: messages as any,
-          }, { signal: callOpts?.signal });
+          for (const m of params.messages ?? [])
+            messages.push({ role: m.role, content: m.content });
+          const res = await client.chat.completions.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              messages: messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           const text = res.choices?.[0]?.message?.content ?? "";
           return { content: [{ type: "text", text }] };
         },
@@ -216,10 +253,16 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
         create: async (params, callOpts) => {
           const messages: Array<{ role: string; content: string }> = [];
           if (params.system) messages.push({ role: "system", content: params.system });
-          for (const m of params.messages ?? []) messages.push({ role: m.role, content: m.content });
-          const res = await client.chat.completions.create({
-            model: resolvedModel, max_tokens: params.max_tokens, messages: messages as any,
-          }, { signal: callOpts?.signal });
+          for (const m of params.messages ?? [])
+            messages.push({ role: m.role, content: m.content });
+          const res = await client.chat.completions.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              messages: messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           const text = res.choices?.[0]?.message?.content ?? "";
           return { content: [{ type: "text", text }] };
         },
@@ -235,11 +278,46 @@ async function createLLMClient(model: string): Promise<{ client: LLMClient; reso
 
 function isGermanAnswer(text: string): boolean {
   const germanWords = [
-    "der", "die", "das", "und", "ist", "wird", "nach", "bei", "von", "mit",
-    "auf", "für", "zu", "über", "aus", "dem", "den", "des", "ein", "eine",
-    "einer", "eines", "einem", "einen", "nicht", "auch", "nur", "noch",
-    "bereits", "jedoch", "allerdings", "dabei", "daher", "somit", "gemäß",
-    "Absatz", "Satz", "bzw", "hinsichtlich", "vorausgesetzt",
+    "der",
+    "die",
+    "das",
+    "und",
+    "ist",
+    "wird",
+    "nach",
+    "bei",
+    "von",
+    "mit",
+    "auf",
+    "für",
+    "zu",
+    "über",
+    "aus",
+    "dem",
+    "den",
+    "des",
+    "ein",
+    "eine",
+    "einer",
+    "eines",
+    "einem",
+    "einen",
+    "nicht",
+    "auch",
+    "nur",
+    "noch",
+    "bereits",
+    "jedoch",
+    "allerdings",
+    "dabei",
+    "daher",
+    "somit",
+    "gemäß",
+    "Absatz",
+    "Satz",
+    "bzw",
+    "hinsichtlich",
+    "vorausgesetzt",
   ];
   const lower = text.toLowerCase();
   let matches = 0;
@@ -264,11 +342,17 @@ function referencesLaw(text: string, legalArea: string): boolean {
 
 function isGrounded(text: string, context: string): boolean {
   const contextWords = new Set(
-    context.replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ").split(/\s+/)
-      .filter((w) => w.length >= 5).map((w) => w.toLowerCase())
+    context
+      .replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 5)
+      .map((w) => w.toLowerCase())
   );
-  const answerWords = text.replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ").split(/\s+/)
-    .filter((w) => w.length >= 5).map((w) => w.toLowerCase());
+  const answerWords = text
+    .replace(/[^a-zA-ZäöüÄÖÜß\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 5)
+    .map((w) => w.toLowerCase());
   let grounded = 0;
   for (const w of answerWords) if (contextWords.has(w)) grounded++;
   return answerWords.length > 0 && grounded / answerWords.length >= 0.2;
@@ -276,15 +360,17 @@ function isGrounded(text: string, context: string): boolean {
 
 // ─── Context assembly ────────────────────────────────────────────────────
 
-function assembleContext(results: Array<{ slug: string; title: string; chunk_text: string; score: number }>): string {
+function assembleContext(
+  results: Array<{ slug: string; title: string; chunk_text: string; score: number }>
+): string {
   const blocks: string[] = [];
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     blocks.push(
       `--- Rechtsquelle ${i + 1} ---\n` +
-      `Gesetz: ${r.title}\n` +
-      `Relevanz: ${(r.score * 100).toFixed(1)}%\n` +
-      `Text:\n${r.chunk_text}\n`
+        `Gesetz: ${r.title}\n` +
+        `Relevanz: ${(r.score * 100).toFixed(1)}%\n` +
+        `Text:\n${r.chunk_text}\n`
     );
   }
   return blocks.join("\n");
@@ -325,7 +411,11 @@ const JUDGE_SYSTEM =
 // ─── Generate answer ─────────────────────────────────────────────────────
 
 async function generateAnswer(
-  client: LLMClient, model: string, systemPrompt: string, question: string, context: string
+  client: LLMClient,
+  model: string,
+  systemPrompt: string,
+  question: string,
+  context: string
 ): Promise<string> {
   const userPrompt =
     `Frage: ${question}\n\n` +
@@ -337,10 +427,16 @@ async function generateAnswer(
     `Wenn die Antwort nicht in den Quellen steht, sage: "Diese Information ist in den bereitgestellten Rechtsquellen nicht enthalten."`;
 
   const response = await client.create({
-    model, max_tokens: 512, system: systemPrompt,
+    model,
+    max_tokens: 512,
+    system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
   });
-  return response.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+  return response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
 }
 
 // ─── Judge ───────────────────────────────────────────────────────────────
@@ -354,7 +450,11 @@ interface JudgeResult {
 }
 
 async function judgeAnswer(
-  client: LLMClient, model: string, question: string, context: string, answer: string
+  client: LLMClient,
+  model: string,
+  question: string,
+  context: string,
+  answer: string
 ): Promise<JudgeResult> {
   const userPrompt =
     `Frage: ${question}\n\n` +
@@ -363,10 +463,16 @@ async function judgeAnswer(
     `Bewerte die Antwort gemäß den Kriterien. Ausgabe NUR als JSON.`;
 
   const response = await client.create({
-    model, max_tokens: 512, system: JUDGE_SYSTEM,
+    model,
+    max_tokens: 512,
+    system: JUDGE_SYSTEM,
     messages: [{ role: "user", content: userPrompt }],
   });
-  const raw = response.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+  const raw = response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
 
   // Robust JSON parsing — try multiple strategies
   let parsed: any = null;
@@ -430,7 +536,9 @@ async function main() {
   let testQuestions = questions;
   if (opts.limit && opts.limit > 0) testQuestions = questions.slice(0, opts.limit);
 
-  process.stderr.write(`[phase5b] loaded ${testQuestions.length} questions, ${corpusFiles.length} corpus files\n`);
+  process.stderr.write(
+    `[phase5b] loaded ${testQuestions.length} questions, ${corpusFiles.length} corpus files\n`
+  );
   process.stderr.write(`[phase5b] generate: ${opts.generateModel}\n`);
   process.stderr.write(`[phase5b] judge: ${opts.judgeModel}\n`);
   process.stderr.write(`[phase5b] max regenerations: ${opts.maxRegenerations}\n`);
@@ -442,7 +550,8 @@ async function main() {
   const { importFromContent } = await import("../../core/import-file.ts");
   const { configureGateway } = await import("../../core/ai/gateway.ts");
   const { loadConfig } = await import("../../core/config.ts");
-  const { checkCitationGrounding, buildRegenerationPrompt } = await import("../../core/citation-guardrail.ts");
+  const { checkCitationGrounding, buildRegenerationPrompt } =
+    await import("../../core/citation-guardrail.ts");
 
   const cfg = loadConfig();
   configureGateway({
@@ -513,7 +622,9 @@ async function main() {
     // Step 1: Hybrid search
     try {
       const searchResults = await hybridSearch(engine, question, {
-        limit: 8, autocut: false, embeddingColumn: EMBEDDING_COLUMN,
+        limit: 8,
+        autocut: false,
+        embeddingColumn: EMBEDDING_COLUMN,
       });
       const rankedSlugs = searchResults.map((r) => r.slug);
       result.top_slugs = rankedSlugs.slice(0, 8);
@@ -525,7 +636,10 @@ async function main() {
       } else {
         const context = assembleContext(
           searchResults.slice(0, 8).map((r) => ({
-            slug: r.slug, title: r.title, chunk_text: r.chunk_text, score: r.score,
+            slug: r.slug,
+            title: r.title,
+            chunk_text: r.chunk_text,
+            score: r.score,
           }))
         );
 
@@ -533,7 +647,13 @@ async function main() {
         let currentAnswer = "";
         let currentSystem = BASE_SYSTEM;
         try {
-          currentAnswer = await generateAnswer(genClient, genModel, currentSystem, question, context);
+          currentAnswer = await generateAnswer(
+            genClient,
+            genModel,
+            currentSystem,
+            question,
+            context
+          );
           result.initial_answer = currentAnswer;
           result.heuristic_german = isGermanAnswer(currentAnswer);
           result.heuristic_references_law = referencesLaw(currentAnswer, legalArea);
@@ -573,7 +693,13 @@ async function main() {
               const strictSystem = buildRegenerationPrompt(BASE_SYSTEM, guardResult, context);
 
               try {
-                const regenerated = await generateAnswer(genClient, genModel, strictSystem, question, context);
+                const regenerated = await generateAnswer(
+                  genClient,
+                  genModel,
+                  strictSystem,
+                  question,
+                  context
+                );
                 if (regenerated) {
                   // Re-check guardrail
                   const recheck = checkCitationGrounding({
@@ -616,13 +742,21 @@ async function main() {
           // Step 4: Judge the final answer
           if (currentAnswer) {
             try {
-              const judgeRes = await judgeAnswer(judgeClient, judgeModel, question, context, currentAnswer);
+              const judgeRes = await judgeAnswer(
+                judgeClient,
+                judgeModel,
+                question,
+                context,
+                currentAnswer
+              );
               result.judge_score = judgeRes.score;
               result.judge_correct = judgeRes.correct;
               result.judge_hallucination = judgeRes.hallucination;
               result.judge_issues = judgeRes.issues;
               result.judge_feedback = judgeRes.feedback;
-              process.stderr.write(` judge=${judgeRes.score}/10 ${judgeRes.correct ? "✓" : "✗"}${judgeRes.hallucination ? " HALLU" : ""}`);
+              process.stderr.write(
+                ` judge=${judgeRes.score}/10 ${judgeRes.correct ? "✓" : "✗"}${judgeRes.hallucination ? " HALLU" : ""}`
+              );
             } catch (err: any) {
               result.judge_error = String(err?.message ?? err);
               process.stderr.write(` JUDGE-ERROR`);
@@ -652,20 +786,42 @@ async function main() {
   // Print summary
   process.stderr.write(`\n[phase5b] ═══ QUALITY GATE + GUARDRAIL SUMMARY ═══\n`);
   process.stderr.write(`  Questions:                ${results.length}\n`);
-  process.stderr.write(`  Retrieval Hit@5:          ${(results.filter((r) => r.hit_at_5).length / n * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `  Retrieval Hit@5:          ${((results.filter((r) => r.hit_at_5).length / n) * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  Guardrail Metrics:\n`);
-  process.stderr.write(`    Initial pass rate:      ${(results.filter((r) => r.guardrail_passed).length / n * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Final pass rate:        ${(results.filter((r) => r.final_guardrail_passed).length / n * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Regenerated:            ${results.filter((r) => r.regeneration_count > 0).length}/${results.length}\n`);
-  process.stderr.write(`    Avg regen count:        ${(results.reduce((s, r) => s + r.regeneration_count, 0) / n).toFixed(2)}\n`);
+  process.stderr.write(
+    `    Initial pass rate:      ${((results.filter((r) => r.guardrail_passed).length / n) * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Final pass rate:        ${((results.filter((r) => r.final_guardrail_passed).length / n) * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Regenerated:            ${results.filter((r) => r.regeneration_count > 0).length}/${results.length}\n`
+  );
+  process.stderr.write(
+    `    Avg regen count:        ${(results.reduce((s, r) => s + r.regeneration_count, 0) / n).toFixed(2)}\n`
+  );
   process.stderr.write(`\n  Heuristic Metrics:\n`);
-  process.stderr.write(`    German:                 ${(results.filter((r) => r.heuristic_german).length / n * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    References law (§):     ${(results.filter((r) => r.heuristic_references_law).length / n * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Grounded:               ${(results.filter((r) => r.heuristic_grounded).length / n * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `    German:                 ${((results.filter((r) => r.heuristic_german).length / n) * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    References law (§):     ${((results.filter((r) => r.heuristic_references_law).length / n) * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Grounded:               ${((results.filter((r) => r.heuristic_grounded).length / n) * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  LLM-as-Judge Metrics:\n`);
-  process.stderr.write(`    Avg judge score:        ${(results.reduce((s, r) => s + r.judge_score, 0) / n).toFixed(2)}/10\n`);
-  process.stderr.write(`    Correct (≥7/10):        ${(results.filter((r) => r.judge_correct).length / n * 100).toFixed(1)}%\n`);
-  process.stderr.write(`    Hallucination rate:     ${(results.filter((r) => r.judge_hallucination).length / n * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `    Avg judge score:        ${(results.reduce((s, r) => s + r.judge_score, 0) / n).toFixed(2)}/10\n`
+  );
+  process.stderr.write(
+    `    Correct (≥7/10):        ${((results.filter((r) => r.judge_correct).length / n) * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `    Hallucination rate:     ${((results.filter((r) => r.judge_hallucination).length / n) * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`\n  Guardrail Flag Breakdown:\n`);
   const flagTypeCounts: Record<string, number> = {};
   for (const r of results) {
@@ -682,16 +838,18 @@ async function main() {
     const an = list.length || 1;
     process.stderr.write(
       `    ${area} (n=${list.length}): score=${(list.reduce((s, r) => s + r.judge_score, 0) / an).toFixed(2)} ` +
-      `correct=${(list.filter((r) => r.judge_correct).length / an * 100).toFixed(0)}% ` +
-      `hallu=${(list.filter((r) => r.judge_hallucination).length / an * 100).toFixed(0)}% ` +
-      `guardrail_pass=${(list.filter((r) => r.final_guardrail_passed).length / an * 100).toFixed(0)}%\n`
+        `correct=${((list.filter((r) => r.judge_correct).length / an) * 100).toFixed(0)}% ` +
+        `hallu=${((list.filter((r) => r.judge_hallucination).length / an) * 100).toFixed(0)}% ` +
+        `guardrail_pass=${((list.filter((r) => r.final_guardrail_passed).length / an) * 100).toFixed(0)}%\n`
     );
   }
 
   // Comparison with Phase 5 (no guardrail)
   process.stderr.write(`\n  Phase 5 vs 5b Comparison:\n`);
   process.stderr.write(`    Phase 5  (no guardrail):  correct=65.0% hallu=20.0%\n`);
-  process.stderr.write(`    Phase 5b (with guardrail): correct=${(results.filter((r) => r.judge_correct).length / n * 100).toFixed(1)}% hallu=${(results.filter((r) => r.judge_hallucination).length / n * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `    Phase 5b (with guardrail): correct=${((results.filter((r) => r.judge_correct).length / n) * 100).toFixed(1)}% hallu=${((results.filter((r) => r.judge_hallucination).length / n) * 100).toFixed(1)}%\n`
+  );
 
   // Sample answers
   process.stderr.write(`\n  Sample Answers (first 3):\n`);
@@ -699,17 +857,25 @@ async function main() {
     process.stderr.write(`\n    Q: ${r.question}\n`);
     process.stderr.write(`    Initial: ${r.initial_answer.slice(0, 150)}...\n`);
     if (r.regeneration_count > 0) {
-      process.stderr.write(`    Regenerated ${r.regeneration_count}x, guardrail: ${r.guardrail_passed ? "FAIL→" : ""}${r.final_guardrail_passed ? "PASS" : "STILL-FLAGGED"}\n`);
+      process.stderr.write(
+        `    Regenerated ${r.regeneration_count}x, guardrail: ${r.guardrail_passed ? "FAIL→" : ""}${r.final_guardrail_passed ? "PASS" : "STILL-FLAGGED"}\n`
+      );
       process.stderr.write(`    Final: ${r.final_answer.slice(0, 150)}...\n`);
     }
-    process.stderr.write(`    Judge: ${r.judge_score}/10 ${r.judge_correct ? "✓" : "✗"}${r.judge_hallucination ? " HALLU" : ""}\n`);
+    process.stderr.write(
+      `    Judge: ${r.judge_score}/10 ${r.judge_correct ? "✓" : "✗"}${r.judge_hallucination ? " HALLU" : ""}\n`
+    );
     if (r.judge_feedback) process.stderr.write(`    Feedback: ${r.judge_feedback.slice(0, 150)}\n`);
   }
 
   // Guardrail-flagged answers that still hallucinated (missed by guardrail)
-  const guardrailPassedButHallu = results.filter((r) => r.final_guardrail_passed && r.judge_hallucination);
+  const guardrailPassedButHallu = results.filter(
+    (r) => r.final_guardrail_passed && r.judge_hallucination
+  );
   if (guardrailPassedButHallu.length > 0) {
-    process.stderr.write(`\n  ⚠️ Guardrail PASSED but Judge found HALLUCINATION (${guardrailPassedButHallu.length}):\n`);
+    process.stderr.write(
+      `\n  ⚠️ Guardrail PASSED but Judge found HALLUCINATION (${guardrailPassedButHallu.length}):\n`
+    );
     for (const r of guardrailPassedButHallu) {
       process.stderr.write(`    ${r.question_id} (${r.legal_area}): score=${r.judge_score}\n`);
       process.stderr.write(`    Issues: ${r.judge_issues.join("; ")}\n`);
@@ -722,11 +888,21 @@ async function main() {
   const guardrailEffectiveness = results.filter((r) => r.final_guardrail_passed).length / n;
 
   process.stderr.write(`\n[phase5b] ═══ FINAL VERDICT ═══\n`);
-  process.stderr.write(`  Judge correct (≥80%):       ${judgePass ? "✅ PASS" : "❌ FAIL"} (${(results.filter((r) => r.judge_correct).length / n * 100).toFixed(1)}%)\n`);
-  process.stderr.write(`  Hallucination (≤10%):       ${hallucinationPass ? "✅ PASS" : "❌ FAIL"} (${(results.filter((r) => r.judge_hallucination).length / n * 100).toFixed(1)}%)\n`);
-  process.stderr.write(`  Guardrail pass rate:        ${(guardrailEffectiveness * 100).toFixed(1)}%\n`);
-  process.stderr.write(`  Guardrail caught halluc:    ${results.filter((r) => !r.final_guardrail_passed && r.judge_hallucination).length}/${results.filter((r) => r.judge_hallucination).length} hallucinations were guardrail-flagged\n`);
-  process.stderr.write(`  Overall:                    ${judgePass && hallucinationPass ? "✅ ALL PASS" : "❌ FAILURES"}\n`);
+  process.stderr.write(
+    `  Judge correct (≥80%):       ${judgePass ? "✅ PASS" : "❌ FAIL"} (${((results.filter((r) => r.judge_correct).length / n) * 100).toFixed(1)}%)\n`
+  );
+  process.stderr.write(
+    `  Hallucination (≤10%):       ${hallucinationPass ? "✅ PASS" : "❌ FAIL"} (${((results.filter((r) => r.judge_hallucination).length / n) * 100).toFixed(1)}%)\n`
+  );
+  process.stderr.write(
+    `  Guardrail pass rate:        ${(guardrailEffectiveness * 100).toFixed(1)}%\n`
+  );
+  process.stderr.write(
+    `  Guardrail caught halluc:    ${results.filter((r) => !r.final_guardrail_passed && r.judge_hallucination).length}/${results.filter((r) => r.judge_hallucination).length} hallucinations were guardrail-flagged\n`
+  );
+  process.stderr.write(
+    `  Overall:                    ${judgePass && hallucinationPass ? "✅ ALL PASS" : "❌ FAILURES"}\n`
+  );
 
   if (emitter) {
     emitter.emit({

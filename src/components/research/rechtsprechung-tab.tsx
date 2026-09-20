@@ -88,7 +88,6 @@ export default function RechtsprechungPage() {
       // No AI fallback: a model asked to "find" decisions invents Geschäftszahlen
       // and ECLIs. Only the firm's knowledge and the RIS return decisions here.
       setResults(judgements);
-
     } catch {
       setResults([]);
     } finally {
@@ -195,11 +194,7 @@ export default function RechtsprechungPage() {
                   {r.keywords.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {r.keywords.map((k) => (
-                        <Badge
-                          key={k}
-                          variant="default"
-                          className="text-xs"
-                        >
+                        <Badge key={k} variant="default" className="text-xs">
                           {k}
                         </Badge>
                       ))}
@@ -223,7 +218,6 @@ export default function RechtsprechungPage() {
           ))}
         </div>
       )}
-
     </div>
   );
 }

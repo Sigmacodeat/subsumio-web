@@ -26,7 +26,9 @@ export function generateFullReport(run: E2ERunResult): string {
     lines.push(`- **Total cost**: $${run.total_cost_usd.toFixed(4)}`);
   }
   if (run.total_tokens) {
-    lines.push(`- **Total tokens**: ${run.total_tokens.input.toLocaleString()} in / ${run.total_tokens.output.toLocaleString()} out`);
+    lines.push(
+      `- **Total tokens**: ${run.total_tokens.input.toLocaleString()} in / ${run.total_tokens.output.toLocaleString()} out`
+    );
   }
   if (run.provider_errors && run.provider_errors.length > 0) {
     lines.push(`- **Provider errors**: ${run.provider_errors.length}`);
@@ -46,7 +48,9 @@ export function generateFullReport(run: E2ERunResult): string {
 
     lines.push(`## ${task.id} — ${task.title}${task.review_status === "draft" ? " [DRAFT]" : ""}`);
     lines.push(`- **Workflow**: ${task.workflow}`);
-    lines.push(`- **Jurisdiction**: ${task.jurisdiction}${task.review_status === "draft" ? " (draft — excluded from aggregates)" : ""}`);
+    lines.push(
+      `- **Jurisdiction**: ${task.jurisdiction}${task.review_status === "draft" ? " (draft — excluded from aggregates)" : ""}`
+    );
     lines.push(`- **All-pass**: ${rubric.all_pass ? "✅" : "❌"}`);
     lines.push(`- **Strict all-pass**: ${rubric.strict_all_pass ? "✅" : "❌"}`);
     lines.push(`- **Critical all-pass**: ${rubric.critical_all_pass ? "✅" : "❌"}`);

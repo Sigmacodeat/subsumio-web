@@ -45,14 +45,19 @@ export const CI_FIXTURES: ComponentEvalFixture[] = [
   {
     id: "comp-de-001",
     jurisdiction: "DE",
-    question: "Ich habe einen gebrauchten Wagen gekauft und die Bremsen sind defekt. Was kann ich tun?",
+    question:
+      "Ich habe einen gebrauchten Wagen gekauft und die Bremsen sind defekt. Was kann ich tun?",
     gold_concepts: {
       intent: "statute_lookup",
       expected_laws: ["BGB"],
       expected_sections: ["434", "437", "438"],
       expected_terms: ["Gewährleistung", "Sachmangel", "Nacherfüllung", "Kaufvertrag"],
     },
-    gold_slugs: ["legal/statutes/de/bgb/p-434", "legal/statutes/de/bgb/p-437", "legal/statutes/de/bgb/p-438"],
+    gold_slugs: [
+      "legal/statutes/de/bgb/p-434",
+      "legal/statutes/de/bgb/p-437",
+      "legal/statutes/de/bgb/p-438",
+    ],
     gold_context: `## § 434 BGB — Sachmangel
 (1) Die Sache ist frei von Sachmängeln, wenn sie bei Gefahrübergang den vereinbarten Zustand hat.
 
@@ -82,7 +87,12 @@ Ist die Sache mangelhaft, kann der Käufer
       intent: "mixed",
       expected_laws: ["BGB", "StGB"],
       expected_sections: ["823", "254"],
-      expected_terms: ["Schadensersatz", "unerlaubte Handlung", "Mitverschulden", "Körperverletzung"],
+      expected_terms: [
+        "Schadensersatz",
+        "unerlaubte Handlung",
+        "Mitverschulden",
+        "Körperverletzung",
+      ],
     },
     gold_slugs: ["legal/statutes/de/bgb/p-823", "legal/statutes/de/bgb/p-254"],
     gold_context: `## § 823 BGB — Schadensersatzpflicht
@@ -156,15 +166,14 @@ Wer einem anderen widerrechtlich Schaden zugefügt hat, hat ihn zu ersetzen.`,
     gold_slugs: ["legal/statutes/at/zpo/p-514"],
     gold_context: `## § 514 ZPO — Berufungsfrist
 Die Berufung kann binnen vier Wochen ab Zustellung des Urteils eingebracht werden. Die Frist beginnt mit der Zustellung der schriftlichen Ausfertigung des Urteils zu laufen.`,
-    gold_citations: [
-      { code: "ZPO", paragraph: "514" },
-    ],
+    gold_citations: [{ code: "ZPO", paragraph: "514" }],
   },
   // ── AT 3: Betrug StGB ─────────────────────────────────────────────
   {
     id: "comp-at-003",
     jurisdiction: "AT",
-    question: "Mir wurde etwas falsch verkauft. Der Verkäufer hat mich absichtlich getäuscht. Ist das Betrug?",
+    question:
+      "Mir wurde etwas falsch verkauft. Der Verkäufer hat mich absichtlich getäuscht. Ist das Betrug?",
     gold_concepts: {
       intent: "statute_lookup",
       expected_laws: ["StGB"],
@@ -174,9 +183,7 @@ Die Berufung kann binnen vier Wochen ab Zustellung des Urteils eingebracht werde
     gold_slugs: ["legal/statutes/at/stgb/p-146"],
     gold_context: `## § 146 StGB — Betrug
 Wer einen anderen mit dem Vorsatz, durch die Täuschung über Tatsachen sich oder einen Dritten unrechtmäßig zu bereichern, an seinem Vermögen schädigt, ist mit Freiheitsstrafe bis zu sechs Monaten oder mit Geldstrafe bis zu 360 Tagessätzen zu bestrafen.`,
-    gold_citations: [
-      { code: "StGB", paragraph: "146" },
-    ],
+    gold_citations: [{ code: "StGB", paragraph: "146" }],
   },
 ];
 
@@ -242,9 +249,7 @@ Die regelmäßige Verjährungsfrist beträgt drei Jahre.
     gold_slugs: ["legal/statutes/de/bgb/p-1924"],
     gold_context: `## § 1924 BGB — Kinder als gesetzliche Erben
 (1) Die Kinder des Erblassers werden bei der gesetzlichen Erbfolge zu gleichen Teilen Erben.`,
-    gold_citations: [
-      { code: "BGB", paragraph: "1924" },
-    ],
+    gold_citations: [{ code: "BGB", paragraph: "1924" }],
   },
   // ── AT 4: Tierhalterhaftung ───────────────────────────────────────
   {
@@ -260,9 +265,7 @@ Die regelmäßige Verjährungsfrist beträgt drei Jahre.
     gold_slugs: ["legal/statutes/at/abgb/p-1320"],
     gold_context: `## § 1320 ABGB — Tierhalterhaftung
 Wird jemand durch ein Tier beschädigt, so ist derjenige, der das Tier hält, verpflichtet, den Schaden zu ersetzen, es wäre denn, dass der Beschädigte seinerseits den Schaden verursacht hat.`,
-    gold_citations: [
-      { code: "ABGB", paragraph: "1320" },
-    ],
+    gold_citations: [{ code: "ABGB", paragraph: "1320" }],
   },
   // ── AT 5: Ehescheidung ────────────────────────────────────────────
   {
@@ -278,9 +281,7 @@ Wird jemand durch ein Tier beschädigt, so ist derjenige, der das Tier hält, ve
     gold_slugs: ["legal/statutes/at/eheg/p-55"],
     gold_context: `## § 55 EheG — Verschuldensscheidung
 Ein Ehegatte kann Scheidung begehren, wenn der andere Ehegatte durch sein Verhalten die Ehe schuldhaft so zerrüttet hat, dass die Wiederherstellung einer dem Wesen der Ehe entsprechenden Lebensgemeinschaft nicht erwartet werden kann.`,
-    gold_citations: [
-      { code: "EheG", paragraph: "55" },
-    ],
+    gold_citations: [{ code: "EheG", paragraph: "55" }],
   },
   // ── AT 6: Sachbeschädigung ────────────────────────────────────────
   {

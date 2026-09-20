@@ -77,7 +77,6 @@ export function AclSettings() {
 
   return (
     <div className="space-y-6">
-
       {/* Create Group */}
       <Card className="border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex gap-2">
@@ -246,8 +245,8 @@ export function AclSettings() {
             </p>
             <p>
               <strong className="text-[color:var(--ds-text)]">Einschränkung:</strong> Sobald eine
-              Akte oder ein Dokument einer Gruppe zugeordnet ist, ist es nur noch für Mitglieder der zugewiesenen Gruppen
-              sichtbar.
+              Akte oder ein Dokument einer Gruppe zugeordnet ist, ist es nur noch für Mitglieder der
+              zugewiesenen Gruppen sichtbar.
             </p>
             <p>
               <strong className="text-[color:var(--ds-text)]">Kanzleiverwaltung:</strong>{" "}

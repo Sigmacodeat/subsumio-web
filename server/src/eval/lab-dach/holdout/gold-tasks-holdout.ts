@@ -67,13 +67,9 @@ export function loadHoldoutTasksFromPath(path: string): Task[] {
       throw new Error(`Holdout task ${task.id} not found in manifest`);
     }
     if (entry.hash !== hash) {
-      throw new Error(
-        `Holdout task ${task.id} hash mismatch: expected ${entry.hash}, got ${hash}`
-      );
+      throw new Error(`Holdout task ${task.id} hash mismatch: expected ${entry.hash}, got ${hash}`);
     }
   }
 
   return tasks;
 }
-
-

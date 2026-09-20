@@ -72,7 +72,11 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           onClick={refetch}
           className="h-7 px-2"
           disabled={loading}
-          aria-label={lang !== "en" ? "Qualität des Kanzleiwissens aktualisieren" : "Refresh knowledge quality"}
+          aria-label={
+            lang !== "en"
+              ? "Qualität des Kanzleiwissens aktualisieren"
+              : "Refresh knowledge quality"
+          }
         >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>

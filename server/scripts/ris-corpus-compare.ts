@@ -24,8 +24,10 @@ for (const f of files) {
   const abbrMatch = fm.match(/abbreviation:\s*"?([^"\n]+)"?/);
   const vdMatch = fm.match(/version_date:\s*"?(\d{4}-\d{2}-\d{2})"?/);
   const entry: { name: string; gnr?: string; abbr?: string; versionDate?: string } = { name: f };
-  if (gnrMatch) { corpusGnrs.add(gnrMatch[1]); entry.gnr = gnrMatch[1]; }
-  else noGnr++;
+  if (gnrMatch) {
+    corpusGnrs.add(gnrMatch[1]);
+    entry.gnr = gnrMatch[1];
+  } else noGnr++;
   if (abbrMatch) entry.abbr = abbrMatch[1].trim();
   if (vdMatch) entry.versionDate = vdMatch[1];
   corpusFiles.push(entry);
@@ -37,11 +39,15 @@ console.log("Files with gesetzesnummer:", corpusGnrs.size);
 console.log("Files WITHOUT gesetzesnummer:", noGnr);
 
 console.log("\n=== RIS SAMPLE vs CORPUS ===");
-let matched = 0, missing = 0;
+let matched = 0,
+  missing = 0;
 const missingLaws: string[] = [];
 for (const gnr of risGnrs) {
   if (corpusGnrs.has(gnr)) matched++;
-  else { missing++; missingLaws.push(gnr); }
+  else {
+    missing++;
+    missingLaws.push(gnr);
+  }
 }
 console.log("RIS unique Gesetzesnummern (sample):", risGnrs.size);
 console.log("Matched in corpus:", matched);

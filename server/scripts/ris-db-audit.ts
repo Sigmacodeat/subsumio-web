@@ -19,16 +19,27 @@ function arg(name: string, fallback?: string): string | undefined {
 }
 
 const RIS_FILE = arg("ris", "/tmp/ris-inforce.jsonl")!;
-const DB_URL = arg("db", process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain")!;
+const DB_URL = arg(
+  "db",
+  process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
+)!;
 const OUT = arg("out", "/tmp/ris-db-audit.json")!;
 
 type RisNorm = {
-  nor: string; gnr: string; kurztitel: string; abk: string | null;
-  typ: string | null; apa: string | null; inkraft: string | null;
+  nor: string;
+  gnr: string;
+  kurztitel: string;
+  abk: string | null;
+  typ: string | null;
+  apa: string | null;
+  inkraft: string | null;
 };
 
 type LawAgg = {
-  gnr: string; kurztitel: string; abk: string | null; typ: string | null;
+  gnr: string;
+  kurztitel: string;
+  abk: string | null;
+  typ: string | null;
   normen: Set<string>;
 };
 
@@ -79,11 +90,17 @@ async function main() {
 
   // ── 2. DB-Bestand laden ───────────────────────────────────────────
   const sql = postgres(DB_URL, { max: 4, idle_timeout: 20 });
-  const rows = await sql<{
-    slug: string; title: string; statute: string | null;
-    paragraph: string | null; gnr: string | null; abbreviation: string | null;
-    len: number;
-  }[]>`
+  const rows = await sql<
+    {
+      slug: string;
+      title: string;
+      statute: string | null;
+      paragraph: string | null;
+      gnr: string | null;
+      abbreviation: string | null;
+      len: number;
+    }[]
+  >`
     SELECT slug, title,
            frontmatter->>'statute'       AS statute,
            frontmatter->>'paragraph'     AS paragraph,
@@ -96,18 +113,29 @@ async function main() {
   console.log(`  ${rows.length} DB-Seiten in source_id='law-at'`);
 
   // DB nach Gesetz gruppieren (Schlüssel: normalisierter Langtitel aus `statute`)
-  const dbLaws = new Map<string, { titel: string; normen: Set<string>; gnrs: Set<string>; pages: number }>();
+  const dbLaws = new Map<
+    string,
+    { titel: string; normen: Set<string>; gnrs: Set<string>; pages: number }
+  >();
   for (const r of rows) {
     const raw = r.statute ?? r.title ?? "";
     const titel = raw.includes("—") ? raw.split("—").slice(1).join("—").trim() : raw.trim();
     const key = normalizeTitle(titel);
     if (!key) continue;
     let e = dbLaws.get(key);
-    if (!e) { e = { titel, normen: new Set(), gnrs: new Set(), pages: 0 }; dbLaws.set(key, e); }
+    if (!e) {
+      e = { titel, normen: new Set(), gnrs: new Set(), pages: 0 };
+      dbLaws.set(key, e);
+    }
     e.pages++;
     if (r.gnr) e.gnrs.add(r.gnr);
     const m = r.slug.match(/\/(p|art|anl)-([0-9a-z]+)$/i);
-    if (m) e.normen.add(m[1].toLowerCase() === "p" ? m[2].toLowerCase() : `${m[1].toLowerCase()}-${m[2].toLowerCase()}`);
+    if (m)
+      e.normen.add(
+        m[1].toLowerCase() === "p"
+          ? m[2].toLowerCase()
+          : `${m[1].toLowerCase()}-${m[2].toLowerCase()}`
+      );
   }
   console.log(`  ${dbLaws.size} unterscheidbare Gesetze in der DB`);
 
@@ -125,23 +153,36 @@ async function main() {
       if (dbLaws.has(k)) dbKey = k;
     }
     if (!dbKey) {
-      missingLaws.push({ gnr, kurztitel: law.kurztitel, abk: law.abk, typ: law.typ, risNormen: law.normen.size });
+      missingLaws.push({
+        gnr,
+        kurztitel: law.kurztitel,
+        abk: law.abk,
+        typ: law.typ,
+        risNormen: law.normen.size,
+      });
       continue;
     }
     const db = dbLaws.get(dbKey)!;
     const fehlend = [...law.normen].filter((n) => !db.normen.has(n));
     const ueberzaehlig = [...db.normen].filter((n) => !law.normen.has(n));
     matched.push({
-      gnr, kurztitel: law.kurztitel, abk: law.abk,
-      risNormen: law.normen.size, dbNormen: db.normen.size,
-      fehlendeNormen: fehlend.length, ueberzaehligeNormen: ueberzaehlig.length,
+      gnr,
+      kurztitel: law.kurztitel,
+      abk: law.abk,
+      risNormen: law.normen.size,
+      dbNormen: db.normen.size,
+      fehlendeNormen: fehlend.length,
+      ueberzaehligeNormen: ueberzaehlig.length,
       fehlendBeispiele: fehlend.slice(0, 10),
       vollstaendig: fehlend.length === 0,
     });
   }
 
   const dbMatchedKeys = new Set(matched.map((m) => normalizeTitle(m.kurztitel)));
-  for (const [gnr] of risLaws) { const k = dbByGnr.get(gnr); if (k) dbMatchedKeys.add(k); }
+  for (const [gnr] of risLaws) {
+    const k = dbByGnr.get(gnr);
+    if (k) dbMatchedKeys.add(k);
+  }
   const orphans = [...dbLaws.entries()]
     .filter(([k]) => !dbMatchedKeys.has(k))
     .map(([k, e]) => ({ key: k, titel: e.titel, pages: e.pages }));
@@ -159,41 +200,59 @@ async function main() {
   console.log("══════════════════════════════════════════════════════════\n");
   console.log("  GESETZE (Gesetzesnummern)");
   console.log(`    RIS geltend:                 ${risLaws.size}`);
-  console.log(`    davon in DB vorhanden:       ${matched.length}  (${p(matched.length, risLaws.size)} %)`);
+  console.log(
+    `    davon in DB vorhanden:       ${matched.length}  (${p(matched.length, risLaws.size)} %)`
+  );
   console.log(`    davon vollständig:           ${matched.filter((m) => m.vollstaendig).length}`);
-  console.log(`    in DB fehlend:               ${missingLaws.length}  (${p(missingLaws.length, risLaws.size)} %)`);
+  console.log(
+    `    in DB fehlend:               ${missingLaws.length}  (${p(missingLaws.length, risLaws.size)} %)`
+  );
   console.log(`    DB-Einträge ohne RIS-Match:  ${orphans.length}`);
   console.log("\n  NORMEN (§/Art/Anlage)");
   console.log(`    RIS geltend gesamt:          ${risNormenGesamt}`);
-  console.log(`    in DB erfasst:               ${dbNormenErfasst}  (${p(dbNormenErfasst, risNormenGesamt)} %)`);
+  console.log(
+    `    in DB erfasst:               ${dbNormenErfasst}  (${p(dbNormenErfasst, risNormenGesamt)} %)`
+  );
   console.log(`    fehlend in vorhandenen Ges.: ${fehlendeNormenInGetroffenen}`);
   console.log(`    fehlend durch fehlende Ges.: ${normenInFehlendenGesetzen}`);
 
   console.log("\n  GRÖSSTE LÜCKEN — komplett fehlende Gesetze (Top 30 nach Normenzahl)");
   for (const l of missingLaws.sort((a, b) => b.risNormen - a.risNormen).slice(0, 30)) {
-    console.log(`    ${String(l.risNormen).padStart(5)} Normen  ${(l.abk ?? "–").padEnd(14)} ${l.kurztitel.slice(0, 70)}`);
+    console.log(
+      `    ${String(l.risNormen).padStart(5)} Normen  ${(l.abk ?? "–").padEnd(14)} ${l.kurztitel.slice(0, 70)}`
+    );
   }
 
   console.log("\n  UNVOLLSTÄNDIGE GESETZE (Top 25 nach fehlenden Normen)");
-  for (const m of matched.filter((x) => x.fehlendeNormen > 0).sort((a, b) => b.fehlendeNormen - a.fehlendeNormen).slice(0, 25)) {
-    console.log(`    ${String(m.fehlendeNormen).padStart(5)} fehlen von ${String(m.risNormen).padStart(5)}  ${(m.abk ?? "–").padEnd(12)} ${m.kurztitel.slice(0, 55)}`);
+  for (const m of matched
+    .filter((x) => x.fehlendeNormen > 0)
+    .sort((a, b) => b.fehlendeNormen - a.fehlendeNormen)
+    .slice(0, 25)) {
+    console.log(
+      `    ${String(m.fehlendeNormen).padStart(5)} fehlen von ${String(m.risNormen).padStart(5)}  ${(m.abk ?? "–").padEnd(12)} ${m.kurztitel.slice(0, 55)}`
+    );
   }
 
   const report = {
     timestamp: new Date().toISOString(),
     risFile: RIS_FILE,
     summary: {
-      risLaws: risLaws.size, matchedLaws: matched.length,
+      risLaws: risLaws.size,
+      matchedLaws: matched.length,
       completeLaws: matched.filter((m) => m.vollstaendig).length,
-      missingLaws: missingLaws.length, orphanDbLaws: orphans.length,
-      risNorms: risNormenGesamt, dbNormsCovered: dbNormenErfasst,
+      missingLaws: missingLaws.length,
+      orphanDbLaws: orphans.length,
+      risNorms: risNormenGesamt,
+      dbNormsCovered: dbNormenErfasst,
       missingNormsInMatchedLaws: fehlendeNormenInGetroffenen,
       missingNormsFromMissingLaws: normenInFehlendenGesetzen,
       normCoveragePct: Number(p(dbNormenErfasst, risNormenGesamt)),
       lawCoveragePct: Number(p(matched.length, risLaws.size)),
     },
     missingLaws: missingLaws.sort((a, b) => b.risNormen - a.risNormen),
-    incompleteLaws: matched.filter((m) => m.fehlendeNormen > 0).sort((a, b) => b.fehlendeNormen - a.fehlendeNormen),
+    incompleteLaws: matched
+      .filter((m) => m.fehlendeNormen > 0)
+      .sort((a, b) => b.fehlendeNormen - a.fehlendeNormen),
     orphanDbLaws: orphans,
   };
   writeFileSync(OUT, JSON.stringify(report, null, 2));
@@ -202,4 +261,7 @@ async function main() {
   await sql.end();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

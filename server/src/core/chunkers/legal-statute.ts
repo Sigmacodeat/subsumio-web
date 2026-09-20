@@ -122,10 +122,7 @@ export function chunkLegalSection(
   // Strip RIS-OGD boilerplate footer that fetchers append to every document.
   // Pattern: "\n---\n*Quelle: [RIS-OGD](https://www.ris.bka.gv.at/...)*"
   // This URL noise pollutes embeddings and chunk text — remove before chunking.
-  const stripped = body.replace(
-    /\n---\n\*Quelle:\s*\[[^\]]*\]\([^)]*\)\*\s*$/i,
-    ""
-  );
+  const stripped = body.replace(/\n---\n\*Quelle:\s*\[[^\]]*\]\([^)]*\)\*\s*$/i, "");
   const trimmed = stripped.trim();
   if (!trimmed) return [];
 

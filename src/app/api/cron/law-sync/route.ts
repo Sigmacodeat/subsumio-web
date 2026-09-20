@@ -2,7 +2,11 @@ import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
-import { runAmendmentCheck, buildFreshnessSummary, type Jurisdiction } from "@/lib/statute-freshness";
+import {
+  runAmendmentCheck,
+  buildFreshnessSummary,
+  type Jurisdiction,
+} from "@/lib/statute-freshness";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -63,7 +67,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const totalErrors = Object.values(result.sources).reduce((sum, s) => sum + s.errors, 0);
 
   // ── Statute Amendment Detection (Gap 3) ──
-  let amendmentResult: { total_amendments: number; freshness_summary: ReturnType<typeof buildFreshnessSummary> | null } = {
+  let amendmentResult: {
+    total_amendments: number;
+    freshness_summary: ReturnType<typeof buildFreshnessSummary> | null;
+  } = {
     total_amendments: 0,
     freshness_summary: null,
   };

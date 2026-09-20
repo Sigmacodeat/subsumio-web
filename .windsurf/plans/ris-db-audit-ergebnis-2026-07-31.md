@@ -18,13 +18,13 @@ verarbeitet (100 % Embeddings, keine Dubletten, konsistente Versionierung), aber
 es fehlt der Großteil des Bundesrechts, und der vorhandene Text trägt
 Extraktionsartefakte.
 
-| Ebene | RIS geltend | in DB | Abdeckung |
-| --- | ---: | ---: | ---: |
-| Gesetze (Gesetzesnummern) | 10.695 | 563 | **5,3 %** |
-| Normen gesamt | 158.741 | 19.745 | **11,0 %** |
-| davon Paragraphen | 91.410 | 15.719 | 17,2 % |
-| davon Artikel | 59.887 | 4.026 | 6,7 % |
-| davon Anlagen | 7.444 | **0** | **0 %** |
+| Ebene                     | RIS geltend |  in DB |  Abdeckung |
+| ------------------------- | ----------: | -----: | ---------: |
+| Gesetze (Gesetzesnummern) |      10.695 |    563 |  **5,3 %** |
+| Normen gesamt             |     158.741 | 19.745 | **11,0 %** |
+| davon Paragraphen         |      91.410 | 15.719 |     17,2 % |
+| davon Artikel             |      59.887 |  4.026 |      6,7 % |
+| davon Anlagen             |       7.444 |  **0** |    **0 %** |
 
 ## Befunde nach Schwere
 
@@ -120,15 +120,15 @@ Gesamtbestand: **796.000 Seiten / 4.626.244 Chunks** (65 GB Chunks, 20 GB Pages)
 
 Die Masse ist Judikatur, nicht Gesetzestext:
 
-| Kategorie | Seiten |
-| --- | ---: |
-| Judikatur (Urteile) | 647.551 |
-| EU | 70.551 |
-| DE | 27.071 |
+| Kategorie                    |     Seiten |
+| ---------------------------- | ---------: |
+| Judikatur (Urteile)          |    647.551 |
+| EU                           |     70.551 |
+| DE                           |     27.071 |
 | **AT Bundesrecht (Gesetze)** | **21.451** |
-| AT Landesrecht | 15.215 |
-| CH | 13.069 |
-| AT Staatsverträge | 1.156 |
+| AT Landesrecht               |     15.215 |
+| CH                           |     13.069 |
+| AT Staatsverträge            |      1.156 |
 
 Die 5,3 %-Aussage oben bleibt damit gültig — sie bezieht sich auf `law-at`
 (Bundesgesetze), nicht auf den Gesamtbestand.
@@ -138,13 +138,13 @@ Die 5,3 %-Aussage oben bleibt damit gültig — sie bezieht sich auf `law-at`
 Mehrere Judikatur-Quellen wurden zweimal ingestiert, unter zwei `type`-Werten
 und zwei Slug-Konventionen (`<datum>-<az>` vs. `<az>-<datum>`):
 
-| Quelle | doppelt erfasste Fälle |
-| --- | ---: |
-| `law-at-judikatur-asylgh` | 24.123 |
-| `law-at-judikatur-uvs` | 17.471 |
-| `law-at-judikatur-ubas` | 2.778 |
-| `law-at-judikatur-umse` | 333 |
-| `law-at-judikatur-vwgh` | 63 |
+| Quelle                    | doppelt erfasste Fälle |
+| ------------------------- | ---------------------: |
+| `law-at-judikatur-asylgh` |                 24.123 |
+| `law-at-judikatur-uvs`    |                 17.471 |
+| `law-at-judikatur-ubas`   |                  2.778 |
+| `law-at-judikatur-umse`   |                    333 |
+| `law-at-judikatur-vwgh`   |                     63 |
 
 Verifiziert an B1 229548-0/2008 (30.03.2009): `type='court_decision'` ist sauber
 strukturiert („# Asylgerichtshof — B1 229548-0/2008 ## Gericht …"), `type='judikatur'`

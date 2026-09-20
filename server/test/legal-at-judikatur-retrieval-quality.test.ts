@@ -48,7 +48,9 @@ const searchFn =
     return results.map((r) => r.slug);
   };
 
-function overall(qs: Array<{ hit_at_1: boolean; hit_at_3: boolean; reciprocal_rank: number; recall_at_k: number }>) {
+function overall(
+  qs: Array<{ hit_at_1: boolean; hit_at_3: boolean; reciprocal_rank: number; recall_at_k: number }>
+) {
   const n = qs.length || 1;
   return {
     hit1: qs.filter((q) => q.hit_at_1).length / n,
@@ -63,9 +65,7 @@ async function measurePurity(jurisdiction?: string): Promise<{ leaks: string[]; 
   const leaks: string[] = [];
   for (const g of JUDIKATUR_GOLD) {
     const results = await hybridSearch(eng, g.query, { limit: 10, expansion: false, jurisdiction });
-    const foreign = results
-      .map((r) => r.slug)
-      .filter((s) => s.startsWith("legal/statutes/de/"));
+    const foreign = results.map((r) => r.slug).filter((s) => s.startsWith("legal/statutes/de/"));
     if (foreign.length > 0) leaks.push(`"${g.query}" → ${foreign.join(", ")}`);
   }
   return { leaks, total: JUDIKATUR_GOLD.length };
@@ -103,9 +103,9 @@ describe("legal-AT judikatur retrieval quality (eval gate)", () => {
     // hit@3 ≥ 0.85 — most OGH decisions should be findable in top-3
     expect(o.hit3, `hit@3 ${(o.hit3 * 100).toFixed(1)}% < 85%`).toBeGreaterThanOrEqual(0.85);
     // hit@1 ≥ 0.60 — a majority should rank at position 1
-    expect(o.hit1, `hit@1 ${(o.hit1 * 100).toFixed(1)}% < 60%`).toBeGreaterThanOrEqual(0.60);
+    expect(o.hit1, `hit@1 ${(o.hit1 * 100).toFixed(1)}% < 60%`).toBeGreaterThanOrEqual(0.6);
     // MRR ≥ 0.70
-    expect(o.mrr, `MRR ${o.mrr.toFixed(3)} < 0.70`).toBeGreaterThanOrEqual(0.70);
+    expect(o.mrr, `MRR ${o.mrr.toFixed(3)} < 0.70`).toBeGreaterThanOrEqual(0.7);
     // Purity is absolute: not one German § may appear under jurisdiction=at
     expect(purity.leaks, `purity breached:\n${purity.leaks.join("\n")}`).toEqual([]);
   }, 120_000);
@@ -122,16 +122,26 @@ describe("legal-AT judikatur retrieval quality (eval gate)", () => {
 
     // Now verify they're filtered out under jurisdiction=at
     const scoped = await measurePurity("at");
-    expect(scoped.leaks, `purity breached under jurisdiction=at:\n${scoped.leaks.join("\n")}`).toEqual([]);
+    expect(
+      scoped.leaks,
+      `purity breached under jurisdiction=at:\n${scoped.leaks.join("\n")}`
+    ).toEqual([]);
   }, 120_000);
 
   test("all 20 gold slugs are retrievable (existence check)", async () => {
     // Each gold slug should appear in at least one search result for its own query
     for (const g of JUDIKATUR_GOLD) {
-      const results = await hybridSearch(eng, g.query, { limit: 10, expansion: false, jurisdiction: "at" });
+      const results = await hybridSearch(eng, g.query, {
+        limit: 10,
+        expansion: false,
+        jurisdiction: "at",
+      });
       const slugs = results.map((r) => r.slug);
       const expectedSlug = `legal/judikatur/at/${g.ref.file}`;
-      expect(slugs, `${g.ref.gz} (${expectedSlug}) not found in results for: "${g.query}"`).toContain(expectedSlug);
+      expect(
+        slugs,
+        `${g.ref.gz} (${expectedSlug}) not found in results for: "${g.query}"`
+      ).toContain(expectedSlug);
     }
   }, 120_000);
 });

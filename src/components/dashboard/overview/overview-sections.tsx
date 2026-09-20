@@ -151,7 +151,7 @@ function AgendaRow({ entry, showDate = false }: { entry: AgendaEntry; showDate?:
         href={
           entry.caseSlug ? `/dashboard/cases/${encodeSlug(entry.caseSlug)}` : "/dashboard/deadlines"
         }
-        className="group grid grid-cols-[3.25rem_1fr] items-start gap-x-3 gap-y-1 sm:grid-cols-[3.25rem_1fr_auto] px-4 py-2.5 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none focus-visible:ring-inset md:px-5"
+        className="group grid grid-cols-[3.25rem_1fr] items-start gap-x-3 gap-y-1 px-4 py-2.5 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none focus-visible:ring-inset sm:grid-cols-[3.25rem_1fr_auto] md:px-5"
       >
         <span className="pt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
           {showDate ? formatDate(entry.date).slice(0, 6) : (entry.time ?? kindLabel)}

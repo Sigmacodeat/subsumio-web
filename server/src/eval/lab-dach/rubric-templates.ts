@@ -38,7 +38,8 @@ const STRUKTUR: RubricDimension = {
   key: "struktur",
   label: "Struktur & Aufbau",
   severity: "medium",
-  description: "Die Ausgabe folgt einer klaren juristischen Struktur (Sachverhalt, Rechtsfrage, Würdigung, Ergebnis).",
+  description:
+    "Die Ausgabe folgt einer klaren juristischen Struktur (Sachverhalt, Rechtsfrage, Würdigung, Ergebnis).",
   judge_question:
     "Folgt die Ausgabe einer klaren juristischen Struktur mit erkennbaren Abschnitten (Sachverhalt, Rechtsfrage, rechtliche Würdigung, Ergebnis)? Sind die Abschnitte logisch aufeinander aufgebaut?",
 };
@@ -128,7 +129,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         key: "struktur",
         label: "Anspruchsgrundlage identifiziert",
         severity: "high",
-        description: "Die zutreffende Anspruchsgrundlage (Anspruchsnorm) wird korrekt identifiziert.",
+        description:
+          "Die zutreffende Anspruchsgrundlage (Anspruchsnorm) wird korrekt identifiziert.",
         judge_question:
           "Wird die zutreffende Anspruchsgrundlage (z.B. § 433 II BGB, § 812 BGB, § 280 I BGB) korrekt identifiziert und begründet? Wird die Norm genannt, aus der sich der Anspruch ergibt?",
       },
@@ -145,7 +147,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         key: "struktur",
         label: "Gesellschaftsrechtliche Spezialprüfung",
         severity: "high",
-        description: "Gesellschaftsrechtliche Spezialfragen (Haftung, Vertretung, Gesellschafterrechte) werden korrekt geprüft.",
+        description:
+          "Gesellschaftsrechtliche Spezialfragen (Haftung, Vertretung, Gesellschafterrechte) werden korrekt geprüft.",
         judge_question:
           "Werden gesellschaftsrechtliche Spezialfragen (persönliche Haftung, Vertretungsmacht, Gesellschafterbeschlüsse, Informationsrechte) korrekt identifiziert und rechtlich gewürdigt?",
       },
@@ -179,7 +182,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         key: "struktur",
         label: "Grundstücksrechtliche Besonderheiten",
         severity: "high",
-        description: "Grundstücksrechtliche Besonderheiten (Auflassung, Grundbuch, Vormerkung) werden korrekt geprüft.",
+        description:
+          "Grundstücksrechtliche Besonderheiten (Auflassung, Grundbuch, Vormerkung) werden korrekt geprüft.",
         judge_question:
           "Werden grundstücksrechtliche Besonderheiten (Auflassung § 925 BGB, Grundbuch, Vormerkung § 883 BGB, Eigentumserwerb) korrekt identifiziert und rechtlich gewürdigt?",
       },
@@ -196,7 +200,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         key: "struktur",
         label: "Steuerliche Beurteilung & Steuerschuld",
         severity: "high",
-        description: "Die steuerliche Beurteilung (Steuerart, Bemessungsgrundlage, Steuerschuldner) wird korrekt vorgenommen.",
+        description:
+          "Die steuerliche Beurteilung (Steuerart, Bemessungsgrundlage, Steuerschuldner) wird korrekt vorgenommen.",
         judge_question:
           "Wird die steuerliche Beurteilung korrekt vorgenommen (Steuerart, Bemessungsgrundlage, Steuerschuldner, Fälligkeit)? Werden die einschlägigen Normen des EStG/UStG/AO korrekt angewendet?",
       },
@@ -214,7 +219,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         label: "Tatbestandsmäßigkeit & Schuld",
         severity: "critical",
         always_critical: true,
-        description: "Tatbestandsmäßigkeit, Rechtswidrigkeit und Schuld werden korrekt geprüft (dreistufiger Aufbau).",
+        description:
+          "Tatbestandsmäßigkeit, Rechtswidrigkeit und Schuld werden korrekt geprüft (dreistufiger Aufbau).",
         judge_question:
           "Wird der dreistufige strafrechtliche Aufbau korrekt angewendet (Tatbestandsmäßigkeit → Rechtswidrigkeit → Schuld)? Werden alle Tatbestandsmerkmale einzeln geprüft?",
       },
@@ -231,7 +237,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         key: "struktur",
         label: "Familienrechtliche Spezialprüfung",
         severity: "high",
-        description: "Familienrechtliche Spezialfragen (Unterhalt, Zugewinn, Sorgerecht) werden korrekt geprüft.",
+        description:
+          "Familienrechtliche Spezialfragen (Unterhalt, Zugewinn, Sorgerecht) werden korrekt geprüft.",
         judge_question:
           "Werden familienrechtliche Spezialfragen (Unterhalt § 1601 BGB, Zugewinnausgleich § 1373 BGB, elterliche Sorge § 1626 BGB) korrekt identifiziert und rechtlich gewürdigt?",
       },
@@ -248,7 +255,8 @@ export const RUBRIC_TEMPLATES: Record<LegalArea, RubricTemplate> = {
         key: "struktur",
         label: "Erbrechtliche Spezialprüfung",
         severity: "high",
-        description: "Erbrechtliche Spezialfragen (Pflichtteil, Testamentsergänzung, Erbfolge) werden korrekt geprüft.",
+        description:
+          "Erbrechtliche Spezialfragen (Pflichtteil, Testamentsergänzung, Erbfolge) werden korrekt geprüft.",
         judge_question:
           "Werden erbrechtliche Spezialfragen (gesetzliche Erbfolge, Testamentsergänzung § 2325 BGB, Pflichtteil § 2303 BGB, Erbschein) korrekt identifiziert und rechtlich gewürdigt?",
       },

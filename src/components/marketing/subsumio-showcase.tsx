@@ -702,7 +702,9 @@ export function FeatureBento() {
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
       <motion.div {...reveal(0, reduce)} className="mb-14 text-center">
-        <p className={`mb-4 justify-center after:h-px after:w-6 after:bg-current after:opacity-50 after:content-[''] ${EYEBROW_CLASS}`}>
+        <p
+          className={`mb-4 justify-center after:h-px after:w-6 after:bg-current after:opacity-50 after:content-[''] ${EYEBROW_CLASS}`}
+        >
           {c.bentoEyebrow}
         </p>
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.bentoTitle}</h2>

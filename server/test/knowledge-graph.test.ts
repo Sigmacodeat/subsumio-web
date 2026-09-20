@@ -73,9 +73,24 @@ const estgSections: StatuteSection[] = [
 
 function buildTestGraph() {
   return buildLegalKnowledgeGraph([
-    { jurisdiction: "DE", statuteCode: "BGB", sections: bgbSections, slugPrefix: "legal/statutes/de" },
-    { jurisdiction: "DE", statuteCode: "AO", sections: aoSections, slugPrefix: "legal/statutes/de" },
-    { jurisdiction: "DE", statuteCode: "EStG", sections: estgSections, slugPrefix: "legal/statutes/de" },
+    {
+      jurisdiction: "DE",
+      statuteCode: "BGB",
+      sections: bgbSections,
+      slugPrefix: "legal/statutes/de",
+    },
+    {
+      jurisdiction: "DE",
+      statuteCode: "AO",
+      sections: aoSections,
+      slugPrefix: "legal/statutes/de",
+    },
+    {
+      jurisdiction: "DE",
+      statuteCode: "EStG",
+      sections: estgSections,
+      slugPrefix: "legal/statutes/de",
+    },
   ]);
 }
 

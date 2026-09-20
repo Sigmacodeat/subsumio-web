@@ -135,10 +135,7 @@ describe("runGroundingCheck", () => {
   });
 
   it("returns all_verified=true when all citations verified", async () => {
-    const result = await runGroundingCheck(
-      "Gemäß § 433 BGB und § 437 BGB",
-      mockGroundAllVerified
-    );
+    const result = await runGroundingCheck("Gemäß § 433 BGB und § 437 BGB", mockGroundAllVerified);
     expect(result.all_verified).toBe(true);
     expect(result.unverified).toEqual([]);
   });
@@ -410,9 +407,31 @@ describe("detectDisagreement", () => {
   it("returns false when both judges agree on all criteria", () => {
     const judgeA: CrossJudgeResult = {
       task_id: "t1",
-      answer: { model_config: MODEL_A, text: "", grounding: { citations: [], all_verified: true, unverified: [] } },
+      answer: {
+        model_config: MODEL_A,
+        text: "",
+        grounding: { citations: [], all_verified: true, unverified: [] },
+      },
       criteria: [
-        { criterion_id: "c1", criterion: {} as Criterion, severity: "low", verdict: { status: "pass", passed: true, reasoning: "", confidence: 1, evidence_quotes: [], raw_response: "", model: "opus" }, grounding_passed: true, grounding_overrode: false, passed: true, judge_model: MODEL_B, answer_model: MODEL_A },
+        {
+          criterion_id: "c1",
+          criterion: {} as Criterion,
+          severity: "low",
+          verdict: {
+            status: "pass",
+            passed: true,
+            reasoning: "",
+            confidence: 1,
+            evidence_quotes: [],
+            raw_response: "",
+            model: "opus",
+          },
+          grounding_passed: true,
+          grounding_overrode: false,
+          passed: true,
+          judge_model: MODEL_B,
+          answer_model: MODEL_A,
+        },
       ],
       all_pass: true,
       full_agreement: true,
@@ -426,9 +445,7 @@ describe("detectDisagreement", () => {
 
     const judgeB: CrossJudgeResult = {
       ...judgeA,
-      criteria: [
-        { ...judgeA.criteria[0]!, passed: true },
-      ],
+      criteria: [{ ...judgeA.criteria[0]!, passed: true }],
     };
 
     expect(detectDisagreement(judgeA, judgeB)).toBe(false);
@@ -437,9 +454,31 @@ describe("detectDisagreement", () => {
   it("returns true when judges disagree on a criterion", () => {
     const judgeA: CrossJudgeResult = {
       task_id: "t1",
-      answer: { model_config: MODEL_A, text: "", grounding: { citations: [], all_verified: true, unverified: [] } },
+      answer: {
+        model_config: MODEL_A,
+        text: "",
+        grounding: { citations: [], all_verified: true, unverified: [] },
+      },
       criteria: [
-        { criterion_id: "c1", criterion: {} as Criterion, severity: "low", verdict: { status: "pass", passed: true, reasoning: "", confidence: 1, evidence_quotes: [], raw_response: "", model: "opus" }, grounding_passed: true, grounding_overrode: false, passed: true, judge_model: MODEL_B, answer_model: MODEL_A },
+        {
+          criterion_id: "c1",
+          criterion: {} as Criterion,
+          severity: "low",
+          verdict: {
+            status: "pass",
+            passed: true,
+            reasoning: "",
+            confidence: 1,
+            evidence_quotes: [],
+            raw_response: "",
+            model: "opus",
+          },
+          grounding_passed: true,
+          grounding_overrode: false,
+          passed: true,
+          judge_model: MODEL_B,
+          answer_model: MODEL_A,
+        },
       ],
       all_pass: true,
       full_agreement: true,
@@ -453,9 +492,7 @@ describe("detectDisagreement", () => {
 
     const judgeB: CrossJudgeResult = {
       ...judgeA,
-      criteria: [
-        { ...judgeA.criteria[0]!, passed: false },
-      ],
+      criteria: [{ ...judgeA.criteria[0]!, passed: false }],
     };
 
     expect(detectDisagreement(judgeA, judgeB)).toBe(true);

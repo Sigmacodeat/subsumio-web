@@ -181,7 +181,9 @@ export function buildReasoningTrace(opts: TraceCaptureOpts): ReasoningTrace {
  * Requires the engine's executeRaw for DB access.
  */
 export async function persistTrace(
-  engine: { executeRaw<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> },
+  engine: {
+    executeRaw<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
+  },
   trace: ReasoningTrace
 ): Promise<void> {
   try {
@@ -316,14 +318,18 @@ export function verifyTraceChain(traces: ReasoningTrace[]): {
     const { trace_hash, prev_trace_hash, ...content } = trace;
     const computedHash = computeTraceHash(content);
     if (computedHash !== trace_hash) {
-      errors.push(`Trace ${i} (${trace.trace_id}): hash mismatch — trace may have been tampered with`);
+      errors.push(
+        `Trace ${i} (${trace.trace_id}): hash mismatch — trace may have been tampered with`
+      );
       return { valid: false, broken_at: i, errors };
     }
 
     if (i > 0) {
       const expectedPrevHash = traces[i - 1].trace_hash;
       if (trace.prev_trace_hash !== expectedPrevHash) {
-        errors.push(`Trace ${i} (${trace.trace_id}): chain broken — prev_trace_hash does not match previous trace's hash`);
+        errors.push(
+          `Trace ${i} (${trace.trace_id}): chain broken — prev_trace_hash does not match previous trace's hash`
+        );
         return { valid: false, broken_at: i, errors };
       }
     }

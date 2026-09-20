@@ -67,7 +67,10 @@ interface AktenAggregate {
 
 function loadFixture(path: string): { questions: AktenQuestion[] } {
   const raw = readFileSync(path, "utf-8");
-  const lines = raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const lines = raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"));
   const questions: AktenQuestion[] = [];
   for (const line of lines) {
     try {
@@ -81,7 +84,15 @@ function loadFixture(path: string): { questions: AktenQuestion[] } {
 
 // ─── Case file import ────────────────────────────────────────────────────
 
-const CASE_FILES_DIR = join(resolve(import.meta.dir), "..", "..", "..", "test", "fixtures", "akten");
+const CASE_FILES_DIR = join(
+  resolve(import.meta.dir),
+  "..",
+  "..",
+  "..",
+  "test",
+  "fixtures",
+  "akten"
+);
 const EVAL_SOURCE_ID = "eval-akten";
 
 async function importCaseFiles(engine: any): Promise<{ slugs: string[] }> {
@@ -113,7 +124,10 @@ async function importCaseFiles(engine: any): Promise<{ slugs: string[] }> {
       process.stderr.write(`[akten-eval] imported ${slug} → faelle/${slug}\n`);
     } catch (err: any) {
       // If already exists, that's fine
-      if (String(err?.message ?? err).includes("duplicate") || String(err?.message ?? err).includes("exists")) {
+      if (
+        String(err?.message ?? err).includes("duplicate") ||
+        String(err?.message ?? err).includes("exists")
+      ) {
         slugs.push(`faelle/${slug}`);
         process.stderr.write(`[akten-eval] already exists: faelle/${slug}\n`);
       } else {
@@ -145,7 +159,13 @@ function normalizeText(s: string): string {
  * overlap rather than exact substring match.
  */
 function checkChunkTextMatch(
-  topResults: { slug: string; chunk_text?: string; content?: string; text?: string; chunk?: string }[],
+  topResults: {
+    slug: string;
+    chunk_text?: string;
+    content?: string;
+    text?: string;
+    chunk?: string;
+  }[],
   expectedChunkText: string
 ): boolean {
   const expected = normalizeText(expectedChunkText);
@@ -216,7 +236,10 @@ function formatReport(aggregate: AktenAggregate): string {
 // ─── JSONL Emitter ───────────────────────────────────────────────────────
 
 class JsonlEmitter {
-  constructor(private path: string, private append: boolean = false) {
+  constructor(
+    private path: string,
+    private append: boolean = false
+  ) {
     if (!append && existsSync(path)) writeFileSync(path, "");
   }
   emit(obj: Record<string, unknown>) {
@@ -234,13 +257,21 @@ async function main() {
       output: { type: "string", default: "/tmp/akten-retrieval-results.jsonl" },
       append: { type: "boolean", default: false },
       "skip-import": { type: "boolean", default: false },
-      "synthesis": { type: "boolean", default: false },
+      synthesis: { type: "boolean", default: false },
     },
     allowPositionals: true,
   });
 
   const topK = parseInt(args["top-k"] as string, 10);
-  const fixturePath = join(resolve(import.meta.dir), "..", "..", "..", "test", "fixtures", "akten-retrieval.jsonl");
+  const fixturePath = join(
+    resolve(import.meta.dir),
+    "..",
+    "..",
+    "..",
+    "test",
+    "fixtures",
+    "akten-retrieval.jsonl"
+  );
   const { questions } = loadFixture(fixturePath);
 
   process.stderr.write(`[akten-eval] loaded ${questions.length} questions\n`);
@@ -254,18 +285,25 @@ async function main() {
   const { loadConfig, toEngineConfig } = await import("../../core/config.ts");
   const { createEngine } = await import("../../core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../../core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine } = await import("../../core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine } =
+    await import("../../core/ai/gateway.ts");
 
   const cfg = loadConfig();
   if (!cfg) {
-    throw new Error("No engine configured. Set DATABASE_URL / ~/.gbrain/config.json before running this eval.");
+    throw new Error(
+      "No engine configured. Set DATABASE_URL / ~/.gbrain/config.json before running this eval."
+    );
   }
   configureGateway(buildGatewayConfig(cfg));
 
   process.stderr.write(`[akten-eval] connecting to engine...\n`);
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
-  try { await reconfigureGatewayWithEngine(engine); } catch { /* non-fatal */ }
+  try {
+    await reconfigureGatewayWithEngine(engine);
+  } catch {
+    /* non-fatal */
+  }
 
   // Import case files if not skipped
   if (!args["skip-import"]) {
@@ -307,8 +345,11 @@ async function main() {
       // Check if expected slug is in results
       // The expected slug is the case file slug (e.g. "faelle/mueller-gegen-huber-urteil")
       // Search results may have chunk slugs like "faelle/mueller-gegen-huber-urteil#chunk-3"
-      const firstHit = rankedSlugs.findIndex((s: string) =>
-        s === q.expected_slug || s.startsWith(q.expected_slug + "#") || s.startsWith(q.expected_slug + "/")
+      const firstHit = rankedSlugs.findIndex(
+        (s: string) =>
+          s === q.expected_slug ||
+          s.startsWith(q.expected_slug + "#") ||
+          s.startsWith(q.expected_slug + "/")
       );
       const hitAt = (k: number) => firstHit >= 0 && firstHit < k;
 

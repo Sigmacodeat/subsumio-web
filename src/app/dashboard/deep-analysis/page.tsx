@@ -100,7 +100,11 @@ function reportMarkdown(report: DeepAnalysisReport, docs: PickedDocument[]): str
     }
   }
   if (report.cross_document_patterns.length) {
-    lines.push("", "## Dokumentübergreifende Muster", ...report.cross_document_patterns.map((p) => `- ${p}`));
+    lines.push(
+      "",
+      "## Dokumentübergreifende Muster",
+      ...report.cross_document_patterns.map((p) => `- ${p}`)
+    );
   }
   if (report.warnings.length) {
     lines.push("", "## Hinweise", ...report.warnings.map((w) => `- ${w}`));
@@ -510,7 +514,6 @@ export default function DeepAnalysisPage() {
           )}
         </>
       )}
-
     </div>
   );
 }

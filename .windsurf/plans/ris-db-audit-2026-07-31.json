@@ -70949,18 +70949,7 @@
       "dbNormen": 551,
       "fehlendeNormen": 74,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "2",
-        "3",
-        "4",
-        "5",
-        "26a",
-        "290",
-        "290a",
-        "290b",
-        "290c"
-      ],
+      "fehlendBeispiele": ["0", "2", "3", "4", "5", "26a", "290", "290a", "290b", "290c"],
       "vollstaendig": false
     },
     {
@@ -70993,18 +70982,7 @@
       "dbNormen": 46,
       "fehlendeNormen": 73,
       "ueberzaehligeNormen": 3,
-      "fehlendBeispiele": [
-        "0",
-        "8",
-        "15",
-        "17",
-        "21",
-        "23",
-        "27",
-        "31",
-        "32",
-        "34"
-      ],
+      "fehlendBeispiele": ["0", "8", "15", "17", "21", "23", "27", "31", "32", "34"],
       "vollstaendig": false
     },
     {
@@ -71015,18 +70993,7 @@
       "dbNormen": 354,
       "fehlendeNormen": 46,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "7",
-        "169",
-        "206",
-        "107",
-        "108",
-        "246",
-        "257",
-        "258",
-        "259"
-      ],
+      "fehlendBeispiele": ["0", "7", "169", "206", "107", "108", "246", "257", "258", "259"],
       "vollstaendig": false
     },
     {
@@ -71037,18 +71004,7 @@
       "dbNormen": 978,
       "fehlendeNormen": 44,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "32",
-        "108h",
-        "274",
-        "314a",
-        "320",
-        "369",
-        "437",
-        "522h",
-        "675"
-      ],
+      "fehlendBeispiele": ["0", "32", "108h", "274", "314a", "320", "369", "437", "522h", "675"],
       "vollstaendig": false
     },
     {
@@ -71059,18 +71015,7 @@
       "dbNormen": 82,
       "fehlendeNormen": 37,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "anl-1",
-        "0",
-        "35c",
-        "35d",
-        "35e",
-        "36",
-        "37",
-        "37a",
-        "37b",
-        "37c"
-      ],
+      "fehlendBeispiele": ["anl-1", "0", "35c", "35d", "35e", "36", "37", "37a", "37b", "37c"],
       "vollstaendig": false
     },
     {
@@ -71081,18 +71026,7 @@
       "dbNormen": 94,
       "fehlendeNormen": 36,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "11"
-      ],
+      "fehlendBeispiele": ["0", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
       "vollstaendig": false
     },
     {
@@ -71675,18 +71609,7 @@
       "dbNormen": 126,
       "fehlendeNormen": 15,
       "ueberzaehligeNormen": 126,
-      "fehlendBeispiele": [
-        "0",
-        "16a",
-        "16b",
-        "16c",
-        "16d",
-        "16e",
-        "51",
-        "52",
-        "53",
-        "54"
-      ],
+      "fehlendBeispiele": ["0", "16a", "16b", "16c", "16d", "16e", "51", "52", "53", "54"],
       "vollstaendig": false
     },
     {
@@ -71983,18 +71906,7 @@
       "dbNormen": 175,
       "fehlendeNormen": 12,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "9b",
-        "14",
-        "15",
-        "16",
-        "16a",
-        "16c",
-        "17",
-        "17a",
-        "20"
-      ],
+      "fehlendBeispiele": ["0", "9b", "14", "15", "16", "16a", "16c", "17", "17a", "20"],
       "vollstaendig": false
     },
     {
@@ -72005,18 +71917,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 11,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "5",
-        "6",
-        "8",
-        "11",
-        "12",
-        "13",
-        "14",
-        "15"
-      ],
+      "fehlendBeispiele": ["0", "1", "5", "6", "8", "11", "12", "13", "14", "15"],
       "vollstaendig": false
     },
     {
@@ -72049,18 +71950,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 11,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -72395,17 +72285,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 9,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "6", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -72416,17 +72296,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 9,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "6", "7", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -72521,16 +72391,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -72541,16 +72402,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "6", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -72561,16 +72413,7 @@
       "dbNormen": 24,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3",
-        "anl-4",
-        "anl-5",
-        "anl-6",
-        "anl-7"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3", "anl-4", "anl-5", "anl-6", "anl-7"],
       "vollstaendig": false
     },
     {
@@ -72581,16 +72424,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "art-2",
-        "art-3",
-        "art-4",
-        "art-5",
-        "art-6",
-        "art-7"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "art-2", "art-3", "art-4", "art-5", "art-6", "art-7"],
       "vollstaendig": false
     },
     {
@@ -72601,16 +72435,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "6", "7"],
       "vollstaendig": false
     },
     {
@@ -72621,16 +72446,7 @@
       "dbNormen": 59,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3",
-        "anl-4",
-        "art-16",
-        "art-2",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3", "anl-4", "art-16", "art-2", "art-79"],
       "vollstaendig": false
     },
     {
@@ -72641,16 +72457,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "1a",
-        "2",
-        "3",
-        "3a",
-        "4",
-        "5"
-      ],
+      "fehlendBeispiele": ["0", "1", "1a", "2", "3", "3a", "4", "5"],
       "vollstaendig": false
     },
     {
@@ -72661,16 +72468,7 @@
       "dbNormen": 59,
       "fehlendeNormen": 8,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "19",
-        "20",
-        "21",
-        "22",
-        "22a",
-        "22b",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "19", "20", "21", "22", "22a", "22b", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -72681,15 +72479,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "7"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5", "7"],
       "vollstaendig": false
     },
     {
@@ -72700,15 +72490,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2",
-        "art-3",
-        "art-8",
-        "art-11",
-        "art-40",
-        "art-41"
-      ],
+      "fehlendBeispiele": ["0", "art-2", "art-3", "art-8", "art-11", "art-40", "art-41"],
       "vollstaendig": false
     },
     {
@@ -72719,15 +72501,7 @@
       "dbNormen": 374,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 118,
-      "fehlendBeispiele": [
-        "0",
-        "art-16",
-        "art-25",
-        "art-5",
-        "art-10",
-        "art-12",
-        "art-18"
-      ],
+      "fehlendBeispiele": ["0", "art-16", "art-25", "art-5", "art-10", "art-12", "art-18"],
       "vollstaendig": false
     },
     {
@@ -72738,15 +72512,7 @@
       "dbNormen": 172,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 6,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "art-2",
-        "art-6",
-        "art-79",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "art-2", "art-6", "art-79", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -72757,15 +72523,7 @@
       "dbNormen": 192,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "43",
-        "117",
-        "anl-1",
-        "anl-2",
-        "anl-3",
-        "anl-4"
-      ],
+      "fehlendBeispiele": ["0", "43", "117", "anl-1", "anl-2", "anl-3", "anl-4"],
       "vollstaendig": false
     },
     {
@@ -72776,15 +72534,7 @@
       "dbNormen": 37,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "25a",
-        "anl-1",
-        "anl-2",
-        "anl-3",
-        "art-3",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "25a", "anl-1", "anl-2", "anl-3", "art-3", "art-79"],
       "vollstaendig": false
     },
     {
@@ -72795,15 +72545,7 @@
       "dbNormen": 75,
       "fehlendeNormen": 7,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "11a",
-        "11b",
-        "12",
-        "13",
-        "14",
-        "art-10"
-      ],
+      "fehlendBeispiele": ["0", "11a", "11b", "12", "13", "14", "art-10"],
       "vollstaendig": false
     },
     {
@@ -72814,14 +72556,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 5,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3",
-        "anl-4",
-        "anl-5"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3", "anl-4", "anl-5"],
       "vollstaendig": false
     },
     {
@@ -72832,14 +72567,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5"],
       "vollstaendig": false
     },
     {
@@ -72850,14 +72578,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5"],
       "vollstaendig": false
     },
     {
@@ -72868,14 +72589,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4", "5"],
       "vollstaendig": false
     },
     {
@@ -72886,14 +72600,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3",
-        "anl-4",
-        "anl-5"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3", "anl-4", "anl-5"],
       "vollstaendig": false
     },
     {
@@ -72904,14 +72611,7 @@
       "dbNormen": 278,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "art-3",
-        "art-4",
-        "art-2",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "art-3", "art-4", "art-2", "art-79"],
       "vollstaendig": false
     },
     {
@@ -72922,14 +72622,7 @@
       "dbNormen": 65,
       "fehlendeNormen": 6,
       "ueberzaehligeNormen": 1,
-      "fehlendBeispiele": [
-        "0",
-        "23",
-        "art-3",
-        "art-4",
-        "art-6",
-        "art-7"
-      ],
+      "fehlendBeispiele": ["0", "23", "art-3", "art-4", "art-6", "art-7"],
       "vollstaendig": false
     },
     {
@@ -72940,13 +72633,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -72957,13 +72644,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "2",
-        "9",
-        "10",
-        "17"
-      ],
+      "fehlendBeispiele": ["0", "2", "9", "10", "17"],
       "vollstaendig": false
     },
     {
@@ -72974,13 +72655,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -72991,13 +72666,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "art-2",
-        "art-3",
-        "art-4"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "art-2", "art-3", "art-4"],
       "vollstaendig": false
     },
     {
@@ -73008,13 +72677,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -73025,13 +72688,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -73042,13 +72699,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -73059,13 +72710,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -73076,13 +72721,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -73093,13 +72732,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3", "4"],
       "vollstaendig": false
     },
     {
@@ -73110,13 +72743,7 @@
       "dbNormen": 37,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "4a",
-        "4b",
-        "art-2",
-        "art-25"
-      ],
+      "fehlendBeispiele": ["0", "4a", "4b", "art-2", "art-25"],
       "vollstaendig": false
     },
     {
@@ -73127,13 +72754,7 @@
       "dbNormen": 178,
       "fehlendeNormen": 5,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2",
-        "art-3",
-        "art-4",
-        "art-18"
-      ],
+      "fehlendBeispiele": ["0", "art-2", "art-3", "art-4", "art-18"],
       "vollstaendig": false
     },
     {
@@ -73144,12 +72765,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73160,12 +72776,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73176,12 +72787,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73192,12 +72798,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73208,12 +72809,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73224,12 +72820,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3"],
       "vollstaendig": false
     },
     {
@@ -73240,12 +72831,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3"],
       "vollstaendig": false
     },
     {
@@ -73256,12 +72842,7 @@
       "dbNormen": 19,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3"],
       "vollstaendig": false
     },
     {
@@ -73272,12 +72853,7 @@
       "dbNormen": 64,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2",
-        "anl-3"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2", "anl-3"],
       "vollstaendig": false
     },
     {
@@ -73288,12 +72864,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "4"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "4"],
       "vollstaendig": false
     },
     {
@@ -73304,12 +72875,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73320,12 +72886,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73336,12 +72897,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "1", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73352,12 +72908,7 @@
       "dbNormen": 47,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 3,
-      "fehlendBeispiele": [
-        "0",
-        "46",
-        "47",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "46", "47", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -73368,12 +72919,7 @@
       "dbNormen": 91,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2",
-        "art-3",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-2", "art-3", "art-79"],
       "vollstaendig": false
     },
     {
@@ -73384,12 +72930,7 @@
       "dbNormen": 62,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-4",
-        "art-5",
-        "art-6"
-      ],
+      "fehlendBeispiele": ["0", "art-4", "art-5", "art-6"],
       "vollstaendig": false
     },
     {
@@ -73400,12 +72941,7 @@
       "dbNormen": 144,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2",
-        "art-3",
-        "art-4"
-      ],
+      "fehlendBeispiele": ["0", "art-2", "art-3", "art-4"],
       "vollstaendig": false
     },
     {
@@ -73416,12 +72952,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-9",
-        "art-18",
-        "art-24"
-      ],
+      "fehlendBeispiele": ["0", "art-9", "art-18", "art-24"],
       "vollstaendig": false
     },
     {
@@ -73432,12 +72963,7 @@
       "dbNormen": 30,
       "fehlendeNormen": 4,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-18",
-        "art-19",
-        "art-24"
-      ],
+      "fehlendBeispiele": ["0", "art-18", "art-19", "art-24"],
       "vollstaendig": false
     },
     {
@@ -73448,11 +72974,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "2",
-        "3"
-      ],
+      "fehlendBeispiele": ["0", "2", "3"],
       "vollstaendig": false
     },
     {
@@ -73463,11 +72985,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73478,11 +72996,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73493,11 +73007,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 10,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "art-2"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "art-2"],
       "vollstaendig": false
     },
     {
@@ -73508,11 +73018,7 @@
       "dbNormen": 29,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73523,11 +73029,7 @@
       "dbNormen": 30,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73538,11 +73040,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73553,11 +73051,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -73568,11 +73062,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73583,11 +73073,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -73598,11 +73084,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73613,11 +73095,7 @@
       "dbNormen": 21,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73628,11 +73106,7 @@
       "dbNormen": 48,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73643,11 +73117,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73658,11 +73128,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73673,11 +73139,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73688,11 +73150,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -73703,11 +73161,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73718,11 +73172,7 @@
       "dbNormen": 60,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73733,11 +73183,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73748,11 +73194,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73763,11 +73205,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73778,11 +73216,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73793,11 +73227,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73808,11 +73238,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73823,11 +73249,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73838,11 +73260,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73853,11 +73271,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1",
-        "anl-2"
-      ],
+      "fehlendBeispiele": ["0", "anl-1", "anl-2"],
       "vollstaendig": false
     },
     {
@@ -73868,11 +73282,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73883,11 +73293,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73898,11 +73304,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73913,11 +73315,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73928,11 +73326,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73943,11 +73337,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73958,11 +73348,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73973,11 +73359,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -73988,11 +73370,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74003,11 +73381,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74018,11 +73392,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74033,11 +73403,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74048,11 +73414,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74063,11 +73425,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74078,11 +73436,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74093,11 +73447,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74108,11 +73458,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74123,11 +73469,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74138,11 +73480,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74153,11 +73491,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74168,11 +73502,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74183,11 +73513,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74198,11 +73524,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74213,11 +73535,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74228,11 +73546,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74243,11 +73557,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74258,11 +73568,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74273,11 +73579,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74288,11 +73590,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74303,11 +73601,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74318,11 +73612,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74333,11 +73623,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74348,11 +73634,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74363,11 +73645,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74378,11 +73656,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74393,11 +73667,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74408,11 +73678,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74423,11 +73689,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74438,11 +73700,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74453,11 +73711,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74468,11 +73722,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74483,11 +73733,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74498,11 +73744,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74513,11 +73755,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74528,11 +73766,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74543,11 +73777,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74558,11 +73788,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74573,11 +73799,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74588,11 +73810,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74603,11 +73821,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74618,11 +73832,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74633,11 +73843,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74648,11 +73854,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74663,11 +73865,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74678,11 +73876,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74693,11 +73887,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74708,11 +73898,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74723,11 +73909,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74738,11 +73920,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74753,11 +73931,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74768,11 +73942,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74783,11 +73953,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74798,11 +73964,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1",
-        "2"
-      ],
+      "fehlendBeispiele": ["0", "1", "2"],
       "vollstaendig": false
     },
     {
@@ -74813,11 +73975,7 @@
       "dbNormen": 45,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-1", "art-79"],
       "vollstaendig": false
     },
     {
@@ -74828,11 +73986,7 @@
       "dbNormen": 28,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-12",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-12", "art-1"],
       "vollstaendig": false
     },
     {
@@ -74843,11 +73997,7 @@
       "dbNormen": 154,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "anl-1",
-        "0",
-        "12"
-      ],
+      "fehlendBeispiele": ["anl-1", "0", "12"],
       "vollstaendig": false
     },
     {
@@ -74858,11 +74008,7 @@
       "dbNormen": 86,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-16",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-16", "art-79"],
       "vollstaendig": false
     },
     {
@@ -74873,11 +74019,7 @@
       "dbNormen": 30,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-115",
-        "art-24"
-      ],
+      "fehlendBeispiele": ["0", "art-115", "art-24"],
       "vollstaendig": false
     },
     {
@@ -74888,11 +74030,7 @@
       "dbNormen": 67,
       "fehlendeNormen": 3,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-10",
-        "art-39"
-      ],
+      "fehlendBeispiele": ["0", "art-10", "art-39"],
       "vollstaendig": false
     },
     {
@@ -74903,10 +74041,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -74917,10 +74052,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -74931,10 +74063,7 @@
       "dbNormen": 34,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -74945,10 +74074,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -74959,10 +74085,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -74973,10 +74096,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2"
-      ],
+      "fehlendBeispiele": ["0", "art-2"],
       "vollstaendig": false
     },
     {
@@ -74987,10 +74107,7 @@
       "dbNormen": 28,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "anl-1",
-        "0"
-      ],
+      "fehlendBeispiele": ["anl-1", "0"],
       "vollstaendig": false
     },
     {
@@ -75001,10 +74118,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "1"
-      ],
+      "fehlendBeispiele": ["0", "1"],
       "vollstaendig": false
     },
     {
@@ -75015,10 +74129,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2"
-      ],
+      "fehlendBeispiele": ["0", "art-2"],
       "vollstaendig": false
     },
     {
@@ -75029,10 +74140,7 @@
       "dbNormen": 23,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75043,10 +74151,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75057,10 +74162,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75071,10 +74173,7 @@
       "dbNormen": 36,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75085,10 +74184,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75099,10 +74195,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75113,10 +74206,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75127,10 +74217,7 @@
       "dbNormen": 21,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75141,10 +74228,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75155,10 +74239,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75169,10 +74250,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75183,10 +74261,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75197,10 +74272,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75211,10 +74283,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75225,10 +74294,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75239,10 +74305,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-6"
-      ],
+      "fehlendBeispiele": ["0", "art-6"],
       "vollstaendig": false
     },
     {
@@ -75253,10 +74316,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75267,10 +74327,7 @@
       "dbNormen": 2,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75281,10 +74338,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75295,10 +74349,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75309,10 +74360,7 @@
       "dbNormen": 39,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75323,10 +74371,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75337,10 +74382,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75351,10 +74393,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75365,10 +74404,7 @@
       "dbNormen": 20,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75379,10 +74415,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75393,10 +74426,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75407,10 +74437,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75421,10 +74448,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75435,10 +74459,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75449,10 +74470,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75463,10 +74481,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75477,10 +74492,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75491,10 +74503,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75505,10 +74514,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75519,10 +74525,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75533,10 +74536,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -75547,10 +74547,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75561,10 +74558,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75575,10 +74569,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75589,10 +74580,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75603,10 +74591,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75617,10 +74602,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75631,10 +74613,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75645,10 +74624,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75659,10 +74635,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75673,10 +74646,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75687,10 +74657,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75701,10 +74668,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75715,10 +74679,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75729,10 +74690,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75743,10 +74701,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75757,10 +74712,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75771,10 +74723,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75785,10 +74734,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75799,10 +74745,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75813,10 +74756,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75827,10 +74767,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75841,10 +74778,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75855,10 +74789,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75869,10 +74800,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75883,10 +74811,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75897,10 +74822,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75911,10 +74833,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75925,10 +74844,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75939,10 +74855,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75953,10 +74866,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75967,10 +74877,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75981,10 +74888,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -75995,10 +74899,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76009,10 +74910,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76023,10 +74921,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76037,10 +74932,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76051,10 +74943,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76065,10 +74954,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76079,10 +74965,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76093,10 +74976,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76107,10 +74987,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76121,10 +74998,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76135,10 +75009,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76149,10 +75020,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76163,10 +75031,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76177,10 +75042,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76191,10 +75053,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76205,10 +75064,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76219,10 +75075,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76233,10 +75086,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76247,10 +75097,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76261,10 +75108,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76275,10 +75119,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76289,10 +75130,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76303,10 +75141,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76317,10 +75152,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76331,10 +75163,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76345,10 +75174,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76359,10 +75185,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76373,10 +75196,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76387,10 +75207,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76401,10 +75218,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76415,10 +75229,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76429,10 +75240,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76443,10 +75251,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76457,10 +75262,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76471,10 +75273,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76485,10 +75284,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76499,10 +75295,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76513,10 +75306,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76527,10 +75317,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76541,10 +75328,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76555,10 +75339,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76569,10 +75350,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76583,10 +75361,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76597,10 +75372,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76611,10 +75383,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76625,10 +75394,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76639,10 +75405,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76653,10 +75416,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76667,10 +75427,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76681,10 +75438,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76695,10 +75449,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76709,10 +75460,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76723,10 +75471,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76737,10 +75482,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76751,10 +75493,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76765,10 +75504,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76779,10 +75515,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76793,10 +75526,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76807,10 +75537,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76821,10 +75548,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76835,10 +75559,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76849,10 +75570,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76863,10 +75581,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76877,10 +75592,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 1,
-      "fehlendBeispiele": [
-        "0",
-        "anl-1"
-      ],
+      "fehlendBeispiele": ["0", "anl-1"],
       "vollstaendig": false
     },
     {
@@ -76891,10 +75603,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-6"
-      ],
+      "fehlendBeispiele": ["0", "art-6"],
       "vollstaendig": false
     },
     {
@@ -76905,10 +75614,7 @@
       "dbNormen": 47,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "anl-1",
-        "0"
-      ],
+      "fehlendBeispiele": ["anl-1", "0"],
       "vollstaendig": false
     },
     {
@@ -76919,10 +75625,7 @@
       "dbNormen": 241,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-3"
-      ],
+      "fehlendBeispiele": ["0", "art-3"],
       "vollstaendig": false
     },
     {
@@ -76933,10 +75636,7 @@
       "dbNormen": 103,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-5"
-      ],
+      "fehlendBeispiele": ["0", "art-5"],
       "vollstaendig": false
     },
     {
@@ -76947,10 +75647,7 @@
       "dbNormen": 60,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-79"],
       "vollstaendig": false
     },
     {
@@ -76961,10 +75658,7 @@
       "dbNormen": 70,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-1"
-      ],
+      "fehlendBeispiele": ["0", "art-1"],
       "vollstaendig": false
     },
     {
@@ -76975,10 +75669,7 @@
       "dbNormen": 38,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-2"
-      ],
+      "fehlendBeispiele": ["0", "art-2"],
       "vollstaendig": false
     },
     {
@@ -76989,10 +75680,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-79"],
       "vollstaendig": false
     },
     {
@@ -77003,10 +75691,7 @@
       "dbNormen": 74,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-79"
-      ],
+      "fehlendBeispiele": ["0", "art-79"],
       "vollstaendig": false
     },
     {
@@ -77017,10 +75702,7 @@
       "dbNormen": 61,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-10"
-      ],
+      "fehlendBeispiele": ["0", "art-10"],
       "vollstaendig": false
     },
     {
@@ -77031,10 +75713,7 @@
       "dbNormen": 31,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-24"
-      ],
+      "fehlendBeispiele": ["0", "art-24"],
       "vollstaendig": false
     },
     {
@@ -77045,10 +75724,7 @@
       "dbNormen": 87,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-5"
-      ],
+      "fehlendBeispiele": ["0", "art-5"],
       "vollstaendig": false
     },
     {
@@ -77059,10 +75735,7 @@
       "dbNormen": 44,
       "fehlendeNormen": 2,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0",
-        "art-5"
-      ],
+      "fehlendBeispiele": ["0", "art-5"],
       "vollstaendig": false
     },
     {
@@ -77073,9 +75746,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77086,9 +75757,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77099,9 +75768,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77112,9 +75779,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77125,9 +75790,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77138,9 +75801,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77151,9 +75812,7 @@
       "dbNormen": 30,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77164,9 +75823,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77177,9 +75834,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77190,9 +75845,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77203,9 +75856,7 @@
       "dbNormen": 24,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77216,9 +75867,7 @@
       "dbNormen": 32,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77229,9 +75878,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77242,9 +75889,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77255,9 +75900,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77268,9 +75911,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77281,9 +75922,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77294,9 +75933,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77307,9 +75944,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77320,9 +75955,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77333,9 +75966,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77346,9 +75977,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77359,9 +75988,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77372,9 +75999,7 @@
       "dbNormen": 64,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77385,9 +76010,7 @@
       "dbNormen": 38,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77398,9 +76021,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77411,9 +76032,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77424,9 +76043,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77437,9 +76054,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77450,9 +76065,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77463,9 +76076,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77476,9 +76087,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77489,9 +76098,7 @@
       "dbNormen": 38,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77502,9 +76109,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77515,9 +76120,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77528,9 +76131,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77541,9 +76142,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77554,9 +76153,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77567,9 +76164,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77580,9 +76175,7 @@
       "dbNormen": 21,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77593,9 +76186,7 @@
       "dbNormen": 18,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77606,9 +76197,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77619,9 +76208,7 @@
       "dbNormen": 4,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77632,9 +76219,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77645,9 +76230,7 @@
       "dbNormen": 5,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77658,9 +76241,7 @@
       "dbNormen": 18,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77671,9 +76252,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77684,9 +76263,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77697,9 +76274,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77710,9 +76285,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77723,9 +76296,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77736,9 +76307,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77749,9 +76318,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77762,9 +76329,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77775,9 +76340,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77788,9 +76351,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77801,9 +76362,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77814,9 +76373,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77827,9 +76384,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77840,9 +76395,7 @@
       "dbNormen": 4,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77853,9 +76406,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77866,9 +76417,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77879,9 +76428,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77892,9 +76439,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77905,9 +76450,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77918,9 +76461,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77931,9 +76472,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77944,9 +76483,7 @@
       "dbNormen": 19,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77957,9 +76494,7 @@
       "dbNormen": 28,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77970,9 +76505,7 @@
       "dbNormen": 21,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77983,9 +76516,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -77996,9 +76527,7 @@
       "dbNormen": 19,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78009,9 +76538,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78022,9 +76549,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78035,9 +76560,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78048,9 +76571,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78061,9 +76582,7 @@
       "dbNormen": 51,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78074,9 +76593,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78087,9 +76604,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78100,9 +76615,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78113,9 +76626,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78126,9 +76637,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78139,9 +76648,7 @@
       "dbNormen": 25,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78152,9 +76659,7 @@
       "dbNormen": 21,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78165,9 +76670,7 @@
       "dbNormen": 21,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78178,9 +76681,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78191,9 +76692,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78204,9 +76703,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78217,9 +76714,7 @@
       "dbNormen": 6,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78230,9 +76725,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78243,9 +76736,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78256,9 +76747,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78269,9 +76758,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78282,9 +76769,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78295,9 +76780,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78308,9 +76791,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78321,9 +76802,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78334,9 +76813,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78347,9 +76824,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78360,9 +76835,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78373,9 +76846,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78386,9 +76857,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78399,9 +76868,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78412,9 +76879,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78425,9 +76890,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78438,9 +76901,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78451,9 +76912,7 @@
       "dbNormen": 60,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78464,9 +76923,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 1,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78477,9 +76934,7 @@
       "dbNormen": 26,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78490,9 +76945,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78503,9 +76956,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78516,9 +76967,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78529,9 +76978,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78542,9 +76989,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78555,9 +77000,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78568,9 +77011,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78581,9 +77022,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78594,9 +77033,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78607,9 +77044,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78620,9 +77055,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78633,9 +77066,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78646,9 +77077,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78659,9 +77088,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78672,9 +77099,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78685,9 +77110,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78698,9 +77121,7 @@
       "dbNormen": 25,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78711,9 +77132,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78724,9 +77143,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78737,9 +77154,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78750,9 +77165,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78763,9 +77176,7 @@
       "dbNormen": 0,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78776,9 +77187,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78789,9 +77198,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78802,9 +77209,7 @@
       "dbNormen": 4,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78815,9 +77220,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78828,9 +77231,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78841,9 +77242,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78854,9 +77253,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78867,9 +77264,7 @@
       "dbNormen": 5,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78880,9 +77275,7 @@
       "dbNormen": 5,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78893,9 +77286,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78906,9 +77297,7 @@
       "dbNormen": 5,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78919,9 +77308,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78932,9 +77319,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78945,9 +77330,7 @@
       "dbNormen": 4,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78958,9 +77341,7 @@
       "dbNormen": 5,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78971,9 +77352,7 @@
       "dbNormen": 27,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78984,9 +77363,7 @@
       "dbNormen": 2,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -78997,9 +77374,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79010,9 +77385,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79023,9 +77396,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79036,9 +77407,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79049,9 +77418,7 @@
       "dbNormen": 10,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79062,9 +77429,7 @@
       "dbNormen": 9,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79075,9 +77440,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79088,9 +77451,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79101,9 +77462,7 @@
       "dbNormen": 3,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79114,9 +77473,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79127,9 +77484,7 @@
       "dbNormen": 17,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79140,9 +77495,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79153,9 +77506,7 @@
       "dbNormen": 15,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79166,9 +77517,7 @@
       "dbNormen": 5,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79179,9 +77528,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79192,9 +77539,7 @@
       "dbNormen": 18,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79205,9 +77550,7 @@
       "dbNormen": 7,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79218,9 +77561,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79231,9 +77572,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79244,9 +77583,7 @@
       "dbNormen": 87,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79257,9 +77594,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79270,9 +77605,7 @@
       "dbNormen": 11,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79283,9 +77616,7 @@
       "dbNormen": 12,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79296,9 +77627,7 @@
       "dbNormen": 46,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79309,9 +77638,7 @@
       "dbNormen": 13,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79322,9 +77649,7 @@
       "dbNormen": 22,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79335,9 +77660,7 @@
       "dbNormen": 96,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79348,9 +77671,7 @@
       "dbNormen": 16,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79361,9 +77682,7 @@
       "dbNormen": 14,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79374,9 +77693,7 @@
       "dbNormen": 49,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79387,9 +77704,7 @@
       "dbNormen": 78,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79400,9 +77715,7 @@
       "dbNormen": 8,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 6,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79413,9 +77726,7 @@
       "dbNormen": 61,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79426,9 +77737,7 @@
       "dbNormen": 107,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79439,9 +77748,7 @@
       "dbNormen": 62,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79452,9 +77759,7 @@
       "dbNormen": 80,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79465,9 +77770,7 @@
       "dbNormen": 136,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     },
     {
@@ -79478,9 +77781,7 @@
       "dbNormen": 18,
       "fehlendeNormen": 1,
       "ueberzaehligeNormen": 0,
-      "fehlendBeispiele": [
-        "0"
-      ],
+      "fehlendBeispiele": ["0"],
       "vollstaendig": false
     }
   ],

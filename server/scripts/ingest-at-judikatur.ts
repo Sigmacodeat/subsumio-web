@@ -48,45 +48,166 @@ const COURT_CONFIGS: Record<string, CourtConfig> = {
  *  Used as Suchworte to prioritize decisions referencing our statute inventory.
  *  Mapped from law-corpus/at/*.md filenames → RIS convention. */
 const NORM_SEARCH_TERMS: string[] = [
-  "ABGB", "AHG", "AktG", "ALVG", "AMG", "AngG", "ArbVG", "ARG",
-  "ASVG", "AsylG", "AußStrG", "AufenthG", "AuslBG", "AVG", "AVRAG",
-  "AWG", "AZG", "B-VG", "BAO", "BBG", "BDG", "BewG", "BRAG",
-  "BuAG", "BVerGG", "ChemG", "DSG", "E-GovG", "ECG", "EheG",
-  "Eiwog", "EO", "EPG", "EstG", "ForstG", "FPG", "GebG", "GewO",
-  "GlBG", "GmbHG", "GOG", "GRestG", "GukG", "GWG", "IO", "JGG",
-  "JN", "KAG", "KartG", "KSchG", "KStG", "MedienG", "MRG", "MSchG",
-  "N-G", "PatG", "PStG", "RAO", "SMG", "SPG", "StBG", "StGB",
-  "StPO", "StRegG", "StVO", "TilgG", "TKG", "TschG", "UGB", "UrhG",
-  "UStG", "UWG", "VBVG", "VKGG", "VStG", "VVG", "WaffG", "WEG",
-  "WRG", "ZPO", "ZustG",
+  "ABGB",
+  "AHG",
+  "AktG",
+  "ALVG",
+  "AMG",
+  "AngG",
+  "ArbVG",
+  "ARG",
+  "ASVG",
+  "AsylG",
+  "AußStrG",
+  "AufenthG",
+  "AuslBG",
+  "AVG",
+  "AVRAG",
+  "AWG",
+  "AZG",
+  "B-VG",
+  "BAO",
+  "BBG",
+  "BDG",
+  "BewG",
+  "BRAG",
+  "BuAG",
+  "BVerGG",
+  "ChemG",
+  "DSG",
+  "E-GovG",
+  "ECG",
+  "EheG",
+  "Eiwog",
+  "EO",
+  "EPG",
+  "EstG",
+  "ForstG",
+  "FPG",
+  "GebG",
+  "GewO",
+  "GlBG",
+  "GmbHG",
+  "GOG",
+  "GRestG",
+  "GukG",
+  "GWG",
+  "IO",
+  "JGG",
+  "JN",
+  "KAG",
+  "KartG",
+  "KSchG",
+  "KStG",
+  "MedienG",
+  "MRG",
+  "MSchG",
+  "N-G",
+  "PatG",
+  "PStG",
+  "RAO",
+  "SMG",
+  "SPG",
+  "StBG",
+  "StGB",
+  "StPO",
+  "StRegG",
+  "StVO",
+  "TilgG",
+  "TKG",
+  "TschG",
+  "UGB",
+  "UrhG",
+  "UStG",
+  "UWG",
+  "VBVG",
+  "VKGG",
+  "VStG",
+  "VVG",
+  "WaffG",
+  "WEG",
+  "WRG",
+  "ZPO",
+  "ZustG",
 ];
 
 /** Topic-based search queries for broader coverage (OGH only). */
 const TOPIC_QUERIES: string[] = [
-  "Amtshaftung", "Schadensersatz", "Vertragsrecht", "Sachbeschädigung",
-  "Betrug", "Körperverletzung", "Zivilverfahren", "Exekution",
-  "Kündigung", "Datenschutz", "Gesellschaftsrecht", "Erbrecht",
-  "Familienrecht", "Mietrecht", "Insolvenz", "Wettbewerbsrecht",
-  "Eigentum", "Herausgabe", "Unterhalt", "Sorgerecht",
-  "Kaufvertrag", "Werkvertrag", "Schadensersatzpflicht", "Fahrlässigkeit",
-  "Verjährung", "Rücktritt", "Anfechtung", "Stellvertretung",
-  "Bankrecht", "Versicherungsrecht", "Arbeitsrecht", "Urheberrecht",
+  "Amtshaftung",
+  "Schadensersatz",
+  "Vertragsrecht",
+  "Sachbeschädigung",
+  "Betrug",
+  "Körperverletzung",
+  "Zivilverfahren",
+  "Exekution",
+  "Kündigung",
+  "Datenschutz",
+  "Gesellschaftsrecht",
+  "Erbrecht",
+  "Familienrecht",
+  "Mietrecht",
+  "Insolvenz",
+  "Wettbewerbsrecht",
+  "Eigentum",
+  "Herausgabe",
+  "Unterhalt",
+  "Sorgerecht",
+  "Kaufvertrag",
+  "Werkvertrag",
+  "Schadensersatzpflicht",
+  "Fahrlässigkeit",
+  "Verjährung",
+  "Rücktritt",
+  "Anfechtung",
+  "Stellvertretung",
+  "Bankrecht",
+  "Versicherungsrecht",
+  "Arbeitsrecht",
+  "Urheberrecht",
   // Expanded OGH-specific topics
-  "Einstweilige Verfügung", "Schiedsgericht", "Schadensersatzanspruch",
-  "Gewährleistungsanspruch", "Klagsabweisung", "Berufungsentscheidung",
-  "Revisionsentscheidung", "Kostenersatz", "Zinsen",
-  "Sachlegitimation", "Rechtsweg", "Unzulässigkeit",
-  "Beweiswürdigung", "Beweisantrag", "Parteienverkehr",
-  "Grundbuch", "Eigentumsvorbehalt", "Pfandrecht",
-  "Schadensersatzhaftung", "Vertretungsmacht", "Vollmacht",
-  "Nichtigkeit", "Rechtsmissbrauch", "Treu und Glauben",
-  "Kaufgewährleistung", "Mangel", "Lieferungsverzug",
-  "Werkstörung", "Baumangel", "Kündigungsgrund",
-  "Fristsetzung", "Nachfrist", "Rücktrittsrecht",
-  "Schadensersatz wegen Verzugs", "Nichterfüllung",
-  "Deliktsfähigkeit", "Verschulden", "Kausalität",
-  "Adäquanz", "Schutzzweckzusammenhang", "Rechtswidrigkeit",
-]
+  "Einstweilige Verfügung",
+  "Schiedsgericht",
+  "Schadensersatzanspruch",
+  "Gewährleistungsanspruch",
+  "Klagsabweisung",
+  "Berufungsentscheidung",
+  "Revisionsentscheidung",
+  "Kostenersatz",
+  "Zinsen",
+  "Sachlegitimation",
+  "Rechtsweg",
+  "Unzulässigkeit",
+  "Beweiswürdigung",
+  "Beweisantrag",
+  "Parteienverkehr",
+  "Grundbuch",
+  "Eigentumsvorbehalt",
+  "Pfandrecht",
+  "Schadensersatzhaftung",
+  "Vertretungsmacht",
+  "Vollmacht",
+  "Nichtigkeit",
+  "Rechtsmissbrauch",
+  "Treu und Glauben",
+  "Kaufgewährleistung",
+  "Mangel",
+  "Lieferungsverzug",
+  "Werkstörung",
+  "Baumangel",
+  "Kündigungsgrund",
+  "Fristsetzung",
+  "Nachfrist",
+  "Rücktrittsrecht",
+  "Schadensersatz wegen Verzugs",
+  "Nichterfüllung",
+  "Deliktsfähigkeit",
+  "Verschulden",
+  "Kausalität",
+  "Adäquanz",
+  "Schutzzweckzusammenhang",
+  "Rechtswidrigkeit",
+];
 
 interface JudikaturDoc {
   id: string;
@@ -101,10 +222,7 @@ interface JudikaturDoc {
   title: string;
 }
 
-async function fetchWithRetry(
-  url: string,
-  maxRetries: number = MAX_RETRIES
-): Promise<Response> {
+async function fetchWithRetry(url: string, maxRetries: number = MAX_RETRIES): Promise<Response> {
   let lastErr: Error | null = null;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -114,7 +232,9 @@ async function fetchWithRetry(
       });
       if (res.status === 429 || res.status >= 500) {
         const backoff = RETRY_BASE_MS * Math.pow(2, attempt);
-        console.warn(`  ⚠ HTTP ${res.status}, retrying in ${backoff}ms (attempt ${attempt + 1}/${maxRetries})`);
+        console.warn(
+          `  ⚠ HTTP ${res.status}, retrying in ${backoff}ms (attempt ${attempt + 1}/${maxRetries})`
+        );
         await new Promise((r) => setTimeout(r, backoff));
         continue;
       }
@@ -240,9 +360,11 @@ async function main() {
   }
 
   const outDirIdx = args.indexOf("--out");
-  const outDir = outDirIdx >= 0 ? args[outDirIdx + 1] : join(import.meta.dir, "..", "law-corpus", court.outDir);
+  const outDir =
+    outDirIdx >= 0 ? args[outDirIdx + 1] : join(import.meta.dir, "..", "law-corpus", court.outDir);
   const targetIdx = args.indexOf("--target");
-  const target = targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : (courtKey === "ogh" ? DEFAULT_TARGET : 200);
+  const target =
+    targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : courtKey === "ogh" ? DEFAULT_TARGET : 200;
   const dateFromIdx = args.indexOf("--from");
   const dateFrom = dateFromIdx >= 0 ? args[dateFromIdx + 1] : "2005-01-01";
   const skipText = args.includes("--skip-text");
@@ -273,7 +395,9 @@ async function main() {
   console.log(`\n═══════════════════════════════════════════════════════════`);
   console.log(`  Subsumio — ${court.label} Judikatur Bulk Import`);
   console.log(`  Target: ≥${target} decisions | Date: ${fromYear}→${toYear}`);
-  console.log(`  Strategy: ${searchTerms.length} norms × ${years.length} years = ${searchTerms.length * years.length} queries`);
+  console.log(
+    `  Strategy: ${searchTerms.length} norms × ${years.length} years = ${searchTerms.length * years.length} queries`
+  );
   console.log(`  Per-norm-year cap: ${perNormYearLimit} | Output: ${outDir}`);
   console.log(`═══════════════════════════════════════════════════════════\n`);
 
@@ -351,7 +475,9 @@ async function main() {
 
           if (totalWritten % 100 === 0 || totalWritten <= 5) {
             const textPreview = fullText ? `${fullText.length} chars` : "no text";
-            console.log(`  [${totalWritten}] ${doc.court} ${doc.az} (${slugDate}) — ${textPreview}`);
+            console.log(
+              `  [${totalWritten}] ${doc.court} ${doc.az} (${slugDate}) — ${textPreview}`
+            );
           }
 
           await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
@@ -362,7 +488,9 @@ async function main() {
       }
 
       if (yearCount > 0) {
-        console.log(`  ${term}/${year}: +${yearCount} (norm total: ${normTotal}, grand total: ${totalFetched})`);
+        console.log(
+          `  ${term}/${year}: +${yearCount} (norm total: ${normTotal}, grand total: ${totalFetched})`
+        );
       }
       if (totalFetched < target) await new Promise((r) => setTimeout(r, 100));
     }
@@ -397,7 +525,10 @@ async function main() {
           const item = mapRisReference(ref, new Date());
           if (!item) continue;
           const id = item.id.replace(/^ris-/, "");
-          if (seen.has(id)) { totalSkipped++; continue; }
+          if (seen.has(id)) {
+            totalSkipped++;
+            continue;
+          }
           seen.add(id);
           totalFetched++;
           topicCount++;
@@ -409,16 +540,26 @@ async function main() {
           }
 
           const doc: JudikaturDoc = {
-            id, court: item.court, date: item.date, az: item.az ?? "",
-            ecli: item.ecli, legalArea: item.legalArea, keywords: item.keywords,
-            text: fullText, url: item.url, title: item.title,
+            id,
+            court: item.court,
+            date: item.date,
+            az: item.az ?? "",
+            ecli: item.ecli,
+            legalArea: item.legalArea,
+            keywords: item.keywords,
+            text: fullText,
+            url: item.url,
+            title: item.title,
           };
 
           const slugDate = doc.date.split("T")[0];
           const slugAz = slugify(doc.az || id);
           const filename = `${slugDate}-${slugAz}.md`;
           const filepath = join(outDir, filename);
-          if (existsSync(filepath)) { totalSkipped++; continue; }
+          if (existsSync(filepath)) {
+            totalSkipped++;
+            continue;
+          }
 
           writeFileSync(filepath, buildMarkdown(doc, courtKey), "utf-8");
           totalWritten++;

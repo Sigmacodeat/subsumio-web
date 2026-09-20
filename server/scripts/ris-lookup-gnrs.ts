@@ -37,9 +37,12 @@ for (const title of searches) {
   const url = `${RIS_API}?Applikation=BrKons&Titel=${encodeURIComponent(title)}&DokumenteProSeite=OneHundred&Seitennummer=1`;
   try {
     const res = await fetch(url, { headers: RIS_UA });
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     let refs = data?.OgdSearchResult?.OgdDocumentResults?.OgdDocumentReference;
-    if (!refs) { console.log(`${title}: NO RESULTS`); continue; }
+    if (!refs) {
+      console.log(`${title}: NO RESULTS`);
+      continue;
+    }
     if (!Array.isArray(refs)) refs = [refs];
     const byGnr = new Map<string, string>();
     for (const ref of refs) {
@@ -56,7 +59,9 @@ for (const title of searches) {
     if (best) {
       console.log(`${title.padEnd(45)} -> Gnr: ${best[0]}, "${best[1]}"`);
     } else {
-      console.log(`${title.padEnd(45)} -> ${entries.length} laws, first: ${entries[0]?.[0] || "?"} "${(entries[0]?.[1] || "").slice(0,60)}"`);
+      console.log(
+        `${title.padEnd(45)} -> ${entries.length} laws, first: ${entries[0]?.[0] || "?"} "${(entries[0]?.[1] || "").slice(0, 60)}"`
+      );
     }
   } catch (e: any) {
     console.log(`${title}: ERROR ${e}`);

@@ -63,7 +63,9 @@ export function CorpusProtokoll() {
   const query = useQuery({
     queryKey: ["corpus-ingest-log", params.toString()],
     queryFn: async () => {
-      const r = await fetch(`/api/admin/corpus-ingest-log?${params}`, { credentials: "same-origin" });
+      const r = await fetch(`/api/admin/corpus-ingest-log?${params}`, {
+        credentials: "same-origin",
+      });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return ((await r.json()) as { data: IngestLogPage }).data;
     },
@@ -121,7 +123,12 @@ export function CorpusProtokoll() {
             <label htmlFor="log-day" className="text-xs text-[color:var(--ds-text-muted)]">
               Tag
             </label>
-            <Input id="log-day" type="date" value={day} onChange={(e) => reset(() => setDay(e.target.value))} />
+            <Input
+              id="log-day"
+              type="date"
+              value={day}
+              onChange={(e) => reset(() => setDay(e.target.value))}
+            />
           </div>
           <form
             className="space-y-1"
@@ -164,7 +171,9 @@ export function CorpusProtokoll() {
               Protokoll konnte nicht geladen werden.
             </p>
           ) : data && data.entries.length === 0 ? (
-            <p className="p-6 text-sm text-[color:var(--ds-text-muted)]">Keine Einträge für diese Auswahl.</p>
+            <p className="p-6 text-sm text-[color:var(--ds-text-muted)]">
+              Keine Einträge für diese Auswahl.
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -183,20 +192,29 @@ export function CorpusProtokoll() {
                     const ris = officialRisUrl(e.risUrl);
                     return (
                       <TableRow key={e.id}>
-                        <TableCell className="whitespace-nowrap text-xs tabular-nums">
-                          {new Date(e.occurredAt).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "medium" })}
+                        <TableCell className="text-xs whitespace-nowrap tabular-nums">
+                          {new Date(e.occurredAt).toLocaleString("de-AT", {
+                            dateStyle: "short",
+                            timeStyle: "medium",
+                          })}
                         </TableCell>
                         <TableCell className="text-xs">{e.sourceLabel}</TableCell>
                         <TableCell>
                           <div className="max-w-[28rem] truncate text-sm" title={e.title ?? e.slug}>
                             {e.title ?? e.slug}
                           </div>
-                          <div className="text-xs text-[color:var(--ds-text-subtle)]">{e.docId ?? "—"}</div>
+                          <div className="text-xs text-[color:var(--ds-text-subtle)]">
+                            {e.docId ?? "—"}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={ACTION_STYLE[e.action]}>{INGEST_ACTION_LABELS[e.action]}</Badge>
+                          <Badge className={ACTION_STYLE[e.action]}>
+                            {INGEST_ACTION_LABELS[e.action]}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-[color:var(--ds-text-muted)]">{e.origin}</TableCell>
+                        <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
+                          {e.origin}
+                        </TableCell>
                         <TableCell>
                           {ris ? (
                             <a
@@ -229,7 +247,7 @@ export function CorpusProtokoll() {
               >
                 Zurück
               </Button>
-              <span className="text-xs tabular-nums text-[color:var(--ds-text-muted)]">
+              <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
                 Seite {pageNo} von {pages}
               </span>
               <Button

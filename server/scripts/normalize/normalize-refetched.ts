@@ -15,9 +15,12 @@ import { createHash } from "crypto";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
-const LOGS = args.find((a) => !a.startsWith("--")) ?? "/tmp/refetch-defective-normen.jsonl,/tmp/refetch-defective-landesrecht.jsonl";
+const LOGS =
+  args.find((a) => !a.startsWith("--")) ??
+  "/tmp/refetch-defective-normen.jsonl,/tmp/refetch-defective-landesrecht.jsonl";
 
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
 const OUT_ROOT = process.env.NORMALIZED_ROOT ?? join(CORPUS_ROOT, "_normalized");
 
 const hash16 = (s: string) => createHash("sha256").update(s, "utf8").digest("hex").slice(0, 16);
@@ -92,7 +95,11 @@ function parseRaw(text: string): Raw {
   return { fm, list, body: text.slice(m[0].length) };
 }
 
-const clean = (v?: string) => (v ?? "").trim().replace(/^["']|["']$/g, "").replace(/\s+/g, " ");
+const clean = (v?: string) =>
+  (v ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, " ");
 
 // ── normalizeBody (identisch zu normalize-corpus.ts) ──
 function normalizeBody(body: string): string {
@@ -106,14 +113,14 @@ function normalizeBody(body: string): string {
   t = t.replace(/[ \t]+\n/g, "\n");
   // 5. Section alias normalization (## Norm → ## Norm)
   const SECTION_ALIASES: Record<string, string> = {
-    "norm": "Norm",
-    "text": "Text",
-    "spruch": "Spruch",
-    "entscheidungsgründe": "Entscheidungsgründe",
-    "entscheidungssatz": "Entscheidungssatz",
-    "begründung": "Begründung",
-    "tatbestand": "Tatbestand",
-    "tenor": "Tenor",
+    norm: "Norm",
+    text: "Text",
+    spruch: "Spruch",
+    entscheidungsgründe: "Entscheidungsgründe",
+    entscheidungssatz: "Entscheidungssatz",
+    begründung: "Begründung",
+    tatbestand: "Tatbestand",
+    tenor: "Tenor",
   };
   const lines = t.split("\n");
   for (let i = 0; i < lines.length; i++) {
@@ -123,12 +130,22 @@ function normalizeBody(body: string): string {
     const canon = SECTION_ALIASES[key];
     if (canon) lines[i] = `${m[1]} ${canon}`;
   }
-  return lines.join("\n").replace(/\n{4,}/g, "\n\n\n").trimEnd() + "\n";
+  return (
+    lines
+      .join("\n")
+      .replace(/\n{4,}/g, "\n\n\n")
+      .trimEnd() + "\n"
+  );
 }
 
 function assertBodyUnchanged(before: string, after: string): string | null {
   const textOf = (s: string) =>
-    s.split("\n").filter((l) => !/^#{1,6}\s/.test(l)).join("\n").replace(/\s+/g, " ").trim();
+    s
+      .split("\n")
+      .filter((l) => !/^#{1,6}\s/.test(l))
+      .join("\n")
+      .replace(/\s+/g, " ")
+      .trim();
   const a = textOf(before);
   const b = textOf(after);
   if (a === b) return null;
@@ -228,7 +245,10 @@ function main() {
   console.log(`${DRY ? "[DRY-RUN — nichts wird geschrieben]" : ""}`);
   console.log("─".repeat(78));
 
-  let ok = 0, rejected = 0, notFound = 0, skipped = 0;
+  let ok = 0,
+    rejected = 0,
+    notFound = 0,
+    skipped = 0;
   const issues: Record<string, number> = {};
 
   for (let i = 0; i < entries.length; i++) {
@@ -245,8 +265,12 @@ function main() {
     }
 
     let text: string;
-    try { text = readFileSync(paths.raw, "utf8"); }
-    catch { notFound++; continue; }
+    try {
+      text = readFileSync(paths.raw, "utf8");
+    } catch {
+      notFound++;
+      continue;
+    }
 
     const raw = parseRaw(text);
     const newBody = normalizeBody(raw.body);
@@ -275,15 +299,21 @@ function main() {
     }
 
     if ((i + 1) % 500 === 0) {
-      console.log(`  ${i + 1}/${entries.length}  ok=${ok} rejected=${rejected} notFound=${notFound} skipped=${skipped}`);
+      console.log(
+        `  ${i + 1}/${entries.length}  ok=${ok} rejected=${rejected} notFound=${notFound} skipped=${skipped}`
+      );
     }
   }
 
   console.log("─".repeat(78));
-  console.log(`GESAMT: ${ok}/${entries.length} normalisiert, ${rejected} abgelehnt, ${notFound} nicht gefunden, ${skipped} übersprungen`);
+  console.log(
+    `GESAMT: ${ok}/${entries.length} normalisiert, ${rejected} abgelehnt, ${notFound} nicht gefunden, ${skipped} übersprungen`
+  );
   if (Object.keys(issues).length) {
     console.log("\nAblehnungsgründe:");
-    for (const [k, n] of Object.entries(issues).sort((a, b) => b[1] - a[1]).slice(0, 20)) {
+    for (const [k, n] of Object.entries(issues)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)) {
       console.log(`  ${String(n).padStart(7)}  ${k}`);
     }
   }

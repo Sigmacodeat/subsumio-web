@@ -163,7 +163,9 @@ function parseRssXml(xml: string): Array<{
   for (const item of items) {
     const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
     const linkMatch = item.match(/<link>([\s\S]*?)<\/link>/i);
-    const descMatch = item.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
+    const descMatch = item.match(
+      /<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i
+    );
     const dateMatch = item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
     const guidMatch = item.match(/<guid[^>]*>([\s\S]*?)<\/guid>/i);
 
@@ -180,13 +182,15 @@ function parseRssXml(xml: string): Array<{
 }
 
 /** Fetch RSS feed and parse entries */
-async function fetchFeed(url: string): Promise<Array<{
-  title: string;
-  link: string;
-  description: string;
-  pubDate: string;
-  guid?: string;
-}>> {
+async function fetchFeed(url: string): Promise<
+  Array<{
+    title: string;
+    link: string;
+    description: string;
+    pubDate: string;
+    guid?: string;
+  }>
+> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)" },
@@ -295,9 +299,7 @@ async function main() {
       totalWritten++;
 
       const textPreview = fullText ? `${fullText.length} chars` : "no text";
-      console.log(
-        `  [${totalWritten}] BGer ${az || "(no Az)"} (${slugDate}) — ${textPreview}`
-      );
+      console.log(`  [${totalWritten}] BGer ${az || "(no Az)"} (${slugDate}) — ${textPreview}`);
 
       // Rate limit: 300ms between detail fetches
       await new Promise((r) => setTimeout(r, 300));

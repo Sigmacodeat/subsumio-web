@@ -22,15 +22,19 @@ import { $ } from "bun";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
-const SOURCE = args.find((a) => a.startsWith("--source="))?.split("=")[1]
-  ?? args[args.indexOf("--source") + 1];
+const SOURCE =
+  args.find((a) => a.startsWith("--source="))?.split("=")[1] ?? args[args.indexOf("--source") + 1];
 const LIMIT = parseInt(args.find((a) => a.startsWith("--limit="))?.split("=")[1] ?? "0", 10);
 
 const CORPUS_ROOT = `${process.cwd()}/law-corpus`;
 
 // ── DB ─────────────────────────────────────────────────────────────────
-const DB_URL = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
+const DB_URL = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
 const URL_ = DB_URL.replace(/\/[^/?]+(\?|$)/, "/subsumio_law_v2$1");
 
 // ── Source → Korpus-Verzeichnis ────────────────────────────────────────
@@ -94,40 +98,70 @@ function cleanPdfArtifacts(text: string): { cleaned: string; removed: number } {
   result = result.replace(RE_DUP_CITY, "$1");
 
   // 2. "www.ris.bka.gv.atSeite X von Y" (zusammengeklebt)
-  result = result.replace(RE_RIS_SEITE, () => { removed++; return ""; });
+  result = result.replace(RE_RIS_SEITE, () => {
+    removed++;
+    return "";
+  });
 
   // 3. "www.ris.bka.gv.at" alleine
-  result = result.replace(RE_RIS_URL, () => { removed++; return ""; });
+  result = result.replace(RE_RIS_URL, () => {
+    removed++;
+    return "";
+  });
 
   // 4. "Seite X von Y" alleine
-  result = result.replace(RE_SEITE, () => { removed++; return ""; });
+  result = result.replace(RE_SEITE, () => {
+    removed++;
+    return "";
+  });
 
   // 5. "1 von 2" (kurze Form am Zeilenanfang)
-  result = result.replace(RE_SHORT_PAGE, () => { removed++; return ""; });
+  result = result.replace(RE_SHORT_PAGE, () => {
+    removed++;
+    return "";
+  });
 
   // 6. "--- Page N ---" Marker
-  result = result.replace(RE_PAGE_MARKER, () => { removed++; return ""; });
+  result = result.replace(RE_PAGE_MARKER, () => {
+    removed++;
+    return "";
+  });
 
   // 7. "Bundesrecht konsolidiert"
-  result = result.replace(RE_BUNDESRECHT, () => { removed++; return ""; });
+  result = result.replace(RE_BUNDESRECHT, () => {
+    removed++;
+    return "";
+  });
 
   // 8. "Gesamte Rechtsvorschrift für ..." Titelzeile
-  result = result.replace(RE_GESAMTE, () => { removed++; return ""; });
+  result = result.replace(RE_GESAMTE, () => {
+    removed++;
+    return "";
+  });
 
   // 9. "VERORDNUNGSBLATT DER BEZIRKSHAUPTMANNSCHAFT <ORT>"
-  result = result.replace(RE_VERORDNUNGSBLATT, () => { removed++; return ""; });
+  result = result.replace(RE_VERORDNUNGSBLATT, () => {
+    removed++;
+    return "";
+  });
 
   // 10. "Jahrgang XXXX Ausgegeben am ..."
-  result = result.replace(RE_JAHRGANG, () => { removed++; return ""; });
+  result = result.replace(RE_JAHRGANG, () => {
+    removed++;
+    return "";
+  });
 
   // 11. DVR/UID/Briefkopf
-  result = result.replace(RE_BRIEFKOPF, () => { removed++; return ""; });
+  result = result.replace(RE_BRIEFKOPF, () => {
+    removed++;
+    return "";
+  });
 
   // Aufräumen: leere Zeilen und überflüssige Whitespaces
   result = result
-    .replace(/[ \t]+\n/g, "\n")  // trailing whitespace
-    .replace(/\n{3,}/g, "\n\n")  // max 2 aufeinanderfolgende newlines
-    .replace(/^\s+/, "")         // leading whitespace
+    .replace(/[ \t]+\n/g, "\n") // trailing whitespace
+    .replace(/\n{3,}/g, "\n\n") // max 2 aufeinanderfolgende newlines
+    .replace(/^\s+/, "") // leading whitespace
     .trim();
 
   return { cleaned: result, removed };
@@ -164,28 +198,38 @@ async function main() {
 
   console.log(`Gefunden: ${entries.length} Defekte\n`);
 
-  let cleaned = 0, unchanged = 0, failed = 0, notFound = 0;
+  let cleaned = 0,
+    unchanged = 0,
+    failed = 0,
+    notFound = 0;
   const logPath = "/tmp/clean-pdf-artifacts.jsonl";
   if (!DRY) writeFileSync(logPath, "");
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const dir = SOURCE_DIR[entry.sourceId];
-    if (!dir) { failed++; continue; }
+    if (!dir) {
+      failed++;
+      continue;
+    }
 
     const slugRel = entry.slug.replace("legal/statutes/at/", "").replace("legal/judikatur/at/", "");
     const filePath = `${CORPUS_ROOT}/${dir}/${slugRel}.md`;
 
     if (!existsSync(filePath)) {
       notFound++;
-      if (!DRY) appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "not_found" }) + "\n");
+      if (!DRY)
+        appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "not_found" }) + "\n");
       continue;
     }
 
     try {
       const content = readFileSync(filePath, "utf8");
       const fmM = content.match(/^---\n([\s\S]*?)\n---\n?/);
-      if (!fmM) { failed++; continue; }
+      if (!fmM) {
+        failed++;
+        continue;
+      }
 
       const fm = fmM[1];
       const body = content.slice(fmM[0].length);
@@ -194,7 +238,11 @@ async function main() {
 
       if (removed === 0) {
         unchanged++;
-        if (!DRY) appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "no_artifacts" }) + "\n");
+        if (!DRY)
+          appendFileSync(
+            logPath,
+            JSON.stringify({ slug: entry.slug, status: "no_artifacts" }) + "\n"
+          );
         continue;
       }
 
@@ -205,7 +253,8 @@ async function main() {
 
       if (oldHash === newHash) {
         unchanged++;
-        if (!DRY) appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "unchanged" }) + "\n");
+        if (!DRY)
+          appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "unchanged" }) + "\n");
         continue;
       }
 
@@ -223,15 +272,26 @@ async function main() {
       writeFileSync(filePath, newContent);
 
       cleaned++;
-      if (!DRY) appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "cleaned", removed, oldHash, newHash }) + "\n");
+      if (!DRY)
+        appendFileSync(
+          logPath,
+          JSON.stringify({ slug: entry.slug, status: "cleaned", removed, oldHash, newHash }) + "\n"
+        );
     } catch (e) {
       failed++;
-      if (!DRY) appendFileSync(logPath, JSON.stringify({ slug: entry.slug, status: "error", error: String(e).slice(0, 200) }) + "\n");
+      if (!DRY)
+        appendFileSync(
+          logPath,
+          JSON.stringify({ slug: entry.slug, status: "error", error: String(e).slice(0, 200) }) +
+            "\n"
+        );
     }
 
     if ((i + 1) % 500 === 0) {
       const pct = ((100 * (i + 1)) / entries.length).toFixed(1);
-      console.log(`  ${i + 1}/${entries.length} (${pct}%)  cleaned=${cleaned} unchanged=${unchanged} failed=${failed} notFound=${notFound}`);
+      console.log(
+        `  ${i + 1}/${entries.length} (${pct}%)  cleaned=${cleaned} unchanged=${unchanged} failed=${failed} notFound=${notFound}`
+      );
     }
   }
 

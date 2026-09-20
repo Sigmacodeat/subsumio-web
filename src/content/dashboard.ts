@@ -1328,7 +1328,10 @@ export const D = {
 
   // ── Invoicing page ──
   "inv.title": { de: "Rechnungen", en: "Invoices" },
-  "inv.desc": { de: "Honorarnoten erstellen, versenden und Zahlungseingänge verfolgen.", en: "Billing & PDF export" },
+  "inv.desc": {
+    de: "Honorarnoten erstellen, versenden und Zahlungseingänge verfolgen.",
+    en: "Billing & PDF export",
+  },
   "inv.cancel": { de: "Abbrechen", en: "Cancel" },
   "inv.create": { de: "Rechnung erstellen", en: "Create invoice" },
   "inv.outstanding": { de: "Offen", en: "Outstanding" },
@@ -4536,7 +4539,10 @@ export const D = {
   },
   "ocr.retry": { de: "Erneut versuchen", en: "Retry" },
   "ocr.retry_success": { de: "Texterkennung neu gestartet", en: "OCR restarted" },
-  "ocr.retry_error": { de: "Texterkennung konnte nicht neu gestartet werden", en: "OCR retry failed" },
+  "ocr.retry_error": {
+    de: "Texterkennung konnte nicht neu gestartet werden",
+    en: "OCR retry failed",
+  },
   "vault.parts": { de: "Teile", en: "parts" },
   "vault.split_parent": { de: "Aufgeteilt", en: "Split parent" },
   "vault.part_of": { de: "Teil von", en: "Part of" },
@@ -5587,7 +5593,10 @@ export const D = {
   "strategy.draft_outline": { de: "Gliederung", en: "Outline" },
   "strategy.draft_arguments": { de: "Schlüsselargumente", en: "Key arguments" },
   "strategy.btn_copy": { de: "Kopieren", en: "Copy" },
-  "strategy.btn_open_drafting": { de: "Im Schriftsatz-Editor öffnen", en: "Open in drafting editor" },
+  "strategy.btn_open_drafting": {
+    de: "Im Schriftsatz-Editor öffnen",
+    en: "Open in drafting editor",
+  },
   "strategy.btn_back_strategy": { de: "Zurück zur Strategie", en: "Back to strategy" },
   "strategy.no_drafts": {
     de: "Keine Entwürfe generiert. Bitte erneut versuchen.",
@@ -8215,7 +8224,10 @@ export const D = {
     en: "Daily firm briefing — deadlines, open tasks, recommendations",
   },
   "reports.rundown_latest": { de: "Neuestes Tagesbriefing", en: "Latest Rundown" },
-  "reports.rundown_none": { de: "Noch kein Tagesbriefing erstellt.", en: "No Rundown generated yet." },
+  "reports.rundown_none": {
+    de: "Noch kein Tagesbriefing erstellt.",
+    en: "No Rundown generated yet.",
+  },
   "reports.rundown_auto": {
     de: "Automatisch täglich um 7:00 Uhr",
     en: "Automatically daily at 7:00 AM",

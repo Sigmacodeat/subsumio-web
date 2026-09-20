@@ -135,11 +135,7 @@ export default function AnonymizePage() {
               {result.count} {t("anonymize.stats_replacements")}:
             </span>
             {Object.entries(result.stats).map(([type, n]) => (
-              <Badge
-                key={type}
-                variant="default"
-                className="text-xs"
-              >
+              <Badge key={type} variant="default" className="text-xs">
                 {TYPE_LABELS[type] ? t(TYPE_LABELS[type]) : type}: {n}
               </Badge>
             ))}

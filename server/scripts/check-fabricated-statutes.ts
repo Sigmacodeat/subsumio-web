@@ -95,11 +95,13 @@ function main() {
       } else {
         const url = meta.source_url ?? meta.source ?? "";
         if (!/^https?:\/\//.test(url)) reasons.push(`source_url ist keine URL (${url || "fehlt"})`);
-        else if (official && !official.test(url)) reasons.push(`source_url zeigt nicht auf die amtliche Quelle (${url.slice(0, 60)})`);
+        else if (official && !official.test(url))
+          reasons.push(`source_url zeigt nicht auf die amtliche Quelle (${url.slice(0, 60)})`);
       }
 
       if (reasons.length > 0) {
-        if (/\bTODO\b|\blorem ipsum\b/i.test(raw)) reasons.push("zusätzlich: TODO/Platzhalter im Text");
+        if (/\bTODO\b|\blorem ipsum\b/i.test(raw))
+          reasons.push("zusätzlich: TODO/Platzhalter im Text");
         if (meta?.gesetzesnummer) reasons.push(`Gesetzesnummer laut Datei: ${meta.gesetzesnummer}`);
         findings.push({ dir, file: f, bytes: raw.length, reasons });
         hits++;
@@ -107,7 +109,9 @@ function main() {
       checked++;
     }
 
-    console.log(`  ${dir.padEnd(22)} ${String(files.length).padStart(6)} Dateien · ${hits > 0 ? `${hits} AUFFÄLLIG` : "sauber"}`);
+    console.log(
+      `  ${dir.padEnd(22)} ${String(files.length).padStart(6)} Dateien · ${hits > 0 ? `${hits} AUFFÄLLIG` : "sauber"}`
+    );
   }
 
   if (findings.length > 0) {

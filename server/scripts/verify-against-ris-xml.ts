@@ -26,7 +26,10 @@ import { $ } from "bun";
 import { risXmlToText } from "./backfill-utils";
 
 const args = process.argv.slice(2);
-const arg = (n: string, d?: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
+const arg = (n: string, d?: string) => {
+  const i = args.indexOf(n);
+  return i >= 0 ? args[i + 1] : d;
+};
 const SOURCE = arg("--source", "law-at-normen")!;
 const LIMIT = parseInt(arg("--limit", "200")!, 10);
 const RATE_MS = parseInt(arg("--rate-ms", "700")!, 10);
@@ -34,17 +37,29 @@ const DB = arg("--db", "subsumio_law_v2")!;
 /** Ab welchem Fehlbetrag gilt ein Dokument als unvollständig (Anteil). */
 const SCHWELLE = parseFloat(arg("--schwelle", "0.10")!);
 
-if (!/^law-at[a-z-]*$/.test(SOURCE)) { console.error("Ungültige --source"); process.exit(1); }
+if (!/^law-at[a-z-]*$/.test(SOURCE)) {
+  console.error("Ungültige --source");
+  process.exit(1);
+}
 
-const base = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
+const base = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
 const URL_ = base.replace(/\/[^/?]+(\?|$)/, `/${DB}$1`);
 const UA = "subsumio-law-corpus/1.0 (corpus verification; contact: hello@subsum.io)";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Substanztext: ohne Überschriften, Leerraum vereinheitlicht. */
 const substanz = (s: string) =>
-  s.split("\n").filter((l) => !/^#{1,6}\s/.test(l)).join(" ").replace(/\s+/g, " ").trim();
+  s
+    .split("\n")
+    .filter((l) => !/^#{1,6}\s/.test(l))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 /**
  * Den RIS-Metadatenblock aus dem Quelltext entfernen.
@@ -71,7 +86,11 @@ function ohneMetadaten(s: string): string {
   return t;
 }
 
-interface Doc { slug: string; xmlUrl: string; text: string }
+interface Doc {
+  slug: string;
+  xmlUrl: string;
+  text: string;
+}
 
 async function main() {
   // Nur Dokumente mit XML-Quelle — sonst ist der Vergleich sinnlos.
@@ -105,8 +124,12 @@ async function main() {
   console.log(`Schwelle:   ${(SCHWELLE * 100).toFixed(0)} % Fehlbetrag\n`);
   if (docs.length === 0) return;
 
-  let geprueft = 0, unvollstaendig = 0, nichtErreichbar = 0, laenger = 0;
-  const funde: { slug: string; unser: number; quelle: number; fehlt: number; beispiel: string }[] = [];
+  let geprueft = 0,
+    unvollstaendig = 0,
+    nichtErreichbar = 0,
+    laenger = 0;
+  const funde: { slug: string; unser: number; quelle: number; fehlt: number; beispiel: string }[] =
+    [];
 
   for (const d of docs) {
     let xml: string;
@@ -115,9 +138,17 @@ async function main() {
         headers: { "User-Agent": UA },
         signal: AbortSignal.timeout(20000),
       });
-      if (!res.ok) { nichtErreichbar++; await sleep(RATE_MS); continue; }
+      if (!res.ok) {
+        nichtErreichbar++;
+        await sleep(RATE_MS);
+        continue;
+      }
       xml = await res.text();
-    } catch { nichtErreichbar++; await sleep(RATE_MS); continue; }
+    } catch {
+      nichtErreichbar++;
+      await sleep(RATE_MS);
+      continue;
+    }
 
     const quelle = substanz(ohneMetadaten(risXmlToText(xml)));
     const unser = substanz(d.text);
@@ -135,8 +166,16 @@ async function main() {
     // Der Enthaltensein-Test fragt stattdessen: welche Sätze der Quelle
     // stehen NICHT in unserem Text? Das ist gegen Metadaten-Unterschiede
     // unempfindlich und misst genau das, was zählt — fehlenden Normtext.
-    const saetze = quelle.split(/(?<=[.;:])\s+/).map((x) => x.trim())
-      .filter((x) => x.length >= 40 && !/^(Schlagworte|Zuletzt aktualisiert|Gesetzesnummer|Dokumentnummer|alte Dokumentnummer|Index|Typ|Kundmachungsorgan)/i.test(x));
+    const saetze = quelle
+      .split(/(?<=[.;:])\s+/)
+      .map((x) => x.trim())
+      .filter(
+        (x) =>
+          x.length >= 40 &&
+          !/^(Schlagworte|Zuletzt aktualisiert|Gesetzesnummer|Dokumentnummer|alte Dokumentnummer|Index|Typ|Kundmachungsorgan)/i.test(
+            x
+          )
+      );
     const fehlende = saetze.filter((x) => !unser.includes(x.slice(0, Math.min(x.length, 60))));
     const anteilFehlend = saetze.length ? fehlende.length / saetze.length : 0;
 
@@ -145,8 +184,11 @@ async function main() {
     if (saetze.length >= 3 && anteilFehlend >= SCHWELLE) {
       unvollstaendig++;
       funde.push({
-        slug: d.slug, unser: fehlende.length, quelle: saetze.length,
-        fehlt: anteilFehlend, beispiel: fehlende[0]?.slice(0, 80) ?? "",
+        slug: d.slug,
+        unser: fehlende.length,
+        quelle: saetze.length,
+        fehlt: anteilFehlend,
+        beispiel: fehlende[0]?.slice(0, 80) ?? "",
       });
     }
     if (geprueft % 25 === 0) process.stderr.write(`\r  ${geprueft}/${docs.length}`);
@@ -156,14 +198,18 @@ async function main() {
 
   console.log("─".repeat(72));
   console.log(`geprüft:          ${geprueft}`);
-  console.log(`unvollständig:    ${unvollstaendig}  (${((unvollstaendig / Math.max(geprueft, 1)) * 100).toFixed(1)} %)`);
+  console.log(
+    `unvollständig:    ${unvollstaendig}  (${((unvollstaendig / Math.max(geprueft, 1)) * 100).toFixed(1)} %)`
+  );
   console.log(`länger als Quelle:${laenger}   XML nicht erreichbar: ${nichtErreichbar}`);
 
   if (funde.length) {
     console.log(`\nGrößte Fehlbeträge:`);
     funde.sort((a, b) => b.fehlt - a.fehlt);
     for (const f of funde.slice(0, 12)) {
-      console.log(`  ${(f.fehlt * 100).toFixed(0).padStart(3)} %  ${String(f.unser).padStart(3)}/${String(f.quelle).padEnd(3)} Sätze fehlen  ${f.slug.slice(-44)}`);
+      console.log(
+        `  ${(f.fehlt * 100).toFixed(0).padStart(3)} %  ${String(f.unser).padStart(3)}/${String(f.quelle).padEnd(3)} Sätze fehlen  ${f.slug.slice(-44)}`
+      );
       if (f.beispiel) console.log(`         fehlt z.B.: „${f.beispiel}…"`);
     }
     console.log(`\nDiese Dokumente sind strukturell einwandfrei und trotzdem unvollständig —`);

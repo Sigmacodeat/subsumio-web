@@ -466,8 +466,8 @@ function CommentaryDetail({
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <CommentaryTypeBadge synthetic={commentary.commentary_type === "synthetic"} />
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  {commentary.jurisdiction.toUpperCase()} · {commentary.statute_abbr} ·{" "}
-                  §&#8239;{commentary.section_num}
+                  {commentary.jurisdiction.toUpperCase()} · {commentary.statute_abbr} · §&#8239;
+                  {commentary.section_num}
                 </span>
               </div>
               {/* h2: the research page owns the only h1. */}
@@ -601,7 +601,9 @@ function CommentaryDetail({
               </span>
             )}
             <span>Aktualisiert: {formatDate(commentary.updated_at)}</span>
-            {commentary.generated_at && <span>Erstellt: {formatDate(commentary.generated_at)}</span>}
+            {commentary.generated_at && (
+              <span>Erstellt: {formatDate(commentary.generated_at)}</span>
+            )}
           </div>
         </div>
       </div>

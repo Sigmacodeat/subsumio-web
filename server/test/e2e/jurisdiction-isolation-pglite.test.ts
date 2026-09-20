@@ -37,7 +37,11 @@ function basisEmbedding(slug: string, dim: number): Float32Array {
 }
 
 async function probeDim(engine: PGLiteEngine): Promise<number> {
-  const db = (engine as unknown as { db: { query: (s: string) => Promise<{ rows: Array<{ atttypmod: number }> }> } }).db;
+  const db = (
+    engine as unknown as {
+      db: { query: (s: string) => Promise<{ rows: Array<{ atttypmod: number }> }> };
+    }
+  ).db;
   const r = await db.query(
     `SELECT atttypmod FROM pg_attribute
        WHERE attrelid = 'content_chunks'::regclass AND attname = 'embedding'`
@@ -53,7 +57,12 @@ async function probeDim(engine: PGLiteEngine): Promise<number> {
 // Each query's key terms appear VERBATIM (as standalone, identically-stemmed
 // words) in BOTH the AT and the DE body, so keyword FTS matches both and the
 // only thing distinguishing them is the jurisdiction in the slug.
-const PAIRS: Array<{ topic: string; query: string; at: { slug: string; body: string }; de: { slug: string; body: string } }> = [
+const PAIRS: Array<{
+  topic: string;
+  query: string;
+  at: { slug: string; body: string };
+  de: { slug: string; body: string };
+}> = [
   {
     topic: "Verjährung",
     query: "Verjährung drei Jahren",
@@ -146,21 +155,29 @@ beforeAll(async () => {
   for (const p of PAIRS) {
     for (const s of [p.at, p.de]) {
       const sourceId = s.slug.startsWith("legal/statutes/at/") ? "law-at" : "law-de";
-      await eng.putPage(s.slug, {
-        type: "law" as never,
-        title: s.slug.split("/").slice(-2).join(" "),
-        compiled_truth: s.body,
-        timeline: "",
-      }, { sourceId });
-      await eng.upsertChunks(s.slug, [
+      await eng.putPage(
+        s.slug,
         {
-          chunk_index: 0,
-          chunk_text: s.body,
-          chunk_source: "compiled_truth",
-          embedding: basisEmbedding(s.slug, dim),
-          token_count: s.body.split(/\s+/).length,
+          type: "law" as never,
+          title: s.slug.split("/").slice(-2).join(" "),
+          compiled_truth: s.body,
+          timeline: "",
         },
-      ] satisfies ChunkInput[], { sourceId });
+        { sourceId }
+      );
+      await eng.upsertChunks(
+        s.slug,
+        [
+          {
+            chunk_index: 0,
+            chunk_text: s.body,
+            chunk_source: "compiled_truth",
+            embedding: basisEmbedding(s.slug, dim),
+            token_count: s.body.split(/\s+/).length,
+          },
+        ] satisfies ChunkInput[],
+        { sourceId }
+      );
     }
   }
 }, 60_000);
@@ -222,10 +239,12 @@ describe("jurisdiction isolation (Phase 0 leak probe)", () => {
     // query must still surface at least one at-statute.
     const misses: string[] = [];
     for (const q of AT_QUERIES) {
-      const results = await hybridSearch(eng, q, { limit: 10, expansion: false, jurisdiction: "at" });
-      const atHits = results.filter(
-        (r) => r.slug.startsWith("legal/statutes/at/")
-      );
+      const results = await hybridSearch(eng, q, {
+        limit: 10,
+        expansion: false,
+        jurisdiction: "at",
+      });
+      const atHits = results.filter((r) => r.slug.startsWith("legal/statutes/at/"));
       if (atHits.length === 0) misses.push(q);
     }
     expect(misses, `queries with no AT statute after filtering: ${misses.join(", ")}`).toEqual([]);
@@ -295,37 +314,50 @@ describe("jurisdiction isolation (Phase 0 leak probe)", () => {
     const atNonStatute = [
       { slug: "legal/judikatur/at/ogh/2ob123-24x", sourceId: "law-at-judikatur" },
       { slug: "legal/landesrecht/at/wien/bauordnung-testfall", sourceId: "law-at-landesrecht" },
-      { slug: "legal/staatsvertraege/at/testabkommen-verjaehrung", sourceId: "law-at-staatsvertraege" },
+      {
+        slug: "legal/staatsvertraege/at/testabkommen-verjaehrung",
+        sourceId: "law-at-staatsvertraege",
+      },
     ];
     for (const p of atNonStatute) {
-      await eng.putPage(p.slug, {
-        type: "law" as never,
-        title: p.slug.split("/").slice(-1).join(" "),
-        compiled_truth: body,
-        timeline: "",
-      }, { sourceId: p.sourceId });
-      await eng.upsertChunks(p.slug, [
+      await eng.putPage(
+        p.slug,
         {
-          chunk_index: 0,
-          chunk_text: body,
-          chunk_source: "compiled_truth",
-          embedding: basisEmbedding(p.slug, dim),
-          token_count: body.split(/\s+/).length,
+          type: "law" as never,
+          title: p.slug.split("/").slice(-1).join(" "),
+          compiled_truth: body,
+          timeline: "",
         },
-      ] satisfies ChunkInput[], { sourceId: p.sourceId });
+        { sourceId: p.sourceId }
+      );
+      await eng.upsertChunks(
+        p.slug,
+        [
+          {
+            chunk_index: 0,
+            chunk_text: body,
+            chunk_source: "compiled_truth",
+            embedding: basisEmbedding(p.slug, dim),
+            token_count: body.split(/\s+/).length,
+          },
+        ] satisfies ChunkInput[],
+        { sourceId: p.sourceId }
+      );
     }
 
     // Probe has teeth: WITHOUT a jurisdiction filter the seeded AT pages are
     // reachable for this query (otherwise the assertion below proves nothing).
     const unfiltered = await hybridSearch(eng, QUERY, { limit: 20, expansion: false });
-    const reachable = unfiltered.filter((r) =>
-      atNonStatute.some((p) => r.slug === p.slug)
-    );
+    const reachable = unfiltered.filter((r) => atNonStatute.some((p) => r.slug === p.slug));
     expect(reachable.length).toBeGreaterThan(0);
 
     // The actual guarantee: jurisdiction=de must exclude EVERY AT legal
     // content class, not only legal/statutes/at/.
-    const filtered = await hybridSearch(eng, QUERY, { limit: 20, expansion: false, jurisdiction: "de" });
+    const filtered = await hybridSearch(eng, QUERY, {
+      limit: 20,
+      expansion: false,
+      jurisdiction: "de",
+    });
     const leakedAt = filtered
       .map((r) => r.slug)
       .filter((s) => /^legal\/(statutes|judikatur|landesrecht|staatsvertraege)\/at\//.test(s));

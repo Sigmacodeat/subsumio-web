@@ -310,7 +310,8 @@ export class DependencyGraphStore {
     const detectedAt = row.detected_at as string;
     let affectedSince: string | null;
     if (announcementDateRaw) {
-      const d = announcementDateRaw instanceof Date ? announcementDateRaw : new Date(announcementDateRaw);
+      const d =
+        announcementDateRaw instanceof Date ? announcementDateRaw : new Date(announcementDateRaw);
       affectedSince = d.toISOString().slice(0, 10);
     } else {
       affectedSince = detectedAt;
@@ -349,10 +350,9 @@ export class DependencyGraphStore {
     amendedParagraphs: string[]
   ): Promise<ReverifyStatus> {
     try {
-      const depResult = await this.pool.query(
-        `SELECT * FROM output_dependencies WHERE id = $1`,
-        [dependencyId]
-      );
+      const depResult = await this.pool.query(`SELECT * FROM output_dependencies WHERE id = $1`, [
+        dependencyId,
+      ]);
       const dep = depResult.rows[0];
       if (!dep) throw new Error(`Dependency ${dependencyId} not found`);
 
@@ -361,8 +361,12 @@ export class DependencyGraphStore {
 
       // If the dependency has a specific paragraph_ref, check if it was amended
       if (paragraphRef && !amendedSet.has(paragraphRef)) {
-        await this.reVerify(dependencyId, "not_affected", reviewerId,
-          `${paragraphRef} was not in amended set [${amendedParagraphs.join(", ")}]`);
+        await this.reVerify(
+          dependencyId,
+          "not_affected",
+          reviewerId,
+          `${paragraphRef} was not in amended set [${amendedParagraphs.join(", ")}]`
+        );
         return "not_affected";
       }
 

@@ -6,9 +6,11 @@ import type { ChunkInput } from "../../src/core/types.ts";
 let engine: PGLiteEngine;
 
 async function embeddingDim(): Promise<number> {
-  const db = (engine as unknown as {
-    db: { query: (sql: string) => Promise<{ rows: Array<{ atttypmod: number }> }> };
-  }).db;
+  const db = (
+    engine as unknown as {
+      db: { query: (sql: string) => Promise<{ rows: Array<{ atttypmod: number }> }> };
+    }
+  ).db;
   const result = await db.query(
     `SELECT atttypmod FROM pg_attribute
       WHERE attrelid = 'content_chunks'::regclass AND attname = 'embedding'`
@@ -29,9 +31,21 @@ beforeAll(async () => {
   const vector = new Float32Array(dim);
   vector[0] = 1;
   const versions = [
-    { slug: "legal/statutes/at/abgb/p-1489--v-2020-01-01", date: "2020-01-01", text: "Verjährung historische Fassung zwanzig" },
-    { slug: "legal/statutes/at/abgb/p-1489--v-2023-01-01", date: "2023-01-01", text: "Verjährung historische Fassung dreiundzwanzig" },
-    { slug: "legal/statutes/at/abgb/p-1489", date: "2025-01-01", text: "Verjährung aktuelle Fassung fünfundzwanzig" },
+    {
+      slug: "legal/statutes/at/abgb/p-1489--v-2020-01-01",
+      date: "2020-01-01",
+      text: "Verjährung historische Fassung zwanzig",
+    },
+    {
+      slug: "legal/statutes/at/abgb/p-1489--v-2023-01-01",
+      date: "2023-01-01",
+      text: "Verjährung historische Fassung dreiundzwanzig",
+    },
+    {
+      slug: "legal/statutes/at/abgb/p-1489",
+      date: "2025-01-01",
+      text: "Verjährung aktuelle Fassung fünfundzwanzig",
+    },
   ];
   for (const version of versions) {
     await engine.putPage(
@@ -47,7 +61,15 @@ beforeAll(async () => {
     );
     await engine.upsertChunks(
       version.slug,
-      [{ chunk_index: 0, chunk_text: version.text, chunk_source: "compiled_truth", embedding: vector, token_count: 4 }] satisfies ChunkInput[],
+      [
+        {
+          chunk_index: 0,
+          chunk_text: version.text,
+          chunk_source: "compiled_truth",
+          embedding: vector,
+          token_count: 4,
+        },
+      ] satisfies ChunkInput[],
       { sourceId: "law-at" }
     );
   }

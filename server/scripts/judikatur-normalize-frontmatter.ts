@@ -56,8 +56,15 @@ const COURTS: Record<string, { court: string; courtType: string }> = {
  * abgeleitet, damit die Gerichts-Facette nicht zerfällt.
  */
 const UVS_LAND: Record<string, string> = {
-  BU: "Burgenland", KA: "Kärnten", NI: "Niederösterreich", OB: "Oberösterreich",
-  SA: "Salzburg", ST: "Steiermark", TI: "Tirol", VO: "Vorarlberg", WI: "Wien",
+  BU: "Burgenland",
+  KA: "Kärnten",
+  NI: "Niederösterreich",
+  OB: "Oberösterreich",
+  SA: "Salzburg",
+  ST: "Steiermark",
+  TI: "Tirol",
+  VO: "Vorarlberg",
+  WI: "Wien",
 };
 
 type FM = { keys: string[]; get: (k: string) => string | undefined; raw: string };
@@ -129,7 +136,9 @@ function undoOne(raw: string): string | null {
   if (fm.get("type_original") !== "judikatur") return null;
   const kept = fm.raw
     .split("\n")
-    .filter((l) => !/^(court|court_type|case_number|decision_date|date|legal_area|type_original):/.test(l))
+    .filter(
+      (l) => !/^(court|court_type|case_number|decision_date|date|legal_area|type_original):/.test(l)
+    )
     .join("\n")
     .replace(/^type:\s*.*$/m, `type: "judikatur"`);
   return `---\n${kept}\n---\n${body}`;
@@ -138,7 +147,9 @@ function undoOne(raw: string): string | null {
 function main() {
   const dirs = readdirSync(CORPUS_ROOT)
     .filter((d) => d.startsWith("at-judikatur"))
-    .filter((d) => (COURT ? d === `at-judikatur-${COURT}` || (COURT === "ogh" && d === "at-judikatur") : true))
+    .filter((d) =>
+      COURT ? d === `at-judikatur-${COURT}` || (COURT === "ogh" && d === "at-judikatur") : true
+    )
     .filter((d) => COURTS[d]);
 
   console.log(
@@ -148,7 +159,9 @@ function main() {
         ? "NORMALISIERUNG (--apply)\n"
         : "PROBELAUF — es wird nichts geschrieben. Mit --apply ausführen.\n"
   );
-  console.log(`  ${"Gericht".padEnd(10)}${"Dateien".padStart(9)}${"Alt-Format".padStart(12)}${"geändert".padStart(10)}`);
+  console.log(
+    `  ${"Gericht".padEnd(10)}${"Dateien".padStart(9)}${"Alt-Format".padStart(12)}${"geändert".padStart(10)}`
+  );
   console.log(`  ${"-".repeat(10)}${"-".repeat(9)}${"-".repeat(12)}${"-".repeat(10)}`);
 
   let totOld = 0;
@@ -186,14 +199,20 @@ function main() {
   }
 
   console.log(`  ${"-".repeat(10)}${"-".repeat(9)}${"-".repeat(12)}${"-".repeat(10)}`);
-  console.log(`  ${"SUMME".padEnd(10)}${"".padStart(9)}${String(totOld).padStart(12)}${String(totChanged).padStart(10)}`);
+  console.log(
+    `  ${"SUMME".padEnd(10)}${"".padStart(9)}${String(totOld).padStart(12)}${String(totChanged).padStart(10)}`
+  );
 
   if (!APPLY) {
     console.log("\n  Nichts geschrieben. Mit --apply ausführen.");
   } else if (!UNDO) {
     console.log("\n  Danach neu importieren, damit der Structure-aware-Chunker greift:");
-    console.log("    bun run server/scripts/import-judikatur.ts --source <gericht> --force-rechunk --no-embed");
-    console.log("  Rücknahme: bun run server/scripts/judikatur-normalize-frontmatter.ts --undo --apply");
+    console.log(
+      "    bun run server/scripts/import-judikatur.ts --source <gericht> --force-rechunk --no-embed"
+    );
+    console.log(
+      "  Rücknahme: bun run server/scripts/judikatur-normalize-frontmatter.ts --undo --apply"
+    );
   }
 }
 

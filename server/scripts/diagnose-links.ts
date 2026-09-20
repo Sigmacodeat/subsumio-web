@@ -7,11 +7,29 @@ import { buildGatewayConfig } from "../src/core/ai/build-gateway-config.ts";
 import { configureGateway } from "../src/core/ai/gateway.ts";
 
 const JUDIKATUR_CODE_MAP: Record<string, string> = {
-  StGB: "stgb", ABGB: "abgb", ZPO: "zpo", EO: "eo", AHG: "ahg",
-  ArbVG: "arbvg", StPO: "stpo", AußStrG: "au-strg", DSG: "dsg",
-  AngG: "angg", IO: "io", KSchG: "kschg", MRG: "mrg", EheG: "eheg",
-  GmbHG: "gmbhg", UGB: "ugb", ASVG: "asvg", AVG: "avg", GewO: "gewo",
-  StVO: "stvo", VStG: "vstg", JGG: "jgg", GOG: "gog",
+  StGB: "stgb",
+  ABGB: "abgb",
+  ZPO: "zpo",
+  EO: "eo",
+  AHG: "ahg",
+  ArbVG: "arbvg",
+  StPO: "stpo",
+  AußStrG: "au-strg",
+  DSG: "dsg",
+  AngG: "angg",
+  IO: "io",
+  KSchG: "kschg",
+  MRG: "mrg",
+  EheG: "eheg",
+  GmbHG: "gmbhg",
+  UGB: "ugb",
+  ASVG: "asvg",
+  AVG: "avg",
+  GewO: "gewo",
+  StVO: "stvo",
+  VStG: "vstg",
+  JGG: "jgg",
+  GOG: "gog",
 };
 
 const DIR = join(import.meta.dir, "..", "law-corpus", "at-judikatur");
@@ -23,7 +41,9 @@ async function main() {
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
 
-  const files = readdirSync(DIR).filter(f => f.endsWith(".md")).slice(0, 100);
+  const files = readdirSync(DIR)
+    .filter((f) => f.endsWith(".md"))
+    .slice(0, 100);
   const unmappedCodes = new Map<string, number>();
   const mappedButMissing: Array<{ code: string; ref: string; slug: string }> = [];
   const found: Array<{ code: string; ref: string; slug: string }> = [];
@@ -45,7 +65,8 @@ async function main() {
     }
     const slug = `legal/statutes/at/${abbr}/p-${r.ref}`;
     const rows = (await engine.executeRaw(
-      `SELECT id FROM pages WHERE slug = $1 AND source_id = 'law-at'`, [slug]
+      `SELECT id FROM pages WHERE slug = $1 AND source_id = 'law-at'`,
+      [slug]
     )) as any[];
     if (rows.length > 0) {
       found.push({ code: r.code, ref: r.ref, slug });
@@ -76,4 +97,7 @@ async function main() {
 
   await engine.disconnect();
 }
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

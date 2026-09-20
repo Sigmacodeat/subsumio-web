@@ -73,31 +73,23 @@ function makeMockTask(): Task {
 
 describe("Mock/Live Separation Regression", () => {
   it("buildRunReceipt with mode='mock' produces receipt with mode='mock'", () => {
-    const receipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-001",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "mock",
-      }
-    );
+    const receipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-001",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "mock",
+    });
     expect(receipt.mode).toBe("mock");
     expect(receipt.mode).not.toBe("live");
   });
 
   it("buildRunReceipt with mode='live' produces receipt with mode='live'", () => {
-    const receipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-002",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "live",
-      }
-    );
+    const receipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-002",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "live",
+    });
     expect(receipt.mode).toBe("live");
     expect(receipt.mode).not.toBe("mock");
   });
@@ -122,26 +114,18 @@ describe("Mock/Live Separation Regression", () => {
   });
 
   it("mock receipt can never be confused with live — mode field is the source of truth", () => {
-    const mockReceipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-mock",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "mock",
-      }
-    );
-    const liveReceipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-live",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "live",
-      }
-    );
+    const mockReceipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-mock",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "mock",
+    });
+    const liveReceipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-live",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "live",
+    });
     // Even if all other fields are identical, mode must differ
     expect(mockReceipt.mode).not.toBe(liveReceipt.mode);
     // Mock receipt must never claim to be live
@@ -165,31 +149,23 @@ describe("Mock/Live Separation Regression", () => {
   });
 
   it("provider_errors are passed through to receipt", () => {
-    const receipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-004",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "live",
-        provider_errors: ["timeout", "rate_limited"],
-      }
-    );
+    const receipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-004",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "live",
+      provider_errors: ["timeout", "rate_limited"],
+    });
     expect(receipt.provider_errors).toEqual(["timeout", "rate_limited"]);
   });
 
   it("mock receipt has no provider_errors by default", () => {
-    const receipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-005",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "mock",
-      }
-    );
+    const receipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-005",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "mock",
+    });
     expect(receipt.provider_errors).toBeUndefined();
   });
 
@@ -214,16 +190,12 @@ describe("Mock/Live Separation Regression", () => {
   });
 
   it("latency p50/p95 are computed from llm_latencies_ms", () => {
-    const receipt = buildRunReceipt(
-      makeMockWorkflowResult(),
-      makeMockTask(),
-      {
-        runId: "test-run-latency",
-        corpusRoot: "/tmp/test-corpus",
-        startedAt: "2026-01-01T00:00:00Z",
-        mode: "live",
-      }
-    );
+    const receipt = buildRunReceipt(makeMockWorkflowResult(), makeMockTask(), {
+      runId: "test-run-latency",
+      corpusRoot: "/tmp/test-corpus",
+      startedAt: "2026-01-01T00:00:00Z",
+      mode: "live",
+    });
     // latencies [50, 80, 120, 200] → sorted: [50, 80, 120, 200]
     // p50 = index 2 = 120, p95 = index 3 = 200
     expect(receipt.latency_p50_ms).toBe(120);

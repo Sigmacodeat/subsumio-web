@@ -37,7 +37,9 @@ function main() {
     console.error(`Verzeichnis fehlt: ${DIR}`);
     process.exit(1);
   }
-  console.log(APPLY ? `ERGÄNZUNG (--apply) — ${DIR}\n` : `PROBELAUF — ${DIR}, es wird nichts geschrieben.\n`);
+  console.log(
+    APPLY ? `ERGÄNZUNG (--apply) — ${DIR}\n` : `PROBELAUF — ${DIR}, es wird nichts geschrieben.\n`
+  );
 
   const files = walk(DIR);
   let hatte = 0;

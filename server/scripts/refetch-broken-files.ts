@@ -86,7 +86,10 @@ function checkFile(fullPath: string): BrokenFile | null {
     }
     if (yamlEnd > 0) {
       frontmatter = lines.slice(0, yamlEnd).join("\n");
-      body = lines.slice(yamlEnd + 1).join("\n").trim();
+      body = lines
+        .slice(yamlEnd + 1)
+        .join("\n")
+        .trim();
     }
   }
 
@@ -116,11 +119,20 @@ function checkFile(fullPath: string): BrokenFile | null {
 
   // 4. Merged headers
   const MERGED_HEADER_WORDS = [
-    "Text", "Spruch", "Tenor", "Ausspruch",
-    "Begründung", "Begruendung",
-    "Rechtssatz", "Leitsatz", "Stammrechtssatz",
-    "Sachverhalt", "Tatbestand",
-    "Beachte", "Norm", "Entscheidungstexte",
+    "Text",
+    "Spruch",
+    "Tenor",
+    "Ausspruch",
+    "Begründung",
+    "Begruendung",
+    "Rechtssatz",
+    "Leitsatz",
+    "Stammrechtssatz",
+    "Sachverhalt",
+    "Tatbestand",
+    "Beachte",
+    "Norm",
+    "Entscheidungstexte",
   ];
   for (const word of MERGED_HEADER_WORDS) {
     const re = new RegExp(`[a-zA-Z0-9)"\\]]${word}[A-Z\\[]`, "");
@@ -133,9 +145,21 @@ function checkFile(fullPath: string): BrokenFile | null {
   // 4b. Merged law metadata headers (at/ root and at-landesrecht files)
   // These files have "KurztitelValue" instead of "## Kurztitel\nValue"
   const LAW_MERGED_HEADERS = [
-    "Kurztitel", "Kundmachungsorgan", "Inkrafttretensdatum", "Außerkrafttretensdatum",
-    "Langtitel", "Änderung", "Präambel", "Typ", "Index", "Abkürzung", "Anmerkung",
-    "Schlagworte", "Gesetzesnummer", "Dokumentnummer", "§/Artikel/Anlage",
+    "Kurztitel",
+    "Kundmachungsorgan",
+    "Inkrafttretensdatum",
+    "Außerkrafttretensdatum",
+    "Langtitel",
+    "Änderung",
+    "Präambel",
+    "Typ",
+    "Index",
+    "Abkürzung",
+    "Anmerkung",
+    "Schlagworte",
+    "Gesetzesnummer",
+    "Dokumentnummer",
+    "§/Artikel/Anlage",
   ];
   for (const word of LAW_MERGED_HEADERS) {
     const re = new RegExp(`^${word}[A-Z0-9]`, "m");
@@ -146,7 +170,8 @@ function checkFile(fullPath: string): BrokenFile | null {
   }
 
   // 5. Spelled-out numbers
-  const SPELLED = /(Paragraph (eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf))|(Absatz (eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn))/;
+  const SPELLED =
+    /(Paragraph (eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf))|(Absatz (eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn))/;
   if (SPELLED.test(body)) reasons.push("spelled_numbers");
 
   // 6. Boilerplate
@@ -174,11 +199,20 @@ function checkFile(fullPath: string): BrokenFile | null {
   const isCourtDecision = typeMatch && typeMatch[1].includes("court_decision");
   if (isCourtDecision) {
     const CONTENT_HEADERS = [
-      "## Text", "## Spruch", "## Tenor", "## Ausspruch",
-      "## Entscheidungstexte", "## Rechtssatz", "## Leitsatz",
-      "## Entscheidungsgründe", "## Entscheidungsgruende",
-      "## Begründung", "## Begruendung",
-      "## Sachverhalt", "## Tatbestand", "## Feststellungen",
+      "## Text",
+      "## Spruch",
+      "## Tenor",
+      "## Ausspruch",
+      "## Entscheidungstexte",
+      "## Rechtssatz",
+      "## Leitsatz",
+      "## Entscheidungsgründe",
+      "## Entscheidungsgruende",
+      "## Begründung",
+      "## Begruendung",
+      "## Sachverhalt",
+      "## Tatbestand",
+      "## Feststellungen",
       "## Stammrechtssatz",
     ];
     const hasContentHeader = CONTENT_HEADERS.some((h) => body.includes(h));
@@ -203,7 +237,8 @@ function checkFile(fullPath: string): BrokenFile | null {
   // (`frontmatter` ist hier in Reichweite; `fmText` wird erst weiter unten
   // gebildet und dürfte hier noch nicht gelesen werden.)
   const fmForOrigin = frontmatter ?? content.slice(0, 2000);
-  const ausXml = /source_format:\s*"?xml/.test(fmForOrigin) || /source_url:.*\.xml/.test(fmForOrigin);
+  const ausXml =
+    /source_format:\s*"?xml/.test(fmForOrigin) || /source_url:.*\.xml/.test(fmForOrigin);
   for (const issue of validateBody(body, docClass)) {
     // image_only ist kein Fetch-Fehler: die Anlage liegt in RIS nur als Bild
     // vor. Ein Refetch würde dasselbe Bild nochmal holen.
@@ -297,7 +332,10 @@ function findBrokenFiles(dir: string): BrokenFile[] {
  * gerade" zu unterscheiden. Lieber schnell scheitern und erneut versuchen.
  */
 const FETCH_TIMEOUT_MS = Number(
-  (() => { const i = args.indexOf("--timeout-ms"); return i >= 0 ? args[i + 1] : "20000"; })()
+  (() => {
+    const i = args.indexOf("--timeout-ms");
+    return i >= 0 ? args[i + 1] : "20000";
+  })()
 );
 
 async function fetchXml(abfrage: string, dokNr: string): Promise<string> {
@@ -383,7 +421,8 @@ async function main() {
 
       // Extract identity for verification
       const fmText = b.frontmatter || content.slice(0, 2000);
-      const caseNum = (fmText.match(/case_number:\s*(.+)/) || [])[1]?.trim().replace(/['"]/g, "") || "";
+      const caseNum =
+        (fmText.match(/case_number:\s*(.+)/) || [])[1]?.trim().replace(/['"]/g, "") || "";
       const ecli = (fmText.match(/ecli:\s*(.+)/) || [])[1]?.trim().replace(/['"]/g, "") || "";
 
       // Fetch XML

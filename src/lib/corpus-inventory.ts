@@ -51,7 +51,11 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
   const chunkBySource = new Map(chunks.rows.map((r) => [r.source_id as string, r]));
   const rows: InventoryRow[] = pages.rows.map((r) => {
     const c = chunkBySource.get(r.source_id);
-    const kind: InventoryRow["kind"] = r.is_decision ? "decision" : r.is_statute ? "statute" : "other";
+    const kind: InventoryRow["kind"] = r.is_decision
+      ? "decision"
+      : r.is_statute
+        ? "statute"
+        : "other";
     return {
       source_id: r.source_id,
       kind,

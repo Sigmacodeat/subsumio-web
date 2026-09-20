@@ -44,8 +44,12 @@ if (!SIEGELN && !PRUEFEN) {
   process.exit(2);
 }
 
-const url = (await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet())
-  .stdout.toString().trim().split("\n")[0];
+const url = (
+  await $`grep -hoE 'postgres://[^"'"'"' ]+subsumio_law[^"'"'"' ]*' server/.env`.quiet()
+).stdout
+  .toString()
+  .trim()
+  .split("\n")[0];
 
 interface Siegel {
   quelle: string;
@@ -76,10 +80,16 @@ async function bestand(quelle: string): Promise<Record<string, string>> {
 }
 
 if (SIEGELN) {
-  if (!/^law-[a-z-]+$/.test(SIEGELN)) { console.error("Ungültige Quelle"); process.exit(2); }
+  if (!/^law-[a-z-]+$/.test(SIEGELN)) {
+    console.error("Ungültige Quelle");
+    process.exit(2);
+  }
   const dok = await bestand(SIEGELN);
   const n = Object.keys(dok).length;
-  if (n === 0) { console.error(`Quelle ${SIEGELN} hat keine aktiven Seiten — nicht gesiegelt.`); process.exit(1); }
+  if (n === 0) {
+    console.error(`Quelle ${SIEGELN} hat keine aktiven Seiten — nicht gesiegelt.`);
+    process.exit(1);
+  }
   const ohneHash = Object.values(dok).filter((h) => !h).length;
   if (ohneHash > 0) {
     console.error(`${ohneHash} von ${n} Seiten haben keinen content_hash — Siegel wäre wertlos.`);
@@ -99,13 +109,22 @@ if (SIEGELN) {
 }
 
 // ── Prüfen ────────────────────────────────────────────────────────────────
-if (!existsSync(DIR)) { console.log("Keine Siegel vorhanden."); process.exit(0); }
-const dateien = readdirSync(DIR).filter((f) => f.endsWith(".json"))
+if (!existsSync(DIR)) {
+  console.log("Keine Siegel vorhanden.");
+  process.exit(0);
+}
+const dateien = readdirSync(DIR)
+  .filter((f) => f.endsWith(".json"))
   .filter((f) => !NUR || f === `${NUR}.json`);
-if (!dateien.length) { console.log("Kein passendes Siegel gefunden."); process.exit(0); }
+if (!dateien.length) {
+  console.log("Kein passendes Siegel gefunden.");
+  process.exit(0);
+}
 
 let verletzt = 0;
-console.log(`${"Quelle".padEnd(26)}${"gesiegelt".padStart(10)}${"aktiv".padStart(9)}${"fehlend".padStart(9)}${"verändert".padStart(11)}${"neu".padStart(8)}`);
+console.log(
+  `${"Quelle".padEnd(26)}${"gesiegelt".padStart(10)}${"aktiv".padStart(9)}${"fehlend".padStart(9)}${"verändert".padStart(11)}${"neu".padStart(8)}`
+);
 console.log("─".repeat(73));
 
 for (const f of dateien) {
@@ -124,7 +143,7 @@ for (const f of dateien) {
   const mark = schlecht > 0 ? "✗" : "✓";
   console.log(
     `${mark} ${s.quelle.padEnd(24)}${String(s.seiten).padStart(10)}${String(Object.keys(jetzt).length).padStart(9)}` +
-    `${String(fehlend.length).padStart(9)}${String(veraendert.length).padStart(11)}${String(neu).padStart(8)}`
+      `${String(fehlend.length).padStart(9)}${String(veraendert.length).padStart(11)}${String(neu).padStart(8)}`
   );
   for (const x of fehlend.slice(0, 5)) console.log(`      fehlt:     ${x}`);
   for (const x of veraendert.slice(0, 5)) console.log(`      verändert: ${x}`);

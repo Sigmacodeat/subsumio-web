@@ -460,7 +460,9 @@ async function main() {
         // verlor Typ, Titel und Quelle. Das hat 100 Landesrecht-Dateien
         // beschädigt. Lieber überspringen als still zerstören.
         if (fm.trim() === "") {
-          console.error(`  ⚠️ ${filename}: Frontmatter nicht lesbar — übersprungen (nicht überschrieben)`);
+          console.error(
+            `  ⚠️ ${filename}: Frontmatter nicht lesbar — übersprungen (nicht überschrieben)`
+          );
           fail++;
           await new Promise((r) => setTimeout(r, DELAY_MS));
           continue;

@@ -25,19 +25,23 @@ export const GET = createHandler({ action: "platform.operator" }, async () => {
     const [inventory, recon, byDay] = await Promise.all([
       readLatestInventory(pool).catch(() => [] as InventoryRow[]),
       pool
-        .query(`
+        .query(
+          `
         SELECT DISTINCT ON (source_id) source_id, measured_at, method, ris_total, db_total, missing, extra, note
         FROM corpus_reconciliation
-        ORDER BY source_id, measured_at DESC`)
+        ORDER BY source_id, measured_at DESC`
+        )
         .catch(() => ({ rows: [] })),
       pool
-        .query(`
+        .query(
+          `
         SELECT to_char(occurred_at AT TIME ZONE 'Europe/Vienna', 'YYYY-MM-DD') AS day,
                count(*) FILTER (WHERE action = 'added')::int AS added,
                count(*) FILTER (WHERE action = 'updated')::int AS updated
         FROM corpus_ingest_log
         WHERE occurred_at > now() - interval '30 days'
-        GROUP BY 1 ORDER BY 1`)
+        GROUP BY 1 ORDER BY 1`
+        )
         .catch(() => ({ rows: [] })),
     ]);
 
@@ -72,14 +76,25 @@ export const GET = createHandler({ action: "platform.operator" }, async () => {
       })
       .sort((a, b) => b.pages - a.pages);
 
-    const sum = (f: (s: CorpusSourceStats) => number, pred: (s: CorpusSourceStats) => boolean = () => true) =>
-      sources.filter(pred).reduce((n, s) => n + f(s), 0);
+    const sum = (
+      f: (s: CorpusSourceStats) => number,
+      pred: (s: CorpusSourceStats) => boolean = () => true
+    ) => sources.filter(pred).reduce((n, s) => n + f(s), 0);
     const overview: CorpusOverview = {
       sources,
       totals: {
-        statutes: sum((s) => s.statutes, (s) => s.kind === "statute"),
-        norms: sum((s) => s.pages, (s) => s.kind === "statute"),
-        decisions: sum((s) => s.pages, (s) => s.kind === "decision"),
+        statutes: sum(
+          (s) => s.statutes,
+          (s) => s.kind === "statute"
+        ),
+        norms: sum(
+          (s) => s.pages,
+          (s) => s.kind === "statute"
+        ),
+        decisions: sum(
+          (s) => s.pages,
+          (s) => s.kind === "decision"
+        ),
         rechtssaetze: sum((s) => s.rechtssaetze),
         entscheidungstexte: sum((s) => s.entscheidungstexte),
         pages: sum((s) => s.pages),

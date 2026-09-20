@@ -12,11 +12,7 @@ import {
   useUpdateModelPreference,
   type ModelPreferenceResponse,
 } from "@/lib/queries/settings";
-import {
-  formatCost,
-  formatContextWindow,
-  getProviderLabel,
-} from "@/lib/model-config";
+import { formatCost, formatContextWindow, getProviderLabel } from "@/lib/model-config";
 
 const SPEED_LABELS: Record<number, { de: string; en: string }> = {
   1: { de: "sehr langsam", en: "very slow" },

@@ -18,34 +18,34 @@ Critical Pass Rate: 33.3%
 Weighted Avg Score: 0.464
 
 --- Judge Status Distribution ---
-  pass: 16
-  fail: 12
-  uncertain: 0
-  not_judgeable: 0
-  judge_error: 0
+pass: 16
+fail: 12
+uncertain: 0
+not_judgeable: 0
+judge_error: 0
 
 --- Verification States ---
-  NEEDS_HUMAN_REVIEW: 7
+NEEDS_HUMAN_REVIEW: 7
 
 --- By Jurisdiction ---
-  AT: 0/7 all-pass (0.0%)
+AT: 0/7 all-pass (0.0%)
 
 --- By Legal Area ---
-  litigation: 0/7 (0.0%)
+litigation: 0/7 (0.0%)
 
 --- By Workflow ---
-  rechtsfrage_memorandum: 0/6 (0.0%)
-  schriftsatz_entwurf: 0/1 (0.0%)
+rechtsfrage_memorandum: 0/6 (0.0%)
+schriftsatz_entwurf: 0/1 (0.0%)
 
 --- Cost Metrics ---
-  Total Tokens: 18945
-  Total Cost: $0.0033
-  Avg Latency: 79.7s
-
+Total Tokens: 18945
+Total Cost: $0.0033
+Avg Latency: 79.7s
 
 --- Per-Task Results ---
 
 ## gold-at-lit-001 — Berufung — Frist und Begründung nach § 401 ZPO
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -60,6 +60,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 1 ungrounded citation(s): Citation "§ 461 ZPO" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (49 German function words detected)
@@ -72,6 +73,7 @@ Weighted Avg Score: 0.464
 - ✅ **crit-010** — Die KI-Ausgabe kommt zu einem klaren Ergebnis, dass die Berufung fristgerecht ist, wenn man die subsidiär geltende ZPO annimmt. Dies wird durch die Berechnung der Frist (01.07.2026 + 4 Wochen = 29.07.2026) und die Einbringung am 28.07.2026 gestützt. Die Ausgabe weist jedoch korrekt darauf hin, dass die vorgelegten Gesetze keine prozessualen Fristen regeln und empfiehlt eine Prüfung der ZPO.
 
 ## gold-at-lit-002 — Klagebeantwortung — Inhalt und Frist nach § 243 ZPO
+
 - **Workflow**: schriftsatz_entwurf
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -86,6 +88,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 1 ungrounded citation(s): Citation "§ 239 ZPO" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (61 German function words detected)
@@ -98,6 +101,7 @@ Weighted Avg Score: 0.464
 - ✅ **crit-010** — Die Klagebeantwortung formuliert das Bestreiten der Forderung substantiiert und nicht pauschal. Es wird konkret auf die fehlende Anspruchsgrundlage und die unzureichende Substantiierung der Klage eingegangen.
 
 ## gold-at-lit-003 — Amtshaftung — Schaden durch Amtswalterhandlung
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -112,6 +116,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 1 ungrounded citation(s): Citation "§ 335 BDG" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (60 German function words detected)
@@ -124,6 +129,7 @@ Weighted Avg Score: 0.464
 - ✅ **crit-010** — Die Ausgabe kommt korrekt zum Ergebnis, dass die Gemeinde G nach § 335 BDG (Beamten-Dienstrechtsgesetz) schadenersatzpflichtig ist. Die Begründung ist klar und stützt sich auf die relevanten rechtlichen Grundlagen, insbesondere die Fahrlässigkeit des Beamten während der dienstlichen Tätigkeit. Die Ausführung ist präzise und entspricht den Anforderungen des Kriteriums.
 
 ## gold-at-lit-004 — Verjährung — Dreijährige Verjährung nach § 1489 ABGB
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -138,6 +144,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 3 ungrounded citation(s): Citation "§ 1478 ABGB" not found in retrieved context; Citation "§ 1479 ABGB" not found in retrieved context; Citation "§ 1494" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (54 German function words detected)
@@ -150,6 +157,7 @@ Weighted Avg Score: 0.464
 - ❌ **crit-010** — Die Ausgabe kommt zum Ergebnis, dass die Forderung noch nicht verjährt ist, was jedoch nicht mit der gestellten Aufgabe übereinstimmt. Die Aufgabe fragt explizit, ob die Forderung verjährt ist, wenn die Mahnung am 15.06.2026 erfolgt, was nach der korrekten Berechnung der Verjährungsfrist (Ende am 31.12.2026) tatsächlich der Fall wäre. Die Ausgabe hat die Verjährungsfrist falsch berechnet und kommt zu einem falschen Ergebnis.
 
 ## gold-at-lit-005 — Schadenersatz — Personenschaden nach § 1311 ABGB
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -164,6 +172,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 2 ungrounded citation(s): Citation "§ 1295 ABGB" not found in retrieved context; Citation "§ 1325 ABGB" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (55 German function words detected)
@@ -176,6 +185,7 @@ Weighted Avg Score: 0.464
 - ✅ **crit-010** — Die Ausgabe stellt das Verschulden des A korrekt dar, indem sie die Fahrlässigkeit im Zusammenhang mit dem Rotlichtverstoß klar benennt und rechtlich einordnet. Die Darstellung ist präzise und stützt sich auf die relevanten rechtlichen Grundlagen, ohne unbegründete Behauptungen aufzustellen.
 
 ## gold-at-lit-006 — Eigentumsklage — Herausgabe nach § 366 ABGB
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -190,6 +200,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 2 ungrounded citation(s): Citation "§ 366 ABGB" not found in retrieved context; Citation "§ 339 ABGB" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (69 German function words detected)
@@ -202,6 +213,7 @@ Weighted Avg Score: 0.464
 - ✅ **crit-010** — Die KI-Ausgabe kommt zum korrekten Ergebnis, dass E gegen B einen Herausgabeanspruch nach § 366 ABGB hat. Die Ausführung ist klar und logisch aufgebaut, beginnend mit der Feststellung des Eigentums von E, über die unrechtmäßige Besitznahme durch B bis hin zur Begründung des Herausgabeanspruchs. Die Behauptung des B, das Fahrrad gekauft zu haben, wird zutreffend als unwahr und ohne rechtliche Bedeutung für den Besitzanspruch bewertet. Die Argumentation stützt sich auf die im ABGB verankerten Prinzipien des Eigentums- und Besitzrechts.
 
 ## gold-at-lit-007 — Werkvertrag — Mängelgewährleistung nach §§ 1165, 1170 ABGB
+
 - **Workflow**: rechtsfrage_memorandum
 - **Jurisdiction**: AT
 - **All-pass**: ❌
@@ -216,6 +228,7 @@ Weighted Avg Score: 0.464
 - **Corpus hash**: 898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95
 
 ### Criteria
+
 - ❌ **auto-citation_grounded_v2** (critical) — 1 ungrounded citation(s): Citation "§ 633 BGB" not found in retrieved context
 - ✅ **auto-law_valid** (critical) — All law abbreviations are valid
 - ✅ **auto-language_german** — Output is in German (57 German function words detected)

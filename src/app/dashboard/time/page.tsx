@@ -179,10 +179,15 @@ export default function TimeEntriesPage() {
   const totalHours = formatHours(totalMinutes);
   const billableValue = filteredEntries
     .filter((e: TimeEntryWithMeta) => e.billable && !e.billed)
-    .reduce((sum: number, e: TimeEntryWithMeta) => sum + ((e.minutes || 0) / 60) * (e.rate || 0), 0);
+    .reduce(
+      (sum: number, e: TimeEntryWithMeta) => sum + ((e.minutes || 0) / 60) * (e.rate || 0),
+      0
+    );
   const billableAmount = formatEur(billableValue, lang);
   const caseTitle = (slug?: string) =>
-    (slug && cases.find((c: { slug: string; title: string }) => c.slug === slug)?.title) || slug || "—";
+    (slug && cases.find((c: { slug: string; title: string }) => c.slug === slug)?.title) ||
+    slug ||
+    "—";
 
   // Export entries as CSV or PDF
   function handleExport(format: "csv" | "pdf") {
@@ -337,7 +342,12 @@ export default function TimeEntriesPage() {
         ]}
         actions={
           <>
-            <Button variant="primary" size="sm" className="whitespace-nowrap" onClick={() => setCreateOpen(true)}>
+            <Button
+              variant="primary"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => setCreateOpen(true)}
+            >
               <Plus className="h-4 w-4" aria-hidden="true" />
               Neuer Eintrag
             </Button>
@@ -378,7 +388,11 @@ export default function TimeEntriesPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <TimeStat label="Erfasste Zeit" value={totalHours} sub={`${totalMinutes} Minuten`} />
-          <TimeStat label="Nicht abgerechnet" value={billableAmount} sub="abrechenbar, noch offen" />
+          <TimeStat
+            label="Nicht abgerechnet"
+            value={billableAmount}
+            sub="abrechenbar, noch offen"
+          />
           <TimeStat
             label="Einträge"
             value={String(filteredEntries.length)}
@@ -417,7 +431,7 @@ export default function TimeEntriesPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+        <div className="max-w-full [scrollbar-width:none] overflow-x-auto">
           <TabsList>
             <TabsTrigger value="all">Alle</TabsTrigger>
             <TabsTrigger value="billable">Abrechenbar</TabsTrigger>
@@ -715,7 +729,9 @@ function TimeStat({ label, value, sub }: { label: string; value: string; sub: st
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
       <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">{value}</div>
+      <div className="mt-1 text-xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+        {value}
+      </div>
       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{sub}</div>
     </div>
   );

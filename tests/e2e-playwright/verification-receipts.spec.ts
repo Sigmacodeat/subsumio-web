@@ -95,11 +95,9 @@ test.describe("Verification Receipts API", () => {
 
   test("receipts/[receiptId] returns 404 for non-existent receipt", async ({ page }) => {
     const csrf = await getCsrfToken(page);
-    const res = await page
-      .context()
-      .request.get("/api/legal/receipts/rcpt-nonexistent-000", {
-        headers: csrf ? { "x-csrf-token": csrf } : {},
-      });
+    const res = await page.context().request.get("/api/legal/receipts/rcpt-nonexistent-000", {
+      headers: csrf ? { "x-csrf-token": csrf } : {},
+    });
     expect(res.status()).toBe(404);
   });
 

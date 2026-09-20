@@ -22,7 +22,8 @@ async function main() {
     `SELECT s.id, s.name, count(p.id) as page_count
      FROM sources s LEFT JOIN pages p ON p.source_id = s.id
      WHERE s.id LIKE 'law-%' OR s.id = 'default' OR s.id = 'demo'
-     GROUP BY s.id, s.name ORDER BY s.id`, []
+     GROUP BY s.id, s.name ORDER BY s.id`,
+    []
   )) as any[];
   console.log("=== 1. Sources ===");
   for (const r of sources) console.log(`  ${r.id}: ${r.page_count} pages (${r.name})`);
@@ -32,18 +33,22 @@ async function main() {
     `SELECT (SELECT count(*) FROM pages) as total_pages,
             (SELECT count(*) FROM content_chunks) as total_chunks,
             (SELECT count(embedding) FROM content_chunks) as chunks_with_emb,
-            (SELECT count(*) FROM links) as total_links`, []
+            (SELECT count(*) FROM links) as total_links`,
+    []
   )) as any[];
   console.log("\n=== 2. Totals ===");
   console.log(`  Pages: ${totals[0].total_pages}`);
-  console.log(`  Chunks: ${totals[0].total_chunks} (with embeddings: ${totals[0].chunks_with_emb})`);
+  console.log(
+    `  Chunks: ${totals[0].total_chunks} (with embeddings: ${totals[0].chunks_with_emb})`
+  );
   console.log(`  Links: ${totals[0].total_links}`);
 
   // ── 3. Duplicate slugs (same slug across different source_ids) ──
   const dupSlugs = (await engine.executeRaw(
     `SELECT slug, count(DISTINCT source_id) as src_count, array_agg(DISTINCT source_id) as sources
      FROM pages GROUP BY slug HAVING count(DISTINCT source_id) > 1
-     ORDER BY src_count DESC LIMIT 30`, []
+     ORDER BY src_count DESC LIMIT 30`,
+    []
   )) as any[];
   console.log(`\n=== 3. Duplicate slugs (same slug, different sources) ===`);
   if (dupSlugs.length === 0) console.log("  ✅ No duplicates found");
@@ -53,7 +58,8 @@ async function main() {
   const dupPairs = (await engine.executeRaw(
     `SELECT source_id, slug, count(*) as cnt
      FROM pages GROUP BY source_id, slug HAVING count(*) > 1
-     ORDER BY cnt DESC LIMIT 20`, []
+     ORDER BY cnt DESC LIMIT 20`,
+    []
   )) as any[];
   console.log(`\n=== 4. Duplicate (source_id, slug) pairs ===`);
   if (dupPairs.length === 0) console.log("  ✅ No duplicate pairs found");
@@ -66,7 +72,8 @@ async function main() {
      WHERE source_id = 'law-at'
        AND slug LIKE 'legal/statutes/at/%'
        AND slug !~ '^legal/statutes/at/[a-z][a-z0-9-]*/p-[0-9]+$'
-     LIMIT 30`, []
+     LIMIT 30`,
+    []
   )) as any[];
   console.log(`\n=== 5. AT statute slugs NOT matching canonical format ===`);
   console.log("  Expected: legal/statutes/at/<lowercase-abbr>/p-<N>");
@@ -77,7 +84,8 @@ async function main() {
   const atSlugSummary = (await engine.executeRaw(
     `SELECT substring(slug from '^legal/statutes/at/[^/]+') as law_prefix, count(*) as cnt
      FROM pages WHERE source_id = 'law-at' AND slug LIKE 'legal/statutes/at/%'
-     GROUP BY 1 ORDER BY cnt DESC`, []
+     GROUP BY 1 ORDER BY cnt DESC`,
+    []
   )) as any[];
   console.log(`\n=== 6. AT statutes by law (paragraph counts) ===`);
   for (const r of atSlugSummary) console.log(`  ${r.law_prefix}: ${r.cnt} paragraphs`);
@@ -88,7 +96,8 @@ async function main() {
        substring(slug from '^legal/judikatur/at/[^/]+') as court_prefix,
        count(*) as cnt
      FROM pages WHERE slug LIKE 'legal/judikatur/at/%'
-     GROUP BY 1, 2 ORDER BY source_id, court_prefix`, []
+     GROUP BY 1, 2 ORDER BY source_id, court_prefix`,
+    []
   )) as any[];
   console.log(`\n=== 7. Judikatur pages by court ===`);
   for (const r of judSlugs) console.log(`  ${r.source_id} / ${r.court_prefix}: ${r.cnt}`);
@@ -99,7 +108,8 @@ async function main() {
   const orphanCheck = (await engine.executeRaw(
     `SELECT count(*) as cnt FROM links l
      LEFT JOIN pages p ON p.id = l.to_page_id
-     WHERE p.id IS NULL`, []
+     WHERE p.id IS NULL`,
+    []
   )) as any[];
   console.log(`\n=== 8. Orphan links (to_page missing) ===`);
   const orphanCount = orphanCheck[0]?.cnt ?? 0;
@@ -109,7 +119,8 @@ async function main() {
   // ── 9. Citation links summary ──
   const linkSummary = (await engine.executeRaw(
     `SELECT l.link_source, l.link_type, count(*) as cnt
-     FROM links l GROUP BY 1, 2 ORDER BY 1, 2`, []
+     FROM links l GROUP BY 1, 2 ORDER BY 1, 2`,
+    []
   )) as any[];
   console.log(`\n=== 9. All links by source/type ===`);
   for (const r of linkSummary) console.log(`  ${r.link_source}/${r.link_type}: ${r.cnt}`);
@@ -124,12 +135,15 @@ async function main() {
      FROM pages p
      LEFT JOIN content_chunks c ON c.page_id = p.id
      WHERE p.source_id LIKE 'law-at%'
-     GROUP BY p.source_id ORDER BY p.source_id`, []
+     GROUP BY p.source_id ORDER BY p.source_id`,
+    []
   )) as any[];
   console.log(`\n=== 10. Embedding coverage (AT sources) ===`);
   for (const r of embCoverage) {
     const status = r.emb_pct == 100 ? "✅" : r.emb_pct > 0 ? "⚠️" : "❌";
-    console.log(`  ${status} ${r.source_id}: ${r.pages} pages, ${r.chunks} chunks, ${r.chunks_with_emb} emb (${r.emb_pct}%)`);
+    console.log(
+      `  ${status} ${r.source_id}: ${r.pages} pages, ${r.chunks} chunks, ${r.chunks_with_emb} emb (${r.emb_pct}%)`
+    );
   }
 
   // ── 11. DE + CH sources embedding coverage ──
@@ -142,13 +156,16 @@ async function main() {
      FROM pages p
      LEFT JOIN content_chunks c ON c.page_id = p.id
      WHERE p.source_id LIKE 'law-de%' OR p.source_id LIKE 'law-ch%' OR p.source_id LIKE 'law-eu%'
-     GROUP BY p.source_id ORDER BY p.source_id`, []
+     GROUP BY p.source_id ORDER BY p.source_id`,
+    []
   )) as any[];
   console.log(`\n=== 11. Embedding coverage (DE/CH/EU sources) ===`);
   if (otherEmb.length === 0) console.log("  (none)");
   for (const r of otherEmb) {
     const status = r.emb_pct == 100 ? "✅" : r.emb_pct > 0 ? "⚠️" : "❌";
-    console.log(`  ${status} ${r.source_id}: ${r.pages} pages, ${r.chunks} chunks, ${r.chunks_with_emb} emb (${r.emb_pct}%)`);
+    console.log(
+      `  ${status} ${r.source_id}: ${r.pages} pages, ${r.chunks} chunks, ${r.chunks_with_emb} emb (${r.emb_pct}%)`
+    );
   }
 
   // ── 12. Judikatur-cites link targets — which laws are cited most ──
@@ -159,7 +176,8 @@ async function main() {
      FROM links l
      JOIN pages t ON t.id = l.to_page_id
      WHERE l.link_type = 'judikatur-cites'
-     GROUP BY 1, 2 ORDER BY cnt DESC LIMIT 20`, []
+     GROUP BY 1, 2 ORDER BY cnt DESC LIMIT 20`,
+    []
   )) as any[];
   console.log(`\n=== 12. Top 20 cited laws (judikatur-cites targets) ===`);
   if (topCited.length === 0) console.log("  (no judikatur-cites links found)");
@@ -171,7 +189,8 @@ async function main() {
      FROM links l
      JOIN pages t ON t.id = l.to_page_id
      WHERE l.link_type = 'judikatur-cites'
-     GROUP BY 1, 2 ORDER BY cnt DESC LIMIT 20`, []
+     GROUP BY 1, 2 ORDER BY cnt DESC LIMIT 20`,
+    []
   )) as any[];
   console.log(`\n=== 13. Top 20 judikatur-cites target slugs ===`);
   if (sampleCites.length === 0) console.log("  (no judikatur-cites links found)");
@@ -181,7 +200,8 @@ async function main() {
   const constraintCheck = (await engine.executeRaw(
     `SELECT source_id, slug, count(*) as cnt
      FROM pages GROUP BY source_id, slug HAVING count(*) > 1
-     LIMIT 5`, []
+     LIMIT 5`,
+    []
   )) as any[];
   console.log(`\n=== 14. Unique constraint violations (source_id, slug) ===`);
   if (constraintCheck.length === 0) console.log("  ✅ No violations — (source_id, slug) is unique");
@@ -192,7 +212,8 @@ async function main() {
      FROM pages p
      LEFT JOIN content_chunks c ON c.page_id = p.id
      WHERE c.id IS NULL
-     GROUP BY p.source_id ORDER BY cnt DESC LIMIT 10`, []
+     GROUP BY p.source_id ORDER BY cnt DESC LIMIT 10`,
+    []
   )) as any[];
   console.log(`\n=== 15. Pages without any chunks ===`);
   if (noChunks.length === 0) console.log("  ✅ All pages have chunks");
@@ -204,4 +225,7 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
 }
 
-main().catch((e) => { console.error("FATAL:", e); process.exit(1); });
+main().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(1);
+});

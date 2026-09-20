@@ -74,7 +74,6 @@ export interface CorpusOverview {
   generatedAt: string | null;
 }
 
-
 export interface IngestLogEntry {
   id: number;
   occurredAt: string;

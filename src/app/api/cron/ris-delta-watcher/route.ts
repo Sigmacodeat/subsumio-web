@@ -32,6 +32,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   return Response.json({
     triggered: true,
-    message: "RIS Delta-Sync trigger gesetzt — corpus-pipeline wird ihn im nächsten Zyklus abarbeiten",
+    message:
+      "RIS Delta-Sync trigger gesetzt — corpus-pipeline wird ihn im nächsten Zyklus abarbeiten",
   });
 });

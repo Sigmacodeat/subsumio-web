@@ -27,10 +27,21 @@ const ONLY_DIR = corpusIdx >= 0 ? args[corpusIdx + 1] : null;
 
 const JUDIKATUR_DIRS = ONLY_DIR
   ? [ONLY_DIR]
-  : ["at-judikatur", "at-judikatur-vwgh", "at-judikatur-vfgh", "at-judikatur-bvwg",
-     "at-judikatur-lvwg", "at-judikatur-asylgh", "at-judikatur-uvs", "at-judikatur-dsk",
-     "at-judikatur-gbk", "at-judikatur-pvak", "at-judikatur-dok", "at-judikatur-ubas",
-     "at-judikatur-umse"];
+  : [
+      "at-judikatur",
+      "at-judikatur-vwgh",
+      "at-judikatur-vfgh",
+      "at-judikatur-bvwg",
+      "at-judikatur-lvwg",
+      "at-judikatur-asylgh",
+      "at-judikatur-uvs",
+      "at-judikatur-dsk",
+      "at-judikatur-gbk",
+      "at-judikatur-pvak",
+      "at-judikatur-dok",
+      "at-judikatur-ubas",
+      "at-judikatur-umse",
+    ];
 
 const DATE_PREFIX_RE = /^(\d{4}-\d{2}-\d{2})-(.+\.md)$/;
 
@@ -84,11 +95,15 @@ for (const dir of JUDIKATUR_DIRS) {
           renameSync(oldPath, newPath);
         }
         merged++;
-        console.log(`  ${DRY_RUN ? "[DRY] " : ""}🔀 merge: ${datedFile} → ${newFile} (alte war neuer)`);
+        console.log(
+          `  ${DRY_RUN ? "[DRY] " : ""}🔀 merge: ${datedFile} → ${newFile} (alte war neuer)`
+        );
       } else {
         if (!DRY_RUN) unlinkSync(oldPath);
         merged++;
-        console.log(`  ${DRY_RUN ? "[DRY] " : ""}🔀 merge: ${datedFile} gelöscht (neue existiert bereits, neuer)`);
+        console.log(
+          `  ${DRY_RUN ? "[DRY] " : ""}🔀 merge: ${datedFile} gelöscht (neue existiert bereits, neuer)`
+        );
       }
     } else {
       if (!DRY_RUN) renameSync(oldPath, newPath);

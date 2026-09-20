@@ -87,10 +87,14 @@ Options:
 
 // ── Real mode adapters ────────────────────────────────────────────────
 
-async function makeSearchFn(engineUrl: string): Promise<
-  (query: string, mode: SearchMode, jurisdiction?: string) => Promise<SearchResult[]>
-> {
-  return async (query: string, mode: SearchMode, jurisdiction?: string): Promise<SearchResult[]> => {
+async function makeSearchFn(
+  engineUrl: string
+): Promise<(query: string, mode: SearchMode, jurisdiction?: string) => Promise<SearchResult[]>> {
+  return async (
+    query: string,
+    mode: SearchMode,
+    jurisdiction?: string
+  ): Promise<SearchResult[]> => {
     const params = new URLSearchParams({
       q: query,
       mode,
@@ -104,7 +108,7 @@ async function makeSearchFn(engineUrl: string): Promise<
     if (!resp.ok) {
       throw new Error(`Search failed: ${resp.status} ${resp.statusText}`);
     }
-    const data = await resp.json() as { results: SearchResult[] };
+    const data = (await resp.json()) as { results: SearchResult[] };
     return data.results;
   };
 }
@@ -121,15 +125,20 @@ async function makeChatFn(_engineUrl: string): Promise<(opts: ChatOpts) => Promi
   };
 }
 
-async function makePlanQueryFn(): Promise<(question: string, jurisdiction?: string) => Promise<QueryPlan>> {
+async function makePlanQueryFn(): Promise<
+  (question: string, jurisdiction?: string) => Promise<QueryPlan>
+> {
   const { planQuery } = await import("../../core/think/query-planner.ts");
   return async (question: string, jurisdiction?: string): Promise<QueryPlan> => {
     return planQuery({ question, jurisdiction });
   };
 }
 
-async function makeGroundCitationsFn(): Promise<(citations: RawCitation[]) => Promise<GroundedCitation[]>> {
-  const { checkCitationGrounding, extractCitations } = await import("../../core/citation-guardrail.ts");
+async function makeGroundCitationsFn(): Promise<
+  (citations: RawCitation[]) => Promise<GroundedCitation[]>
+> {
+  const { checkCitationGrounding, extractCitations } =
+    await import("../../core/citation-guardrail.ts");
   return async (citations: RawCitation[]): Promise<GroundedCitation[]> => {
     const answerText = citations.map((c) => `§ ${c.paragraph} ${c.code}`).join(" ");
     const contextText = citations.map((c) => `§ ${c.paragraph} ${c.code}`).join(" ");
@@ -180,7 +189,9 @@ async function main() {
   }
 
   if (args.verbose) {
-    console.error(`[component-eval] Running ${fixtures.length} fixtures (${subset} mode, real=${args.full})`);
+    console.error(
+      `[component-eval] Running ${fixtures.length} fixtures (${subset} mode, real=${args.full})`
+    );
   }
 
   const start = performance.now();
@@ -204,7 +215,9 @@ async function main() {
 
   // Exit code: 0 if all pass, 1 if any failures
   if (summary.all_pass_count < summary.total_fixtures) {
-    console.error(`\n[component-eval] ${summary.total_fixtures - summary.all_pass_count} fixture(s) failed.`);
+    console.error(
+      `\n[component-eval] ${summary.total_fixtures - summary.all_pass_count} fixture(s) failed.`
+    );
     process.exit(1);
   }
 }

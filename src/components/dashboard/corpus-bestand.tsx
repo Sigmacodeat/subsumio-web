@@ -17,7 +17,8 @@ import { RefreshCw } from "lucide-react";
 import type { CorpusOverview, CorpusSourceStats } from "@/lib/corpus-labels";
 
 const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-AT");
-const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0);
+const pct = (part: number, whole: number) =>
+  whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0;
 const date = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }) : "—";
 
@@ -25,7 +26,9 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
   return (
     <Card>
       <CardContent className="p-4">
-        <p className="text-xs uppercase tracking-wide text-[color:var(--ds-text-subtle)]">{label}</p>
+        <p className="text-xs tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+          {label}
+        </p>
         <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
         {hint && <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{hint}</p>}
       </CardContent>
@@ -36,7 +39,8 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
 /** "RIS hat / wir haben" of the latest reconciliation, as a status chip. */
 function ReconChip({ s }: { s: CorpusSourceStats }) {
   const r = s.reconciliation;
-  if (!r) return <span className="text-xs text-[color:var(--ds-text-subtle)]">noch nicht gemessen</span>;
+  if (!r)
+    return <span className="text-xs text-[color:var(--ds-text-subtle)]">noch nicht gemessen</span>;
   const missing = r.missing ?? 0;
   const ok = missing === 0;
   return (
@@ -50,7 +54,7 @@ function ReconChip({ s }: { s: CorpusSourceStats }) {
       >
         {ok ? "vollständig" : `${fmt(missing)} fehlen`}
       </Badge>
-      <span className="text-xs tabular-nums text-[color:var(--ds-text-muted)]">
+      <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
         RIS {r.risTotal === null ? "?" : fmt(r.risTotal)} · DB {fmt(r.dbTotal)}
         {(r.extra ?? 0) > 0 ? ` · ${fmt(r.extra)} nicht mehr im RIS` : ""}
       </span>
@@ -88,7 +92,9 @@ export function CorpusBestand() {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-sm text-[color:var(--ds-danger-text)]">Bestand konnte nicht geladen werden.</p>
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
+            Bestand konnte nicht geladen werden.
+          </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => query.refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Neu laden
@@ -142,14 +148,20 @@ export function CorpusBestand() {
                       : fmt(s.statutes)}
                   </TableCell>
                   {!isDecision && (
-                    <TableCell className="text-right tabular-nums">{s.repealed ? fmt(s.repealed) : "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {s.repealed ? fmt(s.repealed) : "—"}
+                    </TableCell>
                   )}
                   <TableCell className="text-right tabular-nums">{fmt(s.chunks)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{pct(s.embedded, s.chunks)} %</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {pct(s.embedded, s.chunks)} %
+                  </TableCell>
                   <TableCell>
                     <ReconChip s={s} />
                   </TableCell>
-                  <TableCell className="text-xs text-[color:var(--ds-text-muted)]">{date(s.lastUpdated)}</TableCell>
+                  <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
+                    {date(s.lastUpdated)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -167,14 +179,23 @@ export function CorpusBestand() {
             ? `Zählung der Datenbank auf dem Server vom ${date(d.generatedAt)} (stündlich neu)`
             : "Noch keine Zählung vorhanden — sie wird stündlich erstellt."}
         </p>
-        <Button variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => query.refetch()}
+          disabled={query.isFetching}
+        >
           <RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />
           Neu laden
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Gesetze" value={fmt(t.statutes)} hint={`${fmt(t.norms)} Normen (Paragraphen, Artikel, Anlagen)`} />
+        <Kpi
+          label="Gesetze"
+          value={fmt(t.statutes)}
+          hint={`${fmt(t.norms)} Normen (Paragraphen, Artikel, Anlagen)`}
+        />
         <Kpi
           label="Entscheidungen"
           value={fmt(t.decisions)}
@@ -192,9 +213,15 @@ export function CorpusBestand() {
         <CardContent className="p-4">
           <h3 className="text-sm font-semibold">Eingang der letzten 30 Tage</h3>
           {d.ingestByDay.length === 0 ? (
-            <p className="mt-2 text-xs text-[color:var(--ds-text-subtle)]">Noch keine protokollierten Importe.</p>
+            <p className="mt-2 text-xs text-[color:var(--ds-text-subtle)]">
+              Noch keine protokollierten Importe.
+            </p>
           ) : (
-            <div className="mt-3 flex h-28 items-end gap-1" role="img" aria-label="Neue und geänderte Dokumente je Tag">
+            <div
+              className="mt-3 flex h-28 items-end gap-1"
+              role="img"
+              aria-label="Neue und geänderte Dokumente je Tag"
+            >
               {d.ingestByDay.map((x) => (
                 <div
                   key={x.day}

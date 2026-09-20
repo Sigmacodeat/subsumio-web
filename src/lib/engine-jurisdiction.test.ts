@@ -57,11 +57,12 @@ describe("WP3: engineHeadersWithCaseJurisdiction", () => {
   }
 
   function mockFetchResponse(body: unknown, ok = true, status = 200) {
-    global.fetch = vi.fn(async () =>
-      new Response(JSON.stringify(body), {
-        status: ok ? status : status,
-        headers: { "Content-Type": "application/json" },
-      })
+    global.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify(body), {
+          status: ok ? status : status,
+          headers: { "Content-Type": "application/json" },
+        })
     ) as unknown as typeof fetch;
   }
 
@@ -201,11 +202,11 @@ describe("WP3: engineHeadersWithCaseJurisdiction", () => {
   });
 
   test("uses cache on second call for same case (single fetch)", async () => {
-    const fetchFn = vi.fn(async () =>
-      new Response(
-        JSON.stringify({ frontmatter: { jurisdiction: "DE" } }),
-        { headers: { "Content-Type": "application/json" } }
-      )
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ frontmatter: { jurisdiction: "DE" } }), {
+          headers: { "Content-Type": "application/json" },
+        })
     );
     global.fetch = fetchFn as unknown as typeof fetch;
     const { engineHeadersWithCaseJurisdiction } = await importEngine();
@@ -218,11 +219,11 @@ describe("WP3: engineHeadersWithCaseJurisdiction", () => {
   });
 
   test("cache is scoped per brainId (different source = different cache key)", async () => {
-    const fetchFn = vi.fn(async () =>
-      new Response(
-        JSON.stringify({ frontmatter: { jurisdiction: "DE" } }),
-        { headers: { "Content-Type": "application/json" } }
-      )
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ frontmatter: { jurisdiction: "DE" } }), {
+          headers: { "Content-Type": "application/json" },
+        })
     );
     global.fetch = fetchFn as unknown as typeof fetch;
     const { engineHeadersWithCaseJurisdiction } = await importEngine();
@@ -240,11 +241,11 @@ describe("WP3: engineHeadersWithCaseJurisdiction", () => {
   });
 
   test("trims case slug before lookup", async () => {
-    const fetchFn = vi.fn(async () =>
-      new Response(
-        JSON.stringify({ frontmatter: { jurisdiction: "DE" } }),
-        { headers: { "Content-Type": "application/json" } }
-      )
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ frontmatter: { jurisdiction: "DE" } }), {
+          headers: { "Content-Type": "application/json" },
+        })
     );
     global.fetch = fetchFn as unknown as typeof fetch;
     const { engineHeadersWithCaseJurisdiction } = await importEngine();
@@ -255,7 +256,7 @@ describe("WP3: engineHeadersWithCaseJurisdiction", () => {
     );
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    const url = (fetchFn.mock.calls[0][0] as string);
+    const url = fetchFn.mock.calls[0][0] as string;
     expect(url).toContain("legal/cases/trimmed");
   });
 });

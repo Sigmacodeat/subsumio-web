@@ -48,10 +48,7 @@
       "legal_area": "abgb",
       "expected_slug": "legal/statutes/at/abgb/p-933",
       "rank": null,
-      "top_slugs": [
-        "legal/at/abgb",
-        "legal/at/kschg"
-      ],
+      "top_slugs": ["legal/at/abgb", "legal/at/kschg"],
       "mrr": 0
     },
     {
@@ -67,12 +64,7 @@
       "legal_area": "abgb",
       "expected_slug": "legal/statutes/at/abgb/p-871",
       "rank": null,
-      "top_slugs": [
-        "legal/at/eo",
-        "legal/at/bao",
-        "legal/at/stpo-at",
-        "legal/at/asvg"
-      ],
+      "top_slugs": ["legal/at/eo", "legal/at/bao", "legal/at/stpo-at", "legal/at/asvg"],
       "mrr": 0
     },
     {
@@ -80,9 +72,7 @@
       "legal_area": "abgb",
       "expected_slug": "legal/statutes/at/abgb/p-432",
       "rank": null,
-      "top_slugs": [
-        "legal/at/abgb"
-      ],
+      "top_slugs": ["legal/at/abgb"],
       "mrr": 0
     },
     {
@@ -98,9 +88,7 @@
       "legal_area": "stgb_at",
       "expected_slug": "legal/statutes/at/stgb/p-128",
       "rank": null,
-      "top_slugs": [
-        "legal/at/gewo-at"
-      ],
+      "top_slugs": ["legal/at/gewo-at"],
       "mrr": 0
     },
     {
@@ -108,12 +96,7 @@
       "legal_area": "stgb_at",
       "expected_slug": "legal/statutes/at/stgb/p-146",
       "rank": null,
-      "top_slugs": [
-        "legal/at/stgb-at",
-        "legal/at/abgb",
-        "legal/at/bvergg",
-        "legal/at/zpo-at"
-      ],
+      "top_slugs": ["legal/at/stgb-at", "legal/at/abgb", "legal/at/bvergg", "legal/at/zpo-at"],
       "mrr": 0
     },
     {
@@ -135,9 +118,7 @@
       "legal_area": "stgb_at",
       "expected_slug": "legal/statutes/at/stgb/p-80",
       "rank": null,
-      "top_slugs": [
-        "legal/at/gwg"
-      ],
+      "top_slugs": ["legal/at/gwg"],
       "mrr": 0
     },
     {
@@ -159,10 +140,7 @@
       "legal_area": "zpo_at",
       "expected_slug": "legal/statutes/at/zpo/p-226",
       "rank": 2,
-      "top_slugs": [
-        "legal/at/zpo-at",
-        "legal/statutes/at/zpo/p-226"
-      ],
+      "top_slugs": ["legal/at/zpo-at", "legal/statutes/at/zpo/p-226"],
       "mrr": 0.5
     },
     {
@@ -184,9 +162,7 @@
       "legal_area": "zpo_at",
       "expected_slug": "legal/statutes/at/zpo/p-41",
       "rank": null,
-      "top_slugs": [
-        "legal/at/zpo-at"
-      ],
+      "top_slugs": ["legal/at/zpo-at"],
       "mrr": 0
     },
     {
@@ -194,11 +170,7 @@
       "legal_area": "ugb",
       "expected_slug": "legal/statutes/at/ugb/p-17",
       "rank": null,
-      "top_slugs": [
-        "legal/at/ugb",
-        "legal/at/gewo-at",
-        "legal/at/e-govg"
-      ],
+      "top_slugs": ["legal/at/ugb", "legal/at/gewo-at", "legal/at/e-govg"],
       "mrr": 0
     },
     {
@@ -255,9 +227,7 @@
       "legal_area": "gmbhg_at",
       "expected_slug": "legal/statutes/at/gmbhg/p-6",
       "rank": null,
-      "top_slugs": [
-        "legal/at/aktg-at"
-      ],
+      "top_slugs": ["legal/at/aktg-at"],
       "mrr": 0
     },
     {
@@ -315,9 +285,7 @@
       "legal_area": "au_strg",
       "expected_slug": "legal/statutes/at/au-strg/p-13",
       "rank": null,
-      "top_slugs": [
-        "legal/at/mrg"
-      ],
+      "top_slugs": ["legal/at/mrg"],
       "mrr": 0
     },
     {
@@ -380,9 +348,7 @@
       "legal_area": "arbvg",
       "expected_slug": "legal/statutes/at/arbvg/p-105",
       "rank": null,
-      "top_slugs": [
-        "legal/at/asvg"
-      ],
+      "top_slugs": ["legal/at/asvg"],
       "mrr": 0
     },
     {
@@ -404,9 +370,7 @@
       "legal_area": "vkgg",
       "expected_slug": "legal/statutes/at/vkgg/p-2",
       "rank": null,
-      "top_slugs": [
-        "legal/at/bdg"
-      ],
+      "top_slugs": ["legal/at/bdg"],
       "mrr": 0
     },
     {
@@ -548,9 +512,7 @@
       "legal_area": "avg",
       "expected_slug": "legal/statutes/at/avg/p-62",
       "rank": null,
-      "top_slugs": [
-        "legal/at/rao"
-      ],
+      "top_slugs": ["legal/at/rao"],
       "mrr": 0
     },
     {
@@ -712,10 +674,7 @@
       "legal_area": "asylg",
       "expected_slug": "legal/statutes/at/asylg/p-1",
       "rank": null,
-      "top_slugs": [
-        "legal/at/asylg",
-        "legal/at/fpg"
-      ],
+      "top_slugs": ["legal/at/asylg", "legal/at/fpg"],
       "mrr": 0
     },
     {
@@ -736,12 +695,7 @@
       "legal_area": "eheg",
       "expected_slug": "legal/statutes/at/eheg/p-43",
       "rank": null,
-      "top_slugs": [
-        "legal/at/eheg",
-        "legal/at/au-strg",
-        "legal/at/zpo-at",
-        "legal/at/asvg"
-      ],
+      "top_slugs": ["legal/at/eheg", "legal/at/au-strg", "legal/at/zpo-at", "legal/at/asvg"],
       "mrr": 0
     },
     {
@@ -843,9 +797,7 @@
       "legal_area": "asvg",
       "expected_slug": "legal/statutes/at/asvg/p-102",
       "rank": null,
-      "top_slugs": [
-        "legal/at/eheg"
-      ],
+      "top_slugs": ["legal/at/eheg"],
       "mrr": 0
     },
     {
@@ -950,10 +902,7 @@
       "legal_area": "jn",
       "expected_slug": "legal/statutes/at/jn/p-7a",
       "rank": null,
-      "top_slugs": [
-        "legal/statutes/at/adv-form-verordnung/full",
-        "legal/at/adv-form-verordnung"
-      ],
+      "top_slugs": ["legal/statutes/at/adv-form-verordnung/full", "legal/at/adv-form-verordnung"],
       "mrr": 0
     },
     {

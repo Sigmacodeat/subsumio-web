@@ -182,9 +182,7 @@ export function OursSection({ t }: { t: SuperbrainCopyDe }) {
             transition={{ duration: 0.4 }}
             className="mb-4 inline-flex"
           >
-            <span className={EYEBROW_CLASS}>
-              {"Die Lösung"}
-            </span>
+            <span className={EYEBROW_CLASS}>{"Die Lösung"}</span>
           </motion.div>
           <ClipReveal>
             <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.oursTitle}</h2>

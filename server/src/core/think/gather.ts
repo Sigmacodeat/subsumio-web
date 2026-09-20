@@ -151,7 +151,7 @@ export async function runGather(
   // affects the retrieval/search phase.
   const searchQuery = expandConceptQuery(
     expandLegalQuery(opts.question),
-    opts.jurisdiction as "de" | "at" | undefined,
+    opts.jurisdiction as "de" | "at" | undefined
   );
 
   // Set when the page stream threw (DB/search outage). An empty result set
@@ -169,7 +169,7 @@ export async function runGather(
           sourceId: opts.sourceId,
           sourceIds: opts.sourceIds,
           limit: gatherLimit,
-        }).then(r => r.results)
+        }).then((r) => r.results)
       : opts.agenticRetrievalEnabled
         ? agenticRetrieval(engine, {
             question: opts.question,
@@ -178,7 +178,7 @@ export async function runGather(
             sourceIds: opts.sourceIds,
             limit: gatherLimit,
             maxRounds: 2,
-          }).then(r => r.results)
+          }).then((r) => r.results)
         : hybridSearch(engine, searchQuery, {
             limit: gatherLimit,
             expansion: false,
@@ -261,32 +261,31 @@ export async function runGather(
   // This activates graph-based retrieval by default in legal mode, finding
   // related statutes/cases even without an explicit --anchor flag.
   const legalGraphEnabled = opts.legalGraphEnabled !== false;
-  const legalGraphPromise: Promise<string[]> = (legalGraphEnabled && !opts.anchor)
-    ? pagesPromise.then(async (pages) => {
-        const seeds = pages
-          .slice(0, 5)
-          .map((p) => String((p as unknown as { slug?: string }).slug ?? ""))
-          .filter((s) => s.length > 0);
-        if (seeds.length === 0) return [];
-        try {
-          const fanout = await engine.relationalFanout(seeds, {
-            depth: 2,
-            direction: "both",
-            limit: 20,
-            ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
-            ...(opts.sourceIds !== undefined ? { sourceIds: opts.sourceIds } : {}),
-          });
-          return fanout
-            .filter((r) => r.hop <= 2)
-            .map((r) => r.slug);
-        } catch (e) {
-          process.stderr.write(
-            `[think.gather] legal graph fan-out failed: ${(e as Error).message}\n`
-          );
-          return [];
-        }
-      })
-    : Promise.resolve([] as string[]);
+  const legalGraphPromise: Promise<string[]> =
+    legalGraphEnabled && !opts.anchor
+      ? pagesPromise.then(async (pages) => {
+          const seeds = pages
+            .slice(0, 5)
+            .map((p) => String((p as unknown as { slug?: string }).slug ?? ""))
+            .filter((s) => s.length > 0);
+          if (seeds.length === 0) return [];
+          try {
+            const fanout = await engine.relationalFanout(seeds, {
+              depth: 2,
+              direction: "both",
+              limit: 20,
+              ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
+              ...(opts.sourceIds !== undefined ? { sourceIds: opts.sourceIds } : {}),
+            });
+            return fanout.filter((r) => r.hop <= 2).map((r) => r.slug);
+          } catch (e) {
+            process.stderr.write(
+              `[think.gather] legal graph fan-out failed: ${(e as Error).message}\n`
+            );
+            return [];
+          }
+        })
+      : Promise.resolve([] as string[]);
 
   const [pages, takesKw, takesVec, graphSlugs, legalGraphSlugs] = await Promise.all([
     pagesPromise,

@@ -210,13 +210,35 @@ export async function fetchBuzerStatuteVersion(
   // buzer.de uses mixed-case URLs (StGB, StPO, BauGB, etc.)
   // We need an explicit mapping from lowercase corpus names to buzer.de URL slugs.
   const BUZER_MAP: Record<string, string> = {
-    bgb: "BGB", gg: "GG", hgb: "HGB", stgb: "StGB", stpo: "StPO",
-    zpo: "ZPO", ao: "AO", estg: "EStG", kstg: "KStG", ustg: "UStG",
-    gewstg: "GewStG", gmbhg: "GmbHG", baugb: "BauGB", bewg: "BewG",
-    betrvg: "BetrVG", inso: "InsO", vwgo: "VwGO", zvg: "ZVG",
-    urhg: "UrhG", gewo: "GewO", famfg: "FamFG", erbstg: "ErbStG",
-    bdsg: "BDSG", stbvv: "StBVV", rvg: "RVG", uwg: "UWG",
-    lstdv: "LStDV", grestg: "GrEStG", stberg: "StBerG",
+    bgb: "BGB",
+    gg: "GG",
+    hgb: "HGB",
+    stgb: "StGB",
+    stpo: "StPO",
+    zpo: "ZPO",
+    ao: "AO",
+    estg: "EStG",
+    kstg: "KStG",
+    ustg: "UStG",
+    gewstg: "GewStG",
+    gmbhg: "GmbHG",
+    baugb: "BauGB",
+    bewg: "BewG",
+    betrvg: "BetrVG",
+    inso: "InsO",
+    vwgo: "VwGO",
+    zvg: "ZVG",
+    urhg: "UrhG",
+    gewo: "GewO",
+    famfg: "FamFG",
+    erbstg: "ErbStG",
+    bdsg: "BDSG",
+    stbvv: "StBVV",
+    rvg: "RVG",
+    uwg: "UWG",
+    lstdv: "LStDV",
+    grestg: "GrEStG",
+    stberg: "StBerG",
     aoIndex: "AO",
   };
   const buzerAbbr = BUZER_MAP[statuteAbbr.toLowerCase()] ?? statuteAbbr.toUpperCase();
@@ -238,9 +260,7 @@ export async function fetchBuzerStatuteVersion(
 
   // Extract title from the page
   const titleMatch = detailHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-  const lawTitle = titleMatch
-    ? titleMatch[1]!.replace(/&[a-z]+;/g, "").trim()
-    : statuteAbbr;
+  const lawTitle = titleMatch ? titleMatch[1]!.replace(/&[a-z]+;/g, "").trim() : statuteAbbr;
 
   let versionDate: string | null = null;
 

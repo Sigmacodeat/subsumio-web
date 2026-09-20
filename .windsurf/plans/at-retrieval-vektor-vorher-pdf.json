@@ -172,9 +172,7 @@
       "expected_slug": "legal/statutes/at/stgb/p-80",
       "ziel_vorhanden": true,
       "rank": null,
-      "top_slugs": [
-        "legal/at/stgb-at"
-      ],
+      "top_slugs": ["legal/at/stgb-at"],
       "mrr": 0
     },
     {
@@ -513,11 +511,7 @@
       "expected_slug": "legal/statutes/at/buag/p-12",
       "ziel_vorhanden": true,
       "rank": null,
-      "top_slugs": [
-        "legal/at/buag",
-        "legal/statutes/at/buag/p-33f",
-        "legal/statutes/at/buag/p-8"
-      ],
+      "top_slugs": ["legal/at/buag", "legal/statutes/at/buag/p-33f", "legal/statutes/at/buag/p-8"],
       "mrr": 0
     },
     {
@@ -1082,10 +1076,7 @@
       "expected_slug": "legal/statutes/at/arbvg/p-97",
       "ziel_vorhanden": true,
       "rank": null,
-      "top_slugs": [
-        "legal/statutes/at/abgb/p-1397",
-        "legal/at/epig"
-      ],
+      "top_slugs": ["legal/statutes/at/abgb/p-1397", "legal/at/epig"],
       "mrr": 0
     },
     {

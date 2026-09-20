@@ -222,7 +222,9 @@ export function verifyTraceChain(traces: ReasoningTrace[]): {
     const { trace_hash, prev_trace_hash, ...content } = trace;
     const computedHash = computeTraceHash(content);
     if (computedHash !== trace_hash) {
-      errors.push(`Trace ${i} (${trace.trace_id}): hash mismatch — trace may have been tampered with`);
+      errors.push(
+        `Trace ${i} (${trace.trace_id}): hash mismatch — trace may have been tampered with`
+      );
       return { valid: false, broken_at: i, errors };
     }
 
@@ -230,7 +232,9 @@ export function verifyTraceChain(traces: ReasoningTrace[]): {
     if (i > 0) {
       const expectedPrevHash = traces[i - 1].trace_hash;
       if (trace.prev_trace_hash !== expectedPrevHash) {
-        errors.push(`Trace ${i} (${trace.trace_id}): chain broken — prev_trace_hash does not match previous trace's hash`);
+        errors.push(
+          `Trace ${i} (${trace.trace_id}): chain broken — prev_trace_hash does not match previous trace's hash`
+        );
         return { valid: false, broken_at: i, errors };
       }
     }
@@ -310,13 +314,17 @@ export function exportTracesCSV(traces: ReasoningTrace[]): string {
  * Export traces as JSON (full detail for compliance audits).
  */
 export function exportTracesJSON(traces: ReasoningTrace[]): string {
-  return JSON.stringify({
-    export_format: "EU_AI_ACT_ART_13",
-    export_timestamp: new Date().toISOString(),
-    trace_count: traces.length,
-    chain_valid: verifyTraceChain(traces).valid,
-    traces,
-  }, null, 2);
+  return JSON.stringify(
+    {
+      export_format: "EU_AI_ACT_ART_13",
+      export_timestamp: new Date().toISOString(),
+      trace_count: traces.length,
+      chain_valid: verifyTraceChain(traces).valid,
+      traces,
+    },
+    null,
+    2
+  );
 }
 
 /**
@@ -331,8 +339,13 @@ export function exportTracesHTML(traces: ReasoningTrace[]): string {
 
   const traceRows = traces
     .map((t, i) => {
-      const guardrailStatus = t.guardrail_passed === true ? "PASSED" : t.guardrail_passed === false ? "FLAGGED" : "N/A";
-      const injectionStatus = t.injection_detected ? (t.injection_blocked ? "BLOCKED" : "DETECTED") : "CLEAN";
+      const guardrailStatus =
+        t.guardrail_passed === true ? "PASSED" : t.guardrail_passed === false ? "FLAGGED" : "N/A";
+      const injectionStatus = t.injection_detected
+        ? t.injection_blocked
+          ? "BLOCKED"
+          : "DETECTED"
+        : "CLEAN";
       const confidence = t.confidence_level ?? "N/A";
       return `
         <tr>
@@ -463,7 +476,9 @@ export interface WebhookEvent {
  * Determine if a trace should trigger a webhook escalation.
  * Returns the event type and severity if escalation is needed.
  */
-export function shouldEscalate(trace: ReasoningTrace): { event: WebhookEventType; severity: "critical" | "high" | "medium" } | null {
+export function shouldEscalate(
+  trace: ReasoningTrace
+): { event: WebhookEventType; severity: "critical" | "high" | "medium" } | null {
   // BLOCK: Injection was detected but NOT blocked — critical
   if (trace.injection_detected && !trace.injection_blocked) {
     return { event: "BLOCK", severity: "critical" };
@@ -550,9 +565,7 @@ export async function deliverWebhook(
 
     return { status: "failed", statusCode: res.status };
   } catch (err) {
-    console.error(
-      `[webhook] delivery failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    console.error(`[webhook] delivery failed: ${err instanceof Error ? err.message : String(err)}`);
     return { status: "failed" };
   }
 }
@@ -562,10 +575,7 @@ export async function deliverWebhook(
  * The trace is immutable once stored — no UPDATE or DELETE allowed.
  * Returns the stored trace or null on failure.
  */
-export async function storeTrace(
-  trace: ReasoningTrace,
-  auditId?: number
-): Promise<boolean> {
+export async function storeTrace(trace: ReasoningTrace, auditId?: number): Promise<boolean> {
   const { getSharedPgPool } = await import("@/lib/auth/store");
   const pool = getSharedPgPool();
   if (!pool) return false;
@@ -740,7 +750,10 @@ export async function loadTraces(opts: {
       query_hash: r.query_hash,
       jurisdiction: r.jurisdiction ?? undefined,
       search_mode: r.search_mode ?? undefined,
-      retrieved_chunks: typeof r.retrieved_chunks === "string" ? JSON.parse(r.retrieved_chunks) : r.retrieved_chunks ?? [],
+      retrieved_chunks:
+        typeof r.retrieved_chunks === "string"
+          ? JSON.parse(r.retrieved_chunks)
+          : (r.retrieved_chunks ?? []),
       pages_gathered: r.pages_gathered ?? 0,
       takes_gathered: r.takes_gathered ?? 0,
       graph_hits: r.graph_hits ?? 0,
@@ -748,26 +761,35 @@ export async function loadTraces(opts: {
       system_prompt_hash: r.system_prompt_hash,
       max_tokens: r.max_tokens ?? undefined,
       guardrail_passed: r.guardrail_passed ?? undefined,
-      guardrail_flags: typeof r.guardrail_flags === "string" ? JSON.parse(r.guardrail_flags) : r.guardrail_flags,
+      guardrail_flags:
+        typeof r.guardrail_flags === "string" ? JSON.parse(r.guardrail_flags) : r.guardrail_flags,
       cross_verify_clean: r.cross_verify_clean ?? undefined,
-      cross_verify_flags: typeof r.cross_verify_flags === "string" ? JSON.parse(r.cross_verify_flags) : r.cross_verify_flags,
+      cross_verify_flags:
+        typeof r.cross_verify_flags === "string"
+          ? JSON.parse(r.cross_verify_flags)
+          : r.cross_verify_flags,
       ensemble_clean: r.ensemble_clean ?? undefined,
-      ensemble_flags: typeof r.ensemble_flags === "string" ? JSON.parse(r.ensemble_flags) : r.ensemble_flags,
+      ensemble_flags:
+        typeof r.ensemble_flags === "string" ? JSON.parse(r.ensemble_flags) : r.ensemble_flags,
       ensemble_method: r.ensemble_method ?? undefined,
       regeneration_count: r.regeneration_count ?? 0,
       injection_detected: r.injection_detected ?? false,
       injection_blocked: r.injection_blocked ?? false,
-      injection_flags: typeof r.injection_flags === "string" ? JSON.parse(r.injection_flags) : r.injection_flags,
+      injection_flags:
+        typeof r.injection_flags === "string" ? JSON.parse(r.injection_flags) : r.injection_flags,
       final_answer_hash: r.final_answer_hash,
       answer_length: r.answer_length ?? 0,
-      citations: typeof r.citations === "string" ? JSON.parse(r.citations) : r.citations ?? [],
+      citations: typeof r.citations === "string" ? JSON.parse(r.citations) : (r.citations ?? []),
       confidence_level: r.confidence_level ?? undefined,
       overall_confidence: r.overall_confidence ?? undefined,
-      provenance_links: typeof r.provenance_links === "string" ? JSON.parse(r.provenance_links) : r.provenance_links,
+      provenance_links:
+        typeof r.provenance_links === "string"
+          ? JSON.parse(r.provenance_links)
+          : r.provenance_links,
       prev_trace_hash: r.prev_trace_hash ?? undefined,
       trace_hash: r.trace_hash,
       latency_ms: r.latency_ms ?? undefined,
-      warnings: typeof r.warnings === "string" ? JSON.parse(r.warnings) : r.warnings ?? [],
+      warnings: typeof r.warnings === "string" ? JSON.parse(r.warnings) : (r.warnings ?? []),
     })) as ReasoningTrace[];
   } catch (err) {
     console.error(

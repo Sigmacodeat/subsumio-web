@@ -3,6 +3,7 @@
 Frage: Was kostet uns ein Credit wirklich, welche Spanne haben wir, und was kostet ein Gratis-/Testkonto?
 
 **Status der Zahlen:**
+
 - ✅ **Geprüft**: Listenpreise der Modelle (Anthropic-Preisseite, heute abgerufen), Verkaufspreise und Regeln im Code.
 - 🟡 **Geschätzt aus dem Code**: Tokenmenge pro Aktion (welche Modelle, wie viele Aufrufe, welche Obergrenzen). Echte
   Verbrauchsdaten aus Produktion fehlen — siehe Abschnitt 6: die Hauptaktionen schreiben ihre Tokens **nicht** mit.
@@ -10,12 +11,12 @@ Frage: Was kostet uns ein Credit wirklich, welche Spanne haben wir, und was kost
 
 ## 1. Einkaufspreise (✅ geprüft, platform.claude.com/docs/en/about-claude/pricing, 19.09.2026)
 
-| Modell | Einsatz bei uns (Prod) | Input $/MTok | Cache-Lesen | Output $/MTok |
-|---|---|---|---|---|
-| Claude Haiku 4.5 | `utility`: Planer, Klassifikation, Prüfungen | 1,00 | 0,10 | 5,00 |
-| Claude Sonnet 5 | `reasoning`: normale Fragen, Zitat-Gegenprüfung | 2,00 | 0,20 | 10,00 |
-| Claude Opus 5 | `deep`: komplexe Rechtsfragen (Subsumtion, Rechtsmittel) | 5,00 | 0,50 | 25,00 |
-| text-embedding-3-large | Einbetten hochgeladener Seiten | 0,13 | – | – |
+| Modell                 | Einsatz bei uns (Prod)                                   | Input $/MTok | Cache-Lesen | Output $/MTok |
+| ---------------------- | -------------------------------------------------------- | ------------ | ----------- | ------------- |
+| Claude Haiku 4.5       | `utility`: Planer, Klassifikation, Prüfungen             | 1,00         | 0,10        | 5,00          |
+| Claude Sonnet 5        | `reasoning`: normale Fragen, Zitat-Gegenprüfung          | 2,00         | 0,20        | 10,00         |
+| Claude Opus 5          | `deep`: komplexe Rechtsfragen (Subsumtion, Rechtsmittel) | 5,00         | 0,50        | 25,00         |
+| text-embedding-3-large | Einbetten hochgeladener Seiten                           | 0,13         | –           | –             |
 
 Sonnet 5: Die $2/$10 waren als Einführungspreis bis 31.08. angekündigt und sind jetzt **Dauerpreis**; die geplante
 Erhöhung auf $3/$15 findet laut Anthropic nicht statt. Das kanonische Preisblatt im Code
@@ -23,20 +24,20 @@ Erhöhung auf $3/$15 findet laut Anthropic nicht statt. Das kanonische Preisblat
 
 ## 2. Verkaufspreise — es gibt drei parallele Systeme
 
-| System | Wo | Einheit | Wird es benutzt? |
-|---|---|---|---|
-| **A. Festpreis pro Aktion** | `CREDIT_COSTS` in `credit-constants.ts` | Frage 1, Dokumentanalyse 2, Subsumtion 3, Agent 5 Credits | **Ja** — Hauptsystem |
-| **B. Token-Rate-Card** | `credit-rate-card.ts` | 12 × US-$-Listenpreis, „1 Credit = 1 €“ | Ja, nur automatische Pipeline beim Upload, beA, Connector |
-| **C. SaaS-Verbrauchsbuch** | `saas-pricing.ts`, `saas_usage_ledger` | € mit 12×/18× Aufschlag | **Nein** — `recordUsage()` wird nirgends aufgerufen (toter Code) |
+| System                      | Wo                                      | Einheit                                                   | Wird es benutzt?                                                 |
+| --------------------------- | --------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| **A. Festpreis pro Aktion** | `CREDIT_COSTS` in `credit-constants.ts` | Frage 1, Dokumentanalyse 2, Subsumtion 3, Agent 5 Credits | **Ja** — Hauptsystem                                             |
+| **B. Token-Rate-Card**      | `credit-rate-card.ts`                   | 12 × US-$-Listenpreis, „1 Credit = 1 €“                   | Ja, nur automatische Pipeline beim Upload, beA, Connector        |
+| **C. SaaS-Verbrauchsbuch**  | `saas-pricing.ts`, `saas_usage_ledger`  | € mit 12×/18× Aufschlag                                   | **Nein** — `recordUsage()` wird nirgends aufgerufen (toter Code) |
 
 Was ein Credit den Kunden kostet (Pakete, `CREDIT_PACKS`):
 
-| Paket | Credits | Preis | € pro Credit |
-|---|---|---|---|
-| Starter | 50 | 49 € | 0,98 |
-| Standard | 100 | 89 € | 0,89 |
-| Pro | 500 | 399 € | 0,80 |
-| Firm | 2.000 | 1.499 € | 0,75 |
+| Paket    | Credits | Preis   | € pro Credit |
+| -------- | ------- | ------- | ------------ |
+| Starter  | 50      | 49 €    | 0,98         |
+| Standard | 100     | 89 €    | 0,89         |
+| Pro      | 500     | 399 €   | 0,80         |
+| Firm     | 2.000   | 1.499 € | 0,75         |
 
 Im Tarif enthalten (`included_credit`, wird als Credits verbucht): **Solo 60 Credits/Monat, Kanzlei 200 Credits pro Platz**
 (= 1.000 bei 5 Plätzen). Testphase: 100 Credits, gültig 30 Tage.
@@ -44,38 +45,39 @@ Im Tarif enthalten (`included_credit`, wird als Credits verbucht): **Solo 60 Cre
 ## 3. Was eine Aktion uns kostet (🟡 geschätzt aus dem Code)
 
 ### Eine Frage im Chat (1 Credit)
+
 Ablauf laut `server/src/core/think/index.ts` + `model-config.ts`: Planer und Vollständigkeitsprüfung auf dem günstigen
 Modell, Antwort auf Sonnet 5 (komplexe Fragen: Opus 5), danach Zitat-Gegenprüfung auf Sonnet 5; wird etwas beanstandet,
 wird die Antwort ein zweites Mal erzeugt. Kontext im Modus „balanced“: bis ca. 12.000 Tokens Fundstellen.
 
-| Baustein | Annahme | Kosten |
-|---|---|---|
-| Planer + Vollständigkeit (Haiku 4.5) | 2 × 3.000 in / 300 out | 0,009 $ |
-| Antwort (Sonnet 5) | 18.000 in / 1.500 out | 0,051 $ |
-| Zitat-Gegenprüfung (Sonnet 5) | 16.000 in / 400 out | 0,036 $ |
-| **Normale Frage** | | **≈ 0,10 $ ≈ 0,09 €** (Spanne 0,06–0,15 $) |
-| Antwort auf Opus 5 statt Sonnet | 18.000 in / 2.500 out | 0,153 $ |
-| **Komplexe Frage** | | **≈ 0,20 $ ≈ 0,18 €** |
-| + Neuerzeugung nach Beanstandung | eine weitere Opus-Antwort | **bis ≈ 0,35 $ ≈ 0,32 €** |
+| Baustein                             | Annahme                   | Kosten                                     |
+| ------------------------------------ | ------------------------- | ------------------------------------------ |
+| Planer + Vollständigkeit (Haiku 4.5) | 2 × 3.000 in / 300 out    | 0,009 $                                    |
+| Antwort (Sonnet 5)                   | 18.000 in / 1.500 out     | 0,051 $                                    |
+| Zitat-Gegenprüfung (Sonnet 5)        | 16.000 in / 400 out       | 0,036 $                                    |
+| **Normale Frage**                    |                           | **≈ 0,10 $ ≈ 0,09 €** (Spanne 0,06–0,15 $) |
+| Antwort auf Opus 5 statt Sonnet      | 18.000 in / 2.500 out     | 0,153 $                                    |
+| **Komplexe Frage**                   |                           | **≈ 0,20 $ ≈ 0,18 €**                      |
+| + Neuerzeugung nach Beanstandung     | eine weitere Opus-Antwort | **bis ≈ 0,35 $ ≈ 0,32 €**                  |
 
 Prompt-Caching würde den Input-Anteil senken; ob die Engine es hier nutzt, ist nicht gemessen.
 
 ### Die anderen Aktionen (geringere Sicherheit)
 
-| Aktion | Credits | Verkauf (0,75–0,98 €/Credit) | Unsere Kosten (Schätzung) | Anmerkung |
-|---|---|---|---|---|
-| Dokumentanalyse | 2 | 1,50–1,96 € | 0,15–0,60 € | Fester Preis unabhängig von der Dokumentgröße — 200-Seiten-Akte kostet uns ein Vielfaches |
-| Subsumtion | 3 | 2,25–2,94 € | 0,20–0,50 € | läuft auf Opus |
-| Agent | 5 | 3,75–4,90 € | 0,50–3,00 € | mehrstufig, stark schwankend |
-| Seite einbetten | 0 | – | ≈ 0,0002 € | 1.000 Seiten ≈ 0,20 € — vernachlässigbar |
+| Aktion          | Credits | Verkauf (0,75–0,98 €/Credit) | Unsere Kosten (Schätzung) | Anmerkung                                                                                 |
+| --------------- | ------- | ---------------------------- | ------------------------- | ----------------------------------------------------------------------------------------- |
+| Dokumentanalyse | 2       | 1,50–1,96 €                  | 0,15–0,60 €               | Fester Preis unabhängig von der Dokumentgröße — 200-Seiten-Akte kostet uns ein Vielfaches |
+| Subsumtion      | 3       | 2,25–2,94 €                  | 0,20–0,50 €               | läuft auf Opus                                                                            |
+| Agent           | 5       | 3,75–4,90 €                  | 0,50–3,00 €               | mehrstufig, stark schwankend                                                              |
+| Seite einbetten | 0       | –                            | ≈ 0,0002 €                | 1.000 Seiten ≈ 0,20 € — vernachlässigbar                                                  |
 
 ### Spanne pro Credit (Frage)
 
-| | Erlös pro Credit | Kosten | Rohmarge |
-|---|---|---|---|
-| Normale Frage | 0,75–0,98 € | ≈ 0,09 € | **88–91 %** |
-| Komplexe Frage | 0,75–0,98 € | ≈ 0,18 € | **76–82 %** |
-| Komplex + Neuerzeugung | 0,75–0,98 € | ≈ 0,32 € | **57–67 %** |
+|                        | Erlös pro Credit | Kosten   | Rohmarge    |
+| ---------------------- | ---------------- | -------- | ----------- |
+| Normale Frage          | 0,75–0,98 €      | ≈ 0,09 € | **88–91 %** |
+| Komplexe Frage         | 0,75–0,98 €      | ≈ 0,18 € | **76–82 %** |
+| Komplex + Neuerzeugung | 0,75–0,98 €      | ≈ 0,32 € | **57–67 %** |
 
 Token-Pipeline (System B): Der Kunde zahlt 12 × den US-$-Listenpreis in Credits. Da ein Credit 0,75–0,98 € erlöst,
 ist die echte Spanne ≈ 10–11 × Einkauf (≈ 90 %). Die Rate Card nennt „1 Credit = 1 €“, rechnet aber US-$ ohne
@@ -84,24 +86,27 @@ Umrechnung als € — das ist uneinheitlich, aber zu unseren Gunsten.
 ## 4. Was kostet ein Konto?
 
 ### Testkonto (30 Tage, 100 Credits) — Kosten durch die Credits
-| Nutzung der 100 Credits | Kosten für uns |
-|---|---|
-| nur normale Fragen | ≈ 9 € |
-| 70 % normal / 30 % komplex | ≈ 16 € |
-| nur komplexe Fragen mit Neuerzeugung | ≈ 32 € |
+
+| Nutzung der 100 Credits              | Kosten für uns |
+| ------------------------------------ | -------------- |
+| nur normale Fragen                   | ≈ 9 €          |
+| 70 % normal / 30 % komplex           | ≈ 16 €         |
+| nur komplexe Fragen mit Neuerzeugung | ≈ 32 €         |
 
 **Das wäre die Obergrenze — wenn die Credits überall abgezogen würden. Das ist nicht der Fall (Abschnitt 5).**
 
 ### Gratis-Konto nach dem Test
+
 Startguthaben verfällt nach 30 Tagen, danach 0 Credits: Alles, was Credits prüft, ist gesperrt. **Aber:** die Routen
 ohne Credit-Prüfung (Abschnitt 5, Punkt 2) bleiben offen. Ohne diese Lücke kostet ein ruhendes Gratis-Konto nur
 Speicher (Cent-Bereich).
 
 ### Zahlende Kunden — wenn die Website-Versprechen eingelöst würden
-| Tarif | Preis | Code heute | Website verspricht | Kosten bei Versprechen (0,09–0,32 € je Frage) |
-|---|---|---|---|---|
-| Solo | 249 € | 60 Credits ≈ 60 Fragen | „1.000 KI-Anfragen/Mon.“ | 90–320 € → Marge 64 % bis **negativ** |
-| Kanzlei | 1.499 € | 1.000 Credits | „4.000 KI-Anfragen/Nutzer/Mon.“ = 20.000 | 1.800–6.400 € → **Verlust** |
+
+| Tarif   | Preis   | Code heute             | Website verspricht                       | Kosten bei Versprechen (0,09–0,32 € je Frage) |
+| ------- | ------- | ---------------------- | ---------------------------------------- | --------------------------------------------- |
+| Solo    | 249 €   | 60 Credits ≈ 60 Fragen | „1.000 KI-Anfragen/Mon.“                 | 90–320 € → Marge 64 % bis **negativ**         |
+| Kanzlei | 1.499 € | 1.000 Credits          | „4.000 KI-Anfragen/Nutzer/Mon.“ = 20.000 | 1.800–6.400 € → **Verlust**                   |
 
 Fixkosten zusätzlich: netcup-Server ≈ 69 €/Monat netto für alles.
 
@@ -119,6 +124,7 @@ Fixkosten zusätzlich: netcup-Server ≈ 69 €/Monat netto für alles.
    Kunden werden enttäuscht (Code) oder es wird teuer (Versprechen). Muss vor dem Verkaufsstart entschieden werden.
 
 ### Stand 2026-09-19 abends — behoben
+
 - Punkt 1: `agents`, `legal/subsumption`, `legal/analyze` ziehen jetzt ab (Analyse nur bei Nutzeraufruf; interne
   Pipeline-Aufrufe rechnen weiter tokengenau ab).
 - Punkt 2: Fallstrategie, Gegnersimulation, Berufungsgründe (je 3 Credits), Tabellenfrage und E-Mail-Entwurf

@@ -27,7 +27,10 @@ import { join } from "path";
 import { $ } from "bun";
 
 const args = process.argv.slice(2);
-const arg = (n: string, d?: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
+const arg = (n: string, d?: string) => {
+  const i = args.indexOf(n);
+  return i >= 0 ? args[i + 1] : d;
+};
 const NEW_DB = arg("--db", "subsumio_law_v2")!;
 const DRY = args.includes("--dry-run");
 const SCHEMA_ONLY = args.includes("--schema-only");
@@ -44,7 +47,7 @@ const NORMALIZED = join(ROOT, "law-corpus", "_normalized");
  * bewusst nicht angefasst.
  */
 const SOURCE_MAP: Record<string, string> = {
-  "at": "law-at",
+  at: "law-at",
   "at-normen": "law-at-normen",
   "at-landesrecht": "law-at-landesrecht",
   "at-gemeinden": "law-at-gemeinden",
@@ -133,22 +136,36 @@ async function step1_createDatabase(base: string) {
     console.log(`   ${NEW_DB} existiert bereits — wird weiterverwendet.`);
     return;
   }
-  if (DRY) { console.log(`   [DRY] CREATE DATABASE ${NEW_DB}`); return; }
+  if (DRY) {
+    console.log(`   [DRY] CREATE DATABASE ${NEW_DB}`);
+    return;
+  }
   await $`psql ${base} -c ${`CREATE DATABASE ${NEW_DB}`}`.quiet();
   console.log(`   ${NEW_DB} angelegt.`);
 }
 
 async function step2_schema(target: string) {
   console.log(`\n─── 2. Schema + Migrationen ───`);
-  if (DRY) { console.log("   [DRY] initSchema() über die Migrations-Kette"); return; }
+  if (DRY) {
+    console.log("   [DRY] initSchema() über die Migrations-Kette");
+    return;
+  }
   // initSchema() fährt MIGRATIONS bis LATEST_VERSION hoch — inklusive
   // Migration 123 (Vorfilter-Indizes), die vorher nur von Hand existierte.
   // NICHT `gbrain init` — das ist ein Assistent, der ~/.gbrain/config.json
   // schreibt und damit die laufende Installation auf die neue, leere DB
   // umbiegen würde. init-schema-only.ts ruft ausschließlich initSchema().
-  const env = { ...process.env, GBRAIN_ENGINE: "postgres", GBRAIN_DATABASE_URL: target, DATABASE_URL: target };
+  const env = {
+    ...process.env,
+    GBRAIN_ENGINE: "postgres",
+    GBRAIN_DATABASE_URL: target,
+    DATABASE_URL: target,
+  };
   const proc = Bun.spawn(["bun", "run", join(ROOT, "server", "scripts", "init-schema-only.ts")], {
-    cwd: ROOT, env, stdout: "inherit", stderr: "inherit",
+    cwd: ROOT,
+    env,
+    stdout: "inherit",
+    stderr: "inherit",
   });
   const code = await proc.exited;
   if (code !== 0) throw new Error(`Schema-Init fehlgeschlagen (exit ${code})`);
@@ -159,7 +176,10 @@ async function step2_schema(target: string) {
 async function step3_searchConfig(target: string) {
   console.log(`\n─── 3. Suchkonfiguration ───`);
   for (const [k, v] of Object.entries(SEARCH_CONFIG)) {
-    if (DRY) { console.log(`   [DRY] ${k} = ${v}`); continue; }
+    if (DRY) {
+      console.log(`   [DRY] ${k} = ${v}`);
+      continue;
+    }
     await psql(
       target,
       `INSERT INTO config (key, value) VALUES ('${k}', '${v}')
@@ -178,8 +198,14 @@ function corporaToImport(): { dir: string; source: string; files: number }[] {
   for (const dir of readdirSync(NORMALIZED).sort()) {
     if (dir.startsWith("_")) continue;
     const source = SOURCE_MAP[dir];
-    if (!source) { console.log(`   ⚠ ${dir}: keine source_id hinterlegt — übersprungen`); continue; }
-    if (IN_FLIGHT.includes(dir)) { console.log(`   ⏸ ${dir}: wird gerade noch geholt — übersprungen`); continue; }
+    if (!source) {
+      console.log(`   ⚠ ${dir}: keine source_id hinterlegt — übersprungen`);
+      continue;
+    }
+    if (IN_FLIGHT.includes(dir)) {
+      console.log(`   ⏸ ${dir}: wird gerade noch geholt — übersprungen`);
+      continue;
+    }
     const n = countMd(join(NORMALIZED, dir));
     if (n === 0) continue;
     out.push({ dir, source, files: n });
@@ -203,7 +229,9 @@ function printPlan() {
   console.log(`   ${"Korpus".padEnd(24)} ${"source_id".padEnd(28)} Dateien`);
   console.log("   " + "─".repeat(64));
   for (const { dir, source, files } of list) {
-    console.log(`   ${dir.padEnd(24)} ${source.padEnd(28)} ${files.toLocaleString("de-AT").padStart(9)}`);
+    console.log(
+      `   ${dir.padEnd(24)} ${source.padEnd(28)} ${files.toLocaleString("de-AT").padStart(9)}`
+    );
   }
   console.log("   " + "─".repeat(64));
   console.log(`   ${"SUMME".padEnd(53)} ${total.toLocaleString("de-AT").padStart(9)}`);
@@ -218,24 +246,40 @@ async function step4_import(target: string) {
   for (const { dir, source, files } of list) {
     console.log(`   ▶ ${source.padEnd(28)} ${files.toLocaleString("de-AT").padStart(9)} Dateien`);
     if (DRY) continue;
-    const proc = Bun.spawn([
-      "bun", "run", join(ROOT, "server", "scripts", "batch-import-from-disk.ts"),
-      "--source", source,
-      "--disk-dir", join("law-corpus", "_normalized", dir),
-      "--batch-size", BATCH,
-      "--sleep-ms", "20",
-      "--no-embed",              // Embeddings erst nach der Abnahme — sonst
-      "--slug-from-path",        // zahlen wir für Vektoren auf ungeprüfte Daten
-      // Cursor je Zieldatenbank. Der Standardpfad ist
-      // /tmp/import-cursor-<source>.json und kennt die Datenbank nicht: der
-      // Lauf gegen die frische DB fand dort den Cursor des alten Imports vor
-      // und meldete "alles schon importiert" — bei 0 Pages in der Zieldatenbank.
-      "--cursor-file", `/tmp/import-cursor-${NEW_DB}-${source}.json`,
-    ], {
-      cwd: ROOT,
-      env: { ...process.env, GBRAIN_ENGINE: "postgres", GBRAIN_DATABASE_URL: target, DATABASE_URL: target },
-      stdout: "inherit", stderr: "inherit",
-    });
+    const proc = Bun.spawn(
+      [
+        "bun",
+        "run",
+        join(ROOT, "server", "scripts", "batch-import-from-disk.ts"),
+        "--source",
+        source,
+        "--disk-dir",
+        join("law-corpus", "_normalized", dir),
+        "--batch-size",
+        BATCH,
+        "--sleep-ms",
+        "20",
+        "--no-embed", // Embeddings erst nach der Abnahme — sonst
+        "--slug-from-path", // zahlen wir für Vektoren auf ungeprüfte Daten
+        // Cursor je Zieldatenbank. Der Standardpfad ist
+        // /tmp/import-cursor-<source>.json und kennt die Datenbank nicht: der
+        // Lauf gegen die frische DB fand dort den Cursor des alten Imports vor
+        // und meldete "alles schon importiert" — bei 0 Pages in der Zieldatenbank.
+        "--cursor-file",
+        `/tmp/import-cursor-${NEW_DB}-${source}.json`,
+      ],
+      {
+        cwd: ROOT,
+        env: {
+          ...process.env,
+          GBRAIN_ENGINE: "postgres",
+          GBRAIN_DATABASE_URL: target,
+          DATABASE_URL: target,
+        },
+        stdout: "inherit",
+        stderr: "inherit",
+      }
+    );
     const code = await proc.exited;
     if (code !== 0) {
       console.error(`   ✗ Import von ${source} fehlgeschlagen (exit ${code}) — Lauf gestoppt.`);
@@ -258,28 +302,45 @@ async function step5_verify(target: string) {
 
   console.log("");
   // Die Kennzahlen, an denen der alte Bestand gescheitert ist:
-  await q("Chunks ohne chunk_role (soll: 0)",
-    "SELECT count(*) FROM content_chunks WHERE chunk_role IS NULL");
-  await q("Chunks ohne document_type (soll: 0)",
-    "SELECT count(*) FROM content_chunks WHERE document_type IS NULL");
-  await q("unstrukturiert 'full' (soll: gering)",
-    "SELECT round(100.0*count(*) FILTER (WHERE chunk_role='full')/nullif(count(*),0),1)||' %' FROM content_chunks");
-  await q("Navigationsmüll (soll: 0)",
-    "SELECT count(*) FROM content_chunks WHERE chunk_text LIKE '%Accesskey%' OR chunk_text LIKE '%Seitenbereiche:%'");
-  await q("Chunks über 12.000 Zeichen (soll: 0)",
-    "SELECT count(*) FROM content_chunks WHERE length(chunk_text) > 12000");
-  await q("doppelte content_hash (soll: 0)",
-    "SELECT coalesce(sum(n-1),0) FROM (SELECT count(*) n FROM pages WHERE content_hash IS NOT NULL GROUP BY content_hash HAVING count(*)>1) t");
+  await q(
+    "Chunks ohne chunk_role (soll: 0)",
+    "SELECT count(*) FROM content_chunks WHERE chunk_role IS NULL"
+  );
+  await q(
+    "Chunks ohne document_type (soll: 0)",
+    "SELECT count(*) FROM content_chunks WHERE document_type IS NULL"
+  );
+  await q(
+    "unstrukturiert 'full' (soll: gering)",
+    "SELECT round(100.0*count(*) FILTER (WHERE chunk_role='full')/nullif(count(*),0),1)||' %' FROM content_chunks"
+  );
+  await q(
+    "Navigationsmüll (soll: 0)",
+    "SELECT count(*) FROM content_chunks WHERE chunk_text LIKE '%Accesskey%' OR chunk_text LIKE '%Seitenbereiche:%'"
+  );
+  await q(
+    "Chunks über 12.000 Zeichen (soll: 0)",
+    "SELECT count(*) FROM content_chunks WHERE length(chunk_text) > 12000"
+  );
+  await q(
+    "doppelte content_hash (soll: 0)",
+    "SELECT coalesce(sum(n-1),0) FROM (SELECT count(*) n FROM pages WHERE content_hash IS NOT NULL GROUP BY content_hash HAVING count(*)>1) t"
+  );
 
   console.log("");
-  await q("statute: paragraph_ref gesetzt",
-    "SELECT round(100.0*count(paragraph_ref)/nullif(count(*),0),1)||' %' FROM content_chunks WHERE document_type='statute'");
-  await q("decision: court gesetzt",
-    "SELECT round(100.0*count(court)/nullif(count(*),0),1)||' %' FROM content_chunks WHERE document_type='decision'");
-  await q("decision: decision_date gesetzt",
-    "SELECT round(100.0*count(decision_date)/nullif(count(*),0),1)||' %' FROM content_chunks WHERE document_type='decision'");
-  await q("Embeddings (erst nach Abnahme)",
-    "SELECT count(embedding) FROM content_chunks");
+  await q(
+    "statute: paragraph_ref gesetzt",
+    "SELECT round(100.0*count(paragraph_ref)/nullif(count(*),0),1)||' %' FROM content_chunks WHERE document_type='statute'"
+  );
+  await q(
+    "decision: court gesetzt",
+    "SELECT round(100.0*count(court)/nullif(count(*),0),1)||' %' FROM content_chunks WHERE document_type='decision'"
+  );
+  await q(
+    "decision: decision_date gesetzt",
+    "SELECT round(100.0*count(decision_date)/nullif(count(*),0),1)||' %' FROM content_chunks WHERE document_type='decision'"
+  );
+  await q("Embeddings (erst nach Abnahme)", "SELECT count(embedding) FROM content_chunks");
 }
 
 async function main() {
@@ -304,7 +365,10 @@ async function main() {
     return;
   }
 
-  if (VERIFY_ONLY) { await step5_verify(target); return; }
+  if (VERIFY_ONLY) {
+    await step5_verify(target);
+    return;
+  }
 
   await step1_createDatabase(base);
   await step2_schema(target);

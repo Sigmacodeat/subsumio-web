@@ -45,7 +45,7 @@ describe("useOptimisticMutation", () => {
           queryKey: ["todos"],
           updater,
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({ text: "Neu" }));
@@ -88,7 +88,7 @@ describe("useOptimisticMutation", () => {
             { queryKey: ["overview"], updater: overviewUpdater },
           ],
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({ path: "a.md" }));
@@ -97,7 +97,9 @@ describe("useOptimisticMutation", () => {
     await waitFor(() => expect(overviewUpdater).toHaveBeenCalled());
 
     expect(qc.getQueryData<{ files: unknown[] }>(["list"])?.files).toHaveLength(1);
-    expect(qc.getQueryData<{ totals: { totalFiles: number } }>(["overview"])?.totals.totalFiles).toBe(1);
+    expect(
+      qc.getQueryData<{ totals: { totalFiles: number } }>(["overview"])?.totals.totalFiles
+    ).toBe(1);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
@@ -123,7 +125,7 @@ describe("useOptimisticMutation", () => {
           updater,
           onError,
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({ text: "Neu" }));
@@ -133,7 +135,10 @@ describe("useOptimisticMutation", () => {
 
     // Nach Fehler: Snapshot wiederhergestellt (nur 1 Item, nicht das optimistische).
     expect(qc.getQueryData<{ items: unknown[] }>(["todos"])?.items).toHaveLength(1);
-    expect(qc.getQueryData<{ items: unknown[] }>(["todos"])?.items[0]).toEqual({ id: 1, text: "Alt" });
+    expect(qc.getQueryData<{ items: unknown[] }>(["todos"])?.items[0]).toEqual({
+      id: 1,
+      text: "Alt",
+    });
     expect(onError).toHaveBeenCalled();
     // hadSnapshot: true weil Cache Daten hatte.
     expect(onError).toHaveBeenCalledWith(expect.any(Error), { text: "Neu" }, true);
@@ -156,7 +161,7 @@ describe("useOptimisticMutation", () => {
           updater: (old) => old, // no-op updater
           onError,
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({}));
@@ -193,7 +198,7 @@ describe("useOptimisticMutation", () => {
             { queryKey: ["overview"], updater: overviewUpdater },
           ],
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({ path: "a.md" }));
@@ -202,7 +207,9 @@ describe("useOptimisticMutation", () => {
 
     // Nach Fehler: beide Snapshots wiederhergestellt.
     expect(qc.getQueryData<{ files: unknown[] }>(["list"])?.files).toHaveLength(2);
-    expect(qc.getQueryData<{ totals: { totalFiles: number } }>(["overview"])?.totals.totalFiles).toBe(2);
+    expect(
+      qc.getQueryData<{ totals: { totalFiles: number } }>(["overview"])?.totals.totalFiles
+    ).toBe(2);
     expect(listUpdater).toHaveBeenCalled();
     expect(overviewUpdater).toHaveBeenCalled();
   });
@@ -223,7 +230,7 @@ describe("useOptimisticMutation", () => {
           updater: (old) => old,
           onSuccess,
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({}));
@@ -250,7 +257,7 @@ describe("useOptimisticMutation", () => {
           updater: (old) => old,
           invalidates: [["todos"], ["other"], ["third"]],
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({}));
@@ -285,7 +292,7 @@ describe("useOptimisticMutation", () => {
           updater: ignoredUpdater,
           targets: [{ queryKey: ["target-cache"], updater: targetUpdater }],
         }),
-      { wrapper },
+      { wrapper }
     );
 
     act(() => result.current.mutate({}));

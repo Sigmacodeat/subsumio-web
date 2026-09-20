@@ -11,10 +11,7 @@
 
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import {
-  lookupEmbeddingPrice,
-  estimateCostFromChars,
-} from "../src/core/embedding-pricing.ts";
+import { lookupEmbeddingPrice, estimateCostFromChars } from "../src/core/embedding-pricing.ts";
 
 const args = process.argv.slice(2);
 const targetIdx = args.indexOf("--target");
@@ -43,9 +40,10 @@ async function main() {
   const current = stats.length;
   const withText = stats.filter((s) => s.hasText);
 
-  const avgChars = withText.length > 0
-    ? Math.round(withText.reduce((s, d) => s + d.charCount, 0) / withText.length)
-    : 0;
+  const avgChars =
+    withText.length > 0
+      ? Math.round(withText.reduce((s, d) => s + d.charCount, 0) / withText.length)
+      : 0;
   const totalChars = withText.reduce((s, d) => s + d.charCount, 0);
   const minChars = withText.length > 0 ? Math.min(...withText.map((s) => s.charCount)) : 0;
   const maxChars = withText.length > 0 ? Math.max(...withText.map((s) => s.charCount)) : 0;

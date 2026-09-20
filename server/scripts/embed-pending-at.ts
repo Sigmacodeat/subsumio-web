@@ -61,7 +61,8 @@ while (true) {
     const embeddings = await embedBatch(texts);
     for (let i = 0; i < rows.length; i++) {
       const emb = embeddings[i];
-      const vecStr = "[" + (Array.isArray(emb) ? emb : Array.from(emb as Float32Array)).join(",") + "]";
+      const vecStr =
+        "[" + (Array.isArray(emb) ? emb : Array.from(emb as Float32Array)).join(",") + "]";
       await engine.executeRaw(
         `UPDATE content_chunks SET embedding = $1::vector, embedded_at = now(), model = $2 WHERE id = $3`,
         [vecStr, sig, rows[i].id]

@@ -74,9 +74,7 @@ export default function AnalyzePage() {
       setResult(res);
       if (!res._grounding) {
         void groundAnswer(
-          [res.summary, ...(res.issues ?? []).map((i) => `${i.issue}: ${i.rationale}`)].join(
-            "\n\n"
-          )
+          [res.summary, ...(res.issues ?? []).map((i) => `${i.issue}: ${i.rationale}`)].join("\n\n")
         );
       }
     } catch (e) {
@@ -167,11 +165,7 @@ export default function AnalyzePage() {
             />
           </div>
         )}
-        <Button
-          onClick={run}
-          disabled={loading || !canRun}
-          className="gap-2 whitespace-nowrap"
-        >
+        <Button onClick={run} disabled={loading || !canRun} className="gap-2 whitespace-nowrap">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <FileSearch size={15} />}
           {t("analyze.run_btn")}
         </Button>

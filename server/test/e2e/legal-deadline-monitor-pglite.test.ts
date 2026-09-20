@@ -127,7 +127,8 @@ describe("legal deadline-monitor dream phase (Phase 3)", () => {
     expect(res.status).toBe("warn");
     // Flagged list carries every non-ok deadline, earliest first, with its
     // deterministic status — this is the secretary's actionable worklist.
-    const flagged = (res.details as { flagged: Array<{ status: FristStatus; due_date: string }> }).flagged;
+    const flagged = (res.details as { flagged: Array<{ status: FristStatus; due_date: string }> })
+      .flagged;
     expect(flagged.length).toBeGreaterThan(0);
     expect(flagged.every((f) => f.status !== "ok")).toBe(true);
     const sorted = [...flagged].sort((a, b) => a.due_date.localeCompare(b.due_date));

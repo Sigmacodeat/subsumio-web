@@ -21,7 +21,15 @@ const REPO = join(import.meta.dir, "..", "..");
 const CORPUS = join(REPO, "law-corpus");
 const SPLIT_CORPUS_AT = join(REPO, "law-corpus-split", "at");
 const SPLIT_CORPUS_DE = join(REPO, "law-corpus-split", "de");
-const OUT_FILE = join(REPO, "server", "test", "fixtures", "retrieval-quality", "legal-at", "pending-review.ts");
+const OUT_FILE = join(
+  REPO,
+  "server",
+  "test",
+  "fixtures",
+  "retrieval-quality",
+  "legal-at",
+  "pending-review.ts"
+);
 
 // ── Types (mirrors corpus.ts) ────────────────────────────────────────────────
 
@@ -130,8 +138,17 @@ const DOMAINS: DomainConfig[] = [
 // ── Existing gold refs (to skip duplicates) ──────────────────────────────────
 
 const EXISTING_GOLD_REFS = new Set<string>([
-  "at:abgb:1489", "at:abgb:922", "at:abgb:918", "at:abgb:1295", "at:abgb:1053", "at:abgb:914",
-  "at:mrg:30", "at:gmbhg:6", "at:io:66", "at:stgb:127", "at:stgb:75",
+  "at:abgb:1489",
+  "at:abgb:922",
+  "at:abgb:918",
+  "at:abgb:1295",
+  "at:abgb:1053",
+  "at:abgb:914",
+  "at:mrg:30",
+  "at:gmbhg:6",
+  "at:io:66",
+  "at:stgb:127",
+  "at:stgb:75",
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,15 +195,101 @@ function extractKeywords(title: string, body: string): string[] {
   const text = `${title} ${body.slice(0, 300)}`.toLowerCase();
   // German legal stop words
   const stop = new Set([
-    "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer", "eines", "einem", "einen",
-    "und", "oder", "aber", "nicht", "ist", "wird", "werden", "wurde", "worden", "hat", "haben",
-    "hatte", "gehabt", "kann", "könne", "darf", "soll", "muss", "müsse", "auf", "in", "an", "bei",
-    "mit", "von", "zu", "zur", "zum", "nach", "vor", "über", "unter", "durch", "für", "gegen",
-    "ohne", "um", "als", "wie", "so", "auch", "nur", "noch", "schon", "wenn", "dann", "hier",
-    "dort", "dies", "diese", "dieser", "dieses", "jenem", "welcher", "welche", "welches",
-    "sich", "sein", "seine", "ihre", "ihrem", "ihren", "ihres", "einem", "welche", "wer",
-    "etwa", "jedenfalls", "insbesondere", "jedoch", "jede", "jeder", "jedes", "alle", "aller",
-    "abs", "satz", "ziffer", "lit", "nr", "punkt", "paragraph", "§",
+    "der",
+    "die",
+    "das",
+    "den",
+    "dem",
+    "des",
+    "ein",
+    "eine",
+    "einer",
+    "eines",
+    "einem",
+    "einen",
+    "und",
+    "oder",
+    "aber",
+    "nicht",
+    "ist",
+    "wird",
+    "werden",
+    "wurde",
+    "worden",
+    "hat",
+    "haben",
+    "hatte",
+    "gehabt",
+    "kann",
+    "könne",
+    "darf",
+    "soll",
+    "muss",
+    "müsse",
+    "auf",
+    "in",
+    "an",
+    "bei",
+    "mit",
+    "von",
+    "zu",
+    "zur",
+    "zum",
+    "nach",
+    "vor",
+    "über",
+    "unter",
+    "durch",
+    "für",
+    "gegen",
+    "ohne",
+    "um",
+    "als",
+    "wie",
+    "so",
+    "auch",
+    "nur",
+    "noch",
+    "schon",
+    "wenn",
+    "dann",
+    "hier",
+    "dort",
+    "dies",
+    "diese",
+    "dieser",
+    "dieses",
+    "jenem",
+    "welcher",
+    "welche",
+    "welches",
+    "sich",
+    "sein",
+    "seine",
+    "ihre",
+    "ihrem",
+    "ihren",
+    "ihres",
+    "einem",
+    "welche",
+    "wer",
+    "etwa",
+    "jedenfalls",
+    "insbesondere",
+    "jedoch",
+    "jede",
+    "jeder",
+    "jedes",
+    "alle",
+    "aller",
+    "abs",
+    "satz",
+    "ziffer",
+    "lit",
+    "nr",
+    "punkt",
+    "paragraph",
+    "§",
   ]);
   const words = text
     .replace(/[§\d.,;:!?()«»"\-]/g, " ")
@@ -212,7 +315,10 @@ const QUERY_PATTERNS: { match: RegExp; prefix: string }[] = [
   { match: /verjähr|verjaehr/i, prefix: "Verjährung" },
   { match: /gewähr|mängel|maengel/i, prefix: "Gewährleistung Mängel" },
   { match: /schadenersatz|schadensersatz|ersatz.*schaden/i, prefix: "Schadenersatz" },
-  { match: /kündigung|kuendigung|beendigung|auflösung|aufloesung/i, prefix: "Kündigung Beendigung" },
+  {
+    match: /kündigung|kuendigung|beendigung|auflösung|aufloesung/i,
+    prefix: "Kündigung Beendigung",
+  },
   { match: /haftung|haftet|haftbar/i, prefix: "Haftung" },
   { match: /vertrag|vertrags/i, prefix: "Vertrag" },
   { match: /eigentum|besitz/i, prefix: "Eigentum Besitz" },
@@ -224,8 +330,14 @@ const QUERY_PATTERNS: { match: RegExp; prefix: string }[] = [
   { match: /vollstreck|exekution|pfändung|pfaendung/i, prefix: "Exekution Vollstreckung" },
   { match: /datenschutz|daten|verarbeitung/i, prefix: "Datenschutz" },
   { match: /verbraucher|konsument/i, prefix: "Verbraucherschutz" },
-  { match: /gesellschaft|geschäftsführer|gesellschafter|aufsichtsrat/i, prefix: "Gesellschaftsrecht" },
-  { match: /arbeitszeit|urlaub|dienstverhältnis|arbeitnehmer|angestellte/i, prefix: "Arbeitsrecht" },
+  {
+    match: /gesellschaft|geschäftsführer|gesellschafter|aufsichtsrat/i,
+    prefix: "Gesellschaftsrecht",
+  },
+  {
+    match: /arbeitszeit|urlaub|dienstverhältnis|arbeitnehmer|angestellte/i,
+    prefix: "Arbeitsrecht",
+  },
   { match: /verwaltungsverfahren|bescheid|behörde/i, prefix: "Verwaltungsverfahren" },
   { match: /verfassung|gesetzgebung|nationalrat|bundespräsident/i, prefix: "Verfassung" },
 ];
@@ -293,7 +405,7 @@ function craftQuery(
 function findDeDistractor(
   deSections: StatuteSection[],
   atSection: StatuteSection,
-  usedDeRefs: Set<string>,
+  usedDeRefs: Set<string>
 ): Ref | undefined {
   const atKws = new Set(extractKeywords(atSection.title, atSection.body));
   if (atKws.size === 0) return undefined;
@@ -329,7 +441,10 @@ function isSubstantive(section: StatuteSection): boolean {
 }
 
 /** Evenly distribute question count across laws in a domain. */
-function distributeCount(laws: { file: string; abbr: string }[], total: number): Map<string, number> {
+function distributeCount(
+  laws: { file: string; abbr: string }[],
+  total: number
+): Map<string, number> {
   const result = new Map<string, number>();
   const per = Math.floor(total / laws.length);
   const remainder = total - per * laws.length;
@@ -437,7 +552,7 @@ function writeOutput(drafts: DraftEntry[]): void {
     " * statute corpus. Every § has been validated against law-corpus-split/at/.",
     " *",
     " * LEAKAGE RULE: no query contains its answer's § number (a query citing",
-    " * \"ABGB § 138\" would measure citation-string matching, not retrieval).",
+    ' * "ABGB § 138" would measure citation-string matching, not retrieval).',
     " * Only the code-scoped family may name the code — never the § ref.",
     " *",
     " * Review workflow:",
@@ -459,7 +574,7 @@ function writeOutput(drafts: DraftEntry[]): void {
     "",
     "interface DraftEntry {",
     "  query: string;",
-    "  family: NamedThingQuestion[\"family\"];",
+    '  family: NamedThingQuestion["family"];',
     "  at: Ref;",
     "  de?: Ref;",
     "  domain: string;",
@@ -468,8 +583,8 @@ function writeOutput(drafts: DraftEntry[]): void {
     "  reviewed_at?: string;",
     "}",
     "",
-    "const A = (file: string, abbr: string, ref: string): Ref => ({ jur: \"at\", file, abbr, ref });",
-    "const D = (file: string, abbr: string, ref: string): Ref => ({ jur: \"de\", file, abbr, ref });",
+    'const A = (file: string, abbr: string, ref: string): Ref => ({ jur: "at", file, abbr, ref });',
+    'const D = (file: string, abbr: string, ref: string): Ref => ({ jur: "de", file, abbr, ref });',
     "",
     "export const LEGAL_AT_PENDING: DraftEntry[] = [",
   ];
@@ -497,9 +612,11 @@ function writeOutput(drafts: DraftEntry[]): void {
   // Close array
   lines.push("];");
   lines.push("");
-  lines.push("/** Draft entries with reviewed_by + reviewed_at, ready for promotion to corpus.ts. */");
+  lines.push(
+    "/** Draft entries with reviewed_by + reviewed_at, ready for promotion to corpus.ts. */"
+  );
   lines.push("export const LEGAL_AT_REVIEWED: DraftEntry[] = LEGAL_AT_PENDING.filter(");
-  lines.push("  (e) => e.status === \"reviewed\" && e.reviewed_by && e.reviewed_at");
+  lines.push('  (e) => e.status === "reviewed" && e.reviewed_by && e.reviewed_at');
   lines.push(");");
   lines.push("");
 

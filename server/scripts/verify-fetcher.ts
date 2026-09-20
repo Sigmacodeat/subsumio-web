@@ -21,7 +21,11 @@ let allPass = true;
 for (const t of tests) {
   const content = readFileSync(t.file, "utf-8");
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!fmMatch) { console.log("✗ " + t.name + ": NO FRONTMATTER"); allPass = false; continue; }
+  if (!fmMatch) {
+    console.log("✗ " + t.name + ": NO FRONTMATTER");
+    allPass = false;
+    continue;
+  }
   const fm = fmMatch[1];
 
   // Fetch RIS XML
@@ -31,7 +35,8 @@ for (const t of tests) {
 
   // Extract all ct fields from XML
   const xmlMeta: Record<string, string> = {};
-  const re = /<ueberschrift typ="titel"[^>]*>([^<]+)<\/ueberschrift>\s*<absatz[^>]*ct="([^"]*)"[^>]*>([^<]*)<\/absatz>/g;
+  const re =
+    /<ueberschrift typ="titel"[^>]*>([^<]+)<\/ueberschrift>\s*<absatz[^>]*ct="([^"]*)"[^>]*>([^<]*)<\/absatz>/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(xml)) !== null) {
     xmlMeta[m[2]] = m[3].trim();

@@ -220,9 +220,7 @@ Bewerte dieses Kriterium. Antworte im JSON-Format mit status, reasoning, confide
  *
  * If both fail → return null (caller sets judge_error).
  */
-export function parseJudgeJSON(
-  raw: string
-): {
+export function parseJudgeJSON(raw: string): {
   status: JudgeStatus;
   reasoning: string;
   confidence: number;

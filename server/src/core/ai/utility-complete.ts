@@ -167,7 +167,9 @@ export async function runUtilityCompletion(
 export async function* streamUtilityCompletion(
   engine: BrainEngine | null,
   body: Record<string, unknown>
-): AsyncGenerator<{ type: "text"; text: string } | { type: "done"; result: UtilityCompletionResult }> {
+): AsyncGenerator<
+  { type: "text"; text: string } | { type: "done"; result: UtilityCompletionResult }
+> {
   const req = normalizeUtilityRequest(body);
   if (!isAvailable("chat")) {
     throw new UtilityCompletionError(503, "llm_not_configured", "No chat model configured");

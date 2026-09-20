@@ -73,7 +73,9 @@ describe("autopilot.ts ↔ ChildWorkerSupervisor wiring", () => {
     // crash counter tripped, bypassing its own dispatch-loop cleanup and
     // lockfile removal. Post-refactor: the callback routes through
     // shutdown('max_crashes') so cleanup runs.
-    expect(AUTOPILOT_SRC).toMatch(/onMaxCrashesExceeded:[\s\S]{0,300}shutdown\(["']max_crashes["']\)/);
+    expect(AUTOPILOT_SRC).toMatch(
+      /onMaxCrashesExceeded:[\s\S]{0,300}shutdown\(["']max_crashes["']\)/
+    );
   });
 
   it("shutdown drains via supervisor.killChild + awaitChildExit (not workerProc.kill)", () => {

@@ -10,7 +10,9 @@ import { CorpusProtokoll } from "./corpus-protokoll";
 import type { CorpusOverview, IngestLogPage } from "@/lib/corpus-labels";
 
 function withQueryClient(ui: React.ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } },
+  });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
@@ -99,7 +101,9 @@ beforeEach(() => vi.restoreAllMocks());
 
 /** Matches an element's own text ignoring whitespace kinds (de-AT groups digits with NBSP). */
 const text = (expected: string) => (_: string, el: Element | null) =>
-  !!el && el.children.length === 0 && (el.textContent ?? "").replace(/\s/g, "") === expected.replace(/\s/g, "");
+  !!el &&
+  el.children.length === 0 &&
+  (el.textContent ?? "").replace(/\s/g, "") === expected.replace(/\s/g, "");
 
 describe("CorpusBestand", () => {
   it("shows totals, per-source rows and the reconciliation status", async () => {
@@ -123,7 +127,9 @@ describe("CorpusBestand", () => {
   it("offers a retry when the API fails", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(new Response("x", { status: 500 }));
     withQueryClient(<CorpusBestand />);
-    await waitFor(() => expect(screen.getByText("Bestand konnte nicht geladen werden.")).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByText("Bestand konnte nicht geladen werden.")).toBeDefined()
+    );
   });
 });
 
@@ -131,7 +137,9 @@ describe("CorpusProtokoll", () => {
   it("lists documents with action and an HTML link to the official RIS page", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({ data: LOG })));
     withQueryClient(<CorpusProtokoll />);
-    await waitFor(() => expect(screen.getByText("2. Geschäftsverteilung der Volksanwaltschaft")).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByText("2. Geschäftsverteilung der Volksanwaltschaft")).toBeDefined()
+    );
     expect(screen.getByText("neu")).toBeDefined();
     const link = screen.getByRole("link", { name: /im RIS öffnen/ });
     expect(link.getAttribute("href")).toBe(

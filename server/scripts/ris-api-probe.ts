@@ -60,7 +60,9 @@ function collectFields(obj: unknown, prefix: string, fields: Map<string, FieldIn
 
 async function main() {
   console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log(`║  RIS OGD API v2.6 — Bundesrecht ${FULL ? "FULL Probe" : "Sample Probe       "}       ║`);
+  console.log(
+    `║  RIS OGD API v2.6 — Bundesrecht ${FULL ? "FULL Probe" : "Sample Probe       "}       ║`
+  );
   console.log("╚══════════════════════════════════════════════════════════╝\n");
 
   const allLaws: Record<string, unknown>[] = [];
@@ -132,7 +134,9 @@ async function main() {
   const kurztitelSet = new Set<string>();
 
   for (const law of allLaws) {
-    const meta = (law.Data as Record<string, unknown>)?.Metadaten as Record<string, unknown> | undefined;
+    const meta = (law.Data as Record<string, unknown>)?.Metadaten as
+      | Record<string, unknown>
+      | undefined;
     const bund = meta?.Bundesrecht as Record<string, unknown> | undefined;
     if (!bund) continue;
 
@@ -187,7 +191,9 @@ async function main() {
   console.log(`  ${"-".repeat(55)}-+-${"-".repeat(8)}-+-${"-".repeat(6)}-+-${"-".repeat(40)}`);
   for (const f of sortedFields) {
     const example = f.example.slice(0, 60).replace(/\n/g, " ");
-    console.log(`  ${f.path.padEnd(55)} | ${f.type.padEnd(8)} | ${String(f.count).padStart(6)} | ${example}`);
+    console.log(
+      `  ${f.path.padEnd(55)} | ${f.type.padEnd(8)} | ${String(f.count).padStart(6)} | ${example}`
+    );
   }
 
   // ── Print sample laws ────────────────────────────────────────
@@ -210,7 +216,9 @@ async function main() {
     totalDocumentRefs: allLaws.length,
   };
   writeFileSync("/tmp/ris-api-probe.json", JSON.stringify(report, null, 2));
-  console.log(`\n✅ Full report saved to /tmp/ris-api-probe.json (${(JSON.stringify(report).length / 1024).toFixed(0)} KB)`);
+  console.log(
+    `\n✅ Full report saved to /tmp/ris-api-probe.json (${(JSON.stringify(report).length / 1024).toFixed(0)} KB)`
+  );
 }
 
 main().catch((err) => {

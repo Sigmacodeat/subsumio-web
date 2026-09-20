@@ -128,9 +128,7 @@ ${citations.map((c) => `- ${c}`).join("\n")}`;
     const result = await chatFn({
       model: PARAPHRASE_MODEL,
       system: PARAPHRASE_SYSTEM_PROMPT,
-      messages: [
-        { role: "user", content: userMsg },
-      ],
+      messages: [{ role: "user", content: userMsg }],
       maxTokens: 800,
     });
 
@@ -207,9 +205,7 @@ ${citations.map((c) => `- ${c}`).join("\n")}`;
       const result = await chatFn({
         model,
         system: ENSEMBLE_SYSTEM_PROMPT,
-        messages: [
-          { role: "user", content: userMsg },
-        ],
+        messages: [{ role: "user", content: userMsg }],
         maxTokens: 800,
       });
 
@@ -261,11 +257,21 @@ export interface EnsembleVerifyOpts {
   context: string;
   citations: string[];
   /** Stage 1 results (from citation-guardrail) */
-  stage1Flags?: Array<{ type: string; detail: string; citation?: string; severity: "high" | "medium" | "low" }>;
+  stage1Flags?: Array<{
+    type: string;
+    detail: string;
+    citation?: string;
+    severity: "high" | "medium" | "low";
+  }>;
   /** Stage 2 results (from cross-verify) */
   stage2Result?: {
     clean: boolean;
-    flags: Array<{ type: string; detail: string; citation?: string; severity: "high" | "medium" | "low" }>;
+    flags: Array<{
+      type: string;
+      detail: string;
+      citation?: string;
+      severity: "high" | "medium" | "low";
+    }>;
     verified_citations: string[];
     flagged_citations: string[];
   };
@@ -410,7 +416,8 @@ export async function runEnsembleVerification(
 
   const methodParts: string[] = [`Stage 1 (deterministic)`, `Stage 2 (cross-model)`];
   if (stagesRun.includes(3)) methodParts.push(`Stage 3 (paraphrase judge)`);
-  if (stagesRun.includes(4)) methodParts.push(`Stage 4 (ensemble ×${opts.ensembleModels ?? ENSEMBLE_MODELS.length})`);
+  if (stagesRun.includes(4))
+    methodParts.push(`Stage 4 (ensemble ×${opts.ensembleModels ?? ENSEMBLE_MODELS.length})`);
 
   return {
     clean,

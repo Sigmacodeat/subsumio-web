@@ -32,21 +32,39 @@ function arg(name: string, fb?: string) {
   return i > -1 ? process.argv[i + 1] : fb;
 }
 
-const FIXTURE = arg("fixture", join(import.meta.dir, "..", "test", "fixtures", "at-legal-retrieval.jsonl"))!;
-const DB_URL = arg("db", process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain")!;
+const FIXTURE = arg(
+  "fixture",
+  join(import.meta.dir, "..", "test", "fixtures", "at-legal-retrieval.jsonl")
+)!;
+const DB_URL = arg(
+  "db",
+  process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
+)!;
 const LABEL = arg("label", "baseline")!;
-const OUT = arg("out", join(import.meta.dir, "..", "..", ".windsurf", "plans", `at-retrieval-vektor-${LABEL}.json`))!;
+const OUT = arg(
+  "out",
+  join(import.meta.dir, "..", "..", ".windsurf", "plans", `at-retrieval-vektor-${LABEL}.json`)
+)!;
 const TOPK = Number(arg("topk", "8"));
 const MODEL = arg("model", "openai/text-embedding-3-small")!;
 /** Wie viele Chunk-Nachbarn geholt werden, bevor auf Seiten reduziert wird. */
 const CHUNK_FANOUT = Number(arg("fanout", "40"));
 
-type Q = { question_id: string; question: string; expected_slug: string; legal_area: string; question_type: string };
+type Q = {
+  question_id: string;
+  question: string;
+  expected_slug: string;
+  legal_area: string;
+  question_type: string;
+};
 
 /** .env aus server/ lesen, ohne den Wert je auszugeben. */
 function loadKey(): string {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
-  for (const p of [join(import.meta.dir, "..", ".env"), join(import.meta.dir, "..", ".env.local")]) {
+  for (const p of [
+    join(import.meta.dir, "..", ".env"),
+    join(import.meta.dir, "..", ".env.local"),
+  ]) {
     if (!existsSync(p)) continue;
     const m = readFileSync(p, "utf-8").match(/^OPENROUTER_API_KEY=(.+)$/m);
     if (m) return m[1].trim().replace(/^["']|["']$/g, "");
@@ -61,7 +79,8 @@ async function embed(texts: string[], key: string): Promise<number[][]> {
     body: JSON.stringify({ model: MODEL, input: texts, dimensions: 1536 }),
     signal: AbortSignal.timeout(120_000),
   });
-  if (!res.ok) throw new Error(`Embedding-API HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok)
+    throw new Error(`Embedding-API HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = (await res.json()) as any;
   return data.data.sort((a: any, b: any) => a.index - b.index).map((d: any) => d.embedding);
 }
@@ -72,7 +91,9 @@ async function main() {
     process.exit(1);
   }
   const fragen: Q[] = readFileSync(FIXTURE, "utf-8")
-    .trim().split("\n").filter((l) => l.trim() && !l.startsWith("#"))
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
     .map((l) => JSON.parse(l));
 
   console.log(`AT-Gesetzes-Retrieval — Vektor-Baseline "${LABEL}"`);
@@ -82,13 +103,23 @@ async function main() {
   console.log("  Fragen einbetten …");
   const vecs: number[][] = [];
   for (let i = 0; i < fragen.length; i += 32) {
-    vecs.push(...(await embed(fragen.slice(i, i + 32).map((q) => q.question), key)));
+    vecs.push(
+      ...(await embed(
+        fragen.slice(i, i + 32).map((q) => q.question),
+        key
+      ))
+    );
   }
   console.log(`  ${vecs.length} Vektoren erhalten\n`);
 
   const sql = postgres(DB_URL, { max: 2, idle_timeout: 20 });
   const results: any[] = [];
-  let h1 = 0, h3 = 0, h5 = 0, hk = 0, mrrSum = 0, fehlend = 0;
+  let h1 = 0,
+    h3 = 0,
+    h5 = 0,
+    hk = 0,
+    mrrSum = 0,
+    fehlend = 0;
 
   for (let i = 0; i < fragen.length; i++) {
     const q = fragen[i];
@@ -127,9 +158,13 @@ async function main() {
     mrrSum += mrr;
 
     results.push({
-      question_id: q.question_id, legal_area: q.legal_area,
-      expected_slug: q.expected_slug, ziel_vorhanden: n > 0,
-      rank: idx < 0 ? null : idx + 1, top_slugs: slugs.slice(0, 5), mrr,
+      question_id: q.question_id,
+      legal_area: q.legal_area,
+      expected_slug: q.expected_slug,
+      ziel_vorhanden: n > 0,
+      rank: idx < 0 ? null : idx + 1,
+      top_slugs: slugs.slice(0, 5),
+      mrr,
     });
     process.stderr.write(`\r  ${i + 1}/${fragen.length}`);
   }
@@ -147,24 +182,49 @@ async function main() {
   console.log(`    MRR     ${(mrrSum / n).toFixed(4)}`);
   console.log(`\n  ${fehlend} Fragen zielen auf Seiten, die es NICHT gibt (nicht beantwortbar).`);
   if (erreichbar > 0) {
-    console.log(`  Auf die ${erreichbar} erreichbaren bezogen: Hit@5 ${p(h5, erreichbar)}, Hit@${TOPK} ${p(hk, erreichbar)}`);
+    console.log(
+      `  Auf die ${erreichbar} erreichbaren bezogen: Hit@5 ${p(h5, erreichbar)}, Hit@${TOPK} ${p(hk, erreichbar)}`
+    );
   }
 
-  writeFileSync(OUT, JSON.stringify({
-    label: LABEL, timestamp: new Date().toISOString(), modell: MODEL,
-    // Gefiltert wird über document_type='statute', nicht über eine einzelne
-    // source_id: die Gesetze liegen inzwischen über law-at-normen,
-    // law-at-landesrecht, law-at-gemeinden und sechs weitere Quellen verteilt.
-    // Ein Filter auf 'law-at' träfe nur noch 1.174 von 345.356 Chunks.
-    methode: "Kosinus über content_chunks.embedding, auf Seite aggregiert (bester Chunk), document_type=statute",
-    hinweis: "Nur der Vektor-Arm — nicht die produktive Hybrid-Suche. Vergleichbar nur mit Läufen derselben Methode.",
-    fixture: FIXTURE, fragen: n, ziel_fehlt: fehlend, topk: TOPK,
-    metrics: { hit_at_1: h1, hit_at_3: h3, hit_at_5: h5, [`hit_at_${TOPK}`]: hk, mrr: mrrSum / n },
-    results,
-  }, null, 2));
+  writeFileSync(
+    OUT,
+    JSON.stringify(
+      {
+        label: LABEL,
+        timestamp: new Date().toISOString(),
+        modell: MODEL,
+        // Gefiltert wird über document_type='statute', nicht über eine einzelne
+        // source_id: die Gesetze liegen inzwischen über law-at-normen,
+        // law-at-landesrecht, law-at-gemeinden und sechs weitere Quellen verteilt.
+        // Ein Filter auf 'law-at' träfe nur noch 1.174 von 345.356 Chunks.
+        methode:
+          "Kosinus über content_chunks.embedding, auf Seite aggregiert (bester Chunk), document_type=statute",
+        hinweis:
+          "Nur der Vektor-Arm — nicht die produktive Hybrid-Suche. Vergleichbar nur mit Läufen derselben Methode.",
+        fixture: FIXTURE,
+        fragen: n,
+        ziel_fehlt: fehlend,
+        topk: TOPK,
+        metrics: {
+          hit_at_1: h1,
+          hit_at_3: h3,
+          hit_at_5: h5,
+          [`hit_at_${TOPK}`]: hk,
+          mrr: mrrSum / n,
+        },
+        results,
+      },
+      null,
+      2
+    )
+  );
   console.log(`\n  ✓ ${OUT}`);
 
   await sql.end();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

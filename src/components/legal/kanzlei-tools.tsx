@@ -142,7 +142,10 @@ function FaxCard() {
   const formatted = fax && valid ? formatFaxNumber(fax) : null;
 
   return (
-    <Tool title="Fax-Prüfung" subtitle="Prüft, ob eine Faxnummer vollständig und richtig aufgebaut ist.">
+    <Tool
+      title="Fax-Prüfung"
+      subtitle="Prüft, ob eine Faxnummer vollständig und richtig aufgebaut ist."
+    >
       <Input
         value={fax}
         onChange={(e) => setFax(e.target.value)}

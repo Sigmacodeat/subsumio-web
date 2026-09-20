@@ -9,18 +9,18 @@ globalen Teile (Layout, Seitenleiste, Übersicht, geteilte Komponenten, Texte, H
 
 ## 1. Globale Befunde (alle Seiten)
 
-| # | Befund | Wirkung | Stand |
-|---|---|---|---|
-| G1 | Assistenten-Panel startete bei ≥ 768 px offen | Auf 1440-px-Laptops blieben ~800 px Inhalt; Tabellen schnitten Datum/Rechtsgebiet ab | behoben: offen erst ab 1680 px, neuer Speicher-Schlüssel (`subsumio-copilot-open-v2`), damit alte Automatik-Werte nicht greifen |
-| G2 | Geschlossene Handy-Schublade des Assistenten verbreiterte jede Seite auf 780 px | Seitliches Wischen auf dem Handy | behoben: nach dem Schließen `display: none` (`copilot-sidebar.tsx`) |
-| G3 | Rohe Engine-Diagnose „(no LLM available — [chat(openrouter:…)] Insufficient credits…)“ im Morgenbriefing und in Antworten | Anbieter, Abrechnungs-URL und Technik vor dem Anwalt | behoben zentral: `src/lib/engine-degraded.ts` in Citation-Gate-Stream, Client-Stream (`api.ts`), `engine-client.ts`, Briefing-Route; mit Test |
-| G4 | „Invalid Date“, ISO-Daten, „vor 3d“, „noch 18T“ | Unprofessionelle Datumsangaben | behoben: `formatDate`/`formatDateTime` liefern „—“ statt Fehler, neue Helfer `daysUntil`/`formatDaysUntil` („in 5 Tagen“, „seit 2 Tagen überfällig“), `formatRelativeTime` ausgeschrieben; Agenten haben die Seiten umgestellt |
-| G5 | Fundstellen-Panel mit „Corpus-Grounding“, „Brain-Quellen“, „Lücken im Brain“, „Corpus geprüft am“ und doppeltem KI-Hinweis | Technikjargon bei jeder KI-Antwort | behoben: „Geprüfte Rechtsquellen“, „Quellen aus Akte und Kanzleiwissen“, „Nicht belegt“, „Gegen die Rechtsquellen geprüft am TT.MM.JJJJ“; ein Hinweis „KI-generiert · Anwaltlich zu prüfen“ |
-| G6 | ~150 Textschlüssel mit Englisch/Jargon (Upload, Review, Drafting, Cockpit, Playbook, Agent, Token, Legal Hold, Rundown, OCR …) | Mischsprache | behoben in `src/content/dashboard.ts`; Seitennamen vereinheitlicht (Dokumente, Schriftsätze, Vorlagen, Klauseln, Prüfsets, Prüfleitfäden, Aufbewahrungssperre, Signaturen, Freigaben …) |
-| G7 | Fehlerseiten zweisprachig („Page could not be loaded … / Try again“), `DashboardError` zeigte `error.message` roh | | behoben; Fehlerkennung (digest) für den Support |
-| G8 | Seitenleiste: Gruppen teils umrahmt, teils nicht; Erklärsätze („das Fristenbuch führt alle Deadlines kanonisch“); Schalter „Kernfunktionen“ las sich wie ein Menüpunkt; Akten-Register doppelt (Seitenleiste + Tab-Leiste) | Unruhe, Verwirrung | behoben: einheitliche Gruppen, Abschnitt „Verwaltung“ abgesetzt, Schalter nennt die Aktion („Alle Funktionen“ / „Nur Kernfunktionen“), geöffnete Akte als ein Eintrag mit Titel und Aktenzeichen |
-| G9 | Platzhaltertext „Assistent wird geladen…“ als eigene Spalte | | behoben |
-| G10 | Diagrammachse „00 / 00 / 00“ (Umsatz abgeschnitten) | | behoben: kompakte €-Achse, Tooltip in € |
+| #   | Befund                                                                                                                                                                                                                     | Wirkung                                                                              | Stand                                                                                                                                                                                                                          |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| G1  | Assistenten-Panel startete bei ≥ 768 px offen                                                                                                                                                                              | Auf 1440-px-Laptops blieben ~800 px Inhalt; Tabellen schnitten Datum/Rechtsgebiet ab | behoben: offen erst ab 1680 px, neuer Speicher-Schlüssel (`subsumio-copilot-open-v2`), damit alte Automatik-Werte nicht greifen                                                                                                |
+| G2  | Geschlossene Handy-Schublade des Assistenten verbreiterte jede Seite auf 780 px                                                                                                                                            | Seitliches Wischen auf dem Handy                                                     | behoben: nach dem Schließen `display: none` (`copilot-sidebar.tsx`)                                                                                                                                                            |
+| G3  | Rohe Engine-Diagnose „(no LLM available — [chat(openrouter:…)] Insufficient credits…)“ im Morgenbriefing und in Antworten                                                                                                  | Anbieter, Abrechnungs-URL und Technik vor dem Anwalt                                 | behoben zentral: `src/lib/engine-degraded.ts` in Citation-Gate-Stream, Client-Stream (`api.ts`), `engine-client.ts`, Briefing-Route; mit Test                                                                                  |
+| G4  | „Invalid Date“, ISO-Daten, „vor 3d“, „noch 18T“                                                                                                                                                                            | Unprofessionelle Datumsangaben                                                       | behoben: `formatDate`/`formatDateTime` liefern „—“ statt Fehler, neue Helfer `daysUntil`/`formatDaysUntil` („in 5 Tagen“, „seit 2 Tagen überfällig“), `formatRelativeTime` ausgeschrieben; Agenten haben die Seiten umgestellt |
+| G5  | Fundstellen-Panel mit „Corpus-Grounding“, „Brain-Quellen“, „Lücken im Brain“, „Corpus geprüft am“ und doppeltem KI-Hinweis                                                                                                 | Technikjargon bei jeder KI-Antwort                                                   | behoben: „Geprüfte Rechtsquellen“, „Quellen aus Akte und Kanzleiwissen“, „Nicht belegt“, „Gegen die Rechtsquellen geprüft am TT.MM.JJJJ“; ein Hinweis „KI-generiert · Anwaltlich zu prüfen“                                    |
+| G6  | ~150 Textschlüssel mit Englisch/Jargon (Upload, Review, Drafting, Cockpit, Playbook, Agent, Token, Legal Hold, Rundown, OCR …)                                                                                             | Mischsprache                                                                         | behoben in `src/content/dashboard.ts`; Seitennamen vereinheitlicht (Dokumente, Schriftsätze, Vorlagen, Klauseln, Prüfsets, Prüfleitfäden, Aufbewahrungssperre, Signaturen, Freigaben …)                                        |
+| G7  | Fehlerseiten zweisprachig („Page could not be loaded … / Try again“), `DashboardError` zeigte `error.message` roh                                                                                                          |                                                                                      | behoben; Fehlerkennung (digest) für den Support                                                                                                                                                                                |
+| G8  | Seitenleiste: Gruppen teils umrahmt, teils nicht; Erklärsätze („das Fristenbuch führt alle Deadlines kanonisch“); Schalter „Kernfunktionen“ las sich wie ein Menüpunkt; Akten-Register doppelt (Seitenleiste + Tab-Leiste) | Unruhe, Verwirrung                                                                   | behoben: einheitliche Gruppen, Abschnitt „Verwaltung“ abgesetzt, Schalter nennt die Aktion („Alle Funktionen“ / „Nur Kernfunktionen“), geöffnete Akte als ein Eintrag mit Titel und Aktenzeichen                               |
+| G9  | Platzhaltertext „Assistent wird geladen…“ als eigene Spalte                                                                                                                                                                |                                                                                      | behoben                                                                                                                                                                                                                        |
+| G10 | Diagrammachse „00 / 00 / 00“ (Umsatz abgeschnitten)                                                                                                                                                                        |                                                                                      | behoben: kompakte €-Achse, Tooltip in €                                                                                                                                                                                        |
 
 ## 2. Übersicht (neu aufgebaut)
 
@@ -29,6 +29,7 @@ Kanzlei-Operationen, Umschalter, Morgenbriefing, Wochenrückblick, „Heute zu s
 Fristen bis zu dreimal, Fristen ohne Datum, zwei unterschiedliche Begrüßungen auf einem Bildschirm.
 
 Nachher („Mein Tag“ | „Kanzlei“):
+
 - Kopf: Datum, „Guten Morgen, Dr. Nachname“ (Titel + Nachname, `formalNameOf`).
 - Kennzahlen: Fällig in 7 Tagen · Überfällig · Ungeprüfte Fristen · Offene Akten (Farbe nur > 0).
 - Fristen & Termine: Überfälliges oben, dann 14 Tage nach Kalendertagen, Vorfristen als eigener
@@ -67,13 +68,14 @@ Nachher („Mein Tag“ | „Kanzlei“):
 Neu: `src/components/marketing/handbook/*`, Inhalte `src/content/handbook.ts` (24 Kapitel in 6 Gruppen,
 FAQ). Jedes Kapitel: Zweck, Ort im Produkt mit Link, Nachbau, „So gehen Sie vor“, „Gut zu wissen“.
 Nachbauten aus echten Komponenten bzw. echter Logik:
+
 - Übersicht (echte `OverviewKpis`/`DeadlineAgenda`/`ActiveMatters` + `buildAgenda`),
 - Fristenrechner **interaktiv** mit `berechneFristAuto` (Feiertage, § 222 ZPO, § 89a GOG),
 - Kalender mit Kollisionen über `findCalendarConflicts`/`describeCalendarConflict`,
 - Assistent mit dem echten `CitationPanel`, Honorarnote mit `calculateRatgService`,
 - Akte, Fristenbuch, Erinnerungsstufen (7/3/1/0 + Vorfrist), Kollisionsprüfung, Treuhand, Import.
-Jede Aussage ist am Code geprüft; Guard-Test `src/content/handbook.test.ts` (Sie-Form, kein Jargon,
-nur Österreich). Das Hilfe-Panel im Produkt verlinkt pro Seite das passende Kapitel.
+  Jede Aussage ist am Code geprüft; Guard-Test `src/content/handbook.test.ts` (Sie-Form, kein Jargon,
+  nur Österreich). Das Hilfe-Panel im Produkt verlinkt pro Seite das passende Kapitel.
 
 ## 5. Offen (Entscheidung oder Serverarbeit nötig)
 

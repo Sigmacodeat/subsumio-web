@@ -345,8 +345,8 @@ export function AttorneyReviewWarning({
       <div className="leading-relaxed">
         {unverified > 0 && (
           <p className="font-medium">
-            {unverified} {unverified === 1 ? "Zitat" : "Zitate"} nicht in den Rechtsquellen gefunden —
-            anwaltliche Prüfung zwingend erforderlich.
+            {unverified} {unverified === 1 ? "Zitat" : "Zitate"} nicht in den Rechtsquellen gefunden
+            — anwaltliche Prüfung zwingend erforderlich.
           </p>
         )}
         {unverified === 0 && verified === 0 && (

@@ -24,10 +24,7 @@ import { CH_CHALLENGE_SET } from "./ch-challenge-set.ts";
 import type { ChallengeEntry, ManipulationType } from "./types.ts";
 
 /** Combined challenge set: DE/AT (100) + CH (26+) */
-export const ALL_CHALLENGE_ENTRIES: ChallengeEntry[] = [
-  ...CHALLENGE_SET,
-  ...CH_CHALLENGE_SET,
-];
+export const ALL_CHALLENGE_ENTRIES: ChallengeEntry[] = [...CHALLENGE_SET, ...CH_CHALLENGE_SET];
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -227,7 +224,12 @@ async function main() {
 
   const taskMap = new Map<string, string>();
   const slugMap = new Map<string, string[]>();
-  for (const t of [...GOLD_DE_LITIGATION, ...GOLD_DE_CRIMINAL, ...GOLD_AT_LITIGATION, ...ALL_GOLD_CH]) {
+  for (const t of [
+    ...GOLD_DE_LITIGATION,
+    ...GOLD_DE_CRIMINAL,
+    ...GOLD_AT_LITIGATION,
+    ...ALL_GOLD_CH,
+  ]) {
     if (t.reference_output) {
       taskMap.set(t.id, t.reference_output);
     }

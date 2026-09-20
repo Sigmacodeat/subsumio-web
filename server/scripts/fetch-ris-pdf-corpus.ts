@@ -34,7 +34,10 @@ import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { contentHash } from "./backfill-utils";
 
 const args = process.argv.slice(2);
-const arg = (n: string, d?: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
+const arg = (n: string, d?: string) => {
+  const i = args.indexOf(n);
+  return i >= 0 ? args[i + 1] : d;
+};
 const CORPUS = arg("--corpus", "Bezirke")!;
 const DRY = args.includes("--dry-run");
 const LIMIT = parseInt(arg("--limit", "0")!, 10);
@@ -57,27 +60,44 @@ const CONFIG: Record<
   { endpoint: string; applikation?: string; dir: string; container: string; detail: string }
 > = {
   Bezirke: { endpoint: "Bezirke", dir: "at-bezirke", container: "Bezirke", detail: "Bvb" },
-  KmGer: { endpoint: "Sonstige", applikation: "KmGer", dir: "at-kmger", container: "Sonstige", detail: "KmGer" },
+  KmGer: {
+    endpoint: "Sonstige",
+    applikation: "KmGer",
+    dir: "at-kmger",
+    container: "Sonstige",
+    detail: "KmGer",
+  },
 };
 
 const cfg = CONFIG[CORPUS];
-if (!cfg) { console.error(`--corpus muss Bezirke oder KmGer sein`); process.exit(1); }
+if (!cfg) {
+  console.error(`--corpus muss Bezirke oder KmGer sein`);
+  process.exit(1);
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const one = <T,>(v: T | T[] | undefined): T | undefined => (Array.isArray(v) ? v[0] : v);
-const all = <T,>(v: T | T[] | undefined): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
+const one = <T>(v: T | T[] | undefined): T | undefined => (Array.isArray(v) ? v[0] : v);
+const all = <T>(v: T | T[] | undefined): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
 /** `{ item: "x" }` oder `{ item: ["x","y"] }` — RIS liefert beides. */
 function items(v: any): string[] {
   if (v == null) return [];
   const inner = v.item ?? v;
-  return all<any>(inner).map((x) => String(x).trim()).filter(Boolean);
+  return all<any>(inner)
+    .map((x) => String(x).trim())
+    .filter(Boolean);
 }
 
 function slugify(s: string): string {
-  return s.toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120);
+  return s
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
 }
 
 function yamlStr(s: string): string {
@@ -86,17 +106,25 @@ function yamlStr(s: string): string {
 
 /** PDF → Text über die eingebettete Textschicht. Kein OCR. */
 async function pdfToText(buf: ArrayBuffer): Promise<string> {
-  const tmp = join(process.env.TMPDIR ?? "/tmp", `ris-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`);
+  const tmp = join(
+    process.env.TMPDIR ?? "/tmp",
+    `ris-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`
+  );
   writeFileSync(tmp, Buffer.from(buf));
   try {
     const proc = Bun.spawn(["pdftotext", "-layout", "-enc", "UTF-8", tmp, "-"], {
-      stdout: "pipe", stderr: "pipe",
+      stdout: "pipe",
+      stderr: "pipe",
     });
     const out = await new Response(proc.stdout).text();
     await proc.exited;
     return out;
   } finally {
-    try { unlinkSync(tmp); } catch { /* egal */ }
+    try {
+      unlinkSync(tmp);
+    } catch {
+      /* egal */
+    }
   }
 }
 
@@ -118,10 +146,15 @@ function cleanPdfText(raw: string): string {
 }
 
 interface Doc {
-  id: string; title: string; pdfUrl: string;
-  kundmachungsdatum: string | null; typ: string | null;
-  behoerde: string | null; bundesland: string | null;
-  kundmachungsorgan: string | null; inkrafttreten: string | null;
+  id: string;
+  title: string;
+  pdfUrl: string;
+  kundmachungsdatum: string | null;
+  typ: string | null;
+  behoerde: string | null;
+  bundesland: string | null;
+  kundmachungsorgan: string | null;
+  inkrafttreten: string | null;
 }
 
 /** Eine API-Seite holen und zu Doc-Sätzen normalisieren. */
@@ -151,19 +184,27 @@ async function fetchPage(page: number): Promise<{ docs: Doc[]; total: number }> 
 
     // Titel tragen CRLF und Doppel-Leerzeichen aus dem RIS-Redaktionssystem.
     const norm = (v: unknown) =>
-      v == null ? null : String(v).replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim() || null;
+      v == null
+        ? null
+        : String(v)
+            .replace(/<br\s*\/?>/gi, " ")
+            .replace(/\s+/g, " ")
+            .trim() || null;
 
     const id = String(tech.ID ?? pdf.split("/").slice(-2)[0]);
-    const title =
-      norm(cont.Titel) ?? norm(cont.Kurztitel) ?? norm(spec.Kurzinformation) ?? id;
+    const title = norm(cont.Titel) ?? norm(cont.Kurztitel) ?? norm(spec.Kurzinformation) ?? id;
 
     docs.push({
-      id, title, pdfUrl: pdf,
+      id,
+      title,
+      pdfUrl: pdf,
       kundmachungsdatum: spec.Kundmachungsdatum ?? cont.Kundmachungsdatum ?? null,
       typ: norm(spec.Typ),
       behoerde: norm(spec.Bezirksverwaltungsbehoerde ?? spec.Gericht ?? tech.Organ),
       bundesland: norm(cont.Bundesland),
-      kundmachungsorgan: norm([spec.Kundmachungsorgan, spec.Kundmachungsnummer].filter(Boolean).join(" ")),
+      kundmachungsorgan: norm(
+        [spec.Kundmachungsorgan, spec.Kundmachungsnummer].filter(Boolean).join(" ")
+      ),
       inkrafttreten: spec.Inkrafttretensdatum ?? null,
     });
   }
@@ -190,13 +231,17 @@ function toMarkdown(d: Doc, body: string): string {
     `license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`,
     `content_hash: ${yamlStr(contentHash(body))}`,
     "---",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
   return `${fm}\n\n# ${d.title}\n\n${body}\n`;
 }
 
 async function main() {
   const outDir = join(CORPUS_ROOT, cfg.dir);
-  console.log(`Korpus:    ${CORPUS} (${cfg.endpoint}${cfg.applikation ? "/" + cfg.applikation : ""})`);
+  console.log(
+    `Korpus:    ${CORPUS} (${cfg.endpoint}${cfg.applikation ? "/" + cfg.applikation : ""})`
+  );
   console.log(`Ziel:      ${outDir}`);
   console.log(`Rate:      ${RATE_MS}ms   ${DRY ? "[DRY-RUN]" : ""}`);
 
@@ -206,18 +251,32 @@ async function main() {
     console.log("RIS-Lock erhalten.");
   }
 
-  let written = 0, failed = 0, emptyText = 0, page = 1, total = 0;
+  let written = 0,
+    failed = 0,
+    emptyText = 0,
+    page = 1,
+    total = 0;
   try {
     for (;;) {
       const { docs, total: t } = await fetchPage(page);
-      if (page === 1) { total = t; console.log(`RIS meldet ${total} Dokumente.\n`); }
+      if (page === 1) {
+        total = t;
+        console.log(`RIS meldet ${total} Dokumente.\n`);
+      }
       if (docs.length === 0) break;
 
       for (const d of docs) {
-        if (LIMIT && written >= LIMIT) { console.log("\nLimit erreicht."); return; }
+        if (LIMIT && written >= LIMIT) {
+          console.log("\nLimit erreicht.");
+          return;
+        }
         try {
           const res = await fetch(d.pdfUrl, { headers: { "User-Agent": UA } });
-          if (!res.ok) { failed++; console.log(`  ✗ HTTP ${res.status}  ${d.id}`); continue; }
+          if (!res.ok) {
+            failed++;
+            console.log(`  ✗ HTTP ${res.status}  ${d.id}`);
+            continue;
+          }
           const text = cleanPdfText(await pdfToText(await res.arrayBuffer()));
 
           // Ohne Textschicht kein Volltext — lieber gar nichts schreiben als

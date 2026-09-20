@@ -169,7 +169,7 @@ export function TimeTrackingWidget() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-[color:var(--ds-text-muted)] text-sm">Laden...</div>
+          <div className="text-sm text-[color:var(--ds-text-muted)]">Laden...</div>
         </CardContent>
       </Card>
     );
@@ -188,7 +188,7 @@ export function TimeTrackingWidget() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium">{currentActivity.description}</div>
-              <div className="text-[color:var(--ds-text-muted)] text-sm">
+              <div className="text-sm text-[color:var(--ds-text-muted)]">
                 {currentActivity.case_slug || "Global"}
               </div>
             </div>
@@ -203,7 +203,7 @@ export function TimeTrackingWidget() {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="text-[color:var(--ds-text-muted)] py-4 text-center text-sm">
+            <div className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
               Keine aktive Zeiterfassung
             </div>
             <Button onClick={handleStart} size="sm" className="w-full">

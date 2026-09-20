@@ -36,25 +36,33 @@ for (const path of walk(ROOT)) {
 
   // Frontmatter-Ende finden
   const fmEnd = content.indexOf("\n---\n", 4);
-  if (fmEnd < 0) { skipped++; continue; }
+  if (fmEnd < 0) {
+    skipped++;
+    continue;
+  }
   const fm = content.slice(0, fmEnd);
 
   // Bereits vorhanden?
-  if (/\nid:\s/.test(fm)) { skipped++; continue; }
+  if (/\nid:\s/.test(fm)) {
+    skipped++;
+    continue;
+  }
 
   // nor_id extrahieren
   const norMatch = fm.match(/\nnor_id:\s*"([^"]+)"/);
-  if (!norMatch) { noNorId++; continue; }
+  if (!norMatch) {
+    noNorId++;
+    continue;
+  }
   const norId = norMatch[1];
 
   // id-Feld nach nor_id einfügen
-  const newFm = fm.replace(
-    /(\nnor_id:\s*"[^"]+")/,
-    `$1\nid: "ris-${norId}"`
-  );
+  const newFm = fm.replace(/(\nnor_id:\s*"[^"]+")/, `$1\nid: "ris-${norId}"`);
   const newContent = newFm + content.slice(fmEnd);
   writeFileSync(path, newContent);
   updated++;
 }
 
-console.log(`✓ ${updated} Dateien aktualisiert, ${skipped} bereits vorhanden, ${noNorId} ohne nor_id`);
+console.log(
+  `✓ ${updated} Dateien aktualisiert, ${skipped} bereits vorhanden, ${noNorId} ohne nor_id`
+);

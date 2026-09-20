@@ -821,8 +821,7 @@ export const UI_STRINGS: Record<string, string> = {
   downloadHint: "2 Fristen diese Woche — Klagebeantwortung Müller am Do",
   verticalSeePricing: "Preise ansehen",
   verticalSeeLive: "Live ansehen",
-  verticalTrialNote:
-    "30 Tage kostenlos testen · Keine Kreditkarte erforderlich",
+  verticalTrialNote: "30 Tage kostenlos testen · Keine Kreditkarte erforderlich",
   verticalTrustNote: "EU-Cloud · On-Premise (Enterprise) · DSGVO · § 9 Abs. 2 RAO",
   verticalFeaturesSub:
     "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort mit Fundstelle.",

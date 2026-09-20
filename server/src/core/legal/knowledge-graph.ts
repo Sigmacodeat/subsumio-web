@@ -111,7 +111,10 @@ export function buildLegalKnowledgeGraph(
   const edges: GraphEdge[] = [];
 
   // Track all known statute+paragraph combos for cross-statute resolution
-  const knownParagraphs = new Map<string, { jurisdiction: string; statute: string; paragraph: string }>();
+  const knownParagraphs = new Map<
+    string,
+    { jurisdiction: string; statute: string; paragraph: string }
+  >();
   for (const { jurisdiction, statuteCode, sections } of statutes) {
     for (const section of sections) {
       const key = `${jurisdiction.toLowerCase()}:${statuteCode.toLowerCase()}:${section.ref}`;

@@ -4,9 +4,7 @@
   "gold_version": 2,
   "gold_hash": "825972096c019a4d",
   "code_sha": "4a75ef9295-dirty",
-  "models": [
-    "anthropic:claude-sonnet-5"
-  ],
+  "models": ["anthropic:claude-sonnet-5"],
   "tier": "reasoning",
   "all": {
     "n": 46,
@@ -134,10 +132,7 @@
       "id": "vj-1489-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "unsupported",
       "reason": "Der Quelltext kennt keine Sonderregel von fünf Jahren für Verbraucher, sondern nur die Fristen von drei bzw. dreißig Jahren.",
       "ms": 2553
@@ -178,10 +173,7 @@
       "id": "mi-1096-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "partial",
       "reason": "Der Quelltext regelt nur die Zinsbefreiung bei Unbrauchbarkeit, nicht einen verschuldensunabhängigen Schadenersatzanspruch.",
       "ms": 1466
@@ -254,10 +246,7 @@
       "id": "gw-933-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "partial",
       "reason": "Die zweijährige Frist für bewegliche Sachen ist korrekt, aber eine 14-tägige Rügepflicht ist in § 933 ABGB nicht geregelt.",
       "ms": 1802
@@ -306,10 +295,7 @@
       "id": "kv-1325-overreach",
       "split": "dev",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "unsupported",
       "reason": "Der Quelltext verlangt für Schmerzengeld kein grobes Verschulden, sondern nur eine Körperverletzung und Verlangen des Verletzten.",
       "ms": 4909
@@ -422,10 +408,7 @@
       "id": "h-1320-overreach",
       "split": "holdout",
       "expected": "partial",
-      "acceptable": [
-        "partial",
-        "unsupported"
-      ],
+      "acceptable": ["partial", "unsupported"],
       "predicted": "unsupported",
       "reason": "Der Quelltext enthält keine Haftungshöchstgrenze von 50.000 Euro, diese Begrenzung ist frei erfunden.",
       "ms": 1550

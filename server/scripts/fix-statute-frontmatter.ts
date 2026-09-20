@@ -134,7 +134,9 @@ for (const sf of FAILING_FILES) {
   const newContent = fm + raw;
   if (!DRY_RUN) writeFileSync(path, newContent, "utf-8");
   fixed++;
-  console.log(`  ${DRY_RUN ? "[DRY] " : ""}🔧 ${sf.file} — Frontmatter hinzugefügt (title: "${title}", version: ${versionDate})`);
+  console.log(
+    `  ${DRY_RUN ? "[DRY] " : ""}🔧 ${sf.file} — Frontmatter hinzugefügt (title: "${title}", version: ${versionDate})`
+  );
 }
 
 console.log(`\n═══ Ergebnis ═══`);

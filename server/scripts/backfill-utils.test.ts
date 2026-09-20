@@ -130,7 +130,9 @@ describe("backfill-utils: atomicWrite", () => {
   const testFile = join(testDir, "test.md");
 
   afterEach(() => {
-    try { unlinkSync(testFile); } catch {}
+    try {
+      unlinkSync(testFile);
+    } catch {}
   });
 
   it("schreibt Datei erfolgreich", () => {

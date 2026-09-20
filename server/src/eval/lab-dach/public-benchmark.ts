@@ -393,7 +393,9 @@ export function exportRawReceipts(
     const task = taskMap.get(t.task_id);
     return task?.review_status === "draft";
   });
-  const nonDraftEntries = taskEntries.filter((t) => !draftTaskEntries.some((d) => d.task_id === t.task_id));
+  const nonDraftEntries = taskEntries.filter(
+    (t) => !draftTaskEntries.some((d) => d.task_id === t.task_id)
+  );
   const nonDraftTotal = nonDraftEntries.length;
   const allPassCount = nonDraftEntries.filter((t) => t.all_pass).length;
   const meanCriterionPass =
@@ -406,7 +408,8 @@ export function exportRawReceipts(
     all_pass_rate: nonDraftTotal > 0 ? allPassCount / nonDraftTotal : 0,
     strict_all_pass_rate:
       nonDraftTotal > 0
-        ? nonDraftEntries.filter((t) => t.all_pass && t.critical_pass_rate === 1).length / nonDraftTotal
+        ? nonDraftEntries.filter((t) => t.all_pass && t.critical_pass_rate === 1).length /
+          nonDraftTotal
         : 0,
     mean_criterion_pass_rate: meanCriterionPass,
     mean_critical_pass_rate: meanCriticalPass,
@@ -550,7 +553,9 @@ function generateMarkdownReport(
   lines.push("## Aggregate Metrics");
   if (results.aggregate_metrics.excluded_draft_count > 0) {
     lines.push("");
-    lines.push(`⚠️ ${results.aggregate_metrics.excluded_draft_count} draft task(s) excluded from aggregate metrics: ${results.aggregate_metrics.excluded_draft_tasks.join(", ")}`);
+    lines.push(
+      `⚠️ ${results.aggregate_metrics.excluded_draft_count} draft task(s) excluded from aggregate metrics: ${results.aggregate_metrics.excluded_draft_tasks.join(", ")}`
+    );
   }
   lines.push("");
   lines.push(`- **Total tasks**: ${results.aggregate_metrics.total_tasks}`);

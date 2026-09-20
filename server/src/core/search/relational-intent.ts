@@ -124,7 +124,7 @@ const STOPWORD_SEEDS: ReadonlySet<string> = new Set([
   "der",
   "das",
   "ein",
- "eine",
+  "eine",
   "einer",
   "eines",
   "sich",
@@ -167,10 +167,26 @@ const WHO_REL_VERBS: Array<{ verb: string; linkTypes: string[]; direction: Relat
   { verb: "works at|worked at|works for", linkTypes: ["works_at"], direction: "in" },
   { verb: "attended", linkTypes: ["attended"], direction: "in" },
   // ── German legal verbs ──
-  { verb: "verweist auf|bezieht sich auf|referenziert", linkTypes: ["statute_to_statute"], direction: "out" },
-  { verb: "interpretiert|ausgelegt in|kommentiert", linkTypes: ["case_to_statute"], direction: "in" },
-  { verb: "aufgehoben durch|überholt durch|bestätigt durch", linkTypes: ["legal_precedent"], direction: "both" },
-  { verb: "haftet für|verantwortlich für|regelt|betrifft", linkTypes: ["case_to_statute", "statute_to_statute"], direction: "both" },
+  {
+    verb: "verweist auf|bezieht sich auf|referenziert",
+    linkTypes: ["statute_to_statute"],
+    direction: "out",
+  },
+  {
+    verb: "interpretiert|ausgelegt in|kommentiert",
+    linkTypes: ["case_to_statute"],
+    direction: "in",
+  },
+  {
+    verb: "aufgehoben durch|überholt durch|bestätigt durch",
+    linkTypes: ["legal_precedent"],
+    direction: "both",
+  },
+  {
+    verb: "haftet für|verantwortlich für|regelt|betrifft",
+    linkTypes: ["case_to_statute", "statute_to_statute"],
+    direction: "both",
+  },
 ];
 
 function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {

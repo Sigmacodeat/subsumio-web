@@ -2685,11 +2685,15 @@ async function checkEmbeddingEnvOverride(engine: BrainEngine): Promise<Check> {
   }
   const mismatches: Array<{ key: string; env: string; db: string }> = [];
   if (envModel && dbModel && envModel !== dbModel) {
-    const modelKey = process.env.SUBSUMIO_EMBEDDING_MODEL ? "SUBSUMIO_EMBEDDING_MODEL" : "GBRAIN_EMBEDDING_MODEL";
+    const modelKey = process.env.SUBSUMIO_EMBEDDING_MODEL
+      ? "SUBSUMIO_EMBEDDING_MODEL"
+      : "GBRAIN_EMBEDDING_MODEL";
     mismatches.push({ key: modelKey, env: envModel, db: dbModel });
   }
   if (envDim && dbDim && envDim !== dbDim) {
-    const dimKey = process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ? "SUBSUMIO_EMBEDDING_DIMENSIONS" : "GBRAIN_EMBEDDING_DIMENSIONS";
+    const dimKey = process.env.SUBSUMIO_EMBEDDING_DIMENSIONS
+      ? "SUBSUMIO_EMBEDDING_DIMENSIONS"
+      : "GBRAIN_EMBEDDING_DIMENSIONS";
     mismatches.push({ key: dimKey, env: envDim, db: dbDim });
   }
   if (mismatches.length === 0) {

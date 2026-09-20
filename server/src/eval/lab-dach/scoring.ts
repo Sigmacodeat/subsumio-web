@@ -516,7 +516,9 @@ export function generateReport(score: AggregateScore): string {
   lines.push("=== LAB-DACH v3 Benchmark Report ===");
   lines.push("");
   if (score.excluded_draft_count > 0) {
-    lines.push(`⚠️ ${score.excluded_draft_count} draft task(s) excluded from aggregate metrics: ${score.excluded_draft_tasks.join(", ")}`);
+    lines.push(
+      `⚠️ ${score.excluded_draft_count} draft task(s) excluded from aggregate metrics: ${score.excluded_draft_tasks.join(", ")}`
+    );
     lines.push("");
   }
   lines.push(`Total Tasks: ${score.total_tasks}`);

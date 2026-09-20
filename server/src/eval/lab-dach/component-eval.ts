@@ -136,11 +136,7 @@ export interface ComponentEvalOpts {
   fixtures: ComponentEvalFixture[];
   chatFn?: (opts: ChatOpts) => Promise<ChatResult>;
   judgeConfig?: JudgeConfig;
-  searchFn?: (
-    query: string,
-    mode: SearchMode,
-    jurisdiction?: string
-  ) => Promise<SearchResult[]>;
+  searchFn?: (query: string, mode: SearchMode, jurisdiction?: string) => Promise<SearchResult[]>;
   planQueryFn?: (question: string, jurisdiction?: string) => Promise<QueryPlan>;
   groundCitationsFn?: (citations: RawCitation[]) => Promise<GroundedCitation[]>;
 }
@@ -201,7 +197,7 @@ function extractConceptsFromPlan(plan: QueryPlan): {
 
 function computeConceptMetrics(
   extracted: { laws: string[]; sections: string[]; terms: string[] },
-  gold: { expected_laws: string[]; expected_sections: string[]; expected_terms: string[] },
+  gold: { expected_laws: string[]; expected_sections: string[]; expected_terms: string[] }
 ): { recall: number; precision: number; f1: number } {
   const allGold = [
     ...gold.expected_laws.map((l) => l.toUpperCase()),
@@ -231,7 +227,7 @@ function computeConceptMetrics(
 
 export async function evalQueryRewriting(
   fixture: ComponentEvalFixture,
-  opts: ComponentEvalOpts,
+  opts: ComponentEvalOpts
 ): Promise<QueryRewritingResult> {
   let plan: QueryPlan;
 
@@ -296,8 +292,15 @@ function slugMatches(resultSlug: string, goldSlug: string): boolean {
 
 function computeHitMetrics(
   results: SearchResult[],
-  goldSlugs: string[],
-): { hit_at_1: boolean; hit_at_3: boolean; hit_at_5: boolean; hit_at_10: boolean; mrr: number; purity: number } {
+  goldSlugs: string[]
+): {
+  hit_at_1: boolean;
+  hit_at_3: boolean;
+  hit_at_5: boolean;
+  hit_at_10: boolean;
+  mrr: number;
+  purity: number;
+} {
   const slugs = results.map((r) => r.slug);
 
   const findFirstHit = (k: number): number => {
@@ -335,7 +338,7 @@ function computeHitMetrics(
 function computeRecallAtTokenBudget(
   results: SearchResult[],
   goldSlugs: string[],
-  tokenBudget: number,
+  tokenBudget: number
 ): number {
   if (goldSlugs.length === 0) return 1.0;
 
@@ -376,7 +379,7 @@ function buildModeResult(results: SearchResult[], goldSlugs: string[]): Retrieva
 
 export async function evalRetrieval(
   fixture: ComponentEvalFixture,
-  opts: ComponentEvalOpts,
+  opts: ComponentEvalOpts
 ): Promise<RetrievalResult> {
   const modes: SearchMode[] = ["conservative", "balanced", "tokenmax"];
   const modeResults = {} as Record<SearchMode, RetrievalModeResult>;
@@ -455,7 +458,7 @@ const JUDGE_CRITERIA = [
 
 export async function evalAnswer(
   fixture: ComponentEvalFixture,
-  opts: ComponentEvalOpts,
+  opts: ComponentEvalOpts
 ): Promise<AnswerResult> {
   let generatedText: string;
 
@@ -495,7 +498,9 @@ export async function evalAnswer(
         const parsed = JSON.parse(judgeResult.text);
         const passed = parsed.status === "pass";
         verdicts.push(passed);
-        judgeDetails.push(`${criterion.id}: ${parsed.status} — ${parsed.reasoning?.slice(0, 200) ?? ""}`);
+        judgeDetails.push(
+          `${criterion.id}: ${parsed.status} — ${parsed.reasoning?.slice(0, 200) ?? ""}`
+        );
       } catch {
         verdicts.push(false);
         judgeDetails.push(`${criterion.id}: judge_error`);
@@ -517,9 +522,7 @@ export async function evalAnswer(
 }
 
 function mockAnswer(fixture: ComponentEvalFixture): string {
-  const cites = fixture.gold_citations
-    .map((c) => `§ ${c.paragraph} ${c.code}`)
-    .join(", ");
+  const cites = fixture.gold_citations.map((c) => `§ ${c.paragraph} ${c.code}`).join(", ");
   return `Auf Basis der gesetzlichen Bestimmungen (${cites}) lässt sich Ihre Frage wie folgt beantworten:
 
 Die relevanten Vorschriften regeln die Rechte und Pflichten in Ihrem Fall. Gemäß ${cites} können Sie die dort vorgesehenen Maßnahmen ergreifen.
@@ -532,7 +535,7 @@ Die relevanten Vorschriften regeln die Rechte und Pflichten in Ihrem Fall. Gemä
 export async function evalCitations(
   fixture: ComponentEvalFixture,
   answerText: string,
-  opts: ComponentEvalOpts,
+  opts: ComponentEvalOpts
 ): Promise<CitationResult> {
   let grounded: GroundedCitation[];
 
@@ -548,24 +551,20 @@ export async function evalCitations(
   const verifiedRatio = totalCitations > 0 ? verifiedCount / totalCitations : 1.0;
 
   const goldSet = new Set(
-    fixture.gold_citations.map((c) => `${c.code.toUpperCase()}§${c.paragraph}`),
+    fixture.gold_citations.map((c) => `${c.code.toUpperCase()}§${c.paragraph}`)
   );
   const fabricated = grounded.filter(
-    (g) => !g.verified && !goldSet.has(`${g.code.toUpperCase()}§${g.paragraph}`),
+    (g) => !g.verified && !goldSet.has(`${g.code.toUpperCase()}§${g.paragraph}`)
   );
   const fabricatedCount = fabricated.length;
 
   const goldFound = fixture.gold_citations.filter((gc) =>
     grounded.some(
-      (g) =>
-        g.code.toUpperCase() === gc.code.toUpperCase() &&
-        g.paragraph === gc.paragraph,
-    ),
+      (g) => g.code.toUpperCase() === gc.code.toUpperCase() && g.paragraph === gc.paragraph
+    )
   );
   const goldCitationCoverage =
-    fixture.gold_citations.length > 0
-      ? goldFound.length / fixture.gold_citations.length
-      : 1.0;
+    fixture.gold_citations.length > 0 ? goldFound.length / fixture.gold_citations.length : 1.0;
 
   const fabricatedMustBeZero = fabricatedCount === 0;
   const pass = fabricatedMustBeZero && verifiedRatio >= 0.8 && goldCitationCoverage >= 0.5;
@@ -585,7 +584,8 @@ function extractCitationsFromText(text: string): RawCitation[] {
   const citations: RawCitation[] = [];
   const seen = new Set<string>();
 
-  const pattern = /§\s*(\d+[a-z]?)\s*(BGB|ABGB|StGB|ZPO|StPO|UWG|HGB|InsO|AO|EStG|UStG|GewStG|KStG|ErbStG|BewG|GrEStG|GG|BauGB|BDSG|BetrVG|FamFG|GewO|GmbHG|UrhG|VwGO|ZVG|EheG|UGB|EVG|ArbVG|ASVG|AVG|KartG|DSG|BVG)/gi;
+  const pattern =
+    /§\s*(\d+[a-z]?)\s*(BGB|ABGB|StGB|ZPO|StPO|UWG|HGB|InsO|AO|EStG|UStG|GewStG|KStG|ErbStG|BewG|GrEStG|GG|BauGB|BDSG|BetrVG|FamFG|GewO|GmbHG|UrhG|VwGO|ZVG|EheG|UGB|EVG|ArbVG|ASVG|AVG|KartG|DSG|BVG)/gi;
 
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -594,7 +594,11 @@ function extractCitationsFromText(text: string): RawCitation[] {
     const key = `${code}§${paragraph}`;
     if (!seen.has(key)) {
       seen.add(key);
-      citations.push({ code, paragraph, context: text.slice(Math.max(0, match.index - 50), match.index + 100) });
+      citations.push({
+        code,
+        paragraph,
+        context: text.slice(Math.max(0, match.index - 50), match.index + 100),
+      });
     }
   }
 
@@ -616,7 +620,7 @@ function computeAttribution(
   queryResult: QueryRewritingResult,
   retrievalResult: RetrievalResult,
   answerResult: AnswerResult,
-  citationResult: CitationResult,
+  citationResult: CitationResult
 ): { failed_stages: string[]; first_failure: string | null } {
   const failed: string[] = [];
   if (!queryResult.pass) failed.push("query_rewriting");
@@ -632,9 +636,7 @@ function computeAttribution(
 
 // ── Main Runner ───────────────────────────────────────────────────────
 
-export async function runComponentEval(
-  opts: ComponentEvalOpts,
-): Promise<ComponentEvalSummary> {
+export async function runComponentEval(opts: ComponentEvalOpts): Promise<ComponentEvalSummary> {
   const reports: ComponentEvalReport[] = [];
 
   for (const fixture of opts.fixtures) {
@@ -665,7 +667,8 @@ export async function runComponentEval(
   const allPassCount = reports.filter((r) => r.all_pass).length;
 
   const stagePassRates = {
-    query_rewriting: reports.filter((r) => r.stages.query_rewriting.pass).length / Math.max(totalFixtures, 1),
+    query_rewriting:
+      reports.filter((r) => r.stages.query_rewriting.pass).length / Math.max(totalFixtures, 1),
     retrieval: reports.filter((r) => r.stages.retrieval.pass).length / Math.max(totalFixtures, 1),
     answer: reports.filter((r) => r.stages.answer.pass).length / Math.max(totalFixtures, 1),
     citations: reports.filter((r) => r.stages.citations.pass).length / Math.max(totalFixtures, 1),
@@ -695,7 +698,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
 
   lines.push("# Component Evaluation Report");
   lines.push("");
-  lines.push(`**Fixtures:** ${summary.total_fixtures} | **All-Pass:** ${summary.all_pass_count}/${summary.total_fixtures} (${(summary.all_pass_rate * 100).toFixed(1)}%)`);
+  lines.push(
+    `**Fixtures:** ${summary.total_fixtures} | **All-Pass:** ${summary.all_pass_count}/${summary.total_fixtures} (${(summary.all_pass_rate * 100).toFixed(1)}%)`
+  );
   lines.push("");
 
   // ── Stage Pass Rates ──
@@ -703,7 +708,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("");
   lines.push("| Stage | Pass Rate |");
   lines.push("|-------|-----------|");
-  lines.push(`| Query Rewriting | ${(summary.stage_pass_rates.query_rewriting * 100).toFixed(1)}% |`);
+  lines.push(
+    `| Query Rewriting | ${(summary.stage_pass_rates.query_rewriting * 100).toFixed(1)}% |`
+  );
   lines.push(`| Retrieval | ${(summary.stage_pass_rates.retrieval * 100).toFixed(1)}% |`);
   lines.push(`| Answer | ${(summary.stage_pass_rates.answer * 100).toFixed(1)}% |`);
   lines.push(`| Citations | ${(summary.stage_pass_rates.citations * 100).toFixed(1)}% |`);
@@ -729,7 +736,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("|---------|--------|---------------|-------------------|----|------|");
   for (const r of summary.reports) {
     const s = r.stages.query_rewriting;
-    lines.push(`| ${r.fixture_id} | ${s.intent_correct ? "Y" : "N"} | ${(s.concept_recall * 100).toFixed(0)}% | ${(s.concept_precision * 100).toFixed(0)}% | ${s.concept_f1.toFixed(2)} | ${s.pass ? "Y" : "N"} |`);
+    lines.push(
+      `| ${r.fixture_id} | ${s.intent_correct ? "Y" : "N"} | ${(s.concept_recall * 100).toFixed(0)}% | ${(s.concept_precision * 100).toFixed(0)}% | ${s.concept_f1.toFixed(2)} | ${s.pass ? "Y" : "N"} |`
+    );
   }
   lines.push("");
 
@@ -742,7 +751,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("|---------|-------|-------|-----|----------|-----------|------|");
   for (const r of summary.reports) {
     const s = r.stages.retrieval.modes.balanced;
-    lines.push(`| ${r.fixture_id} | ${s.hit_at_1 ? "Y" : "N"} | ${s.hit_at_5 ? "Y" : "N"} | ${s.mrr.toFixed(2)} | ${(s.recall_4k * 100).toFixed(0)}% | ${(s.recall_12k * 100).toFixed(0)}% | ${r.stages.retrieval.pass ? "Y" : "N"} |`);
+    lines.push(
+      `| ${r.fixture_id} | ${s.hit_at_1 ? "Y" : "N"} | ${s.hit_at_5 ? "Y" : "N"} | ${s.mrr.toFixed(2)} | ${(s.recall_4k * 100).toFixed(0)}% | ${(s.recall_12k * 100).toFixed(0)}% | ${r.stages.retrieval.pass ? "Y" : "N"} |`
+    );
   }
   lines.push("");
 
@@ -752,7 +763,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("|---------|------------------|--------------------|");
   for (const r of summary.reports) {
     const t = r.stages.retrieval.truncated;
-    lines.push(`| ${r.fixture_id} | ${(t.recall_4k * 100).toFixed(0)}% | ${(t.recall_12k * 100).toFixed(0)}% |`);
+    lines.push(
+      `| ${r.fixture_id} | ${(t.recall_4k * 100).toFixed(0)}% | ${(t.recall_12k * 100).toFixed(0)}% |`
+    );
   }
   lines.push("");
 
@@ -763,7 +776,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("|---------|------------|-----------|------|");
   for (const r of summary.reports) {
     const s = r.stages.answer;
-    lines.push(`| ${r.fixture_id} | ${s.judge_score.toFixed(1)}/10 | ${(s.criterion_pass_rate * 100).toFixed(0)}% | ${s.pass ? "Y" : "N"} |`);
+    lines.push(
+      `| ${r.fixture_id} | ${s.judge_score.toFixed(1)}/10 | ${(s.criterion_pass_rate * 100).toFixed(0)}% | ${s.pass ? "Y" : "N"} |`
+    );
   }
   lines.push("");
 
@@ -774,7 +789,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("|---------|-------|----------|------------|----------|--------------|------|");
   for (const r of summary.reports) {
     const s = r.stages.citations;
-    lines.push(`| ${r.fixture_id} | ${s.total_citations} | ${s.verified_count} | ${s.fabricated_count} | ${(s.verified_ratio * 100).toFixed(0)}% | ${(s.gold_citation_coverage * 100).toFixed(0)}% | ${s.pass ? "Y" : "N"} |`);
+    lines.push(
+      `| ${r.fixture_id} | ${s.total_citations} | ${s.verified_count} | ${s.fabricated_count} | ${(s.verified_ratio * 100).toFixed(0)}% | ${(s.gold_citation_coverage * 100).toFixed(0)}% | ${s.pass ? "Y" : "N"} |`
+    );
   }
   lines.push("");
 
@@ -784,7 +801,9 @@ export function formatReportTable(summary: ComponentEvalSummary): string {
   lines.push("| Fixture | Failed Stages | First Failure | All Pass |");
   lines.push("|---------|--------------|---------------|----------|");
   for (const r of summary.reports) {
-    lines.push(`| ${r.fixture_id} | ${r.attribution.failed_stages.join(", ") || "-"} | ${r.attribution.first_failure ?? "-"} | ${r.all_pass ? "Y" : "N"} |`);
+    lines.push(
+      `| ${r.fixture_id} | ${r.attribution.failed_stages.join(", ") || "-"} | ${r.attribution.first_failure ?? "-"} | ${r.all_pass ? "Y" : "N"} |`
+    );
   }
   lines.push("");
 

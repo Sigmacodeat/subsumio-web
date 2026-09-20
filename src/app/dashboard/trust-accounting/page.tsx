@@ -157,7 +157,12 @@ export default function TrustAccountingPage() {
       setAccounts(data as unknown as TrustAccount[]);
     } catch (err) {
       console.error("[trust] load failed:", err instanceof Error ? err.message : err);
-      setError(plainError(err, "Die Treuhandkonten konnten nicht geladen werden. Bitte laden Sie die Seite neu."));
+      setError(
+        plainError(
+          err,
+          "Die Treuhandkonten konnten nicht geladen werden. Bitte laden Sie die Seite neu."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -233,7 +238,9 @@ export default function TrustAccountingPage() {
       setNewMatter("");
       await loadAccounts();
     } catch (err) {
-      setError(plainError(err, "Das Konto konnte nicht angelegt werden. Bitte versuchen Sie es erneut."));
+      setError(
+        plainError(err, "Das Konto konnte nicht angelegt werden. Bitte versuchen Sie es erneut.")
+      );
     } finally {
       setSaving(false);
     }
@@ -262,7 +269,9 @@ export default function TrustAccountingPage() {
       await loadAccounts();
     } catch (err) {
       // Stay in the dialog and say why the booking was refused.
-      setTxError(plainError(err, "Die Buchung wurde nicht gespeichert. Bitte versuchen Sie es erneut."));
+      setTxError(
+        plainError(err, "Die Buchung wurde nicht gespeichert. Bitte versuchen Sie es erneut.")
+      );
     } finally {
       setSaving(false);
     }
@@ -289,7 +298,9 @@ export default function TrustAccountingPage() {
       showToast("Buchung storniert.");
       await loadAccounts();
     } catch (err) {
-      setError(plainError(err, "Das Storno wurde nicht gespeichert. Bitte versuchen Sie es erneut."));
+      setError(
+        plainError(err, "Das Storno wurde nicht gespeichert. Bitte versuchen Sie es erneut.")
+      );
     } finally {
       setSaving(false);
     }
@@ -348,7 +359,9 @@ export default function TrustAccountingPage() {
       setReconcileStep("done");
       await loadAccounts();
     } catch (err) {
-      setError(plainError(err, "Die Abstimmung wurde nicht gespeichert. Bitte versuchen Sie es erneut."));
+      setError(
+        plainError(err, "Die Abstimmung wurde nicht gespeichert. Bitte versuchen Sie es erneut.")
+      );
     } finally {
       setSaving(false);
     }
@@ -365,7 +378,9 @@ export default function TrustAccountingPage() {
       setSelectedSlug(null);
       await loadAccounts();
     } catch (err) {
-      setError(plainError(err, "Das Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."));
+      setError(
+        plainError(err, "Das Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.")
+      );
     } finally {
       setSaving(false);
     }
@@ -410,7 +425,12 @@ export default function TrustAccountingPage() {
         >
           <AlertCircle size={16} className="shrink-0" aria-hidden="true" />
           <span className="min-w-0 flex-1">{error}</span>
-          <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void loadAccounts()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            onClick={() => void loadAccounts()}
+          >
             Erneut laden
           </Button>
           <button
@@ -435,33 +455,37 @@ export default function TrustAccountingPage() {
 
       {/* Filters — only once there is something to filter */}
       {accounts.length > 0 && (
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[200px] flex-1">
-          <Search
-            size={14}
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-          />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("trust.search" as DashboardKey)}
-            className="pl-9"
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search
+              size={14}
+              className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+            />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("trust.search" as DashboardKey)}
+              className="pl-9"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            onClick={loadAccounts}
+            className="gap-2 text-sm"
+            aria-label={t("common.refresh" as DashboardKey)}
+          >
+            <RefreshCw size={14} />
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          onClick={loadAccounts}
-          className="gap-2 text-sm"
-          aria-label={t("common.refresh" as DashboardKey)}
-        >
-          <RefreshCw size={14} />
-        </Button>
-      </div>
       )}
 
       {/* Loading */}
       {loading && accounts.length === 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Konten werden geladen">
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          role="status"
+          aria-label="Konten werden geladen"
+        >
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-[132px] rounded-xl" />
           ))}
@@ -469,8 +493,10 @@ export default function TrustAccountingPage() {
       )}
 
       {/* Empty state — never while a load error is showing */}
-      {!loading && !error && filtered.length === 0 && (
-        search ? (
+      {!loading &&
+        !error &&
+        filtered.length === 0 &&
+        (search ? (
           <EmptyState
             icon={Wallet}
             title="Keine passenden Konten"
@@ -484,8 +510,7 @@ export default function TrustAccountingPage() {
             actionLabel={t("trust.new" as DashboardKey)}
             onAction={() => setShowCreate(true)}
           />
-        )
-      )}
+        ))}
 
       {/* Account cards */}
       {filtered.length > 0 && (
@@ -705,10 +730,7 @@ export default function TrustAccountingPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-x-2 text-xs text-[color:var(--ds-text-muted)]">
                           <span>{TRANSACTION_TYPE_LABELS_DE[tx.type]}</span>
-                          <span>
-                            ·{" "}
-                            {formatDate(tx.date)}
-                          </span>
+                          <span>· {formatDate(tx.date)}</span>
                           <span>· {caseTitle(tx.matterSlug)}</span>
                           {tx.reference && <span>· {tx.reference}</span>}
                           {tx.createdBy && <span>· {tx.createdBy}</span>}
@@ -750,9 +772,7 @@ export default function TrustAccountingPage() {
             {/* Reconciliation History */}
             {reconciliations.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Abstimmungen
-                </h4>
+                <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">Abstimmungen</h4>
                 {reconciliations
                   .slice()
                   .reverse()

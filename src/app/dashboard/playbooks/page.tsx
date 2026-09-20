@@ -110,8 +110,7 @@ function parsePlaybook(page: BrainPage): PlaybookItem {
     contract_types: Array.isArray(fm.contract_types) ? (fm.contract_types as string[]) : [],
     rules: Array.isArray(fm.rules) ? (fm.rules as PlaybookRule[]) : [],
     description: page.content || "",
-    createdAt:
-      ((page as unknown as Record<string, unknown>).created_at as string) || "",
+    createdAt: ((page as unknown as Record<string, unknown>).created_at as string) || "",
   };
 }
 
@@ -701,12 +700,7 @@ function PlaybookEditor(props: {
           <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
             {t("playbooks.field_rules")} ({props.rules.length})
           </label>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={props.onAddRule}
-            className="gap-1.5 text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={props.onAddRule} className="gap-1.5 text-xs">
             <Plus size={12} /> {t("playbooks.btn_add_rule")}
           </Button>
         </div>

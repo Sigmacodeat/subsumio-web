@@ -21,13 +21,7 @@
  *   Public benchmark claims may ONLY count human-reviewed tasks.
  */
 
-import type {
-  Task,
-  Criterion,
-  CriterionResult,
-  JudgeStatus,
-  CriterionSeverity,
-} from "./types.ts";
+import type { Task, Criterion, CriterionResult, JudgeStatus, CriterionSeverity } from "./types.ts";
 import { getCriterionSeverity } from "./types.ts";
 import {
   judgeCriterion,
@@ -138,12 +132,15 @@ export interface CrossJudgeResult {
  * Extract §-citations from text as RawCitation format.
  * Supports: § 433 BGB, §433 BGB, § 433 Abs. 1 BGB, Art. 127 OR, Art. 12 StGB
  */
-function extractRawCitations(text: string): Array<{ code: string; paragraph: string; context?: string }> {
+function extractRawCitations(
+  text: string
+): Array<{ code: string; paragraph: string; context?: string }> {
   const citations: Array<{ code: string; paragraph: string; context?: string }> = [];
   const seen = new Set<string>();
 
   // Pattern 1: § N [Abs. N] [Nr. N] CODE (DE/AT style)
-  const dePattern = /§\s*(\d+[a-z]?)\s*(?:Abs\.\s*\d+)?\s*(?:Nr\.\s*\d+)?\s+(BGB|StGB|ZPO|HGB|AO|InsO|BauGB|UWG|GG|StPO|VwGO|RVG|BDSG|ABGB|StPO|UGB|EKStG|EStG|UStG|GewStG|KStG|ErbStG|BewG|GrEStG)/g;
+  const dePattern =
+    /§\s*(\d+[a-z]?)\s*(?:Abs\.\s*\d+)?\s*(?:Nr\.\s*\d+)?\s+(BGB|StGB|ZPO|HGB|AO|InsO|BauGB|UWG|GG|StPO|VwGO|RVG|BDSG|ABGB|StPO|UGB|EKStG|EStG|UStG|GewStG|KStG|ErbStG|BewG|GrEStG)/g;
   let match: RegExpExecArray | null;
   while ((match = dePattern.exec(text)) !== null) {
     const paragraph = match[1]!;
@@ -184,18 +181,22 @@ function extractRawCitations(text: string): Array<{ code: string; paragraph: str
  */
 export async function runGroundingCheck(
   answerText: string,
-  groundCitationsFn?: (citations: Array<{ code: string; paragraph: string; context?: string }>) => Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>>
+  groundCitationsFn?: (
+    citations: Array<{ code: string; paragraph: string; context?: string }>
+  ) => Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>>
 ): Promise<GroundingResult> {
   const rawCitations = extractRawCitations(answerText);
   if (rawCitations.length === 0) {
     return { citations: [], all_verified: true, unverified: [] };
   }
 
-  const groundFn = groundCitationsFn ?? (async (cites: Array<{ code: string; paragraph: string; context?: string }>) => {
-    // Default: use real groundCitations from @/lib/legal-grounding
-    const { groundCitations } = await import("@/lib/legal-grounding");
-    return groundCitations(cites);
-  });
+  const groundFn =
+    groundCitationsFn ??
+    (async (cites: Array<{ code: string; paragraph: string; context?: string }>) => {
+      // Default: use real groundCitations from @/lib/legal-grounding
+      const { groundCitations } = await import("@/lib/legal-grounding");
+      return groundCitations(cites);
+    });
 
   const grounded = await groundFn(rawCitations);
   const unverified = grounded
@@ -261,7 +262,9 @@ export async function crossJudgeAnswer(
   judgeModel: ModelConfig,
   context: string,
   chatFn: (opts: ChatOpts) => Promise<ChatResult>,
-  groundCitationsFn?: (citations: Array<{ code: string; paragraph: string; context?: string }>) => Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>>
+  groundCitationsFn?: (
+    citations: Array<{ code: string; paragraph: string; context?: string }>
+  ) => Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>>
 ): Promise<CrossJudgeResult> {
   // Structural guard: never allow self-judging
   assertDifferentVendors(answerModel, judgeModel);
@@ -291,7 +294,8 @@ export async function crossJudgeAnswer(
         verdict: {
           status: "fail",
           passed: false,
-          reasoning: `Grounding gate: ${grounding.unverified.length} unverified citation(s) found. ` +
+          reasoning:
+            `Grounding gate: ${grounding.unverified.length} unverified citation(s) found. ` +
             `Unverified: ${grounding.unverified.map((u) => `§ ${u.paragraph} ${u.code}`).join(", ")}. ` +
             `The judge is not consulted — the corpus determines this criterion.`,
           confidence: 1.0,
@@ -399,7 +403,9 @@ export async function crossJudgeSession(
   context: string,
   modelA: ModelConfig,
   modelB: ModelConfig,
-  groundCitationsFn?: (citations: Array<{ code: string; paragraph: string; context?: string }>) => Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>>
+  groundCitationsFn?: (
+    citations: Array<{ code: string; paragraph: string; context?: string }>
+  ) => Promise<Array<{ code: string; paragraph: string; verified: boolean; source_text?: string }>>
 ): Promise<{
   answer_a: ModelAnswer;
   answer_b: ModelAnswer;

@@ -132,11 +132,7 @@ function ResearchPageInner() {
   );
   const [currentGaps, setCurrentGaps] = useState<string[]>([]);
   // Every AI text surface verifies its statute citations (CLAUDE.md invariant).
-  const {
-    grounding: currentGrounding,
-    groundAnswer,
-    reset: resetGrounding,
-  } = useGroundedAnswer();
+  const { grounding: currentGrounding, groundAnswer, reset: resetGrounding } = useGroundedAnswer();
   const [error, setError] = useState<string | null>(null);
   const [savedPages, setSavedPages] = useState<BrainPage[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
@@ -430,7 +426,10 @@ function ResearchPageInner() {
     <PageHeader
       title={t("research.title")}
       description={t("research.description")}
-      breadcrumbs={[{ label: t("nav.overview"), href: "/dashboard" }, { label: t("research.title") }]}
+      breadcrumbs={[
+        { label: t("nav.overview"), href: "/dashboard" },
+        { label: t("research.title") },
+      ]}
     />
   );
 
@@ -541,7 +540,10 @@ function ResearchPageInner() {
             role="status"
             aria-live="polite"
           >
-            <Loader2 size={13} className="shrink-0 animate-spin text-[color:var(--brand-primary)]" />
+            <Loader2
+              size={13}
+              className="shrink-0 animate-spin text-[color:var(--brand-primary)]"
+            />
             <span>{researchPhase}</span>
           </div>
         )}
@@ -692,10 +694,7 @@ function ResearchPageInner() {
                       <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                         {s.query}
                       </span>
-                      <Badge
-                        variant="default"
-                        className="text-xs"
-                      >
+                      <Badge variant="default" className="text-xs">
                         {s.jurisdiction.toUpperCase()}
                       </Badge>
                     </div>
@@ -704,9 +703,7 @@ function ResearchPageInner() {
                       {s.answer.length > 150 ? "…" : ""}
                     </div>
                     <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
-                      <span>
-                        {formatDateTime(s.createdAt)}
-                      </span>
+                      <span>{formatDateTime(s.createdAt)}</span>
                       {s.citations.length > 0 && <span>{s.citations.length} Quellen</span>}
                     </div>
                   </div>
@@ -820,7 +817,7 @@ function ResearchPageInner() {
                         <div className="flex shrink-0 items-center gap-1">
                           <button
                             onClick={() => setExpandedSlug(isExpanded ? null : page.slug)}
-                            className="rounded-lg p-1.5 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                             title={isExpanded ? "Zuklappen" : "Aufklappen"}
                             aria-label={isExpanded ? "Zuklappen" : "Aufklappen"}
                           >

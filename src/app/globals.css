@@ -785,8 +785,7 @@
   --brand-text: var(--brand-700);
   /* Elevation — layered ambient + key light, navy-tinted (Vercel/Attio school).
      1 = resting card, 2 = raised/hover, 3 = menus, popovers, dialogs. */
-  --ds-shadow-1:
-    0 1px 1px hsla(222, 40%, 12%, 0.03), 0 2px 4px -2px hsla(222, 40%, 12%, 0.06);
+  --ds-shadow-1: 0 1px 1px hsla(222, 40%, 12%, 0.03), 0 2px 4px -2px hsla(222, 40%, 12%, 0.06);
   --ds-shadow-2:
     0 1px 1px hsla(222, 40%, 12%, 0.03), 0 4px 8px -4px hsla(222, 40%, 12%, 0.07),
     0 12px 20px -10px hsla(222, 40%, 12%, 0.08);

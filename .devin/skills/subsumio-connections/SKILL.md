@@ -21,7 +21,7 @@ zusammengören und bei einer Änderung geprüft werden müssen.
 1. Identifiziere die geänderte Datei (vom User genannt oder aus dem
    Verlauf).
 2. Bestimme den Datei-Typ (API-Route / lib / Frontend / Types / Engine /
-  AI-Output).
+   AI-Output).
 3. Gehe die zugehörige Tabelle durch und liste alle zu prüfenden Dateien.
 4. Prüfe jede via grep/read — sind sie noch kompatibel?
 5. Liste gefundene Inkonsistenzen mit Fix-Vorschlag.
@@ -29,7 +29,9 @@ zusammengören und bei einer Änderung geprüft werden müssen.
 ## Mapping-Tabellen
 
 ### Wenn API-Route geändert (`src/app/api/**/route.ts`)
+
 Prüfe:
+
 - **lib-Funktion** die in der Route aufgerufen wird (grep nach Funktionsname
   in `src/lib/`).
 - **Frontend-Hook/Komponente** die diese Route konsumiert (grep nach dem
@@ -42,7 +44,9 @@ Prüfe:
 - **CSRF/Rate-Limit/Audit** via `createHandler` (nicht handgerollt).
 
 ### Wenn lib-Funktion geändert (`src/lib/*.ts`)
+
 Prüfe:
+
 - **Alle API-Routes** die sie aufrufen (grep nach Funktionsname in
   `src/app/api/`).
 - **Alle Frontend-Hooks** die sie (indirekt) verwenden.
@@ -51,7 +55,9 @@ Prüfe:
 - Falls Engine-Funktion: pglite + postgres Parität (siehe unten).
 
 ### Wenn Frontend-Komponente geändert (`src/components/**/*.tsx`)
+
 Prüfe:
+
 - **API-Route** die sie konsumiert (grep nach `API_BASE`/`/api/`).
 - **Types** des API-Response (in `src/lib/types.ts` oder lokal).
 - **useQuery/useMutation**: Query-Key korrekt? Invalidation nach Mutation
@@ -62,7 +68,9 @@ Prüfe:
 - **Disabled-State**: Buttons während `isPending` disabled?
 
 ### Wenn Types geändert (`src/lib/types.ts`)
+
 Prüfe:
+
 - **Alle Konsumenten** via grep nach Typname (in `src/`).
 - **API-Serialisierung**: wird der Typ an einer API-Grenze serialisiert?
   Response-Shape passt noch?
@@ -70,7 +78,9 @@ Prüfe:
   passen die Felder noch?
 
 ### Wenn Engine-Schema geändert (`server/src/core/migrate.ts`)
+
 Prüfe:
+
 - **MIGRATIONS-Array**: neuer Eintrag mit Versionsnummer?
 - **`CREATE INDEX CONCURRENTLY`**: braucht `transaction: false` (Postgres);
   plain `CREATE INDEX` auf PGLite via `sqlFor.pglite`.
@@ -82,7 +92,9 @@ Prüfe:
 - **operations.ts**: falls neue op — `scope` + optional `localOnly`.
 
 ### Wenn AI-Output-Fläche erstellt/geändert (UI die KI-Text zeigt)
+
 Prüfe:
+
 - **`useGroundedAnswer`** (in `src/lib/use-grounded-answer.ts`) aufgerufen?
 - **`CitationPanel`** gerendert?
 - **"anwaltlich zu prüfen"-Badge** vorhanden?
