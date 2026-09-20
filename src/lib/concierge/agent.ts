@@ -205,7 +205,15 @@ export async function runConciergeTurn(
   const context = selectContext(messages);
   const result = await complete({ system: systemPrompt(context), messages });
   if (!result) return null;
+  return finishTurn(result, context, redacted);
+}
 
+/** Validate + shape a finished model answer. Shared by both turn functions. */
+function finishTurn(
+  result: { text: string; model: string },
+  context: KnowledgeChunk[],
+  redacted: string[]
+): ConciergeReply | null {
   const out = parseModelOutput(result.text);
   if (!out) return null;
 
@@ -260,4 +268,166 @@ export async function runConciergeTurn(
     dropped: checked.dropped,
     model: result.model,
   };
+}
+
+/**
+ * Pull the sentence objects that are already complete out of a partial JSON
+ * answer. The model writes `{"sentences": [ {...}, {...} ], ...}`; while it is
+ * still writing, everything up to the last closed brace inside that array can
+ * already be checked and shown.
+ */
+export function completedSentences(partial: string): DraftSentence[] {
+  const key = partial.indexOf('"sentences"');
+  if (key < 0) return [];
+  const start = partial.indexOf("[", key);
+  if (start < 0) return [];
+  const out: DraftSentence[] = [];
+  let depth = 0;
+  let objectStart = -1;
+  let inString = false;
+  let escaped = false;
+  for (let i = start + 1; i < partial.length; i++) {
+    const ch = partial[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{") {
+      if (depth === 0) objectStart = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && objectStart >= 0) {
+        try {
+          const raw = JSON.parse(partial.slice(objectStart, i + 1)) as {
+            text?: unknown;
+            sources?: unknown;
+          };
+          if (typeof raw.text === "string" && raw.text.trim()) {
+            out.push({
+              text: raw.text.slice(0, 600),
+              sources: Array.isArray(raw.sources)
+                ? raw.sources.filter((x): x is string => typeof x === "string")
+                : [],
+            });
+          }
+        } catch {
+          // half-written object — stop here, the next chunk completes it
+        }
+        objectStart = -1;
+      }
+    } else if (ch === "]" && depth === 0) break;
+  }
+  return out;
+}
+
+export type StreamFn = (
+  opts: { system: string; messages: ConciergeMessage[] },
+  onChunk: (text: string) => void
+) => Promise<{ text: string; model: string } | null>;
+
+export type TurnEvent =
+  /** A sentence that passed the claim check — safe to show right away. */
+  | { type: "sentence"; sentence: CheckedSentence }
+  /** End of the turn. `replace` is true when the checked answer differs from
+   *  what was streamed (nothing substantive survived), so the client must drop
+   *  what it showed and use `reply` instead. `unavailable` marks the case where
+   *  the model never answered — a different message than "nothing is backed". */
+  | { type: "final"; reply: ConciergeReply; replace: boolean; unavailable?: boolean };
+
+/**
+ * Streaming turn: same retrieval, same prompt, same claim check as
+ * runConciergeTurn — only the checked sentences leave as they are finished.
+ */
+export async function* runConciergeTurnStream(
+  rawMessages: ConciergeMessage[],
+  stream: StreamFn
+): AsyncGenerator<TurnEvent> {
+  const lastRaw = rawMessages.at(-1);
+  const redacted = lastRaw?.role === "user" ? redact(lastRaw.content).removed : [];
+  const messages = rawMessages.map((m) =>
+    m.role === "user" ? { ...m, content: redact(m.content).text } : m
+  );
+  const context = selectContext(messages);
+
+  let buffer = "";
+  const streamed: CheckedSentence[] = [];
+  let lastDraftCount = 0;
+
+  // The model writes into a callback while this generator yields: a tiny queue
+  // hands sentences over as they are checked, instead of collecting them and
+  // handing everything out at the end (which would not be streaming at all).
+  const queue: CheckedSentence[] = [];
+  let wake: (() => void) | null = null;
+  const wakeUp = () => {
+    wake?.();
+    wake = null;
+  };
+
+  let result: { text: string; model: string } | null = null;
+  let streamFailed = false;
+  const running = stream({ system: systemPrompt(context), messages }, (chunk) => {
+    buffer += chunk;
+    const draft = completedSentences(buffer);
+    // The most recent object may still be extended; only hand out sentences
+    // the model has clearly moved past.
+    if (draft.length <= lastDraftCount) return;
+    lastDraftCount = draft.length;
+    const checked = claimCheck(draft.slice(0, -1), context);
+    for (const sentence of checked.sentences.slice(streamed.length)) {
+      streamed.push(sentence);
+      queue.push(sentence);
+    }
+    if (queue.length) wakeUp();
+  })
+    .then((r) => {
+      result = r;
+    })
+    .catch(() => {
+      streamFailed = true;
+    })
+    .finally(wakeUp);
+
+  let done = false;
+  void running.then(() => {
+    done = true;
+    wakeUp();
+  });
+  while (!done || queue.length > 0) {
+    if (queue.length === 0) {
+      await new Promise<void>((resolve) => {
+        wake = resolve;
+      });
+      continue;
+    }
+    yield { type: "sentence", sentence: queue.shift() as CheckedSentence };
+  }
+  await running;
+  if (streamFailed) result = null;
+
+  const reply = result ? finishTurn(result, context, redacted) : null;
+  if (!reply) {
+    yield {
+      type: "final",
+      unavailable: true,
+      reply: {
+        sentences: NO_ANSWER_REPLY,
+        nextStep: "offer_contact",
+        suggestions: [],
+        intent: "product",
+        profile: {},
+        redacted,
+        dropped: [],
+        model: null,
+      },
+      replace: true,
+    };
+    return;
+  }
+  const streamedText = streamed.map((s) => s.text).join(" ");
+  const finalText = reply.sentences.map((s) => s.text).join(" ");
+  yield { type: "final", reply, replace: !finalText.startsWith(streamedText) };
 }

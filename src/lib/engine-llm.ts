@@ -151,3 +151,76 @@ export function parseJsonObject<T = Record<string, unknown>>(text: string): T | 
     }
   }
 }
+
+/**
+ * Streaming variant of `engineComplete` (engine: POST /api/llm/stream).
+ * `onChunk` fires for every piece of text as it arrives. Returns the same
+ * result as `engineComplete` once the stream ends, or null when the engine
+ * does not offer the endpoint (older deployment) or the call fails — callers
+ * fall back to `engineComplete` then.
+ */
+export async function engineStream(
+  headers: Record<string, string>,
+  opts: EngineCompleteOptions,
+  onChunk: (text: string) => void
+): Promise<EngineCompleteResult | null> {
+  const timeoutMs = opts.timeoutMs ?? 30_000;
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/llm/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...headers },
+      body: JSON.stringify({
+        purpose: opts.purpose,
+        tier: opts.tier ?? "utility",
+        system: opts.system,
+        prompt: opts.prompt,
+        messages: opts.messages,
+        json: opts.json === true,
+        max_tokens: opts.maxTokens,
+        timeout_ms: timeoutMs,
+      }),
+      signal: AbortSignal.timeout(timeoutMs + 5_000),
+    });
+    if (!res.ok || !res.body) {
+      log.warn("engine stream unavailable", { purpose: opts.purpose, status: res.status });
+      return null;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let done: EngineCompleteResult | null = null;
+    for (;;) {
+      const { value, done: finished } = await reader.read();
+      if (finished) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const event = JSON.parse(payload) as
+            | { type: "text"; text: string }
+            | { type: "done"; result: EngineCompleteResult }
+            | { type: "error"; error: string; message?: string };
+          if (event.type === "text") onChunk(event.text);
+          else if (event.type === "done") done = event.result;
+          else if (event.type === "error") {
+            log.warn("engine stream error", { purpose: opts.purpose, error: event.error });
+            return null;
+          }
+        } catch {
+          // ignore malformed lines
+        }
+      }
+    }
+    return done;
+  } catch (err) {
+    log.warn("engine stream failed", {
+      purpose: opts.purpose,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
+}

@@ -11,7 +11,14 @@
  * `think`, the same injection sanitiser, and usage returned to the caller.
  */
 import type { BrainEngine } from "../engine.ts";
-import { chat, getChatModel, isAvailable, type ChatMessage, type ChatResult } from "./gateway.ts";
+import {
+  chat,
+  chatStream,
+  getChatModel,
+  isAvailable,
+  type ChatMessage,
+  type ChatResult,
+} from "./gateway.ts";
 import { resolveModel, type ModelTier } from "../model-config.ts";
 import { sanitizePromptInput } from "../think/sanitize.ts";
 
@@ -150,4 +157,60 @@ export async function runUtilityCompletion(
     purpose: req.purpose,
     tier: req.tier,
   };
+}
+
+/**
+ * Same contract as runUtilityCompletion, but the text arrives in pieces.
+ * Callers that show the answer while it is being written (the website
+ * concierge) use this; everything else keeps the single-shot version.
+ */
+export async function* streamUtilityCompletion(
+  engine: BrainEngine | null,
+  body: Record<string, unknown>
+): AsyncGenerator<{ type: "text"; text: string } | { type: "done"; result: UtilityCompletionResult }> {
+  const req = normalizeUtilityRequest(body);
+  if (!isAvailable("chat")) {
+    throw new UtilityCompletionError(503, "llm_not_configured", "No chat model configured");
+  }
+  const model = await resolveModel(engine, {
+    tier: req.tier,
+    configKey: `models.purpose.${req.purpose}`,
+    fallback: getChatModel(),
+  });
+  const started = Date.now();
+  let text = "";
+  try {
+    for await (const event of chatStream({
+      model,
+      system: req.system,
+      messages: req.messages,
+      maxTokens: req.maxTokens,
+      abortSignal: AbortSignal.timeout(req.timeoutMs),
+    })) {
+      if (event.type === "text") {
+        text += event.text;
+        yield { type: "text", text: event.text };
+      } else if (event.type === "done") {
+        yield {
+          type: "done",
+          result: {
+            text: event.result.text || text,
+            model: event.result.model,
+            provider: event.result.providerId,
+            stop_reason: event.result.stopReason,
+            usage: event.result.usage,
+            latency_ms: Date.now() - started,
+            purpose: req.purpose,
+            tier: req.tier,
+          },
+        };
+      }
+    }
+  } catch (e) {
+    const name = e instanceof Error ? e.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new UtilityCompletionError(504, "llm_timeout", `LLM call exceeded ${req.timeoutMs}ms`);
+    }
+    throw e;
+  }
 }

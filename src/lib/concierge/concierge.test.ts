@@ -3,7 +3,14 @@ import { knowledgeBase } from "./knowledge";
 import { buildRetriever } from "./retrieve";
 import { redact } from "./redact";
 import { claimCheck, __test } from "./claim-check";
-import { runConciergeTurn, selectContext, type CompleteFn } from "./agent";
+import {
+  completedSentences,
+  runConciergeTurn,
+  runConciergeTurnStream,
+  selectContext,
+  type CompleteFn,
+  type StreamFn,
+} from "./agent";
 import { GOLDEN_QUESTIONS, RED_TEAM_PROMPTS } from "./golden";
 import { BILLABLE_PLANS } from "@/lib/billing/plans";
 
@@ -301,5 +308,110 @@ describe("concierge turn", () => {
     expect(cited.length).toBeGreaterThan(2);
     expect(cited.length).toBeLessThanOrEqual(8);
     expect(cited).toContain("pricing-overview");
+  });
+});
+
+describe("streaming turn", () => {
+  const answer = (text: string, id = "pricing-overview") =>
+    JSON.stringify({
+      intent: "pricing",
+      sentences: [
+        { text, sources: [id] },
+        { text: "Enterprise rechnen wir auf Anfrage ab.", sources: [id] },
+      ],
+      next_step: "show_pricing",
+      suggestions: [],
+      profile: {},
+    });
+
+  /** Feeds the JSON in small pieces, like a real stream. */
+  const chunked = (full: string, size = 24): StreamFn => {
+    return async (_opts, onChunk) => {
+      for (let i = 0; i < full.length; i += size) onChunk(full.slice(i, i + size));
+      return { text: full, model: "test-model" };
+    };
+  };
+
+  test("finds the sentences that are already complete in a half-written answer", () => {
+    const partial =
+      '{"intent":"pricing","sentences":[{"text":"Solo kostet 249 €.","sources":["a"]},{"text":"Kanz';
+    const found = completedSentences(partial);
+    expect(found).toHaveLength(1);
+    expect(found[0].text).toBe("Solo kostet 249 €.");
+  });
+
+  test("hands out checked sentences before the answer is finished", async () => {
+    const events = [];
+    for await (const e of runConciergeTurnStream(
+      [{ role: "user", content: "Was kostet Subsumio?" }],
+      chunked(answer(`Solo kostet ${BILLABLE_PLANS.pro.monthlyEur} € pro Monat.`))
+    )) {
+      events.push(e);
+    }
+    const streamedSentences = events.filter((e) => e.type === "sentence");
+    const final = events.at(-1);
+    expect(streamedSentences.length).toBeGreaterThan(0);
+    expect(final?.type).toBe("final");
+    if (final?.type === "final") {
+      expect(final.replace).toBe(false);
+      expect(final.reply.nextStep).toBe("show_pricing");
+      expect(final.reply.sentences.length).toBe(2);
+    }
+  });
+
+  test("an invented price is never streamed out", async () => {
+    const events = [];
+    for await (const e of runConciergeTurnStream(
+      [{ role: "user", content: "Was kostet Subsumio?" }],
+      chunked(answer("Solo kostet 49 € pro Monat."))
+    )) {
+      events.push(e);
+    }
+    const text = events
+      .filter((e) => e.type === "sentence")
+      .map((e) => (e.type === "sentence" ? e.sentence.text : ""))
+      .join(" ");
+    expect(text).not.toContain("49 €");
+  });
+
+  test("shows nothing and answers honestly when no sentence survives", async () => {
+    const stream: StreamFn = async (_opts, onChunk) => {
+      const full = JSON.stringify({
+        intent: "security",
+        sentences: [{ text: "Wir sind nach ISO 27001 und SOC 2 zertifiziert.", sources: [] }],
+      });
+      onChunk(full);
+      return { text: full, model: "m" };
+    };
+    const events = [];
+    for await (const e of runConciergeTurnStream(
+      [{ role: "user", content: "Seid ihr zertifiziert?" }],
+      stream
+    )) {
+      events.push(e);
+    }
+    const final = events.at(-1);
+    expect(events.filter((e) => e.type === "sentence")).toEqual([]);
+    expect(final?.type).toBe("final");
+    if (final?.type === "final") {
+      // Nothing was shown, so there is nothing to replace.
+      expect(final.replace).toBe(false);
+      expect(final.reply.sentences[0].text).toMatch(/keine belegte Auskunft/);
+    }
+  });
+
+  test("a broken stream ends in the honest fallback", async () => {
+    const events = [];
+    for await (const e of runConciergeTurnStream([{ role: "user", content: "Hallo" }], async () => {
+      throw new Error("network");
+    })) {
+      events.push(e);
+    }
+    const final = events.at(-1);
+    expect(final?.type).toBe("final");
+    if (final?.type === "final") {
+      expect(final.unavailable).toBe(true);
+      expect(final.replace).toBe(true);
+    }
   });
 });

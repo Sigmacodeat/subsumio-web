@@ -28,6 +28,21 @@ interface ChatMessage {
   redacted?: string[];
 }
 
+type ConciergeEvent =
+  | { type: "sentence"; sentence: { text: string; sources: Source[] } }
+  | {
+      type: "final";
+      replace: boolean;
+      reply: {
+        sentences: Array<{ text: string; sources: Source[] }>;
+        nextStep: NextStep;
+        suggestions: string[];
+        redacted: string[];
+        profile: Record<string, string>;
+      };
+    }
+  | { type: "unavailable" };
+
 interface StoredState {
   sessionId: string;
   messages: ChatMessage[];
@@ -162,68 +177,106 @@ export default function ConciergeWidget() {
     setState({ ...state, messages });
     setInput("");
     setBusy(true);
+
+    const fail = (message: string, nextStep: NextStep = "offer_contact") =>
+      appendAssistant(messages, { role: "assistant", content: message, nextStep });
+
     try {
       const res = await fetch("/api/concierge", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({
           sessionId: state.sessionId,
           page: pathname,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = (await res.json().catch(() => null)) as {
-        available?: boolean;
-        reply?: {
-          sentences: Array<{ text: string; sources: Source[] }>;
-          nextStep: NextStep;
-          suggestions: string[];
-          redacted: string[];
-          profile: Record<string, string>;
-        };
-        error?: string;
-      } | null;
 
       if (res.status === 429) {
-        appendAssistant(messages, {
-          role: "assistant",
-          content:
-            "Sie haben gerade sehr viele Fragen gestellt. Bitte versuchen Sie es in einer Stunde wieder – oder lassen Sie sich direkt von uns zurückrufen.",
-          nextStep: "offer_contact",
-        });
+        fail(
+          "Sie haben gerade sehr viele Fragen gestellt. Bitte versuchen Sie es in einer Stunde wieder – oder lassen Sie sich direkt von uns zurückrufen."
+        );
         return;
       }
-      if (!data?.available || !data.reply) {
+      if (!res.ok || !res.body) {
         setUnavailable(true);
-        appendAssistant(messages, {
-          role: "assistant",
-          content:
-            "Ich bin gerade nicht erreichbar. Hinterlassen Sie uns gern Ihre Frage – ein Mensch aus unserem Team antwortet Ihnen.",
-          nextStep: "offer_contact",
-        });
+        fail(
+          "Ich bin gerade nicht erreichbar. Hinterlassen Sie uns gern Ihre Frage – ein Mensch aus unserem Team antwortet Ihnen."
+        );
         return;
       }
-      const reply = data.reply;
-      const sources = [
-        ...new Map(reply.sentences.flatMap((s) => s.sources).map((s) => [s.url, s])).values(),
-      ];
-      appendAssistant(
-        messages,
-        {
+
+      // The answer arrives sentence by sentence, each already checked against
+      // its source on the server; nothing unverified is ever shown.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let shown: Array<{ text: string; sources: Source[] }> = [];
+      let closed = false;
+
+      const render = (
+        sentences: Array<{ text: string; sources: Source[] }>,
+        extra: Partial<ChatMessage> = {}
+      ) => {
+        const sources = [
+          ...new Map(sentences.flatMap((x) => x.sources).map((x) => [x.url, x])).values(),
+        ];
+        appendAssistant(messages, {
           role: "assistant",
-          content: reply.sentences.map((s) => s.text).join(" "),
+          content: sentences.map((x) => x.text).join(" "),
           sources,
-          nextStep: reply.nextStep,
-          suggestions: reply.suggestions,
-          redacted: reply.redacted,
-        },
-        reply.profile
-      );
+          ...extra,
+        });
+      };
+
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload || payload === "[DONE]") continue;
+          let event: ConciergeEvent;
+          try {
+            event = JSON.parse(payload) as ConciergeEvent;
+          } catch {
+            continue;
+          }
+          if (event.type === "sentence") {
+            shown = [...shown, event.sentence];
+            render(shown);
+          } else if (event.type === "final") {
+            closed = true;
+            // `replace` means the checked answer differs from what was shown.
+            const sentences = event.replace || shown.length === 0 ? event.reply.sentences : shown;
+            render(sentences, {
+              nextStep: event.reply.nextStep,
+              suggestions: event.reply.suggestions,
+              redacted: event.reply.redacted,
+            });
+            setState((prev) =>
+              prev ? { ...prev, profile: { ...prev.profile, ...event.reply.profile } } : prev
+            );
+          } else if (event.type === "unavailable") {
+            closed = true;
+            setUnavailable(true);
+            fail(
+              "Ich bin gerade nicht erreichbar. Hinterlassen Sie uns gern Ihre Frage – ein Mensch aus unserem Team antwortet Ihnen."
+            );
+          }
+        }
+      }
+      if (!closed && shown.length === 0) {
+        setUnavailable(true);
+        fail(
+          "Ich bin gerade nicht erreichbar. Hinterlassen Sie uns gern Ihre Frage – ein Mensch aus unserem Team antwortet Ihnen."
+        );
+      }
     } catch {
-      appendAssistant(messages, {
-        role: "assistant",
-        content: "Die Verbindung ist abgebrochen. Bitte versuchen Sie es noch einmal.",
-      });
+      fail("Die Verbindung ist abgebrochen. Bitte versuchen Sie es noch einmal.", null);
     } finally {
       setBusy(false);
     }
