@@ -19,14 +19,17 @@
  *   bun scripts/reconcile-ris.ts            # measure and record
  *   bun scripts/reconcile-ris.ts --dry-run  # measure, print only
  *
- * RIS OGD rules: one connection, pause between requests, shared ris-lock.
+ * RIS OGD rules: one connection, 2 s between requests, shared ris-lock.
+ * This is a measurement of about 15 requests, not a mass download, so it
+ * does not wait for the night window — it holds the RIS lock while it runs,
+ * and waiting would block the daily delta sync for a whole working day.
  */
 
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { getUserAgent, proxyFetchOptions } from "./ris-proxy";
-import { risMassPause } from "./ris-pace.ts";
+import { risPause } from "./ris-pace.ts";
 
 const DRY = process.argv.includes("--dry-run");
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
@@ -148,7 +151,7 @@ async function main() {
     // Courts — count level.
     for (const c of COURT_SOURCES) {
       const ris = await hits(`${API}/Judikatur?Applikation=${c.applikation}&DokumenteProSeite=Ten`);
-      await risMassPause("reconcile-ris");
+      await risPause();
       const [counts] = await q(
         `SELECT count(*)::int AS alle,
                 count(*) FILTER (WHERE frontmatter->>'doc_id' ~ '^J[A-Z]R_')::int AS rs,
