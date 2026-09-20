@@ -41,6 +41,7 @@ const { values } = parseArgs({
     batch: { type: "string", default: "2000" },
     "min-age-days": { type: "string", default: "7" },
     "pause-ms": { type: "string", default: "200" },
+    "statement-timeout": { type: "string", default: "20min" },
     source: { type: "string" },
     help: { type: "boolean", default: false },
   },
@@ -50,7 +51,10 @@ const { values } = parseArgs({
 if (values.help) {
   console.log(
     "Usage: purge-tombstoned-pages.ts [--yes] [--batch 2000] [--min-age-days 7]\n" +
-      "                                 [--pause-ms 200] [--source <id>]"
+      "                                 [--pause-ms 200] [--source <id>]\n" +
+      "                                 [--statement-timeout 20min]\n" +
+      "  Der Stapel halbiert sich selbst, wenn die Zeitgrenze greift, und\n" +
+      "  wächst nach zehn ruhigen Stapeln wieder."
   );
   process.exit(0);
 }
@@ -58,6 +62,16 @@ if (values.help) {
 const BATCH = Number(values.batch);
 const MIN_AGE_DAYS = Number(values["min-age-days"]);
 const PAUSE_MS = Number(values["pause-ms"]);
+/** Smallest batch worth trying before giving up on a stubborn stretch. */
+const MIN_BATCH = 25;
+
+// Deleting a page cascades into content_chunks, and every chunk that carries
+// a vector has to be taken out of the HNSW index — which is what makes a
+// batch expensive, not the row count. The default connection timeout cancels
+// such a batch mid-flight (error 57014), so this run gets its own, generous
+// one. Set before the engine is created: the value travels as a startup
+// parameter on every connection the pool opens.
+process.env.GBRAIN_STATEMENT_TIMEOUT = values["statement-timeout"] as string;
 const SOURCE = values.source;
 
 interface Engine {
@@ -114,25 +128,59 @@ async function main() {
     return;
   }
 
-  console.log(`\nEntferne in Stapeln zu ${n(BATCH)} …`);
+  console.log(`\nEntferne in Stapeln zu ${n(BATCH)} (Zeitgrenze ${values["statement-timeout"]}) …`);
   const t0 = Date.now();
   let removed = 0;
+  let batch = BATCH;
+  let clean = 0;
+  let lastReport = 0;
+
   while (true) {
-    // Chunks, Verweise, Zeitleisten und Rechte gehen über die
-    // Fremdschlüssel-Kaskade mit; angefasst wird nur `pages`.
-    const gone = (await engine.executeRaw(
-      `WITH doomed AS (
-         SELECT id FROM pages p WHERE ${where} ORDER BY id LIMIT $${params.length + 1})
-       DELETE FROM pages USING doomed WHERE pages.id = doomed.id
-       RETURNING pages.id`,
-      [...params, BATCH]
-    )) as Array<{ id: number }>;
+    let gone: Array<{ id: number }>;
+    try {
+      // Chunks, Verweise, Zeitleisten und Rechte gehen über die
+      // Fremdschlüssel-Kaskade mit; angefasst wird nur `pages`.
+      gone = (await engine.executeRaw(
+        `WITH doomed AS (
+           SELECT id FROM pages p WHERE ${where} ORDER BY id LIMIT $${params.length + 1})
+         DELETE FROM pages USING doomed WHERE pages.id = doomed.id
+         RETURNING pages.id`,
+        [...params, batch]
+      )) as Array<{ id: number }>;
+    } catch (e) {
+      // 57014 = statement timeout. Pages differ wildly in how many chunks
+      // they carry — one court decision brings twenty-odd, a norm brings one
+      // — so a batch size that flies through statutes can stall on
+      // judgements. Halve and keep going rather than abandoning the run.
+      const code = (e as { code?: string })?.code;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (code === "57014" && batch > MIN_BATCH) {
+        batch = Math.max(MIN_BATCH, Math.floor(batch / 2));
+        clean = 0;
+        console.log(`  ⚠️ Zeitgrenze erreicht — Stapel auf ${n(batch)} verkleinert.`);
+        continue;
+      }
+      console.error(`  ❌ Abbruch bei Stapelgröße ${n(batch)}: ${msg}`);
+      break;
+    }
+
     if (gone.length === 0) break;
     removed += gone.length;
-    if (removed % (BATCH * 10) === 0 || gone.length < BATCH) {
+
+    // Nach zehn ruhigen Stapeln wieder wachsen, bis zur Vorgabe.
+    if (batch < BATCH && ++clean >= 10) {
+      batch = Math.min(BATCH, batch * 2);
+      clean = 0;
+    }
+
+    if (removed - lastReport >= 10_000 || gone.length < batch) {
+      lastReport = removed;
       const min = (Date.now() - t0) / 60000;
+      const rate = Math.round(removed / Math.max(min, 0.01));
+      const rest = Math.max(0, totalPages - removed);
       console.log(
-        `  ${n(removed)} / ${n(totalPages)} Seiten · ${n(Math.round(removed / Math.max(min, 0.01)))}/min`
+        `  ${n(removed)} / ${n(totalPages)} Seiten · ${n(rate)}/min` +
+          (rate > 0 ? ` · Rest ca. ${(rest / rate / 60).toFixed(1)} h` : "")
       );
     }
     if (PAUSE_MS > 0) await new Promise((r) => setTimeout(r, PAUSE_MS));
