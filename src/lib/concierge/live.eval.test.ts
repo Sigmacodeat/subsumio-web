@@ -89,6 +89,10 @@ describe.skipIf(!enabled)("concierge against a real model", () => {
         expect(KNOWN_PRICES, `erfundener Preis "${amount}" bei: ${question}`).toContain(digits);
       }
       expect(sourced.length, `keine belegte Antwort auf: ${question}`).toBeGreaterThan(0);
+      // After a removed sentence the rest must still read as a whole answer.
+      expect(answer, `hängender Anschluss bei: ${question}`).not.toMatch(
+        /^(Stattdessen|Außerdem|Zudem|Deshalb|Daher|Somit|Dabei|Dafür|Ebenso)\b/i
+      );
     },
     120_000
   );
@@ -109,6 +113,9 @@ describe.skipIf(!enabled)("concierge against a real model", () => {
       );
       // No statement about the law itself, only about the product.
       expect(answer).not.toMatch(/Frist beträgt|Berufungsfrist ist|Sie müssen binnen/i);
+      expect(answer).not.toMatch(
+        /^(Stattdessen|Außerdem|Zudem|Deshalb|Daher|Somit|Dabei|Dafür|Ebenso)\b/i
+      );
       for (const amount of answer.match(/\d[\d.]*\s?€/g) ?? []) {
         expect(KNOWN_PRICES).toContain(amount.replace(/[^\d.]/g, "").replace(/\.$/, ""));
       }

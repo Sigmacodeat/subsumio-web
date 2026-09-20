@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { knowledgeBase } from "./knowledge";
 import { buildRetriever } from "./retrieve";
 import { redact } from "./redact";
-import { claimCheck } from "./claim-check";
+import { claimCheck, __test } from "./claim-check";
 import { runConciergeTurn, selectContext, type CompleteFn } from "./agent";
 import { GOLDEN_QUESTIONS, RED_TEAM_PROMPTS } from "./golden";
 import { BILLABLE_PLANS } from "@/lib/billing/plans";
@@ -131,6 +131,59 @@ describe("claim check", () => {
       ctx
     );
     expect(r.dropped[0].reason).toBe("low_overlap");
+  });
+
+  test("cites a chunk itself when the model forgot the id", () => {
+    // Word for word from the security page; the model just left sources empty.
+    const r = claimCheck(
+      [
+        {
+          text: "Zertifizierungen: Derzeit keine. Unsere technischen Maßnahmen legen wir im Security Review offen.",
+          sources: [],
+        },
+      ],
+      [byId.get("security-enterprise")!, byId.get("pricing-overview")!]
+    );
+    expect(r.dropped).toEqual([]);
+    expect(r.sentences[0].sources[0].id).toBe("security-enterprise");
+  });
+
+  test("does not invent a source for a sentence nothing covers", () => {
+    const r = claimCheck(
+      [{ text: "Wir sind seit 2024 nach ISO 27001 zertifiziert.", sources: [] }],
+      [byId.get("security-enterprise")!]
+    );
+    expect(r.sentences).toEqual([]);
+    expect(r.dropped[0].reason).toBe("no_source");
+  });
+
+  test("repairs the flow when the sentence before was removed", () => {
+    const r = claimCheck(
+      [
+        { text: "Wir sind nach ISO 27001 und SOC 2 zertifiziert.", sources: [] },
+        {
+          text: "Unsere technischen Maßnahmen legen wir stattdessen im Security Review offen.",
+          sources: ["security-enterprise"],
+        },
+      ],
+      [byId.get("security-enterprise")!]
+    );
+    expect(r.dropped[0].reason).toBe("no_source");
+    expect(r.sentences[0].text).toBe(
+      "Unsere technischen Maßnahmen legen wir im Security Review offen."
+    );
+  });
+
+  test("a survivor that is only a reference to the removed sentence goes too", () => {
+    expect(__test.stripLeadingConnective("Außerdem gilt das.")).toBeNull();
+    expect(__test.stripLeadingConnective("Zudem das.")).toBeNull();
+  });
+
+  test("leaves a well-formed answer untouched", () => {
+    const chunk = byId.get("security-enterprise")!;
+    const text = "Die technischen Maßnahmen legen wir im Security Review offen.";
+    const r = claimCheck([{ text, sources: [chunk.id] }], [chunk]);
+    expect(r.sentences[0].text).toBe(text);
   });
 
   test("allows a short fact-free follow-up question", () => {

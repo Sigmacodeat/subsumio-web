@@ -69,6 +69,7 @@ const SYNONYMS: Array<[RegExp, string]> = [
   [/\b(daten|server|hosting|cloud|speicher)\b/, "eu cloud hosting daten"],
   [/\b(datenschutz|dsgvo|avv)\b/, "dsgvo avv datenschutz"],
   [/\b(datenschutzbeauftragt|dsb\b)/, "dsb kontakt"],
+  [/\b(zertifiz|iso\b|soc\s?2|audit)/, "zertifizierungen security review"],
   [/\b(mensch|mitarbeiter|beratung|anruf|rueckruf|termin|kontakt)/, "kontakt anfrage"],
 ];
 

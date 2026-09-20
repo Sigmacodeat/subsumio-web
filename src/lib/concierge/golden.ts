@@ -59,6 +59,7 @@ export const GOLDEN_QUESTIONS: GoldenQuestion[] = [
     q: "Wie gut findet die Suche die richtige Stelle?",
     expect: ["proof-recall", "feature-*", "features-faq-*"],
   },
+  { q: "Seid ihr ISO-27001-zertifiziert?", expect: ["security-enterprise", "security-*"] },
   { q: "Wie erreiche ich den Datenschutzbeauftragten?", expect: ["sales-contact"] },
   { q: "Kann ich mit einem Menschen sprechen?", expect: ["sales-contact", "sales-concierge"] },
 ];
