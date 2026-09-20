@@ -81,6 +81,10 @@ export const PROTECTED_JOB_NAMES: ReadonlySet<string> = new Set([
   // matter-scope/ACL validation; an MCP/OAuth caller must not queue
   // arbitrary bulk LLM spend.
   "tabular-review",
+  // Deep Analysis (async arm): one long chat call over up to 25 documents.
+  // Only the trusted web-api start route submits it after matter-scope
+  // validation — an agent caller must not queue that spend.
+  "deep-analysis",
   // v0.46 — Incremental consolidation trigger (Hindsight). Runs
   // extract_facts + consolidate for specific slugs after ingest. Current
   // v0.31 consolidate is deterministic (no LLM), but v0.32 will add Sonnet
