@@ -368,6 +368,10 @@ export interface ModelPreferenceResponse {
   } | null;
   brainId: string;
   modelPolicy: "any" | "eu_only";
+  /** Firm minimum for a chat answer; null when the engine could not be asked. */
+  chatMinimumTier: "utility" | "reasoning" | "deep" | null;
+  /** Catalogue ids that clear the firm minimum; null when unknown (all allowed). */
+  allowedChatPicks: string[] | null;
 }
 
 export function useModelPreference() {

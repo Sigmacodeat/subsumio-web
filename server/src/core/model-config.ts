@@ -179,6 +179,11 @@ const USER_MODEL_CHOICES: Record<string, { native: string; openrouter: string; t
  * (src/core/model-profile.ts) — a pick may go stronger, never weaker.
  * Returns undefined for anything outside the picker catalogue (CLI/--model).
  */
+/** The picker catalogue: web model id → the tier it routes to. */
+export function pickableModelTiers(): Array<{ id: string; tier: ModelTier }> {
+  return Object.entries(USER_MODEL_CHOICES).map(([id, entry]) => ({ id, tier: entry.tier }));
+}
+
 export function tierForPickableModel(model: string | undefined): ModelTier | undefined {
   if (!model) return undefined;
   const wanted = model.trim();

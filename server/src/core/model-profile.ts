@@ -380,6 +380,10 @@ export interface ModelProfileView {
   areas: ModelProfileAreaView[];
   /** USD per 1M tokens for every model named in `areas`; null when unpriced. */
   pricing: Record<string, { input: number; output: number } | null>;
+  /** Tier a chat answer runs on at minimum — the floor a per-question pick must clear. */
+  chatMinimumTier: SelectableTier;
+  /** Web catalogue ids a user may still pick for a chat answer. */
+  allowedChatPicks: string[];
 }
 
 /**
@@ -392,7 +396,7 @@ export async function buildModelProfileView(
   engine: BrainEngine | null,
   profile: ModelProfile
 ): Promise<ModelProfileView> {
-  const { resolveModel, TIER_DEFAULTS } = await import("./model-config.ts");
+  const { resolveModel, TIER_DEFAULTS, pickableModelTiers } = await import("./model-config.ts");
   const { canonicalLookup } = await import("./model-pricing.ts");
 
   const memo = new Map<string, Promise<string>>();
@@ -437,5 +441,13 @@ export async function buildModelProfileView(
       }
     }
   }
-  return { profile, areas, pricing };
+  // A per-question pick in the chat may go stronger than the firm's chat
+  // setting, never weaker (enforced in think/index.ts) — the picker greys out
+  // the rest instead of letting the engine silently raise them.
+  const chatMinimumTier = effectiveTier("chat", "reasoning", profile) as SelectableTier;
+  const allowedChatPicks = pickableModelTiers()
+    .filter((m) => TIER_RANK[m.tier] >= TIER_RANK[chatMinimumTier])
+    .map((m) => m.id);
+
+  return { profile, areas, pricing, chatMinimumTier, allowedChatPicks };
 }

@@ -295,6 +295,21 @@ describe("storage", () => {
     const quality = view.areas.find((a) => a.id === "qualitaet")!;
     expect(quality).toMatchObject({ locked: true, choice: "auto" });
   });
+
+  test("the view names the chat minimum and which per-question picks clear it", async () => {
+    const byDefault = await buildModelProfileView(engine, defaultModelProfile());
+    expect(byDefault.chatMinimumTier).toBe("reasoning");
+    expect(byDefault.allowedChatPicks).toContain("claude-sonnet-5");
+    expect(byDefault.allowedChatPicks).toContain("claude-opus-5");
+    expect(byDefault.allowedChatPicks).not.toContain("claude-haiku-4-5");
+
+    const pinnedDeep = await buildModelProfileView(engine, profileWith({ chat: "deep" }));
+    expect(pinnedDeep.chatMinimumTier).toBe("deep");
+    expect(pinnedDeep.allowedChatPicks).toEqual(
+      expect.arrayContaining(["claude-opus-5", "claude-fable-5-1"])
+    );
+    expect(pinnedDeep.allowedChatPicks).not.toContain("claude-sonnet-5");
+  });
 });
 
 // ── Subagent handler: the specialist really runs on the picked model ────

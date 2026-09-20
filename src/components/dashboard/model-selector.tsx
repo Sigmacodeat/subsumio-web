@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { ChevronDown, Check, Cpu, Zap, DollarSign, Gauge, Globe } from "lucide-react";
+import { ChevronDown, Check, Cpu, Zap, DollarSign, Gauge, Globe, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import {
@@ -44,6 +44,12 @@ export function ModelSelector({
 
   const data = query.data?.data as ModelPreferenceResponse | undefined;
   const models = data?.models ?? [];
+  // Picks below the firm's chat minimum (Einstellungen → KI-Modelle) are
+  // refused by the engine, so they are shown but not selectable. null means
+  // the minimum could not be read — then nothing is restricted here.
+  const allowedPicks = data?.allowedChatPicks ?? null;
+  const isBelowFirmMinimum = (modelId: string) =>
+    allowedPicks !== null && !allowedPicks.includes(modelId);
   const serverPreferred = data?.preferredModelId;
 
   const activeModelId = selectedModelId ?? serverPreferred ?? "auto";
@@ -60,6 +66,7 @@ export function ModelSelector({
   }, []);
 
   function handleSelect(modelId: string) {
+    if (modelId !== "auto" && isBelowFirmMinimum(modelId)) return;
     if (persistToServer) {
       mutation.mutate(modelId);
     }
@@ -173,13 +180,21 @@ export function ModelSelector({
             {/* Model list */}
             {models.map((model) => {
               const isActive = model.id === activeModelId;
+              const blocked = isBelowFirmMinimum(model.id);
               return (
                 <button
                   key={model.id}
                   onClick={() => handleSelect(model.id)}
+                  disabled={blocked}
+                  title={
+                    blocked ? "Die Kanzlei verlangt für Antworten eine höhere Stufe" : undefined
+                  }
                   className={cn(
-                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] last:border-0 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
                     isCompact ? "px-3 py-2" : "px-4 py-3",
+                    blocked
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:bg-[color:var(--ds-hover)] active:scale-[0.97]",
                     isActive && "brand-soft"
                   )}
                 >
@@ -202,6 +217,12 @@ export function ModelSelector({
                       >
                         {getProviderLabel(model.provider as never)}
                       </span>
+                      {blocked && (
+                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-1 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
+                          <Lock size={7} />
+                          Kanzlei
+                        </span>
+                      )}
                       {"dataResidency" in model && model.dataResidency === "eu" && (
                         <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
                           <Globe size={7} />

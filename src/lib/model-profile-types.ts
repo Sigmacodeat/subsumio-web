@@ -26,7 +26,14 @@ export interface ModelProfileAreaView {
   options: Array<{ choice: AreaChoice; models: string[] }>;
 }
 
-export interface ModelProfileResponse {
+export interface ModelProfileChatLimit {
+  /** Tier a chat answer runs on at minimum (the firm's chat setting). */
+  chatMinimumTier: Exclude<AreaChoice, "auto">;
+  /** Catalogue ids a user may still pick per question; others are below the minimum. */
+  allowedChatPicks: string[];
+}
+
+export interface ModelProfileResponse extends ModelProfileChatLimit {
   profile: {
     areas: Record<ModelArea, AreaChoice>;
     updated_at: string | null;
