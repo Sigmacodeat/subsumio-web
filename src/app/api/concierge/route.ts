@@ -9,7 +9,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { createPublicHandler } from "@/lib/api-handler";
-import { clientIp } from "@/lib/auth/rate-limit";
+import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { engineHeadersForBrain } from "@/lib/engine";
 import { engineComplete, isEngineLLMAvailable } from "@/lib/engine-llm";
 import { env } from "@/lib/env";
@@ -38,6 +38,11 @@ const bodySchema = z.object({
     .refine((m) => m[m.length - 1]?.role === "user", "last_message_must_be_user"),
 });
 
+/** Answers a day across all visitors — the brake for a distributed flood that
+ *  the per-IP limit cannot see. ~0.01 $ per answer, so the default caps the
+ *  public chat at roughly 20 $ a day. */
+const DAILY_MAX = Number(env("CONCIERGE_DAILY_MAX") || 2000);
+
 function conciergeBrain(): string {
   return env("SUBSUMIO_CONCIERGE_BRAIN") || env("SUBSUMIO_DEMO_BRAIN") || "demo";
 }
@@ -64,6 +69,12 @@ export const POST = createPublicHandler(
   },
   async (_req, body) => {
     if (env("CONCIERGE_DISABLED") === "1" || !isEngineLLMAvailable()) {
+      return Response.json({ available: false });
+    }
+
+    const daily = await hit("concierge:global-day", DAILY_MAX, 24 * 60 * 60_000);
+    if (!daily.ok) {
+      log.warn("concierge daily budget reached", { limit: DAILY_MAX });
       return Response.json({ available: false });
     }
 
