@@ -76,7 +76,11 @@ step bun scripts/mark-superseded-versions.ts --source law-at-normen
 # VfGH, VwGH. The corpus held their Rechtssätze but almost no decisions.
 step bun scripts/fetch-entscheidungstexte.ts --court ogh,vfgh,vwgh
 
-for court in bvwg vwgh ogh lvwg dok vfgh gbk umse uvs dsk asylgh pvak ubas; do
+# Order by what a lawyer cites, not by gap size: OGH civil and criminal first
+# (every brief cites it), then VwGH, then BVwG — asylum and administrative
+# appeals, a side field for most firms. The old order put the 83k OGH gap
+# behind 495k documents, three weeks later.
+for court in ogh vwgh bvwg lvwg dok vfgh gbk umse uvs dsk asylgh pvak ubas; do
   step bun scripts/fetch-all-at-judikatur.ts --court "$court" --from 1900
 done
 

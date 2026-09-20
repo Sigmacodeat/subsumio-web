@@ -8,7 +8,7 @@
  *
  *   bun run server/scripts/ris-inforce-crawl.ts [--out /tmp/ris-inforce.jsonl]
  */
-import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
@@ -101,7 +101,27 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
   }
 }
 
+/** Hours after which the index is refetched; --force ignores it. */
+const MAX_AGE_HOURS = Number(
+  process.argv.find((a) => a.startsWith("--max-age-hours="))?.split("=")[1] ?? 24
+);
+
 async function main() {
+  // The index is ~1,600 paged requests, about an hour inside the allowed
+  // window. A queue restarted the same day must not spend that hour again:
+  // when the file is younger than --max-age-hours, this step is skipped.
+  if (!process.argv.includes("--force") && existsSync(OUT)) {
+    const ageHours = (Date.now() - statSync(OUT).mtimeMs) / 3_600_000;
+    if (ageHours < MAX_AGE_HOURS) {
+      const lines = readFileSync(OUT, "utf8").trimEnd().split("\n").length;
+      console.log(
+        `Index ist ${ageHours.toFixed(1)} h alt (${lines} Normen) — wird nicht erneut geholt. ` +
+          `Mit --force oder --max-age-hours=0 erzwingen.`
+      );
+      return;
+    }
+  }
+
   await acquireRisLock();
   // Gesamtzahl ermitteln
   const probe = await fetch(pageUrl(1), { headers: UA });
