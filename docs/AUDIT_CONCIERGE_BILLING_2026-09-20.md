@@ -24,9 +24,9 @@ Drei Lücken habe ich im Zuge dieses Audits gleich geschlossen (Abschnitt 3).
 
 | # | Lücke | Wirkung | Aufwand |
 |---|---|---|---|
-| P1 | **Kein Streaming im Chat.** Antworten brauchen gemessen 3,5–8 s, sichtbar ist nur „Suche in unseren Inhalten …“. Marktübliche Vertriebs-Chats schreiben mit. | Besucher brechen ab | mittel |
-| P1 | **Falsche Aussage auf der Startseite**: „Mandantendaten verlassen nie die EU“, während Anthropic (US, Standardvertragsklauseln) als Unterauftragsverarbeiter gelistet ist. Der Chat zitiert die Website wörtlich. | Rechtliches Risiko, Vertrauensschaden | klein (Text) |
-| P1 | **Keine Erinnerung vor Testende** für Konten ohne gewählten Tarif. | Verlorene Abschlüsse | klein |
+| ~~P1~~ | ~~Kein Streaming im Chat.~~ **Erledigt (f39a46b55c):** Engine streamt (`POST /api/llm/stream`), jeder Satz wird geprüft und sofort gezeigt; Rückfall auf eine Einmal-Antwort, wenn der Endpunkt fehlt. | | |
+| ~~P1~~ | ~~Falsche EU-Aussage auf der Startseite.~~ **Erledigt** (andere Sitzung): Der Text nennt jetzt Speicherung in der EU, den Ausschnitt an den Modellanbieter mit Standardvertragsklauseln, kein Training, eigenes Modell im Enterprise-Tarif. | | |
+| ~~P1~~ | ~~Keine Erinnerung vor Testende.~~ **Erledigt (f39a46b55c):** `cron/trial-reminder`, drei Tage vorher, einmal pro Konto, mit Datum und Tarifwahl. | | |
 | P2 | **Kosten pro Aktion werden nicht gemessen.** Festpreis-Aktionen schreiben Modell und Tokens nicht mit; gehört ins KI-Gateway. | Marge bleibt geschätzt | mittel |
 | P2 | **Guthaben-Prüfung vor, Abzug nach der Arbeit.** Parallel abgeschickte Aufträge passieren alle die Prüfung (gebremst nur durch 30 Anfragen/Minute). | Überziehung möglich | mittel |
 | P2 | **Namen werden nicht geschwärzt.** Nur strukturierte Kennungen. Schreibt jemand „Mandant Huber ./. Meier“, steht das im Protokoll. | Berufsrecht | mittel |
@@ -59,11 +59,15 @@ Drei Lücken habe ich im Zuge dieses Audits gleich geschlossen (Abschnitt 3).
 - **Portal-Chat wird der Kanzlei nicht belastet**, sondern auf 30 Antworten pro Akte und Tag
   gedeckelt — offene Produktentscheidung.
 
-## 5. Empfohlene Reihenfolge
+## 5. Stand 2026-09-20 abends
 
-1. Startseiten-Aussage zur EU korrigieren (Text, juristisch prüfen lassen).
-2. Streaming im Chat.
-3. Erinnerung vor Testende.
-4. Token-Protokoll im Gateway — danach sind alle Margen gemessen statt geschätzt.
-5. Namensschwärzung und die Parallel-Abbuchung.
-6. Modellwahl mit Credit-Faktoren zusammenführen.
+Die drei dringenden Punkte sind erledigt. Offen bleibt, in dieser Reihenfolge:
+
+1. Token-Protokoll im Gateway — danach sind alle Margen gemessen statt geschätzt.
+2. Namensschwärzung im Chat und die Parallel-Abbuchung bei gleichzeitigen Aufträgen.
+3. Modellwahl pro Arbeitsbereich mit Credit-Faktoren zusammenführen.
+4. Dokumentanalyse nach Größe staffeln, Kontaktanfragen in die DSGVO-Werkzeuge, Alarm bei
+   häufigen „keine belegte Auskunft“, E2E-Test des Chatfensters in der CI.
+
+Nicht vergessen: Der neue Streaming-Endpunkt lebt in der Engine — der Chat streamt erst nach einem
+Engine-Deploy; bis dahin greift der Rückfall auf die Einmal-Antwort.
