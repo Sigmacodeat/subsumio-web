@@ -319,8 +319,13 @@ services:
       # with its own spend limit, separate from the engine's answers.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY_PIPELINE:-${OPENROUTER_API_KEY:-}}
       OPENROUTER_API_KEY_FALLBACK: ${OPENROUTER_API_KEY_FALLBACK:-}
-      SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:-openrouter:openai/text-embedding-3-small}
-      SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:-1536}
+      # No default on purpose. A fallback here is silent data corruption:
+      # the pipeline would embed new chunks with one model into a column
+      # holding another's vectors, and nothing would look wrong until
+      # answers quietly got worse. Missing value = the service refuses to
+      # start, with this message.
+      SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:?in server/deploy/hetzner/.env setzen — muss zum Vektorraum der Spalte content_chunks.embedding passen}
+      SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:?in server/deploy/hetzner/.env setzen — Breite der Spalte content_chunks.embedding}
       # RIS Proxy — disabled: all 10 proxies were dead (timeout on every HTTPS request).
       # Re-enable by setting RIS_PROXY_URLS in .env with working proxy URLs.
       RIS_PROXY_URLS: ""

@@ -148,3 +148,70 @@ Proxy läuft aus `/opt/caddy`.
 2. Offsite-Backup-Ziel eintragen.
 3. Umzugsschlüssel auf dem neuen Server aus `authorized_keys` entfernen.
 4. Alten Hetzner-Server nach zwei Wochen ohne Befund löschen, ebenso `/opt/subsumio-old-2026-09-18`.
+
+## 7. Das Embedding-Modell wechseln
+
+Vektoren zweier Modelle sind nicht vergleichbar. Der Abstand zwischen einem
+OpenAI- und einem Qwen-Vektor ist keine Ähnlichkeit, sondern Rauschen. Ein
+Wechsel darf deshalb nie in die laufende Spalte schreiben.
+
+Der Weg führt über eine Ersatzspalte, die am Ende per Katalog-Umbenennung an
+die Stelle der alten tritt — Millisekunden statt Kopieren von 98 GB.
+
+```bash
+# 1. Ersatzspalte anlegen (einmalig, kostet nichts)
+docker exec -w /app subsumio-engine-engine-1 bun run scripts/embed-into-column.ts \
+  --column embedding_neu --model <anbieter:modell> --dims 1536 --create
+
+# 2. Id-Fenster nach ECHTEN Kandidaten schneiden, nicht nach Rohzeilen:
+#    rund 1,5 Mio. Chunks gehören zu gelöschten Seiten oder sind zu kurz,
+#    und liegen in Blöcken beisammen — nach Rohzeilen geschnitten bekommt
+#    ein Arbeiter ein komplett leeres Fenster.
+docker exec -i subsumio-engine-db-1 psql -U subsumio -d subsumio -c "
+  WITH k AS (SELECT c.id, ntile(8) OVER (ORDER BY c.id) b
+               FROM content_chunks c JOIN pages p ON p.id=c.page_id
+              WHERE c.embedding_neu IS NULL AND p.deleted_at IS NULL
+                AND length(btrim(c.chunk_text)) >= 80)
+  SELECT b, min(id)-1, max(id), count(*) FROM k GROUP BY b ORDER BY b;"
+
+# 3. Je Fenster ein Arbeiter, abgekoppelt. Der letzte OHNE --id-to,
+#    sonst fallen zwischenzeitlich importierte Chunks hinten durch.
+docker exec -d -w /app subsumio-engine-engine-1 sh -c \
+  'bun run scripts/embed-into-column.ts --column embedding_neu \
+     --id-from <von> --id-to <bis> >> /data/embed-N.log 2>&1'
+
+# 4. Indizes auf der Ersatzspalte, BEVOR umgeschaltet wird
+docker exec -w /app subsumio-engine-engine-1 bun run scripts/promote-embedding-column.ts \
+  --column embedding_neu --indexes --work-mem 8GB
+#    --blocking ist etwa viermal schneller (parallele Arbeiter), sperrt aber
+#    Schreibzugriffe auf content_chunks — nur im Wartungsfenster.
+
+# 5. Probe: dieselben Rechtsfragen an beide Spalten
+docker exec -w /app subsumio-engine-engine-1 bun run scripts/compare-embedding-columns.ts \
+  --a embedding --b embedding_neu --k 10
+
+# 6. Erst wenn die Probe für die neue Spalte spricht
+docker exec -w /app subsumio-engine-engine-1 bun run scripts/promote-embedding-column.ts \
+  --column embedding_neu --check     # neun Prüfungen ansehen
+docker exec -w /app subsumio-engine-engine-1 bun run scripts/promote-embedding-column.ts \
+  --column embedding_neu --yes
+```
+
+**Danach zwingend** — sonst fragt die Suche mit dem alten Modell gegen die
+neuen Vektoren und findet Unsinn:
+
+```bash
+# in /opt/subsumio/server/deploy/hetzner/.env
+SUBSUMIO_EMBEDDING_MODEL=<anbieter:modell>
+SUBSUMIO_EMBEDDING_DIMENSIONS=1536
+
+cd /opt/subsumio/server/deploy/hetzner
+docker compose -p subsumio-engine up -d --no-deps engine web corpus-pipeline
+```
+
+Die Umgebungsvariable hat Vorrang vor allem, was in der Datenbank steht. In
+der Compose-Datei hat sie bewusst **keinen** Vorgabewert: fehlt sie, startet
+der Dienst gar nicht erst, statt still mit dem falschen Modell zu arbeiten.
+
+Zum Schluss `VACUUM (ANALYZE) content_chunks;` — der Lauf schreibt jede Zeile
+neu und lässt entsprechend alte Zeilenversionen zurück.
