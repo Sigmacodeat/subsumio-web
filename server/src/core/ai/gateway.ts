@@ -53,7 +53,7 @@ import type {
   TouchpointKind,
 } from "./types.ts";
 import { resolveRecipe, assertTouchpoint, parseModelId } from "./model-resolver.ts";
-import { resolveModel, TIER_DEFAULTS } from "../model-config.ts";
+import { resolveModel, TIER_DEFAULTS, type ModelTier } from "../model-config.ts";
 import { recordAiSpend } from "./spend-log.ts";
 import type { BrainEngine } from "../engine.ts";
 import { dimsProviderOptions } from "./dims.ts";
@@ -156,6 +156,8 @@ let _openRouterCacheEnabled = false;
  * source-code typos while allowing config-time model selection of any id.
  */
 const _extendedModels: Map<string, Set<string>> = new Map();
+
+const MODEL_TIERS = Object.keys(TIER_DEFAULTS) as ModelTier[];
 
 /**
  * v0.31.12 — register a model id under its provider so `assertTouchpoint`
@@ -531,6 +533,14 @@ export async function reconfigureGatewayWithEngine(engine: BrainEngine): Promise
     expansion_model: expansionFull,
     chat_model: chatFull,
   };
+  // Callers such as think (deep tier), the subagent loop and utility
+  // completions resolve their own tier and hand the result straight to
+  // chat(). Register every tier's resolved model so a `models.tier.*` /
+  // `models.default` choice is honoured as the assertTouchpoint contract
+  // promises, not only the gateway's own chat/expansion slots.
+  const tierModels = await Promise.all(
+    MODEL_TIERS.map((tier) => resolveModel(engine, { tier, fallback: TIER_DEFAULTS[tier] }))
+  );
   _modelCache.clear();
   _shrinkState.clear();
   _extendedModels.clear();
@@ -541,6 +551,7 @@ export async function reconfigureGatewayWithEngine(engine: BrainEngine): Promise
     _config.chat_model,
     _config.reranker_model,
     ...(_config.chat_fallback_chain ?? []),
+    ...tierModels,
   ]) {
     if (m) registerExtendedModel(m);
   }
