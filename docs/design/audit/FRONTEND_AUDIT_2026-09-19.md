@@ -79,24 +79,39 @@ nur Österreich). Das Hilfe-Panel im Produkt verlinkt pro Seite das passende Kap
 
 1. ~~**Rechtsprechungs-Fallback erfindet Entscheidungen**~~ Erledigt am 19.09.: Der Fallback ist entfernt,
    die Suche zeigt nur Kanzleiwissen und RIS-Treffer.
-2. **Kalender-Abo (.ics) verlangt Anmeldung** — Outlook/Google können es nicht abonnieren; nötig ist eine
-   Abo-Adresse mit eigenem Schlüssel. Bis dahin: Export-Datei (Handbuch beschreibt nur das).
-3. **Urlaubsvertretung leitet Fristen nicht weiter** (`forwardDeadlines` wird nirgends aufgerufen).
+2. ~~**Kalender-Abo (.ics) verlangt Anmeldung**~~ Erledigt am 20.09.: persönliche Abo-Adresse mit eigenem
+   Schlüssel (`/api/calendar/<token>/fristen.ics`), nur der Hash wird gespeichert, widerrufbar in
+   „Kalender-Export“. Download und Abo bauen dieselbe Datei (`src/lib/deadlines-ics.ts`); sind alle
+   Quellen unerreichbar, meldet die Route einen Fehler statt eines leeren Kalenders.
+3. ~~**Urlaubsvertretung leitet Fristen nicht weiter**~~ Erledigt am 20.09., anders gelöst: Fristen haben keine
+   eigene Zuständigkeit, sie erben sie von der Akte — es gibt also nichts umzuhängen. Die Fristenliste nennt
+   stattdessen die Vertretung (`activeDelegateFor`, Feld `deputy`), der Hinweis auf der Abwesenheitsseite auch.
 4. ~~**Badge-Zählung „Eingang prüfen“** (`api/dashboard/badges`) weicht von `api/review-inbox` ab.~~ Erledigt (0b80bdd5a6): Badges und Listen zählen aus `src/lib/approval-summary.ts`; neue Seite `/dashboard/freigaben`.
-5. Mobile Tabellenkarten (`DataTable`) zeigen ein leeres Auswahlkästchen.
-6. Server-Texte „im Brain“ in `server/src/core/legal/conflict-check.ts` (UI übersetzt sie bereits).
+5. ~~Mobile Tabellenkarten (`DataTable`) zeigen ein leeres Auswahlkästchen.~~ Erledigt am 20.09.: beschriftet
+   („Auswählen“/„Ausgewählt“), größere Tippfläche.
+6. ~~Server-Texte „im Brain“ in `server/src/core/legal/conflict-check.ts`.~~ Erledigt am 20.09.: „Kanzleiwissen“.
 7. Rechnungs-E-Mail mit PDF nicht gegen einen echten SMTP-Server geprüft (lokal kein Mailserver).
 8. **Freigaben:** kein erzwungenes Vier-Augen-Prinzip (`api/approvals` PATCH). Bewusst nicht serverseitig
    gesperrt — eine Solo-Kanzlei könnte sonst die eigenen Assistenten-Vorschläge nie freigeben; der Text
    verspricht jetzt „berechtigte Person“. Echte Zweitprüfung gibt es bei Notfristen.
-9. **Zugangsschlüssel der KI-Anbieter** (`api/settings/api-keys` POST): das Ändern eines Schlüssels löscht die
-   anderen bzw. scheitert an maskierten Werten.
-10. **Datenexport/Backup** enthalten keine Dokumenttexte, Backup bricht still bei 5.000 Einträgen ab, DSGVO-Export
-    fragt `deadline` statt `legal_deadline` ab. Handbuch verspricht daher nur den Konto-Export.
-11. `api/webhook/incoming` protokolliert nur, antwortet aber „queued“; Word-Add-in (`public/word-addin/taskpane.js`)
-    zeigt KI-Ausgaben ohne Belegprüfung (Invariante).
+9. ~~**Zugangsschlüssel der KI-Anbieter**~~ Erledigt am 20.09.: Es werden nur geänderte Felder geschrieben,
+   maskierte Werte bedeuten „behalten“, `null` löscht (`src/lib/api-key-updates.ts`, Tests dazu).
+10. ~~**Datenexport/Backup**~~ Erledigt am 20.09.: Die Sicherung holt die Texte seitenweise nach, die Grenze von
+    5.000 Einträgen ist weg, und die Datei sagt, ob sie vollständig ist. Der Portabilitäts-Export fragt jetzt
+    `legal_deadline` (und `appointment`) ab. Offen bleibt: Laufzeit bei sehr großen Kanzleien beobachten.
+11. ~~`api/webhook/incoming` und Word-Add-in~~ Erledigt am 20.09.: Der Webhook antwortet ehrlich (nur
+    protokolliert, keine Verarbeitung — der Schlüssel ist installationsweit, nicht kanzleibezogen); das
+    Word-Add-in zeigt zu jeder KI-Antwort den Prüfhinweis und die Quellen.
 12. Einstellungen: vorher scheinbar speichernde, aber wirkungslose Schalter (Suchmodus, Engine-URL, Konsolidierung,
     RCIID) wurden entfernt bzw. ehrlich als Status dargestellt.
+
+### Wirklich noch offen (Stand 20.09.2026)
+
+- Rechnungs-E-Mail mit PDF gegen einen echten Mailserver prüfen (Punkt 7).
+- Vier-Augen-Prinzip bei Freigaben bleibt bewusst ohne Serverzwang (Punkt 8).
+- Datenschutzerklärung/AVV: Hosting auf netcup Wien und Anthropic als Unterauftragsverarbeiter sind
+  eingetragen (20.09.) — bei jedem Anbieterwechsel nachziehen.
+- Echte Seitenübergänge im Browser (View Transitions) erst mit React ≥ 19.3 / Next 16.
 
 ## 6. Premium-Durchgang (19.09.2026, nachmittags)
 
