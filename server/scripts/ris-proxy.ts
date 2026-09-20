@@ -168,23 +168,15 @@ export function reportProxyFailure(): void {
 }
 
 /**
- * Get the User-Agent header.
- * When using proxies, we vary the UA to look like real browsers.
+ * The one User-Agent every RIS request sends. It is the string named in
+ * our bulk-download notice to ris.it@bka.gv.at, so RIS can attribute the
+ * traffic; browser look-alike agents would defeat that and breach the OGD
+ * rules (ris-policy.ts).
  */
+export const RIS_USER_AGENT = "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)";
+
 export function getUserAgent(): string {
-  if (hasProxies()) {
-    const uas = [
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Safari/605.1.15",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0",
-    ];
-    return uas[Math.floor(Math.random() * uas.length)];
-  }
-  return "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)";
+  return RIS_USER_AGENT;
 }
 
 /**

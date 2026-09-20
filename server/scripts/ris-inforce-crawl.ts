@@ -13,7 +13,7 @@ import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
-const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus audit; contact: hello@subsum.io)" };
+const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
 // RIS OGD: one connection, 2 s between requests, bulk window (ris-policy.ts).
 const CONCURRENCY = 1;
 const PAGE_SIZE = 100;
