@@ -22,19 +22,19 @@ Drei Lücken habe ich im Zuge dieses Audits gleich geschlossen (Abschnitt 3).
 
 ## 2. Was fehlt für „Verkaufsstart“ (nach Dringlichkeit)
 
-| #   | Lücke                                                                                                                                                                                                             | Wirkung                               | Aufwand      |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------ |
-| P1  | **Kein Streaming im Chat.** Antworten brauchen gemessen 3,5–8 s, sichtbar ist nur „Suche in unseren Inhalten …“. Marktübliche Vertriebs-Chats schreiben mit.                                                      | Besucher brechen ab                   | mittel       |
-| P1  | **Falsche Aussage auf der Startseite**: „Mandantendaten verlassen nie die EU“, während Anthropic (US, Standardvertragsklauseln) als Unterauftragsverarbeiter gelistet ist. Der Chat zitiert die Website wörtlich. | Rechtliches Risiko, Vertrauensschaden | klein (Text) |
-| P1  | **Keine Erinnerung vor Testende** für Konten ohne gewählten Tarif.                                                                                                                                                | Verlorene Abschlüsse                  | klein        |
-| P2  | **Kosten pro Aktion werden nicht gemessen.** Festpreis-Aktionen schreiben Modell und Tokens nicht mit; gehört ins KI-Gateway.                                                                                     | Marge bleibt geschätzt                | mittel       |
-| P2  | **Guthaben-Prüfung vor, Abzug nach der Arbeit.** Parallel abgeschickte Aufträge passieren alle die Prüfung (gebremst nur durch 30 Anfragen/Minute).                                                               | Überziehung möglich                   | mittel       |
-| P2  | **Namen werden nicht geschwärzt.** Nur strukturierte Kennungen. Schreibt jemand „Mandant Huber ./. Meier“, steht das im Protokoll.                                                                                | Berufsrecht                           | mittel       |
-| P3  | Kontaktanfragen sind nicht in Auskunft und Löschung der DSGVO-Werkzeuge enthalten (nur Konten).                                                                                                                   | Manuelle Bearbeitung                  | klein        |
-| P3  | Dokumentanalyse kostet fest 2 Credits, unabhängig von der Seitenzahl.                                                                                                                                             | Marge bei großen Akten                | klein        |
-| P3  | Modellwahl pro Arbeitsbereich liegt auf einem Branch (45 Commits zurück), ohne Credit-Faktoren je Stufe.                                                                                                          | Entscheidung offen                    | mittel       |
-| P3  | Kein automatischer Alarm, wenn der Chat reihenweise „keine belegte Auskunft“ antwortet. Zahlen stehen nur in `/ops/leads`.                                                                                        | Späte Reaktion                        | klein        |
-| P3  | Kein E2E-Test des Chatfensters in der CI (nur manuell headless geprüft).                                                                                                                                          | Regression fällt spät auf             | klein        |
+| #      | Lücke                                                                                                                                                                                                                                       | Wirkung                | Aufwand |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------- |
+| ~~P1~~ | ~~Kein Streaming im Chat.~~ **Erledigt (f39a46b55c):** Engine streamt (`POST /api/llm/stream`), jeder Satz wird geprüft und sofort gezeigt; Rückfall auf eine Einmal-Antwort, wenn der Endpunkt fehlt.                                      |                        |         |
+| ~~P1~~ | ~~Falsche EU-Aussage auf der Startseite.~~ **Erledigt** (andere Sitzung): Der Text nennt jetzt Speicherung in der EU, den Ausschnitt an den Modellanbieter mit Standardvertragsklauseln, kein Training, eigenes Modell im Enterprise-Tarif. |                        |         |
+| ~~P1~~ | ~~Keine Erinnerung vor Testende.~~ **Erledigt (f39a46b55c):** `cron/trial-reminder`, drei Tage vorher, einmal pro Konto, mit Datum und Tarifwahl.                                                                                           |                        |         |
+| ~~P2~~ | ~~Kosten pro Aktion werden nicht gemessen.~~ **Erledigt (9345314a85):** Der Gateway-Kontext zählt Tokens pro Modell, die Engine meldet den Verbrauch am Ende des Chat-Stroms, die Buchung wird damit vervollständigt.                       |                        |         |
+| P2     | **Guthaben-Prüfung vor, Abzug nach der Arbeit.** Parallel abgeschickte Aufträge passieren alle die Prüfung (gebremst nur durch 30 Anfragen/Minute).                                                                                         | Überziehung möglich    | mittel  |
+| ~~P2~~ | ~~Namen werden nicht geschwärzt.~~ **Erledigt (9345314a85):** Namen in Akten- und Rollenkontexten werden entfernt, Produktvergleiche („Subsumio gegen Harvey“) bleiben unberührt.                                                           |                        |         |
+| ~~P3~~ | ~~Kontaktanfragen fehlen in den DSGVO-Werkzeugen.~~ **Erledigt:** Der Datenexport enthält die eigenen Anfragen, Betreiber können eine Anfrage unter `/ops/leads` löschen (auditiert).                                                       |                        |         |
+| P3     | Dokumentanalyse kostet fest 2 Credits, unabhängig von der Seitenzahl.                                                                                                                                                                       | Marge bei großen Akten | klein   |
+| P3     | Modellwahl pro Arbeitsbereich liegt auf einem Branch (45 Commits zurück), ohne Credit-Faktoren je Stufe.                                                                                                                                    | Entscheidung offen     | mittel  |
+| ~~P3~~ | ~~Kein Alarm bei häufigen Fehlanzeigen.~~ **Erledigt:** `/ops/leads` warnt sichtbar, sobald unter 75 % der Fragen belegt beantwortet werden (ab 20 Fragen).                                                                                 |                        |         |
+| ~~P3~~ | ~~Kein E2E-Test des Chatfensters.~~ **Erledigt (9345314a85):** `tests/e2e-playwright/concierge.spec.ts` gegen die Mock-Engine, in der CI aktiviert.                                                                                         |                        |         |
 
 ## 3. Im Audit gefunden und sofort behoben (Commit 1a83a7c124)
 
@@ -59,11 +59,18 @@ Drei Lücken habe ich im Zuge dieses Audits gleich geschlossen (Abschnitt 3).
 - **Portal-Chat wird der Kanzlei nicht belastet**, sondern auf 30 Antworten pro Akte und Tag
   gedeckelt — offene Produktentscheidung.
 
-## 5. Empfohlene Reihenfolge
+## 5. Stand 2026-09-20 abends
 
-1. Startseiten-Aussage zur EU korrigieren (Text, juristisch prüfen lassen).
-2. Streaming im Chat.
-3. Erinnerung vor Testende.
-4. Token-Protokoll im Gateway — danach sind alle Margen gemessen statt geschätzt.
-5. Namensschwärzung und die Parallel-Abbuchung.
-6. Modellwahl mit Credit-Faktoren zusammenführen.
+Erledigt sind alle Punkte außer zweien, die eine Entscheidung von dir brauchen:
+
+1. **Parallel-Abbuchung** (P2): Das Guthaben wird vor der Arbeit geprüft und danach abgezogen, also
+   können gleichzeitig abgeschickte Aufträge das Konto überziehen (gebremst durch 30 Anfragen pro
+   Minute). Die saubere Lösung ist Reservieren vor der Arbeit und Rückbuchen bei Fehlschlag — das
+   ändert aber das Verhalten bei Abbrüchen: heute zahlt der Kunde nur für gelieferte Arbeit.
+2. **Dokumentanalyse nach Größe** (P3): 2 Credits unabhängig von der Seitenzahl. Vorschlag: 2 Credits
+   bis 50 Seiten, je weitere 50 Seiten +1.
+3. **Modellwahl pro Arbeitsbereich** mit Credit-Faktoren (1× / 2× / 4×) — Branch liegt bereit,
+   Faktoren noch nicht bestätigt.
+
+Nicht vergessen: Der neue Streaming-Endpunkt lebt in der Engine — der Chat streamt erst nach einem
+Engine-Deploy; bis dahin greift der Rückfall auf die Einmal-Antwort.

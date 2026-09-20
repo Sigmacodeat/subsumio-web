@@ -246,6 +246,27 @@ export async function setLeadStatus(id: string, status: LeadStatus): Promise<boo
   return (res.rowCount ?? 0) > 0;
 }
 
+/** A visitor's own contact requests — for a data subject request (Art. 15). */
+export async function leadsForEmail(email: string): Promise<Lead[]> {
+  const needle = email.trim().toLowerCase();
+  if (!needle) return [];
+  const all = await listLeads(500);
+  return all.filter((l) => l.email.trim().toLowerCase() === needle);
+}
+
+/** Delete one contact request (Art. 17). Returns false when it was already gone. */
+export async function deleteLead(id: string): Promise<boolean> {
+  const pool = getSharedPgPool();
+  if (!pool) {
+    const i = memoryLeads.findIndex((l) => l.id === id);
+    if (i >= 0) memoryLeads.splice(i, 1);
+    return i >= 0;
+  }
+  await ensureSchema();
+  const res = await pool.query(`DELETE FROM subsumio_leads WHERE id = $1`, [id]);
+  return (res.rowCount ?? 0) > 0;
+}
+
 export interface ConciergeStats {
   turns: number;
   unanswered: number;

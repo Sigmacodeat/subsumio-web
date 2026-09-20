@@ -72,7 +72,12 @@ export const POST = createHandler(
       timeoutMs: 45_000,
     });
     if (!result?.text) return apiError("draft_failed", "Entwurf konnte nicht erstellt werden", 502);
-    void recordCreditConsumption(ctx, "think");
+    void recordCreditConsumption(ctx, "think", undefined, {
+      modelId: result.model,
+      inputTokens: result.usage?.input_tokens,
+      cachedTokens: result.usage?.cache_read_tokens,
+      outputTokens: result.usage?.output_tokens,
+    });
     return Response.json({ draft: result.text.trim(), aiGenerated: true });
   }
 );

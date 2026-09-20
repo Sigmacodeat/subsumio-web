@@ -79,6 +79,8 @@ export interface User {
   /** End of the free self-service trial (ISO). Resolve limits through
    *  `effectivePlan` in src/lib/billing/trial.ts, never `plan` alone. */
   trialEndsAt?: string | null;
+  /** Set when the "your trial ends soon" mail went out, so it goes out once. */
+  trialReminderSentAt?: string | null;
   /** SHA-256 of the secret in the personal calendar feed URL (never the secret
    *  itself). Set while a subscription link exists, null once revoked. */
   calendarFeedTokenHash?: string | null;

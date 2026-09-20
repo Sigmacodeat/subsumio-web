@@ -62,6 +62,11 @@ export interface BudgetActualUsage {
 
 export interface BudgetSnapshot {
   cumulativeCostUsd: number;
+  /** Tokens across every call in this scope — what an action really consumed. */
+  inputTokens: number;
+  outputTokens: number;
+  /** Per model: calls and tokens, so a mixed action can be read apart. */
+  models: Record<string, { calls: number; inputTokens: number; outputTokens: number }>;
   startedAt: number;
   elapsedMs: number;
   maxCostUsd?: number;
@@ -216,6 +221,12 @@ function costForUsage(
 export class BudgetTracker {
   private cumulativeUsd = 0;
   private callsRecorded = 0;
+  private inputTokens = 0;
+  private outputTokens = 0;
+  private readonly perModel = new Map<
+    string,
+    { calls: number; inputTokens: number; outputTokens: number }
+  >();
   private readonly startedAt: number;
   private readonly auditPath: string;
   private readonly onExhaustedCbs: Array<() => void> = [];
@@ -365,6 +376,17 @@ export class BudgetTracker {
    */
   record(actual: BudgetActualUsage & { kind?: BudgetKind }): void {
     this.callsRecorded++;
+    this.inputTokens += actual.inputTokens ?? 0;
+    this.outputTokens += actual.outputTokens ?? 0;
+    const perModel = this.perModel.get(actual.modelId) ?? {
+      calls: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+    };
+    perModel.calls++;
+    perModel.inputTokens += actual.inputTokens ?? 0;
+    perModel.outputTokens += actual.outputTokens ?? 0;
+    this.perModel.set(actual.modelId, perModel);
     const kind: BudgetKind = actual.kind ?? "chat";
     const cost = costForUsage(actual.modelId, actual.inputTokens, actual.outputTokens ?? 0, kind);
 
@@ -422,6 +444,9 @@ export class BudgetTracker {
   snapshot(): BudgetSnapshot {
     return {
       cumulativeCostUsd: this.cumulativeUsd,
+      inputTokens: this.inputTokens,
+      outputTokens: this.outputTokens,
+      models: Object.fromEntries(this.perModel),
       startedAt: this.startedAt,
       elapsedMs: Date.now() - this.startedAt,
       maxCostUsd: this.opts.maxCostUsd,

@@ -69,7 +69,8 @@ SERVER_INVENTORY.md
 # Local verification builds + ad-hoc QA artefacts (never commit)
 .next-verify/
 .next-e2e/
-.next-isolated/
+.next-isolated
+.next-mock/
 tests/screenshots/
 tests/e2e-playwright/marketing-visual.spec.ts-snapshots/
 

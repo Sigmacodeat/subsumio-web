@@ -43,6 +43,9 @@
 # Also sends Vorfrist-specific reminders (B3) when vorfrist_date is reached.
 0 7 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-reminders || true
 
+# Trial ending in 3 days — one mail per account, for trials with no plan chosen
+15 7 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/trial-reminder || true
+
 # ── 06:30 UTC (08:30 CEST) — Case law monitoring ──
 30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-law || true
 

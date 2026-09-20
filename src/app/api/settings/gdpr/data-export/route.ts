@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { leadsForEmail } from "@/lib/concierge/store";
 import { getStore } from "@/lib/auth/store";
 import { getApiKeyStore } from "@/lib/api-key-store";
 import { decrypt } from "@/lib/encryption";
@@ -75,6 +76,9 @@ export const GET = createHandler(
         lastUsedAt: k.lastUsedAt,
       })),
       brainPages,
+      // Contact requests this address sent through the website chat or the
+      // contact form (Art. 15 DSGVO).
+      contactRequests: await leadsForEmail(user.email).catch(() => []),
       ...(firmBrain
         ? {
             brainPagesNote:

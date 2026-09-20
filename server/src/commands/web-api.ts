@@ -3349,6 +3349,46 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
+  // Same completion, streamed. The website concierge shows each sentence as
+  // soon as it has passed its claim check, so the visitor is not left staring
+  // at a spinner for several seconds.
+  app.post(
+    "/api/llm/stream",
+    express.json({ limit: "2mb" }),
+    async (req: Request, res: Response) => {
+      const { streamUtilityCompletion, UtilityCompletionError } =
+        await import("../core/ai/utility-complete.ts");
+      try {
+        const events = streamUtilityCompletion(
+          engine,
+          (req.body ?? {}) as Record<string, unknown>,
+          requestSourceId(req)
+        );
+        res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache, no-transform");
+        res.setHeader("Connection", "keep-alive");
+        res.flushHeaders?.();
+        for await (const event of events) {
+          res.write(`data: ${JSON.stringify(event)}\n\n`);
+        }
+        res.write("data: [DONE]\n\n");
+        res.end();
+      } catch (e: unknown) {
+        // Nothing sent yet → a normal error response; mid-stream → an error
+        // event, because the status line is already out.
+        const status = e instanceof UtilityCompletionError ? e.status : 500;
+        const code = e instanceof UtilityCompletionError ? e.code : "llm_stream_failed";
+        const message = e instanceof Error ? e.message : "unknown";
+        if (res.headersSent) {
+          res.write(`data: ${JSON.stringify({ type: "error", error: code, message })}\n\n`);
+          res.end();
+        } else {
+          res.status(status).json({ error: code, message });
+        }
+      }
+    }
+  );
+
   // Speech-to-text for WhatsApp voice notes. Lives in the engine so the
   // provider key stays in ONE place (the web container has none on Hetzner).
   app.post(
@@ -3498,33 +3538,42 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const jurisdiction = (caseJurHeader ?? userJurHeader)?.toUpperCase();
 
       const thinkStartTime = Date.now();
+      // Meter the whole answer: every model call inside think (planner,
+      // answer, citation cross-check, a regeneration) records into this
+      // tracker, so the caller learns what the action really cost instead of
+      // guessing. See the final "usage" event below.
+      const { BudgetTracker } = await import("../core/budget/budget-tracker.ts");
+      const { withBudgetTracker } = await import("../core/ai/gateway.ts");
+      const meter = new BudgetTracker({ label: "api.think" });
       // What the browser has already seen. The citation guardrail and
       // cross-verify may REPLACE the answer after streaming finished; the
       // final event then carries the verified text (see finalAnswerEvent).
       let streamedAnswer = "";
-      const result = await runThink(engine, {
-        question: query,
-        ...(instructions ? { instructions } : {}),
-        ...(pickedModel ? { model: pickedModel } : {}),
-        remote: false,
-        sourceId,
-        // Federate reads across the tenant's source + shared statute corpus so
-        // the answer can retrieve and cite the actual law, not just the firm's docs.
-        ...(readSourcesFor(req) ? { allowedSources: readSourcesFor(req) } : {}),
-        searchMode,
-        matterScope,
-        aclGroups,
-        // Activate legal mode when the attorney has a jurisdiction set —
-        // this enables the citation guardrail, cross-verify, and the
-        // legal-aware system prompt with statute citation discipline.
-        legalMode: true,
-        jurisdiction,
-        // Real-time token streaming: each text delta fires an SSE chunk event.
-        onStreamChunk: (text) => {
-          streamedAnswer += text;
-          res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
-        },
-      });
+      const result = await withBudgetTracker(meter, () =>
+        runThink(engine, {
+          question: query,
+          ...(instructions ? { instructions } : {}),
+          ...(pickedModel ? { model: pickedModel } : {}),
+          remote: false,
+          sourceId,
+          // Federate reads across the tenant's source + shared statute corpus so
+          // the answer can retrieve and cite the actual law, not just the firm's docs.
+          ...(readSourcesFor(req) ? { allowedSources: readSourcesFor(req) } : {}),
+          searchMode,
+          matterScope,
+          aclGroups,
+          // Activate legal mode when the attorney has a jurisdiction set —
+          // this enables the citation guardrail, cross-verify, and the
+          // legal-aware system prompt with statute citation discipline.
+          legalMode: true,
+          jurisdiction,
+          // Real-time token streaming: each text delta fires an SSE chunk event.
+          onStreamChunk: (text) => {
+            streamedAnswer += text;
+            res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+          },
+        })
+      );
 
       // P0-SECR-002: Filter citations by matter_scope — only include
       // citations whose slug falls within the caller's allowed matters.
@@ -3589,6 +3638,21 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           trace_id: traceId,
           model: result.modelUsed,
           ...finalAnswerEvent(streamedAnswer, result.answer, warnings),
+        })}\n\n`
+      );
+      // What this answer actually consumed — the caller books it against the
+      // action instead of estimating (web: recordCreditConsumption).
+      const spent = meter.snapshot();
+      res.write(
+        `data: ${JSON.stringify({
+          usage: {
+            model: result.modelUsed,
+            calls: spent.callsRecorded,
+            input_tokens: spent.inputTokens,
+            output_tokens: spent.outputTokens,
+            cost_usd: Number(spent.cumulativeCostUsd.toFixed(6)),
+            models: spent.models,
+          },
         })}\n\n`
       );
       res.write("data: [DONE]\n\n");
