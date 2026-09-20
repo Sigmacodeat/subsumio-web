@@ -47,11 +47,24 @@ function holderAlive(pid: number, command: string): boolean {
   }
   try {
     const cmdline = readFileSync(`/proc/${pid}/cmdline`, "utf-8").replace(/\0/g, " ").trim();
-    if (cmdline && command) return cmdline.includes(command.split(" ")[0]);
+    const script = scriptName(command);
+    // Compare the script's file name, never its path. Bun writes an absolute
+    // path into argv ("/app/scripts/fetch.ts") while the process was launched
+    // relative ("bun scripts/fetch.ts"), so a path comparison never matched —
+    // every live holder looked dead and every new job stole the lock. Three
+    // RIS fetchers ran at once on 2026-09-20 because of this, which the OGD
+    // rules forbid.
+    if (cmdline && script) return cmdline.includes(script);
   } catch {
     /* no /proc (macOS) — the signal check has to do */
   }
   return true;
+}
+
+/** File name of the script in a recorded command line, without directories. */
+export function scriptName(command: string): string {
+  const first = command.trim().split(/\s+/)[0] ?? "";
+  return first.split("/").pop() ?? "";
 }
 
 function readLockData(): { pid: number; acquired_at: number; command: string } | null {

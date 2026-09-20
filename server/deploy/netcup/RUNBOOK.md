@@ -215,3 +215,57 @@ der Dienst gar nicht erst, statt still mit dem falschen Modell zu arbeiten.
 
 Zum Schluss `VACUUM (ANALYZE) content_chunks;` — der Lauf schreibt jede Zeile
 neu und lässt entsprechend alte Zeilenversionen zurück.
+
+## 8. Grabsteine endgültig entfernen
+
+Eine soft-gelöschte Seite ist für Suche und Embedding unsichtbar, belegt aber
+weiter die Tabelle. In einer Rechtssoftware ist das eine Last: jede Zählung,
+jede Prüfung und jede künftige Migration muss über Zeilen nachdenken, die
+nichts bedeuten.
+
+**Unwiderruflich.** Die nächtliche Sicherung schließt den Rechtskorpus
+ausdrücklich aus (`dump-firm-data.sh`: `source_id NOT LIKE 'law-%'`). Vorher
+das Verzeichnis der betroffenen Seiten schreiben — Slug, Titel, Dokument-Id,
+Prüfsumme —, damit Jahre später noch beantwortbar ist, was entfernt wurde:
+
+```bash
+mkdir -p /opt/subsumio-data/purge-$(date +%F)
+docker exec subsumio-engine-db-1 sh -c "psql -U subsumio -d subsumio -qAt -c \"\\copy (
+  SELECT p.id, p.source_id, p.slug, p.title, p.type, p.deleted_at,
+         p.frontmatter->>'doc_id' AS doc_id, p.content_hash,
+         (SELECT count(*) FROM content_chunks c WHERE c.page_id=p.id) AS chunks
+    FROM pages p WHERE p.deleted_at IS NOT NULL ORDER BY p.id)
+  TO STDOUT WITH (FORMAT csv, HEADER true)\" | gzip -c" \
+  > /opt/subsumio-data/purge-$(date +%F)/geloeschte-seiten.csv.gz
+```
+
+**Vorher belegen, dass der Inhalt aktiv weiterlebt.** Grabsteine aus einer
+Formatumstellung sind ersetzt, Grabsteine aus einem Fehlimport nicht:
+
+```sql
+-- Ersatz über die Dokument-Id
+SELECT count(*) FROM pages t
+  JOIN pages a ON a.frontmatter->>'doc_id' = t.frontmatter->>'doc_id'
+   AND a.deleted_at IS NULL
+ WHERE t.deleted_at IS NOT NULL;
+-- Stichprobe: ist das Gesetz im neuen Format da?
+SELECT count(*) FILTER (WHERE deleted_at IS NULL) AS aktiv, count(*) AS gesamt
+  FROM pages WHERE title ILIKE '%<Gesetzesname>%';
+```
+
+Dann:
+
+```bash
+docker exec -w /app subsumio-engine-engine-1 \
+  bun run scripts/purge-tombstoned-pages.ts                      # nur berichten
+docker exec -d -w /app subsumio-engine-engine-1 sh -c \
+  'bun run scripts/purge-tombstoned-pages.ts --yes --batch 2000 --pause-ms 300 \
+     > /data/purge.log 2>&1'
+```
+
+`--min-age-days` (Vorgabe 7) schützt eine Löschung, die jemand vor Minuten
+gemacht hat und noch zurückholen will. Chunks, Verweise, Zeitleisten und
+Rechte gehen über die Fremdschlüssel-Kaskade mit; angefasst wird nur `pages`.
+
+Danach `VACUUM (ANALYZE) pages, content_chunks;` — ohne das gibt Postgres den
+Platz nicht an das Dateisystem zurück.
