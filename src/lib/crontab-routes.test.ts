@@ -14,15 +14,12 @@ const crontab = readFileSync(join(root, "server/deploy/hetzner/crontab"), "utf8"
 // AI budget; switching them on is an owner decision, tracked in
 // docs/AUDIT_KI_COPILOT_2026-09-18.md. Remove an entry once that is decided.
 //
-// deadline-alerts reads deadlines from the "system" brain only (so it finds no
-// firm's deadlines) and has no dedup, so every 30-minute run would resend the
-// same deadline.critical webhook. Deadline reminders run through
-// deadline-reminders; fix both issues before enabling it.
-const NOT_YET_ENABLED = new Set([
-  "/api/cron/autonomous-engine",
-  "/api/cron/autopilot",
-  "/api/cron/deadline-alerts",
-]);
+// deadline-alerts was on this list until 2026-09-20: it read the "system"
+// brain (finding no firm's deadlines) and had no dedup, so every 30-minute run
+// would have resent the same deadline.critical webhook. Both are fixed — it
+// walks each firm's own brain and records every stage on the deadline — so it
+// is scheduled with -X POST now and this guard checks it like any other job.
+const NOT_YET_ENABLED = new Set(["/api/cron/autonomous-engine", "/api/cron/autopilot"]);
 
 const calls = crontab
   .split("\n")

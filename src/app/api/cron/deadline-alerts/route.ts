@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { batchFetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { broadcastDeadlineAlert } from "@/lib/realtime-bus";
 import { dispatchWebhookEvent } from "@/lib/webhook-dispatch";
+import {
+  alertSentFields,
+  collectDueAlerts,
+  markCaseAlerts,
+  type AlertDeadline,
+  type AlertPage,
+  type DueAlert,
+} from "@/lib/deadline-alerts";
 import { logger } from "@/lib/logger";
 
 const log = logger("deadline-alerts");
@@ -10,127 +19,144 @@ const log = logger("deadline-alerts");
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-interface DeadlinePage {
-  slug: string;
-  frontmatter: {
-    case_slug?: string;
-    due_date?: string;
-    status?: string;
-    urgency?: string;
-    brain_id?: string;
+/** Deadlines and matters of one firm. */
+async function loadBrain(brainId: string): Promise<{ cases: AlertPage[]; deadlines: AlertPage[] }> {
+  const pages = await batchFetchPages(brainId, ["legal_case", "legal_deadline"], 500);
+  return {
+    cases: (pages["legal_case"] ?? []) as unknown as AlertPage[],
+    deadlines: (pages["legal_deadline"] ?? []) as unknown as AlertPage[],
   };
 }
 
-/**
- * Resolve the brainId for a deadline by looking up the associated case.
- * Falls back to "system" if the case cannot be found or has no brain_id.
- */
-async function resolveBrainIdFromCase(
-  caseSlug: string | undefined,
-  headers: HeadersInit
-): Promise<string> {
-  if (!caseSlug) return "system";
-  try {
-    const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
-      headers,
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (caseRes.ok) {
-      const caseData = await caseRes.json();
-      const fm = caseData.frontmatter ?? {};
-      if (fm.brain_id && typeof fm.brain_id === "string") return fm.brain_id;
+/** Record the sent stage, so the next run half an hour later stays quiet. */
+async function markSent(brainId: string, items: DueAlert[], nowIso: string): Promise<void> {
+  const headers = engineHeadersForBrain(brainId);
+
+  for (const item of items) {
+    if (item.ref.kind !== "page") continue;
+    try {
+      const path = item.ref.slug.split("/").map(encodeURIComponent).join("/");
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+        headers,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) continue;
+      const page = (await res.json()) as { frontmatter?: AlertDeadline };
+      await enginePatchPage(
+        headers,
+        {
+          slug: item.ref.slug,
+          frontmatter: alertSentFields(page.frontmatter ?? {}, item.urgency, nowIso),
+        },
+        { timeoutMs: 30_000 }
+      );
+    } catch {
+      // One failed write must not stop the run — the stage simply fires again.
     }
-  } catch {
-    // best-effort
   }
-  return "system";
+
+  // Deadlines inside a matter: re-read the matter and write only its deadline
+  // list back, so documents or edits saved meanwhile are not overwritten.
+  const byCase = new Map<string, DueAlert[]>();
+  for (const item of items) {
+    if (item.ref.kind !== "case") continue;
+    const list = byCase.get(item.ref.caseSlug) ?? [];
+    list.push(item);
+    byCase.set(item.ref.caseSlug, list);
+  }
+  for (const [caseSlug, caseItems] of byCase) {
+    try {
+      const path = caseSlug.split("/").map(encodeURIComponent).join("/");
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+        headers,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) continue;
+      const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+      const current = Array.isArray(page.frontmatter?.deadlines)
+        ? (page.frontmatter.deadlines as AlertDeadline[])
+        : [];
+      const { deadlines, changed } = markCaseAlerts(current, caseItems, nowIso);
+      if (changed) {
+        await enginePatchPage(
+          headers,
+          { slug: caseSlug, frontmatter: { deadlines } },
+          {
+            timeoutMs: 30_000,
+          }
+        );
+      }
+    } catch {
+      // Same here: a failed write only means the alert repeats once.
+    }
+  }
 }
 
+/**
+ * Live alerts for deadlines coming due — into the open dashboard, and as a
+ * `deadline.critical` webhook for the ones inside 24 hours.
+ *
+ * Two faults fixed on 2026-09-20: the job read the "system" brain and
+ * therefore never saw a firm's deadlines, and it had no memory, so every
+ * 30-minute run resent the same alert. It now walks every firm's own brain
+ * and records each stage on the deadline itself.
+ */
 async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
-  const headers = engineHeadersForBrain("system");
-
-  // Fetch all deadline pages
-  const params = new URLSearchParams({ type: "deadline", limit: "200" });
-  const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-
-  if (!res.ok) {
-    return NextResponse.json({ error: "Failed to fetch deadlines" }, { status: 500 });
-  }
-
-  const data = await res.json();
-  const deadlines = (Array.isArray(data) ? data : (data.pages ?? [])) as DeadlinePage[];
-
   const now = new Date();
-  const alertThresholds = [
-    { hours: 24, urgency: "urgent" as const },
-    { hours: 72, urgency: "warning" as const },
-    { hours: 168, urgency: "normal" as const },
-  ];
+  const nowIso = now.toISOString();
+  const brains = [...(await getRecipientsByBrain()).keys()];
 
-  const alertsSent: Array<{
-    caseSlug: string;
-    deadlineId: string;
-    urgency: string;
-    dueDate: string;
-    brainId: string;
-  }> = [];
+  let totalAlerts = 0;
+  const perBrain: Array<{ brainId: string; alerts: number }> = [];
 
-  for (const deadline of deadlines) {
-    const fm = deadline.frontmatter;
-    if (!fm.due_date || fm.status === "completed") continue;
+  for (const brainId of brains) {
+    let items: DueAlert[] = [];
+    try {
+      const { cases, deadlines } = await loadBrain(brainId);
+      items = collectDueAlerts(cases, deadlines, now);
+    } catch (err) {
+      log.warn("brain unreadable", { brainId, error: err instanceof Error ? err.message : err });
+      continue;
+    }
+    if (items.length === 0) continue;
 
-    const dueDate = new Date(fm.due_date);
-    const hoursUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    for (const item of items) {
+      broadcastDeadlineAlert(brainId, {
+        caseSlug: item.caseSlug ?? "unknown",
+        deadlineId: item.ref.kind === "page" ? item.ref.slug : `${item.ref.caseSlug}#${item.title}`,
+        urgency: item.urgency,
+        dueDate: item.dueDate,
+      });
 
-    // Check if deadline is within alert thresholds
-    for (const threshold of alertThresholds) {
-      if (hoursUntilDue <= threshold.hours && hoursUntilDue > threshold.hours - 24) {
-        // Resolve actual brainId from case_slug or deadline frontmatter
-        const brainId = fm.brain_id ?? (await resolveBrainIdFromCase(fm.case_slug, headers));
-
-        broadcastDeadlineAlert(brainId, {
-          caseSlug: fm.case_slug ?? "unknown",
-          deadlineId: deadline.slug,
-          urgency: threshold.urgency,
-          dueDate: fm.due_date,
-        });
-
-        // Fire outgoing webhook for critical (urgent) deadlines
-        if (threshold.urgency === "urgent") {
-          try {
-            await dispatchWebhookEvent("deadline.critical", {
-              case_slug: fm.case_slug ?? "unknown",
-              deadline_id: deadline.slug,
-              due_date: fm.due_date,
-              urgency: threshold.urgency,
-              brain_id: brainId,
-            });
-          } catch {
-            // best-effort — webhook delivery should not block alert processing
-          }
+      if (item.urgency === "urgent") {
+        try {
+          await dispatchWebhookEvent("deadline.critical", {
+            case_slug: item.caseSlug ?? "unknown",
+            deadline_id:
+              item.ref.kind === "page" ? item.ref.slug : `${item.ref.caseSlug}#${item.title}`,
+            title: item.title,
+            due_date: item.dueDate,
+            urgency: item.urgency,
+            brain_id: brainId,
+          });
+        } catch {
+          // Webhook delivery must not block the alerts.
         }
-
-        alertsSent.push({
-          caseSlug: fm.case_slug ?? "unknown",
-          deadlineId: deadline.slug,
-          urgency: threshold.urgency,
-          dueDate: fm.due_date,
-          brainId,
-        });
-        break; // Only send one alert per deadline per run
       }
     }
+
+    await markSent(brainId, items, nowIso);
+    totalAlerts += items.length;
+    perBrain.push({ brainId, alerts: items.length });
   }
 
-  log.info("Deadline alerts processed", { total: alertsSent.length });
+  log.info("deadline alerts processed", { brains: brains.length, total: totalAlerts });
 
   return NextResponse.json({
-    executedAt: new Date().toISOString(),
-    totalAlerts: alertsSent.length,
-    alerts: alertsSent,
+    executedAt: nowIso,
+    brainsChecked: brains.length,
+    totalAlerts,
+    perBrain,
   });
 }
 
