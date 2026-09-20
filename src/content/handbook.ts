@@ -223,8 +223,8 @@ export const HANDBOOK: HandbookGroup[] = [
             body: "Überfällig, kritisch (höchstens zwei Werktage bis Fristende), Vorfrist erreicht oder in Ordnung.",
           },
           {
-            term: "Kalender-Export",
-            body: "Fristen und Termine exportieren Sie als Kalenderdatei für Outlook, Apple- oder Google-Kalender — mit Erinnerung zur Vorfrist und zwei Tage vor Fristende.",
+            term: "Kalender-Abo und Export",
+            body: "Unter „Kalender-Export“ erzeugen Sie eine persönliche Abo-Adresse. Outlook, Apple- und Google-Kalender halten damit Ihre Fristen selbstständig aktuell. Die Adresse enthält einen persönlichen Schlüssel, gilt wie ein Passwort und lässt sich jederzeit widerrufen. Alternativ laden Sie eine einmalige Kalenderdatei herunter — mit Erinnerung zur Vorfrist und zwei Tage vor Fristende.",
           },
         ],
       },

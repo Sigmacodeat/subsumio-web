@@ -677,7 +677,7 @@ export const LANDING = {
     },
     {
       q: "Wo liegen meine Daten — und wie unterstützt Subsumio die Verschwiegenheit?",
-      a: "Sie wählen: Self-Hosting auf eigener Hardware mit eigenen Schlüsseln, oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen nie die EU. Kein Dritter verarbeitet sie ohne ausdrückliche Freigabe. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
+      a: "Sie wählen: Betrieb auf eigener Hardware mit eigenen Schlüsseln oder verwaltete EU-Cloud mit Auftragsverarbeitungsvertrag. Gespeichert werden Ihre Akten in einem Rechenzentrum in der EU. Für eine KI-Antwort geht der benötigte Ausschnitt an den Anbieter des Sprachmodells; er ist im AVV benannt, über EU-Standardvertragsklauseln gebunden und trainiert nicht mit Ihren Daten. Wer auch das ausschließen will, betreibt im Enterprise-Tarif ein eigenes Sprachmodell auf eigener Hardware. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
     },
     {
       q: "Brauche ich IT-Kenntnisse oder eigene Server?",

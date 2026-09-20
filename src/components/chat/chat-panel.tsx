@@ -2354,7 +2354,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           onClick={() => setSubsumptionMode(false)}
           className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
             !subsumptionMode
-              ? "bg-[var(--brand-primary)] text-white"
+              ? "bg-[color:var(--brand-solid)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
           } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >
@@ -2364,7 +2364,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           onClick={() => setSubsumptionMode(true)}
           className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
             subsumptionMode
-              ? "bg-[var(--brand-primary)] text-white"
+              ? "bg-[color:var(--brand-solid)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
           } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >

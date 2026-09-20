@@ -2,18 +2,15 @@ import { z } from "zod";
 import { getStore } from "@/lib/auth/store";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { maskApiKey } from "@/lib/api-keys";
+import { planKeyUpdates } from "@/lib/api-key-updates";
 import { isAppError } from "@/lib/errors";
 import { createHandler, apiError } from "@/lib/api-handler";
 
-function looksLikeApiKey(key: string): boolean {
-  return key.length >= 8 && /^[A-Za-z0-9_\-\.]+$/.test(key);
-}
-
 const apiKeysPostSchema = z
   .object({
-    openaiKey: z.string().optional(),
-    anthropicKey: z.string().optional(),
-    zeroEntropyKey: z.string().optional(),
+    openaiKey: z.string().nullish(),
+    anthropicKey: z.string().nullish(),
+    zeroEntropyKey: z.string().nullish(),
   })
   .passthrough();
 
@@ -26,44 +23,47 @@ export const POST = createHandler(
       action: "settings.update" as const,
       entityType: "api_keys",
       entityId: ctx.user.id,
-      details: { fields_updated: Object.keys(body).filter((k) => body[k as keyof typeof body]) },
+      details: {
+        fields_updated: [
+          ...planKeyUpdates(body).set.map((entry) => entry.field),
+          ...planKeyUpdates(body).remove,
+        ],
+      },
     }),
   },
   async (ctx, body, _query, _req) => {
-    const rawKeys = {
-      openaiKey: typeof body.openaiKey === "string" ? body.openaiKey.trim() : "",
-      anthropicKey: typeof body.anthropicKey === "string" ? body.anthropicKey.trim() : "",
-      zeroEntropyKey: typeof body.zeroEntropyKey === "string" ? body.zeroEntropyKey.trim() : "",
-    };
+    // Only the fields that carry a new secret are written. Untouched fields
+    // come back masked from GET and must not overwrite what is stored.
+    const plan = planKeyUpdates(body);
 
-    for (const [name, val] of Object.entries(rawKeys)) {
-      if (val && !looksLikeApiKey(val)) {
-        return apiError("invalid_key_format", `Invalid key format: ${name}`, 400, { field: name });
-      }
+    if (plan.invalid.length > 0) {
+      const field = plan.invalid[0];
+      return apiError("invalid_key_format", `Invalid key format: ${field}`, 400, { field });
     }
 
-    let encrypted: (string | null)[];
+    const patch: Record<string, string | null> = {};
     try {
-      encrypted = await Promise.all([
-        rawKeys.openaiKey ? encrypt(rawKeys.openaiKey) : Promise.resolve(null),
-        rawKeys.anthropicKey ? encrypt(rawKeys.anthropicKey) : Promise.resolve(null),
-        rawKeys.zeroEntropyKey ? encrypt(rawKeys.zeroEntropyKey) : Promise.resolve(null),
-      ]);
+      for (const { field, value } of plan.set) {
+        patch[field] = await encrypt(value);
+      }
     } catch (err) {
       if (isAppError(err)) {
         return apiError(err.code, err.message, err.statusCode);
       }
       return apiError("encryption_failed", "Encryption failed", 500);
     }
+    for (const field of plan.remove) {
+      patch[field] = null;
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return Response.json({ ok: true, updated: [] });
+    }
 
     const store = getStore();
-    await store.update(ctx.user.id, {
-      openaiKey: encrypted[0],
-      anthropicKey: encrypted[1],
-      zeroEntropyKey: encrypted[2],
-    });
+    await store.update(ctx.user.id, patch);
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, updated: Object.keys(patch) });
   }
 );
 

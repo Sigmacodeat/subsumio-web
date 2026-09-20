@@ -222,6 +222,34 @@ export function addCallerIdentity(
 }
 
 /**
+ * Engine headers for a known user WITHOUT a browser session — used by the
+ * calendar subscription, where Outlook or Google fetches the feed on its own.
+ * Resolves the same brain the person would get when signed in and signs their
+ * identity, so the engine applies the matter access rules to the feed too.
+ * Returns null for an unknown, deactivated or suspended account.
+ */
+export async function engineHeadersForUserId(
+  userId: string
+): Promise<{ headers: Record<string, string>; user: User } | null> {
+  const user = await getStore().getById(userId);
+  if (!user || user.deactivatedAt) return null;
+
+  let brainId = user.brainId;
+  if (user.orgId) {
+    const org = await getOrgStore().getById(user.orgId);
+    if (org?.suspendedAt) return null;
+    if (org) brainId = org.brainId;
+  }
+
+  const headers: Record<string, string> = { "x-subsumio-source": brainId };
+  const apiKey = env("SUBSUMIO_WEB_API_KEY");
+  if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+  if (user.jurisdiction) headers["x-subsumio-jurisdiction"] = user.jurisdiction;
+  addCallerIdentity(headers, brainId, user);
+  return { headers, user };
+}
+
+/**
  * Headers for an engine call on behalf of the current session, or null when
  * nobody is signed in (proxies answer 401 then — the dashboard middleware
  * normally prevents that from ever happening).

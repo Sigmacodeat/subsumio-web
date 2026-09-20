@@ -62,7 +62,6 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: strin
   inbox_triage: { icon: Inbox, label: "Posteingang", color: "text-[color:var(--ds-info-text)]" },
 };
 
-
 function getNotificationMessage(n: NotificationItem): {
   title: string;
   message: string;

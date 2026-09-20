@@ -79,6 +79,13 @@ export interface User {
   /** End of the free self-service trial (ISO). Resolve limits through
    *  `effectivePlan` in src/lib/billing/trial.ts, never `plan` alone. */
   trialEndsAt?: string | null;
+  /** SHA-256 of the secret in the personal calendar feed URL (never the secret
+   *  itself). Set while a subscription link exists, null once revoked. */
+  calendarFeedTokenHash?: string | null;
+  /** When the current calendar feed link was created (ISO). */
+  calendarFeedCreatedAt?: string | null;
+  /** Last time a calendar client fetched the feed (ISO). */
+  calendarFeedLastUsedAt?: string | null;
   createdAt: string;
 }
 

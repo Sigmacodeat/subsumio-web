@@ -36,7 +36,7 @@ describe("GET /api/legal/deadlines.ics", () => {
 
   test("proxies ICS feed from engine with correct content-type", async () => {
     const mockIcs =
-      "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Subsumio//Fristenbuch//DE\nEND:VCALENDAR";
+      "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Frist\nEND:VEVENT\nEND:VCALENDAR";
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       new Response(mockIcs, { status: 200, headers: { "Content-Type": "text/calendar" } })
     );
@@ -54,7 +54,7 @@ describe("GET /api/legal/deadlines.ics", () => {
 
   test("passes case filter to engine URL", async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      new Response("BEGIN:VCALENDAR\nEND:VCALENDAR", { status: 200 })
+      new Response("BEGIN:VCALENDAR\nBEGIN:VEVENT\nEND:VEVENT\nEND:VCALENDAR", { status: 200 })
     );
 
     const req = new Request("http://localhost/api/legal/deadlines.ics?case=legal/cases/test", {
@@ -64,6 +64,24 @@ describe("GET /api/legal/deadlines.ics", () => {
 
     const fetchUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(fetchUrl).toContain("case=legal%2Fcases%2Ftest");
+  });
+
+  test("an empty engine feed falls back to the matters in the brain", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(new Response("BEGIN:VCALENDAR\nEND:VCALENDAR", { status: 200 }))
+      .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(
+        Response.json([
+          { slug: "legal/cases/a", title: "Novak", frontmatter: { deadlines: [{ title: "Replik", due_date: "2026-10-01" }] } },
+        ])
+      );
+
+    const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("SUMMARY:Replik");
+    expect(body).toContain("DTSTART;VALUE=DATE:20261001");
   });
 
   test("falls back to brain-built ICS when the engine feed errors", async () => {
@@ -83,7 +101,9 @@ describe("GET /api/legal/deadlines.ics", () => {
   });
 
   test("returns 502 when engine is unreachable", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("ECONNREFUSED"));
+    // Every source fails. An empty calendar would quietly delete the entries a
+    // subscribed client already holds, so the route reports the failure.
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("ECONNREFUSED"));
 
     const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
     const res = await GET(req);
@@ -94,7 +114,7 @@ describe("GET /api/legal/deadlines.ics", () => {
 
   test("works without case filter (all deadlines)", async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      new Response("BEGIN:VCALENDAR\nEND:VCALENDAR", { status: 200 })
+      new Response("BEGIN:VCALENDAR\nBEGIN:VEVENT\nEND:VEVENT\nEND:VCALENDAR", { status: 200 })
     );
 
     const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });

@@ -98,10 +98,30 @@ export default function ConciergeWidget() {
   const [busy, setBusy] = useState(false);
   const [contactKind, setContactKind] = useState<"callback" | "meeting" | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  // On a phone the launcher sits right where the hero's own call to action is,
+  // and the consent banner covers it on a first visit. It therefore appears
+  // only once the reader has scrolled past the hero — the same rule the
+  // back-to-top button follows. On wider screens it is there from the start.
+  const [launcherVisible, setLauncherVisible] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
+
+  useEffect(() => {
+    const NARROW = "(max-width: 639px)";
+    const update = () => {
+      const narrow = window.matchMedia(NARROW).matches;
+      setLauncherVisible(!narrow || window.scrollY > 600);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   useEffect(() => {
     setState(loadState() ?? { sessionId: newSessionId(), messages: [], profile: {} });
@@ -232,7 +252,7 @@ export default function ConciergeWidget() {
 
   return (
     <>
-      {!open && (
+      {!open && launcherVisible && (
         <button
           ref={launcherRef}
           type="button"
