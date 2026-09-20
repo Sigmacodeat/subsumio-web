@@ -8,8 +8,10 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: { pages: 200, queriesPerMonth: 100, seats: 1 },
-  pro: { pages: 50_000, queriesPerMonth: 1_000, seats: 1 },
-  team: { pages: 200_000, queriesPerMonth: 4_000, seats: 5 },
+  // queriesPerMonth mirrors the included credits (saas-pricing.ts PLANS):
+  // one question = one credit, so both gates state the same number.
+  pro: { pages: 50_000, queriesPerMonth: 300, seats: 1 },
+  team: { pages: 200_000, queriesPerMonth: 1_500, seats: 5 },
   enterprise: { pages: 1_000_000, queriesPerMonth: 15_000, seats: 25 },
 };
 

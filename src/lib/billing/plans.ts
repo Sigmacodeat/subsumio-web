@@ -58,7 +58,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
     price: "0 €",
     features: [
       "Self-hosted — eigener Server, eigene Schlüssel",
-      "100 KI-Anfragen/Mon. inklusive",
+      "KI über Ihre eigenen Schlüssel — Sie zahlen den Anbieter direkt",
       "5 GB lokaler Speicher",
       "Akten-Q&A mit seitengenauen Zitaten",
       "Fristenverwaltung (ZPO/ABGB)",
@@ -72,7 +72,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
     features: [
       "Voll verwaltet — keine API-Keys nötig",
       "1 Nutzer",
-      "1.000 KI-Anfragen/Mon. inklusive",
+      "300 KI-Anfragen pro Monat inklusive (1 Credit je Anfrage)",
       "75 GB Cloud-Speicher pro Nutzer",
       "Nächtliche Konsolidierung: Duplikate, Zitate, Widersprüche",
       "Live-Verbrauchsanzeige — transparente Mehrkosten",
@@ -88,7 +88,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
     features: [
       "Alles aus Solo für 5 Nutzer",
       "Geteiltes Kanzleiwissen",
-      "4.000 KI-Anfragen/Nutzer/Mon. inklusive",
+      "300 KI-Anfragen pro Nutzer und Monat inklusive (1.500 bei 5 Nutzern)",
       "200 GB Cloud-Speicher pro Nutzer",
       "1.000 WhatsApp-Nachrichten/Mon. inklusive",
       "Rollenbasierte Zugriffe pro Akte und Nutzer",

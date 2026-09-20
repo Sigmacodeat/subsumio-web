@@ -69,3 +69,28 @@ describe("trial length in the copy matches the trial the product grants", () => 
     }
   });
 });
+
+describe("included AI requests are one number everywhere", () => {
+  test("plan copy, query quota and included credits agree", async () => {
+    const { PLANS } = await import("../../../server/src/core/saas-pricing");
+    const { PLAN_LIMITS } = await import("@/lib/plans-limits");
+
+    // One question costs one credit, so the query quota must equal the grant.
+    expect(PLAN_LIMITS.pro.queriesPerMonth).toBe(PLANS.solo.included_credit);
+    expect(PLAN_LIMITS.team.queriesPerMonth).toBe(
+      PLANS.kanzlei.included_credit * PLAN_LIMITS.team.seats
+    );
+
+    const solo = BILLING_PLANS_DISPLAY.find((p) => p.id === "pro")!.features.join(" ");
+    const team = BILLING_PLANS_DISPLAY.find((p) => p.id === "team")!.features.join(" ");
+    expect(solo).toContain(`${PLANS.solo.included_credit} KI-Anfragen`);
+    expect(team).toContain(`${PLANS.kanzlei.included_credit} KI-Anfragen`);
+    const total = PLANS.kanzlei.included_credit * PLAN_LIMITS.team.seats;
+    expect(team).toContain(total.toLocaleString("de-AT").replace(/\s/g, "."));
+
+    // The Community plan must not advertise included AI requests: a cloud
+    // account holds no credits once the trial expired.
+    const free = BILLING_PLANS_DISPLAY.find((p) => p.id === "free")!.features.join(" ");
+    expect(free).not.toMatch(/KI-Anfragen/);
+  });
+});

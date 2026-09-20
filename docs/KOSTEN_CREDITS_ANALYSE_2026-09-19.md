@@ -130,7 +130,15 @@ Fixkosten zusätzlich: netcup-Server ≈ 69 €/Monat netto für alles.
   Chat-Pipeline (≈ 0,09 €); jetzt ein einzelner Utility-Aufruf (≈ 0,002 €).
 - Wächter-Test `src/app/api/credit-coverage.test.ts`: jede Route, die ein Modell aufruft, bucht Credits ab oder
   steht mit Begründung auf der Ausnahmeliste.
-- Offen: Punkt 3 (Dokumentanalyse nach Größe) und Punkt 4 (Kontingente) — Entscheidung nötig.
+- Punkt 4 entschieden (2026-09-20): **Solo 300 Credits/Monat, Kanzlei 300 pro Platz (1.500 bei 5 Nutzern)**.
+  `PLANS.included_credit`, `PLAN_LIMITS.queriesPerMonth` und die Tarif-Texte sagen jetzt dieselbe Zahl, gebunden
+  durch einen Test. Community wirbt nicht mehr mit inkludierten KI-Anfragen (ein Cloud-Gratiskonto hat nach dem
+  Test kein Guthaben). Marge bei Vollnutzung: Solo 300 × 0,09–0,32 € = 27–96 € Kosten bei 249 € Preis (61–89 %),
+  Kanzlei 1.500 × … = 135–480 € bei 1.499 € (68–91 %).
+- Offen: Punkt 3 (Dokumentanalyse nach Größe) — Entscheidung nötig.
+- **Live gegen das echte Modell geprüft (2026-09-20)**, `src/lib/concierge/live.eval.test.ts`: 23 Fachfragen alle
+  belegt beantwortet, kein erfundener Preis, nichts von der Belegprüfung gestrichen; 6 Angriffe abgewehrt.
+  29 Aufrufe auf Sonnet 5 = 85.628 Input-/13.005 Output-Tokens ≈ 0,30 $ → **≈ 0,01 $ pro Chat-Antwort**.
 
 ## 6. Warum es keine gemessenen Zahlen gibt
 
