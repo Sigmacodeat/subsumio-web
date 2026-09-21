@@ -25,6 +25,7 @@ import { parseArgs } from "util";
 import { validateBody, type DocClass } from "./normalize/canonical-schema.ts";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
+import { upsertPlausibility } from "./corpus-status-db.ts";
 
 /** Every corpus source this audit covers, and how validateBody should treat its pages. */
 export const DOC_CLASS_OF_SOURCE: Record<string, DocClass> = {
@@ -170,6 +171,16 @@ async function main() {
       }
 
       grandTotals[source] = total;
+      if (total > 0) {
+        await upsertPlausibility(engine, {
+          sourceId: source,
+          docClass,
+          dbPages: total,
+          plausiblePages: ok,
+          issueBreakdown: issueCounts,
+          unembeddedOkPages: okButUnembedded,
+        });
+      }
       console.log(`\n═══ ${source} (${docClass}) ═══`);
       console.log(`  Geprüft:              ${total.toLocaleString("de-AT")}`);
       console.log(

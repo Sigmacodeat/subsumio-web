@@ -26,6 +26,7 @@ import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risPause, RIS_USER_AGENT } from "./ris-pace";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
+import { upsertCompleteness } from "./corpus-status-db.ts";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 
@@ -136,6 +137,12 @@ async function main() {
       const dbCount = Number(dbRows[0]?.n ?? 0);
       const { pct, gap } = completenessRow(risTotal, dbCount);
       rows.push({ key, label: court.label, risTotal, dbCount, pct, gap });
+      await upsertCompleteness(engine, {
+        sourceId: court.sourceId,
+        docClass: "decision",
+        dbPages: dbCount,
+        risTotal,
+      });
       console.log(
         `  ${court.label.padEnd(8)} RIS: ${String(risTotal).padStart(8)}  DB: ${String(dbCount).padStart(8)}  ${String(pct).padStart(6)}%  Lücke: ${gap}`
       );
