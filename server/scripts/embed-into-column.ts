@@ -34,7 +34,7 @@ import { configureGateway } from "../src/core/ai/gateway.ts";
 import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts";
 import { resolveEmbeddingColumn } from "../src/core/search/embedding-column.ts";
 import {
-  noiseFilterSql,
+  embeddableSql,
   toVectorStr,
   wrapWithPageContext,
   type PendingChunk,
@@ -274,7 +274,7 @@ async function main() {
     process.exit(1);
   }
 
-  const NOISE = noiseFilterSql("c");
+  const NOISE = embeddableSql("c", "p");
   // Deliberately without the join to pages: counting 5.4 million chunks
   // against their pages took over three minutes at every start, and this
   // number only drives the progress line. It is an upper bound — it still

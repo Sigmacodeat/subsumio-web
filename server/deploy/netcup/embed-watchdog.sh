@@ -14,12 +14,20 @@ PSQL='docker exec -i subsumio-engine-db-1 psql -U subsumio -d subsumio -t -A'
 
 sagen() { printf '%s  %s\n' "$(date -u +%FT%TZ)" "$*" >> "$LOG"; }
 
-offen() { $PSQL -c "SELECT count(*) FROM content_chunks c JOIN pages p ON p.id=c.page_id WHERE c.embedding_qwen IS NULL AND p.deleted_at IS NULL AND length(btrim(c.chunk_text)) >= 80" 2>/dev/null | tr -cd '0-9'; }
+# Dieselbe Regel wie der Lauf selbst (core/embedding-run.ts → embeddableSql).
+# Mit einer eigenen, einfacheren Regel wartete der Wächter ewig auf Chunks,
+# die der Lauf mit Absicht nie einbettet, und startete im Zwei-Minuten-Takt
+# Arbeiter, die nichts zu tun finden. Beim Deploy erzeugen:
+#   bun -e 'import {embeddableSql} from "./src/core/embedding-run.ts"; console.log(embeddableSql("c","p"))' > embeddable.sql
+REGEL_DATEI=/opt/subsumio-data/embeddable.sql
+regel() { if [ -s "$REGEL_DATEI" ]; then cat "$REGEL_DATEI"; else echo "length(btrim(c.chunk_text)) >= 80"; fi; }
+
+offen() { echo "SELECT count(*) FROM content_chunks c JOIN pages p ON p.id=c.page_id WHERE c.embedding_qwen IS NULL AND p.deleted_at IS NULL AND $(regel)" | $PSQL 2>/dev/null | tr -cd '0-9'; }
 laufen() { docker exec subsumio-engine-engine-1 sh -c 'ps -eo args | grep "[e]mbed-into-column" | grep -c id-from' 2>/dev/null | head -1 | tr -cd '0-9'; }
 
 starten() {
   sagen "Kein Arbeiter aktiv — schneide Fenster neu und starte acht."
-  fenster=$($PSQL -F' ' -c "WITH k AS (SELECT c.id, ntile(8) OVER (ORDER BY c.id) AS b FROM content_chunks c JOIN pages p ON p.id=c.page_id WHERE c.embedding_qwen IS NULL AND p.deleted_at IS NULL AND length(btrim(c.chunk_text))>=80) SELECT b, min(id)-1, max(id) FROM k GROUP BY b ORDER BY b" 2>/dev/null)
+  fenster=$(echo "WITH k AS (SELECT c.id, ntile(8) OVER (ORDER BY c.id) AS b FROM content_chunks c JOIN pages p ON p.id=c.page_id WHERE c.embedding_qwen IS NULL AND p.deleted_at IS NULL AND $(regel)) SELECT b, min(id)-1, max(id) FROM k GROUP BY b ORDER BY b" | $PSQL -F' ' 2>/dev/null)
   [ -z "$fenster" ] && { sagen "Keine Fenster erhalten — überspringe."; return; }
   echo "$fenster" | while read -r b von bis; do
     [ -z "${bis:-}" ] && continue

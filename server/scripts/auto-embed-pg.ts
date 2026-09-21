@@ -18,7 +18,7 @@ import { buildGatewayConfig } from "../src/core/ai/build-gateway-config.ts";
 import { configureGateway } from "../src/core/ai/gateway.ts";
 import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts";
 import {
-  noiseFilterSql,
+  embeddableSql,
   toVectorStr,
   wrapWithPageContext,
   type PendingChunk,
@@ -28,7 +28,7 @@ import { randomUUID } from "node:crypto";
 
 /** The rule and the wrapping live in core/embedding-run.ts, so the run that
  *  fills a second column for a model switch builds byte-identical texts. */
-const NOISE_FILTER = noiseFilterSql("c");
+const NOISE_FILTER = embeddableSql("c", "p");
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),

@@ -306,6 +306,29 @@ export const LAND_CODES: Record<string, string> = {
   WI: "wien",
 };
 
+/**
+ * The state's name as `region` carries it. Read back off the ~140,000 pages
+ * whose raw file named its state: every document-number prefix maps to
+ * exactly one of these.
+ */
+export const LAND_NAMES: Record<string, string> = {
+  BG: "Burgenland",
+  KT: "Kärnten",
+  NO: "Niederösterreich",
+  OO: "Oberösterreich",
+  SB: "Salzburg",
+  ST: "Steiermark",
+  TI: "Tirol",
+  VB: "Vorarlberg",
+  WI: "Wien",
+};
+
+/** State name of a state-law document number (LTI40038778 → "Tirol"), else null. */
+export function regionOfDocId(docId: string | null | undefined): string | null {
+  const m = docId?.match(/^L([A-Z]{2})\d/);
+  return m ? (LAND_NAMES[m[1]] ?? null) : null;
+}
+
 /** State of a state-law document number (LTI40038778 → "tir"), else null. */
 export function landOfDocId(docId: string | null | undefined): string | null {
   const m = docId?.match(/^L([A-Z]{2})\d/);
@@ -406,7 +429,11 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     in_force_to: toIsoDate(fm.ausserkrafttretensdatum),
     // RIS source URLs of the form …/eli/bgbl/1973/413/A10/NOR… are ELI URIs.
     eli: pick(fm, "eli") ?? (/\/eli\//.test(url) ? url : null),
-    region: pick(fm, "bundesland", "state"),
+    // The XML fetcher writes no `bundesland`, so reading only the raw
+    // frontmatter left 7,829 state-law pages without a state — and the state
+    // is what tells nine near-identical laws apart in the embedding context.
+    // The document number always carries it.
+    region: pick(fm, "bundesland", "state") ?? regionOfDocId(docId),
 
     court: cls === "decision" ? pick(fm, "court", "gericht") : null,
     court_code: cls === "decision" ? pick(fm, "court_type") : null,

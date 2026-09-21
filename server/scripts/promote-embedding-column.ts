@@ -24,7 +24,7 @@
 import { parseArgs } from "util";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
-import { noiseFilterSql, promotionVerdict } from "../src/core/embedding-run.ts";
+import { embeddableSql, promotionVerdict } from "../src/core/embedding-run.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -149,7 +149,7 @@ async function main() {
   }
   const live = await columnInfo(engine, "embedding");
 
-  const NOISE = noiseFilterSql("c");
+  const NOISE = embeddableSql("c", "p");
   const open = await one<{ cnt: string }>(
     engine,
     `SELECT count(*) AS cnt FROM content_chunks c JOIN pages p ON p.id = c.page_id

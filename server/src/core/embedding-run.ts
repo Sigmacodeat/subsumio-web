@@ -28,9 +28,53 @@ import {
  */
 export const MIN_EMBED_CHARS = 80;
 
+/** Under this many characters besides the pointer, a PDF annex chunk describes nothing. */
+export const PDF_POINTER_MIN_REST = 40;
+
 /** The same rule as SQL, for the candidate queries. `alias` is the chunk table's. */
 export function noiseFilterSql(alias = "c"): string {
   return `length(btrim(${alias}.chunk_text)) >= ${MIN_EMBED_CHARS}`;
+}
+
+/**
+ * Everything that must not get a vector, as one SQL predicate over a chunk
+ * `c` joined to its page `p`. True means: embed it.
+ *
+ * Three kinds of text are in the corpus legitimately — they are genuine RIS
+ * documents — and still have no place in a semantic index, because they carry
+ * no norm text and would only compete with the sections that do:
+ *
+ *   - fragments under MIN_EMBED_CHARS (list artefacts, "(Aufgehoben)");
+ *   - annexes RIS publishes only as a PDF, when the chunk says nothing else:
+ *     "Anlage 3 (Anm.: Anlage 3 ist als PDF dokumentiert.)" — 2,134 chunks.
+ *     An annex that names its subject stays in ("Anlage 9 — Einwilligungs-
+ *     erklärung gemäß § 37 Abs. 3 WaffG"): that the form exists and where is
+ *     something a lawyer looks for. The line between the two is what is left
+ *     once heading, version note and the pointer itself are removed — under
+ *     40 characters there is no description, only a number;
+ *   - "§ 0" records, the cover sheet RIS keeps per law: short title, long
+ *     title, amendment history, no section of the law itself.
+ *
+ * One definition, used by the top-up run, the migration run, the audit and
+ * the promotion check — a rule that lives in four places drifts.
+ */
+export function embeddableSql(chunkAlias = "c", pageAlias = "p"): string {
+  const c = chunkAlias;
+  const pg = pageAlias;
+  // What remains of a chunk without its heading line, its version note and
+  // the PDF pointer itself. String.raw, so the backslashes reach Postgres:
+  // in an ordinary template literal `\s+` silently becomes `s+`, which would
+  // have stripped runs of the letter s instead of whitespace.
+  const rest =
+    `length(btrim(regexp_replace(regexp_replace(${c}.chunk_text, ` +
+    String.raw`'(^#[^\n]*)|(Anm\.: in der Fassung[^\n]*)|(Anm\.:)|(als PDF dokumentiert)|[().]', '', 'g'), ` +
+    String.raw`'\s+', ' ', 'g')))`;
+  return (
+    `(length(btrim(${c}.chunk_text)) >= ${MIN_EMBED_CHARS}` +
+    ` AND NOT (length(btrim(${c}.chunk_text)) < 400` +
+    ` AND ${c}.chunk_text ~ 'als PDF dokumentiert' AND ${rest} < ${PDF_POINTER_MIN_REST})` +
+    ` AND ${pg}.frontmatter->>'paragraph_ref' IS DISTINCT FROM '§ 0')`
+  );
 }
 
 /** pgvector wants "[1,2,3]", not JSON. */

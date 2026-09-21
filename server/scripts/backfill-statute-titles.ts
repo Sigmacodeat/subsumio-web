@@ -22,6 +22,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
+import { clean } from "./normalize/normalize-corpus.ts";
 
 const args = Bun.argv.slice(2);
 const DRY = args.includes("--dry-run");
@@ -51,10 +52,14 @@ function readIndex(path: string): Map<string, { title: string; abbr: string | nu
     } catch {
       continue;
     }
+    // Through the normalizer's own clean(), not a bare trim(): the RIS index
+    // writes non-breaking spaces into 9,284 of its lines ("VAG\u00a02016"), and
+    // the first version of this script copied them into 1,474 short titles —
+    // invisible, and unfindable for anyone typing an ordinary space.
     const gnr = d.gnr?.trim();
-    const title = d.kurztitel?.trim();
+    const title = clean(d.kurztitel);
     if (!gnr || !title || out.has(gnr)) continue;
-    out.set(gnr, { title, abbr: d.abk?.trim() || null });
+    out.set(gnr, { title, abbr: clean(d.abk) });
   }
   return out;
 }

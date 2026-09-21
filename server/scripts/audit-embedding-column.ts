@@ -20,7 +20,7 @@
 import { parseArgs } from "util";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
-import { MIN_EMBED_CHARS } from "../src/core/embedding-run.ts";
+import { embeddableSql } from "../src/core/embedding-run.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -126,7 +126,7 @@ async function main() {
   // ── Was NICHT eingebettet sein darf ──────────────────────────────────
   const forbidden = await one<{ geloescht: string; rauschen: string }>(
     `SELECT count(*) FILTER (WHERE p.deleted_at IS NOT NULL)::text AS geloescht,
-            count(*) FILTER (WHERE length(btrim(c.chunk_text)) < ${MIN_EMBED_CHARS})::text AS rauschen
+            count(*) FILTER (WHERE NOT ${embeddableSql("c", "p")})::text AS rauschen
        FROM content_chunks c JOIN pages p ON p.id = c.page_id
       WHERE c."${COLUMN}" IS NOT NULL`
   );
@@ -137,8 +137,8 @@ async function main() {
   );
   verdict(
     Number(forbidden.rauschen) === 0,
-    "kein Rauschen unter der Mindestlänge",
-    `${n(forbidden.rauschen)} kürzer als ${MIN_EMBED_CHARS} Zeichen`
+    "nur Normtext eingebettet",
+    `${n(forbidden.rauschen)} Vektoren auf Fragmenten, PDF-Hinweisen oder § 0-Deckblättern`
   );
 
   const orphan = await one<{ cnt: string }>(
@@ -258,7 +258,7 @@ async function main() {
             count(c."${COLUMN}")::text AS fertig,
             round(100.0 * count(c."${COLUMN}") / greatest(count(*), 1))::text AS prozent
        FROM content_chunks c JOIN pages p ON p.id = c.page_id
-      WHERE p.deleted_at IS NULL AND length(btrim(c.chunk_text)) >= ${MIN_EMBED_CHARS}
+      WHERE p.deleted_at IS NULL AND ${embeddableSql("c", "p")}
       GROUP BY 1 HAVING count(*) > 1000
       ORDER BY 100.0 * count(c."${COLUMN}") / greatest(count(*), 1) ASC`
   )) as Array<{ source_id: string; kandidaten: string; fertig: string; prozent: string }>;

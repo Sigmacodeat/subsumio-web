@@ -52,3 +52,41 @@ describe("pagePrefix", () => {
     expect(prefix ?? "").toContain("Kanzleihandbuch");
   });
 });
+
+describe("embeddableSql", () => {
+  const { embeddableSql } = require("../src/core/embedding-run.ts");
+  const sql: string = embeddableSql("c", "p");
+
+  test("keeps the length threshold", () => {
+    expect(sql).toContain(`length(btrim(c.chunk_text)) >= ${MIN_EMBED_CHARS}`);
+  });
+
+  test("excludes annexes that exist only as a PDF note", () => {
+    expect(sql).toContain("als PDF dokumentiert");
+    // Long chunks that merely mention a PDF annex stay in …
+    expect(sql).toContain("< 400");
+    // … and so does an annex that names its subject.
+    expect(sql).toContain("< 40)");
+  });
+
+  test("the backslashes survive into the SQL", () => {
+    // In an ordinary template literal `\\s+` degrades to `s+` without any
+    // error, and the rule then strips runs of the letter s, not whitespace.
+    expect(sql).toContain(String.raw`'\s+'`);
+    expect(sql).toContain(String.raw`Anm\.:`);
+    expect(sql).toContain(String.raw`[^\n]*`);
+    expect(sql).not.toContain("'s+'");
+    expect(sql).not.toContain("\n"); // no literal line break inside the predicate
+  });
+
+  test("excludes the per-law cover sheet RIS files under § 0", () => {
+    expect(sql).toContain("p.frontmatter->>'paragraph_ref' IS DISTINCT FROM '§ 0'");
+  });
+
+  test("uses the caller's aliases throughout", () => {
+    const other: string = embeddableSql("cc", "pg");
+    expect(other).not.toMatch(/\bc\.chunk_text/);
+    expect(other).toContain("cc.chunk_text");
+    expect(other).toContain("pg.frontmatter");
+  });
+});

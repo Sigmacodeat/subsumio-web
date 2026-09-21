@@ -36,6 +36,7 @@
 import { parseArgs } from "util";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
+import { embeddableSql } from "../src/core/embedding-run.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -44,6 +45,7 @@ const { values } = parseArgs({
     install: { type: "boolean", default: false },
     sweep: { type: "boolean", default: false },
     drop: { type: "boolean", default: false },
+    "clear-unembeddable": { type: "boolean", default: false },
     "batch": { type: "string", default: "2000" },
     help: { type: "boolean", default: false },
   },
@@ -63,6 +65,9 @@ if (!/^[a-z_][a-z0-9_]*$/.test(COLUMN)) {
   process.exit(1);
 }
 const BATCH = Number(values.batch);
+// These statements scan a four-million-row table; the connection default
+// cancels them (57014). Set before the pool opens so every connection has it.
+process.env.GBRAIN_STATEMENT_TIMEOUT = "45min";
 const FN = `trg_clear_${COLUMN}_fn`;
 const TRG = `trg_clear_${COLUMN}`;
 
@@ -165,7 +170,24 @@ async function main() {
     console.log(`✓ ${n(cleared)} Vektoren verworfen — der Lauf bettet sie neu ein.`);
   }
 
-  if (!values.install && !values.sweep && !values.drop) {
+  if (values["clear-unembeddable"]) {
+    // Vectors on chunks the shared rule says must have none — written before
+    // the rule knew about bare PDF pointers and § 0 cover sheets.
+    // One statement, one pass. A batched loop re-evaluates the rule's regex
+    // over every embedded row for each batch — for a few thousand hits that
+    // is forty scans instead of one, and each ran into the timeout.
+    const rows = (await engine.executeRaw(
+      `UPDATE content_chunks c
+          SET "${COLUMN}" = NULL, "${COLUMN}_model" = NULL, "${COLUMN}_embedded_at" = NULL
+         FROM pages p
+        WHERE p.id = c.page_id AND c."${COLUMN}" IS NOT NULL AND NOT ${embeddableSql("c", "p")}
+       RETURNING c.id`
+    )) as Array<{ id: number }>;
+    const cleared = rows.length;
+    console.log(`✓ ${n(cleared)} Vektoren auf nicht einbettbaren Chunks entfernt.`);
+  }
+
+  if (!values.install && !values.sweep && !values.drop && !values["clear-unembeddable"]) {
     const trg = await one<{ cnt: string }>(
       `SELECT count(*)::text AS cnt FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
         WHERE c.relname = 'content_chunks' AND t.tgname = $1`,
