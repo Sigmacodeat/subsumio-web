@@ -14,9 +14,17 @@
  */
 
 import { api } from "@/lib/api";
-import { ENGINE_URL } from "@/lib/engine";
 import { pageTypeOf } from "@/lib/types";
 import type { BrainPage } from "@/lib/types";
+
+// Deliberately NOT importing ENGINE_URL from "@/lib/engine": that module
+// pulls in `next/headers` (server-only) and, transitively, `node:fs` via
+// src/lib/plans.ts — fine for a server-only file, but this module is also
+// imported client-side (session-memory.ts -> chat-panel.tsx), and a static
+// import breaks the client bundle even though the code only runs when
+// `headers` is passed (server-side). Same constant, same env var, just
+// without the heavy import.
+const ENGINE_URL = process.env.SUBSUMIO_API_URL || "http://localhost:3001";
 
 /**
  * `api.brain.*` resolves against the engine directly (not through this
