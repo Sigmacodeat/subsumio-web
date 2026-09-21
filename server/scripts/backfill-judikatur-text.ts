@@ -1,16 +1,25 @@
 #!/usr/bin/env bun
 /**
  * Backfill full text for judikatur files that were created with --skip-text.
- * Fetches text in parallel batches (5 concurrent) for speed.
+ *
+ * Found 2026-09-21: this used to fetch 5 documents concurrently at a 200ms
+ * pace — 25x the RIS OGD single-connection, <=0.5req/s limit, and with no
+ * proxy pool configured (the only condition under which ris-lock.ts's
+ * docstring allows more than one connection) every one of those 5 was a
+ * direct, simultaneous hit from our own IP. Now sequential, RIS-lock-gated,
+ * and paced the same as every other RIS fetcher (risPause(), 2s). --batch is
+ * kept for backwards compatibility but is now a no-op.
  *
  * Usage:
- *   bun scripts/backfill-judikatur-text.ts --dir law-corpus/at-judikatur --batch 5
+ *   bun scripts/backfill-judikatur-text.ts --dir law-corpus/at-judikatur
  */
 
 import { readFileSync, writeFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risPause } from "./ris-pace";
 import {
   stripHtmlComplete,
   contentMatchesDocument,
@@ -22,7 +31,6 @@ import {
 } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-const RATE_LIMIT_MS = 200;
 
 function stripHtml(html: string): string {
   return stripHtmlComplete(html);
@@ -241,8 +249,8 @@ async function main() {
   const args = process.argv.slice(2);
   const dirIdx = args.indexOf("--dir");
   const dir = dirIdx >= 0 ? args[dirIdx + 1]! : "law-corpus/at-judikatur";
-  const batchIdx = args.indexOf("--batch");
-  const batchSize = batchIdx >= 0 ? parseInt(args[batchIdx + 1]!, 10) : 5;
+  // --batch is accepted but ignored — kept so old invocations don't fail
+  // to parse; see the file-header note for why concurrency was removed.
   const limitIdx = args.indexOf("--limit");
   const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1]!, 10) : 0;
   const forceReFetch = args.includes("--force-refetch");
@@ -268,7 +276,6 @@ async function main() {
   console.log(`  Directory: ${absDir}`);
   console.log(`  Total files: ${files.length}`);
   console.log(`  Textless: ${textless.length}`);
-  console.log(`  Batch size: ${batchSize} concurrent`);
   console.log(`═══════════════════════════════════════════════════════════\n`);
 
   if (textless.length === 0) {
@@ -281,61 +288,62 @@ async function main() {
   let success = 0;
   let failed = 0;
 
-  // Process in batches
-  for (let i = 0; i < toProcess.length; i += batchSize) {
-    const batch = toProcess.slice(i, i + batchSize);
-    const promises = batch.map(async (file) => {
+  // Sequential, one RIS connection at a time — see the file-header note on
+  // why this replaced the old 5-concurrent Promise.all batches.
+  console.log("RIS-Sperre anfordern (wartet, falls belegt)...");
+  await acquireRisLock();
+  console.log("Sperre erhalten.\n");
+  try {
+    for (const file of toProcess) {
       const filepath = join(absDir, file);
       const content = readFileSync(filepath, "utf-8");
       const docNumber = extractDocNumber(content, file);
-      if (!docNumber) {
-        return { file, success: false, text: "", reason: "no_doc_number" };
-      }
-      const text = await fetchRisFullText(content, docNumber);
-      if (text.length < 100) {
-        return { file, success: false, text: "", reason: "fetch_failed" };
-      }
-      // Validate fetched text before writing
-      const validation = validateFetchedText(text);
-      if (!validation.valid) {
-        return { file, success: false, text: "", reason: `validation: ${validation.reason}` };
-      }
-      // Structure validation for court decisions
-      const structResult = validateLegalStructure(validation.cleanedText, "court_decision");
-      if (!structResult.valid) {
-        return { file, success: false, text: "", reason: `structure: ${structResult.reason}` };
-      }
-      return { file, success: true, text: validation.cleanedText, reason: "" };
-    });
+      const result = await (async () => {
+        if (!docNumber) {
+          return { success: false, text: "", reason: "no_doc_number" };
+        }
+        const text = await fetchRisFullText(content, docNumber);
+        if (text.length < 100) {
+          return { success: false, text: "", reason: "fetch_failed" };
+        }
+        // Validate fetched text before writing
+        const validation = validateFetchedText(text);
+        if (!validation.valid) {
+          return { success: false, text: "", reason: `validation: ${validation.reason}` };
+        }
+        // Structure validation for court decisions
+        const structResult = validateLegalStructure(validation.cleanedText, "court_decision");
+        if (!structResult.valid) {
+          return { success: false, text: "", reason: `structure: ${structResult.reason}` };
+        }
+        return { success: true, text: validation.cleanedText, reason: "" };
+      })();
 
-    const results = await Promise.all(promises);
-
-    for (const result of results) {
       processed++;
       if (result.success) {
-        const filepath = join(absDir, result.file);
-        const content = readFileSync(filepath, "utf-8");
         const updated = injectText(content, result.text);
         try {
           atomicWrite(filepath, updated);
           success++;
         } catch (e: any) {
-          console.error(`  ⚠️ write failed for ${result.file}: ${e?.message}`);
+          console.error(`  ⚠️ write failed for ${file}: ${e?.message}`);
           failed++;
         }
       } else {
         if (result.reason && result.reason !== "fetch_failed") {
-          console.error(`  ⚠️ ${result.file}: ${result.reason}`);
+          console.error(`  ⚠️ ${file}: ${result.reason}`);
         }
         failed++;
       }
-    }
 
-    if (processed % 50 < batchSize) {
-      console.log(`  [${processed}/${toProcess.length}] ✅ ${success} ❌ ${failed}`);
-    }
+      if (processed % 50 === 0) {
+        console.log(`  [${processed}/${toProcess.length}] ✅ ${success} ❌ ${failed}`);
+      }
 
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      await risPause();
+    }
+  } finally {
+    releaseRisLock();
   }
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
@@ -346,7 +354,10 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════\n`);
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error("Fatal:", err);
+    releaseRisLock();
+    process.exit(1);
+  });
+}

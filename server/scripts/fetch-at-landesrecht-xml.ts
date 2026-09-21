@@ -75,6 +75,7 @@ function arg(name: string, fb?: string): string {
 
 const LIMIT = Number(arg("limit", "0"));
 const START_PAGE = Number(arg("page", "1"));
+const END_PAGE = Number(arg("to-page", String(MAX_PAGES)));
 
 function slugify(s: string): string {
   return s
@@ -360,7 +361,7 @@ async function main() {
   const inventory: string[] = [];
   let reachedEnd = false;
 
-  for (let page = START_PAGE; page <= MAX_PAGES; page++) {
+  for (let page = START_PAGE; page <= Math.min(MAX_PAGES, END_PAGE); page++) {
     if (aborted) {
       console.log(`\nAborted due to ${MAX_CONSECUTIVE_503} consecutive 503 errors.`);
       console.log(`Resume with: --page ${page}`);

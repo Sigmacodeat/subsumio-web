@@ -17,7 +17,9 @@ import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { atomicWrite } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
+const UA = {
+  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
+};
 const DELAY_MS = 500;
 const MAX_RETRIES = 3;
 

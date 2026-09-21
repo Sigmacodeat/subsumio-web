@@ -18,7 +18,7 @@ import { fileURLToPath } from "url";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
 const RIS_UA = {
-  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)",
+  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
 };
 
 const args = process.argv.slice(2);
