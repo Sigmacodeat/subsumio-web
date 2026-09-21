@@ -25,7 +25,7 @@ import { parseArgs } from "util";
 import { validateBody, type DocClass } from "./normalize/canonical-schema.ts";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
-import { upsertPlausibility } from "./corpus-status-db.ts";
+import { recordVerdicts, upsertPlausibility } from "./corpus-status-db.ts";
 
 /** Every corpus source this audit covers, and how validateBody should treat its pages. */
 export const DOC_CLASS_OF_SOURCE: Record<string, DocClass> = {
@@ -98,6 +98,7 @@ interface DbRow {
   id: number;
   frontmatter: Record<string, unknown> | null;
   compiled_truth: string | null;
+  content_hash: string | null;
   has_embedding: boolean;
 }
 
@@ -142,7 +143,7 @@ async function main() {
       for (;;) {
         if (scanned >= hardLimit) break;
         const batch = (await engine.executeRaw(
-          `SELECT p.id, p.frontmatter, p.compiled_truth,
+          `SELECT p.id, p.frontmatter, p.compiled_truth, p.content_hash,
                   EXISTS (SELECT 1 FROM content_chunks c WHERE c.page_id = p.id AND c.embedding_qwen IS NOT NULL) AS has_embedding
              FROM pages p
             WHERE p.deleted_at IS NULL AND p.source_id = $1 AND p.id > $2
@@ -152,10 +153,14 @@ async function main() {
         )) as DbRow[];
         if (batch.length === 0) break;
 
+        const batchOk: Array<{ pageId: number; contentHash: string | null }> = [];
+        const batchFailed: number[] = [];
         for (const row of batch) {
           total++;
           scanned++;
           const verdict = assessPage(row, docClass);
+          if (verdict.ok) batchOk.push({ pageId: row.id, contentHash: row.content_hash });
+          else batchFailed.push(row.id);
           if (verdict.ok) {
             ok++;
             if (!row.has_embedding) okButUnembedded++;
@@ -164,6 +169,7 @@ async function main() {
             if (row.has_embedding) badButEmbedded++;
           }
         }
+        await recordVerdicts(engine, batchOk, batchFailed);
         lastId = batch[batch.length - 1]!.id;
         if (total % 20000 < PAGE_SIZE) {
           process.stderr.write(`  ${source}: ${total.toLocaleString("de-AT")} geprüft...\r`);

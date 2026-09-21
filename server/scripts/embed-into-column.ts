@@ -35,6 +35,7 @@ import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts"
 import { resolveEmbeddingColumn } from "../src/core/search/embedding-column.ts";
 import {
   embeddableSql,
+  verifiedSql,
   toVectorStr,
   wrapWithPageContext,
   type PendingChunk,
@@ -240,16 +241,13 @@ async function main() {
   // Go through the canonical resolver rather than trusting the flags: it
   // validates key, type, dimensions and the provider string the same way
   // search will when the column is promoted.
-  const resolved = resolveEmbeddingColumn(
-    { embeddingColumn: COLUMN },
-    {
-      ...cfg,
-      embedding_columns: {
-        ...(cfg.embedding_columns ?? {}),
-        [COLUMN]: { provider: model, dimensions: dims, type: "vector" },
-      },
-    } as GBrainConfig
-  );
+  const resolved = resolveEmbeddingColumn({ embeddingColumn: COLUMN }, {
+    ...cfg,
+    embedding_columns: {
+      ...(cfg.embedding_columns ?? {}),
+      [COLUMN]: { provider: model, dimensions: dims, type: "vector" },
+    },
+  } as GBrainConfig);
 
   // Point this process's gateway at the column's model. Only this process —
   // web and engine keep answering from the live column.
@@ -275,6 +273,28 @@ async function main() {
   }
 
   const NOISE = embeddableSql("c", "p");
+  // Fail-closed spending gate — see verifiedSql(). Checked before the probe,
+  // so an audit that never ran stops the run before a single paid request.
+  const VERIFIED = verifiedSql("p");
+  let verifiedCount = 0;
+  try {
+    const v = await one<{ cnt: string }>(
+      engine,
+      `SELECT count(*) AS cnt FROM corpus_page_verified`
+    );
+    verifiedCount = Number(v?.cnt ?? 0);
+  } catch {
+    verifiedCount = 0;
+  }
+  if (verifiedCount === 0) {
+    console.error(
+      "Keine geprüften Seiten (corpus_page_verified fehlt oder ist leer).\n" +
+        "Erst scripts/audit-plausibility-full.ts laufen lassen — eingebettet wird nur, was geprüft ist."
+    );
+    await engine.disconnect();
+    process.exit(1);
+  }
+  console.log(`Freigegeben durch den Prüflauf: ${verifiedCount.toLocaleString("de-AT")} Seiten`);
   // Deliberately without the join to pages: counting 5.4 million chunks
   // against their pages took over three minutes at every start, and this
   // number only drives the progress line. It is an upper bound — it still
@@ -343,6 +363,7 @@ async function main() {
           ${upper}
           AND p.deleted_at IS NULL
           AND ${NOISE}
+          AND ${VERIFIED}
           ${SOURCE_FILTER ? "AND p.source_id = $3" : ""}
         ORDER BY c.id
         LIMIT $1`,

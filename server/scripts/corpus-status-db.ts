@@ -97,3 +97,52 @@ export async function upsertCompleteness(
     [args.sourceId, args.docClass, args.dbPages, args.risTotal, pct]
   );
 }
+
+let verifiedEnsured = false;
+
+export async function ensureVerifiedTable(engine: RawExecutor): Promise<void> {
+  if (verifiedEnsured) return;
+  await engine.executeRaw(`
+    CREATE TABLE IF NOT EXISTS corpus_page_verified (
+      page_id BIGINT PRIMARY KEY,
+      content_hash TEXT NOT NULL,
+      verified_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  verifiedEnsured = true;
+}
+
+/**
+ * Writes one audit batch into the positive list embedding is gated on
+ * (verifiedSql() in core/embedding-run.ts): confirmed pages in with the
+ * content_hash they were confirmed at, failed pages out. A page without a
+ * content_hash cannot be bound to its text and stays out.
+ */
+export async function recordVerdicts(
+  engine: RawExecutor,
+  ok: Array<{ pageId: number; contentHash: string | null }>,
+  failedPageIds: number[]
+): Promise<void> {
+  await ensureVerifiedTable(engine);
+  const bindable = ok.filter((r) => r.contentHash);
+  if (bindable.length > 0) {
+    // As text, parsed in SQL: postgres.js double-encodes a string handed to
+    // a jsonb parameter, and would turn a JS array into a Postgres array.
+    await engine.executeRaw(
+      `INSERT INTO corpus_page_verified (page_id, content_hash, verified_at)
+       SELECT (e->>'id')::bigint, e->>'h', now()
+         FROM jsonb_array_elements(($1::text)::jsonb) e
+       ON CONFLICT (page_id) DO UPDATE SET
+         content_hash = EXCLUDED.content_hash, verified_at = EXCLUDED.verified_at`,
+      [JSON.stringify(bindable.map((r) => ({ id: r.pageId, h: r.contentHash })))]
+    );
+  }
+  const out = [...failedPageIds, ...ok.filter((r) => !r.contentHash).map((r) => r.pageId)];
+  if (out.length > 0) {
+    await engine.executeRaw(
+      `DELETE FROM corpus_page_verified
+        WHERE page_id IN (SELECT (e)::text::bigint FROM jsonb_array_elements(($1::text)::jsonb) e)`,
+      [JSON.stringify(out)]
+    );
+  }
+}

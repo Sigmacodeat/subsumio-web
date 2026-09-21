@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { MIN_EMBED_CHARS, noiseFilterSql, pagePrefix, toVectorStr } from "../src/core/embedding-run.ts";
+import {
+  MIN_EMBED_CHARS,
+  noiseFilterSql,
+  pagePrefix,
+  toVectorStr,
+} from "../src/core/embedding-run.ts";
 
 describe("noiseFilterSql", () => {
   test("uses the shared threshold and the caller's alias", () => {
@@ -88,5 +93,28 @@ describe("embeddableSql", () => {
     expect(other).not.toMatch(/\bc\.chunk_text/);
     expect(other).toContain("cc.chunk_text");
     expect(other).toContain("pg.frontmatter");
+  });
+});
+
+describe("verifiedSql", () => {
+  test("gates on the positive list AND binds to the page's current content_hash", async () => {
+    const { verifiedSql } = await import("../src/core/embedding-run.ts");
+    const sql = verifiedSql("p");
+    expect(sql).toContain("corpus_page_verified");
+    expect(sql).toContain("v.page_id = p.id");
+    // Without the hash binding a page edited after its audit would keep its
+    // clearance — the exact staleness this gate exists to rule out.
+    expect(sql).toContain("v.content_hash = p.content_hash");
+    expect(sql.startsWith("EXISTS")).toBe(true);
+  });
+
+  test("honours the page alias", async () => {
+    const { verifiedSql } = await import("../src/core/embedding-run.ts");
+    expect(verifiedSql("pg")).toContain("v.page_id = pg.id");
+  });
+
+  test("is NOT part of embeddableSql — guard-scaffold strips vectors by that rule", async () => {
+    const { embeddableSql } = await import("../src/core/embedding-run.ts");
+    expect(embeddableSql("c", "p")).not.toContain("corpus_page_verified");
   });
 });
