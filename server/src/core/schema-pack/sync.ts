@@ -128,7 +128,7 @@ async function applyTypeAssignment(
            LIMIT $3
          ),
          upd AS (
-           UPDATE pages SET type = $1
+           UPDATE pages SET type = $1, updated_at = now()
            WHERE id IN (SELECT id FROM win)
            RETURNING 1
          )

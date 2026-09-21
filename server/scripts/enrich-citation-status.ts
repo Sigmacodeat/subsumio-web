@@ -145,7 +145,7 @@ async function main() {
         citation_status_enriched_at: new Date().toISOString(),
       };
 
-      await client.query(`UPDATE pages SET frontmatter = $1 WHERE id = $2`, [
+      await client.query(`UPDATE pages SET frontmatter = $1, updated_at = now() WHERE id = $2`, [
         JSON.stringify(newFm),
         page.id,
       ]);
