@@ -22,6 +22,8 @@
  */
 
 import { parseArgs } from "util";
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { validateBody, type DocClass } from "./normalize/canonical-schema.ts";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
@@ -56,7 +58,29 @@ export const DOC_CLASS_OF_SOURCE: Record<string, DocClass> = {
   "law-at-judikatur-umse": "decision",
 };
 
+/** "law-at-normen" → "at-normen": one folder per source, the same name minus the prefix. */
+export function corpusDirOf(sourceId: string): string {
+  return sourceId.replace(/^law-/, "");
+}
+
+/** Markdown files under a corpus folder; null when the folder isn't there (not mounted, or no such corpus). */
+export function countMarkdownFiles(dir: string): number | null {
+  if (!existsSync(dir)) return null;
+  let n = 0;
+  const stack = [dir];
+  while (stack.length > 0) {
+    const d = stack.pop()!;
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.name.startsWith("_") || e.name.startsWith(".")) continue;
+      if (e.isDirectory()) stack.push(join(d, e.name));
+      else if (e.name.endsWith(".md")) n++;
+    }
+  }
+  return n;
+}
+
 /** Fetch generations this audit already proved defective — see korpus-inventur-2026-09-21. */
+const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? "/law-corpus";
 const KNOWN_BAD_RETRIEVED_AT = new Set(["2026-08-03"]);
 
 export interface PageRow {
@@ -186,6 +210,10 @@ async function main() {
           plausiblePages: ok,
           issueBreakdown: issueCounts,
           unembeddedOkPages: okButUnembedded,
+          rawFiles: countMarkdownFiles(join(CORPUS_ROOT, corpusDirOf(source))),
+          normalizedFiles: countMarkdownFiles(
+            join(CORPUS_ROOT, "_normalized", corpusDirOf(source))
+          ),
         });
       }
       console.log(`\n═══ ${source} (${docClass}) ═══`);

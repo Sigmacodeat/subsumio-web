@@ -30,6 +30,15 @@ const OVERVIEW: CorpusOverview = {
       chunks: 213964,
       embedded: 69325,
       lastUpdated: "2026-09-19T11:10:11.000Z",
+      quality: {
+        checkedAt: "2026-09-21T18:54:00.000Z",
+        plausible: 149746,
+        implausible: 0,
+        issues: {},
+        rawFiles: 158000,
+        normalizedFiles: 149746,
+        unembeddedOk: 10726,
+      },
       reconciliation: {
         measuredAt: "2026-09-19T12:00:00.000Z",
         method: "doc-ids",
@@ -52,6 +61,15 @@ const OVERVIEW: CorpusOverview = {
       chunks: 168702,
       embedded: 168702,
       lastUpdated: null,
+      quality: {
+        checkedAt: "2026-09-21T18:54:00.000Z",
+        plausible: 54968,
+        implausible: 698,
+        issues: { "body:no_content_section": 345, "schema:legacy_frontmatter": 393 },
+        rawFiles: 99666,
+        normalizedFiles: 68803,
+        unembeddedOk: 5612,
+      },
       reconciliation: {
         measuredAt: "2026-09-19T12:00:00.000Z",
         method: "counts",
@@ -115,6 +133,28 @@ describe("CorpusBestand", () => {
     expect(screen.getByText(text("82813 fehlen"))).toBeDefined(); // OGH gap
     expect(screen.getByText(text("55666 / 1200"))).toBeDefined(); // Rechtssätze / texts
     expect(screen.getByText(/stündlich neu/)).toBeDefined();
+  });
+
+  it("shows the audit verdict per source: folder vs. database, and what is wrong in plain German", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({ data: OVERVIEW })));
+    withQueryClient(<CorpusBestand />);
+    await waitFor(() => expect(screen.getByText("Bundesrecht")).toBeDefined());
+    expect(screen.getByText("alle Seiten geprüft")).toBeDefined(); // federal norms: 0 implausible
+    expect(screen.getByText(text("698 fehlerhaft"))).toBeDefined(); // OGH
+    // The most frequent cause, not the raw code "schema:legacy_frontmatter".
+    expect(screen.getByText("altes Metadaten-Format")).toBeDefined();
+    expect(screen.getByText(text("Ordner 68803 · DB 55666"))).toBeDefined();
+  });
+
+  it("says so when a source was never audited, instead of implying it passed", async () => {
+    const noAudit = {
+      ...OVERVIEW,
+      sources: OVERVIEW.sources.map((s) => ({ ...s, quality: null })),
+    };
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({ data: noAudit })));
+    withQueryClient(<CorpusBestand />);
+    await waitFor(() => expect(screen.getByText("Bundesrecht")).toBeDefined());
+    expect(screen.getAllByText("noch nicht geprüft").length).toBe(2);
   });
 
   it("says when no snapshot exists yet", async () => {

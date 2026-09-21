@@ -22,13 +22,17 @@ import {
   toVectorStr,
   wrapWithPageContext,
   type PendingChunk,
+  verifiedSql,
 } from "../src/core/embedding-run.ts";
 import { assertChunkModelConsistency } from "../src/core/embedding-consistency-guard.ts";
 import { randomUUID } from "node:crypto";
 
 /** The rule and the wrapping live in core/embedding-run.ts, so the run that
  *  fills a second column for a model switch builds byte-identical texts. */
-const NOISE_FILTER = embeddableSql("c", "p");
+// Noise rule AND the spending gate: only pages the plausibility audit has
+// confirmed (see verifiedSql). Same rule as embed-into-column.ts, so the two
+// write paths can never disagree about what may receive a vector.
+const NOISE_FILTER = `${embeddableSql("c", "p")} AND ${verifiedSql("p")}`;
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),

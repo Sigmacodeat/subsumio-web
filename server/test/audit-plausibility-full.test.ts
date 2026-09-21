@@ -126,3 +126,28 @@ describe("DOC_CLASS_OF_SOURCE", () => {
     expect(Object.keys(DOC_CLASS_OF_SOURCE).sort()).toEqual(expected.sort());
   });
 });
+
+describe("corpusDirOf / countMarkdownFiles", () => {
+  test("one folder per source: the source id minus its law- prefix", async () => {
+    const { corpusDirOf } = await import("../scripts/audit-plausibility-full.ts");
+    expect(corpusDirOf("law-at-normen")).toBe("at-normen");
+    expect(corpusDirOf("law-at-judikatur-vwgh")).toBe("at-judikatur-vwgh");
+    expect(corpusDirOf("law-at")).toBe("at");
+  });
+
+  test("counts nested .md files, skips _state-style and dot folders, null when absent", async () => {
+    const { countMarkdownFiles } = await import("../scripts/audit-plausibility-full.ts");
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const root = mkdtempSync(join(tmpdir(), "corpus-count-"));
+    mkdirSync(join(root, "gnr-1"));
+    mkdirSync(join(root, "_state"));
+    writeFileSync(join(root, "a.md"), "x");
+    writeFileSync(join(root, "gnr-1", "p-1.md"), "x");
+    writeFileSync(join(root, "gnr-1", "notes.txt"), "x");
+    writeFileSync(join(root, "_state", "ignored.md"), "x");
+    expect(countMarkdownFiles(root)).toBe(2);
+    expect(countMarkdownFiles(join(root, "does-not-exist"))).toBeNull();
+  });
+});

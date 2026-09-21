@@ -45,6 +45,11 @@ async function ensureTable(engine: RawExecutor): Promise<void> {
       last_completeness_check TIMESTAMPTZ
     )
   `);
+  // Files on disk per source — the middle link of RIS → Ordner → Datenbank.
+  await engine.executeRaw(
+    `ALTER TABLE corpus_status ADD COLUMN IF NOT EXISTS raw_files INT,
+                               ADD COLUMN IF NOT EXISTS normalized_files INT`
+  );
   ensured = true;
 }
 
@@ -57,12 +62,14 @@ export async function upsertPlausibility(
     plausiblePages: number;
     issueBreakdown: Record<string, number>;
     unembeddedOkPages: number;
+    rawFiles: number | null;
+    normalizedFiles: number | null;
   }
 ): Promise<void> {
   await ensureTable(engine);
   await engine.executeRaw(
-    `INSERT INTO corpus_status (source_id, doc_class, db_pages, plausible_pages, implausible_pages, issue_breakdown, unembedded_ok_pages, last_plausibility_check)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, now())
+    `INSERT INTO corpus_status (source_id, doc_class, db_pages, plausible_pages, implausible_pages, issue_breakdown, unembedded_ok_pages, raw_files, normalized_files, last_plausibility_check)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, now())
      ON CONFLICT (source_id) DO UPDATE SET
        doc_class = EXCLUDED.doc_class,
        db_pages = EXCLUDED.db_pages,
@@ -70,6 +77,8 @@ export async function upsertPlausibility(
        implausible_pages = EXCLUDED.implausible_pages,
        issue_breakdown = EXCLUDED.issue_breakdown,
        unembedded_ok_pages = EXCLUDED.unembedded_ok_pages,
+       raw_files = EXCLUDED.raw_files,
+       normalized_files = EXCLUDED.normalized_files,
        last_plausibility_check = EXCLUDED.last_plausibility_check`,
     [
       args.sourceId,
@@ -79,6 +88,8 @@ export async function upsertPlausibility(
       args.dbPages - args.plausiblePages,
       args.issueBreakdown,
       args.unembeddedOkPages,
+      args.rawFiles,
+      args.normalizedFiles,
     ]
   );
 }

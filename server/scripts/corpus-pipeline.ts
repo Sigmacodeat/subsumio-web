@@ -999,6 +999,28 @@ function runFreshnessCheck(): void {
 /** Check that content_hash in DB matches a re-computed hash from the source
  *  file. Alerts on mismatch — indicates corruption between download and
  *  import, or silent file modification after import. */
+/**
+ * Full plausibility audit, at most once per 6h. It is what makes the path
+ * one path: it refreshes corpus_status (what /ops/corpus shows) and the
+ * positive list corpus_page_verified — and only pages on that list may be
+ * embedded (verifiedSql() in core/embedding-run.ts). Without this step a
+ * freshly imported page would stay un-embeddable until someone remembered
+ * to run the audit by hand. Runs detached; ~5 minutes for the whole corpus.
+ */
+function runPlausibilityAudit(): void {
+  const key = "plausibility-audit";
+  ensureSourceRow(key);
+  const row = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`);
+  if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
+    const hoursSince = (Date.now() - new Date(row[0].last_cycle_at).getTime()) / 3_600_000;
+    if (hoursSince < 6) return;
+  }
+  if (processRunningGrep("audit-plausibility-full.ts")) return;
+  startProcess(key, ["scripts/audit-plausibility-full.ts"], key, 3600);
+  updateSourceState(key, { last_cycle_at: new Date().toISOString(), stage: "importing" });
+  appendHistory(key, "audit", "started");
+}
+
 function runHashIntegrityCheck(): void {
   const key = "hash-integrity";
   ensureSourceRow(key);
@@ -2089,6 +2111,9 @@ async function cycle(): Promise<void> {
 
     // ── Layer 5: Hash File→DB integrity check (at most once per 6h) ──
     runHashIntegrityCheck();
+
+    // ── Layer 5b: full plausibility audit → corpus_status + embedding clearance (6h) ──
+    if (!REPORT_ONLY) runPlausibilityAudit();
 
     // ── Layer 6: Fassungs-Sync / version_date delta (at most once per 12h) ──
     runFassungsSync();

@@ -22,7 +22,7 @@ export const GET = createHandler({ action: "platform.operator" }, async () => {
   const pool = getSharedPgPool();
   if (!pool) return apiError("service_unavailable", "Datenbank nicht erreichbar", 503);
   try {
-    const [inventory, recon, byDay] = await Promise.all([
+    const [inventory, recon, byDay, quality] = await Promise.all([
       readLatestInventory(pool).catch(() => [] as InventoryRow[]),
       pool
         .query(
@@ -43,12 +43,23 @@ export const GET = createHandler({ action: "platform.operator" }, async () => {
         GROUP BY 1 ORDER BY 1`
         )
         .catch(() => ({ rows: [] })),
+      // Written by the pipeline's plausibility audit; absent before its first run.
+      pool
+        .query(
+          `
+        SELECT source_id, plausible_pages, implausible_pages, issue_breakdown, unembedded_ok_pages,
+               raw_files, normalized_files, last_plausibility_check
+        FROM corpus_status`
+        )
+        .catch(() => ({ rows: [] })),
     ]);
 
     const reconBySource = new Map(recon.rows.map((r) => [r.source_id, r]));
+    const qualityBySource = new Map(quality.rows.map((r) => [r.source_id, r]));
     const sources: CorpusSourceStats[] = inventory
       .map((r) => {
         const rc = reconBySource.get(r.source_id);
+        const q = qualityBySource.get(r.source_id);
         return {
           sourceId: r.source_id,
           label: SOURCE_LABELS[r.source_id] ?? r.source_id,
@@ -61,6 +72,20 @@ export const GET = createHandler({ action: "platform.operator" }, async () => {
           chunks: r.chunks,
           embedded: r.embedded,
           lastUpdated: r.last_updated,
+          quality:
+            q && q.plausible_pages !== null
+              ? {
+                  checkedAt: q.last_plausibility_check
+                    ? new Date(q.last_plausibility_check).toISOString()
+                    : null,
+                  plausible: q.plausible_pages,
+                  implausible: q.implausible_pages ?? 0,
+                  issues: (q.issue_breakdown ?? {}) as Record<string, number>,
+                  rawFiles: q.raw_files,
+                  normalizedFiles: q.normalized_files,
+                  unembeddedOk: q.unembedded_ok_pages ?? 0,
+                }
+              : null,
           reconciliation: rc
             ? {
                 measuredAt: new Date(rc.measured_at).toISOString(),

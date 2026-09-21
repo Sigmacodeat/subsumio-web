@@ -46,6 +46,22 @@ export interface CorpusSourceStats {
   chunks: number;
   embedded: number;
   lastUpdated: string | null;
+  /**
+   * Latest full plausibility audit (server/scripts/audit-plausibility-full.ts →
+   * corpus_status): every page checked with the rule that gates new imports,
+   * plus the file counts of the source's folder. Null before the first audit.
+   */
+  quality: {
+    checkedAt: string | null;
+    plausible: number;
+    implausible: number;
+    /** issue code → pages, e.g. "generation:known_bad". */
+    issues: Record<string, number>;
+    rawFiles: number | null;
+    normalizedFiles: number | null;
+    /** Confirmed pages still without a vector. */
+    unembeddedOk: number;
+  } | null;
   reconciliation: {
     measuredAt: string;
     method: string;
@@ -100,4 +116,19 @@ export const INGEST_ACTION_LABELS: Record<IngestLogEntry["action"], string> = {
   updated: "geändert",
   removed: "entfernt",
   rejected: "abgelehnt",
+};
+
+/** Plain German for the audit's issue codes (audit-plausibility-full.ts / validateBody). */
+export const QUALITY_ISSUE_LABELS: Record<string, string> = {
+  "generation:known_bad": "fehlerhafte Abrufgeneration — Neuabruf nötig",
+  "schema:legacy_frontmatter": "altes Metadaten-Format",
+  "schema:no_identity": "ohne RIS-Dokumentnummer",
+  "body:no_content_section": "kein Entscheidungstext",
+  "body:screenreader_copy": "Sprachausgabe-Kopie im Text",
+  "body:ris_prefix": "RIS-Seitenkopf im Text",
+  "body:letterhead": "Briefkopf im Text",
+  "body:pdf_pagebreak": "Seitenumbruch der Druckfassung im Text",
+  "body:kein_rechtssatz": "RIS-Vermerk „Kein RS.“",
+  "body:too_short": "zu wenig Text",
+  "body:empty_body": "leer",
 };

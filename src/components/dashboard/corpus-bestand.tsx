@@ -14,7 +14,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshCw } from "lucide-react";
-import type { CorpusOverview, CorpusSourceStats } from "@/lib/corpus-labels";
+import {
+  QUALITY_ISSUE_LABELS,
+  type CorpusOverview,
+  type CorpusSourceStats,
+} from "@/lib/corpus-labels";
 
 const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-AT");
 const pct = (part: number, whole: number) =>
@@ -33,6 +37,37 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
         {hint && <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{hint}</p>}
       </CardContent>
     </Card>
+  );
+}
+
+/** Folder → database → checked: the audit's verdict for one source. */
+function QualityChip({ s }: { s: CorpusSourceStats }) {
+  const q = s.quality;
+  if (!q)
+    return <span className="text-xs text-[color:var(--ds-text-subtle)]">noch nicht geprüft</span>;
+  const ok = q.implausible === 0;
+  const top = Object.entries(q.issues).sort((a, b) => b[1] - a[1])[0];
+  return (
+    <div className="flex flex-col gap-0.5">
+      <Badge
+        className={
+          ok
+            ? "w-fit bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+            : "w-fit bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+        }
+      >
+        {ok ? "alle Seiten geprüft" : `${fmt(q.implausible)} fehlerhaft`}
+      </Badge>
+      {top && (
+        <span className="text-xs text-[color:var(--ds-text-muted)]">
+          {QUALITY_ISSUE_LABELS[top[0]] ?? top[0]}
+        </span>
+      )}
+      <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+        Ordner {q.normalizedFiles === null ? "?" : fmt(q.normalizedFiles)} · DB {fmt(s.pages)}
+      </span>
+      <span className="text-xs text-[color:var(--ds-text-subtle)]">{date(q.checkedAt)}</span>
+    </div>
   );
 }
 
@@ -129,6 +164,7 @@ export function CorpusBestand() {
                 <TableHead className="text-right">Abschnitte</TableHead>
                 <TableHead className="text-right">eingebettet</TableHead>
                 <TableHead>Abgleich mit RIS</TableHead>
+                <TableHead>Prüfung (Ordner → Datenbank)</TableHead>
                 <TableHead>zuletzt geändert</TableHead>
               </TableRow>
             </TableHeader>
@@ -158,6 +194,9 @@ export function CorpusBestand() {
                   </TableCell>
                   <TableCell>
                     <ReconChip s={s} />
+                  </TableCell>
+                  <TableCell>
+                    <QualityChip s={s} />
                   </TableCell>
                   <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
                     {date(s.lastUpdated)}
