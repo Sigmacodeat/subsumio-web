@@ -107,6 +107,8 @@ export interface PromotionState {
   strayModelRows: number;
   /** Indexes the live column carries that the scaffold does not have yet. */
   missingIndexes: string[];
+  /** Vectors whose page changed after they were written — made from other text. */
+  staleRows?: number;
   /** `format_type` of scaffold and live column, e.g. "vector(1536)". */
   scaffoldType?: string;
   liveType?: string;
@@ -174,6 +176,16 @@ export function promotionVerdict(state: PromotionState): PromotionVerdict {
           "sind nach dem Umschalten für die Vektorsuche unsichtbar."
       );
     }
+  }
+
+  // A vector made from text that has since changed answers a different
+  // question than the one the chunk now poses. The sweep clears them and the
+  // run re-embeds them; promoting before that bakes the mismatch in.
+  if ((state.staleRows ?? 0) > 0) {
+    blockers.push(
+      `${n(state.staleRows ?? 0)} Vektoren sind älter als ihre Seite und damit aus anderem ` +
+        "Text gemacht. Erst `guard-scaffold-embedding.ts --sweep`, dann den Lauf fertig laufen lassen."
+    );
   }
 
   if (state.missingIndexes.length > 0) {

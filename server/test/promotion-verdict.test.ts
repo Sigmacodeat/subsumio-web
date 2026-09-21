@@ -71,3 +71,14 @@ describe("promotionVerdict", () => {
     expect(v.warnings.join(" ")).toContain("vector(1024)");
   });
 });
+
+describe("promotionVerdict — stale vectors", () => {
+  test("refuses while vectors are older than their page", () => {
+    const v = promotionVerdict({ ...ready, staleRows: 514 });
+    expect(v.blockers.join(" ")).toContain("älter als ihre Seite");
+  });
+
+  test("a clean sweep lets it through", () => {
+    expect(promotionVerdict({ ...ready, staleRows: 0 }).blockers).toEqual([]);
+  });
+});

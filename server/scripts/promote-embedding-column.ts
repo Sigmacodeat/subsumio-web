@@ -234,6 +234,11 @@ async function main() {
     return;
   }
 
+  const staleRow = (await engine.executeRaw(
+    `SELECT count(*)::text AS cnt FROM content_chunks c JOIN pages p ON p.id = c.page_id
+      WHERE c."${COLUMN}" IS NOT NULL AND p.updated_at > c."${COLUMN}_embedded_at"`
+  )) as Array<{ cnt: string }>;
+
   const missingIndexes: string[] = [];
   for (const ix of INDEXES) {
     if (!(await indexExists(engine, ix.scaffold))) missingIndexes.push(ix.scaffold);
@@ -244,6 +249,7 @@ async function main() {
     openCandidates: Number(open?.cnt ?? 0),
     strayModelRows: Number(stray?.cnt ?? 0),
     missingIndexes,
+    staleRows: Number(staleRow[0]?.cnt ?? 0),
     scaffoldType: scaffold.t,
     liveType: live?.t,
     allowPartial: values["allow-partial"] as boolean,
@@ -268,6 +274,12 @@ async function main() {
   try {
     await engine.transaction(async (tx) => {
       await tx.executeRaw(`SET LOCAL lock_timeout = '30s'`);
+      // The guard trigger names the scaffold column in its body. Once that
+      // column is renamed, the function refers to nothing and every UPDATE on
+      // content_chunks would fail — so it goes first, in the same transaction.
+      // From here on the engine's own upsert clears `embedding` on text change.
+      await tx.executeRaw(`DROP TRIGGER IF EXISTS "trg_clear_${COLUMN}" ON content_chunks`);
+      await tx.executeRaw(`DROP FUNCTION IF EXISTS "trg_clear_${COLUMN}_fn"()`);
       await tx.executeRaw(
         `ALTER TABLE content_chunks
            DROP COLUMN embedding,
