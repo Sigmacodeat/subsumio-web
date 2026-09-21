@@ -83,7 +83,9 @@ interface Engine {
 const n = (v: number | string) => Number(v).toLocaleString("de-AT");
 
 async function main() {
-  const cfg = toEngineConfig(loadConfig());
+  const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
+  const cfg = toEngineConfig(fileCfg);
   const engine = (await createEngine(cfg)) as unknown as Engine;
   await engine.connect(cfg);
 

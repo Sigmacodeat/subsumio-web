@@ -50,7 +50,9 @@ interface Row {
 }
 
 async function main() {
-  const cfg = toEngineConfig(loadConfig());
+  const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
+  const cfg = toEngineConfig(fileCfg);
   const engine = await createEngine(cfg);
   await engine.connect(cfg);
 

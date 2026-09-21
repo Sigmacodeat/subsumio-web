@@ -67,7 +67,9 @@ async function main() {
   const index = readIndex(INDEX);
   console.log(`RIS-Index: ${index.size} Gesetze mit Titel`);
 
-  const engineConfig = toEngineConfig(loadConfig());
+  const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
+  const engineConfig = toEngineConfig(fileCfg);
   const engine = await createEngine(engineConfig);
   await engine.connect(engineConfig);
 

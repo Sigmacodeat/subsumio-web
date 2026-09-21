@@ -68,7 +68,9 @@ function verdict(ok: boolean, label: string, detail: string, soft = false): void
 }
 
 async function main() {
-  const cfg = toEngineConfig(loadConfig());
+  const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
+  const cfg = toEngineConfig(fileCfg);
   const engine = (await createEngine(cfg)) as unknown as Engine;
   await engine.connect(cfg);
 
@@ -219,6 +221,33 @@ async function main() {
     "Trigger gegen Textänderungen aktiv",
     Number(trigger.cnt) > 0 ? "ein geänderter Text löscht seinen Vektor" : "FEHLT — Re-Importe hinterlassen veraltete Vektoren"
   );
+
+  // ── Fragt die Suche im selben Raum? ──────────────────────────────────
+  // Nach dem Umschalten bettet die Suche jede Frage mit dem Modell ein, das
+  // die Umgebung vorgibt (SUBSUMIO_EMBEDDING_MODEL hat Vorrang vor allem).
+  // Weicht es vom Modell der gespeicherten Vektoren ab, vergleicht sie Äpfel
+  // mit Birnen und liefert trotzdem Treffer — nur die falschen, ohne Fehler.
+  // Für die Live-Spalte ist das der wichtigste Einzeltest dieser Prüfung.
+  const searchModel = fileCfg.embedding_model ?? "(nicht gesetzt)";
+  const searchDims = fileCfg.embedding_dimensions;
+  const storedSig = models.length === 1 ? models[0]!.modell : "";
+  const storedModel = storedSig.replace(/:\d+$/, "");
+  const sameSpace =
+    storedModel === searchModel || storedModel === searchModel.replace(/:\d+$/, "");
+  if (COLUMN === "embedding") {
+    verdict(
+      sameSpace,
+      "Suche fragt im Raum der Vektoren",
+      sameSpace
+        ? `${searchModel}${searchDims ? `:${searchDims}` : ""}`
+        : `Suche: ${searchModel} — Vektoren: ${storedModel}. SUBSUMIO_EMBEDDING_MODEL anpassen und web + engine neu starten.`
+    );
+  } else {
+    console.log(
+      `  · Suche nutzt derzeit ${searchModel} über die Spalte embedding; ` +
+        `diese Spalte (${storedModel}) wird erst nach dem Umschalten gefragt.`
+    );
+  }
 
   // ── Deckung je Quelle ────────────────────────────────────────────────
   // Ein Arbeiter, dessen Fenster leer blieb oder der früh starb, zeigt sich

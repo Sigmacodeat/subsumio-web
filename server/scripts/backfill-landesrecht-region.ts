@@ -67,7 +67,9 @@ function regionOf(docId: string | null, eli: string | null): string | undefined 
 }
 
 async function main() {
-  const engineConfig = toEngineConfig(loadConfig());
+  const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
+  const engineConfig = toEngineConfig(fileCfg);
   const engine = await createEngine(engineConfig);
   await engine.connect(engineConfig);
 

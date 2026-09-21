@@ -32,8 +32,20 @@ starten() {
   sagen "Acht Arbeiter gestartet."
 }
 
+spalte_da() {
+  $PSQL -c "SELECT 1 FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid WHERE c.relname='content_chunks' AND a.attname='embedding_qwen' AND NOT a.attisdropped" 2>/dev/null | tr -cd '0-9'
+}
+
 sagen "Wächter gestartet."
 while true; do
+  # Nach dem Umschalten heißt die Spalte `embedding`, und embedding_qwen gibt
+  # es nicht mehr. Ein Wächter, der dann weiter Arbeiter startet, schreibt ins
+  # Leere — also endet er von selbst, statt sich darauf zu verlassen, dass
+  # jemand an ihn denkt.
+  if [ "$(spalte_da)" != "1" ]; then
+    sagen "Spalte embedding_qwen existiert nicht mehr (umgeschaltet?) — Wächter endet."
+    exit 0
+  fi
   rest=$(offen)
   if [ -z "$rest" ]; then sagen "Datenbank antwortet nicht."; sleep 120; continue; fi
   if [ "$rest" -eq 0 ]; then

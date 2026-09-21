@@ -161,6 +161,7 @@ async function createColumns(engine: Engine, dims: number, signature: string): P
 
 async function main() {
   const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
   const engineCfg = toEngineConfig(fileCfg);
   const engine = (await createEngine(engineCfg)) as unknown as Engine;
   await engine.connect(engineCfg);

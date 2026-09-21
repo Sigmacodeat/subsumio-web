@@ -130,6 +130,7 @@ async function indexExists(engine: Engine, name: string): Promise<boolean> {
 
 async function main() {
   const fileCfg = loadConfig();
+  if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
   const engineCfg = toEngineConfig(fileCfg);
   const engine = (await createEngine(engineCfg)) as unknown as Engine;
   await engine.connect(engineCfg);
@@ -181,7 +182,43 @@ async function main() {
   }
   console.log("");
 
+  // One verdict for --check and --yes, so what the check promises is exactly
+  // what the swap enforces. The stale-row count is a full join, so it is paid
+  // only on these two paths, never on --indexes.
+  const judge = async () => {
+    const staleRow = (await engine.executeRaw(
+      `SELECT count(*)::text AS cnt FROM content_chunks c JOIN pages p ON p.id = c.page_id
+        WHERE c."${COLUMN}" IS NOT NULL AND p.updated_at > c."${COLUMN}_embedded_at"`
+    )) as Array<{ cnt: string }>;
+    const missingIndexes: string[] = [];
+    for (const ix of INDEXES) {
+      if (!(await indexExists(engine, ix.scaffold))) missingIndexes.push(ix.scaffold);
+    }
+    return promotionVerdict({
+      signature,
+      filledRows: Number(filled?.cnt ?? 0),
+      openCandidates: Number(open?.cnt ?? 0),
+      strayModelRows: Number(stray?.cnt ?? 0),
+      missingIndexes,
+      staleRows: Number(staleRow[0]?.cnt ?? 0),
+      scaffoldType: scaffold.t,
+      liveType: live?.t,
+      allowPartial: values["allow-partial"] as boolean,
+    });
+  };
+
+  const report = (v: { blockers: string[]; warnings: string[] }) => {
+    for (const w of v.warnings) console.log(`  Hinweis: ${w}`);
+    if (v.blockers.length === 0) {
+      console.log("  → Umschalten wäre jetzt zulässig.");
+      return;
+    }
+    console.log(`  → Umschalten verweigert:`);
+    for (const b of v.blockers) console.log(`    · ${b}`);
+  };
+
   if (values.check) {
+    report(await judge());
     await engine.disconnect();
     return;
   }
@@ -234,32 +271,13 @@ async function main() {
     return;
   }
 
-  const staleRow = (await engine.executeRaw(
-    `SELECT count(*)::text AS cnt FROM content_chunks c JOIN pages p ON p.id = c.page_id
-      WHERE c."${COLUMN}" IS NOT NULL AND p.updated_at > c."${COLUMN}_embedded_at"`
-  )) as Array<{ cnt: string }>;
-
-  const missingIndexes: string[] = [];
-  for (const ix of INDEXES) {
-    if (!(await indexExists(engine, ix.scaffold))) missingIndexes.push(ix.scaffold);
-  }
-  const verdict = promotionVerdict({
-    signature,
-    filledRows: Number(filled?.cnt ?? 0),
-    openCandidates: Number(open?.cnt ?? 0),
-    strayModelRows: Number(stray?.cnt ?? 0),
-    missingIndexes,
-    staleRows: Number(staleRow[0]?.cnt ?? 0),
-    scaffoldType: scaffold.t,
-    liveType: live?.t,
-    allowPartial: values["allow-partial"] as boolean,
-  });
-  for (const w of verdict.warnings) console.warn(`Hinweis: ${w}`);
+  const verdict = await judge();
   if (verdict.blockers.length > 0) {
     console.error("Abbruch — nichts geändert:");
-    for (const b of verdict.blockers) console.error(`  · ${b}`);
+    report(verdict);
     process.exit(1);
   }
+  for (const w of verdict.warnings) console.warn(`Hinweis: ${w}`);
 
   console.log("Schalte um…");
   const t0 = Date.now();

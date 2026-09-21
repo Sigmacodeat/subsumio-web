@@ -64,6 +64,7 @@ CHECKS=(
   "check:batch-audit-site"
   "check:worker-lock-renewal-shape"
   "typecheck"
+  "typecheck:corpus-scripts"
 )
 
 if [ "${#CHECKS[@]}" -eq 0 ]; then

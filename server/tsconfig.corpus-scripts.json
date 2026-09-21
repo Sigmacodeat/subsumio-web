@@ -1,0 +1,21 @@
+{
+  "//": "The main tsconfig excludes scripts/, so these were never type-checked — twelve null-config crashes and a mangled promotion script shipped as 'typecheck clean' on 2026-09-21. The corpus and embedding scripts write to the production law database and some are one-shot and destructive; they get checked here. src/ is included because the ambient declarations it carries are needed to resolve the scripts' imports.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true },
+  "include": [
+    "src",
+    "scripts/embed-into-column.ts",
+    "scripts/promote-embedding-column.ts",
+    "scripts/guard-scaffold-embedding.ts",
+    "scripts/audit-embedding-column.ts",
+    "scripts/verify-embedding-freshness.ts",
+    "scripts/compare-embedding-columns.ts",
+    "scripts/purge-tombstoned-pages.ts",
+    "scripts/backfill-landesrecht-region.ts",
+    "scripts/backfill-statute-titles.ts",
+    "scripts/inspect-embedding-prefix.ts",
+    "scripts/auto-embed-pg.ts",
+    "scripts/ris-lock.ts"
+  ],
+  "exclude": []
+}
