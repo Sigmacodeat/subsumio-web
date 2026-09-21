@@ -14,8 +14,122 @@
  */
 
 import { api } from "@/lib/api";
+import { ENGINE_URL } from "@/lib/engine";
 import { pageTypeOf } from "@/lib/types";
 import type { BrainPage } from "@/lib/types";
+
+/**
+ * `api.brain.*` resolves against the engine directly (not through this
+ * app's own `/api/*` proxy) whenever it runs server-side — see BASE_URL in
+ * `@/lib/api.ts`. That's fine when the caller is a browser (cookies carry
+ * the session), but this module is also called from `/api/copilot/memory`
+ * itself, a server Route Handler — there the client sent no engine auth at
+ * all and every call failed with "Invalid or missing API key" (401 from
+ * `server/src/commands/web-api.ts`), surfaced to lawyers as the memory
+ * settings page silently showing nothing.
+ *
+ * `headers` is optional and only needed for that server-side path — pass
+ * `ctx.headers` there (see `cockpit.ts`'s `fetchPagesByType` for the same
+ * pattern). Callers that already run in the browser (the live chat) omit it
+ * and keep using the `api.brain.*` client as before.
+ */
+type EngineHeaders = Record<string, string> | undefined;
+
+async function enginePagesList(
+  headers: EngineHeaders,
+  params: { type: string; limit: number }
+): Promise<BrainPage[]> {
+  if (!headers) return api.brain.listPages(params) as Promise<BrainPage[]>;
+  const qs = new URLSearchParams({ type: params.type, limit: String(params.limit) });
+  const res = await fetch(`${ENGINE_URL}/api/pages?${qs.toString()}`, {
+    headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`engine_pages_list_failed_${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data) ? (data as BrainPage[]) : [];
+}
+
+async function enginePageGet(headers: EngineHeaders, slug: string): Promise<BrainPage | null> {
+  if (!headers) return api.brain.getPage(slug);
+  const path = slug.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+    headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as BrainPage;
+}
+
+async function enginePagesBatch(
+  headers: EngineHeaders,
+  slugs: string[]
+): Promise<Record<string, BrainPage>> {
+  if (slugs.length === 0) return {};
+  if (!headers) return api.brain.getPages(slugs);
+  const res = await fetch(`${ENGINE_URL}/api/pages/batch`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ slugs }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`engine_pages_batch_failed_${res.status}`);
+  const data = (await res.json()) as { pages: Record<string, BrainPage> };
+  return data.pages;
+}
+
+async function enginePageWrite(
+  headers: EngineHeaders,
+  page: {
+    slug: string;
+    title: string;
+    content?: string;
+    type?: string;
+    frontmatter?: Record<string, unknown>;
+  },
+  opts: { merge: boolean }
+): Promise<void> {
+  if (!headers) {
+    if (opts.merge) await api.brain.updatePage(page);
+    else await api.brain.createPage(page);
+    return;
+  }
+  const res = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(opts.merge ? { ...page, merge: true } : page),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`engine_page_write_failed_${res.status}`);
+}
+
+async function enginePageDelete(headers: EngineHeaders, slug: string): Promise<void> {
+  if (!headers) {
+    await api.brain.deletePage(slug);
+    return;
+  }
+  const path = slug.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+    method: "DELETE",
+    headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`engine_page_delete_failed_${res.status}`);
+}
+
+async function engineSearch(
+  headers: EngineHeaders,
+  query: string,
+  limit: number
+): Promise<Array<{ slug: string }>> {
+  if (!headers) return api.brain.search(query, limit);
+  const res = await fetch(
+    `${ENGINE_URL}/api/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+    { headers, signal: AbortSignal.timeout(10_000) }
+  );
+  if (!res.ok) throw new Error(`engine_search_failed_${res.status}`);
+  return (await res.json()) as Array<{ slug: string }>;
+}
 
 export type MemoryType = "preference" | "fact" | "topic" | "instruction" | "case_note";
 
@@ -72,12 +186,15 @@ function parseMemoryPage(page: BrainPage): CopilotMemoryEntry | null {
   };
 }
 
-export async function listMemories(opts?: {
-  caseSlug?: string;
-  type?: MemoryType;
-  pinnedOnly?: boolean;
-}): Promise<CopilotMemoryEntry[]> {
-  const pages = await api.brain.listPages({ type: "copilot_memory", limit: 200 });
+export async function listMemories(
+  opts?: {
+    caseSlug?: string;
+    type?: MemoryType;
+    pinnedOnly?: boolean;
+  },
+  headers?: EngineHeaders
+): Promise<CopilotMemoryEntry[]> {
+  const pages = await enginePagesList(headers, { type: "copilot_memory", limit: 200 });
   let memories = (pages as BrainPage[])
     .map(parseMemoryPage)
     .filter((m): m is CopilotMemoryEntry => m !== null);
@@ -101,43 +218,50 @@ export async function listMemories(opts?: {
   return memories;
 }
 
-export async function createMemory(opts: {
-  type: MemoryType;
-  key: string;
-  value: string;
-  source?: MemorySource;
-  caseSlug?: string;
-  pinned?: boolean;
-  entities?: string[];
-  validFrom?: string;
-  validTo?: string;
-}): Promise<CopilotMemoryEntry> {
+export async function createMemory(
+  opts: {
+    type: MemoryType;
+    key: string;
+    value: string;
+    source?: MemorySource;
+    caseSlug?: string;
+    pinned?: boolean;
+    entities?: string[];
+    validFrom?: string;
+    validTo?: string;
+  },
+  headers?: EngineHeaders
+): Promise<CopilotMemoryEntry> {
   const id = generateId();
   const slug = memorySlug(id);
   const now = new Date().toISOString();
 
-  await api.brain.createPage({
-    slug,
-    title: `Memory: ${opts.key}`,
-    type: "copilot_memory",
-    content: opts.value,
-    frontmatter: {
+  await enginePageWrite(
+    headers,
+    {
+      slug,
+      title: `Memory: ${opts.key}`,
       type: "copilot_memory",
-      memory_id: id,
-      memory_type: opts.type,
-      memory_key: opts.key,
-      memory_value: opts.value,
-      memory_source: opts.source ?? "user_explicit",
-      case_slug: opts.caseSlug,
-      pinned: opts.pinned ?? false,
-      times_referenced: 0,
-      entities: opts.entities ?? [],
-      valid_from: opts.validFrom,
-      valid_to: opts.validTo,
-      created_at: now,
-      updated_at: now,
+      content: opts.value,
+      frontmatter: {
+        type: "copilot_memory",
+        memory_id: id,
+        memory_type: opts.type,
+        memory_key: opts.key,
+        memory_value: opts.value,
+        memory_source: opts.source ?? "user_explicit",
+        case_slug: opts.caseSlug,
+        pinned: opts.pinned ?? false,
+        times_referenced: 0,
+        entities: opts.entities ?? [],
+        valid_from: opts.validFrom,
+        valid_to: opts.validTo,
+        created_at: now,
+        updated_at: now,
+      },
     },
-  });
+    { merge: false }
+  );
 
   return {
     id,
@@ -158,34 +282,39 @@ export async function createMemory(opts: {
 
 export async function updateMemory(
   id: string,
-  updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type">>
+  updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type">>,
+  headers?: EngineHeaders
 ): Promise<void> {
   const slug = memorySlug(id);
-  const existing = await api.brain.getPage(slug);
+  const existing = await enginePageGet(headers, slug);
   if (!existing) throw new Error("Memory not found");
 
   const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
   const now = new Date().toISOString();
 
-  await api.brain.updatePage({
-    slug,
-    title: existing.title ?? `Memory: ${fm.memory_key ?? id}`,
-    type: "copilot_memory",
-    content: updates.value ?? existing.content ?? "",
-    frontmatter: {
-      ...fm,
+  await enginePageWrite(
+    headers,
+    {
+      slug,
+      title: existing.title ?? `Memory: ${fm.memory_key ?? id}`,
       type: "copilot_memory",
-      memory_type: updates.type ?? fm.memory_type ?? "fact",
-      memory_value: updates.value ?? fm.memory_value ?? "",
-      pinned: updates.pinned ?? fm.pinned ?? false,
-      updated_at: now,
+      content: updates.value ?? existing.content ?? "",
+      frontmatter: {
+        ...fm,
+        type: "copilot_memory",
+        memory_type: updates.type ?? fm.memory_type ?? "fact",
+        memory_value: updates.value ?? fm.memory_value ?? "",
+        pinned: updates.pinned ?? fm.pinned ?? false,
+        updated_at: now,
+      },
     },
-  });
+    { merge: true }
+  );
 }
 
-export async function deleteMemory(id: string): Promise<void> {
+export async function deleteMemory(id: string, headers?: EngineHeaders): Promise<void> {
   const slug = memorySlug(id);
-  await api.brain.deletePage(slug);
+  await enginePageDelete(headers, slug);
 }
 
 /**
@@ -199,26 +328,34 @@ export async function deleteMemory(id: string): Promise<void> {
  * Superseded memories are filtered out during search but retained for
  * audit trail and temporal reasoning.
  */
-export async function supersedeMemory(oldId: string, newId: string): Promise<void> {
+export async function supersedeMemory(
+  oldId: string,
+  newId: string,
+  headers?: EngineHeaders
+): Promise<void> {
   const slug = memorySlug(oldId);
-  const existing = await api.brain.getPage(slug);
+  const existing = await enginePageGet(headers, slug);
   if (!existing) throw new Error("Memory not found");
 
   const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
 
-  await api.brain.updatePage({
-    slug,
-    title: existing.title ?? `Memory: ${fm.memory_key ?? oldId}`,
-    type: "copilot_memory",
-    content: existing.content ?? "",
-    frontmatter: {
-      ...fm,
+  await enginePageWrite(
+    headers,
+    {
+      slug,
+      title: existing.title ?? `Memory: ${fm.memory_key ?? oldId}`,
       type: "copilot_memory",
-      superseded_by: newId,
-      superseded_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      content: existing.content ?? "",
+      frontmatter: {
+        ...fm,
+        type: "copilot_memory",
+        superseded_by: newId,
+        superseded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
     },
-  });
+    { merge: true }
+  );
 }
 
 /**
@@ -230,55 +367,62 @@ export async function supersedeMemory(oldId: string, newId: string): Promise<voi
  *
  * Returns the created memory and any superseded memory IDs.
  */
-export async function createMemoryWithSupersession(opts: {
-  type: MemoryType;
-  key: string;
-  value: string;
-  source?: MemorySource;
-  caseSlug?: string;
-  pinned?: boolean;
-  entities?: string[];
-  validFrom?: string;
-  validTo?: string;
-}): Promise<{ memory: CopilotMemoryEntry; superseded: string[] }> {
+export async function createMemoryWithSupersession(
+  opts: {
+    type: MemoryType;
+    key: string;
+    value: string;
+    source?: MemorySource;
+    caseSlug?: string;
+    pinned?: boolean;
+    entities?: string[];
+    validFrom?: string;
+    validTo?: string;
+  },
+  headers?: EngineHeaders
+): Promise<{ memory: CopilotMemoryEntry; superseded: string[] }> {
   // Check for existing memories with the same type + key
-  const existing = await listMemories({ caseSlug: opts.caseSlug, type: opts.type });
+  const existing = await listMemories({ caseSlug: opts.caseSlug, type: opts.type }, headers);
   const conflicts = existing.filter(
     (m) => m.key === opts.key && !m.supersededBy && m.value !== opts.value
   );
 
-  const created = await createMemory(opts);
+  const created = await createMemory(opts, headers);
 
   // Supersede all conflicting memories
   const superseded: string[] = [];
   for (const conflict of conflicts) {
-    await supersedeMemory(conflict.id, created.id);
+    await supersedeMemory(conflict.id, created.id, headers);
     superseded.push(conflict.id);
   }
 
   return { memory: created, superseded };
 }
 
-export async function incrementReference(id: string): Promise<void> {
+export async function incrementReference(id: string, headers?: EngineHeaders): Promise<void> {
   const slug = memorySlug(id);
-  const existing = await api.brain.getPage(slug);
+  const existing = await enginePageGet(headers, slug);
   if (!existing) return;
 
   const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
   const count = Number(fm.times_referenced ?? 0) + 1;
 
-  await api.brain.updatePage({
-    slug,
-    title: existing.title ?? `Memory: ${fm.memory_key ?? id}`,
-    type: "copilot_memory",
-    content: existing.content ?? "",
-    frontmatter: {
-      ...fm,
+  await enginePageWrite(
+    headers,
+    {
+      slug,
+      title: existing.title ?? `Memory: ${fm.memory_key ?? id}`,
       type: "copilot_memory",
-      times_referenced: count,
-      updated_at: new Date().toISOString(),
+      content: existing.content ?? "",
+      frontmatter: {
+        ...fm,
+        type: "copilot_memory",
+        times_referenced: count,
+        updated_at: new Date().toISOString(),
+      },
     },
-  });
+    { merge: true }
+  );
 }
 
 /**
@@ -311,30 +455,33 @@ function countEntityMatches(entities: string[] | undefined, queryWords: Set<stri
  * Falls back to listMemories (recent + pinned) when the engine search
  * returns no memory pages or is unavailable.
  */
-export async function searchMemories(opts: {
-  query: string;
-  caseSlug?: string;
-  limit?: number;
-}): Promise<CopilotMemoryEntry[]> {
+export async function searchMemories(
+  opts: {
+    query: string;
+    caseSlug?: string;
+    limit?: number;
+  },
+  headers?: EngineHeaders
+): Promise<CopilotMemoryEntry[]> {
   const limit = opts.limit ?? 10;
 
   // Use the engine's hybrid search to find memory pages semantically.
   // The search covers ALL brain pages; we filter to copilot/memory/ slugs.
   try {
-    const results = await api.brain.search(opts.query, limit * 3);
+    const results = await engineSearch(headers, opts.query, limit * 3);
     const memorySlugs = results
       .filter((r) => r.slug.startsWith(MEMORY_TYPE_PREFIX + "/"))
       .map((r) => r.slug);
 
     if (memorySlugs.length === 0) {
       // No semantic hits — fall back to pinned + recent
-      return listMemories({ caseSlug: opts.caseSlug, pinnedOnly: false }).then((m) =>
+      return listMemories({ caseSlug: opts.caseSlug, pinnedOnly: false }, headers).then((m) =>
         m.slice(0, limit)
       );
     }
 
     // Hydrate the memory entries from the search results
-    const pages = await api.brain.getPages(memorySlugs.slice(0, limit * 2));
+    const pages = await enginePagesBatch(headers, memorySlugs.slice(0, limit * 2));
     let memories = memorySlugs
       .map((slug) => {
         const page = pages[slug];
@@ -371,14 +518,14 @@ export async function searchMemories(opts: {
       : memories;
 
     // Always include pinned memories that weren't in the search results
-    const allMemories = await listMemories({ caseSlug: opts.caseSlug, pinnedOnly: true });
+    const allMemories = await listMemories({ caseSlug: opts.caseSlug, pinnedOnly: true }, headers);
     const existingIds = new Set(filtered.map((m) => m.id));
     const pinnedNotInResults = allMemories.filter((m) => !existingIds.has(m.id));
 
     return [...filtered, ...pinnedNotInResults].slice(0, limit);
   } catch {
     // Search failed — fall back to recent + pinned
-    return listMemories({ caseSlug: opts.caseSlug }).then((m) => m.slice(0, limit));
+    return listMemories({ caseSlug: opts.caseSlug }, headers).then((m) => m.slice(0, limit));
   }
 }
 
@@ -389,25 +536,31 @@ export async function searchMemories(opts: {
  * relevant memories instead of loading all 200 and dumping 20.
  * Pinned memories are always included.
  */
-export async function buildMemoryContext(opts?: {
-  caseSlug?: string;
-  maxEntries?: number;
-  query?: string;
-}): Promise<string> {
+export async function buildMemoryContext(
+  opts?: {
+    caseSlug?: string;
+    maxEntries?: number;
+    query?: string;
+  },
+  headers?: EngineHeaders
+): Promise<string> {
   const max = opts?.maxEntries ?? 20;
 
   let selected: CopilotMemoryEntry[];
 
   if (opts?.query && opts.query.trim().length > 3) {
     // P0.2: Semantic search — find memories relevant to the current query
-    selected = await searchMemories({
-      query: opts.query,
-      caseSlug: opts.caseSlug,
-      limit: max,
-    });
+    selected = await searchMemories(
+      {
+        query: opts.query,
+        caseSlug: opts.caseSlug,
+        limit: max,
+      },
+      headers
+    );
   } else {
     // Fallback: pinned + recent (legacy behavior)
-    const all = await listMemories({ caseSlug: opts?.caseSlug });
+    const all = await listMemories({ caseSlug: opts?.caseSlug }, headers);
     const now = Date.now();
     const active = all.filter((m) => {
       if (m.supersededBy) return false;
