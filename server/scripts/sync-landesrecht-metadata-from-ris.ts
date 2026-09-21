@@ -1,28 +1,19 @@
 #!/usr/bin/env bun
 /**
- * Brings every federal norm's metadata level with the RIS index, document by
- * document.
+ * Brings every state norm's metadata level with the RIS Landesrecht index —
+ * the state-law counterpart to sync-federal-metadata-from-ris.ts, run
+ * against ris-inforce-crawl-landesrecht.ts's output instead of the federal
+ * Bundesrecht index.
  *
- * The RIS in-force index (_state/ris-inforce.jsonl, written by
- * ris-inforce-crawl) is RIS's own statement about each document: short title,
- * abbreviation, section, entry into force, promulgation organ. A field-by-field
- * comparison of all 148,056 shared documents on 2026-09-21 found the database
- * agreeing wherever it had a value — statute number and section 148,055 of
- * 148,056 — but leaving gaps: 64,045 norms without the law's short title, 118
- * without an entry-into-force date, 113 without the abbreviation RIS has, and
- * promulgation organs missing.
- *
- * A search that cites "§ 12" without being able to say of which law is of no
- * use to a lawyer, so the gaps get filled — from the index, keyed on the
- * document number, which is exact. Only EMPTY fields are written. A value the
- * database already holds came from the document itself and stays.
- *
- * Every value passes the normalizer's clean(): the index carries non-breaking
- * spaces in 9,284 lines.
+ * Only EMPTY fields are written. A value the database already holds came
+ * from the document itself and stays. Every value passes the normalizer's
+ * clean(): the RIS index carries non-breaking spaces (see
+ * repair-metadata-whitespace.ts for the federal-side incident this guards
+ * against).
  *
  * Usage:
- *   bun run scripts/sync-federal-metadata-from-ris.ts             # nur zählen
- *   bun run scripts/sync-federal-metadata-from-ris.ts --apply
+ *   bun run scripts/sync-landesrecht-metadata-from-ris.ts             # nur zählen
+ *   bun run scripts/sync-landesrecht-metadata-from-ris.ts --apply
  */
 
 import { parseArgs } from "util";
@@ -35,8 +26,8 @@ const { values } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
     apply: { type: "boolean", default: false },
-    index: { type: "string", default: "/law-corpus/_state/ris-inforce.jsonl" },
-    source: { type: "string", default: "law-at-normen" },
+    index: { type: "string", default: "/law-corpus/_state/ris-inforce-landesrecht.jsonl" },
+    source: { type: "string", default: "law-at-landesrecht" },
     batch: { type: "string", default: "2000" },
     help: { type: "boolean", default: false },
   },
@@ -44,7 +35,9 @@ const { values } = parseArgs({
 });
 
 if (values.help) {
-  console.log("Usage: sync-federal-metadata-from-ris.ts [--apply] [--index <jsonl>] [--source law-at-normen]");
+  console.log(
+    "Usage: sync-landesrecht-metadata-from-ris.ts [--apply] [--index <jsonl>] [--source law-at-landesrecht]"
+  );
   process.exit(0);
 }
 
@@ -58,6 +51,7 @@ interface IndexRow {
   apa?: string | null;
   inkraft?: string | null;
   kundmachungsorgan?: string | null;
+  region?: string | null;
 }
 
 interface Engine {
@@ -74,9 +68,20 @@ interface PageRow {
   paragraph_ref: string | null;
   in_force_from: string | null;
   promulgation_organ: string | null;
+  region: string | null;
 }
 
-const FIELDS = ["short_title", "abbr", "paragraph_ref", "in_force_from", "promulgation_organ"] as const;
+// region included: the RIS index states the state directly, so it needs no
+// derivation from the document-number prefix the way backfill-landesrecht-
+// region.ts had to.
+const FIELDS = [
+  "short_title",
+  "abbr",
+  "paragraph_ref",
+  "in_force_from",
+  "promulgation_organ",
+  "region",
+] as const;
 type Field = (typeof FIELDS)[number];
 
 const n = (v: number) => v.toLocaleString("de-AT");
@@ -84,7 +89,7 @@ const n = (v: number) => v.toLocaleString("de-AT");
 async function main() {
   const indexPath = values.index as string;
   if (!existsSync(indexPath)) {
-    console.error(`Index fehlt: ${indexPath} — erst ris-inforce-crawl laufen lassen.`);
+    console.error(`Index fehlt: ${indexPath} — erst ris-inforce-crawl-landesrecht.ts laufen lassen.`);
     process.exit(1);
   }
   const ris = new Map<string, Record<Field, string | null>>();
@@ -103,6 +108,7 @@ async function main() {
       paragraph_ref: clean(d.apa),
       in_force_from: clean(d.inkraft),
       promulgation_organ: clean(d.kundmachungsorgan),
+      region: clean(d.region),
     });
   }
   console.log(`RIS-Index: ${n(ris.size)} Dokumente`);
@@ -118,12 +124,13 @@ async function main() {
             frontmatter->>'short_title' AS short_title, frontmatter->>'abbr' AS abbr,
             frontmatter->>'paragraph_ref' AS paragraph_ref,
             frontmatter->>'in_force_from' AS in_force_from,
-            frontmatter->>'promulgation_organ' AS promulgation_organ
+            frontmatter->>'promulgation_organ' AS promulgation_organ,
+            frontmatter->>'region' AS region
        FROM pages
       WHERE deleted_at IS NULL AND source_id = $1 AND frontmatter->>'doc_id' IS NOT NULL
         AND (frontmatter->>'short_title' IS NULL OR frontmatter->>'abbr' IS NULL
              OR frontmatter->>'paragraph_ref' IS NULL OR frontmatter->>'in_force_from' IS NULL
-             OR frontmatter->>'promulgation_organ' IS NULL)`,
+             OR frontmatter->>'promulgation_organ' IS NULL OR frontmatter->>'region' IS NULL)`,
     [values.source]
   )) as PageRow[];
   console.log(`Seiten mit mindestens einem leeren Feld: ${n(pages.length)}`);
@@ -134,6 +141,7 @@ async function main() {
     paragraph_ref: 0,
     in_force_from: 0,
     promulgation_organ: 0,
+    region: 0,
   };
   const patches: Array<{ id: number } & Record<Field, string | null>> = [];
   for (const p of pages) {
@@ -142,8 +150,6 @@ async function main() {
     const patch = { id: p.id } as { id: number } & Record<Field, string | null>;
     let any = false;
     for (const f of FIELDS) {
-      // Only an empty field is written; RIS has no value for many (not every
-      // law has an abbreviation), and then it stays empty.
       if (p[f] == null && r[f] != null) {
         patch[f] = r[f];
         filled[f]++;
@@ -167,17 +173,14 @@ async function main() {
   let done = 0;
   for (let i = 0; i < patches.length; i += BATCH) {
     const slice = patches.slice(i, i + BATCH);
-    // Plain text arrays, assembled into jsonb by the database — no stringified
-    // JSON goes through a ::jsonb cast. jsonb_strip_nulls drops the fields
-    // this page does not need, so existing values are never touched.
     await engine.executeRaw(
       `UPDATE pages p
           SET frontmatter = p.frontmatter || jsonb_strip_nulls(jsonb_build_object(
                 'short_title', v.st, 'abbr', v.ab, 'paragraph_ref', v.par,
-                'in_force_from', v.inf, 'promulgation_organ', v.org)),
+                'in_force_from', v.inf, 'promulgation_organ', v.org, 'region', v.reg)),
               updated_at = now()
-         FROM unnest($1::int[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[])
-              AS v(id, st, ab, par, inf, org)
+         FROM unnest($1::int[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[])
+              AS v(id, st, ab, par, inf, org, reg)
         WHERE p.id = v.id`,
       [
         slice.map((s) => s.id),
@@ -186,6 +189,7 @@ async function main() {
         slice.map((s) => s.paragraph_ref),
         slice.map((s) => s.in_force_from),
         slice.map((s) => s.promulgation_organ),
+        slice.map((s) => s.region),
       ]
     );
     done += slice.length;

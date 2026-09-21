@@ -22,7 +22,11 @@
     "scripts/sync-federal-metadata-from-ris.ts",
     "scripts/verify-text-against-ris-xml.ts",
     "scripts/normalize/normalize-corpus.ts",
-    "scripts/normalize/canonical-schema.ts"
+    "scripts/normalize/canonical-schema.ts",
+    "scripts/ris-inforce-crawl-landesrecht.ts",
+    "scripts/sync-landesrecht-metadata-from-ris.ts",
+    "scripts/audit-completeness-vs-ris.ts",
+    "scripts/ris-inforce-crawl.ts"
   ],
   "exclude": []
 }
