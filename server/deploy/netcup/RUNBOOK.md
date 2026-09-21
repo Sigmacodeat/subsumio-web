@@ -269,3 +269,31 @@ Rechte gehen über die Fremdschlüssel-Kaskade mit; angefasst wird nur `pages`.
 
 Danach `VACUUM (ANALYZE) pages, content_chunks;` — ohne das gibt Postgres den
 Platz nicht an das Dateisystem zurück.
+
+## 9. Den Embedding-Lauf am Leben halten
+
+Die Arbeiter laufen als `docker exec` im Engine-Container und sterben mit
+ihm. Am 21.09. startete der Container um 03:02 neu — Exit 0, kein OOM, kein
+Absturz im Protokoll, nur die Engine sauber beendet und von Docker wieder
+hochgefahren. Alle acht Arbeiter gingen mit, und es fiel erst 2,5 Stunden
+später auf.
+
+`embed-watchdog.sh` läuft deshalb auf dem **Host**, nicht im Container:
+
+```bash
+scp server/deploy/netcup/embed-watchdog.sh subsumio-netcup:/opt/subsumio-data/
+ssh subsumio-netcup "chmod +x /opt/subsumio-data/embed-watchdog.sh && \
+  setsid nohup /opt/subsumio-data/embed-watchdog.sh >/dev/null 2>&1 </dev/null &"
+```
+
+Er prüft alle zwei Minuten, ob noch Arbeiter laufen, schneidet die Id-Fenster
+bei Bedarf neu (nach **echten** Kandidaten, siehe Abschnitt 7) und startet
+acht neue. Er endet von selbst, wenn nichts mehr offen ist. Protokoll:
+`/opt/subsumio-data/qwen-watchdog.log`.
+
+Nach dem Umschalten nicht vergessen, ihn zu beenden — sonst startet er
+Arbeiter für eine Spalte, die es nicht mehr gibt:
+
+```bash
+ssh subsumio-netcup "pkill -f embed-watchdog.sh"
+```
