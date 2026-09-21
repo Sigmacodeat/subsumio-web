@@ -97,6 +97,7 @@ describe("assessPage", () => {
 describe("DOC_CLASS_OF_SOURCE", () => {
   test("covers every AT law/judikatur/literature source this session has touched", () => {
     const expected = [
+      "law-at",
       "law-at-normen",
       "law-at-landesrecht",
       "law-at-gemeinden",

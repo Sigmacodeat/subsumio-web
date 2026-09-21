@@ -29,6 +29,7 @@ import { recordVerdicts, upsertPlausibility } from "./corpus-status-db.ts";
 
 /** Every corpus source this audit covers, and how validateBody should treat its pages. */
 export const DOC_CLASS_OF_SOURCE: Record<string, DocClass> = {
+  "law-at": "statute",
   "law-at-normen": "statute",
   "law-at-landesrecht": "statute",
   "law-at-gemeinden": "statute",

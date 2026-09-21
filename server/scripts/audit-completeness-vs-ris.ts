@@ -28,6 +28,7 @@ import { parseArgs } from "util";
 import { existsSync, readFileSync } from "node:fs";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
+import { pruneLawCompleteness, upsertLawCompleteness } from "./corpus-status-db.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -74,9 +75,10 @@ async function main() {
   // excluded — they carry no norm text and would make every law with one
   // look permanently "incomplete".
   const byGnr = new Map<string, Set<string>>();
+  const titleOfGnr = new Map<string, string>();
   for (const line of readFileSync(indexPath, "utf8").split("\n")) {
     if (!line.trim()) continue;
-    let d: { nor?: string; gnr?: string; apa?: string | null };
+    let d: { nor?: string; gnr?: string; apa?: string | null; kurztitel?: string };
     try {
       d = JSON.parse(line);
     } catch {
@@ -86,8 +88,11 @@ async function main() {
     const set = byGnr.get(d.gnr) ?? new Set<string>();
     set.add(d.nor);
     byGnr.set(d.gnr, set);
+    if (d.kurztitel && !titleOfGnr.has(d.gnr)) titleOfGnr.set(d.gnr, d.kurztitel);
   }
-  console.log(`RIS-Index: ${n(byGnr.size)} Gesetze, ${n([...byGnr.values()].reduce((a, s) => a + s.size, 0))} Dokumente`);
+  console.log(
+    `RIS-Index: ${n(byGnr.size)} Gesetze, ${n([...byGnr.values()].reduce((a, s) => a + s.size, 0))} Dokumente`
+  );
 
   const fileCfg = loadConfig();
   if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
@@ -122,8 +127,24 @@ async function main() {
   let chunksInComplete = 0;
   let chunksEmbeddedInComplete = 0;
 
+  const lawRows: Array<{
+    sourceId: string;
+    gnr: string;
+    title: string | null;
+    status: "complete" | "partial" | "missing";
+    have: number;
+    wanted: number;
+  }> = [];
   for (const [gnr, wanted] of byGnr) {
     const have = [...wanted].filter((nor) => byNor.has(nor)).length;
+    lawRows.push({
+      sourceId: SOURCE,
+      gnr,
+      title: titleOfGnr.get(gnr) ?? null,
+      status: have === wanted.size ? "complete" : have > 0 ? "partial" : "missing",
+      have,
+      wanted: wanted.size,
+    });
     if (have === wanted.size) {
       complete++;
       const pages = byGnrDb.get(gnr) ?? [];
@@ -141,6 +162,11 @@ async function main() {
       missing++;
     }
   }
+
+  await upsertLawCompleteness(engine, lawRows);
+  const pruned = await pruneLawCompleteness(engine, SOURCE, [...byGnr.keys()]);
+  if (pruned > 0)
+    console.log(`\n(${pruned} Gesetze aus law_completeness entfernt — nicht mehr im RIS-Index)`);
 
   console.log(`\n═══ Vollständigkeit (${SOURCE}) ═══`);
   console.log(`  Gesetze mit Normtext im Index: ${n(byGnr.size)}`);

@@ -146,3 +146,63 @@ export async function recordVerdicts(
     );
   }
 }
+
+let lawEnsured = false;
+
+async function ensureLawTable(engine: RawExecutor): Promise<void> {
+  if (lawEnsured) return;
+  await engine.executeRaw(`
+    CREATE TABLE IF NOT EXISTS law_completeness (
+      source_id TEXT NOT NULL,
+      gnr TEXT NOT NULL,
+      title TEXT,
+      status TEXT NOT NULL,
+      have INT NOT NULL,
+      wanted INT NOT NULL,
+      checked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (source_id, gnr)
+    )
+  `);
+  lawEnsured = true;
+}
+
+/** One row per Gesetz — the per-law breakdown corpus_status can't show (it only aggregates per source). */
+export async function upsertLawCompleteness(
+  engine: RawExecutor,
+  rows: Array<{
+    sourceId: string;
+    gnr: string;
+    title: string | null;
+    status: "complete" | "partial" | "missing";
+    have: number;
+    wanted: number;
+  }>
+): Promise<void> {
+  if (rows.length === 0) return;
+  await ensureLawTable(engine);
+  await engine.executeRaw(
+    `INSERT INTO law_completeness (source_id, gnr, title, status, have, wanted, checked_at)
+     SELECT (e->>'sourceId'), (e->>'gnr'), (e->>'title'), (e->>'status'), (e->>'have')::int, (e->>'wanted')::int, now()
+       FROM jsonb_array_elements(($1::text)::jsonb) e
+     ON CONFLICT (source_id, gnr) DO UPDATE SET
+       title = EXCLUDED.title, status = EXCLUDED.status, have = EXCLUDED.have,
+       wanted = EXCLUDED.wanted, checked_at = EXCLUDED.checked_at`,
+    [JSON.stringify(rows)]
+  );
+}
+
+/** Rows this run's index no longer lists at all (repealed/renumbered) — stale unless removed. */
+export async function pruneLawCompleteness(
+  engine: RawExecutor,
+  sourceId: string,
+  keepGnrs: string[]
+): Promise<number> {
+  await ensureLawTable(engine);
+  const deleted = (await engine.executeRaw(
+    `DELETE FROM law_completeness
+      WHERE source_id = $1 AND NOT (gnr = ANY($2::text[]))
+      RETURNING gnr`,
+    [sourceId, keepGnrs]
+  )) as unknown[];
+  return deleted.length;
+}
