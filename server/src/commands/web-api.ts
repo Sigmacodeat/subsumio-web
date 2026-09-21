@@ -36,6 +36,7 @@ import { splitStatute } from "../core/legal/split-statute.ts";
 import { AT_LAW_SOURCES_ALL } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
+import { publicErrorMessage } from "../core/public-error-message.ts";
 import {
   PRIVATE_CHAT_PREFIX,
   callerMatterAccess,
@@ -4612,7 +4613,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       console.error("[web-api] put_page failed:", e);
       res.status(500).json({
         error: "put_page_failed",
-        message: msg,
+        message: publicErrorMessage(msg),
       });
     }
   });
