@@ -6,16 +6,20 @@
  * since nothing in src/ ever queries this — only the audit scripts that
  * write it and corpus-status-report.ts that reads it.
  *
- * Two independent axes, each written by a different tool, each nullable
- * until that tool has actually run for that source:
- *   - Plausibilität (audit-plausibility-full.ts): is what's already in the
- *     DB structurally correct, per the same rule the normalizer gates new
- *     imports with?
- *   - Vollständigkeit (judikatur-completeness-check.ts /
- *     audit-completeness-vs-ris.ts): does the DB have everything RIS lists?
+ * Plausibilität only (audit-plausibility-full.ts): is what's already in
+ * the DB structurally correct, per the same rule the normalizer gates new
+ * imports with? Nullable until that audit has run for a source.
+ *
+ * Vollständigkeit against RIS deliberately lives elsewhere —
+ * corpus_reconciliation (reconcile-ris.ts, migration 142), the
+ * pre-existing, dashboard-integrated table (/ops/corpus reads it via
+ * /api/admin/corpus-overview). It already handles the Rechtssatz-vs-
+ * Volltext distinction for OGH/VwGH/VfGH that a naive page-count
+ * comparison misses. corpus-status-report.ts reads it directly rather
+ * than this module keeping a second, driftable copy.
  * A source can be 100% plausible and still incomplete (nothing wrong with
- * what's there, just not all of it fetched yet) — that distinction is the
- * whole point of keeping them separate columns, not one merged "% done".
+ * what's there, just not all of it fetched yet) — that's why the two
+ * never collapse into one merged "% done".
  */
 
 interface RawExecutor {
@@ -76,25 +80,6 @@ export async function upsertPlausibility(
       args.issueBreakdown,
       args.unembeddedOkPages,
     ]
-  );
-}
-
-export async function upsertCompleteness(
-  engine: RawExecutor,
-  args: { sourceId: string; docClass: string; dbPages: number; risTotal: number }
-): Promise<void> {
-  await ensureTable(engine);
-  const pct = args.risTotal > 0 ? Math.round((args.dbPages / args.risTotal) * 1000) / 10 : null;
-  await engine.executeRaw(
-    `INSERT INTO corpus_status (source_id, doc_class, db_pages, ris_total, completeness_pct, last_completeness_check)
-     VALUES ($1, $2, $3, $4, $5, now())
-     ON CONFLICT (source_id) DO UPDATE SET
-       doc_class = EXCLUDED.doc_class,
-       db_pages = EXCLUDED.db_pages,
-       ris_total = EXCLUDED.ris_total,
-       completeness_pct = EXCLUDED.completeness_pct,
-       last_completeness_check = EXCLUDED.last_completeness_check`,
-    [args.sourceId, args.docClass, args.dbPages, args.risTotal, pct]
   );
 }
 
