@@ -6,3 +6,9 @@
 
 # ── 03:00 UTC Sundays — Restore verification (restore latest into a throwaway DB) ──
 0 3 * * 0      sh /backup/verify.sh
+
+# ── 02:00 UTC Saturdays — Weekly law-corpus text+metadata backup (no vectors) ──
+0 2 * * 6      sh /backup/run-law-corpus.sh
+
+# ── 04:00 UTC Sundays — Law-corpus backup verification (after the 03:00 firm one) ──
+0 4 * * 0      sh /backup/verify-law-corpus.sh

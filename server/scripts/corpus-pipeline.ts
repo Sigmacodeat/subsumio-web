@@ -2003,7 +2003,17 @@ async function cycle(): Promise<void> {
         "jud-umse": ["scripts/fetch-missing-sources.ts", "--source", "Umse"],
         // Bundesrecht + Landesrecht
         "statutes-at": ["scripts/fetch-all-at-laws.ts"],
-        landesrecht: ["scripts/fetch-at-landesrecht-xml.ts"],
+        // --keep-xml: without it every fetch discards the RIS original the
+        // moment it is turned into markdown. That is the only backup this
+        // corpus has — the nightly DB dump excludes law-% pages on purpose
+        // (see backup/dump-firm-data.sh) — and a text-fidelity check can only
+        // ever cover documents whose XML survived. Cost is disk, not RIS
+        // traffic: ~10 GB per full federal pass per a prior measurement here.
+        landesrecht: [
+          "scripts/fetch-at-landesrecht-xml.ts",
+          "--keep-xml",
+          "/law-corpus/_xml/at-landesrecht",
+        ],
       };
       const cmd = fetchCmd[key];
       if (cmd) {

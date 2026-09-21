@@ -28,7 +28,10 @@ rdir="/tmp/verify-$(date -u +%s)"
 mkdir -p "${rdir}"
 
 if [ -n "${RESTIC_REPOSITORY:-}" ]; then
-  restic restore latest --target "${rdir}"
+  # --tag: the repo also holds subsumio-corpus snapshots (see
+  # run-law-corpus.sh) since 2026-09-21. Without the filter, "latest"
+  # is repo-wide and would silently restore whichever kind ran last.
+  restic restore latest --tag subsumio --target "${rdir}"
 elif [ -n "${BACKUP_LOCAL_DIR:-}" ]; then
   archive=$(ls -t "${BACKUP_LOCAL_DIR}"/subsumio-*.tar.gz.enc 2>/dev/null | head -1 || true)
   [ -n "${archive}" ] || {
