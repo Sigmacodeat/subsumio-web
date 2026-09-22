@@ -2,7 +2,7 @@ name: Heavy Tests
 
 # Heavy ops-shape tests under tests/heavy/. Cost minutes per run; NOT part
 # of default PR CI. Two triggers:
-#   - Nightly schedule (catches regressions within 24h of merge to master).
+#   - Nightly schedule (catches regressions within 24h of merge to main).
 #   - On-demand opt-in via PR label `heavy-tests` (slow loop kept off by default).
 #   - Manual workflow_dispatch for triage.
 #

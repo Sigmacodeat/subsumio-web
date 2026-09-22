@@ -2,11 +2,11 @@ name: Test
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   # Manual dispatch lets a local dev/agent offload the suite to GitHub's
-  # on-demand runners from ANY branch (see scripts/ship-remote-tests.sh).
+  # on-demand runners from ANY branch (see server/scripts/ship-remote-tests.sh).
   # Frees a load-saturated local machine (e.g. many Conductor agents running
   # their own bun-test suites at once — load avg 120 on 16 cores).
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────
   # cache-check: runs first, computes the content hash of every tracked
   # file EXCEPT the deny-list (CHANGELOG.md, README.md, docs/**/*.md, etc.
-  # — see scripts/ci-cache-hash.sh for the full list). Looks up
+  # — see server/scripts/ci-cache-hash.sh for the full list). Looks up
   # `ci-pass-<hash>` in actions/cache; if hit, the test matrix + verify
   # + serial jobs all skip and test-status reports green immediately.
   # If miss, the full suite runs and cache-write seals it on success.
@@ -39,7 +39,7 @@ jobs:
         run: |
           # --verbose writes the "X/Y files in hash" diagnostic to stderr;
           # stdout carries the 16-char hash. Capture both.
-          HASH=$(bash scripts/ci-cache-hash.sh --verbose 2>/tmp/cache-diag)
+          HASH=$(bash server/scripts/ci-cache-hash.sh --verbose 2>/tmp/cache-diag)
           cat /tmp/cache-diag
           echo "Computed cache hash: $HASH"
           echo "hash=$HASH" >> "$GITHUB_OUTPUT"
@@ -55,10 +55,10 @@ jobs:
           # true only on EXACT key match (per actions/cache docs); a
           # restore-keys prefix fallback would set cache-hit=false, so
           # it's deliberately omitted here. Cross-branch scoping works
-          # naturally: PR branches can read default-branch (master)
+          # naturally: PR branches can read default-branch (main)
           # cache entries via exact key match when the content hash
           # matches, which happens whenever the tree is doc-only
-          # different from a green master run.
+          # different from a green main run.
           lookup-only: true
       - name: Cache status
         run: |
@@ -85,7 +85,7 @@ jobs:
     # Lives in its own runner so the matrix shards aren't carrying ~2-3min
     # of verify work in addition to their test files (the old shape stuffed
     # this into `test (1)` via `if: matrix.shard == 1`, which made shard 1
-    # the slowest matrix worker). scripts/run-verify-parallel.sh fans out
+    # the slowest matrix worker). server/scripts/run-verify-parallel.sh fans out
     # the 20 checks via & + wait (~5s vs ~15-25s sequential).
     needs: cache-check
     if: needs.cache-check.outputs.hit != 'true'
@@ -127,7 +127,7 @@ jobs:
     # was originally 359s. TODO #1 (engine-sharing in runEvalLongMemEval
     # via RunOpts.engine) cut it to ~200s by amortizing PGLite cold-create
     # across all 13 runEvalLongMemEval calls in one beforeAll-shared brain.
-    # Pulled out of the matrix (see scripts/test-shard.sh) so a single 200s
+    # Pulled out of the matrix (see server/scripts/test-shard.sh) so a single 200s
     # atom doesn't dominate a shard's wallclock. Companion file
     # test/eval-longmemeval.slow.test.ts (the pure-bucket half) stays in
     # the matrix because it's light (~42s).
@@ -151,7 +151,7 @@ jobs:
     # describe with one test that builds 5000+ pages and asserts the NEW
     # tryPrefixExpansion shape is 5x faster than the OLD shape — not
     # subdivisible without weakening the perf guarantee). Pulled out of the
-    # matrix (see scripts/test-shard.sh) so a single 159s atom doesn't
+    # matrix (see server/scripts/test-shard.sh) so a single 159s atom doesn't
     # dominate a shard's wallclock. Runs in parallel with the matrix.
     needs: cache-check
     if: needs.cache-check.outputs.hit != 'true'
@@ -184,9 +184,9 @@ jobs:
     # caps at ~20 concurrent jobs, so multi-PR days will see some queue
     # pressure. Single-PR runs are unaffected.
     #
-    # Partition policy is weight-aware LPT bin-packing via scripts/sharding.ts
-    # (replaces FNV-1a path hash). Weights live in scripts/test-weights.json,
-    # mined from real CI logs via scripts/mine-shard-weights.ts. Missing
+    # Partition policy is weight-aware LPT bin-packing via server/scripts/sharding.ts
+    # (replaces FNV-1a path hash). Weights live in server/scripts/test-weights.json,
+    # mined from real CI logs via server/scripts/mine-shard-weights.ts. Missing
     # weights fall back to corpus median — new test files work immediately.
     needs: cache-check
     if: needs.cache-check.outputs.hit != 'true'
@@ -206,7 +206,7 @@ jobs:
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
       - name: Run test shard ${{ matrix.shard }}/10
-        run: scripts/test-shard.sh ${{ matrix.shard }} 10
+        run: server/server/scripts/test-shard.sh ${{ matrix.shard }} 10
 
   # ──────────────────────────────────────────────────────────────────────
   # cache-write: ONLY runs when every gated job succeeded. Writes the
