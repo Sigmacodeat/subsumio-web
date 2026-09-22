@@ -53,7 +53,9 @@ export class CaseNumberAllocationError extends Error {}
 
 /**
  * Allocate the next case number for this brain. `prefix` is an optional
- * Kanzlei-Kürzel (e.g. "MK" for a firm's initials); omit for a bare
+ * Kanzlei-Kürzel (e.g. "MK" for a firm's initials); when omitted, the
+ * firm's configured `aktenzeichenPrefix` from the Kanzlei settings page
+ * (slug legal/settings/kanzlei) is used, falling back to a bare
  * "<YY>-<0001>" number.
  */
 export async function allocateCaseNumber(
@@ -61,6 +63,12 @@ export async function allocateCaseNumber(
   prefix?: string
 ): Promise<string> {
   const brain = createServerBrainClient(headers);
+  if (!prefix?.trim()) {
+    const settingsPage = await brain.getPage("legal/settings/kanzlei").catch(() => null);
+    const configured = (settingsPage?.frontmatter as Record<string, unknown> | undefined)
+      ?.aktenzeichenPrefix;
+    if (typeof configured === "string" && configured.trim()) prefix = configured;
+  }
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const page = await brain.getPage(COUNTER_SLUG).catch(() => null);
     const current = readCounter(page?.frontmatter as Record<string, unknown> | undefined);

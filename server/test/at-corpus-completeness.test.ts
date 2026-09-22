@@ -21,6 +21,9 @@ import { splitStatute } from "../src/core/legal/split-statute.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const AT_DIR = join(__dirname, "../../law-corpus/at");
+// law-corpus/ is gitignored (rebuilt via scripts/ingest-law-corpus.ts) — absent
+// in CI. Same skip contract as legal-corpus-integrity.test.ts.
+const CORPUS_AVAILABLE = existsSync(join(AT_DIR, "abgb.md"));
 
 function sectionCount(file: string): number {
   const path = join(AT_DIR, file);
@@ -46,7 +49,7 @@ const FLAGSHIP_FLOORS: Array<{ file: string; abbr: string; min: number }> = [
   { file: "bao.md", abbr: "BAO", min: 300 }, // Abgaben
 ];
 
-describe("AT corpus completeness gate", () => {
+describe.skipIf(!CORPUS_AVAILABLE)("AT corpus completeness gate", () => {
   for (const { file, abbr, min } of FLAGSHIP_FLOORS) {
     test(`${abbr} (${file}) splits into at least ${min} §-sections`, () => {
       const count = sectionCount(file);

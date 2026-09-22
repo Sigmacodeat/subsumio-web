@@ -27,14 +27,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EASE } from "./motion-system";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
-import {
-  NAV,
-  FOOTER,
-  p,
-  UI_STRINGS,
-  type NavContent,
-  type NavFeaturedContent,
-} from "@/content/site";
+import { type NavContent, type NavFeaturedContent } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import { ICONS } from "./icons";
 
 function BrandLogo() {
@@ -192,6 +186,7 @@ function FeaturedSidebar({
   content: NavFeaturedContent;
   onClick: () => void;
 }) {
+  const { p, ui: UI_STRINGS } = useMarket();
   const Icon = ICONS[content.icon ?? "Sparkles"] ?? Sparkles;
   return (
     <Link
@@ -232,6 +227,7 @@ function FeaturedSidebar({
 
 /** Announcement bar above the header — dismissible, links to featured content. */
 function AnnouncementBar({ nav }: { nav: NavContent }) {
+  const { p, ui: UI_STRINGS } = useMarket();
   const [dismissed, setDismissed] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -302,7 +298,7 @@ function AnnouncementBar({ nav }: { nav: NavContent }) {
 }
 
 export function MarketingNav() {
-  const nav = NAV;
+  const { nav, ui: UI_STRINGS, p } = useMarket();
   const pathname = usePathname() || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -1050,7 +1046,7 @@ function SocialX({ size = 16 }: { size?: number }) {
 }
 
 export function MarketingFooter() {
-  const footer = FOOTER;
+  const { footer, ui: UI_STRINGS, p } = useMarket();
   return (
     <footer
       className="relative z-10 border-t [border-color:var(--mk-border)] px-4 py-14 sm:px-6 lg:px-8"

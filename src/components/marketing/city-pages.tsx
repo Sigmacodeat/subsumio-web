@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { ArrowRight, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { CITIES, type CityPageContent } from "@/content/city-pages";
 import {
   BreadcrumbNav,
@@ -29,7 +29,9 @@ const CLOSING = {
   sub: "Volle Testversion ohne IT-Aufwand, keine Kreditkarte.",
 } as const;
 
-function TrialActions() {
+function TrialActions({ market }: { market: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
   return (
     <>
       <Button size="lg" variant="primary" className="group min-h-[48px]" asChild>
@@ -48,7 +50,9 @@ function TrialActions() {
   );
 }
 
-export function CityPage({ city }: { city: CityPageContent }) {
+export function CityPage({ city, market = "at" }: { city: CityPageContent; market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
   const others = Object.values(CITIES).filter((c) => c.slug !== city.slug);
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
@@ -65,7 +69,7 @@ export function CityPage({ city }: { city: CityPageContent }) {
         badge={`${city.city} · ${city.country}`}
         h1a={city.h1}
         sub={city.intro}
-        actions={<TrialActions />}
+        actions={<TrialActions market={market} />}
       />
 
       {/* Jurisdiction — note left, the local courts right */}
@@ -148,7 +152,9 @@ export function CityPage({ city }: { city: CityPageContent }) {
   );
 }
 
-export function CitiesIndexPage() {
+export function CitiesIndexPage({ market = "at" }: { market?: Market } = {}) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       <PageHero
@@ -156,7 +162,7 @@ export function CitiesIndexPage() {
         h1a="KI-Kanzleisoftware"
         h1b="für Österreich."
         sub="Subsumio arbeitet mit österreichischem Recht — von ABGB und ZPO bis EO — und berücksichtigt gesetzliche Feiertage, die Fristenhemmung nach § 222 ZPO und den zuständigen OLG-Sprengel."
-        actions={<TrialActions />}
+        actions={<TrialActions market={market} />}
       />
       <Section tone="light" className={SECTION_PAD_FLUSH}>
         <StaggerContainer

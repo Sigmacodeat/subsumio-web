@@ -77,6 +77,10 @@ describe("GBRAIN_HOME write-side isolation", () => {
   test("saveConfig/loadConfig honor GBRAIN_HOME", async () => {
     const tmp = fresh();
     process.env.GBRAIN_HOME = tmp;
+    // .env ships a DATABASE_URL that loadConfig() merges over the file —
+    // it would flip engine to "postgres" regardless of the fixture.
+    const oldDbUrl = process.env.DATABASE_URL;
+    delete process.env.DATABASE_URL;
     try {
       const { saveConfig, loadConfig } = await import("../src/core/config.ts");
       const cfg = {
@@ -93,6 +97,7 @@ describe("GBRAIN_HOME write-side isolation", () => {
       expect(loaded?.database_path).toBe(cfg.database_path);
     } finally {
       process.env.GBRAIN_HOME = ORIG_GBRAIN_HOME;
+      if (oldDbUrl !== undefined) process.env.DATABASE_URL = oldDbUrl;
       rmSync(tmp, { recursive: true, force: true });
     }
   });

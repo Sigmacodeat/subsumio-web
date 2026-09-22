@@ -1,17 +1,19 @@
 import { describe, test, expect } from "bun:test";
 import { getPGLiteSchema, PGLITE_SCHEMA_SQL } from "../../src/core/pglite-schema.ts";
 import { getPostgresSchema } from "../../src/core/postgres-engine.ts";
+import {
+  DEFAULT_EMBEDDING_MODEL,
+  DEFAULT_EMBEDDING_DIMENSIONS,
+} from "../../src/core/ai/defaults.ts";
 
 describe("getPGLiteSchema", () => {
-  test("default produces gateway-default schema (v0.37+: 1280d + zeroentropyai:zembed-1)", () => {
-    // v0.37 fix wave Lane A.1 + CDX2-1: defaults now track the canonical
-    // gateway constants in `ai/defaults.ts` instead of the stale v0.13
-    // OpenAI literals (1536 / text-embedding-3-large). Fixes the
-    // headline bug where bare `gbrain init --pglite` produced a 1536
-    // schema while the ZE default model emitted 1280-dim vectors.
+  test("default produces gateway-default schema (tracks ai/defaults.ts)", () => {
+    // The contract: bare init emits the canonical DEFAULT_EMBEDDING_MODEL /
+    // DEFAULT_EMBEDDING_DIMENSIONS — whatever they are (Subsumio currently:
+    // OpenAI 1536d; the ZE 1280d era is documented in defaults.ts).
     const sql = getPGLiteSchema();
-    expect(sql).toMatch(/vector\(1280\)/);
-    expect(sql).toMatch(/'zeroentropyai:zembed-1'/);
+    expect(sql).toMatch(new RegExp(`vector\\(${DEFAULT_EMBEDDING_DIMENSIONS}\\)`));
+    expect(sql).toContain(`'${DEFAULT_EMBEDDING_MODEL}'`);
     expect(sql).not.toMatch(/__EMBEDDING_DIMS__/);
     expect(sql).not.toMatch(/__EMBEDDING_MODEL__/);
   });

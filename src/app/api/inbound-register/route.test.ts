@@ -97,6 +97,40 @@ describe("POST /api/inbound-register", () => {
     });
   });
 
+  test("suggests a case when the subject contains its Aktenzeichen", async () => {
+    mockListEnginePages.mockResolvedValueOnce([
+      {
+        slug: "legal/cases/2026-0007",
+        title: "Muster ./. AG",
+        frontmatter: { aktenzeichen: "MUSTER-26-0007", client_name: "Muster GmbH" },
+      },
+    ]);
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
+
+    const res = await post({
+      channel: "erv",
+      subject: "Ladung MUSTER-26-0007",
+      sender_name: "Bezirksgericht",
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.entry.case_slug).toBe("legal/cases/2026-0007");
+    expect(body.data.entry.case_suggested).toBe(true);
+  });
+
+  test("leaves case_slug empty when nothing matches", async () => {
+    mockListEnginePages.mockResolvedValueOnce([
+      { slug: "legal/cases/x", title: "Unrelatiert", frontmatter: {} },
+    ]);
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
+
+    const res = await post({ channel: "scan", subject: "Brief" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.entry.case_slug).toBeUndefined();
+    expect(body.data.entry.case_suggested).toBeUndefined();
+  });
+
   test("returns 502 when the engine write fails", async () => {
     mockFetch.mockResolvedValueOnce(new Response("broken", { status: 500 }));
     const res = await post({ channel: "scan", subject: "Brief" });

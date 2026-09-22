@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { CheckCircle2 } from "lucide-react";
-import { UI_STRINGS } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import { FEATURES_PAGE } from "@/content/features";
 import { SectionHeading, Section } from "./primitives";
 import { H3_CLASS, SECTION_PAD as SECTION, SECTION_COLUMN as COLUMN } from "./typography";
@@ -229,6 +229,7 @@ export function HowItWorks() {
 }
 
 export function FeatureCommandCenter() {
+  const { ui: UI_STRINGS } = useMarket();
   const [step, setStep] = useState(0);
   // The demo only advances while it is on screen and nobody is pointing at it.
   const [paused, setPaused] = useState(false);
@@ -412,6 +413,7 @@ export function FeatureCommandCenter() {
  *  the application right. (A card grid repeating the same five areas used to
  *  follow; the tabs already are that overview.) */
 export function CategoryExplorer() {
+  const { ui: UI_STRINGS } = useMarket();
   const t = FEATURES_PAGE;
   const [active, setActive] = useState(t.categories[0].id);
   const cat = t.categories.find((c) => c.id === active) ?? t.categories[0];

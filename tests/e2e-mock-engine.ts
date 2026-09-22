@@ -42,6 +42,59 @@ interface MockPage {
 
 const pages = new Map<string, MockPage>();
 
+// ── Demo sources (public live demo) ──────────────────────────────────
+// Source-scoped page stores for `demo-*` sources: the `demo-template`
+// source is seeded from src/content/demo-matter.ts at startup; each
+// /demo session clones it into its own `demo-s-*` source via
+// POST /api/sources/clone. Requests carrying `x-subsumio-source: demo-*`
+// are served from these maps — the flat `pages` map above stays the
+// default tenant fixture.
+
+const sourcePages = new Map<string, Map<string, MockPage>>();
+
+function srcStore(source: string): Map<string, MockPage> {
+  let m = sourcePages.get(source);
+  if (!m) {
+    m = new Map();
+    sourcePages.set(source, m);
+  }
+  return m;
+}
+
+function requestSource(req: IncomingMessage): string {
+  const h = req.headers["x-subsumio-source"];
+  return typeof h === "string" ? h : "";
+}
+
+function isDemoSource(source: string): boolean {
+  return source.startsWith("demo-template") || source.startsWith("demo-s-");
+}
+
+async function seedDemoTemplate() {
+  try {
+    const { demoMatterPages, demoTemplateSource } = await import("../src/content/demo-matter");
+    const now = new Date().toISOString();
+    for (const jur of ["at", "de"] as const) {
+      const store = srcStore(demoTemplateSource(jur));
+      for (const p of demoMatterPages(new Date(), jur)) {
+        store.set(p.slug, {
+          slug: p.slug,
+          title: p.title,
+          content: p.content,
+          type: p.type,
+          frontmatter: p.frontmatter,
+          created_at: now,
+          updated_at: now,
+        });
+      }
+      console.log(`[mock] demo template ${jur} seeded: ${store.size} pages`);
+    }
+  } catch (e) {
+    console.warn("[mock] demo template seed failed:", e);
+  }
+}
+void seedDemoTemplate();
+
 // Seed with a few pages
 function seedPages() {
   const now = new Date().toISOString();
@@ -166,6 +219,11 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
   const { path, query } = parseUrl(req.url || "/");
 
+  // Source-scoped page store: demo sessions (x-subsumio-source: demo-*)
+  // read/write their own clone; everything else uses the global fixture.
+  const reqSrc = requestSource(req);
+  const reqPages = isDemoSource(reqSrc) ? srcStore(reqSrc) : pages;
+
   // ── Health ──────────────────────────────────────────────────────────
   if (path === "/health" || path === "/api/health") {
     return sendJson(res, 200, { status: "ok", engine: "mock", version: "test" });
@@ -176,7 +234,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const limit = parseInt(query.get("limit") || "50", 10);
     const typeFilter = query.get("type");
     const q = query.get("q") || "";
-    let items = Array.from(pages.values());
+    let items = Array.from(reqPages.values());
     if (typeFilter) items = items.filter((p) => p.type === typeFilter);
     if (q)
       items = items.filter(
@@ -196,9 +254,11 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const slug = body.slug || `test/page-${Date.now()}`;
     const now = new Date().toISOString();
 
+    const store = reqPages;
+
     // Support merge:true (used by enginePatchPage) — merge frontmatter into existing page
-    if (body.merge && pages.has(slug)) {
-      const existing = pages.get(slug)!;
+    if (body.merge && store.has(slug)) {
+      const existing = store.get(slug)!;
       const updated: MockPage = {
         ...existing,
         title: body.title || existing.title,
@@ -210,7 +270,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
         },
         updated_at: now,
       };
-      pages.set(slug, updated);
+      store.set(slug, updated);
       return sendJson(res, 200, updated);
     }
 
@@ -223,17 +283,48 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       created_at: now,
       updated_at: now,
     };
-    pages.set(slug, page);
+    store.set(slug, page);
     return sendJson(res, 200, page);
+  }
+
+  // ── Sources: clone + purge (public live demo) ──────────────────────
+  if (path === "/api/sources/clone" && req.method === "POST") {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}");
+    const from = String(body.from ?? "");
+    const to = String(body.to ?? "");
+    const slugs: string[] | null = Array.isArray(body.slugs) ? body.slugs : null;
+    const fromStore = sourcePages.get(from);
+    if (!from || !to || !fromStore) {
+      return sendJson(res, 200, { ok: true, cloned: { pages: 0 } });
+    }
+    const toStore = srcStore(to);
+    let n = 0;
+    for (const [slug, p] of fromStore) {
+      if (slugs && !slugs.includes(slug)) continue;
+      if (!toStore.has(slug)) {
+        toStore.set(slug, { ...p });
+        n++;
+      }
+    }
+    return sendJson(res, 200, { ok: true, cloned: { pages: n } });
+  }
+
+  if (path === "/api/source-data" && req.method === "DELETE") {
+    const src = requestSource(req);
+    const n = src ? (sourcePages.get(src)?.size ?? 0) : 0;
+    if (src) sourcePages.delete(src);
+    return sendJson(res, 200, { ok: true, pages_deleted: n });
   }
 
   // ── Pages: by slug ──────────────────────────────────────────────────
   const pageMatch = path.match(/^\/api\/pages\/(.+)$/);
   if (pageMatch) {
     const slug = decodeURIComponent(pageMatch[1]);
+    const store = reqPages;
 
     if (req.method === "GET") {
-      const page = pages.get(slug);
+      const page = store.get(slug);
       if (!page) return sendJson(res, 404, { error: "not_found" });
       return sendJson(res, 200, page);
     }
@@ -245,7 +336,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
       const now = new Date().toISOString();
-      const existing = pages.get(slug);
+      const existing = store.get(slug);
       const page: MockPage = {
         slug,
         title: body.title || existing?.title || "Untitled",
@@ -258,14 +349,14 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
         created_at: existing?.created_at ?? now,
         updated_at: now,
       };
-      pages.set(slug, page);
+      store.set(slug, page);
       return sendJson(res, 200, page);
     }
 
     if (req.method === "PATCH") {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
-      const page = pages.get(slug);
+      const page = store.get(slug);
       if (!page) return sendJson(res, 404, { error: "not_found" });
 
       // Server-side guard: block modifications to archived cases unless it's a restore
@@ -284,7 +375,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
         frontmatter: { ...page.frontmatter, ...body.frontmatter },
         updated_at: new Date().toISOString(),
       };
-      pages.set(slug, updated);
+      store.set(slug, updated);
 
       // Restore cascade: un-tombstone documents when case is restored
       if (body.frontmatter?.restored_at && body.frontmatter?.status !== "archived") {
@@ -305,9 +396,9 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
             },
           ],
         };
-        pages.set(slug, updated);
+        store.set(slug, updated);
 
-        for (const [docSlug, docPage] of pages.entries()) {
+        for (const [docSlug, docPage] of store.entries()) {
           if (
             docPage.type === "document" &&
             docPage.frontmatter?.case_slug === slug &&
@@ -316,10 +407,9 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
             docPage.frontmatter = {
               ...docPage.frontmatter,
               status: "active",
-              tombstoned_at: null,
               tombstone_reason: null,
             };
-            pages.set(docSlug, docPage);
+            store.set(docSlug, docPage);
           }
         }
       }
@@ -328,7 +418,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     }
 
     if (req.method === "DELETE") {
-      const page = pages.get(slug);
+      const page = store.get(slug);
       if (!page) return sendJson(res, 404, { error: "not_found" });
       // Soft-delete: if legal_case, archive instead of delete
       if (page.type === "legal_case") {
@@ -358,18 +448,18 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
             },
           ],
         };
-        pages.set(slug, page);
+        store.set(slug, page);
         // Tombstone cascade: mark all documents with matching case_slug as tombstoned
-        for (const [docSlug, docPage] of pages.entries()) {
+        for (const [docSlug, docPage] of store.entries()) {
           if (docPage.type === "document" && docPage.frontmatter?.case_slug === slug) {
             docPage.frontmatter = { ...docPage.frontmatter, status: "tombstoned" };
-            pages.set(docSlug, docPage);
+            store.set(docSlug, docPage);
           }
         }
         return sendJson(res, 200, { ok: true, method: "archived", slug });
       }
       // Hard delete for non-case pages
-      pages.delete(slug);
+      store.delete(slug);
       return sendJson(res, 200, { ok: true, method: "deleted", slug });
     }
   }
@@ -384,12 +474,12 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     let matched: MockPage[];
     if (fieldMatch) {
       const [, field, value] = fieldMatch;
-      matched = Array.from(pages.values()).filter((p) => {
+      matched = Array.from(reqPages.values()).filter((p) => {
         const fm = p.frontmatter || {};
         return String(fm[field] ?? "") === value;
       });
     } else {
-      matched = Array.from(pages.values()).filter(
+      matched = Array.from(reqPages.values()).filter(
         (p) =>
           p.title.toLowerCase().includes(q.toLowerCase()) ||
           p.content.toLowerCase().includes(q.toLowerCase()) ||
@@ -470,9 +560,11 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const raw = await readBody(req);
     const body = JSON.parse(raw || "{}");
     const name = String(body.name || "").toLowerCase();
+    const pSrc = requestSource(req);
+    const pStore = isDemoSource(pSrc) ? srcStore(pSrc) : pages;
     // Find pages with matching client_name or opponent_name
     const matches: Array<{ name: string; slug: string; type: string }> = [];
-    for (const p of pages.values()) {
+    for (const p of pStore.values()) {
       const fm = p.frontmatter || {};
       const clientName = String(fm.client_name || "").toLowerCase();
       const opponentName = String(fm.opponent_name || "").toLowerCase();
@@ -492,9 +584,11 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const raw = await readBody(req);
     const body = JSON.parse(raw || "{}");
     const caseSlug = body.caseSlug || body.case_slug || "";
+    const aSrc = requestSource(req);
+    const aStore = isDemoSource(aSrc) ? srcStore(aSrc) : pages;
     // Writeback suggested_deadlines and suggested_parties to case frontmatter
-    if (caseSlug && pages.has(caseSlug)) {
-      const casePage = pages.get(caseSlug)!;
+    if (caseSlug && aStore.has(caseSlug)) {
+      const casePage = aStore.get(caseSlug)!;
       const fm = casePage.frontmatter || {};
       const existingDl = Array.isArray(fm.suggested_deadlines) ? fm.suggested_deadlines : [];
       const existingParty = Array.isArray(fm.suggested_parties) ? fm.suggested_parties : [];
@@ -535,7 +629,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
         }),
       ];
       casePage.frontmatter = { ...fm, suggested_deadlines: newDl, suggested_parties: newParty };
-      pages.set(caseSlug, casePage);
+      aStore.set(caseSlug, casePage);
     }
     return sendJson(res, 200, {
       analysis: "Mock-Analyse: Der Vertrag enthält Standardklauseln.",
@@ -605,16 +699,16 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
   // ── Brains ──────────────────────────────────────────────────────────
   if (path === "/api/brains" && req.method === "GET") {
-    return sendJson(res, 200, [{ id: "test-brain", name: "Test Brain", pages: pages.size }]);
+    return sendJson(res, 200, [{ id: "test-brain", name: "Test Brain", pages: reqPages.size }]);
   }
 
   // ── Stats ───────────────────────────────────────────────────────────
   if (path === "/api/stats" && req.method === "GET") {
     return sendJson(res, 200, {
-      total_pages: pages.size,
-      cases: Array.from(pages.values()).filter((p) => p.type === "legal_case").length,
-      deadlines: Array.from(pages.values()).filter((p) => p.type === "deadline").length,
-      memos: Array.from(pages.values()).filter((p) => p.type === "memo").length,
+      total_pages: reqPages.size,
+      cases: Array.from(reqPages.values()).filter((p) => p.type === "legal_case").length,
+      deadlines: Array.from(reqPages.values()).filter((p) => p.type === "deadline").length,
+      memos: Array.from(reqPages.values()).filter((p) => p.type === "memo").length,
     });
   }
 
@@ -644,7 +738,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const limit = parseInt(query.get("limit") || "300", 10);
     const results: Record<string, MockPage[]> = {};
     for (const t of types) {
-      results[t] = Array.from(pages.values())
+      results[t] = Array.from(reqPages.values())
         .filter((p) => p.type === t)
         .slice(0, limit);
     }
@@ -656,7 +750,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const caseFilter = query.get("case");
     const heute = query.get("heute") || new Date().toISOString().slice(0, 10);
     const eintraege: Array<Record<string, unknown>> = [];
-    for (const p of pages.values()) {
+    for (const p of reqPages.values()) {
       if (p.type === "legal_case") {
         const fm = p.frontmatter || {};
         const deadlines = Array.isArray(fm.deadlines) ? fm.deadlines : [];
@@ -738,7 +832,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       "X-WR-CALNAME:Subsumio Kanzlei-Fristen",
       "X-WR-TIMEZONE:Europe/Berlin",
     ];
-    for (const p of pages.values()) {
+    for (const p of reqPages.values()) {
       if (p.type === "legal_case") {
         if (caseFilter && p.slug !== caseFilter) continue;
         const fm = p.frontmatter || {};
@@ -838,7 +932,8 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       created_at: now,
       updated_at: now,
     };
-    pages.set(docSlug, docPage);
+    const uSrc = requestSource(req);
+    (isDemoSource(uSrc) ? srcStore(uSrc) : pages).set(docSlug, docPage);
     return sendJson(res, 200, { ok: true, slug: docSlug, page: docPage });
   }
 

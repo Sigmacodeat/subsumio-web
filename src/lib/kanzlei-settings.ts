@@ -38,6 +38,10 @@ export interface KanzleiSettings {
   logoUrl?: string;
   // Security: org-level 2FA enforcement
   require2FA?: boolean;
+  // Aktenzeichen-Nummernkreis: optional firm prefix for auto-allocated
+  // case numbers (e.g. "MK" → "MK-26-0042"). Read by
+  // api/legal/case-number/allocate when the caller passes no prefix.
+  aktenzeichenPrefix?: string;
   // C1: Rechtsraum — jurisdiction for holiday-aware deadline calculation
   rechtsraumCountry?: "DE" | "AT" | "CH";
   rechtsraumState?: string;

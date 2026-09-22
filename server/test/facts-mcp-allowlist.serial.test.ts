@@ -16,10 +16,41 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { operations } from "../src/core/operations.ts";
 import { dispatchToolCall } from "../src/mcp/dispatch.ts";
+import { setEnvForFile } from "./helpers/with-env.ts";
+import { configureGateway } from "../src/core/ai/gateway.ts";
+
+// The "no API key" assertion below only holds if provider keys cannot leak in
+// from the developer's .env / ~/.gbrain — bun auto-loads .env, so blank them.
+setEnvForFile({
+  // Empty GBRAIN_HOME is ignored by configDir() — point at an absent dir so
+  // loadConfig() returns null and no stored provider key is reachable.
+  GBRAIN_HOME: "/tmp/gbrain-no-key-fixture-absent",
+  DATABASE_URL: undefined,
+  ANTHROPIC_API_KEY: undefined,
+  OPENROUTER_API_KEY: undefined,
+  OPENROUTER_API_KEY_FALLBACK: undefined,
+  OPENAI_API_KEY: undefined,
+  GBRAIN_CHAT_MODEL: undefined,
+  SUBSUMIO_CHAT_MODEL: undefined,
+});
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
+  // The legacy-embedding preload snapshotted process.env (including any real
+  // provider keys from .env) into the gateway's _config.env. Re-configure
+  // with the already-scrubbed env so isAvailable("chat") sees no keys.
+  const scrubbed = { ...process.env };
+  delete scrubbed.ANTHROPIC_API_KEY;
+  delete scrubbed.OPENROUTER_API_KEY;
+  delete scrubbed.OPENROUTER_API_KEY_FALLBACK;
+  delete scrubbed.OPENAI_API_KEY;
+  configureGateway({
+    embedding_model: "openai:text-embedding-3-large",
+    embedding_dimensions: 1536,
+    env: scrubbed,
+  });
+
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();

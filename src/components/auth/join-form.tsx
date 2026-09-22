@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
 import { csrfFetch } from "@/lib/csrf";
-import { p } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 
 const COPY = {
   title: "Dem Team beitreten",
@@ -42,6 +42,7 @@ export default function JoinForm({
   email: string;
   myEmail: string;
 }) {
+  const { p } = useMarket();
   const t = COPY;
   const [error, setError] = useState<string | null>(
     !token || !org || !email ? t.errors.invalid_or_expired_invite : null

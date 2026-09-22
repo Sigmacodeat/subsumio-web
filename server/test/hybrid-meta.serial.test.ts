@@ -14,14 +14,44 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { hybridSearch } from "../src/core/search/hybrid.ts";
+import { configureGateway } from "../src/core/ai/gateway.ts";
+import { setEnvForFile } from "./helpers/with-env.ts";
 import type { PageInput, HybridSearchMeta } from "../src/core/types.ts";
 
 let engine: PGLiteEngine;
+let fakeHome: string;
+let releaseEnv: () => void;
 const savedKey = process.env.OPENAI_API_KEY;
 
 beforeAll(async () => {
+  // These tests pin the "no OPENAI_API_KEY" contract. Two leaks must be
+  // closed: (1) the legacy-embedding preload snapshotted process.env —
+  // including real keys from the developer's .env — into the gateway's
+  // _config.env, where per-test `delete process.env.X` cannot reach; and
+  // (2) hybridSearch's column resolver merges loadConfig(), which reads
+  // the developer's ~/.gbrain/config.json (e.g. ollama:nomic-embed-text —
+  // a no-auth provider, so isAvailable("embedding") stays true and the
+  // query embed stalls on a real HTTP call until the 6s deadline).
+  fakeHome = mkdtempSync(join(tmpdir(), "gbrain-hybrid-meta-"));
+  releaseEnv = setEnvForFile({ GBRAIN_HOME: fakeHome });
+
+  const scrubbed = { ...process.env };
+  delete scrubbed.OPENAI_API_KEY;
+  delete scrubbed.OPENROUTER_API_KEY;
+  delete scrubbed.OPENROUTER_API_KEY_FALLBACK;
+  delete scrubbed.ANTHROPIC_API_KEY;
+  delete scrubbed.DATABASE_URL;
+  configureGateway({
+    embedding_model: "openai:text-embedding-3-large",
+    embedding_dimensions: 1536,
+    env: scrubbed,
+  });
+
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();
@@ -37,6 +67,8 @@ afterAll(async () => {
   if (savedKey === undefined) delete process.env.OPENAI_API_KEY;
   else process.env.OPENAI_API_KEY = savedKey;
   await engine.disconnect();
+  releaseEnv();
+  rmSync(fakeHome, { recursive: true, force: true });
 });
 
 async function runWithMeta(

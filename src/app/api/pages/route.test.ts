@@ -58,6 +58,10 @@ describe("POST /api/pages", () => {
     );
   });
 
+  // Lock check (GET /api/pages/<slug>) precedes every merge write — only the
+  // write call carries a body.
+  const writes = () => engineCalls.filter((c) => Object.keys(c.body).length > 0);
+
   it("rejects a create without a title", async () => {
     const res = await post({ slug: "legal/deadlines/x", frontmatter: { status: "done" } });
     expect(res.status).toBe(400);
@@ -71,13 +75,68 @@ describe("POST /api/pages", () => {
       frontmatter: { review_status: "approved", reviewed_by: "Anwalt" },
     });
     expect(res.status).toBe(200);
-    // First call is the merge itself; a deadline merge may be followed by the
+    // First write call is the merge itself; a deadline merge may be followed by the
     // best-effort Aktenblatt refresh of its matter (read + rewrite).
-    expect(engineCalls.length).toBeGreaterThanOrEqual(1);
-    expect(engineCalls[0].body).toMatchObject({ slug: "legal/deadlines/x", merge: true });
+    expect(writes().length).toBeGreaterThanOrEqual(1);
+    expect(writes()[0].body).toMatchObject({ slug: "legal/deadlines/x", merge: true });
     // A merge is not a new page: no page quota, audited as an update.
     expect(recordQuota).not.toHaveBeenCalled();
     expect(vi.mocked(logAudit).mock.calls[0]?.[0]).toBe("case.update");
+  });
+
+  it("rejects a merge on a document checked out by another user (409)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        engineCalls.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+        if (init?.body === undefined) {
+          // Lock check GET — document locked by someone else.
+          return Response.json({
+            slug: "legal/akte-1/vertrag",
+            frontmatter: {
+              checked_out_by: {
+                userId: "u2",
+                userEmail: "kollege@kanzlei.example",
+                at: "2026-09-22T10:00:00Z",
+              },
+            },
+          });
+        }
+        return Response.json({ slug: "legal/akte-1/vertrag", success: true });
+      })
+    );
+    const res = await post({
+      slug: "legal/akte-1/vertrag",
+      merge: true,
+      frontmatter: { status: "final" },
+    });
+    expect(res.status).toBe(409);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("lets the lock owner merge normally", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        engineCalls.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+        if (init?.body === undefined) {
+          return Response.json({
+            slug: "legal/akte-1/vertrag",
+            frontmatter: {
+              checked_out_by: { userId: "u1", userEmail: "anwalt@kanzlei.example", at: "t" },
+            },
+          });
+        }
+        return Response.json({ slug: "legal/akte-1/vertrag", success: true });
+      })
+    );
+    const res = await post({
+      slug: "legal/akte-1/vertrag",
+      merge: true,
+      frontmatter: { status: "final" },
+    });
+    expect(res.status).toBe(200);
+    expect(writes().length).toBeGreaterThanOrEqual(1);
   });
 
   it("creates a page with a title and counts the page quota", async () => {

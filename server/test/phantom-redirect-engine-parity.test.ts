@@ -24,9 +24,23 @@ beforeAll(async () => {
   await pglite.initSchema();
 
   if (process.env.DATABASE_URL) {
-    pg = new PostgresEngine();
-    await pg.connect({ database_url: process.env.DATABASE_URL });
-    await pg.initSchema();
+    // The env var may be set while no Postgres is actually reachable (e.g.
+    // .env carries a stale local URL). Treat connect failure as "pg half
+    // unavailable" — same as the var being absent — rather than failing
+    // every test in beforeEach.
+    try {
+      const candidate = new PostgresEngine();
+      await candidate.connect({ database_url: process.env.DATABASE_URL });
+      await candidate.initSchema();
+      pg = candidate;
+    } catch (e) {
+      console.warn(
+        `[parity] DATABASE_URL set but unreachable — running PGLite half only: ${
+          e instanceof Error ? e.message : e
+        }`
+      );
+      pg = null;
+    }
   }
 });
 

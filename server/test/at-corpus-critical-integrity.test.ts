@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
 
 const corpus = join(import.meta.dir, "..", "..", "law-corpus", "at");
+const CORPUS_AVAILABLE = existsSync(join(corpus, "abgb.md"));
 
 function read(name: string): string {
   return readFileSync(join(corpus, name), "utf8");
@@ -15,7 +16,7 @@ function sectionBody(file: string, ref: string): string {
   return section!.body;
 }
 
-describe("critical AT corpus identities", () => {
+describe.skipIf(!CORPUS_AVAILABLE)("critical AT corpus identities", () => {
   test("AußStrG points to the current 2003 statute, not the repealed 1854 law", () => {
     const raw = read("au-strg.md");
     expect(raw).toMatch(/(?:Gesetzesnummer=|Bundesnormen\/)20003047(?:\/|\b)/);

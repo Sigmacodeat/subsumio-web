@@ -145,13 +145,18 @@ function processLiveness(pid: number): "alive" | "dead" | "unknown" {
  */
 function processStartMs(pid: number): number | null {
   try {
+    // TZ=UTC on BOTH sides: `ps` prints lstart in the process's local zone,
+    // while Date.parse resolves naive strings in the runtime's zone. Under
+    // `bun test` the runtime runs pinned to UTC while ps still prints CEST —
+    // the 2h skew tripped the PID-reuse guard on every live worker.
     const out = execFileSync("ps", ["-o", "lstart=", "-p", String(pid)], {
       encoding: "utf8",
       timeout: 2000,
       stdio: ["ignore", "pipe", "ignore"],
+      env: { ...process.env, TZ: "UTC" },
     }).trim();
     if (!out) return null;
-    const t = Date.parse(out);
+    const t = Date.parse(`${out} UTC`);
     return Number.isNaN(t) ? null : t;
   } catch {
     return null;

@@ -21,7 +21,7 @@ describe("phantom-redirect lock contract", () => {
   test("IRON-RULE: import line uses syncLockId, not bare SYNC_LOCK_ID", () => {
     // syncLockId must be imported; SYNC_LOCK_ID must NOT be (per-source posture).
     const importLine = SRC.split("\n").find(
-      (l) => l.includes("from '../db-lock.ts'") && l.includes("import")
+      (l) => l.match(/from\s+['"]\.\.\/db-lock\.ts['"]/) && l.includes("import")
     );
     expect(importLine).toBeDefined();
     expect(importLine).toContain("syncLockId");

@@ -179,8 +179,8 @@ describe("Bug 9 — doctor surfaces sync failures", () => {
 describe("Bug 9 — sync.ts CLI flag wiring", () => {
   test("runSync parses --skip-failed and --retry-failed flags", async () => {
     const source = await Bun.file(new URL("../src/commands/sync.ts", import.meta.url)).text();
-    expect(source).toContain("args.includes('--skip-failed')");
-    expect(source).toContain("args.includes('--retry-failed')");
+    expect(source).toMatch(/args\.includes\(['"]--skip-failed['"]\)/);
+    expect(source).toMatch(/args\.includes\(['"]--retry-failed['"]\)/);
     expect(source).toContain("skipFailed");
     expect(source).toContain("retryFailed");
   });

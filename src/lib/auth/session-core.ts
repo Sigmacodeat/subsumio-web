@@ -22,6 +22,21 @@ export interface SessionPayload {
    * without this flag.
    */
   must2fa?: boolean;
+  /**
+   * Public live-demo session (issued by POST /api/demo/session). Points at an
+   * isolated engine source cloned from demo-template — never at a real
+   * tenant brain. Token TTL equals the demo session TTL (1h); engineContext()
+   * resolves the per-session source and a synthetic demo user, the api-handler
+   * demo guard restricts dangerous actions and enforces the LLM budget.
+   */
+  demo?: {
+    /** subsumio_demo_sessions row id. */
+    sid: string;
+    /** Isolated engine source for this visitor: demo-s-<id12>. */
+    source: string;
+    persona: "lawyer" | "assistant";
+    jurisdiction?: "at" | "de";
+  };
 }
 
 export const SESSION_COOKIE = "sb_session";

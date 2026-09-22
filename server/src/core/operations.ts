@@ -2941,9 +2941,9 @@ const add_timeline_entry: Operation = {
     // v0.31.8 (D7): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     await ctx.engine.addTimelineEntry(
+      // gbrain-allow-direct-insert: add_timeline_entry MCP op is the explicit canonical surface for manual timeline entries
       p.slug as string,
       {
-        // gbrain-allow-direct-insert: add_timeline_entry MCP op is the explicit canonical surface for manual timeline entries
         date,
         source: (p.source as string) || "",
         summary: p.summary as string,

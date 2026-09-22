@@ -91,6 +91,9 @@ export const signupSchema = z.object({
   // language code because locale and legal jurisdiction are separate fields.
   locale: z.enum(["de", "en", "at"]).optional(),
   industry: z.literal("legal").optional(),
+  // Legal jurisdiction of the firm (Rechtsraum). Separate from `locale`
+  // (UI language) — a German firm keeps German UI but needs DE law corpus.
+  jurisdiction: z.enum(["at", "de"]).optional(),
 });
 
 export const registerSchema = signupSchema

@@ -29,7 +29,19 @@ export const GET = createHandler(
           expiresAt: ctx.supportSession.expiresAt,
         }
       : null;
-    return Response.json({ user: toPublic(ctx.user), referrals, supportSession });
+    // Public live-demo marker — drives the DemoBanner/Tour/Gate UI and
+    // skips onboarding redirects + PostHog identification in the layout.
+    const demo = ctx.demo
+      ? {
+          sid: ctx.demo.sid,
+          persona: ctx.demo.persona,
+          jurisdiction: ctx.demo.jurisdiction ?? "at",
+          questionsUsed: ctx.demo.questionsUsed,
+          questionsCap: ctx.demo.questionsCap,
+          ingested: ctx.demo.ingested,
+        }
+      : null;
+    return Response.json({ user: toPublic(ctx.user), referrals, supportSession, demo });
   }
 );
 

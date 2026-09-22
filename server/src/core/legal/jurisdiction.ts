@@ -69,6 +69,29 @@ export const AT_LAW_SOURCES_ALL: string[] = [
 /** Primary AT statute source — use as `sourceId` for single-source queries. */
 export const AT_PRIMARY_STATUTE_SOURCE = "law-at-normen";
 
+/**
+ * DE law sources. `law-de` holds the per-§ split federal statutes
+ * (import-statutes-split.ts, jurisdiction de). Judikatur lives in the
+ * separate `law-de-judikatur` source (74k+ decisions), literature and
+ * Gesetzesmaterialien in their own sources — mirroring the granular AT
+ * layout so DE queries actually reach the imported corpora instead of
+ * searching only the statute source.
+ */
+export const DE_LAW_SOURCES_STATUTES: string[] = [
+  "law-de",
+  "law-de-literatur",
+  "law-de-materialien",
+];
+
+export const DE_LAW_SOURCES_JUDIKATUR: string[] = ["law-de-judikatur"];
+
+/** All DE law sources (statutes + judikatur + EU). Use this for "all" queries. */
+export const DE_LAW_SOURCES_ALL: string[] = [
+  ...DE_LAW_SOURCES_STATUTES,
+  ...DE_LAW_SOURCES_JUDIKATUR,
+  "law-eu",
+];
+
 export function isLegalJurisdiction(value: string): value is LegalJurisdiction {
   return (LEGAL_JURISDICTIONS as readonly string[]).includes(value.toLowerCase());
 }

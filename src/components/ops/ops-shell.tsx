@@ -7,6 +7,7 @@ import {
   Building2,
   Coins,
   Database,
+  FlaskConical,
   Gauge,
   HardDrive,
   Inbox,
@@ -37,6 +38,7 @@ export const OPS_NAV: { title: string; items: NavItem[] }[] = [
       { href: "/ops/users", label: "Nutzer", icon: Users },
       { href: "/ops/mailbox", label: "Support-Mailbox", icon: Mail },
       { href: "/ops/leads", label: "Anfragen", icon: Inbox },
+      { href: "/ops/demo", label: "Live-Demo", icon: FlaskConical },
     ],
   },
   {

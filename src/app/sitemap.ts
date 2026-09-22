@@ -40,6 +40,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
+  // Public live demo — standalone URL (not under /at), the conversion entry.
+  entries.push({
+    url: `${BASE}/demo`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.9,
+    alternates: { languages: { "de-AT": `${BASE}/demo`, "x-default": `${BASE}/demo` } },
+  });
+
   // Legal pages — Austrian canonical only (auth pages remain noindex).
   for (const page of ["/privacy", "/imprint", "/terms"]) {
     const url = `${BASE}/at${page}`;

@@ -36,6 +36,8 @@ import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { RatgTariffForm, type TariffInvoiceLine } from "@/components/legal/RatgTariffForm";
 import { AhkTariffForm } from "@/components/legal/AhkTariffForm";
+import { GggTariffForm } from "@/components/legal/GggTariffForm";
+import { NtgTariffForm } from "@/components/legal/NtgTariffForm";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;
@@ -631,6 +633,8 @@ export function InvoiceQuickCreateDialog({
 
             {selectedCaseSlug && <RatgTariffForm lines={tariffLines} onChange={setTariffLines} />}
             {selectedCaseSlug && <AhkTariffForm lines={tariffLines} onChange={setTariffLines} />}
+            {selectedCaseSlug && <GggTariffForm lines={tariffLines} onChange={setTariffLines} />}
+            {selectedCaseSlug && <NtgTariffForm lines={tariffLines} onChange={setTariffLines} />}
 
             {/* Invoice type + Advance payment */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

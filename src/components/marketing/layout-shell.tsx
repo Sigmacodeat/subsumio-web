@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import MarketingShell from "./marketing-shell";
 import RefConsentBanner from "./ref-consent";
 import AnalyticsConsentBanner from "./analytics-consent";
-import { UI_STRINGS } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 
 function isAuthedOrApi(pathname: string): boolean {
   return (
@@ -22,6 +22,7 @@ function isAuthedOrApi(pathname: string): boolean {
 }
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
+  const { ui: UI_STRINGS } = useMarket();
   const pathname = usePathname();
   const hasOwnMain =
     pathname.startsWith("/dashboard") ||

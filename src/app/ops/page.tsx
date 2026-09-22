@@ -10,6 +10,7 @@ import { getOrgStore, getStore } from "@/lib/auth/store";
 import { BILLABLE_PLANS } from "@/lib/billing/plans";
 import { StatCard, PlanBadge } from "@/components/admin/admin-stat-card";
 import { CreditsHealthCard } from "@/components/admin/credits-health-card";
+import { OpsDemoTile } from "@/components/ops/demo-tile";
 import { PageHeader } from "@/components/dashboard/page-header";
 
 export const metadata = { title: "Betreiber-Konsole" };
@@ -62,6 +63,7 @@ export default async function OpsOverviewPage() {
       </div>
 
       <CreditsHealthCard />
+      <OpsDemoTile />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">

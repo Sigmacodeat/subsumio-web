@@ -45,7 +45,10 @@ export function isAuthenticatedArea(pathname: string): boolean {
 /** Routes served to visitors without a firm session (no /api/auth/me probing). */
 export function isPublicRoute(pathname: string): boolean {
   return (
-    pathname.startsWith("/portal") || pathname.startsWith("/at") || pathname.startsWith("/join")
+    pathname.startsWith("/portal") ||
+    pathname.startsWith("/at") ||
+    pathname.startsWith("/join") ||
+    pathname === "/demo"
   );
 }
 

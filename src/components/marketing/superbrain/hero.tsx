@@ -6,13 +6,14 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p } from "@/content/site";
 import { EASE, SplitTextReveal, MagneticButton, GradientMesh } from "../motion-system";
 import { Section, BadgePill, H1_CLASS } from "../primitives";
 import { type SuperbrainCopyDe } from "./shared";
 import { resolveIcon } from "../icons";
+import { useMarket } from "@/lib/use-market";
 
 export function HeroSection({ t }: { t: SuperbrainCopyDe }) {
+  const { p } = useMarket();
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
   const yOrb = useTransform(scrollY, [0, 800], [0, reduce ? 0 : 200]);

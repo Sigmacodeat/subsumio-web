@@ -5,7 +5,7 @@
 // reader was trying to read. A still, four-column register reads as evidence.
 
 import { Scale, ShieldCheck, Server, Plug, type LucideIcon } from "lucide-react";
-import { UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { EYEBROW_CLASS } from "./typography";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
@@ -50,7 +50,10 @@ const GROUPS: FoundationGroup[] = [
   },
 ];
 
-export default function LogoMarquee() {
+export default function LogoMarquee({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   const eyebrow = UI_STRINGS.certificationsEyebrow;
   const heading = UI_STRINGS.trustHeading;
 

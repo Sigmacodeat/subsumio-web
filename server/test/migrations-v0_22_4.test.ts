@@ -62,7 +62,7 @@ describe("v0.22.4 migration (B11)", () => {
     // Source-grep guards the contract without spinning up a real audit.
     const fs = await import("fs");
     const src = fs.readFileSync("src/commands/migrations/v0_22_4.ts", "utf8");
-    expect(src).toContain("'skills/migrations/v0.22.4.md'");
+    expect(src).toMatch(/['"]skills\/migrations\/v0\.22\.4\.md['"]/);
     expect(src).not.toMatch(/skills\/migrations\/v0_22_4\.md/);
   });
 

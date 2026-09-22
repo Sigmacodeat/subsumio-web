@@ -37,7 +37,7 @@ const NEW_VERBS = [
 describe("v0.39 T6 — schema CLI contract", () => {
   test("every new verb routes through runSchema dispatch", () => {
     for (const v of NEW_VERBS) {
-      expect(SCHEMA_TS).toContain(`case '${v}':`);
+      expect(SCHEMA_TS).toMatch(new RegExp(`case ["']${v}["']:`));
     }
   });
 
@@ -72,8 +72,8 @@ describe("v0.39 T6 — schema CLI contract", () => {
   });
 
   test("parseFlags accepts both --source and --source-id forms", () => {
-    expect(SCHEMA_TS).toContain("'--source'");
-    expect(SCHEMA_TS).toContain("'--source-id'");
+    expect(SCHEMA_TS).toMatch(/["']--source["']/);
+    expect(SCHEMA_TS).toMatch(/["']--source-id["']/);
   });
 
   test("every new verb when --json passed produces a JSON envelope", () => {

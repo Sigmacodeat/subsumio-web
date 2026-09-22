@@ -3546,6 +3546,102 @@ export const D = {
     de: "Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten und erneut versuchen.",
     en: "Too many requests in a short time. Please wait a moment and try again.",
   },
+  "chat.error_demo_limit": {
+    de: "Demofragen aufgebraucht — oben im Demo-Banner per E-Mail weitere freischalten oder direkt mit Ihrer Kanzlei starten.",
+    en: "Demo questions used up — unlock more via e-mail in the demo banner above, or start with your firm directly.",
+  },
+  "chat.error_demo_daily_limit": {
+    de: "Das Demo-Tagesbudget ist ausgeschöpft — morgen wieder verfügbar. Oder starten Sie jetzt kostenlos mit Ihrer eigenen Kanzlei.",
+    en: "Today's demo budget is used up — available again tomorrow. Or start for free with your own firm right now.",
+  },
+
+  // ── Public live demo (/demo sandbox) ──
+  "demo.banner.badge": { de: "Live-Demo", en: "Live demo" },
+  "demo.banner.subtitle": {
+    de: "Fiktive Kanzlei-Akte · alle Funktionen testbar",
+    en: "Fictional matter · all features testable",
+  },
+  "demo.banner.questions": { de: "Fragen", en: "Questions" },
+  "demo.banner.cta": { de: "Mit meiner Kanzlei starten", en: "Start with my firm" },
+  "demo.banner.reset": { de: "Demo zurücksetzen", en: "Reset demo" },
+  "demo.banner.reset_confirm": {
+    de: "Demo wirklich zurücksetzen? Alle Änderungen in der Demo-Akte gehen verloren.",
+    en: "Reset the demo? All changes in the demo matter will be lost.",
+  },
+  "demo.banner.expires_in": { de: "läuft ab in", en: "expires in" },
+  "demo.tour.skip": { de: "Tour überspringen", en: "Skip tour" },
+  "demo.tour.next": { de: "Weiter", en: "Next" },
+  "demo.tour.done": { de: "Frei erkunden", en: "Explore freely" },
+  "demo.tour.step1.title": {
+    de: "Fragen Sie die Akte",
+    en: "Ask the matter",
+  },
+  "demo.tour.step1.body": {
+    de: "Die Akte „Berger ./. Muster Werk GmbH“ ist bereits angelegt — mit Kündigung, Dienstvertrag, Zeugnis und einer offenen Frist. Stellen Sie eine Frage und sehen Sie die Antwort mit Fundstellen.",
+    en: "The matter “Berger ./. Muster Werk GmbH” is already set up — termination letter, contract, reference and an open deadline. Ask a question and see the answer with citations.",
+  },
+  "demo.tour.step1.cta": { de: "Erste Frage stellen", en: "Ask first question" },
+  "demo.tour.step2.title": {
+    de: "Neuer Schriftsatz eingegangen",
+    en: "New brief arrived",
+  },
+  "demo.tour.step2.body": {
+    de: "So sieht die Aufnahme eines Dokuments aus: Subsumio erkennt Beteiligte, Fristen und verknüpft alles mit der Akte — in der Demo beschleunigt dargestellt.",
+    en: "This is how document intake works: Subsumio detects parties, deadlines and links everything to the matter — shown accelerated in the demo.",
+  },
+  "demo.tour.step2.cta": { de: "Zum Posteingang", en: "Open inbox" },
+  "demo.tour.step3.title": {
+    de: "KI-Vorschlag prüfen",
+    en: "Review the AI suggestion",
+  },
+  "demo.tour.step3.body": {
+    de: "Aus dem Schriftsatz wurde eine Replikfrist erkannt — als Vorschlag, den Sie als Anwältin oder Anwalt bestätigen. Nichts wird ohne Ihre Prüfung übernommen.",
+    en: "A reply deadline was extracted from the brief — as a suggestion you confirm as the attorney. Nothing is adopted without your review.",
+  },
+  "demo.tour.step3.cta": { de: "Frist prüfen", en: "Review deadline" },
+  "demo.tour.step4.title": { de: "Alles gesehen?", en: "Seen enough?" },
+  "demo.tour.step4.body": {
+    de: "Erkunden Sie die Sandbox frei — Suche, Akten, Fristen, Recherche. Oder starten Sie direkt mit Ihrer eigenen Kanzlei: Die Demo-Akte kommt mit.",
+    en: "Explore the sandbox — search, matters, deadlines, research. Or start with your own firm: the demo matter comes along.",
+  },
+  "demo.tour.step4.cta": { de: "Kostenlos starten", en: "Start for free" },
+  "demo.ingest.title": { de: "Posteingang", en: "Inbox" },
+  "demo.ingest.new_doc": {
+    de: "Klagebeantwortung Muster Werk GmbH — eingegangen via ERV",
+    en: "Statement of defence Muster Werk GmbH — received via e-service",
+  },
+  "demo.ingest.cta": { de: "In Akte aufnehmen", en: "File to matter" },
+  "demo.ingest.processing": { de: "Dokument wird aufgenommen…", en: "Processing document…" },
+  "demo.ingest.done_title": { de: "Aufgenommen", en: "Filed" },
+  "demo.ingest.done_body": {
+    de: "1 Dokument · 1 Beteiligter · 1 Frist erkannt — als Vorschlag zur Prüfung.",
+    en: "1 document · 1 party · 1 deadline detected — as a suggestion for review.",
+  },
+  "demo.ingest.to_deadline": { de: "Frist prüfen", en: "Review deadline" },
+  "demo.ingest.via": { de: "eingegangen via ERV", en: "received via e-service" },
+  "demo.ingest.in_file": { de: "in der Akte", en: "in the matter" },
+  "demo.ingest.parties": { de: "Beteiligte erkannt", en: "parties detected" },
+  "demo.ingest.deadline": { de: "Frist erkannt", en: "deadline detected" },
+  "demo.ingest.err_title": { de: "Aufnahme fehlgeschlagen", en: "Intake failed" },
+  "demo.ingest.err_body": {
+    de: "Das Dokument konnte nicht aufgenommen werden. Bitte erneut versuchen.",
+    en: "The document could not be filed. Please try again.",
+  },
+  "demo.ingest.note": {
+    de: "Demo: Aufnahme beschleunigt dargestellt (real: 30–90 Sek.)",
+    en: "Demo: intake shown accelerated (real: 30–90 s)",
+  },
+  "demo.gate.title": { de: "Weiterfragen freischalten", en: "Unlock more questions" },
+  "demo.gate.body": {
+    de: "Hinterlassen Sie Ihre E-Mail — wir schalten 15 weitere Demofragen frei und senden Ihnen auf Wunsch eine Zusammenfassung.",
+    en: "Leave your e-mail — we unlock 15 more demo questions and can send you a summary.",
+  },
+  "demo.gate.email": { de: "E-Mail-Adresse", en: "E-mail address" },
+  "demo.gate.cta": { de: "Freischalten", en: "Unlock" },
+  "demo.gate.privacy": {
+    de: "Kein Newsletter, kein Spam — nur Demo-Freischaltung und einmalige Kontaktaufnahme.",
+    en: "No newsletter, no spam — just the demo unlock and a one-time follow-up.",
+  },
   "chat.confirm_clear": {
     de: "Alle Nachrichten löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     en: "Delete all messages? This action cannot be undone.",

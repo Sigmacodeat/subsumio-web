@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api, type ConnectorStatus } from "@/lib/api";
+import { useMe } from "@/lib/queries/auth";
 import { cn, formatDateTime } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
@@ -59,15 +60,20 @@ const CONNECTOR_LABELS: Record<string, string> = {
   "advokat-import": "ADVOKAT-Import",
 };
 
-// Nur Österreich: Konnektoren für den deutschen/schweizerischen Markt werden
-// nicht angezeigt (die Server-Logik bleibt unberührt).
-const HIDDEN_SERVICES = new Set(["bea-import"]);
-const HIDDEN_COVERAGE_IDS = new Set([
-  "bea-import",
-  "datev-import",
-  "legal-judgements-de",
-  "legal-judgements-ch",
-]);
+// Jurisdiktionsgebundene Konnektoren: DE-Orgs sehen beA/DATEV/deutsche
+// Rechtsprechung, AT-Orgs sehen sie nicht (und umgekehrt bei CH).
+const DE_ONLY_SERVICES = new Set(["bea-import"]);
+const DE_ONLY_COVERAGE_IDS = new Set(["bea-import", "datev-import", "legal-judgements-de"]);
+const CH_ONLY_COVERAGE_IDS = new Set(["legal-judgements-ch"]);
+
+function hiddenServicesFor(jurisdiction: string | null | undefined): Set<string> {
+  return jurisdiction === "DE" ? new Set() : DE_ONLY_SERVICES;
+}
+function hiddenCoverageFor(jurisdiction: string | null | undefined): Set<string> {
+  if (jurisdiction === "DE") return CH_ONLY_COVERAGE_IDS;
+  if (jurisdiction === "CH") return new Set([...DE_ONLY_COVERAGE_IDS]);
+  return new Set([...DE_ONLY_COVERAGE_IDS, ...CH_ONLY_COVERAGE_IDS]);
+}
 
 const PERMISSION_MESSAGE =
   "Für diese Seite fehlt Ihnen die Berechtigung. Bitte wenden Sie sich an Ihre Kanzlei-Administration.";
@@ -113,6 +119,8 @@ const CATEGORY_LABEL: Record<string, string> = {
 export default function ConnectorsPage() {
   const { addToast } = useToast();
   const { t } = useLang();
+  const me = useMe();
+  const jurisdiction = me.data?.user?.jurisdiction ?? me.data?.demo?.jurisdiction?.toUpperCase();
   const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
@@ -128,7 +136,8 @@ export default function ConnectorsPage() {
     setError(null);
     try {
       const res = await api.connectors.list();
-      setConnectors(res.connectors.filter((c) => !HIDDEN_SERVICES.has(c.service)));
+      const hidden = hiddenServicesFor(jurisdiction);
+      setConnectors(res.connectors.filter((c) => !hidden.has(c.service)));
     } catch (e) {
       setConnectors([]);
       setError(
@@ -445,8 +454,11 @@ export default function ConnectorsPage() {
 
 function CoverageMatrix() {
   const { t } = useLang();
+  const me = useMe();
+  const jurisdiction = me.data?.user?.jurisdiction ?? me.data?.demo?.jurisdiction?.toUpperCase();
+  const hidden = hiddenCoverageFor(jurisdiction);
   const fullMatrix = getCoverageMatrix();
-  const connectors = fullMatrix.connectors.filter((c) => !HIDDEN_COVERAGE_IDS.has(c.id));
+  const connectors = fullMatrix.connectors.filter((c) => !hidden.has(c.id));
 
   const statusColors: Record<string, string> = {
     available: "text-[color:var(--ds-success-text)]",

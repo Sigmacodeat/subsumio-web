@@ -33,7 +33,104 @@ export interface InboundEntry {
   document_slug?: string;
   received_by?: string;
   notes?: string;
+  /** Automatische Aktenzuordnung — Vorschlag, noch nicht bestätigt. */
+  case_suggested?: boolean;
+  case_suggest_reason?: string;
   created_at: string;
+}
+
+export interface InboundCaseCandidate {
+  slug: string;
+  aktenzeichen?: string;
+  title?: string;
+  parties?: string[];
+}
+
+const STOPWORDS = new Set([
+  "der",
+  "die",
+  "das",
+  "und",
+  "oder",
+  "von",
+  "vom",
+  "mit",
+  "für",
+  "gegen",
+  "in",
+  "im",
+  "am",
+  "an",
+  "auf",
+  "zu",
+  "zur",
+  "zum",
+  "bei",
+  "sehr",
+  "geehrte",
+  "betreff",
+  "betreffend",
+  "re",
+  "az",
+  "aktenzeichen",
+  "schreiben",
+  "post",
+  "eingang",
+  "datum",
+  "sehr",
+  "frau",
+  "herr",
+  "herrn",
+  "kanzlei",
+  "gmbh",
+]);
+
+function tokens(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}-]+/u)
+    .filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+}
+
+/**
+ * Deterministische Aktenzuordnung für Posteingänge — bewusst ohne KI:
+ * ein Posteingang ist GoBD-relevant, die Zuordnung muss nachvollziehbar
+ * und reproduzierbar sein. Score: Aktenzeichen-Treffer (10), Partei-
+ * Name (4/Token), Betreff-Tokens gegen Titel (2/Token). Ab Score 6 gilt
+ * die Zuordnung als Vorschlag (nie still übernommen).
+ */
+export function suggestCaseForInbound(
+  input: { subject: string; senderName?: string; senderAddress?: string },
+  cases: InboundCaseCandidate[]
+): { slug: string; score: number; reason: string } | null {
+  const haystack =
+    `${input.subject} ${input.senderName ?? ""} ${input.senderAddress ?? ""}`.toLowerCase();
+  const subjectTokens = new Set(tokens(input.subject));
+  let best: { slug: string; score: number; reason: string } | null = null;
+
+  for (const c of cases) {
+    let score = 0;
+    const reasons: string[] = [];
+    if (c.aktenzeichen && haystack.includes(c.aktenzeichen.toLowerCase())) {
+      score += 10;
+      reasons.push(`Aktenzeichen ${c.aktenzeichen}`);
+    }
+    for (const party of c.parties ?? []) {
+      const hits = tokens(party).filter((w) => haystack.includes(w));
+      if (hits.length > 0) {
+        score += hits.length * 4;
+        reasons.push(`Partei ${party}`);
+      }
+    }
+    if (c.title) {
+      const hits = tokens(c.title).filter((w) => subjectTokens.has(w));
+      if (hits.length > 0) score += hits.length * 2;
+    }
+    if (score > 0 && (best === null || score > best.score)) {
+      best = { slug: c.slug, score, reason: reasons.join(", ") || "Betreff-Ähnlichkeit" };
+    }
+  }
+  return best && best.score >= 6 ? best : null;
 }
 
 export function createInboundEntry(input: {

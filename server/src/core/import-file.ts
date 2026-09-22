@@ -107,6 +107,16 @@ const _configCache = new WeakMap<object, { cfg: any; ts: number }>();
 const CONFIG_CACHE_TTL_MS = 60_000;
 
 /**
+ * Drop the cached resolved config for an engine. Callers that mutate
+ * content_sanity.* via engine.setConfig mid-session (tests, `gbrain
+ * config set` in-process) must invalidate or the 60s TTL serves the
+ * pre-change config.
+ */
+export function invalidateImportConfigCache(engine: object): void {
+  _configCache.delete(engine);
+}
+
+/**
  * Frontmatter-Feld als Text lesen — erster Schlüssel, der etwas liefert, gewinnt.
  *
  * WARUM: Das kanonische Korpus-Schema v1 benennt Felder um (`paragraph` →

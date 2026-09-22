@@ -4,12 +4,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p } from "@/content/site";
 import { EASE, ClipReveal, MagneticButton, GradientMesh } from "../motion-system";
 import { Section } from "../primitives";
 import { H2_CTA_CLASS } from "../typography";
 import SharedStickyCta from "../sticky-cta";
 import { reveal, type SuperbrainCopyDe } from "./shared";
+import { useMarket } from "@/lib/use-market";
 
 /** The floating trial bar — the same one as on the landing page. (A bespoke
  *  pill used to live here: untoned, so its text resolved to the light page's
@@ -19,6 +19,7 @@ export function StickyCTA(_props: { t: SuperbrainCopyDe }) {
 }
 
 export function CTASection({ t }: { t: SuperbrainCopyDe }) {
+  const { p } = useMarket();
   return (
     <Section
       tone="dark"

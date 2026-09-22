@@ -148,15 +148,18 @@ function readOutput(): Array<Record<string, unknown>> {
   return raw.split("\n").map((line) => JSON.parse(line));
 }
 
-describe("runEvalLongMemEval — trajectory routing on (default)", () => {
+describe("runEvalLongMemEval — trajectory routing on (--trajectory)", () => {
   test("temporal-reasoning question gets the trajectory block in the prompt", async () => {
     const state: StubState = { answerCalls: [], extractorCalls: 0 };
     const { answerClient, extractorClient } = stubClients(state);
-    await runEvalLongMemEval([datasetPath, "--keyword-only", "--output", outputPath], {
-      client: answerClient,
-      extractorClient,
-      extractorModel: "stub",
-    });
+    await runEvalLongMemEval(
+      [datasetPath, "--keyword-only", "--trajectory", "--output", outputPath],
+      {
+        client: answerClient,
+        extractorClient,
+        extractorModel: "stub",
+      }
+    );
 
     // q1 (temporal) → answer-gen call must include trajectory block.
     // q2 (other) → no trajectory block.
@@ -180,7 +183,7 @@ describe("runEvalLongMemEval — trajectory routing on (default)", () => {
     expect(out[1].intent).toBe("other");
     expect(out[1].trajectory_points).toBe(0);
     expect(out[1].entity_resolved).toBe(null);
-  });
+  }, 90_000);
 });
 
 describe("runEvalLongMemEval — --no-trajectory bypasses both extractor and injection", () => {
@@ -191,21 +194,10 @@ describe("runEvalLongMemEval — --no-trajectory bypasses both extractor and inj
       [datasetPath, "--keyword-only", "--no-trajectory", "--output", outputPath],
       { client: answerClient, extractorClient, extractorModel: "stub" }
     );
-    expect(state.extractorCalls).toBe(0);
-    expect(state.answerCalls.length).toBe(2);
-    expect(state.answerCalls[0]).not.toContain("Known trajectory:");
-    expect(state.answerCalls[1]).not.toContain("Known trajectory:");
+    assertNoTrajectory(state);
+  }, 90_000);
 
-    // Envelope: trajectory fields absent when --no-trajectory.
-    const out = readOutput();
-    expect(out[0].intent).toBeUndefined();
-    expect(out[0].trajectory_points).toBeUndefined();
-    expect(out[0].methodology_note).toBeUndefined();
-  });
-});
-
-describe("runEvalLongMemEval — methodology_note presence", () => {
-  test("default run stamps methodology_note on every routed row", async () => {
+  test("default (v0.44+): trajectory is OFF — same bypass without the flag", async () => {
     const state: StubState = { answerCalls: [], extractorCalls: 0 };
     const { answerClient, extractorClient } = stubClients(state);
     await runEvalLongMemEval([datasetPath, "--keyword-only", "--output", outputPath], {
@@ -213,23 +205,54 @@ describe("runEvalLongMemEval — methodology_note presence", () => {
       extractorClient,
       extractorModel: "stub",
     });
+    assertNoTrajectory(state);
+  }, 90_000);
+});
+
+function assertNoTrajectory(state: StubState): void {
+  expect(state.extractorCalls).toBe(0);
+  expect(state.answerCalls.length).toBe(2);
+  expect(state.answerCalls[0]).not.toContain("Known trajectory:");
+  expect(state.answerCalls[1]).not.toContain("Known trajectory:");
+
+  // Envelope: trajectory fields absent when trajectory routing is off.
+  const out = readOutput();
+  expect(out[0].intent).toBeUndefined();
+  expect(out[0].trajectory_points).toBeUndefined();
+  expect(out[0].methodology_note).toBeUndefined();
+}
+
+describe("runEvalLongMemEval — methodology_note presence", () => {
+  test("--trajectory run stamps methodology_note on every routed row", async () => {
+    const state: StubState = { answerCalls: [], extractorCalls: 0 };
+    const { answerClient, extractorClient } = stubClients(state);
+    await runEvalLongMemEval(
+      [datasetPath, "--keyword-only", "--trajectory", "--output", outputPath],
+      {
+        client: answerClient,
+        extractorClient,
+        extractorModel: "stub",
+      }
+    );
     const out = readOutput();
     for (const row of out) {
       expect(row.methodology_note).toBe("extractor=haiku-preprocess-full-haystack-v1");
     }
-  });
+  }, 90_000);
 });
 
 describe("runEvalLongMemEval — perf gate preserved", () => {
   // v0.40.10 flake-hardening: the perf assertion's ceiling is mode-aware.
-  // Solo run (10s) is the tight gate — catches real harness regressions.
-  // Shard run (60s) is the loose gate — CPU contention with 8 parallel
-  // shards routinely 3-5x's wallclock, which is contention, not a code
-  // regression. `SHARD=N/M` env var is set by scripts/run-unit-parallel.sh
+  // Solo run (30s) is the tight gate — catches real harness regressions.
+  // Raised from 10s: schema init now applies 139 migrations (~11-16s on a
+  // loaded machine), so the old ceiling measured migration count, not the
+  // harness. Shard run (60s) is the loose gate — CPU contention with 8
+  // parallel shards routinely 3-5x's wallclock, which is contention, not a
+  // code regression. `SHARD=N/M` env var is set by scripts/run-unit-parallel.sh
   // when running under the parallel wrapper. Per-test timeout always bumped
   // to outrun bun's 5s default.
   const SHARD_MODE = !!process.env.SHARD;
-  const PERF_CEILING_MS = SHARD_MODE ? 60_000 : 10_000;
+  const PERF_CEILING_MS = SHARD_MODE ? 60_000 : 30_000;
   test(`run completes for the 2-question fixture in under ${PERF_CEILING_MS / 1000}s with stubs`, async () => {
     const state: StubState = { answerCalls: [], extractorCalls: 0 };
     const { answerClient, extractorClient } = stubClients(state);

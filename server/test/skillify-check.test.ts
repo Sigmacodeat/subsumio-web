@@ -22,6 +22,10 @@ function run(args: string[]): { exitCode: number; stdout: string; stderr: string
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"],
       cwd: REPO,
+      // --recent on a fresh CI checkout audits every file in the tree — the
+      // JSON output can exceed execFileSync's 1MB default maxBuffer and
+      // truncate stdout into unparseable partial JSON.
+      maxBuffer: 64 * 1024 * 1024,
     });
     return { exitCode: 0, stdout, stderr: "" };
   } catch (err: any) {

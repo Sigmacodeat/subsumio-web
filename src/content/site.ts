@@ -11,8 +11,12 @@ import { PROOF } from "./proof-points";
 
 export const CONTENT_LANGS = ["de", "at", "ch", "en"] as const;
 export type Lang = (typeof CONTENT_LANGS)[number];
-export const SUPPORTED_LANGS: readonly Lang[] = ["at"];
+export const SUPPORTED_LANGS: readonly Lang[] = ["at", "de"];
 export const DEFAULT_LANG: Lang = "at";
+
+/** Public markets — the locales with a real route tree (/at, /de). */
+export type Market = "at" | "de";
+export const SUPPORTED_MARKETS: readonly Market[] = ["at", "de"];
 
 /** hreflang locale code for each Lang. */
 export const HREFLANG: Record<Lang, string> = {
@@ -37,42 +41,69 @@ export const ENGINE_REPO_URL =
   process.env.NEXT_PUBLIC_ENGINE_REPO_URL || "https://github.com/subsumio";
 export const ENGINE_REPO_INSTALL = ENGINE_REPO_URL.replace("https://github.com/", "github:");
 
-/** Build a public-site path. Austria is the only market — every public route
- * lives under /at. */
-export function p(path: string): string {
-  return path === "" || path === "/" ? "/at" : `/at${path}`;
+/** Build a public-site path for a market. Default stays Austria — every
+ * public route lives under /{market}. */
+export function pFor(market: Market, path: string): string {
+  return path === "" || path === "/" ? `/${market}` : `/${market}${path}`;
 }
 
-/** Strip the locale prefix from a pathname, returning the bare path. */
+/** Canonical Austria path — kept for call sites without market context
+ * (sitemap, redirects, tests). Components should prefer useMarket().p. */
+export function p(path: string): string {
+  return pFor("at", path);
+}
+
+/** Strip the market prefix from a pathname, returning the bare path. */
 export function stripLangPrefix(pathname: string): string {
-  for (const l of CONTENT_LANGS) {
-    if (l === "de") continue;
+  for (const l of SUPPORTED_MARKETS) {
     if (pathname === `/${l}` || pathname === `/${l}/`) return "/";
     if (pathname.startsWith(`/${l}/`)) return pathname.slice(l.length + 1); // keep leading /
   }
   return pathname;
 }
 
-/** The same page in another language (for the language switcher). */
+/** The same page in the other market (for the language switcher). */
 export function altPath(lang: Lang, pathname: string): string {
   const stripped = stripLangPrefix(pathname);
-  void lang;
-  return p(stripped);
+  const market: Market = lang === "de" ? "de" : "at";
+  return pFor(market, stripped);
 }
 
-/** All language alternates for a given pathname, excluding the current lang.
+/** All market alternates for a given pathname, excluding the current lang.
  * Used by the language switcher dropdown and hreflang link tags. */
 export function allAltPaths(
   lang: Lang,
   pathname: string
 ): { lang: Lang; href: string; label: string; hreflang: string }[] {
   const base = stripLangPrefix(pathname);
-  return SUPPORTED_LANGS.filter((l) => l !== lang).map((l) => ({
+  return SUPPORTED_MARKETS.filter((l) => l !== lang).map((l) => ({
     lang: l,
-    href: p(base),
+    href: pFor(l, base),
     label: JURISDICTION_LABEL[l],
     hreflang: HREFLANG[l],
   }));
+}
+
+/** Recursive merge for market content overrides: plain objects merge,
+ * arrays/scalars replace. Used to derive market copy from the AT base. */
+export function deepMerge<T>(base: T, overrides: unknown): T {
+  if (overrides === undefined) return base;
+  if (Array.isArray(base) || Array.isArray(overrides)) {
+    return (overrides === undefined ? base : overrides) as T;
+  }
+  if (
+    base !== null &&
+    overrides !== null &&
+    typeof base === "object" &&
+    typeof overrides === "object"
+  ) {
+    const result: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    for (const [k, v] of Object.entries(overrides as Record<string, unknown>)) {
+      result[k] = k in result ? deepMerge(result[k], v) : v;
+    }
+    return result as T;
+  }
+  return overrides as T;
 }
 
 // ---------------------------------------------------------------------------

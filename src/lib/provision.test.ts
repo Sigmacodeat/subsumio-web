@@ -14,6 +14,9 @@ vi.mock("@/lib/industry-pack", () => ({
 }));
 
 import { provisionBrain, provisionBrainAsync } from "./provision";
+import { demoMatterPages } from "@/content/demo-matter";
+
+const DEMO_LIVE_COUNT = demoMatterPages().filter((p) => p.frontmatter.demo_stage === "live").length;
 
 describe("provisionBrain", () => {
   beforeEach(() => {
@@ -54,11 +57,11 @@ describe("provisionBrain", () => {
     expect(result.ok).toBe(true);
     // The engine has no skill-pack route — provisioning must not call it.
     expect(fetchSpy.mock.calls.some((c) => String(c[0]).includes("/api/skillpack"))).toBe(false);
-    // 3 workflow seeds + 1 Kanzlei defaults + 4 demo-matter seeds.
+    // 3 workflow seeds + 1 Kanzlei defaults + live demo-matter seeds.
     const seedCalls = fetchSpy.mock.calls.filter(
       (c) => String(c[0]).includes("/api/pages") && c[1]?.method === "POST"
     );
-    expect(seedCalls.length).toBe(8);
+    expect(seedCalls.length).toBe(4 + DEMO_LIVE_COUNT);
   });
 
   test("unknown industry provisions the same legal defaults", async () => {
@@ -71,8 +74,8 @@ describe("provisionBrain", () => {
     const result = await provisionBrain("brain-1", { industry: "nonexistent" });
     expect(result.ok).toBe(true);
     // stats + 3 workflow seeds + 1 Kanzlei defaults + demo idempotency GET +
-    // 4 demo seeds = 10 total
-    expect(fetchSpy).toHaveBeenCalledTimes(10);
+    // live demo seeds
+    expect(fetchSpy).toHaveBeenCalledTimes(6 + DEMO_LIVE_COUNT);
   });
 
   test("returns ok:false on non-200/non-404 after retries", async () => {

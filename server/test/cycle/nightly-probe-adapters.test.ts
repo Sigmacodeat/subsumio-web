@@ -99,12 +99,12 @@ describe("nightly-probe-adapters: argv shape regression (codex round-2 #1)", () 
     const source = fs.readFileSync(path, "utf-8");
 
     // Both adapters' argv arrays must include these markers:
-    expect(source).toContain(`'--output'`); // both adapters thread an output path
+    expect(source).toMatch(/['"]--output['"]/); // both adapters thread an output path
     expect(source).toContain(`args.summaryPath`); // cross-modal reads from caller-controlled path
-    expect(source).toContain(`'--batch'`);
-    expect(source).toContain(`'--max-usd'`);
-    expect(source).toContain(`'--yes'`);
-    expect(source).toContain(`'--json'`); // cross-modal needs --json for the summary envelope
+    expect(source).toMatch(/['"]--batch['"]/);
+    expect(source).toMatch(/['"]--max-usd['"]/);
+    expect(source).toMatch(/['"]--yes['"]/);
+    expect(source).toMatch(/['"]--json['"]/); // cross-modal needs --json for the summary envelope
   });
 
   test("runLongMemEvalForProbe builds argv with --output for output path", () => {
@@ -113,7 +113,7 @@ describe("nightly-probe-adapters: argv shape regression (codex round-2 #1)", () 
     const source = fs.readFileSync(path, "utf-8");
     // longmemeval adapter: first positional arg is fixturePath, then --output outputPath.
     expect(source).toMatch(
-      /runEvalLongMemEval\(\[args\.fixturePath, '--output', args\.outputPath\]\)/
+      /runEvalLongMemEval\(\[args\.fixturePath, ['"]--output['"], args\.outputPath\]\)/
     );
   });
 });

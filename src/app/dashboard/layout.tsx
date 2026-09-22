@@ -58,6 +58,7 @@ import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { MobileSyncBanner } from "@/components/mobile/mobile-sync-banner";
 import { SupportSessionBanner } from "@/components/dashboard/support-session-banner";
+import { DemoChrome } from "@/components/dashboard/demo-banner";
 import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
 import { AnimatePresence } from "framer-motion";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -313,27 +314,40 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const userEmail = meQuery.data?.user?.email ?? null;
   const supportSession = meQuery.data?.supportSession ?? null;
+  // Public live-demo session: synthetic user, no firm data. Skips PostHog
+  // identification (anonymous), onboarding redirects and the regular tour —
+  // the demo has its own DemoTour.
+  const isDemoSession = Boolean(meQuery.data?.demo);
 
   // Auto-start guided tour on first dashboard visit after onboarding
-  useAutoStartTour(onboardingCompleted);
+  useAutoStartTour(isDemoSession ? null : onboardingCompleted);
 
   useEffect(() => {
     if (meQuery.isLoading || !meQuery.data?.user) return;
     const u = meQuery.data.user;
-    identifyUser(u.id, {
-      email: u.email,
-      name: u.name,
-      role: u.role,
-      plan: u.plan,
-      industry: u.industry,
-    });
-    if (!onboardingCompleted && !isOnboardingPage) {
+    if (!isDemoSession) {
+      identifyUser(u.id, {
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        plan: u.plan,
+        industry: u.industry,
+      });
+    }
+    if (!onboardingCompleted && !isOnboardingPage && !isDemoSession) {
       router.replace("/dashboard/onboarding");
     }
     if (onboardingCompleted && isOnboardingPage) {
       router.replace("/dashboard");
     }
-  }, [onboardingCompleted, isOnboardingPage, meQuery.isLoading, meQuery.data?.user, router]);
+  }, [
+    onboardingCompleted,
+    isOnboardingPage,
+    meQuery.isLoading,
+    meQuery.data?.user,
+    isDemoSession,
+    router,
+  ]);
 
   // Route change: move focus to <main> and announce page change for screen readers
   useEffect(() => {
@@ -646,7 +660,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       // Brand colours come from the theme tokens in globals.css (light: brand-600,
       // dark: brand-400). The legacy per-industry inline style pinned brand-500
       // for both themes — links were 2.8:1 on the dark surface.
-      style={supportSession ? { paddingTop: SUPPORT_BANNER_HEIGHT } : undefined}
+      style={
+        supportSession
+          ? { paddingTop: SUPPORT_BANNER_HEIGHT }
+          : isDemoSession
+            ? { paddingTop: "var(--demo-banner-h, 44px)" }
+            : undefined
+      }
       data-industry={industry ?? "core"}
       data-app="dashboard"
       data-theme={theme}
@@ -660,6 +680,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <SupportSessionBanner session={supportSession} />
         </div>
       )}
+      {isDemoSession && <DemoChrome />}
       {/* Prevent search engines from indexing authenticated dashboard pages.
           Defense-in-depth: robots.txt already blocks /dashboard, but this
           data attribute ensures noindex intent is documented. The actual

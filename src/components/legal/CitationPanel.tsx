@@ -25,6 +25,8 @@ import type { GroundedCitation } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 import { extractStatuteCitations, type GroundingMetadata } from "@/lib/citation-gate-client";
 import { openNormReader, readerJurisdiction } from "@/lib/norm-reader-events";
+import { useMe } from "@/lib/queries/auth";
+import { tracking } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -70,6 +72,11 @@ const SUPPORT_STYLE: Record<
 export function CitationPanel({ data, compact = false, className }: CitationPanelProps) {
   const { lang } = useLang();
   const [expanded, setExpanded] = useState(!compact);
+  // Demo-only: citation clicks are the trust signal in the live-demo funnel.
+  const isDemo = Boolean(useMe().data?.demo);
+  const trackCitation = () => {
+    if (isDemo) tracking.demo?.citationOpened();
+  };
 
   const ground = useMemo(
     () => assessGroundedness(data.citations, data.gaps),
@@ -301,13 +308,14 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                       <button
                         key={c.slug}
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          trackCitation();
                           openNormReader({
                             code: norm.code!,
                             paragraph: norm.paragraph!,
                             jurisdiction: readerJurisdiction(data.jurisdiction),
-                          })
-                        }
+                          });
+                        }}
                         className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                         title={`${c.title}: Normtext anzeigen`}
                       >
@@ -322,6 +330,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                       href={`/dashboard/brain/${encodeURIComponent(c.slug)}${
                         c.quote ? `?hl=${encodeURIComponent(c.quote.slice(0, 300))}` : ""
                       }`}
+                      onClick={trackCitation}
                       className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                       target="_blank"
                       rel="noopener noreferrer"

@@ -168,6 +168,16 @@ export default function KanzleiSettingsPage() {
               onChange={(v) => update("website", v)}
             />
           </div>
+          <Field
+            id="k-aktenzeichen-prefix"
+            label={L("Aktenzeichen-Kürzel (optional)", "Case-number prefix (optional)")}
+            hint={L(
+              "Wird automatisch vergebene Aktenzeichen vorangestellt, z. B. „MK“ → MK-26-0042.",
+              "Prepended to automatically allocated case numbers, e.g. “MK” → MK-26-0042."
+            )}
+            value={settings.aktenzeichenPrefix ?? ""}
+            onChange={(v) => update("aktenzeichenPrefix", v.toUpperCase().trim())}
+          />
           <div className="sm:col-span-2">
             <Field
               id="k-logo"

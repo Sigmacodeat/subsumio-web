@@ -219,7 +219,9 @@ describe("E: universal grace-evict listener (D8b)", () => {
     // The 30_000 literal must appear OUTSIDE the `if (job.timeout_ms != null)`
     // branch. Check the addEventListener block contains the 30_000 literal.
     // Find the addEventListener and look in its function body.
-    const listenerIdx = launchJobBody.indexOf("abort.signal.addEventListener('abort'");
+    const listenerMatch = launchJobBody.match(/abort\.signal\.addEventListener\(['"]abort['"]/);
+    expect(listenerMatch).not.toBeNull();
+    const listenerIdx = listenerMatch!.index!;
     expect(listenerIdx).toBeGreaterThan(-1);
     // Grab ~1500 chars after the listener to capture its body.
     const listenerWindow = launchJobBody.slice(listenerIdx, listenerIdx + 1500);

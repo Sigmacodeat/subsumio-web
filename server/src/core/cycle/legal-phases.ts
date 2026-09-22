@@ -481,6 +481,7 @@ export async function runPhaseLegalPrecedentLinkage(
           if (statuteSlugs.has(candidateSlug)) {
             try {
               await engine.addLink(
+                // gbrain-allow-direct-insert: legal-dream cycle phase — statute link reconciliation
                 caseRow.slug,
                 candidateSlug,
                 ref,
@@ -510,6 +511,7 @@ export async function runPhaseLegalPrecedentLinkage(
       if (opponentTarget && entitySlugs.has(opponentTarget)) {
         try {
           await engine.addLink(
+            // gbrain-allow-direct-insert: legal-dream cycle phase — opponent link reconciliation
             caseRow.slug,
             opponentTarget,
             "opponent",
@@ -543,6 +545,7 @@ export async function runPhaseLegalPrecedentLinkage(
         if (target && entitySlugs.has(target)) {
           try {
             await engine.addLink(
+              // gbrain-allow-direct-insert: legal-dream cycle phase — entity-to-case link reconciliation
               target,
               caseRow.slug,
               ef.role,
@@ -588,6 +591,7 @@ export async function runPhaseLegalPrecedentLinkage(
         for (const matchCase of matchingCases) {
           try {
             await engine.addLink(
+              // gbrain-allow-direct-insert: legal-dream cycle phase — precedent link reconciliation
               caseRow.slug,
               matchCase.slug,
               caseRef,

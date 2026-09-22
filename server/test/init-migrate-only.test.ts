@@ -35,8 +35,10 @@ function run(args: string[]): { exitCode: number; stdout: string; stderr: string
   // won't if any env var fallback is set (src/core/config.ts:30). Tests
   // that seed their own config use freshHomeWithConfig() below.
   const env = { ...process.env, HOME: tmp } as Record<string, string | undefined>;
-  delete env.DATABASE_URL;
-  delete env.GBRAIN_DATABASE_URL;
+  // Blank, don't delete: bun auto-loads .env in the child process — a deleted
+  // key gets re-read from .env, an empty-string key takes precedence.
+  env.DATABASE_URL = "";
+  env.GBRAIN_DATABASE_URL = "";
   try {
     const stdout = execFileSync("bun", ["run", CLI, ...args], {
       env: env as Record<string, string>,

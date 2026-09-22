@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   Mail,
   MessageSquareText,
+  Play,
   Plus,
   Search,
   SearchCheck,
@@ -36,7 +37,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { SubsumioMark, SubsumioWordmark } from "@/components/brand/subsumio-logo";
-import { PRODUCT_DEMO } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
+import Link from "next/link";
+import { tracking } from "@/lib/tracking";
 
 export type DemoScene = "frage" | "akte" | "fundstelle" | "frist";
 const ORDER: DemoScene[] = ["frage", "akte", "fundstelle", "frist"];
@@ -109,7 +112,7 @@ export default function ProductDemo({
     return () => window.clearTimeout(id);
   }, [auto, controlled, reduce]);
 
-  const d = PRODUCT_DEMO;
+  const { productDemo: d } = useMarket();
 
   return (
     <div
@@ -231,6 +234,18 @@ export default function ProductDemo({
         </div>
       </div>
 
+      {/* Conversion bridge: the replica shows what the product looks like —
+          this pill takes the visitor into the real thing (public live demo,
+          no signup). Sits outside the inert scene tree. */}
+      <Link
+        href="/demo"
+        onClick={() => tracking.demo.ctaClicked("product_replica")}
+        className="group/demo absolute right-3 bottom-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-[color:var(--brand-primary)]/40 bg-[color:var(--ds-surface)]/90 px-3.5 py-2 text-[12px] font-semibold text-[color:var(--brand-primary)] shadow-lg backdrop-blur-sm transition-all duration-[var(--ds-duration-normal)] hover:-translate-y-0.5 hover:bg-[color:var(--brand-primary)] hover:text-white hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none"
+      >
+        <Play size={12} aria-hidden />
+        Live testen — ohne Anmeldung
+      </Link>
+
       {/* Scene dots — also the manual control when autoplaying */}
       {!controlled && (
         <div className="flex items-center justify-center gap-1 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1">
@@ -262,7 +277,7 @@ export default function ProductDemo({
 /* ── Scenes ─────────────────────────────────────────────────────────────── */
 
 function AssistantScene({ full, animate }: { full: boolean; animate: boolean }) {
-  const d = PRODUCT_DEMO;
+  const { productDemo: d } = useMarket();
   const [shown, setShown] = useState(animate && full ? 0 : d.answer.length);
   useEffect(() => {
     if (!animate || !full) return;
@@ -328,7 +343,7 @@ function AssistantScene({ full, animate }: { full: boolean; animate: boolean }) 
 }
 
 function MatterScene() {
-  const d = PRODUCT_DEMO;
+  const { productDemo: d } = useMarket();
   return (
     <div className="flex h-full flex-col gap-2.5">
       <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5">
@@ -397,7 +412,7 @@ function MatterScene() {
 }
 
 function DeadlineScene({ animate }: { animate: boolean }) {
-  const d = PRODUCT_DEMO;
+  const { productDemo: d } = useMarket();
   const [confirmed, setConfirmed] = useState(!animate);
   useEffect(() => {
     if (!animate) return;

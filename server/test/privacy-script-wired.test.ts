@@ -28,7 +28,7 @@ const REPO_ROOT = resolve(import.meta.dir, "..");
 const PACKAGE_JSON = resolve(REPO_ROOT, "package.json");
 const PRIVACY_SCRIPT = resolve(REPO_ROOT, "scripts/check-privacy.sh");
 const VERIFY_DISPATCHER = resolve(REPO_ROOT, "scripts/run-verify-parallel.sh");
-const TEST_WORKFLOW = resolve(REPO_ROOT, ".github/workflows/test.yml");
+const TEST_WORKFLOW = resolve(REPO_ROOT, "..", ".github/workflows/test.yml");
 
 describe("check-privacy.sh CI wiring", () => {
   it("scripts/check-privacy.sh exists and is executable", () => {

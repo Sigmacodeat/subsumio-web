@@ -31,7 +31,11 @@ set -euo pipefail
 if [ -n "${GBRAIN_SCAN_ROOT:-}" ]; then
   ROOT="$GBRAIN_SCAN_ROOT"
 else
-  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  # Default to the engine root (this script lives in <engine>/scripts/).
+  # `git rev-parse --show-toplevel` is wrong in monorepo checkouts where
+  # the engine is a subdirectory — it would scan the outer repo's src/
+  # (e.g. the Next.js frontend) instead of the engine sources.
+  ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 fi
 cd "$ROOT"
 

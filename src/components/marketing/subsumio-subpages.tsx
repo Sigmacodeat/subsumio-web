@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { ArrowRight, MessageSquare, Clock, Paperclip, Mic, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { SECURITY } from "@/content/security";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { Section, SectionHeading, PageHero, CTASection } from "./primitives";
@@ -34,7 +34,10 @@ const COPY = {
 
 // --- Pages -----------------------------------------------------------------
 
-export function WhatsAppPage() {
+export function WhatsAppPage({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   const c = COPY.whatsapp;
   const signup = p("/signup?industry=legal");
   const ui = UI_STRINGS;

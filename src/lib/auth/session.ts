@@ -68,6 +68,9 @@ export async function verifySession(
 ): Promise<SessionPayload | null> {
   const payload = await verifySessionCore(token, secret);
   if (!payload) return null;
+  // Demo sessions carry their own 1h expiry and map to no real user row —
+  // the revocation store has nothing to say about them.
+  if (payload.demo) return payload;
   if (!(await isSessionVersionValid(payload.uid, payload.v))) return null;
   return payload;
 }

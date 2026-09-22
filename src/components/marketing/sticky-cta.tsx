@@ -13,12 +13,11 @@ import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { LANDING, UI_STRINGS, p } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import { EASE } from "./motion-presets";
 
 export default function StickyCta() {
-  const t = LANDING;
-  const ui = UI_STRINGS;
+  const { landing: t, ui, p } = useMarket();
   const { scrollY: globalScrollY } = useScroll();
   const [stickyVisible, setStickyVisible] = useState(false);
   useMotionValueEvent(globalScrollY, "change", (latest) => {

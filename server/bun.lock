@@ -18,6 +18,7 @@
         "@modelcontextprotocol/sdk": "1.29.0",
         "@npeersab/msgreader": "^4.4.0",
         "@types/busboy": "^1.5.4",
+        "@xmldom/xmldom": "^0.8.15",
         "ai": "^6.0.280",
         "busboy": "^1.6.0",
         "chokidar": "^4.0.3",
@@ -62,9 +63,12 @@
   "trustedDependencies": [
     "@electric-sql/pglite",
   ],
+  "patchedDependencies": {
+    "gray-matter@4.0.3": "patches/gray-matter@4.0.3.patch",
+  },
   "overrides": {
     "@hono/node-server": "^1.19.15",
-    "@xmldom/xmldom": "^0.9.12",
+    "@xmldom/xmldom": "^0.8.15",
     "body-parser": "^2.3.0",
     "fast-uri": "^4.1.4",
     "fast-xml-parser": "^5.11.1",
@@ -329,7 +333,7 @@
 
     "@vercel/oidc": ["@vercel/oidc@3.2.0", "", {}, "sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug=="],
 
-    "@xmldom/xmldom": ["@xmldom/xmldom@0.9.12", "", {}, "sha512-5AXjrcMClTryPe9LgZrygpB1lj7s0S9E0+W+AHaVKAVyHanafK86iPSvG5xHVSp/jC+VH1UXu0TAEmY279xH7A=="],
+    "@xmldom/xmldom": ["@xmldom/xmldom@0.8.15", "", {}, "sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA=="],
 
     "abort-controller": ["abort-controller@3.0.0", "", { "dependencies": { "event-target-shim": "^5.0.0" } }, "sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg=="],
 

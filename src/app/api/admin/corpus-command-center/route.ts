@@ -270,6 +270,7 @@ export const GET = createHandler(
       "at-kmger": "law-at-kmger",
       "at-spg": "law-at-spg",
       de: "law-de",
+      "de-judikatur": "law-de-judikatur",
       "de-literatur": "law-de-literatur",
       "de-materialien": "law-de-materialien",
       ch: "law-ch",

@@ -49,6 +49,7 @@ import { can, type RouteAction } from "@/lib/permissions";
 import type { RateTier } from "@/lib/rate-limit-api";
 import type { QuotaType } from "@/lib/plans";
 import type { CreditOperation } from "@/lib/billing/credits";
+import { demoGuard } from "@/lib/demo/guard";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { apiError, apiStream } from "@/lib/api-response";
@@ -465,8 +466,19 @@ export function createHandler<
       }
     }
 
-    // 4. CSRF (state-changing methods only, skip for internal, API key, and custom auth)
-    if (!internalContext && !isApiKeyAuth && !customContext) {
+    // 3c. Public live-demo session — sandboxed to the visitor's isolated
+    // demo-s-* source. Denylisted actions/paths 403; LLM-costly actions
+    // consume the per-session question budget (429 → e-mail gate) instead
+    // of touching real credits or quotas.
+    if (ctx.demo) {
+      const demoError = await demoGuard(req, options.action, ctx.demo.sid);
+      if (demoError) return withCorsHeaders(demoError, options.cors ?? false, req);
+    }
+
+    // 4. CSRF (state-changing methods only, skip for internal, API key,
+    //    custom auth and demo sessions — demo visitors never received a
+    //    CSRF cookie; SameSite=lax on the session cookie is the boundary).
+    if (!internalContext && !isApiKeyAuth && !customContext && !ctx.demo) {
       const csrfError = checkCsrf(req, options.skipCsrf ?? false);
       if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false, req);
     }

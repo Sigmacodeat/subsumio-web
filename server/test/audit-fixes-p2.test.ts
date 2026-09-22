@@ -114,8 +114,11 @@ describe("G21/G22: ConnectorManager map keys", () => {
 
   it("list() uses _findConnectorIdByService instead of has(service)", () => {
     const src = readFileSync(CONNECTOR_MGR, "utf-8");
-    const listFn = src.slice(src.indexOf("async list()"), src.indexOf("async syncOne"));
-    expect(listFn).toContain("_findConnectorIdByService");
+    const listFn = src.slice(src.indexOf("async list("), src.indexOf("async syncOne"));
+    // Id-aware lookup: either via the _findConnectorIdByService helper or the
+    // inline `connector_id ?? service` fallback — both satisfy the G21 contract
+    // (never a bare has(e.service), which misses renamed/aliased connectors).
+    expect(listFn).toMatch(/_findConnectorIdByService|connector_id\s*\?\?\s*e\.service/);
     expect(listFn).not.toContain("this.connectors.has(e.service)");
   });
 

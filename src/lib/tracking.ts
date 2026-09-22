@@ -239,6 +239,61 @@ export const tracking = {
     },
   },
 
+  // Public live-demo journey (anonymous — properties carry no PII)
+  demo: {
+    started(persona?: string, jurisdiction?: string) {
+      track("demo_started", { persona, jurisdiction });
+    },
+    stepViewed(step: number) {
+      track("demo_step_viewed", { step });
+    },
+    stepCompleted(step: number) {
+      track("demo_step_completed", { step });
+    },
+    skipped() {
+      track("demo_tour_skipped");
+    },
+    questionAsked() {
+      track("demo_question_asked");
+    },
+    answerReceived() {
+      track("demo_answer_received");
+    },
+    citationOpened() {
+      track("demo_citation_opened");
+    },
+    ingestStarted() {
+      track("demo_ingest_started");
+    },
+    ingestDone() {
+      track("demo_ingest_done");
+    },
+    deadlineConfirmed() {
+      track("demo_deadline_confirmed");
+    },
+    capReached() {
+      track("demo_cap_reached");
+    },
+    gateShown() {
+      track("demo_gate_shown");
+    },
+    gatePassed() {
+      track("demo_gate_passed");
+    },
+    ctaClicked(place: string) {
+      track("demo_cta_clicked", { place });
+    },
+    signupCompleted() {
+      track("demo_signup_completed");
+    },
+    reset() {
+      track("demo_reset");
+    },
+    expired() {
+      track("demo_expired");
+    },
+  },
+
   // Feature usage
   features: {
     searchUsed(query: string) {

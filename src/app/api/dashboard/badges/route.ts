@@ -107,6 +107,11 @@ export const GET = createHandler(
     if (inboxCount > 0) {
       badges["/dashboard/intake"] = { count: inboxCount, variant: "info" };
     }
+    // Live demo: the staged Klagebeantwortung is a real pending inbox item
+    // until the visitor files it (demo tour chapter 2).
+    if (ctx.demo && !ctx.demo.ingested && !badges["/dashboard/intake"]) {
+      badges["/dashboard/intake"] = { count: 1, variant: "info" };
+    }
 
     // Approvals — one number for everything waiting for a decision, plus the
     // per-list counts. All come from the same summary the lists use, so a

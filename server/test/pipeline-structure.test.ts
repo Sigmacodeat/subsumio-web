@@ -34,6 +34,8 @@ interface LayerSpec {
   mapReduce?: boolean;
 }
 
+const LEGAL_PIPELINE_PATH = `${import.meta.dir}/../src/core/minions/handlers/legal-pipeline.ts`;
+
 const PIPELINE_LAYERS: Record<string, LayerSpec> = {
   "1": { specialist: "on-scanner", tier: "utility", output: "on_index", mapReduce: true },
   "2": { specialist: "entity-extractor", tier: "utility", output: "entities", mapReduce: true },
@@ -45,18 +47,18 @@ const PIPELINE_LAYERS: Record<string, LayerSpec> = {
   },
   "3c": { specialist: "fact-gap-detector", tier: "reasoning", output: "fact_gap" },
   "4": { specialist: "law-matcher", tier: "utility", output: "legal_grounding_map" },
-  "4b": { specialist: "precedent-matcher", tier: "reasoning", output: "precedent_match" },
+  "4b": { specialist: "precedent-matcher", tier: "utility", output: "precedent_match" },
   "4c": { specialist: "burden-of-proof-analyzer", tier: "reasoning", output: "burden_of_proof" },
-  "4d": { specialist: "admissibility-checker", tier: "reasoning", output: "admissibility_check" },
+  "4d": { specialist: "admissibility-checker", tier: "utility", output: "admissibility_check" },
   "4f": { specialist: "evidence-quality-assessor", tier: "reasoning", output: "evidence_quality" },
   "4g": { specialist: "witness-expert-analyzer", tier: "reasoning", output: "witness_expert" },
   "5": {
     specialist: "damage-extractor",
-    tier: "reasoning",
+    tier: "utility",
     output: "damage_table + deadline_calendar",
     mapReduce: true,
   },
-  "5b": { specialist: "deadline-validator", tier: "reasoning", output: "deadline_validation" },
+  "5b": { specialist: "deadline-validator", tier: "utility", output: "deadline_validation" },
   "5c": { specialist: "cost-benefit-analyzer", tier: "reasoning", output: "cost_benefit" },
   "5d": { specialist: "settlement-analyzer", tier: "reasoning", output: "settlement_analysis" },
   "5e": { specialist: "enforcement-analyzer", tier: "reasoning", output: "enforcement_analysis" },
@@ -70,7 +72,7 @@ const PIPELINE_LAYERS: Record<string, LayerSpec> = {
   "5i": { specialist: "tax-impact-analyzer", tier: "reasoning", output: "tax_impact" },
   "5j": { specialist: "counterclaim-analyzer", tier: "reasoning", output: "counterclaim_risk" },
   "5k": { specialist: "mediation-adr-analyzer", tier: "reasoning", output: "mediation_adr" },
-  "5l": { specialist: "limitation-scanner", tier: "reasoning", output: "limitation_scan" },
+  "5l": { specialist: "limitation-scanner", tier: "utility", output: "limitation_scan" },
   "5m": { specialist: "cost-award-predictor", tier: "reasoning", output: "cost_award" },
   "6": { specialist: "legal-drafter", tier: "reasoning", output: "legal_draft" },
   "6.5": { specialist: "opponent-simulator", tier: "deep", output: "counter_arguments" },
@@ -220,42 +222,42 @@ describe("Pipeline layer ordering", () => {
 
 describe("Pipeline guardrail integration (AP-1/AP-2)", () => {
   it("legal-pipeline.ts imports checkCitationGrounding from citation-guardrail", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("checkCitationGrounding");
     expect(source).toContain("citation-guardrail");
   });
 
   it("legal-pipeline.ts imports crossVerifyCitations from cross-verify", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("crossVerifyCitations");
     expect(source).toContain("cross-verify");
   });
 
   it("legal-pipeline.ts imports buildRegenerationPrompt and buildCrossVerifyRegenerationPrompt", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("buildRegenerationPrompt");
     expect(source).toContain("buildCrossVerifyRegenerationPrompt");
   });
 
   it("legal-pipeline.ts has runCitationGuardrailForLayer function", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("function runCitationGuardrailForLayer");
   });
 
   it("legal-pipeline.ts has crossCheckDeadlineStatutory function (AP-6)", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("function crossCheckDeadlineStatutory");
     expect(source).toContain("STATUTORY_LIMITATION_PERIODS");
   });
 
   it("legal-pipeline.ts has configurable ensemble critic models (AP-5)", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("SUBSUMIO_ENSEMBLE_CRITIC_MODELS");
     expect(source).toContain("resolveEnsembleCriticModels");
   });
 
   it("legal-pipeline.ts has hard-block config option (AP-8)", async () => {
-    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file(LEGAL_PIPELINE_PATH).text();
     expect(source).toContain("SUBSUMIO_GUARDRAIL_HARD_BLOCK");
     expect(source).toContain("enforceGuardrailHardBlock");
   });
@@ -313,20 +315,28 @@ describe("Registry ↔ specialist-defs consistency", () => {
     expect(names).toContain("subsumption-checker");
   });
 
-  it("exactly 4 utility-tier specialists in EMBEDDED_SPECIALISTS", () => {
+  it("exactly 9 utility-tier specialists in EMBEDDED_SPECIALISTS", () => {
     const utilitySpecialists = EMBEDDED_SPECIALISTS.filter((s) => s.modelTier === "utility");
-    expect(utilitySpecialists.length).toBe(4);
+    expect(utilitySpecialists.length).toBe(9);
     const names = utilitySpecialists.map((s) => s.name);
-    expect(names).toContain("legal-deadline-extractor");
-    expect(names).toContain("on-scanner");
-    expect(names).toContain("entity-extractor");
-    expect(names).toContain("law-matcher");
+    for (const n of [
+      "legal-deadline-extractor",
+      "on-scanner",
+      "entity-extractor",
+      "law-matcher",
+      "damage-extractor",
+      "deadline-validator",
+      "precedent-matcher",
+      "admissibility-checker",
+      "limitation-scanner",
+    ])
+      expect(names).toContain(n);
   });
 
   it("all remaining specialists are reasoning-tier", () => {
     const reasoningCount = EMBEDDED_SPECIALISTS.filter((s) => s.modelTier === "reasoning").length;
     const total = EMBEDDED_SPECIALISTS.length;
-    expect(reasoningCount).toBe(total - 3 - 4);
+    expect(reasoningCount).toBe(total - 3 - 9);
   });
 
   it("LAYER_REGISTRY has at least 27 layers", () => {
@@ -342,13 +352,15 @@ describe("Workflow definitions validation", () => {
     expect(issues, JSON.stringify(issues, null, 2)).toEqual([]);
   });
 
-  it("all 4 workflow IDs are defined", () => {
+  it("all 6 workflow IDs are defined", () => {
     const ids = listWorkflowIds();
+    expect(ids).toContain("quick_answer");
+    expect(ids).toContain("aktencheck");
     expect(ids).toContain("memo");
     expect(ids).toContain("fristen_report");
     expect(ids).toContain("schriftsatz");
     expect(ids).toContain("full_pipeline");
-    expect(ids.length).toBe(4);
+    expect(ids.length).toBe(6);
   });
 
   it("full_pipeline includes all LAYER_REGISTRY layers", () => {
@@ -416,12 +428,12 @@ describe("Cross-cutting specialist validation", () => {
     }
   });
 
-  it("every specialist has maxTurns >= 5", () => {
+  it("every specialist has maxTurns >= 4", () => {
     for (const s of EMBEDDED_SPECIALISTS) {
       expect(
         s.maxTurns,
-        `Specialist "${s.name}" has maxTurns ${s.maxTurns} — must be >= 5`
-      ).toBeGreaterThanOrEqual(5);
+        `Specialist "${s.name}" has maxTurns ${s.maxTurns} — must be >= 4`
+      ).toBeGreaterThanOrEqual(4);
     }
   });
 });

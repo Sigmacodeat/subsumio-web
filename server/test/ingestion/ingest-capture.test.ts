@@ -52,7 +52,9 @@ function makeJob(data: Record<string, unknown>): MinionJobContext {
   return {
     id: 1,
     name: "ingest_capture",
-    data,
+    // Defer embedding — these tests exercise slug routing + validation,
+    // not the paid embed path (no OPENAI_API_KEY in test env).
+    data: { noEmbed: true, ...data },
     attempts_made: 1,
     signal: new AbortController().signal,
     shutdownSignal: new AbortController().signal,

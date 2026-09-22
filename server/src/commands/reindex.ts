@@ -117,7 +117,7 @@ async function countPending(engine: BrainEngine): Promise<number> {
        FROM pages
       WHERE page_kind = 'markdown'
         AND (
-          COALESCE(chunker_version, 0) < CASE
+          COALESCE(chunker_version, 0) < (CASE
             WHEN type IN ('law', 'statute')
               OR frontmatter->>'type' IN ('law', 'statute')
               THEN $2
@@ -125,7 +125,7 @@ async function countPending(engine: BrainEngine): Promise<number> {
               OR frontmatter->>'type' IN ('court_decision', 'judgement')
               THEN $3
             ELSE $1
-          END
+          END)::int
           OR contextual_retrieval_mode IS NULL
         )
         AND deleted_at IS NULL`,
@@ -150,7 +150,7 @@ async function readBatch(
        FROM pages
       WHERE page_kind = 'markdown'
         AND (
-          COALESCE(chunker_version, 0) < CASE
+          COALESCE(chunker_version, 0) < (CASE
             WHEN type IN ('law', 'statute')
               OR frontmatter->>'type' IN ('law', 'statute')
               THEN $3
@@ -158,7 +158,7 @@ async function readBatch(
               OR frontmatter->>'type' IN ('court_decision', 'judgement')
               THEN $4
             ELSE $1
-          END
+          END)::int
           OR contextual_retrieval_mode IS NULL
         )
         AND deleted_at IS NULL

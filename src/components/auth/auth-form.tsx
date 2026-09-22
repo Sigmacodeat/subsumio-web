@@ -6,7 +6,7 @@
 
 import { useState, Suspense, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { tracking } from "@/lib/tracking";
 import { safeNextPath } from "@/lib/safe-next-path";
 import {
@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
 import { H2_CTA_CLASS } from "@/components/marketing/primitives";
-import { p } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
   ClipReveal,
@@ -31,6 +30,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/marketing/motion-system";
+import { useMarket } from "@/lib/use-market";
 
 const COPY = {
   login: {
@@ -76,11 +76,14 @@ const COPY = {
     back: "Zurück",
   },
   referralNote: "Sie wurden empfohlen — Ihr erster Monat auf einem Bezahlplan ist gratis.",
+  jurisdiction: "Rechtsraum",
+  jurisdictionHint: "Bestimmt Gesetzeskorpus, Fristenregeln und Gerichtsintegration.",
   biometric: "Mit Face ID / Touch ID anmelden",
   biometricUnavailable: "Biometrie nicht verfügbar",
 } as const;
 
 function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
+  const { p } = useMarket();
   const t = COPY;
   const m = t[mode];
   const _router = useRouter();
@@ -91,6 +94,15 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const planNext =
     planParam === "pro" || planParam === "team" ? `/dashboard/billing?checkout=${planParam}` : null;
   const next = safeNextPath(params.get("next"), planNext ?? "/dashboard");
+  // Demo-attribution: /demo CTAs link here with ?from=demo — a completed
+  // signup is the conversion event the demo funnel is measured against.
+  const fromDemo = params.get("from") === "demo";
+  const pathname = usePathname();
+  // Jurisdiction preselect: /de marketing tree or explicit ?jur=de deep-link
+  // (e.g. from the demo CTA). Falls back to AT — the primary market.
+  const [jurisdiction, setJurisdiction] = useState<"at" | "de">(() =>
+    params.get("jur") === "de" || pathname.startsWith("/de") ? "de" : "at"
+  );
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -196,7 +208,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mode === "signup"
-            ? { name, email, password, locale: "at", industry }
+            ? { name, email, password, locale: "at", industry, jurisdiction }
             : { email, password }
         ),
       });
@@ -217,6 +229,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
         tracking.auth.loginSuccess("password");
       } else {
         tracking.auth.signupSuccess("password");
+        if (fromDemo) tracking.demo?.signupCompleted();
       }
       // Hard navigation — router.push + router.refresh races in Next.js 15
       // and leaves the browser stuck on /login. The session cookie is already
@@ -428,6 +441,55 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                   </Link>
                 )}
               </label>
+
+              {mode === "signup" && (
+                <fieldset>
+                  <legend className="mb-1.5 text-xs font-medium [color:var(--mk-text-muted)]">
+                    {t.jurisdiction}
+                  </legend>
+                  <div
+                    role="radiogroup"
+                    aria-label={t.jurisdiction}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    {(
+                      [
+                        { value: "at", label: "Österreich", hint: "ABGB · ZPO · RAO · ERV" },
+                        { value: "de", label: "Deutschland", hint: "BGB · ZPO · BRAO · beA" },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={jurisdiction === opt.value}
+                        onClick={() => setJurisdiction(opt.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                            e.preventDefault();
+                            setJurisdiction(opt.value === "at" ? "de" : "at");
+                          }
+                        }}
+                        className={`flex min-h-[52px] flex-col items-start rounded-lg border px-3 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${
+                          jurisdiction === opt.value
+                            ? "border-[var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
+                            : "[border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] [background:var(--mk-field)] hover:[border-color:var(--mk-border-strong)]"
+                        }`}
+                      >
+                        <span className="text-sm font-medium [color:var(--mk-text)]">
+                          {opt.label}
+                        </span>
+                        <span className="text-[11px] [color:var(--mk-text-subtle)]">
+                          {opt.hint}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[11px] [color:var(--mk-text-subtle)]">
+                    {t.jurisdictionHint}
+                  </p>
+                </fieldset>
+              )}
 
               {error && (
                 <div

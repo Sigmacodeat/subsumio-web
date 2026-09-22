@@ -256,8 +256,8 @@ describe("cross-surface parity contract", () => {
   test("source greps: orphan_ratio check name appears in BOTH local doctor and remote doctor", () => {
     const doctor = readFileSync("src/commands/doctor.ts", "utf8");
     const remote = readFileSync("src/core/doctor-remote.ts", "utf8");
-    expect(doctor.includes("name: 'orphan_ratio'")).toBe(true);
-    expect(remote.includes("name: 'orphan_ratio'")).toBe(true);
+    expect(doctor.match(/name:\s*['"]orphan_ratio['"]/)).toBeTruthy();
+    expect(remote.match(/name:\s*['"]orphan_ratio['"]/)).toBeTruthy();
   });
 
   test("source greps: both surfaces reference the same fix command", () => {

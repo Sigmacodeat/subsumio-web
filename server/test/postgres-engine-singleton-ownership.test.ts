@@ -100,7 +100,7 @@ describe("postgres-engine / module-singleton ownership (#1471)", () => {
     // Module-singleton engines must NOT route through this.disconnect()/db.disconnect()
     // on reconnect — they recover idempotently via db.connect() + setReadPool, so a
     // transient blip can't null the shared singleton other phases are using.
-    expect(/this\._connectionStyle\s*!==\s*'instance'/.test(reconnect)).toBe(true);
+    expect(/this\._connectionStyle\s*!==\s*['"]instance['"]/.test(reconnect)).toBe(true);
     expect(/db\.connect\(this\._savedConfig\)/.test(reconnect)).toBe(true);
     expect(/setReadPool\(db\.getConnection\(\)\)/.test(reconnect)).toBe(true);
     // The instance path keeps the `_reconnecting` re-entrancy guard.

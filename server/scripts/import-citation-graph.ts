@@ -346,7 +346,7 @@ async function main() {
     await engine.connect(toEngineConfig(cfg));
     await engine.initSchema();
     addLinksBatch = (links: any[]) =>
-      engine.addLinksBatch(links, { auditSite: "citation-graph-import" });
+      engine.addLinksBatch(links, { auditSite: "citation-graph-import" }); // gbrain-allow-direct-insert: citation-graph import script — bulk migration path
   }
 
   const progress = createProgress({ mode: "auto" });

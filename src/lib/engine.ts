@@ -121,6 +121,18 @@ export interface EngineContext {
   /** Set only while a platform operator is inside a time-boxed support
    *  session (see src/lib/support-session.ts) — never for firm users. */
   supportSession?: SupportSession;
+  /** Set for public live-demo visitors (POST /api/demo/session). brainId is
+   *  the visitor's isolated demo-s-* source; api-handler restricts dangerous
+   *  actions and bills LLM use against the session budget, not credits. */
+  demo?: {
+    sid: string;
+    sourceId: string;
+    persona: "lawyer" | "assistant";
+    jurisdiction: "at" | "de";
+    questionsUsed: number;
+    questionsCap: number;
+    ingested: boolean;
+  };
 }
 
 /**
@@ -142,6 +154,55 @@ export async function engineContext(): Promise<EngineContext | null> {
   const jar = await cookies();
   const session = await verifySession(jar.get(SESSION_COOKIE)?.value);
   if (!session) return null;
+
+  // Public live-demo session: no real user row — resolve the per-visitor
+  // isolated source and a synthetic demo identity. Same redirect pattern as
+  // support sessions: the single enforcement point for every route.
+  if (session.demo) {
+    const { getDemoSession } = await import("@/lib/demo/session");
+    const ds = await getDemoSession(session.demo.sid);
+    if (!ds || ds.deletedAt || ds.sourceId !== session.demo.source) return null;
+    if (new Date(ds.expiresAt).getTime() <= Date.now()) return null;
+    const role = session.demo.persona === "assistant" ? "assistant" : "lawyer";
+    const demoUser = {
+      id: `demo:${ds.id}`,
+      email: `demo@subsumio.invalid`,
+      name: "Demo-Kanzlei",
+      passwordHash: "",
+      role,
+      plan: "enterprise",
+      locale: "de",
+      referralCode: "",
+      referredBy: null,
+      brainId: ds.sourceId,
+      stripeCustomerId: null,
+      jurisdiction: ds.jurisdiction === "de" ? "DE" : "AT",
+      onboardingCompletedAt: new Date().toISOString(),
+      createdAt: ds.createdAt,
+    } as User;
+    const headers: Record<string, string> = { "x-subsumio-source": ds.sourceId };
+    const apiKey = env("SUBSUMIO_WEB_API_KEY");
+    if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+    if (demoUser.jurisdiction) headers["x-subsumio-jurisdiction"] = demoUser.jurisdiction;
+    addCallerIdentity(headers, ds.sourceId, demoUser);
+    return {
+      headers,
+      brainId: ds.sourceId,
+      plan: "enterprise",
+      user: demoUser,
+      billing: { ownerId: `demo:${ds.id}`, ownerType: "user" },
+      demo: {
+        sid: ds.id,
+        sourceId: ds.sourceId,
+        persona: session.demo.persona,
+        jurisdiction: ds.jurisdiction,
+        questionsUsed: ds.questionsUsed,
+        questionsCap: ds.questionsCap,
+        ingested: ds.ingested,
+      },
+    };
+  }
+
   const user = await getStore().getById(session.uid);
   if (!user) return null;
   if (user.deactivatedAt) return null;
@@ -473,7 +534,10 @@ export async function requireEngineContext(
   // `next start` forces NODE_ENV=production which would block the e2e
   // production-build server).
   const e2eBypass = env("SUBSUMIO_E2E") === "1";
-  if (creditOp && CREDIT_COSTS[creditOp] > 0 && !e2eBypass) {
+  // Demo sessions bill LLM use against their per-session question budget
+  // (demo guard in api-handler) — never against real credits or plan quotas.
+  const isDemo = Boolean(ctx.demo);
+  if (creditOp && CREDIT_COSTS[creditOp] > 0 && !e2eBypass && !isDemo) {
     const ownerType: OwnerType = ctx.billing.ownerType;
     const ownerId = ctx.billing.ownerId;
     // New accounts start with the 30-day trial balance (idempotent, one-time).
@@ -485,7 +549,7 @@ export async function requireEngineContext(
   }
 
   // 4. Quota (optional)
-  if (quotaField) {
+  if (quotaField && !isDemo) {
     const quota = await checkQuota(ctx.brainId, ctx.plan, quotaField);
     if (!quota.ok) {
       return quotaExceeded(quotaField, quota.used, quota.limit);
@@ -504,6 +568,7 @@ export async function recordQuota(
   field: QuotaType,
   amount = 1
 ): Promise<void> {
+  if (ctx.demo) return;
   await incQuota(ctx.brainId, field, amount);
 }
 
@@ -528,7 +593,7 @@ export async function recordCreditConsumption(
   idempotencyKey?: string
 ): Promise<void> {
   const cost = CREDIT_COSTS[operation];
-  if (cost <= 0) return;
+  if (cost <= 0 || ctx.demo) return;
   const ownerType: OwnerType = ctx.billing.ownerType;
   const ownerId = ctx.billing.ownerId;
   try {

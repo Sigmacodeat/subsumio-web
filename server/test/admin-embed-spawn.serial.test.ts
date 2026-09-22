@@ -1,24 +1,13 @@
 /**
- * v0.36.1.x #1090: admin embed E2E — spawns `gbrain serve --http` from a
- * fresh tmpdir (so `process.cwd()/admin/dist` doesn't exist), then issues
- * a real HTTP GET to /admin and asserts the React SPA shell HTML comes
- * back from the embedded manifest path — NOT a 404, NOT an Express
- * default error page.
+ * Admin surface contract after the legacy admin SPA was removed (admin/dist
+ * no longer ships; src/admin-embedded.ts is an empty generated stub):
+ *   - /admin/* page routes degrade to 404 (no embedded manifest, no
+ *     cwd-relative admin/dist fallback in a foreign cwd)
+ *   - /admin/api/* routes still resolve to real handlers — the auth
+ *     challenge must NOT be swallowed by any SPA fallback
  *
- * Pre-fix, the server resolved `adminDistPath = path.join(process.cwd(),
- * 'admin', 'dist')` and skipped /admin route mounting when that path did
- * not exist. Every globally-installed binary (`bun install -g
- * github:garrytan/gbrain`) hit 404 on /admin because the user never
- * cd's into the source repo. The fix:
- *   1. `scripts/build-admin-embedded.ts` walks admin/dist and emits
- *      `src/admin-embedded.ts` with `with { type: 'file' }` imports.
- *   2. `serve-http.ts` two-tier resolution: cwd-relative admin/dist for
- *      dev (Vite hot-rebuild), embedded manifest otherwise.
- *
- * This test deliberately runs the server from a tmpdir so the cwd-relative
- * branch CANNOT fire — the embedded path is the one under test. If the
- * embed wiring regresses, this case fails with a 404 (or never reaches
- * the SPA shell HTML).
+ * Spawns `gbrain serve --http` from a fresh tmpdir so `process.cwd()/admin/dist`
+ * cannot exist — the embedded-manifest branch is the one under test.
  *
  * No DATABASE_URL needed; PGLite is the engine. Serial because it binds
  * a TCP port and reads/writes a tmpdir.
@@ -64,8 +53,7 @@ async function spawnServer(): Promise<ServeProc> {
 
   // CRITICAL: cwd is the tmpdir, NOT the repo. This forces serve-http to
   // fall into the embedded-manifest branch because cwd/admin/dist does
-  // not exist. The pre-fix code would 404 here; the fix serves from the
-  // bundled assets via Bun's `with { type: 'file' }` import resolution.
+  // not exist.
   const proc = Bun.spawn(
     [
       "bun",
@@ -82,6 +70,8 @@ async function spawnServer(): Promise<ServeProc> {
       cwd: home,
       env: {
         ...process.env,
+        DATABASE_URL: "",
+        GBRAIN_DATABASE_URL: "",
         HOME: home,
         GBRAIN_HOME: home,
         GBRAIN_ADMIN_BOOTSTRAP_TOKEN: bootstrapToken,
@@ -146,69 +136,45 @@ async function spawnServer(): Promise<ServeProc> {
   return { proc, port, home, bootstrapToken, cleanup };
 }
 
-describe("admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1090)", () => {
-  test("GET /admin/ returns 200 with the React SPA shell HTML", async () => {
+describe("admin surface contract — SPA absent, API routes intact", () => {
+  test("GET /admin/ returns 404 (admin SPA not embedded in this build)", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/`, {
         signal: AbortSignal.timeout(5000),
       });
-      expect(res.status).toBe(200);
-      const html = await res.text();
-      // The actual admin/dist/index.html declares <title>GBrain Admin</title>
-      // and mounts the SPA on <div id="root">. Both must be present, otherwise
-      // we're not serving the embedded asset.
-      expect(html).toContain("GBrain Admin");
-      expect(html).toContain('<div id="root">');
-      // Content-Type is text/html, not application/octet-stream (which would
-      // mean the mime lookup in ADMIN_ASSETS regressed).
-      expect(res.headers.get("content-type") ?? "").toMatch(/text\/html/);
+      expect(res.status).toBe(404);
+      const body = await res.text();
+      expect(body).not.toContain('<div id="root">');
     } finally {
       await s.cleanup();
     }
   }, 90_000);
 
-  test("GET /admin/index.html (explicit path) also returns the SPA HTML", async () => {
-    const s = await spawnServer();
-    try {
-      const res = await fetch(`http://127.0.0.1:${s.port}/admin/index.html`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      expect(res.status).toBe(200);
-      const html = await res.text();
-      expect(html).toContain("GBrain Admin");
-    } finally {
-      await s.cleanup();
-    }
-  }, 90_000);
-
-  test("GET /admin/agents (SPA-routed deep link) falls back to index.html", async () => {
+  test("GET /admin/agents (SPA deep link) also 404s — no stale fallback serving HTML", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/agents`, {
         signal: AbortSignal.timeout(5000),
       });
-      expect(res.status).toBe(200);
-      const html = await res.text();
-      // SPA fallback: any unmatched /admin/* path serves index.html so
-      // client-side routing takes over.
-      expect(html).toContain("GBrain Admin");
-      expect(html).toContain('<div id="root">');
+      expect(res.status).toBe(404);
+      const body = await res.text();
+      expect(body).not.toContain('<div id="root">');
     } finally {
       await s.cleanup();
     }
   }, 90_000);
 
-  test("GET /admin/api/stats (API route) is NOT swallowed by the SPA fallback — returns auth challenge", async () => {
+  test("GET /admin/api/stats (API route) is NOT swallowed — returns auth challenge", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/api/stats`, {
         signal: AbortSignal.timeout(5000),
       });
-      // No session cookie → 401/403 from requireAdmin, NOT 200 + HTML.
-      // The regression we guard against: SPA fallback grabbing /admin/api/*
-      // would silently return HTML to a JSON client and break the dashboard.
+      // No session cookie → 401/403 from requireAdmin, NOT 200 + HTML and
+      // NOT the 404 the SPA routes now return.
       expect(res.status).not.toBe(200);
+      expect(res.status).not.toBe(404);
       const body = await res.text().catch(() => "");
       expect(body).not.toContain('<div id="root">');
     } finally {

@@ -71,7 +71,7 @@ import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
 import { inheritBudgetOwner } from "../budget-tracker.ts";
 import { recordUsage as recordSaaSUsage } from "../../billing.ts";
 import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
-import { AT_LAW_SOURCES_ALL } from "../../legal/jurisdiction.ts";
+import { AT_LAW_SOURCES_ALL, DE_LAW_SOURCES_ALL } from "../../legal/jurisdiction.ts";
 import {
   runCompletenessCheck,
   detectCaseType,
@@ -217,7 +217,7 @@ function buildFactsFence(rows: FactRow[]): string {
  */
 const PIPELINE_JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
   at: AT_LAW_SOURCES_ALL,
-  de: ["law-de", "law-eu"],
+  de: DE_LAW_SOURCES_ALL,
   ch: ["law-ch", "law-eu"],
   eu: ["law-eu"],
 };

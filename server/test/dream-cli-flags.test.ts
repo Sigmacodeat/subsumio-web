@@ -14,14 +14,14 @@ const dreamSrc = readFileSync(new URL("../src/commands/dream.ts", import.meta.ur
 
 describe("dream CLI flag wiring", () => {
   test("declares --input flag with file argument", () => {
-    expect(dreamSrc).toContain("'--input'");
+    expect(dreamSrc).toMatch(/["']--input["']/);
     expect(dreamSrc).toContain("inputFile");
   });
 
   test("declares --date / --from / --to flags", () => {
-    expect(dreamSrc).toContain("'--date'");
-    expect(dreamSrc).toContain("'--from'");
-    expect(dreamSrc).toContain("'--to'");
+    expect(dreamSrc).toMatch(/["']--date["']/);
+    expect(dreamSrc).toMatch(/["']--from["']/);
+    expect(dreamSrc).toMatch(/["']--to["']/);
   });
 
   test("validates ISO date format", () => {
@@ -34,7 +34,7 @@ describe("dream CLI flag wiring", () => {
   });
 
   test("--input implies --phase synthesize", () => {
-    expect(dreamSrc).toContain("phase = 'synthesize'");
+    expect(dreamSrc).toMatch(/phase = ["']synthesize["']/);
   });
 
   test("--from > --to range validation", () => {
@@ -63,11 +63,11 @@ describe("dream CLI flag wiring", () => {
   // Structural-only tests; behavioral tests live in test/dream.test.ts.
   describe("--source / --source-id wiring (v0.41.13)", () => {
     test("declares --source flag in argv parsing", () => {
-      expect(dreamSrc).toContain("'--source'");
+      expect(dreamSrc).toMatch(/["']--source["']/);
     });
 
     test("declares --source-id alias in argv parsing", () => {
-      expect(dreamSrc).toContain("'--source-id'");
+      expect(dreamSrc).toMatch(/["']--source-id["']/);
     });
 
     test("forwards resolved sourceId to runCycle", () => {
@@ -77,7 +77,7 @@ describe("dream CLI flag wiring", () => {
     });
 
     test("imports resolveSourceId from canonical source-resolver helper", () => {
-      expect(dreamSrc).toContain("from '../core/source-resolver.ts'");
+      expect(dreamSrc).toMatch(/from ["']\.{2}\/core\/source-resolver\.ts["']/);
       expect(dreamSrc).toContain("resolveSourceId");
     });
 
@@ -109,13 +109,13 @@ describe("dream CLI flag wiring", () => {
   // issue #1678 — --drain bounded backlog drain wiring (structural).
   describe("--drain wiring", () => {
     test("declares --drain and --window flags", () => {
-      expect(dreamSrc).toContain("'--drain'");
-      expect(dreamSrc).toContain("'--window'");
+      expect(dreamSrc).toMatch(/["']--drain["']/);
+      expect(dreamSrc).toMatch(/["']--window["']/);
       expect(dreamSrc).toContain("windowSeconds");
     });
 
     test("--drain defaults to extract_atoms and rejects other phases", () => {
-      expect(dreamSrc).toContain("phase = 'extract_atoms'");
+      expect(dreamSrc).toMatch(/phase = ["']extract_atoms["']/);
       expect(dreamSrc).toContain("--drain currently supports only --phase extract_atoms");
     });
 

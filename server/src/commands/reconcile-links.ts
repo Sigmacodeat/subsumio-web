@@ -128,6 +128,7 @@ export async function runReconcileLinks(
         // qualified per opts.sourceId; same-source assumption mirrors the
         // import-file.ts:303 doc↔impl auto-link.
         await engine.addLink(
+          // gbrain-allow-direct-insert: gbrain reconcile-links — code-graph reconciliation from markdown references
           mdSlug,
           codeSlug,
           ctx,
@@ -138,6 +139,7 @@ export async function runReconcileLinks(
           linkOpts
         ); // gbrain-allow-direct-insert: gbrain reconcile-links command — code-graph reconciliation from markdown references
         await engine.addLink(
+          // gbrain-allow-direct-insert: gbrain reconcile-links — code-graph reconciliation from markdown references
           codeSlug,
           mdSlug,
           ref.path,

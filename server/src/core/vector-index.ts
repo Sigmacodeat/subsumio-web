@@ -21,6 +21,12 @@ export const PGVECTOR_HNSW_VECTOR_MAX_DIMS = 2000;
 const CHUNK_EMBEDDING_HNSW_INDEX =
   "CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops);";
 
+// The embedded Postgres schema defers the index into a `DO $block$` guarded
+// by an empty-table check; the same policy must neutralize that EXECUTE form
+// for over-limit dims or init dies on pgvector's HNSW cap.
+const CHUNK_EMBEDDING_HNSW_EXECUTE =
+  "EXECUTE 'CREATE INDEX idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops)';";
+
 export function chunkEmbeddingIndexSql(dims: number): string {
   if (dims <= PGVECTOR_HNSW_VECTOR_MAX_DIMS) return CHUNK_EMBEDDING_HNSW_INDEX;
   return [
@@ -30,7 +36,11 @@ export function chunkEmbeddingIndexSql(dims: number): string {
 }
 
 export function applyChunkEmbeddingIndexPolicy(sql: string, dims: number): string {
-  return sql.replaceAll(CHUNK_EMBEDDING_HNSW_INDEX, chunkEmbeddingIndexSql(dims));
+  const out = sql.replaceAll(CHUNK_EMBEDDING_HNSW_INDEX, chunkEmbeddingIndexSql(dims));
+  if (dims <= PGVECTOR_HNSW_VECTOR_MAX_DIMS) return out;
+  // Neutralize the deferred EXECUTE inside the DO block: replace it with a
+  // no-op statement so the block stays syntactically valid but skips HNSW.
+  return out.replaceAll(CHUNK_EMBEDDING_HNSW_EXECUTE, "EXECUTE 'SELECT 1'");
 }
 
 // ---------------------------------------------------------------------------

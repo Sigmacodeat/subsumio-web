@@ -171,7 +171,9 @@ describe("Bug 3 — orchestrator no longer writes the ledger directly", () => {
     const source = await Bun.file(
       new URL("../src/commands/apply-migrations.ts", import.meta.url)
     ).text();
-    expect(source).toContain("import { loadCompletedMigrations, appendCompletedMigration");
+    expect(source).toMatch(
+      /import\s*\{[^}]*loadCompletedMigrations[^}]*appendCompletedMigration[^}]*\}/
+    );
     expect(source).toContain("appendCompletedMigration({");
     expect(source).toContain("'retry'");
     expect(source).toContain("--force-retry");

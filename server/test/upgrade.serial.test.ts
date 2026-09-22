@@ -41,12 +41,12 @@ describe("detectInstallMethod heuristic (source analysis)", () => {
 
   test("checks node_modules before binary", () => {
     const nodeModulesIdx = source.indexOf("node_modules");
-    const binaryIdx = source.indexOf("endsWith('/gbrain')");
+    const binaryIdx = source.indexOf('endsWith("/gbrain")');
     expect(nodeModulesIdx).toBeLessThan(binaryIdx);
   });
 
   test("checks binary before clawhub", () => {
-    const binaryIdx = source.indexOf("endsWith('/gbrain')");
+    const binaryIdx = source.indexOf('endsWith("/gbrain")');
     const clawhubIdx = source.indexOf("clawhub --version");
     expect(binaryIdx).toBeLessThan(clawhubIdx);
   });
@@ -63,7 +63,7 @@ describe("detectInstallMethod heuristic (source analysis)", () => {
   });
 
   test("return type includes bun-link variant (v0.28.5 cluster D)", () => {
-    expect(source).toContain("'bun' | 'bun-link' | 'binary' | 'clawhub' | 'unknown'");
+    expect(source).toContain('"bun" | "bun-link" | "binary" | "clawhub" | "unknown"');
   });
 
   test("does not reference npm in case labels or messages", () => {
@@ -101,13 +101,13 @@ describe("detectInstallMethod heuristic (source analysis)", () => {
     // execFileSync with array args bypasses the shell (same pattern as
     // dry-fix.ts:172). execSync with template strings is vulnerable to
     // paths containing shell metacharacters.
-    expect(source).toContain("execFileSync('git', ['-C', linkInfo.repoRoot, 'pull', '--ff-only']");
-    expect(source).toContain("execFileSync('bun', ['install']");
+    expect(source).toContain('execFileSync("git", ["-C", linkInfo.repoRoot, "pull", "--ff-only"]');
+    expect(source).toContain('execFileSync("bun", ["install"]');
   });
 
   test("bun global upgrade passes cwd to bun update", () => {
     expect(source).toContain("const bunGlobalRoot = resolveBunGlobalRoot()");
-    expect(source).toContain("execFileSync('bun', ['update', 'gbrain'], { cwd: bunGlobalRoot");
+    expect(source).toMatch(/execFileSync\("bun", \["update", "gbrain"\], \{\s*cwd: bunGlobalRoot/);
   });
 
   test("classifyBunInstall checks repository.url AND src/cli.ts marker", () => {
@@ -116,7 +116,7 @@ describe("detectInstallMethod heuristic (source analysis)", () => {
     // belt-and-suspenders.
     expect(source).toContain("function classifyBunInstall");
     expect(source).toContain("pkg.repository");
-    expect(source).toContain("'src', 'cli.ts'");
+    expect(source).toContain('"src", "cli.ts"');
   });
 
   test("squatter recovery message names both source-clone AND release-binary paths", () => {

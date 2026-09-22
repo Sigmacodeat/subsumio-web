@@ -5,7 +5,7 @@ import { withEnv } from "./helpers/with-env.ts";
 import { mkdtempSync, rmSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import { importFromContent } from "../src/core/import-file.ts";
+import { importFromContent, invalidateImportConfigCache } from "../src/core/import-file.ts";
 import { ContentSanityBlockError } from "../src/core/content-sanity.ts";
 import { isEmbedSkipped, EMBED_SKIP_KEY } from "../src/core/embed-skip.ts";
 import { isQuarantined, getContentFlag, CONTENT_FLAG_KEY } from "../src/core/quarantine.ts";
@@ -160,6 +160,7 @@ describe("importFromContent — junk reject (opt-in disposition)", () => {
   test("junk_disposition=reject → throws ContentSanityBlockError with PAGE_JUNK_PATTERN", async () => {
     await withIsolatedHome(async () => {
       await engine.setConfig("content_sanity.junk_disposition", "reject");
+      invalidateImportConfigCache(engine);
       try {
         const content = FRONTMATTER + "Cloudflare Ray ID: abc123";
         let caught: Error | undefined;
@@ -175,6 +176,7 @@ describe("importFromContent — junk reject (opt-in disposition)", () => {
         expect(page).toBeNull();
       } finally {
         await engine.unsetConfig("content_sanity.junk_disposition");
+        invalidateImportConfigCache(engine);
       }
     });
   });
@@ -209,6 +211,7 @@ describe("importFromContent — markup-heavy FLAG (Q1=A: warn, stay searchable)"
   test("prose_check_enabled=false suppresses the markup-heavy flag", async () => {
     await withIsolatedHome(async () => {
       await engine.setConfig("content_sanity.prose_check_enabled", "false");
+      invalidateImportConfigCache(engine);
       try {
         const navRow = "| [x](http://a) | [y](http://b) | [z](http://c) | [w](http://d) |\n";
         const content = FRONTMATTER + navRow.repeat(1200);
@@ -218,6 +221,7 @@ describe("importFromContent — markup-heavy FLAG (Q1=A: warn, stay searchable)"
         expect(getContentFlag(page!.frontmatter as Record<string, unknown>)).toBeNull();
       } finally {
         await engine.unsetConfig("content_sanity.prose_check_enabled");
+        invalidateImportConfigCache(engine);
       }
     });
   });
@@ -226,50 +230,73 @@ describe("importFromContent — markup-heavy FLAG (Q1=A: warn, stay searchable)"
 describe("importFromContent — soft-block (D9 transition + embed_skip)", () => {
   test("soft-block writes page with embed_skip frontmatter marker", async () => {
     await withIsolatedHome(async () => {
-      // 600K of clean text → soft-block (oversize but no junk pattern).
-      const content = FRONTMATTER + "a".repeat(600_000);
-      const result = await importFromContent(engine, "test/big", content, { noEmbed: true });
-      expect(result.status).not.toBe("error");
-      // v0.42: oversize also flags (agent warning) alongside embed_skip.
-      expect(result.flagged).toBe(true);
-      expect(result.flag_reason).toBe("oversized");
-      const page = await engine.getPage("test/big");
-      expect(page).not.toBeNull();
-      const fm = page!.frontmatter as Record<string, unknown>;
-      expect(isEmbedSkipped(fm)).toBe(true);
-      const marker = fm[EMBED_SKIP_KEY] as Record<string, unknown>;
-      expect(marker.reason).toBe("oversized");
-      expect(marker.bytes).toBeGreaterThan(500_000);
-      // content_flag:oversized rides along for the agent warning.
-      expect((fm[CONTENT_FLAG_KEY] as Record<string, unknown>)?.reason).toBe("oversized");
+      // bytes_block defaults to 50MB; pin it below the 600K fixture so the
+      // oversize path fires without a 50MB test payload.
+      await engine.setConfig("content_sanity.bytes_block", "500000");
+      invalidateImportConfigCache(engine);
+      try {
+        // 600K of clean text → soft-block (oversize but no junk pattern).
+        const content = FRONTMATTER + "a".repeat(600_000);
+        const result = await importFromContent(engine, "test/big", content, { noEmbed: true });
+        expect(result.status).not.toBe("error");
+        // v0.42: oversize also flags (agent warning) alongside embed_skip.
+        expect(result.flagged).toBe(true);
+        expect(result.flag_reason).toBe("oversized");
+        const page = await engine.getPage("test/big");
+        expect(page).not.toBeNull();
+        const fm = page!.frontmatter as Record<string, unknown>;
+        expect(isEmbedSkipped(fm)).toBe(true);
+        const marker = fm[EMBED_SKIP_KEY] as Record<string, unknown>;
+        expect(marker.reason).toBe("oversized");
+        expect(marker.bytes).toBeGreaterThan(500_000);
+        // content_flag:oversized rides along for the agent warning.
+        expect((fm[CONTENT_FLAG_KEY] as Record<string, unknown>)?.reason).toBe("oversized");
+      } finally {
+        await engine.unsetConfig("content_sanity.bytes_block");
+        invalidateImportConfigCache(engine);
+      }
     });
   });
 
   test("soft-block deletes existing chunks (D9 transition invariant)", async () => {
     await withIsolatedHome(async () => {
-      // First write a normal page to seed some chunks.
-      const small =
-        FRONTMATTER +
-        "Short content with multiple sentences. Plenty of words here. Enough to chunk.";
-      await importFromContent(engine, "test/grow", small, { noEmbed: true });
-      const beforeChunks = await engine.getChunks("test/grow");
-      expect(beforeChunks.length).toBeGreaterThan(0);
+      await engine.setConfig("content_sanity.bytes_block", "500000");
+      invalidateImportConfigCache(engine);
+      try {
+        // First write a normal page to seed some chunks.
+        const small =
+          FRONTMATTER +
+          "Short content with multiple sentences. Plenty of words here. Enough to chunk.";
+        await importFromContent(engine, "test/grow", small, { noEmbed: true });
+        const beforeChunks = await engine.getChunks("test/grow");
+        expect(beforeChunks.length).toBeGreaterThan(0);
 
-      // Now re-import with content that grew past the block threshold.
-      const big = FRONTMATTER + "a".repeat(600_000);
-      await importFromContent(engine, "test/grow", big, { noEmbed: true });
-      const afterChunks = await engine.getChunks("test/grow");
-      // D9: transition to embed_skip should delete chunks.
-      expect(afterChunks.length).toBe(0);
+        // Now re-import with content that grew past the block threshold.
+        const big = FRONTMATTER + "a".repeat(600_000);
+        await importFromContent(engine, "test/grow", big, { noEmbed: true });
+        const afterChunks = await engine.getChunks("test/grow");
+        // D9: transition to embed_skip should delete chunks.
+        expect(afterChunks.length).toBe(0);
+      } finally {
+        await engine.unsetConfig("content_sanity.bytes_block");
+        invalidateImportConfigCache(engine);
+      }
     });
   });
 
   test("soft-block skips chunking entirely (no new chunks created)", async () => {
     await withIsolatedHome(async () => {
-      const content = FRONTMATTER + "a".repeat(600_000);
-      await importFromContent(engine, "test/big2", content, { noEmbed: true });
-      const chunks = await engine.getChunks("test/big2");
-      expect(chunks.length).toBe(0);
+      await engine.setConfig("content_sanity.bytes_block", "500000");
+      invalidateImportConfigCache(engine);
+      try {
+        const content = FRONTMATTER + "a".repeat(600_000);
+        await importFromContent(engine, "test/big2", content, { noEmbed: true });
+        const chunks = await engine.getChunks("test/big2");
+        expect(chunks.length).toBe(0);
+      } finally {
+        await engine.unsetConfig("content_sanity.bytes_block");
+        invalidateImportConfigCache(engine);
+      }
     });
   });
 });

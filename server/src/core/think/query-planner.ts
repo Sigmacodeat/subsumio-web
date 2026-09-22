@@ -30,7 +30,11 @@ import { hybridSearch } from "../search/hybrid.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
 import { expandLegalQuery } from "./legal-query-expand.ts";
 import { expandConceptQuery } from "../legal/concept-map.ts";
-import { AT_LAW_SOURCES_STATUTES, LEGAL_SOURCE_BY_JURISDICTION } from "../legal/jurisdiction.ts";
+import {
+  AT_LAW_SOURCES_STATUTES,
+  DE_LAW_SOURCES_STATUTES,
+  LEGAL_SOURCE_BY_JURISDICTION,
+} from "../legal/jurisdiction.ts";
 
 export type QueryIntent = "statute_lookup" | "case_analysis" | "internal_doc_search" | "mixed";
 
@@ -247,6 +251,7 @@ export function fallbackPlan(opts: QueryPlannerOpts): QueryPlan {
 export function statuteSourcesFor(jurisdiction: string): string[] | undefined {
   const j = jurisdiction.toLowerCase();
   if (j === "at") return [...AT_LAW_SOURCES_STATUTES, LEGAL_SOURCE_BY_JURISDICTION.eu];
+  if (j === "de") return [...DE_LAW_SOURCES_STATUTES, LEGAL_SOURCE_BY_JURISDICTION.eu];
   const single = LEGAL_SOURCE_BY_JURISDICTION[j as keyof typeof LEGAL_SOURCE_BY_JURISDICTION];
   if (!single) return undefined;
   return j === "eu" ? [single] : [single, LEGAL_SOURCE_BY_JURISDICTION.eu];

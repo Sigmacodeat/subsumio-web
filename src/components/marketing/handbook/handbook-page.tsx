@@ -17,7 +17,6 @@ import {
   type HandbookChapter,
   type HandbookReplica,
 } from "@/content/handbook";
-import { p } from "@/content/site";
 import { cn } from "@/lib/utils";
 import {
   AssistantReplica,
@@ -34,6 +33,7 @@ import {
   DeadlineRegisterReplica,
   MatterReplica,
 } from "./replicas-pages";
+import { useMarket } from "@/lib/use-market";
 
 function Replica({ kind, caption }: { kind: HandbookReplica; caption?: string }) {
   switch (kind) {
@@ -156,6 +156,7 @@ function Chapter({ chapter }: { chapter: HandbookChapter }) {
 }
 
 export default function HandbookPage() {
+  const { p } = useMarket();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<string>(HANDBOOK[0].chapters[0].id);
   const searchRef = useRef<HTMLInputElement>(null);

@@ -6,9 +6,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
-import { UI_STRINGS } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 
 export default function BackToTop() {
+  const { ui: UI_STRINGS } = useMarket();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

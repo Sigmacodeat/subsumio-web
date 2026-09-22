@@ -239,6 +239,7 @@ function calculateDeadline(
 
 export default function DeadlinesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
   const { t, lang } = useLang();
   const meQuery = useMe();
@@ -320,7 +321,9 @@ export default function DeadlinesPage() {
     note: string;
   } | null>(null);
   const [showAiDetect, setShowAiDetect] = useState(false);
-  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
+  // ?ai=1 deep-links straight to the KI-Vorschläge (demo tour chapter 3,
+  // intake "Frist prüfen" CTA) — the HITL review must be reachable by URL.
+  const [showAiSuggestions, setShowAiSuggestions] = useState(() => searchParams.get("ai") === "1");
   const [aiText, setAiText] = useState("");
   const [aiResults, setAiResults] = useState<
     Array<{ type: string; description: string; date?: string; confidence: string }>
@@ -528,7 +531,6 @@ export default function DeadlinesPage() {
   }, [loadDeadlines]);
 
   // Apply URL filter params from deep-link navigation (e.g. ?case=xxx&status=critical)
-  const searchParams = useSearchParams();
   useEffect(() => {
     const caseParam = searchParams.get("case");
     const statusParam = searchParams.get("status");
@@ -1239,7 +1241,11 @@ export default function DeadlinesPage() {
       )}
 
       {/* AI Deadline Suggestions — global consolidated view */}
-      {showAiSuggestions && <AiDeadlineSuggestions />}
+      {showAiSuggestions && (
+        <div id="ai-suggestions" data-tour="ai-suggestions">
+          <AiDeadlineSuggestions />
+        </div>
+      )}
 
       {/* Alert banner */}
       {(counts.overdue > 0 || criticalCount > 0) && (

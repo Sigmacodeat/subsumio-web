@@ -93,7 +93,7 @@ describe("#1569 --no-schema-pack + heartbeat wiring (structural)", () => {
 
   test("SyncOpts carries noSchemaPack and it gates loadActivePack", () => {
     expect(SYNC).toContain("noSchemaPack?: boolean");
-    expect(SYNC).toContain("args.includes('--no-schema-pack')");
+    expect(SYNC).toMatch(/args\.includes\(['"]--no-schema-pack['"]\)/);
     expect(SYNC).toContain("if (opts.noSchemaPack)");
   });
 

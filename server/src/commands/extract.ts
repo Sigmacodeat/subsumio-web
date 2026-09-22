@@ -1360,6 +1360,7 @@ export async function extractLinksForSlugs(
       })) {
         try {
           await engine.addLink(
+            // gbrain-allow-direct-insert: gbrain extract — canonical link extraction from markdown body
             link.from_slug,
             link.to_slug,
             link.context,
@@ -1400,6 +1401,7 @@ export async function extractTimelineForSlugs(
       for (const entry of extractTimelineFromContent(content, slug)) {
         try {
           await engine.addTimelineEntry(
+            // gbrain-allow-direct-insert: gbrain extract — canonical timeline extraction from markdown body
             entry.slug,
             {
               date: entry.date,
@@ -1900,6 +1902,7 @@ async function extractStaleFromDB(
     // idempotent on re-extraction.
     for (let i = 0; i < linkRows.length; i += BATCH_SIZE) {
       linksCreated += await engine.addLinksBatch(linkRows.slice(i, i + BATCH_SIZE), {
+        // gbrain-allow-direct-insert: gbrain extract --stale — canonical link reconciliation from markdown body
         auditSite: "extract.stale",
       }); // gbrain-allow-direct-insert: gbrain extract --stale — canonical link reconciliation from markdown body
     }

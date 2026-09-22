@@ -12,7 +12,7 @@
  *   - resolver rows appended when AGENTS.md present
  */
 
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
 import {
   mkdtempSync,
   mkdirSync,
@@ -30,10 +30,211 @@ import {
   refreshRecipeIntoHostRepo,
   classifyForRefresh,
 } from "../src/commands/integrations.ts";
+import { setEnvForFile } from "./helpers/with-env.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 
 let scratch: string;
+let recipesDir: string;
+let releaseEnv: (() => void) | undefined;
+
+// Synthetic copy-into-host-repo recipe fixture. The original upstream
+// `agent-voice` bundle was removed from this repo; the install/refresh
+// mechanics under test are content-agnostic, so a minimal bundle with the
+// same target layout exercises them without shipping the real artifact.
+function makeAgentVoiceFixture(root: string): void {
+  const bundleRoot = join(root, "agent-voice");
+  const files = [
+    { src: "package.json", target: "services/voice-agent/package.json", mode: "0644" },
+    { src: "code/server.mjs", target: "services/voice-agent/code/server.mjs", mode: "0755" },
+    { src: "code/prompt.mjs", target: "services/voice-agent/code/prompt.mjs", mode: "0644" },
+    { src: "code/tools.mjs", target: "services/voice-agent/code/tools.mjs", mode: "0644" },
+    {
+      src: "code/gbrain-client.mjs",
+      target: "services/voice-agent/code/gbrain-client.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/personas/personas.mjs",
+      target: "services/voice-agent/code/lib/personas/personas.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/personas/mars.mjs",
+      target: "services/voice-agent/code/lib/personas/mars.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/personas/venus.mjs",
+      target: "services/voice-agent/code/lib/personas/venus.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/personas/private-name-blocklist.json",
+      target: "services/voice-agent/code/lib/personas/private-name-blocklist.json",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/personas/context-builder.contract.md",
+      target: "services/voice-agent/code/lib/personas/context-builder.contract.md",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/context-builder.example.mjs",
+      target: "services/voice-agent/code/lib/context-builder.example.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/audio-convert.mjs",
+      target: "services/voice-agent/code/lib/audio-convert.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/gatekeeper.mjs",
+      target: "services/voice-agent/code/lib/gatekeeper.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/sessions.mjs",
+      target: "services/voice-agent/code/lib/sessions.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/twilio-bridge.mjs",
+      target: "services/voice-agent/code/lib/twilio-bridge.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/lib/upstream-classifier.mjs",
+      target: "services/voice-agent/code/lib/upstream-classifier.mjs",
+      mode: "0644",
+    },
+    {
+      src: "code/public/call.html",
+      target: "services/voice-agent/code/public/call.html",
+      mode: "0644",
+    },
+    {
+      src: "tests/unit/personas.test.mjs",
+      target: "services/voice-agent/tests/unit/personas.test.mjs",
+      mode: "0644",
+    },
+    {
+      src: "tests/unit/mars-prompt-shape.test.mjs",
+      target: "services/voice-agent/tests/unit/mars-prompt-shape.test.mjs",
+      mode: "0644",
+    },
+    {
+      src: "tests/unit/venus-prompt-shape.test.mjs",
+      target: "services/voice-agent/tests/unit/venus-prompt-shape.test.mjs",
+      mode: "0644",
+    },
+    {
+      src: "tests/unit/tools-allowlist.test.mjs",
+      target: "services/voice-agent/tests/unit/tools-allowlist.test.mjs",
+      mode: "0644",
+    },
+    {
+      src: "tests/unit/upstream-classifier.test.mjs",
+      target: "services/voice-agent/tests/unit/upstream-classifier.test.mjs",
+      mode: "0644",
+    },
+  ];
+  const skills = [
+    {
+      src: "skills/voice-persona-mars/SKILL.md",
+      target: "skills/voice-persona-mars/SKILL.md",
+      mode: "0644",
+    },
+    {
+      src: "skills/voice-persona-mars/routing-eval.jsonl",
+      target: "skills/voice-persona-mars/routing-eval.jsonl",
+      mode: "0644",
+    },
+    {
+      src: "skills/voice-persona-venus/SKILL.md",
+      target: "skills/voice-persona-venus/SKILL.md",
+      mode: "0644",
+    },
+    {
+      src: "skills/voice-persona-venus/routing-eval.jsonl",
+      target: "skills/voice-persona-venus/routing-eval.jsonl",
+      mode: "0644",
+    },
+    {
+      src: "skills/voice-post-call/SKILL.md",
+      target: "skills/voice-post-call/SKILL.md",
+      mode: "0644",
+    },
+    {
+      src: "skills/voice-post-call/routing-eval.jsonl",
+      target: "skills/voice-post-call/routing-eval.jsonl",
+      mode: "0644",
+    },
+  ];
+
+  writeFileSync(
+    join(root, "agent-voice.md"),
+    [
+      "---",
+      "id: agent-voice",
+      "name: Voice Personas (Mars + Venus)",
+      "version: 0.1.0",
+      "description: Synthetic fixture bundle for install/refresh mechanics tests.",
+      "category: voice",
+      "install_kind: copy-into-host-repo",
+      "requires: []",
+      "secrets: []",
+      "health_checks: []",
+      "setup_time: 1 min",
+      "---",
+      "",
+      "# Voice Personas fixture",
+      "",
+    ].join("\n")
+  );
+
+  for (const entry of [...files, ...skills]) {
+    const srcPath = join(bundleRoot, entry.src);
+    mkdirSync(join(srcPath, ".."), { recursive: true });
+    writeFileSync(srcPath, `// fixture: ${entry.src}\n`);
+  }
+  mkdirSync(join(bundleRoot, "install"), { recursive: true });
+  writeFileSync(
+    join(bundleRoot, "install", "manifest.json"),
+    JSON.stringify(
+      {
+        recipe: "agent-voice",
+        version: "0.1.0",
+        install_kind: "copy-into-host-repo",
+        target_root_relative_to_host_repo: "services/voice-agent",
+        skills_target_root_relative_to_host_repo: "skills",
+        files,
+        skills,
+        resolver_rows_to_append: [
+          'voice-persona-mars  | "talk to mars", "mars,", "demo mode mars"',
+          'voice-persona-venus | "venus,", "calendar", "tasks"',
+          'voice-post-call     | "after the call", "call ended", "transcript"',
+        ],
+      },
+      null,
+      2
+    )
+  );
+}
+
+beforeAll(() => {
+  recipesDir = mkdtempSync(join(tmpdir(), "gbrain-recipes-fixture-"));
+  makeAgentVoiceFixture(recipesDir);
+  releaseEnv = setEnvForFile({ GBRAIN_RECIPES_DIR: recipesDir });
+});
+
+afterAll(() => {
+  releaseEnv?.();
+  if (recipesDir && existsSync(recipesDir)) {
+    rmSync(recipesDir, { recursive: true, force: true });
+  }
+});
 
 function makeScratchRepo(opts: { withGit?: boolean; withAgentsMd?: boolean } = {}): string {
   const { withGit = true, withAgentsMd = true } = opts;

@@ -388,3 +388,23 @@ describe("Quartalsbericht mit Storno", () => {
     expect(report.closingBalance).toBe(40_000);
   });
 });
+
+describe("buildTreuhandMeldung (§ 10a RAO)", () => {
+  it("erzeugt einen Meldeentwurf mit Akte, Betrag und IBAN", async () => {
+    const { buildTreuhandMeldung } = await import("./trust-accounting");
+    const text = buildTreuhandMeldung({
+      kanzleiName: "Kanzlei Muster",
+      matterTitle: "Kauf Liegenschaft Huber",
+      matterSlug: "cases/26-0042",
+      accountIban: "AT611904300234573201",
+      deposits: 150_000,
+      heute: new Date("2026-09-22"),
+    });
+    expect(text).toContain("§ 10a Abs. 2 RAO");
+    expect(text).toContain("Kanzlei Muster");
+    expect(text).toContain("26-0042");
+    expect(text).toContain("AT611904300234573201");
+    expect(text).toContain("150");
+    expect(text).toContain("anwaltlich zu prüfen");
+  });
+});

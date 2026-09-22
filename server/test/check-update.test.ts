@@ -1,4 +1,6 @@
 import { describe, test, expect } from "bun:test";
+import { execFileSync } from "child_process";
+import { join } from "path";
 import {
   parseSemver,
   isMinorOrMajorBump,
@@ -143,15 +145,16 @@ describe("check-update CLI", () => {
     expect(exitCode).toBe(0);
   });
 
-  test("--json returns valid JSON with required fields", async () => {
-    const proc = Bun.spawn(["bun", "run", "src/cli.ts", "check-update", "--json"], {
-      cwd: new URL("..", import.meta.url).pathname,
-      stdout: "pipe",
-      stderr: "pipe",
+  test("--json returns valid JSON with required fields", () => {
+    // execFileSync buffers the child's full stdout — Bun.spawn's piped stdout
+    // can deliver truncated output when several test files spawn CLIs inside
+    // one bun process (observed as "Unterminated string" JSON.parse flakes
+    // under shard load).
+    const stdout = execFileSync("bun", ["run", "src/cli.ts", "check-update", "--json"], {
+      cwd: join(__dirname, ".."),
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"],
     });
-    const stdout = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
-    expect(exitCode).toBe(0);
 
     const output = JSON.parse(stdout);
     expect(output).toHaveProperty("current_version");

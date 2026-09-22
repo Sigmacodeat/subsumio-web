@@ -25,13 +25,33 @@ import {
 } from "../../src/core/ai/gateway.ts";
 import type { PageInput, SearchOpts } from "../../src/core/types.ts";
 import type { RerankInput, RerankResult } from "../../src/core/ai/gateway.ts";
+import { setEnvForFile } from "../helpers/with-env.ts";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 let engine: PGLiteEngine;
+let releaseEnv: (() => void) | undefined;
+let fakeHome: string;
 
 const DIMS = 1536;
 const FAKE_EMB = Array.from({ length: DIMS }, (_, j) => (j === 0 ? 1 : 0.01));
 
 beforeAll(async () => {
+  // Isolate the file-plane config: hybridSearch merges loadConfig() into
+  // the column resolver — a developer ~/.gbrain/config.json (e.g.
+  // ollama:nomic-embed-text/768) would override the 1536 gateway config
+  // and break the FAKE_EMB dim contract.
+  fakeHome = mkdtempSync(join(tmpdir(), "gbrain-autocut-home-"));
+  releaseEnv = setEnvForFile({ GBRAIN_HOME: fakeHome });
+  // Gateway BEFORE initSchema: schema embedding dims read the gateway
+  // config at initSchema time; a leaked config from an earlier serial
+  // file would mint a mismatched dim (e.g. 768 vs FAKE_EMB's 1536).
+  configureGateway({
+    embedding_model: "openai:text-embedding-3-large",
+    embedding_dimensions: DIMS,
+    env: { OPENAI_API_KEY: "sk-test" },
+  });
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();
@@ -71,11 +91,6 @@ beforeAll(async () => {
     ]);
   }
 
-  configureGateway({
-    embedding_model: "openai:text-embedding-3-large",
-    embedding_dimensions: DIMS,
-    env: { OPENAI_API_KEY: "sk-test" },
-  });
   __setEmbedTransportForTests(
     async (args: any) =>
       ({
@@ -88,6 +103,10 @@ afterAll(async () => {
   __setEmbedTransportForTests(null);
   resetGateway();
   await engine.disconnect();
+  releaseEnv?.();
+  try {
+    rmSync(fakeHome, { recursive: true, force: true });
+  } catch {}
 });
 
 // A reranker that assigns descending scores from a fixed array (by index).

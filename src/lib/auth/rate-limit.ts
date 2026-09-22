@@ -152,7 +152,7 @@ export async function hit(key: string, max: number, windowMs: number): Promise<R
   // (Previously double-gated with NODE_ENV !== "production", but `next start`
   // forces NODE_ENV=production, which would block the e2e production-build
   // server from bypassing signup/login limits.)
-  if (env("SUBSUMIO_E2E") === "1" && /^signup:/.test(key)) {
+  if (env("SUBSUMIO_E2E") === "1" && /^(signup|demo-session):/.test(key)) {
     return { ok: true, retryAfterSeconds: 0 };
   }
   if (UPSTASH_URL && UPSTASH_TOKEN) {

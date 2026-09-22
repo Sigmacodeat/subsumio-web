@@ -1,10 +1,12 @@
 import { Star, Quote } from "lucide-react";
-import { UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 import { H2_CTA_CLASS } from "./typography";
 import { TESTIMONIALS } from "./testimonials-data";
 
-export function TestimonialsSection() {
+export function TestimonialsSection({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+
   // No fabricated social proof: render nothing until real, consented
   // testimonials exist in testimonials-data.ts.
   if (TESTIMONIALS.length === 0) return null;

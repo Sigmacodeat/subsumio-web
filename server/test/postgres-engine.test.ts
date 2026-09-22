@@ -43,12 +43,12 @@ describe("postgres-engine / search path timeout isolation", () => {
 
   test("searchKeyword wraps its query in sql.begin()", () => {
     const fn = extractMethod(SRC, "searchKeyword");
-    expect(fn).toMatch(/sql\.begin\s*\(\s*async\s+sql\s*=>/);
+    expect(fn).toMatch(/sql\.begin\s*\(\s*async\s+\(?\s*sql\s*\)?\s*=>/);
   });
 
   test("searchVector wraps its query in sql.begin()", () => {
     const fn = extractMethod(SRC, "searchVector");
-    expect(fn).toMatch(/sql\.begin\s*\(\s*async\s+sql\s*=>/);
+    expect(fn).toMatch(/sql\.begin\s*\(\s*async\s+\(?\s*sql\s*\)?\s*=>/);
   });
 
   test("both search methods use SET LOCAL for the timeout", () => {

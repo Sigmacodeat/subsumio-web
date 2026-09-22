@@ -108,7 +108,7 @@ describe("zeroEntropyCompatFetch — OOM caps", () => {
     expect(zeFetchStart).toBeGreaterThan(0);
     const block = src.slice(zeFetchStart, zeFetchStart + 8000);
 
-    const preCheckIdx = block.indexOf("resp.headers.get('content-length')");
+    const preCheckIdx = block.search(/resp\.headers\.get\(["']content-length["']\)/);
     const jsonParseIdx = block.indexOf("await resp.clone().json()");
     expect(preCheckIdx).toBeGreaterThan(0);
     expect(jsonParseIdx).toBeGreaterThan(0);
@@ -156,7 +156,7 @@ describe("instantiateEmbedding wiring", () => {
   test("branch lives in the openai-compatible case of instantiateEmbedding", async () => {
     const src = await Bun.file(GATEWAY_PATH).text();
     const fnIdx = src.indexOf("function instantiateEmbedding(");
-    const ocIdx = src.indexOf("case 'openai-compatible':", fnIdx);
+    const ocIdx = src.search(/case ["']openai-compatible["']:/);
     const branchIdx = src.indexOf("zeroEntropyCompatFetch", ocIdx);
     expect(fnIdx).toBeGreaterThan(0);
     expect(ocIdx).toBeGreaterThan(0);

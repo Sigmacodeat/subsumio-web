@@ -10,7 +10,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 import { ArrowRight } from "lucide-react";
-import { p, UI_STRINGS } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import {
   SOLUTION_SLUGS,
   SOLUTION_CROSS_LINKS,
@@ -22,6 +22,7 @@ import { EASE } from "./motion-system";
 import { EYEBROW_CLASS } from "./typography";
 
 export default function AudienceTabs() {
+  const { ui: UI_STRINGS, p } = useMarket();
   const [active, setActive] = useState<SolutionSlug>(SOLUTION_SLUGS[0]);
   // Tab switching keeps its crossfade under reduced motion — only the
   // translate is dropped, since that is the vestibular part.

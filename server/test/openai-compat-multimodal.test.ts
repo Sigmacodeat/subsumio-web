@@ -6,6 +6,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { configureGateway, embedMultimodal, resetGateway } from "../src/core/ai/gateway.ts";
 import { AIConfigError, AITransientError } from "../src/core/ai/errors.ts";
+import { DEFAULT_EMBEDDING_DIMENSIONS } from "../src/core/ai/defaults.ts";
 
 type FetchHandler = (url: string, init: RequestInit) => Promise<Response>;
 let fetchHandler: FetchHandler | null = null;
@@ -131,23 +132,22 @@ describe("embedMultimodal — openai-compat routing (#875)", () => {
     expect((caught as Error).message).toContain("gpt-4o-multimodal");
   });
 
-  test("D12 — default embedding_dimensions (1280 as of v0.36.0.0) applies when not explicitly set", async () => {
+  test("D12 — default embedding_dimensions (DEFAULT_EMBEDDING_DIMENSIONS) applies when not explicitly set", async () => {
     // configureGateway normalizes embedding_dimensions to DEFAULT_EMBEDDING_DIMENSIONS
-    // when unset. v0.36.0.0 flipped the default from 1536 (OpenAI) to 1280
-    // (ZE Matryoshka step). LiteLLM recipe's default_dims=0 so we fall back
+    // when unset. LiteLLM recipe's default_dims=0 so we fall back
     // to the brain's configured value. This test pins the "always validate
     // via the configured/default dim" contract — there is no skip-when-unset
     // path in practice because configureGateway always populates it.
     configureGateway({
       embedding_model: "litellm:any-model",
-      // intentionally NO embedding_dimensions → falls back to 1280
+      // intentionally NO embedding_dimensions → falls back to DEFAULT_EMBEDDING_DIMENSIONS
       env: { LITELLM_BASE_URL: "http://localhost:4000" },
       base_urls: { litellm: "http://localhost:4000" },
     });
-    fetchHandler = async () => okResponse(1280, 1);
+    fetchHandler = async () => okResponse(DEFAULT_EMBEDDING_DIMENSIONS, 1);
     const result = await embedMultimodal([{ kind: "image_base64", data: "x", mime: "image/png" }]);
     expect(result.length).toBe(1);
-    expect(result[0].length).toBe(1280);
+    expect(result[0].length).toBe(DEFAULT_EMBEDDING_DIMENSIONS);
   });
 
   test("provider returns 401 → AIConfigError with model id in message", async () => {

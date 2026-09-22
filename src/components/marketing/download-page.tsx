@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { p, UI_STRINGS } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import { DOWNLOAD } from "@/content/download";
 import { Section, SectionHeading, PageHero, CTASection, IconTile } from "./primitives";
 import { AnimatedFaqList } from "./animated-faq";
@@ -83,6 +83,7 @@ interface BeforeInstallPromptEvent extends Event {
 // --- Animated phone mockup -----------------------------------------------
 
 function PhoneMockup() {
+  const { ui: UI_STRINGS } = useMarket();
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -180,6 +181,7 @@ function PhoneMockup() {
 }
 
 export default function DownloadPage() {
+  const { ui: UI_STRINGS, p } = useMarket();
   const t = DOWNLOAD;
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
 

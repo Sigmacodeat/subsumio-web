@@ -219,7 +219,22 @@ export default function PosteingangsbuchPage() {
                     {e.sender_name ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-[color:var(--ds-text-muted)]">
-                    {e.case_slug ?? "—"}
+                    {e.case_slug ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        {e.case_slug}
+                        {e.case_suggested && (
+                          <Badge
+                            variant="attention"
+                            className="text-xs"
+                            title={`Automatische Zuordnung: ${e.case_suggest_reason ?? ""}`}
+                          >
+                            Vorschlag
+                          </Badge>
+                        )}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-3 py-2">{e.subject}</td>
                 </tr>

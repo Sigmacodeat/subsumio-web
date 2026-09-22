@@ -7,11 +7,14 @@ server/scripts/split-statutes.ts (DE mode: `## § N — Title` headings).
 Usage:
   python3 server/scripts/fetch-de-statutes.py sgb_1 stvo owig ...
   python3 server/scripts/fetch-de-statutes.py --batch2   # built-in priority list
+  python3 server/scripts/fetch-de-statutes.py --all      # full gii-toc.xml (~6.5k)
+  python3 server/scripts/fetch-de-statutes.py --all --resume  # skip existing
 
 Output: law-corpus/de/<abk>.md  (frontmatter + `## § n — titel` sections)
 """
 
 import io
+import os
 import re
 import sys
 import time
@@ -21,7 +24,14 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from datetime import date
 
-OUT_DIR = Path(__file__).resolve().parent.parent.parent / "law-corpus" / "de"
+# Corpus root is env-configured (SUBSUMIO_LAW_CORPUS_DIR / LAW_CORPUS_ROOT);
+# fall back to the repo-relative path for fresh checkouts.
+_CORPUS_ROOT = os.environ.get("SUBSUMIO_LAW_CORPUS_DIR") or os.environ.get("LAW_CORPUS_ROOT")
+OUT_DIR = (
+    Path(_CORPUS_ROOT) / "de"
+    if _CORPUS_ROOT
+    else Path(__file__).resolve().parent.parent.parent / "law-corpus" / "de"
+)
 
 # Priority batch: Sozialrecht, Verkehrsrecht, Arbeitsrecht-Ergänzung,
 # Gesellschafts-/Finanzrecht, Wettbewerb, Bau, Medizin, Energie, Verfahren
@@ -113,23 +123,53 @@ def convert(abk: str) -> tuple[int, str]:
     return len(sections), f"{amtabk} ({version})"
 
 
+TOC_URL = "https://www.gesetze-im-internet.de/gii-toc.xml"
+
+
+def fetch_toc_slugs() -> list[str]:
+    """Parse gii-toc.xml → all statute slugs (the path segment of each
+    xml.zip link, e.g. `bgb` from `.../bgb/xml.zip`)."""
+    req = urllib.request.Request(TOC_URL, headers=UA)
+    with urllib.request.urlopen(req, timeout=120) as r:
+        root = ET.fromstring(r.read())
+    slugs = []
+    for link in root.iter("link"):
+        href = (link.text or "").strip()
+        m = re.search(r"gesetze-im-internet\.de/([^/]+)/xml\.zip", href)
+        if m:
+            slugs.append(m.group(1))
+    return slugs
+
+
 def main():
     args = [a for a in sys.argv[1:]]
-    abks = BATCH2 if "--batch2" in args else args
+    resume = "--resume" in args
+    args = [a for a in args if a != "--resume"]
+    if "--all" in args:
+        abks = fetch_toc_slugs()
+        print(f"gii-toc.xml: {len(abks)} Gesetze gefunden")
+    elif "--batch2" in args:
+        abks = BATCH2
+    else:
+        abks = args
     if not abks:
         print(__doc__)
         sys.exit(1)
-    ok, failed = 0, []
-    for abk in abks:
+    ok, skipped, failed = 0, 0, []
+    for i, abk in enumerate(abks):
+        if resume and (OUT_DIR / f"{abk}.md").exists():
+            skipped += 1
+            continue
         try:
             n, info = convert(abk)
-            print(f"  ✓ {abk:12s} {n:4d} §§  {info}")
+            print(f"  [{i+1}/{len(abks)}] ✓ {abk:12s} {n:4d} §§  {info}", flush=True)
             ok += 1
         except Exception as e:
-            print(f"  ✗ {abk:12s} FEHLER: {e}")
+            print(f"  [{i+1}/{len(abks)}] ✗ {abk:12s} FEHLER: {e}", flush=True)
             failed.append(abk)
         time.sleep(0.5)
-    print(f"\nFertig: {ok} Gesetze konvertiert, {len(failed)} fehlgeschlagen: {failed}")
+    print(f"\nFertig: {ok} konvertiert, {skipped} übersprungen, "
+          f"{len(failed)} fehlgeschlagen: {failed[:50]}")
 
 
 if __name__ == "__main__":

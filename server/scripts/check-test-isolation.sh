@@ -37,10 +37,18 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TARGET_DIR="${1:-test}"
+
+# When TARGET_DIR exists relative to the caller's cwd, the caller IS the
+# project root (test fixtures exercise this by running the script from a
+# tmpdir). Otherwise fall back to the script's own repo root.
+if [ -d "$TARGET_DIR" ]; then
+  ROOT="$(pwd)"
+else
+  ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+fi
 cd "$ROOT"
 
-TARGET_DIR="${1:-test}"
 ALLOWLIST_FILE="$ROOT/scripts/check-test-isolation.allowlist"
 
 # Read allowlist (one filename per line, # comments allowed). Empty file

@@ -5,10 +5,13 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { professionalPricing } from "@/content/audiences";
-import { UI_STRINGS, p } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { StaggerContainer, StaggerItem } from "./motion-system";
 
-export function PricingGrid() {
+export function PricingGrid({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   const pricing = professionalPricing();
   const ui = UI_STRINGS;
 

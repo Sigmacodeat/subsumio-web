@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import type { ChatMessage } from "./chat-types";
 import { ChatMessageBubble } from "./chat-message";
 
@@ -210,8 +210,10 @@ describe("ChatMessageBubble", () => {
       createdAt: new Date().toISOString(),
     };
     renderMessage(message);
-    fireEvent.click(screen.getByRole("button", { name: /chat.copy/i }));
-    await new Promise((r) => setTimeout(r, 50));
+    // act() flushes the resolved clipboard promise + setCopied state update.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /chat.copy/i }));
+    });
     expect(writeText).toHaveBeenCalledWith("Kopier mich");
   });
 

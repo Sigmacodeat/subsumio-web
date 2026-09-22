@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { ArrowRight, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { FEATURES_PAGE } from "@/content/features";
 import { PROOF } from "@/content/proof-points";
 import SubsumioShowcase from "./subsumio-showcase";
@@ -23,7 +23,10 @@ import {
 } from "./features-interactive";
 import { AnimatedCounter, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
-export default function FeaturesPage() {
+export default function FeaturesPage({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   const t = FEATURES_PAGE;
 
   // One documented figure only — everything else was unsourced and removed.

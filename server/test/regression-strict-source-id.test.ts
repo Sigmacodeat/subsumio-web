@@ -90,19 +90,19 @@ describe("strict-regex blast radius — patterns.ts + synthesize.ts (codex r2 P1
       // Look for the canonical reverseWriteRefs body: validateSourceId(source_id)
       // must appear inside a function that later calls join(brainDir, '.sources', source_id, ...).
       const validatePos = src.indexOf("validateSourceId(source_id)");
-      const joinPos = src.indexOf(".sources', source_id");
+      const joinMatch = src.match(/\.sources['"],\s*source_id/);
       expect(validatePos).toBeGreaterThan(-1);
-      expect(joinPos).toBeGreaterThan(-1);
-      expect(validatePos).toBeLessThan(joinPos);
+      expect(joinMatch).not.toBeNull();
+      expect(validatePos).toBeLessThan(joinMatch!.index!);
     });
 
     test("synthesize.ts calls validateSourceId before reverse-write join", () => {
       const src = readFileSync(join(REPO_ROOT, "src/core/cycle/synthesize.ts"), "utf8");
       const validatePos = src.indexOf("validateSourceId(source_id)");
-      const joinPos = src.indexOf(".sources', source_id");
+      const joinMatch = src.match(/\.sources['"],\s*source_id/);
       expect(validatePos).toBeGreaterThan(-1);
-      expect(joinPos).toBeGreaterThan(-1);
-      expect(validatePos).toBeLessThan(joinPos);
+      expect(joinMatch).not.toBeNull();
+      expect(validatePos).toBeLessThan(joinMatch!.index!);
     });
   });
 

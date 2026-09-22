@@ -29,6 +29,8 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
   if (err instanceof ApiRequestError) {
     if (err.code === "quota_exceeded") return t("chat.error_quota");
     if (err.code === "insufficient_credits" || err.status === 402) return t("chat.error_credits");
+    if (err.code === "demo_limit") return t("chat.error_demo_limit");
+    if (err.code === "demo_daily_limit") return t("chat.error_demo_daily_limit");
     if (err.code === "rate_limited" || err.status === 429) return t("chat.error_rate_limit");
     if (err.status >= 502 && err.status <= 504) return t("chat.error_engine");
     if (err.message && !err.message.trim().startsWith("{")) return err.message;
@@ -39,6 +41,7 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
   return t("chat.error_generic");
 }
 import { csrfFetch } from "@/lib/csrf";
+import { tracking } from "@/lib/tracking";
 import { synthesisInput } from "@/components/chat/tool-synthesis";
 import { mergeSessionLists } from "@/components/chat/chat-session-merge";
 import {
@@ -1215,6 +1218,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setMessages((m) => [...m, userMsg, assistantMsg]);
       setIsStreaming(true);
       setError(null);
+      if (meQuery.data?.demo) tracking.demo?.questionAsked();
 
       // Non-blocking: infer memories from user message
       if (text.length > 10) {
@@ -1320,6 +1324,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         };
 
         setMessages((m) => [...m.slice(0, -1), finalMsg]);
+        if (meQuery.data?.demo) tracking.demo?.answerReceived();
 
         if (persistHistory && activeSessionId) {
           await saveMessage(activeSessionId, finalMsg);
@@ -1454,6 +1459,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         if (!isAborted) {
           const errorMsg = describeChatError(err, t);
           setError(errorMsg);
+          // Demo funnel: hitting the question budget is a conversion moment.
+          if (
+            meQuery.data?.demo &&
+            /^demo_(daily_)?limit$/.test((err as { code?: string } | null)?.code ?? "")
+          ) {
+            tracking.demo?.capReached();
+          }
           let errorMsgFinal: ChatMessage | null = null;
           setMessages((m) => {
             const last = m[m.length - 1];
@@ -1510,6 +1522,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       matterVitals,
       groundAnswer,
       lang,
+      meQuery.data?.demo,
     ]
   );
 

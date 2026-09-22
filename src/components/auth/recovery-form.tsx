@@ -9,7 +9,7 @@ import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
-import { p } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 
 const COPY = {
   forgot: {
@@ -42,6 +42,7 @@ const COPY = {
 } as const;
 
 export default function RecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
+  const { p } = useMarket();
   const t = COPY;
   const m = t[mode];
 

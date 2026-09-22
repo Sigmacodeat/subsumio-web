@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
 import { Section, SectionHeading, CTASection, PageHero } from "./primitives";
@@ -10,7 +10,15 @@ import { ICONS, accentTile } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
-export function SolutionPage({ content }: { content: SolutionContent }) {
+export function SolutionPage({
+  content,
+  market = "at",
+}: {
+  content: SolutionContent;
+  market?: Market;
+}) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       {/* Hero */}

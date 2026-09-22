@@ -27,8 +27,14 @@ import {
 } from "../../src/core/ai/gateway.ts";
 import type { PageInput, SearchOpts } from "../../src/core/types.ts";
 import type { RerankInput, RerankResult } from "../../src/core/ai/gateway.ts";
+import { setEnvForFile } from "../helpers/with-env.ts";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 let engine: PGLiteEngine;
+let releaseEnv: (() => void) | undefined;
+let fakeHome: string;
 
 const DIMS = 1536; // gateway default embedding dim
 const FAKE_EMB = Array.from({ length: DIMS }, (_, j) => (j === 0 ? 1 : 0.01));
@@ -43,6 +49,21 @@ function stubEmbeddings(): void {
 }
 
 beforeAll(async () => {
+  // Isolate the file-plane config: hybridSearch merges loadConfig() into
+  // the column resolver — a developer ~/.gbrain/config.json (e.g.
+  // ollama:nomic-embed-text/768) would override the 1536 gateway config
+  // and break the FAKE_EMB dim contract.
+  fakeHome = mkdtempSync(join(tmpdir(), "gbrain-reranker-home-"));
+  releaseEnv = setEnvForFile({ GBRAIN_HOME: fakeHome });
+  // Gateway BEFORE initSchema: the schema's embedding column dim is read
+  // from the gateway config at initSchema time. Under the serial runner
+  // another file may have left the gateway on a different dim (e.g.
+  // nomic-embed-text/768) — init must see our 1536 to match FAKE_EMB.
+  configureGateway({
+    embedding_model: "openai:text-embedding-3-large",
+    embedding_dimensions: DIMS,
+    env: { OPENAI_API_KEY: "sk-test" },
+  });
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();
@@ -104,6 +125,10 @@ afterAll(async () => {
   __setEmbedTransportForTests(null);
   resetGateway();
   await engine.disconnect();
+  releaseEnv?.();
+  try {
+    rmSync(fakeHome, { recursive: true, force: true });
+  } catch {}
 });
 
 describe("hybridSearch — reranker disabled (pass-through)", () => {

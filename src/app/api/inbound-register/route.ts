@@ -6,6 +6,8 @@ import {
   createInboundEntry,
   filterInboundByDateRange,
   exportInboundRegister,
+  suggestCaseForInbound,
+  type InboundCaseCandidate,
   type InboundEntry,
   type InboundChannel,
 } from "@/lib/inbound-register";
@@ -34,15 +36,55 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    let caseSlug = body.case_slug;
+    let suggested: { reason: string } | undefined;
+    if (!caseSlug) {
+      // Automatische Aktenzuordnung: deterministisch gegen offene Akten
+      // (Aktenzeichen > Parteinamen > Titel-Tokens). Nur ein Vorschlag —
+      // die Zuordnung bleibt in der UI als solche markiert.
+      try {
+        const casePages = await listEnginePages(ctx.headers, "legal_case", 500);
+        const candidates: InboundCaseCandidate[] = casePages.map((p) => {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          return {
+            slug: p.slug,
+            aktenzeichen:
+              (fm.aktenzeichen as string | undefined) ?? (fm.case_number as string | undefined),
+            title: typeof p.title === "string" ? p.title : undefined,
+            parties: [fm.client_name, fm.opponent_name].filter(
+              (v): v is string => typeof v === "string" && v.length > 0
+            ),
+          };
+        });
+        const hit = suggestCaseForInbound(
+          {
+            subject: body.subject,
+            senderName: body.sender_name,
+            senderAddress: body.sender_address,
+          },
+          candidates
+        );
+        if (hit) {
+          caseSlug = hit.slug;
+          suggested = { reason: hit.reason };
+        }
+      } catch {
+        // Zuordnung ist best-effort — der Eintrag wird auch ohne Akte gespeichert.
+      }
+    }
     const entry = createInboundEntry({
       channel: body.channel as InboundChannel,
       subject: body.subject,
       senderName: body.sender_name,
       senderAddress: body.sender_address,
-      caseSlug: body.case_slug,
+      caseSlug,
       documentSlug: body.document_slug,
       receivedBy: ctx.user.name || ctx.user.email,
     });
+    if (suggested) {
+      entry.case_suggested = true;
+      entry.case_suggest_reason = suggested.reason;
+    }
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },

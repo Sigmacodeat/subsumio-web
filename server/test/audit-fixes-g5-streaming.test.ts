@@ -26,8 +26,8 @@ describe("G5 Full-Streaming: lazy-load from temp file", () => {
 
   it("cleanupTempFile is called in finally block", () => {
     const src = readFileSync(WEB_API, "utf-8");
-    expect(src).toContain("const cleanupTempFile = ()");
-    expect(src).toContain("if (fileData) cleanupTempFile()");
+    expect(src).toMatch(/cleanupTempFile\s*=\s*\(\)\s*=>/);
+    expect(src).toContain("cleanupTempFile?.()");
     expect(src).toContain("G5 fix: always clean up the temp file");
   });
 
@@ -73,6 +73,6 @@ describe("G5 Full-Streaming: lazy-load from temp file", () => {
     );
     // After duplicate check, if we return early, the finally block handles cleanup
     expect(src).toContain("} finally {");
-    expect(src).toContain("if (fileData) cleanupTempFile()");
+    expect(src).toContain("cleanupTempFile?.()");
   });
 });

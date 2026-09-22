@@ -24,6 +24,8 @@ import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/li
 import type { BrainPage, Entity } from "@/lib/types";
 import { pageTypeOf } from "@/lib/types";
 import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
+import { DocumentCheckoutPanel } from "@/components/legal/DocumentCheckoutPanel";
+import { isDocumentLock } from "@/lib/document-versions";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
@@ -418,6 +420,19 @@ export default function BrainDetailPage() {
           {!editMode && isAiOutput && content.trim() && <GroundedOutputPanel text={content} />}
 
           {!editMode && <GobdIntegrityPanel page={page} />}
+
+          {!editMode && isDocument && (
+            <DocumentCheckoutPanel
+              slug={slug}
+              lockedBy={isDocumentLock(fm.checked_out_by) ? fm.checked_out_by : null}
+              onChanged={() => {
+                void api.brain.getPage(slug).then((p) => {
+                  setPage(p);
+                  setContent(p.content || "");
+                });
+              }}
+            />
+          )}
 
           {!editMode && links.length > 0 && (
             <section className="space-y-3">

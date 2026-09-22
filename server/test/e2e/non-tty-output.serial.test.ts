@@ -27,7 +27,7 @@ describe("non-TTY output contract: jobs watch (#1784)", () => {
 
   beforeAll(() => {
     home = mkdtempSync(join(tmpdir(), "gbrain-nontty-e2e-"));
-    env = { ...process.env, GBRAIN_HOME: home };
+    env = { ...process.env, DATABASE_URL: "", GBRAIN_DATABASE_URL: "", GBRAIN_HOME: home };
     // Fresh local PGLite brain so `jobs watch` has an engine to read.
     execFileSync(
       "bun",

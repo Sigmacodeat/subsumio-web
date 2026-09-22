@@ -297,6 +297,43 @@ export function isOverdrawn(account: TrustAccount): boolean {
 }
 
 /**
+ * § 10a Abs. 2 und 3 RAO: Meldeentwurf an die Treuhandeinrichtung der
+ * Rechtsanwaltskammer, wenn der Treuhanderlag einer Akte 40.000 € übersteigt.
+ * Reiner Textentwurf — der Anwalt prüft, ergänzt und versendet ihn.
+ */
+export function buildTreuhandMeldung(opts: {
+  kanzleiName: string;
+  matterTitle: string;
+  matterSlug: string;
+  accountIban: string;
+  deposits: number;
+  heute?: Date;
+}): string {
+  const datum = (opts.heute ?? new Date()).toLocaleDateString("de-AT");
+  return [
+    `An die Treuhandeinrichtung der Rechtsanwaltskammer`,
+    ``,
+    `Betreff: Meldung einer Treuhandschaft gemäß § 10a Abs. 2 RAO`,
+    `Datum: ${datum}`,
+    ``,
+    `Sehr geehrte Damen und Herren,`,
+    ``,
+    `hiermit melden wir gemäß § 10a Abs. 2 RAO die Übernahme einer Treuhandschaft,`,
+    `da der Treuhanderlag den Betrag von 40.000 € übersteigt:`,
+    ``,
+    `  Kanzlei:              ${opts.kanzleiName}`,
+    `  Akte / Geschäftszahl: ${opts.matterTitle} (${opts.matterSlug})`,
+    `  Treuhanderlag:        ${euro(opts.deposits)}`,
+    `  Anderkonto (IBAN):    ${opts.accountIban}`,
+    ``,
+    `Wir ersuchen um Abwicklung der Treuhandschaft über die Treuhandeinrichtung`,
+    `und verbleiben mit freundlichen Grüßen.`,
+    ``,
+    `— Entwurf, vor Versand anwaltlich zu prüfen (§ 10a RAO, Ausnahmen Abs. 3 beachten) —`,
+  ].join("\n");
+}
+
+/**
  * Bookings of the last `days` days, newest first. Compared by day, not by the
  * time of the call: a booking dated exactly `days` ago belongs in the window,
  * whatever time it is now.

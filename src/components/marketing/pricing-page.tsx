@@ -3,7 +3,7 @@
 // every section scroll-reveals; value-props use signal-colored tiles.
 
 import { Check, Shield, Clock, Globe, Coins, Zap } from "lucide-react";
-import { PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credit-constants";
 import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
 import { AnimatedFaqList } from "./animated-faq";
@@ -25,7 +25,10 @@ const OPERATION_LABELS: Record<CreditOperation, string> = {
   frist_engine: "Fristenrechner",
 };
 
-export default function PricingPage() {
+export default function PricingPage({ market = "at" }: { market?: Market }) {
+  const { pricingFaq: PRICING_FAQ, valueProps: VALUE_PROPS, ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   const faq = PRICING_FAQ.items;
   const faqTitle = PRICING_FAQ.title;
   const valueProps = VALUE_PROPS;
@@ -205,8 +208,8 @@ export default function PricingPage() {
         sub="30 Tage testen, keine Kreditkarte."
         href={p("/signup?plan=pro")}
         label="Solo starten"
-        secondaryHref={p("/contact")}
-        secondaryLabel={ui.writeUs}
+        secondaryHref="/demo"
+        secondaryLabel="Live-Demo öffnen"
         showLogo={false}
       />
     </div>

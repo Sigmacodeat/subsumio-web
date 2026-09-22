@@ -24,6 +24,9 @@ import { api } from "@/lib/api";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import type { Lang } from "@/content/site";
 import type { BrainPage } from "@/lib/types";
+import { useMe } from "@/lib/queries/auth";
+import { demoBeacon } from "@/lib/queries/demo";
+import { tracking } from "@/lib/tracking";
 
 interface AiDeadlineSuggestion {
   slug: string;
@@ -118,6 +121,8 @@ export function AiDeadlineSuggestions() {
   const { lang } = useLang();
   const { addToast } = useToast();
   const qc = useQueryClient();
+  const me = useMe();
+  const isDemo = Boolean(me.data?.demo);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const suggestionsQuery = useQuery({
@@ -172,6 +177,10 @@ export function AiDeadlineSuggestions() {
       qc.invalidateQueries({ queryKey: ["sidebar-badges"] });
       qc.invalidateQueries({ queryKey: ["review-inbox"] });
       setSelected(new Set());
+      if (isDemo && variables.action === "approve") {
+        tracking.demo?.deadlineConfirmed();
+        demoBeacon("deadline_confirmed");
+      }
       addToast({
         type: "success",
         title:
@@ -197,6 +206,10 @@ export function AiDeadlineSuggestions() {
       qc.invalidateQueries({ queryKey: ["ai-deadline-suggestions"] });
       qc.invalidateQueries({ queryKey: ["sidebar-badges"] });
       qc.invalidateQueries({ queryKey: ["review-inbox"] });
+      if (isDemo && variables.action === "approve") {
+        tracking.demo?.deadlineConfirmed();
+        demoBeacon("deadline_confirmed");
+      }
       addToast({
         type: "success",
         title:

@@ -45,7 +45,8 @@ describe("v0.31.8 — voyage Content-Length pre-check + per-item cap", () => {
 
     // Pre-check string. Use the actual code shape from gateway.ts so the test
     // doesn't pin to comment text.
-    const preCheckIdx = inboundBlock.indexOf("resp.headers.get('content-length')");
+    const preCheckIdx =
+      inboundBlock.match(/resp\.headers\.get\(["']content-length["']\)/)?.index ?? -1;
     // Use the full lvalue assignment so the match doesn't accidentally hit
     // comment text that mentions `await resp.clone().json()` for context.
     const jsonParseIdx = inboundBlock.indexOf("const json: any = await resp.clone().json()");

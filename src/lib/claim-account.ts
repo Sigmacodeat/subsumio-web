@@ -51,7 +51,8 @@ export interface PaymentAllocation {
 }
 
 /**
- * § 367 BGB Verrechnung: Payments are allocated in this order:
+ * Tilgungsreihenfolge (§ 1415 ABGB, identisch § 367 BGB): Payments are
+ * allocated in this order:
  * 1. Costs (Kosten)
  * 2. Interest (Zinsen)
  * 3. Principal (Hauptforderung)

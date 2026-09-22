@@ -14,11 +14,17 @@ const opts = {
 describe("v0.29.1 migration", () => {
   let tmp: string;
   let oldGbrainHome: string | undefined;
+  let oldDatabaseUrl: string | undefined;
 
   beforeEach(async () => {
     oldGbrainHome = process.env.GBRAIN_HOME;
+    oldDatabaseUrl = process.env.DATABASE_URL;
     tmp = mkdtempSync(join(tmpdir(), "gbrain-v0291-"));
     process.env.GBRAIN_HOME = tmp;
+    // .env ships a DATABASE_URL that loadConfig() merges over the fixture
+    // config.json — it would route the backfill onto the postgres path with
+    // an unreachable URL. Blank it so the fixture's engine:"pglite" wins.
+    delete process.env.DATABASE_URL;
 
     const gbrainHome = join(tmp, ".gbrain");
     const dbPath = join(tmp, "brain-db");
@@ -40,6 +46,8 @@ describe("v0.29.1 migration", () => {
   afterEach(() => {
     if (oldGbrainHome === undefined) delete process.env.GBRAIN_HOME;
     else process.env.GBRAIN_HOME = oldGbrainHome;
+    if (oldDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = oldDatabaseUrl;
     rmSync(tmp, { recursive: true, force: true });
   });
 

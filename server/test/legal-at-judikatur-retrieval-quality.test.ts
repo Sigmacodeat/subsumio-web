@@ -26,10 +26,13 @@ import {
   JUDIKATUR_GOLD,
   JUDIKATUR_QUESTIONS,
 } from "./fixtures/retrieval-quality/legal-at-judikatur/corpus.ts";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 let eng: PGLiteEngine;
 
 beforeAll(async () => {
+  if (!CORPUS_AVAILABLE) return;
   eng = new PGLiteEngine();
   await eng.connect({});
   await eng.initSchema();
@@ -38,7 +41,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  await eng.disconnect();
+  await eng?.disconnect();
 });
 
 const searchFn =
@@ -71,7 +74,12 @@ async function measurePurity(jurisdiction?: string): Promise<{ leaks: string[]; 
   return { leaks, total: JUDIKATUR_GOLD.length };
 }
 
-describe("legal-AT judikatur retrieval quality (eval gate)", () => {
+// law-corpus/at-judikatur is gitignored (rebuilt via ingest script) — absent in CI.
+const CORPUS_AVAILABLE =
+  existsSync(join(import.meta.dir, "..", "fixtures", "retrieval-quality", "legal-at-judikatur")) &&
+  existsSync(join(import.meta.dir, "..", "..", "law-corpus", "at-judikatur"));
+
+describe.skipIf(!CORPUS_AVAILABLE)("legal-AT judikatur retrieval quality (eval gate)", () => {
   test("gold set has ≥20 verified OGH questions", () => {
     expect(JUDIKATUR_GOLD.length).toBeGreaterThanOrEqual(20);
     // Every gold entry must have a query and a ref

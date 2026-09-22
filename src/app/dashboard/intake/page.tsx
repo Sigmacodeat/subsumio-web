@@ -27,6 +27,7 @@ import {
   Landmark,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { DemoIngestCard } from "@/components/dashboard/demo-ingest-card";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { Badge } from "@/components/ui/badge";
@@ -434,6 +435,9 @@ export default function IntakePage() {
           </div>
         }
       />
+
+      {/* Public live-demo: staged incoming brief (chapter 2 of the tour) */}
+      <DemoIngestCard />
 
       {/* Urgency hints (rule-based, lib/triage) — only when something is urgent */}
       {!loading && items.length > 0 && <TriagePanel items={items} />}

@@ -8,6 +8,7 @@ import { sendMail, siteUrl } from "@/lib/mail";
 import { provisionBrainAsync } from "@/lib/provision";
 import { signupSchema } from "@/lib/api-validation";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { verifySession } from "@/lib/auth/session";
 import { env } from "@/lib/env";
 import { z } from "zod";
 
@@ -34,7 +35,7 @@ export const POST = createPublicHandler(
     rateLimitWindowMs: 60 * 60_000,
   },
   async (req, body) => {
-    const { email, password, name, locale } = body;
+    const { email, password, name, locale, jurisdiction } = body;
 
     if (name.length < 1 || name.length > 120) {
       return apiError("invalid_name", "Invalid name", 400);
@@ -58,6 +59,14 @@ export const POST = createPublicHandler(
     // with the canonical legal pack.
     const industry = "legal";
 
+    // Demo → signup conversion: a visitor who came from the live demo still
+    // carries the signed demo session. Read it before provisioning so the
+    // seeded matter matches the jurisdiction the visitor experienced.
+    // An explicit picker choice in the signup form wins over the demo.
+    const demoSession = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
+    const tenantJurisdiction =
+      jurisdiction ?? (demoSession?.demo?.jurisdiction === "de" ? "de" : "at");
+
     const passwordHash = await hashPassword(password);
     const user = await store.create(
       await buildNewUser({
@@ -67,9 +76,9 @@ export const POST = createPublicHandler(
         locale: locale === "en" ? "en" : "de",
         referredBy,
         industry,
-        // Austria-only pilot market — every new tenant scopes to the AT
-        // corpus and sees AT surfaces. Onboarding may refine this.
-        jurisdiction: "AT",
+        // Tenant jurisdiction: explicit signup picker > demo attribution >
+        // AT default. Drives law-corpus scoping and seeded demo matter.
+        jurisdiction: tenantJurisdiction === "de" ? "DE" : "AT",
         startTrial: true,
       })
     );
@@ -77,7 +86,7 @@ export const POST = createPublicHandler(
     // Brain provisioning — fire-and-forget; pre-warms the Engine source so
     // the first dashboard load is instant. Engine lazily creates the source
     // on first write anyway, but this avoids the cold-start penalty.
-    provisionBrainAsync(user.brainId, { industry });
+    provisionBrainAsync(user.brainId, { industry, jurisdiction: tenantJurisdiction });
 
     // Verification mail — fire-and-forget; signup never fails on mail issues.
     // Without RESEND_API_KEY the mailer prints the link to the server console.
@@ -103,10 +112,21 @@ export const POST = createPublicHandler(
       }
     })();
 
+    // Attribute the conversion server-side (the funnel's last step) —
+    // first-party, independent of client tracking.
+    if (demoSession?.demo) {
+      const { recordDemoEvent, updateDemoSession } = await import("@/lib/demo/session");
+      await updateDemoSession(demoSession.demo.sid, { convertedUserId: user.id });
+      await recordDemoEvent(demoSession.demo.sid, "signup", {
+        props: { persona: demoSession.demo.persona },
+      });
+    }
+
     const session = await createSession(user.id, user.email, user.role);
     const res = NextResponse.json({ user: toPublic(user) }, { status: 201 });
     res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     res.cookies.delete(REF_COOKIE);
+    if (demoSession?.demo) res.cookies.delete("sb_demo");
     return res;
   }
 );

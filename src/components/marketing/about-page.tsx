@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { p, UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { PROOF } from "@/content/proof-points";
 import { TRIAL_DAYS } from "@/lib/billing/credit-constants";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,10 @@ const CONTENT = {
   ctaButton: "Kontakt aufnehmen",
 } as const;
 
-export default function AboutPage() {
+export default function AboutPage({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   const c = CONTENT;
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">

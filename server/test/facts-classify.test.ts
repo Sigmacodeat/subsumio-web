@@ -9,9 +9,47 @@
  *   - 4-strategy parse fallback for malformed JSON
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { cosineSimilarity, classifyAgainstCandidates } from "../src/core/facts/classify.ts";
+import { configureGateway, resetGateway } from "../src/core/ai/gateway.ts";
+import { setEnvForFile } from "./helpers/with-env.ts";
 import type { FactRow } from "../src/core/engine.ts";
+
+// These tests pin the "no API key" cosine-fallback contract. The
+// legacy-embedding preload snapshotted process.env — including real provider
+// keys from the developer's .env — into the gateway's _config.env, where
+// per-test `delete process.env.X` cannot reach. Re-configure the gateway
+// with a scrubbed env for the duration of this file, then reset so the
+// scrub doesn't leak into later files of the same shard process.
+let releaseEnv: () => void;
+
+beforeAll(() => {
+  releaseEnv = setEnvForFile({
+    ANTHROPIC_API_KEY: undefined,
+    OPENROUTER_API_KEY: undefined,
+    OPENROUTER_API_KEY_FALLBACK: undefined,
+    OPENAI_API_KEY: undefined,
+    GBRAIN_CHAT_MODEL: undefined,
+    SUBSUMIO_CHAT_MODEL: undefined,
+  });
+  const scrubbed = { ...process.env };
+  delete scrubbed.ANTHROPIC_API_KEY;
+  delete scrubbed.OPENROUTER_API_KEY;
+  delete scrubbed.OPENROUTER_API_KEY_FALLBACK;
+  delete scrubbed.OPENAI_API_KEY;
+  delete scrubbed.GBRAIN_CHAT_MODEL;
+  delete scrubbed.SUBSUMIO_CHAT_MODEL;
+  configureGateway({
+    embedding_model: "openai:text-embedding-3-large",
+    embedding_dimensions: 1536,
+    env: scrubbed,
+  });
+});
+
+afterAll(() => {
+  resetGateway();
+  releaseEnv?.();
+});
 
 function makeFact(overrides: Partial<FactRow> & { id: number }): FactRow {
   return {

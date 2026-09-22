@@ -45,7 +45,7 @@ async function sleep(ms: number): Promise<void> {
  */
 export async function provisionBrain(
   brainId: string,
-  opts?: { industry?: string | null }
+  opts?: { industry?: string | null; jurisdiction?: "at" | "de" | "AT" | "DE" | null }
 ): Promise<ProvisionResult> {
   const headers = engineHeadersForBrain(brainId);
 
@@ -77,19 +77,21 @@ export async function provisionBrain(
         // Seeding is optional — brain still works without it
       }
 
-      // 4. Seed Kanzlei defaults (AT Rechtsraum + RATG) so invoices/deadlines
-      //    start with correct Austrian settings and the settings page doesn't
+      // 4. Seed Kanzlei defaults (Rechtsraum + Tarifmodell) so invoices/deadlines
+      //    start with correct settings and the settings page doesn't
       //    hit a 404 on first load
+      const demoJur = opts?.jurisdiction?.toLowerCase() === "de" ? "de" : "at";
       try {
-        await seedKanzleiDefaults(headers);
+        await seedKanzleiDefaults(headers, demoJur);
       } catch {
         // Optional — settings fall back to client-side defaults
       }
 
       // 5. Seed a fictional demo matter so a new tenant sees a working
-      //    Akte + Frist + Dokument + Posteingang instead of an empty app
+      //    Akte + Frist + Dokument + Posteingang instead of an empty app.
+      //    Matches the jurisdiction of the public demo the visitor came from.
       try {
-        await seedDemoMatter(headers);
+        await seedDemoMatter(headers, demoJur);
       } catch {
         // Demo data is optional — signup must never fail on it
       }
@@ -113,7 +115,10 @@ export async function provisionBrain(
  * Fire-and-forget brain provisioning.
  * Use this in signup/register flows where you don't want to block the response.
  */
-export function provisionBrainAsync(brainId: string, opts?: { industry?: string | null }): void {
+export function provisionBrainAsync(
+  brainId: string,
+  opts?: { industry?: string | null; jurisdiction?: "at" | "de" | "AT" | "DE" | null }
+): void {
   void provisionBrain(brainId, opts).catch((err) => {
     log.error(
       `[provision] failed for ${brainId}:`,
@@ -163,14 +168,17 @@ async function seedWorkflows(
   }
 }
 
-const DEMO_CASE_SLUG = "legal/cases/demo-2026-001-berger-vs-muster";
+import { DEMO_CASE_SLUG, demoMatterPages, type DemoJurisdiction } from "@/content/demo-matter";
 
 /**
- * Seed the canonical Kanzlei-Settings page with Austrian defaults.
+ * Seed the canonical Kanzlei-Settings page with jurisdiction defaults.
  * loadKanzleiSettings() merges with client-side defaults, so we only set the
  * jurisdiction-relevant keys — the rest resolves via normalizeKanzleiSettings.
  */
-async function seedKanzleiDefaults(headers: Record<string, string>): Promise<void> {
+async function seedKanzleiDefaults(
+  headers: Record<string, string>,
+  jur: DemoJurisdiction = "at"
+): Promise<void> {
   await createSeedPage(headers, {
     slug: "legal/settings/kanzlei",
     title: "Kanzlei-Einstellungen",
@@ -178,21 +186,20 @@ async function seedKanzleiDefaults(headers: Record<string, string>): Promise<voi
     content: "Zentrale Kanzlei-Stammdaten für Rechnungen und Verfahrensdokumentation.",
     frontmatter: {
       type: "kanzlei_settings",
-      rechtsraumCountry: "AT",
-      tarifModell: "ratg",
+      rechtsraumCountry: jur === "de" ? "DE" : "AT",
+      tarifModell: jur === "de" ? "rvg" : "ratg",
       provisioned_defaults: true,
     },
   });
 }
 
 /** Slugs of the fictional demo matter seeded at signup — used by the
- *  demo-data cleanup endpoint to remove them again. */
-export const DEMO_SEED_SLUGS = [
-  DEMO_CASE_SLUG,
-  "legal/deadlines/demo-anfechtungsfrist-berger",
-  "legal/documents/demo-kuendigungsschreiben",
-  "legal/intake/demo-eingang-berger",
-] as const;
+ *  demo-data cleanup endpoint to remove them again. Mirrors the live
+ *  stage of src/content/demo-matter.ts (the public /demo sandbox clones
+ *  the same content into its isolated per-visitor source). */
+export const DEMO_SEED_SLUGS: readonly string[] = demoMatterPages(new Date(), "at")
+  .filter((p) => p.frontmatter.demo_stage === "live")
+  .map((p) => p.slug);
 
 async function createSeedPage(
   headers: Record<string, string>,
@@ -212,7 +219,10 @@ async function createSeedPage(
   });
 }
 
-async function seedDemoMatter(headers: Record<string, string>): Promise<void> {
+async function seedDemoMatter(
+  headers: Record<string, string>,
+  jur: DemoJurisdiction = "at"
+): Promise<void> {
   // Idempotent: if the demo case already exists (re-provision or retry), skip —
   // the lawyer may have edited the demo data and we must not overwrite it.
   try {
@@ -226,108 +236,7 @@ async function seedDemoMatter(headers: Record<string, string>): Promise<void> {
     // Lookup failed — proceed with seeding anyway; per-seed errors are tolerated
   }
 
-  const now = new Date();
-  const due = new Date(now.getTime() + 21 * 86_400_000);
-  const dueDate = due.toISOString().slice(0, 10);
-  const createdAt = now.toISOString();
-
-  const seeds = [
-    {
-      slug: DEMO_CASE_SLUG,
-      title: "Demo-Akte: Berger ./. Muster Werk GmbH",
-      type: "legal_case",
-      content: [
-        "**DEMO-AKTE — fiktives Mandat zum Testen, keine echten Mandantendaten.**",
-        "",
-        "Mag. Anna Berger wurde von der Muster Werk GmbH (Wien) am 01.09.2026",
-        "die Kündigung ausgesprochen. Sie wünscht Anfechtung wegen sozialer",
-        "Unrechtfertigung und Überprüfung offener Ansprüche (Überstunden,",
-        "Urlaubsersatzleistung).",
-        "",
-        "Nächster Schritt: Klagsbeantwortung / Anfechtungsklage beim",
-        "Arbeits- und Sozialgericht Wien einbringen.",
-      ].join("\n"),
-      frontmatter: {
-        case_number: "DEMO-2026-001",
-        legal_area: "Arbeitsrecht",
-        jurisdiction: "AT",
-        status: "open",
-        priority: "normal",
-        client_name: "Mag. Anna Berger",
-        opponent_name: "Muster Werk GmbH",
-        court_name: "Arbeits- und Sozialgericht Wien",
-        tags: ["demo"],
-        demo: true,
-        portal_enabled: false,
-        version: 0,
-      },
-    },
-    {
-      slug: "legal/deadlines/demo-anfechtungsfrist-berger",
-      title: "Anfechtungsfrist — Demo-Mandat Berger",
-      type: "legal_deadline",
-      content:
-        "Demo-Frist: Kündigungsanfechtung für das fiktive Mandat Berger ./. Muster Werk GmbH.",
-      frontmatter: {
-        type: "legal_deadline",
-        event_type: "deadline",
-        due_date: dueDate,
-        description: "Anfechtung der Kündigung beim zuständigen Gericht einbringen (Demo).",
-        status: "pending",
-        review_status: "unreviewed",
-        source: "demo_seed",
-        case_slug: DEMO_CASE_SLUG,
-        demo: true,
-        created_at: createdAt,
-      },
-    },
-    {
-      slug: "legal/documents/demo-kuendigungsschreiben",
-      title: "Kündigungsschreiben Muster Werk GmbH (Demo)",
-      type: "document",
-      content: [
-        "**DEMO-DOKUMENT — fiktives Schreiben zum Testen.**",
-        "",
-        "Muster Werk GmbH, Musterstraße 12, 1010 Wien",
-        "Wien, am 01.09.2026",
-        "",
-        "Sehr geehrte Frau Mag. Berger,",
-        "",
-        "hiermit kündigen wir das mit Ihnen bestehende Dienstverhältnis",
-        "ordentlich und zum nächstzulässigen Termin.",
-        "",
-        "Mit freundlichen Grüßen",
-        "Muster Werk GmbH",
-      ].join("\n"),
-      frontmatter: {
-        type: "document",
-        case_slug: DEMO_CASE_SLUG,
-        extraction_status: "done",
-        tags: ["demo"],
-        demo: true,
-      },
-    },
-    {
-      slug: "legal/intake/demo-eingang-berger",
-      title: "Posteingang: Kündigungsschreiben Berger (Demo)",
-      type: "intake_request",
-      content: "Demo-Eingang: fiktive Mandatsanfrage zum Testen des Posteingangs.",
-      frontmatter: {
-        type: "intake_request",
-        source: "email",
-        status: "new",
-        client_name: "Mag. Anna Berger",
-        email: "demo@beispiel.invalid",
-        legal_area: "Arbeitsrecht",
-        summary:
-          "Mandatsanfrage: Kündigung erhalten, Prüfung der Anfechtungsmöglichkeit gewünscht (Demo).",
-        conflict_check_status: "clear",
-        demo: true,
-        created_at: createdAt,
-        updated_at: createdAt,
-      },
-    },
-  ];
+  const seeds = demoMatterPages(new Date(), jur).filter((p) => p.frontmatter.demo_stage === "live");
 
   for (const seed of seeds) {
     try {

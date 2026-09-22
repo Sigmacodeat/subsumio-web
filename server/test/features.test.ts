@@ -86,7 +86,7 @@ describe("brain_score calculation", () => {
 describe("CLI routing", () => {
   it("features is in CLI_ONLY set", async () => {
     const cliSource = await Bun.file("src/cli.ts").text();
-    expect(cliSource).toContain("'features'");
+    expect(cliSource).toMatch(/["']features["']/);
   });
 
   it("help text mentions features", async () => {

@@ -24,6 +24,11 @@ import {
   isValidVoyageOutputDim,
 } from "../../src/core/ai/dims.ts";
 import { AIConfigError } from "../../src/core/ai/errors.ts";
+import {
+  DEFAULT_EMBEDDING_MODEL,
+  DEFAULT_EMBEDDING_DIMENSIONS,
+} from "../../src/core/ai/defaults.ts";
+import { TIER_DEFAULTS } from "../../src/core/model-config.ts";
 
 describe("gateway configuration", () => {
   beforeEach(() => resetGateway());
@@ -40,14 +45,15 @@ describe("gateway configuration", () => {
     expect(getExpansionModel()).toBe("anthropic:claude-haiku-4-5-20251001");
   });
 
-  test("defaults are ZE 1280d as of v0.36.0.0 (D3)", () => {
-    // The default flipped from openai:text-embedding-3-large 1536d to
-    // zeroentropyai:zembed-1 1280d in v0.36.0.0. The cost story is in
-    // CHANGELOG.md; the rationale lives in src/core/ai/gateway.ts:45-54.
+  test("defaults match DEFAULT_EMBEDDING_MODEL/DIMENSIONS (Subsumio: OpenAI 1536d)", () => {
+    // Subsumio moved the default back to OpenAI text-embedding-3-small @
+    // 1536d (deployed corpus is 1536d; SUBSUMIO_EMBEDDING_MODEL overrides DB
+    // config anyway). The contract under test: configureGateway({env:{}})
+    // resolves to the canonical defaults, whatever they are.
     configureGateway({ env: {} });
-    expect(getEmbeddingModel()).toBe("zeroentropyai:zembed-1");
-    expect(getEmbeddingDimensions()).toBe(1280);
-    expect(getExpansionModel()).toBe("anthropic:claude-haiku-4-5-20251001");
+    expect(getEmbeddingModel()).toBe(DEFAULT_EMBEDDING_MODEL);
+    expect(getEmbeddingDimensions()).toBe(DEFAULT_EMBEDDING_DIMENSIONS);
+    expect(getExpansionModel()).toBe(TIER_DEFAULTS.utility);
   });
 });
 
@@ -143,7 +149,7 @@ describe("model-resolver", () => {
   });
 
   test("resolveRecipe throws AIConfigError for unknown provider", () => {
-    expect(() => resolveRecipe("cohere:embed-v3")).toThrow(AIConfigError);
+    expect(() => resolveRecipe("not-a-real-provider:embed-v3")).toThrow(AIConfigError);
   });
 });
 

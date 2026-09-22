@@ -16,8 +16,13 @@ describe("G25 Full-Refactor: apiError consistency", () => {
     const apiErrorIdx = src.indexOf("const apiError =");
     expect(mountIdx).toBeGreaterThan(-1);
     expect(apiErrorIdx).toBeGreaterThan(-1);
-    // apiError should be defined within the first 200 chars of mountWebApi
-    expect(apiErrorIdx - mountIdx).toBeLessThan(300);
+    // apiError must be defined after mountWebApi opens and before the first
+    // route registration — a char-distance cap broke when unrelated prologue
+    // lines (error reporting, key resolution) were added above it.
+    expect(apiErrorIdx).toBeGreaterThan(mountIdx);
+    const firstRouteIdx = src.indexOf("app.", mountIdx);
+    expect(firstRouteIdx).toBeGreaterThan(-1);
+    expect(apiErrorIdx).toBeLessThan(firstRouteIdx);
   });
 
   it("apiError is defined only once", () => {

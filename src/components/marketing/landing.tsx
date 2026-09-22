@@ -11,7 +11,7 @@ import { ArrowRight, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { LANDING, UI_STRINGS, p } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { professionalPricing } from "@/content/audiences";
 import { PricingGrid } from "./pricing-grid";
 import { TestimonialsSection } from "./testimonials";
@@ -36,10 +36,10 @@ import LogoMarquee from "./logo-marquee";
 
 const PAIN_ICONS = [ICONS.Search, ICONS.AlertTriangle, ICONS.FileClock, ICONS.Users];
 
-export default function LandingPage() {
-  const t = LANDING;
+export default function LandingPage({ market = "at" }: { market?: Market }) {
+  const { landing: t, ui } = contentFor(market);
+  const p = pBind(market);
   const pricing = professionalPricing();
-  const ui = UI_STRINGS;
 
   return (
     <>
@@ -48,7 +48,11 @@ export default function LandingPage() {
           turning this wrapper into a scroll container that would break any
           `position: sticky` descendant. `clip` clips the horizontal
           marquee/parallax overflow without establishing a scroll container. */}
-      <div data-tone="light" className="min-h-screen overflow-x-clip" lang="de-AT">
+      <div
+        data-tone="light"
+        className="min-h-screen overflow-x-clip"
+        lang={market === "de" ? "de-DE" : "de-AT"}
+      >
         <LandingHero />
 
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
@@ -190,7 +194,7 @@ export default function LandingPage() {
         <WhatsAppSpotlight>
           <Button size="lg" variant="primary" asChild>
             <Link href={p("/whatsapp")}>
-              {UI_STRINGS.whatsappDetail} <ArrowRight size={16} />
+              {ui.whatsappDetail} <ArrowRight size={16} />
             </Link>
           </Button>
         </WhatsAppSpotlight>
@@ -354,7 +358,7 @@ export default function LandingPage() {
                 </Button>
               </MagneticButton>
               <Button size="xl" variant="secondary" asChild>
-                <Link href={p("/superbrain")}>{UI_STRINGS.watchDemo}</Link>
+                <Link href={p("/superbrain")}>{ui.watchDemo}</Link>
               </Button>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm [color:var(--mk-text-subtle)]">

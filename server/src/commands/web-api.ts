@@ -33,7 +33,11 @@ import {
 } from "../core/extract-document.ts";
 import { slugifySegment, isImageFilePath } from "../core/sync.ts";
 import { splitStatute } from "../core/legal/split-statute.ts";
-import { AT_LAW_SOURCES_ALL } from "../core/legal/jurisdiction.ts";
+import {
+  AT_LAW_SOURCES_ALL,
+  DE_LAW_SOURCES_ALL,
+  DE_LAW_SOURCES_STATUTES,
+} from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
 import { publicErrorMessage } from "../core/public-error-message.ts";
@@ -1802,11 +1806,12 @@ const SHARED_READ_SOURCES: string[] = (
 
 /**
  * Map a jurisdiction code to the law sources that jurisdiction's attorneys need.
- * DE → law-de + law-eu, AT → law-at + law-eu, CH → law-ch + law-eu.
+ * DE → DE_LAW_SOURCES_ALL (law-de + judikatur + literatur + law-eu),
+ * AT → AT_LAW_SOURCES_ALL, CH → law-ch + law-eu.
  * EU law applies to all DACH jurisdictions, so it's always included.
  */
 const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
-  DE: ["law-de", "law-eu"],
+  DE: DE_LAW_SOURCES_ALL,
   AT: AT_LAW_SOURCES_ALL,
   CH: ["law-ch", "law-eu"],
 };
@@ -4426,6 +4431,189 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.status(500).json({ error: "source_data_purge_failed", message: msg });
     }
   });
+
+  // Subsumio Demo: clone a template source into a fresh target source via
+  // pure SQL — zero pipeline, zero embedding/LLM cost, milliseconds instead
+  // of seconds. Powers the public live-demo where every visitor gets an
+  // isolated copy of the fictional matter. API-key guarded like every /api
+  // route; the web app is the only caller.
+  //
+  // Body: { from: string, to: string, slugs?: string[] }
+  //   from   — template source id (must exist)
+  //   to     — target source id (auto-provisioned via ensureSource)
+  //   slugs  — optional allowlist; when omitted every live page is cloned.
+  // Copies pages (id-remapped) plus content_chunks (with embeddings and
+  // search vectors), content_chunk_labels, current links, tags,
+  // raw_data and timeline_entries. files, page_versions and ingest_log are
+  // deliberately not cloned — demo pages carry no uploaded originals and
+  // no meaningful history. All inserts are ON CONFLICT DO NOTHING so a
+  // repeated call (e.g. the demo "ingest" step re-running) is idempotent.
+  app.post(
+    "/api/sources/clone",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const from = typeof body.from === "string" ? body.from.trim() : "";
+        const to = typeof body.to === "string" ? body.to.trim() : "";
+        const slugs = Array.isArray(body.slugs)
+          ? body.slugs.filter((s): s is string => typeof s === "string" && s.length > 0)
+          : null;
+        if (!from || !to) {
+          apiError(res, 400, "missing_source");
+          return;
+        }
+        if (from === to) {
+          apiError(res, 400, "clone_same_source");
+          return;
+        }
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(to)) {
+          apiError(res, 400, "invalid_source_id");
+          return;
+        }
+        if (slugs !== null && slugs.length === 0) {
+          res.json({ ok: true, cloned: { pages: 0 } });
+          return;
+        }
+
+        await ensureSource(to);
+
+        // Pages first — everything else joins back through the slug remap.
+        const pages = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO pages
+           (source_id, slug, type, page_kind, title, compiled_truth, timeline,
+            frontmatter, content_hash, emotional_weight, effective_date,
+            effective_date_source, import_filename)
+         SELECT $2, slug, type, page_kind, title, compiled_truth, timeline,
+                frontmatter, content_hash, emotional_weight, effective_date,
+                effective_date_source, import_filename
+         FROM pages
+         WHERE source_id = $1 AND deleted_at IS NULL
+           AND ($3::text[] IS NULL OR slug = ANY($3))
+         ON CONFLICT (source_id, slug) DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+        if (pages.length === 0) {
+          res.json({ ok: true, cloned: { pages: 0 } });
+          return;
+        }
+
+        // Slug-scoped old→new page remap shared by every dependent table.
+        const PAGE_JOIN = `
+        JOIN pages po ON po.id = %s AND po.source_id = $1
+           AND ($3::text[] IS NULL OR po.slug = ANY($3))
+        JOIN pages pn ON pn.slug = po.slug AND pn.source_id = $2`;
+
+        const chunks = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO content_chunks
+           (page_id, chunk_index, chunk_text, chunk_source, embedding, model,
+            token_count, embedded_at, modality, embedding_image,
+            embedding_multimodal, search_vector, document_type, statute_abbr,
+            paragraph_ref, absatz, ziffer, literal, chunk_role, court,
+            case_number, ecli, decision_date, legal_area, canonical_label,
+            language, symbol_name, symbol_type, start_line, end_line,
+            parent_symbol_path, doc_comment, symbol_name_qualified)
+         SELECT pn.id, c.chunk_index, c.chunk_text, c.chunk_source, c.embedding,
+                c.model, c.token_count, c.embedded_at, c.modality,
+                c.embedding_image, c.embedding_multimodal, c.search_vector,
+                c.document_type, c.statute_abbr, c.paragraph_ref, c.absatz,
+                c.ziffer, c.literal, c.chunk_role, c.court, c.case_number,
+                c.ecli, c.decision_date, c.legal_area, c.canonical_label,
+                c.language, c.symbol_name, c.symbol_type, c.start_line,
+                c.end_line, c.parent_symbol_path, c.doc_comment,
+                c.symbol_name_qualified
+         FROM content_chunks c
+         ${PAGE_JOIN.replace("%s", "c.page_id")}
+         ON CONFLICT (page_id, chunk_index) DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+
+        // Chunk labels remap old→new chunk ids via (page slug, chunk_index).
+        const labels = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO content_chunk_labels
+           (chunk_id, label_type, label_text, label_display, embedding, model, embedded_at)
+         SELECT cn.id, l.label_type, l.label_text, l.label_display,
+                l.embedding, l.model, l.embedded_at
+         FROM content_chunk_labels l
+         JOIN content_chunks co ON co.id = l.chunk_id
+         ${PAGE_JOIN.replace("%s", "co.page_id")}
+         JOIN content_chunks cn ON cn.page_id = pn.id AND cn.chunk_index = co.chunk_index
+         ON CONFLICT (chunk_id, label_type, label_text) DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+
+        // Only current (non-superseded) edges; origin_page_id provenance is
+        // dropped on clone (points at template rows — meaningless in the copy).
+        const links = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO links
+           (from_page_id, to_page_id, link_type, context, link_source,
+            link_kind, origin_field, resolution_type, valid_from)
+         SELECT fpn.id, tpn.id, l.link_type, l.context, l.link_source,
+                l.link_kind, l.origin_field, l.resolution_type, l.valid_from
+         FROM links l
+         JOIN pages fpo ON fpo.id = l.from_page_id AND fpo.source_id = $1
+           AND ($3::text[] IS NULL OR fpo.slug = ANY($3))
+         JOIN pages tpo ON tpo.id = l.to_page_id AND tpo.source_id = $1
+           AND ($3::text[] IS NULL OR tpo.slug = ANY($3))
+         JOIN pages fpn ON fpn.slug = fpo.slug AND fpn.source_id = $2
+         JOIN pages tpn ON tpn.slug = tpo.slug AND tpn.source_id = $2
+         WHERE l.valid_to IS NULL
+         ON CONFLICT DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+
+        const tags = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO tags (page_id, tag)
+         SELECT pn.id, t.tag FROM tags t
+         ${PAGE_JOIN.replace("%s", "t.page_id")}
+         ON CONFLICT (page_id, tag) DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+
+        const timeline = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO timeline_entries (page_id, date, source, summary, detail)
+         SELECT pn.id, te.date, te.source, te.summary, te.detail
+         FROM timeline_entries te
+         ${PAGE_JOIN.replace("%s", "te.page_id")}
+         ON CONFLICT (page_id, date, summary, source) DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+
+        const rawData = await engine.executeRaw<{ id: number }>(
+          `INSERT INTO raw_data (page_id, source, data, fetched_at)
+         SELECT pn.id, rd.source, rd.data, rd.fetched_at
+         FROM raw_data rd
+         ${PAGE_JOIN.replace("%s", "rd.page_id")}
+         ON CONFLICT (page_id, source) DO NOTHING
+         RETURNING id`,
+          [from, to, slugs]
+        );
+
+        res.json({
+          ok: true,
+          cloned: {
+            pages: pages.length,
+            chunks: chunks.length,
+            chunk_labels: labels.length,
+            links: links.length,
+            tags: tags.length,
+            timeline_entries: timeline.length,
+            raw_data: rawData.length,
+          },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        console.error("[web-api] source clone failed:", e);
+        res.status(500).json({ error: "clone_failed", message: publicErrorMessage(msg) });
+      }
+    }
+  );
 
   // DSGVO Art. 20 (Datenübertragbarkeit): vollständiger Export aller Seiten
   // der Tenant-Source inkl. Volltext + Frontmatter + Tags. Streng auf die
@@ -9372,16 +9560,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             (j): j is "at" | "de" | "ch" => j === "at" || j === "de" || j === "ch"
           )
         : (["at", "de", "ch"] as const);
-      const { LEGAL_SOURCE_BY_JURISDICTION, AT_LAW_SOURCES_STATUTES } =
+      const { LEGAL_SOURCE_BY_JURISDICTION, AT_LAW_SOURCES_STATUTES, DE_LAW_SOURCES_STATUTES } =
         await import("../core/legal/jurisdiction.ts");
       const jurisdictions: Record<string, unknown> = {};
       for (const jurisdiction of wanted) {
-        // Statutes live in the law sources, not in "default" (AT is split
-        // into granular statute sources).
+        // Statutes live in the law sources, not in "default" (AT and DE are
+        // split into granular statute sources).
         const lawSources =
           jurisdiction === "at"
             ? [LEGAL_SOURCE_BY_JURISDICTION.at, ...AT_LAW_SOURCES_STATUTES]
-            : [LEGAL_SOURCE_BY_JURISDICTION[jurisdiction]];
+            : jurisdiction === "de"
+              ? [LEGAL_SOURCE_BY_JURISDICTION.de, ...DE_LAW_SOURCES_STATUTES]
+              : [LEGAL_SOURCE_BY_JURISDICTION[jurisdiction]];
         const opCtx = buildOperationContext(
           engine,
           {},

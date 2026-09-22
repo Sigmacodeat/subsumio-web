@@ -23,7 +23,7 @@ const AT_ROOT = join(SRC_ROOT, "app", "at");
 const SITE_CONTENT = join(SRC_ROOT, "content", "site.ts");
 
 // Hrefs that intentionally leave the marketing shell (app routes, not /at).
-const NON_MARKETING_PREFIXES = ["/dashboard", "/portal", "/api", "/admin"];
+const NON_MARKETING_PREFIXES = ["/dashboard", "/portal", "/api", "/admin", "/demo"];
 const isExternal = (h: string) =>
   h.startsWith("http") || h.startsWith("mailto:") || h.startsWith("tel:") || h.startsWith("#");
 

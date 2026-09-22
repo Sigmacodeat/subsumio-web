@@ -116,7 +116,9 @@ describe("loadConfigWithEngine (Phase 4 / F3)", () => {
     });
     const merged = await loadConfigWithEngine(engine, base);
     expect(merged?.embedding_multimodal).toBeUndefined();
-    expect(merged?.embedding_image_ocr).toBeUndefined();
+    // OCR defaults to true when nothing configures it — the empty DB string
+    // is ignored (not coerced to false), then the default fills in.
+    expect(merged?.embedding_image_ocr).toBe(true);
     expect(merged?.embedding_image_ocr_model).toBeUndefined();
   });
 

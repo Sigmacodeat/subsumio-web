@@ -28,6 +28,7 @@ import { isOnline } from "@/lib/offline-store";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
+import { isDocumentLock, type DocumentLock } from "@/lib/document-versions";
 import { ActImportCockpit } from "@/components/legal/ActImportCockpit";
 import { QesSignButton } from "@/components/legal/QesSignButton";
 
@@ -102,6 +103,12 @@ export function DocumentsTab() {
   // Jurisdiction lives on the doc pages (stamped by the pipeline), not on the
   // case's documents[] entries — batch-fetch it like the evidence tab does.
   const [docJurisdictions, setDocJurisdictions] = useState<Record<string, DocJurisdiction>>({});
+  const [docLocks, setDocLocks] = useState<Record<string, DocumentLock>>({});
+  const [docFolders, setDocFolders] = useState<Record<string, string>>({});
+  const [folderFilter, setFolderFilter] = useState("all");
+  const [folderEditSlug, setFolderEditSlug] = useState<string | null>(null);
+  const [folderEditValue, setFolderEditValue] = useState("");
+  const [folderSaving, setFolderSaving] = useState(false);
   const docSlugsKey = (ctx.caseData?.documents ?? [])
     .map((d) => d.slug || d.url || "")
     .filter(Boolean)
@@ -115,8 +122,14 @@ export function DocumentsTab() {
         const pagesMap = await api.brain.getPages(slugs);
         if (cancelled) return;
         const next: Record<string, DocJurisdiction> = {};
+        const locks: Record<string, DocumentLock> = {};
+        const folders: Record<string, string> = {};
         for (const [pageSlug, page] of Object.entries(pagesMap)) {
           const fm = (page?.frontmatter ?? {}) as Record<string, unknown>;
+          if (isDocumentLock(fm.checked_out_by)) locks[pageSlug] = fm.checked_out_by;
+          if (typeof fm.folder === "string" && fm.folder.trim()) {
+            folders[pageSlug] = fm.folder.trim();
+          }
           if (typeof fm.jurisdiction !== "string" || !fm.jurisdiction) continue;
           next[pageSlug] = {
             jurisdiction: fm.jurisdiction,
@@ -129,6 +142,8 @@ export function DocumentsTab() {
           };
         }
         setDocJurisdictions(next);
+        setDocLocks(locks);
+        setDocFolders(folders);
       } catch {
         // Best-effort enrichment — the tab stays fully usable without it
       }
@@ -139,6 +154,45 @@ export function DocumentsTab() {
   }, [docSlugsKey]);
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
+  const allFolders = [...new Set(Object.values(docFolders))].sort((a, b) =>
+    a.localeCompare(b, "de")
+  );
+  const docKey = (d: { slug?: string; url?: string }) => d.slug || d.url || "";
+  const matchesFolder = (d: { slug?: string; url?: string }) =>
+    folderFilter === "all" ||
+    (folderFilter === "" ? !docFolders[docKey(d)] : docFolders[docKey(d)] === folderFilter);
+
+  async function saveFolder(docSlug: string, folder: string) {
+    setFolderSaving(true);
+    try {
+      const res = await csrfFetch(
+        `/api/pages/${docSlug.split("/").map(encodeURIComponent).join("/")}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            frontmatter: { folder: folder.trim() || null },
+            merge: true,
+          }),
+        }
+      );
+      if (!res.ok) {
+        ctx.setUploadError("Ordner konnte nicht gespeichert werden.");
+        return;
+      }
+      setDocFolders((prev) => {
+        const next = { ...prev };
+        if (folder.trim()) next[docSlug] = folder.trim();
+        else delete next[docSlug];
+        return next;
+      });
+      setFolderEditSlug(null);
+    } catch {
+      ctx.setUploadError("Ordner konnte nicht gespeichert werden.");
+    } finally {
+      setFolderSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -432,6 +486,22 @@ export function DocumentsTab() {
             <option value="police_report">Ermittlungsakte</option>
             <option value="financial_record">Finanzunterlage</option>
           </select>
+          {allFolders.length > 0 && (
+            <select
+              value={folderFilter}
+              onChange={(e) => setFolderFilter(e.target.value)}
+              aria-label="Nach Ordner filtern"
+              className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            >
+              <option value="all">Alle Ordner</option>
+              <option value="">Ohne Ordner</option>
+              {allFolders.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -540,6 +610,71 @@ export function DocumentsTab() {
         </div>
       )}
 
+      {/* Folder assignment dialog */}
+      {folderEditSlug && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="In Ordner ablegen"
+            className="w-full max-w-sm rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                In Ordner ablegen
+              </h3>
+              <button
+                onClick={() => setFolderEditSlug(null)}
+                aria-label="Dialog schließen"
+                className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              >
+                <XCircle size={16} />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={folderEditValue}
+              onChange={(e) => setFolderEditValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !folderSaving) {
+                  void saveFolder(folderEditSlug, folderEditValue);
+                }
+              }}
+              placeholder="Ordnername, z. B. Schriftsätze"
+              list="matter-folder-suggestions"
+              aria-label="Ordnername"
+              autoFocus
+              className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            />
+            <datalist id="matter-folder-suggestions">
+              {allFolders.map((f) => (
+                <option key={f} value={f} />
+              ))}
+            </datalist>
+            <p className="mb-4 text-xs text-[color:var(--ds-text-muted)]">
+              Unterordner mit „/“ anlegen, z. B. „Schriftsätze/Klagen“. Leer = kein Ordner.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setFolderEditSlug(null)}
+                disabled={folderSaving}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                size="sm"
+                disabled={folderSaving}
+                onClick={() => void saveFolder(folderEditSlug, folderEditValue)}
+              >
+                {folderSaving ? "Speichern…" : "Speichern"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Document list */}
       {caseData.documents.length === 0 ? (
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-6 text-center">
@@ -556,9 +691,10 @@ export function DocumentsTab() {
           {caseData.documents
             .filter(
               (d) =>
-                ctx.docTypeFilter === "all" ||
-                d.kind === ctx.docTypeFilter ||
-                d.doc_type === ctx.docTypeFilter
+                (ctx.docTypeFilter === "all" ||
+                  d.kind === ctx.docTypeFilter ||
+                  d.doc_type === ctx.docTypeFilter) &&
+                matchesFolder(d)
             )
             .map((doc) => (
               <div
@@ -613,6 +749,26 @@ export function DocumentsTab() {
                         {t("docstab.privileged")}
                       </Badge>
                     )}
+                    {docFolders[docKey(doc)] && (
+                      <Badge variant="default" className="shrink-0 text-xs">
+                        <FolderOpen size={10} className="mr-0.5" aria-hidden />
+                        {docFolders[docKey(doc)]}
+                      </Badge>
+                    )}
+                    {(() => {
+                      const lock = docLocks[doc.slug || doc.url || ""];
+                      if (!lock) return null;
+                      return (
+                        <Badge
+                          variant="warning"
+                          className="shrink-0 text-xs"
+                          title={`Ausgecheckt seit ${new Date(lock.at).toLocaleString("de-AT")}`}
+                        >
+                          <Lock size={10} className="mr-0.5" aria-hidden />
+                          {lock.userEmail || "ausgecheckt"}
+                        </Badge>
+                      );
+                    })()}
                     {(() => {
                       const ps = ctx.docProcessingStatus(doc);
                       const labelMap: Record<string, string> = {
@@ -700,6 +856,21 @@ export function DocumentsTab() {
                   >
                     <Download size={14} />
                   </a>
+                )}
+                {(doc.slug || doc.url) && (
+                  <button
+                    disabled={caseData?.status === "archived"}
+                    onClick={() => {
+                      const k = docKey(doc);
+                      setFolderEditSlug(k);
+                      setFolderEditValue(docFolders[k] ?? "");
+                    }}
+                    className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
+                    title="In Ordner ablegen"
+                    aria-label={`${doc.name} in Ordner ablegen`}
+                  >
+                    <FolderOpen size={14} />
+                  </button>
                 )}
                 <button
                   disabled={caseData?.status === "archived"}

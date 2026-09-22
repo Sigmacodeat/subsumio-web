@@ -66,7 +66,7 @@ async function runCli(
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const proc = Bun.spawn(["bun", "run", `${REPO}/src/cli.ts`, ...args], {
     cwd: REPO,
-    env: { ...process.env, ...env },
+    env: { ...process.env, DATABASE_URL: "", GBRAIN_DATABASE_URL: "", ...env },
     stdout: "pipe",
     stderr: "pipe",
   });

@@ -61,7 +61,7 @@ describe("v0.41 T4: bundled registry includes lens packs", () => {
       "utf-8"
     );
     for (const name of PACK_NAMES) {
-      expect(loadActiveSrc).toContain(`'${name}'`);
+      expect(loadActiveSrc).toMatch(new RegExp(`['"]${name}['"]`));
     }
   });
 });

@@ -82,7 +82,7 @@ beforeAll(() => {
   // Strip embedding-provider env vars so init doesn't refuse on the
   // multi-provider ambiguity check. We don't need embeddings — sync
   // runs with --no-embed below and search/get are keyword-only paths.
-  runEnv = { ...process.env, GBRAIN_HOME: tmpHome };
+  runEnv = { ...process.env, DATABASE_URL: "", GBRAIN_DATABASE_URL: "", GBRAIN_HOME: tmpHome };
   delete runEnv.VOYAGE_API_KEY;
   delete runEnv.ZEROENTROPY_API_KEY;
   delete runEnv.OPENAI_API_KEY;

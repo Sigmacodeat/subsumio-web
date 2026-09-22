@@ -89,7 +89,7 @@ describe("resolveEmbeddingColumn — resolution chain", () => {
     expect(err).toBeTruthy();
     expect(err?.code).toBe("embedding_column_not_registered");
     expect(err?.columnName).toBe("nonexistent");
-    expect(err?.validColumns).toEqual(["embedding", "embedding_image"]);
+    expect(err?.validColumns).toEqual(["embedding", "embedding_half", "embedding_image"]);
     expect(err?.message).toContain("Declared columns:");
     expect(err?.message).toContain("gbrain config set");
   });
@@ -156,7 +156,12 @@ describe("getEmbeddingColumnRegistry — builtins + merge", () => {
         },
       })
     );
-    expect(Object.keys(reg).sort()).toEqual(["embedding", "embedding_image", "embedding_voyage"]);
+    expect(Object.keys(reg).sort()).toEqual([
+      "embedding",
+      "embedding_half",
+      "embedding_image",
+      "embedding_voyage",
+    ]);
   });
 
   test("user override wins on conflict (override embedding builtin)", () => {

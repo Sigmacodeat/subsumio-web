@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, FileText, Loader2, Plus, RefreshCw } from "lucide-react";
+import { Banknote, FileText, Loader2, Plus, RefreshCw, Upload } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { formatDate, formatEur } from "@/lib/utils";
@@ -30,6 +30,7 @@ export default function FibuPage() {
   const [showImport, setShowImport] = useState(false);
   const [showPaymentLink, setShowPaymentLink] = useState(false);
   const [saving, setSaving] = useState(false);
+  const camtInputRef = useRef<HTMLInputElement>(null);
 
   const [importForm, setImportForm] = useState({
     date: "",
@@ -169,6 +170,36 @@ export default function FibuPage() {
     }
   }
 
+  async function importCamtFile(file: File) {
+    setSaving(true);
+    try {
+      const xml = await file.text();
+      const response = await csrfFetch("/api/fibu/camt-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ xml }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message ?? result.error);
+      addToast({
+        type: "success",
+        title: `${result.data?.imported ?? 0} Buchungen aus camt.053 importiert`,
+        description: `${result.data?.matched ?? 0} automatisch zugeordnet.`,
+      });
+      await load();
+    } catch (error) {
+      console.error("[fibu] camt import failed:", error instanceof Error ? error.message : error);
+      addToast({
+        type: "error",
+        title: "Kontoauszug konnte nicht importiert werden",
+        description: "Bitte prüfen Sie, ob es sich um eine camt.053-XML-Datei (ISO 20022) handelt.",
+      });
+    } finally {
+      setSaving(false);
+      if (camtInputRef.current) camtInputRef.current.value = "";
+    }
+  }
+
   async function handlePaymentLink() {
     if (
       !linkForm.invoice_id ||
@@ -252,6 +283,27 @@ export default function FibuPage() {
               <RefreshCw size={14} aria-hidden="true" />
               Bank abgleichen
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              disabled={saving}
+              onClick={() => camtInputRef.current?.click()}
+            >
+              <Upload size={14} aria-hidden="true" />
+              camt.053 importieren
+            </Button>
+            <input
+              ref={camtInputRef}
+              type="file"
+              accept=".xml,text/xml,application/xml"
+              className="hidden"
+              aria-label="camt.053-Kontoauszug auswählen"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void importCamtFile(file);
+              }}
+            />
             <Button
               variant="outline"
               size="sm"

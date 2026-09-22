@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { p, UI_STRINGS } from "@/content/site";
 import { ClipReveal, GlowCard, StaggerContainer, StaggerItem } from "../motion-system";
 import { Section, H2_CTA_CLASS } from "../primitives";
 import { AnimatedFaqList } from "../animated-faq";
 import { reveal, type SuperbrainCopyDe } from "./shared";
 import { resolveIcon } from "../icons";
+import { useMarket } from "@/lib/use-market";
 
 export function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
   return (
@@ -50,6 +50,7 @@ export function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
 }
 
 export function UseCasesSection({ t }: { t: SuperbrainCopyDe }) {
+  const { p, ui: UI_STRINGS } = useMarket();
   return (
     <Section
       tone="light"
@@ -106,6 +107,7 @@ export function UseCasesSection({ t }: { t: SuperbrainCopyDe }) {
 }
 
 export function TrustSection({ t }: { t: SuperbrainCopyDe }) {
+  const { p, ui: UI_STRINGS } = useMarket();
   return (
     <Section
       tone="light"
@@ -186,6 +188,7 @@ export function TrustSection({ t }: { t: SuperbrainCopyDe }) {
 }
 
 export function FAQSection({ t }: { t: SuperbrainCopyDe }) {
+  const { p, ui: UI_STRINGS } = useMarket();
   const faqItems = t.faq.map((item) => ({ q: item.q, a: item.a }));
   return (
     <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label={UI_STRINGS.ariaFaq}>

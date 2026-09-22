@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { contentFor, pBind, type Market } from "@/lib/market";
 import { PROOF } from "@/content/proof-points";
 import { Section, SectionHeading, CTASection, PageHero } from "./primitives";
 import { Reveal, GlowCard } from "./motion-system";
@@ -31,7 +31,10 @@ const METHOD_ITEMS = [
   "Protokoll: Suchverfahren und Einstellungen werden je Messlauf festgehalten.",
 ];
 
-export default function BenchmarkMethodologyPage() {
+export default function BenchmarkMethodologyPage({ market = "at" }: { market?: Market }) {
+  const { ui: UI_STRINGS } = contentFor(market);
+  const p = pBind(market);
+
   return (
     <div
       data-tone="light"

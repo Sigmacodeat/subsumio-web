@@ -54,6 +54,9 @@ function buildCspHeader(nonce: string): string {
 }
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+/** Marker cookie set next to the signed demo session — lets middleware tell
+ *  "expired demo visitor" apart from "never signed in" for the redirect. */
+const DEMO_MARKER_COOKIE = "sb_demo";
 const APP_HOSTS = new Set(
   ["app.subsum.io", "cockpit.subsum.io", ...(env("SUBSUMIO_APP_HOSTS")?.split(",") ?? [])]
     .map((host) => host.trim().toLowerCase())
@@ -201,6 +204,9 @@ const API_CSRF_EXEMPT_PATHS = new Set([
   // anonymous visitors have no CSRF cookie. The route itself bounds abuse
   // with a per-IP rate limit (5/h) and a honeypot field.
   "/api/intake/public",
+  // Live-demo session bootstrap: anonymous POST, issues the signed demo
+  // session cookie. Per-IP rate limited inside the route.
+  "/api/demo/session",
 ]);
 
 function isWebhookCsrfExempt(pathname: string): boolean {
@@ -446,21 +452,29 @@ export async function middleware(req: NextRequest) {
       hasValidInternalSecret(req);
 
     if (!isExempt) {
-      const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
-      const headerToken = req.headers.get(CSRF_HEADER_NAME);
-      if (!cookieToken || !headerToken) {
-        return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
-      }
-      // Timing-safe comparison (same pattern as csrf.ts validateCsrf)
-      if (cookieToken.length !== headerToken.length) {
-        return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
-      }
-      let diff = 0;
-      for (let i = 0; i < cookieToken.length; i++) {
-        diff |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
-      }
-      if (diff !== 0) {
-        return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
+      // Live-demo sessions never received a CSRF cookie — their signed
+      // session token IS the credential and SameSite=lax already keeps it
+      // off cross-site POSTs. Verify it rather than trusting a marker.
+      const apiSession = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
+      if (apiSession?.demo) {
+        // Demo session → sandboxed source, demo guard handles the rest.
+      } else {
+        const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
+        const headerToken = req.headers.get(CSRF_HEADER_NAME);
+        if (!cookieToken || !headerToken) {
+          return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
+        }
+        // Timing-safe comparison (same pattern as csrf.ts validateCsrf)
+        if (cookieToken.length !== headerToken.length) {
+          return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
+        }
+        let diff = 0;
+        for (let i = 0; i < cookieToken.length; i++) {
+          diff |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
+        }
+        if (diff !== 0) {
+          return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
+        }
       }
     }
   }
@@ -469,6 +483,13 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/dashboard") || isOpsPath(pathname)) {
     const session = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
     if (!session) {
+      // Expired live-demo session (marker cookie set at /demo entry):
+      // send the visitor back to the demo entry, not the login wall.
+      if (req.cookies.get(DEMO_MARKER_COOKIE)?.value === "1") {
+        const demo = new URL("/demo", req.url);
+        demo.searchParams.set("expired", "1");
+        return applyCsp(NextResponse.redirect(demo));
+      }
       const login = new URL("/at/login", req.url);
       login.searchParams.set("next", pathname);
       return applyCsp(NextResponse.redirect(login));

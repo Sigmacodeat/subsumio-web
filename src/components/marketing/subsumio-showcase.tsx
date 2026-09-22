@@ -34,7 +34,7 @@ import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { EASE } from "./motion-system";
 import Link from "next/link";
-import { UI_STRINGS, p } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 
 const COPY = {
   waEyebrow: "Das Büro in der Hosentasche",
@@ -130,6 +130,7 @@ function TypingDots({ color }: { color: string }) {
 }
 
 export function PhoneCopilot() {
+  const { ui: UI_STRINGS } = useMarket();
   const c = COPY;
   const reduce = useReducedMotion() ?? false;
   const WA = {
@@ -774,6 +775,7 @@ export function FeatureBento() {
 }
 
 export default function SubsumioShowcase() {
+  const { ui: UI_STRINGS, p } = useMarket();
   return (
     <>
       <WhatsAppSpotlight>

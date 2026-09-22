@@ -99,6 +99,8 @@ describe("migration v39 (multimodal dual-column + PGLite files)", () => {
       "created_at",
       "filename",
       "id",
+      "integrity_status",
+      "last_integrity_check",
       "metadata",
       "mime_type",
       "page_id",

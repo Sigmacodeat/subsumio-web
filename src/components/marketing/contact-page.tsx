@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Mail, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import { Section, SectionHeading, PageHero, CTASection, IconTile, H3_CLASS } from "./primitives";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
@@ -45,6 +45,7 @@ const CONTENT = {
 const ICON_MAP = { Mail, FileText };
 
 export default function ContactPage() {
+  const { ui: UI_STRINGS, p } = useMarket();
   const c = CONTENT;
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   return (

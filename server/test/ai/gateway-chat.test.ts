@@ -25,6 +25,7 @@ import {
   getChatFallbackChain,
 } from "../../src/core/ai/gateway.ts";
 import { parseModelId, resolveRecipe, assertTouchpoint } from "../../src/core/ai/model-resolver.ts";
+import { TIER_DEFAULTS } from "../../src/core/model-config.ts";
 import { AIConfigError } from "../../src/core/ai/errors.ts";
 import { listRecipes, getRecipe } from "../../src/core/ai/recipes/index.ts";
 
@@ -43,10 +44,10 @@ describe("chat touchpoint — recipe registry", () => {
     }
   });
 
-  test("only Anthropic claims supports_prompt_cache=true", () => {
+  test("prompt-cache providers are exactly Anthropic + OpenRouter", () => {
     for (const r of listRecipes()) {
       if (!r.touchpoints.chat) continue;
-      if (r.id === "anthropic") {
+      if (r.id === "anthropic" || r.id === "openrouter") {
         expect(r.touchpoints.chat.supports_prompt_cache).toBe(true);
       } else {
         expect(r.touchpoints.chat.supports_prompt_cache ?? false).toBe(false);
@@ -54,9 +55,8 @@ describe("chat touchpoint — recipe registry", () => {
     }
   });
 
-  test("embedding-only providers (voyage, ollama) do NOT declare chat", () => {
+  test("embedding-only providers (voyage) do NOT declare chat", () => {
     expect(getRecipe("voyage")!.touchpoints.chat).toBeUndefined();
-    expect(getRecipe("ollama")!.touchpoints.chat).toBeUndefined();
   });
 
   test("openai-compat chat recipes have base_url_default", () => {
@@ -107,16 +107,13 @@ describe("chat touchpoint — model resolver + aliases (Codex F-OV-5)", () => {
     expect(() =>
       assertTouchpoint(getRecipe("anthropic")!, "chat", "claude-opus-4-7")
     ).not.toThrow();
-    expect(() => assertTouchpoint(getRecipe("openai")!, "chat", "gpt-5.2")).not.toThrow();
+    expect(() => assertTouchpoint(getRecipe("openai")!, "chat", "gpt-5.4")).not.toThrow();
     expect(() => assertTouchpoint(getRecipe("google")!, "chat", "gemini-2.0-flash")).not.toThrow();
     expect(() => assertTouchpoint(getRecipe("deepseek")!, "chat", "deepseek-chat")).not.toThrow();
   });
 
   test("assertTouchpoint rejects chat on embedding-only providers with a fix hint", () => {
     expect(() => assertTouchpoint(getRecipe("voyage")!, "chat", "voyage-3")).toThrow(AIConfigError);
-    expect(() => assertTouchpoint(getRecipe("ollama")!, "chat", "nomic-embed-text")).toThrow(
-      AIConfigError
-    );
   });
 
   test("assertTouchpoint rejects unknown native model with the model list in the fix hint", () => {
@@ -138,9 +135,9 @@ describe("chat touchpoint — model resolver + aliases (Codex F-OV-5)", () => {
 describe("chat touchpoint — gateway config plumbing", () => {
   beforeEach(() => resetGateway());
 
-  test("default chat_model is anthropic:claude-sonnet-4-6", () => {
+  test("default chat_model is the utility tier default", () => {
     configureGateway({ env: {} });
-    expect(getChatModel()).toBe("anthropic:claude-sonnet-4-6");
+    expect(getChatModel()).toBe(TIER_DEFAULTS.utility);
   });
 
   test("explicit chat_model overrides the default", () => {

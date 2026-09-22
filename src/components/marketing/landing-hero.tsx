@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { LANDING, UI_STRINGS, p } from "@/content/site";
+import { useMarket } from "@/lib/use-market";
 import { Section } from "./primitives";
 import { EASE, MagneticButton, SplitTextReveal } from "./motion-system";
 import RotatingBadge from "./rotating-badge";
@@ -32,8 +32,7 @@ const TRUST_ICONS: Record<string, LucideIcon> = {
 };
 
 export default function LandingHero() {
-  const t = LANDING;
-  const ui = UI_STRINGS;
+  const { landing: t, ui, p } = useMarket();
   const reduce = useReducedMotion();
 
   return (

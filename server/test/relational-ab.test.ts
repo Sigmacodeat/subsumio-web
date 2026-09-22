@@ -14,8 +14,13 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { hybridSearch } from "../src/core/search/hybrid.ts";
+import { configureGateway } from "../src/core/ai/gateway.ts";
+import { setEnvForFile } from "./helpers/with-env.ts";
 import {
   runRetrievalQuality,
   parseQuestionsJsonl,
@@ -26,11 +31,35 @@ import {
   RELATIONAL_QUESTIONS,
 } from "./fixtures/retrieval-quality/relational/corpus.ts";
 import { readFileSync } from "fs";
-import { join } from "path";
 
 let eng: PGLiteEngine;
+let fakeHome: string;
+let releaseEnv: () => void;
 
 beforeAll(async () => {
+  // Isolate the file-plane config: a developer ~/.gbrain/config.json can
+  // resolve a no-auth provider (ollama) whose embed call stalls on the 6s
+  // query deadline per question — ~30 questions × 2 arms → 120s timeout.
+  // The relational arm is graph-based and needs no embedding provider.
+  fakeHome = mkdtempSync(join(tmpdir(), "gbrain-rel-ab-"));
+  releaseEnv = setEnvForFile({ GBRAIN_HOME: fakeHome });
+
+  const scrubbed = { ...process.env };
+  for (const k of [
+    "OPENAI_API_KEY",
+    "OPENROUTER_API_KEY",
+    "OPENROUTER_API_KEY_FALLBACK",
+    "ANTHROPIC_API_KEY",
+    "DATABASE_URL",
+  ]) {
+    delete scrubbed[k];
+  }
+  configureGateway({
+    embedding_model: "openai:text-embedding-3-large",
+    embedding_dimensions: 1536,
+    env: scrubbed,
+  });
+
   eng = new PGLiteEngine();
   await eng.connect({});
   await eng.initSchema();
@@ -39,6 +68,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await eng.disconnect();
+  releaseEnv();
+  rmSync(fakeHome, { recursive: true, force: true });
 });
 
 const searchFnWith =

@@ -21,11 +21,16 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { retrieveStatutesForIssues, type LegalIssue } from "../src/core/legal/case-analyzer.ts";
 import { agenticRetrieval } from "../src/core/think/agentic-retrieval.ts";
-import { seedLegalAtCorpus } from "./fixtures/retrieval-quality/legal-at/corpus.ts";
+import {
+  seedLegalAtCorpus,
+  legalAtCorpusAvailable,
+} from "./fixtures/retrieval-quality/legal-at/corpus.ts";
 
 let eng: PGLiteEngine;
+const CORPUS_AVAILABLE = legalAtCorpusAvailable();
 
 beforeAll(async () => {
+  if (!CORPUS_AVAILABLE) return;
   eng = new PGLiteEngine();
   await eng.connect({});
   await eng.initSchema();
@@ -33,7 +38,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  await eng.disconnect();
+  await eng?.disconnect();
 });
 
 // Jurisdiction-neutral issues: the query text matches both the AT and the DE
@@ -64,50 +69,56 @@ const QUESTIONS = ISSUES.map((i) => i.description);
 const foreignStatutes = (slugs: string[]): string[] =>
   slugs.filter((s) => s.startsWith("legal/statutes/") && !s.startsWith("legal/statutes/at/"));
 
-describe("new retrieval paths honor jurisdiction isolation (Phase 3 guard)", () => {
-  test("case-analyzer retrieveStatutesForIssues: jurisdiction=at surfaces zero German §§", async () => {
-    const results = await retrieveStatutesForIssues(ISSUES, eng, { jurisdiction: "at", limit: 30 });
-    const foreign = foreignStatutes(results.map((r) => r.slug));
-    expect(foreign, `case-analyzer leaked: ${foreign.join(", ")}`).toEqual([]);
-    // Sanity: it actually retrieved the AT statutes (not just empty).
-    const atHits = results.filter((r) => r.slug.startsWith("legal/statutes/at/"));
-    expect(atHits.length).toBeGreaterThan(0);
-  }, 30_000);
-
-  test("case-analyzer WITHOUT the filter leaks German §§ (guard has teeth)", async () => {
-    const results = await retrieveStatutesForIssues(ISSUES, eng, { limit: 30 });
-    const foreign = foreignStatutes(results.map((r) => r.slug));
-    expect(foreign.length).toBeGreaterThan(0);
-  }, 30_000);
-
-  test("agenticRetrieval: jurisdiction=at surfaces zero German §§ across all rounds", async () => {
-    const leaks: string[] = [];
-    for (const question of QUESTIONS) {
-      const res = await agenticRetrieval(eng, {
-        question,
+describe.skipIf(!CORPUS_AVAILABLE)(
+  "new retrieval paths honor jurisdiction isolation (Phase 3 guard)",
+  () => {
+    test("case-analyzer retrieveStatutesForIssues: jurisdiction=at surfaces zero German §§", async () => {
+      const results = await retrieveStatutesForIssues(ISSUES, eng, {
         jurisdiction: "at",
-        llmCompletenessCheck: false, // heuristic path — no LLM needed
-        limit: 20,
+        limit: 30,
       });
-      const foreign = foreignStatutes(res.results.map((r) => r.slug));
-      if (foreign.length > 0) leaks.push(`"${question}" → ${foreign.join(", ")}`);
-    }
-    expect(leaks, `agenticRetrieval leaked:\n${leaks.join("\n")}`).toEqual([]);
-  }, 60_000);
+      const foreign = foreignStatutes(results.map((r) => r.slug));
+      expect(foreign, `case-analyzer leaked: ${foreign.join(", ")}`).toEqual([]);
+      // Sanity: it actually retrieved the AT statutes (not just empty).
+      const atHits = results.filter((r) => r.slug.startsWith("legal/statutes/at/"));
+      expect(atHits.length).toBeGreaterThan(0);
+    }, 30_000);
 
-  test("agenticRetrieval WITHOUT the filter leaks German §§ (guard has teeth)", async () => {
-    let leaked = false;
-    for (const question of QUESTIONS) {
-      const res = await agenticRetrieval(eng, {
-        question,
-        llmCompletenessCheck: false,
-        limit: 20,
-      });
-      if (foreignStatutes(res.results.map((r) => r.slug)).length > 0) {
-        leaked = true;
-        break;
+    test("case-analyzer WITHOUT the filter leaks German §§ (guard has teeth)", async () => {
+      const results = await retrieveStatutesForIssues(ISSUES, eng, { limit: 30 });
+      const foreign = foreignStatutes(results.map((r) => r.slug));
+      expect(foreign.length).toBeGreaterThan(0);
+    }, 30_000);
+
+    test("agenticRetrieval: jurisdiction=at surfaces zero German §§ across all rounds", async () => {
+      const leaks: string[] = [];
+      for (const question of QUESTIONS) {
+        const res = await agenticRetrieval(eng, {
+          question,
+          jurisdiction: "at",
+          llmCompletenessCheck: false, // heuristic path — no LLM needed
+          limit: 20,
+        });
+        const foreign = foreignStatutes(res.results.map((r) => r.slug));
+        if (foreign.length > 0) leaks.push(`"${question}" → ${foreign.join(", ")}`);
       }
-    }
-    expect(leaked).toBe(true);
-  }, 60_000);
-});
+      expect(leaks, `agenticRetrieval leaked:\n${leaks.join("\n")}`).toEqual([]);
+    }, 60_000);
+
+    test("agenticRetrieval WITHOUT the filter leaks German §§ (guard has teeth)", async () => {
+      let leaked = false;
+      for (const question of QUESTIONS) {
+        const res = await agenticRetrieval(eng, {
+          question,
+          llmCompletenessCheck: false,
+          limit: 20,
+        });
+        if (foreignStatutes(res.results.map((r) => r.slug)).length > 0) {
+          leaked = true;
+          break;
+        }
+      }
+      expect(leaked).toBe(true);
+    }, 60_000);
+  }
+);

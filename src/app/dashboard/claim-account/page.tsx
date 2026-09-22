@@ -13,6 +13,7 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { Claim } from "@/lib/claim-account";
 import { CaseSelect } from "@/components/legal/case-select";
+import { VerzugszinsenCalculator } from "@/components/legal/VerzugszinsenCalculator";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Offen",
@@ -270,6 +271,13 @@ export default function ClaimAccountPage() {
                 onChange={(e) => setForm({ ...form, court: e.target.value })}
               />
             </div>
+            <VerzugszinsenCalculator
+              principal={form.principal_amount}
+              defaultVon={form.due_date}
+              onApply={(interest_amount, interest_from) =>
+                setForm({ ...form, interest_amount: String(interest_amount), interest_from })
+              }
+            />
           </div>
           <div className="flex gap-2">
             <Button onClick={create} disabled={saving}>

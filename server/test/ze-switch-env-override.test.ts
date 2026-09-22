@@ -66,7 +66,7 @@ describe("detectEnvOverride (pure)", () => {
     });
     expect(w.triggered).toBe(true);
     expect(w.vars).toHaveLength(1);
-    expect(w.vars[0].name).toBe("GBRAIN_EMBEDDING_MODEL");
+    expect(w.vars[0].name).toBe("SUBSUMIO/GBRAIN_EMBEDDING_MODEL");
     expect(w.vars[0].current).toBe("openai:text-embedding-3-large");
     expect(w.vars[0].target).toBe("zeroentropyai:zembed-1");
   });
@@ -76,7 +76,7 @@ describe("detectEnvOverride (pure)", () => {
       GBRAIN_EMBEDDING_DIMENSIONS: "1536",
     });
     expect(w.triggered).toBe(true);
-    expect(w.vars[0].name).toBe("GBRAIN_EMBEDDING_DIMENSIONS");
+    expect(w.vars[0].name).toBe("SUBSUMIO/GBRAIN_EMBEDDING_DIMENSIONS");
     expect(w.vars[0].current).toBe("1536");
     expect(w.vars[0].target).toBe("1280");
   });
@@ -203,7 +203,7 @@ describe("applyRetrievalUpgrade env-gate (D9 #7)", () => {
         if (result.status === "refused") {
           expect(result.reason).toBe("env_override");
           expect(result.warning.triggered).toBe(true);
-          expect(result.warning.vars[0].name).toBe("GBRAIN_EMBEDDING_MODEL");
+          expect(result.warning.vars[0].name).toBe("SUBSUMIO/GBRAIN_EMBEDDING_MODEL");
         }
         // THE LOAD-BEARING ASSERTION: no setConfig calls fired during the
         // refused apply. Pre-fix, KEY_PREVIOUS_SNAPSHOT and KEY_REQUESTED

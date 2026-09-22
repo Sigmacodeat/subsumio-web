@@ -199,9 +199,13 @@ describe("Source Router v2", () => {
   // ── sourceTypeToIds ──
 
   describe("sourceTypeToIds", () => {
-    it("maps statute to law source for DE", () => {
+    it("maps statute to granular DE law sources", () => {
       const ids = sourceTypeToIds("statute", "DE");
-      expect(ids).toEqual(["law-de"]);
+      expect(ids).toContain("law-de");
+      expect(ids).toContain("law-de-literatur");
+      expect(ids).toContain("law-de-materialien");
+      // Should NOT include judikatur sources
+      expect(ids).not.toContain("law-de-judikatur");
     });
 
     it("maps statute to granular AT law sources (v0.46: law-at has 0 pages)", () => {
@@ -224,9 +228,11 @@ describe("Source Router v2", () => {
       expect(ids).not.toContain("law-at-normen");
     });
 
-    it("maps judgement to law-de for DE", () => {
+    it("maps judgement to law-de-judikatur for DE", () => {
+      // DE judgements live in the dedicated judikatur source (74k+ decisions
+      // on disk) — routing to law-de would search statutes for judgements.
       const ids = sourceTypeToIds("judgement", "DE");
-      expect(ids).toEqual(["law-de"]);
+      expect(ids).toEqual(["law-de-judikatur"]);
     });
 
     it("maps firm_knowledge to own source", () => {
@@ -237,6 +243,8 @@ describe("Source Router v2", () => {
     it("maps all to multiple sources including EU", () => {
       const ids = sourceTypeToIds("all", "DE", "brain_abc");
       expect(ids).toContain("law-de");
+      expect(ids).toContain("law-de-judikatur");
+      expect(ids).toContain("law-de-literatur");
       expect(ids).toContain("law-eu");
       expect(ids).toContain("brain_abc");
     });
@@ -261,7 +269,11 @@ describe("Source Router v2", () => {
       expect(result.needsClarification).toBe(false);
       expect(result.stichtag.source).toBe("default");
       const statuteMapping = result.sourceMappings.find((m) => m.sourceType === "statute");
-      expect(statuteMapping?.sourceIds).toEqual(["law-de"]);
+      expect(statuteMapping?.sourceIds).toEqual([
+        "law-de",
+        "law-de-literatur",
+        "law-de-materialien",
+      ]);
     });
 
     it("detects ambiguity in full routing", () => {
