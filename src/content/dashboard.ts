@@ -8286,6 +8286,66 @@ export const D = {
   "casesdetail.folder_tree_toggle": { de: "Ordner", en: "Folders" },
   "casesdetail.folder_all": { de: "Alle Ordner", en: "All folders" },
   "casesdetail.folder_unfiled": { de: "Ohne Ordner", en: "Unfiled" },
+  "casesdetail.folder_menu": { de: "Ordner-Aktionen", en: "Folder actions" },
+  "casesdetail.folder_rename": { de: "Umbenennen", en: "Rename" },
+  "casesdetail.folder_new_subfolder": { de: "Neuer Unterordner", en: "New subfolder" },
+  "casesdetail.folder_rename_title": { de: "Ordner umbenennen", en: "Rename folder" },
+  "casesdetail.folder_new_sub_title": {
+    de: "Neuer Unterordner",
+    en: "New subfolder",
+  },
+  "casesdetail.folder_name": { de: "Ordnername", en: "Folder name" },
+  "casesdetail.folder_new_sub_in": {
+    de: "Unterordner von „{{name}}“ — sichtbar sobald ein Dokument zugeordnet ist.",
+    en: "Subfolder of „{{name}}“ — visible once a document is assigned.",
+  },
+  "casesdetail.folder_exists": {
+    de: "Dieser Ordner existiert bereits.",
+    en: "This folder already exists.",
+  },
+  "casesdetail.folder_invalid": {
+    de: "Ungültiger Ordnername — ein Ordner kann nicht in sich selbst verschoben werden.",
+    en: "Invalid folder name — a folder cannot be moved into itself.",
+  },
+  "casesdetail.folder_renamed": {
+    de: "Ordner umbenannt — {{count}} Dokument(e) verschoben.",
+    en: "Folder renamed — {{count}} document(s) moved.",
+  },
+  "casesdetail.folder_rename_partial": {
+    de: "{{count}} Dokument(e) konnten nicht verschoben werden — bitte erneut versuchen.",
+    en: "{{count}} document(s) could not be moved — please retry.",
+  },
+  "casesdetail.folder_rename_affects": {
+    de: "Unterordner werden mitverschoben. Betroffen: {{count}} Dokument(e).",
+    en: "Subfolders are moved along. Affected: {{count}} document(s).",
+  },
+  "casesdetail.folder_created": {
+    de: "Unterordner angelegt — Dokumente per Drag & Drop oder „In Ordner ablegen“ zuordnen.",
+    en: "Subfolder created — assign documents via drag & drop or „file in folder“.",
+  },
+  "casesdetail.folder_drag_hint": {
+    de: "Ziehen, um in einen Ordner abzulegen",
+    en: "Drag to file into a folder",
+  },
+  "casesdetail.folder_dialog_cancel": { de: "Abbrechen", en: "Cancel" },
+  "casesdetail.folder_dialog_save": { de: "Speichern", en: "Save" },
+  "casesdetail.folder_dialog_busy": { de: "Verschiebe…", en: "Moving…" },
+  "casesdetail.folder_dialog_close": { de: "Dialog schließen", en: "Close dialog" },
+  "casesdetail.folder_exists": { de: "Ordner existiert bereits", en: "Folder already exists" },
+  "casesdetail.folder_invalid": { de: "Ordnername ungültig", en: "Invalid folder name" },
+  "casesdetail.folder_created": { de: "Ordner angelegt", en: "Folder created" },
+  "casesdetail.folder_renamed": {
+    de: "Ordner umbenannt — {{count}} Dokumente verschoben",
+    en: "Folder renamed — {{count}} documents moved",
+  },
+  "casesdetail.folder_rename_partial": {
+    de: "{{count}} Dokumente konnten nicht verschoben werden",
+    en: "{{count}} documents could not be moved",
+  },
+  "casesdetail.folder_drag_hint": {
+    de: "Ziehen, um in einen Ordner zu verschieben",
+    en: "Drag to move into a folder",
+  },
   "casesdetail.already_linked": { de: "verknüpft", en: "linked" },
   "casesdetail.doc_empty_desc": {
     de: "Hochladen, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.",

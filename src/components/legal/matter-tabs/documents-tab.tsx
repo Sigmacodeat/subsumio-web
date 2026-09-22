@@ -33,7 +33,8 @@ import { ActImportCockpit } from "@/components/legal/ActImportCockpit";
 import { QesSignButton } from "@/components/legal/QesSignButton";
 import { suggestFolder } from "@/lib/vault-organization";
 import { buildFolderTree, folderMatches } from "@/lib/folder-tree";
-import { FolderTree } from "@/components/legal/folder-tree";
+import { FolderTree, FOLDER_DND_MIME } from "@/components/legal/folder-tree";
+import { useToast } from "@/components/ui/toast";
 
 interface DocJurisdiction {
   jurisdiction: string;
@@ -44,6 +45,7 @@ interface DocJurisdiction {
 export function DocumentsTab() {
   const ctx = useMatterDetail();
   const { t } = useLang();
+  const { addToast } = useToast();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -114,6 +116,55 @@ export function DocumentsTab() {
   const [folderSaving, setFolderSaving] = useState(false);
   const [autoOrganizing, setAutoOrganizing] = useState(false);
   const [folderTreeOpen, setFolderTreeOpen] = useState(false);
+  // WP-2.8: Baum-Persistenz + Ordner-Verwaltung (Umbenennen/Unterordner).
+  // Leere Ordner existieren nicht serverseitig (Ordner leben im
+  // Doc-Frontmatter) — neu angelegte Unterordner werden daher pro Akte
+  // in localStorage „gepinnt", bis ein Dokument sie befüllt.
+  const [pinnedFolders, setPinnedFolders] = useState<string[]>([]);
+  const [folderRename, setFolderRename] = useState<{ path: string; value: string } | null>(null);
+  const [folderCreate, setFolderCreate] = useState<{ parent: string; value: string } | null>(null);
+  const [folderBulkBusy, setFolderBulkBusy] = useState(false);
+  const caseSlug = ctx.caseData?.slug ?? "";
+  const treeOpenKey = caseSlug ? `subsumio:folder-tree-open:${caseSlug}` : null;
+  const pinnedKey = caseSlug ? `subsumio:pinned-folders:${caseSlug}` : null;
+  const treeHydratedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!treeOpenKey || treeHydratedRef.current === treeOpenKey) return;
+    treeHydratedRef.current = treeOpenKey;
+    try {
+      if (localStorage.getItem(treeOpenKey) === "1") setFolderTreeOpen(true);
+      const rawPinned = pinnedKey ? localStorage.getItem(pinnedKey) : null;
+      setPinnedFolders(rawPinned ? (JSON.parse(rawPinned) as string[]) : []);
+    } catch {
+      /* localStorage verweigert — Defaults bleiben */
+    }
+  }, [treeOpenKey, pinnedKey]);
+  const toggleFolderTree = () => {
+    setFolderTreeOpen((o) => {
+      const next = !o;
+      if (treeOpenKey) {
+        try {
+          localStorage.setItem(treeOpenKey, next ? "1" : "0");
+        } catch {
+          /* ignore */
+        }
+      }
+      return next;
+    });
+  };
+  const updatePinnedFolders = (fn: (prev: string[]) => string[]) => {
+    setPinnedFolders((prev) => {
+      const next = fn(prev);
+      if (pinnedKey) {
+        try {
+          localStorage.setItem(pinnedKey, JSON.stringify(next));
+        } catch {
+          /* ignore */
+        }
+      }
+      return next;
+    });
+  };
   const docSlugsKey = (ctx.caseData?.documents ?? [])
     .map((d) => d.slug || d.url || "")
     .filter(Boolean)
@@ -159,7 +210,7 @@ export function DocumentsTab() {
   }, [docSlugsKey]);
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
-  const allFolders = [...new Set(Object.values(docFolders))].sort((a, b) =>
+  const allFolders = [...new Set([...Object.values(docFolders), ...pinnedFolders])].sort((a, b) =>
     a.localeCompare(b, "de")
   );
   const docKey = (d: { slug?: string; url?: string }) => d.slug || d.url || "";
@@ -205,6 +256,97 @@ export function DocumentsTab() {
     } finally {
       setFolderSaving(false);
     }
+  }
+
+  /** Normalisiert Nutzereingabe zu einem sauberen Ordner-Pfad. */
+  function normalizeFolderPath(raw: string): string {
+    return raw
+      .trim()
+      .replace(/\/{2,}/g, "/")
+      .replace(/^\/+|\/+$/g, "");
+  }
+
+  /** Drag & Drop: Dokument auf einen Baum-Knoten fallen lassen. */
+  function dropDocumentOnFolder(docSlug: string, folderPath: string) {
+    if ((docFolders[docSlug] ?? "") === folderPath) return;
+    void saveFolder(docSlug, folderPath);
+  }
+
+  /** Prefix-Rename: Ordner inkl. aller Unterordner umbenennen. */
+  async function renameFolder(oldPath: string, rawNew: string) {
+    const newPath = normalizeFolderPath(rawNew);
+    if (!newPath || newPath === oldPath) {
+      setFolderRename(null);
+      return;
+    }
+    if (newPath.startsWith(`${oldPath}/`) || allFolders.includes(newPath)) {
+      ctx.setUploadError(
+        allFolders.includes(newPath)
+          ? t("casesdetail.folder_exists")
+          : t("casesdetail.folder_invalid")
+      );
+      return;
+    }
+    setFolderBulkBusy(true);
+    let moved = 0;
+    let failed = 0;
+    try {
+      for (const [slug, f] of Object.entries(docFolders)) {
+        if (f !== oldPath && !f.startsWith(`${oldPath}/`)) continue;
+        const next = `${newPath}${f.slice(oldPath.length)}`;
+        const res = await csrfFetch(
+          `/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ frontmatter: { folder: next }, merge: true }),
+          }
+        );
+        if (res.ok) {
+          moved++;
+          setDocFolders((prev) => ({ ...prev, [slug]: next }));
+        } else {
+          failed++;
+        }
+      }
+      updatePinnedFolders((prev) =>
+        prev.map((p) =>
+          p === oldPath || p.startsWith(`${oldPath}/`) ? `${newPath}${p.slice(oldPath.length)}` : p
+        )
+      );
+      if (folderFilter === oldPath || folderFilter.startsWith(`${oldPath}/`)) {
+        setFolderFilter(`${newPath}${folderFilter.slice(oldPath.length)}`);
+      }
+      setFolderRename(null);
+      if (failed > 0) {
+        ctx.setUploadError(
+          t("casesdetail.folder_rename_partial").replace("{{count}}", String(failed))
+        );
+      } else {
+        addToast({
+          type: "success",
+          title: t("casesdetail.folder_renamed").replace("{{count}}", String(moved)),
+        });
+      }
+    } finally {
+      setFolderBulkBusy(false);
+    }
+  }
+
+  /** Neuen (leeren) Unterordner pinnen — wird serverseitig real, sobald
+   *  das erste Dokument zugeordnet ist. */
+  function createSubfolder(parentPath: string, rawName: string) {
+    const name = normalizeFolderPath(rawName);
+    if (!name) return;
+    const newPath = `${parentPath}/${name}`;
+    if (allFolders.includes(newPath)) {
+      ctx.setUploadError(t("casesdetail.folder_exists"));
+      return;
+    }
+    updatePinnedFolders((prev) => [...new Set([...prev, newPath])]);
+    setFolderCreate(null);
+    if (!folderTreeOpen) toggleFolderTree();
+    addToast({ type: "info", title: t("casesdetail.folder_created") });
   }
 
   async function autoOrganize() {
@@ -546,7 +688,7 @@ export function DocumentsTab() {
           {allFolders.length > 0 && (
             <button
               type="button"
-              onClick={() => setFolderTreeOpen((o) => !o)}
+              onClick={toggleFolderTree}
               aria-expanded={folderTreeOpen}
               aria-label={t("casesdetail.folder_tree_toggle")}
               className={cn(
@@ -759,10 +901,150 @@ export function DocumentsTab() {
               all: t("casesdetail.folder_all"),
               unfiled: t("casesdetail.folder_unfiled"),
               heading: t("casesdetail.folder_tree_toggle"),
+              menu: t("casesdetail.folder_menu"),
+              rename: t("casesdetail.folder_rename"),
+              newSubfolder: t("casesdetail.folder_new_subfolder"),
             }}
             unfiledCount={unfiledCount}
             totalCount={caseData.documents.length}
+            persistKey={caseData.slug}
+            onDropDocument={caseData.status !== "archived" ? dropDocumentOnFolder : undefined}
+            onRenameFolder={
+              caseData.status !== "archived"
+                ? (p) => setFolderRename({ path: p, value: p })
+                : undefined
+            }
+            onCreateSubfolder={
+              caseData.status !== "archived"
+                ? (p) => setFolderCreate({ parent: p, value: "" })
+                : undefined
+            }
           />
+        </div>
+      )}
+
+      {/* Ordner umbenennen (Prefix-Rename über alle Dokumente + Unterordner) */}
+      {folderRename && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("casesdetail.folder_rename_title")}
+            className="w-full max-w-sm rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("casesdetail.folder_rename_title")}
+              </h3>
+              <button
+                onClick={() => setFolderRename(null)}
+                disabled={folderBulkBusy}
+                aria-label={t("casesdetail.folder_dialog_close")}
+                className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              >
+                <XCircle size={16} />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={folderRename.value}
+              onChange={(e) =>
+                setFolderRename((prev) => (prev ? { ...prev, value: e.target.value } : prev))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !folderBulkBusy) {
+                  void renameFolder(folderRename.path, folderRename.value);
+                }
+                if (e.key === "Escape") setFolderRename(null);
+              }}
+              aria-label={t("casesdetail.folder_name")}
+              autoFocus
+              className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            />
+            <p className="mb-4 text-xs text-[color:var(--ds-text-muted)]">
+              {t("casesdetail.folder_rename_affects").replace(
+                "{{count}}",
+                String(
+                  Object.values(docFolders).filter(
+                    (f) => f === folderRename.path || f.startsWith(`${folderRename.path}/`)
+                  ).length
+                )
+              )}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setFolderRename(null)}
+                disabled={folderBulkBusy}
+              >
+                {t("casesdetail.folder_dialog_cancel")}
+              </Button>
+              <Button
+                size="sm"
+                disabled={folderBulkBusy}
+                onClick={() => void renameFolder(folderRename.path, folderRename.value)}
+              >
+                {folderBulkBusy
+                  ? t("casesdetail.folder_dialog_busy")
+                  : t("casesdetail.folder_dialog_save")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Neuen Unterordner anlegen (gepinnt bis erste Zuordnung) */}
+      {folderCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("casesdetail.folder_new_sub_title")}
+            className="w-full max-w-sm rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("casesdetail.folder_new_sub_title")}
+              </h3>
+              <button
+                onClick={() => setFolderCreate(null)}
+                aria-label={t("casesdetail.folder_dialog_close")}
+                className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              >
+                <XCircle size={16} />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={folderCreate.value}
+              onChange={(e) =>
+                setFolderCreate((prev) => (prev ? { ...prev, value: e.target.value } : prev))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createSubfolder(folderCreate.parent, folderCreate.value);
+                if (e.key === "Escape") setFolderCreate(null);
+              }}
+              placeholder={t("casesdetail.folder_name")}
+              aria-label={t("casesdetail.folder_name")}
+              autoFocus
+              className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            />
+            <p className="mb-4 text-xs text-[color:var(--ds-text-muted)]">
+              {t("casesdetail.folder_new_sub_in").replace("{{name}}", folderCreate.parent)}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setFolderCreate(null)}>
+                {t("casesdetail.folder_dialog_cancel")}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => createSubfolder(folderCreate.parent, folderCreate.value)}
+              >
+                {t("casesdetail.folder_dialog_save")}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -788,8 +1070,16 @@ export function DocumentsTab() {
                 matchesFolder(d)
             )
             .map((doc) => (
+              // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Drag-Quelle für Ordner-Zuordnung; Tastatur-Nutzer ordnen über das Ordner-Bearbeiten-Feld pro Dokument zu.
               <div
                 key={doc.id}
+                draggable={caseData.status !== "archived" && Boolean(doc.slug)}
+                onDragStart={(e) => {
+                  if (!doc.slug) return;
+                  e.dataTransfer.setData(FOLDER_DND_MIME, doc.slug);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                title={doc.slug ? t("casesdetail.folder_drag_hint") : undefined}
                 className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5"
               >
                 <FileText size={16} className="brand-text shrink-0" />

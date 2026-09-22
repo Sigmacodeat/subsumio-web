@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileUp, Loader2, Plus, Trash2, Users } from "lucide-react";
+import { FileUp, Loader2, Plus, Trash2, UserPlus, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { extractDocxVariables, DocxTemplateError } from "@/lib/docx-template";
 import { CaseSelect } from "@/components/legal/case-select";
+import { api } from "@/lib/api";
+import { caseFrontmatter, type ContactFrontmatter } from "@/lib/legal-types";
 
 interface RecipientRow {
   filename: string;
@@ -53,6 +55,7 @@ export function SerienbriefDialog({ open, onClose }: { open: boolean; onClose: (
   const [caseSlug, setCaseSlug] = useState("");
   const [rows, setRows] = useState<RecipientRow[]>([{ filename: "", values: {} }]);
   const [busy, setBusy] = useState(false);
+  const [importingParties, setImportingParties] = useState(false);
 
   const canSubmit = useMemo(
     () => !!file && variables.length >= 0 && rows.length > 0 && !busy,
@@ -82,6 +85,86 @@ export function SerienbriefDialog({ open, onClose }: { open: boolean; onClose: (
     setRows((rs) =>
       rs.map((r, idx) => (idx === i ? { ...r, values: { ...r.values, [key]: value } } : r))
     );
+  }
+
+  /**
+   * Beteiligten-Auswahl: lädt die Akte + verknüpfte Kontakte und erzeugt
+   * eine Empfängerzeile pro Partei (Klient, Gegner, zusätzliche Gegner).
+   * Adresse/E-Mail kommen aus den verknüpften Kontakt-Seiten, sonst aus
+   * den Akten-Feldern.
+   */
+  async function importParties() {
+    if (!caseSlug) return;
+    setImportingParties(true);
+    try {
+      const page = await api.brain.getPage(caseSlug);
+      const fm = caseFrontmatter(page);
+
+      const slugs = [
+        fm.client_slug,
+        ...(fm.opponent_slugs ?? []),
+        ...(fm.additional_opponents ?? []).map((o) => o.slug),
+      ].filter((s): s is string => Boolean(s));
+      const contacts = slugs.length > 0 ? await api.brain.getPages([...new Set(slugs)]) : {};
+
+      const contactOf = (slug?: string): ContactFrontmatter =>
+        (slug && contacts[slug] ? contacts[slug].frontmatter : {}) as ContactFrontmatter;
+
+      const parties: Array<{ name: string; rolle: string; adresse?: string; email?: string }> = [];
+      const seen = new Set<string>();
+
+      const push = (name: string | undefined, rolle: string, slug?: string) => {
+        if (!name?.trim() || seen.has(name.trim().toLowerCase())) return;
+        seen.add(name.trim().toLowerCase());
+        const c = contactOf(slug);
+        parties.push({
+          name: name.trim(),
+          rolle,
+          adresse: c.address || c.company || undefined,
+          email: c.email || undefined,
+        });
+      };
+
+      push(fm.client_name, "Klient:in", fm.client_slug);
+      push(fm.opponent_name, "Gegner:in", fm.opponent_slugs?.[0]);
+      for (const o of fm.additional_opponents ?? []) push(o.name, o.rolle, o.slug);
+
+      if (parties.length === 0) {
+        addToast({
+          type: "error",
+          title: "Keine Beteiligten in der Akte gefunden.",
+        });
+        return;
+      }
+
+      const emptyIsOnly =
+        rows.length === 1 && !rows[0].filename && Object.keys(rows[0].values).length === 0;
+      const newRows: RecipientRow[] = parties.map((p) => ({
+        filename: `${p.name.replace(/[^a-zA-Z0-9äöüßÄÖÜ]+/g, "_").slice(0, 60)}.docx`,
+        values: Object.fromEntries(
+          variables
+            .map((v) => {
+              const k = v.toLowerCase();
+              if (k.includes("name") || k.includes("empfaenger") || k.includes("empfänger"))
+                return [v, p.name];
+              if (k.includes("adresse") || k.includes("anschrift")) return [v, p.adresse ?? ""];
+              if (k.includes("email") || k.includes("mail")) return [v, p.email ?? ""];
+              if (k.includes("rolle")) return [v, p.rolle];
+              return null;
+            })
+            .filter((e): e is [string, string] => e !== null)
+        ),
+      }));
+      setRows((rs) => [...(emptyIsOnly ? [] : rs), ...newRows]);
+      addToast({
+        type: "success",
+        title: `${parties.length} Beteiligte als Empfänger übernommen.`,
+      });
+    } catch {
+      addToast({ type: "error", title: "Akte konnte nicht geladen werden." });
+    } finally {
+      setImportingParties(false);
+    }
   }
 
   async function submit() {
@@ -164,6 +247,23 @@ export function SerienbriefDialog({ open, onClose }: { open: boolean; onClose: (
           <div className="space-y-1.5">
             <Label htmlFor="sb-case">Akte (befüllt Akten- und Kanzlei-Platzhalter)</Label>
             <CaseSelect value={caseSlug} onChange={setCaseSlug} id="sb-case" />
+            {caseSlug && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={importingParties}
+                onClick={() => void importParties()}
+                className="mt-1 gap-1.5 text-xs"
+              >
+                {importingParties ? (
+                  <Loader2 size={13} className="animate-spin" aria-hidden />
+                ) : (
+                  <UserPlus size={13} aria-hidden />
+                )}
+                Beteiligte als Empfänger übernehmen
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">

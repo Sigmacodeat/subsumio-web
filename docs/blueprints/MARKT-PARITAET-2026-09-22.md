@@ -71,8 +71,13 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
 3. ~~Forderungsbetreibung~~ ✅ teilweise: Verzugszinsen-Rechner
    (`verzugszinsen.ts`, §§ 1000/1333 ABGB, § 456/458 UGB, OeNB-Historie,
    40-€-Betreibungspauschale, § 1415 ABGB Tilgungsreihenfolge) +
-   Übernahme ins Forderungsformular. **Rest offen:** Mahnklage-/
-   Exekutions-Vorbereitung (EKV-Antragsdaten), Ratenvereinbarung.
+   Übernahme ins Forderungsformular. ✅ **Mahnklage-/Exekutions-
+   Vorbereitung + Ratenvereinbarung geliefert:** `buildMahnAntrag`/
+   `buildExekutionsantrag` (AT: §§ 244 ff. ZPO/EKV + §§ 3 ff. EO,
+   DE: §§ 688 ff./750 ff. ZPO — Antragstext + Prüfhinweise),
+   InstallmentPlan mit Verfallsklausel/Überfällig-Markierung,
+   PATCH-Actions mahnklage/vollstreckung/exekution/ratenplan/rate,
+   UI in `dashboard/claim-account` (Antragstext-Vorschau).
 4. ~~Bankimport camt.053~~ ✅ `camt053.ts` + `POST /api/fibu/camt-import`
    - `fibu-import.server.ts` (geteilter Match/Persist-Pfad) +
      Upload-Button in `dashboard/fibu`.

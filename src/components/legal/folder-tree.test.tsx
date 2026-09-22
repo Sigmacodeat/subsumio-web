@@ -1,17 +1,27 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FolderTree } from "@/components/legal/folder-tree";
+import { FolderTree, FOLDER_DND_MIME } from "@/components/legal/folder-tree";
 import { buildFolderTree } from "@/lib/folder-tree";
 
-const labels = { all: "Alle Ordner", unfiled: "Ohne Ordner", heading: "Ordner" };
+const labels = {
+  all: "Alle Ordner",
+  unfiled: "Ohne Ordner",
+  heading: "Ordner",
+  menu: "Ordner-Aktionen",
+  rename: "Umbenennen",
+  newSubfolder: "Neuer Unterordner",
+};
 
-function renderTree(selected = "all", onSelect = vi.fn()) {
-  const nodes = buildFolderTree(["Korrespondenz", "Korrespondenz/Ausgehend", "Verträge"], {
-    Korrespondenz: 2,
-    "Korrespondenz/Ausgehend": 3,
-    Verträge: 1,
-  });
+const PATHS = ["Korrespondenz", "Korrespondenz/Ausgehend", "Verträge"];
+const COUNTS = { Korrespondenz: 2, "Korrespondenz/Ausgehend": 3, Verträge: 1 };
+
+function renderTree(
+  selected = "all",
+  onSelect = vi.fn(),
+  extra: Partial<Parameters<typeof FolderTree>[0]> = {}
+) {
+  const nodes = buildFolderTree(PATHS, COUNTS);
   render(
     <FolderTree
       nodes={nodes}
@@ -20,12 +30,28 @@ function renderTree(selected = "all", onSelect = vi.fn()) {
       labels={labels}
       unfiledCount={4}
       totalCount={10}
+      {...extra}
     />
   );
   return onSelect;
 }
 
+function makeDataTransfer() {
+  const store: Record<string, string> = {};
+  return {
+    types: [FOLDER_DND_MIME],
+    effectAllowed: "",
+    dropEffect: "",
+    setData: (t: string, v: string) => {
+      store[t] = v;
+    },
+    getData: (t: string) => store[t] ?? "",
+  };
+}
+
 describe("FolderTree", () => {
+  beforeEach(() => localStorage.clear());
+
   it("renders all/unfiled rows and folder nodes", () => {
     renderTree();
     expect(screen.getByText("Alle Ordner")).toBeTruthy();
@@ -69,5 +95,89 @@ describe("FolderTree", () => {
     expect(vertraege.getAttribute("aria-pressed")).toBe("true");
     const alle = screen.getByText("Alle Ordner").closest("button")!;
     expect(alle.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("persists collapsed state to localStorage under persistKey", async () => {
+    const { unmount } = render(
+      <FolderTree
+        nodes={buildFolderTree(PATHS, COUNTS)}
+        selected="all"
+        onSelect={vi.fn()}
+        labels={labels}
+        unfiledCount={0}
+        totalCount={0}
+        persistKey="case-x"
+      />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Zuklappen: Korrespondenz/ }));
+    expect(localStorage.getItem("subsumio:folder-collapsed:case-x")).toContain("Korrespondenz");
+    unmount();
+    // Remount: collapsed state restored → Ausgehend stays hidden
+    render(
+      <FolderTree
+        nodes={buildFolderTree(PATHS, COUNTS)}
+        selected="all"
+        onSelect={vi.fn()}
+        labels={labels}
+        unfiledCount={0}
+        totalCount={0}
+        persistKey="case-x"
+      />
+    );
+    expect(screen.queryByText("Ausgehend")).toBeNull();
+  });
+
+  it("calls onDropDocument with slug + folder path on drop", () => {
+    const onDrop = vi.fn();
+    renderTree("all", vi.fn(), { onDropDocument: onDrop });
+    const dt = makeDataTransfer();
+    dt.setData(FOLDER_DND_MIME, "legal/documents/vertrag-1");
+    const row = screen.getByText("Korrespondenz").closest("button")!;
+    fireEvent.dragOver(row, { dataTransfer: dt });
+    fireEvent.drop(row, { dataTransfer: dt });
+    expect(onDrop).toHaveBeenCalledWith("legal/documents/vertrag-1", "Korrespondenz");
+  });
+
+  it("drops on „Ohne Ordner“ to unfile a document", () => {
+    const onDrop = vi.fn();
+    renderTree("all", vi.fn(), { onDropDocument: onDrop });
+    const dt = makeDataTransfer();
+    dt.setData(FOLDER_DND_MIME, "legal/documents/x");
+    const row = screen.getByText("Ohne Ordner").closest("button")!;
+    fireEvent.drop(row, { dataTransfer: dt });
+    expect(onDrop).toHaveBeenCalledWith("legal/documents/x", "");
+  });
+
+  it("ignores drops with foreign dataTransfer types", () => {
+    const onDrop = vi.fn();
+    renderTree("all", vi.fn(), { onDropDocument: onDrop });
+    const dt = { types: ["text/plain"], getData: () => "x", setData: vi.fn() };
+    const row = screen.getByText("Verträge").closest("button")!;
+    fireEvent.dragOver(row, { dataTransfer: dt });
+    fireEvent.drop(row, { dataTransfer: dt });
+    // drop still fires (no preventDefault gate on drop), but the handler
+    // reads our MIME → empty string → no callback
+    expect(onDrop).not.toHaveBeenCalled();
+  });
+
+  it("opens the context menu via the ⋯ button and fires rename", async () => {
+    const onRename = vi.fn();
+    renderTree("all", vi.fn(), { onRenameFolder: onRename });
+    await userEvent.click(screen.getByRole("button", { name: "Ordner-Aktionen: Verträge" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Umbenennen/ }));
+    expect(onRename).toHaveBeenCalledWith("Verträge");
+  });
+
+  it("fires create-subfolder from the context menu", async () => {
+    const onCreate = vi.fn();
+    renderTree("all", vi.fn(), { onCreateSubfolder: onCreate });
+    await userEvent.click(screen.getByRole("button", { name: "Ordner-Aktionen: Korrespondenz" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Neuer Unterordner/ }));
+    expect(onCreate).toHaveBeenCalledWith("Korrespondenz");
+  });
+
+  it("hides the menu trigger when no menu handlers are given", () => {
+    renderTree();
+    expect(screen.queryByRole("button", { name: /Ordner-Aktionen/ })).toBeNull();
   });
 });
