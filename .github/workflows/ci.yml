@@ -126,6 +126,12 @@ jobs:
         run: bun run test:e2e -- --grep "accessibility|a11y|keyboard|Keyboard|visual|Visual|concierge"
         env:
           CI: "true"
+          # Service container is TCP-only — PG* steer dropdb/createdb +
+          # the app DB URL off the unix socket (scripts/e2e-pg-setup.sh).
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          SUBSUMIO_E2E_DB_URL: postgres://postgres:postgres@127.0.0.1:5432/subsumio_e2e?sslmode=disable
 
   check-resolvable:
     name: Skill Tree (Reachability/MECE/DRY)

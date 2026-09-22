@@ -80,7 +80,11 @@ const WEB_SERVER_ENV_BASE: Record<string, string> = {
 
 const MOCK_ENGINE_WEB_ENV: Record<string, string> = {
   ...WEB_SERVER_ENV_BASE,
-  SUBSUMIO_AUTH_DATABASE_URL: "postgres://localhost:5432/subsumio_e2e?sslmode=disable",
+  // CI overrides this via SUBSUMIO_E2E_DB_URL (service container needs
+  // postgres:postgres credentials + sslmode=disable); local dev keeps the
+  // passwordless localhost socket-adjacent default.
+  SUBSUMIO_AUTH_DATABASE_URL:
+    process.env.SUBSUMIO_E2E_DB_URL ?? "postgres://localhost:5432/subsumio_e2e?sslmode=disable",
   SUBSUMIO_API_URL: "",
 };
 
