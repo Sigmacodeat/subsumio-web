@@ -2,23 +2,30 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckSquare, CalendarClock, Briefcase, CheckCircle2, RotateCcw } from "lucide-react";
+import { CheckSquare, CalendarClock, Briefcase, CheckCircle2, RotateCcw, User } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useMe } from "@/lib/queries/auth";
+import { useTeam } from "@/lib/queries/settings";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
-type Filter = "all" | "open" | "done";
+type Filter = "all" | "open" | "done" | "mine";
 
 export default function TasksPage() {
   const { t } = useLang();
   const router = useRouter();
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("open");
+  const { data: meData } = useMe();
+  const { data: teamData } = useTeam();
+  const teamMembers = teamData?.members ?? [];
+  const currentUserId = meData?.user?.id;
 
   const {
     data: casePages = [],
@@ -27,15 +34,25 @@ export default function TasksPage() {
     refetch,
   } = useQuery({
     queryKey: ["tasks-cases"],
-    queryFn: () => api.cases.list({ limit: 200 }),
+    // batchListPages paginates past the engine's 200-page cap
+    // (api.cases.list()/GET /api/pages does not) — a Kanzlei with more
+    // than 200 cases used to silently lose tasks from every case past the
+    // 200th, with no error surfaced. See engine-list-cap-and-tombstones.
+    queryFn: async () => {
+      const { legal_case: pages = [] } = await api.brain.batchListPages(["legal_case"], 2000);
+      return pages;
+    },
   });
 
   const tasks = useMemo(() => {
     const items: Array<{
       id: string;
+      taskId: string;
       text: string;
       done: boolean;
       dueDate?: string;
+      assigneeId?: string;
+      assigneeName?: string;
       createdAt: string;
       caseSlug: string;
       caseTitle: string;
@@ -47,9 +64,12 @@ export default function TasksPage() {
       for (const task of taskList) {
         items.push({
           id: `${page.slug}-${task.id}`,
+          taskId: String(task.id ?? ""),
           text: task.text || t("tasks.untitled"),
           done: Boolean(task.done),
           dueDate: typeof task.dueDate === "string" && task.dueDate ? task.dueDate : undefined,
+          assigneeId: typeof task.assigneeId === "string" ? task.assigneeId : undefined,
+          assigneeName: typeof task.assigneeName === "string" ? task.assigneeName : undefined,
           createdAt: task.createdAt || page.created_at,
           caseSlug: page.slug,
           caseTitle: page.title,
@@ -69,14 +89,38 @@ export default function TasksPage() {
 
   const filteredTasks = useMemo(() => {
     if (filter === "all") return tasks;
+    if (filter === "mine") return tasks.filter((t) => !t.done && t.assigneeId === currentUserId);
     return tasks.filter((t) => (filter === "done" ? t.done : !t.done));
-  }, [tasks, filter]);
+  }, [tasks, filter, currentUserId]);
+
+  /**
+   * Reassign or toggle a task from the aggregated view, writing straight
+   * back to the owning case's tasks[] array — the same read-modify-write
+   * shape the matter tab itself uses. Re-reads that one case fresh right
+   * before writing (rather than trusting the already-fetched list) to
+   * shrink the staleness window; not the full retry-verify loop
+   * time-entries got (src/app/api/time/route.ts) since a task checkbox
+   * losing a race is a "click it again" problem, not a billing one.
+   */
+  async function mutateTask(
+    caseSlug: string,
+    taskId: string,
+    mutate: (task: Record<string, unknown>) => Record<string, unknown>
+  ) {
+    const fresh = await api.brain.getPage(caseSlug);
+    const freshTasks = Array.isArray(fresh.frontmatter?.tasks)
+      ? (fresh.frontmatter.tasks as Array<Record<string, unknown>>)
+      : [];
+    const updated = freshTasks.map((t) => (t.id === taskId ? mutate(t) : t));
+    await api.brain.updatePage({ slug: caseSlug, frontmatter: { tasks: updated } });
+    await qc.invalidateQueries({ queryKey: ["tasks-cases"] });
+  }
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("tasks.title")}
-        description="Offene Aufgaben aus allen Akten, nach Fälligkeit sortiert. Aufgaben legen Sie in der jeweiligen Akte an und haken sie dort ab."
+        description="Aufgaben aus allen Akten, mit Zuständigkeit und Fälligkeit. Neue Aufgaben legen Sie in der jeweiligen Akte an."
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("tasks.title") },
@@ -87,7 +131,7 @@ export default function TasksPage() {
             aria-label="Aufgaben filtern"
             className="flex items-center rounded-lg border border-[color:var(--ds-border)] p-0.5"
           >
-            {(["all", "open", "done"] as Filter[]).map((f) => (
+            {(["mine", "all", "open", "done"] as Filter[]).map((f) => (
               <button
                 key={f}
                 type="button"
@@ -95,13 +139,13 @@ export default function TasksPage() {
                 aria-checked={filter === f}
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "px-3 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                  "px-3 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                   filter === f
                     ? "rounded-md bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)]"
                 )}
               >
-                {t(`tasks.${f}`)}
+                {f === "mine" ? "Mir zugewiesen" : t(`tasks.${f}`)}
               </button>
             ))}
           </div>
@@ -138,7 +182,9 @@ export default function TasksPage() {
             description={
               filter === "done"
                 ? "Abgehakte Aufgaben aus Ihren Akten erscheinen hier."
-                : "Aufgaben entstehen in der Akte — öffnen Sie eine Akte, um eine Aufgabe anzulegen."
+                : filter === "mine"
+                  ? "Ihnen sind aktuell keine offenen Aufgaben zugewiesen."
+                  : "Aufgaben entstehen in der Akte — öffnen Sie eine Akte, um eine Aufgabe anzulegen."
             }
             actionLabel="Zu den Akten"
             onAction={() => router.push("/dashboard/cases")}
@@ -153,13 +199,19 @@ export default function TasksPage() {
                   task.done && "opacity-60"
                 )}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)]">
+                <button
+                  onClick={() =>
+                    void mutateTask(task.caseSlug, task.taskId, (t) => ({ ...t, done: !t.done }))
+                  }
+                  aria-label={task.done ? "Als offen markieren" : "Als erledigt markieren"}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)] transition-[background-color] hover:bg-[color:var(--ds-surface-hover)]"
+                >
                   {task.done ? (
                     <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <CheckSquare size={16} className="text-[color:var(--brand-primary)]" />
                   )}
-                </div>
+                </button>
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn(
@@ -170,7 +222,7 @@ export default function TasksPage() {
                     {task.text}
                     {task.done && <span className="sr-only"> (erledigt)</span>}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
                     <Link
                       href={`/dashboard/cases/${encodeSlugPath(task.caseSlug)}`}
                       className="inline-flex items-center gap-1 hover:text-[color:var(--ds-text)]"
@@ -196,6 +248,33 @@ export default function TasksPage() {
                       </>
                     )}
                   </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <User
+                    size={12}
+                    className="text-[color:var(--ds-text-subtle)]"
+                    aria-hidden="true"
+                  />
+                  <select
+                    value={task.assigneeId ?? ""}
+                    onChange={(e) => {
+                      const assignee = teamMembers.find((m) => m.id === e.target.value);
+                      void mutateTask(task.caseSlug, task.taskId, (t) => ({
+                        ...t,
+                        assigneeId: assignee?.id,
+                        assigneeName: assignee?.name || assignee?.email,
+                      }));
+                    }}
+                    aria-label={`Zuständig für „${task.text}"`}
+                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-1 text-xs text-[color:var(--ds-text)]"
+                  >
+                    <option value="">Nicht zugewiesen</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name || m.email}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             ))}

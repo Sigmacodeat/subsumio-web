@@ -301,7 +301,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                   maxLength={32}
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value)}
-                  className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-center font-mono text-lg tracking-[0.3em] [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  className="w-full rounded-lg border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] px-3 py-2.5 text-center font-mono text-lg tracking-[0.3em] [color:var(--mk-text)] [background:var(--mk-field)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </label>
               {error && (
@@ -364,7 +364,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                       placeholder={t.namePlaceholder}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="focus:brand-border/60 w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                      className="focus:brand-border/60 w-full rounded-lg border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-field)] placeholder:text-[color:var(--mk-text-subtle)] placeholder:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                   </div>
                 </label>
@@ -388,7 +388,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                     placeholder={t.emailPlaceholder}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
+                    className="w-full rounded-lg border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-field)] placeholder:text-[color:var(--mk-text-subtle)] placeholder:opacity-80 focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
                   />
                 </div>
               </label>
@@ -411,7 +411,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                     placeholder={t.passwordPlaceholder}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                    className="w-full rounded-lg border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-field)] placeholder:text-[color:var(--mk-text-subtle)] placeholder:opacity-80 focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                 </div>
                 {mode === "signup" && (
@@ -456,7 +456,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
               type="button"
               onClick={handleBiometricLogin}
               disabled={biometricLoading}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
             >
               <Fingerprint size={16} className="text-[var(--brand-primary)]" />
               {biometricLoading ? "Wird verifiziert…" : t.biometric}
@@ -480,7 +480,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                   type="button"
                   onClick={() => startSso("MicrosoftOAuth")}
                   disabled={ssoLoading}
-                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   <Building2 size={16} className="text-[color:var(--ds-info-text)]" />
                   Microsoft
@@ -489,7 +489,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                   type="button"
                   onClick={() => startSso("GoogleOAuth")}
                   disabled={ssoLoading}
-                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
                     <path

@@ -151,7 +151,7 @@ export function TrustSection({ t }: { t: SuperbrainCopyDe }) {
             {t.integrations.map((integration, i) => (
               <motion.div
                 key={integration.name}
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.3, delay: i * 0.05 }}

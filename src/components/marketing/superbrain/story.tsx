@@ -203,7 +203,7 @@ export function OursSection({ t }: { t: SuperbrainCopyDe }) {
             return (
               <motion.div
                 key={step.label}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
@@ -253,7 +253,7 @@ export function OursSection({ t }: { t: SuperbrainCopyDe }) {
 
         {/* Central brain visualization */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: EASE.out }}

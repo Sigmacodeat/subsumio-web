@@ -59,12 +59,14 @@ export function ActAnalysisStep({
   const { addToast } = useToast();
   const { t } = useLang();
 
-  // Load case list (type=case)
+  // Load case list. Cases are stored with engine type "legal_case" (see
+  // cases/new/page.tsx) — this used to query "case" and so always returned
+  // an empty list, the same bug as the Word-Add-in's case dropdown.
   useEffect(() => {
     let cancelled = false;
     setLoadingCases(true);
     api.brain
-      .listPages({ type: "case", limit: 100 })
+      .listPages({ type: "legal_case", limit: 100 })
       .then((pages) => {
         if (!cancelled) setCases(pages);
       })

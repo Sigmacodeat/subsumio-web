@@ -3,7 +3,51 @@
  * =============================
  * Law firm letterhead as settings asset + rubrum auto-generation
  * from case parties (plaintiff/defendant/case-number/court).
+ *
+ * `LetterheadConfig` and `generateLetterhead()` below existed but had no
+ * caller anywhere in the app — a defined-but-dead type. What both export
+ * paths (PDF via legal-draft-pdf.ts/DraftEditor.tsx, DOCX via
+ * docx-export.ts) actually used instead was an ad-hoc `{ name }` object
+ * with just the firm name, nothing else. `buildLetterheadFromKanzleiSettings`
+ * is the missing bridge from the real settings source (kanzlei-settings.ts)
+ * to this type, so both exports can finally show a real letterhead.
  */
+
+import type { KanzleiSettings } from "@/lib/kanzlei-settings";
+
+export function buildLetterheadFromKanzleiSettings(settings: KanzleiSettings): LetterheadConfig {
+  const address =
+    settings.street || settings.zip || settings.city
+      ? {
+          line1: settings.street ?? "",
+          zipCity: [settings.zip, settings.city].filter(Boolean).join(" "),
+        }
+      : { line1: settings.kanzleiAdresse ?? "", zipCity: "" };
+  return {
+    firm_name: settings.kanzleiName || "",
+    address_line_1: address.line1,
+    zip_city: address.zipCity,
+    phone: settings.kanzleiTelefon,
+    email: settings.kanzleiEmail,
+    website: settings.website,
+    logo_url: settings.logoUrl,
+    lawyers: settings.anwaltName
+      ? [
+          {
+            name: settings.anwaltName,
+            title: "Rechtsanwalt/-anwältin",
+            bar_number: settings.kammerNummer,
+          },
+        ]
+      : [],
+    tax_number: settings.taxNumber,
+    vat_id: settings.ustId || undefined,
+    bank_details:
+      settings.iban && settings.bic
+        ? { iban: settings.iban, bic: settings.bic, bank_name: settings.bankName ?? "" }
+        : undefined,
+  };
+}
 
 export interface LetterheadConfig {
   firm_name: string;

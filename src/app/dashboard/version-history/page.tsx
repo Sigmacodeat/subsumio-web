@@ -117,7 +117,7 @@ export default function VersionHistoryPage() {
     typeof page?.frontmatter?.version === "number" ? page.frontmatter.version : undefined;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("vhist.title")}
         description={t("vhist.desc")}

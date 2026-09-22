@@ -87,7 +87,7 @@ export default function AnalyzePage() {
   const canRun = mode === "slug" ? slug.trim().length > 0 : text.trim().length > 0;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("analyze.title")}
         description={t("analyze.desc")}
@@ -104,7 +104,7 @@ export default function AnalyzePage() {
           aria-selected={mode === "slug"}
           onClick={() => setMode("slug")}
           className={cn(
-            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
             mode === "slug"
               ? "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -117,7 +117,7 @@ export default function AnalyzePage() {
           aria-selected={mode === "text"}
           onClick={() => setMode("text")}
           className={cn(
-            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
             mode === "text"
               ? "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

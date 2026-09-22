@@ -19,6 +19,7 @@ import {
   type FlowEndpointResponse,
 } from "@/lib/whatsapp/flow-crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { randomUUID } from "node:crypto";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -57,24 +58,62 @@ const LEGAL_AREA_MAP = Object.fromEntries(LEGAL_AREAS.map((a) => [a.id, a.title]
 
 // ── Available appointment slots (generated dynamically) ────────────────────
 
-function generateSlots(dateStr: string): Array<{ id: string; title: string }> {
-  const slots = [
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-  ];
-  // In production, check against existing appointments in the brain
-  // For now, return all slots as available
-  return slots.map((time) => ({ id: `${dateStr}_${time}`, title: time }));
+const ALL_SLOT_TIMES = [
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+];
+
+/**
+ * Times already booked for a given date, across confirmed appointments in
+ * this brain. Used to both filter the slot picker (get_slots) and to
+ * re-verify at write time (book_appointment) that the slot the person
+ * picked wasn't taken by someone else in between — the picker alone is a
+ * TOCTOU race, not an enforced hold.
+ */
+async function getBookedTimes(brainId: string, dateStr: string): Promise<Set<string>> {
+  const pages = await listEnginePages(engineHeadersForBrain(brainId), "appointment", 500);
+  const booked = new Set<string>();
+  for (const page of pages) {
+    const fm = page.frontmatter ?? {};
+    if (fm.date === dateStr && fm.status !== "cancelled") {
+      const time = String(fm.time ?? "");
+      if (time) booked.add(time);
+    }
+  }
+  return booked;
+}
+
+async function generateSlots(
+  dateStr: string,
+  brainId: string
+): Promise<Array<{ id: string; title: string }>> {
+  let booked: Set<string>;
+  try {
+    booked = await getBookedTimes(brainId, dateStr);
+  } catch (err) {
+    // Fail closed on availability, not open: if we can't confirm what's
+    // booked, don't offer slots we can't vouch for. get_slots() will just
+    // come back empty for this date rather than risk a double-booking.
+    log.error(
+      "[flow/appointment] getBookedTimes failed, returning no slots:",
+      err instanceof Error ? err.message : String(err)
+    );
+    return [];
+  }
+  return ALL_SLOT_TIMES.filter((time) => !booked.has(time)).map((time) => ({
+    id: `${dateStr}_${time}`,
+    title: time,
+  }));
 }
 
 // ── Flow handlers ──────────────────────────────────────────────────────────
@@ -185,7 +224,7 @@ async function handleAppointmentBooking(
   switch (action) {
     case "get_slots": {
       const selectedDate = String(data.selected_date || "");
-      const slots = generateSlots(selectedDate);
+      const slots = await generateSlots(selectedDate, brainId);
       return {
         screen: "DATE_SELECT",
         data: {
@@ -211,6 +250,23 @@ async function handleAppointmentBooking(
       const appointmentDate = String(data.appointment_date || "").slice(0, 20);
       const appointmentTime = String(data.appointment_time || "").slice(0, 20);
       const topic = String(data.topic || "Allgemeine Beratung").slice(0, MAX_FIELD_LENGTH);
+      // Re-verify the slot is still free right before writing — the picker
+      // shown to the user (get_slots) is a snapshot, not a hold, so two
+      // people booking the same date concurrently could otherwise both
+      // land on "confirmed" for the same time.
+      const stillBooked = await getBookedTimes(brainId, appointmentDate).catch(() => null);
+      if (stillBooked === null || stillBooked.has(appointmentTime)) {
+        const freshSlots = await generateSlots(appointmentDate, brainId);
+        return {
+          screen: "DATE_SELECT",
+          data: {
+            selected_date: appointmentDate,
+            available_slots: freshSlots,
+            error: "slot_taken",
+          },
+        };
+      }
+
       const appointmentId = randomUUID();
 
       const apptPayload = sanitizeObjectStrings({

@@ -81,7 +81,7 @@ export default function AppUpdateBanner() {
       </div>
       <button
         onClick={handleUpdate}
-        className="brand-bg shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-transform active:scale-95"
+        className="brand-bg shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-transform active:scale-[0.97]"
       >
         Aktualisieren
       </button>

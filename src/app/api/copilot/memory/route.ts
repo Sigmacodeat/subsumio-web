@@ -41,7 +41,7 @@ export const GET = createHandler(
     const pinnedOnly = query?.pinnedOnly === "true";
 
     try {
-      const memories = await listMemories({ caseSlug, type, pinnedOnly });
+      const memories = await listMemories({ caseSlug, type, pinnedOnly }, ctx.headers);
       return NextResponse.json({ memories });
     } catch (err) {
       log.error("[copilot/memory] GET failed:", err instanceof Error ? err.message : String(err));
@@ -141,16 +141,19 @@ export const POST = createHandler(
         const created = [];
         const allSuperseded: string[] = [];
         for (const item of extracted) {
-          const { memory: mem, superseded } = await createMemoryWithSupersession({
-            type: item.type,
-            key: item.key,
-            value: item.value,
-            source: "inferred",
-            caseSlug,
-            entities: item.entities,
-            validFrom: item.validFrom,
-            validTo: item.validTo,
-          });
+          const { memory: mem, superseded } = await createMemoryWithSupersession(
+            {
+              type: item.type,
+              key: item.key,
+              value: item.value,
+              source: "inferred",
+              caseSlug,
+              entities: item.entities,
+              validFrom: item.validFrom,
+              validTo: item.validTo,
+            },
+            ctx.headers
+          );
           created.push(mem);
           allSuperseded.push(...superseded);
         }
@@ -163,32 +166,38 @@ export const POST = createHandler(
 
       // Semantic search across memories
       if (action === "search" && message) {
-        const results = await searchMemories({ query: message, caseSlug, limit: 10 });
+        const results = await searchMemories({ query: message, caseSlug, limit: 10 }, ctx.headers);
         return NextResponse.json({ results });
       }
 
       // P2.7: Agent-Generated Facts — store confirmed agent actions as memories
       if (action === "agent_action" && key && value) {
-        const { memory, superseded } = await createMemoryWithSupersession({
-          type: type ?? "fact",
-          key,
-          value,
-          source: "system",
-          caseSlug,
-        });
+        const { memory, superseded } = await createMemoryWithSupersession(
+          {
+            type: type ?? "fact",
+            key,
+            value,
+            source: "system",
+            caseSlug,
+          },
+          ctx.headers
+        );
         return NextResponse.json({ memory, superseded });
       }
 
       // Create a memory entry
       if (action === "create" && type && key && value) {
-        const memory = await createMemory({
-          type,
-          key,
-          value,
-          source: source ?? "user_explicit",
-          caseSlug,
-          pinned: pinned ?? false,
-        });
+        const memory = await createMemory(
+          {
+            type,
+            key,
+            value,
+            source: source ?? "user_explicit",
+            caseSlug,
+            pinned: pinned ?? false,
+          },
+          ctx.headers
+        );
         return NextResponse.json({ memory });
       }
 
@@ -227,7 +236,7 @@ export const PATCH = createHandler(
     }
 
     try {
-      await updateMemory(id, { value, pinned, type });
+      await updateMemory(id, { value, pinned, type }, ctx.headers);
       return NextResponse.json({ ok: true });
     } catch (err) {
       log.error("[copilot/memory] PATCH failed:", err instanceof Error ? err.message : String(err));
@@ -258,7 +267,7 @@ export const DELETE = createHandler(
     }
 
     try {
-      await deleteMemory(id);
+      await deleteMemory(id, ctx.headers);
       return NextResponse.json({ ok: true });
     } catch (err) {
       log.error(

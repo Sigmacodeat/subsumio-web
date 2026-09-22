@@ -5,24 +5,17 @@
 // in ./features-page.tsx is a Server Component; these islands hydrate
 // independently.
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { UI_STRINGS } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import { SectionHeading, Section } from "./primitives";
-import { H2_CTA_CLASS } from "./typography";
+import { H3_CLASS, SECTION_PAD as SECTION, SECTION_COLUMN as COLUMN } from "./typography";
 import { ICONS } from "./icons";
 import { IllusPipeline, ScrollDrawScene } from "./brand-illustrations";
-import {
-  GuidedCursor,
-  GlowCard,
-  Reveal,
-  StaggerContainer,
-  StaggerItem,
-  VIEWPORT,
-} from "./motion-system";
+import { GuidedCursor, StaggerContainer, StaggerItem, VIEWPORT } from "./motion-system";
 
 // --- Animated knowledge-graph hero visual --------------------------------
 
@@ -97,19 +90,19 @@ export function GraphHero() {
               fill="url(#nodeGlow)"
               strokeWidth={1.4}
               initial={{ scale: 0.72, opacity: 0.42 }}
-              animate={n.pulse ? { scale: [1, 1.18, 1], opacity: 1 } : { scale: 1, opacity: 1 }}
+              animate={n.pulse ? { scale: [1, 1.08, 1], opacity: 1 } : { scale: 1, opacity: 1 }}
               transition={
                 n.pulse
                   ? {
                       scale: {
-                        duration: 2.4,
+                        duration: 3.6,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: 0.9 + i * 0.05,
                       },
                       opacity: { duration: 0.4, delay: 0.6 + i * 0.07 },
                     }
-                  : { duration: 0.4, delay: 0.6 + i * 0.07, type: "spring", stiffness: 200 }
+                  : { duration: 0.4, delay: 0.6 + i * 0.07, ease: "easeOut" }
               }
               style={{
                 stroke: "var(--brand-text)",
@@ -177,61 +170,70 @@ const HOW = {
 export function HowItWorks() {
   const h = HOW;
   return (
-    <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-      <Reveal variant="up" className="mb-6 text-center">
-        <SectionHeading title={h.title} sub={h.sub} />
-      </Reveal>
+    <Section tone="light" className={SECTION}>
+      <div className={COLUMN}>
+        <SectionHeading badge="Ablauf" title={h.title} sub={h.sub} />
 
-      {/* Signature scene — the pipeline draws itself with scroll */}
-      <ScrollDrawScene className="mx-auto mb-10 max-w-xl">
-        {(progress) => <IllusPipeline progress={progress} />}
-      </ScrollDrawScene>
+        {/* Signature scene — the pipeline draws itself with scroll */}
+        <ScrollDrawScene className="mx-auto -mt-6 mb-12 max-w-xl">
+          {(progress) => <IllusPipeline progress={progress} />}
+        </ScrollDrawScene>
 
-      <StaggerContainer
-        className="relative grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-        stagger={0.18}
-      >
-        {/* animated connector line (lg+) */}
-        <motion.div
-          aria-hidden
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.1, ease: "easeInOut", delay: 0.2 }}
-          className="absolute top-7 right-[12.5%] left-[12.5%] hidden h-px origin-left lg:block"
-          style={{
-            background: "linear-gradient(90deg, transparent, var(--brand-primary), transparent)",
-          }}
-        />
-        {h.steps.map((s, i) => {
-          const Icon = ICONS[s.icon];
-          return (
-            <StaggerItem key={s.title} className="relative">
-              <div className="brand-soft brand-border relative z-10 mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border shadow-lg shadow-black/40">
-                {Icon && <Icon size={22} className="brand-text" />}
-                <span className="brand-bg absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-md">
-                  {i + 1}
-                </span>
-              </div>
-              <div className="text-center">
-                <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{s.title}</h3>
-                <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                  {s.desc}
-                </p>
-                <span className="brand-text brand-soft inline-block rounded-full px-2 py-1 font-mono text-sm">
-                  {s.tag}
-                </span>
-              </div>
-            </StaggerItem>
-          );
-        })}
-      </StaggerContainer>
+        <StaggerContainer
+          className="relative grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-4"
+          stagger={0.1}
+        >
+          {/* animated connector line (lg+) */}
+          <motion.div
+            aria-hidden
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            className="absolute top-7 right-[12.5%] left-[12.5%] hidden h-px origin-left lg:block"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand-primary) 45%, transparent) 15%, color-mix(in srgb, var(--brand-primary) 45%, transparent) 85%, transparent)",
+            }}
+          />
+          {h.steps.map((s, i) => {
+            const Icon = ICONS[s.icon];
+            return (
+              <StaggerItem key={s.title} className="relative">
+                {/* Opaque tile (page colour under the brand tint) so the connector
+                  line passes behind it instead of through it. */}
+                <div className="relative z-10 mx-auto mb-6 h-14 w-14 rounded-2xl [background:var(--mk-bg)]">
+                  <div className="brand-soft brand-border flex h-full w-full items-center justify-center rounded-2xl border [box-shadow:var(--mk-card-shadow)]">
+                    {Icon && <Icon size={22} strokeWidth={1.75} className="brand-text" />}
+                  </div>
+                  <span className="brand-bg absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-[11px] leading-none font-semibold text-white tabular-nums">
+                    {i + 1}
+                  </span>
+                </div>
+                <div className="text-center">
+                  <h3 className={`mb-2 ${H3_CLASS}`}>{s.title}</h3>
+                  <p className="mx-auto mb-4 max-w-[17rem] text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+                    {s.desc}
+                  </p>
+                  <span className="inline-block font-mono text-xs tracking-wide [color:var(--mk-text-subtle)]">
+                    {s.tag}
+                  </span>
+                </div>
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
+      </div>
     </Section>
   );
 }
 
 export function FeatureCommandCenter() {
   const [step, setStep] = useState(0);
+  // The demo only advances while it is on screen and nobody is pointing at it.
+  const [paused, setPaused] = useState(false);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(frameRef, { margin: "-15% 0px" });
   const reduce = useReducedMotion();
   const panels = [
     {
@@ -258,11 +260,10 @@ export function FeatureCommandCenter() {
   ];
 
   useEffect(() => {
-    if (reduce) return;
-    const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    const id = setInterval(() => setStep((s) => (s + 1) % panels.length), isMobile ? 3500 : 2400);
+    if (reduce || paused || !inView) return;
+    const id = setInterval(() => setStep((s) => (s + 1) % panels.length), 3800);
     return () => clearInterval(id);
-  }, [panels.length, reduce]);
+  }, [panels.length, reduce, paused, inView]);
 
   const toneClass: Record<string, string> = {
     amber:
@@ -290,28 +291,24 @@ export function FeatureCommandCenter() {
   ];
 
   return (
-    <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-      <div className="grid items-center gap-9 lg:grid-cols-[0.85fr_1.15fr]">
+    <Section tone="light" className={SECTION}>
+      <div className={`${COLUMN} grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16`}>
+        <SectionHeading
+          align="left"
+          badge={UI_STRINGS.inDashboard}
+          title={UI_STRINGS.featuresWorkflowTitle}
+          sub={UI_STRINGS.featuresWorkflowSub}
+        />
+
         <motion.div
+          ref={frameRef}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={VIEWPORT.tight}
-          transition={{ duration: 0.4 }}
-        >
-          <SectionHeading
-            align="left"
-            badge={UI_STRINGS.inDashboard}
-            title={UI_STRINGS.featuresWorkflowTitle}
-            sub={UI_STRINGS.featuresWorkflowSub}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={VIEWPORT.tight}
-          transition={{ duration: 0.45 }}
-          className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/15 [background:var(--mk-bg)]"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-xl shadow-[hsl(222_40%_12%/0.12)] [background:var(--mk-bg)]"
           data-tone="dashboard"
         >
           <GuidedCursor {...cursorTargets[step]} className="hidden md:flex" />
@@ -334,27 +331,15 @@ export function FeatureCommandCenter() {
                 const Icon = ICONS[panel.icon];
                 const active = i === step;
                 return (
-                  <motion.button
+                  <button
                     key={panel.label}
+                    type="button"
                     onClick={() => setStep(i)}
-                    animate={
-                      active && !reduce
-                        ? {
-                            scale: [1, 1.025, 1],
-                            borderColor:
-                              "color-mix(in srgb, var(--brand-primary) 46%, transparent)",
-                          }
-                        : { scale: 1 }
-                    }
-                    transition={
+                    aria-pressed={active}
+                    className={`w-full rounded-lg border p-3 text-left transition-[background-color,border-color,box-shadow] duration-300 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${
                       active
-                        ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
-                        : { duration: 0.2 }
-                    }
-                    className={`w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none ${
-                      active
-                        ? "brand-border ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] [background:var(--mk-surface)]"
-                        : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
+                        ? "brand-border ring-1 ring-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] [background:var(--mk-surface)]"
+                        : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -372,31 +357,21 @@ export function FeatureCommandCenter() {
                         </span>
                       </span>
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
             {/* A fixed minimum height: the five steps differ in text length, and
                 without it the panel — and the section below it — jumped by about
                 20 px on every switch. */}
-            <div className="relative min-h-[22rem] overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-              {!reduce && (
-                <motion.div
-                  key={`focus-${step}`}
-                  aria-hidden
-                  className="pointer-events-none absolute inset-2 rounded-lg border border-[var(--brand-secondary)]/35"
-                  initial={{ opacity: 0, scale: 0.94 }}
-                  animate={{ opacity: [0, 0.65, 0], scale: [0.94, 1.02, 1.06] }}
-                  transition={{ duration: 1.8, ease: "easeOut" }}
-                />
-              )}
-              <AnimatePresence mode="wait">
+            <div className="relative min-h-[18rem] overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={step}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.25 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <p className="brand-text mb-2 text-sm font-semibold">{panels[step].label}</p>
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
@@ -413,9 +388,9 @@ export function FeatureCommandCenter() {
                     ].map((line, i) => (
                       <motion.div
                         key={line}
-                        initial={{ opacity: 0, x: -6 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.08 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.12 + i * 0.07, duration: 0.3 }}
                         className="flex items-center gap-2 rounded-lg px-3 py-2 [background:var(--mk-surface-2)]"
                       >
                         <CheckCircle2 size={14} className="brand-text" />
@@ -433,9 +408,9 @@ export function FeatureCommandCenter() {
   );
 }
 
-/** Category explorer + "everything at a glance" — share the same `active`
- *  tab state (glance cards jump back to the explorer), so they must live in
- *  one client component. */
+/** Category explorer — five areas as tabs: explanation left, an example from
+ *  the application right. (A card grid repeating the same five areas used to
+ *  follow; the tabs already are that overview.) */
 export function CategoryExplorer() {
   const t = FEATURES_PAGE;
   const [active, setActive] = useState(t.categories[0].id);
@@ -443,13 +418,17 @@ export function CategoryExplorer() {
   const CatIcon = ICONS[cat.icon];
 
   return (
-    <>
-      {/* Category explorer */}
-      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
+    <Section tone="light" className={SECTION}>
+      <div className={COLUMN}>
+        <SectionHeading
+          badge="Im Detail"
+          title={UI_STRINGS.featuresGlanceTitle}
+          sub="Wählen Sie einen Bereich: links die Erklärung, rechts ein Beispiel aus der Anwendung."
+        />
         <div
           role="tablist"
           aria-label="Funktionsbereiche"
-          className="mb-12 flex flex-wrap justify-center gap-2"
+          className="mb-12 flex flex-wrap justify-center gap-1.5"
         >
           {t.categories.map((c) => {
             const Icon = ICONS[c.icon];
@@ -464,13 +443,13 @@ export function CategoryExplorer() {
                   isActive
                     ? "brand-text"
                     : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
-                } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
+                } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99]`}
               >
                 {isActive && (
                   <motion.span
                     layoutId="feature-tab-pill"
-                    className="brand-soft brand-border absolute inset-0 rounded-full border shadow-lg shadow-black/30"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                    className="brand-soft brand-border absolute inset-0 rounded-full border"
+                    transition={{ type: "spring", stiffness: 380, damping: 36 }}
                   />
                 )}
                 <span className="relative flex items-center gap-2">
@@ -482,134 +461,107 @@ export function CategoryExplorer() {
           })}
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={cat.id}
-            role="tabpanel"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="grid items-start gap-8 lg:grid-cols-2"
-          >
-            {/* Left: explanation */}
-            <div>
-              <div className="mb-4 flex items-center gap-3">
-                <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
-                  {CatIcon && <CatIcon size={22} className="brand-text" />}
+        {/* Reserved height: the areas differ in length, and the sections below
+            must not jump when the tab changes. */}
+        <div className="lg:min-h-[36rem]">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={cat.id}
+              role="tabpanel"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+              className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16"
+            >
+              {/* Left: explanation */}
+              <div>
+                <div className="mb-5 flex items-center gap-4">
+                  <div className="brand-soft brand-border flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border">
+                    {CatIcon && <CatIcon size={22} strokeWidth={1.75} className="brand-text" />}
+                  </div>
+                  <h3 className="[font-family:var(--font-display)] text-2xl leading-tight font-medium tracking-[-0.015em] text-balance [color:var(--mk-text)] md:text-[1.75rem]">
+                    {cat.title}
+                  </h3>
                 </div>
-                <h2 className={H2_CTA_CLASS}>{cat.title}</h2>
+                <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+                  {cat.intro}
+                </p>
+                {/* A ruled list, not four cards: these are statements, not buttons. */}
+                <ul className="border-t [border-color:var(--mk-border)]">
+                  {cat.items.map((item, i) => (
+                    <motion.li
+                      key={item.title}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.08 + 0.05 * i, duration: 0.3 }}
+                      className="flex gap-3 border-b [border-color:var(--mk-border)] py-4"
+                    >
+                      <CheckCircle2 size={16} className="brand-text mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
+                          {item.title}
+                        </h4>
+                        <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </motion.li>
+                  ))}
+                </ul>
               </div>
-              <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-                {cat.intro}
-              </p>
-              <div className="space-y-4">
-                {cat.items.map((item, i) => (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.06 * i, duration: 0.22 }}
-                    className="hover:brand-border flex gap-3 rounded-xl border [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
-                  >
-                    <CheckCircle2 size={16} className="brand-text mt-0.5 shrink-0" />
-                    <div>
-                      <h3 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
 
-            {/* Right: demo window */}
-            {cat.demo ? (
-              <div className="lg:sticky lg:top-8">
-                <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/50 [background:var(--mk-bg)]">
-                  <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3">
-                    <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-                    <div className="ml-4 flex-1 font-mono text-sm [color:var(--mk-text-subtle)]">
-                      {cat.demo.windowTitle}
+              {/* Right: demo window */}
+              {cat.demo ? (
+                <div className="lg:sticky lg:top-28">
+                  <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-xl shadow-[hsl(222_40%_12%/0.10)] [background:var(--mk-surface)]">
+                    <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
+                      <div className="terminal-dots flex items-center gap-2">
+                        <span className="terminal-dot-red" />
+                        <span className="terminal-dot-amber" />
+                        <span className="terminal-dot-green" />
+                      </div>
+                      <div className="ml-4 flex-1 font-mono text-sm [color:var(--mk-text-muted)]">
+                        {cat.demo.windowTitle}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 p-6 font-mono text-[13px] leading-relaxed">
+                      {cat.demo.lines.map((line, i) => (
+                        <motion.p
+                          key={`${cat.id}-${i}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.15 + 0.09 * i, duration: 0.3 }}
+                          className={
+                            line.startsWith("Frage:")
+                              ? "[color:var(--mk-text)]"
+                              : line.includes("⚠")
+                                ? "[color:var(--ds-warning-text)]"
+                                : line.startsWith("→") || line.match(/^\d\d:\d\d/)
+                                  ? "brand-text"
+                                  : "[color:var(--mk-text-muted)]"
+                          }
+                        >
+                          {line}
+                        </motion.p>
+                      ))}
                     </div>
                   </div>
-                  <div className="space-y-1.5 p-6 font-mono text-sm leading-relaxed">
-                    {cat.demo.lines.map((line, i) => (
-                      <motion.p
-                        key={`${cat.id}-${i}`}
-                        initial={{ opacity: 0, x: -4 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.12 * i, duration: 0.25 }}
-                        className={
-                          line.startsWith("Frage:")
-                            ? "[color:var(--mk-text)]"
-                            : line.includes("⚠")
-                              ? "[color:var(--ds-warning-text)]"
-                              : line.startsWith("→") || line.match(/^\d\d:\d\d/)
-                                ? "brand-text"
-                                : "[color:var(--mk-text-muted)]"
-                        }
-                      >
-                        {line}
-                      </motion.p>
-                    ))}
-                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="hidden h-full min-h-[300px] items-center justify-center rounded-2xl border border-dashed [border-color:var(--mk-border)] lg:flex">
-                <div className="px-8 text-center">
-                  {CatIcon && <CatIcon size={32} className="brand-text mx-auto mb-4" />}
-                  <p className="max-w-xs text-sm [color:var(--mk-text-subtle)]">
-                    {UI_STRINGS.featuresEmptyState}
-                  </p>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </Section>
-
-      {/* Everything at a glance */}
-      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-        <h2 className={`mb-12 text-center ${H2_CTA_CLASS}`}>{UI_STRINGS.featuresGlanceTitle}</h2>
-        <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
-          {t.categories.map((c) => {
-            const Icon = ICONS[c.icon];
-            return (
-              <StaggerItem key={c.id}>
-                <button
-                  onClick={() => {
-                    setActive(c.id);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="group rounded-2xl text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                >
-                  <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)] motion-reduce:transition-none">
-                    <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
-                      {Icon && <Icon size={20} className="brand-text" />}
-                    </div>
-                    <h3 className="mb-1.5 text-lg font-semibold [color:var(--mk-text)]">
-                      {c.label}
-                    </h3>
-                    <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                      {c.glance}
+              ) : (
+                <div className="hidden h-full min-h-[300px] items-center justify-center rounded-2xl border border-dashed [border-color:var(--mk-border)] lg:flex">
+                  <div className="px-8 text-center">
+                    {CatIcon && <CatIcon size={32} className="brand-text mx-auto mb-4" />}
+                    <p className="max-w-xs text-sm [color:var(--mk-text-subtle)]">
+                      {UI_STRINGS.featuresEmptyState}
                     </p>
-                    <span className="brand-text mt-4 inline-flex items-center gap-1 text-sm opacity-0 transition-opacity group-hover:opacity-100">
-                      {UI_STRINGS.exploreLabel} <ArrowRight size={12} />
-                    </span>
-                  </GlowCard>
-                </button>
-              </StaggerItem>
-            );
-          })}
-        </StaggerContainer>
-      </Section>
-    </>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </Section>
   );
 }

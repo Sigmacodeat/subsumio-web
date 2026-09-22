@@ -1,7 +1,7 @@
 import { Star, Quote } from "lucide-react";
 import { UI_STRINGS } from "@/content/site";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
-import { H2_CTA_CLASS } from "./primitives";
+import { H2_CTA_CLASS } from "./typography";
 import { TESTIMONIALS } from "./testimonials-data";
 
 export function TestimonialsSection() {

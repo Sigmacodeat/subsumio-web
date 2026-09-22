@@ -116,57 +116,60 @@ export function CorpusBestand() {
         <div className="border-b border-[color:var(--ds-border)] px-4 py-3">
           <h3 className="text-sm font-semibold">{title}</h3>
         </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Quelle</TableHead>
-                <TableHead className="text-right">{isDecision ? "Dokumente" : "Normen"}</TableHead>
-                <TableHead className="text-right">
-                  {isDecision ? "Rechtssätze / Texte" : "Gesetze"}
-                </TableHead>
-                {!isDecision && <TableHead className="text-right">außer Kraft</TableHead>}
-                <TableHead className="text-right">Abschnitte</TableHead>
-                <TableHead className="text-right">eingebettet</TableHead>
-                <TableHead>Abgleich mit RIS</TableHead>
-                <TableHead>zuletzt geändert</TableHead>
+        {/* No extra overflow-x-auto wrapper here: <Table> already provides one
+            (with overscroll-x-contain) — a second one nested around it did
+            nothing but add an uncontained scroll edge. */}
+        <Table>
+          {/* Sticky against the page's own scroll container so the column
+              headers stay put while this list of ~20 sources scrolls past. */}
+          <TableHeader className="sticky top-0 z-10 [background:var(--ds-surface)]">
+            <TableRow>
+              <TableHead>Quelle</TableHead>
+              <TableHead className="text-right">{isDecision ? "Dokumente" : "Normen"}</TableHead>
+              <TableHead className="text-right">
+                {isDecision ? "Rechtssätze / Texte" : "Gesetze"}
+              </TableHead>
+              {!isDecision && <TableHead className="text-right">außer Kraft</TableHead>}
+              <TableHead className="text-right">Abschnitte</TableHead>
+              <TableHead className="text-right">eingebettet</TableHead>
+              <TableHead>Abgleich mit RIS</TableHead>
+              <TableHead>zuletzt geändert</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((s) => (
+              <TableRow key={s.sourceId}>
+                <TableCell>
+                  <div className="font-medium">{s.label}</div>
+                  <div className="text-xs text-[color:var(--ds-text-subtle)]">{s.sourceId}</div>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{fmt(s.pages)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {isDecision
+                    ? s.rechtssaetze + s.entscheidungstexte > 0
+                      ? `${fmt(s.rechtssaetze)} / ${fmt(s.entscheidungstexte)}`
+                      : "—"
+                    : fmt(s.statutes)}
+                </TableCell>
+                {!isDecision && (
+                  <TableCell className="text-right tabular-nums">
+                    {s.repealed ? fmt(s.repealed) : "—"}
+                  </TableCell>
+                )}
+                <TableCell className="text-right tabular-nums">{fmt(s.chunks)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {pct(s.embedded, s.chunks)} %
+                </TableCell>
+                <TableCell>
+                  <ReconChip s={s} />
+                </TableCell>
+                <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
+                  {date(s.lastUpdated)}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s) => (
-                <TableRow key={s.sourceId}>
-                  <TableCell>
-                    <div className="font-medium">{s.label}</div>
-                    <div className="text-xs text-[color:var(--ds-text-subtle)]">{s.sourceId}</div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{fmt(s.pages)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {isDecision
-                      ? s.rechtssaetze + s.entscheidungstexte > 0
-                        ? `${fmt(s.rechtssaetze)} / ${fmt(s.entscheidungstexte)}`
-                        : "—"
-                      : fmt(s.statutes)}
-                  </TableCell>
-                  {!isDecision && (
-                    <TableCell className="text-right tabular-nums">
-                      {s.repealed ? fmt(s.repealed) : "—"}
-                    </TableCell>
-                  )}
-                  <TableCell className="text-right tabular-nums">{fmt(s.chunks)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {pct(s.embedded, s.chunks)} %
-                  </TableCell>
-                  <TableCell>
-                    <ReconChip s={s} />
-                  </TableCell>
-                  <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
-                    {date(s.lastUpdated)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

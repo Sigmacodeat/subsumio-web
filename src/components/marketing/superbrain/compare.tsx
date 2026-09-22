@@ -57,7 +57,7 @@ export function CompareSection({ t }: { t: SuperbrainCopyDe }) {
         </div>
         {/* Desktop: table layout */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.6, ease: EASE.out }}

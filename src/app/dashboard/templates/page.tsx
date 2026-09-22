@@ -36,6 +36,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { TemplateUseDialog } from "@/components/legal/TemplateUseDialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
@@ -98,6 +99,7 @@ export default function TemplateLibraryPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
+  const [useTemplateTarget, setUseTemplateTarget] = useState<TemplateItem | null>(null);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -264,7 +266,7 @@ export default function TemplateLibraryPage() {
   const categoryLabel = (cat: string) => t(`templates.cat_${cat}` as DashboardKey);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("templates.title")}
         description={t("templates.description")}
@@ -409,22 +411,33 @@ export default function TemplateLibraryPage() {
                 </div>
 
                 <div className="mt-auto flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyTemplate(template)}
-                    className="h-8 gap-1.5 text-xs"
-                  >
-                    {copied && selectedTemplate?.slug === template.slug ? (
-                      <>
-                        <Check size={14} /> {t("templates.btn_copied")}
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} /> {t("templates.btn_copy")}
-                      </>
-                    )}
-                  </Button>
+                  {template.variables.length > 0 || /\{\{.*\}\}/.test(template.body) ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setUseTemplateTarget(template)}
+                      className="h-8 gap-1.5 text-xs"
+                    >
+                      <FileCheck size={14} /> Verwenden
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyTemplate(template)}
+                      className="h-8 gap-1.5 text-xs"
+                    >
+                      {copied && selectedTemplate?.slug === template.slug ? (
+                        <>
+                          <Check size={14} /> {t("templates.btn_copied")}
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={14} /> {t("templates.btn_copy")}
+                        </>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -614,6 +627,13 @@ export default function TemplateLibraryPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {useTemplateTarget && (
+        <TemplateUseDialog
+          template={useTemplateTarget}
+          onClose={() => setUseTemplateTarget(null)}
+        />
+      )}
     </div>
   );
 }

@@ -362,7 +362,7 @@ export function ContractRedlineViewer({
           {onClose && (
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
               aria-label="Schließen"
             >
               <XCircle size={18} />
@@ -381,7 +381,7 @@ export function ContractRedlineViewer({
               aria-checked={perspective === p}
               onClick={() => setPerspective(p)}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.99] motion-reduce:transition-none",
                 perspective === p
                   ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -446,13 +446,13 @@ export function ContractRedlineViewer({
           )}
           <button
             onClick={acceptAll}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] active:scale-[0.99] motion-reduce:transition-none"
           >
             Alle akzeptieren
           </button>
           <button
             onClick={rejectAll}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
           >
             Alle ablehnen
           </button>
@@ -631,7 +631,7 @@ export function ContractRedlineViewer({
                         <button
                           onClick={() => acceptClause(idx)}
                           className={cn(
-                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
                             clause.accepted === true
                               ? "border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                               : "border border-transparent text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
@@ -642,7 +642,7 @@ export function ContractRedlineViewer({
                         <button
                           onClick={() => rejectClause(idx)}
                           className={cn(
-                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
                             clause.accepted === false
                               ? "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                               : "border border-transparent text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"

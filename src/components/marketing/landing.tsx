@@ -54,9 +54,6 @@ export default function LandingPage() {
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
         <LogoMarquee />
 
-        {/* Product story — pinned visual driven by scroll */}
-        <ScrollStory />
-
         {/* Pain + Stats — merged: cost of inaction, then proof metrics in one section. */}
         {"pains" in t && t.pains && (
           <Section
@@ -141,7 +138,11 @@ export default function LandingPage() {
           </Section>
         )}
 
-        {/* Features — what it does (directly after Pain, solution = benefits) */}
+        {/* Product story — pinned visual driven by scroll. Comes after the pain:
+            first what searching costs, then how Subsumio answers it. */}
+        <ScrollStory />
+
+        {/* Features — what it does (after the story: how it works, then what it covers) */}
         <Section
           tone="light"
           id="features"
@@ -163,7 +164,7 @@ export default function LandingPage() {
                   <StaggerItem key={f.title}>
                     <Link
                       href={p("/features")}
-                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                     >
                       <div
                         className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile(f.color, "light")}`}
@@ -335,6 +336,7 @@ export default function LandingPage() {
           tone="dark"
           className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
           aria-label={ui.ariaCta}
+          data-closing-cta
         >
           <GradientMesh className="z-0" />
           <Reveal variant="upScale" className="relative z-10 mx-auto max-w-3xl text-center">
@@ -369,19 +371,6 @@ export default function LandingPage() {
                 {ui.professionalSecrecy}
               </span>
             </div>
-            {t.relatedLinks && (
-              <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
-                {t.relatedLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-[background-color,border-color,color] hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            )}
           </Reveal>
         </Section>
 

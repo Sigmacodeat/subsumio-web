@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { toLocalIsoDate } from "@/lib/calendar-conflicts";
@@ -429,26 +429,23 @@ export default function DeadlinesPage() {
       });
       return;
     }
-    const now = new Date().toISOString();
     setSecondCheckBusy(true);
     try {
-      await api.brain.updatePage({
-        slug: item.slug,
-        frontmatter: {
-          status: "done",
-          completed_at: now,
-          completed_by: userName,
-          second_check_required: true,
-          second_check_by: userName,
-          second_check_at: now,
-        },
-      });
+      // Server-enforced four-eyes check — see api/legal/fristen/second-check.
+      // The client-side secondCheckSelfBlocked guard above is UX only; the
+      // route re-derives the caller's identity from the session and rejects
+      // if it matches the first checker, so this can't be bypassed by
+      // calling api.brain.updatePage directly.
+      await api.legal.fristenSecondCheck(item.slug);
       addToast({ type: "success", title: t("deadlines.second_check_done") });
       await loadDeadlines();
-    } catch {
+    } catch (err) {
       addToast({
         type: "error",
-        title: t("deadlines.update_failed"),
+        title:
+          err instanceof ApiRequestError && err.code === "second_check_self_blocked"
+            ? t("deadlines.second_check_self_blocked")
+            : t("deadlines.update_failed"),
       });
     } finally {
       setSecondCheckBusy(false);
@@ -910,10 +907,7 @@ export default function DeadlinesPage() {
   ];
 
   return (
-    <div
-      data-tour="deadlines-widget"
-      className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8"
-    >
+    <div data-tour="deadlines-widget" className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("deadlines.title")}
         description="Alle Fristen und Termine Ihrer Akten nach Fälligkeit — prüfen, freigeben und als erledigt vermerken."
@@ -1003,7 +997,7 @@ export default function DeadlinesPage() {
             <button
               onClick={() => setShowCalc(false)}
               aria-label={t("cmd.close")}
-              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             >
               <XCircle size={16} />
             </button>
@@ -1064,7 +1058,7 @@ export default function DeadlinesPage() {
                     setCalcError(err instanceof Error ? err.message : String(err));
                   }
                 }}
-                className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+                className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               >
                 <Calculator size={14} />
                 {t("deadlines.calc_button")}
@@ -1121,7 +1115,7 @@ export default function DeadlinesPage() {
             <button
               onClick={() => setShowAiDetect(false)}
               aria-label={t("deadlines.detect_title")}
-              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             >
               <XCircle size={16} />
             </button>
@@ -1172,7 +1166,7 @@ export default function DeadlinesPage() {
               }
             }}
             disabled={aiLoading || !aiText.trim()}
-            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none"
+            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
           >
             {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <FileSearch size={14} />}
             {aiLoading ? t("deadlines.detect_analyzing") : t("deadlines.detect_button")}

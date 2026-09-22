@@ -92,7 +92,7 @@ export function useDeleteApiKey() {
 
 // ── Team ──
 
-interface TeamMember {
+export interface TeamMember {
   id: string;
   name: string | null;
   email: string;

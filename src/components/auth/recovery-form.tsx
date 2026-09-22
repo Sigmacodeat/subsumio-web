@@ -165,7 +165,7 @@ export default function RecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
+                      className="w-full rounded-xl border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-field)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
                     />
                   </div>
                 </label>
@@ -188,7 +188,7 @@ export default function RecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
                         minLength={8}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                        className="w-full rounded-xl border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-field)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                       />
                     </div>
                     <span className="mt-1 block text-xs [color:var(--mk-text-subtle)]">
@@ -212,7 +212,7 @@ export default function RecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
                         minLength={8}
                         value={confirm}
                         onChange={(e) => setConfirm(e.target.value)}
-                        className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                        className="w-full rounded-xl border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-field)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                       />
                     </div>
                   </label>

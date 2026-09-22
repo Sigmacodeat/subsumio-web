@@ -38,8 +38,17 @@ export default function CorpusPage() {
   const unreadAlerts = alertData?.unreadCount ?? 0;
 
   useEffect(() => {
-    const main = typeof window !== "undefined" ? document.getElementById("main-content") : null;
-    if (main) main.scrollTo({ top: 0, behavior: "smooth" });
+    // The ops shell (OpsShell) has no independent scrolling <main> — its id
+    // is "ops-main", not "main-content" (that id belongs to the *dashboard*
+    // layout), and even "ops-main" never sets overflow-y: the whole document
+    // scrolls. `getElementById("main-content")` was always null here, so
+    // this reset silently never ran — switch to a tab further down the page
+    // and every other tab opened mid-scroll instead of at its own top.
+    // Instant, not smooth: a context switch should land immediately: an
+    // animated scroll here fights whatever position the new tab's own layout
+    // settles into, and clicking through tabs quickly stacks overlapping
+    // scroll animations.
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
   }, [activeTab]);
 
   return (

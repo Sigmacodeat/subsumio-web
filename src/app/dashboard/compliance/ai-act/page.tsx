@@ -172,7 +172,7 @@ export default function AIActConformityPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("aiact.title")}
         description={t("aiact.intro")}

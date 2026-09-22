@@ -311,7 +311,7 @@ export default function DashboardPage() {
   const role = user?.role;
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <p

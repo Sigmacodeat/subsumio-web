@@ -85,8 +85,8 @@ interface BeforeInstallPromptEvent extends Event {
 function PhoneMockup() {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24, rotate: -2 }}
-      animate={{ opacity: 1, y: 0, rotate: 0 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
       className="relative mx-auto w-[260px]"
     >
@@ -241,7 +241,7 @@ export default function DownloadPage() {
                 <GlowCard
                   glowColor="var(--brand-primary)"
                   intensity={0.12}
-                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)] motion-reduce:transition-none"
+                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)] motion-reduce:transition-none"
                 >
                   <IconTile icon={Icon} size={22} className="mb-5" />
                   <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h3>
@@ -272,7 +272,7 @@ export default function DownloadPage() {
       </Section>
 
       {/* Store preview */}
-      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <SectionHeading title={t.storesTitle} sub={t.storesSub} />
 

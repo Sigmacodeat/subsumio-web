@@ -103,6 +103,25 @@ export interface ConnectorCoverageEntry {
   limitations?: string[];
 }
 
+/**
+ * Connectors a Kanzlei user can turn on from the dashboard itself
+ * (`POST /api/connectors/[service]/configure`, which only accepts these two
+ * folder-watch services — see that route). Every other connector with
+ * status "available" is real, working code, but reachable only via
+ * `gbrain connector add` on the server, i.e. it needs the technical admin.
+ * The coverage table used to label all of them "Verfügbar" with no way to
+ * tell those two apart, which reads as "click here to enable it" for
+ * connectors nobody using only the dashboard can actually enable. Exported
+ * so the configure route's own allowlist and this UI-facing flag can never
+ * drift apart — see WEB_SELF_SERVICE_CONNECTOR_IDS usage in
+ * api/connectors/[service]/configure/route.ts.
+ */
+export const WEB_SELF_SERVICE_CONNECTOR_IDS = ["advokat-import", "bea-import"] as const;
+
+export function isWebSelfServiceConnector(id: string): boolean {
+  return (WEB_SELF_SERVICE_CONNECTOR_IDS as readonly string[]).includes(id);
+}
+
 export interface CoverageMatrix {
   connectors: ConnectorCoverageEntry[];
   by_category: Record<ConnectorCategory, ConnectorCoverageEntry[]>;

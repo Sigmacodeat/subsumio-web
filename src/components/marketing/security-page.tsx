@@ -50,7 +50,7 @@ export default function SecurityPage() {
             return (
               <StaggerItem
                 key={pillar.title}
-                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none"
+                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-0.5 hover:shadow-xl motion-reduce:transition-none"
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text mb-4" />
@@ -114,7 +114,7 @@ export default function SecurityPage() {
               const Icon = ICONS[b.icon] ?? Shield;
               return (
                 <StaggerItem key={b.label}>
-                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
                     <div className="brand-soft brand-border mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
                       <Icon size={22} className="brand-text" />
                     </div>
@@ -179,7 +179,7 @@ export default function SecurityPage() {
       </Section>
 
       {/* FAQ */}
-      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -205,10 +205,10 @@ export default function SecurityPage() {
       <CTASection
         title={t.ctaTitle}
         sub={t.ctaSub}
-        href={p("/signup")}
+        href={p("/contact")}
         label={t.ctaButton}
-        secondaryHref={p("/contact")}
-        secondaryLabel={UI_STRINGS.writeUs}
+        secondaryHref={p("/signup")}
+        secondaryLabel={UI_STRINGS.startFree}
         showLogo={false}
       />
     </div>

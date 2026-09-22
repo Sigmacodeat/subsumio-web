@@ -31,12 +31,32 @@ const verificationSchema = z.object({
   override: overrideSchema.optional(),
 });
 
+const letterheadSchema = z.object({
+  firm_name: z.string(),
+  address_line_1: z.string(),
+  address_line_2: z.string().optional(),
+  zip_city: z.string(),
+  phone: z.string().optional(),
+  fax: z.string().optional(),
+  email: z.string().optional(),
+  website: z.string().optional(),
+  logo_url: z.string().optional(),
+  lawyers: z.array(
+    z.object({ name: z.string(), title: z.string(), bar_number: z.string().optional() })
+  ),
+  tax_number: z.string().optional(),
+  vat_id: z.string().optional(),
+  bank_details: z.object({ iban: z.string(), bic: z.string(), bank_name: z.string() }).optional(),
+});
+
 const postSchema = z.object({
   slug: z.string().optional(),
   title: z.string().optional(),
   markdown: z.string().max(500_000).optional(),
   formData: z.record(z.unknown()).optional(),
   verification: verificationSchema.optional(),
+  /** Kanzlei-Briefpapier für die erste Seite — siehe docx-export.ts. */
+  letterhead: letterheadSchema.optional(),
 });
 
 function buildMarkdownFromDraft(
@@ -121,7 +141,7 @@ export const POST = createHandler(
     }
 
     const title = body.title || "Subsumio Dokument";
-    const docx = await generateDocx(md, { title, caseRef });
+    const docx = await generateDocx(md, { title, caseRef, letterhead: body.letterhead });
     const buf = docx.buffer.slice(
       docx.byteOffset,
       docx.byteOffset + docx.byteLength

@@ -63,20 +63,21 @@ function makeVariants(opts: {
 // ---------------------------------------------------------------------------
 
 export const REVEAL = {
-  /** Default scroll-reveal: fade up 24px, 0.5s */
-  up: (delay = 0) => makeVariants({ y: 24, duration: 0.5, delay }),
-  /** Tighter fade up: 16px, 0.45s */
-  upSm: (delay = 0) => makeVariants({ y: 16, duration: 0.45, delay }),
-  /** Dramatic fade up: 32px, 0.6s */
-  upLg: (delay = 0) => makeVariants({ y: 32, duration: 0.6, ease: EASE.dramatic, delay }),
-  /** Fade from left: -20px x, 0.45s */
-  left: (delay = 0) => makeVariants({ x: -20, duration: 0.45, delay }),
-  /** Fade from right: +20px x, 0.45s */
-  right: (delay = 0) => makeVariants({ x: 20, duration: 0.45, delay }),
-  /** Scale-in: 0.96 -> 1, 0.5s */
-  scale: (delay = 0) => makeVariants({ scale: 0.96, duration: 0.5, delay }),
-  /** Depth reveal: fade up 24px + subtle 0.98 scale, 0.5s */
-  upScale: (delay = 0) => makeVariants({ y: 24, scale: 0.98, duration: 0.5, delay }),
+  /** Default scroll-reveal: fade up 16px, 0.55s */
+  up: (delay = 0) => makeVariants({ y: 16, duration: 0.55, delay }),
+  /** Tighter fade up: 10px, 0.45s */
+  upSm: (delay = 0) => makeVariants({ y: 10, duration: 0.45, delay }),
+  /** Larger blocks (closing CTA): fade up 20px, 0.6s */
+  upLg: (delay = 0) => makeVariants({ y: 20, duration: 0.6, delay }),
+  /** Fade from left: -12px x, 0.5s */
+  left: (delay = 0) => makeVariants({ x: -12, duration: 0.5, delay }),
+  /** Fade from right: +12px x, 0.5s */
+  right: (delay = 0) => makeVariants({ x: 12, duration: 0.5, delay }),
+  /** Scale-in: 0.985 -> 1, 0.5s */
+  scale: (delay = 0) => makeVariants({ scale: 0.985, duration: 0.5, delay }),
+  /** Kept for existing callers — same as `up`. Whole sections no longer
+   *  scale: text smears while a large block is resampled. */
+  upScale: (delay = 0) => makeVariants({ y: 16, duration: 0.55, delay }),
   /** Subtle: 8px up, 0.4s — good for dense grids */
   subtle: (delay = 0) => makeVariants({ y: 8, duration: 0.4, delay }),
 } as const;
@@ -488,7 +489,7 @@ export function GuidedCursor({ x, y, label, className = "", duration = 6.5 }: Gu
       animate={{
         left: x,
         top: y,
-        scale: isPath ? [1, 1, 0.92, 1.06, 1, 1] : [1, 0.94, 1],
+        ...(isPath ? { scale: [1, 1, 0.92, 1.06, 1, 1] } : {}),
       }}
       transition={
         isPath
@@ -500,22 +501,28 @@ export function GuidedCursor({ x, y, label, className = "", duration = 6.5 }: Gu
               scale: { duration, repeat: Infinity, repeatDelay: 0.5, ease: [0.45, 0, 0.55, 1] },
             }
           : {
-              left: { type: "spring", stiffness: 100, damping: 18, mass: 0.8 },
-              top: { type: "spring", stiffness: 100, damping: 18, mass: 0.8 },
-              scale: { duration: 1.4, repeat: Infinity, ease: [0.45, 0, 0.55, 1] },
+              // Critically damped — the pointer glides to the target and stops.
+              left: { type: "spring", stiffness: 90, damping: 20, mass: 0.9 },
+              top: { type: "spring", stiffness: 90, damping: 20, mass: 0.9 },
             }
       }
     >
-      <span
+      {/* Keyed on the target: one short "press" on arrival, then still. */}
+      <motion.span
+        key={isPath ? "path" : `${String(x)}-${String(y)}`}
         className="relative mt-0.5 block h-5 w-4"
+        initial={false}
+        animate={isPath ? undefined : { scale: [1, 1, 0.88, 1] }}
+        transition={{ duration: 1.1, times: [0, 0.6, 0.78, 1], ease: "easeOut" }}
         style={{
+          transformOrigin: "top left",
           background:
             "linear-gradient(145deg, var(--mk-text), color-mix(in srgb, var(--brand-text) 40%, var(--mk-text)))",
           clipPath: "polygon(0 0, 100% 48%, 58% 58%, 78% 100%, 55% 100%, 38% 64%, 0 84%)",
         }}
       >
         <span className="absolute inset-0 rounded-sm border border-white/40" />
-      </span>
+      </motion.span>
       {label && (
         <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:color-mix(in_srgb,var(--mk-surface)_85%,transparent)]">
           {label}
@@ -672,9 +679,12 @@ export function SplitTextReveal({
         {lineData.map((line, lineIdx) => (
           <span key={line.key} className="block">
             {line.nodes.map((n, i) => (
+              // A real space: without animation the words are plain inline
+              // text, and a no-break space would keep a long line from wrapping
+              // (the headline ran off the viewport for reduced-motion visitors).
               <span key={line.words[i]}>
                 {n.word}
-                {n.hasSpace ? "\u00A0" : ""}
+                {n.hasSpace ? " " : ""}
               </span>
             ))}
             {lineIdx < lineData.length - 1 ? " " : ""}
@@ -867,8 +877,13 @@ export function ScrollProgress() {
 }
 
 // ---------------------------------------------------------------------------
-// MagneticButton — magnetic CTA that follows cursor with spring physics
+// MagneticButton — the CTA leans a few pixels towards the cursor. Kept
+// deliberately small and critically damped: a larger pull made the button
+// chase the pointer and wobble on hover.
 // ---------------------------------------------------------------------------
+
+/** Hard cap on the pull, in px — whatever `strength` a caller passes. */
+const MAGNETIC_MAX_OFFSET = 2.5;
 
 interface MagneticButtonProps {
   children: ReactNode;
@@ -885,17 +900,22 @@ export function MagneticButton({ children, className = "", strength = 0.3 }: Mag
     setIsTouch(window.matchMedia("(hover: none)").matches);
   }, []);
 
-  const x = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
-  const y = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
+  // damping ≈ 2·√stiffness → settles without overshoot.
+  const x = useSpring(useMotionValue(0), { stiffness: 170, damping: 26 });
+  const y = useSpring(useMotionValue(0), { stiffness: 170, damping: 26 });
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (reduce || isTouch || !ref.current) return;
       const rect = ref.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      x.set((e.clientX - cx) * strength);
-      y.set((e.clientY - cy) * strength);
+      // Measure against the resting position — the rect already includes the
+      // current offset, and chasing it feeds the movement back into itself.
+      const cx = rect.left - x.get() + rect.width / 2;
+      const cy = rect.top - y.get() + rect.height / 2;
+      const pull = (d: number, half: number) =>
+        Math.max(-1, Math.min(1, d / half)) * MAGNETIC_MAX_OFFSET * Math.min(strength / 0.35, 1);
+      x.set(pull(e.clientX - cx, rect.width / 2));
+      y.set(pull(e.clientY - cy, rect.height / 2));
     },
     [reduce, isTouch, strength, x, y]
   );

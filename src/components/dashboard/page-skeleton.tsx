@@ -16,7 +16,12 @@ export function PageSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-6 p-4 md:p-6 lg:p-8", className)} role="status" aria-live="polite">
+    <div
+      // Same column as the page it stands in for — no jump when the content arrives.
+      className={cn("ds-page space-y-6 p-4 md:p-6 lg:p-8", className)}
+      role="status"
+      aria-live="polite"
+    >
       <span className="sr-only">Wird geladen</span>
       <div className="space-y-3">
         <Skeleton className="h-3 w-40" />

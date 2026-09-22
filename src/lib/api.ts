@@ -695,6 +695,28 @@ export const api = {
       return request(`/api/legal/fristen${qs.toString() ? `?${qs}` : ""}`);
     },
 
+    /**
+     * Server-enforced Vier-Augen-Kontrolle for a Notfrist. The route rejects
+     * with `second_check_self_blocked` if the caller is also the first
+     * checker — see api/legal/fristen/second-check/route.ts.
+     */
+    fristenSecondCheck(
+      slug: string
+    ): Promise<{ slug: string; second_check_by: string; second_check_at: string }> {
+      return request("/api/legal/fristen/second-check", {
+        method: "POST",
+        body: JSON.stringify({ slug }),
+      });
+    },
+
+    /** Allocate the next sequential Aktenzeichen for this Kanzlei (yearly-resetting). */
+    allocateCaseNumber(prefix?: string): Promise<{ caseNumber: string }> {
+      return request("/api/legal/case-number/allocate", {
+        method: "POST",
+        body: JSON.stringify(prefix ? { prefix } : {}),
+      });
+    },
+
     conflictCheck(name: string): Promise<ConflictCheckResponse> {
       return request("/api/legal/conflict-check", {
         method: "POST",

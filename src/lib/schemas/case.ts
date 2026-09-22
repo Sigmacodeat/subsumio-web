@@ -56,6 +56,7 @@ export const caseFormSchema = z.object({
   additionalOpponents: z.array(additionalOpponentSchema).optional(),
   relatedCaseSlugs: z.array(z.string()).optional(),
   mandateId: z.string().max(100).optional(),
+  disputeValue: z.string().max(20).optional(),
   courtName: z.string().max(200).optional(),
   courtSlug: z.string().optional(),
   lawyerName: z.string().max(200).optional(),

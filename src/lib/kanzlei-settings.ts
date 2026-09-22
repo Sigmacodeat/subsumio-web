@@ -45,6 +45,15 @@ export interface KanzleiSettings {
   kleinunternehmer?: boolean;
   // E-Invoice: default profile for ZUGFeRD generation
   eInvoiceProfile?: "BASIC" | "COMFORT" | "EXTENDED";
+  // Buchhaltungsexport (BMD/RZL, src/lib/fibu-export/): Konten sind pro
+  // Kanzlei individuell und müssen mit dem Steuerberater abgestimmt
+  // werden — kein sinnvoller Standardwert möglich.
+  fibuDebitorKonto?: string;
+  fibuErloesKonto?: string;
+  /** Nur für BMD: USt-Satz (als "20") → BMD-Steuercode. Pro BMD-Mandant konfiguriert, kein Standardwert. */
+  fibuBmdSteuercode20?: string;
+  fibuBmdSteuercode13?: string;
+  fibuBmdSteuercode10?: string;
 }
 
 export const KANZLEI_SETTINGS_SLUG = "legal/settings/kanzlei";

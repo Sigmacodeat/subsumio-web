@@ -33,8 +33,8 @@ export const EASE = {
 
 /** Section/card scroll-reveal preset — subtle scale + Y for depth. */
 export const REVEAL = {
-  initial: { opacity: 0, y: 24, scale: 0.98 },
-  whileInView: { opacity: 1, y: 0, scale: 1 },
+  initial: { opacity: 0, y: 16 },
+  whileInView: { opacity: 1, y: 0 },
   viewport: VIEWPORT.gentle,
   transition: { duration: 0.5, ease: EASE.out },
 } as const;

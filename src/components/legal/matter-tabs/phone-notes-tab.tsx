@@ -43,7 +43,16 @@ export function PhoneNotesTab() {
   const load = useCallback(async () => {
     if (!caseSlug) return;
     try {
-      const pages = await api.brain.listPages({ type: "legal_phone_note", limit: 500 });
+      // listPages() is a single engine call capped at 200 regardless of the
+      // requested limit — a Kanzlei with more than 200 phone notes across
+      // all cases would silently lose notes here. batchListPages paginates
+      // past that cap (see engine-list-cap-and-tombstones); it's also how
+      // this data is loaded kanzleiweit before filtering to this one case,
+      // same shape as before.
+      const { legal_phone_note: pages = [] } = await api.brain.batchListPages(
+        ["legal_phone_note"],
+        2000
+      );
       const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
       const mapped: PhoneNoteItem[] = filtered.map((p: BrainPage) => ({
         slug: p.slug,

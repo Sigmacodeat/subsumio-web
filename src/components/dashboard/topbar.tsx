@@ -46,6 +46,33 @@ import { cn } from "@/lib/utils";
 import { MatterSwitcher } from "@/components/dashboard/matter-switcher";
 import { tracking } from "@/lib/tracking";
 
+/** "heute fällig" / "morgen fällig" / "in 3 Tagen" / "seit 2 Tagen überfällig". */
+function dueLabel(days: number, overdue: boolean): string {
+  const n = Math.abs(days);
+  if (overdue) return n === 1 ? "seit 1 Tag überfällig" : `seit ${n} Tagen überfällig`;
+  if (n === 0) return "heute fällig";
+  if (n === 1) return "morgen fällig";
+  return `in ${n} Tagen`;
+}
+
+/** "vor 5 Min." / "vor 3 Std." / "12.09." — compact, for the notification list. */
+function relativeTime(iso: string, lang: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const min = Math.max(0, Math.round((Date.now() - then) / 60000));
+  const en = lang === "en";
+  if (min < 1) return en ? "now" : "jetzt";
+  if (min < 60) return en ? `${min} min ago` : `vor ${min} Min.`;
+  const h = Math.round(min / 60);
+  if (h < 24) return en ? `${h} h ago` : `vor ${h} Std.`;
+  const d = Math.round(h / 24);
+  if (d < 7) return en ? `${d} d ago` : `vor ${d} T.`;
+  return new Date(iso).toLocaleDateString(en ? "en-GB" : "de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 export type Theme = "light" | "dark";
 
 interface TopbarProps {
@@ -86,7 +113,7 @@ export function Topbar({
   const brainRef = useRef<HTMLDivElement>(null);
   const quickCreateRef = useRef<HTMLDivElement>(null);
   const utilitiesRef = useRef<HTMLDivElement>(null);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   useEffect(() => {
@@ -138,6 +165,7 @@ export function Topbar({
       type: "deadline" | "dream" | "system" | "mention" | "reply";
       read: boolean;
       caseSlug?: string;
+      createdAt?: string;
     }>
   >([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
@@ -160,10 +188,12 @@ export function Topbar({
               return {
                 id: n.id,
                 title: isOverdue ? "Frist abgelaufen" : "Fristenwarnung",
-                message: `${title}${days !== undefined ? (isOverdue ? ` — ${Math.abs(days)}T überfällig` : ` — in ${days}T`) : ""}`,
+                // Written out: "in 0T" / "3T überfällig" read like a log line.
+                message: `${title}${days !== undefined ? ` — ${dueLabel(days, isOverdue)}` : ""}`,
                 type: "deadline" as const,
                 read: false,
                 caseSlug,
+                createdAt: n.createdAt,
               };
             }
             return {
@@ -176,6 +206,7 @@ export function Topbar({
                 | "system",
               read: false,
               caseSlug: undefined as string | undefined,
+              createdAt: n.createdAt,
             };
           }
         );
@@ -444,7 +475,7 @@ export function Topbar({
             else onMobileMenuOpen();
             if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
           }}
-          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-90 motion-reduce:transition-none md:hidden"
+          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none md:hidden"
           aria-label={mobileOpen ? t("topbar.close_menu") : t("topbar.open_menu")}
           aria-expanded={mobileOpen}
         >
@@ -520,7 +551,8 @@ export function Topbar({
             <Bell size={16} />
             {unreadCount > 0 && (
               <span
-                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
+                // Sits on the corner of the button, not on top of the bell.
+                className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-solid)] px-1 text-[10px] leading-none font-semibold text-white tabular-nums ring-2 ring-[var(--ds-bg)]"
                 aria-hidden
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -530,40 +562,48 @@ export function Topbar({
           <AnimatePresence initial={false}>
             {notifOpen && (
               <motion.div
-                className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                role="menu"
+                className="card-shadow-elevated absolute top-12 right-0 z-50 w-[25rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                role="dialog"
                 aria-label={t("topbar.notifications")}
                 initial={popoverInitial}
                 animate={popoverAnimate}
                 exit={popoverExit}
                 transition={popoverTransition}
               >
-                <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                  <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {t("topbar.notifications")}
-                  </span>
-                  <div className="flex items-center gap-2">
+                {/* Header: title, unread count, bulk action */}
+                <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-2.5">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      {t("topbar.notifications")}
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                        {unreadCount} {lang === "en" ? "unread" : "ungelesen"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllRead}
                         disabled={loadingNotifs}
-                        className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                        className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none disabled:opacity-50 motion-reduce:transition-none"
                       >
-                        {t("topbar.mark_all_read")}
+                        {lang === "en" ? "Mark all read" : "Alle gelesen"}
                       </button>
                     )}
                     <button
                       onClick={() => setNotifOpen(false)}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
                       aria-label={t("topbar.close")}
                     >
-                      <X size={18} />
+                      <X size={16} />
                     </button>
                   </div>
                 </div>
                 {notificationError && (
                   <div
-                    className="flex items-center justify-between gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 text-xs text-[color:var(--ds-danger-text)]"
+                    className="flex items-center justify-between gap-2 border-y border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 text-xs text-[color:var(--ds-danger-text)]"
                     role="alert"
                   >
                     <span>{t("topbar.notifications_error")}</span>
@@ -576,8 +616,9 @@ export function Topbar({
                     </button>
                   </div>
                 )}
+                {/* Filters: underline tabs with counts — no cramped pills */}
                 <div
-                  className="flex gap-1 border-b border-[color:var(--ds-border)] p-2"
+                  className="flex gap-4 border-b border-[color:var(--ds-border)] px-4"
                   role="tablist"
                 >
                   {(
@@ -587,149 +628,216 @@ export function Topbar({
                       ["mention", t("topbar.filter_mentions")],
                       ["system", t("topbar.filter_system")],
                     ] as const
-                  ).map(([filter, label]) => (
-                    <button
-                      key={filter}
-                      type="button"
-                      role="tab"
-                      aria-selected={notificationFilter === filter}
-                      onClick={() => setNotificationFilter(filter)}
-                      className={cn(
-                        "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
-                        notificationFilter === filter
-                          ? "brand-soft brand-text"
-                          : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                  ).map(([filter, label]) => {
+                    const count = notifications.filter((n) =>
+                      filter === "all"
+                        ? true
+                        : filter === "mention"
+                          ? n.type === "mention" || n.type === "reply"
+                          : filter === "system"
+                            ? n.type === "system" || n.type === "dream"
+                            : n.type === "deadline"
+                    ).length;
+                    const active = notificationFilter === filter;
+                    return (
+                      <button
+                        key={filter}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setNotificationFilter(filter)}
+                        className={cn(
+                          "-mb-px inline-flex items-center gap-1.5 border-b-2 py-2 text-xs font-medium transition-[border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none",
+                          active
+                            ? "border-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
+                            : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                        )}
+                      >
+                        {label}
+                        {count > 0 && (
+                          <span className="text-[11px] text-[color:var(--ds-text-subtle)] tabular-nums">
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
+                <div className="max-h-[26rem] overflow-y-auto">
                   {filteredNotifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <Bell
-                        size={20}
-                        className="mb-3 text-[color:var(--ds-border-strong)]"
-                        aria-hidden
-                      />
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        {t("topbar.no_notifications")}
+                    <div className="flex flex-col items-center justify-center px-8 py-12 text-center">
+                      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+                        <Check
+                          size={18}
+                          className="text-[color:var(--ds-text-muted)]"
+                          aria-hidden
+                        />
+                      </div>
+                      <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                        {lang === "en" ? "All caught up" : "Alles erledigt"}
+                      </p>
+                      <p className="mt-1 max-w-[16rem] text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                        {lang === "en"
+                          ? "Deadlines, mentions and system notices appear here."
+                          : "Fristen, Erwähnungen und Systemhinweise erscheinen hier."}
                       </p>
                     </div>
                   ) : (
-                    filteredNotifications.map((n) => {
-                      const notifHref = n.caseSlug
-                        ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
-                        : null;
-                      // Row is a plain div; the navigate action and the mark-read
-                      // action are sibling buttons (no nested interactive controls).
-                      return (
-                        <div
-                          key={n.id}
-                          className={`flex items-start gap-2 rounded-lg border p-3 ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
-                        >
-                          {notifHref ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                router.push(notifHref);
-                                setNotifOpen(false);
-                              }}
-                              className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
-                            >
-                              <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                    <ul className="divide-y divide-[color:var(--ds-border)]">
+                      {filteredNotifications.map((n) => {
+                        const notifHref = n.caseSlug
+                          ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
+                          : null;
+                        const TypeIcon =
+                          n.type === "deadline"
+                            ? CalendarClock
+                            : n.type === "mention" || n.type === "reply"
+                              ? MessageSquare
+                              : n.type === "dream"
+                                ? BrainIcon
+                                : Bell;
+                        const tile =
+                          n.type === "deadline"
+                            ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                            : n.type === "mention" || n.type === "reply"
+                              ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                              : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]";
+                        // Inline deadline reminders carry no timestamp; API ones do.
+                        const createdAt =
+                          "createdAt" in n && typeof n.createdAt === "string"
+                            ? n.createdAt
+                            : undefined;
+                        const body = (
+                          <>
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="text-[13px] leading-snug font-medium text-[color:var(--ds-text)]">
                                 {n.title}
-                              </div>
-                              <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                                {n.message}
-                              </div>
-                            </button>
-                          ) : (
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
-                                {n.title}
-                              </div>
-                              <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                                {n.message}
-                              </div>
+                              </span>
+                              {createdAt && (
+                                <span className="shrink-0 text-[11px] text-[color:var(--ds-text-subtle)] tabular-nums">
+                                  {relativeTime(createdAt, lang)}
+                                </span>
+                              )}
                             </div>
-                          )}
-                          {!n.read && (
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (n.id.startsWith("dl-")) {
-                                  setReadInlineIds((prev) => new Set(prev).add(n.id));
-                                  return;
-                                }
-                                try {
-                                  await csrfFetch("/api/notifications", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: n.id }),
-                                  });
-                                  setApiNotifications((prev) =>
-                                    prev.map((item) =>
-                                      item.id === n.id ? { ...item, read: true } : item
-                                    )
-                                  );
-                                } catch {}
-                              }}
-                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
-                              aria-label={t("topbar.mark_read")}
+                            <div className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                              {n.message}
+                            </div>
+                          </>
+                        );
+                        // The row is a plain li; "open" and "mark read" are sibling
+                        // buttons (no nested interactive controls).
+                        return (
+                          <li
+                            key={n.id}
+                            className="group/notif relative flex items-start gap-3 px-4 py-3 transition-[background-color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                          >
+                            {!n.read && (
+                              <span
+                                className="absolute top-1/2 left-1.5 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[color:var(--brand-primary)]"
+                                aria-hidden
+                              />
+                            )}
+                            <span
+                              className={cn(
+                                "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
+                                tile
+                              )}
                             >
-                              <Check size={12} />
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })
+                              <TypeIcon size={15} aria-hidden />
+                            </span>
+                            {notifHref ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  router.push(notifHref);
+                                  setNotifOpen(false);
+                                }}
+                                className="min-w-0 flex-1 cursor-pointer rounded-md text-left focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              >
+                                {body}
+                              </button>
+                            ) : (
+                              <div className="min-w-0 flex-1">{body}</div>
+                            )}
+                            {!n.read && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (n.id.startsWith("dl-")) {
+                                    setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                    return;
+                                  }
+                                  try {
+                                    await csrfFetch("/api/notifications", {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ id: n.id }),
+                                    });
+                                    setApiNotifications((prev) =>
+                                      prev.map((item) =>
+                                        item.id === n.id ? { ...item, read: true } : item
+                                      )
+                                    );
+                                  } catch {}
+                                }}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] opacity-0 transition-[background-color,color,opacity] duration-[var(--ds-duration-normal)] group-focus-within/notif:opacity-100 group-hover/notif:opacity-100 hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none [@media(hover:none)]:opacity-100"
+                                aria-label={t("topbar.mark_read")}
+                                title={t("topbar.mark_read")}
+                              >
+                                <Check size={14} />
+                              </button>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
                 </div>
-                <div className="flex items-center gap-1 border-t border-[color:var(--ds-border)] p-2">
-                  {typeof window !== "undefined" &&
-                    "Notification" in window &&
-                    Notification.permission === "default" && (
-                      <button
-                        onClick={async () => {
-                          const granted = await requestNotificationPermission();
-                          setPushEnabled(granted);
-                        }}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[color:var(--ds-warning-bg)] py-2 text-xs font-medium text-[color:var(--ds-warning-text)] transition-opacity hover:opacity-80"
-                      >
-                        <Bell size={12} />
-                        {t("topbar.enable_push")}
-                      </button>
+                {/* Footer: one quiet row — open the full inbox, push state, settings */}
+                <div className="flex items-center justify-between gap-2 border-t border-[color:var(--ds-border)] px-3 py-2">
+                  <button
+                    onClick={() => {
+                      router.push("/dashboard/notifications");
+                      setNotifOpen(false);
+                    }}
+                    className="rounded-md px-2 py-1.5 text-xs font-medium text-[color:var(--ds-text)] transition-[background-color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
+                  >
+                    {lang === "en" ? "Open inbox" : "Alle anzeigen"}
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {typeof window !== "undefined" &&
+                      "Notification" in window &&
+                      Notification.permission === "default" && (
+                        <button
+                          onClick={async () => {
+                            const granted = await requestNotificationPermission();
+                            setPushEnabled(granted);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
+                        >
+                          <Bell size={13} aria-hidden />
+                          {t("topbar.enable_push")}
+                        </button>
+                      )}
+                    {pushEnabled && (
+                      <span className="inline-flex items-center gap-1.5 px-2 text-xs text-[color:var(--ds-text-muted)]">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--ds-success-text)]" />
+                        {t("topbar.push_active")}
+                      </span>
                     )}
-                  {pushEnabled && (
-                    <span className="flex items-center gap-1 px-2 text-xs text-[color:var(--ds-success-text)]">
-                      <Bell size={11} />
-                      {t("topbar.push_active")}
-                    </span>
-                  )}
-                  <button
-                    onClick={() => {
-                      router.push("/dashboard/notifications");
-                      setNotifOpen(false);
-                    }}
-                    className="brand-text flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-opacity hover:opacity-80"
-                  >
-                    <Bell size={12} />
-                    {t("topbar.all_notifications")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      router.push("/dashboard/notifications");
-                      setNotifOpen(false);
-                    }}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    aria-label={t("topbar.notification_settings")}
-                    title={t("topbar.notification_settings")}
-                  >
-                    <Settings size={14} />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        router.push("/dashboard/notifications");
+                        setNotifOpen(false);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
+                      aria-label={t("topbar.notification_settings")}
+                      title={t("topbar.notification_settings")}
+                    >
+                      <Settings size={15} />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}

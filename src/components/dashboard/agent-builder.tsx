@@ -199,7 +199,7 @@ function StepEditor({
               onClick={() => moveStep(idx, -1)}
               disabled={idx === 0}
               aria-label={`Schritt ${idx + 1} nach oben`}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] disabled:opacity-30 motion-reduce:transition-none"
             >
               <ChevronUp size={14} />
             </button>
@@ -207,14 +207,14 @@ function StepEditor({
               onClick={() => moveStep(idx, 1)}
               disabled={idx === steps.length - 1}
               aria-label={`Schritt ${idx + 1} nach unten`}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] disabled:opacity-30 motion-reduce:transition-none"
             >
               <ChevronDown size={14} />
             </button>
             <button
               onClick={() => removeStep(idx)}
               aria-label="Schritt entfernen"
-              className="rounded p-1 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+              className="rounded p-1 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
             >
               <Trash2 size={14} />
             </button>
@@ -232,7 +232,7 @@ function StepEditor({
 
       <button
         onClick={addStep}
-        className="hover:brand-border flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+        className="hover:brand-border flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
       >
         <Plus size={14} aria-hidden="true" />
         Schritt hinzufügen
@@ -452,7 +452,7 @@ function RunDialog({
           <button
             onClick={onClose}
             aria-label="Dialog schließen"
-            className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
           >
             <X size={18} />
           </button>
@@ -474,14 +474,14 @@ function RunDialog({
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-lg px-4 py-2 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
           >
             Abbrechen
           </button>
           <button
             onClick={() => onRun(input.trim() || undefined)}
             disabled={isRunning}
-            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
+            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] disabled:opacity-40 motion-reduce:transition-none"
           >
             {isRunning ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
             Starten

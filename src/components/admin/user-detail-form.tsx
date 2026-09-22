@@ -161,7 +161,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
           <button
             onClick={save}
             disabled={saving}
-            className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:opacity-90 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+            className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:opacity-90 active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
           >
             <Save size={14} /> Speichern
           </button>
@@ -169,7 +169,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             <button
               onClick={deactivate}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] px-4 py-2 text-sm font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+              className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] px-4 py-2 text-sm font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
             >
               <UserX size={14} /> Deaktivieren
             </button>

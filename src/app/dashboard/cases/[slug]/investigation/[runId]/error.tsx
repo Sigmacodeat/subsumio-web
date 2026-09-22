@@ -12,7 +12,7 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="mx-auto max-w-[800px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6">
         <div className="flex items-start gap-3">
           <AlertCircle className="h-5 w-5 shrink-0 text-[color:var(--ds-danger-text)]" />

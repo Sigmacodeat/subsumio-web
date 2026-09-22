@@ -1028,6 +1028,15 @@ function sectionDomId(titleKey: DashboardKey) {
   return `sidebar-section-${titleKey.replaceAll(".", "-")}`;
 }
 
+/** Selected navigation row: a quiet neutral surface with a hairline — the
+ *  pattern of Linear / Notion / Vercel. (It used to be a blue tint with a 3 px
+ *  left bar and a glow, which read as a template.) Only the icon keeps its
+ *  category colour, so the eye still finds the current area at a glance. */
+const NAV_ITEM_ACTIVE =
+  // --ds-hover, not --ds-surface: in the dark theme the surface token is
+  // DARKER than the sidebar, so the selected row read as a sunken well.
+  "bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] shadow-[inset_0_0_0_1px_var(--ds-border)]";
+
 function isActiveHref(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
 }
@@ -1566,7 +1575,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               setMobileOpen(false);
               if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
             }}
-            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-90 motion-reduce:transition-none md:hidden"
+            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none md:hidden"
             aria-label={t("sidebar.close_menu")}
           >
             <span className="relative flex h-4 w-4 items-center justify-center">
@@ -1754,28 +1763,19 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     onClick={() => setMobileOpen(false)}
                     title={tooltip}
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface-2)] focus-visible:outline-none motion-reduce:transition-none",
+                      "group relative flex items-center gap-3 rounded-lg text-[13px] font-medium transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface-2)] focus-visible:outline-none motion-reduce:transition-none",
                       collapsed ? "h-11 justify-center px-0" : "h-11 px-3",
                       active
-                        ? "brand-soft brand-text border-l-[3px] border-[color:var(--brand-primary)]"
-                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                        ? NAV_ITEM_ACTIVE
+                        : "text-[color:var(--ds-text-muted)] hover:bg-[color:color-mix(in_srgb,var(--ds-hover)_55%,transparent)] hover:text-[color:var(--ds-text)]"
                     )}
                   >
-                    {collapsed && active && (
-                      <span
-                        className="absolute top-1/2 left-0 h-5 w-[2px] -translate-y-1/2 rounded-r-full"
-                        style={{ backgroundColor: `var(${colorVar})` }}
-                        aria-hidden
-                      />
-                    )}
                     <Icon
                       size={collapsed ? 18 : 15}
                       className="shrink-0 transition-[color,opacity] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
-                      strokeWidth={active && collapsed ? 2.25 : 1.75}
+                      strokeWidth={1.75}
                       style={{
-                        color: active
-                          ? `var(${colorVar})`
-                          : `color-mix(in srgb, var(${colorVar}) 55%, var(--ds-text-muted))`,
+                        color: active ? `var(${colorVar})` : "var(--ds-text-muted)",
                       }}
                     />
                     <span
@@ -1880,25 +1880,16 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             className={cn(
                               "group relative flex h-8 items-center justify-center rounded-lg text-[13px] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface-2)] focus-visible:outline-none motion-reduce:transition-none",
                               active
-                                ? "brand-soft brand-text border-l-[3px] border-[color:var(--brand-primary)]"
-                                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                ? NAV_ITEM_ACTIVE
+                                : "text-[color:var(--ds-text-muted)] hover:bg-[color:color-mix(in_srgb,var(--ds-hover)_55%,transparent)] hover:text-[color:var(--ds-text)]"
                             )}
                           >
-                            {active && (
-                              <span
-                                className="absolute top-1/2 left-0 h-4 w-[2px] -translate-y-1/2 rounded-r-full"
-                                style={{ backgroundColor: `var(${catVar})` }}
-                                aria-hidden
-                              />
-                            )}
                             <Icon
                               size={18}
                               className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
-                              strokeWidth={active ? 2.25 : 1.75}
+                              strokeWidth={1.75}
                               style={{
-                                color: active
-                                  ? `var(${catVar})`
-                                  : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
+                                color: active ? `var(${catVar})` : "var(--ds-text-muted)",
                               }}
                             />
                             {badges[item.href] && (
@@ -1961,9 +1952,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] group-hover:[color:var(--ds-text)] motion-reduce:transition-none"
                             style={{
                               color:
-                                sectionActive || isOpen
-                                  ? `var(${catVar})`
-                                  : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
+                                sectionActive || isOpen ? `var(${catVar})` : "var(--ds-text-muted)",
                             }}
                           />
                           {/* Normal case (not uppercase/tracking-wider): at the old
@@ -2055,8 +2044,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                     className={cn(
                                       "sidebar-item-in relative flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium transition-[background-color,color,transform] duration-[120ms] ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                                       active
-                                        ? "brand-soft brand-text font-semibold shadow-[0_0_10px_-2px_var(--brand-glow)]"
-                                        : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                        ? NAV_ITEM_ACTIVE
+                                        : "text-[color:var(--ds-text-muted)] hover:bg-[color:color-mix(in_srgb,var(--ds-hover)_55%,transparent)] hover:text-[color:var(--ds-text)]"
                                     )}
                                   >
                                     <Icon
@@ -2065,7 +2054,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                       style={{
                                         color: active
                                           ? `var(${itemCatVar})`
-                                          : `color-mix(in srgb, var(${itemCatVar}) 55%, var(--ds-text-muted))`,
+                                          : "var(--ds-text-muted)",
                                       }}
                                     />
                                     <span className="min-w-0 flex-1 truncate">

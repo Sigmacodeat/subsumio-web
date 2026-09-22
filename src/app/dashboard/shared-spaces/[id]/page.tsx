@@ -136,7 +136,7 @@ export default function DataRoomPage() {
   }
   if (!room) {
     return (
-      <div className="mx-auto max-w-[1000px] space-y-4 p-6" aria-busy="true">
+      <div className="ds-page ds-page-medium space-y-4 p-6" aria-busy="true">
         <Skeleton className="h-10 w-1/2" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -149,7 +149,7 @@ export default function DataRoomPage() {
     `/api/data-rooms/${id}/document?slug=${encodeURIComponent(slug)}&inline=1`;
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={room.title}
         description={

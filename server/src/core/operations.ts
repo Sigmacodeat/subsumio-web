@@ -1703,6 +1703,18 @@ const delete_page: Operation = {
     // v0.31.8 (D7): thread ctx.sourceId so multi-source brains soft-delete the
     // intended row instead of always targeting (default, slug).
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
+    // Subsumio: a page under legal hold (frontmatter legal_hold: true) must
+    // survive delete_page the same way it already survives forget_fact
+    // (facts/forget.ts:isUnderLegalHold). Without this check the retention
+    // page's delete button could remove a held case outright.
+    const existingBeforeDelete = await ctx.engine.getPage(slug, sourceOpts).catch(() => null);
+    if (existingBeforeDelete?.frontmatter?.legal_hold === true) {
+      throw new OperationError(
+        "legal_hold_active",
+        `Page ${slug} cannot be deleted: it is under legal hold.`,
+        "Lift the legal hold (frontmatter legal_hold: false) before deleting this page."
+      );
+    }
     // v0.26.5: rewired from hard-delete to soft-delete. The hard-delete primitive
     // (engine.deletePage) is now reserved for purgeDeletedPages and explicit
     // tests. softDeletePage returns null when the slug is unknown OR already

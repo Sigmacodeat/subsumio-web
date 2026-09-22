@@ -32,7 +32,7 @@ export function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
             return (
               <motion.div
                 key={layer.title}
-                initial={{ opacity: 0, x: -30 }}
+                initial={{ opacity: 0, x: -12 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.5, delay: i * 0.12, ease: EASE.out }}
@@ -119,7 +119,7 @@ export function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
               return (
                 <motion.div
                   key={step.phase}
-                  initial={{ opacity: 0, y: 24 }}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
@@ -203,7 +203,7 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           {t.finetunePoints.map((point, i) => (
             <motion.div
               key={point.label}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: i * 0.1 }}

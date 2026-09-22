@@ -391,7 +391,7 @@ export default function WhatsAppDashboardPage() {
   }, [events]);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("whatsapp.title")}
         description={t("whatsapp.desc")}
@@ -1053,7 +1053,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
         <div className="flex gap-1">
           <button
             onClick={() => setViewMode("flat")}
-            className={`rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none ${
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
               viewMode === "flat"
                 ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -1063,7 +1063,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
           </button>
           <button
             onClick={() => setViewMode("threads")}
-            className={`rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none ${
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
               viewMode === "threads"
                 ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

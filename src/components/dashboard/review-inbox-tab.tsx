@@ -417,7 +417,7 @@ export function ReviewInboxTab() {
               key={tab.key}
               onClick={() => setFilter(isActive ? "all" : tab.key)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                 isActive
                   ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -642,7 +642,7 @@ export function ReviewInboxTab() {
                               })
                           }
                           disabled={locked || !(editedDates[item.id] ?? item.dueDate)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />

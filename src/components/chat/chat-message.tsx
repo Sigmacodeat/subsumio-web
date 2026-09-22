@@ -24,10 +24,10 @@ import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
 import { linkCitationsInHtml } from "@/lib/citation-gate-client";
 import { useLang } from "@/lib/use-lang";
-import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { type AnswerDownReason, type ChatMessage } from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface ChatMessageBubbleProps {
@@ -49,6 +49,32 @@ interface ChatMessageBubbleProps {
   onFeedback?: (messageId: string, rating: "up" | "down", reason?: AnswerDownReason) => void;
   /** Offer "In Akte speichern" on finished answers; preselects this matter ("" = choose). */
   saveToMatterCase?: string;
+}
+
+/** Waiting state of an answer that has not produced text yet. One honest line:
+ *  the engine streams text only (no progress events), so there are no invented
+ *  "searching / verifying" phases — just what is happening and for how long. */
+function AnswerPending({ label }: { label: string }) {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div
+      className="flex items-center gap-2.5 text-[13px] text-[color:var(--ds-text-muted)]"
+      role="status"
+    >
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--brand-primary)] opacity-40 motion-reduce:hidden" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-[color:var(--brand-primary)]" />
+      </span>
+      <span>{label}</span>
+      {seconds >= 3 && (
+        <span className="text-[color:var(--ds-text-subtle)] tabular-nums">{seconds} s</span>
+      )}
+    </div>
+  );
 }
 
 const DOWN_REASONS: Array<{ value: AnswerDownReason; de: string; en: string }> = [
@@ -77,7 +103,6 @@ function ChatMessageBubbleInner({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { t, lang } = useLang();
   const isUser = message.role === "user";
-  const hasCitations = (message.citations?.length ?? 0) > 0;
   const hasAttachments = (message.attachments?.length ?? 0) > 0;
 
   async function handleCopy() {
@@ -145,13 +170,21 @@ function ChatMessageBubbleInner({
         )
       : null;
 
+  const pending = !isUser && message.isStreaming && !message.content && !message.error;
+
   return (
     <div
-      className={cn("group flex gap-2.5 px-3 py-2.5", isUser ? "justify-end" : "justify-start")}
+      className={cn(
+        // One reading column for the whole conversation (wide panels would
+        // otherwise run answers across 1,800 px).
+        "group mx-auto flex w-full max-w-3xl gap-3 px-4 py-3",
+        isUser ? "justify-end" : "justify-start"
+      )}
       role="article"
       aria-label={isUser ? t("chat.msg_user_aria") : t("chat.msg_ai_aria")}
     >
-      <div className={cn("max-w-[85%] space-y-1.5", isUser ? "order-2" : "w-full")}>
+      {!isUser && <SubsumioMark size={24} animated={false} className="mt-0.5 hidden sm:block" />}
+      <div className={cn("min-w-0 space-y-2", isUser ? "relative order-2 max-w-[85%]" : "flex-1")}>
         {/* Attachments */}
         {hasAttachments && (
           <div className="flex flex-wrap gap-1.5">
@@ -167,16 +200,19 @@ function ChatMessageBubbleInner({
           </div>
         )}
 
-        {/* Message bubble */}
+        {/* The question sits in a quiet surface bubble; the answer is plain text
+            on the page — it is the document, not a chat bubble. */}
         <div
           className={cn(
-            "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+            "text-[14px] leading-relaxed",
             isUser
-              ? "brand-bg brand-text-on-primary rounded-br-md"
-              : "rounded-bl-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
+              ? "rounded-2xl rounded-br-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2.5 text-[color:var(--ds-text)]"
+              : "text-[color:var(--ds-text)]"
           )}
         >
-          {message.error ? (
+          {pending ? (
+            <AnswerPending label={t("chat.typing")} />
+          ) : message.error ? (
             <div className="flex items-start gap-2 text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <span>{message.error}</span>
@@ -184,16 +220,7 @@ function ChatMessageBubbleInner({
           ) : displayRendered ? (
             <div className="prose-chat" dangerouslySetInnerHTML={{ __html: displayRendered }} />
           ) : (
-            <p className={cn("whitespace-pre-wrap", isUser && "font-medium")}>
-              {message.content}
-              {message.isStreaming && (
-                <span className="ml-1 inline-flex items-center gap-0.5 align-middle">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" />
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-40 [animation-delay:150ms]" />
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-20 [animation-delay:300ms]" />
-                </span>
-              )}
-            </p>
+            <p className="whitespace-pre-wrap">{message.content}</p>
           )}
         </div>
 
@@ -246,7 +273,7 @@ function ChatMessageBubbleInner({
                 <button
                   key={idx}
                   onClick={() => onFollowUp(suggestion)}
-                  className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                  className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 >
                   {suggestion}
                 </button>
@@ -257,8 +284,9 @@ function ChatMessageBubbleInner({
         {/* Metadata row (assistant only) */}
         {!isUser && !message.isStreaming && !message.error && (
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-[color:var(--ds-text-subtle)]">
-            <AIBadge size="sm" showTooltip={false} />
-            {hasCitations && <GroundingStatus citations={message.citations} gaps={message.gaps} />}
+            {/* "KI-generiert" and the grounding state live in the CitationPanel
+                directly above — repeating both here showed four badges for one
+                answer. This line only carries the run facts. */}
             {features?.tokenWidget && message.tokensUsed != null && (
               <span className="inline-flex items-center gap-0.5" title={t("chat.tokens_used")}>
                 <Zap size={9} />
@@ -308,37 +336,46 @@ function ChatMessageBubbleInner({
 
         {/* Action buttons: on hover, when focused with the keyboard, and always on touch screens */}
         {features?.messageActions && !message.isStreaming && (
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-[var(--ds-duration-normal)] group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+          <div
+            className={cn(
+              "flex items-center gap-0.5 transition-opacity duration-[var(--ds-duration-normal)] group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
+              // The question's actions float under the bubble (out of the flow) so
+              // they do not hold 28 px of empty space open between messages.
+              isUser
+                ? "absolute top-full right-0 z-10 pt-1 opacity-0 [@media(hover:none)]:static [@media(hover:none)]:pt-0"
+                : "-ml-1.5 opacity-60"
+            )}
+          >
             <button
               onClick={handleCopy}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               aria-label={t("chat.copy")}
             >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
             {!isUser && onRegenerate && (
               <button
                 onClick={() => onRegenerate(message.id)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("chat.regenerate")}
               >
-                <RefreshCw size={12} />
+                <RefreshCw size={14} />
               </button>
             )}
             {!isUser && typeof window !== "undefined" && "speechSynthesis" in window && (
               <button
                 onClick={handleSpeak}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={isSpeaking ? t("chat.tts_stop") : t("chat.tts_play")}
                 aria-pressed={isSpeaking}
               >
-                {isSpeaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
               </button>
             )}
             {!isUser && (
               <button
                 onClick={() => setShowExplain((v) => !v)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={lang === "en" ? "Explain" : "Erklären"}
                 title={
                   lang === "en"
@@ -346,26 +383,26 @@ function ChatMessageBubbleInner({
                     : "Warum diese Antwort? Zeige Begründung und Quellen"
                 }
               >
-                <Lightbulb size={12} />
+                <Lightbulb size={14} />
               </button>
             )}
             {isUser && onEdit && (
               <button
                 onClick={() => onEdit(message.id)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("chat.edit")}
               >
-                <Pencil size={12} />
+                <Pencil size={14} />
               </button>
             )}
             {onReply && (
               <button
                 onClick={() => onReply(message.id)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("chat.reply_btn")}
                 title={t("chat.reply_title")}
               >
-                <Reply size={12} />
+                <Reply size={14} />
               </button>
             )}
             {!isUser && onFeedback && !message.error && (
@@ -373,7 +410,7 @@ function ChatMessageBubbleInner({
                 <button
                   onClick={() => onFeedback(message.id, "up")}
                   className={cn(
-                    "inline-flex h-7 w-7 items-center justify-center rounded-lg transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                    "inline-flex h-7 w-7 items-center justify-center rounded-lg transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     message.feedback?.rating === "up"
                       ? "text-[color:var(--brand-primary)]"
                       : "text-[color:var(--ds-text-subtle)]"
@@ -381,12 +418,12 @@ function ChatMessageBubbleInner({
                   aria-label={lang === "en" ? "Helpful answer" : "Hilfreiche Antwort"}
                   aria-pressed={message.feedback?.rating === "up"}
                 >
-                  <ThumbsUp size={12} />
+                  <ThumbsUp size={14} />
                 </button>
                 <button
                   onClick={() => onFeedback(message.id, "down")}
                   className={cn(
-                    "inline-flex h-7 w-7 items-center justify-center rounded-lg transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                    "inline-flex h-7 w-7 items-center justify-center rounded-lg transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     message.feedback?.rating === "down"
                       ? "text-[color:var(--ds-danger-text)]"
                       : "text-[color:var(--ds-text-subtle)]"
@@ -394,7 +431,7 @@ function ChatMessageBubbleInner({
                   aria-label={lang === "en" ? "Unhelpful answer" : "Nicht hilfreiche Antwort"}
                   aria-pressed={message.feedback?.rating === "down"}
                 >
-                  <ThumbsDown size={12} />
+                  <ThumbsDown size={14} />
                 </button>
               </>
             )}
@@ -419,10 +456,10 @@ function ChatMessageBubbleInner({
             {onExport && (
               <button
                 onClick={onExport}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("chat.export_btn")}
               >
-                <Download size={12} />
+                <Download size={14} />
               </button>
             )}
           </div>

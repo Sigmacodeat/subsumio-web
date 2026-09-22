@@ -15,11 +15,19 @@
  */
 
 import JSZip from "jszip";
+import { generateLetterhead, type LetterheadConfig } from "@/lib/letterhead-rubrum";
 
 interface DocxOptions {
   title: string;
   author?: string;
   caseRef?: string;
+  /**
+   * Kanzlei-Briefpapier für die erste Seite. LetterheadConfig existierte
+   * bereits (letterhead-rubrum.ts) mit einem fertigen Markdown-Generator,
+   * hatte aber keinen Aufrufer — der DOCX-Export zeigte bisher gar kein
+   * Briefpapier, nur einen generischen "Titel — Datum"-Kopf auf jeder Seite.
+   */
+  letterhead?: LetterheadConfig;
 }
 
 /**
@@ -268,10 +276,27 @@ export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8
   );
 
   // ── word/footer1.xml ─────────────────────────────────────
+  const footerBankLine = opts.letterhead?.bank_details
+    ? `${opts.letterhead.bank_details.bank_name ? opts.letterhead.bank_details.bank_name + " — " : ""}IBAN ${opts.letterhead.bank_details.iban} · BIC ${opts.letterhead.bank_details.bic}`
+    : "";
+  const footerVatLine = [
+    opts.letterhead?.vat_id ? `UID ${opts.letterhead.vat_id}` : "",
+    opts.letterhead?.tax_number ? `StNr ${opts.letterhead.tax_number}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const footerLetterheadRun = (text: string) =>
+    text
+      ? `<w:p><w:pPr><w:pStyle w:val="Normal"/><w:jc w:val="center"/></w:pPr>
+  <w:r><w:rPr><w:sz w:val="16"/><w:color w:val="999999"/></w:rPr>
+  <w:t xml:space="preserve">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</w:t></w:r></w:p>`
+      : "";
   zip.file(
     "word/footer1.xml",
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  ${footerLetterheadRun(footerBankLine)}
+  ${footerLetterheadRun(footerVatLine)}
   <w:p><w:pPr><w:pStyle w:val="Normal"/><w:jc w:val="center"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr>
   <w:t xml:space="preserve">Generiert von Subsumio Legal AI — Seite </w:t></w:r>
@@ -282,7 +307,13 @@ export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8
   );
 
   // ── word/document.xml ────────────────────────────────────
-  const paragraphs = markdownToDocxParagraphs(md);
+  // Letterhead goes at the top of page 1 as ordinary body content (like a
+  // real paper letterhead), not a repeating page header — the running
+  // header above (title + date) already serves continuation pages.
+  // markdownToDocxParagraphs has no "---" horizontal-rule support (it would
+  // print as literal dashes), so a blank line is the separator instead.
+  const letterheadMd = opts.letterhead ? generateLetterhead(opts.letterhead) + "\n\n\n" : "";
+  const paragraphs = markdownToDocxParagraphs(letterheadMd + md);
   const bodyContent = paragraphs.join("\n    ");
 
   zip.file(

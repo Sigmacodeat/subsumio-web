@@ -69,6 +69,12 @@ export interface TaskEntry {
   text: string;
   done: boolean;
   createdAt: string;
+  /** ISO date (YYYY-MM-DD). Was already read by dashboard/tasks/page.tsx
+   * but never written anywhere — no task had a due date to read. */
+  dueDate?: string;
+  /** Zuweisung/Delegation: who is responsible for this task. */
+  assigneeId?: string;
+  assigneeName?: string;
 }
 
 export interface TimeEntry {
@@ -261,6 +267,8 @@ export interface CaseFrontmatter {
   strategy?: StrategyInfo;
   outcome?: Record<string, unknown>;
   estimated_value?: { min: number; max: number; currency: string };
+  /** Streitwert in Euro — Grundlage für RATG/AHK-Honorarberechnung. Added in cases/new/page.tsx (Welle B, 21.09.2026); was missing from the type. */
+  dispute_value?: number;
   tags?: string[];
   deadlines?: DeadlineEntry[];
   /** P0-2: KI-extrahierte Fristenvorschläge aus Dokumentanalyse (await confirmation) */

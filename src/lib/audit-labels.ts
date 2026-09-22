@@ -56,6 +56,7 @@ export type AuditAction =
   | "deadline.create"
   | "deadline.update"
   | "deadline.delete"
+  | "deadline.second_check"
   | "evidence.create"
   | "evidence.update"
   | "evidence.delete"
@@ -357,6 +358,7 @@ const ACTION_LABELS: Record<string, string> = {
   "deadline.create": "Frist erstellt",
   "deadline.update": "Frist aktualisiert",
   "deadline.delete": "Frist gelöscht",
+  "deadline.second_check": "Notfrist zweitgeprüft",
   "evidence.create": "Beweismittel erstellt",
   "evidence.update": "Beweismittel aktualisiert",
   "evidence.delete": "Beweismittel gelöscht",

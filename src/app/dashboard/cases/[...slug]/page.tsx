@@ -89,13 +89,13 @@ export default function CaseDetailPage() {
   const router = useRouter();
 
   if (ctx.loading) {
-    return <div className="mx-auto w-full max-w-[1200px] p-4 md:p-6">{tabFallback}</div>;
+    return <div className="ds-page p-4 md:p-6">{tabFallback}</div>;
   }
 
   if (!ctx.caseData) {
     // The header above already names the problem; this offers the way back.
     return (
-      <div className="mx-auto w-full max-w-[720px] p-4 md:p-6">
+      <div className="ds-page ds-page-narrow p-4 md:p-6">
         <EmptyState
           icon={Briefcase}
           title={t("cases.detail_not_found")}
@@ -135,7 +135,7 @@ export default function CaseDetailPage() {
             {ctx.conflictWarning}
             <button
               onClick={() => window.location.reload()}
-              className="brand-text ml-auto rounded text-xs transition-[color,transform] duration-[var(--ds-duration-fast)] hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+              className="brand-text ml-auto rounded text-xs transition-[color,transform] duration-[var(--ds-duration-fast)] hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             >
               {t("cases.detail_refresh_now")}
             </button>
@@ -157,7 +157,7 @@ export default function CaseDetailPage() {
                 <button
                   onClick={() => ctx.handleRestore("open")}
                   disabled={ctx.restoring}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-50 motion-reduce:transition-none"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   {ctx.restoring ? (
                     <Loader2 size={12} className="animate-spin" />
@@ -169,7 +169,7 @@ export default function CaseDetailPage() {
                 <button
                   onClick={() => ctx.handleRestore("dormant")}
                   disabled={ctx.restoring}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-50 motion-reduce:transition-none"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   <PauseCircle size={12} />
                   {t("casesdetail.as_dormant")}

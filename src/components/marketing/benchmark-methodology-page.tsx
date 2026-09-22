@@ -101,7 +101,7 @@ export default function BenchmarkMethodologyPage() {
 
       <CTASection
         title="Sehen Sie es an Ihren eigenen Akten."
-        sub="Starten Sie Ihre 14-tägige Testphase — keine Kreditkarte nötig."
+        sub="Starten Sie Ihre 30-tägige Testphase — keine Kreditkarte nötig."
         href="/at/signup"
         label="30 Tage kostenlos testen"
         secondaryHref="/at/contact"

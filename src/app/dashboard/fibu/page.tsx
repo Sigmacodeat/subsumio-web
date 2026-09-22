@@ -17,6 +17,7 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import { getOposSummary, getDunningLabel, type OpenItem, type BankTransaction } from "@/lib/fibu";
+import { FibuExportPanel } from "@/components/legal/FibuExportPanel";
 
 import { unwrapApiBody } from "@/lib/api-body";
 export default function FibuPage() {
@@ -225,7 +226,7 @@ export default function FibuPage() {
   const unmatchedTxns = transactions.filter((t) => t.status === "unmatched");
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("fibu.title")}
         description={t("fibu.desc")}
@@ -266,6 +267,8 @@ export default function FibuPage() {
           </>
         }
       />
+
+      <FibuExportPanel />
 
       {/* Kennzahlen — Farbe nur, wenn es etwas zu beachten gibt */}
       {loading ? (

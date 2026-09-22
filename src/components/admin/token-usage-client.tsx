@@ -193,7 +193,7 @@ export function AdminTokenUsageClient() {
                 onClick={() => setDays(r.days)}
                 aria-pressed={days === r.days}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                   days === r.days
                     ? "brand-bg text-white"
                     : "border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"

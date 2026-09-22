@@ -11,6 +11,17 @@ export interface SessionPayload {
   exp: number; // unix seconds
   /** Session version for revocation. Incremented on password change / logout-all. */
   v?: number;
+  /**
+   * Set when the Kanzlei has require2FA on (kanzlei-settings.ts) and this
+   * user logged in without having 2FA enabled themselves. Baked into the
+   * signed session at login time (login/route.ts) rather than re-checked
+   * per request, so the org-wide policy can't be bypassed without also
+   * forging the session signature. middleware.ts redirects every /dashboard
+   * route except the security settings page until the user completes 2FA
+   * setup, at which point /api/auth/2fa/verify re-issues the session
+   * without this flag.
+   */
+  must2fa?: boolean;
 }
 
 export const SESSION_COOKIE = "sb_session";

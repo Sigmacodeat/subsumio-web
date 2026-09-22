@@ -433,9 +433,13 @@ export function CorpusFileViewer({ path, onClose }: Props) {
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden p-0">
+      {/* flex + shrink-0 header + min-h-0 flex-1 body — not a max-h(header) calc:
+          a calc'd magic number silently breaks the moment the header wraps to an
+          extra line (a long filename, badges wrapping on a narrow window), same
+          fix already used by the chunk inspector's detail dialog. */}
+      <DialogContent className="flex h-[90vh] max-w-4xl flex-col overflow-hidden p-0">
         {/* Header */}
-        <DialogHeader className="border-b border-[color:var(--ds-border)] px-6 py-4">
+        <DialogHeader className="shrink-0 border-b border-[color:var(--ds-border)] px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <DialogTitle className="flex items-center gap-2 text-base">
@@ -462,7 +466,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
             <button
               onClick={() => setActiveTab("content")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                 activeTab === "content"
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -475,7 +479,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
             <button
               onClick={() => setActiveTab("versions")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                 activeTab === "versions"
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -493,7 +497,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
             <button
               onClick={() => setActiveTab("audit")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                 activeTab === "audit"
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -507,7 +511,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
         </DialogHeader>
 
         {/* Body */}
-        <div className="max-h-[calc(90vh-180px)] overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
           {/* Loading */}
           {readQuery.isLoading && (
             <div className="space-y-3" aria-live="polite" aria-busy="true">
@@ -579,7 +583,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
                       )}
                     </h3>
                     <pre
-                      className="max-h-[400px] overflow-auto rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]/30 p-3 font-mono text-xs leading-relaxed text-[color:var(--ds-text)]"
+                      className="max-h-[400px] overflow-auto overscroll-contain rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]/30 p-3 font-mono text-xs leading-relaxed text-[color:var(--ds-text)]"
                       aria-label="Datei-Inhalt"
                     >
                       {displayBody}
@@ -844,7 +848,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
                           </Button>
                         </div>
                       </div>
-                      <div className="max-h-[400px] overflow-auto rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]/30 font-mono text-xs">
+                      <div className="max-h-[400px] overflow-auto overscroll-contain rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]/30 font-mono text-xs">
                         {diffQuery.data.diff.length === 0 && (
                           <p className="p-4 text-center text-[color:var(--ds-text-muted)]">
                             Keine Änderungen.

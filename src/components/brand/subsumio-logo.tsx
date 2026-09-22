@@ -5,7 +5,7 @@
 // the product delivers (the passage, not just the answer). The wordmark keeps
 // the domain dot: Subsum•io = subsum.io.
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
 
@@ -19,7 +19,8 @@ export function SubsumioMark({
 }: {
   size?: number;
   tile?: boolean;
-  /** The gold line draws in once and then breathes very slowly. */
+  /** The gold line draws in once, then rests — a mark that keeps pulsing in
+   *  the navigation reads as restless. */
   animated?: boolean;
   className?: string;
 }) {
@@ -29,11 +30,14 @@ export function SubsumioMark({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const move = animated && mounted && !reduce;
-  const gradId = `sm-tile-${size}`;
+  // useId: several marks of the same size share a page (nav, footer, CTA).
+  const uid = useId().replace(/:/g, "");
+  const gradId = `sm-tile-${uid}`;
+  const sheenId = `sm-sheen-${uid}`;
 
   // Shared geometry on a 72 grid.
   const bar = tile ? "#ffffff" : "currentColor";
-  const line = tile ? "rgba(255,255,255,0.5)" : "currentColor";
+  const line = tile ? "rgba(255,255,255,0.56)" : "currentColor";
 
   return (
     <svg
@@ -46,8 +50,10 @@ export function SubsumioMark({
       style={
         tile
           ? {
+              // Tight contact shadow + soft ambient one: the tile sits on the
+              // page instead of floating in a haze.
               filter:
-                "drop-shadow(0 2px 6px color-mix(in srgb, var(--brand-800, #1a3470) 35%, transparent))",
+                "drop-shadow(0 1px 1px color-mix(in srgb, var(--brand-800, #1a3470) 32%, transparent)) drop-shadow(0 3px 7px color-mix(in srgb, var(--brand-800, #1a3470) 16%, transparent))",
             }
           : undefined
       }
@@ -59,8 +65,13 @@ export function SubsumioMark({
               <stop offset="0" stopColor="var(--brand-500, #2a60df)" />
               <stop offset="1" stopColor="var(--brand-800, #1a3470)" />
             </linearGradient>
+            <linearGradient id={sheenId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0.16" />
+              <stop offset="0.55" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
           </defs>
           <rect x="2" y="2" width="68" height="68" rx="17" fill={`url(#${gradId})`} />
+          <rect x="2" y="2" width="68" height="68" rx="17" fill={`url(#${sheenId})`} />
           <rect
             x="2.5"
             y="2.5"
@@ -72,8 +83,8 @@ export function SubsumioMark({
           />
         </>
       )}
-      {/* margin bar */}
-      <rect x="16" y="19" width="7" height="34" rx="2.5" fill={bar} />
+      {/* margin bar — same cap radius and the same top/bottom edge as the lines */}
+      <rect x="16" y="20" width="7" height="33" rx="3.5" fill={bar} />
       {/* text lines */}
       <rect x="31" y="20" width="25" height="7" rx="3.5" fill={line} opacity={tile ? 1 : 0.3} />
       <rect x="31" y="46" width="17" height="7" rx="3.5" fill={line} opacity={tile ? 1 : 0.3} />
@@ -87,27 +98,9 @@ export function SubsumioMark({
         fill={GOLD}
         style={{ transformBox: "fill-box", transformOrigin: "left center" }}
         initial={false}
-        animate={
-          move ? { scaleX: [0.2, 1, 1, 1], opacity: [0.6, 1, 0.78, 1] } : { scaleX: 1, opacity: 1 }
-        }
+        animate={move ? { scaleX: [0.2, 1], opacity: [0.6, 1] } : { scaleX: 1, opacity: 1 }}
         transition={
-          move
-            ? {
-                scaleX: {
-                  duration: 0.9,
-                  ease: [0.22, 1, 0.36, 1],
-                  delay: 0.25,
-                  times: [0, 1, 1, 1],
-                },
-                opacity: {
-                  duration: 6,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  repeatDelay: 2,
-                  delay: 1.4,
-                },
-              }
-            : { duration: 0 }
+          move ? { duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.25 } : { duration: 0 }
         }
       />
     </svg>
@@ -129,7 +122,7 @@ export function SubsumioLogo({
     <span className={`group inline-flex items-center gap-2.5 ${className}`}>
       <SubsumioMark
         size={size}
-        className="transition-[filter] duration-[var(--ds-duration-normal)] group-hover:[filter:drop-shadow(0_4px_14px_color-mix(in_srgb,var(--brand-primary)_45%,transparent))]"
+        className="transition-[filter] duration-[var(--ds-duration-normal)] group-hover:[filter:drop-shadow(0_1px_1px_color-mix(in_srgb,var(--brand-800,#1a3470)_32%,transparent))_drop-shadow(0_4px_10px_color-mix(in_srgb,var(--brand-primary)_28%,transparent))]"
       />
       <motion.span
         className="flex flex-col leading-none"
@@ -159,13 +152,14 @@ export function SubsumioWordmark({ className = "" }: { className?: string }) {
       style={{ fontFamily: "var(--font-serif), Georgia, 'Times New Roman', serif" }}
     >
       Subsum
+      {/* Drawn, not typed: the "•" glyph differs per font in size and side
+          bearing and tore the word into three pieces. A fixed disc at x-height
+          centre keeps "Subsum·io" one word. */}
       <span
         aria-hidden
-        className="mx-[0.04em] inline-block translate-y-[-0.02em]"
-        style={{ color: GOLD }}
-      >
-        •
-      </span>
+        className="mx-[0.085em] inline-block h-[0.2em] w-[0.2em] rounded-full align-[0.14em]"
+        style={{ background: GOLD }}
+      />
       <span className="sr-only">.</span>
       io
     </span>

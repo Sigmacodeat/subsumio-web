@@ -140,7 +140,7 @@ export function SaasUsageClient() {
               days === d
                 ? "bg-[color:var(--brand-solid)] text-white"
                 : "border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
-            } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
+            } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99]`}
           >
             {d === 365 ? "1 Jahr" : `${d} Tage`}
           </button>

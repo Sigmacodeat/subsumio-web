@@ -134,6 +134,25 @@ const NAV_LINK_INACTIVE =
 const NAV_LINK_ACTIVE =
   "[color:var(--brand-text)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border-color:color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]";
 
+/** A mega menu opens centred under its trigger. Wide panels would run off the
+ *  viewport that way (the first trigger sits ~380 px from the left edge), so the
+ *  panel is nudged back inside with a 16 px margin; the arrow counter-shifts and
+ *  keeps pointing at the trigger. */
+function keepMegaMenuInViewport(el: HTMLDivElement | null) {
+  const anchor = el?.parentElement;
+  if (!el || !anchor) return;
+  const a = anchor.getBoundingClientRect();
+  const half = el.offsetWidth / 2;
+  const centre = a.left + a.width / 2;
+  // Bounds are the header's content column, so the panel lines up with the
+  // logo and the CTA instead of running to the window edge.
+  const column = el.closest("nav")?.getBoundingClientRect();
+  const min = (column?.left ?? 0) + 16;
+  const max = (column?.right ?? document.documentElement.clientWidth) - 16;
+  const shift = Math.max(min - (centre - half), Math.min(0, max - (centre + half)));
+  el.style.setProperty("--mega-shift", `${Math.round(shift)}px`);
+}
+
 /** Shared link class helper — used by both desktop and mobile nav. */
 function navLinkCls(isActive: boolean): string {
   return `text-sm px-3 py-2 rounded-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none duration-[var(--ds-duration-normal)] ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
@@ -178,7 +197,7 @@ function FeaturedSidebar({
     <Link
       href={p(content.href)}
       onClick={onClick}
-      className="group relative flex w-[240px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
+      className="group relative flex w-[248px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-5 transition-[background-color,border-color,color] [background:var(--mk-bg)] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
     >
       {/* Decorative gradient orb */}
       <div className="brand-bg pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-[var(--ds-duration-normal)] group-hover:opacity-[0.12]" />
@@ -194,13 +213,14 @@ function FeaturedSidebar({
         {/* Title */}
         <div className="text-sm font-semibold [color:var(--mk-text)]">{content.title}</div>
         {/* Description */}
-        <div className="mt-1 text-sm leading-relaxed [color:var(--mk-text-subtle)]">
+        <div className="mt-1 text-[13px] leading-[1.5] text-pretty [color:var(--mk-text-muted)]">
           {content.description}
         </div>
       </div>
 
       {/* CTA arrow */}
       <div className="brand-text mt-4 flex items-center gap-1 text-sm font-medium">
+        {UI_STRINGS.exploreLabel}
         <ChevronRight
           size={14}
           className="shrink-0 transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
@@ -552,25 +572,27 @@ export function MarketingNav() {
                         {isOpen && (
                           <motion.div
                             id={`mega-menu-${sIdx}`}
-                            initial={
-                              reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8, scale: 0.98 }
-                            }
-                            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
+                            ref={keepMegaMenuInViewport}
+                            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
+                            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
                             transition={
-                              reduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE.out }
+                              reduceMotion ? { duration: 0 } : { duration: 0.18, ease: EASE.out }
                             }
-                            className="absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
+                            className="absolute top-full left-1/2 z-50 mt-2 ml-[var(--mega-shift,0px)] -translate-x-1/2"
                             style={{
-                              minWidth: section.featuredContent
-                                ? "640px"
+                              // Fixed widths, wide enough that a description
+                              // wraps to two lines — at 640 px the two item
+                              // columns were ~190 px and broke after every word.
+                              width: section.featuredContent
+                                ? "min(840px, calc(100vw - 3rem))"
                                 : section.items.length > 4
-                                  ? "560px"
-                                  : "340px",
+                                  ? "620px"
+                                  : "360px",
                             }}
                           >
                             {/* Arrow pointer */}
-                            <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-t border-l [border-color:var(--mk-border)] [background:var(--mk-surface)]" />
+                            <div className="absolute -top-1.5 left-1/2 ml-[calc(var(--mega-shift,0px)*-1)] h-3 w-3 -translate-x-1/2 rotate-45 border-t border-l [border-color:var(--mk-border)] [background:var(--mk-surface)]" />
                             <div
                               className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/10 backdrop-blur-xl"
                               style={{
@@ -585,7 +607,7 @@ export function MarketingNav() {
                               >
                                 {/* Nav items grid */}
                                 <div
-                                  className={`flex-1 ${section.items.length > 4 ? "grid grid-cols-2 gap-1 p-3" : "p-3"}`}
+                                  className={`flex-1 ${section.items.length > 4 ? "grid grid-cols-2 gap-x-1 gap-y-0.5 p-3" : "space-y-0.5 p-3"}`}
                                 >
                                   {section.items.map((item, iIdx) => {
                                     const active = isActive(item.href);
@@ -617,7 +639,7 @@ export function MarketingNav() {
                                             active
                                               ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
                                               : "hover:[background:var(--mk-hover)]"
-                                          } ${item.featured ? "ring-1 ring-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]" : ""}`}
+                                          }`}
                                         >
                                           <div
                                             className={`group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-[background-color,border-color,color] [background:var(--mk-bg)] motion-reduce:transition-none ${item.featured ? "brand-soft brand-border" : ""}`}
@@ -629,12 +651,12 @@ export function MarketingNav() {
                                           </div>
                                           <div className="min-w-0 flex-1">
                                             <div
-                                              className={`flex items-center gap-1.5 text-sm font-medium ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
+                                              className={`flex items-center gap-1.5 text-sm leading-5 font-semibold ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
                                             >
                                               {item.label}
                                               {item.badge && <NavBadge label={item.badge} />}
                                             </div>
-                                            <div className="mt-0.5 text-sm leading-snug [color:var(--mk-text-subtle)]">
+                                            <div className="mt-0.5 text-[13px] leading-[1.45] text-pretty [color:var(--mk-text-muted)]">
                                               {item.description}
                                             </div>
                                           </div>
@@ -808,7 +830,7 @@ export function MarketingNav() {
                   <BrandLogo />
                 </Link>
                 <button
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90 motion-reduce:transition-none"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-[0.96] motion-reduce:transition-none"
                   onClick={() => {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
@@ -984,7 +1006,11 @@ export function MarketingNav() {
                 {/* Standalone pricing link */}
                 <Link
                   href={p(nav.pricingHref)}
-                  className={mobileLinkCls(isActive(nav.pricingHref))}
+                  // Same size and weight as the section rows above — a top-level
+                  // entry, not a sub-link.
+                  className={`flex min-h-[48px] w-full items-center rounded-lg px-3 py-3 text-base font-medium transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none ${NAV_LINK_FOCUS} ${
+                    isActive(nav.pricingHref) ? "brand-text" : "[color:var(--mk-text)]"
+                  }`}
                   aria-current={isActive(nav.pricingHref) ? "page" : undefined}
                   onClick={() => setMobileOpen(false)}
                 >
@@ -1031,11 +1057,17 @@ export function MarketingFooter() {
       style={{ background: "var(--mk-surface)" }}
     >
       <div className="mx-auto max-w-7xl">
-        <div className="mb-10 grid grid-cols-2 gap-8 md:grid-cols-6">
-          <div className="col-span-2">
-            <div className="mb-3">
+        {/* Brand block + five link columns share one row on desktop — with a
+            six-track grid the last column wrapped onto a row of its own. */}
+        <div className="mb-10 grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))]">
+          <div className="col-span-2 md:col-span-3 lg:col-span-1">
+            <Link
+              href={p("/")}
+              aria-label={UI_STRINGS.ariaHome}
+              className="mb-3 inline-flex rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
+            >
               <SubsumioLogo size={28} />
-            </div>
+            </Link>
             <p className="mb-4 text-sm [color:var(--mk-text-muted)]">{footer.tagline}</p>
             <p className="max-w-xs text-sm leading-relaxed [color:var(--mk-text-subtle)]">
               {footer.note}

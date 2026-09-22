@@ -723,7 +723,10 @@ function WorkQueueSection({
               Keine Auffälligkeiten in diesem Filter
             </div>
           ) : (
-            <div className="max-h-[500px] space-y-1 overflow-y-auto">
+            // overscroll-contain: a fixed-height list next to a page that keeps
+            // scrolling below it — without it, reaching the bottom edge here
+            // chains straight into the page and it jumps.
+            <div className="max-h-[500px] space-y-1 overflow-y-auto overscroll-contain">
               {filtered.map((item) => (
                 <div
                   key={item.path}
@@ -934,7 +937,7 @@ function PipelineSection({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="max-h-[500px] space-y-2 overflow-y-auto">
+            <div className="max-h-[500px] space-y-2 overflow-y-auto overscroll-contain">
               {states.map((s, i) => {
                 const isRunning = s.pid !== null;
                 const hasAlerts = s.alertFlags.length > 0;
@@ -1138,7 +1141,7 @@ function TrustSection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="max-h-[400px] space-y-1.5 overflow-y-auto">
+          <div className="max-h-[400px] space-y-1.5 overflow-y-auto overscroll-contain">
             {rows.map((r) => {
               const total = r.total + r.unreviewed;
               const verifiedPct = total > 0 ? (r.verified / total) * 100 : 0;
@@ -1393,9 +1396,9 @@ function RisDeltaSection({
               </span>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overscroll-x-contain">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10 [background:var(--ds-surface)]">
                   <tr className="border-b text-left text-xs text-[color:var(--ds-text-muted)]">
                     <th className="px-4 py-2 font-medium">Applikation</th>
                     <th className="px-4 py-2 font-medium">Status</th>

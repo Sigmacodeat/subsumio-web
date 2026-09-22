@@ -23,6 +23,8 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
+import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { buildLetterheadFromKanzleiSettings } from "@/lib/letterhead-rubrum";
 import { AI_FRONTMATTER } from "@/lib/ai-act";
 import { CitationPanel } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
@@ -265,12 +267,14 @@ export default function DraftingPage() {
       // The brief exactly as shown. No slug (the text is authoritative, and a
       // null slug made the route reject every unsaved export) and no form
       // fields: they are internal and would end up at the bottom of the brief.
+      const kanzlei = await loadKanzleiSettings().catch(() => null);
       const res = await csrfFetch("/api/word-export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: `${template.label}: ${formData.title || "Entwurf"}`,
           markdown: text,
+          letterhead: kanzlei ? buildLetterheadFromKanzleiSettings(kanzlei) : undefined,
         }),
       });
       if (!res.ok) {
@@ -411,7 +415,7 @@ export default function DraftingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("drafting.title")}
         description={t("drafting.description")}
@@ -571,7 +575,7 @@ export default function DraftingPage() {
             variant="secondary"
             onClick={enqueueBackgroundDraft}
             disabled={!canGenerate || enqueuing || generating}
-            className="gap-2 active:scale-[0.98]"
+            className="gap-2 active:scale-[0.99]"
             title={t("drafting.btn_background_hint")}
           >
             {enqueuing ? <Loader2 size={16} className="animate-spin" /> : <Clock size={16} />}
@@ -591,7 +595,7 @@ export default function DraftingPage() {
               <button
                 onClick={() => saveDraftToBrain(result)}
                 disabled={savingDraft || submitting}
-                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-60 motion-reduce:transition-none"
+                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-60 motion-reduce:transition-none"
                 title={t("drafting.btn_save")}
               >
                 {savingDraft ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -600,7 +604,7 @@ export default function DraftingPage() {
               <button
                 onClick={() => submitForApproval(result)}
                 disabled={savingDraft || submitting}
-                className="hover:brand-text flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-60 motion-reduce:transition-none"
+                className="hover:brand-text flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-60 motion-reduce:transition-none"
                 title={t("drafting.btn_submit_approval")}
               >
                 {submitting ? (
@@ -612,7 +616,7 @@ export default function DraftingPage() {
               </button>
               <button
                 onClick={() => downloadDocx(result)}
-                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                 title={t("drafting.btn_docx")}
               >
                 {docxReady ? (
@@ -624,7 +628,7 @@ export default function DraftingPage() {
               </button>
               <button
                 onClick={() => copyToClipboard(result)}
-                className="rounded-md text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                className="rounded-md text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                 title={t("drafting.btn_copy")}
                 aria-label={t("drafting.btn_copy")}
               >

@@ -107,4 +107,8 @@ regexes = [
   # Test values
   '''test-cron-secret''',
   '''sk_live_test_''',
+  # AHK tariff position keys (ahk-tariff-data.ts) — German legal fee
+  # schedule items ("Verhandlung 1./2. Instanz"), not credentials
+  '''verhandlung_1instanz''',
+  '''verhandlung_2instanz''',
 ]

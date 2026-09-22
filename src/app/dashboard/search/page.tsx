@@ -215,7 +215,7 @@ export default function GlobalSearchPage() {
   }, [results]);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("search.title" as DashboardKey)}
         description={t("search.description" as DashboardKey)}
@@ -250,7 +250,7 @@ export default function GlobalSearchPage() {
               setHasSearched(false);
             }}
             aria-label="Suche zurücksetzen"
-            className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] ease-out hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+            className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] ease-out hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             <X size={18} />
           </button>
@@ -271,7 +271,7 @@ export default function GlobalSearchPage() {
                 key={s.id}
                 onClick={() => setScope(s.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-fast)] ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                  "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-fast)] ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                   isActive
                     ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

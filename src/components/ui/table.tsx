@@ -3,7 +3,13 @@ import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
+    // overflow-x-auto, not the `overflow-auto` shorthand: a wide table needs its
+    // own horizontal scrollbar, but must never clip vertically — that would trap
+    // `position: sticky` table headers against this div instead of the page's
+    // real scroll container, and a two-finger swipe hitting this div's left/right
+    // edge would otherwise be free to fall through to the browser's back/forward
+    // gesture. overscroll-x-contain stops that fall-through explicitly.
+    <div className="relative w-full overflow-x-auto overscroll-x-contain">
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   )

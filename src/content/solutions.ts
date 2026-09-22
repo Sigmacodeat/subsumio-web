@@ -17,6 +17,9 @@ export interface SolutionContent {
   ctaTitle: string;
   ctaSub: string;
   ctaButton: string;
+  /** Where the primary button leads. Defaults to the trial signup; a button
+   *  that promises an appointment has to lead to the contact page. */
+  ctaHref?: string;
 }
 
 export type SolutionSlug = "law-firms" | "solo" | "in-house";
@@ -126,8 +129,9 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       },
     ],
     ctaTitle: "Starten Sie mit einer abgeschlossenen Akte als Pilot.",
-    ctaSub: "30 Tage testen, keine Kreditkarte.",
+    ctaSub: "Wir zeigen Subsumio an Ihren Abläufen und richten den Pilot gemeinsam ein.",
     ctaButton: "Demo vereinbaren",
+    ctaHref: "/contact",
   },
   solo: {
     slug: "solo",
@@ -283,5 +287,6 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
     ctaSub:
       "Starten Sie mit einem Vertragsbestand als Pilot. EU-Cloud mit AVV oder On-Premise im Enterprise-Tarif.",
     ctaButton: "Demo vereinbaren",
+    ctaHref: "/contact",
   },
 };

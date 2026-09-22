@@ -81,7 +81,7 @@ export default function KanzleiSettingsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
         {header}
         <div className="space-y-3" role="status" aria-label={L("Wird geladen", "Loading")}>
           <Skeleton className="h-64 w-full rounded-xl" />
@@ -93,7 +93,7 @@ export default function KanzleiSettingsPage() {
 
   if (!settings) {
     return (
-      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
         {header}
         <div
           role="alert"
@@ -109,7 +109,7 @@ export default function KanzleiSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       {header}
 
       <Section
@@ -222,6 +222,49 @@ export default function KanzleiSettingsPage() {
             label="BIC"
             value={settings.bic ?? ""}
             onChange={(v) => update("bic", v)}
+          />
+        </div>
+      </Section>
+
+      <Section
+        title={L("Buchhaltungsexport (BMD / RZL)", "Accounting export (BMD / RZL)")}
+        description={L(
+          "Debitoren- und Erlöskonto sind kanzleispezifisch — bitte einmalig mit dem Steuerberater abstimmen. Der BMD-Steuercode ist pro BMD-Mandant individuell konfiguriert, es gibt keinen allgemeingültigen Wert.",
+          "Debtor and revenue accounts are firm-specific — confirm them with your tax advisor once. The BMD tax code is configured per BMD client and has no universal value."
+        )}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field
+            id="k-fibu-debitor"
+            label={L("Debitorenkonto", "Debtor account")}
+            value={settings.fibuDebitorKonto ?? ""}
+            onChange={(v) => update("fibuDebitorKonto", v)}
+            hint={L("z. B. 20000", "e.g. 20000")}
+          />
+          <Field
+            id="k-fibu-erloes"
+            label={L("Erlöskonto", "Revenue account")}
+            value={settings.fibuErloesKonto ?? ""}
+            onChange={(v) => update("fibuErloesKonto", v)}
+            hint={L("z. B. 4000", "e.g. 4000")}
+          />
+          <Field
+            id="k-fibu-bmd-20"
+            label={L("BMD-Steuercode für 20 %", "BMD tax code for 20%")}
+            value={settings.fibuBmdSteuercode20 ?? ""}
+            onChange={(v) => update("fibuBmdSteuercode20", v)}
+          />
+          <Field
+            id="k-fibu-bmd-13"
+            label={L("BMD-Steuercode für 13 %", "BMD tax code for 13%")}
+            value={settings.fibuBmdSteuercode13 ?? ""}
+            onChange={(v) => update("fibuBmdSteuercode13", v)}
+          />
+          <Field
+            id="k-fibu-bmd-10"
+            label={L("BMD-Steuercode für 10 %", "BMD tax code for 10%")}
+            value={settings.fibuBmdSteuercode10 ?? ""}
+            onChange={(v) => update("fibuBmdSteuercode10", v)}
           />
         </div>
       </Section>

@@ -224,10 +224,10 @@ export default function EmailSettingsPage() {
     }
   }
 
-  if (accounts === null) return <PageSkeleton rows={4} className="mx-auto max-w-[720px]" />;
+  if (accounts === null) return <PageSkeleton rows={4} className="ds-page ds-page-narrow" />;
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="E-Mail-Postfach"
         description="Eingehende E-Mails werden alle fünf Minuten abgerufen, der passenden Akte zugeordnet und auf Fristen geprüft."

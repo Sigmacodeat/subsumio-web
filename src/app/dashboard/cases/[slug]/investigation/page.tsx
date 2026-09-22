@@ -45,7 +45,7 @@ export default function InvestigationLauncherPage() {
   }, [caseSlug, lang, router]);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center gap-3">
         <Scale className="h-6 w-6 text-[color:var(--brand-primary)]" />
         <h1 className="text-xl font-semibold text-[color:var(--ds-text)]">

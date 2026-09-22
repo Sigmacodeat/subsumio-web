@@ -170,7 +170,7 @@ export default function AbsencePage() {
   const activeCount = absences.filter((a) => displayStatus(a) === "active").length;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("absence.title")}
         description="Erfassen Sie Urlaube und Abwesenheiten samt Vertretung, damit die Kanzlei weiß, wer während der Abwesenheit Fristen und Post übernimmt."

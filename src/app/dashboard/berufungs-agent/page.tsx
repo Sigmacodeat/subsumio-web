@@ -179,7 +179,7 @@ export default function BerufungsAgentPage() {
         }
       />
 
-      <div className="container mx-auto max-w-6xl px-4 py-6">
+      <div className="ds-page px-4 py-6">
         <BerufungsAgentStepper
           steps={STEPS}
           currentStep={step}

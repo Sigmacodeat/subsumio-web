@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
-import { H1_CLASS, H2_CTA_CLASS, H3_CLASS, EYEBROW_CLASS } from "./typography";
+import { H1_CLASS, H2_CTA_CLASS, H3_CLASS, EYEBROW_CLASS, SECTION_PAD } from "./typography";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -232,7 +232,15 @@ export function TypewriterText({ text, speed = 12 }: { text: string; speed?: num
 
 // Typography constants live in ./typography (pure module) so Server
 // Components can use them; re-exported here for existing client consumers.
-export { H1_CLASS, H2_CTA_CLASS, H3_CLASS, EYEBROW_CLASS } from "./typography";
+export {
+  H1_CLASS,
+  H2_CTA_CLASS,
+  H3_CLASS,
+  EYEBROW_CLASS,
+  SECTION_PAD,
+  SECTION_PAD_FLUSH,
+  SECTION_COLUMN,
+} from "./typography";
 
 /** Section eyebrow (name kept for existing callers) — small caps with a hairline. */
 export function BadgePill({
@@ -275,7 +283,7 @@ export function IconTile({
   const Icon = resolveIcon(icon);
   return (
     <div
-      className={`brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 ${className}`}
+      className={`brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-[var(--ds-duration-normal)] hover:scale-105 ${className}`}
     >
       <Icon size={size} className="brand-text" />
     </div>
@@ -299,7 +307,7 @@ export function ContentCard({
 }) {
   return (
     <GlowCard
-      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none ${className}`}
+      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none ${className}`}
     >
       <IconTile icon={icon} size={iconSize} />
       <h3 className={`mb-2 ${H3_CLASS}`}>{title}</h3>
@@ -350,7 +358,7 @@ export function PageHero({
     <div className={visual ? "text-center lg:text-left" : "text-center"}>
       {badge && (
         <motion.span
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: EASE.out }}
           className={visual ? "inline-flex lg:mx-0" : "inline-flex"}
@@ -440,11 +448,12 @@ export function CTASection({
   tone?: "dark" | "light" | "slate";
 }) {
   return (
-    <Section tone={tone} className="px-4 py-28 text-center sm:px-6 lg:px-8">
+    // data-closing-cta: the sticky trial bar steps aside once this is on screen.
+    <Section tone={tone} className={`${SECTION_PAD} text-center`} data-closing-cta>
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
-        {showLogo && <SubsumioMark size={56} className="mx-auto mb-6" />}
-        <h2 className={H2_CTA_CLASS}>{title}</h2>
-        <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+        {showLogo && <SubsumioMark size={48} className="mx-auto mb-6" />}
+        <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
+        <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {sub}
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -526,7 +535,7 @@ export function SplitHero({
         <div className="text-center lg:text-left">
           {badge && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: EASE.out }}
               className="mb-6 flex justify-center lg:justify-start"
@@ -576,7 +585,7 @@ export function SplitHero({
           )}
         </div>
         <motion.div
-          initial={{ opacity: 0, x: 30 }}
+          initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: EASE.out }}
           className="relative order-first lg:order-last"
@@ -770,7 +779,7 @@ export function PricingCard({
       className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
         highlighted
           ? "border-[color:var(--brand-text)] shadow-lg [background:var(--mk-surface-2)] lg:scale-105"
-          : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md"
+          : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:shadow-md"
       }`}
     >
       {badge && (

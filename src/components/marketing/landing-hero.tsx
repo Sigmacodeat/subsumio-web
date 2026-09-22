@@ -122,7 +122,7 @@ export default function LandingHero() {
 
           {/* Product demo — the thesis of the page, shown before any trust claim */}
           <motion.div
-            initial={reduce ? false : { opacity: 0, y: 24 }}
+            initial={reduce ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.out, delay: 0.32 }}
             className="mb-10"

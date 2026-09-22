@@ -634,7 +634,7 @@ function AlertItem({
             {!alert.read && (
               <button
                 onClick={onMarkRead}
-                className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
               >
                 <Check size={11} /> {t("monitoring.alert_mark_read")}
               </button>
@@ -816,7 +816,7 @@ export default function MonitoringPage() {
   // ── Render ──
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("monitoring.title")}
         description={t("monitoring.desc")}

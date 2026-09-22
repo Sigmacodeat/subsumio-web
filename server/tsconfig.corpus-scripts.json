@@ -15,6 +15,7 @@
     "scripts/purge-tombstoned-pages.ts",
     "scripts/backfill-landesrecht-region.ts",
     "scripts/backfill-statute-titles.ts",
+    "scripts/backfill-gnr-statute-names.ts",
     "scripts/inspect-embedding-prefix.ts",
     "scripts/auto-embed-pg.ts",
     "scripts/ris-lock.ts",

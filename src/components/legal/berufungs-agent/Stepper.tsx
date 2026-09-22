@@ -44,7 +44,7 @@ export function BerufungsAgentStepper({
                   className={cn(
                     "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none",
                     "hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
-                    "active:scale-[0.98] motion-reduce:transition-none",
+                    "active:scale-[0.99] motion-reduce:transition-none",
                     isActive && "bg-[color:var(--ds-surface-hover)]"
                   )}
                 >

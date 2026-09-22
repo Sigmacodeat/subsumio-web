@@ -346,7 +346,7 @@ export function MobileTabBar({
           setCreateOnly(true);
           setMoreOpen(true);
         }}
-        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none md:hidden"
+        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none md:hidden"
         aria-label={t("topbar.quick_create")}
         aria-expanded={moreOpen && createOnly}
       >

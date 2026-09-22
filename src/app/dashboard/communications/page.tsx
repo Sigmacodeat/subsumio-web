@@ -530,7 +530,7 @@ export default function CommunicationsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={tr("title", lang)}
         description={tr("description", lang)}
@@ -608,7 +608,7 @@ export default function CommunicationsPage() {
                     key={tab.key}
                     onClick={() => setChannel(isActive ? "all" : tab.key)}
                     className={cn(
-                      "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                      "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
                       isActive
                         ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
                         : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -652,7 +652,7 @@ export default function CommunicationsPage() {
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
                   aria-label={lang === "en" ? "Clear search" : "Suche leeren"}
                 >
                   <X size={15} />
@@ -944,7 +944,7 @@ export default function CommunicationsPage() {
                         })
                       }
                       disabled={markReadMutation.isPending}
-                      className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                      className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
                       title={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
                       aria-label={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
                     >

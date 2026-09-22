@@ -219,32 +219,34 @@ export const NAV: NavContent = {
         href: "/solutions/law-firms",
       },
       featuredContent: {
-        title: "Kundenstories",
-        description: "Wie Kanzleien mit Subsumio effizienter arbeiten und mehr Mandanten gewinnen",
-        href: "/about",
-        icon: "Sparkles",
+        // No customer stories are published yet — the card must not promise them.
+        title: "Pilot mit einer Akte",
+        description:
+          "Starten Sie mit einer abgeschlossenen Akte. Wir richten den Pilot gemeinsam mit Ihnen ein.",
+        href: "/contact",
+        icon: "FolderOpen",
       },
     },
     {
       label: "Ressourcen",
       items: [
         {
-          label: "Dokumentation",
+          label: "Handbuch",
           href: "/docs",
-          description: "Guides, API-Referenz, Setup-Hilfe",
+          description: "Schritt für Schritt durch Akten, Fristen und Assistent",
           icon: "FileText",
         },
         {
           label: "Blog",
           href: "/blog",
-          description: "Insights, Updates, Legal-Tech-Trends",
+          description: "Praxisbeiträge zu KI, Berufsrecht und Fristen",
           icon: "Megaphone",
           badge: "Neu",
         },
         {
           label: "Partnerprogramm",
           href: "/partners",
-          description: "Kunden empfehlen, 30 % wiederkehrend",
+          description: "Kanzleien empfehlen — bis zu 30 % wiederkehrend",
           icon: "Handshake",
         },
         {
@@ -255,12 +257,13 @@ export const NAV: NavContent = {
         },
       ],
       ctaBottom: {
-        label: "Doku öffnen",
+        label: "Handbuch öffnen",
         href: "/docs",
       },
       featuredContent: {
         title: "Erste Schritte",
-        description: "Setup in 5 Minuten — Guides, API-Referenz, Tutorials für jeden Workflow",
+        description:
+          "Das Handbuch führt durch Übersicht, Akten und Fristen — mit Beispielen aus dem Kanzleialltag",
         href: "/docs",
         icon: "Zap",
       },
@@ -288,8 +291,8 @@ export const NAV: NavContent = {
         },
       ],
       featuredContent: {
-        title: "Sprich mit uns",
-        description: "Demo buchen oder Fragen stellen — wir antworten in unter 24 Stunden",
+        title: "Sprechen Sie mit uns",
+        description: "Demo vereinbaren oder Fragen stellen — Antwort binnen eines Werktags",
         href: "/contact",
         icon: "Mail",
       },
@@ -352,13 +355,18 @@ export const FOOTER: {
           label: "Für Rechtsabteilungen",
           href: "/solutions/in-house",
         },
+        {
+          // The city pages were reachable through the sitemap only.
+          label: "Standorte in Österreich",
+          href: "/cities",
+        },
       ],
     },
     {
       title: "Ressourcen",
       links: [
         {
-          label: "Dokumentation",
+          label: "Handbuch",
           href: "/docs",
         },
         {
@@ -391,15 +399,15 @@ export const FOOTER: {
           label: "Kontakt",
           href: "/contact",
         },
-        {
-          label: "Impressum",
-          href: "/imprint",
-        },
       ],
     },
     {
       title: "Rechtliches",
       links: [
+        {
+          label: "Impressum",
+          href: "/imprint",
+        },
         {
           label: "AGB",
           href: "/terms",
@@ -670,11 +678,10 @@ export const LANDING = {
     },
   ],
   faqTitle: "Häufige Fragen",
+  // The comparison table and the pricing section sit directly above the FAQ —
+  // "how is this different from a general AI tool" and "what does it cost"
+  // are answered there, not a second time here.
   faq: [
-    {
-      q: "Was unterscheidet Subsumio von allgemeinen KI-Werkzeugen?",
-      a: "Allgemeine Werkzeuge kennen Ihre Akten nicht und belegen ihre Aussagen nicht. Subsumio antwortet aus Ihren Akten und dem RIS, nennt zu jeder Aussage Seite und Absatz, erkennt Zusammenhänge zwischen Personen, Fristen und Dokumenten und sagt ausdrücklich, was in der Akte noch fehlt.",
-    },
     {
       q: "Wo liegen meine Daten — und wie unterstützt Subsumio die Verschwiegenheit?",
       a: "Sie wählen: Betrieb auf eigener Hardware mit eigenen Schlüsseln oder verwaltete EU-Cloud mit Auftragsverarbeitungsvertrag. Gespeichert werden Ihre Akten in einem Rechenzentrum in der EU. Für eine KI-Antwort geht der benötigte Ausschnitt an den Anbieter des Sprachmodells; er ist im AVV benannt, über EU-Standardvertragsklauseln gebunden und trainiert nicht mit Ihren Daten. Wer auch das ausschließen will, betreibt im Enterprise-Tarif ein eigenes Sprachmodell auf eigener Hardware. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
@@ -699,37 +706,11 @@ export const LANDING = {
       q: "Wie werden Fristen berechnet?",
       a: "Not- und Berufungsfristen nach ZPO und ABGB — mit korrekter Monatsarithmetik und Feiertagsverschiebung. Eingehende Dokumente werden auf fristauslösende Ereignisse analysiert. Der tägliche Digest markiert kritische Fristen vor Ablauf.",
     },
-    {
-      q: "Was kostet Subsumio — und gibt es versteckte Gebühren?",
-      a: "Solo 249 € pro Monat für einen Nutzer, Kanzlei 1.499 € pro Monat inklusive fünf Nutzern, Enterprise auf Anfrage. Beide Tarife sind monatlich kündbar. Nutzungslimits und Mehrverbrauch werden vor Abschluss ausgewiesen und sind in der Übersicht jederzeit sichtbar. 30 Tage gratis, keine Kreditkarte.",
-    },
   ],
   ctaTitle: "Hören Sie auf zu suchen. Fragen Sie.",
   ctaSub:
-    "30 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Ihr Team ist morgen produktiver.",
+    "Volle Testversion ohne IT-Aufwand: eine Akte hochladen, die erste Frage stellen — und die Fundstelle selbst prüfen.",
   ctaButton: "30 Tage kostenlos testen",
-  relatedLinks: [
-    {
-      label: "Preise & Pläne",
-      href: "/pricing",
-    },
-    {
-      label: "Sicherheit & § 9 Abs. 2 RAO",
-      href: "/security",
-    },
-    {
-      label: "Funktionen im Überblick",
-      href: "/features",
-    },
-    {
-      label: "Für Einzelanwälte",
-      href: "/solutions/solo",
-    },
-    {
-      label: "Für Kanzleien",
-      href: "/solutions/law-firms",
-    },
-  ],
 };
 
 // ---------------------------------------------------------------------------
@@ -744,9 +725,10 @@ export const UI_STRINGS: Record<string, string> = {
   ariaMobileNav: "Mobile Navigation",
   ariaCloseMenu: "Menü schließen",
   ariaLanguage: "Sprache",
-  footerLegalTagline: "KI-Kanzleisoftware & Legal Intelligence für Anwälte",
-  footerHostingLine:
-    "EU-Cloud oder On-Premise · AVV inklusive · Verschwiegenheit nach § 9 Abs. 2 RAO im Blick",
+  // The brand block above already carries the tagline and the hosting note —
+  // the bottom line only adds what is not said there.
+  footerLegalTagline: "Kanzleisoftware für Österreich",
+  footerHostingLine: "Verschwiegenheit nach § 9 Abs. 2 RAO im Blick",
   noCreditCard: "Keine Kreditkarte",
   trialDaysFree: "30 Tage gratis · Keine Kreditkarte",
   threeMinAnswer: "3 Min. zur ersten belegten Antwort",
@@ -758,7 +740,7 @@ export const UI_STRINGS: Record<string, string> = {
   noGamesTitle: "Keine Spielchen bei den Preisen",
   noGamesSub: "Fixer Monatspreis, monatlich kündbar, Export jederzeit.",
   stillQuestions: "Noch Fragen?",
-  writeUs: "Schreiben Sie uns — wir antworten persönlich.",
+  writeUs: "Schreiben Sie uns",
   startFree: "30 Tage kostenlos testen",
   seePlans: "Pläne ansehen",
   trustedBy: "Gebaut für Kanzleien in Österreich",

@@ -456,7 +456,7 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("contacts.title")}
         description={t("contacts.description")}
@@ -538,7 +538,7 @@ export default function ContactsPage() {
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                 aria-label="Suche löschen"
               >
                 <X size={15} />
@@ -648,7 +648,7 @@ export default function ContactsPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                             aria-label={t("contacts.aria_menu")}
                           >
                             <MoreVertical size={15} />

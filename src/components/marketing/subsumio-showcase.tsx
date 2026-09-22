@@ -17,11 +17,14 @@ import {
   Check,
   CheckCheck,
   FileText,
-  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
   Video,
   Phone,
-  MoreVertical,
   Camera,
+  Signal,
+  Wifi,
+  BatteryFull,
   Smile,
   Send,
 } from "lucide-react";
@@ -30,7 +33,8 @@ import { ICONS, accentTile } from "./icons";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { EASE } from "./motion-system";
-import { UI_STRINGS } from "@/content/site";
+import Link from "next/link";
+import { UI_STRINGS, p } from "@/content/site";
 
 const COPY = {
   waEyebrow: "Das Büro in der Hosentasche",
@@ -65,6 +69,7 @@ const COPY = {
   ],
   phoneHeader: "Subsumio-Assistent",
   phoneStatus: "online",
+  phoneNotice: "Unternehmenskonto Ihrer Kanzlei — Nachrichten werden der Akte zugeordnet.",
   chat: [
     { from: "user", text: "Zeit 0,5 h Akte Müller, Telefonat Gegenseite" },
     {
@@ -93,7 +98,7 @@ const COPY = {
 } as const;
 
 const reveal = (i: number, reduce = false) => ({
-  initial: reduce ? false : { opacity: 0, y: 24 },
+  initial: reduce ? false : { opacity: 0, y: 14 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
   transition: {
@@ -111,7 +116,7 @@ function TypingDots({ color }: { color: string }) {
           key={i}
           className="h-1.5 w-1.5 rounded-full"
           style={{ background: color }}
-          animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+          animate={{ y: [0, -2.5, 0], opacity: [0.4, 1, 0.4] }}
           transition={{
             duration: 0.9,
             repeat: Infinity,
@@ -198,7 +203,8 @@ export function PhoneCopilot() {
 
           elapsed += 700;
 
-          // Chip tap simulation — user taps "Bestätigen" after 1.5s
+          // Chip tap simulation — the user confirms; the chip stays confirmed
+          // until the loop resets (a booking that un-confirms itself reads wrong).
           if ("chips" in msg && msg.chips) {
             timeouts.push(
               setTimeout(() => {
@@ -206,15 +212,7 @@ export function PhoneCopilot() {
               }, elapsed)
             );
 
-            elapsed += 700;
-
-            timeouts.push(
-              setTimeout(() => {
-                if (mounted) setTappedChip(null);
-              }, elapsed)
-            );
-
-            elapsed += 500;
+            elapsed += 1200;
           }
         } else {
           // User starts typing in input bar
@@ -330,309 +328,328 @@ export function PhoneCopilot() {
 
   return (
     <div className="relative mx-auto w-[290px] sm:w-[330px]" aria-hidden="true">
-      {/* iPhone frame */}
-      <div className="relative overflow-hidden rounded-[3rem] border-[3px] border-[#2a2a2e] bg-[#0f0f12] p-[6px] shadow-[0_0_0_1px_#000,0_30px_70px_rgba(0,0,0,0.55)]">
-        {/* Dynamic Island */}
-        <div className="absolute top-3 left-1/2 z-30 h-[25px] w-[90px] -translate-x-1/2 rounded-full bg-black">
-          <div className="absolute top-1/2 right-2.5 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-[#1a1a1e]" />
-        </div>
+      {/* Soft brand halo — lifts the device off the dark band without a hard glow. */}
+      <div
+        className="pointer-events-none absolute -inset-x-16 -inset-y-10 -z-10 rounded-full opacity-70 blur-3xl"
+        style={{ background: "radial-gradient(closest-side, var(--brand-glow), transparent)" }}
+      />
 
-        {/* Screen */}
-        <div
-          className="relative overflow-hidden rounded-[2.4rem] bg-[#0b141a] transition-opacity duration-[400ms] ease-in-out"
-          style={{ opacity: fadingOut ? 0 : 1 }}
-        >
-          {/* WhatsApp chat background pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h300v300H0z' fill='none'/%3E%3Cpath d='M42 42c12 0 12-18 24-18s12 18 24 18c12 0 12-18 24-18s12 18 24 18' stroke='%23fff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
-              backgroundColor: WA.bg,
-              backgroundSize: "300px 300px",
-            }}
-          />
+      {/* Hardware buttons — action + volume left, power right */}
+      <div className="absolute top-[104px] -left-[3px] h-6 w-[4px] rounded-l-sm bg-[#2c2c31]" />
+      <div className="absolute top-[150px] -left-[3px] h-11 w-[4px] rounded-l-sm bg-[#2c2c31]" />
+      <div className="absolute top-[206px] -left-[3px] h-11 w-[4px] rounded-l-sm bg-[#2c2c31]" />
+      <div className="absolute top-[170px] -right-[3px] h-[70px] w-[4px] rounded-r-sm bg-[#2c2c31]" />
 
-          {/* WhatsApp header */}
-          <div className="relative z-10 flex items-center gap-2.5 bg-[#1f2c34] px-3 pt-10 pb-2.5">
-            <ArrowLeft size={20} style={{ color: WA.text }} />
-            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#2a3b45]">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <SubsumioMark size={16} className="text-white" />
-              </div>
-            </div>
-            <div className="min-w-0 flex-1 leading-tight">
-              <p className="truncate text-[13px] font-semibold" style={{ color: WA.text }}>
-                {c.phoneHeader}
-              </p>
-              <p className="text-[11px]" style={{ color: isTyping ? WA.text : WA.accent }}>
-                {isTyping ? typingLabel : c.phoneStatus}
-              </p>
-            </div>
-            <div className="flex items-center gap-6" style={{ color: WA.text }}>
-              <Video size={18} />
-              <Phone size={17} />
-              <MoreVertical size={18} />
-            </div>
+      {/* iPhone frame — a brushed-metal rim around a black bezel */}
+      <div className="relative rounded-[3.1rem] bg-gradient-to-b from-[#55555c] via-[#26262b] to-[#44444b] p-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.7),0_40px_80px_-20px_rgba(0,0,0,0.65)]">
+        <div className="relative overflow-hidden rounded-[3rem] bg-black p-[8px]">
+          {/* Dynamic Island */}
+          <div className="absolute top-[18px] left-1/2 z-30 h-[24px] w-[84px] -translate-x-1/2 rounded-full bg-black">
+            <div className="absolute top-1/2 right-2.5 h-2 w-2 -translate-y-1/2 rounded-full bg-[#15151a]" />
           </div>
 
-          {/* Messages — auto-scrolling, hidden scrollbar */}
-          <div
-            ref={scrollRef}
-            className="relative z-10 h-[340px] space-y-2 overflow-y-auto px-3 py-3 [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {chat.slice(0, visibleCount).map((m, i) => {
-              const isUser = m.from === "user";
-              return (
-                <div key={i}>
-                  {/* WhatsApp day separator at conversation start */}
-                  {i === 0 && (
-                    <div className="mb-3 flex justify-center">
-                      <span
-                        className="rounded-md px-2 py-1 text-[10px] font-medium"
-                        style={{ background: "#1e2a31", color: WA.meta }}
-                      >
-                        {UI_STRINGS.todayLabel}
-                      </span>
-                    </div>
-                  )}
+          {/* Screen */}
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0b141a]">
+            {/* iOS status bar */}
+            <div
+              className="absolute inset-x-0 top-0 z-20 flex h-[44px] items-center justify-between px-7 text-[12px] font-semibold"
+              style={{ color: WA.text }}
+            >
+              <span className="tabular-nums">{times[times.length - 1]}</span>
+              <span className="flex items-center gap-1">
+                <Signal size={12} strokeWidth={2.5} />
+                <Wifi size={12} strokeWidth={2.5} />
+                <BatteryFull size={16} strokeWidth={2} />
+              </span>
+            </div>
 
+            {/* WhatsApp header */}
+            <div className="relative z-10 flex items-center gap-2 bg-[#1f2c34] px-2.5 pt-[48px] pb-2.5">
+              <ChevronLeft size={22} className="-mr-1" style={{ color: WA.text }} />
+              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#2a3b45]">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <SubsumioMark size={16} className="text-white" />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-[13px] font-semibold" style={{ color: WA.text }}>
+                  {c.phoneHeader}
+                </p>
+                <p className="text-[11px]" style={{ color: isTyping ? WA.text : WA.accent }}>
+                  {isTyping ? typingLabel : c.phoneStatus}
+                </p>
+              </div>
+              <div className="flex items-center gap-5 pr-1.5" style={{ color: WA.text }}>
+                <Video size={19} strokeWidth={1.75} className="hidden sm:block" />
+                <Phone size={17} strokeWidth={1.75} />
+              </div>
+            </div>
+
+            {/* Messages — auto-scrolling, hidden scrollbar */}
+            <div
+              ref={scrollRef}
+              className="relative z-10 h-[400px] space-y-2 overflow-y-auto px-3 py-3 transition-opacity duration-500 ease-in-out sm:h-[450px] [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: "none", opacity: fadingOut ? 0 : 1 }}
+            >
+              {/* Day chip + business notice are always there, so the chat never
+                sits empty between loops. */}
+              <div className="flex flex-col items-center gap-2 pb-1">
+                <span
+                  className="rounded-md px-2 py-1 text-[10px] font-medium"
+                  style={{ background: "#1e2a31", color: WA.meta }}
+                >
+                  {UI_STRINGS.todayLabel}
+                </span>
+                <span
+                  className="max-w-[85%] rounded-lg px-2.5 py-1.5 text-center text-[10px] leading-snug"
+                  style={{ background: "#1e2a31", color: WA.meta }}
+                >
+                  {c.phoneNotice}
+                </span>
+              </div>
+
+              {chat.slice(0, visibleCount).map((m, i) => {
+                const isUser = m.from === "user";
+                return (
+                  <div key={i}>
+                    <motion.div
+                      initial={reduce ? false : { opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: EASE.out }}
+                      className={isUser ? "flex justify-end" : "flex justify-start"}
+                    >
+                      <div
+                        className="relative max-w-[86%] px-2.5 pt-1.5 pb-1 text-[13px] leading-[1.35]"
+                        style={{
+                          background: isUser ? WA.outgoing : WA.incoming,
+                          color: WA.text,
+                          borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
+                          boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)",
+                        }}
+                      >
+                        {/* WhatsApp-style curved message tail */}
+                        <span
+                          className="absolute bottom-0 h-3.5 w-2"
+                          style={{ [isUser ? "right" : "left"]: "-5px" }}
+                        >
+                          <svg
+                            className="h-full w-full"
+                            viewBox="0 0 8 13"
+                            fill={isUser ? WA.outgoing : WA.incoming}
+                            preserveAspectRatio="none"
+                          >
+                            <path
+                              d={
+                                isUser ? "M0 0C0 7 3.5 11 8 13L0 13Z" : "M8 0C8 7 4.5 11 0 13L8 13Z"
+                              }
+                            />
+                          </svg>
+                        </span>
+                        <div className="whitespace-pre-line">
+                          {m.text}
+                          {/* Inline spacer — only takes space on the last text line,
+                            so the timestamp doesn't overlap. WhatsApp does the same. */}
+                          {!("file" in m && m.file) && !("chips" in m && m.chips) && (
+                            <span
+                              className="ml-1 inline-block w-12 align-bottom select-none"
+                              aria-hidden="true"
+                            >
+                              {"\u200B"}
+                            </span>
+                          )}
+                        </div>
+
+                        {"file" in m && m.file && (
+                          <div className="mt-2 flex items-center gap-2 rounded-lg bg-black/10 px-2 py-1.5">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2a3b45]">
+                              <FileText size={16} style={{ color: WA.accent }} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-[11px] font-medium">{m.file}</p>
+                              <p
+                                className="text-[10px]"
+                                style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
+                              >
+                                PDF · 1.2 MB
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {"chips" in m && m.chips && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {m.chips.map((ch, idx) => {
+                              const isConfirmed = tappedChip === idx;
+                              return (
+                                <motion.span
+                                  key={ch}
+                                  animate={isConfirmed ? { scale: [1, 0.97, 1] } : { scale: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                                  style={{
+                                    background: isConfirmed
+                                      ? WA.accent
+                                      : idx === 0
+                                        ? WA.accent
+                                        : "transparent",
+                                    color: idx === 0 || isConfirmed ? "#0b0f1a" : WA.text,
+                                    border:
+                                      idx === 0 && !isConfirmed ? "none" : `1px solid ${WA.meta}40`,
+                                    opacity: isConfirmed ? 1 : tappedChip !== null ? 0.4 : 1,
+                                  }}
+                                >
+                                  {isConfirmed && idx === 0 ? (
+                                    <span className="flex items-center gap-1">
+                                      <Check size={11} strokeWidth={3} />
+                                      {UI_STRINGS.confirmedLabel}
+                                    </span>
+                                  ) : (
+                                    ch
+                                  )}
+                                </motion.span>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* timestamp + progressive read receipts.
+                          For plain text: absolute at bottom-right (spacer reserves space).
+                          For file/chips: in-flow below the attachment. */}
+                        {("file" in m && m.file) || ("chips" in m && m.chips) ? (
+                          <div className="mt-1 flex items-center justify-end gap-0.5">
+                            <span
+                              className="text-[10px]"
+                              style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
+                            >
+                              {times[i] ?? ""}
+                            </span>
+                            {isUser && readStatus[i] === "sent" && (
+                              <Check size={11} style={{ color: WA.metaOnOutgoing }} />
+                            )}
+                            {isUser && readStatus[i] === "delivered" && (
+                              <CheckCheck size={11} style={{ color: WA.metaOnOutgoing }} />
+                            )}
+                            {isUser && readStatus[i] === "read" && (
+                              <CheckCheck size={11} style={{ color: WA.read }} />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
+                            <span
+                              className="text-[10px]"
+                              style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
+                            >
+                              {times[i] ?? ""}
+                            </span>
+                            {isUser && readStatus[i] === "sent" && (
+                              <Check size={11} style={{ color: WA.metaOnOutgoing }} />
+                            )}
+                            {isUser && readStatus[i] === "delivered" && (
+                              <CheckCheck size={11} style={{ color: WA.metaOnOutgoing }} />
+                            )}
+                            {isUser && readStatus[i] === "read" && (
+                              <CheckCheck size={11} style={{ color: WA.read }} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </div>
+                );
+              })}
+
+              {/* WhatsApp typing indicator */}
+              <AnimatePresence>
+                {isTyping && (
                   <motion.div
-                    initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.35, ease: EASE.spring }}
-                    className={isUser ? "flex justify-end" : "flex justify-start"}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                    transition={{ duration: 0.25, ease: EASE.out }}
+                    className="flex justify-start"
                   >
                     <div
-                      className="relative max-w-[86%] px-2.5 pt-1.5 pb-1 text-[13px] leading-[1.35]"
+                      className="relative max-w-[60%] rounded-[12px_12px_12px_4px] px-2 py-0.5"
                       style={{
-                        background: isUser ? WA.outgoing : WA.incoming,
-                        color: WA.text,
-                        borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
+                        background: WA.incoming,
                         boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)",
                       }}
                     >
-                      {/* WhatsApp-style curved message tail */}
-                      <span
-                        className="absolute bottom-0 h-3.5 w-2"
-                        style={{ [isUser ? "right" : "left"]: "-5px" }}
-                      >
+                      <span className="absolute bottom-0 h-3.5 w-2" style={{ left: "-5px" }}>
                         <svg
                           className="h-full w-full"
                           viewBox="0 0 8 13"
-                          fill={isUser ? WA.outgoing : WA.incoming}
+                          fill={WA.incoming}
                           preserveAspectRatio="none"
                         >
-                          <path
-                            d={isUser ? "M0 0C0 7 3.5 11 8 13L0 13Z" : "M8 0C8 7 4.5 11 0 13L8 13Z"}
-                          />
+                          <path d="M8 0C8 7 4.5 11 0 13L8 13Z" />
                         </svg>
                       </span>
-                      <div className="whitespace-pre-line">
-                        {m.text}
-                        {/* Inline spacer — only takes space on the last text line,
-                            so the timestamp doesn't overlap. WhatsApp does the same. */}
-                        {!("file" in m && m.file) && !("chips" in m && m.chips) && (
-                          <span
-                            className="ml-1 inline-block w-12 align-bottom select-none"
-                            aria-hidden="true"
-                          >
-                            {"\u200B"}
-                          </span>
-                        )}
-                      </div>
-
-                      {"file" in m && m.file && (
-                        <div className="mt-2 flex items-center gap-2 rounded-lg bg-black/10 px-2 py-1.5">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2a3b45]">
-                            <FileText size={16} style={{ color: WA.accent }} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-[11px] font-medium">{m.file}</p>
-                            <p className="text-[10px]" style={{ color: WA.meta }}>
-                              PDF · 1.2 MB
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {"chips" in m && m.chips && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {m.chips.map((ch, idx) => {
-                            const isConfirmed = tappedChip === idx && visibleCount === i + 1;
-                            return (
-                              <motion.span
-                                key={ch}
-                                animate={isConfirmed ? { scale: [1, 0.92, 1] } : { scale: 1 }}
-                                transition={{ duration: 0.3 }}
-                                className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                                style={{
-                                  background: isConfirmed
-                                    ? WA.accent
-                                    : idx === 0
-                                      ? WA.accent
-                                      : "transparent",
-                                  color: idx === 0 || isConfirmed ? "#0b0f1a" : WA.text,
-                                  border:
-                                    idx === 0 && !isConfirmed ? "none" : `1px solid ${WA.meta}40`,
-                                  opacity: isConfirmed
-                                    ? 1
-                                    : tappedChip !== null && visibleCount === i + 1
-                                      ? 0.4
-                                      : 1,
-                                }}
-                              >
-                                {isConfirmed && idx === 0 ? (
-                                  <span className="flex items-center gap-1">
-                                    <Check size={11} strokeWidth={3} />
-                                    {UI_STRINGS.confirmedLabel}
-                                  </span>
-                                ) : (
-                                  ch
-                                )}
-                              </motion.span>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* timestamp + progressive read receipts.
-                          For plain text: absolute at bottom-right (spacer reserves space).
-                          For file/chips: in-flow below the attachment. */}
-                      {("file" in m && m.file) || ("chips" in m && m.chips) ? (
-                        <div className="mt-1 flex items-center justify-end gap-0.5">
-                          <span
-                            className="text-[10px]"
-                            style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
-                          >
-                            {times[i] ?? ""}
-                          </span>
-                          {isUser && readStatus[i] === "sent" && (
-                            <Check size={11} style={{ color: WA.metaOnOutgoing }} />
-                          )}
-                          {isUser && readStatus[i] === "delivered" && (
-                            <CheckCheck size={11} style={{ color: WA.metaOnOutgoing }} />
-                          )}
-                          {isUser && readStatus[i] === "read" && (
-                            <CheckCheck size={11} style={{ color: WA.read }} />
-                          )}
-                        </div>
-                      ) : (
-                        <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
-                          <span
-                            className="text-[10px]"
-                            style={{ color: isUser ? WA.metaOnOutgoing : WA.meta }}
-                          >
-                            {times[i] ?? ""}
-                          </span>
-                          {isUser && readStatus[i] === "sent" && (
-                            <Check size={11} style={{ color: WA.metaOnOutgoing }} />
-                          )}
-                          {isUser && readStatus[i] === "delivered" && (
-                            <CheckCheck size={11} style={{ color: WA.metaOnOutgoing }} />
-                          )}
-                          {isUser && readStatus[i] === "read" && (
-                            <CheckCheck size={11} style={{ color: WA.read }} />
-                          )}
-                        </div>
-                      )}
+                      <TypingDots color={WA.meta} />
                     </div>
                   </motion.div>
-                </div>
-              );
-            })}
+                )}
+              </AnimatePresence>
+            </div>
 
-            {/* WhatsApp typing indicator */}
-            <AnimatePresence>
-              {isTyping && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
-                  transition={{ duration: 0.3, ease: EASE.spring }}
-                  className="flex justify-start"
-                >
-                  <div
-                    className="relative max-w-[60%] rounded-[12px_12px_12px_4px] px-2 py-0.5"
-                    style={{
-                      background: WA.incoming,
-                      boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)",
-                    }}
-                  >
-                    <span className="absolute bottom-0 h-3.5 w-2" style={{ left: "-5px" }}>
-                      <svg
-                        className="h-full w-full"
-                        viewBox="0 0 8 13"
-                        fill={WA.incoming}
-                        preserveAspectRatio="none"
-                      >
-                        <path d="M8 0C8 7 4.5 11 0 13L8 13Z" />
-                      </svg>
-                    </span>
-                    <TypingDots color={WA.meta} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* WhatsApp input bar — shows user typing + send/mic toggle.
+            {/* WhatsApp input bar — shows user typing + send/mic toggle.
               Its height is fixed at two lines: a bar that grows with the text
               would push the section (and the rest of the page) down while the
               demo types. Longer text scrolls to the caret instead. */}
-          <div className="relative z-10 flex items-end gap-2 bg-[#1f2c34] px-2 py-2">
-            <div
-              className="flex flex-1 items-end gap-2 rounded-full px-3 py-1.5"
-              style={{ background: WA.inputField }}
-            >
-              <Smile size={20} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
+            <div className="relative z-10 flex items-center gap-2 bg-[#1f2c34] px-2.5 pt-2 pb-6">
               <div
-                ref={inputViewRef}
-                className="my-1 h-[34px] min-w-0 flex-1 overflow-hidden"
-                style={{ scrollbarWidth: "none" }}
+                className="flex flex-1 items-center gap-2 rounded-[22px] px-3 py-1.5"
+                style={{ background: WA.inputField }}
               >
-                <span
-                  className="block text-[13px] leading-[17px] break-words whitespace-pre-wrap"
-                  style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
+                <Smile size={20} style={{ color: WA.meta }} className="shrink-0" />
+                <div
+                  ref={inputViewRef}
+                  className="my-1 flex h-[34px] min-w-0 flex-1 flex-col overflow-hidden"
+                  style={{ scrollbarWidth: "none" }}
                 >
-                  {isUserTyping && inputText ? inputText : UI_STRINGS.messageLabel}
-                  {isUserTyping && inputText && (
-                    <motion.span
-                      animate={{ opacity: [1, 0, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                      className="ml-0.5 inline-block"
-                      style={{ color: WA.text }}
-                    >
-                      |
-                    </motion.span>
-                  )}
-                </span>
+                  <span
+                    className="my-auto block text-[13px] leading-[17px] break-words whitespace-pre-wrap"
+                    style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
+                  >
+                    {isUserTyping && inputText ? inputText : UI_STRINGS.messageLabel}
+                    {isUserTyping && inputText && (
+                      <motion.span
+                        animate={{ opacity: [1, 0, 1] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                        className="ml-0.5 inline-block"
+                        style={{ color: WA.text }}
+                      >
+                        |
+                      </motion.span>
+                    )}
+                  </span>
+                </div>
+                <Paperclip size={18} style={{ color: WA.meta }} className="shrink-0" />
+                <Camera size={18} style={{ color: WA.meta }} className="shrink-0" />
               </div>
-              <Paperclip size={18} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
-              <Camera size={18} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
-            </div>
-            {/* Mic → Send arrow toggle: key-change triggers remount + scale-in.
+              {/* Mic → Send arrow toggle: key-change triggers remount + scale-in.
                 No AnimatePresence = no layout gap = no shift. */}
-            <motion.div
-              key={isUserTyping && inputText ? "send" : "mic"}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.2 }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-              style={{ background: WA.accent }}
-            >
-              {isUserTyping && inputText ? (
-                <Send size={18} className="text-[#0b0f1a]" />
-              ) : (
-                <Mic size={18} className="text-[#0b0f1a]" />
-              )}
-            </motion.div>
+              <motion.div
+                key={isUserTyping && inputText ? "send" : "mic"}
+                initial={reduce ? false : { scale: 0.85, opacity: 0.6 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.18, ease: EASE.out }}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                style={{ background: WA.accent }}
+              >
+                {isUserTyping && inputText ? (
+                  <Send size={18} className="text-[#0b0f1a]" />
+                ) : (
+                  <Mic size={18} className="text-[#0b0f1a]" />
+                )}
+              </motion.div>
+            </div>
+
+            {/* Home indicator */}
+            <div className="absolute bottom-2 left-1/2 z-20 h-1 w-28 -translate-x-1/2 rounded-full bg-white/40" />
           </div>
         </div>
       </div>
-
-      {/* Home indicator */}
-      <div className="absolute bottom-1.5 left-1/2 z-20 h-1 w-28 -translate-x-1/2 rounded-full bg-white/20" />
     </div>
   );
 }
@@ -663,19 +680,19 @@ export function WhatsAppSpotlight({ children }: { children?: React.ReactNode }) 
               {c.waSub}
             </p>
           </motion.div>
-          <ul className="space-y-5">
+          <ul className="max-w-xl space-y-6">
             {c.waPoints.map((pt, i) => {
               const Icon = pt.icon;
               return (
-                <motion.li key={pt.t} {...reveal(i + 3, reduce)} className="flex items-start gap-6">
+                <motion.li key={pt.t} {...reveal(i + 3, reduce)} className="flex items-start gap-4">
                   <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accentTile(pt.color, "dark")}`}
+                    className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accentTile(pt.color, "dark")}`}
                   >
-                    <Icon size={18} />
+                    <Icon size={17} strokeWidth={1.75} />
                   </div>
                   <div>
-                    <p className="text-lg font-semibold [color:var(--mk-text)]">{pt.t}</p>
-                    <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    <p className="text-base font-semibold [color:var(--mk-text)]">{pt.t}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                       {pt.d}
                     </p>
                   </div>
@@ -683,7 +700,11 @@ export function WhatsAppSpotlight({ children }: { children?: React.ReactNode }) 
               );
             })}
           </ul>
-          {children && <motion.div {...reveal(6, reduce)}>{children}</motion.div>}
+          {children && (
+            <motion.div {...reveal(6, reduce)} className="mt-10">
+              {children}
+            </motion.div>
+          )}
         </div>
         <motion.div {...reveal(2, reduce)} className="relative">
           <PhoneCopilot />
@@ -692,6 +713,8 @@ export function WhatsAppSpotlight({ children }: { children?: React.ReactNode }) 
     </Section>
   );
 }
+
+const BENTO_WIDE = new Set([0, 6, 10]);
 
 /** Bento feature grid — every capability. Tone-flexible: inherits the
  *  surrounding section tone (place inside a <Section tone=…>). */
@@ -712,16 +735,18 @@ export function FeatureBento() {
           {c.bentoSub}
         </p>
       </motion.div>
-      <div className="grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-flow-dense auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f, i) => {
           const Icon = ICONS[f.icon];
-          const featured = i === 0 || i === 4; // two emphasis tiles
+          // Three wide tiles: 12 features + 3 extra cells = 15 = five full rows of
+          // three. With two wide tiles the grid left a hole in row two.
+          const featured = BENTO_WIDE.has(i);
           return (
             <motion.div
               key={f.title}
               {...reveal(i, reduce)}
-              whileHover={reduce ? undefined : { y: -4 }}
-              className={`group relative overflow-hidden rounded-2xl border p-6 transition-[background-color,border-color,color] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] motion-reduce:transition-none ${featured ? "brand-border sm:col-span-2" : "[border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)]"}`}
+              whileHover={reduce ? undefined : { y: -2 }}
+              className={`group relative overflow-hidden rounded-2xl border p-6 transition-[background-color,border-color,color] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] motion-reduce:transition-none ${featured ? "brand-border lg:col-span-2" : "[border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)]"}`}
             >
               {featured && (
                 <div
@@ -737,7 +762,6 @@ export function FeatureBento() {
                 </div>
                 <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold [color:var(--mk-text)]">
                   {f.title}
-                  {featured && <Check size={14} className="brand-text" />}
                 </h3>
                 <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{f.desc}</p>
               </div>
@@ -752,7 +776,18 @@ export function FeatureBento() {
 export default function SubsumioShowcase() {
   return (
     <>
-      <WhatsAppSpotlight />
+      <WhatsAppSpotlight>
+        <Link
+          href={p("/whatsapp")}
+          className="brand-text group inline-flex items-center gap-1.5 text-sm font-semibold"
+        >
+          {UI_STRINGS.whatsappDetail}
+          <ArrowRight
+            size={14}
+            className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
+          />
+        </Link>
+      </WhatsAppSpotlight>
       <FeatureBento />
     </>
   );

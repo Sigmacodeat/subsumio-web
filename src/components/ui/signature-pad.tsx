@@ -315,7 +315,7 @@ export const SignaturePad = React.forwardRef<HTMLDivElement, SignaturePadProps>(
             size="sm"
             onClick={handleClear}
             disabled={disabled || isEmpty}
-            className="gap-1.5 active:scale-[0.98]"
+            className="gap-1.5 active:scale-[0.99]"
             aria-label="Signatur löschen"
           >
             <Eraser size={14} />

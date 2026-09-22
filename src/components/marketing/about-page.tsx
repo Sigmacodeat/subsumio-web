@@ -2,8 +2,10 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { p, UI_STRINGS } from "@/content/site";
 import { PROOF } from "@/content/proof-points";
+import { TRIAL_DAYS } from "@/lib/billing/credit-constants";
 import { Button } from "@/components/ui/button";
 import { Section, SectionHeading, PageHero, CTASection, ContentCard, StatCard } from "./primitives";
+import { H2_CTA_CLASS } from "./typography";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 import { IllusOrigin } from "./brand-illustrations";
 
@@ -44,7 +46,7 @@ const CONTENT = {
       value: PROOF.recall8.value,
       label: `richtige Textstelle unter den ersten 8 Treffern (Test mit ${PROOF.recall8.sampleSize} Fragen, Methodik offen)`,
     },
-    { value: "14", label: "Tage kostenlos testen — ohne Kreditkarte" },
+    { value: String(TRIAL_DAYS), label: "Tage kostenlos testen — ohne Kreditkarte" },
   ],
   ctaTitle: "Sprechen Sie mit uns",
   ctaSub: "Ob Einzelanwältin oder Kanzleipartner — wir freuen uns, von Ihnen zu hören.",
@@ -77,9 +79,11 @@ export default function AboutPage() {
 
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <SectionHeading title={c.missionTitle} tone="light" />
-          <Reveal variant="up" delay={0.1}>
-            <p className="mx-auto max-w-3xl text-center text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+          {/* Heading and statement belong together — SectionHeading's 56 px
+              bottom margin tore them apart. */}
+          <Reveal variant="up" className="text-center">
+            <h2 className={`mb-6 ${H2_CTA_CLASS}`}>{c.missionTitle}</h2>
+            <p className="mx-auto max-w-3xl [font-family:var(--font-display)] text-xl leading-relaxed text-pretty [color:var(--mk-text)] md:text-2xl">
               {c.missionText}
             </p>
           </Reveal>

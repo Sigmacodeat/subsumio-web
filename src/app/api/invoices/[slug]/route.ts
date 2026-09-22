@@ -52,7 +52,7 @@ export const PATCH = createHandler(
     audit: (_ctx, body) => ({
       action: "invoice.update" as const,
       entityType: "invoice",
-      details: { fields: Object.keys(body).filter((k) => k !== "_allow_status_override") },
+      details: { fields: Object.keys(body) },
     }),
   },
   async (ctx, body, _query, req) => {
@@ -65,24 +65,45 @@ export const PATCH = createHandler(
       return apiError("nothing_to_update", "Keine Felder zum Aktualisieren", 400);
     }
 
-    const BLOCKED_STATUS = new Set(["sent", "paid"]);
-    if (
-      typeof body.status === "string" &&
-      BLOCKED_STATUS.has(body.status) &&
-      !body._allow_status_override
-    ) {
-      return apiError(
-        "use_dedicated_endpoint",
-        "Use /api/invoices/send or /api/invoices/remind",
-        409
-      );
+    // A sent/paid invoice is a finalized document (GoBD/Rechnungsstellung —
+    // BAO/UStG). No caller in this codebase ever set _allow_status_override
+    // (grep confirms: /api/invoices/send and /remind write status themselves
+    // via enginePatchPage, bypassing this route entirely), so it was a pure
+    // client-controllable bypass of the guard below — removed. The guard
+    // itself used to check only `body.status`, which blocked *setting*
+    // status to sent/paid via PATCH but did nothing to stop a client from
+    // PATCHing other fields (amount, line items, dates) on an invoice that
+    // was ALREADY sent or paid. Fetch the current status first and reject
+    // any PATCH once the invoice has left draft/pending, full stop — there
+    // is no dedicated storno/Korrekturbeleg endpoint yet (see audit Welle B:
+    // unveränderbare Rechnung + Stornonote), so the only safe behavior today
+    // is to refuse the edit rather than silently allow it.
+    const PROTECTED_STATUS = new Set(["sent", "paid", "overdue"]);
+    try {
+      const currentRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (currentRes.ok) {
+        const currentPage = await currentRes.json();
+        const currentStatus = String(currentPage?.frontmatter?.status ?? "");
+        if (PROTECTED_STATUS.has(currentStatus)) {
+          return apiError(
+            "invoice_finalized",
+            `Rechnung ist bereits ${currentStatus === "paid" ? "bezahlt" : "versendet"} und kann nicht mehr geändert werden. Für Korrekturen: Stornonote verwenden.`,
+            409
+          );
+        }
+      }
+    } catch {
+      // If the read fails, fall through to the engine PATCH below — the
+      // engine's own state is the source of truth and this is a best-effort
+      // pre-check, not the only enforcement point (the DELETE handler above
+      // has the same fetch-then-check shape and the same fallback).
     }
 
     try {
-      // Invoice fields arrive flat (e.g. `status`); they belong in the page
-      // frontmatter on the engine's merge-update. `_allow_status_override` is a
-      // control flag for the guard above and must not be persisted.
-      const { _allow_status_override: _drop, ...frontmatter } = body as Record<string, unknown>;
+      const frontmatter = body as Record<string, unknown>;
       const res = await enginePatchPage(ctx.headers, { slug, frontmatter }, { timeoutMs: 15_000 });
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) {

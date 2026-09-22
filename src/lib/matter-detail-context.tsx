@@ -54,6 +54,7 @@ import {
   type DocumentEntry,
   type DeadlineEntry,
   type ExpenseEntry,
+  type TaskEntry,
 } from "@/lib/legal-types";
 import { useMatterData } from "@/lib/matter-data-context";
 import {
@@ -104,10 +105,8 @@ interface MatterDetailContextValue {
   currentUserId: string;
 
   // Tasks
-  tasks: Array<{ id: string; text: string; done: boolean; createdAt: string }>;
-  setTasks: React.Dispatch<
-    React.SetStateAction<Array<{ id: string; text: string; done: boolean; createdAt: string }>>
-  >;
+  tasks: TaskEntry[];
+  setTasks: React.Dispatch<React.SetStateAction<TaskEntry[]>>;
   newTask: string;
   setNewTask: (v: string) => void;
 
@@ -371,9 +370,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     setFolderApi(typeof window !== "undefined" && "showDirectoryPicker" in window);
   }, []);
 
-  const [tasks, setTasks] = useState<
-    Array<{ id: string; text: string; done: boolean; createdAt: string }>
-  >([]);
+  const [tasks, setTasks] = useState<TaskEntry[]>([]);
   const [newTask, setNewTask] = useState("");
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [expensesList, setExpensesList] = useState<ExpenseEntry[]>([]);

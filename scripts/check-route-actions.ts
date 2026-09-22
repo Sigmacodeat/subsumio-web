@@ -74,6 +74,28 @@ function checkRouteFile(filePath: string): void {
     if (content.includes("getQesSession(") && content.includes("hit(")) return;
   }
 
+  // Skip 410 Gone stubs — deprecated routes that only point at their
+  // replacement (see cases/ethical-wall → cases/access). No handler logic,
+  // no data access, nothing to scope.
+  if (/status:\s*410/.test(content)) return;
+
+  // Skip forwarding shims — routes whose entire body forwards to another
+  // route's wrapped handler (pipeline/start, pipeline/resume →
+  // legal/trigger-pipeline). RBAC/action scope and credit reservation are
+  // enforced by the target route.
+  if (/from\s+"@\/app\/api\/.*route"/.test(content)) return;
+
+  // Skip portal token routes — the client portal has no user session; the
+  // per-matter portal token is the credential (verifyPortalToken /
+  // resolvePortalAccess both reject unknown tokens before any data flows).
+  if (content.includes("verifyPortalToken(") || content.includes("resolvePortalAccess(")) return;
+
+  // Skip calendar feed tokens — subscribed calendar clients (Outlook, Apple,
+  // Google) fetch with a bare HTTP request; the secret in the path is the
+  // credential, only its SHA-256 is stored, and the feed is rate-limited
+  // (see calendar/[token]/fristen.ics).
+  if (content.includes("parseFeedToken(") && content.includes("secretsMatch(")) return;
+
   // Check if file exports any HTTP method handlers
   const hasHttpExport = HTTP_METHODS.some((method) =>
     new RegExp(`export\\s+(const|async\\s+function)\\s+${method}\\b`).test(content)

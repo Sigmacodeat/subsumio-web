@@ -36,7 +36,7 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const entry = createOutboundEntry(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -47,6 +47,16 @@ export const POST = createHandler(
       }),
       signal: AbortSignal.timeout(10_000),
     });
+    // The engine write was previously fire-and-forget: a failed write still
+    // returned 200 with the entry the caller asked to log, so the postal
+    // register (a compliance record) could silently miss entries.
+    if (!res.ok) {
+      return apiError(
+        "engine_write_failed",
+        "Postausgang konnte nicht gespeichert werden",
+        res.status >= 500 ? 502 : res.status
+      );
+    }
     return apiSuccess({ entry });
   }
 );

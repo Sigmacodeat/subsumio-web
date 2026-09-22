@@ -666,7 +666,9 @@
   /* Solid brand fills (buttons, badges with white text). Separate from
      --brand-primary so dark themes can keep links light and fills dark. */
   --brand-solid: var(--brand-primary);
-  --brand-solid-hover: var(--brand-primary-hover);
+  /* Darker, never lighter: --brand-primary-hover is a lighter blue (meant for
+     text/links on dark); as a button fill it dropped white text to 3.6:1. */
+  --brand-solid-hover: var(--brand-600);
   --brand-secondary: var(--brand-400);
   --brand-tertiary: var(--brand-300);
   --brand-glow: color-mix(in srgb, var(--brand-primary) 24%, transparent);
@@ -737,7 +739,9 @@
   --mk-bg: var(--neutral-900);
   --mk-surface: var(--neutral-800);
   --mk-surface-2: var(--neutral-700);
-  --mk-hover: var(--neutral-600);
+  /* A lift, not a fill: neutral-600 (40 % L) on the 13–22 % surfaces read as a
+     light-grey slab under the pointer. */
+  --mk-hover: hsla(220, 30%, 96%, 0.07);
   --mk-border: var(--neutral-700);
   --mk-border-strong: var(--neutral-600);
   --mk-text: var(--neutral-100);
@@ -745,6 +749,9 @@
   --mk-text-subtle: var(--neutral-400);
   --mk-focus-ring: var(--brand-300);
   --mk-control-border: var(--neutral-400);
+  /* Form fields on dark: an inset well, not a grey slab — darker than the
+     card it sits on, outlined by the control border. */
+  --mk-field: hsla(222, 35%, 4%, 0.4);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 
   /* Marketing header height — used by sticky sub-navs (docs, etc.) */
@@ -768,7 +775,9 @@
   --mk-bg: var(--neutral-50);
   --mk-surface: #ffffff;
   --mk-surface-2: var(--neutral-100);
-  --mk-hover: var(--neutral-200);
+  /* A tint of the ink rather than a grey fill — the same step on white cards
+     and on the off-white page background. */
+  --mk-hover: hsla(222, 35%, 18%, 0.05);
   --mk-border: var(--neutral-200);
   --mk-border-strong: var(--neutral-300);
   --mk-text: var(--neutral-900);
@@ -779,6 +788,8 @@
   --mk-text-subtle: var(--neutral-600);
   --mk-focus-ring: var(--brand-700);
   --mk-control-border: var(--neutral-400);
+  /* Form fields: white, carried by the control border. */
+  --mk-field: #ffffff;
   --mk-card-shadow:
     0 1px 2px hsla(222, 8%, 15%, 0.05), 0 8px 24px hsla(222, 8%, 15%, 0.07),
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
@@ -814,6 +825,13 @@
   --ds-text-muted: var(--neutral-600);
   --ds-text-subtle: var(--neutral-600);
   --ds-surface-2: var(--neutral-100);
+  /* Without these the light tone inherited the dark root values: secondary
+     buttons hovered to a mid-grey slab (neutral-600) under dark ink and wore a
+     near-black border. */
+  --ds-hover: var(--neutral-200);
+  --ds-surface-hover: var(--ds-hover);
+  --ds-border: var(--neutral-200);
+  --ds-border-strong: var(--neutral-400);
 
   /* Editorial palette — additive, marketing-only. */
   --mk-parchment: hsl(38, 26%, 95%);
@@ -835,7 +853,7 @@
   --mk-bg: hsl(222, 30%, 12%);
   --mk-surface: hsl(222, 25%, 18%);
   --mk-surface-2: hsl(222, 20%, 28%);
-  --mk-hover: hsl(222, 25%, 22%);
+  --mk-hover: hsla(222, 40%, 96%, 0.07);
   --mk-border: hsl(222, 20%, 30%);
   --mk-border-strong: hsl(222, 15%, 42%);
   --mk-text: hsl(222, 10%, 97%);
@@ -843,6 +861,9 @@
   --mk-text-subtle: hsl(222, 15%, 58%);
   --mk-focus-ring: var(--brand-300);
   --mk-control-border: hsl(222, 12%, 58%);
+  /* Form fields on dark: an inset well, not a grey slab — darker than the
+     card it sits on, outlined by the control border. */
+  --mk-field: hsla(222, 35%, 4%, 0.4);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   --brand-text: var(--brand-300);
   --brand-tertiary: var(--brand-300);
@@ -852,7 +873,9 @@
   --mk-bg: var(--neutral-900);
   --mk-surface: var(--neutral-800);
   --mk-surface-2: var(--neutral-700);
-  --mk-hover: var(--neutral-600);
+  /* A lift, not a fill: neutral-600 (40 % L) on the 13–22 % surfaces read as a
+     light-grey slab under the pointer. */
+  --mk-hover: hsla(220, 30%, 96%, 0.07);
   --mk-border: var(--neutral-700);
   --mk-border-strong: var(--neutral-600);
   --mk-text: var(--neutral-100);
@@ -860,6 +883,9 @@
   --mk-text-subtle: var(--neutral-400);
   --mk-focus-ring: var(--brand-300);
   --mk-control-border: var(--neutral-400);
+  /* Form fields on dark: an inset well, not a grey slab — darker than the
+     card it sits on, outlined by the control border. */
+  --mk-field: hsla(222, 35%, 4%, 0.4);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.04) inset;
   --brand-text: var(--brand-300);
   --brand-tertiary: var(--brand-300);
@@ -874,7 +900,15 @@
   --ds-text: var(--mk-text);
   --ds-text-muted: var(--mk-text-muted);
   --ds-text-subtle: var(--mk-text-subtle);
-  --ds-surface-2: var(--mk-surface-2);
+  /* Controls on dark bands (secondary / outline buttons) are glass, not grey
+     slabs: a translucent lift over whatever dark surface they sit on. The
+     opaque neutral-700 → neutral-600 pair turned into a light-grey block under
+     the pointer. */
+  --ds-surface-2: hsla(220, 30%, 96%, 0.08);
+  --ds-hover: hsla(220, 30%, 96%, 0.13);
+  --ds-surface-hover: var(--ds-hover);
+  --ds-border: hsla(220, 30%, 96%, 0.16);
+  --ds-border-strong: hsla(220, 30%, 96%, 0.26);
   --ds-success-text: hsl(150, 40%, 72%);
   --ds-success-bg: hsla(150, 35%, 55%, 0.12);
   --ds-success-border: hsla(150, 35%, 55%, 0.22);
@@ -2088,6 +2122,24 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--ds-ring) 18%, transparent);
 }
 
+/* ── Page container (one left edge for every dashboard page) ────────────────
+   Every page sits in the same 1440 px column as the matters list, so the
+   breadcrumb, title and first card start at the same x on every screen. Form
+   and settings pages keep a comfortable measure by capping their CHILDREN
+   (left-aligned) instead of centring a narrow column in the middle of the
+   window — that read as a different design area. Overlays are exempt. */
+.ds-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+}
+.ds-page-narrow > :not(.fixed):not([role="dialog"]) {
+  max-width: 45rem;
+}
+.ds-page-medium > :not(.fixed):not([role="dialog"]) {
+  max-width: 62.5rem;
+}
+
 /* F2: Default background-color transition for interactive elements that
    lack an explicit transition class — prevents hard-cut hover states
    across the 67 dashboard pages. */
@@ -2107,7 +2159,7 @@
     [role="tab"]:not([aria-disabled="true"]):not([class*="active:scale"]):active,
   [data-app="dashboard"]
     [role="menuitem"]:not([aria-disabled="true"]):not([class*="active:scale"]):active {
-    transform: scale(0.985);
+    transform: scale(0.99);
   }
 }
 
@@ -2159,9 +2211,16 @@
 
 /* Chat markdown rendering — lightweight prose for AI responses */
 .prose-chat {
-  font-size: 0.875rem;
-  line-height: 1.6;
+  /* Reading size: answers are legal text people study, not chat chatter. */
+  font-size: 0.9375rem;
+  line-height: 1.65;
   color: var(--ds-text);
+}
+.prose-chat > :first-child {
+  margin-top: 0;
+}
+.prose-chat > :last-child {
+  margin-bottom: 0;
 }
 .prose-chat h1,
 .prose-chat h2,
@@ -3264,9 +3323,11 @@ pre {
   }
 }
 
+/* No permanent `will-change: transform` here: it turns this root wrapper into
+   the containing block of every `position: fixed` descendant, so bars meant to
+   stick to the viewport (sticky CTA) sat at the end of the page instead. */
 .route-transition {
   animation: route-transition-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {

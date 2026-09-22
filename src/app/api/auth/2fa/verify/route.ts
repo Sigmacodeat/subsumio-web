@@ -1,9 +1,11 @@
 import { z } from "zod";
+import { NextResponse } from "next/server";
 import { createHandler } from "@/lib/api-handler";
 import { getStore } from "@/lib/auth/store";
 import { verifyTOTP } from "@/lib/totp";
 import { hit } from "@/lib/auth/rate-limit";
 import { generateBackupCodes, hashBackupCodes } from "@/lib/auth/backup-codes";
+import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,15 @@ export const POST = createHandler(
       twoFactorBackupCodes: hashedCodes,
     });
 
-    return Response.json({ ok: true, enabled: true, backupCodes });
+    // Re-issue the session without must2fa: the login-time session was
+    // stateless (JWT-signed) and, if the org requires 2FA, was minted with
+    // must2fa: true confining the user to this settings page (see
+    // middleware.ts). Without re-issuing here, that flag would otherwise
+    // stick around for the rest of the session's 30-day lifetime even
+    // though 2FA is now set up.
+    const session = await createSession(ctx.user.id, ctx.user.email, ctx.user.role);
+    const res = NextResponse.json({ ok: true, enabled: true, backupCodes });
+    res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
+    return res;
   }
 );

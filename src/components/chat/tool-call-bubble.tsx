@@ -171,14 +171,14 @@ export function ToolCallBubble({
         <div className="flex items-center gap-2 border-t border-[color:var(--ds-warning-border)] px-3 py-2">
           <button
             onClick={() => onConfirm?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-warning-solid)] px-2.5 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-warning-solid)] px-2.5 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
             <Check size={12} />
             {t("chat.tool.confirm")}
           </button>
           <button
             onClick={() => onCancel?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
             <X size={12} />
             {t("chat.tool.cancel")}
@@ -220,7 +220,7 @@ export function ToolCallBubble({
         {onRetry && (
           <button
             onClick={() => onRetry(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-danger-solid)] px-2 py-0.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-danger-solid)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-danger-solid)] px-2 py-0.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-danger-solid)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
             <RotateCw size={11} />
             {t("chat.tool.retry")}
@@ -304,7 +304,7 @@ function ToolResultCard({
                 onClick={() => onNavigate(item.href)}
                 disabled={!item.href}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-1.5 text-left transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-left transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
                   item.href && "hover:bg-[color:var(--ds-hover)]"
                 )}
               >
@@ -329,7 +329,7 @@ function ToolResultCard({
       {display.kind === "navigation" && display.href && !hasItems && (
         <button
           onClick={() => onNavigate(display.href)}
-          className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none"
+          className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.99] motion-reduce:transition-none"
         >
           {display.message ?? t("chat.tool.open_navigation")}
           <ArrowRight size={12} />
@@ -568,7 +568,7 @@ function CalendarCard({
         {item.href && (
           <button
             onClick={() => onNavigate(item.href)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.99] motion-reduce:transition-none"
           >
             <ExternalLink size={10} />
           </button>
@@ -756,7 +756,7 @@ function DeadlineCard({
             <button
               onClick={() => onMarkDone(item.deadlineSlug!)}
               disabled={marking}
-              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
               title={t("chat.deadline.mark_done" as never)}
             >
               {marking ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
@@ -766,7 +766,7 @@ function DeadlineCard({
           {item.href && (
             <button
               onClick={() => onNavigate(item.href)}
-              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none"
+              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.99] motion-reduce:transition-none"
             >
               <ExternalLink size={10} />
               {t("chat.deadline.open_case" as never)}
