@@ -413,12 +413,10 @@ export function DemoAnalytics() {
   const d = query.data;
   const { summary: s, previous: p, capacity: cap } = d;
   const maxFunnel = Math.max(1, d.funnel[0]?.count ?? 1);
-  const biggestDrop = d.funnel
-    .slice(1)
-    .reduce<{
-      key: string;
-      drop: number;
-    } | null>((acc, st) => (st.stepConvPct !== null && (acc === null || 100 - st.stepConvPct > acc.drop) ? { key: st.key, drop: 100 - st.stepConvPct } : acc), null);
+  const biggestDrop = d.funnel.slice(1).reduce<{
+    key: string;
+    drop: number;
+  } | null>((acc, st) => (st.stepConvPct !== null && (acc === null || 100 - st.stepConvPct > acc.drop) ? { key: st.key, drop: 100 - st.stepConvPct } : acc), null);
   const capPct = cap.maxActiveSessions > 0 ? (cap.activeSessions / cap.maxActiveSessions) * 100 : 0;
   const budgetPct =
     cap.dailyQuestionCap > 0 ? (cap.questionsToday / cap.dailyQuestionCap) * 100 : 0;

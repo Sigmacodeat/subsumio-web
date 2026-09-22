@@ -104,6 +104,7 @@ export default function KYCPage() {
   });
   const [serverMissing, setServerMissing] = useState<string[]>([]);
   const [failReason, setFailReason] = useState("");
+  const [uploadingId, setUploadingId] = useState(false);
   const [create, setCreate] = useState({
     case_slug: searchParams.get("case_slug") ?? "",
     client_name: searchParams.get("client_name") ?? "",
@@ -197,6 +198,28 @@ export default function KYCPage() {
   const locked = draft?.status === "verified" || draft?.status === "failed";
   const setId = (patch: Partial<KYCIdentification>) =>
     draft && setDraft({ ...draft, identification: { ...draft.identification, ...patch } });
+
+  async function uploadIdDocument(file: File | undefined) {
+    if (!file || !draft?.case_slug) return;
+    setUploadingId(true);
+    try {
+      const result = await api.upload.file(file, {
+        title: `Lichtbildausweis — ${draft.client_name}`,
+        case_slug: draft.case_slug,
+        doc_type: "ausweiskopie",
+        tags: ["kyc", "ausweis"],
+      });
+      setId({ document_file_slug: result.slug, copy_retained: true });
+      addToast({ type: "success", title: "Ausweiskopie in der Akte abgelegt" });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Upload fehlgeschlagen",
+      });
+    } finally {
+      setUploadingId(false);
+    }
+  }
 
   async function saveDraft(): Promise<boolean> {
     if (!draft) return false;
@@ -560,6 +583,44 @@ export default function KYCPage() {
                       value={draft.identification?.birth_date ?? ""}
                       onChange={(e) => setId({ birth_date: e.target.value || undefined })}
                     />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label htmlFor="kyc-doc-file" className="text-xs">
+                      Ausweiskopie (Scan/Foto)
+                    </Label>
+                    {draft.identification?.document_file_slug ? (
+                      <div className="flex items-center gap-2 text-xs">
+                        <Badge variant="success" className="max-w-full truncate">
+                          {draft.identification.document_file_slug}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={locked || uploadingId}
+                          aria-label="Ausweiskopie entfernen"
+                          onClick={() =>
+                            setId({ document_file_slug: undefined, copy_retained: false })
+                          }
+                        >
+                          <XCircle size={13} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="kyc-doc-file"
+                          type="file"
+                          accept="image/*,application/pdf"
+                          disabled={locked || uploadingId || !draft.case_slug}
+                          onChange={(e) => void uploadIdDocument(e.target.files?.[0])}
+                          className="text-xs"
+                        />
+                        {uploadingId && <Loader2 size={14} className="animate-spin" aria-hidden />}
+                      </div>
+                    )}
+                    <p className="text-[11px] text-[color:var(--ds-text-subtle)]">
+                      Wird in der Akte abgelegt (§ 8b Abs. 5 RAO — Kopie aufbewahren).
+                    </p>
                   </div>
                   <div className="flex flex-col justify-end gap-2 text-sm">
                     <label className="flex items-center gap-2">

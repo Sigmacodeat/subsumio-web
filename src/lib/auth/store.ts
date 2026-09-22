@@ -53,6 +53,12 @@ export interface User {
   docusignAccessToken?: string | null;
   docusignRefreshToken?: string | null;
   docusignTokenExpiresAt?: string | null;
+  /** Microsoft 365 delegated OAuth (per-user Kalender, WP-4.19). */
+  ms365AccessToken?: string | null;
+  ms365RefreshToken?: string | null;
+  ms365TokenExpiresAt?: string | null;
+  /** UPN/E-Mail des verbundenen M365-Accounts (für die UI, nicht sensitiv). */
+  ms365UserEmail?: string | null;
   /** SSO identity link (WorkOS). */
   workosUserId?: string | null;
   ssoProvider?: string | null;
@@ -163,6 +169,8 @@ export const SENSITIVE_USER_FIELDS = [
   "pendingTwoFactorSecret",
   "docusignAccessToken",
   "docusignRefreshToken",
+  "ms365AccessToken",
+  "ms365RefreshToken",
   "openaiKey",
   "anthropicKey",
   "zeroEntropyKey",
@@ -756,6 +764,9 @@ export type PublicUser = Omit<
   | "docusignAccessToken"
   | "docusignRefreshToken"
   | "docusignTokenExpiresAt"
+  | "ms365AccessToken"
+  | "ms365RefreshToken"
+  | "ms365TokenExpiresAt"
   | "openaiKey"
   | "anthropicKey"
   | "zeroEntropyKey"
@@ -769,6 +780,9 @@ export function toPublic(user: User): PublicUser {
     docusignAccessToken: _dat,
     docusignRefreshToken: _drt,
     docusignTokenExpiresAt: _dte,
+    ms365AccessToken: _mat,
+    ms365RefreshToken: _mrt,
+    ms365TokenExpiresAt: _mte,
     openaiKey: _oak,
     anthropicKey: _aak,
     zeroEntropyKey: _zek,
@@ -781,6 +795,9 @@ export function toPublic(user: User): PublicUser {
   void _dat;
   void _drt;
   void _dte;
+  void _mat;
+  void _mrt;
+  void _mte;
   void _oak;
   void _aak;
   void _zek;

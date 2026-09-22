@@ -15,11 +15,10 @@ async function run(pathname: string, init?: ConstructorParameters<typeof NextReq
   return middleware(request(pathname, init));
 }
 
-describe("middleware Austria-only public routing", () => {
+describe("middleware retired-locale public routing", () => {
   it.each([
     ["/", "/at"],
     ["/pricing", "/at/pricing"],
-    ["/de/security", "/at/security"],
     ["/ch/solutions/solo", "/at/solutions/solo"],
     ["/en/login", "/at/login"],
     ["/en/subsumio", "/at"],
@@ -30,6 +29,11 @@ describe("middleware Austria-only public routing", () => {
     expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe(
       destination
     );
+  });
+
+  it("serves /de as a live market (no redirect to /at)", async () => {
+    const res = await run("/de/security");
+    expect(res.headers.get("location")).toBeNull();
   });
 
   it("preserves reset tokens and other query parameters", async () => {

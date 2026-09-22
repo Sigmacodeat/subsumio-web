@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={organizationLd()} />
+      <JsonLd data={organizationLd("de")} />
       <JsonLd data={softwareApplicationLd("de")} />
       <JsonLd data={faqPageLd(superbrainFaq("de"))} />
       <JsonLd

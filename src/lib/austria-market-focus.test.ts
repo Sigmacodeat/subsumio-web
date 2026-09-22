@@ -5,16 +5,18 @@ import sitemap from "@/app/sitemap";
 import { getAllCitySlugs } from "@/content/city-pages";
 import { allAltPaths, DEFAULT_LANG, p, SUPPORTED_LANGS } from "@/content/site";
 
-describe("Austria-only market focus", () => {
-  test("exposes Austria as the only active public locale", () => {
+describe("public market focus (AT + DE live, CH/EN retired)", () => {
+  test("exposes Austria and Germany as the active public locales", () => {
     expect(DEFAULT_LANG).toBe("at");
-    expect(SUPPORTED_LANGS).toEqual(["at"]);
+    expect(SUPPORTED_LANGS).toEqual(["at", "de"]);
     expect(p("/pricing")).toBe("/at/pricing");
-    expect(allAltPaths("at", "/at/pricing")).toEqual([]);
+    expect(allAltPaths("at", "/at/pricing")).toEqual([
+      expect.objectContaining({ lang: "de", href: "/de/pricing" }),
+    ]);
   });
 
   test("keeps retired locale route trees outside the active build", () => {
-    for (const locale of ["de", "ch", "en"]) {
+    for (const locale of ["ch", "en"]) {
       const localeDir = join(process.cwd(), "src/app", locale);
       const files = existsSync(localeDir)
         ? readdirSync(localeDir, { recursive: true }).filter((entry) =>
@@ -30,8 +32,9 @@ describe("Austria-only market focus", () => {
     const entries = sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
 
-    expect(paths.some((path) => /\/(de|ch|en)(\/|$)/.test(path))).toBe(false);
+    expect(paths.some((path) => /\/(ch|en)(\/|$)/.test(path))).toBe(false);
     expect(paths).toContain("/at");
+    expect(paths).toContain("/de");
     // Canonical city URLs live under /at (bare /cities/* 308-redirects there).
     expect(paths).toContain("/at/cities/wien");
     expect(paths).not.toContain("/cities/wien");
@@ -46,8 +49,10 @@ describe("Austria-only market focus", () => {
 
   test("active Austrian pages do not advertise retired hreflang URLs", () => {
     const source = readFileSync(join(process.cwd(), "src/app/at/layout.tsx"), "utf8");
-    expect(source).not.toMatch(/de-DE|de-CH|\/de|\/ch|\/en/);
+    // /de is a live alternate; only the retired locales must stay absent.
+    expect(source).not.toMatch(/de-CH|\/ch|\/en|en-[A-Z]{2}/);
     expect(source).toContain('"de-AT": "/at"');
+    expect(source).toContain('"de-DE": "/de"');
   });
 
   test("new matters and the AI copilot default to Austria", () => {

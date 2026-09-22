@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Trash2,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ import type { Plan } from "@/lib/auth/store";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { AclSettings } from "@/components/dashboard/acl-settings";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { SettingsHub } from "@/components/dashboard/settings-hub";
 import { csrfFetch } from "@/lib/csrf";
@@ -1146,6 +1148,7 @@ function SettingsPageInner() {
                 </div>
               </Card>
               <DemoDataCard />
+              <OutlookCalendarCard />
             </>
           )}
 
@@ -1485,6 +1488,109 @@ function DemoDataCard() {
             {removing ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
             {t("settings.demo_remove")}
           </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/** WP-4.19: Persönlicher Outlook-Kalender (delegiertes OAuth pro Nutzer). */
+function OutlookCalendarCard() {
+  const { addToast } = useToast();
+  const [state, setState] = useState<"loading" | "unconfigured" | "ready">("loading");
+  const [connected, setConnected] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/outlook/status", { credentials: "same-origin" });
+      const data = await res.json().catch(() => ({}));
+      const d = data.data ?? data;
+      if (!d.configured) {
+        setState("unconfigured");
+        return;
+      }
+      setConnected(Boolean(d.connected));
+      setEmail(d.email ?? null);
+      setState("ready");
+    } catch {
+      setState("unconfigured");
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function connect() {
+    setBusy(true);
+    try {
+      const res = await csrfFetch("/api/outlook/connect", { credentials: "same-origin" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.authUrl) throw new Error(data.error || "connect failed");
+      window.location.href = data.authUrl;
+    } catch {
+      addToast({ type: "error", title: "Outlook-Verbindung konnte nicht gestartet werden" });
+      setBusy(false);
+    }
+  }
+
+  async function disconnect() {
+    if (!window.confirm("Outlook-Kalender-Verbindung wirklich trennen?")) return;
+    setBusy(true);
+    try {
+      const res = await csrfFetch("/api/outlook/disconnect", { method: "POST" });
+      if (!res.ok) throw new Error(String(res.status));
+      setConnected(false);
+      setEmail(null);
+      addToast({ type: "success", title: "Outlook-Kalender getrennt" });
+    } catch {
+      addToast({ type: "error", title: "Trennen fehlgeschlagen" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (state === "unconfigured") return null;
+
+  return (
+    <Card className="mt-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 p-6">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
+            Outlook-Kalender (persönlich)
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+            {state === "loading"
+              ? "Verbindungsstatus wird geladen…"
+              : connected
+                ? `Verbunden${email ? ` als ${email}` : ""}. Ihre Termine werden in Subsumio gespiegelt und neue Termine können nach Outlook geschrieben werden.`
+                : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
+          </p>
+        </div>
+        {state === "ready" && (
+          <div className="flex shrink-0 items-center gap-2">
+            {connected ? (
+              <>
+                <Badge variant="success">Verbunden</Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void disconnect()}
+                  disabled={busy}
+                >
+                  {busy && <Loader2 size={13} className="animate-spin" />}
+                  Trennen
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
+                {busy && <Loader2 size={13} className="animate-spin" />}
+                Mit Microsoft verbinden
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </Card>

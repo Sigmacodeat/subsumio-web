@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { useMe } from "@/lib/queries/auth";
 import type { BrainPage } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
@@ -510,6 +511,7 @@ function mapAppointment(p: BrainPage): Appointment {
 export function useAppointments() {
   const { t } = useLang();
   const { addToast } = useToast();
+  const me = useMe();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [casePages, setCasePages] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -572,6 +574,10 @@ export function useAppointments() {
           case_title: caseTitle,
           status: "scheduled",
           appointment_type: data.type,
+          // WP-4.19: per-user two-way sync — the cron pushes flagged
+          // appointments into the owner's Outlook calendar.
+          sync_to_outlook: true,
+          calendar_owner_email: me.data?.user?.email ?? undefined,
           updated_at: new Date().toISOString(),
         },
       });
@@ -611,7 +617,7 @@ export function useAppointments() {
       });
       await reload();
     },
-    [casePages, reload, addToast, t]
+    [casePages, reload, addToast, t, me.data?.user?.email]
   );
 
   const remove = useCallback(

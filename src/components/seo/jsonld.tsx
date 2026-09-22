@@ -12,16 +12,18 @@ export function JsonLd({ data }: { data: object }) {
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
-export function organizationLd() {
+export function organizationLd(market: Market = "at") {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Subsumio",
     alternateName: "Subsumio Legal AI",
-    url: BASE,
+    url: market === "de" ? `${BASE}/de` : BASE,
     logo: `${BASE}/icon-512.png`,
     description:
-      "Subsumio is AI legal software for law firms in Austria — cited answers with page-level sources, deadline tracking, conflict checks. Not affiliated with Sumsub (KYC provider).",
+      market === "de"
+        ? "Subsumio ist KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Deutschland — belegte Antworten mit Fundstellen, Fristenkontrolle, Kollisionsprüfung. Keine Verbindung zu Sumsub (KYC-Anbieter)."
+        : "Subsumio is AI legal software for law firms in Austria — cited answers with page-level sources, deadline tracking, conflict checks. Not affiliated with Sumsub (KYC provider).",
     foundingLocation: {
       "@type": "Place",
       name: "Vienna, Austria",

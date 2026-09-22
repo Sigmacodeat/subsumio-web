@@ -7,6 +7,10 @@ vi.mock("@/lib/use-lang", () => ({
   useLang: () => ({ lang: "de", t: (k: string) => k, setLang: vi.fn() }),
 }));
 
+vi.mock("@/lib/queries/auth", () => ({
+  useMe: () => ({ data: undefined }),
+}));
+
 const grounding = {
   citations_verified: 2,
   citations_unverified: 0,

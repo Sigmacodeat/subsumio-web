@@ -37,6 +37,10 @@ export const MAIL_OAUTH_PROVIDERS: Record<MailOAuthProvider, ProviderConfig> = {
       "email",
       "https://outlook.office.com/IMAP.AccessAsUser.All",
       "https://outlook.office.com/SMTP.Send",
+      // WP-4.19: per-user two-way calendar sync (Graph, delegated).
+      // Accounts connected before this scope was added must re-consent
+      // once before calendar sync works for them.
+      "https://graph.microsoft.com/Calendars.ReadWrite",
     ],
     imapHost: "outlook.office365.com",
     smtpHost: "smtp.office365.com",

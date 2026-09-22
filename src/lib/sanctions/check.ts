@@ -6,7 +6,12 @@
 
 import type { KYCBeneficialOwner, KYCVerification } from "@/lib/kyc";
 import { matchName, type NameMatch } from "./match";
-import { loadSanctionsList, type StoredList } from "./store";
+import { loadAllSanctionsLists, SOURCE_LABELS, type StoredList } from "./store";
+
+export interface SourcedMatch extends NameMatch {
+  /** Which list produced the hit (eu-fsf, un-sc, ofac-sdn). */
+  source: string;
+}
 
 export interface SanctionsCheckResult {
   checkedAt: string;
@@ -16,13 +21,12 @@ export interface SanctionsCheckResult {
   entryCount: number;
   /** Names that were run, in the order they were checked. */
   checkedNames: string[];
-  hits: Array<{ name: string; matches: NameMatch[] }>;
+  hits: Array<{ name: string; matches: SourcedMatch[] }>;
 }
 
 export function describeSource(list: StoredList): string {
   const generated = list.generatedAt.slice(0, 10);
-  const label =
-    list.source === "eu-fsf" ? "EU-Finanzsanktionsliste (FSF)" : `Sanktionsliste ${list.source}`;
+  const label = SOURCE_LABELS[list.source] ?? `Sanktionsliste ${list.source}`;
   return `${label}, Stand ${generated}, ${list.entryCount} Listungen`;
 }
 
@@ -45,27 +49,39 @@ export interface CheckOptions {
 /**
  * Null when no list has been downloaded yet — the caller must then say so
  * instead of reporting "no hit", which would be a false all-clear.
+ * Checks every stored list (EU FSF, UN SC, OFAC SDN); hits carry their source.
  */
 export async function runSanctionsCheck(
   v: Pick<KYCVerification, "client_name" | "beneficial_owners">,
   opts: CheckOptions = {},
-  load: () => Promise<StoredList | null> = loadSanctionsList
+  load: () => Promise<StoredList[]> = loadAllSanctionsLists
 ): Promise<SanctionsCheckResult | null> {
-  const list = await load();
-  if (!list) return null;
+  const lists = await load();
+  if (lists.length === 0) return null;
   const names = namesToCheck(v);
   const hits: SanctionsCheckResult["hits"] = [];
   for (const name of names) {
-    const matches = matchName(name, list.entries, {
-      birthDate: name === v.client_name ? opts.birthDate : undefined,
-    });
-    if (matches.length > 0) hits.push({ name, matches });
+    const matches: SourcedMatch[] = [];
+    for (const list of lists) {
+      for (const m of matchName(name, list.entries, {
+        birthDate: name === v.client_name ? opts.birthDate : undefined,
+      })) {
+        matches.push({ ...m, source: list.source });
+      }
+    }
+    matches.sort((a, b) => b.score - a.score);
+    if (matches.length > 0) hits.push({ name, matches: matches.slice(0, 20) });
   }
+  const latestGenerated =
+    lists
+      .map((l) => l.generatedAt)
+      .sort()
+      .at(-1) ?? "";
   return {
     checkedAt: (opts.now ?? new Date()).toISOString(),
-    source: describeSource(list),
-    listGeneratedAt: list.generatedAt,
-    entryCount: list.entryCount,
+    source: lists.map(describeSource).join(" · "),
+    listGeneratedAt: latestGenerated,
+    entryCount: lists.reduce((s, l) => s + l.entryCount, 0),
     checkedNames: names,
     hits,
   };

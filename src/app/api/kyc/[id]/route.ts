@@ -31,6 +31,7 @@ const fieldsSchema = z.object({
         .regex(/^\d{4}-\d{2}-\d{2}$/)
         .optional(),
       copy_retained: z.boolean().optional(),
+      document_file_slug: z.string().max(500).optional(),
       remote: z.boolean().optional(),
       additional_measures: z.string().max(2000).optional(),
     })
@@ -64,6 +65,7 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("update"), fields: fieldsSchema }),
   z.object({ action: z.literal("verify") }),
   z.object({ action: z.literal("sanctions_check") }),
+  z.object({ action: z.literal("pep_screen") }),
   z.object({ action: z.literal("fail"), reason: z.string().trim().min(10).max(2000) }),
   z.object({
     action: z.literal("mandate_end"),
@@ -175,6 +177,46 @@ export const PATCH = createHandler(
           note: result.hits.length
             ? `Sanktionsabgleich: ${result.hits.length} Treffer zu prüfen (${result.source})`
             : `Sanktionsabgleich ohne Treffer (${result.source})`,
+        };
+        auditAction = "kyc.update";
+      } else if (body.action === "pep_screen") {
+        const { pepScreen, isPepScreenConfigured } = await import("@/lib/sanctions/pep");
+        if (!isPepScreenConfigured()) {
+          return apiError(
+            "pep_screen_not_configured",
+            "Kein PEP-Datenprovider konfiguriert (OPENSANCTIONS_API_KEY). Bitte manuell prüfen und bestätigen.",
+            503
+          );
+        }
+        const names = [
+          current.client_name,
+          ...(current.beneficial_owners ?? []).map((o) => o.name),
+        ].filter((n): n is string => Boolean(n?.trim()));
+        const result = await pepScreen(names);
+        if (!result) {
+          return apiError("pep_screen_unavailable", "PEP-Screening nicht verfügbar", 503);
+        }
+        next = {
+          ...next,
+          pep_checked_source: result.source,
+          pep_checked_at: result.checkedAt,
+          pep_candidates: result.results.map((r) => ({
+            name: r.name,
+            candidates: r.candidates.map((c) => ({
+              name: c.name,
+              score: c.score,
+              countries: c.countries,
+            })),
+          })),
+        };
+        const hits = result.results.filter((r) => r.candidates.length > 0).length;
+        entry = {
+          at: now,
+          by: ctx.user.email,
+          action: "updated",
+          note: hits
+            ? `PEP-Screening: ${hits} Name(n) mit Kandidaten (${result.source})`
+            : `PEP-Screening ohne Kandidaten (${result.source})`,
         };
         auditAction = "kyc.update";
       } else if (body.action === "fail") {

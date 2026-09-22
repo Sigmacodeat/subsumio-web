@@ -7,6 +7,8 @@
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { fetchSanctionsList, type SanctionsEntry, type SanctionsList } from "./eu-list";
+import { fetchUnSanctionsList } from "./un-list";
+import { fetchOfacSdnList } from "./ofac-list";
 
 const ensureSchema = createSchemaInit([
   `CREATE TABLE IF NOT EXISTS subsumio_sanctions_entries (
@@ -30,6 +32,27 @@ const ensureSchema = createSchemaInit([
 ]);
 
 export const EU_SOURCE = "eu-fsf";
+export const UN_SOURCE = "un-sc";
+export const OFAC_SOURCE = "ofac-sdn";
+
+/** Alle gepflegten Sanktionsquellen — der Cron aktualisiert jede davon. */
+export const SANCTION_SOURCES: ReadonlyArray<{
+  source: string;
+  label: string;
+  load: () => Promise<SanctionsList>;
+}> = [
+  { source: EU_SOURCE, label: "EU-Finanzsanktionsliste (FSF)", load: () => fetchSanctionsList() },
+  {
+    source: UN_SOURCE,
+    label: "UN Security Council Consolidated List",
+    load: () => fetchUnSanctionsList(),
+  },
+  { source: OFAC_SOURCE, label: "OFAC SDN List", load: () => fetchOfacSdnList() },
+];
+
+export const SOURCE_LABELS: Record<string, string> = Object.fromEntries(
+  SANCTION_SOURCES.map((s) => [s.source, s.label])
+);
 
 export interface StoredList {
   source: string;
@@ -40,7 +63,7 @@ export interface StoredList {
   entries: SanctionsEntry[];
 }
 
-let cache: { list: StoredList; loadedAt: number } | null = null;
+let cache = new Map<string, { list: StoredList; loadedAt: number }>();
 /** The list changes a few times a month; an hour of staleness is harmless. */
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
@@ -104,14 +127,15 @@ export async function refreshSanctionsList(
     client.release();
   }
 
-  cache = null;
+  cache.delete(source);
   return { generatedAt: list.generatedAt, entryCount: list.entries.length };
 }
 
 /** The stored list, cached per process. Null when it was never downloaded. */
 export async function loadSanctionsList(source = EU_SOURCE): Promise<StoredList | null> {
-  if (cache && cache.list.source === source && Date.now() - cache.loadedAt < CACHE_TTL_MS) {
-    return cache.list;
+  const cached = cache.get(source);
+  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
+    return cached.list;
   }
   const pool = getSharedPgPool();
   if (!pool) return null;
@@ -144,11 +168,43 @@ export async function loadSanctionsList(source = EU_SOURCE): Promise<StoredList 
     refreshedAt: new Date(String(m.refreshed_at)).toISOString(),
     entries,
   };
-  cache = { list, loadedAt: Date.now() };
+  cache.set(source, { list, loadedAt: Date.now() });
   return list;
 }
 
 /** Test seam: drops the process cache. */
 export function clearSanctionsCache(): void {
-  cache = null;
+  cache = new Map();
+}
+
+/** Aktualisiert alle konfigurierten Quellen; Fehler einzelner Quellen werden gesammelt. */
+export async function refreshAllSanctionsLists(): Promise<
+  Array<{ source: string; ok: boolean; entryCount?: number; error?: string }>
+> {
+  const out: Array<{ source: string; ok: boolean; entryCount?: number; error?: string }> = [];
+  for (const s of SANCTION_SOURCES) {
+    try {
+      const r = await refreshSanctionsList(s.source, s.load);
+      out.push({ source: s.source, ok: true, entryCount: r.entryCount });
+    } catch (err) {
+      // Eine defekte Quelle darf die anderen nicht blockieren — die alte
+      // Fassung bleibt gespeichert und Checks laufen weiter.
+      out.push({
+        source: s.source,
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return out;
+}
+
+/** Alle gespeicherten Listen — die Prüfung läuft über jede Quelle. */
+export async function loadAllSanctionsLists(): Promise<StoredList[]> {
+  const out: StoredList[] = [];
+  for (const s of SANCTION_SOURCES) {
+    const list = await loadSanctionsList(s.source);
+    if (list) out.push(list);
+  }
+  return out;
 }

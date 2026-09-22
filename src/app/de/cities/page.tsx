@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export default function CitiesPage() {
   return (
     <>
-      <JsonLd data={organizationLd()} />
+      <JsonLd data={organizationLd("de")} />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/de" },

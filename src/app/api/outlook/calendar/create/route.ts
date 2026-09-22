@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { createCalendarEvent, isMsGraphConfigured } from "@/lib/msgraph";
+import {
+  createUserCalendarEvent,
+  isDelegatedMs365Configured,
+  isMs365Connected,
+} from "@/lib/msgraph-user";
+import { getStore } from "@/lib/auth/store";
 import { ENGINE_URL } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +48,11 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    if (!isMsGraphConfigured()) {
+    // WP-4.19: persönlich verbundener Kalender hat Vorrang — der Termin
+    // landet im eigenen Outlook des Nutzers, nicht im Dienst-Postfach.
+    const user = await getStore().getById(ctx.user.id);
+    const delegated = isDelegatedMs365Configured() && user && isMs365Connected(user);
+    if (!delegated && !isMsGraphConfigured()) {
       return apiError(
         "msgraph_not_configured",
         "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID",
@@ -51,20 +61,36 @@ export const POST = createHandler(
     }
 
     try {
-      const event = await createCalendarEvent({
-        subject: body.subject,
-        start: body.start,
-        end: body.end,
-        timeZone: body.timeZone,
-        location: body.location,
-        body: body.body,
-        attendees: body.attendees,
-        categories: body.categories,
-      });
+      let eventId: string | undefined;
+      let webLink: string | undefined;
+      if (delegated) {
+        // Delegierter Schreibpfad: /me/events des Nutzers.
+        eventId = await createUserCalendarEvent(ctx.user.id, {
+          subject: body.subject,
+          start: body.start,
+          end: body.end,
+          location: body.location,
+        });
+      } else {
+        const event = await createCalendarEvent({
+          subject: body.subject,
+          start: body.start,
+          end: body.end,
+          timeZone: body.timeZone,
+          location: body.location,
+          body: body.body,
+          attendees: body.attendees,
+          categories: body.categories,
+        });
+        eventId = event.id;
+        webLink = event.webLink;
+      }
 
       // If case-linked, store event reference in brain
-      if (body.caseSlug) {
-        const slug = `calendar/outlook/${event.id}`;
+      if (body.caseSlug && eventId) {
+        const slug = delegated
+          ? `calendar/outlook/${ctx.user.id}/${eventId}`
+          : `calendar/outlook/${eventId}`;
         await fetch(`${ENGINE_URL}/api/pages`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -75,12 +101,13 @@ export const POST = createHandler(
             frontmatter: {
               type: "calendar_event",
               case_slug: body.caseSlug,
-              outlook_event_id: event.id,
+              outlook_event_id: eventId,
+              owner_user_id: delegated ? ctx.user.id : undefined,
               subject: body.subject,
               start: body.start,
               end: body.end,
               location: body.location,
-              web_link: event.webLink,
+              web_link: webLink,
               synced_at: new Date().toISOString(),
             },
           }),
@@ -90,9 +117,10 @@ export const POST = createHandler(
 
       return apiSuccess({
         ok: true,
-        eventId: event.id,
-        webLink: event.webLink,
-        subject: event.subject,
+        eventId,
+        webLink,
+        subject: body.subject,
+        delegated: Boolean(delegated),
       });
     } catch (e) {
       return apiError(

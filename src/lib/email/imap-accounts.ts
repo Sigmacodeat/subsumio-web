@@ -40,6 +40,9 @@ export interface MailAccount {
   authType: "password" | "oauth";
   oauthProvider: MailOAuthProvider | null;
   enabled: boolean;
+  /** WP-4.19: two-way calendar sync via the OAuth provider's calendar API. */
+  calendarSync: boolean;
+  lastCalendarSyncAt: string | null;
   lastUid: number | null;
   uidValidity: string | null;
   lastSyncAt: string | null;
@@ -100,6 +103,9 @@ const ensureSchema = createSchemaInit([
   "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_refresh_enc text",
   "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_access_enc text",
   "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_expires_at timestamptz",
+  // WP-4.19 per-user calendar sync opt-in (delegated OAuth only).
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS calendar_sync boolean NOT NULL DEFAULT false",
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS calendar_synced_at timestamptz",
 ]);
 
 function pool() {
@@ -127,6 +133,10 @@ function rowToAccount(r: Record<string, unknown>): MailAccount {
     oauthProvider:
       r.oauth_provider === "microsoft" || r.oauth_provider === "google" ? r.oauth_provider : null,
     enabled: Boolean(r.enabled),
+    calendarSync: Boolean(r.calendar_sync),
+    lastCalendarSyncAt: r.calendar_synced_at
+      ? new Date(r.calendar_synced_at as string).toISOString()
+      : null,
     lastUid: r.last_uid == null ? null : Number(r.last_uid),
     uidValidity: r.uid_validity ? String(r.uid_validity) : null,
     lastSyncAt: r.last_sync_at ? new Date(r.last_sync_at as string).toISOString() : null,
@@ -250,6 +260,41 @@ export async function setMailAccountEnabled(
     [brainId, id, enabled]
   );
   return rows[0] ? rowToAccount(rows[0]) : null;
+}
+
+/** WP-4.19: opt an OAuth mailbox in/out of two-way calendar sync. */
+export async function setCalendarSync(
+  brainId: string,
+  id: string,
+  enabled: boolean
+): Promise<MailAccount | null> {
+  await ensureSchema();
+  const { rows } = await pool().query(
+    `UPDATE subsumio_mail_accounts SET calendar_sync = $3, updated_at = now()
+      WHERE brain_id = $1 AND id = $2 AND auth_type = 'oauth' RETURNING *`,
+    [brainId, id, enabled]
+  );
+  return rows[0] ? rowToAccount(rows[0]) : null;
+}
+
+/** Enabled OAuth accounts that opted into calendar sync — cron only. */
+export async function listCalendarSyncAccounts(): Promise<MailAccount[]> {
+  await ensureSchema();
+  const { rows } = await pool().query(
+    `SELECT * FROM subsumio_mail_accounts
+      WHERE enabled = true AND auth_type = 'oauth' AND calendar_sync = true
+      ORDER BY calendar_synced_at ASC NULLS FIRST`
+  );
+  return rows.map(rowToAccount);
+}
+
+export async function recordCalendarSyncResult(id: string, error: string | null): Promise<void> {
+  await ensureSchema();
+  await pool().query(
+    `UPDATE subsumio_mail_accounts SET calendar_synced_at = now(), last_error = $2, updated_at = now()
+      WHERE id = $1`,
+    [id, error]
+  );
 }
 
 export async function deleteMailAccount(brainId: string, id: string): Promise<boolean> {

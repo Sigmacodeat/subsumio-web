@@ -72,7 +72,7 @@ export default function CityPage({ params }: { params: Promise<{ slug: string }>
 
     return (
       <>
-        <JsonLd data={organizationLd()} />
+        <JsonLd data={organizationLd("de")} />
         <JsonLd data={CityServiceLd(city)} />
         <JsonLd
           data={serviceLd({

@@ -5,7 +5,17 @@
 // assigned to matters and triaged; replies go out from the firm's address.
 
 import { useCallback, useEffect, useState } from "react";
-import { Inbox, Loader2, Mail, Pause, Play, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  CalendarSync,
+  Inbox,
+  Loader2,
+  Mail,
+  Pause,
+  Play,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +37,10 @@ interface Account {
   folder: string;
   smtpHost: string | null;
   authType?: "password" | "oauth";
+  oauthProvider?: "microsoft" | "google" | null;
   enabled: boolean;
+  calendarSync?: boolean;
+  lastCalendarSyncAt?: string | null;
   lastSyncAt: string | null;
   lastError: string | null;
 }
@@ -185,19 +198,31 @@ export default function EmailSettingsPage() {
     }
   }
 
-  async function act(id: string, kind: "sync" | "toggle" | "delete", enabled?: boolean) {
+  async function act(
+    id: string,
+    kind: "sync" | "toggle" | "delete" | "calendar" | "calsync",
+    enabled?: boolean
+  ) {
     setBusy(`${kind}:${id}`);
     try {
       const res =
         kind === "sync"
           ? await csrfFetch(`/api/email/accounts/${id}/sync`, { method: "POST" })
-          : kind === "toggle"
-            ? await csrfFetch(`/api/email/accounts/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled: !enabled }),
-              })
-            : await csrfFetch(`/api/email/accounts/${id}`, { method: "DELETE" });
+          : kind === "calsync"
+            ? await csrfFetch(`/api/email/accounts/${id}/calendar-sync`, { method: "POST" })
+            : kind === "calendar"
+              ? await csrfFetch(`/api/email/accounts/${id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ calendarSync: !enabled }),
+                })
+              : kind === "toggle"
+                ? await csrfFetch(`/api/email/accounts/${id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enabled: !enabled }),
+                  })
+                : await csrfFetch(`/api/email/accounts/${id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         addToast({
@@ -205,10 +230,17 @@ export default function EmailSettingsPage() {
           title:
             kind === "sync"
               ? "Postfach konnte nicht abgerufen werden"
-              : kind === "toggle"
-                ? "Status konnte nicht geändert werden"
-                : "Postfach konnte nicht getrennt werden",
-          description: "Bitte versuchen Sie es erneut.",
+              : kind === "calsync"
+                ? "Kalender konnte nicht synchronisiert werden"
+                : kind === "calendar"
+                  ? "Kalender-Sync konnte nicht geändert werden"
+                  : kind === "toggle"
+                    ? "Status konnte nicht geändert werden"
+                    : "Postfach konnte nicht getrennt werden",
+          description:
+            data?.error === "calendar_sync_oauth_only"
+              ? "Kalender-Sync ist nur für Microsoft-365-Postfächer verfügbar."
+              : "Bitte versuchen Sie es erneut.",
         });
       } else if (kind === "sync") {
         const r = unwrapApiBody(data).result;
@@ -216,6 +248,13 @@ export default function EmailSettingsPage() {
           type: "success",
           title: "Postfach abgerufen",
           description: `${r?.stored ?? 0} neue E-Mails, ${r?.assigned ?? 0} einer Akte zugeordnet.`,
+        });
+      } else if (kind === "calsync") {
+        const r = data?.result;
+        addToast({
+          type: "success",
+          title: "Kalender synchronisiert",
+          description: `${r?.pulled ?? 0} Termine übernommen, ${r?.pushed ?? 0} an Outlook gesendet.`,
         });
       }
       await load();
@@ -444,6 +483,43 @@ export default function EmailSettingsPage() {
                 <div className="mt-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
                   {a.imapHost} · Ordner {a.folder} · zuletzt abgerufen: {formatWhen(a.lastSyncAt)}
                 </div>
+                {a.oauthProvider === "microsoft" && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                    <CalendarSync
+                      size={13}
+                      aria-hidden
+                      className={a.calendarSync ? "text-[color:var(--ds-success-text)]" : undefined}
+                    />
+                    <span>
+                      Kalender:{" "}
+                      {a.calendarSync
+                        ? `2-Wege-Sync aktiv · zuletzt ${formatWhen(a.lastCalendarSyncAt ?? null)}`
+                        : "nicht synchronisiert"}
+                    </span>
+                    <button
+                      type="button"
+                      className="font-medium text-[color:var(--brand-primary)] underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
+                      disabled={busy !== null}
+                      onClick={() => act(a.id, "calendar", a.calendarSync)}
+                    >
+                      {busy === `calendar:${a.id}`
+                        ? "…"
+                        : a.calendarSync
+                          ? "deaktivieren"
+                          : "aktivieren"}
+                    </button>
+                    {a.calendarSync && (
+                      <button
+                        type="button"
+                        className="font-medium text-[color:var(--brand-primary)] underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
+                        disabled={busy !== null}
+                        onClick={() => act(a.id, "calsync")}
+                      >
+                        {busy === `calsync:${a.id}` ? "Synchronisiere…" : "jetzt synchronisieren"}
+                      </button>
+                    )}
+                  </div>
+                )}
                 {a.lastError && (
                   <div className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                     Der letzte Abruf ist fehlgeschlagen. Bitte prüfen Sie das Passwort bzw. die

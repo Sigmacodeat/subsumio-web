@@ -44,6 +44,10 @@ const NormReaderPanel = dynamic(
   () => import("@/components/legal/NormReaderPanel").then((m) => m.NormReaderPanel),
   { ssr: false }
 );
+const CtiCallBanner = dynamic(
+  () => import("@/components/dashboard/CtiCallBanner").then((m) => m.CtiCallBanner),
+  { ssr: false, loading: () => null }
+);
 const CopilotSidebar = dynamic(
   () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
   {
@@ -818,6 +822,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       )}
       <CopilotSidebar open={copilotVisible} onToggle={() => setCopilotOpen((v) => !v)} />
       <NormReaderPanel />
+      <CtiCallBanner />
 
       {/* Push notification toast (native app only) */}
       {nativeFeatures.pushNotification && (

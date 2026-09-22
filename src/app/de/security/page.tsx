@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={organizationLd()} />
+      <JsonLd data={organizationLd("de")} />
       <JsonLd data={faqPageLd(SECURITY.faq)} />
       <JsonLd
         data={breadcrumbLd([

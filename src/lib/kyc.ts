@@ -30,6 +30,8 @@ export interface KYCIdentification {
   birth_date?: string;
   /** § 8b Abs. 5: copy of the document retained. */
   copy_retained?: boolean;
+  /** Slug der Ausweiskopie im DMS der Akte (§ 8b Abs. 5 — Aufbewahrung). */
+  document_file_slug?: string;
   /** § 8b Abs. 3: party not physically present. */
   remote?: boolean;
   additional_measures?: string;
@@ -71,6 +73,14 @@ export interface KYCVerification {
   pep_check: boolean;
   pep_match?: boolean;
   pep_note?: string;
+  /** Automatische PEP-Screening-Quelle (z. B. OpenSanctions) — nur gesetzt,
+   *  wenn ein externer Check tatsächlich lief. */
+  pep_checked_source?: string;
+  pep_checked_at?: string;
+  pep_candidates?: Array<{
+    name: string;
+    candidates: Array<{ name: string; score: number; countries: string[] }>;
+  }>;
   sanctions_checked?: boolean;
   sanctions_source?: string;
   sanctions_hit?: boolean;

@@ -4,3 +4,6 @@
 # noise-stripping regexes in server/src/core/legal/split-statute.ts.
 law-corpus/
 law-corpus-split/
+
+# Scratch agent worktrees — not shipped, not format-gated
+.kilo/

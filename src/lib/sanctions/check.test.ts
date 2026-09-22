@@ -56,7 +56,7 @@ describe("Sanktionsprüfung einer Akte", () => {
     const result = await runSanctionsCheck(
       record(),
       { now: new Date("2026-09-18T08:00:00Z") },
-      async () => list
+      async () => [list]
     );
     expect(result).toMatchObject({
       hits: [],
@@ -80,7 +80,7 @@ describe("Sanktionsprüfung einer Akte", () => {
         beneficial_owners: [{ name: "Ramzan Kadyrov", verified: true }],
       }),
       {},
-      async () => list
+      async () => [list]
     );
     expect(result!.hits).toHaveLength(1);
     expect(result!.hits[0].name).toBe("Ramzan Kadyrov");
@@ -95,18 +95,18 @@ describe("Sanktionsprüfung einer Akte", () => {
     const same = await runSanctionsCheck(
       record({ client_name: "Ramzan Kadyrov" }),
       { birthDate: "1976-10-05" },
-      async () => list
+      async () => [list]
     );
     expect(same!.hits[0].matches[0].kind).toBe("exact");
     const other = await runSanctionsCheck(
       record({ client_name: "Ramzan Kadyrov" }),
       { birthDate: "1990-01-01" },
-      async () => list
+      async () => [list]
     );
     expect(other!.hits[0].matches[0].kind).not.toBe("exact");
   });
 
   it("gibt null zurück, solange keine Liste geladen ist — kein falsches „keine Treffer“", async () => {
-    expect(await runSanctionsCheck(record(), {}, async () => null)).toBeNull();
+    expect(await runSanctionsCheck(record(), {}, async () => [])).toBeNull();
   });
 });

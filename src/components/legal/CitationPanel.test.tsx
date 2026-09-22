@@ -24,6 +24,12 @@ vi.mock("@/lib/use-lang", () => ({
   useLang: () => ({ lang: "de", t: (k: string) => k, setLang: () => {} }),
 }));
 
+// useMe runs through react-query — stub it so the panel renders without a
+// QueryClientProvider (jurisdiction badge is driven by props, not the hook).
+vi.mock("@/lib/queries/auth", () => ({
+  useMe: () => ({ data: undefined }),
+}));
+
 describe("CitationPanel", () => {
   const baseData: CitationPanelData = {
     citations: [{ slug: "bgb/433", title: "§ 433 BGB" }],

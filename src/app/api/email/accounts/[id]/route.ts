@@ -1,11 +1,19 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
-import { deleteMailAccount, setMailAccountEnabled } from "@/lib/email/imap-accounts";
+import {
+  deleteMailAccount,
+  getMailAccount,
+  setCalendarSync,
+  setMailAccountEnabled,
+} from "@/lib/email/imap-accounts";
 
 export const dynamic = "force-dynamic";
 
-const patchSchema = z.object({ enabled: z.boolean() });
+const patchSchema = z.object({
+  enabled: z.boolean().optional(),
+  calendarSync: z.boolean().optional(),
+});
 
 export const PATCH = createHandler(
   {
@@ -16,17 +24,27 @@ export const PATCH = createHandler(
     audit: (_ctx, body) => ({
       action: "email.account_update" as const,
       entityType: "mail_account",
-      details: { enabled: body.enabled },
+      details: { enabled: body.enabled, calendarSync: body.calendarSync },
     }),
   },
   async (ctx, body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
-    const account = await setMailAccountEnabled(
-      mailboxScopeFor(ctx, req).brainId,
-      id,
-      body.enabled
-    );
+    const brainId = mailboxScopeFor(ctx, req).brainId;
+    let account =
+      body.enabled === undefined
+        ? await getMailAccount(brainId, id)
+        : await setMailAccountEnabled(brainId, id, body.enabled);
     if (!account) return apiError("not_found", "Postfach nicht gefunden", 404);
+    if (body.calendarSync !== undefined) {
+      const updated = await setCalendarSync(brainId, id, body.calendarSync);
+      if (!updated)
+        return apiError(
+          "calendar_sync_oauth_only",
+          "Kalender-Sync ist nur für OAuth-Postfächer (Microsoft 365) verfügbar",
+          400
+        );
+      account = updated;
+    }
     return Response.json({ account });
   }
 );

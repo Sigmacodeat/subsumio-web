@@ -270,7 +270,10 @@ export function PrivacyContent({
         über{" "}
         <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span>{" "}
         auslösen. Sie haben das Recht auf Beschwerde bei der Österreichischen Datenschutzbehörde,
-        Barichgasse 40–42, 1030 Wien, dsb.gv.at.
+        Barichgasse 40–42, 1030 Wien, dsb.gv.at
+        {market === "de" &&
+          ", sowie bei der für Sie zuständigen deutschen Aufsichtsbehörde (Art. 77 DSGVO)"}
+        .
       </p>
 
       <H2>11. Änderungen</H2>

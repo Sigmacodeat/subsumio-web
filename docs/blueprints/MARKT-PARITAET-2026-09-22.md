@@ -159,10 +159,34 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
 17. **Workflow-Engine „wenn X dann Y".** Trigger (Akte angelegt, Frist <
     N Tage, Rechnung überfällig, Dokument hochgeladen) → Aktionen
     (Aufgabe, Mail, Status). Engine-seitiger Cron-Evaluator + UI-Builder.
+    ✅ **Teil geliefert:** Regeln als `automation`-Pages mit 8 Events
+    (case.created, case.status_changed, document.uploaded, deadline.created,
+    deadline.due_soon, message.received, booking.created, invoice.overdue),
+    Payload-Filtern und {platzhalter}-Interpolation; Aktionen create_task /
+    notify (SSE) / send_mail / start_workflow. CRUD via `api/automations`,
+    UI-Builder `AutomationsPanel` auf `/dashboard/workflows`. Cron-Evaluator
+    `api/cron/automations` scannt alle Entity-Pages, dispatcht via
+    `dispatchAutomations`, Idempotenz über `fired_keys` (FIFO-Cap 500).
+    Fix: `updateAutomation` nutzt POST-merge (Engine hat kein PUT).
 18. **KYC ausbauen.** PEP-Liste (OpenSanctions API o.ä.), UN/OFAC-
     Sanktionslisten, Ausweis-Upload + Prüfprotokoll.
+    ✅ **Geliefert:** `src/lib/sanctions/` (EU-FSF, UN-SC, OFAC-SDN Parser +
+    Store, OpenSanctions-PEP-Screening, Name-Matching), Sync-Cron
+    `api/cron/sanctions-sync`, KYC-UI mit § 8b-RAO-Prüfprotokoll
+    (Risiko-Faktoren, wirtschaftliche Eigentümer, Sanktionscheck mit
+    Listen-Stand/Quelle). Ergänzt: Ausweis-Upload-Control — Scan landet
+    via `api.upload.file` als DMS-Dokument in der Akte
+    (`identification.document_file_slug`, § 8b Abs. 5 RAO).
 19. **Kalender 2-Wege pro Nutzer.** msgraph.ts + outlook/calendar-Routen
     existieren — von „ein Postfach/Admin" auf pro-Nutzer-OAuth heben.
+    ✅ **Geliefert:** Delegierter OAuth-Flow (`api/outlook/connect` +
+    `callback` mit State-Cookie/Timing-Safe-Compare, `disconnect`,
+    `status`), Tokens verschlüsselt im User-Store (`ms365*` in
+    SENSITIVE_USER_FIELDS), Auto-Refresh. Rückrichtung: `calendar/create`
+    schreibt bei verbundenem Account in den persönlichen Kalender
+    (`/me/events`), sonst App-Level-Fallback; Cron `outlook-user-sync`
+    spiegelt `/me/calendarView` pro Nutzer (Slug mit User-ID) und pusht
+    geflaggte Termine nach. Settings-Card „Outlook-Kalender (persönlich)".
 20. **CTI.** Webhook für Placetel/sipgate/3CX: eingehender Ruf →
     Anruferkennung → Akt-Öffnen + Telefonnotiz mit Timer.
 21. **Outlook-Add-in: Anhänge ablegen** (Mail-Anhänge → Akt-DMS).

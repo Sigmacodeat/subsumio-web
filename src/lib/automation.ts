@@ -257,10 +257,14 @@ export async function saveAutomation(brainId: string, rule: AutomationRule): Pro
 }
 
 export async function updateAutomation(brainId: string, rule: AutomationRule): Promise<boolean> {
-  const res = await engineFetch(brainId, `/api/pages/${encodeURIComponent(rule.slug)}`, {
-    method: "PUT",
+  // Die Engine kennt kein PUT auf /api/pages — Merge-Update via POST.
+  const res = await engineFetch(brainId, "/api/pages", {
+    method: "POST",
     body: JSON.stringify({
+      slug: rule.slug,
       title: rule.name,
+      type: "automation",
+      merge: true,
       frontmatter: automationToFrontmatter(rule),
     }),
   });

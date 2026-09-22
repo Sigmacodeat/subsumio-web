@@ -144,6 +144,16 @@
 # Mail is handled by imap-sync above.
 */15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-sync || true
 
+# ── Every 15 minutes — per-user Outlook calendar sync (WP-4.19) ──
+# Two-way sync for every mailbox that opted into calendar_sync under
+# Einstellungen → E-Mail-Postfach. No-op when no account opted in.
+*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-user-sync || true
+
+# ── Every hour — Demo session cleanup ──
+# Purges the isolated engine source of expired demo sessions and mails the
+# ops mailbox when the daily demo question budget or purge backlog spikes.
+30 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/demo-cleanup || true
+
 # ── Every 30 minutes — Deadline alerts (realtime escalation) ──
 # Broadcasts realtime alerts for deadlines crossing urgency thresholds.
 */30 * * * *   curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-alerts || true

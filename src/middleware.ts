@@ -210,6 +210,9 @@ const API_CSRF_EXEMPT_PATHS = new Set([
   // Public appointment booking (/termin): same anonymous profile — per-IP
   // rate limits (60/h GET, 10/h POST) and a honeypot inside the route.
   "/api/booking/public",
+  // CTI webhook (Placetel/sipgate/3CX): machine-to-machine, Bearer-token
+  // auth inside the route — providers can't send the CSRF cookie.
+  "/api/cti/webhook",
   // Live-demo session bootstrap: anonymous POST, issues the signed demo
   // session cookie. Per-IP rate limited inside the route.
   "/api/demo/session",
