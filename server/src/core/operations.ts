@@ -6413,6 +6413,10 @@ const legal_contract_redline: Operation = {
     counterparty_text: { type: "string", description: "Counterparty version for comparison" },
     playbook_slug: { type: "string", description: "Optional clause playbook page slug" },
     contract_type: { type: "string", description: "Contract type" },
+    instruction: {
+      type: "string",
+      description: "Free-form lawyer instruction, e.g. 'tighten liability clauses'",
+    },
     jurisdiction: { type: "string", description: "Jurisdiction code" },
     perspective: {
       type: "string",
@@ -6433,6 +6437,7 @@ const legal_contract_redline: Operation = {
         : {}),
       ...(typeof p.playbook_slug === "string" ? { playbook_slug: p.playbook_slug } : {}),
       ...(typeof p.contract_type === "string" ? { contract_type: p.contract_type } : {}),
+      ...(typeof p.instruction === "string" ? { instruction: p.instruction } : {}),
       jurisdiction: typeof p.jurisdiction === "string" ? p.jurisdiction : "all",
       perspective: (["client", "counterparty", "neutral"].includes(String(p.perspective))
         ? p.perspective

@@ -325,6 +325,18 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         allowed: ADMIN,
       },
       {
+        id: "mcp",
+        label: { de: "KI-Zugriff (MCP)", en: "AI access (MCP)" },
+        desc: {
+          de: "KI-Assistenten wie Claude über das Model Context Protocol lesend an das Kanzleiwissen anbinden.",
+          en: "Connect AI assistants like Claude to the firm knowledge via the Model Context Protocol.",
+        },
+        icon: Network,
+        href: "/dashboard/settings/mcp",
+        allowed: ADMIN,
+        keywords: "mcp model context protocol claude",
+      },
+      {
         id: "rciid",
         label: { de: "Krypto-Forensik (RCIID)", en: "Crypto forensics (RCIID)" },
         desc: {

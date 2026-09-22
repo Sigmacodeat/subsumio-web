@@ -14,11 +14,12 @@ import { mkdirSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 import { atomicWrite, contentHash, stripHtmlComplete, decodeEntities } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
-const DELAY_MS = 500;
+
 const MAX_RETRIES = 3;
 const MAX_PAGES = 5000;
 
@@ -322,7 +323,7 @@ async function fetchDocContent(dokumentliste: unknown, dokumentUrl: string): Pro
       const text = cleanText(xml);
       if (text.length > 100) return text;
     }
-    await new Promise((r) => setTimeout(r, DELAY_MS));
+    await risMassPause("Missing-Sources");
   }
 
   // Strategy 2: HTML content URL
@@ -333,7 +334,7 @@ async function fetchDocContent(dokumentliste: unknown, dokumentUrl: string): Pro
       const text = cleanText(html);
       if (text.length > 100) return text;
     }
-    await new Promise((r) => setTimeout(r, DELAY_MS));
+    await risMassPause("Missing-Sources");
   }
 
   // Strategy 3: DokumentUrl (RIS page — less structured)

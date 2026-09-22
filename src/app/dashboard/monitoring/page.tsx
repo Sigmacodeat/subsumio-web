@@ -23,6 +23,7 @@ import {
   Clock,
   Globe,
   MoreHorizontal,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { csrfFetch } from "@/lib/csrf";
+import { useToast } from "@/components/ui/toast";
 import type { TFunc } from "@/content/dashboard";
 import {
   type RegulatoryMonitor,
@@ -104,6 +107,9 @@ interface MonitorFormState {
   status: MonitorStatus;
   email_notifications: boolean;
   notify_emails: string;
+  /** WP-7.41: Akten-Slug für Mandanten-Publishing (leer = nur intern). */
+  case_slug: string;
+  owner_name: string;
   newKeyword: string;
 }
 
@@ -117,6 +123,8 @@ const emptyForm: MonitorFormState = {
   status: "active",
   email_notifications: true,
   notify_emails: "",
+  case_slug: "",
+  owner_name: "",
   newKeyword: "",
 };
 
@@ -150,6 +158,8 @@ function MonitorFormDialog({
         status: editing.status,
         email_notifications: editing.email_notifications,
         notify_emails: editing.notify_emails?.join(", ") ?? "",
+        case_slug: editing.case_slug ?? "",
+        owner_name: editing.owner_name ?? "",
         newKeyword: "",
       });
     } else {
@@ -203,6 +213,8 @@ function MonitorFormDialog({
             .split(",")
             .map((e) => e.trim())
             .filter(Boolean) || undefined,
+        case_slug: form.case_slug.trim() || undefined,
+        owner_name: form.owner_name.trim() || undefined,
         created_at: editing?.created_at ?? now,
         updated_at: now,
         last_run_at: editing?.last_run_at,
@@ -293,6 +305,35 @@ function MonitorFormDialog({
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* WP-7.41: Mandanten-Publishing — Monitor an Akte binden */}
+          <div className="grid grid-cols-1 gap-3 rounded-lg border border-dashed border-[color:var(--ds-border)] p-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="mon-case" className={labelCls}>
+                {t("monitoring.form_case_slug")}
+              </label>
+              <Input
+                id="mon-case"
+                value={form.case_slug}
+                onChange={(e) => setForm((f) => ({ ...f, case_slug: e.target.value }))}
+                placeholder="cases/mueller-huber"
+              />
+            </div>
+            <div>
+              <label htmlFor="mon-owner" className={labelCls}>
+                {t("monitoring.form_owner")}
+              </label>
+              <Input
+                id="mon-owner"
+                value={form.owner_name}
+                onChange={(e) => setForm((f) => ({ ...f, owner_name: e.target.value }))}
+                placeholder="Dr. Anna Beispiel"
+              />
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] sm:col-span-2">
+              {t("monitoring.form_case_hint")}
+            </p>
           </div>
 
           <div>
@@ -578,10 +619,13 @@ function MonitorCard({
 function AlertItem({
   alert,
   onMarkRead,
+  onPublish,
   t,
 }: {
   alert: RegulatoryAlert;
   onMarkRead: () => void;
+  /** WP-7.41: nur gesetzt, wenn der Monitor an eine Mandant-Akte gebunden ist. */
+  onPublish?: () => void;
   t: TFunc;
 }) {
   return (
@@ -639,7 +683,29 @@ function AlertItem({
                 <Check size={11} /> {t("monitoring.alert_mark_read")}
               </button>
             )}
+            {alert.status === "published" ? (
+              <span className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-success-text)]">
+                <Check size={11} /> {t("monitoring.alert_published")}
+              </span>
+            ) : (
+              onPublish && (
+                <button
+                  onClick={onPublish}
+                  className="brand-text inline-flex items-center gap-1 text-xs transition-[background-color,border-color,color] hover:underline active:scale-[0.99] motion-reduce:transition-none"
+                >
+                  <Share2 size={11} /> {t("monitoring.alert_publish")}
+                </button>
+              )
+            )}
           </div>
+          {alert.impact_note && (
+            <p className="rounded-lg bg-[color:var(--ds-surface-2)] p-2 text-xs text-[color:var(--ds-text-muted)]">
+              <span className="font-medium text-[color:var(--ds-text)]">
+                {t("portal.client_alert_impact")}
+              </span>{" "}
+              {alert.impact_note}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -650,10 +716,18 @@ function AlertItem({
 
 export default function MonitoringPage() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const confirmDialog = useConfirm();
   const [monitors, setMonitors] = useState<RegulatoryMonitor[]>([]);
   const [alerts, setAlerts] = useState<RegulatoryAlert[]>([]);
   const [alertSlugs, setAlertSlugs] = useState<string[]>([]);
+  // WP-7.41: Publish-Dialog (Alert → Mandantenportal der verknüpften Akte)
+  const [publishTarget, setPublishTarget] = useState<{
+    alert: RegulatoryAlert;
+    slug: string;
+  } | null>(null);
+  const [impactNote, setImpactNote] = useState("");
+  const [publishBusy, setPublishBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -787,6 +861,39 @@ export default function MonitoringPage() {
       frontmatter: { ...alertToFrontmatter(alert), read: true },
     });
     await loadData();
+  }
+
+  /** WP-7.41: kuratierter Alert → Mandantenportal (mit Impact-Note). */
+  async function publishAlert() {
+    const target = publishTarget;
+    if (!target || !target.alert.case_slug || impactNote.trim().length < 10) return;
+    setPublishBusy(true);
+    try {
+      const res = await csrfFetch("/api/monitoring/publish-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          alert_slug: target.slug,
+          case_slug: target.alert.case_slug,
+          impact_note: impactNote.trim(),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        addToast({
+          type: "error",
+          title: t("monitoring.publish_error"),
+          description: typeof data.error === "string" ? data.error : undefined,
+        });
+        return;
+      }
+      addToast({ type: "success", title: t("monitoring.publish_ok") });
+      setPublishTarget(null);
+      setImpactNote("");
+      await loadData();
+    } finally {
+      setPublishBusy(false);
+    }
   }
 
   // ── Filtered + sorted alerts ──
@@ -1071,6 +1178,14 @@ export default function MonitoringPage() {
                       onMarkRead={() => {
                         if (slug) markAlertRead(alert, slug);
                       }}
+                      onPublish={
+                        alert.case_slug && slug
+                          ? () => {
+                              setPublishTarget({ alert, slug });
+                              setImpactNote("");
+                            }
+                          : undefined
+                      }
                       t={t}
                     />
                   );
@@ -1159,6 +1274,65 @@ export default function MonitoringPage() {
         editing={editingMonitor}
         t={t}
       />
+
+      {/* WP-7.41: Publish-Dialog — Alert kuratieren & ins Mandantenportal stellen */}
+      <Dialog
+        open={publishTarget !== null}
+        onOpenChange={(v) => {
+          if (!v && !publishBusy) {
+            setPublishTarget(null);
+            setImpactNote("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("monitoring.publish_title")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {publishTarget?.alert.title}
+            </p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("monitoring.publish_desc")}
+            </p>
+            <div>
+              <label htmlFor="publish-impact" className={labelCls}>
+                {t("monitoring.publish_impact_label")}
+              </label>
+              <textarea
+                id="publish-impact"
+                value={impactNote}
+                onChange={(e) => setImpactNote(e.target.value)}
+                rows={4}
+                maxLength={4_000}
+                placeholder={t("monitoring.publish_impact_placeholder")}
+                className={cn(inputCls, "resize-y")}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              disabled={publishBusy}
+              onClick={() => {
+                setPublishTarget(null);
+                setImpactNote("");
+              }}
+            >
+              {t("monitoring.publish_cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={publishBusy || impactNote.trim().length < 10}
+              onClick={() => void publishAlert()}
+            >
+              {publishBusy && <Loader2 size={14} className="animate-spin" />}
+              {t("monitoring.publish_confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

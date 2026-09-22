@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Subsumio</string>
+    <string name="title_activity_main">Subsumio</string>
+    <string name="package_name">io.subsum.app</string>
+    <string name="custom_url_scheme">io.subsum.app</string>
+</resources>

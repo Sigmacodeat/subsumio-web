@@ -39,6 +39,12 @@ export interface RegulatoryMonitor {
   email_notifications: boolean;
   notify_emails?: string[];
   severity_filter?: Severity;
+  /** WP-7.41 Monitors-as-a-Service: optional an eine Mandant-Akte gebunden —
+   *  kuratierte Alerts dieses Monitors können in deren Portal veröffentlicht
+   *  werden. */
+  case_slug?: string;
+  /** Kuratierender Anwalt (Anzeigename). */
+  owner_name?: string;
   created_at: string;
   updated_at: string;
   last_run_at?: string;
@@ -61,6 +67,15 @@ export interface RegulatoryAlert {
   ecli?: string;
   keywords?: string[];
   read: boolean;
+  /** WP-7.41: "published" = vom Anwalt kuratiert und ins Mandantenportal
+   *  der verknüpften Akte gestellt. */
+  status?: "new" | "published";
+  /** Anwaltliche Einordnung für den Mandanten (Pflicht beim Publizieren). */
+  impact_note?: string;
+  published_at?: string;
+  /** Akte, in deren Portal der Alert veröffentlicht wurde. */
+  case_slug?: string;
+  owner_name?: string;
   created_at: string;
 }
 
@@ -120,6 +135,8 @@ export function frontmatterToMonitor(page: BrainPage): RegulatoryMonitor | null 
     email_notifications: fm.email_notifications !== false,
     notify_emails: Array.isArray(fm.notify_emails) ? fm.notify_emails.map(String) : undefined,
     severity_filter: fm.severity_filter as Severity | undefined,
+    case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
+    owner_name: fm.owner_name ? String(fm.owner_name) : undefined,
     created_at: String(fm.created_at ?? page.created_at ?? new Date().toISOString()),
     updated_at: String(fm.updated_at ?? page.updated_at ?? new Date().toISOString()),
     last_run_at: fm.last_run_at ? String(fm.last_run_at) : undefined,
@@ -142,6 +159,8 @@ export function monitorToFrontmatter(m: Partial<RegulatoryMonitor>): Record<stri
     email_notifications: m.email_notifications,
     notify_emails: m.notify_emails,
     severity_filter: m.severity_filter,
+    case_slug: m.case_slug,
+    owner_name: m.owner_name,
     created_at: m.created_at,
     updated_at: m.updated_at,
     last_run_at: m.last_run_at,
@@ -180,6 +199,11 @@ export function frontmatterToAlert(page: BrainPage): RegulatoryAlert | null {
     ecli: fm.ecli ? String(fm.ecli) : undefined,
     keywords: Array.isArray(fm.keywords) ? fm.keywords.map(String) : undefined,
     read: fm.read === true,
+    status: fm.status === "published" ? "published" : "new",
+    impact_note: fm.impact_note ? String(fm.impact_note) : undefined,
+    published_at: fm.published_at ? String(fm.published_at) : undefined,
+    case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
+    owner_name: fm.owner_name ? String(fm.owner_name) : undefined,
     created_at: String(fm.created_at ?? page.created_at ?? new Date().toISOString()),
   };
 }
@@ -201,6 +225,11 @@ export function alertToFrontmatter(a: Partial<RegulatoryAlert>): Record<string, 
     ecli: a.ecli,
     keywords: a.keywords,
     read: a.read,
+    status: a.status,
+    impact_note: a.impact_note,
+    published_at: a.published_at,
+    case_slug: a.case_slug,
+    owner_name: a.owner_name,
     created_at: a.created_at,
   };
 }

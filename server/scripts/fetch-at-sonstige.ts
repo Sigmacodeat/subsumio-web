@@ -14,11 +14,12 @@ import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 import { atomicWrite } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
-const DELAY_MS = 500;
+
 const MAX_RETRIES = 3;
 
 const args = process.argv.slice(2);
@@ -286,7 +287,7 @@ async function fetchSource(source: SourceConfig): Promise<void> {
         let text = "";
         if (docUrl) {
           text = await fetchSourceText(docUrl);
-          await new Promise((r) => setTimeout(r, DELAY_MS));
+          await risMassPause("Sonstige-Fetch");
         }
 
         if (text.length < 50) {

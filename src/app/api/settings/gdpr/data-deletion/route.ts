@@ -6,6 +6,7 @@ import { revokeAllSessions, SESSION_COOKIE } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { deleteMemoriesOfUser } from "@/lib/copilot-memory";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/settings/gdpr/data-deletion");
@@ -70,12 +71,26 @@ export const POST = createHandler(
       )
     );
 
+    // WP-5.30 / Art. 17 DSGVO: personal copilot-memory entries live in the
+    // (possibly shared firm) brain — erase the user's own rows even when the
+    // firm brain itself is not purged.
+    let memoriesDeleted = 0;
+    try {
+      memoriesDeleted = await deleteMemoriesOfUser(ctx.user.id, ctx.headers);
+    } catch (err) {
+      log.warn(
+        "[gdpr] Failed to delete copilot memories for user",
+        ctx.user.id,
+        err instanceof Error ? err.message : err
+      );
+    }
+
     await revokeAllSessions(ctx.user.id);
 
     void logAudit("data.delete", "user", {
       entityId: ctx.user.id,
       userId: ctx.user.id,
-      details: { api_keys_deleted: apiKeys.length },
+      details: { api_keys_deleted: apiKeys.length, memories_deleted: memoriesDeleted },
     });
 
     await store.update(ctx.user.id, {

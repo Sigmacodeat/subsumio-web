@@ -925,6 +925,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           knowledge_reviews: updates.knowledgeReviews ?? caseData.knowledgeReviews,
           portal_enabled: updates.portalEnabled ?? caseData.portalEnabled,
           portal_note: updates.portalNote ?? caseData.portalNote,
+          portal_workflows: updates.portalWorkflows ?? caseData.portalWorkflows,
           audit_log: newAudit,
         };
         if (isOnline()) {

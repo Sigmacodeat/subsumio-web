@@ -19,6 +19,7 @@ import { readFileSync, writeFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import { risXmlToText, contentHash } from "./backfill-utils";
 import { validateBody, type DocClass } from "./normalize/canonical-schema.ts";
@@ -28,11 +29,8 @@ const dirIdx = args.indexOf("--dir");
 const limitIdx = args.indexOf("--limit");
 const dryRun = args.includes("--dry-run");
 const noLock = args.includes("--no-lock");
-const rateIdx = args.indexOf("--rate-ms");
-
 const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/at-judikatur-bvwg";
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
-const RATE_LIMIT_MS = rateIdx >= 0 ? parseInt(args[rateIdx + 1], 10) : 1500;
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
@@ -367,7 +365,7 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`Target dir:    ${TARGET_DIR}`);
   console.log(`Dry run:       ${dryRun ? "YES" : "no"}`);
-  console.log(`Rate limit:    ${RATE_LIMIT_MS}ms`);
+  console.log(`Rate limit:    ${RIS_PAUSE_MS}ms (+ Fenster-Gate 20:00–05:00)`);
   if (LIMIT) console.log(`Limit:         ${LIMIT}`);
   console.log("");
 
@@ -475,9 +473,9 @@ async function main() {
       }
     }
 
-    // Rate limit
+    // Rate limit + window gate (RIS: 0.5 req/s, 20:00–05:00/weekends/holidays)
     if (i < toProcess.length - 1) {
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      await risMassPause("Refetch");
     }
   }
 

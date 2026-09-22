@@ -96,6 +96,10 @@ async function persistAlertPage(
     ecli: hit.ecli,
     keywords: hit.keywords,
     read: false,
+    // WP-7.41: Mandanten-Bezug + Kurator vom Monitor erben — Alerts eines
+    // mandantenbezogenen Monitors können ins Portal der Akte gestellt werden.
+    case_slug: monitor.case_slug,
+    owner_name: monitor.owner_name,
     created_at: new Date().toISOString(),
   };
   try {

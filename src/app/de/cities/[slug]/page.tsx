@@ -16,6 +16,9 @@ import { CityPage as CityPageView } from "@/components/marketing/city-pages";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
+export const dynamicParams = false;
+export const dynamic = "force-static";
+
 export function generateStaticParams() {
   return getAllCitySlugs().map((slug) => ({ slug }));
 }
@@ -65,34 +68,33 @@ function CityServiceLd(city: CityPageContent) {
   };
 }
 
-export default function CityPage({ params }: { params: Promise<{ slug: string }> }) {
-  return params.then(({ slug }) => {
-    const city = getCityBySlug(slug);
-    if (!city) notFound();
+export default async function CityPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const city = getCityBySlug(slug);
+  if (!city) notFound();
 
-    return (
-      <>
-        <JsonLd data={organizationLd("de")} />
-        <JsonLd data={CityServiceLd(city)} />
-        <JsonLd
-          data={serviceLd({
-            name: city.title,
-            description: city.metaDesc,
-            url: `/de/cities/${city.slug}`,
-            audience: `Rechtsanwälte in ${city.city}`,
-            areaServed: "DE",
-          })}
-        />
-        <JsonLd data={faqPageLd(city.faq)} />
-        <JsonLd
-          data={breadcrumbLd([
-            { name: "Subsumio", url: "/de" },
-            { name: "Städte", url: "/de/cities" },
-            { name: city.city, url: `/de/cities/${city.slug}` },
-          ])}
-        />
-        <CityPageView market="de" city={city} />
-      </>
-    );
-  });
+  return (
+    <>
+      <JsonLd data={organizationLd("de")} />
+      <JsonLd data={CityServiceLd(city)} />
+      <JsonLd
+        data={serviceLd({
+          name: city.title,
+          description: city.metaDesc,
+          url: `/de/cities/${city.slug}`,
+          audience: `Rechtsanwälte in ${city.city}`,
+          areaServed: "DE",
+        })}
+      />
+      <JsonLd data={faqPageLd(city.faq)} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/de" },
+          { name: "Städte", url: "/de/cities" },
+          { name: city.city, url: `/de/cities/${city.slug}` },
+        ])}
+      />
+      <CityPageView market="de" city={city} />
+    </>
+  );
 }

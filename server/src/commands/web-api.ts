@@ -16,6 +16,7 @@ import { fileURLToPath } from "url";
 import {
   createHash,
   createHmac,
+  randomBytes,
   randomUUID,
   timingSafeEqual as cryptoTimingSafeEqual,
 } from "crypto";
@@ -40,6 +41,7 @@ import {
 } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
+import { executeRawJsonb } from "../core/sql-query.ts";
 import { publicErrorMessage } from "../core/public-error-message.ts";
 import {
   PRIVATE_CHAT_PREFIX,
@@ -3931,6 +3933,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             : {}),
           ...(typeof b.playbook_slug === "string" ? { playbook_slug: b.playbook_slug } : {}),
           ...(typeof b.contract_type === "string" ? { contract_type: b.contract_type } : {}),
+          ...(typeof b.instruction === "string" ? { instruction: b.instruction } : {}),
           jurisdiction: typeof b.jurisdiction === "string" ? b.jurisdiction : "all",
           perspective: (["client", "counterparty", "neutral"].includes(String(b.perspective))
             ? b.perspective
@@ -10206,6 +10209,104 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
     }
   );
+
+  // ── WP-5.29: MCP token management for firm brains ──────────────────────
+  // The web app proxies these with its shared key; each token is namespaced
+  // to the requesting brain via the x-subsumio-source header so a firm only
+  // ever sees/mints/revokes its own MCP tokens.
+  const mcpSource = (req: Request): string | null => {
+    const src = req.headers["x-subsumio-source"];
+    const v = Array.isArray(src) ? src[0] : src;
+    return v && /^[a-z0-9:_-]{1,200}$/i.test(v) ? v : null;
+  };
+
+  app.get("/api/mcp-tokens", guard, async (req: Request, res: Response) => {
+    const src = mcpSource(req);
+    if (!src) {
+      apiError(res, 400, "missing_source");
+      return;
+    }
+    try {
+      const rows = await engine.executeRaw<{
+        id: string;
+        name: string;
+        created_at: string;
+        last_used_at: string | null;
+        revoked_at: string | null;
+      }>(
+        `SELECT id, name, created_at, last_used_at, revoked_at FROM access_tokens
+          WHERE name LIKE $1 ORDER BY created_at DESC LIMIT 100`,
+        [`web-mcp:${src}:%`]
+      );
+      res.json({
+        tokens: rows.map((r) => ({
+          id: r.id,
+          name: r.name.slice(`web-mcp:${src}:`.length),
+          createdAt: r.created_at,
+          lastUsedAt: r.last_used_at,
+          revoked: r.revoked_at !== null,
+        })),
+      });
+    } catch (e) {
+      apiError(res, 500, "mcp_tokens_list_failed", e instanceof Error ? e.message : String(e));
+    }
+  });
+
+  app.post(
+    "/api/mcp-tokens",
+    guard,
+    express.json({ limit: "16kb" }),
+    async (req: Request, res: Response) => {
+      const src = mcpSource(req);
+      if (!src) {
+        apiError(res, 400, "missing_source");
+        return;
+      }
+      const body = (req.body ?? {}) as { name?: unknown };
+      const label = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
+      if (!label || !/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u.test(label)) {
+        apiError(res, 400, "invalid_name");
+        return;
+      }
+      const token = `gbrain_${randomBytes(32).toString("hex")}`;
+      const hash = createHash("sha256").update(token).digest("hex");
+      try {
+        await executeRawJsonb(
+          engine,
+          `INSERT INTO access_tokens (name, token_hash, permissions)
+            VALUES ($1, $2, $3::jsonb)`,
+          [`web-mcp:${src}:${label}`, hash],
+          [{ takes_holders: ["world"] }]
+        );
+        res.status(201).json({ name: label, token });
+      } catch (e) {
+        apiError(res, 500, "mcp_token_create_failed", e instanceof Error ? e.message : String(e));
+      }
+    }
+  );
+
+  app.delete("/api/mcp-tokens/:id", guard, async (req: Request, res: Response) => {
+    const src = mcpSource(req);
+    if (!src) {
+      apiError(res, 400, "missing_source");
+      return;
+    }
+    try {
+      const updated = await engine.executeRaw<{ id: string }>(
+        `UPDATE access_tokens SET revoked_at = now()
+          WHERE id = $1 AND name LIKE $2 AND revoked_at IS NULL
+          RETURNING id`,
+        [String(req.params.id), `web-mcp:${src}:%`]
+      );
+      if (updated.length === 0) {
+        apiError(res, 404, "mcp_token_not_found");
+        return;
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      apiError(res, 500, "mcp_token_revoke_failed", e instanceof Error ? e.message : String(e));
+    }
+  });
 
   console.error(
     `[web-api] Subsumio dashboard REST API mounted at /api/* (engine: ${config.engine})`

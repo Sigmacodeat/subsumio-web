@@ -75,6 +75,12 @@ export interface TaskEntry {
   /** Zuweisung/Delegation: who is responsible for this task. */
   assigneeId?: string;
   assigneeName?: string;
+  /** WP-7.42: "agent" = die Aufgabe wird vom KI-Agenten mit Aktenkontext
+   * bearbeitet (cron/agent-tasks); Ergebnis braucht anwaltliche Prüfung. */
+  assigneeType?: "user" | "agent";
+  agentStatus?: "pending" | "needs_review";
+  /** Vom Agenten erzeugtes Zwischenergebnis — nie als Endfassung zeigen. */
+  agentResult?: string;
 }
 
 export interface TimeEntry {
@@ -303,6 +309,26 @@ export interface CaseFrontmatter {
   documents?: DocumentEntry[];
   portal_enabled?: boolean;
   portal_note?: string;
+  /**
+   * WP-7.40: Workflow-Template-IDs (src/lib/workflow.ts), die Mandanten
+   * im Portal selbst ausführen dürfen. Prompts bleiben serverseitig.
+   */
+  portal_workflows?: string[];
+  /**
+   * Monitoring-Alerts, die der Anwalt ins Mandantenportal freigegeben hat
+   * (api/monitoring/publish-alert). Nur geprüfte Kurzfassungen — nie der
+   * interne Rohtext.
+   */
+  client_alerts?: Array<{
+    id: string;
+    title: string;
+    summary?: string;
+    url?: string;
+    date?: string;
+    severity?: string;
+    impact_note?: string;
+    published_at?: string;
+  }>;
   communications?: CommunicationEntry[];
   permissions?: PermissionInfo;
   audit_log?: AuditLogEntry[];

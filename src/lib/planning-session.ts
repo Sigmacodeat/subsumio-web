@@ -20,6 +20,41 @@ export interface PlanStep {
   dependencies?: string[];
   notes?: string;
   completedAt?: string;
+  /** Copilot-Tool, das der Schritt ausführen könnte (KI-Vorschlag). */
+  suggested_tool?: string;
+  /** Vorgeschlagene Tool-Parameter (werden vom Nutzer bestätigt). */
+  suggested_params?: Record<string, unknown>;
+  /** Tatsächlich ausgeführtes Tool + Ergebnis-Notiz. */
+  executed_tool?: string;
+  executed_at?: string;
+}
+
+/** Tools, die ein Plan-Schritt automatisch ausführen darf (Whitelist). */
+export const EXECUTABLE_STEP_TOOLS = [
+  "create_task",
+  "create_deadline",
+  "create_contact",
+  "send_email",
+  "request_signature",
+  "document_request_create",
+  "render_template",
+  "register_lookup",
+  "invoice_draft",
+  "search_cases",
+  "search_deadlines",
+  "search_tasks",
+  "search_calendar",
+  "client_lookup",
+  "precedent_search",
+] as const;
+
+export type ExecutableStepTool = (typeof EXECUTABLE_STEP_TOOLS)[number];
+
+export interface StepActionProposal {
+  /** null = Schritt ist manuell (kein passendes Tool). */
+  tool: ExecutableStepTool | null;
+  params: Record<string, unknown>;
+  rationale: string;
 }
 
 export type PlanStatus = "drafting" | "active" | "completed" | "abandoned";
@@ -373,6 +408,142 @@ Gib den aktualisierten Plan als JSON zurück:
   });
 
   return updated;
+}
+
+const STEP_ACTION_PROMPT = `Du bist ein Ausführungs-Planer für eine Anwalts-Software. Ein Plan-Schritt soll ausgeführt werden.
+
+PLAN-ZIEL: {goal}
+AKTEN-KONTEXT: {case_slug}
+
+SCHRITT: {step_title}
+BESCHREIBUNG: {step_description}
+
+Verfügbare Tools (name: Zweck):
+{tool_list}
+
+Entscheide, welches Tool diesen Schritt ausführt. Gib NUR JSON zurück:
+{{
+  "tool": "tool_name" oder null,
+  "params": {{ ... passende Parameter für das Tool ... }},
+  "rationale": "Ein Satz warum (oder warum kein Tool passt)"
+}}
+
+Regeln:
+- Wenn der Schritt rein intellektuell ist (prüfen, lesen, entscheiden), gib tool: null zurück.
+- Nutze Akten-Kontext als case_slug wo das Tool ihn braucht.
+- Parameter müssen zum Schema des Tools passen — im Zweifel nur die Pflichtfelder setzen.`;
+
+/**
+ * Proposes a Copilot tool call for a plan step (WP-5.24: sichtbarer Plan →
+ * echte Agent-Ausführung). The proposal is advisory — the actual execution
+ * goes through `/api/copilot/tools`, which enforces role-gating, the
+ * confirmation token flow for mutating tools, and credit checks.
+ */
+export async function proposeStepAction(
+  planId: string,
+  stepId: string
+): Promise<StepActionProposal | null> {
+  const plan = await loadPlan(planId);
+  if (!plan) return null;
+  const step = plan.steps.find((s) => s.id === stepId);
+  if (!step) return null;
+
+  const toolList = EXECUTABLE_STEP_TOOLS.join(", ");
+  const prompt = STEP_ACTION_PROMPT.replace("{goal}", plan.goal)
+    .replace("{case_slug}", plan.caseSlug ?? "(keine Akte)")
+    .replace("{step_title}", step.title)
+    .replace("{step_description}", step.description)
+    .replace("{tool_list}", toolList);
+
+  const result = await api.query.think(prompt, {
+    mode: "balanced",
+    queryMode: "deep_matter",
+  });
+
+  try {
+    let jsonStr = result.answer.trim();
+    const jsonMatch = result.answer.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) jsonStr = jsonMatch[1].trim();
+    const parsed = JSON.parse(jsonStr) as {
+      tool?: string | null;
+      params?: Record<string, unknown>;
+      rationale?: string;
+    };
+    const tool =
+      parsed.tool && (EXECUTABLE_STEP_TOOLS as readonly string[]).includes(parsed.tool)
+        ? (parsed.tool as ExecutableStepTool)
+        : null;
+    const params = { ...(parsed.params ?? {}) };
+    if (plan.caseSlug && !("case_slug" in params)) params.case_slug = plan.caseSlug;
+
+    // Persist suggestion on the step so the UI can render it on reload.
+    step.suggested_tool = tool ?? undefined;
+    step.suggested_params = params;
+    await persistPlan(plan);
+
+    return {
+      tool,
+      params,
+      rationale: parsed.rationale ?? "",
+    };
+  } catch {
+    return { tool: null, params: {}, rationale: "" };
+  }
+}
+
+/** Writes the whole plan back (used by proposeStepAction). */
+async function persistPlan(plan: PlanningSession): Promise<void> {
+  const slug = `${PLAN_SLUG_PREFIX}/${plan.id}`;
+  await api.brain.updatePage({
+    slug,
+    type: "copilot_plan",
+    content: plan.goal,
+    frontmatter: {
+      type: "copilot_plan",
+      plan_id: plan.id,
+      title: plan.title,
+      goal: plan.goal,
+      case_slug: plan.caseSlug,
+      status: plan.status,
+      steps: plan.steps,
+      current_step_index: plan.currentStepIndex,
+      conversation_turns: plan.conversationTurns,
+      created_at: plan.createdAt,
+      updated_at: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Marks a step as executed by a tool (called after `/api/copilot/tools`
+ * succeeded). Records the tool + result summary in `notes` for audit.
+ */
+export async function markStepExecuted(
+  planId: string,
+  stepId: string,
+  tool: string,
+  resultSummary: string
+): Promise<void> {
+  const plan = await loadPlan(planId);
+  if (!plan) throw new Error("Plan not found");
+  const step = plan.steps.find((s) => s.id === stepId);
+  if (!step) throw new Error("Step not found");
+
+  step.status = "completed";
+  step.completedAt = new Date().toISOString();
+  step.executed_tool = tool;
+  step.executed_at = step.completedAt;
+  step.notes = resultSummary.slice(0, 500);
+
+  const nextIncomplete = plan.steps.findIndex(
+    (s) => s.status === "pending" || s.status === "in_progress"
+  );
+  plan.currentStepIndex = nextIncomplete >= 0 ? nextIncomplete : plan.steps.length - 1;
+  plan.status = plan.steps.every((s) => s.status === "completed" || s.status === "skipped")
+    ? "completed"
+    : plan.status;
+  plan.updatedAt = new Date().toISOString();
+  await persistPlan(plan);
 }
 
 export async function abandonPlan(planId: string): Promise<void> {

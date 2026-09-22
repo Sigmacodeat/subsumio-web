@@ -1,10 +1,10 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
-import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
-import { deriveLiveRows } from "@/lib/corpus-pipeline-live";
+import { lawCorpusDir, lawCorpusNormalizedDir } from "@/lib/corpus-paths";
+import { deriveLiveRows, PIPELINE_KEY_TO_DIR } from "@/lib/corpus-pipeline-live";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/admin/corpus-command-center");
@@ -13,7 +13,58 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
 const NORMALIZED_ROOT = lawCorpusNormalizedDir();
+const RAW_ROOT = lawCorpusDir();
 const FLAGS_FILE = join(NORMALIZED_ROOT, "_steward-flags.json");
+
+// Corpus-Name → Verzeichnis relativ zum Corpus-Root, wenn es vom Namen
+// abweicht (eu/ ist ein Container mit zwei Unter-Corpora).
+const CORPUS_DIR_OVERRIDES: Record<string, string> = {
+  "eu-directives": "eu/directives",
+  "eu-regulations": "eu/regulations",
+};
+
+// Corpora deren Import-Pfad auf _normalized zeigt (corpus-pipeline.ts
+// importCmd viaNormalized). Alle anderen lesen aus dem Raw-Dir.
+const NORMALIZED_IMPORT_CORPORA = new Set(["at-landesrecht", "at-staatsvertraege"]);
+
+// Rekursiver .md-Scan kostet ~7s über den ganzen Bestand — pro Corpus
+// gecacht, damit das 5s-Polling das FS nicht dauerhaft rödelt.
+const DISK_COUNT_TTL_MS = 30_000;
+const diskCountCache = new Map<string, { n: number; t: number }>();
+
+function countMdFiles(dir: string): number {
+  if (!existsSync(dir)) return 0;
+  try {
+    let n = 0;
+    for (const f of readdirSync(dir, { recursive: true })) {
+      if (typeof f === "string" && f.endsWith(".md")) n++;
+    }
+    return n;
+  } catch {
+    return 0;
+  }
+}
+
+/** Live-Disk-Count: Raw-Dir ist die Import-Quelle (außer NORMALIZED_IMPORT_CORPORA);
+ *  Fallback auf den Normalized-Index für Corpora ohne Raw-Dir. */
+function corpusDiskCount(corpus: string): number {
+  const hit = diskCountCache.get(corpus);
+  if (hit && Date.now() - hit.t < DISK_COUNT_TTL_MS) return hit.n;
+  const rel = CORPUS_DIR_OVERRIDES[corpus] ?? corpus;
+  const primary = NORMALIZED_IMPORT_CORPORA.has(corpus)
+    ? join(NORMALIZED_ROOT, rel)
+    : join(RAW_ROOT, rel);
+  const secondary = NORMALIZED_IMPORT_CORPORA.has(corpus)
+    ? join(RAW_ROOT, rel)
+    : join(NORMALIZED_ROOT, rel);
+  let n = countMdFiles(primary);
+  if (n === 0) {
+    n = countMdFiles(secondary);
+    if (n === 0) n = getCorpusIndex(corpus).length;
+  }
+  diskCountCache.set(corpus, { n, t: Date.now() });
+  return n;
+}
 
 interface CorpusSyncRow {
   corpus: string;
@@ -141,6 +192,14 @@ export const GET = createHandler(
     let pipelineState: PipelineStateRow[] = [];
     let pipelinePaused = false;
     let dbAvailable = false;
+    let risFetchers: Array<{
+      slot: number;
+      holder: string;
+      command: string;
+      acquiredAt: string | null;
+      heartbeatAt: string | null;
+      stale: boolean;
+    }> = [];
 
     if (pool) {
       dbAvailable = true;
@@ -202,6 +261,31 @@ export const GET = createHandler(
         log.error("[corpus-command-center] pipeline_state query failed:", err);
       }
 
+      // RIS-Fetcher: live aus der Semaphore-Tabelle. Manuelle Downloads
+      // (refetch-broken-files & Co.) halten Slots statt pipeline_state-Rows —
+      // ohne diesen Block sind laufende RIS-Jobs auf der Seite unsichtbar.
+      try {
+        const lockResult = await pool.query(`
+          SELECT id, holder, command, acquired_at, heartbeat_at
+          FROM ris_lock ORDER BY id
+        `);
+        const nowMs = Date.now();
+        risFetchers = lockResult.rows.map((r) => {
+          const hb = r.heartbeat_at ? new Date(r.heartbeat_at).getTime() : null;
+          return {
+            slot: parseInt(r.id, 10),
+            holder: r.holder,
+            command: r.command,
+            acquiredAt: r.acquired_at ? new Date(r.acquired_at).toISOString() : null,
+            heartbeatAt: hb ? new Date(hb).toISOString() : null,
+            // >5min ohne Heartbeat = stale (wird vom nächsten Acquire gestohlen)
+            stale: hb === null || nowMs - hb > 5 * 60_000,
+          };
+        });
+      } catch {
+        // Tabelle existiert evtl. noch nicht — kein Fehler
+      }
+
       // Pipeline paused?
       try {
         const pauseResult = await pool.query(`
@@ -215,19 +299,45 @@ export const GET = createHandler(
       }
     }
 
-    // ── 1b. Disk-Index (lokal) ──
-    // Wenn der Web-Container keinen Zugriff auf law-corpus/_normalized hat,
-    // fällt die Route auf DB-Quellen + pipeline_state zurück.
-    let corpora = listCorpusNames();
+    // ── 1b. Corpus-Liste + Disk-Counts ──
+    // Union aus vier Quellen, damit JEDER Bestand sichtbar ist:
+    //  a) _normalized/* — Steward-Korpus (AT)
+    //  b) raw law-corpus/* — Pipeline-Fetch/Import-Quelle (de-*, ch-*, eu/*)
+    //  c) DB source_ids law-* — importiert, aber evtl. ohne Dir
+    //  d) pipeline_state source_keys — via PIPELINE_KEY_TO_DIR
+    const normalizedCorpora = listCorpusNames();
+    const corpusSet = new Set<string>(normalizedCorpora);
+
+    if (existsSync(RAW_ROOT)) {
+      try {
+        for (const d of readdirSync(RAW_ROOT, { withFileTypes: true })) {
+          if (!d.isDirectory() || d.name.startsWith("_")) continue;
+          if (d.name === "eu") {
+            // eu/ ist ein Container — Corpora sind die Unterordner.
+            for (const sub of readdirSync(join(RAW_ROOT, "eu"), {
+              withFileTypes: true,
+            })) {
+              if (sub.isDirectory()) corpusSet.add(`eu-${sub.name}`);
+            }
+            continue;
+          }
+          corpusSet.add(d.name);
+        }
+      } catch {
+        /* Volume nicht erreichbar → nur normalized/DB */
+      }
+    }
+
+    const corpora = [...corpusSet].sort();
     const diskCounts: Record<string, number> = {};
     for (const c of corpora) {
-      diskCounts[c] = getCorpusIndex(c).length;
+      diskCounts[c] = corpusDiskCount(c);
     }
 
     if (corpora.length === 0) {
       // Fallback (Web-Container ohne law-corpus Volume):
       // DB source_ids als Corpus-Liste verwenden.
-      corpora = Object.keys(dbStats).filter((s) => s !== "unknown" && s !== "default");
+      corpora.push(...Object.keys(dbStats).filter((s) => s !== "unknown" && s !== "default"));
     }
 
     // ── 3. Flags (Quality) ──
@@ -289,7 +399,10 @@ export const GET = createHandler(
       "de-literatur": "law-de-literatur",
       "de-materialien": "law-de-materialien",
       ch: "law-ch",
+      "ch-judikatur": "law-ch-judikatur",
       "ch-literatur": "law-ch-literatur",
+      "eu-directives": "law-eu-directives",
+      "eu-regulations": "law-eu",
     };
 
     // BUG 48: pipeline_state.source_key ist 'jud-ogh', 'jud-vwgh', 'statutes-at',
@@ -318,6 +431,8 @@ export const GET = createHandler(
       "de-materialien": "materialien-de",
       ch: "statutes-ch",
       "ch-literatur": "literatur-ch",
+      "eu-directives": "eu-directives",
+      "eu-regulations": "eu-regulations",
     };
 
     // Pipeline-State Lookup-Map: source_key → { diskCount, dbPages, risTotal }
@@ -332,6 +447,34 @@ export const GET = createHandler(
         risTotal: p.risTotal,
       };
     }
+
+    // Union-Teil c)+d): DB-Quellen und Pipeline-Keys ohne eigenes Dir.
+    // dbStats enthält auch brain_*-Quellen (Tenant-Daten) — nur law-* ist Corpus.
+    const SOURCE_ID_TO_CORPUS: Record<string, string> = {};
+    for (const [corpus, sid] of Object.entries(CORPUS_TO_SOURCE_ID)) {
+      if (!(sid in SOURCE_ID_TO_CORPUS)) SOURCE_ID_TO_CORPUS[sid] = corpus;
+    }
+    for (const sid of Object.keys(dbStats)) {
+      if (!sid.startsWith("law-")) continue;
+      const corpus = SOURCE_ID_TO_CORPUS[sid] ?? sid;
+      if (!corpusSet.has(corpus)) {
+        corpusSet.add(corpus);
+        corpora.push(corpus);
+        diskCounts[corpus] = corpusDiskCount(corpus);
+      }
+    }
+    for (const p of pipelineState) {
+      const dir =
+        PIPELINE_KEY_TO_DIR[p.source.replace(/^backfill-/, "")] ?? PIPELINE_KEY_TO_DIR[p.source];
+      if (!dir) continue;
+      const corpus = dir.includes("/") ? dir.replace("/", "-") : dir;
+      if (!corpusSet.has(corpus)) {
+        corpusSet.add(corpus);
+        corpora.push(corpus);
+        diskCounts[corpus] = corpusDiskCount(corpus);
+      }
+    }
+    corpora.sort();
 
     const syncRows: CorpusSyncRow[] = [];
 
@@ -461,11 +604,16 @@ export const GET = createHandler(
     });
 
     // ── 6. Trust Status (pro Korpus) ──
+    // Nur _normalized-Corpora: Steward-Flags leben im normalized-Baum;
+    // raw-only Corpora (de-judikatur, eu-*) haben kein Steward-Review und
+    // würden hier fälschlich komplett "unreviewed" erscheinen.
     const diskByCorpus: Record<string, number> = {};
-    for (const r of syncRows) diskByCorpus[r.corpus] = r.diskFiles;
+    for (const c of normalizedCorpora) {
+      diskByCorpus[c] = getCorpusIndex(c).length;
+    }
 
     const trustByCorpus: Record<string, TrustRow> = {};
-    for (const c of corpora) {
+    for (const c of normalizedCorpora) {
       trustByCorpus[c] = {
         corpus: c,
         verified: 0,
@@ -486,8 +634,8 @@ export const GET = createHandler(
       else if (entry.flag === "defective") t.defective++;
       else if (entry.flag === "archived") t.archived++;
     }
-    // Unreviewed = Disk-Files minus alle mit Flag
-    for (const c of corpora) {
+    // Unreviewed = Normalized-Index-Files minus alle mit Flag
+    for (const c of normalizedCorpora) {
       const t = trustByCorpus[c];
       t.unreviewed = Math.max(0, (diskByCorpus[c] ?? 0) - t.total);
     }
@@ -498,6 +646,7 @@ export const GET = createHandler(
     // ── 7. Totals ──
     const totalDisk = syncRows.reduce((s, r) => s + r.diskFiles, 0);
     const totalDbPages = syncRows.reduce((s, r) => s + r.dbPages, 0);
+    const totalDbChunks = syncRows.reduce((s, r) => s + r.dbChunks, 0);
     const totalDbDocuments = syncRows.reduce((s, r) => s + r.dbDocuments, 0);
     const totalEmbedded = syncRows.reduce((s, r) => s + r.embeddedChunks, 0);
     const totalNotImported = syncRows.reduce((s, r) => s + r.notImported, 0);
@@ -576,6 +725,7 @@ export const GET = createHandler(
         totals: {
           totalDisk,
           totalDbPages,
+          totalDbChunks,
           totalDbDocuments,
           totalEmbedded,
           totalNotImported,
@@ -584,10 +734,11 @@ export const GET = createHandler(
           totalMissingFromDb,
           totalMissingFromDisk,
           totalNewOnRis,
+          // Gleiche Einheit wie pro-Row coveragePct: embedded Chunks /
+          // alle Chunks (vorher / totalDbPages — Chunks≠Pages, >1 Chunk
+          // pro Page blähte den Wert über 100% auf).
           coveragePct:
-            totalDbPages > 0
-              ? Math.round((totalEmbedded / (totalDbPages > 0 ? totalDbPages : 1)) * 1000) / 10
-              : 0,
+            totalDbChunks > 0 ? Math.round((totalEmbedded / totalDbChunks) * 1000) / 10 : 0,
         },
       },
       workQueue: {
@@ -601,6 +752,7 @@ export const GET = createHandler(
         paused: pipelinePaused,
         states: pipelineState,
         live: deriveLiveRows(pipelineState, dbStats, Date.now()),
+        risFetchers,
       },
       trust: {
         rows: trustRows,

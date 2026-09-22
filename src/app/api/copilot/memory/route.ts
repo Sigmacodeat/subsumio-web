@@ -41,7 +41,10 @@ export const GET = createHandler(
     const pinnedOnly = query?.pinnedOnly === "true";
 
     try {
-      const memories = await listMemories({ caseSlug, type, pinnedOnly }, ctx.headers);
+      const memories = await listMemories(
+        { caseSlug, type, pinnedOnly, userId: ctx.user.id },
+        ctx.headers
+      );
       return NextResponse.json({ memories });
     } catch (err) {
       log.error("[copilot/memory] GET failed:", err instanceof Error ? err.message : String(err));
@@ -151,6 +154,7 @@ export const POST = createHandler(
               entities: item.entities,
               validFrom: item.validFrom,
               validTo: item.validTo,
+              ownerId: ctx.user.id,
             },
             ctx.headers
           );
@@ -166,7 +170,10 @@ export const POST = createHandler(
 
       // Semantic search across memories
       if (action === "search" && message) {
-        const results = await searchMemories({ query: message, caseSlug, limit: 10 }, ctx.headers);
+        const results = await searchMemories(
+          { query: message, caseSlug, limit: 10, userId: ctx.user.id },
+          ctx.headers
+        );
         return NextResponse.json({ results });
       }
 
@@ -179,6 +186,7 @@ export const POST = createHandler(
             value,
             source: "system",
             caseSlug,
+            ownerId: ctx.user.id,
           },
           ctx.headers
         );
@@ -195,6 +203,7 @@ export const POST = createHandler(
             source: source ?? "user_explicit",
             caseSlug,
             pinned: pinned ?? false,
+            ownerId: ctx.user.id,
           },
           ctx.headers
         );
@@ -236,9 +245,15 @@ export const PATCH = createHandler(
     }
 
     try {
-      await updateMemory(id, { value, pinned, type }, ctx.headers);
+      await updateMemory(id, { value, pinned, type }, ctx.headers, {
+        userId: ctx.user.id,
+        isAdmin: ctx.user.role === "admin",
+      });
       return NextResponse.json({ ok: true });
     } catch (err) {
+      if (err instanceof Error && err.message === "memory_forbidden") {
+        return apiError("forbidden", "Dieser Eintrag gehört einem anderen Nutzer", 403);
+      }
       log.error("[copilot/memory] PATCH failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to update memory", 500);
     }
@@ -267,9 +282,15 @@ export const DELETE = createHandler(
     }
 
     try {
-      await deleteMemory(id, ctx.headers);
+      await deleteMemory(id, ctx.headers, {
+        userId: ctx.user.id,
+        isAdmin: ctx.user.role === "admin",
+      });
       return NextResponse.json({ ok: true });
     } catch (err) {
+      if (err instanceof Error && err.message === "memory_forbidden") {
+        return apiError("forbidden", "Dieser Eintrag gehört einem anderen Nutzer", 403);
+      }
       log.error(
         "[copilot/memory] DELETE failed:",
         err instanceof Error ? err.message : String(err)

@@ -37,6 +37,7 @@ export type AuditAction =
   | "case.delete"
   | "case.restore"
   | "case.view"
+  | "case.export"
   | "invoice.create"
   | "invoice.update"
   | "invoice.delete"
@@ -342,6 +343,7 @@ const ACTION_LABELS: Record<string, string> = {
   "case.delete": "Akte archiviert",
   "case.restore": "Akte wiederhergestellt",
   "case.view": "Akte geöffnet",
+  "case.export": "Akte exportiert (ZIP)",
   "invoice.create": "Rechnung erstellt",
   "invoice.update": "Rechnung aktualisiert",
   "invoice.delete": "Rechnung gelöscht",

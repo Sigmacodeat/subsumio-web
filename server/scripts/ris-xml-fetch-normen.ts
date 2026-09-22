@@ -62,7 +62,10 @@ const FROM_XML = arg("from-xml");
  * data.bka.gv.at ist davon nicht betroffen — das ist ein anderer Host.
  * Etwa 6 Anfragen/Sekunde laufen stabil; der Vollbestand braucht damit ~7h.
  */
-// RIS OGD: one connection. Earlier default was 3 parallel workers.
+// RIS OGD: one connection per process; two processes in parallel are
+// allowed (RIS-IT mail 2026-09-22, enforced via ris-lock's 2 slots). Keep
+// the default at 1 — with two slots occupied, higher in-process
+// concurrency would exceed the permitted ~1 req/s combined.
 const CONCURRENCY = Number(arg("concurrency", "1"));
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
 const THROTTLE_MS = Number(arg("throttle-ms", String(RIS_PAUSE_MS)));

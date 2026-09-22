@@ -27,6 +27,17 @@ interface PlanStep {
   estimatedTime?: string;
   notes?: string;
   completedAt?: string;
+  suggested_tool?: string;
+  suggested_params?: Record<string, unknown>;
+  executed_tool?: string;
+  executed_at?: string;
+}
+
+interface StepProposal {
+  stepId: string;
+  tool: string | null;
+  params: Record<string, unknown>;
+  rationale: string;
 }
 
 interface PlanningSession {
@@ -79,6 +90,9 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
   const [showCreate, setShowCreate] = useState(false);
   const [showRefine, setShowRefine] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [proposal, setProposal] = useState<StepProposal | null>(null);
+  const [proposing, setProposing] = useState<string | null>(null);
+  const [executing, setExecuting] = useState(false);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -182,6 +196,86 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
       setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     } catch {
       // Non-blocking
+    }
+  };
+
+  const handlePropose = async (stepId: string) => {
+    if (!activePlan) return;
+    setProposing(stepId);
+    setError(null);
+    setProposal(null);
+    try {
+      const res = await csrfFetch("/api/copilot/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "propose", planId: activePlan.id, stepId }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setProposal({ stepId, ...data.proposal });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setProposing(null);
+    }
+  };
+
+  const handleExecuteProposal = async () => {
+    if (!activePlan || !proposal?.tool) return;
+    setExecuting(true);
+    setError(null);
+    try {
+      // Confirmation flow: mutating tools require a server-issued token
+      // bound to exactly these params (lib/copilot-confirmation.ts).
+      let confirmation: string | undefined;
+      const prep = await csrfFetch("/api/copilot/tools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tool: proposal.tool,
+          params: proposal.params,
+          mode: "prepare",
+        }),
+      });
+      if (prep.ok) {
+        const prepData = await prep.json();
+        confirmation = prepData.confirmation;
+      }
+      const res = await csrfFetch("/api/copilot/tools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tool: proposal.tool,
+          params: proposal.params,
+          mode: "execute",
+          ...(confirmation ? { confirmation } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+      const summary =
+        data.display?.message ??
+        data.display?.title ??
+        (isEn ? "Tool executed" : "Tool ausgeführt");
+      await csrfFetch("/api/copilot/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "executed",
+          planId: activePlan.id,
+          stepId: proposal.stepId,
+          tool: proposal.tool,
+          resultSummary: summary,
+        }),
+      });
+      setProposal(null);
+      await loadPlans();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setExecuting(false);
     }
   };
 
@@ -415,7 +509,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                       )}
                       {/* Action buttons */}
                       {step.status !== "completed" && step.status !== "skipped" && (
-                        <div className="mt-1 flex items-center gap-1">
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
                           <button
                             onClick={() => handleStepUpdate(step.id, "completed")}
                             className="flex items-center gap-1 rounded border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-1 text-[10px] font-medium text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
@@ -434,10 +528,84 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                           <button
                             onClick={() => handleStepUpdate(step.id, "skipped")}
                             className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-1.5 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                            aria-label={isEn ? "Skip step" : "Schritt überspringen"}
                           >
                             <SkipForward size={11} />
                           </button>
+                          <button
+                            onClick={() => handlePropose(step.id)}
+                            disabled={proposing === step.id}
+                            className="brand-soft brand-text flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-1.5 py-1 text-[10px] font-medium disabled:opacity-50"
+                            title={
+                              isEn
+                                ? "Let Copilot propose a tool for this step"
+                                : "Copilot schlägt ein Werkzeug für diesen Schritt vor"
+                            }
+                          >
+                            {proposing === step.id ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : (
+                              <Send size={11} />
+                            )}
+                            {isEn ? "Run with AI" : "Mit KI ausführen"}
+                          </button>
                         </div>
+                      )}
+                      {/* Tool proposal card (WP-5.24) */}
+                      {proposal?.stepId === step.id && (
+                        <div className="mt-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-1.5">
+                          {proposal.tool ? (
+                            <>
+                              <p className="text-[10px] font-medium text-[color:var(--ds-text)]">
+                                {isEn ? "Proposed action" : "Vorgeschlagene Aktion"}:{" "}
+                                <code className="font-[family-name:var(--font-jetbrains)] text-[9px] text-[color:var(--brand-primary)]">
+                                  {proposal.tool}
+                                </code>
+                              </p>
+                              {proposal.rationale && (
+                                <p className="mt-0.5 text-[9px] text-[color:var(--ds-text-muted)]">
+                                  {proposal.rationale}
+                                </p>
+                              )}
+                              {Object.keys(proposal.params).length > 0 && (
+                                <pre className="mt-1 max-h-20 overflow-auto rounded bg-[color:var(--ds-surface)] p-1 font-[family-name:var(--font-jetbrains)] text-[8px] text-[color:var(--ds-text-muted)]">
+                                  {JSON.stringify(proposal.params, null, 1)}
+                                </pre>
+                              )}
+                              <div className="mt-1 flex items-center gap-1">
+                                <button
+                                  onClick={handleExecuteProposal}
+                                  disabled={executing}
+                                  className="brand-bg flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-white disabled:opacity-50"
+                                >
+                                  {executing ? (
+                                    <Loader2 size={10} className="animate-spin" />
+                                  ) : (
+                                    <Check size={10} />
+                                  )}
+                                  {isEn ? "Confirm & run" : "Bestätigen & ausführen"}
+                                </button>
+                                <button
+                                  onClick={() => setProposal(null)}
+                                  className="rounded px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                                >
+                                  {isEn ? "Dismiss" : "Verwerfen"}
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-[10px] text-[color:var(--ds-text-muted)]">
+                              {isEn
+                                ? "No tool fits this step — it needs manual work."
+                                : "Kein Werkzeug passt — dieser Schritt ist manuell."}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {step.executed_tool && (
+                        <span className="mt-0.5 inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-hover)] px-1 py-px font-[family-name:var(--font-jetbrains)] text-[8px] text-[color:var(--ds-text-subtle)]">
+                          ⚙ {step.executed_tool}
+                        </span>
                       )}
                       {step.status === "completed" && (
                         <button

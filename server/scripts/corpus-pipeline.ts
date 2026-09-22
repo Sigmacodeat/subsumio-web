@@ -501,7 +501,7 @@ function releaseCycleLock(): void {
   );
 }
 
-function psqlJSON(query: string): Record<string, unknown>[] {
+function psqlJSON<T = Record<string, unknown>>(query: string): T[] {
   const raw = psqlQuery(query);
   if (!raw) return [];
   try {
@@ -513,7 +513,7 @@ function psqlJSON(query: string): Record<string, unknown>[] {
 
 /** Load all pipeline_state rows as a Map keyed by source_key. */
 function loadDBState(): Map<string, DBPipelineState> {
-  const rows = psqlJSON(
+  const rows = psqlJSON<DBPipelineState>(
     `SELECT json_agg(t) FROM (SELECT * FROM pipeline_state ORDER BY source_key) t`
   );
   const map = new Map<string, DBPipelineState>();
@@ -952,7 +952,9 @@ function runFreshnessCheck(): void {
   ensureSourceRow(key);
 
   // Check if we already ran in the last 24h
-  const row = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`);
+  const row = psqlJSON<{ last_cycle_at: string | null }>(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
+  );
   if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
     const lastRun = new Date(row[0].last_cycle_at);
     const hoursSince = (Date.now() - lastRun.getTime()) / 3_600_000;
@@ -1010,7 +1012,9 @@ function runHashIntegrityCheck(): void {
   ensureSourceRow(key);
 
   // Check if we already ran in the last 6h
-  const row = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`);
+  const row = psqlJSON<{ last_cycle_at: string | null }>(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
+  );
   if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
     const lastRun = new Date(row[0].last_cycle_at);
     const hoursSince = (Date.now() - lastRun.getTime()) / 3_600_000;
@@ -1020,7 +1024,12 @@ function runHashIntegrityCheck(): void {
   console.log("  [hash-integrity] Checking content_hash consistency...");
 
   // Sample: pick 100 random pages that have a source_path and content_hash
-  const samples = psqlJSON(
+  const samples = psqlJSON<{
+    source_id: string;
+    slug: string;
+    content_hash: string | null;
+    source_path: string | null;
+  }>(
     `SELECT source_id, slug, content_hash, source_path
      FROM pages
      WHERE content_hash IS NOT NULL
@@ -1040,7 +1049,8 @@ function runHashIntegrityCheck(): void {
 
   for (const sample of samples) {
     const sourcePath = sample.source_path;
-    if (!sourcePath) continue;
+    const contentHash = sample.content_hash;
+    if (typeof sourcePath !== "string" || typeof contentHash !== "string") continue;
 
     // Re-read the file and compute hash
     const fullPath = sourcePath.startsWith("/") ? sourcePath : join(CORPUS, sourcePath);
@@ -1051,13 +1061,13 @@ function runHashIntegrityCheck(): void {
       const content = readFileSync(fullPath, "utf-8");
       const recomputed = createHash("sha256").update(content).digest("hex");
 
-      if (recomputed !== sample.content_hash) {
+      if (recomputed !== contentHash) {
         mismatches++;
         raiseAlert(
           key,
           "hash_mismatch",
           "error",
-          `Content hash mismatch for ${sample.source_id}/${sample.slug}: DB=${sample.content_hash?.substring(0, 12)}... file=${recomputed.substring(0, 12)}...`
+          `Content hash mismatch for ${sample.source_id}/${sample.slug}: DB=${contentHash.substring(0, 12)}... file=${recomputed.substring(0, 12)}...`
         );
       }
       checked++;
@@ -1096,7 +1106,9 @@ function runFassungsSync(): void {
   ensureSourceRow(key);
 
   // Check if we already ran in the last 12h
-  const row = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`);
+  const row = psqlJSON<{ last_cycle_at: string | null }>(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
+  );
   if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
     const lastRun = new Date(row[0].last_cycle_at);
     const hoursSince = (Date.now() - lastRun.getTime()) / 3_600_000;
@@ -1106,7 +1118,7 @@ function runFassungsSync(): void {
   console.log("  [fassungs-sync] Checking statute version dates...");
 
   // Get the most recent effective_date per source_id for AT statutes
-  const dbDates = psqlJSON(
+  const dbDates = psqlJSON<{ source_id: string; latest_effective: string }>(
     `SELECT source_id, max(effective_date) as latest_effective
      FROM pages
      WHERE source_id IN ('law-at', 'law-de', 'law-ch')
@@ -1201,7 +1213,9 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
 
   // Check if we already ran in the last 24h (unless manually triggered)
   const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
-  const row = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`);
+  const row = psqlJSON<{ last_cycle_at: string | null }>(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
+  );
   if (!manualTrigger && Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
     const lastRun = new Date(row[0].last_cycle_at);
     const elapsed = (Date.now() - lastRun.getTime()) / 1000;
@@ -1229,7 +1243,7 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
     if (exitCode === 0) {
       // Read the delta-watcher's summary from stage_history JSONB array
       // (append_stage_history stores entries as {stage, action, ts} in pipeline_state.stage_history)
-      const deltaRow = psqlJSON(
+      const deltaRow = psqlJSON<Pick<DBPipelineState, "stage_history">>(
         `SELECT stage_history FROM pipeline_state WHERE source_key = 'ris-delta'`
       );
       if (Array.isArray(deltaRow) && deltaRow.length > 0) {
@@ -2134,7 +2148,10 @@ async function cycle(): Promise<void> {
     );
 
     // ── Alert summary ──
-    const allAlerts = psqlJSON(
+    const allAlerts = psqlJSON<{
+      source_key: string;
+      alert_flags: DBPipelineState["alert_flags"] | null;
+    }>(
       `SELECT source_key, alert_flags FROM pipeline_state WHERE alert_flags != '[]'::jsonb AND alert_flags IS NOT NULL`
     );
     if (Array.isArray(allAlerts) && allAlerts.length > 0) {

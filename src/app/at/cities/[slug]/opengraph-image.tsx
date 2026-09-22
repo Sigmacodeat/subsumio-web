@@ -4,6 +4,8 @@ import { getCityBySlug, getAllCitySlugs } from "@/content/city-pages";
 export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return getAllCitySlugs().map((slug) => ({ slug }));
 }

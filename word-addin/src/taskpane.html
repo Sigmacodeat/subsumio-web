@@ -356,6 +356,14 @@
         <hr class="sep" />
 
         <div class="sec-title">Redline / Track Changes</div>
+        <select id="redlinePerspective">
+          <option value="client">Perspektive: Mandant</option>
+          <option value="counterparty">Perspektive: Gegenseite</option>
+          <option value="neutral">Perspektive: Neutral</option>
+        </select>
+        <select id="redlinePlaybook">
+          <option value="">— Playbook wählen (optional) —</option>
+        </select>
         <textarea
           id="redlineInstruction"
           placeholder="Anweisungen: z.B. 'Haftungsklauseln verschärfen, Laufzeit auf 1 Jahr begrenzen'"
@@ -370,7 +378,15 @@
           style="display: none"
           onclick="insertRedlineIntoWord()"
         >
-          Redline in Word einfügen
+          Redline als Text einfügen
+        </button>
+        <button
+          class="btn btn-sm"
+          id="insertTrackedBtn"
+          style="display: none"
+          onclick="insertRedlineTrackedChanges()"
+        >
+          Als Tracked Changes einfügen
         </button>
       </div>
 

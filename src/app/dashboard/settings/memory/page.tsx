@@ -27,6 +27,7 @@ interface MemoryEntry {
   supersededBy?: string;
   validFrom?: string;
   validTo?: string;
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -390,6 +391,12 @@ export default function MemoryManagementPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="default" className="shrink-0 text-[10px]">
                     {TYPE_KEYS[memory.type] ? t(TYPE_KEYS[memory.type] as never) : memory.type}
+                  </Badge>
+                  <Badge
+                    variant="default"
+                    className={cn("shrink-0 text-[10px]", !memory.ownerId && "opacity-70")}
+                  >
+                    {memory.ownerId ? L("Persönlich", "Personal") : L("Kanzleiweit", "Firm-wide")}
                   </Badge>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
                     {SOURCE_LABELS[memory.source]

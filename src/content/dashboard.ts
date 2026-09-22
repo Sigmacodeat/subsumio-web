@@ -1379,6 +1379,14 @@ export const D = {
   "inv.mark_paid": { de: "Als bezahlt markieren", en: "Mark as paid" },
   "inv.cancel_invoice": { de: "Stornieren", en: "Cancel" },
   "inv.send_reminder": { de: "Mahnung senden", en: "Send reminder" },
+  "inv.einvoice_send_erv": {
+    de: "An e-Rechnung.gv.at senden",
+    en: "Send to e-Rechnung.gv.at",
+  },
+  "inv.einvoice_send_peppol": {
+    de: "Via PEPPOL senden",
+    en: "Send via PEPPOL",
+  },
   "inv.delete": { de: "Löschen", en: "Delete" },
   "inv.confirm_delete_title": { de: "Rechnung löschen", en: "Delete invoice" },
   "inv.confirm_delete_msg": { de: "Möchten Sie Rechnung", en: "Do you want to delete invoice" },
@@ -2983,6 +2991,18 @@ export const D = {
   "cases.detail_claims": { de: "Ansprüche / Klageanträge", en: "Claims / motions" },
   "cases.detail_defenses": { de: "Verteidigung / Einwände", en: "Defense / objections" },
   "cases.detail_strategy": { de: "Empfohlene Strategie", en: "Recommended strategy" },
+  "cases.next_steps_title": { de: "Nächste Schritte", en: "Next steps" },
+  "cases.next_steps_generate": { de: "Schritte generieren", en: "Generate steps" },
+  "cases.next_steps_refresh": { de: "Aktualisieren", en: "Refresh" },
+  "cases.next_steps_running": {
+    de: "Agent analysiert die Akte…",
+    en: "Agent is analysing the case…",
+  },
+  "cases.next_steps_loading": { de: "Lädt…", en: "Loading…" },
+  "cases.next_steps_empty": {
+    de: "Noch keine Analyse — lassen Sie die KI die nächsten Schritte dieser Akte ableiten.",
+    en: "No analysis yet — let the AI derive the next steps for this case.",
+  },
   "cases.detail_risks": { de: "Risiken", en: "Risks" },
   "cases.detail_tab_overview": { de: "Übersicht", en: "Overview" },
   "cases.detail_tab_timeline": { de: "Timeline", en: "Timeline" },
@@ -3003,6 +3023,10 @@ export const D = {
   "cases.detail_btn_strategy": { de: "Strategie generieren", en: "Generate strategy" },
   "cases.detail_btn_status_change": { de: "Status ändern", en: "Change status" },
   "cases.detail_btn_assess": { de: "Chancen bewerten", en: "Assess chances" },
+  "cases.detail_btn_export": {
+    de: "Akte exportieren (ZIP)",
+    en: "Export case (ZIP)",
+  },
   "cases.detail_btn_portal_enabled": { de: "Portal freigegeben", en: "Portal enabled" },
   "cases.detail_btn_portal_enable": { de: "Für Portal freigeben", en: "Enable portal" },
   "cases.detail_btn_portal_generating": { de: "Wird erstellt…", en: "Generating…" },
@@ -3037,6 +3061,14 @@ export const D = {
   "cases.detail_portal_revoke_error": {
     de: "Portal-Link konnte nicht widerrufen werden.",
     en: "Portal link could not be revoked.",
+  },
+  "cases.detail_portal_workflows_title": {
+    de: "Self-Service für Mandanten",
+    en: "Client self-service",
+  },
+  "cases.detail_portal_workflows_hint": {
+    de: "Freigegebene Services können Mandanten im Portal selbst starten. Ergebnisse werden wie üblich anwaltlich geprüft.",
+    en: "Enabled services can be started by clients in the portal. Results are reviewed by a lawyer as usual.",
   },
   "cases.detail_status_dialog_title": { de: "Aktenstatus ändern", en: "Change case status" },
   "cases.detail_status_dialog_cancel": { de: "Abbrechen", en: "Cancel" },
@@ -4245,6 +4277,37 @@ export const D = {
   },
   "monitoring.alert_open": { de: "Öffnen", en: "Open" },
   "monitoring.alert_mark_read": { de: "Als gelesen markieren", en: "Mark as read" },
+  "monitoring.alert_publish": { de: "An Mandant weitergeben", en: "Share with client" },
+  "monitoring.alert_published": { de: "Im Portal veröffentlicht", en: "Published to portal" },
+  "monitoring.publish_title": { de: "Alert an Mandant weitergeben", en: "Share alert with client" },
+  "monitoring.publish_desc": {
+    de: "Der Alert wird mit Ihrer Einordnung im Mandantenportal der verknüpften Akte angezeigt.",
+    en: "The alert will appear in the client portal of the linked matter together with your assessment.",
+  },
+  "monitoring.publish_impact_label": {
+    de: "Anwaltliche Einordnung (Pflicht)",
+    en: "Legal assessment (required)",
+  },
+  "monitoring.publish_impact_placeholder": {
+    de: "Was bedeutet diese Entscheidung/Novellierung für den Mandanten? …",
+    en: "What does this ruling/amendment mean for the client? …",
+  },
+  "monitoring.publish_cancel": { de: "Abbrechen", en: "Cancel" },
+  "monitoring.publish_confirm": { de: "Veröffentlichen", en: "Publish" },
+  "monitoring.publish_ok": {
+    de: "Alert im Mandantenportal veröffentlicht",
+    en: "Alert published to client portal",
+  },
+  "monitoring.publish_error": { de: "Veröffentlichung fehlgeschlagen", en: "Publishing failed" },
+  "monitoring.form_case_slug": {
+    de: "Mandant-Akte (Slug, optional)",
+    en: "Client matter (slug, optional)",
+  },
+  "monitoring.form_owner": { de: "Kuratierender Anwalt", en: "Curating lawyer" },
+  "monitoring.form_case_hint": {
+    de: "Ist eine Akte hinterlegt, können Treffer dieses Monitors kuratiert ins Mandantenportal gestellt werden (Monitors-as-a-Service).",
+    en: "With a linked matter, this monitor's curated alerts can be published to its client portal.",
+  },
   "monitoring.filter_label": { de: "Filter:", en: "Filter:" },
   "monitoring.filter_all_severities": { de: "Alle Schweregrade", en: "All severities" },
   "monitoring.filter_all_sources": { de: "Alle Quellen", en: "All sources" },
@@ -5237,6 +5300,17 @@ export const D = {
   "chat.tool.create_deadline": { de: "Frist anlegen", en: "Create deadline" },
   "chat.tool.create_contact": { de: "Kontakt anlegen", en: "Create contact" },
   "chat.tool.request_signature": { de: "Signatur anfordern", en: "Request signature" },
+  "chat.tool.render_template": { de: "Vorlage rendern", en: "Render template" },
+  "chat.tool.register_lookup": { de: "Registerabfrage", en: "Register lookup" },
+  "chat.tool.invoice_draft": { de: "Rechnungsentwurf", en: "Invoice draft" },
+  "chat.tool.create_automation_rule": {
+    de: "Automatisierung anlegen",
+    en: "Create automation rule",
+  },
+  "chat.tool.organize_documents": {
+    de: "Akten-Vault einordnen",
+    en: "Organize case vault",
+  },
 
   // ── Chat: deadline card labels ──
   "chat.deadline.status_pending": { de: "Offen", en: "Open" },
@@ -5804,6 +5878,15 @@ export const D = {
   },
   "tabular.truncated": { de: "gekürzt auf {{count}}", en: "truncated to {{count}}" },
   "tabular.csv_export": { de: "CSV-Export", en: "CSV export" },
+  "tabular.xlsx_export": { de: "XLSX-Export", en: "XLSX export" },
+  "tabular.xlsx_export_failed": { de: "XLSX-Export fehlgeschlagen", en: "XLSX export failed" },
+  "tabular.group_by_label": { de: "Zeilen gruppieren nach", en: "Group rows by" },
+  "tabular.group_by_none": { de: "Keine Gruppierung", en: "No grouping" },
+  "tabular.group_by_prefix": { de: "Gruppieren nach:", en: "Group by:" },
+  "tabular.selected_count": { de: "{{n}} ausgewählt", en: "{{n}} selected" },
+  "tabular.retry_selected": { de: "Ausgewählte erneut prüfen", en: "Retry selected" },
+  "tabular.selection_clear": { de: "Auswahl aufheben", en: "Clear selection" },
+  "tabular.select_all": { de: "Alle gefilterten Zeilen auswählen", en: "Select all filtered rows" },
   "tabular.col_document": { de: "Dokument", en: "Document" },
   "tabular.disclaimer": {
     de: 'Maschinell erzeugt — vor Verwendung prüfen. „nicht im Dokument" heißt: die Frage wird vom jeweiligen Dokument nicht beantwortet.',
@@ -7003,6 +7086,28 @@ export const D = {
   "review_sets.success_created": { de: "Prüfset angelegt", en: "Review set created" },
   "review_sets.success_deleted": { de: "Prüfset gelöscht", en: "Review set deleted" },
   "review_sets.error_load": { de: "Fehler beim Laden", en: "Error loading" },
+  "review_sets.qc_title": { de: "QC-Stichprobe", en: "QC sample" },
+  "review_sets.qc_sampled": { de: "Gezogen", en: "Sampled" },
+  "review_sets.qc_reviewed": { de: "Nachgeprüft", en: "QC-reviewed" },
+  "review_sets.qc_agreement": { de: "Übereinstimmung", en: "Agreement" },
+  "review_sets.qc_conflicts": { de: "Konflikte", en: "Conflicts" },
+  "review_sets.qc_draw_sample": {
+    de: "QC-Stichprobe ziehen (10 %)",
+    en: "Draw QC sample (10%)",
+  },
+  "review_sets.qc_sample_drawn": {
+    de: "QC-Stichprobe gezogen",
+    en: "QC sample drawn",
+  },
+  "review_sets.qc_decision": { de: "QC-Entscheidung", en: "QC decision" },
+  "review_sets.qc_conflict": {
+    de: "Konflikt mit Erstprüfung",
+    en: "Conflict with first-level review",
+  },
+  "review_sets.export_protocol": {
+    de: "Protokoll exportieren",
+    en: "Export protocol",
+  },
 
   // ── End of Review Sets ───────────────────────────────────────────────
 
@@ -7015,6 +7120,9 @@ export const D = {
   "nav.pdf_tools": { de: "PDF-Werkzeuge", en: "PDF Tools" },
   "nav.power_of_attorney": { de: "Vollmachten", en: "Powers of Attorney" },
   "nav.fao_tracking": { de: "FAO-Tracking", en: "FAO Tracking" },
+  "nav.bea": { de: "beA-Postfach", en: "beA Mailbox" },
+  "nav.datev_export": { de: "DATEV-Export", en: "DATEV Export" },
+  "nav.datev_direct": { de: "DATEV-Direkt", en: "DATEV Direct" },
   "nav.team_meeting": { de: "Team-Besprechung", en: "Team Meeting" },
   "nav.dictation": { de: "Diktat", en: "Dictation" },
   "nav.kyc": {
@@ -8149,6 +8257,19 @@ export const D = {
     en: "Search by title or keyword…",
   },
   "casesdetail.link_failed": { de: "Verknüpfung fehlgeschlagen", en: "Linking failed" },
+  "casesdetail.auto_organize": { de: "Auto-einordnen", en: "Auto-organize" },
+  "casesdetail.auto_organize_running": { de: "Ordnet ein…", en: "Organizing…" },
+  "casesdetail.auto_organize_none": {
+    de: "Keine eindeutige Zuordnung möglich — bitte Ordner manuell wählen.",
+    en: "No unambiguous assignment possible — please choose a folder manually.",
+  },
+  "casesdetail.auto_organize_error": {
+    de: "Automatische Einordnung fehlgeschlagen.",
+    en: "Automatic organization failed.",
+  },
+  "casesdetail.folder_tree_toggle": { de: "Ordner", en: "Folders" },
+  "casesdetail.folder_all": { de: "Alle Ordner", en: "All folders" },
+  "casesdetail.folder_unfiled": { de: "Ohne Ordner", en: "Unfiled" },
   "casesdetail.already_linked": { de: "verknüpft", en: "linked" },
   "casesdetail.doc_empty_desc": {
     de: "Hochladen, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.",
@@ -8669,6 +8790,32 @@ export const D = {
   "portal.claims_title": { de: "Ansprüche", en: "Claims" },
   "portal.deadlines_title": { de: "Fristen", en: "Deadlines" },
   "portal.deadline_default": { de: "Frist", en: "Deadline" },
+  "portal.client_alerts_title": {
+    de: "Rechts-Updates Ihrer Kanzlei",
+    en: "Legal updates from your law firm",
+  },
+  "portal.client_alert_impact": { de: "Einordnung:", en: "Assessment:" },
+  "portal.client_alert_source": { de: "Quelle ansehen", en: "View source" },
+  "portal.wf_title": {
+    de: "Self-Service: Services Ihrer Kanzlei",
+    en: "Self-service: services from your law firm",
+  },
+  "portal.wf_start": { de: "Starten", en: "Start" },
+  "portal.wf_starting": { de: "Startet…", en: "Starting…" },
+  "portal.wf_start_error": {
+    de: "Service konnte nicht gestartet werden. Bitte versuchen Sie es später erneut.",
+    en: "The service could not be started. Please try again later.",
+  },
+  "portal.wf_not_enabled": {
+    de: "Dieser Service wurde von Ihrer Kanzlei nicht freigegeben.",
+    en: "This service has not been enabled by your law firm.",
+  },
+  "portal.wf_steps_done": { de: "Schritte abgeschlossen", en: "steps completed" },
+  "portal.wf_status_draft": { de: "Entwurf", en: "Draft" },
+  "portal.wf_status_running": { de: "In Bearbeitung", en: "In progress" },
+  "portal.wf_status_completed": { de: "Abgeschlossen", en: "Completed" },
+  "portal.wf_status_failed": { de: "Fehlgeschlagen", en: "Failed" },
+  "portal.wf_status_paused": { de: "Pausiert", en: "Paused" },
   "portal.doc_requests_title": {
     de: "Angeforderte Unterlagen",
     en: "Requested Documents",

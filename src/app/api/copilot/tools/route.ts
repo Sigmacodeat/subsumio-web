@@ -10,7 +10,13 @@ import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { ENGINE_URL, recordCreditConsumption, enginePatchPage } from "@/lib/engine";
 import { buildNdaTemplate } from "@/lib/nda-template";
 import { contactSlugFor } from "@/lib/case-contacts";
-import type { TaskEntry, DeadlineEntry } from "@/lib/legal-types";
+import { listEnginePages } from "@/lib/engine-pages";
+import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
+import { vatRateFor } from "@/lib/kanzlei-settings";
+import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
+import { mapWithConcurrency } from "@/lib/cron-utils";
+import { planVaultOrganization } from "@/lib/vault-organization";
 import {
   CREDIT_COSTS,
   checkCredits,
@@ -23,6 +29,23 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { isToolAvailable, getToolList, type ToolConditionContext } from "@/lib/agent-conditionals";
 import { sendMailboxMessage, buildMailDraft } from "@/lib/email/mailbox";
 import { markOnboardingProgress } from "@/lib/auth/store";
+import { extractVariableKeys, fillTemplate, resolveKnownVariables } from "@/lib/templates";
+import { KANZLEI_SETTINGS_SLUG, type KanzleiSettings } from "@/lib/kanzlei-settings";
+import {
+  REGISTER_LABEL,
+  resolveRegisterAdapter,
+  type RegisterEntry,
+  type RegisterKind,
+} from "@/lib/legal/register-adapter";
+import type { CaseFrontmatter } from "@/lib/legal-types";
+import {
+  TRIGGER_ACTION_LABELS,
+  TRIGGER_ACTION_TYPES,
+  TRIGGER_EVENT_LABELS,
+  TRIGGER_EVENTS,
+  buildAutomationSlug,
+  saveAutomation,
+} from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/copilot/tools");
@@ -254,6 +277,11 @@ const createTaskSchema = z.object({
   case_slug: z.string().min(1).max(300),
   title: z.string().min(1).max(500),
   due_date: z.string().max(20).optional(),
+  /**
+   * WP-7.42: "agent" weist die Aufgabe dem KI-Agenten zu — cron/agent-tasks
+   * bearbeitet sie mit Aktenkontext und stellt das Ergebnis zur Prüfung.
+   */
+  assignee_type: z.enum(["user", "agent"]).optional(),
 });
 
 const createDeadlineSchema = z.object({
@@ -293,6 +321,82 @@ const searchCalendarSchema = z.object({
   limit: z.number().min(1).max(50).default(20),
 });
 
+const renderTemplateSchema = z.object({
+  /** Slug oder Titel der Vorlage (Teilstring-Suche). */
+  template_query: z.string().min(1).max(300),
+  case_slug: z.string().max(300).optional(),
+  /** Manuelle Platzhalter-Werte, überschreiben die automatische Auflösung. */
+  values: z.record(z.string().max(100), z.string().max(4_000)).optional(),
+  /** Befülltes Ergebnis als Dokument-Seite in der Akte ablegen. */
+  create_document: z.boolean().default(false),
+});
+
+const registerLookupSchema = z
+  .object({
+    register: z
+      .enum([
+        "firmenbuch_at",
+        "grundbuch_at",
+        "handelsregister_de",
+        "unternehmensregister_de",
+        "insolvenz_de",
+        "vollstreckungsportal_de",
+      ])
+      .optional(),
+    query: z.string().max(300).optional(),
+    register_number: z.string().max(80).optional(),
+    court: z.string().max(200).optional(),
+    limit: z.number().min(1).max(20).default(10),
+  })
+  .refine((v) => (v.query?.trim() ?? "") !== "" || (v.register_number?.trim() ?? "") !== "", {
+    message: "query_or_number_required",
+  });
+
+const invoiceDraftSchema = z.object({
+  case_slug: z.string().min(1).max(300),
+  /**
+   * Explizite Positionen. Fehlen sie, werden die unbilled billable
+   * time_entries der Akte gesammelt — „Rechnung entwerfen" soll ohne
+   * Positionsliste funktionieren.
+   */
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1).max(500),
+        hours: z.number().nonnegative().max(10_000).optional(),
+        rate: z.number().nonnegative().max(100_000).optional(),
+        amount: z.number().nonnegative().max(100_000_000).optional(),
+      })
+    )
+    .max(100)
+    .optional(),
+  include_unbilled_time: z.boolean().default(true),
+  notes: z.string().max(2_000).optional(),
+});
+
+const createAutomationRuleSchema = z.object({
+  name: z.string().min(1).max(200),
+  event: z.enum(TRIGGER_EVENTS),
+  /** Gleichheitsfilter auf Event-Payload-Felder, z. B. { channel: "whatsapp" }. */
+  filters: z.record(z.string().max(100), z.string().max(300)).optional(),
+  action: z.object({
+    type: z.enum(TRIGGER_ACTION_TYPES),
+    title: z.string().max(300).optional(),
+    message: z.string().max(2_000).optional(),
+    assignee: z.string().max(200).optional(),
+    due_in_days: z.number().int().min(0).max(365).optional(),
+    workflow_template_id: z.string().max(100).optional(),
+    recipient: z.string().max(300).optional(),
+  }),
+});
+
+const organizeDocumentsSchema = z.object({
+  case_slug: z.string().min(1).max(300),
+  /** true = nur ungeordnete Dokumente einordnen; false + overwrite = neu sortieren. */
+  only_unsorted: z.boolean().default(true),
+  overwrite: z.boolean().default(false),
+});
+
 const toolSchema = z.object({
   tool: z.enum([
     "navigate",
@@ -325,6 +429,11 @@ const toolSchema = z.object({
     "create_deadline",
     "create_contact",
     "request_signature",
+    "render_template",
+    "register_lookup",
+    "invoice_draft",
+    "create_automation_rule",
+    "organize_documents",
   ]),
   params: z.record(z.unknown()).default({}),
   /** "prepare" returns a confirmation token for a tool in CONFIRMED_TOOLS. */
@@ -2007,13 +2116,15 @@ async function executeCreateTask(
     // anything to read). Embedding the date in `text` only, as the WhatsApp
     // task intent already does, makes it dead text the dashboard can't sort
     // or flag on — write both so this tool's dates are actually usable.
-    const task: TaskEntry & { source?: string; dueDate?: string } = {
+    const toAgent = params.assignee_type === "agent";
+    const task: TaskEntry & { source?: string } = {
       id: randomUUID(),
       text: safeTitle,
       done: false,
       createdAt: new Date().toISOString(),
       source: "copilot",
       dueDate: params.due_date || undefined,
+      ...(toAgent ? { assigneeType: "agent" as const, agentStatus: "pending" as const } : {}),
     };
     const res = await enginePatchPage(ctx.headers, {
       slug: page.slug,
@@ -2027,7 +2138,9 @@ async function executeCreateTask(
         kind: "confirmation",
         title: `Aufgabe angelegt: ${safeTitle}`,
         href: `/dashboard/cases/${page.slug.replace(/^cases\//, "")}`,
-        message: `Aufgabe wurde zur Akte "${page.title}" hinzugefügt.`,
+        message: toAgent
+          ? `Der KI-Agent bearbeitet die Aufgabe mit Aktenkontext — das Ergebnis kommt zur anwaltlichen Prüfung zurück.`
+          : `Aufgabe wurde zur Akte "${page.title}" hinzugefügt.`,
       },
     };
   } catch (_err) {
@@ -2227,6 +2340,591 @@ async function executeRequestSignature(
         message: "Engine nicht erreichbar.",
       },
     };
+  }
+}
+
+/**
+ * WP-5.23 — Vorlage rendern: findet eine `legal_template`-Seite per
+ * Titel/Slug, befüllt `{{platzhalter}}` mit Akten- + Kanzleidaten plus
+ * manuellen Werten und legt das Ergebnis optional als Dokument ab.
+ */
+async function executeRenderTemplate(
+  ctx: { headers: Record<string, string>; brainId: string },
+  params: z.infer<typeof renderTemplateSchema>
+): Promise<ToolResponse> {
+  const fail = (error: string, title: string, message: string): ToolResponse => ({
+    success: false,
+    error,
+    display: { kind: "confirmation", title, message },
+  });
+  try {
+    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=legal_template&limit=200`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
+    const templates = (await listRes.json()) as Array<{
+      slug: string;
+      title: string;
+      content?: string;
+      frontmatter?: Record<string, unknown>;
+    }>;
+    const q = params.template_query.trim().toLowerCase();
+    const template =
+      templates.find((t) => t.slug.toLowerCase() === q || t.title.toLowerCase() === q) ??
+      templates.find((t) => t.slug.toLowerCase().includes(q) || t.title.toLowerCase().includes(q));
+    if (!template) {
+      return fail(
+        "template_not_found",
+        "Vorlage nicht gefunden",
+        `Keine Vorlage passt auf „${params.template_query}“. Verfügbar: ${templates
+          .slice(0, 5)
+          .map((t) => t.title)
+          .join(", ")}${templates.length > 5 ? " …" : ""}`
+      );
+    }
+
+    const body = template.content ?? "";
+    const keys = extractVariableKeys(body);
+
+    // Akte + Kanzlei-Einstellungen für die automatische Auflösung laden.
+    const fetchPage = async (slug: string) => {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(15_000),
+      });
+      return res.ok
+        ? ((await res.json()) as { frontmatter?: Record<string, unknown>; title?: string })
+        : null;
+    };
+    const [casePage, kanzleiPage] = await Promise.all([
+      params.case_slug ? fetchPage(params.case_slug) : Promise.resolve(null),
+      fetchPage(KANZLEI_SETTINGS_SLUG),
+    ]);
+    const known = resolveKnownVariables(
+      casePage
+        ? {
+            ...(casePage.frontmatter as CaseFrontmatter),
+            title: casePage.title,
+            slug: params.case_slug,
+          }
+        : null,
+      (kanzleiPage?.frontmatter ?? null) as KanzleiSettings | null
+    );
+    const values = { ...known, ...(params.values ?? {}) };
+    const filled = fillTemplate(body, values);
+    const unfilled = keys.filter((k) => values[k] === undefined || values[k]?.trim() === "");
+
+    let documentSlug: string | undefined;
+    if (params.create_document) {
+      documentSlug = `legal/documents/${randomUUID()}`;
+      const res = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ctx.headers },
+        body: JSON.stringify({
+          slug: documentSlug,
+          title: `${template.title} (aus Vorlage)`,
+          type: "document",
+          content: filled,
+          frontmatter: {
+            type: "document",
+            source: "template",
+            template_slug: template.slug,
+            ...(params.case_slug ? { case_slug: params.case_slug } : {}),
+            unfilled_variables: unfilled,
+            created_at: new Date().toISOString(),
+          },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+
+    return {
+      success: true,
+      data: {
+        template: template.title,
+        templateSlug: template.slug,
+        filled,
+        unfilledVariables: unfilled,
+        documentSlug,
+      },
+      display: {
+        kind: "confirmation",
+        title: `Vorlage gerendert: ${template.title}`,
+        ...(documentSlug ? { href: `/dashboard/documents` } : {}),
+        message:
+          unfilled.length > 0
+            ? `Offene Platzhalter: ${unfilled.join(", ")} — bitte manuell ergänzen.`
+            : documentSlug
+              ? "Als Dokument in der Akte abgelegt."
+              : "Alle Platzhalter befüllt.",
+      },
+    };
+  } catch {
+    return fail(
+      "render_failed",
+      "Vorlage konnte nicht gerendert werden",
+      "Engine nicht erreichbar."
+    );
+  }
+}
+
+/**
+ * WP-5.23 — Registerabfrage über den Register-Adapter. Ohne konfigurierten
+ * Partner-Endpunkt (REGISTER_*_ENDPOINT) antwortet das Tool mit einem
+ * sauberen "nicht konfiguriert"-Status statt erfundener Daten.
+ */
+async function executeRegisterLookup(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof registerLookupSchema>
+): Promise<ToolResponse> {
+  try {
+    const kinds = params.register
+      ? [params.register]
+      : (Object.keys(REGISTER_LABEL) as RegisterKind[]);
+    const configured: { kind: RegisterKind; entries: RegisterEntry[] }[] = [];
+    const unconfigured: string[] = [];
+    const unreachable: string[] = [];
+
+    for (const kind of kinds) {
+      const endpoint = env(`REGISTER_${kind.toUpperCase()}_ENDPOINT`);
+      if (!endpoint) {
+        unconfigured.push(REGISTER_LABEL[kind]);
+        continue;
+      }
+      const adapter = resolveRegisterAdapter(kind, {
+        endpoint,
+        apiKey: env(`REGISTER_${kind.toUpperCase()}_API_KEY`),
+      });
+      try {
+        const entries = await adapter.search({
+          query: params.query,
+          registerNumber: params.register_number,
+          court: params.court,
+          limit: params.limit,
+        });
+        configured.push({ kind, entries });
+      } catch {
+        unreachable.push(REGISTER_LABEL[kind]);
+      }
+    }
+
+    const total = configured.reduce((n, c) => n + c.entries.length, 0);
+    return {
+      success: true,
+      data: {
+        results: configured.flatMap((c) => c.entries),
+        registersSearched: configured.map((c) => REGISTER_LABEL[c.kind]),
+        registersUnconfigured: unconfigured,
+        registersUnreachable: unreachable,
+      },
+      display: {
+        kind: "list",
+        title: `${total} Register-Treffer`,
+        items: configured.flatMap((c) =>
+          c.entries.map((e) => ({
+            label: e.name,
+            value: [e.registerNumber, e.court, e.status].filter(Boolean).join(" · "),
+          }))
+        ),
+        message:
+          unconfigured.length > 0
+            ? `Nicht konfiguriert (Partnerzugang fehlt): ${unconfigured.join(", ")}`
+            : unreachable.length > 0
+              ? `Nicht erreichbar: ${unreachable.join(", ")}`
+              : undefined,
+      },
+    };
+  } catch {
+    return {
+      success: false,
+      error: "register_lookup_failed",
+      display: {
+        kind: "list",
+        title: "Registerabfrage fehlgeschlagen",
+        message: "Die Registerabfrage ist derzeit nicht verfügbar.",
+      },
+    };
+  }
+}
+
+/**
+ * WP-5.23 — Rechnungsentwurf aus der Akte: sammelt unbilled billable
+ * time_entries (oder explizite Positionen), reserviert eine fortlaufende
+ * Rechnungsnummer (GoBD), legt den Entwurf als `invoice`-Page an und
+ * markiert die verrechneten Zeiteinträge — identisch zum Dialog-Pfad in
+ * InvoiceQuickCreateDialog, damit die FiBu-Sichten konsistent bleiben.
+ */
+async function executeInvoiceDraft(
+  ctx: { headers: Record<string, string>; brainId: string },
+  params: z.infer<typeof invoiceDraftSchema>
+): Promise<ToolResponse> {
+  const fail = (error: string, title: string, message: string): ToolResponse => ({
+    success: false,
+    error,
+    display: { kind: "confirmation", title, message },
+  });
+  try {
+    const [page, kanzleiRes] = await Promise.all([
+      fetchCasePage(ctx.headers, params.case_slug),
+      fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(KANZLEI_SETTINGS_SLUG)}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => null),
+    ]);
+    if (!page) {
+      return fail(
+        "case_not_found",
+        "Akte nicht gefunden",
+        `"${params.case_slug}" wurde nicht gefunden.`
+      );
+    }
+    const kanzlei = kanzleiRes?.ok
+      ? (((await kanzleiRes.json()) as { frontmatter?: KanzleiSettings }).frontmatter ?? null)
+      : null;
+    const fm = (page.frontmatter ?? {}) as CaseFrontmatter & { time_entries?: TimeEntry[] };
+
+    const stundensatz = Number.parseFloat(kanzlei?.stundensatz ?? "") || 0;
+    const billedEntryIds: string[] = [];
+    const items = params.items?.length
+      ? params.items.map((i) => {
+          const amount =
+            i.amount ?? Math.round((i.hours ?? 0) * (i.rate ?? stundensatz) * 100) / 100;
+          return {
+            description: sanitizeUserInput(i.description),
+            date: new Date().toISOString().split("T")[0],
+            hours: i.hours ?? 0,
+            rate: i.rate ?? stundensatz,
+            amount,
+          };
+        })
+      : params.include_unbilled_time
+        ? (fm.time_entries ?? [])
+            .filter((e) => e.billable && !e.billed)
+            .map((e) => {
+              billedEntryIds.push(e.id);
+              const hours = e.minutes / 60;
+              const rate = e.rate ?? stundensatz;
+              return {
+                description: sanitizeUserInput(e.description),
+                date: (e.date ?? "").split("T")[0],
+                hours: Math.round(hours * 100) / 100,
+                rate,
+                amount: Math.round(hours * rate * 100) / 100,
+              };
+            })
+        : [];
+
+    if (items.length === 0) {
+      return fail(
+        "no_billable_items",
+        "Keine verrechenbaren Leistungen",
+        `In der Akte "${page.title}" gibt es keine offenen verrechenbaren Zeiteinträge — Positionen können als items-Parameter übergeben werden.`
+      );
+    }
+
+    const subtotal = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+    const vatRate = vatRateFor(kanzlei);
+    const tax = Math.round(subtotal * vatRate * 100) / 100;
+    const total = Math.round((subtotal + tax) * 100) / 100;
+    const paymentDays = Math.max(1, parseInt(kanzlei?.zahlungszielTage || "14", 10) || 14);
+
+    let existing: string[] = [];
+    try {
+      const pages = await listEnginePages(ctx.headers, "invoice", 50_000);
+      existing = pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+    } catch {
+      // Der Zähler garantiert Eindeutigkeit auch ohne Bestandsliste.
+    }
+    const year = new Date().getFullYear();
+    const invoiceNumber = await allocateInvoiceNumber(
+      ctx.brainId,
+      year,
+      highestInvoiceNumber(existing, year)
+    );
+
+    const now = new Date();
+    const invoice = {
+      id: `invoice/${now.getTime()}`,
+      number: invoiceNumber,
+      client: fm.client_name ?? "",
+      clientSlug: fm.client_slug,
+      caseNumber: fm.case_number ?? page.slug,
+      date: now.toISOString().split("T")[0],
+      dueDate: new Date(now.getTime() + paymentDays * 86_400_000).toISOString().split("T")[0],
+      items,
+      status: "draft" as const,
+      subtotal,
+      vatRate,
+      tax,
+      total,
+      paymentTerms: `${paymentDays} Tage netto`,
+      bank: { name: kanzlei?.bankName, iban: kanzlei?.iban, bic: kanzlei?.bic },
+      notes:
+        params.notes?.trim() ||
+        `Rechnungsentwurf zur Akte ${fm.case_number ?? page.title} (via Copilot — bitte prüfen)`,
+    };
+    const hash = await sha256Hex(invoiceContentString(invoice));
+
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ctx.headers },
+      body: JSON.stringify({
+        slug: invoice.id,
+        title: `Rechnung ${invoice.number}`,
+        type: "invoice",
+        frontmatter: {
+          type: "invoice",
+          invoice_number: invoice.number,
+          client: invoice.client,
+          client_slug: invoice.clientSlug,
+          case_number: invoice.caseNumber,
+          case_slugs: [params.case_slug],
+          date: invoice.date,
+          due_date: invoice.dueDate,
+          items: invoice.items,
+          time_entry_ids: billedEntryIds,
+          status: "draft",
+          subtotal: invoice.subtotal,
+          vat_rate: invoice.vatRate,
+          tax: invoice.tax,
+          total: invoice.total,
+          payment_terms: invoice.paymentTerms,
+          bank: invoice.bank,
+          notes: invoice.notes,
+          invoice_type: "standard",
+          source: "copilot",
+          ...gobdFrontmatter(hash, now),
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    // Verrechnete Zeiteinträge in der Akte als billed markieren — gleiche
+    // Semantik wie der Rechnungsdialog, damit keine Position doppelt
+    // abgerechnet wird.
+    if (billedEntryIds.length > 0) {
+      const billed = new Set(billedEntryIds);
+      const updated = (fm.time_entries ?? []).map((e) =>
+        billed.has(e.id) ? { ...e, billed: true, invoice_number: invoice.number } : e
+      );
+      await enginePatchPage(ctx.headers, {
+        slug: page.slug,
+        frontmatter: { time_entries: updated },
+      }).catch(() => {});
+    }
+
+    return {
+      success: true,
+      data: { invoiceNumber, total, slug: invoice.id, billedEntries: billedEntryIds.length },
+      display: {
+        kind: "confirmation",
+        title: `Rechnungsentwurf ${invoice.number}`,
+        href: "/dashboard/invoices",
+        message: `Entwurf über ${total.toFixed(2)} € (inkl. ${vatRate * 100} % USt) zur Akte "${page.title}" angelegt — bitte prüfen und versenden.`,
+      },
+    };
+  } catch (err) {
+    log.error(
+      "[copilot/tools] invoice_draft failed:",
+      err instanceof Error ? err.message : String(err)
+    );
+    return fail(
+      "invoice_draft_failed",
+      "Rechnungsentwurf fehlgeschlagen",
+      "Engine nicht erreichbar."
+    );
+  }
+}
+
+/**
+ * WP-7.43 — Magic Builder: der Copilot übersetzt den natürlichsprachlichen
+ * Wunsch („wenn eine Rechnung überfällig ist, Mail an die Buchhaltung")
+ * in eine Automation-Regel im kanonischen Modell (`automation`-Pages,
+ * ausgewertet von cron/automations + dispatchAutomations).
+ */
+async function executeCreateAutomationRule(
+  ctx: { headers: Record<string, string>; brainId: string; user: { id: string } },
+  params: z.infer<typeof createAutomationRuleSchema>
+): Promise<ToolResponse> {
+  const fail = (error: string, message: string): ToolResponse => ({
+    success: false,
+    error,
+    display: { kind: "confirmation", title: "Regel konnte nicht angelegt werden", message },
+  });
+  // Semantische Mindestvalidierung — die Aktion braucht ihre Pflichtfelder.
+  const a = params.action;
+  if (a.type === "send_mail" && !(a.recipient?.includes("@") || a.recipient?.startsWith("{"))) {
+    return fail(
+      "recipient_required",
+      "E-Mail-Aktionen brauchen einen Empfänger (Adresse oder {platzhalter} aus dem Event)."
+    );
+  }
+  if (a.type === "start_workflow" && !a.workflow_template_id) {
+    return fail("workflow_template_required", "Workflow-Aktionen brauchen ein Template.");
+  }
+  try {
+    const rule = {
+      slug: buildAutomationSlug(params.name),
+      name: sanitizeUserInput(params.name),
+      enabled: true,
+      event: params.event,
+      filters: params.filters,
+      action: {
+        type: a.type,
+        title: a.title ? sanitizeUserInput(a.title) : undefined,
+        message: a.message ? sanitizeUserInput(a.message) : undefined,
+        assignee: a.assignee ? sanitizeUserInput(a.assignee) : undefined,
+        due_in_days: a.due_in_days,
+        workflow_template_id: a.workflow_template_id,
+        recipient: a.recipient,
+      },
+      created_at: new Date().toISOString(),
+      created_by: `copilot:${ctx.user.id}`,
+    };
+    const ok = await saveAutomation(ctx.brainId, rule);
+    if (!ok) throw new Error("save failed");
+    return {
+      success: true,
+      data: { slug: rule.slug, name: rule.name },
+      display: {
+        kind: "confirmation",
+        title: `Automatisierung aktiv: ${rule.name}`,
+        href: "/dashboard/workflows",
+        message: `${TRIGGER_EVENT_LABELS[rule.event]} → ${TRIGGER_ACTION_LABELS[rule.action.type]}`,
+      },
+    };
+  } catch {
+    return fail("save_failed", "Engine nicht erreichbar.");
+  }
+}
+
+async function executeOrganizeDocuments(
+  ctx: { headers: Record<string, string>; brainId: string },
+  params: z.infer<typeof organizeDocumentsSchema>
+): Promise<ToolResponse> {
+  const fail = (error: string, message: string): ToolResponse => ({
+    success: false,
+    error,
+    display: { kind: "confirmation", title: "Einordnung fehlgeschlagen", message },
+  });
+
+  try {
+    const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(params.case_slug)}`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!caseRes.ok) {
+      return fail("case_not_found", `Akte '${params.case_slug}' nicht gefunden.`);
+    }
+    const casePage = (await caseRes.json()) as {
+      frontmatter?: { documents?: DocumentEntry[] };
+    };
+    const docs = (casePage.frontmatter?.documents ?? []).filter((d) => d.slug || d.url);
+    if (docs.length === 0) {
+      return {
+        success: true,
+        data: { assigned: 0 },
+        display: {
+          kind: "confirmation",
+          title: "Keine Dokumente",
+          message: "In dieser Akte sind keine Dokumente vorhanden.",
+        },
+      };
+    }
+
+    // Ordner-Stand der Doc-Pages laden (für only_unsorted/overwrite-Logik).
+    const folders = new Map<string, string>();
+    await mapWithConcurrency(
+      docs.slice(0, 100),
+      async (d) => {
+        const key = d.slug || d.url!;
+        try {
+          const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(key)}`, {
+            headers: ctx.headers,
+            signal: AbortSignal.timeout(8_000),
+          });
+          if (!res.ok) return;
+          const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+          const folder = page.frontmatter?.folder;
+          if (typeof folder === "string" && folder.trim()) folders.set(key, folder.trim());
+        } catch {
+          // einzelne Doc-Pages sind best-effort
+        }
+      },
+      6
+    );
+
+    const vaultDocs = docs.map((d) => ({
+      key: d.slug || d.url!,
+      name: d.name,
+      doc_type: d.doc_type,
+      kind: d.kind,
+      source: d.source,
+      mime_type: d.mime_type,
+      folder: folders.get(d.slug || d.url!),
+    }));
+    const plan = planVaultOrganization(vaultDocs, {
+      onlyUnsorted: params.only_unsorted,
+      overwrite: params.overwrite,
+    });
+
+    if (plan.length === 0) {
+      return {
+        success: true,
+        data: { assigned: 0, total: docs.length },
+        display: {
+          kind: "confirmation",
+          title: "Alles eingeordnet",
+          message: params.only_unsorted
+            ? "Alle Dokumente sind bereits zugeordnet oder nicht eindeutig zuordenbar."
+            : "Keine Einordnung möglich — die Dokumente liefern keine eindeutigen Signale.",
+        },
+      };
+    }
+
+    let applied = 0;
+    await mapWithConcurrency(
+      plan,
+      async (a) => {
+        try {
+          const res = await enginePatchPage(ctx.headers, {
+            slug: a.key,
+            frontmatter: { folder: a.folder },
+          });
+          if (res.ok) applied += 1;
+        } catch {
+          // einzelner Patch schlägt fehl — Rest läuft weiter
+        }
+      },
+      4
+    );
+
+    const byFolder = plan.reduce<Record<string, number>>((acc, a) => {
+      acc[a.folder] = (acc[a.folder] ?? 0) + 1;
+      return acc;
+    }, {});
+    const summary = Object.entries(byFolder)
+      .map(([f, n]) => `${f}: ${n}`)
+      .join(", ");
+
+    return {
+      success: applied > 0,
+      data: { assigned: applied, planned: plan.length, total: docs.length },
+      display: {
+        kind: "confirmation",
+        title: `Vault eingeordnet: ${applied}/${plan.length} Dokumente`,
+        href: `/dashboard/cases/${encodeURIComponent(params.case_slug)}`,
+        message: summary,
+      },
+    };
+  } catch (err) {
+    return fail(
+      "organize_failed",
+      err instanceof Error ? err.message : "Einordnung fehlgeschlagen."
+    );
   }
 }
 
@@ -2485,6 +3183,31 @@ export const POST = createHandler(
         case "search_calendar": {
           const params = searchCalendarSchema.parse(body.params);
           result = await executeSearchCalendar(ctx, params);
+          break;
+        }
+        case "render_template": {
+          const params = renderTemplateSchema.parse(body.params);
+          result = await executeRenderTemplate(ctx, params);
+          break;
+        }
+        case "register_lookup": {
+          const params = registerLookupSchema.parse(body.params);
+          result = await executeRegisterLookup(ctx, params);
+          break;
+        }
+        case "create_automation_rule": {
+          const params = createAutomationRuleSchema.parse(body.params);
+          result = await executeCreateAutomationRule(ctx, params);
+          break;
+        }
+        case "invoice_draft": {
+          const params = invoiceDraftSchema.parse(body.params);
+          result = await executeInvoiceDraft(ctx, params);
+          break;
+        }
+        case "organize_documents": {
+          const params = organizeDocumentsSchema.parse(body.params);
+          result = await executeOrganizeDocuments(ctx, params);
           break;
         }
         default:

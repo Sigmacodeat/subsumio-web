@@ -61,6 +61,8 @@ import {
   Share2,
   TrendingUp,
   Send,
+  FileSpreadsheet,
+  GraduationCap,
   FileQuestion,
   ShieldX,
   Hammer,
@@ -144,8 +146,8 @@ type NavSection = {
   colorVar?: string;
 };
 
-// Archived Germany-only integrations. Keep route identifiers centralized while
-// the communication audit decides whether their implementations are deleted.
+// Germany-only surfaces (beA, DATEV) — reactivated in WP-6.37. Hidden for
+// AT/CH firms; shown when the signed-in user's jurisdiction is "DE".
 export const DE_ONLY_HREFS = new Set([
   "/dashboard/bea",
   "/dashboard/datev-export",
@@ -208,6 +210,12 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         icon: FileClock,
         labelKey: "nav.document_requests",
         keywords: "dokumentenanforderung unterlagen documents request",
+      },
+      {
+        href: "/dashboard/bea",
+        icon: Send,
+        labelKey: "nav.bea",
+        keywords: "bea elektronischer anwaltlicher austausch e-filing court",
       },
       {
         href: "/dashboard/communications",
@@ -497,6 +505,18 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         keywords: "fibu finanzbuchhaltung bank opos mahnung zahlung payment",
         tooltipKey: "nav.tooltip.fibu",
       },
+      {
+        href: "/dashboard/datev-export",
+        icon: FileSpreadsheet,
+        labelKey: "nav.datev_export",
+        keywords: "datev export buchhaltung steuerberater csv",
+      },
+      {
+        href: "/dashboard/datev-direct",
+        icon: FileSpreadsheet,
+        labelKey: "nav.datev_direct",
+        keywords: "datev direct api rechnungsdaten buchungsdaten",
+      },
     ],
   },
   {
@@ -510,6 +530,12 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         labelKey: "nav.kanzlei_tools",
         keywords: "kanzlei rsv fax kyc vollmacht rubrum tools",
         audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/fao-tracking",
+        icon: GraduationCap,
+        labelKey: "nav.fao_tracking",
+        keywords: "fao fortbildung nachweise fachanwalt",
       },
       {
         href: "/dashboard/controlling",
@@ -1220,7 +1246,7 @@ interface SidebarProps {
   role?: string | null;
   /** User plan — drives tier-based visibility (free, pro, team, enterprise). */
   plan?: string | null;
-  /** Retained for caller compatibility; the active pilot always hides retired DE routes. */
+  /** User jurisdiction — "DE" reveals the DE-only routes (beA, DATEV, FAO). */
   jurisdiction?: string | null;
 }
 
@@ -1299,8 +1325,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   );
   const isItemVisible = useCallback(
     (item: NavItem) =>
-      isTierVisible(item) && isAudienceVisible(item) && !DE_ONLY_HREFS.has(item.href),
-    [isTierVisible, isAudienceVisible]
+      isTierVisible(item) &&
+      isAudienceVisible(item) &&
+      (!DE_ONLY_HREFS.has(item.href) || _jurisdiction === "DE"),
+    [isTierVisible, isAudienceVisible, _jurisdiction]
   );
   const adminSection = useMemo(
     () =>

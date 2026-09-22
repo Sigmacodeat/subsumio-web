@@ -149,6 +149,7 @@ export async function buildFullMemoryContext(opts: {
   caseSlug?: string;
   query?: string;
   maxEntries?: number;
+  userId?: string;
 }): Promise<string> {
   const parts: string[] = [];
 
@@ -163,6 +164,7 @@ export async function buildFullMemoryContext(opts: {
     caseSlug: opts.caseSlug,
     query: opts.query,
     maxEntries: opts.maxEntries,
+    userId: opts.userId,
   });
   if (agentCtx) parts.push(agentCtx);
 

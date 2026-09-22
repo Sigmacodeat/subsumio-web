@@ -69,7 +69,12 @@ export type ToolType =
   | "create_task"
   | "create_deadline"
   | "create_contact"
-  | "request_signature";
+  | "request_signature"
+  | "render_template"
+  | "register_lookup"
+  | "invoice_draft"
+  | "create_automation_rule"
+  | "organize_documents";
 
 export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "create_case",
@@ -82,6 +87,10 @@ export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "create_deadline",
   "create_contact",
   "request_signature",
+  "create_automation_rule",
+  "render_template",
+  "invoice_draft",
+  "organize_documents",
 ]);
 
 export interface ToolCall {

@@ -158,6 +158,31 @@ export interface CopilotMemoryEntry {
   supersededBy?: string;
   validFrom?: string;
   validTo?: string;
+  /** WP-5.30: user who owns this entry. Missing on legacy firm-shared rows. */
+  ownerId?: string;
+}
+
+/** Who is acting on a memory — drives the per-user ownership check. */
+export interface MemoryActor {
+  userId: string;
+  isAdmin: boolean;
+}
+
+/**
+ * Per-user visibility: entries with an `owner_id` are private to that user;
+ * legacy rows without an owner stay firm-shared (pre-WP-5.30 behaviour).
+ */
+export function memoryVisibleTo(m: CopilotMemoryEntry, userId: string | undefined): boolean {
+  if (!m.ownerId) return true;
+  if (!userId) return false;
+  return m.ownerId === userId;
+}
+
+function assertCanMutate(m: CopilotMemoryEntry, actor?: MemoryActor): void {
+  if (!actor || !m.ownerId) return;
+  if (m.ownerId !== actor.userId && !actor.isAdmin) {
+    throw new Error("memory_forbidden");
+  }
 }
 
 const MEMORY_TYPE_PREFIX = "copilot/memory";
@@ -191,6 +216,7 @@ function parseMemoryPage(page: BrainPage): CopilotMemoryEntry | null {
     supersededBy: fm.superseded_by ? String(fm.superseded_by) : undefined,
     validFrom: fm.valid_from ? String(fm.valid_from) : undefined,
     validTo: fm.valid_to ? String(fm.valid_to) : undefined,
+    ownerId: fm.owner_id ? String(fm.owner_id) : undefined,
   };
 }
 
@@ -199,6 +225,10 @@ export async function listMemories(
     caseSlug?: string;
     type?: MemoryType;
     pinnedOnly?: boolean;
+    /** WP-5.30: restrict to entries this user may see (own + firm-shared). */
+    userId?: string;
+    /** Only rows owned by this user — for GDPR export/deletion. */
+    ownedOnly?: boolean;
   },
   headers?: EngineHeaders
 ): Promise<CopilotMemoryEntry[]> {
@@ -206,6 +236,12 @@ export async function listMemories(
   let memories = (pages as BrainPage[])
     .map(parseMemoryPage)
     .filter((m): m is CopilotMemoryEntry => m !== null);
+
+  if (opts?.ownedOnly) {
+    memories = memories.filter((m) => m.ownerId === opts.userId);
+  } else if (opts?.userId) {
+    memories = memories.filter((m) => memoryVisibleTo(m, opts.userId));
+  }
 
   if (opts?.caseSlug) {
     memories = memories.filter((m) => m.caseSlug === opts.caseSlug);
@@ -237,6 +273,7 @@ export async function createMemory(
     entities?: string[];
     validFrom?: string;
     validTo?: string;
+    ownerId?: string;
   },
   headers?: EngineHeaders
 ): Promise<CopilotMemoryEntry> {
@@ -264,6 +301,7 @@ export async function createMemory(
         entities: opts.entities ?? [],
         valid_from: opts.validFrom,
         valid_to: opts.validTo,
+        owner_id: opts.ownerId,
         created_at: now,
         updated_at: now,
       },
@@ -285,17 +323,21 @@ export async function createMemory(
     entities: opts.entities && opts.entities.length > 0 ? opts.entities : undefined,
     validFrom: opts.validFrom,
     validTo: opts.validTo,
+    ownerId: opts.ownerId,
   };
 }
 
 export async function updateMemory(
   id: string,
   updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type">>,
-  headers?: EngineHeaders
+  headers?: EngineHeaders,
+  actor?: MemoryActor
 ): Promise<void> {
   const slug = memorySlug(id);
   const existing = await enginePageGet(headers, slug);
   if (!existing) throw new Error("Memory not found");
+  const parsed = parseMemoryPage(existing);
+  if (parsed) assertCanMutate(parsed, actor);
 
   const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
   const now = new Date().toISOString();
@@ -320,9 +362,34 @@ export async function updateMemory(
   );
 }
 
-export async function deleteMemory(id: string, headers?: EngineHeaders): Promise<void> {
+export async function deleteMemory(
+  id: string,
+  headers?: EngineHeaders,
+  actor?: MemoryActor
+): Promise<void> {
   const slug = memorySlug(id);
+  if (actor) {
+    const existing = await enginePageGet(headers, slug);
+    const parsed = existing ? parseMemoryPage(existing) : null;
+    if (parsed) assertCanMutate(parsed, actor);
+  }
   await enginePageDelete(headers, slug);
+}
+
+/**
+ * WP-5.30 / DSGVO Art. 17: delete every memory owned by a user — called
+ * when their account is erased. Firm-shared rows (no owner) stay untouched.
+ * Returns the number of deleted entries.
+ */
+export async function deleteMemoriesOfUser(
+  userId: string,
+  headers?: EngineHeaders
+): Promise<number> {
+  const own = await listMemories({ userId, ownedOnly: true }, headers);
+  for (const m of own) {
+    await enginePageDelete(headers, memorySlug(m.id));
+  }
+  return own.length;
 }
 
 /**
@@ -386,11 +453,16 @@ export async function createMemoryWithSupersession(
     entities?: string[];
     validFrom?: string;
     validTo?: string;
+    ownerId?: string;
   },
   headers?: EngineHeaders
 ): Promise<{ memory: CopilotMemoryEntry; superseded: string[] }> {
-  // Check for existing memories with the same type + key
-  const existing = await listMemories({ caseSlug: opts.caseSlug, type: opts.type }, headers);
+  // Conflicts are only detected among the caller's own entries — a new
+  // personal memory never supersedes a colleague's or a firm-shared one.
+  const existing = await listMemories(
+    { caseSlug: opts.caseSlug, type: opts.type, userId: opts.ownerId, ownedOnly: !!opts.ownerId },
+    headers
+  );
   const conflicts = existing.filter(
     (m) => m.key === opts.key && !m.supersededBy && m.value !== opts.value
   );
@@ -468,6 +540,7 @@ export async function searchMemories(
     query: string;
     caseSlug?: string;
     limit?: number;
+    userId?: string;
   },
   headers?: EngineHeaders
 ): Promise<CopilotMemoryEntry[]> {
@@ -483,9 +556,10 @@ export async function searchMemories(
 
     if (memorySlugs.length === 0) {
       // No semantic hits — fall back to pinned + recent
-      return listMemories({ caseSlug: opts.caseSlug, pinnedOnly: false }, headers).then((m) =>
-        m.slice(0, limit)
-      );
+      return listMemories(
+        { caseSlug: opts.caseSlug, pinnedOnly: false, userId: opts.userId },
+        headers
+      ).then((m) => m.slice(0, limit));
     }
 
     // Hydrate the memory entries from the search results
@@ -497,6 +571,12 @@ export async function searchMemories(
         return parseMemoryPage(page);
       })
       .filter((m): m is CopilotMemoryEntry => m !== null);
+
+    // WP-5.30: per-user scope — other people's private memories never leak
+    // into this user's search/context even when the engine search hits them.
+    if (opts.userId) {
+      memories = memories.filter((m) => memoryVisibleTo(m, opts.userId));
+    }
 
     // P1.4: Filter out superseded memories (ADD-only philosophy — don't delete, just deprecate)
     memories = memories.filter((m) => !m.supersededBy);
@@ -526,14 +606,19 @@ export async function searchMemories(
       : memories;
 
     // Always include pinned memories that weren't in the search results
-    const allMemories = await listMemories({ caseSlug: opts.caseSlug, pinnedOnly: true }, headers);
+    const allMemories = await listMemories(
+      { caseSlug: opts.caseSlug, pinnedOnly: true, userId: opts.userId },
+      headers
+    );
     const existingIds = new Set(filtered.map((m) => m.id));
     const pinnedNotInResults = allMemories.filter((m) => !existingIds.has(m.id));
 
     return [...filtered, ...pinnedNotInResults].slice(0, limit);
   } catch {
     // Search failed — fall back to recent + pinned
-    return listMemories({ caseSlug: opts.caseSlug }, headers).then((m) => m.slice(0, limit));
+    return listMemories({ caseSlug: opts.caseSlug, userId: opts.userId }, headers).then((m) =>
+      m.slice(0, limit)
+    );
   }
 }
 
@@ -549,6 +634,7 @@ export async function buildMemoryContext(
     caseSlug?: string;
     maxEntries?: number;
     query?: string;
+    userId?: string;
   },
   headers?: EngineHeaders
 ): Promise<string> {
@@ -563,12 +649,13 @@ export async function buildMemoryContext(
         query: opts.query,
         caseSlug: opts.caseSlug,
         limit: max,
+        userId: opts.userId,
       },
       headers
     );
   } else {
     // Fallback: pinned + recent (legacy behavior)
-    const all = await listMemories({ caseSlug: opts?.caseSlug }, headers);
+    const all = await listMemories({ caseSlug: opts?.caseSlug, userId: opts?.userId }, headers);
     const now = Date.now();
     const active = all.filter((m) => {
       if (m.supersededBy) return false;

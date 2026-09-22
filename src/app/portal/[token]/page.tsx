@@ -14,6 +14,7 @@ import {
   CalendarClock,
   Upload,
   Bot,
+  Bell,
   Send,
   ArrowUpCircle,
   PenTool,
@@ -43,6 +44,14 @@ interface PortalCase {
   claims: string[];
   deadlines: Array<{ title?: string; date?: string; due_date?: string; status?: string }>;
   documents: Array<{ name?: string; url?: string; slug?: string; uploadedAt?: string }>;
+  clientAlerts: Array<{
+    id: string;
+    title: string;
+    summary?: string;
+    url?: string;
+    date?: string;
+    impact_note: string;
+  }>;
 }
 
 interface PortalMessage {
@@ -208,6 +217,21 @@ export default function PortalPage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [signNotice, setSignNotice] = useState<string | null>(null);
   const [signedSuccessfully, setSignedSuccessfully] = useState(false);
+  const [portalWfTemplates, setPortalWfTemplates] = useState<
+    Array<{ id: string; label: string; description: string; icon: string }>
+  >([]);
+  const [portalWfInstances, setPortalWfInstances] = useState<
+    Array<{
+      slug: string;
+      title: string;
+      status: string;
+      started_at: string;
+      progress: { completed: number; total: number };
+      steps: Array<{ label: string; status: string }>;
+    }>
+  >([]);
+  const [wfStarting, setWfStarting] = useState<string | null>(null);
+  const [wfError, setWfError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,6 +255,7 @@ export default function PortalPage() {
           await loadDocumentRequests();
           await loadMessages(verifyData.caseSlug);
           void loadQuestionnaires();
+          void loadPortalWorkflows();
           const docs = await loadSignableDocs();
           // Deep-Link: if ?sign=[slug] present, auto-open SignatureDialog
           if (deepLinkSignSlug) {
@@ -265,6 +290,48 @@ export default function PortalPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  async function loadPortalWorkflows() {
+    try {
+      const res = await fetch(`/api/portal/workflows?token=${encodeURIComponent(token)}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const payload = data.data ?? data;
+      setPortalWfTemplates(payload.templates ?? []);
+      setPortalWfInstances(payload.instances ?? []);
+    } catch {
+      // best-effort — Self-Service-Workflows sind ein optionales Portal-Modul
+    }
+  }
+
+  async function startPortalWorkflow(templateId: string) {
+    setWfStarting(templateId);
+    setWfError(null);
+    try {
+      const res = await fetch("/api/portal/workflows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, template_id: templateId }),
+        signal: AbortSignal.timeout(20_000),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWfError(
+          data.error === "workflow_not_enabled"
+            ? t("portal.wf_not_enabled")
+            : t("portal.wf_start_error")
+        );
+        return;
+      }
+      await loadPortalWorkflows();
+    } catch {
+      setWfError(t("portal.wf_start_error"));
+    } finally {
+      setWfStarting(null);
+    }
+  }
 
   async function loadQuestionnaires() {
     try {
@@ -447,6 +514,30 @@ export default function PortalPage() {
             uploadedAt: d.uploadedAt,
           })
         ),
+        // WP-7.41: kuratierte Rechts-Updates der Kanzlei (Monitor-Alerts).
+        clientAlerts: Array.isArray(
+          (page.frontmatter as Record<string, unknown> | undefined)?.client_alerts
+        )
+          ? (
+              (page.frontmatter as Record<string, unknown>).client_alerts as Array<{
+                id?: string;
+                title?: string;
+                summary?: string;
+                url?: string;
+                date?: string;
+                impact_note?: string;
+              }>
+            )
+              .filter((a) => typeof a.title === "string")
+              .map((a, i) => ({
+                id: a.id ?? `alert-${i}`,
+                title: a.title ?? "",
+                summary: a.summary,
+                url: a.url,
+                date: a.date,
+                impact_note: a.impact_note ?? "",
+              }))
+          : [],
       });
     } catch (err) {
       console.error("[portal] load case failed:", err instanceof Error ? err.message : String(err));
@@ -793,6 +884,123 @@ export default function PortalPage() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* WP-7.41: Rechts-Updates der Kanzlei (kuratierte Monitor-Alerts) */}
+            {caseData.clientAlerts.length > 0 && (
+              <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                <h3 className="text-sm font-semibold">{t("portal.client_alerts_title")}</h3>
+                <div className="space-y-3">
+                  {caseData.clientAlerts.map((a) => (
+                    <div key={a.id} className="space-y-1 text-sm">
+                      <div className="flex items-start gap-2 [color:var(--mk-text)]">
+                        <Bell size={14} className="mt-0.5 shrink-0 [color:var(--brand-text)]" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium">{a.title}</div>
+                          {a.date && (
+                            <div className="text-xs [color:var(--mk-text-subtle)]">
+                              {new Date(a.date).toLocaleDateString(
+                                lang === "en" ? "en-GB" : "de-AT",
+                                { day: "2-digit", month: "2-digit", year: "numeric" }
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {a.summary && (
+                        <p className="pl-6 text-xs [color:var(--mk-text-muted)]">{a.summary}</p>
+                      )}
+                      {a.impact_note && (
+                        <p className="rounded-lg p-2 pl-6 text-xs [color:var(--mk-text)] [background:var(--mk-surface-2,var(--mk-surface))]">
+                          <span className="font-medium">{t("portal.client_alert_impact")}</span>{" "}
+                          {a.impact_note}
+                        </p>
+                      )}
+                      {a.url && (
+                        <a
+                          href={a.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block pl-6 text-xs [color:var(--brand-text)] underline"
+                        >
+                          {t("portal.client_alert_source")}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* WP-7.40: Self-Service-Workflows (Mandant startet freigegebene Services) */}
+            {(portalWfTemplates.length > 0 || portalWfInstances.length > 0) && (
+              <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                <h3 className="text-sm font-semibold">{t("portal.wf_title")}</h3>
+                {portalWfTemplates.length > 0 && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {portalWfTemplates.map((wf) => (
+                      <button
+                        key={wf.id}
+                        type="button"
+                        onClick={() => void startPortalWorkflow(wf.id)}
+                        disabled={wfStarting !== null}
+                        className="group flex items-start gap-3 rounded-lg border [border-color:var(--mk-border)] p-3 text-left transition-colors [background:var(--mk-surface-2,var(--mk-surface))] hover:[border-color:var(--brand-primary)] disabled:opacity-60"
+                      >
+                        <span className="text-lg leading-none" aria-hidden="true">
+                          {wf.icon}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium [color:var(--mk-text)]">
+                            {wf.label}
+                          </span>
+                          <span className="block text-xs [color:var(--mk-text-subtle)]">
+                            {wf.description}
+                          </span>
+                        </span>
+                        <span className="shrink-0 self-center text-xs font-medium [color:var(--brand-text)]">
+                          {wfStarting === wf.id ? t("portal.wf_starting") : t("portal.wf_start")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {wfError && (
+                  <p className="text-xs [color:var(--ds-danger-text)]" role="alert">
+                    {wfError}
+                  </p>
+                )}
+                {portalWfInstances.length > 0 && (
+                  <div className="space-y-2">
+                    {portalWfInstances.map((inst) => (
+                      <div
+                        key={inst.slug}
+                        className="rounded-lg border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-surface-2,var(--mk-surface))]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm font-medium [color:var(--mk-text)]">
+                            {inst.title}
+                          </span>
+                          <span className="shrink-0 text-xs [color:var(--mk-text-subtle)]">
+                            {t(`portal.wf_status_${inst.status}` as DashboardKey)}
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full [background:var(--mk-border)]">
+                          <div
+                            className="h-full rounded-full transition-all [background:var(--brand-primary)]"
+                            style={{
+                              width: `${inst.progress.total > 0 ? Math.round((inst.progress.completed / inst.progress.total) * 100) : 0}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="mt-1 text-xs [color:var(--mk-text-subtle)]">
+                          {inst.progress.completed}/{inst.progress.total}{" "}
+                          {t("portal.wf_steps_done")}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

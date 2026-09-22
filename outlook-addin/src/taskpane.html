@@ -255,6 +255,46 @@
         color: #6366f1;
         background: #6366f110;
       }
+      .attach-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid #1e1e3a;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        background: #0d0d1a;
+      }
+      .attach-item input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+        flex-shrink: 0;
+      }
+      .attach-item .attach-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        color: #e8e8f0;
+      }
+      .attach-item .attach-size {
+        font-size: 11px;
+        color: #8a8aa8;
+        flex-shrink: 0;
+      }
+      .attach-item .attach-state {
+        font-size: 11px;
+        flex-shrink: 0;
+        width: 16px;
+        text-align: center;
+      }
+      .attach-empty {
+        font-size: 12px;
+        color: #8a8aa8;
+        padding: 8px 0;
+      }
     </style>
   </head>
   <body>
@@ -308,6 +348,8 @@
     <div id="mainSection" style="display: none">
       <div class="tab-bar">
         <div class="tab active" data-tab="import">Mail-Import</div>
+        <div class="tab" data-tab="reply">Antwort</div>
+        <div class="tab" data-tab="attach">Anhänge</div>
         <div class="tab" data-tab="query">Brain-Query</div>
       </div>
 
@@ -326,6 +368,41 @@
         <div id="caseMatchSection" class="section" style="display: none">
           <div class="section-title">Passende Akten</div>
           <div id="caseList"></div>
+        </div>
+      </div>
+
+      <div id="tab-reply" class="tab-content">
+        <div class="section">
+          <div class="section-title">Antwortentwurf</div>
+          <div style="font-size: 11px; color: #8a8aa8; margin-bottom: 8px; line-height: 1.5">
+            Der Assistent entwirft eine Antwort auf die aktuell geöffnete E-Mail. Der Entwurf
+            wird nicht versendet — Sie prüfen ihn anwaltlich, bevor er in ein Antwortfenster
+            übernommen wird.
+          </div>
+          <button id="draftReplyBtn">
+            <span id="draftReplyBtnText">Antwort entwerfen</span>
+          </button>
+          <div id="draftSummary" style="display: none"></div>
+          <div id="draftResult" class="query-result" style="display: none"></div>
+          <button
+            id="insertReplyBtn"
+            class="secondary"
+            style="display: none; margin-top: 8px"
+          >
+            Als Antwort öffnen
+          </button>
+        </div>
+      </div>
+
+      <div id="tab-attach" class="tab-content">
+        <div class="section">
+          <div class="section-title">Anhänge der aktuellen E-Mail</div>
+          <div id="attachmentList"></div>
+          <div class="section-title" style="margin-top: 12px">Ziel-Akte</div>
+          <select id="attachCaseSelect"></select>
+          <button id="attachBtn">
+            <span id="attachBtnText">In Akte ablegen</span>
+          </button>
         </div>
       </div>
 

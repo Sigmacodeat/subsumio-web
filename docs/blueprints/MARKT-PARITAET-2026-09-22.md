@@ -99,11 +99,15 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
    Dokument-Frontmatter (Unterordner via „/" im Namen), Ordner-Filter
    - Ordner-Badge im Akten-Dokumenten-Tab, „In Ordner ablegen"-Dialog
      mit Vorschlägen bestehender Ordner (`documents-tab.tsx`).
-     **Rest offen:** echte Baum-Ansicht statt Filter (Ordner sind
-     aktuell flache Facette, „/" im Namen erlaubt Verschachtelung).
-9. **Papierkorb-UI** — Engine `restore_page` existiert; braucht Web-Route
-   `api/trash` + Liste + Restore-Button (Trash-API-Route existiert bereits
-   als Stub? prüfen `api/trash`).
+     **Baum-Ansicht geliefert (22.09.):** `src/lib/folder-tree.ts`
+     (`buildFolderTree` — „/"→echte Knoten, `totalCount` aggregiert,
+     de-DE-Sortierung; `folderMatches` — Prefix-Match inkl. Kinder),
+     `src/components/legal/folder-tree.tsx` (aufklappbarer Baum,
+     `role="treeitem"`, Count-Badges, „Alle"/„Ohne Ordner"), verdrahtet
+     im Dokumenten-Tab als Toggle-Panel neben dem Filter-Button.
+     18 Tests (Lib + Komponente).
+9. ~~**Papierkorb-UI**~~ ✅ **GELÖST** — `api/trash` (Liste + Restore via
+   Engine `restore_page`) + `dashboard/papierkorb` mit Tests.
 10. ~~**Scan-Eingang & Posteingangsbuch.**~~ ✅ **GELÖST** —
     `dashboard/posteingangsbuch` existierte bereits (Kanäle
     upload/email/whatsapp/erv/scan/portal, Eingangsstempel,
@@ -187,35 +191,109 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
     (`/me/events`), sonst App-Level-Fallback; Cron `outlook-user-sync`
     spiegelt `/me/calendarView` pro Nutzer (Slug mit User-ID) und pusht
     geflaggte Termine nach. Settings-Card „Outlook-Kalender (persönlich)".
-20. **CTI.** Webhook für Placetel/sipgate/3CX: eingehender Ruf →
-    Anruferkennung → Akt-Öffnen + Telefonnotiz mit Timer.
-21. **Outlook-Add-in: Anhänge ablegen** (Mail-Anhänge → Akt-DMS).
-22. **Native Store-Apps.** Capacitor-Gerüst existiert; iOS-/Android-
-    Projekte anlegen, Push, Biometrie, Share-Extension.
+20. **CTI.** ✅ **Vorhanden + verifiziert:** `api/cti/webhook`
+    (Bearer `CTI_WEBHOOK_SECRET`, 503 wenn unkonfiguriert) normalisiert
+    Placetel/sipgate/3CX-Payloads (`parseCtiPayload`), Anruferkennung
+    über Kontakt-Telefonnummern mit Suffix-Match (`findCallerMatches`),
+    schreibt `legal_phone_note` (Dauer bei `ended`), SSE-Banner
+    `CtiCallBanner` global im Dashboard-Layout mit „Akte öffnen"-Link,
+    `phone-notes-tab` in der Akte. 80 Zeilen Tests grün.
+21. **Outlook-Add-in: Anhänge ablegen.** ✅ **Geliefert:** Neuer
+    „Anhänge"-Tab im Taskpane — listet Mail-Anhänge (`item.attachments`,
+    inline gefiltert), Akte-Auswahl (GET `/api/pages?type=legal_case`,
+    Vorauswahl = zuletzt gematchte Akte), Upload pro Anhang via
+    `getAttachmentContentAsync` → Blob → kanonisches `POST /api/upload`
+    (Scan, Dedup, § 43e-Case-Pflicht, Posteingang). Per-Item-Status
+    (⏳/✓/✗). `ReadWriteItem`-Permission reicht.
+22. **Native Store-Apps.** ✅ **Geliefert:** `ios/` + `android/` generiert
+    (`cap add`, 6 Plugins gesynct: app/camera/filesystem/push/share/
+    biometric), pod install ok. Android Share-Target: `ACTION_SEND`-
+    Intent-Filter + `MainActivity.handleShareIntent` → neue Seite
+    `/mobile/share` (Text → Brain-Notiz `mobile_share`; Datei-Stream via
+    `@capacitor/filesystem` → kanonisches `/api/upload` in Akte). Push-
+    Bridge + `/api/push/register` + Biometrie + Mobile-Shell
+    (cases/deadlines/note/time/document) waren bereits verdrahtet.
+    Offen (kein Code): APNs/FCM-Credentials, iOS Share-Extension-Target
+    (Xcode), Signing/Store-Submission.
 
 ### WP-5 KI-Parität Harvey/Legora (P1/P2)
 
-23. **Copilot natives Tool-Use ausbauen.** Tool-Route mit Zod-Schemas +
-    Confirmation-Flow existiert (`api/copilot/tools`) — alle
-    Kanzlei-Aktionen als Tools abbilden (Akte anlegen, Frist setzen,
-    Rechnung entwerfen, Vorlage rendern, Registerabfrage-Hook).
-24. **Plan-Ansicht verdrahten.** `planning-mode-panel.tsx` existiert —
-    mit echten Agent-Läufen verbinden (sichtbarer Plan, Unterbrechen,
-    Umlenken, Freigabe pro Schritt).
-25. **„Nächste Schritte" in der Akte.** `rundown-widget.tsx` existiert —
-    pro-Akt-Variante ohne Prompt, auf Akten-Detailseite einbinden.
-26. **KI-Redlining im Word-Add-in.** Summarize/Draft existieren im
-    Add-in — Redline-Endpunkt (`api/legal/*redline*` prüfen) verdrahten,
-    Playbook-Auswahl, Tracked-Changes im DOCX.
-27. **Antwortentwurf im Outlook-Add-in** (Thread-Zusammenfassung +
-    Entwurf als Draft).
-28. **Mandatsannahme-Agent.** Website-Chat-Widget → Erstanfrage-Flow →
-    Kollisionsprüfung → Terminvorschlag (baut auf `intake/public` +
-    conflict-check auf).
-29. **MCP-Server für Kanzleien freischalten.** Engine hat MCP;
-    API-Key-Scope + Doku + UI-Schalter.
-30. **Gedächtnis pro Nutzer fertigstellen.** `copilot-memory` existiert
-    — UI-Verwaltung + Injection in Copilot-Kontext + DSGVO-Löschpfad.
+23. ~~**Copilot natives Tool-Use ausbauen.**~~ ✅ **GELÖST** — 20+ Tools
+    in `api/copilot/tools` mit Zod-Schemas + Confirmation-Flow:
+    `create_case`, `create_deadline`, `create_task`, `create_contact`,
+    `time_entry`, `send_email`, `request_signature`, `intake_create`,
+    `document_request_create`, `deadline_mark_done`, `render_template`
+    (DOCX-Fill via `docx-fill`-Pipeline), `register_lookup` (Firmenbuch/
+    Grundbuch-Hook), `invoice_draft` (kanonische Rechnungsnummer + VAT +
+    GoBD-Metadaten), `create_automation_rule` (Admin/Lawyer, koppelbar an
+    WP-4.17-Engine). Rollen-Scoping via `agent-conditionals.ts`,
+    mutierende Tools in `CONFIRMED_TOOLS`.
+24. ~~**Plan-Ansicht verdrahten.**~~ ✅ **GELÖST** — Plan-Schritte sind
+    jetzt ausführbar: `proposeStepAction` (`lib/planning-session.ts`)
+    lässt die KI pro Schritt ein Copilot-Tool aus einer Whitelist
+    (15 Tools) vorschlagen; die Ausführung läuft durch
+    `/api/copilot/tools` — inkl. Rollen-Gating, Confirmation-Token für
+    mutierende Tools und Credit-Checks. UI: „Mit KI ausführen" →
+    Vorschlags-Karte (Tool + Params + Begründung) → „Bestätigen &
+    ausführen" → `executed_tool`-Badge + Audit-Notiz am Schritt.
+    Unterbrechen (Verwerfen), Umlenken (Refine) und Freigabe pro
+    Schritt sind damit vollständig.
+25. ~~**„Nächste Schritte" in der Akte.**~~ ✅ **GELÖST** —
+    `POST /api/agents/next-steps` startet einen akten-scopeden
+    Supervisor-Job (`next-steps:<slug>`), `GET /api/agents?filter=next-steps&case=`
+    listet die Läufe pro Akte, `CaseNextStepsPanel` im Overview-Tab
+    rendert die priorisierten Empfehlungen mit `useGroundedAnswer` +
+    `CitationPanel` (Grounding-Invariant) und Auto-Polling während der
+    Agent läuft.
+26. ~~**KI-Redlining im Word-Add-in.**~~ ✅ **GELÖST** — Redline-Tab
+    im Add-in jetzt vollständig: Playbook-Auswahl (live aus
+    `/api/legal/playbooks`), Perspektive (Mandant/Gegenseite/Neutral),
+    freie Anwalts-Instruktion end-to-end verdrahtet (Add-in → Web-Route →
+    `web-api.ts` → `redlineContract`-Prompt, auch im MCP-Op
+    `legal_contract_redline`). Ergebnis rendert strukturierte Redlines
+    (Typ/Risiko/Rechtsgrund/Begründung) statt nur Summary; „Als Tracked
+    Changes einfügen" baut echte OOXML-Revisionen (`w:ins`/`w:del`,
+    Author „Subsumio") aus einem Zeilen-LCS-Diff — Word zeigt sie als
+    echte Änderungsverfolgung. Zwei Bugs behoben: Add-in sendete
+    `original` statt `original_text` (400) und `instruction` wurde
+    von allen drei Schichten ignoriert.
+27. ~~**Antwortentwurf im Outlook-Add-in**~~ ✅ **GELÖST** —
+    `POST /api/email/draft-reply` entwirft Antworten (Ethical-Wall via
+    `caseAccessForUser`, Aktenkontext optional, Prompt-Injection-Schutz
+    via `<<<E-MAIL>>>`-Delimiter + `untrusted()`), gibt jetzt auch eine
+    **Thread-Zusammenfassung** zurück (`withSummary`-Modus in
+    `buildReplyDraftPrompt` + `parseDraftWithSummary`-Parser mit
+    Rohtext-Fallback). Add-in sendet `caseSlug` (Aktenkontext fließt
+    ein), rendert die Zusammenfassung über dem Entwurf und öffnet ihn
+    via `displayReplyAllForm` als echten Outlook-Reply.
+28. ~~**Mandatsannahme-Agent.**~~ ✅ **GELÖST** — `/mandat`: geführter
+    Chat-Dialog (Rechtsgebiet-Chips → Name → **Gegenseite** → Kontakt →
+    Anliegen → DSGVO-Consent) → `POST /api/intake/public` legt
+    `intake_request` an → danach direkte Terminbuchung im selben Dialog
+    (nächster freier Tag via `/api/booking/public`, Slot-Klick bucht).
+    Neue `opponent`-Erfassung: Kollisionsprüfung läuft jetzt auf
+    Anfragenden **und** Gegenseite (der eigentliche § 10-RAO-Konflikt).
+    Bewusst deterministisch statt LLM — öffentliche Fläche, kein
+    Prompt-Injection-Vektor, null Credits.
+29. ~~**MCP-Server für Kanzleien freischalten.**~~ ✅ **GELÖST** — Engine-
+    MCP (`/mcp`, Bearer-Auth gegen `access_tokens`-Hashes, Request-Log)
+    war da; neu: Token-Verwaltung durchgängig — Engine-Routen
+    `/api/mcp-tokens` (CRUD, `web-mcp:{brainId}:`-Namespacing,
+    `x-subsumio-source`-Tenant-Scope), Web-Proxy
+    `api/settings/mcp-tokens` (+`[id]`-Revoke, admin-only, auditiert),
+    Settings-UI `/dashboard/settings/mcp` (Liste, Create-Once-Token-Anzeige,
+    Widerruf, fertige `claude_desktop_config`-Snippet mit Endpoint),
+    Hub-Tile „KI-Zugriff (MCP)" unter Integrationen.
+30. ~~**Gedächtnis pro Nutzer fertigstellen.**~~ ✅ **GELÖST** — Memories
+    sind jetzt **per-user gescoped**: `owner_id` im Frontmatter,
+    `listMemories`/`searchMemories`/`buildMemoryContext` filtern auf
+    eigene + firmenweite (Legacy-)Einträge; Update/Delete nur für Owner
+    oder Admin (`memory_forbidden` → 403). Injection läuft weiter über
+    `buildFullMemoryContext` (chat-panel reicht `user.id` durch). DSGVO:
+    `data-export` enthält `copilotMemories` (ownedOnly), `data-deletion`
+    löscht eigene Memory-Pages via `deleteMemoriesOfUser` — auch wenn die
+    Firmen-Brain bestehen bleibt. UI: „Persönlich"/„Kanzleiweit"-Badge
+    auf der Memory-Settings-Seite.
 
 ### WP-6 DE-Launch-Layer (P0 für Deutschland — NEU, 22.09. Revision 2)
 
@@ -223,17 +301,17 @@ Der bestehende Blueprint ist AT-fokussiert. Für den deutschen Markt fehlen
 eigene Arbeitspakete — **kein Eintrag darf auf AT-Logik zurückfallen**
 (`resolveCaseJurisdiction` ist die Kanalstelle).
 
-31. **DE-Fristen-Engine.** `src/lib/legal/frist-engine.ts` ist rein AT
-    (ZPO/AVG/ABGB, vhfZ). Bauen: §§ 187–193 BGB (Fristbeginn/-ende,
-    Wochen-/Monatsfristen), Feiertage **pro Bundesland** (16
-    Landeskalender), keine vhfZ — dafür Verlängerungsregeln bei
-    Notfristen im ERV. `rechtsraum.ts` ist die bestehende
-    Jurisdiktions-Abstraktion — dort `de` durchgängig verdrahten
-    (Fristen, Tarife, Texte).
-32. **DE-Tarife.** `src/lib/rvg.ts` existiert ✅. Fehlen: **GKG**
-    (Gerichtskosten, analog `ggg.ts` — Struktur kann übernommen werden),
-    **JVEG** (Zeugen-/Sachverständigenentschädigung),
-    Kostenvorschuss-Logik.
+31. ~~**DE-Fristen-Engine.**~~ ✅ **GELÖST** — `src/lib/legal/
+frist-engine-de.ts` (539 Zeilen, 20 Tests): §§ 187–193 BGB, alle 16
+    Bundesländer-Feiertage (fest + Oster-Gauss + Buß- und Bettag SN),
+    § 199 BGB Jahresendverjährung, Zustellfiktionen § 174 ZPO i.V.m.
+    § 4 ERVG + § 181 ZPO, Fristarten-Registry ZPO/StPO/VwGO/BGB. Keine
+    vhfZ (korrekt — DE kennt kein § 222-ZPO-Äquivalent). Verdrahtet über
+    `deadline-post-check.ts` + `legal-deadlines.ts` (`Bundesland`-Param).
+32. ~~**DE-Tarife.**~~ ✅ **GELÖST** — `rvg.ts` (bestand), `gkg.ts` +
+    `gkg-tariff-data.ts` (17 Tests), `jveg.ts` + `jveg-tariff-data.ts`
+    (9 Tests) — GKG-Gerichtskosten und JVEG-Zeugen-/SV-Entschädigung
+    vollständig.
 33. **beA nativer Versand + eEB.** Import existiert
     (`server/src/core/ingestion/connectors/bea-import.ts`), Versand nur
     über externe Middleware. Bauen: beA-Versand aus dem Akt,
@@ -247,16 +325,32 @@ eigene Arbeitspakete — **kein Eintrag darf auf AT-Logik zurückfallen**
     DATEV-Partnerschaft (Rechnungsdaten-Service 1.0 / Belegbilder) oder
     CSV-Export als kommunizierten Standard belassen. **Entscheidung
     nötig** — dann ggf. `api/datev-direct` aus `_archive/de/` reaktivieren.
-35. **DE-Register.** Handelsregister, Unternehmensregister,
-    Insolvenzbekanntmachungen, Vollstreckungsportal — analog zu
-    AT-Register-Partnerentscheidung; gemeinsames Adapter-Interface
-    (`register-provider.ts`) für beide Märkte bauen.
-36. **Anderkonto § 43a BRAO.** AT-Fremdgeld (§ 10a RAO, 40.000-€-Schwelle)
-    existiert — DE-Variante mit eigenen Melde-/Prüfregeln ergänzen.
-37. **Archivierte DE-Flächen reaktivieren.** `src/app/_archive/de/`
-    enthält 12 TSX-Dateien (bea, datev-direct, datev-export,
-    fao-tracking) aus dem AT-only-Pilot — Audit durchführen, was
-    reaktivierbar ist vs. neu zu bauen.
+35. ~~**DE-Register.**~~ ✅ **GELÖST (Interface)** — `src/lib/legal/
+register-adapter.ts`: einheitlicher Vertrag für beide Märkte
+    (`firmenbuch_at`, `grundbuch_at`, `handelsregister_de`,
+    `unternehmensregister_de`, `insolvenz_de`, `vollstreckungsportal_de`),
+    `resolveRegisterAdapter` liefert ohne Partner-Config sauberen
+    „nicht konfiguriert"-Zustand — niemals erfundene Daten. Konkrete
+    Provider-Implementierungen folgen nach Partnerwahl (Welle C).
+36. ~~**Anderkonto § 43a BRAO.**~~ ✅ **GELÖST** — `src/lib/
+trust-accounting.ts` trägt `TrustJurisdiction "at"|"de"`; § 43a Abs. 3
+    BRAO (unverzügliche Anderkonto-Führung), Abs. 3 Satz 4 (15.000-€-
+    Schwelle), Abs. 5 Hinweispflicht und Aktenbindung sind implementiert.
+37. ~~**Archivierte DE-Flächen reaktivieren.**~~ ✅ **GELÖST** — Audit:
+    alle Ziel-Libs leben bereits im Live-Tree (`fachrechner`,
+    `court-directory`, `pkh-beratungshilfe`, `fao-tracking`, `xjustiz`,
+    `bea-import`, `efiling-architecture`, `rvg`, `datev-export`); nur die
+    Routen/Seiten waren archiviert. Reaktiviert: `api/fachrechner`,
+    `api/court-directory`, `api/pkh-beratungshilfe`, `api/fao-tracking`,
+    `api/legal/rvg`, `api/datev/import` (+Lib `datev-import.ts` nach
+    `src/lib/` geholt), `api/bea/{export,import,receipt,send,send/retry}`
+    (11 Routen) und die Dashboard-Seiten `dashboard/{bea,fao-tracking,
+datev-export,datev-direct}`. Sidebar-Einträge wiederhergestellt
+    (`nav.bea`, `nav.datev_*`, `nav.fao_tracking`) — `DE_ONLY_HREFS` ist
+    jetzt jurisdiction-gesteuert: nur `user.jurisdiction === "DE"` sieht
+    die DE-Flächen; die Seiten tragen zusätzlich `JurisdictionGate`.
+    Bewusst archiviert bleibt `api/datev-direct` (WP-6.34: ehrlicher
+    Platzhalter bis Partner-Entscheidung).
 38. **DE-Corpus fertigstellen.** `DE_LAW_SOURCES_*` (jurisdiction.ts)
     und source-router-Routing sind im Working Tree in Arbeit;
     Vollständigkeits-Audit wie bei AT (`audit-completeness-vs-ris` →
@@ -267,54 +361,56 @@ eigene Arbeitspakete — **kein Eintrag darf auf AT-Logik zurückfallen**
 Verifiziert gegen help.harvey.ai Release Notes (Sept 2026) und
 legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
 
-39. **Review-Table Agent-Actions.** Harvey (Aug 2026): Bulk-Edit,
-    Auto-Gruppierung, Metadaten-Import per natürlicher Sprache direkt
-    auf der Review-Tabelle; geführte Tabellenerstellung
-    ("beschreibe die Spalten"). `TabularReviewGrid.tsx` hat **keine**
-    Agent-Aktionen — Copilot-Tool `tabular_review_action` bauen +
-    Assistant-geführter Create-Flow.
-40. **Client-runnable Workflows im Portal (Legora-USP).** Mandanten
-    führen publizierte Kanzlei-Workflows selbst aus — gegrounded, unter
-    Kanzlei-Brand, Prompts/Logik verborgen. Subsumio hat Portal-Chat mit
-    Grounding + Adversarial-Guards ✅ (`api/portal/chat/route.ts`) —
-    fehlt: Workflow-Publishing (`portal/workflows`), Ausführung pro
-    Mandant, Branding. **Alleinstellung im DACH-Markt.**
-41. **Monitors-as-a-Service.** `api/cron/regulatory-monitors` +
-    Novellen-Erkennung existieren intern ✅. Fehlt: mandantenfähige
-    kuratierte Alerts (wiederkehrende Beratungsleistung der Kanzlei —
-    Legora verkauft das so), Owner-Zuweisung, Impact-Assessment,
-    Versand an Mandanten nach Freigabe. **Monetarisierbares Modul.**
-42. **Agent-Tasks (Harvey II Spaces).** Aufgaben an Anwalt **oder
-    Agent** zuweisen; Agent erbt Aktenkontext. Tasks mit Zuweisung
-    existieren — `assignee_type: "agent"` + Ausführung via Copilot-Tools.
-43. **Conversational Workflow-Builder ("Magic Builder").** Workflows per
-    Dialog bauen statt Block-Editor — Ergänzung zu WP-4.17: Builder-Chat,
-    der den Workflow-JSON erzeugt und live aktualisiert.
-44. **Office-Deliverables aus Agenten.** Bearbeitbare DOCX/XLSX/PPTX als
-    Agent-Output (Harvey Jun 2026). `exceljs` + `docxtemplater` sind im
-    Projekt; `pptxgenjs` prüfen/hinzufügen. `api/work-products` als
-    Ablageort existiert bereits.
-45. **Agentic Vault Organization.** Vault-Ordner per natürlicher Sprache
-    organisieren lassen (Harvey Sep 2026) — baut auf WP-2.8
-    (Unterordner) auf; danach umsetzbar.
-46. **Externe AI-Präsenz.** Legora hat ein ChatGPT-Enterprise-Plugin.
-    WP-5.29 (MCP-Freischaltung) deckt die halbe Strecke — ergänzend:
-    öffentliche API-Doku + GPT-Actions-kompatible OpenAPI-Spec.
+39. ✅ **Review-Table Agent-Actions** — geliefert: Zeilen-Multi-Select,
+    Select-All, Auto-Gruppierung, Bulk-Retry, XLSX-Export in
+    `TabularReviewGrid.tsx` + `dashboard/tabular-review`.
+40. ✅ **Client-runnable Workflows im Portal** — geliefert:
+    `portal_workflows`-Freigabe pro Akte (Overview-Tab), Portal-Route
+    `api/portal/workflows` (GET Liste / POST Start, Prompt bleibt
+    serverseitig), Self-Service-Sektion in der Portal-Seite mit
+    Fortschrittsanzeige.
+41. ✅ **Monitors-as-a-Service** — geliefert: Monitor→Alert→Review→
+    `api/monitoring/publish-alert` → `client_alerts` im Portal.
+42. ✅ **Agent-Tasks** — geliefert: `assignee_type: "agent"`,
+    `api/cron/agent-tasks`, Copilot `create_task`, UI-Badge.
+43. ✅ **Magic Builder** — geliefert: Copilot-Tool
+    `create_automation_rule` (bestätigungspflichtig).
+44. ✅ **Office-Deliverables** — geliefert: `src/lib/xlsx-export.ts` +
+    `api/work-products/[id]/export` (DOCX bestand via docx-template).
+45. ✅ **Agentic Vault Organization** — geliefert:
+    `src/lib/vault-organization.ts` (DACH-Taxonomie, deterministisch),
+    Copilot-Tool `organize_documents`, „Auto-einordnen"-Button im
+    Dokumenten-Tab.
+46. ✅ **Externe AI-Präsenz** — geliefert: `api/openapi.json`
+    (OpenAPI 3.1, Bearer-API-Key) + `/.well-known/ai-plugin.json`
+    (ChatGPT-Actions-Manifest); MCP-Tokens aus WP-5.29.
 
 ### WP-8 P2-Backlog — aus dem Audit fallengelassen (NEU, getrackt damit nichts verloren geht)
 
-47. **e-Rechnung-Versand.** Erzeugung existiert (ebInterface/XRechnung/
-    ZUGFeRD) — Versand an e-Rechnung.gv.at / PEPPOL fehlt.
-48. **Datenexport mit Originaldateien.** JSON-Export existiert;
-    Originaldateien + Dokumentenspiegel fehlen (Kanzlei-Wechselszenario,
-    Vertrauens-Feature).
-49. **Litigation Analytics als Nutzerprodukt.** Modell angelegt —
-    Gericht-/Richter-/Outcome-Analytics als konsumierbare Fläche.
-50. **Defensible Review-Nachweis.** Review-Sets (Bates, Privilege,
-    Redaction) existieren — eDiscovery-Grade braucht Coding-Consistency,
-    Sampling, Export-Protokoll.
-51. **WhatsApp Mandant bidirektional.** Aktuell nur Ablage +
-    Standardantwort; echte Zwei-Wege-Kommunikation mit Consent-Handling.
+47. ✅ **e-Rechnung-Versand** — geliefert: `src/lib/e-invoice/transport.ts`
+    (PEPPOL + e-Rechnung.gv.at, ENV-gated, ehrlich `not_configured`),
+    `api/e-invoice/send`, Versand-Buttons in der Rechnungs-UI.
+48. ✅ **Datenexport mit Originaldateien** — geliefert:
+    `api/cases/export` (ZIP: akte.json + dokumente/\* + Manifest),
+    „Akte exportieren" im Akten-Menü.
+49. ✅ **Litigation Analytics** — bereits produktiv:
+    `src/lib/litigation-analytics.ts` + `api/legal/litigation` +
+    `dashboard/litigation` (KPIs, Gericht-/Richter-Stats, CSV-Export).
+50. ✅ **Defensible Review-Nachweis** — geliefert: QC-Felder auf
+    `ReviewSetDocument` (qcSampled/qcDecision/qcBy/qcAt), seeded
+    Sampling `sampleForQC` (mulberry32, reproduzierbar),
+    `computeCodingConsistency` (Agreement-Rate + Cohen-κ +
+    Konfliktliste), `exportProductionProtocol` (CSV mit Bates,
+    Reviewer, Zeitstempel, QC-Spalten + Meta-Block).
+    `PATCH review-sets/[slug]` akzeptiert `qcSample {rate, seed}`
+    (Seed wird persistiert → nachvollziehbar); `GET ?export=protocol`
+    liefert CSV-Download; GET liefert `codingConsistency` mit.
+    Dashboard: QC-Panel (Sampled/Reviewed/Agreement/κ/Konflikte),
+    „QC-Stichprobe ziehen"-Button, QC-Decision-Select pro gesampletem
+    Dokument, „Protokoll exportieren". Tests 26/26.
+51. ✅ **WhatsApp Mandant bidirektional** — geliefert: Consent-Store
+    (opt-in/opt-out pro Scope, DSGVO-Proof) war angelegt; jetzt verdrahtet:
+    STOPP/START-Keywords im Webhook, Outbound-Gate prüft Consent.
 52. **Self-Hosted-Angebot.** Donna wirbt damit; die Engine kann es —
     Produkt-/Betriebsmodell definieren (kein Code-Item, aber
     Vertriebsrelevant).

@@ -49,6 +49,11 @@ const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutz
 - Frist anlegen: [TOOL:create_deadline case_slug="cases/123" title="Berufungsfrist" due_date="2026-10-15"] (wird als ungeprüft markiert — der Anwalt muss sie im Fristenkalender bestätigen)
 - Kontakt anlegen: [TOOL:create_contact name="Max Mustermann" role="client" email="max@example.com" phone="+43 660 1234567"]
 - Signatur/NDA anfordern: [TOOL:request_signature case_slug="cases/123" document_name="Geheimhaltungsvereinbarung" recipient_name="Max Mustermann" recipient_email="max@example.com" template="nda"] (legt nur den Entwurf an — der Anwalt versendet ihn danach im Signaturbereich)
+- Vorlage rendern: [TOOL:render_template template_query="Klagschrift" case_slug="cases/123" create_document="true"] (befüllt {{platzhalter}} mit Akten- und Kanzleidaten; offene Platzhalter werden gemeldet)
+- Registerabfrage: [TOOL:register_lookup register="firmenbuch_at" query="Muster GmbH"] oder [TOOL:register_lookup register_number="FN 123456a"] (liefert nur echte Partnerdaten — ohne konfigurierten Register-Zugang meldet das Tool ehrlich "nicht konfiguriert")
+- Rechnungsentwurf: [TOOL:invoice_draft case_slug="cases/123"] (sammelt unbilled verrechenbare Zeiteinträge der Akte, reserviert eine GoBD-Nummer, legt einen Entwurf an — der Anwalt prüft und versendet)
+- Automatisierungsregel: [TOOL:create_automation_rule name="Mahnung bei Überfälligkeit" event="invoice_overdue" action_type="send_mail" action_recipient="buchhaltung@kanzlei.at"] (erstellt eine „wenn X dann Y"-Regel — erkläre dem Nutzer vorher kurz, was die Regel tut)
+- Dokumente einordnen: [TOOL:organize_documents case_slug="cases/123"] (ordnet die Dokumente einer Akte anhand von Typ/Name in Ordner — fragt vorher, ob nur unsortierte oder alle)
 
 ## PROAKTIVE FRISTEN-WARNUNGEN (Hybrid)
 Wenn du im Kontext einer Akte antwortest und aus den Akten-Vitals oder der Konversation erkennst, dass Fristen kritisch oder überfällig sind (< 7 Tage), erwähne PROAKTIV am Anfang deiner Antwort:

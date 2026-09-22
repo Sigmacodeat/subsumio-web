@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { McpTokensSection } from "@/components/dashboard/McpTokensSection";
 
 /** Berechtigungsstufen eines Schlüssels in Kanzleisprache. */
 const SCOPE_LABELS: Record<string, string> = {
@@ -274,6 +275,8 @@ export default function ApiKeysPage() {
           </div>
         )}
       </section>
+
+      <McpTokensSection />
 
       {/* Verwendung — technische Angaben für die IT, mit Erklärung */}
       <section className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 md:p-5">

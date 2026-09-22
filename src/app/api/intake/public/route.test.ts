@@ -141,6 +141,29 @@ describe("POST /api/intake/public", () => {
     expect(payload.frontmatter.conflict_check_status).toBe("needs_review");
   });
 
+  test("checks the opponent against conflicts too (WP-5.28)", async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ severity: "none" }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ severity: "critical" }), { status: 200 })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ slug: "legal/intake/x" }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 404 }));
+
+    const res = await post({ ...validBody, opponent: "Gegenseite GmbH" });
+    expect(res.status).toBe(200);
+    // Beide Konflikt-Checks gelaufen: Anfragender + Gegenseite.
+    expect(mockFetch.mock.calls[0][0]).toContain("conflict-check");
+    expect(JSON.parse(String((mockFetch.mock.calls[1] as [string, RequestInit])[1].body))).toEqual({
+      name: "Gegenseite GmbH",
+    });
+    const payload = JSON.parse(String((mockFetch.mock.calls[2] as [string, RequestInit])[1].body));
+    expect(payload.frontmatter.conflict_check_status).toBe("conflict");
+    expect(payload.frontmatter.opponent).toBe("Gegenseite GmbH");
+  });
+
   test("does not send the submitter a mail and survives notification failure", async () => {
     mockFetch
       .mockResolvedValueOnce(

@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   Inbox,
   Scale,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
@@ -32,6 +33,7 @@ import { caseFrontmatter } from "@/lib/legal-types";
 import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
 import { useCopilotFocus } from "@/lib/copilot-focus";
 import { SelectionAsk } from "@/components/chat/selection-ask";
+import { PlanningModePanel } from "@/components/copilot/planning-mode-panel";
 
 // ── Dashboard-Seiten-Kontext-Map ─────────────────────────────────────
 // Bildet bekannte Dashboard-Routen auf einen lesbaren Seitentitel ab.
@@ -311,6 +313,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const swipeOpacity = useTransform(swipeX, [0, 0.5, 1], [1, 0.6, 0]);
   const swipeScale = useTransform(swipeX, [0, 1], [1, 0.96]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [planMode, setPlanMode] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [matterContextInfo, setMatterContextInfo] = useState<MatterContextInfo | null>(null);
 
@@ -1084,11 +1087,23 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               t={t}
             />
 
+            {/* Plan mode — WP-5.24. The chat panel stays mounted (hidden) so
+                its state survives the switch; the ref must never be mounted
+                twice at once, so the plan panel renders beside it. */}
+            {!isMobile && planMode && (
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+                <PlanningModePanel
+                  caseSlug={routeContext.caseSlug}
+                  onClose={() => setPlanMode(false)}
+                />
+              </div>
+            )}
+
             {/* Chat panel — desktop. Mounted only off mobile: see the note on
                 the mobile ChatPanel above — the same component with the same
                 ref must never be mounted twice at once. */}
             {!isMobile && (
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <div className={cn("min-h-0 min-w-0 flex-1 flex-col", planMode ? "hidden" : "flex")}>
                 <ChatPanel
                   ref={chatRef}
                   context={routeContext}
@@ -1100,9 +1115,24 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   }
                   onStreamingChange={setIsStreaming}
                   exampleQueries={pageExampleQueries}
-                  isVisible={open}
+                  isVisible={open && !planMode}
                   headerActions={
                     <>
+                      <button
+                        type="button"
+                        onClick={() => setPlanMode((v) => !v)}
+                        aria-pressed={planMode}
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
+                          planMode
+                            ? "bg-[color:var(--brand-primary)] text-white"
+                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                        )}
+                        aria-label="Plan-Modus"
+                        title="Plan-Modus — Aufgabe schrittweise planen und freigeben"
+                      >
+                        <ListChecks size={14} aria-hidden />
+                      </button>
                       <button
                         type="button"
                         onClick={handleOpenFullscreen}

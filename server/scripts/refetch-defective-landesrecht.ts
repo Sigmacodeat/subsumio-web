@@ -14,6 +14,8 @@ import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
 import { $ } from "bun";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 
 const args = process.argv.slice(2);
 const arg = (n: string, d?: string) => {
@@ -153,6 +155,7 @@ async function main() {
     console.log(`[resume] ${done.size} Slugs bereits verarbeitet`);
   }
 
+  if (!DRY) await acquireRisLock();
   const todo = slugs.filter((s) => !done.has(s));
   const n = LIMIT > 0 ? Math.min(todo.length, LIMIT) : todo.length;
   console.log(`Zu refetchen: ${n} von ${slugs.length} defekten Slugs${DRY ? " (DRY RUN)" : ""}`);
@@ -180,6 +183,7 @@ async function main() {
       continue;
     }
 
+    await risMassPause("Landesrecht-Refetch");
     const xml = await fetchXml(docId);
     if (!xml) {
       failed++;
@@ -249,4 +253,4 @@ async function main() {
   if (!DRY) console.log(`\nProtokoll: ${OUT}`);
 }
 
-await main();
+await main().finally(() => releaseRisLock());

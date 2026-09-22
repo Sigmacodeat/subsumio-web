@@ -30,6 +30,13 @@ declare module "@capacitor/share" {
   };
 }
 
+declare module "@capacitor/filesystem" {
+  export const Filesystem: {
+    /** Liest auch Android content://-URIs (Share-Target). */
+    readFile(options: { path: string }): Promise<{ data: string | Blob }>;
+  };
+}
+
 declare module "@capacitor/app" {
   export const App: {
     addListener(eventName: string, handler: (event: { canGoBack: boolean }) => void): Promise<void>;

@@ -264,6 +264,46 @@ export function useRundown() {
   });
 }
 
+export function useCaseNextSteps(caseSlug: string) {
+  return useQuery<AgentJob[]>({
+    queryKey: ["agents", "next-steps", caseSlug],
+    queryFn: async () => {
+      const data = await apiGet<{ jobs?: Record<string, unknown>[] }>(
+        `/api/agents?filter=next-steps&case=${encodeURIComponent(caseSlug)}`
+      );
+      if (!data?.jobs) return [];
+      return data.jobs.map(mapJob);
+    },
+    refetchInterval: (query) => {
+      const jobs = query.state.data;
+      const hasActive = jobs?.some((j) => j.status === "active" || j.status === "waiting");
+      return hasActive ? 5000 : false;
+    },
+  });
+}
+
+export function useTriggerCaseNextSteps(caseSlug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await csrfFetch("/api/agents/next-steps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case_slug: caseSlug }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      return data.jobId as number | null;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents", "next-steps", caseSlug] });
+    },
+  });
+}
+
 export function useTriggerRundown() {
   const qc = useQueryClient();
   return useMutation({

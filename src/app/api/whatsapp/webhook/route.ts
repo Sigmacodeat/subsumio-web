@@ -11,6 +11,7 @@ import {
 import { verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/lib/whatsapp/verify";
 import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
+import { getWhatsAppConsentStore, isConsentActive } from "@/lib/whatsapp/consent-store";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
@@ -93,6 +94,25 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
 
     // Inbound message (re)opens the 24h customer-service window for this recipient.
     await getWhatsAppWindowStore().touch(phoneHash(message.from));
+
+    // WP-8.51: Consent-Keywords — STOPP widerruft die Einwilligung, START
+    // reaktiviert sie. Läuft vor dem Orchestrator, damit ein Widerruf nie
+    // in die Kanzlei-Verarbeitung rutscht.
+    if (message.type === "text") {
+      const body = message.text.trim().toLowerCase();
+      if (/^(stopp?|abbestellen|unsubscribe|opt.?out)\b/.test(body)) {
+        await withdrawWhatsAppConsent(message.from, sender);
+        await markMessageProcessed(message.id, phoneHash(message.from), message.type, "opt_out");
+        results.push({ id: message.id, status: "opt_out" });
+        continue;
+      }
+      if (/^(start|anmelden|subscribe|opt.?in)\b/.test(body)) {
+        await reinstateWhatsAppConsent(message.from, sender);
+        await markMessageProcessed(message.id, phoneHash(message.from), message.type, "opt_in");
+        results.push({ id: message.id, status: "opt_in" });
+        continue;
+      }
+    }
 
     try {
       const result = await orchestrateWhatsAppMessage(message, sender, {
@@ -302,4 +322,59 @@ function executionDepsForBrain(brainId: string) {
     },
     sendProactiveWhatsApp: sendProactiveMessage,
   };
+}
+
+// ── Consent-Keywords (WP-8.51) ───────────────────────────────────────────
+
+/** STOPP: alle aktiven Einwilligungen dieser Nummer widerrufen. */
+async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string }): Promise<void> {
+  const store = getWhatsAppConsentStore();
+  const hash = phoneHash(phone);
+  const now = new Date().toISOString();
+  const rows = await store.getByPhoneHash(hash);
+  for (const c of rows.filter(isConsentActive)) {
+    await store.update(c.id, { optOutAt: now });
+  }
+  await logAudit("whatsapp.consent_revoked", "whatsapp_identity", {
+    details: { phoneHash: hash, revoked: rows.filter(isConsentActive).length },
+  });
+  const res = await sendWhatsAppText(
+    phone,
+    "Verstanden — Sie erhalten keine weiteren Nachrichten von uns. " +
+      "Mit START können Sie den Empfang jederzeit wieder aktivieren."
+  );
+  if (res.messageId && sender.brainId) {
+    void recordOutboundMessage(res.messageId, sender.brainId);
+  }
+}
+
+/** START: widerrufene Einwilligungen reaktivieren (Double-Opt-In-proof bleibt). */
+async function reinstateWhatsAppConsent(
+  phone: string,
+  sender: { brainId?: string }
+): Promise<void> {
+  const store = getWhatsAppConsentStore();
+  const hash = phoneHash(phone);
+  const now = new Date().toISOString();
+  const rows = await store.getByPhoneHash(hash);
+  const withdrawn = rows.filter((c) => c.optOutAt);
+  for (const c of withdrawn) {
+    await store.update(c.id, {
+      optOutAt: null,
+      optInAt: now,
+      consentProof: { ...c.consentProof, reinstated_via: "whatsapp_start", reinstated_at: now },
+    });
+  }
+  await logAudit("whatsapp.consent_granted", "whatsapp_identity", {
+    details: { phoneHash: hash, reinstated: withdrawn.length },
+  });
+  const res = await sendWhatsAppText(
+    phone,
+    withdrawn.length > 0
+      ? "Danke — der Nachrichtenempfang wurde wieder aktiviert."
+      : "Ihre Nummer ist bei uns noch nicht für den Nachrichtenempfang freigeschaltet. Bitte wenden Sie sich an Ihre Kanzlei."
+  );
+  if (res.messageId && sender.brainId) {
+    void recordOutboundMessage(res.messageId, sender.brainId);
+  }
 }

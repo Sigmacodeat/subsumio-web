@@ -617,6 +617,66 @@ export default function InvoicingPage() {
     }
   }
 
+  async function sendEInvoiceAction(inv: Invoice, channel: "peppol" | "erechnung_gv_at") {
+    const settings = kanzlei ?? (await loadKanzleiSettings());
+    setStatusMessage(
+      channel === "peppol"
+        ? "PEPPOL-Übertragung läuft …"
+        : "Übertragung an e-Rechnung.gv.at läuft …"
+    );
+    try {
+      const res = await csrfFetch("/api/e-invoice/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel,
+          format: channel === "erechnung_gv_at" ? "ebinterface" : "xrechnung",
+          receiver_id: inv.leitwegId,
+          invoice: {
+            invoice_number: inv.number,
+            client: inv.client,
+            client_address: inv.clientAddress,
+            case_number: inv.caseNumber,
+            date: inv.date,
+            due_date: inv.dueDate,
+            items: inv.items,
+            expenses: inv.expenses,
+            subtotal: inv.subtotal,
+            expense_total: inv.expenseTotal,
+            advance_payment: inv.advancePayment,
+            vat_rate: inv.vatRate,
+            tax: inv.tax,
+            total: inv.total,
+            payment_terms: inv.paymentTerms,
+            bank: inv.bank,
+            notes: inv.notes,
+            invoice_type: inv.invoiceType,
+            leitweg_id: inv.leitwegId,
+          },
+          settings,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatusMessage(
+          invoiceErrorText(data.error, "e-Rechnung konnte nicht versendet werden."),
+          "error",
+          6000
+        );
+        return;
+      }
+      const payload = data.data ?? data;
+      setStatusMessage(
+        payload.message,
+        payload.status === "not_configured" ? "error" : "success",
+        8000
+      );
+    } catch (err) {
+      setStatusMessage("e-Rechnung konnte nicht versendet werden.", "error", 6000);
+      console.error("[e-invoice] send failed:", err);
+    }
+  }
+
   async function importEInvoice(file: File) {
     setStatusMessage("E-Rechnung wird eingelesen …");
     try {
@@ -1242,6 +1302,27 @@ export default function InvoicingPage() {
                         <FileText size={13} />
                         ZUGFeRD-PDF
                       </DropdownMenuItem>
+                      {canManage && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => void sendEInvoiceAction(inv, "erechnung_gv_at")}
+                            disabled={busy}
+                            className="gap-2 text-xs"
+                          >
+                            <Send size={13} />
+                            {t("inv.einvoice_send_erv")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => void sendEInvoiceAction(inv, "peppol")}
+                            disabled={busy}
+                            className="gap-2 text-xs"
+                          >
+                            <Send size={13} />
+                            {t("inv.einvoice_send_peppol")}
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       {canManage && inv.status === "draft" && (
                         <>
                           <DropdownMenuSeparator />

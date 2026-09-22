@@ -442,6 +442,66 @@ const TOOL_SPECS: ToolSpec[] = [
           }
         : null,
   },
+  {
+    tool: "render_template",
+    label: "chat.tool.render_template",
+    transform: (a) =>
+      a.template_query
+        ? {
+            template_query: a.template_query,
+            case_slug: a.case_slug || undefined,
+            create_document: a.create_document === "true",
+          }
+        : null,
+  },
+  {
+    tool: "register_lookup",
+    label: "chat.tool.register_lookup",
+    transform: (a) =>
+      a.query || a.register_number
+        ? {
+            register: a.register || undefined,
+            query: a.query || undefined,
+            register_number: a.register_number || undefined,
+            court: a.court || undefined,
+          }
+        : null,
+  },
+  {
+    tool: "invoice_draft",
+    label: "chat.tool.invoice_draft",
+    // case_slug wie bei create_task: Auto-Inject aus der offenen Akte.
+    transform: (a) => ({ case_slug: a.case_slug, notes: a.notes || undefined }),
+  },
+  {
+    tool: "organize_documents",
+    label: "chat.tool.organize_documents",
+    transform: (a) => ({
+      case_slug: a.case_slug || undefined,
+      only_unsorted: a.only_unsorted !== "false",
+      overwrite: a.overwrite === "true",
+    }),
+  },
+  {
+    tool: "create_automation_rule",
+    label: "chat.tool.create_automation_rule",
+    transform: (a) =>
+      a.name && a.event && a.action_type
+        ? {
+            name: a.name,
+            event: a.event,
+            action: {
+              type: a.action_type,
+              title: a.action_title || undefined,
+              message: a.action_message || undefined,
+              assignee: a.action_assignee || undefined,
+              due_in_days: a.action_due_in_days ? Number(a.action_due_in_days) : undefined,
+              workflow_template_id: a.action_workflow_template_id || undefined,
+              recipient: a.action_recipient || undefined,
+            },
+          }
+        : null,
+  },
 ];
 
 const TOOL_SPEC_BY_NAME = new Map(TOOL_SPECS.map((spec) => [spec.tool as string, spec]));
@@ -479,6 +539,9 @@ export function detectToolCalls(
     "create_task",
     "create_deadline",
     "request_signature",
+    "render_template",
+    "invoice_draft",
+    "organize_documents",
   ]);
 
   const calls: ToolCall[] = [];
@@ -1267,6 +1330,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           sessionId: activeSessionId,
           caseSlug: context.caseSlug,
           query: text,
+          userId: meQuery.data?.user?.id as string | undefined,
         }).catch(() => ""),
       });
       // Persona/tool docs travel as system-prompt instructions; only the
@@ -1510,6 +1574,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       cases,
       context,
       jurisdiction,
+      meQuery.data?.user?.id,
       modelOverride,
       persistHistory,
       queryMode,
@@ -1983,6 +2048,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             sessionId: activeSessionId,
             caseSlug: context.caseSlug,
             query: userMsg.content,
+            userId: meQuery.data?.user?.id as string | undefined,
           }).catch(() => ""),
         });
       const prompt = buildSafePrompt("", regenUserInput).trim();
@@ -2135,6 +2201,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       persistHistory,
       activeSessionId,
       jurisdiction,
+      meQuery.data?.user?.id,
       selectedCaseSlug,
       cases,
       context,

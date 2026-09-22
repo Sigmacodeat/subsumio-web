@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, Scale } from "lucide-react";
+import Link from "next/link";
+import { CalendarCheck, CheckCircle2, Loader2, Scale } from "lucide-react";
 
 /**
  * Öffentliches Erstanfrage-Formular für die Kanzlei — kein Login, keine
@@ -71,6 +72,18 @@ export default function ErstanfrageFormPage() {
         <h1 className="text-xl font-semibold">Anfrage übermittelt</h1>
         <p className="text-sm text-[color:var(--ds-text-muted)]">
           Vielen Dank. Wir prüfen Ihre Anfrage und melden uns so rasch wie möglich bei Ihnen.
+        </p>
+        {/* WP-5.28: Mandatsannahme — direkter Terminvorschlag nach der
+            Erstanfrage (öffentliche Buchung mit echter Kalenderprüfung). */}
+        <Link
+          href="/termin"
+          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[color:var(--brand-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[color:var(--brand-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
+        >
+          <CalendarCheck size={16} aria-hidden />
+          Erstberatung direkt buchen
+        </Link>
+        <p className="text-xs text-[color:var(--ds-text-subtle)]">
+          Optional: Wählen Sie gleich einen freien Termin — wir bestätigen ihn nach Prüfung.
         </p>
       </div>
     );

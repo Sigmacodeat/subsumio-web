@@ -39,6 +39,14 @@ interface AnalysisResult {
   status?: string;
   redlined?: string;
   changes?: string[];
+  redlines?: Array<{
+    original_clause: string;
+    suggested_text: string;
+    change_type: "add" | "remove" | "modify";
+    reason: string;
+    risk_level?: string;
+    legal_basis?: string;
+  }>;
   understanding?: string;
   facts?: string;
   /** Slugs or citations the answer is based on, when the API supplies them. */
@@ -396,6 +404,25 @@ async function insertDraftIntoWord() {
   }
 }
 
+async function loadPlaybooks() {
+  const sel = document.getElementById("redlinePlaybook") as HTMLSelectElement | null;
+  if (!sel || !token) return;
+  try {
+    const data = await apiGet<{ playbooks?: Array<{ slug: string; title: string }> }>(
+      "/api/legal/playbooks"
+    );
+    const items = data.playbooks ?? [];
+    for (const pb of items) {
+      const opt = document.createElement("option");
+      opt.value = pb.slug;
+      opt.textContent = pb.title;
+      sel.appendChild(opt);
+    }
+  } catch {
+    // Playbooks optional — select stays at "optional" entry
+  }
+}
+
 async function redlineContract() {
   setLoading("redlineBtn", true, "Redline erstellen");
   clearResult("redlineResult");
@@ -408,21 +435,43 @@ async function redlineContract() {
       showStatus("Bitte Original-Text markieren.", false, "contractStatus");
       return;
     }
+    const playbookSlug = (document.getElementById("redlinePlaybook") as HTMLSelectElement).value;
+    const perspective = (document.getElementById("redlinePerspective") as HTMLSelectElement)
+      .value as "client" | "counterparty" | "neutral";
     const result = await apiPost<AnalysisResult>("/api/legal/contract-redline", {
-      original,
+      original_text: original,
       instruction: instruction || "Überprüfe und verbessere diesen Vertrag",
+      ...(playbookSlug ? { playbook_slug: playbookSlug } : {}),
+      perspective,
     });
-    const redlined = result.redlined ?? result.text ?? result.summary ?? "";
-    const changes = result.changes ?? [];
+    const redlines = result.redlines ?? [];
+    const redlined =
+      redlines.length > 0
+        ? applyRedlines(original, redlines)
+        : (result.redlined ?? result.text ?? result.summary ?? "");
     const el = document.getElementById("redlineResult")!;
     el.dataset.raw = redlined;
+    el.dataset.original = original;
+    const changeList = redlines
+      .slice(0, 20)
+      .map(
+        (r) =>
+          `<div style="margin-top:6px;padding:6px;border:1px solid #2a2a44;border-radius:6px">
+            <div style="font-size:10px;color:#8a8aa8">${escapeHtml(r.change_type.toUpperCase())}${r.risk_level ? ` · ${escapeHtml(r.risk_level)}` : ""}${r.legal_basis ? ` · ${escapeHtml(r.legal_basis)}` : ""}</div>
+            <div style="font-size:11px;line-height:1.4">${escapeHtml(r.suggested_text.slice(0, 300))}</div>
+            <div style="font-size:10px;color:#8a8aa8;margin-top:2px">${escapeHtml(r.reason)}</div>
+          </div>`
+      )
+      .join("");
     el.innerHTML = `
-      <div style="font-size:11px;color:#8a8aa8;margin-bottom:6px">${changes.length} Änderungen identifiziert</div>
-      <div style="font-size:12px;line-height:1.5">${escapeHtml(redlined).replace(/\n/g, "<br>")}</div>
+      <div style="font-size:11px;color:#8a8aa8;margin-bottom:6px">${redlines.length} Änderungen identifiziert</div>
+      ${result.summary ? `<div style="font-size:11px;line-height:1.5;margin-bottom:6px">${escapeHtml(result.summary)}</div>` : ""}
+      ${changeList}
       ${aiNoticeHtml(sourcesOf(result))}
     `;
     el.style.display = "block";
     document.getElementById("insertRedlineBtn")!.style.display = "block";
+    document.getElementById("insertTrackedBtn")!.style.display = "block";
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Redline fehlgeschlagen.", false, "contractStatus");
   } finally {
@@ -445,6 +494,136 @@ async function insertRedlineIntoWord() {
       false,
       "contractStatus"
     );
+  }
+}
+
+// ── Tracked Changes (WP-5.26) ─────────────────────────────────────────
+
+/** Applies the engine's structured redlines to produce a revised text.
+ *  modify/remove rely on the verbatim `original_clause` guarantee. */
+function applyRedlines(
+  original: string,
+  redlines: NonNullable<AnalysisResult["redlines"]>
+): string {
+  let out = original;
+  const additions: string[] = [];
+  for (const r of redlines) {
+    if (r.change_type === "add" || !r.original_clause) {
+      if (r.change_type === "add" && r.suggested_text) additions.push(r.suggested_text);
+      continue;
+    }
+    if (out.includes(r.original_clause)) {
+      out = out.replace(r.original_clause, r.change_type === "remove" ? "" : r.suggested_text);
+    }
+  }
+  if (additions.length > 0) {
+    out = out.replace(/\n+$/, "") + "\n\n" + additions.join("\n\n");
+  }
+  return out;
+}
+
+type DiffOp = { type: "same" | "del" | "ins"; text: string };
+
+/** Line-level LCS diff; falls back to full replace for very long texts. */
+function diffLines(oldLines: string[], newLines: string[]): DiffOp[] {
+  const n = oldLines.length;
+  const m = newLines.length;
+  if (n === 0) return newLines.map((text) => ({ type: "ins", text }));
+  if (m === 0) return oldLines.map((text) => ({ type: "del", text }));
+  if (n * m > 200_000) {
+    return [
+      ...oldLines.map((text) => ({ type: "del" as const, text })),
+      ...newLines.map((text) => ({ type: "ins" as const, text })),
+    ];
+  }
+  // DP table of LCS lengths
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] =
+        oldLines[i] === newLines[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const ops: DiffOp[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (oldLines[i] === newLines[j]) {
+      ops.push({ type: "same", text: newLines[j] });
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      ops.push({ type: "del", text: oldLines[i] });
+      i++;
+    } else {
+      ops.push({ type: "ins", text: newLines[j] });
+      j++;
+    }
+  }
+  while (i < n) ops.push({ type: "del", text: oldLines[i++] });
+  while (j < m) ops.push({ type: "ins", text: newLines[j++] });
+  return ops;
+}
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Builds an OOXML package whose paragraphs carry real w:ins/w:del revision marks. */
+function buildTrackedChangesOoxml(original: string, revised: string): string {
+  const ops = diffLines(original.split("\n"), revised.split("\n"));
+  const date = new Date().toISOString();
+  let revId = 1;
+  const paras = ops
+    .map((op) => {
+      const text = escapeXml(op.text);
+      if (op.type === "same") {
+        return `<w:p><w:r><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
+      }
+      const id = revId++;
+      if (op.type === "del") {
+        return `<w:p><w:del w:id="${id}" w:author="Subsumio" w:date="${date}"><w:r><w:delText xml:space="preserve">${text}</w:delText></w:r></w:del></w:p>`;
+      }
+      return `<w:p><w:ins w:id="${id}" w:author="Subsumio" w:date="${date}"><w:r><w:t xml:space="preserve">${text}</w:t></w:r></w:ins></w:p>`;
+    })
+    .join("");
+  return `<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage"><pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="512"><pkg:xmlData><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="/word/document.xml"/></Relationships></pkg:xmlData></pkg:part><pkg:part pkg:name="/word/document.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"><pkg:xmlData><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${paras}</w:body></w:document></pkg:xmlData></pkg:part></pkg:package>`;
+}
+
+async function insertRedlineTrackedChanges() {
+  const el = document.getElementById("redlineResult");
+  const revised = el?.dataset.raw;
+  const original = el?.dataset.original ?? "";
+  if (!revised) {
+    showStatus("Zuerst Redline generieren.", false, "contractStatus");
+    return;
+  }
+  setLoading("insertTrackedBtn", true, "Einfügen…");
+  try {
+    const ooxml = buildTrackedChangesOoxml(original, revised);
+    await new Promise<void>((resolve, reject) => {
+      Office.context.document.setSelectedDataAsync(
+        ooxml,
+        { coercionType: Office.CoercionType.Ooxml },
+        (result: Office.AsyncResult<void>) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) resolve();
+          else reject(new Error(result.error?.message ?? "Einfügen fehlgeschlagen"));
+        }
+      );
+    });
+    showStatus("Tracked Changes eingefügt — Änderungen in Word prüfbar.", true, "contractStatus");
+  } catch (e) {
+    showStatus(
+      e instanceof Error ? e.message : "Tracked-Changes-Einfügen fehlgeschlagen.",
+      false,
+      "contractStatus"
+    );
+  } finally {
+    setLoading("insertTrackedBtn", false, "Als Tracked Changes einfügen");
   }
 }
 
@@ -626,6 +805,7 @@ Office.onReady(() => {
     btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab") ?? "analyze"));
   });
   switchTab("analyze");
+  void loadPlaybooks();
 });
 
 // Expose to global scope for HTML onclick handlers
@@ -640,6 +820,7 @@ g.draftContract = draftContract;
 g.insertDraftIntoWord = insertDraftIntoWord;
 g.redlineContract = redlineContract;
 g.insertRedlineIntoWord = insertRedlineIntoWord;
+g.insertRedlineTrackedChanges = insertRedlineTrackedChanges;
 g.loadCaseContext = loadCaseContext;
 g.insertChronology = insertChronology;
 g.triggerPipeline = triggerPipeline;

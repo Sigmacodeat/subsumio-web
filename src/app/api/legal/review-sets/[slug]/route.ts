@@ -1,7 +1,15 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { computeStatistics, generateBatesNumber, type ReviewSetDocument } from "@/lib/review-sets";
+import {
+  computeStatistics,
+  computeCodingConsistency,
+  exportProductionProtocol,
+  generateBatesNumber,
+  parseReviewSet,
+  sampleForQC,
+  type ReviewSetDocument,
+} from "@/lib/review-sets";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +56,23 @@ const updateSchema = z.object({
         batesNumber: z.string().optional(),
         reviewedBy: z.string().optional(),
         reviewedAt: z.string().optional(),
+        qcSampled: z.boolean().optional(),
+        qcDecision: z.enum(VALID_DECISIONS).optional(),
+        qcBy: z.string().optional(),
+        qcAt: z.string().optional(),
+        qcNotes: z.string().optional(),
       })
     )
+    .optional(),
+  /**
+   * WP-8.50: draw a seeded QC sample of decided docs. The seed is stored on
+   * the set so the draw is reproducible (defensibility).
+   */
+  qcSample: z
+    .object({
+      rate: z.number().min(0.01).max(1),
+      seed: z.string().min(1).optional(),
+    })
     .optional(),
   criteria: z
     .object({
@@ -85,12 +108,43 @@ export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
+    query: z.object({
+      export: z.enum(["protocol"]).optional(),
+    }),
   },
-  async (ctx, _body, _query, req) => {
+  async (ctx, _body, query, req) => {
     const { slug } = await (req as unknown as { params: Promise<{ slug: string }> }).params;
     const decoded = decodeURIComponent(slug);
     const set = await getSet(decoded, ctx.headers);
     if (!set) return apiError("not_found", "Review set not found", 404);
+
+    if (query?.export === "protocol") {
+      const parsed = parseReviewSet(
+        set.slug ?? decoded,
+        (set.frontmatter ?? {}) as Record<string, unknown>,
+        set.type as string | undefined
+      );
+      if (!parsed) return apiError("not_found", "Review set not found", 404);
+      const csv = exportProductionProtocol(parsed);
+      return new Response(csv, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="review-protokoll-${decoded.replace(/\//g, "-")}.csv"`,
+        },
+      });
+    }
+
+    const parsed = parseReviewSet(
+      set.slug ?? decoded,
+      (set.frontmatter ?? {}) as Record<string, unknown>,
+      set.type as string | undefined
+    );
+    if (parsed) {
+      return Response.json({
+        ...set,
+        codingConsistency: computeCodingConsistency(parsed.documents),
+      });
+    }
     return Response.json(set);
   }
 );
@@ -127,11 +181,27 @@ export const PATCH = createHandler(
       }));
     }
 
+    let qcMeta: Record<string, unknown> = {};
+    let sampledSlugs: string[] = [];
+    if (body.qcSample) {
+      const seed = body.qcSample.seed ?? `${decoded}:${now}`;
+      sampledSlugs = sampleForQC(documents, { rate: body.qcSample.rate, seed });
+      const sampleSet = new Set(sampledSlugs);
+      documents = documents.map((d) => (sampleSet.has(d.slug) ? { ...d, qcSampled: true } : d));
+      qcMeta = {
+        qc_seed: seed,
+        qc_sample_rate: body.qcSample.rate,
+        qc_sampled_at: now,
+        qc_sampled_by: ctx.user.email,
+      };
+    }
+
     const updatedFm: Record<string, unknown> = {
       ...fm,
       ...(body.status !== undefined ? { status: body.status } : {}),
       ...(body.description !== undefined ? { description: body.description } : {}),
-      ...(body.documents !== undefined ? { documents } : {}),
+      ...(body.documents !== undefined || body.qcSample ? { documents } : {}),
+      ...qcMeta,
       ...(body.criteria !== undefined ? { criteria: body.criteria } : {}),
       ...(body.production !== undefined
         ? { production: { ...(fm.production as object), ...body.production } }
@@ -155,7 +225,11 @@ export const PATCH = createHandler(
       return apiError("engine_error", `Update failed: ${text.slice(0, 200)}`, 502);
     }
     const result = await res.json();
-    return Response.json(result);
+    return Response.json(
+      body.qcSample
+        ? { ...result, qcSample: { rate: body.qcSample.rate, sampled: sampledSlugs } }
+        : result
+    );
   }
 );
 

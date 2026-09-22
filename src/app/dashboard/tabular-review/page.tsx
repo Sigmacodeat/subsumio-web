@@ -10,6 +10,7 @@ import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
+import type { TabularReviewRun } from "@/lib/types";
 import {
   useLegalCaseOptions,
   useTabularReviewRetry,
@@ -195,6 +196,58 @@ function TabularReviewPageInner() {
     a.download = `${safeTitle}-${date}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  // ── XLSX export (WP-7.44) — echte Office-Datei, bearbeitbar ──
+  async function exportXlsx(rows: TabularReviewRun["rows"]) {
+    if (!run || rows.length === 0) return;
+    try {
+      const { default: ExcelJS } = await import("exceljs");
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Subsumio";
+      const sheet = wb.addWorksheet("Review");
+      sheet.addRow([
+        t("tabular.col_document"),
+        "Kennung",
+        t("tabular.col_status"),
+        t("tabular.row_error_label"),
+        ...run.questions,
+      ]).font = { bold: true };
+      for (const row of rows) {
+        sheet.addRow([
+          row.title,
+          row.slug,
+          row.status,
+          row.error ?? "",
+          ...run.questions.map((_, i) => row.cells?.[i]?.answer ?? ""),
+        ]);
+      }
+      sheet.columns.forEach((col) => {
+        let max = 10;
+        col.eachCell?.({ includeEmpty: false }, (cell) => {
+          max = Math.max(max, String(cell.value ?? "").length);
+        });
+        col.width = Math.min(max + 2, 60);
+      });
+      const buf = await wb.xlsx.writeBuffer();
+      const safeTitle =
+        (run.title || "tabular-review")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 60) || "tabular-review";
+      const date = (run.created_at || new Date().toISOString()).slice(0, 10);
+      const blob = new Blob([buf], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${safeTitle}-${date}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      addToast({ type: "error", description: t("tabular.xlsx_export_failed") });
+    }
   }
 
   return (
@@ -431,6 +484,8 @@ function TabularReviewPageInner() {
                 onRetryAll={() => retry()}
                 retrying={retryMutation.isPending}
                 onExportCsv={exportCsv}
+                onRetryRows={(slugs) => retry(slugs)}
+                onExportXlsx={(rows) => void exportXlsx(rows)}
               />
               {/* Grounding invariant (CLAUDE.md): the cell answers are AI output. */}
               <GroundedOutputPanel

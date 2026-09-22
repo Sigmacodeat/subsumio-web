@@ -20,6 +20,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync } from
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import {
   stripHtmlComplete,
@@ -32,7 +33,8 @@ import {
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 2000;
 const TIMEOUT_MS = 30_000;
-const DELAY_MS = 1500; // RIS: 1.5s between requests
+// RIS: 2s zwischen Requests + nur 20:00–05:00/Wochenende/Feiertage
+// (risMassPause wartet das Fenster ab).
 
 const args = process.argv.slice(2);
 const limitIdx = args.indexOf("--limit");
@@ -403,7 +405,7 @@ async function main() {
   console.log(`  AT Landesrecht Backfill — ELI URL Fetcher`);
   console.log(`  Total files: ${allFiles.length}`);
   console.log(`  Placeholders: ${placeholders.length}`);
-  console.log(`  Rate limit: ${DELAY_MS}ms (RIS single-connection)`);
+  console.log(`  Rate limit: ${RIS_PAUSE_MS}ms + Fenster-Gate (RIS 0.5 req/s)`);
   console.log(`  Dry run: ${dryRun}`);
   console.log(`═══════════════════════════════════════════════════════════\n`);
 
@@ -434,7 +436,7 @@ async function main() {
       if (!validation.valid) {
         console.error(`  ⚠️ validation failed for ${filename}: ${validation.reason}`);
         fail++;
-        await new Promise((r) => setTimeout(r, DELAY_MS));
+        await risMassPause("Landesrecht-Backfill");
         continue;
       }
       const cleanText = validation.cleanedText;
@@ -447,7 +449,7 @@ async function main() {
         if (!structResult.valid) {
           console.error(`  ⚠️ structure validation failed for ${filename}: ${structResult.reason}`);
           fail++;
-          await new Promise((r) => setTimeout(r, DELAY_MS));
+          await risMassPause("Landesrecht-Backfill");
           continue;
         }
       }
@@ -464,7 +466,7 @@ async function main() {
             `  ⚠️ ${filename}: Frontmatter nicht lesbar — übersprungen (nicht überschrieben)`
           );
           fail++;
-          await new Promise((r) => setTimeout(r, DELAY_MS));
+          await risMassPause("Landesrecht-Backfill");
           continue;
         }
         // Inject content_hash into frontmatter
@@ -479,7 +481,7 @@ async function main() {
         } catch (e: any) {
           console.error(`  ⚠️ write failed for ${filename}: ${e?.message}`);
           fail++;
-          await new Promise((r) => setTimeout(r, DELAY_MS));
+          await risMassPause("Landesrecht-Backfill");
           continue;
         }
       }
@@ -497,7 +499,7 @@ async function main() {
       );
     }
 
-    await new Promise((r) => setTimeout(r, DELAY_MS));
+    await risMassPause("Landesrecht-Backfill");
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);

@@ -36,6 +36,9 @@ import { csrfFetch } from "@/lib/csrf";
 import CommentThread from "@/components/legal/CommentThread";
 import { useTeam } from "@/lib/queries/settings";
 
+/** Pseudo-Assignee-Wert im Zuständig-Select für den KI-Agenten (WP-7.42). */
+const AGENT_ASSIGNEE = "__agent__";
+
 export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
@@ -70,7 +73,8 @@ export function DeadlinesTasksTab() {
 
   function addTask() {
     if (!ctx.newTask.trim()) return;
-    const assignee = teamMembers.find((m) => m.id === newTaskAssigneeId);
+    const toAgent = newTaskAssigneeId === AGENT_ASSIGNEE;
+    const assignee = toAgent ? undefined : teamMembers.find((m) => m.id === newTaskAssigneeId);
     const updated = [
       ...ctx.tasks,
       {
@@ -80,7 +84,9 @@ export function DeadlinesTasksTab() {
         createdAt: new Date().toISOString(),
         dueDate: newTaskDueDate || undefined,
         assigneeId: assignee?.id,
-        assigneeName: assignee?.name || assignee?.email,
+        assigneeName: toAgent ? "KI-Agent" : assignee?.name || assignee?.email,
+        assigneeType: toAgent ? ("agent" as const) : assignee ? ("user" as const) : undefined,
+        agentStatus: toAgent ? ("pending" as const) : undefined,
       },
     ];
     ctx.setTasks(updated);
@@ -91,10 +97,29 @@ export function DeadlinesTasksTab() {
   }
 
   function reassignTask(taskId: string, assigneeId: string) {
-    const assignee = teamMembers.find((m) => m.id === assigneeId);
+    const toAgent = assigneeId === AGENT_ASSIGNEE;
+    const assignee = toAgent ? undefined : teamMembers.find((m) => m.id === assigneeId);
     const updated = ctx.tasks.map((t) =>
       t.id === taskId
-        ? { ...t, assigneeId: assignee?.id, assigneeName: assignee?.name || assignee?.email }
+        ? toAgent
+          ? // Neu an den Agenten → zurück auf pending; ein bereits geprüftes
+            // Ergebnis wird verworfen, die Aufgabe geht erneut in die Queue.
+            {
+              ...t,
+              assigneeId: undefined,
+              assigneeName: "KI-Agent",
+              assigneeType: "agent" as const,
+              agentStatus: "pending" as const,
+              agentResult: undefined,
+            }
+          : {
+              ...t,
+              assigneeId: assignee?.id,
+              assigneeName: assignee?.name || assignee?.email,
+              assigneeType: assignee ? ("user" as const) : undefined,
+              agentStatus: undefined,
+              agentResult: undefined,
+            }
         : t
     );
     ctx.setTasks(updated);
@@ -811,6 +836,7 @@ export function DeadlinesTasksTab() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-2 text-sm text-[color:var(--ds-text)] disabled:opacity-50"
           >
             <option value="">Nicht zugewiesen</option>
+            <option value={AGENT_ASSIGNEE}>KI-Agent (mit Aktenkontext)</option>
             {teamMembers.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name || m.email}
@@ -888,15 +914,36 @@ export function DeadlinesTasksTab() {
                       {formatDate(task.dueDate)}
                     </span>
                   )}
+                  {task.assigneeType === "agent" && (
+                    <Badge
+                      variant={task.agentStatus === "needs_review" ? "warning" : "default"}
+                      className="ml-2 align-middle"
+                    >
+                      {task.agentStatus === "needs_review"
+                        ? "Agent-Ergebnis — prüfen"
+                        : "KI-Agent läuft"}
+                    </Badge>
+                  )}
+                  {task.assigneeType === "agent" && task.agentResult && (
+                    <details className="mt-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)]">
+                      <summary className="cursor-pointer font-medium select-none">
+                        Agenten-Ergebnis (anwaltlich zu prüfen)
+                      </summary>
+                      <p className="mt-1 whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
+                        {task.agentResult}
+                      </p>
+                    </details>
+                  )}
                 </div>
                 <select
-                  value={task.assigneeId ?? ""}
+                  value={task.assigneeType === "agent" ? AGENT_ASSIGNEE : (task.assigneeId ?? "")}
                   onChange={(e) => reassignTask(task.id, e.target.value)}
                   disabled={caseData?.status === "archived"}
                   aria-label={`Zuständig für „${task.text}"`}
                   className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-1 text-xs text-[color:var(--ds-text)] disabled:opacity-50"
                 >
                   <option value="">Nicht zugewiesen</option>
+                  <option value={AGENT_ASSIGNEE}>KI-Agent</option>
                   {teamMembers.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name || m.email}

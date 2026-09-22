@@ -59,6 +59,8 @@ export interface ContractRedlineOpts {
   counterparty_text?: string;
   playbook_slug?: string;
   contract_type?: string;
+  /** Free-form lawyer instruction, e.g. "Haftungsklauseln verschärfen". */
+  instruction?: string;
   jurisdiction?: string;
   perspective?: "client" | "counterparty" | "neutral";
   language?: "de" | "en";
@@ -118,7 +120,8 @@ function buildSystem(
   language: "de" | "en",
   hasCounterparty: boolean,
   hasPlaybook: boolean,
-  playbookRules: ParsedPlaybookRule[]
+  playbookRules: ParsedPlaybookRule[],
+  instruction?: string
 ): string {
   const persp =
     perspective === "client"
@@ -132,11 +135,14 @@ function buildSystem(
   const playbookHint = hasPlaybook
     ? "Richte dich nach dem mitgelieferten Klauselhandbuch (Playbook) der Kanzlei."
     : "";
+  const instructionHint = instruction?.trim()
+    ? `Anweisung des Anwalts (hat Priorität): ${instruction.trim()}`
+    : "";
   const playbookRulesSection =
     hasPlaybook && playbookRules.length > 0 ? buildPlaybookSection(playbookRules, language) : "";
   const langHint = language === "en" ? "Antworte auf Englisch." : "Antworte auf Deutsch.";
   return `Du bist ein juristischer Redlining-Assistent (Recht: ${jurisdictionLabel(jurisdiction)}).
-${contractType ? `Vertragstyp: ${contractType}.` : ""} ${persp} ${compareHint} ${playbookHint} ${langHint}
+${contractType ? `Vertragstyp: ${contractType}.` : ""} ${persp} ${compareHint} ${playbookHint} ${instructionHint} ${langHint}
 Gib NUR ein JSON-Objekt zurück:
 {
   "summary": "Was die wichtigsten Änderungen bewirken (2-3 Sätze)",
@@ -246,7 +252,8 @@ export async function redlineContract(
     language,
     Boolean(opts.counterparty_text?.trim()),
     Boolean(playbook),
-    playbookRules
+    playbookRules,
+    opts.instruction
   );
   const userPrompt = parts.join("\n\n");
 

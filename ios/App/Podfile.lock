@@ -1,0 +1,65 @@
+PODS:
+  - Capacitor (7.6.9):
+    - CapacitorCordova
+  - CapacitorApp (7.1.2):
+    - Capacitor
+  - CapacitorCamera (7.0.5):
+    - Capacitor
+  - CapacitorCordova (7.6.9)
+  - CapacitorFilesystem (7.1.8):
+    - Capacitor
+    - IONFilesystemLib (~> 1.1.1)
+  - CapacitorNativeBiometric (0.0.1):
+    - Capacitor
+  - CapacitorPushNotifications (7.0.7):
+    - Capacitor
+  - CapacitorShare (7.0.4):
+    - Capacitor
+  - IONFilesystemLib (1.1.4)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - CapacitorNativeBiometric (from `../../node_modules/capacitor-native-biometric`)
+  - "CapacitorPushNotifications (from `../../node_modules/@capacitor/push-notifications`)"
+  - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
+
+SPEC REPOS:
+  trunk:
+    - IONFilesystemLib
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../node_modules/@capacitor/app"
+  CapacitorCamera:
+    :path: "../../node_modules/@capacitor/camera"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorFilesystem:
+    :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorNativeBiometric:
+    :path: "../../node_modules/capacitor-native-biometric"
+  CapacitorPushNotifications:
+    :path: "../../node_modules/@capacitor/push-notifications"
+  CapacitorShare:
+    :path: "../../node_modules/@capacitor/share"
+
+SPEC CHECKSUMS:
+  Capacitor: 46067d1c8df89760dbed78780d436327d588c726
+  CapacitorApp: f01a913211780e0718dae9750442c3e23f96e106
+  CapacitorCamera: 9e952270be355797f769aa835bb7643a96c871fe
+  CapacitorCordova: 2080fc0d6bfbc9dcc0e6d88e77fa624190d343ca
+  CapacitorFilesystem: c63fc54df41e5a6761785a7f3c49dc696c22e296
+  CapacitorNativeBiometric: e1bfea129d4f46d0fa13cdb6da25ce4d872f856c
+  CapacitorPushNotifications: 0527809a9619ed775439d5ab2c2d996122b48319
+  CapacitorShare: 25f7fc5dd0e4edbde5d6801c6de5d14a8b450a41
+  IONFilesystemLib: e6610c2b260d15e4b9cb9d5e37a87095479b669e
+
+PODFILE CHECKSUM: fd2d9590aa8487b7b965fda096f8e99550dc5f1e
+
+COCOAPODS: 1.16.2

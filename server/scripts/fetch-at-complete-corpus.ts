@@ -28,6 +28,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 
 // ── Config ─────────────────────────────────────────────────────────────
@@ -36,7 +37,6 @@ const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const RIS_UA = {
   "User-Agent": getUserAgent(),
 };
-const RATE_LIMIT_MS = 200;
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
 
@@ -673,11 +673,11 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
           );
         }
 
-        await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+        await risMassPause("Corpus-Fetch");
       }
 
       if (refs.length < 100) break;
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      await risMassPause("Corpus-Fetch");
     }
 
     console.log(`  → ${normCount} for ${term} (total: ${totalFetched})`);
@@ -817,11 +817,11 @@ async function fetchStaatsvertraege(): Promise<void> {
         totalWritten++;
         console.log(`  [${totalWritten}] ${kurztitel} (${Math.round(fullText.length / 1024)} KB)`);
 
-        await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+        await risMassPause("Corpus-Fetch");
       }
 
       if (refs.length < 100) break;
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      await risMassPause("Corpus-Fetch");
     }
   }
 
@@ -990,7 +990,7 @@ async function fetchLandesrecht(): Promise<void> {
         );
       }
 
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      await risMassPause("Corpus-Fetch");
     }
 
     if (page % 10 === 0) {
@@ -998,7 +998,7 @@ async function fetchLandesrecht(): Promise<void> {
     }
 
     if (refs.length < 100) break;
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+    await risMassPause("Corpus-Fetch");
   }
 
   console.log(`\n  Landesrecht Summary:`);

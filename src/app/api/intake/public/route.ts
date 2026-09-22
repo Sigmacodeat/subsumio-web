@@ -48,6 +48,9 @@ const bodySchema = z.object({
     .optional()
     .or(z.literal("")),
   legalArea: z.string().trim().max(80).optional(),
+  /** Gegenseite — für die Kollisionsprüfung (§ 10 RAO) mindestens so
+   *  wichtig wie der Anfragende selbst. */
+  opponent: z.string().trim().max(200).optional(),
   message: z.string().trim().min(1).max(4000),
   /** DSGVO-Einwilligung zur Verarbeitung dieser Anfrage. */
   consent: z.literal(true),
@@ -119,7 +122,15 @@ export const POST = createPublicHandler(
     }
 
     const headers = engineHeadersForBrain(brainId);
-    const conflictStatus = await checkConflict(brainId, body.name);
+    // Kollisionsprüfung auf Anfragenden UND Gegenseite — die Gegenseite ist
+    // der eigentliche § 10-RAO-Konflikt (bestehendes Mandat der Gegenseite).
+    let conflictStatus = await checkConflict(brainId, body.name);
+    if (body.opponent && conflictStatus !== "conflict") {
+      const opponentStatus = await checkConflict(brainId, body.opponent);
+      if (opponentStatus === "conflict") conflictStatus = "conflict";
+      else if (opponentStatus === "needs_review" && conflictStatus === "clear")
+        conflictStatus = "needs_review";
+    }
 
     const page = buildIntakeRequest({
       source: "web",
@@ -133,7 +144,11 @@ export const POST = createPublicHandler(
     // phone is stored hashed elsewhere (WhatsApp path) for lookup; here it's
     // just contact info the firm needs to call back, kept in the clear like
     // email — matches how api/intake/route.ts's manual/web sources handle it.
-    const frontmatterWithPhone = { ...page.frontmatter, phone: body.phone || undefined };
+    const frontmatterWithPhone = {
+      ...page.frontmatter,
+      phone: body.phone || undefined,
+      opponent: body.opponent || undefined,
+    };
 
     const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -181,6 +196,7 @@ export const POST = createPublicHandler(
             body.email ? `E-Mail: ${body.email}` : "",
             body.phone ? `Telefon: ${body.phone}` : "",
             body.legalArea ? `Rechtsgebiet: ${body.legalArea}` : "",
+            body.opponent ? `Gegenseite: ${body.opponent}` : "",
             ``,
             `Nachricht:`,
             body.message,

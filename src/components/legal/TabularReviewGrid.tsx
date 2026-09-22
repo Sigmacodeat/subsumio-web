@@ -75,7 +75,29 @@ interface TabularReviewGridProps {
   onRetryAll: () => void;
   retrying: boolean;
   onExportCsv: () => void;
+  /** WP-7.39: Bulk-Retry nur für ausgewählte Zeilen. */
+  onRetryRows?: (slugs: string[]) => void;
+  /** WP-7.39/44: XLSX-Export (ausgewählte oder gefilterte Zeilen). */
+  onExportXlsx?: (rows: TabularReviewRow[]) => void;
 }
+
+/** Gruppen-Schlüssel einer Zeile für die Auto-Gruppierung (WP-7.39):
+ *  Fehler/Ausstehend/nicht gefunden sind feste Buckets, sonst die
+ *  normalisierte Antwort (gekappt). */
+function rowGroupKey(row: TabularReviewRow, qIndex: number): string {
+  if (row.status === "error") return "__error";
+  if (row.status !== "done") return "__pending";
+  const cell = row.cells?.[qIndex];
+  if (isCellNotFound(cell)) return "__not_found";
+  return (cell?.answer ?? "").replace(/\s+/g, " ").trim().slice(0, 80) || "__empty";
+}
+
+const GROUP_KEY_LABELS: Record<string, string> = {
+  __error: "Fehler",
+  __pending: "Ausstehend",
+  __not_found: "nicht im Dokument",
+  __empty: "(leer)",
+};
 
 export function TabularReviewGrid({
   run,
@@ -83,6 +105,8 @@ export function TabularReviewGrid({
   onRetryAll,
   retrying,
   onExportCsv,
+  onRetryRows,
+  onExportXlsx,
 }: TabularReviewGridProps) {
   const { t } = useLang();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -90,6 +114,9 @@ export function TabularReviewGrid({
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [colFilters, setColFilters] = useState<Record<number, ColFilter>>({});
   const [selected, setSelected] = useState<SelectedCell | null>(null);
+  // WP-7.39: Zeilen-Auswahl (Bulk-Aktionen) + Auto-Gruppierung nach Frage.
+  const [selectedRows, setSelectedRows] = useState<ReadonlySet<string>>(new Set());
+  const [groupBy, setGroupBy] = useState<number | "">("");
 
   const terminal = run.status === "done" || run.status === "partial" || run.status === "failed";
   const canRetry = terminal && !retrying;
@@ -101,6 +128,8 @@ export function TabularReviewGrid({
     setErrorsOnly(false);
     setColFilters({});
     setSelected(null);
+    setSelectedRows(new Set());
+    setGroupBy("");
   }, [run.run_slug]);
 
   const filteredRows = useMemo(() => {
@@ -144,8 +173,48 @@ export function TabularReviewGrid({
 
   const rows = table.getRowModel().rows;
 
+  // WP-7.39: Gruppierung — sortierte Buckets über den aktuellen (gefilterten)
+  // Zeilen; bei aktiver Gruppierung wird nicht virtualisiert, damit die
+  // Gruppenheader im normalen Tabellenfluss stehen.
+  const groupedRows = useMemo(() => {
+    if (groupBy === "") return null;
+    const buckets = new Map<string, TabularReviewRow[]>();
+    for (const r of rows) {
+      const key = rowGroupKey(r.original, groupBy);
+      const list = buckets.get(key) ?? [];
+      list.push(r.original);
+      buckets.set(key, list);
+    }
+    return [...buckets.entries()].sort(([a], [b]) => {
+      const order = (k: string) =>
+        k === "__error" ? 0 : k === "__pending" ? 1 : k === "__not_found" ? 3 : 2;
+      return order(a) - order(b) || a.localeCompare(b);
+    });
+  }, [groupBy, rows]);
+
+  function toggleRow(slug: string) {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
+  const allFilteredSelected =
+    filteredRows.length > 0 && filteredRows.every((r) => selectedRows.has(r.slug));
+
+  function toggleAllFiltered() {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredRows.forEach((r) => next.delete(r.slug));
+      else filteredRows.forEach((r) => next.add(r.slug));
+      return next;
+    });
+  }
+
   const scrollRef = useRef<HTMLDivElement>(null);
-  const shouldVirtualize = rows.length > VIRTUALIZE_ABOVE;
+  const shouldVirtualize = rows.length > VIRTUALIZE_ABOVE && groupedRows === null;
   const rowVirtualizer = useVirtualizer({
     count: shouldVirtualize ? rows.length : 0,
     getScrollElement: () => scrollRef.current,
@@ -204,12 +273,21 @@ export function TabularReviewGrid({
             isError ? "bg-[color:var(--ds-danger-bg)]" : "bg-[color:var(--ds-surface)]"
           )}
         >
-          <Link
-            href={`/dashboard/brain/${encodeURIComponent(original.slug)}`}
-            className="hover:brand-text font-medium break-words text-[color:var(--ds-text)]"
-          >
-            {original.title}
-          </Link>
+          <div className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={selectedRows.has(original.slug)}
+              onChange={() => toggleRow(original.slug)}
+              aria-label={`Zeile „${original.title}" auswählen`}
+              className="mt-0.5 shrink-0 accent-[color:var(--brand-primary)]"
+            />
+            <Link
+              href={`/dashboard/brain/${encodeURIComponent(original.slug)}`}
+              className="hover:brand-text font-medium break-words text-[color:var(--ds-text)]"
+            >
+              {original.title}
+            </Link>
+          </div>
           {isPending && (
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
               {t("tabular.row_pending")}
@@ -339,6 +417,19 @@ export function TabularReviewGrid({
           />
           {t("tabular.filter_errors_only")}
         </label>
+        <select
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value === "" ? "" : Number(e.target.value))}
+          aria-label={t("tabular.group_by_label")}
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+        >
+          <option value="">{t("tabular.group_by_none")}</option>
+          {run.questions.map((q, i) => (
+            <option key={i} value={i}>
+              {t("tabular.group_by_prefix")} {q.length > 40 ? `${q.slice(0, 40)}…` : q}
+            </option>
+          ))}
+        </select>
         {filtersActive && (
           <button onClick={resetFilters} className="brand-text text-xs hover:underline">
             {t("tabular.filters_reset")}
@@ -365,7 +456,52 @@ export function TabularReviewGrid({
           <Download size={12} />
           {t("tabular.csv_export")}
         </Button>
+        {onExportXlsx && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() =>
+              onExportXlsx(
+                selectedRows.size > 0
+                  ? run.rows.filter((r) => selectedRows.has(r.slug))
+                  : filteredRows
+              )
+            }
+          >
+            <Download size={12} />
+            {t("tabular.xlsx_export")}
+          </Button>
+        )}
       </div>
+
+      {/* WP-7.39: Bulk-Aktionsleiste für ausgewählte Zeilen */}
+      {selectedRows.size > 0 && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2 text-xs"
+        >
+          <span className="font-medium text-[color:var(--ds-text)]">
+            {t("tabular.selected_count").replace("{{n}}", String(selectedRows.size))}
+          </span>
+          {onRetryRows && canRetry && (
+            <button
+              onClick={() => onRetryRows([...selectedRows])}
+              disabled={retrying}
+              className="brand-text inline-flex items-center gap-1 hover:underline disabled:opacity-50"
+            >
+              <RotateCcw size={11} className={retrying ? "animate-spin" : undefined} />
+              {t("tabular.retry_selected")}
+            </button>
+          )}
+          <button
+            onClick={() => setSelectedRows(new Set())}
+            className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
+          >
+            {t("tabular.selection_clear")}
+          </button>
+        </div>
+      )}
 
       {/* Grid */}
       <div
@@ -381,7 +517,16 @@ export function TabularReviewGrid({
                 className="sticky left-0 z-30 max-w-[280px] min-w-[220px] bg-[color:var(--ds-surface-2)] px-4 py-3 text-left shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
                 aria-sort={sortAria(sorting, "doc")}
               >
-                <SortButton label={t("tabular.col_document")} column={table.getColumn("doc")} />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleAllFiltered}
+                    aria-label={t("tabular.select_all")}
+                    className="shrink-0 accent-[color:var(--brand-primary)]"
+                  />
+                  <SortButton label={t("tabular.col_document")} column={table.getColumn("doc")} />
+                </div>
               </th>
               {run.questions.map((q, i) => (
                 <th
@@ -406,8 +551,8 @@ export function TabularReviewGrid({
               ))}
             </tr>
           </thead>
-          <tbody>
-            {rows.length === 0 ? (
+          {rows.length === 0 ? (
+            <tbody>
               <tr>
                 <td
                   colSpan={run.questions.length + 1}
@@ -416,21 +561,43 @@ export function TabularReviewGrid({
                   {t("tabular.no_rows_match")}
                 </td>
               </tr>
-            ) : shouldVirtualize ? (
-              <>
-                {virtualRows.map((vr) => {
-                  const row = rows[vr.index];
-                  if (!row) return null;
-                  return renderRow(row, { index: vr.index, start: vr.start });
+            </tbody>
+          ) : groupedRows ? (
+            groupedRows.map(([key, groupRows]) => (
+              <tbody key={key}>
+                <tr aria-hidden="true" className="bg-[color:var(--ds-surface-2)]">
+                  <td
+                    colSpan={run.questions.length + 1}
+                    className="px-4 py-2 text-xs font-semibold text-[color:var(--ds-text-muted)]"
+                  >
+                    {GROUP_KEY_LABELS[key] ?? key}{" "}
+                    <span className="font-normal tabular-nums">({groupRows.length})</span>
+                  </td>
+                </tr>
+                {groupRows.map((original) => {
+                  const row = rows.find((r) => r.original.slug === original.slug);
+                  return row ? renderRow(row) : null;
                 })}
-                {rowVirtualizer.getTotalSize() > 0 && (
-                  <tr aria-hidden="true" style={{ height: rowVirtualizer.getTotalSize() }} />
-                )}
-              </>
-            ) : (
-              rows.map((row) => renderRow(row))
-            )}
-          </tbody>
+              </tbody>
+            ))
+          ) : (
+            <tbody>
+              {shouldVirtualize ? (
+                <>
+                  {virtualRows.map((vr) => {
+                    const row = rows[vr.index];
+                    if (!row) return null;
+                    return renderRow(row, { index: vr.index, start: vr.start });
+                  })}
+                  {rowVirtualizer.getTotalSize() > 0 && (
+                    <tr aria-hidden="true" style={{ height: rowVirtualizer.getTotalSize() }} />
+                  )}
+                </>
+              ) : (
+                rows.map((row) => renderRow(row))
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 

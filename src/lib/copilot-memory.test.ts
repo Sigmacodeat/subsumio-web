@@ -281,3 +281,85 @@ describe("copilot-memory-llm — extraction module", () => {
     expect(result).toEqual([]);
   });
 });
+
+describe("copilot-memory — per-user ownership (WP-5.30)", () => {
+  const page = (id: string, ownerId?: string) => ({
+    slug: `copilot/memory/${id}`,
+    title: `Memory: ${id}`,
+    content: `value-${id}`,
+    type: "copilot_memory",
+    frontmatter: {
+      type: "copilot_memory",
+      memory_id: id,
+      memory_type: "fact",
+      memory_key: `key-${id}`,
+      memory_value: `value-${id}`,
+      memory_source: "user_explicit",
+      owner_id: ownerId,
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+    },
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  });
+
+  test("listMemories(userId) returns own + firm-shared, never a colleague's", async () => {
+    vi.mocked(api.brain.listPages).mockResolvedValue([
+      page("mine", "user-a"),
+      page("colleague", "user-b"),
+      page("shared"),
+    ] as never);
+    const { listMemories } = await import("@/lib/copilot-memory");
+    const result = await listMemories({ userId: "user-a" });
+    expect(result.map((m) => m.id).sort()).toEqual(["mine", "shared"]);
+  });
+
+  test("listMemories(ownedOnly) restricts to the user's own rows", async () => {
+    vi.mocked(api.brain.listPages).mockResolvedValue([
+      page("mine", "user-a"),
+      page("shared"),
+    ] as never);
+    const { listMemories } = await import("@/lib/copilot-memory");
+    const result = await listMemories({ userId: "user-a", ownedOnly: true });
+    expect(result.map((m) => m.id)).toEqual(["mine"]);
+  });
+
+  test("createMemory stamps owner_id into the frontmatter", async () => {
+    const { createMemory } = await import("@/lib/copilot-memory");
+    await createMemory({ type: "fact", key: "k", value: "v", ownerId: "user-a" });
+    const written = vi.mocked(api.brain.createPage).mock.calls[0][0] as {
+      frontmatter: Record<string, unknown>;
+    };
+    expect(written.frontmatter.owner_id).toBe("user-a");
+  });
+
+  test("deleteMemoriesOfUser removes only rows owned by that user", async () => {
+    vi.mocked(api.brain.listPages).mockResolvedValue([
+      page("mine", "user-a"),
+      page("colleague", "user-b"),
+      page("shared"),
+    ] as never);
+    const { deleteMemoriesOfUser } = await import("@/lib/copilot-memory");
+    const deleted = await deleteMemoriesOfUser("user-a");
+    expect(deleted).toBe(1);
+    expect(api.brain.deletePage).toHaveBeenCalledWith("copilot/memory/mine");
+    expect(api.brain.deletePage).not.toHaveBeenCalledWith("copilot/memory/colleague");
+    expect(api.brain.deletePage).not.toHaveBeenCalledWith("copilot/memory/shared");
+  });
+
+  test("updateMemory refuses to touch another user's entry", async () => {
+    vi.mocked(api.brain.getPage).mockResolvedValue(page("theirs", "user-b") as never);
+    const { updateMemory } = await import("@/lib/copilot-memory");
+    await expect(
+      updateMemory("theirs", { pinned: true }, undefined, { userId: "user-a", isAdmin: false })
+    ).rejects.toThrow("memory_forbidden");
+  });
+
+  test("an admin may update a colleague's entry", async () => {
+    vi.mocked(api.brain.getPage).mockResolvedValue(page("theirs", "user-b") as never);
+    const { updateMemory } = await import("@/lib/copilot-memory");
+    await expect(
+      updateMemory("theirs", { pinned: true }, undefined, { userId: "user-a", isAdmin: true })
+    ).resolves.toBeUndefined();
+  });
+});

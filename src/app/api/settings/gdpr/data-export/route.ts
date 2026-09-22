@@ -5,6 +5,7 @@ import { getApiKeyStore } from "@/lib/api-key-store";
 import { decrypt } from "@/lib/encryption";
 import { logAudit } from "@/lib/audit";
 import { createServerBrainClient } from "@/lib/server-brain";
+import { listMemories } from "@/lib/copilot-memory";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 export const maxDuration = 120;
@@ -76,6 +77,12 @@ export const GET = createHandler(
         lastUsedAt: k.lastUsedAt,
       })),
       brainPages,
+      // WP-5.30 / Art. 15 DSGVO: the user's own copilot-memory entries are
+      // personal data even when they live in the firm's shared brain.
+      copilotMemories: await listMemories(
+        { userId: ctx.user.id, ownedOnly: true },
+        ctx.headers
+      ).catch(() => []),
       // Contact requests this address sent through the website chat or the
       // contact form (Art. 15 DSGVO).
       contactRequests: await leadsForEmail(user.email).catch(() => []),

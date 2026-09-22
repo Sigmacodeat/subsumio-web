@@ -41,7 +41,12 @@ export type CopilotToolName =
   | "create_task"
   | "create_deadline"
   | "create_contact"
-  | "request_signature";
+  | "request_signature"
+  | "render_template"
+  | "register_lookup"
+  | "create_automation_rule"
+  | "invoice_draft"
+  | "organize_documents";
 
 export interface ToolConditionContext {
   role: string;
@@ -182,7 +187,8 @@ export const TOOL_CONDITIONS: Record<CopilotToolName, ToolCondition> = {
   create_task: {
     roles: ["admin", "lawyer", "assistant"],
     requiresCaseContext: true,
-    description: "Create a task on a case",
+    description:
+      "Create a task on a case — assignee_type 'agent' delegates it to the AI agent (runs with case context, result needs lawyer review)",
   },
   create_deadline: {
     roles: ["admin", "lawyer", "assistant"],
@@ -197,6 +203,31 @@ export const TOOL_CONDITIONS: Record<CopilotToolName, ToolCondition> = {
     roles: ["admin", "lawyer", "assistant"],
     requiresCaseContext: true,
     description: "Request a signature or NDA from a client",
+  },
+  render_template: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Render a legal template (Vorlage) with case/firm variables filled",
+  },
+  register_lookup: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Look up an entity in a register (Firmenbuch, Handelsregister, …)",
+  },
+  create_automation_rule: {
+    roles: ["admin", "lawyer"],
+    description:
+      "Create a 'wenn X dann Y' automation rule conversationally (Magic Builder) — the rule fires on events like document.uploaded or invoice.overdue",
+  },
+  invoice_draft: {
+    roles: ["admin", "lawyer", "assistant"],
+    requiresCaseContext: true,
+    description:
+      "Draft an invoice from the case's unbilled billable time entries (or explicit items) — GoBD-compliant number, stays a draft for review",
+  },
+  organize_documents: {
+    roles: ["admin", "lawyer", "assistant"],
+    requiresCaseContext: true,
+    description:
+      "Organize a case's documents into folders (vault organization) — assigns folder frontmatter per document",
   },
 };
 

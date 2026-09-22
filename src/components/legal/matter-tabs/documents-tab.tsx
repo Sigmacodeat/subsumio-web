@@ -31,6 +31,9 @@ import { api } from "@/lib/api";
 import { isDocumentLock, type DocumentLock } from "@/lib/document-versions";
 import { ActImportCockpit } from "@/components/legal/ActImportCockpit";
 import { QesSignButton } from "@/components/legal/QesSignButton";
+import { suggestFolder } from "@/lib/vault-organization";
+import { buildFolderTree, folderMatches } from "@/lib/folder-tree";
+import { FolderTree } from "@/components/legal/folder-tree";
 
 interface DocJurisdiction {
   jurisdiction: string;
@@ -109,6 +112,8 @@ export function DocumentsTab() {
   const [folderEditSlug, setFolderEditSlug] = useState<string | null>(null);
   const [folderEditValue, setFolderEditValue] = useState("");
   const [folderSaving, setFolderSaving] = useState(false);
+  const [autoOrganizing, setAutoOrganizing] = useState(false);
+  const [folderTreeOpen, setFolderTreeOpen] = useState(false);
   const docSlugsKey = (ctx.caseData?.documents ?? [])
     .map((d) => d.slug || d.url || "")
     .filter(Boolean)
@@ -158,9 +163,17 @@ export function DocumentsTab() {
     a.localeCompare(b, "de")
   );
   const docKey = (d: { slug?: string; url?: string }) => d.slug || d.url || "";
+  // WP-2.8: Prefix-Matching — ein gewählter Baum-Knoten filtert auch seine
+  // Unterordner-Dokumente mit („Korrespondenz" fängt „Korrespondenz/Ausgehend").
   const matchesFolder = (d: { slug?: string; url?: string }) =>
-    folderFilter === "all" ||
-    (folderFilter === "" ? !docFolders[docKey(d)] : docFolders[docKey(d)] === folderFilter);
+    folderMatches(docFolders[docKey(d)], folderFilter);
+  const folderCounts: Record<string, number> = {};
+  for (const d of caseData.documents) {
+    const f = docFolders[docKey(d)];
+    if (f) folderCounts[f] = (folderCounts[f] ?? 0) + 1;
+  }
+  const folderTreeNodes = buildFolderTree(allFolders, folderCounts);
+  const unfiledCount = caseData.documents.filter((d) => !docFolders[docKey(d)]).length;
 
   async function saveFolder(docSlug: string, folder: string) {
     setFolderSaving(true);
@@ -191,6 +204,50 @@ export function DocumentsTab() {
       ctx.setUploadError("Ordner konnte nicht gespeichert werden.");
     } finally {
       setFolderSaving(false);
+    }
+  }
+
+  async function autoOrganize() {
+    const unsorted = (caseData?.documents ?? []).filter((d) => !docFolders[docKey(d)]);
+    if (unsorted.length === 0) {
+      ctx.setUploadError(null);
+      return;
+    }
+    setAutoOrganizing(true);
+    let applied = 0;
+    try {
+      for (const d of unsorted.slice(0, 50)) {
+        const suggestion = suggestFolder({
+          name: d.name,
+          doc_type: d.doc_type,
+          kind: d.kind,
+          source: d.source,
+        });
+        const key = docKey(d);
+        if (!suggestion || !key || !d.slug) continue;
+        const res = await csrfFetch(
+          `/api/pages/${key.split("/").map(encodeURIComponent).join("/")}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              frontmatter: { folder: suggestion.folder },
+              merge: true,
+            }),
+          }
+        );
+        if (res.ok) {
+          applied += 1;
+          setDocFolders((prev) => ({ ...prev, [key]: suggestion.folder }));
+        }
+      }
+      if (applied === 0) {
+        ctx.setUploadError(t("casesdetail.auto_organize_none"));
+      }
+    } catch {
+      ctx.setUploadError(t("casesdetail.auto_organize_error"));
+    } finally {
+      setAutoOrganizing(false);
     }
   }
 
@@ -487,21 +544,37 @@ export function DocumentsTab() {
             <option value="financial_record">Finanzunterlage</option>
           </select>
           {allFolders.length > 0 && (
-            <select
-              value={folderFilter}
-              onChange={(e) => setFolderFilter(e.target.value)}
-              aria-label="Nach Ordner filtern"
-              className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            <button
+              type="button"
+              onClick={() => setFolderTreeOpen((o) => !o)}
+              aria-expanded={folderTreeOpen}
+              aria-label={t("casesdetail.folder_tree_toggle")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
+                folderFilter !== "all"
+                  ? "border-[color:var(--brand-primary)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              )}
             >
-              <option value="all">Alle Ordner</option>
-              <option value="">Ohne Ordner</option>
-              {allFolders.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+              <FolderOpen size={13} />
+              {folderFilter !== "all"
+                ? folderFilter === ""
+                  ? t("casesdetail.folder_unfiled")
+                  : folderFilter
+                : t("casesdetail.folder_all")}
+            </button>
           )}
+          {/* WP-7.45: Vault auto-einordnen (ungeordnete Dokumente) */}
+          <button
+            type="button"
+            onClick={() => void autoOrganize()}
+            disabled={autoOrganizing || caseData?.status === "archived"}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none disabled:opacity-50"
+          >
+            {autoOrganizing
+              ? t("casesdetail.auto_organize_running")
+              : t("casesdetail.auto_organize")}
+          </button>
         </div>
         <Button
           variant="ghost"
@@ -672,6 +745,24 @@ export function DocumentsTab() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* WP-2.8: Ordner-Baum (echte Baum-Ansicht, „/" verschachtelt) */}
+      {folderTreeOpen && allFolders.length > 0 && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+          <FolderTree
+            nodes={folderTreeNodes}
+            selected={folderFilter}
+            onSelect={setFolderFilter}
+            labels={{
+              all: t("casesdetail.folder_all"),
+              unfiled: t("casesdetail.folder_unfiled"),
+              heading: t("casesdetail.folder_tree_toggle"),
+            }}
+            unfiledCount={unfiledCount}
+            totalCount={caseData.documents.length}
+          />
         </div>
       )}
 

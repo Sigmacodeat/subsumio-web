@@ -20,9 +20,10 @@ import {
   atomicWrite,
   risXmlToText,
 } from "./backfill-utils";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-const RATE_LIMIT_MS = 200;
 
 function stripHtml(html: string): string {
   return stripHtmlComplete(html);
@@ -242,7 +243,9 @@ async function main() {
   const dirIdx = args.indexOf("--dir");
   const dir = dirIdx >= 0 ? args[dirIdx + 1]! : "law-corpus/at-judikatur";
   const batchIdx = args.indexOf("--batch");
-  const batchSize = batchIdx >= 0 ? parseInt(args[batchIdx + 1]!, 10) : 5;
+  // RIS erlaubt max. 0,5 req/s pro Prozess — Batch >1 würde parallele
+  // RIS-Requests aus einem Prozess erzeugen und das Limit brechen.
+  const batchSize = Math.min(batchIdx >= 0 ? parseInt(args[batchIdx + 1]!, 10) : 1, 1);
   const limitIdx = args.indexOf("--limit");
   const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1]!, 10) : 0;
   const forceReFetch = args.includes("--force-refetch");
@@ -276,6 +279,7 @@ async function main() {
     return;
   }
 
+  await acquireRisLock();
   const toProcess = limit > 0 ? textless.slice(0, limit) : textless;
   let processed = 0;
   let success = 0;
@@ -335,7 +339,7 @@ async function main() {
       console.log(`  [${processed}/${toProcess.length}] ✅ ${success} ❌ ${failed}`);
     }
 
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+    await risMassPause("Judikatur-Text");
   }
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
@@ -346,7 +350,9 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════\n`);
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error("Fatal:", err);
+    process.exitCode = 1;
+  })
+  .finally(() => releaseRisLock());

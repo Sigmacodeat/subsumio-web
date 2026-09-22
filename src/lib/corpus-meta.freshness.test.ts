@@ -8,7 +8,7 @@ import { lawCorpusDir } from "@/lib/corpus-paths";
 // Corpus is external data (SUBSUMIO_LAW_CORPUS_DIR) — skip on machines
 // without it (CI, fresh checkouts) instead of failing.
 describe.skipIf(!existsSync(lawCorpusDir()))("CORPUS_META freshness", () => {
-  it("matches the current generator output", { timeout: 120_000 }, () => {
+  it("matches the current generator output", () => {
     const raw = collectStatutes();
     const { entries: resolved } = resolveCollisions(raw);
     const generatedKeys = new Set(resolved.map((e) => e.slugKey));
@@ -33,7 +33,7 @@ describe.skipIf(!existsSync(lawCorpusDir()))("CORPUS_META freshness", () => {
     }
 
     expect(currentKeys.size).toBeGreaterThanOrEqual(950);
-  });
+  }, 120_000);
 
   it("includes the new state treaty and state law categories", () => {
     const types = new Set(Object.values(CORPUS_META).map((m) => m.type ?? "statute"));
@@ -42,7 +42,7 @@ describe.skipIf(!existsSync(lawCorpusDir()))("CORPUS_META freshness", () => {
     expect(types.has("statute")).toBe(true);
   });
 
-  it("every meta file points to an existing law-corpus file", { timeout: 30_000 }, () => {
+  it("every meta file points to an existing law-corpus file", () => {
     const missing: string[] = [];
     for (const [key, meta] of Object.entries(CORPUS_META)) {
       const filePath = join(lawCorpusDir(), meta.file);
@@ -55,7 +55,7 @@ describe.skipIf(!existsSync(lawCorpusDir()))("CORPUS_META freshness", () => {
       }
     }
     expect(missing).toEqual([]);
-  });
+  }, 30_000);
 
   it("includes at least one entry from each new directory", () => {
     const hasStaatsvertraege = Object.values(CORPUS_META).some((m) =>

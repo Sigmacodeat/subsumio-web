@@ -9,6 +9,8 @@
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 
 const args = process.argv.slice(2);
 const arg = (n: string, d?: string) => {
@@ -161,6 +163,7 @@ async function main() {
     console.log(`[resume] ${done.size} Slugs bereits verarbeitet`);
   }
 
+  if (!DRY) await acquireRisLock();
   const todo = slugs.filter((s) => !done.has(s));
   console.log(`Zu refetchen: ${todo.length} von ${slugs.length}${DRY ? " (DRY RUN)" : ""}`);
 
@@ -186,6 +189,7 @@ async function main() {
       continue;
     }
 
+    await risMassPause("Listen-Refetch");
     const xml = await fetchXml(docId, slug);
     if (!xml) {
       failed++;
@@ -248,4 +252,4 @@ async function main() {
   if (!DRY) console.log(`\nProtokoll: ${OUT}`);
 }
 
-await main();
+await main().finally(() => releaseRisLock());

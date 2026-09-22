@@ -45,6 +45,12 @@ export const GET = createHandler(
         });
         return Response.json({ jobs: filtered });
       }
+      if (filter === "next-steps") {
+        const caseSlug = url.searchParams.get("case") ?? "";
+        const prefix = `next-steps:${caseSlug}`;
+        const filtered = jobs.filter((j) => String(j.name ?? "") === prefix);
+        return Response.json({ jobs: filtered });
+      }
 
       return Response.json({ jobs });
     } catch (err) {

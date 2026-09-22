@@ -134,6 +134,7 @@ interface CommandCenterData {
     totals: {
       totalDisk: number;
       totalDbPages: number;
+      totalDbChunks: number;
       totalDbDocuments: number;
       totalEmbedded: number;
       totalNotImported: number;
@@ -156,6 +157,15 @@ interface CommandCenterData {
     paused: boolean;
     states: PipelineStateRow[];
     live: PipelineLiveRow[];
+    /** Laufende RIS-Downloads (2-Slot-Semaphore, ris_lock-Tabelle). */
+    risFetchers?: Array<{
+      slot: number;
+      holder: string;
+      command: string;
+      acquiredAt: string | null;
+      heartbeatAt: string | null;
+      stale: boolean;
+    }>;
   };
   trust: {
     rows: TrustRow[];
@@ -813,11 +823,13 @@ function PipelineSection({
   paused,
   states,
   live,
+  risFetchers,
   onActionComplete,
 }: {
   paused: boolean;
   states: PipelineStateRow[];
   live: PipelineLiveRow[];
+  risFetchers?: NonNullable<CommandCenterData["pipeline"]["risFetchers"]>;
   onActionComplete?: () => void;
 }) {
   const { addToast } = useToast();
@@ -958,6 +970,61 @@ function PipelineSection({
                   </div>
                 );
               })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* RIS-Fetcher — laufende Downloads aus der 2-Slot-Semaphore
+          (manuelle Jobs halten ris_lock, nicht pipeline_state). */}
+      {risFetchers && risFetchers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Activity className="h-4 w-4 text-[color:var(--ds-success-text)]" />
+              RIS-Downloads aktiv ({risFetchers.filter((f) => !f.stale).length}/{risFetchers.length}{" "}
+              Slots)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1.5">
+              {risFetchers.map((f) => (
+                <div
+                  key={f.slot}
+                  className="flex items-center gap-3 rounded border border-[color:var(--ds-border)] p-2 text-xs"
+                >
+                  <Badge
+                    variant={f.stale ? "danger" : "success"}
+                    className="flex-shrink-0 text-[10px]"
+                  >
+                    {f.stale ? "stale" : `Slot ${f.slot}`}
+                  </Badge>
+                  <div className="min-w-0 flex-1">
+                    <span className="truncate font-mono" title={f.command}>
+                      {f.command.split("/").pop()}
+                    </span>
+                    {f.acquiredAt && (
+                      <span className="ml-2 text-[color:var(--ds-text-subtle)]">
+                        seit{" "}
+                        {new Date(f.acquiredAt).toLocaleTimeString("de-DE", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  {f.heartbeatAt && (
+                    <span className="flex-shrink-0 text-[10px] text-[color:var(--ds-text-subtle)]">
+                      ♥{" "}
+                      {new Date(f.heartbeatAt).toLocaleTimeString("de-DE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -1611,7 +1678,9 @@ export function CorpusCommandCenter({
   const { data, isLoading, isError, error, refetch } = useQuery<CommandCenterData>({
     queryKey: ["corpus-command-center"],
     queryFn: async () => {
-      const res = await fetch(API_BASE);
+      // no-store: die Route setzt Cache-Control max-age=30 — ohne das liefert
+      // der Browser beim 5s-Polling bis zu 30s alte Daten.
+      const res = await fetch(API_BASE, { cache: "no-store" });
       if (!res.ok) throw new Error("Command Center Daten nicht ladbar");
       return res.json().then((d) => d.data);
     },
@@ -1619,7 +1688,9 @@ export function CorpusCommandCenter({
     // 30s im Leerlauf. Funktionsform = TanStack-Best-Practice für Job-Polling.
     refetchInterval: (query) => {
       const d = query.state.data;
-      const running = d?.pipeline?.states?.some((s) => s.pid !== null);
+      const running =
+        (d?.pipeline?.states?.some((s) => s.pid !== null) ?? false) ||
+        (d?.pipeline?.risFetchers?.some((f) => !f.stale) ?? false);
       return running ? 5_000 : 30_000;
     },
   });
@@ -1748,6 +1819,7 @@ export function CorpusCommandCenter({
           paused={data.pipeline.paused}
           states={data.pipeline.states}
           live={data.pipeline.live ?? []}
+          risFetchers={data.pipeline.risFetchers ?? []}
           onActionComplete={() => refetch()}
         />
       )}

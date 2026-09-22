@@ -45,7 +45,6 @@ for corpus in "${CORPORA[@]}"; do
   echo "=============================================="
   bun run server/scripts/refetch-broken-files.ts \
     --dir "law-corpus/$corpus" \
-    --rate-ms 1000 \
     2>&1
   echo "  DONE: $corpus"
 done

@@ -12,12 +12,23 @@ interface CaseSuggestion {
   title: string;
 }
 
+interface AttachmentMeta {
+  id: string;
+  name: string;
+  size: number;
+  contentType: string;
+  isInline: boolean;
+}
+
 const API_BASE = "https://subsum.io";
 let token = "";
 const _tokenName = "";
 let _connected = false;
 let currentMode: "conservative" | "balanced" | "tokenmax" = "balanced";
 let currentMail: { subject: string; from: string; body: string; date?: string } | null = null;
+let currentAttachments: AttachmentMeta[] = [];
+/** Zuletzt erfolgreich gematchte Akte — wird im Anhang-Select vorausgewählt. */
+let lastCaseSlug = "";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Office: any;
@@ -106,6 +117,22 @@ async function loadCurrentMail() {
     document.getElementById("mailSubject")!.textContent = subject;
     document.getElementById("mailFrom")!.textContent = from;
 
+    // WP-4.21: Anhänge der geöffneten Mail auflisten (Read-Mode liefert
+    // Metadaten; Inhalt erst bei Bedarf via getAttachmentContentAsync).
+    const rawAtts = Array.isArray(item.attachments) ? item.attachments : [];
+    currentAttachments = rawAtts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((a: any) => ({
+        id: String(a.id ?? ""),
+        name: String(a.name ?? "Anhang"),
+        size: typeof a.size === "number" ? a.size : 0,
+        contentType: String(a.contentType ?? "application/octet-stream"),
+        isInline: Boolean(a.isInline),
+      }))
+      .filter((a: AttachmentMeta) => a.id && !a.isInline);
+    renderAttachmentList();
+    loadAttachCases();
+
     if (item.body) {
       item.body.getAsync("text", (asyncResult: { status: string; value: string }) => {
         if (asyncResult.status === "succeeded") {
@@ -152,6 +179,9 @@ async function importMail() {
     const data = await res.json();
 
     if (data.success && data.matchedCase) {
+      lastCaseSlug = data.matchedCase.slug;
+      const sel = document.getElementById("attachCaseSelect") as HTMLSelectElement | null;
+      if (sel && [...sel.options].some((o) => o.value === lastCaseSlug)) sel.value = lastCaseSlug;
       if (data.duplicate) {
         showStatus(`E-Mail bereits in Akte „${data.matchedCase.title}" vorhanden.`, "info");
       } else {
@@ -204,6 +234,9 @@ async function importToSpecificCase(slug: string) {
 
     const data = await res.json();
     if (data.success) {
+      lastCaseSlug = slug;
+      const sel = document.getElementById("attachCaseSelect") as HTMLSelectElement | null;
+      if (sel && [...sel.options].some((o) => o.value === lastCaseSlug)) sel.value = lastCaseSlug;
       showStatus(`E-Mail in Akte importiert.`, "ok");
       document.getElementById("caseMatchSection")!.style.display = "none";
     } else {
@@ -282,6 +315,238 @@ async function runQuery() {
   }
 }
 
+/** Last generated reply draft, kept for the "Als Antwort öffnen" action. */
+let currentDraft = "";
+
+async function draftReply() {
+  if (!currentMail) {
+    showStatus("Keine E-Mail geladen.", "err");
+    return;
+  }
+  if (!currentMail.body || currentMail.body.length < 10) {
+    showStatus("E-Mail-Text wird noch geladen — bitte kurz warten.", "info");
+    return;
+  }
+
+  const btn = document.getElementById("draftReplyBtn") as HTMLButtonElement;
+  const btnText = document.getElementById("draftReplyBtnText")!;
+  const resultEl = document.getElementById("draftResult")!;
+  const summaryEl = document.getElementById("draftSummary")!;
+  const insertBtn = document.getElementById("insertReplyBtn")!;
+  btn.disabled = true;
+  insertBtn.style.display = "none";
+  summaryEl.style.display = "none";
+  summaryEl.textContent = "";
+  currentDraft = "";
+  btnText.innerHTML = '<div class="spinner"></div> Entwurf wird erstellt…';
+  resultEl.style.display = "block";
+  resultEl.textContent = "Der Assistent liest die E-Mail und entwirft eine Antwort…";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/email/draft-reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        subject: currentMail.subject,
+        from: currentMail.from,
+        body: currentMail.body,
+        ...(lastCaseSlug ? { caseSlug: lastCaseSlug } : {}),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    const draft = (data.draft ?? data.data?.draft ?? "") as string;
+    if (!res.ok || !draft) {
+      resultEl.style.display = "none";
+      showStatus(data.message || `Entwurf fehlgeschlagen (HTTP ${res.status}).`, "err");
+      return;
+    }
+    const summary = (data.summary ?? data.data?.summary ?? "") as string;
+    if (summary) {
+      summaryEl.textContent = `📋 ${summary}`;
+      summaryEl.style.display = "block";
+      summaryEl.style.cssText =
+        "display:block;font-size:11px;color:#8a8aa8;border-left:2px solid #6d6dfb;padding:4px 8px;margin:6px 0;line-height:1.4";
+    }
+    currentDraft = draft;
+    resultEl.textContent = draft;
+    insertBtn.style.display = "flex";
+    showStatus("Entwurf bereit — bitte anwaltlich prüfen, bevor Sie antworten.", "info");
+  } catch (e) {
+    resultEl.style.display = "none";
+    showStatus(e instanceof Error ? e.message : "Entwurf fehlgeschlagen.", "err");
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = "Antwort entwerfen";
+  }
+}
+
+/** Open a prefilled Outlook reply window with the draft (read mode). */
+function insertDraftAsReply() {
+  if (!currentDraft) return;
+  try {
+    const htmlBody = `<p>${escapeHtml(currentDraft)
+      .split("\n")
+      .filter((l) => l.trim())
+      .join("<br/>")}</p>`;
+    Office.context.mailbox.item.displayReplyAllForm({ htmlBody });
+  } catch {
+    showStatus(
+      "Antwortfenster konnte nicht geöffnet werden. Der Entwurf steht oben zum Kopieren bereit.",
+      "err"
+    );
+  }
+}
+
+// ── WP-4.21: Anhänge in Akte ablegen ────────────────────────────────
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+function renderAttachmentList() {
+  const list = document.getElementById("attachmentList")!;
+  list.innerHTML = "";
+  if (currentAttachments.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "attach-empty";
+    empty.textContent = "Diese E-Mail enthält keine Anhänge.";
+    list.appendChild(empty);
+    return;
+  }
+  currentAttachments.forEach((att, i) => {
+    const row = document.createElement("label");
+    row.className = "attach-item";
+    row.innerHTML =
+      `<input type="checkbox" data-att-idx="${i}" checked />` +
+      `<span class="attach-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>` +
+      `<span class="attach-size">${formatSize(att.size)}</span>` +
+      `<span class="attach-state" data-att-state="${i}"></span>`;
+    list.appendChild(row);
+  });
+}
+
+async function loadAttachCases() {
+  const sel = document.getElementById("attachCaseSelect") as HTMLSelectElement | null;
+  if (!sel) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/pages?type=legal_case&limit=200`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const raw = (await res.json()) as unknown;
+    const pages = (
+      Array.isArray(raw) ? raw : ((raw as { items?: unknown[] }).items ?? [])
+    ) as Array<{
+      slug: string;
+      title: string;
+      frontmatter?: { case_number?: string };
+    }>;
+    sel.innerHTML = "";
+    for (const p of pages) {
+      const opt = document.createElement("option");
+      opt.value = p.slug;
+      opt.textContent = p.frontmatter?.case_number
+        ? `${p.frontmatter.case_number} — ${p.title}`
+        : p.title;
+      sel.appendChild(opt);
+    }
+    if (lastCaseSlug && pages.some((p) => p.slug === lastCaseSlug)) sel.value = lastCaseSlug;
+  } catch {
+    // Akte-Liste bleibt leer — der Upload meldet dann „keine Akte gewählt".
+  }
+}
+
+/** Office.js-Callback in ein Promise wandeln; liefert den Anhang als Blob. */
+function getAttachmentBlob(att: AttachmentMeta): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    Office.context.mailbox.item.getAttachmentContentAsync(
+      att.id,
+      (asyncResult: {
+        status: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        value?: any;
+        error?: { message?: string };
+      }) => {
+        if (asyncResult.status !== "succeeded" || !asyncResult.value) {
+          reject(new Error(asyncResult.error?.message ?? "Anhang konnte nicht gelesen werden."));
+          return;
+        }
+        const v = asyncResult.value;
+        // base64-Attachments → Blob; .eml-Anhänge kommen als String.
+        if (v.format === "base64" && typeof v.content === "string") {
+          const bin = atob(v.content);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          resolve(new Blob([bytes], { type: att.contentType }));
+        } else if (typeof v.content === "string") {
+          resolve(new Blob([v.content], { type: "message/rfc822" }));
+        } else {
+          reject(new Error("Anhang-Format wird nicht unterstützt."));
+        }
+      }
+    );
+  });
+}
+
+async function fileAttachments() {
+  const sel = document.getElementById("attachCaseSelect") as HTMLSelectElement;
+  const caseSlug = sel?.value ?? "";
+  if (!caseSlug) {
+    showStatus("Bitte zuerst eine Ziel-Akte auswählen.", "err");
+    return;
+  }
+  const checked = Array.from(
+    document.querySelectorAll<HTMLInputElement>("#attachmentList input[type=checkbox]:checked")
+  );
+  if (checked.length === 0) {
+    showStatus("Keine Anhänge ausgewählt.", "err");
+    return;
+  }
+
+  const btn = document.getElementById("attachBtn") as HTMLButtonElement;
+  const btnText = document.getElementById("attachBtnText")!;
+  btn.disabled = true;
+  btnText.innerHTML = '<div class="spinner"></div> Lege ab…';
+
+  let ok = 0;
+  let failed = 0;
+  for (const box of checked) {
+    const idx = Number(box.dataset.attIdx);
+    const att = currentAttachments[idx];
+    const stateEl = document.querySelector(`[data-att-state="${idx}"]`);
+    if (!att) continue;
+    if (stateEl) stateEl.textContent = "⏳";
+    try {
+      const blob = await getAttachmentBlob(att);
+      const fd = new FormData();
+      fd.append("file", new File([blob], att.name, { type: att.contentType }));
+      fd.append("case_slug", caseSlug);
+      fd.append("source", "legal_case");
+      const res = await fetch(`${API_BASE}/api/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      ok++;
+      if (stateEl) stateEl.textContent = "✓";
+    } catch {
+      failed++;
+      if (stateEl) stateEl.textContent = "✗";
+    }
+  }
+
+  btn.disabled = false;
+  btnText.textContent = "In Akte ablegen";
+  if (failed === 0) {
+    showStatus(`${ok} ${ok === 1 ? "Anhang wurde" : "Anhänge wurden"} in der Akte abgelegt.`, "ok");
+  } else {
+    showStatus(`${ok} abgelegt, ${failed} fehlgeschlagen — bitte erneut versuchen.`, "err");
+  }
+}
+
 function switchTab(tab: string) {
   document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
   document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
@@ -317,6 +582,9 @@ function wireUpHandlers() {
   document.getElementById("disconnectBtn")?.addEventListener("click", disconnect);
   document.getElementById("importBtn")?.addEventListener("click", importMail);
   document.getElementById("queryBtn")?.addEventListener("click", runQuery);
+  document.getElementById("draftReplyBtn")?.addEventListener("click", draftReply);
+  document.getElementById("insertReplyBtn")?.addEventListener("click", insertDraftAsReply);
+  document.getElementById("attachBtn")?.addEventListener("click", fileAttachments);
 
   document.querySelectorAll<HTMLElement>(".tab").forEach((el) => {
     el.addEventListener("click", () => {

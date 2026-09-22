@@ -7,6 +7,8 @@ import {
 export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return getAllCitySlugs().map((slug) => ({ slug }));
 }

@@ -15,6 +15,105 @@ import {
 } from "@/components/ui/table";
 import { RefreshCw } from "lucide-react";
 import type { CorpusOverview, CorpusSourceStats } from "@/lib/corpus-labels";
+import type { CoverageAuditResult, SourceAuditRow } from "@/lib/corpus-completeness-audit";
+
+const AUDIT_STATUS_LABELS: Record<SourceAuditRow["audit_status"], string> = {
+  ok: "OK",
+  empty_available: "Deklariert, aber leer",
+  unexpected_data: "Daten ohne Deklaration",
+  gap: "Bekannte Lücke",
+  partially_embedded: "Teilweise eingebettet",
+};
+
+const AUDIT_STATUS_CLASSES: Record<SourceAuditRow["audit_status"], string> = {
+  ok: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  empty_available: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  unexpected_data: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  gap: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  partially_embedded: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+};
+
+function CoverageAudit() {
+  const query = useQuery({
+    queryKey: ["corpus-coverage-audit"],
+    queryFn: async () => {
+      const r = await fetch("/api/admin/corpus-coverage-audit", {
+        credentials: "same-origin",
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return ((await r.json()) as { data: CoverageAuditResult }).data;
+    },
+    staleTime: 300_000,
+  });
+
+  if (query.isLoading) return <Skeleton className="h-32 w-full" />;
+  if (query.isError || !query.data) return null;
+
+  const a = query.data;
+  const deviations = a.rows.filter((r) => r.audit_status !== "ok" && r.audit_status !== "gap");
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">Abdeckungs-Audit (alle Jurisdiktionen)</h3>
+          <Badge
+            className={
+              deviations.length === 0
+                ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                : "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+            }
+          >
+            {a.summary.completeness_pct} % ohne Abweichung
+          </Badge>
+        </div>
+        <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+          {a.summary.total_sources} Quellen in der Matrix · {a.summary.gaps} bekannte Lücken ·{" "}
+          {deviations.length} Abweichungen
+        </p>
+        {deviations.length > 0 && (
+          <div className="mt-3 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Quelle</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Seiten</TableHead>
+                  <TableHead className="text-right">eingebettet</TableHead>
+                  <TableHead>Hinweis</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deviations.map((r) => (
+                  <TableRow key={r.source_id}>
+                    <TableCell>
+                      <div className="font-medium">{r.source_name}</div>
+                      <div className="text-xs text-[color:var(--ds-text-subtle)]">
+                        {r.source_id} · {r.jurisdiction}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={AUDIT_STATUS_CLASSES[r.audit_status]}>
+                        {AUDIT_STATUS_LABELS[r.audit_status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{fmt(r.actual_pages)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {r.embed_pct !== null ? `${r.embed_pct} %` : "—"}
+                    </TableCell>
+                    <TableCell className="max-w-xs text-xs text-[color:var(--ds-text-muted)]">
+                      {r.notes}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-AT");
 const pct = (part: number, whole: number) =>
@@ -251,6 +350,8 @@ export function CorpusBestand() {
 
       {section("Gesetze und Verordnungen", statutes, false)}
       {section("Rechtsprechung", decisions, true)}
+
+      <CoverageAudit />
     </div>
   );
 }

@@ -98,6 +98,8 @@ export interface CaseDetail {
   knowledgeReviews: KnowledgeReview[];
   portalEnabled: boolean;
   portalNote?: string;
+  /** WP-7.40: Im Portal mandanten-startbare Workflow-Template-IDs. */
+  portalWorkflows?: string[];
   auditLog?: AuditLogEntry[];
   archivedAt?: string;
   archivedBy?: string;
@@ -207,6 +209,9 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
       : [],
     portalEnabled: (fm.portal_enabled as boolean) || false,
     portalNote: (fm.portal_note as string) || undefined,
+    portalWorkflows: Array.isArray(fm.portal_workflows)
+      ? (fm.portal_workflows as string[])
+      : undefined,
     auditLog: (fm.audit_log as AuditLogEntry[]) || [],
     archivedAt: typeof fm.archived_at === "string" ? fm.archived_at : undefined,
     archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,

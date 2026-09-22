@@ -42,6 +42,12 @@ export interface ReviewSetDocument {
   batesNumber?: string;
   reviewedBy?: string;
   reviewedAt?: string;
+  /** WP-8.50: QC second-level review — drawn by seeded sampling. */
+  qcSampled?: boolean;
+  qcDecision?: ReviewDecision;
+  qcBy?: string;
+  qcAt?: string;
+  qcNotes?: string;
 }
 
 export interface ReviewSet {
@@ -160,6 +166,179 @@ export function computeStatistics(documents: ReviewSetDocument[]): ReviewSet["st
 export function generateBatesNumber(prefix: string, start: number, index: number): string {
   const num = start + index;
   return `${prefix}${String(num).padStart(7, "0")}`;
+}
+
+// ── WP-8.50: Defensible Review — QC-Sampling + Coding-Consistency ───────────
+
+/**
+ * Deterministic PRNG (mulberry32) — a fixed seed reproduces the exact same
+ * sample, which is the defensibility point: the draw is auditable, not ad hoc.
+ */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashSeed(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/**
+ * Draw a seeded QC sample of *decided* documents. Sampling unreviewed docs
+ * would be meaningless; sampling is reproducible via the seed (ISO string
+ * or any token — hashed into the PRNG). Returns the sampled slugs.
+ */
+export function sampleForQC(
+  documents: ReviewSetDocument[],
+  opts: { rate: number; seed: string }
+): string[] {
+  const rate = Math.min(1, Math.max(0, opts.rate));
+  const decided = documents.filter((d) => d.decision && d.decision !== undefined);
+  const rnd = mulberry32(hashSeed(opts.seed));
+  return decided.filter(() => rnd() < rate).map((d) => d.slug);
+}
+
+export interface CodingConsistency {
+  sampled: number;
+  qcReviewed: number;
+  agreements: number;
+  conflicts: number;
+  /** share of identical decision/qcDecision pairs over QC-reviewed docs */
+  agreementRate: number | null;
+  /** Cohen's kappa over the five decision categories, null without QC data */
+  kappa: number | null;
+  conflictItems: Array<{ slug: string; decision: ReviewDecision; qcDecision: ReviewDecision }>;
+}
+
+/** Inter-rater reliability between first-level and QC decisions. */
+export function computeCodingConsistency(documents: ReviewSetDocument[]): CodingConsistency {
+  const sampled = documents.filter((d) => d.qcSampled);
+  const qcReviewed = sampled.filter((d) => d.qcDecision);
+  const categories: ReviewDecision[] = [
+    "responsive",
+    "non_responsive",
+    "privileged",
+    "redact",
+    "withhold",
+  ];
+
+  let agreements = 0;
+  const conflictItems: CodingConsistency["conflictItems"] = [];
+  const firstCounts: Record<string, number> = {};
+  const qcCounts: Record<string, number> = {};
+
+  for (const d of qcReviewed) {
+    firstCounts[d.decision] = (firstCounts[d.decision] ?? 0) + 1;
+    qcCounts[d.qcDecision!] = (qcCounts[d.qcDecision!] ?? 0) + 1;
+    if (d.decision === d.qcDecision) {
+      agreements++;
+    } else {
+      conflictItems.push({ slug: d.slug, decision: d.decision, qcDecision: d.qcDecision! });
+    }
+  }
+
+  const n = qcReviewed.length;
+  if (n === 0) {
+    return {
+      sampled: sampled.length,
+      qcReviewed: 0,
+      agreements: 0,
+      conflicts: 0,
+      agreementRate: null,
+      kappa: null,
+      conflictItems: [],
+    };
+  }
+
+  const agreementRate = agreements / n;
+  // Cohen's kappa: (Po − Pe) / (1 − Pe), Pe = expected agreement by marginals
+  let pe = 0;
+  for (const c of categories) {
+    pe += ((firstCounts[c] ?? 0) / n) * ((qcCounts[c] ?? 0) / n);
+  }
+  const kappa = pe >= 1 ? null : (agreementRate - pe) / (1 - pe);
+
+  return {
+    sampled: sampled.length,
+    qcReviewed: n,
+    agreements,
+    conflicts: conflictItems.length,
+    agreementRate,
+    kappa,
+    conflictItems,
+  };
+}
+
+const csvEsc = (s: unknown) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+
+/**
+ * Production protocol — the defensibility record: every document with its
+ * Bates number, first-level and QC decision, reviewer identity and
+ * timestamps, plus the consistency summary as trailing metadata rows.
+ */
+export function exportProductionProtocol(set: ReviewSet): string {
+  const headers = [
+    "Bates-Nummer",
+    "Dokument",
+    "Entscheidung",
+    "Reviewer",
+    "Zeitpunkt",
+    "Privileg",
+    "Schwärzung",
+    "QC-Stichprobe",
+    "QC-Entscheidung",
+    "QC-Reviewer",
+    "QC-Zeitpunkt",
+    "Übereinstimmung",
+  ];
+  const rows = set.documents.map((d) => [
+    d.batesNumber ?? "",
+    d.title,
+    REVIEW_DECISION_LABELS_DE[d.decision] ?? d.decision,
+    d.decisionBy ?? d.reviewedBy ?? "",
+    d.decisionAt ?? d.reviewedAt ?? "",
+    d.privilegeType !== "none"
+      ? (PRIVILEGE_TYPE_LABELS_DE[d.privilegeType] ?? d.privilegeType)
+      : "",
+    d.redactionCode ? REDACTION_CODE_LABELS_DE[d.redactionCode] : "",
+    d.qcSampled ? "ja" : "",
+    d.qcDecision ? (REVIEW_DECISION_LABELS_DE[d.qcDecision] ?? d.qcDecision) : "",
+    d.qcBy ?? "",
+    d.qcAt ?? "",
+    d.qcDecision ? (d.qcDecision === d.decision ? "ja" : "NEIN") : "",
+  ]);
+  const c = computeCodingConsistency(set.documents);
+  const meta = [
+    [],
+    ["Review-Set", set.title],
+    ["Erstellt", set.createdAt],
+    ["Produziert", set.production.producedAt ?? ""],
+    ["Dokumente gesamt", String(set.statistics.total)],
+    ["QC-Stichprobe", String(c.sampled)],
+    ["QC geprüft", String(c.qcReviewed)],
+    [
+      "Übereinstimmungsrate",
+      c.agreementRate !== null ? `${(c.agreementRate * 100).toFixed(1)} %` : "",
+    ],
+    ["Cohen-Kappa", c.kappa !== null ? c.kappa.toFixed(3) : ""],
+    ["Konflikte", String(c.conflicts)],
+  ];
+  return [
+    ...[headers, ...rows].map((r) => r.map(csvEsc).join(",")),
+    "",
+    ...meta.map((r) => r.map(csvEsc).join(",")),
+  ].join("\n");
 }
 
 export function exportPrivilegeLog(documents: ReviewSetDocument[]): string {

@@ -31,6 +31,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync, unlinkSync } from "
 import { join } from "path";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
 import { contentHash } from "./backfill-utils";
 
 const args = process.argv.slice(2);
@@ -41,7 +42,6 @@ const arg = (n: string, d?: string) => {
 const CORPUS = arg("--corpus", "Bezirke")!;
 const DRY = args.includes("--dry-run");
 const LIMIT = parseInt(arg("--limit", "0")!, 10);
-const RATE_MS = parseInt(arg("--rate-ms", "1200")!, 10);
 const NO_LOCK = args.includes("--no-lock");
 
 const UA = "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)";
@@ -75,7 +75,6 @@ if (!cfg) {
   process.exit(1);
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const one = <T>(v: T | T[] | undefined): T | undefined => (Array.isArray(v) ? v[0] : v);
 const all = <T>(v: T | T[] | undefined): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
@@ -243,7 +242,7 @@ async function main() {
     `Korpus:    ${CORPUS} (${cfg.endpoint}${cfg.applikation ? "/" + cfg.applikation : ""})`
   );
   console.log(`Ziel:      ${outDir}`);
-  console.log(`Rate:      ${RATE_MS}ms   ${DRY ? "[DRY-RUN]" : ""}`);
+  console.log(`Rate:      ${RIS_PAUSE_MS}ms + Fenster-Gate   ${DRY ? "[DRY-RUN]" : ""}`);
 
   if (!NO_LOCK && !DRY) {
     console.log("Warte auf RIS-Lock (RIS-OGD erlaubt nur eine aktive Verbindung)…");
@@ -300,7 +299,7 @@ async function main() {
           failed++;
           console.log(`  ✗ ${d.id}: ${(e as Error).message.slice(0, 80)}`);
         }
-        await sleep(RATE_MS);
+        await risMassPause("PDF-Corpus");
       }
       if (DRY) break;
       page++;

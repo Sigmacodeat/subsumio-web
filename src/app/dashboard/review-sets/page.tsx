@@ -37,7 +37,10 @@ import {
   REVIEW_DECISION_LABELS_DE,
   PRIVILEGE_TYPE_LABELS_DE,
   REDACTION_CODE_LABELS_DE,
+  computeCodingConsistency,
   exportPrivilegeLog,
+  exportProductionProtocol,
+  parseReviewSet,
   type ReviewSetDocument,
   type ReviewDecision,
   type PrivilegeType,
@@ -247,6 +250,55 @@ export default function ReviewSetsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleDrawQcSample() {
+    if (!selectedSet) return;
+    setSaving(true);
+    try {
+      await api.legal.reviewSets.update(selectedSet.slug, {
+        qcSample: { rate: 0.1 },
+      });
+      showToast(t("review_sets.qc_sample_drawn" as DashboardKey));
+      await loadSets();
+    } catch {
+      setError(SAVE_FAILED);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleQcDecision(docSlug: string, qcDecision: ReviewDecision) {
+    if (!selectedSet?.frontmatter?.documents) return;
+    const docs = selectedSet.frontmatter.documents.map((d) =>
+      d.slug === docSlug ? { ...d, qcDecision, qcAt: new Date().toISOString() } : d
+    );
+    setSaving(true);
+    try {
+      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
+      await loadSets();
+    } catch {
+      setError(SAVE_FAILED);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleExportProtocol() {
+    if (!selectedSet) return;
+    const parsed = parseReviewSet(
+      selectedSet.slug,
+      (selectedSet.frontmatter ?? {}) as Record<string, unknown>,
+      "review_set"
+    );
+    if (!parsed) return;
+    const csv = exportProductionProtocol(parsed);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `review-protokoll-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   function handleExportPrivilegeLog() {
@@ -483,8 +535,71 @@ export default function ReviewSetsPage() {
               ))}
             </div>
 
+            {/* QC / Coding-Consistency */}
+            {(() => {
+              const docs = selectedSet.frontmatter?.documents ?? [];
+              const qc = computeCodingConsistency(docs);
+              if (qc.sampled === 0 && docs.length === 0) return null;
+              return (
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--ds-text-muted)]">
+                    <span className="font-semibold text-[color:var(--ds-text)]">
+                      {t("review_sets.qc_title" as DashboardKey)}
+                    </span>
+                    <span>
+                      {t("review_sets.qc_sampled" as DashboardKey)}: {qc.sampled}
+                    </span>
+                    <span>
+                      {t("review_sets.qc_reviewed" as DashboardKey)}: {qc.qcReviewed}
+                    </span>
+                    <span>
+                      {t("review_sets.qc_agreement" as DashboardKey)}:{" "}
+                      {qc.agreementRate !== null ? `${(qc.agreementRate * 100).toFixed(1)} %` : "—"}
+                    </span>
+                    <span>Cohen-κ: {qc.kappa !== null ? qc.kappa.toFixed(2) : "—"}</span>
+                    <span
+                      className={
+                        qc.conflicts > 0 ? "font-semibold text-[color:var(--ds-danger-text)]" : ""
+                      }
+                    >
+                      {t("review_sets.qc_conflicts" as DashboardKey)}: {qc.conflicts}
+                    </span>
+                  </div>
+                  {qc.conflictItems.length > 0 && (
+                    <ul className="mt-2 space-y-0.5 text-xs text-[color:var(--ds-danger-text)]">
+                      {qc.conflictItems.map((c) => (
+                        <li key={c.slug} className="font-mono">
+                          {c.slug}: {REVIEW_DECISION_LABELS_DE[c.decision]} →{" "}
+                          {REVIEW_DECISION_LABELS_DE[c.qcDecision]}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={handleDrawQcSample}
+                disabled={saving}
+              >
+                <RefreshCw size={14} />
+                {t("review_sets.qc_draw_sample" as DashboardKey)}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={handleExportProtocol}
+              >
+                <Download size={14} />
+                {t("review_sets.export_protocol" as DashboardKey)}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -532,7 +647,7 @@ export default function ReviewSetsPage() {
                         </Badge>
                       )}
                     </div>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
                       <div>
                         <label className="mb-0.5 block text-xs text-[color:var(--ds-text-muted)]">
                           {t("review_sets.decision" as DashboardKey)}
@@ -595,6 +710,35 @@ export default function ReviewSetsPage() {
                           ))}
                         </select>
                       </div>
+                      {doc.qcSampled && (
+                        <div>
+                          <label className="mb-0.5 block text-xs text-[color:var(--ds-text-muted)]">
+                            {t("review_sets.qc_decision" as DashboardKey)}
+                          </label>
+                          <select
+                            value={doc.qcDecision ?? ""}
+                            aria-label={`${t("review_sets.qc_decision" as DashboardKey)}: ${doc.title}`}
+                            onChange={(e) =>
+                              e.target.value &&
+                              handleQcDecision(doc.slug, e.target.value as ReviewDecision)
+                            }
+                            disabled={saving}
+                            className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs"
+                          >
+                            <option value="">—</option>
+                            {DECISIONS.map((d) => (
+                              <option key={d} value={d}>
+                                {REVIEW_DECISION_LABELS_DE[d]}
+                              </option>
+                            ))}
+                          </select>
+                          {doc.qcDecision && doc.qcDecision !== doc.decision && (
+                            <p className="mt-0.5 text-xs font-semibold text-[color:var(--ds-danger-text)]">
+                              {t("review_sets.qc_conflict" as DashboardKey)}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

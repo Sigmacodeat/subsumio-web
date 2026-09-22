@@ -19,6 +19,7 @@ import {
   Trash2,
   MoreHorizontal,
   Briefcase,
+  Download,
   Link2,
   Building2,
   Users,
@@ -38,6 +39,7 @@ import {
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
+import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
 import { EmailComposeDialog } from "@/components/legal/EmailComposeDialog";
 import { DocuSignSendDialog } from "@/components/legal/DocuSignSendDialog";
 import {
@@ -53,6 +55,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import type { CaseDetail } from "@/lib/matter-detail-types";
 import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
 import { ActIntelligencePanel } from "@/components/legal/ActIntelligencePanel";
+import { CaseNextStepsPanel } from "@/components/legal/CaseNextStepsPanel";
 import { VerjaehrungPanel } from "@/components/legal/VerjaehrungPanel";
 import { QuestionnairesPanel } from "@/components/legal/QuestionnairesPanel";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
@@ -130,6 +133,7 @@ export function OverviewTab() {
   return (
     <div className="space-y-4">
       <ActIntelligencePanel caseSlug={caseData.slug} />
+      <CaseNextStepsPanel caseSlug={caseData.slug} />
       {/* Quick actions: one visible secondary action + "Weitere Aktionen" menu.
           The only primary on this view is the cockpit's next step below. */}
       <div className="flex flex-wrap items-center gap-2">
@@ -216,6 +220,16 @@ export function OverviewTab() {
                 <PenTool size={14} className="shrink-0" />
                 {t("docusign.send_title")}
               </button>
+              {/* WP-8.48: Akten-Export inkl. Originaldateien */}
+              <a
+                href={`/api/cases/export?slug=${encodeURIComponent(caseData.slug)}`}
+                download
+                onClick={() => setMoreActionsOpen(false)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none md:text-sm"
+              >
+                <Download size={14} className="shrink-0" />
+                {t("cases.detail_btn_export")}
+              </a>
               {/* Portal toggle (admin/lawyer only) */}
               {(ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
                 <button
@@ -435,6 +449,57 @@ export function OverviewTab() {
             >
               {t("cases.detail_portal_revoke")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* WP-7.40: Self-Service-Workflows fürs Mandantenportal freigeben */}
+      {caseData.portalEnabled && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
+        <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            {t("cases.detail_portal_workflows_title")}
+          </h3>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("cases.detail_portal_workflows_hint")}
+          </p>
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {WORKFLOW_TEMPLATES.map((wf) => {
+              const enabled = caseData.portalWorkflows?.includes(wf.id) ?? false;
+              return (
+                <label
+                  key={wf.id}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors",
+                    enabled
+                      ? "border-[color:var(--brand-primary)] bg-[color:var(--ds-hover)]"
+                      : "border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)]"
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={() => {
+                      const current = caseData.portalWorkflows ?? [];
+                      const next = enabled
+                        ? current.filter((id) => id !== wf.id)
+                        : [...current, wf.id];
+                      const updated = { ...caseData, portalWorkflows: next };
+                      ctx.setCaseData(updated);
+                      void ctx.saveCaseUpdate({ portalWorkflows: next });
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-medium text-[color:var(--ds-text)]">
+                      {wf.icon} {wf.label}
+                    </span>
+                    <span className="block text-[11px] text-[color:var(--ds-text-muted)]">
+                      {wf.description}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </div>
       )}

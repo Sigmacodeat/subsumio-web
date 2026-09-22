@@ -1,16 +1,19 @@
 /**
- * The pace RIS OGD allows (https://www.ris.bka.gv.at/UI/Ogd.aspx, read
- * 2026-09-19). One place, so no fetcher can drift faster:
+ * The pace RIS OGD allows (https://www.ris.bka.gv.at/UI/Ogd.aspx, updated
+ * per RIS-IT mail 2026-09-22). One place, so no fetcher can drift faster:
  *
- * - sequential only, never parallel connections (see ris-lock.ts)
- * - at most 0.5 requests per second → 2 s between requests, always
+ * - at most TWO parallel download processes (see ris-lock.ts, 2 slots)
+ * - each process: at most 0.5 requests per second → 2 s between requests,
+ *   always — combined ≈ 1 req/s
  * - mass downloads only 20:00–05:00, on weekends or Austrian public
  *   holidays (Vienna time)
+ * - updates afterwards via the "History-Abfrage" (see OGD handbooks)
  * - every mass download announced by mail to ris.it@bka.gv.at beforehand
  *
  * Breaking this gets the server's IP blocked, which would also stop the
  * daily delta sync for clients. Speed comes from fewer requests (100 hits
- * per page, delta instead of full scan), never from shorter pauses.
+ * per page, delta instead of full scan) and the second slot, never from
+ * shorter pauses.
  */
 
 export const RIS_PAUSE_MS = 2000;

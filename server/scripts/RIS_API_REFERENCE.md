@@ -216,9 +216,16 @@ For Legal AI: **XML is preferred** — parse with `risXmlToText()` from `backfil
 
 ## Rate Limiting
 
-- 500ms delay between requests (off-hours)
-- RIS OGD API has no documented rate limit, but be polite
-- Use `acquireRisLock` / `releaseRisLock` for concurrent processes
+Official limits per RIS-IT mail (2026-09-22) — no bulk dumps offered, OGD endpoints only:
+
+- **≤ 0.5 requests/second per process** (2 s pause between requests)
+- **At most 2 parallel download processes** (~1 req/s combined)
+- Mass downloads only **20:00–05:00 Vienna time**, weekends, or Austrian holidays
+- Post-hoc updates via the **History-Abfrage** (see OGD handbooks on data.gv.at)
+- Announce mass downloads to ris.it@bka.gv.at beforehand
+
+Enforcement in this repo: `ris-pace.ts` (2 s pause + window check),
+`ris-lock.ts` (2-slot Postgres semaphore via `acquireRisLock`/`releaseRisLock`).
 
 ## Important Notes
 

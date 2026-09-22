@@ -4,6 +4,8 @@ import { getAllPosts, getPostBySlug } from "@/content/blog";
 export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
 }

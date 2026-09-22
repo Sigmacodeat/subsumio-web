@@ -1,5 +1,5 @@
 import type { BrainPage } from "@/lib/types";
-import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
+import { caseFrontmatter, type CaseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
 
 /**
  * What the tokenised client portal is allowed to see of a matter.
@@ -25,6 +25,19 @@ export interface PortalDeadline {
   status?: string;
 }
 
+/** WP-7.41: kuratierter Regulatory-Alert, den die Kanzlei für den
+ *  Mandanten veröffentlicht hat (mit anwaltlicher Einordnung). */
+export interface PortalClientAlert {
+  id: string;
+  title: string;
+  summary?: string;
+  url?: string;
+  date?: string;
+  severity?: string;
+  impact_note: string;
+  published_at?: string;
+}
+
 export interface PortalCaseView {
   slug: string;
   title: string;
@@ -40,6 +53,7 @@ export interface PortalCaseView {
     portal_enabled: boolean;
     deadlines: PortalDeadline[];
     documents: PortalDocument[];
+    client_alerts: PortalClientAlert[];
   };
 }
 
@@ -94,6 +108,18 @@ export function buildPortalCaseView(page: BrainPage): PortalCaseView {
       portal_enabled: fm.portal_enabled === true,
       deadlines,
       documents,
+      client_alerts: (fm.client_alerts ?? [])
+        .filter((a) => typeof a?.title === "string")
+        .map((a) => ({
+          id: a.id || a.title,
+          title: a.title,
+          summary: a.summary,
+          url: a.url,
+          date: a.date,
+          severity: a.severity,
+          impact_note: a.impact_note ?? "",
+          published_at: a.published_at,
+        })),
     },
   };
 }

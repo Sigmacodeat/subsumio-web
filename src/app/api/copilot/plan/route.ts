@@ -8,6 +8,8 @@ import {
   updatePlanStep,
   refinePlan,
   abandonPlan,
+  proposeStepAction,
+  markStepExecuted,
   type PlanStepStatus,
   type PlanStatus,
 } from "@/lib/planning-session";
@@ -16,7 +18,7 @@ import { logger } from "@/lib/logger";
 const log = logger("api/copilot/plan");
 
 const planPostSchema = z.object({
-  action: z.enum(["create", "refine", "abandon", "step"]).optional(),
+  action: z.enum(["create", "refine", "abandon", "step", "propose", "executed"]).optional(),
   goal: z.string().max(5000).optional(),
   caseSlug: z.string().max(200).optional(),
   planId: z.string().max(200).optional(),
@@ -24,6 +26,8 @@ const planPostSchema = z.object({
   stepId: z.string().max(200).optional(),
   status: z.enum(["pending", "in_progress", "done", "skipped"]).optional(),
   notes: z.string().max(5000).optional(),
+  tool: z.string().max(100).optional(),
+  resultSummary: z.string().max(1000).optional(),
 });
 
 export const maxDuration = 60;
@@ -81,12 +85,15 @@ export const POST = createHandler(
     },
   },
   async (ctx, body) => {
-    const { action, goal, caseSlug, planId, feedback } = body as {
+    const { action, goal, caseSlug, planId, feedback, stepId, tool, resultSummary } = body as {
       action?: string;
       goal?: string;
       caseSlug?: string;
       planId?: string;
       feedback?: string;
+      stepId?: string;
+      tool?: string;
+      resultSummary?: string;
     };
 
     try {
@@ -98,6 +105,17 @@ export const POST = createHandler(
       if (action === "refine" && planId && feedback) {
         const plan = await refinePlan(planId, feedback);
         return NextResponse.json({ plan });
+      }
+
+      if (action === "propose" && planId && stepId) {
+        const proposal = await proposeStepAction(planId, stepId);
+        if (!proposal) return apiError("not_found", "Plan or step not found", 404);
+        return NextResponse.json({ proposal });
+      }
+
+      if (action === "executed" && planId && stepId && tool) {
+        await markStepExecuted(planId, stepId, tool, resultSummary ?? "");
+        return NextResponse.json({ ok: true });
       }
 
       return apiError("bad_request", "Invalid action or missing fields", 400);
