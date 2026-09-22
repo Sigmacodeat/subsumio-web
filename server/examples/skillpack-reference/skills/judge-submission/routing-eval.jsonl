@@ -1,0 +1,5 @@
+{"intent": "judge my submission", "expected_skill": "judge-submission"}
+{"intent": "evaluate this brief", "expected_skill": "judge-submission"}
+{"intent": "check my legal brief", "expected_skill": "judge-submission"}
+{"intent": "review the submission", "expected_skill": "judge-submission"}
+{"intent": "assess submission quality", "expected_skill": "judge-submission"}

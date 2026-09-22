@@ -1,0 +1,21 @@
+{
+  "task": "Evaluate a legal submission for citation grounding and completeness",
+  "output": "A structured score report with pass/fail per dimension",
+  "cases": [
+    {
+      "name": "well-grounded submission",
+      "input": "The defendant violated § 823 Abs 1 BGB by negligently damaging the claimant's property.",
+      "expected": "pass"
+    },
+    {
+      "name": "ungrounded submission",
+      "input": "The defendant is liable because the law says so.",
+      "expected": "fail"
+    },
+    {
+      "name": "missing procedural section",
+      "input": "The claimant seeks damages. No statement of costs provided.",
+      "expected": "fail"
+    }
+  ]
+}

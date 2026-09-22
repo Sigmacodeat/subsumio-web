@@ -1,0 +1,19 @@
+{
+  "api_version": "gbrain-skillpack-v1",
+  "name": "reference-pack",
+  "version": "1.0.0",
+  "description": "Reference skillpack demonstrating 10/10 doctor score for third-party publishers.",
+  "author": "gbrain team",
+  "license": "MIT",
+  "homepage": "https://github.com/sigmacodeat/subsumio-web",
+  "gbrain_min_version": "0.42.0",
+  "skills": ["skills/judge-submission"],
+  "unit_tests": ["test/**/*.test.ts"],
+  "e2e_tests": ["e2e/**/*.test.ts"],
+  "llm_evals": ["evals/*.judge.json"],
+  "routing_evals": ["skills/*/routing-eval.jsonl"],
+  "runbooks": {
+    "bootstrap": "runbooks/bootstrap.md"
+  },
+  "changelog": "CHANGELOG.md"
+}
