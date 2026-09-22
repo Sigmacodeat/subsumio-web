@@ -1,222 +1,153 @@
 /**
- * RIS Lock — cross-process advisory lock for RIS (Rechtsinformationssystem)
- * single-connection scraping.
+ * RIS Lock — cross-process, cross-container lock for RIS (Rechtsinformations-
+ * system) single-connection scraping, backed by one row in Postgres.
  *
  * RIS OGD guidelines require at most one active connection when no proxy pool
- * is configured (see `ris-proxy.ts`). `backfill-corpus-text.ts` and
- * `backfill-landesrecht.ts` can both be launched independently (e.g. one per
- * cron job, one run manually), so a machine-wide lock file — not just an
- * in-process flag — is needed to serialize them.
+ * is configured (see `ris-proxy.ts`).
  *
- * Two things this lock must survive, discovered the hard way:
+ * Found 2026-09-22, the hard way, via three file-based generations of this
+ * lock (git history has all three): a shared filesystem path is the wrong
+ * foundation for a lock two containers must agree on, because "shared" here
+ * never actually meant "writable by both":
  *
- * 1. Two DIFFERENT CONTAINERS fetch from RIS: the automated pipeline and its
- *    court fetches run inside `corpus-pipeline`, manual/ad-hoc runs (this
- *    audit's targeted re-fetch, yesterday's parallel state-law fetch) run
- *    inside `engine`. `/tmp` is private per container — a lock under
- *    `os.tmpdir()` only ever coordinated processes in the SAME container.
- *    Measured on 2026-09-21: a manual fetch inside `engine` acquired the
- *    lock and ran for several minutes ALONGSIDE the judikatur court fetch
- *    still running inside `corpus-pipeline`, because each container held
- *    its own separate, empty lock directory the whole time. The lock now
- *    lives under `/data`, the one path both containers actually share.
+ *   engine:          /data rw,  /law-corpus ro
+ *   corpus-pipeline:  /data ro,  /law-corpus rw
  *
- * 2. A holder in one container is invisible to a checker in another: PID
- *    namespaces are per-container, so `process.kill(pid, 0)` — sound within
- *    one container — always reports "no such process" for a PID that
- *    belongs to a different one, whether that process is alive or not.
- *    Liveness across containers therefore cannot be PID-based at all; the
- *    holder now refreshes a heartbeat in the lock file every 30s for as
- *    long as it holds the lock, and a checker that cannot see the PID falls
- *    back to "has it heartbeated recently" instead of assuming dead. Within
- *    a single container the PID check still fires first and faster — a
- *    genuinely crashed process is reclaimed immediately, not after waiting
- *    out the heartbeat grace period.
+ * (server/deploy/netcup/docker-compose.yml — intentional per-container
+ * split, not a mount failure.) A lock rooted at `/data` — the previous
+ * design, chosen because a file written from `engine` was readable from
+ * `corpus-pipeline` — could be READ from corpus-pipeline but never WRITTEN
+ * there, so every RIS fetch running in the one container that does almost
+ * all of the fetching sat in `acquireRisLock()`'s catch block forever,
+ * logging "waiting" for a lock nothing was actually holding. No filesystem
+ * path is writable from every container that needs this lock; Postgres is
+ * the one thing every container already connects to.
  *
- * (An earlier version of this file used PID + command-line liveness only,
- * fixed on 2026-09-21 for a same-container variant of this same class of
- * bug: Bun records an absolute argv path while a process is launched
- * relative, so a path comparison never matched and three same-container RIS
- * fetchers ran at once. That fix — comparing the script's file name, not its
- * path — still matters and is unchanged; it just was not sufficient once a
- * second container entered the picture.)
+ * This also retires two earlier, narrower fixes that don't apply to a DB
+ * row: PID liveness (meaningless across containers — different PID
+ * namespaces) and the argv-path-vs-relative-cmdline mismatch (Bun records
+ * an absolute path in argv while a process is launched relative). A row
+ * that's just "claimed at, heartbeat at" sidesteps both — staleness is
+ * purely a function of the heartbeat, checked the same way regardless of
+ * who holds it or where.
  *
  * Usage:
  *   await acquireRisLock();
  *   try { ... } finally { releaseRisLock(); }
  */
 
-import { mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
+import postgres from "postgres";
 
-/**
- * `/data` is the one path every container that ever fetches from RIS has
- * mounted (checked directly: a file written from `engine` was immediately
- * readable from `corpus-pipeline`). `RIS_LOCK_DIR` overrides it for anyone
- * whose layout differs; local/dev/test runs where neither exists fall back
- * to `os.tmpdir()` — correct for a single process on a single machine,
- * which is the only case that setup can ever be.
- */
-function defaultLockRoot(): string {
-  const shared = "/data";
-  try {
-    if (existsSync(shared)) return shared;
-  } catch {
-    /* fall through */
-  }
-  return tmpdir();
-}
-
-const LOCK_DIR = join(process.env.RIS_LOCK_DIR || defaultLockRoot(), ".subsumio-ris-lock");
-const LOCK_FILE = "lock";
 const POLL_MS = 2000;
 const LOG_EVERY_MS = 30_000;
 /** How often the holder proves it is still alive. */
 const HEARTBEAT_MS = 30_000;
-/** No heartbeat for this long — across a container boundary, where PID
- *  liveness cannot see the holder at all — and the lock is stale. Generous
- *  on purpose: a slow network stall or a GC pause must never look like a
- *  crash and hand a second process the connection RIS only allows one of. */
+/** No heartbeat for this long and the lock is stale. Generous on purpose: a
+ *  slow network stall or a GC pause must never look like a crash and hand a
+ *  second process the connection RIS only allows one of. */
 const HEARTBEAT_GRACE_MS = 5 * 60_000;
 
-/**
- * Pulled out for testing: whether a holder invisible to our PID namespace
- * (a different container, or none of the /proc-liveness signals available)
- * still counts as alive, purely from when it last proved so.
- */
-export function heartbeatFresh(heartbeatAt: number, now: number, graceMs = HEARTBEAT_GRACE_MS): boolean {
+/** Pulled out for testing: whether a holder's last proof of life is recent enough to still count as alive. */
+export function heartbeatFresh(
+  heartbeatAt: number,
+  now: number,
+  graceMs = HEARTBEAT_GRACE_MS
+): boolean {
   return now - heartbeatAt < graceMs;
 }
 
-interface LockData {
-  pid: number;
-  acquired_at: number;
-  heartbeat_at: number;
-  command: string;
-}
-
+let sql: ReturnType<typeof postgres> | null = null;
 let heldByThisProcess = false;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-/** File name of the script in a recorded command line, without directories. */
-export function scriptName(command: string): string {
-  const first = command.trim().split(/\s+/)[0] ?? "";
-  return first.split("/").pop() ?? "";
+function db(): ReturnType<typeof postgres> {
+  if (sql) return sql;
+  const url = process.env.DATABASE_URL;
+  if (!url)
+    throw new Error("DATABASE_URL not set — ris-lock.ts needs it to reach the shared lock table.");
+  sql = postgres(url, { max: 1, idle_timeout: 20, connection: { application_name: "ris-lock" } });
+  return sql;
 }
+
+async function ensureTable(): Promise<void> {
+  await db()`
+    CREATE TABLE IF NOT EXISTS ris_lock (
+      id INT PRIMARY KEY DEFAULT 1,
+      holder TEXT NOT NULL,
+      command TEXT NOT NULL,
+      acquired_at TIMESTAMPTZ NOT NULL,
+      heartbeat_at TIMESTAMPTZ NOT NULL,
+      CONSTRAINT ris_lock_singleton CHECK (id = 1)
+    )
+  `;
+}
+
+/** Random per-process token — the only thing that has to match for a heartbeat/release to be "ours", instead of trusting a PID that means nothing across containers. */
+const HOLDER_TOKEN = `${process.env.HOSTNAME ?? "host"}-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
 
 /**
- * Is the holder still running? PID liveness when it can possibly mean
- * anything (same container — a genuinely dead process is caught right
- * away); heartbeat freshness otherwise, which is the only signal available
- * across a container boundary and stays valid within one too.
+ * One atomic claim attempt: insert if the row doesn't exist, or steal it if
+ * the existing holder's heartbeat is stale. `RETURNING` only produces a row
+ * when the write actually happened, so a plain "did I get it" check needs no
+ * separate SELECT and no race between check and claim.
  */
-export function holderAlive(data: LockData): boolean {
-  try {
-    // Signal 0 checks existence without sending one. Throws ESRCH both for
-    // "really dead" and for "alive, but in a PID namespace we can't see" —
-    // the two are indistinguishable from here, which is exactly why this
-    // path alone used to make a live cross-container holder look dead.
-    process.kill(data.pid, 0);
-    try {
-      const cmdline = readFileSync(`/proc/${data.pid}/cmdline`, "utf-8").replace(/\0/g, " ").trim();
-      const script = scriptName(data.command);
-      // The PID exists in OUR namespace, so we can see its real cmdline —
-      // if it doesn't match, the PID was recycled onto an unrelated process.
-      if (cmdline && script) return cmdline.includes(script);
-    } catch {
-      /* no /proc (macOS) — the signal check has to do */
-    }
-    return true;
-  } catch {
-    // Not visible in our PID namespace. Could be dead; could be alive in
-    // the other container. The heartbeat is the only thing that can tell.
-  }
-  return heartbeatFresh(data.heartbeat_at, Date.now());
+async function tryClaim(command: string): Promise<boolean> {
+  const now = new Date();
+  const staleBefore = new Date(now.getTime() - HEARTBEAT_GRACE_MS);
+  const rows = await db()`
+    INSERT INTO ris_lock (id, holder, command, acquired_at, heartbeat_at)
+    VALUES (1, ${HOLDER_TOKEN}, ${command}, ${now}, ${now})
+    ON CONFLICT (id) DO UPDATE SET
+      holder = EXCLUDED.holder,
+      command = EXCLUDED.command,
+      acquired_at = EXCLUDED.acquired_at,
+      heartbeat_at = EXCLUDED.heartbeat_at
+    WHERE ris_lock.heartbeat_at < ${staleBefore}
+    RETURNING holder
+  `;
+  return rows.length > 0 && rows[0]!.holder === HOLDER_TOKEN;
 }
 
-function readLockData(): LockData | null {
-  try {
-    return JSON.parse(readFileSync(join(LOCK_DIR, LOCK_FILE), "utf-8"));
-  } catch {
-    return null;
-  }
-}
-
-function clearStaleLockIfAny(): void {
-  if (!existsSync(LOCK_DIR)) return;
-  const data = readLockData();
-  if (!data) {
-    // Corrupt/unreadable lock file — remove it.
-    try {
-      rmSync(LOCK_DIR, { recursive: true, force: true });
-    } catch {
-      /* race condition, ignore */
-    }
-    return;
-  }
-  if (!holderAlive(data)) {
-    try {
-      rmSync(LOCK_DIR, { recursive: true, force: true });
-    } catch {
-      /* race condition, ignore */
-    }
-  }
-}
-
-function writeLockFile(command: string, acquiredAt: number): void {
-  const data: LockData = { pid: process.pid, acquired_at: acquiredAt, heartbeat_at: Date.now(), command };
-  writeFileSync(join(LOCK_DIR, LOCK_FILE), JSON.stringify(data), { mode: 0o644 });
+async function currentHolderDescription(): Promise<string> {
+  const rows = await db()`SELECT holder, command, acquired_at FROM ris_lock WHERE id = 1`;
+  if (rows.length === 0) return "Waiting for RIS lock...";
+  const r = rows[0]!;
+  return `⏳ RIS lock held by ${r.holder} (${r.command}) since ${new Date(r.acquired_at).toISOString()} — waiting...`;
 }
 
 /**
  * Block until the RIS lock is acquired by this process. Polls indefinitely
  * (no timeout) — RIS backfills are expected to queue behind each other
- * rather than fail. A lock whose holder is gone (or, across a container
- * boundary, has stopped heartbeating) is cleaned up; a lock held by a
- * running job is waited out, however long it takes.
+ * rather than fail. A lock whose holder has stopped heartbeating is stolen
+ * automatically; a lock held by a live job is waited out, however long it
+ * takes.
  */
 export async function acquireRisLock(): Promise<void> {
+  await ensureTable();
+  const command = process.argv.slice(1).join(" ");
   let lastLog = 0;
 
   for (;;) {
-    clearStaleLockIfAny();
-
-    try {
-      mkdirSync(LOCK_DIR, { recursive: false });
-      const command = process.argv.slice(1).join(" ");
-      const acquiredAt = Date.now();
-      writeLockFile(command, acquiredAt);
-      heldByThisProcess = true;
-      // Keep proving we're alive for as long as we hold it — across a
-      // container boundary this heartbeat is the ONLY thing that lets a
-      // later process tell "still running" apart from "crashed". unref()
-      // so this timer alone never keeps the process from exiting.
-      heartbeatTimer = setInterval(() => {
-        try {
-          writeLockFile(command, acquiredAt);
-        } catch {
-          /* lock dir vanished under us — release() or the next acquirer's
-             stale-check will sort it out; nothing to do from inside a timer */
-        }
-      }, HEARTBEAT_MS);
-      heartbeatTimer.unref?.();
-      return;
-    } catch {
-      // Someone else holds it — wait and retry.
-      const now = Date.now();
-      if (now - lastLog > LOG_EVERY_MS) {
-        const data = readLockData();
-        console.log(
-          data
-            ? `⏳ RIS lock held by PID ${data.pid} (${data.command}) since ${new Date(data.acquired_at).toISOString()} — waiting...`
-            : "⏳ Waiting for RIS lock..."
-        );
-        lastLog = now;
-      }
-      await new Promise((r) => setTimeout(r, POLL_MS));
+    if (await tryClaim(command)) break;
+    const now = Date.now();
+    if (now - lastLog > LOG_EVERY_MS) {
+      console.log(await currentHolderDescription());
+      lastLog = now;
     }
+    await new Promise((r) => setTimeout(r, POLL_MS));
   }
+
+  heldByThisProcess = true;
+  heartbeatTimer = setInterval(() => {
+    db()`UPDATE ris_lock SET heartbeat_at = now() WHERE id = 1 AND holder = ${HOLDER_TOKEN}`.catch(
+      () => {
+        /* transient DB hiccup — the next tick retries; a real outage means the
+         heartbeat goes stale and another process reclaims the lock, which is
+         the correct outcome (we can't reach RIS through a dead DB anyway) */
+      }
+    );
+  }, HEARTBEAT_MS);
+  heartbeatTimer.unref?.();
 }
 
 /**
@@ -229,10 +160,9 @@ export function releaseRisLock(): void {
     heartbeatTimer = null;
   }
   if (!heldByThisProcess) return;
-  try {
-    rmSync(LOCK_DIR, { recursive: true, force: true });
-  } catch {
-    /* already removed (e.g. stale cleanup from another process), fine */
-  }
   heldByThisProcess = false;
+  db()`DELETE FROM ris_lock WHERE id = 1 AND holder = ${HOLDER_TOKEN}`.catch(() => {
+    /* best-effort — a missed delete just leaves a lock that goes stale in
+       HEARTBEAT_GRACE_MS once our heartbeat timer is also gone */
+  });
 }
