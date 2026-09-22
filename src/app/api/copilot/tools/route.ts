@@ -9,6 +9,7 @@ import {
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { ENGINE_URL, recordCreditConsumption, enginePatchPage } from "@/lib/engine";
 import { buildNdaTemplate } from "@/lib/nda-template";
+import { contactSlugFor } from "@/lib/case-contacts";
 import type { TaskEntry, DeadlineEntry } from "@/lib/legal-types";
 import {
   CREDIT_COSTS,
@@ -2000,12 +2001,19 @@ async function executeCreateTask(
     const safeTitle = sanitizeUserInput(params.title);
     const fm = (page.frontmatter ?? {}) as { tasks?: TaskEntry[] };
     const current = Array.isArray(fm.tasks) ? fm.tasks : [];
-    const task: TaskEntry & { source?: string } = {
+    // dueDate isn't on the TaskEntry type (nothing writes a structured task
+    // due date today, though dashboard/tasks/page.tsx already reads
+    // task.dueDate for sorting and the overdue badge — it just never had
+    // anything to read). Embedding the date in `text` only, as the WhatsApp
+    // task intent already does, makes it dead text the dashboard can't sort
+    // or flag on — write both so this tool's dates are actually usable.
+    const task: TaskEntry & { source?: string; dueDate?: string } = {
       id: randomUUID(),
-      text: params.due_date ? `${safeTitle} (bis ${params.due_date})` : safeTitle,
+      text: safeTitle,
       done: false,
       createdAt: new Date().toISOString(),
       source: "copilot",
+      dueDate: params.due_date || undefined,
     };
     const res = await enginePatchPage(ctx.headers, {
       slug: page.slug,
@@ -2107,12 +2115,9 @@ async function executeCreateContact(
     // Same page shape the Kontakte dashboard writes (dashboard/contacts/page.tsx)
     // — a different type here ("client" is a tempting but wrong name, used by
     // the older WhatsApp create_client path) means the contact never shows up
-    // in that list.
-    const slug = `contact/${safeName
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9äöüß]+/gi, "-")
-      .replace(/^-|-$/g, "")}-${Date.now()}`;
+    // in that list. contactSlugFor is the same slug scheme case-contacts.ts
+    // already uses for contacts created from the matter wizard.
+    const slug = contactSlugFor(safeName);
     const body = {
       slug,
       title: safeName,

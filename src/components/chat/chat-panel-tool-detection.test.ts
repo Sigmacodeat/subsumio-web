@@ -78,6 +78,28 @@ describe("detectToolCalls", () => {
     expect(calls[3].params).toMatchObject({ template: "nda" });
   });
 
+  it("auto-injects case_slug into create_task/create_deadline/request_signature when the model omits it", () => {
+    // These three require case_slug in their zod schema, but transform()
+    // used to also require it as a raw marker attribute — which made the
+    // MATTER_SCOPED_TOOLS auto-injection below unreachable: the marker was
+    // already dropped as "missing required attribute" before auto-injection
+    // ever ran, so a model that (correctly) relied on the open matter, the
+    // same way it's allowed to for email_draft, silently lost the tool call.
+    const ctx = { type: "case" as const, caseSlug: "cases/mueller" };
+    const task = detectToolCalls('[TOOL:create_task title="Schriftsatz entwerfen"]', ctx);
+    expect(task[0]?.params.case_slug).toBe("cases/mueller");
+    const deadline = detectToolCalls(
+      '[TOOL:create_deadline title="Berufungsfrist" due_date="2026-10-15"]',
+      ctx
+    );
+    expect(deadline[0]?.params.case_slug).toBe("cases/mueller");
+    const signature = detectToolCalls(
+      '[TOOL:request_signature document_name="NDA" recipient_name="Max Mustermann"]',
+      ctx
+    );
+    expect(signature[0]?.params.case_slug).toBe("cases/mueller");
+  });
+
   it("a non-destructive tool starts executing immediately", () => {
     const calls = detectToolCalls('[TOOL:search_cases query="Müller"]', GLOBAL_CTX);
     expect(calls[0].status).toBe("executing");

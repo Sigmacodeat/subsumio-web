@@ -150,11 +150,14 @@ describe("POST /api/copilot/tools", () => {
     expect(res.status).toBe(200);
     expect(patches).toHaveLength(1);
     expect(patches[0].merge).toBe(true);
-    const tasks = (patches[0].frontmatter as { tasks: Array<{ text: string }> }).tasks;
+    const tasks = (patches[0].frontmatter as { tasks: Array<{ text: string; dueDate?: string }> })
+      .tasks;
     expect(tasks).toHaveLength(2);
     expect(tasks[0].text).toBe("Alt");
-    expect(tasks[1].text).toContain("Schriftsatz entwerfen");
-    expect(tasks[1].text).toContain("2026-10-15");
+    expect(tasks[1].text).toBe("Schriftsatz entwerfen");
+    // Structured, not embedded in the text — dashboard/tasks/page.tsx sorts
+    // and badges on task.dueDate, not on text parsed out of the title.
+    expect(tasks[1].dueDate).toBe("2026-10-15");
   });
 
   it("appends an unreviewed deadline to the case's deadlines[]", async () => {

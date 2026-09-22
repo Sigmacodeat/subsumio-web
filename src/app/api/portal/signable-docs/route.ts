@@ -4,6 +4,7 @@ import { createPublicHandler, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL } from "@/lib/engine";
 import { resolvePortalAccess } from "@/lib/portal-access";
+import { listEnginePages } from "@/lib/engine-pages";
 
 const querySchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -24,37 +25,15 @@ interface SignableDoc {
   content?: string;
 }
 
-type EnginePage = { slug: string; title: string; frontmatter?: Record<string, unknown> };
-
-// The engine caps a single /api/pages call at 200 rows and sorts by
-// updated_desc (server/src/commands/web-api.ts). This route asks for a type
-// firm-wide and only filters to this matter afterwards — with a single
-// uncapped call, a matter whose signature/POA docs happen to fall outside
-// the newest 100 (a firm with many other matters' open signatures, or older
-// requests) silently disappeared from the client's portal with no error.
-// Page through the full firm-wide list instead, bounded so one portal
-// request can't run away.
-const ENGINE_PAGE_LIMIT = 200;
-const MAX_PAGES_PER_TYPE = 5; // 1,000 outstanding docs of one type, firm-wide
-
-async function fetchAllPagesOfType(
-  type: string,
-  headers: Record<string, string>
-): Promise<EnginePage[]> {
-  const all: EnginePage[] = [];
-  for (let page = 0; page < MAX_PAGES_PER_TYPE; page++) {
-    const res = await fetch(
-      `${ENGINE_URL}/api/pages?type=${type}&limit=${ENGINE_PAGE_LIMIT}&offset=${page * ENGINE_PAGE_LIMIT}`,
-      { headers, signal: AbortSignal.timeout(10_000) }
-    ).catch(() => null);
-    if (!res?.ok) break;
-    const data = await res.json();
-    const pages: EnginePage[] = Array.isArray(data) ? data : (data.pages ?? []);
-    all.push(...pages);
-    if (pages.length < ENGINE_PAGE_LIMIT) break; // reached the end of the list
-  }
-  return all;
-}
+// This route asks for a type firm-wide and only filters to this matter
+// afterwards — a single capped call meant a matter whose signature/POA docs
+// fell outside the newest page (a firm with many other matters' open
+// signatures, or older requests) silently disappeared from the client's
+// portal with no error. listEnginePages already pages through the full
+// firm-wide list (bounded, batched at the engine's own per-request cap) and
+// — unlike the hand-rolled loop this replaced — filters out tombstoned
+// pages, so a deleted signature request can no longer resurface here.
+const MAX_DOCS_PER_TYPE = 1_000; // outstanding docs of one type, firm-wide
 
 const SOURCES = [
   {
@@ -85,10 +64,14 @@ export const GET = createPublicHandler(
     const { headers, caseSlug } = access;
 
     const responses = await Promise.all(
-      SOURCES.map((source) => fetchAllPagesOfType(source.type, headers))
+      SOURCES.map((source) => listEnginePages(headers, source.type, MAX_DOCS_PER_TYPE))
     );
 
-    const matched: { source: (typeof SOURCES)[number]; page: EnginePage; status: string }[] = [];
+    const matched: {
+      source: (typeof SOURCES)[number];
+      page: { slug: string; title: string; frontmatter?: Record<string, unknown> };
+      status: string;
+    }[] = [];
     for (const [index, pages] of responses.entries()) {
       const source = SOURCES[index];
       for (const page of pages) {

@@ -103,7 +103,12 @@ describe("orchestrateWhatsAppMessage", () => {
     });
 
     expect(result.status).toBe("pending_approval");
-    expect(result.reply).toContain("Ihre Nachricht ist eingegangen");
+    // The specific reply client-ingest.ts already computed for this sender
+    // (unscoped — matterScope "all" has no matter to link to) — not the
+    // generic safeClientReply(), which used to be returned unconditionally
+    // here and silently discarded whatever client-ingest.ts had already
+    // built.
+    expect(result.reply).toContain("noch keiner Akte zugeordnet");
     expect(result.actionSlug).toContain("agent-action/whatsapp/");
     expect(handleText).not.toHaveBeenCalled();
     expect(fetchImpl).toHaveBeenCalledTimes(3);
@@ -246,6 +251,42 @@ describe("orchestrateWhatsAppMessage", () => {
     expect(approvalBody).toBeDefined();
     expect(approvalBody.frontmatter.payload.case_slug).toBe("legal/cases/2026-014");
     expect(approvalBody.frontmatter.target_slug).toBeFalsy();
+  });
+
+  it("never links a client's approval to a case outside their matterScope, even when they name one in the text", async () => {
+    // resolveClientCaseSlug used to return ANY explicit "akt X" ref from the
+    // text unconditionally, without checking the sender was actually scoped
+    // to it — a verified client naming a matter that isn't theirs would get
+    // the built approval (and, for document_request, a real document-request
+    // page) linked to a case they have no access to.
+    const fetchImpl = caseFetch();
+    const handleText = vi.fn(async () => "should not happen");
+    const client = {
+      ...identity("client"),
+      matterScope: ["legal/cases/2026-014"],
+    };
+    const message: WhatsAppTextMessage = {
+      id: "wamid.CLIENT-OUT-OF-SCOPE",
+      from: "+491701234567",
+      type: "text",
+      text: "Termin für Akte 9999 bitte, ich möchte vorbeikommen.",
+    };
+
+    const result = await orchestrateWhatsAppMessage(message, client, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      handleText,
+    });
+
+    expect(result.status).toBe("pending_approval");
+    const bodies = fetchImpl.mock.calls
+      .filter((c) => c[1]?.method === "POST")
+      .map((c) => JSON.parse(String(c[1]?.body)));
+    const approvalBody = bodies.find((b) => b.type === "agent_action");
+    expect(approvalBody).toBeDefined();
+    expect(approvalBody.frontmatter.payload.case_slug).not.toBe("legal/cases/9999");
+    // Falls back to the client's own single known matter instead of the
+    // unauthorized one named in the text.
+    expect(approvalBody.frontmatter.payload.case_slug).toBe("legal/cases/2026-014");
   });
 
   it("creates a document_request draft before approval for internal document requests", async () => {
