@@ -100,9 +100,7 @@ describe("isToolAvailable", () => {
   test("case-scoped write tools need role and case context", () => {
     expect(isToolAvailable("create_task", { role: "lawyer", hasCaseContext: true })).toBe(true);
     expect(isToolAvailable("create_task", { role: "lawyer", hasCaseContext: false })).toBe(false);
-    expect(isToolAvailable("create_deadline", { role: "lawyer", hasCaseContext: true })).toBe(
-      true
-    );
+    expect(isToolAvailable("create_deadline", { role: "lawyer", hasCaseContext: true })).toBe(true);
     expect(isToolAvailable("request_signature", { role: "lawyer", hasCaseContext: true })).toBe(
       true
     );

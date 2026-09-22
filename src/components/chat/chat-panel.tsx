@@ -161,7 +161,11 @@ interface ToolSpec {
 // finds every `[TOOL:name ...]` block generically and reads its attributes
 // regardless of order.
 const TOOL_SPECS: ToolSpec[] = [
-  { tool: "navigate", label: "chat.tool.navigate", transform: (a) => (a.route ? { route: a.route } : null) },
+  {
+    tool: "navigate",
+    label: "chat.tool.navigate",
+    transform: (a) => (a.route ? { route: a.route } : null),
+  },
   {
     tool: "search_cases",
     label: "chat.tool.search_cases",
@@ -253,7 +257,8 @@ const TOOL_SPECS: ToolSpec[] = [
       a.case_slug
         ? {
             case_slug: a.case_slug,
-            update_type: (a.update_type as "status" | "deadline" | "next_steps" | "summary") || "status",
+            update_type:
+              (a.update_type as "status" | "deadline" | "next_steps" | "summary") || "status",
           }
         : null,
   },
@@ -353,7 +358,8 @@ const TOOL_SPECS: ToolSpec[] = [
       a.query
         ? {
             query: a.query,
-            deadline_status: (a.deadline_status as "open" | "critical" | "overdue" | "all") || "open",
+            deadline_status:
+              (a.deadline_status as "open" | "critical" | "overdue" | "all") || "open",
           }
         : null,
   },

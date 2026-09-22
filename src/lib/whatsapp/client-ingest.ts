@@ -101,7 +101,9 @@ function classifyClientQuickIntent(text: string): ClientQuickIntent {
   // client explaining they missed one ("Ich konnte den Termin am Montag
   // leider nicht wahrnehmen.") would otherwise trip.
   if (/^(?:termin|gerichtstermin|besprechungstermin)\b/.test(t)) return "appointment_request";
-  if (/\b(?:termin|gespräch|besprechung)\b[^.!?]{0,40}\b(?:vereinbaren|ausmachen|buchen)\b/.test(t)) {
+  if (
+    /\b(?:termin|gespräch|besprechung)\b[^.!?]{0,40}\b(?:vereinbaren|ausmachen|buchen)\b/.test(t)
+  ) {
     return "appointment_request";
   }
   return null;
@@ -115,7 +117,10 @@ function nextOpenDeadline(
   return deadlines
     .filter((d) => d.due_date && d.status !== "done" && d.due_date.slice(0, 10) >= today)
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
-    .map((d) => ({ title: d.title || d.description || "Frist", due_date: d.due_date.slice(0, 10) }))[0];
+    .map((d) => ({
+      title: d.title || d.description || "Frist",
+      due_date: d.due_date.slice(0, 10),
+    }))[0];
 }
 
 async function statusReply(
@@ -338,7 +343,11 @@ export async function ingestVerifiedClientWhatsAppSubmission(
     }
     try {
       if (quickIntent === "status") {
-        return { handled: true, caseSlug, reply: await statusReply(input.sender, caseSlug, fetchImpl) };
+        return {
+          handled: true,
+          caseSlug,
+          reply: await statusReply(input.sender, caseSlug, fetchImpl),
+        };
       }
       if (quickIntent === "portal_link") {
         return {

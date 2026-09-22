@@ -85,7 +85,10 @@ describe("ingestVerifiedClientWhatsAppSubmission — quick intents", () => {
   });
 
   it("sends a portal link when the client asks for one", async () => {
-    const result = await ingestVerifiedClientWhatsAppSubmission(input("Portal Link bitte"), fetchImpl);
+    const result = await ingestVerifiedClientWhatsAppSubmission(
+      input("Portal Link bitte"),
+      fetchImpl
+    );
     expect(result.handled).toBe(true);
     expect(result.reply).toMatch(/\/portal\/[\w-]+\.[\w-]+/);
     expect(writes).toHaveLength(0);

@@ -72,10 +72,9 @@ beforeEach(() => {
       const listMatch = u.match(/\/api\/pages\?type=([^&]+)/);
       if (listMatch) {
         const type = decodeURIComponent(listMatch[1]);
-        return new Response(
-          JSON.stringify(Object.values(pages).filter((p) => p.type === type)),
-          { status: 200 }
-        );
+        return new Response(JSON.stringify(Object.values(pages).filter((p) => p.type === type)), {
+          status: 200,
+        });
       }
       const getMatch = u.match(/\/api\/pages\/(.+)$/);
       if (getMatch) {
@@ -102,9 +101,7 @@ function send(text: string, messageId = `m-${Math.random()}`) {
 describe("send_to_client — WhatsApp lawyer command", () => {
   it("previews the message and asks for JA before sending anything", async () => {
     sendProactive.mockResolvedValue({ sent: true, decision: { decision: "send" } });
-    const reply = await send(
-      "sende mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit."
-    );
+    const reply = await send("sende mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit.");
     expect(reply).toContain("Müller ./. Schmidt");
     expect(reply).toContain("Bitte bringen Sie die Vollmacht mit.");
     expect(reply).toMatch(/JA/);
