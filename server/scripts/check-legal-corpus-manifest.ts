@@ -7,7 +7,7 @@
  *   bun run server/scripts/check-legal-corpus-manifest.ts --report-only
  */
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isQuarantinedLegalSource } from "../src/core/legal/corpus-policy.ts";
 
@@ -33,6 +33,14 @@ function frontmatter(raw: string): Record<string, string> {
     if (match) out[match[1]] = match[2];
   }
   return out;
+}
+
+// The corpus is not part of the repo (~18 GB, see .gitignore) — same guard as
+// test/legal-corpus-integrity.test.ts's CORPUS_AVAILABLE skipIf. On machines
+// that carry it (corpus build, prod) the manifest is still validated.
+if (!existsSync(ROOT)) {
+  console.log(`[legal-corpus-manifest] corpus absent at ${ROOT} — skipping (nothing to validate)`);
+  process.exit(0);
 }
 
 const errors: string[] = [];

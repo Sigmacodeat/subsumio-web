@@ -25,12 +25,20 @@ import {
   groundJsonResponse,
 } from "@/lib/citation-gate";
 
-// Mock fs.readFile for grounding verification
-vi.mock("node:fs/promises", () => ({
-  readFile: vi.fn(),
-}));
+// Mock fs.promises.readFile for grounding verification — the module imports
+// `{ promises as fs } from "node:fs"`, so the mock must live on node:fs, not
+// node:fs/promises (otherwise CI without law-corpus/ reads the real fs).
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+  const fn = vi.fn();
+  return {
+    ...actual,
+    default: { ...actual, promises: { ...actual.promises, readFile: fn } },
+    promises: { ...actual.promises, readFile: fn },
+  };
+});
 
-import * as fs from "node:fs/promises";
+import { promises as fs } from "node:fs";
 const mockReadFile = vi.mocked(fs.readFile);
 
 // ── Fixtures ───────────────────────────────────────────────────────────

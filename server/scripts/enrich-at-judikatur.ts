@@ -51,11 +51,10 @@ async function main() {
       }
 
       const newFm = { ...fm, ...updates };
-      await client.query(`UPDATE pages SET title = $1, frontmatter = $2, updated_at = now() WHERE id = $3`, [
-        newTitle,
-        JSON.stringify(newFm),
-        row.id,
-      ]);
+      await client.query(
+        `UPDATE pages SET title = $1, frontmatter = $2, updated_at = now() WHERE id = $3`,
+        [newTitle, JSON.stringify(newFm), row.id]
+      );
       updated++;
     }
 

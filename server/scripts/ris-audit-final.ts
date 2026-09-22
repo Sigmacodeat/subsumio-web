@@ -38,9 +38,7 @@ const KEY_LAWS: { gnr: string; name: string; abbr: string }[] = [
   { gnr: "10003317", name: "EU-Wettbewerbsgesetz", abbr: "UWG/EWG" },
 ];
 
-async function fetchRisNormCount(
-  gnr: string
-): Promise<{
+async function fetchRisNormCount(gnr: string): Promise<{
   norms: number;
   kurztitel: string;
   typ: string;

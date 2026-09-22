@@ -87,7 +87,9 @@ async function main() {
     set.add(d.nor);
     byGnr.set(d.gnr, set);
   }
-  console.log(`RIS-Index: ${n(byGnr.size)} Gesetze, ${n([...byGnr.values()].reduce((a, s) => a + s.size, 0))} Dokumente`);
+  console.log(
+    `RIS-Index: ${n(byGnr.size)} Gesetze, ${n([...byGnr.values()].reduce((a, s) => a + s.size, 0))} Dokumente`
+  );
 
   const fileCfg = loadConfig();
   if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");

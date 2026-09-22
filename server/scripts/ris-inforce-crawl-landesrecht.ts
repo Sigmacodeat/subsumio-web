@@ -72,7 +72,8 @@ function asArray<T>(v: T | T[] | undefined | null): T[] {
 export function str(v: unknown): string | null {
   if (v == null) return null;
   if (typeof v === "string") return v.trim() || null;
-  if (typeof v === "object" && "#text" in (v as any)) return String((v as any)["#text"]).trim() || null;
+  if (typeof v === "object" && "#text" in (v as any))
+    return String((v as any)["#text"]).trim() || null;
   return null;
 }
 

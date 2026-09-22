@@ -85,7 +85,11 @@ const HEARTBEAT_GRACE_MS = 5 * 60_000;
  * (a different container, or none of the /proc-liveness signals available)
  * still counts as alive, purely from when it last proved so.
  */
-export function heartbeatFresh(heartbeatAt: number, now: number, graceMs = HEARTBEAT_GRACE_MS): boolean {
+export function heartbeatFresh(
+  heartbeatAt: number,
+  now: number,
+  graceMs = HEARTBEAT_GRACE_MS
+): boolean {
   return now - heartbeatAt < graceMs;
 }
 
@@ -165,7 +169,12 @@ function clearStaleLockIfAny(): void {
 }
 
 function writeLockFile(command: string, acquiredAt: number): void {
-  const data: LockData = { pid: process.pid, acquired_at: acquiredAt, heartbeat_at: Date.now(), command };
+  const data: LockData = {
+    pid: process.pid,
+    acquired_at: acquiredAt,
+    heartbeat_at: Date.now(),
+    command,
+  };
   writeFileSync(join(LOCK_DIR, LOCK_FILE), JSON.stringify(data), { mode: 0o644 });
 }
 

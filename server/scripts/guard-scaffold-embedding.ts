@@ -46,16 +46,14 @@ const { values } = parseArgs({
     sweep: { type: "boolean", default: false },
     drop: { type: "boolean", default: false },
     "clear-unembeddable": { type: "boolean", default: false },
-    "batch": { type: "string", default: "2000" },
+    batch: { type: "string", default: "2000" },
     help: { type: "boolean", default: false },
   },
   allowPositionals: false,
 });
 
 if (values.help) {
-  console.log(
-    "Usage: guard-scaffold-embedding.ts --column <name> [--install | --sweep | --drop]"
-  );
+  console.log("Usage: guard-scaffold-embedding.ts --column <name> [--install | --sweep | --drop]");
   process.exit(0);
 }
 

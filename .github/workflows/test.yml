@@ -100,7 +100,9 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
+        working-directory: server
       - run: bun run verify
+        working-directory: server
 
   serial-tests:
     # *.serial.test.ts at --max-concurrency=1. Lives in its own runner so
@@ -120,7 +122,9 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
+        working-directory: server
       - run: bun run test:serial
+        working-directory: server
 
   slow-eval-longmemeval:
     # Dedicated runner for the LongMemEval end-to-end test file. The file
@@ -144,7 +148,9 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
+        working-directory: server
       - run: bun test test/eval-longmemeval-e2e.slow.test.ts --timeout=60000
+        working-directory: server
 
   slow-entity-resolve-perf:
     # Dedicated runner for the entity-resolve perf test (~159s, single perf
@@ -166,7 +172,9 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
+        working-directory: server
       - run: bun test test/entity-resolve-perf.slow.test.ts --timeout=300000
+        working-directory: server
 
   test:
     # Pure matrix shard — no verify, no serial. Each shard runs its slice
@@ -205,8 +213,9 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
+        working-directory: server
       - name: Run test shard ${{ matrix.shard }}/10
-        run: server/server/scripts/test-shard.sh ${{ matrix.shard }} 10
+        run: server/scripts/test-shard.sh ${{ matrix.shard }} 10
 
   # ──────────────────────────────────────────────────────────────────────
   # cache-write: ONLY runs when every gated job succeeded. Writes the

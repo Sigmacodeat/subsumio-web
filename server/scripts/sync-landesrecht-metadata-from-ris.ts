@@ -89,7 +89,9 @@ const n = (v: number) => v.toLocaleString("de-AT");
 async function main() {
   const indexPath = values.index as string;
   if (!existsSync(indexPath)) {
-    console.error(`Index fehlt: ${indexPath} — erst ris-inforce-crawl-landesrecht.ts laufen lassen.`);
+    console.error(
+      `Index fehlt: ${indexPath} — erst ris-inforce-crawl-landesrecht.ts laufen lassen.`
+    );
     process.exit(1);
   }
   const ris = new Map<string, Record<Field, string | null>>();

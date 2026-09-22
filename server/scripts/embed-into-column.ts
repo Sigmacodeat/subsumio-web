@@ -240,16 +240,13 @@ async function main() {
   // Go through the canonical resolver rather than trusting the flags: it
   // validates key, type, dimensions and the provider string the same way
   // search will when the column is promoted.
-  const resolved = resolveEmbeddingColumn(
-    { embeddingColumn: COLUMN },
-    {
-      ...cfg,
-      embedding_columns: {
-        ...(cfg.embedding_columns ?? {}),
-        [COLUMN]: { provider: model, dimensions: dims, type: "vector" },
-      },
-    } as GBrainConfig
-  );
+  const resolved = resolveEmbeddingColumn({ embeddingColumn: COLUMN }, {
+    ...cfg,
+    embedding_columns: {
+      ...(cfg.embedding_columns ?? {}),
+      [COLUMN]: { provider: model, dimensions: dims, type: "vector" },
+    },
+  } as GBrainConfig);
 
   // Point this process's gateway at the column's model. Only this process —
   // web and engine keep answering from the live column.

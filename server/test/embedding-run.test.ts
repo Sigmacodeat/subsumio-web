@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { MIN_EMBED_CHARS, noiseFilterSql, pagePrefix, toVectorStr } from "../src/core/embedding-run.ts";
+import {
+  MIN_EMBED_CHARS,
+  noiseFilterSql,
+  pagePrefix,
+  toVectorStr,
+} from "../src/core/embedding-run.ts";
 
 describe("noiseFilterSql", () => {
   test("uses the shared threshold and the caller's alias", () => {

@@ -5,9 +5,7 @@ const verjaehrung: QueryProbe = QUERY_PROBES[0]!;
 
 describe("probeHit", () => {
   test("matches on the chunk's own columns", () => {
-    expect(
-      probeHit(verjaehrung, { statute_abbr: "ABGB", paragraph_ref: "§ 1489" })
-    ).toBe(true);
+    expect(probeHit(verjaehrung, { statute_abbr: "ABGB", paragraph_ref: "§ 1489" })).toBe(true);
   });
 
   test("matches on the citation label when RIS has no abbreviation", () => {
@@ -22,9 +20,9 @@ describe("probeHit", () => {
 
   test("§ 148 is not § 1489", () => {
     expect(probeHit(verjaehrung, { statute_abbr: "ABGB", paragraph_ref: "§ 148" })).toBe(false);
-    expect(
-      probeHit(verjaehrung, { canonical_label: "ABGB § 148", statute_abbr: null })
-    ).toBe(false);
+    expect(probeHit(verjaehrung, { canonical_label: "ABGB § 148", statute_abbr: null })).toBe(
+      false
+    );
   });
 
   test("the right section of the wrong law does not count", () => {

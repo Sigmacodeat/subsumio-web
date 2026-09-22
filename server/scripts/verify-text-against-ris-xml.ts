@@ -40,7 +40,9 @@ const { values } = parseArgs({
 });
 
 if (values.help) {
-  console.log("Usage: verify-text-against-ris-xml.ts [--corpus at-landesrecht|at-normen] [--threshold 0.97] [--limit N]");
+  console.log(
+    "Usage: verify-text-against-ris-xml.ts [--corpus at-landesrecht|at-normen] [--threshold 0.97] [--limit N]"
+  );
   process.exit(0);
 }
 
@@ -129,7 +131,13 @@ async function main() {
 
   const files: Array<{ docId: string; path: string }> = [];
   for (const p of xmlFiles(dir)) {
-    files.push({ docId: p.split("/").pop()!.replace(/\.xml$/, ""), path: p });
+    files.push({
+      docId: p
+        .split("/")
+        .pop()!
+        .replace(/\.xml$/, ""),
+      path: p,
+    });
     if (files.length >= LIMIT) break;
   }
   console.log(`XML-Originale: ${files.length.toLocaleString("de-AT")} (${values.corpus})`);
@@ -153,7 +161,13 @@ async function main() {
          FROM pages
         WHERE deleted_at IS NULL AND frontmatter->>'doc_id' = ANY($1::text[])`,
       [slice.map((f) => f.docId)]
-    )) as Array<{ doc_id: string; title: string | null; compiled_truth: string | null; nv: string; fmt: string }>;
+    )) as Array<{
+      doc_id: string;
+      title: string | null;
+      compiled_truth: string | null;
+      nv: string;
+      fmt: string;
+    }>;
     const byId = new Map(rows.map((r) => [r.doc_id, r]));
 
     for (const f of slice) {
@@ -183,16 +197,25 @@ async function main() {
         worst.push({ docId: f.docId, cov, xmlWords: expected.length, title: page.title ?? "" });
       }
     }
-    if ((i / BATCH) % 10 === 0) process.stdout.write(`\r  geprüft ${Math.min(i + BATCH, files.length)}`);
+    if ((i / BATCH) % 10 === 0)
+      process.stdout.write(`\r  geprüft ${Math.min(i + BATCH, files.length)}`);
   }
   console.log("\n");
 
   const pct = (v: number) => (compared > 0 ? ((v / compared) * 100).toFixed(2) : "0") + " %";
   console.log(`  verglichen:                     ${compared.toLocaleString("de-AT")}`);
-  console.log(`  wortgleich (≥ 99,9 %):          ${buckets.exact.toLocaleString("de-AT")}  (${pct(buckets.exact)})`);
-  console.log(`  ≥ ${(THRESHOLD * 100).toFixed(0)} %:                         ${buckets.high.toLocaleString("de-AT")}  (${pct(buckets.high)})`);
-  console.log(`  80–${(THRESHOLD * 100).toFixed(0)} %:                        ${buckets.mid.toLocaleString("de-AT")}  (${pct(buckets.mid)})`);
-  console.log(`  unter 80 %:                     ${buckets.low.toLocaleString("de-AT")}  (${pct(buckets.low)})`);
+  console.log(
+    `  wortgleich (≥ 99,9 %):          ${buckets.exact.toLocaleString("de-AT")}  (${pct(buckets.exact)})`
+  );
+  console.log(
+    `  ≥ ${(THRESHOLD * 100).toFixed(0)} %:                         ${buckets.high.toLocaleString("de-AT")}  (${pct(buckets.high)})`
+  );
+  console.log(
+    `  80–${(THRESHOLD * 100).toFixed(0)} %:                        ${buckets.mid.toLocaleString("de-AT")}  (${pct(buckets.mid)})`
+  );
+  console.log(
+    `  unter 80 %:                     ${buckets.low.toLocaleString("de-AT")}  (${pct(buckets.low)})`
+  );
   console.log(`  XML ohne Textabschnitt:         ${noBody.toLocaleString("de-AT")}`);
   console.log(`  XML ohne aktive Seite in der DB: ${noPage.toLocaleString("de-AT")}`);
 
@@ -208,7 +231,9 @@ async function main() {
     worst.sort((a, b) => a.cov - b.cov);
     console.log(`\n  Größte Abweichungen:`);
     for (const w of worst.slice(0, 15)) {
-      console.log(`    ${(w.cov * 100).toFixed(1).padStart(5)} %  ${w.docId}  (${w.xmlWords} Wörter)  ${w.title.slice(0, 50)}`);
+      console.log(
+        `    ${(w.cov * 100).toFixed(1).padStart(5)} %  ${w.docId}  (${w.xmlWords} Wörter)  ${w.title.slice(0, 50)}`
+      );
     }
   }
   await engine.disconnect();

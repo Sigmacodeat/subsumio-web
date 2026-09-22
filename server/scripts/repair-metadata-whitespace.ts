@@ -25,7 +25,10 @@ import { createEngine } from "../src/core/engine-factory.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
-  options: { apply: { type: "boolean", default: false }, help: { type: "boolean", default: false } },
+  options: {
+    apply: { type: "boolean", default: false },
+    help: { type: "boolean", default: false },
+  },
   allowPositionals: false,
 });
 
@@ -45,9 +48,17 @@ interface Engine {
 /** U+00A0 no-break, U+2007 figure, U+202F narrow no-break — all read as a space. */
 const ODD = `[${String.fromCharCode(0xa0)}${String.fromCharCode(0x2007)}${String.fromCharCode(0x202f)}]`;
 /** The same cleaning as SQL: odd space → space, runs collapsed, ends trimmed. */
-const fix = (expr: string) => `btrim(regexp_replace(regexp_replace(${expr}, '${ODD}', ' ', 'g'), '\\s+', ' ', 'g'))`;
+const fix = (expr: string) =>
+  `btrim(regexp_replace(regexp_replace(${expr}, '${ODD}', ' ', 'g'), '\\s+', ' ', 'g'))`;
 
-const FM_FIELDS = ["short_title", "abbr", "promulgation_organ", "paragraph_ref", "case_number", "court"];
+const FM_FIELDS = [
+  "short_title",
+  "abbr",
+  "promulgation_organ",
+  "paragraph_ref",
+  "case_number",
+  "court",
+];
 const CHUNK_FIELDS = ["canonical_label", "statute_abbr", "paragraph_ref", "case_number", "court"];
 
 const n = (v: unknown) => Number(v ?? 0).toLocaleString("de-AT");
@@ -77,7 +88,9 @@ async function main() {
     total += c;
   }
   for (const f of CHUNK_FIELDS) {
-    const c = await count(`SELECT count(*)::text AS cnt FROM content_chunks WHERE "${f}" ~ '${ODD}'`);
+    const c = await count(
+      `SELECT count(*)::text AS cnt FROM content_chunks WHERE "${f}" ~ '${ODD}'`
+    );
     console.log(`  content_chunks.${f.padEnd(23)} ${n(c)}`);
     total += c;
   }
@@ -103,7 +116,9 @@ async function main() {
     );
   }
   for (const f of CHUNK_FIELDS) {
-    await engine.executeRaw(`UPDATE content_chunks SET "${f}" = ${fix(`"${f}"`)} WHERE "${f}" ~ '${ODD}'`);
+    await engine.executeRaw(
+      `UPDATE content_chunks SET "${f}" = ${fix(`"${f}"`)} WHERE "${f}" ~ '${ODD}'`
+    );
   }
 
   console.log(`\n✓ ${n(total)} Felder bereinigt.`);

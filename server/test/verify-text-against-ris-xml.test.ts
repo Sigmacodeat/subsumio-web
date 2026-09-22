@@ -34,7 +34,8 @@ describe("coverage", () => {
   const expected = words(risBodyText(XML)!);
 
   test("a faithful page covers the original completely", () => {
-    const page = "# Testgesetz\n\nDieses Landesgesetz tritt in Kraft:\n\n1. Art. I Z 1 bis 3 mit 1. September 1997;\n\n2. Art. I Z 4 bis 8 mit 1. September 1998.";
+    const page =
+      "# Testgesetz\n\nDieses Landesgesetz tritt in Kraft:\n\n1. Art. I Z 1 bis 3 mit 1. September 1997;\n\n2. Art. I Z 4 bis 8 mit 1. September 1998.";
     expect(coverage(expected, words(page))).toBe(1);
   });
 

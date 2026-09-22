@@ -196,7 +196,9 @@ async function main() {
       LEFT JOIN pages p ON p.id = c.page_id WHERE p.id IS NULL`
   )) as Array<{ cnt: string }>;
 
-  console.log(`\n✓ ${n(removed)} Seiten entfernt in ${((Date.now() - t0) / 60000).toFixed(1)} min.`);
+  console.log(
+    `\n✓ ${n(removed)} Seiten entfernt in ${((Date.now() - t0) / 60000).toFixed(1)} min.`
+  );
   console.log(`  Grabsteine übrig (jünger als ${MIN_AGE_DAYS} Tage): ${n(rest[0]?.cnt ?? 0)}`);
   console.log(`  Verwaiste Chunks: ${n(orphans[0]?.cnt ?? 0)}`);
   console.log(`\nDanach: VACUUM (ANALYZE) pages, content_chunks;`);

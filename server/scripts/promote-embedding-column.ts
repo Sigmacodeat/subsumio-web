@@ -246,9 +246,7 @@ async function main() {
 
     await engine.withReservedConnection(async (conn) => {
       await conn.executeRaw(`SET maintenance_work_mem = '${workMem}'`);
-      await conn.executeRaw(
-        `SET max_parallel_maintenance_workers = ${blocking ? parallel : 0}`
-      );
+      await conn.executeRaw(`SET max_parallel_maintenance_workers = ${blocking ? parallel : 0}`);
       for (const ix of INDEXES) {
         if (await indexExists(engine, ix.scaffold)) {
           console.log(`  übersprungen (vorhanden): ${ix.scaffold}`);

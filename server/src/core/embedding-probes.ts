@@ -147,12 +147,7 @@ export interface ProbeCandidate {
 
 /** "§  1489 " and "§1489" are the same section. */
 function normalizeParagraph(value: string): string {
-  return value
-    .replace(/§+/g, "§")
-    .replace(/§\s*/g, "§ ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return value.replace(/§+/g, "§").replace(/§\s*/g, "§ ").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 function haystack(c: ProbeCandidate): string {

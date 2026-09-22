@@ -40,7 +40,9 @@ const { values } = parseArgs({
 });
 
 if (values.help || !values.b) {
-  console.log("Usage: compare-embedding-columns.ts --b <spalte> [--a embedding] [--k 10] [--verbose]");
+  console.log(
+    "Usage: compare-embedding-columns.ts --b <spalte> [--a embedding] [--k 10] [--verbose]"
+  );
   process.exit(values.help ? 0 : 1);
 }
 
@@ -70,11 +72,7 @@ interface Side {
   ranks: number[];
 }
 
-async function search(
-  engine: Engine,
-  column: string,
-  vector: Float32Array
-): Promise<Hit[]> {
+async function search(engine: Engine, column: string, vector: Float32Array): Promise<Hit[]> {
   const literal = "[" + Array.from(vector).join(",") + "]";
   return (await engine.executeRaw(
     `SELECT c.canonical_label, c.statute_abbr, c.paragraph_ref, p.title,
@@ -158,7 +156,9 @@ async function main() {
   console.log("\n═══ Ergebnis ═══");
   for (const s of sides) {
     const share = ((s.hits / QUERY_PROBES.length) * 100).toFixed(0);
-    const avg = s.ranks.length ? (s.ranks.reduce((a, b) => a + b, 0) / s.ranks.length).toFixed(1) : "—";
+    const avg = s.ranks.length
+      ? (s.ranks.reduce((a, b) => a + b, 0) / s.ranks.length).toFixed(1)
+      : "—";
     console.log(
       `  ${s.name.padEnd(18)} ${String(s.hits).padStart(2)}/${QUERY_PROBES.length} (${share} %)` +
         `  mittlerer Platz ${avg}   ${s.model}`

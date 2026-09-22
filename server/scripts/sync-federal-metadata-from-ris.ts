@@ -44,7 +44,9 @@ const { values } = parseArgs({
 });
 
 if (values.help) {
-  console.log("Usage: sync-federal-metadata-from-ris.ts [--apply] [--index <jsonl>] [--source law-at-normen]");
+  console.log(
+    "Usage: sync-federal-metadata-from-ris.ts [--apply] [--index <jsonl>] [--source law-at-normen]"
+  );
   process.exit(0);
 }
 
@@ -76,7 +78,13 @@ interface PageRow {
   promulgation_organ: string | null;
 }
 
-const FIELDS = ["short_title", "abbr", "paragraph_ref", "in_force_from", "promulgation_organ"] as const;
+const FIELDS = [
+  "short_title",
+  "abbr",
+  "paragraph_ref",
+  "in_force_from",
+  "promulgation_organ",
+] as const;
 type Field = (typeof FIELDS)[number];
 
 const n = (v: number) => v.toLocaleString("de-AT");

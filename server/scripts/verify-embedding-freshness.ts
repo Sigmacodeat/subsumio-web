@@ -43,7 +43,9 @@ const { values } = parseArgs({
 });
 
 if (values.help) {
-  console.log("Usage: verify-embedding-freshness.ts [--column embedding_qwen] [--sample 2000] [--threshold 0.02]");
+  console.log(
+    "Usage: verify-embedding-freshness.ts [--column embedding_qwen] [--sample 2000] [--threshold 0.02]"
+  );
   process.exit(0);
 }
 
@@ -102,7 +104,11 @@ async function main() {
   const dims = Number(signature.slice(signature.lastIndexOf(":") + 1));
 
   configureGateway(
-    buildGatewayConfig({ ...cfg, embedding_model: model, embedding_dimensions: dims } as GBrainConfig)
+    buildGatewayConfig({
+      ...cfg,
+      embedding_model: model,
+      embedding_dimensions: dims,
+    } as GBrainConfig)
   );
   if (currentEmbeddingSignature() !== signature) {
     console.error(`Gateway arbeitet mit ${currentEmbeddingSignature()}, Spalte hält ${signature}.`);
@@ -115,13 +121,11 @@ async function main() {
   console.log(`  Modell ${signature}, Stichprobe ${SAMPLE}, Schwelle ${THRESHOLD}\n`);
 
   // ── 1. Ist der Anbieter deterministisch? ─────────────────────────────
-  const probe = "Wer einen anderen am Körper verletzt oder an der Gesundheit schädigt, ist zu bestrafen.";
+  const probe =
+    "Wer einen anderen am Körper verletzt oder an der Gesundheit schädigt, ist zu bestrafen.";
   const [p1, p2] = await embedBatch([probe, probe]);
   const [p3] = await embedBatch([probe]);
-  const self = Math.max(
-    cosineDistance(p1!, Array.from(p2!)),
-    cosineDistance(p1!, Array.from(p3!))
-  );
+  const self = Math.max(cosineDistance(p1!, Array.from(p2!)), cosineDistance(p1!, Array.from(p3!)));
   console.log(`  Gleicher Text, dreimal eingebettet: größter Abstand ${self.toExponential(2)}`);
   if (self > THRESHOLD / 4) {
     console.log(
@@ -176,7 +180,9 @@ async function main() {
       `SELECT count(*)::text AS cnt FROM content_chunks WHERE "${COLUMN}" IS NOT NULL`
     )) as Array<{ cnt: string }>;
     const est = Math.round((stale / rows.length) * Number(total[0]?.cnt ?? 0));
-    console.log(`\n  Hochgerechnet auf die Spalte: rund ${est.toLocaleString("de-AT")} veraltete Vektoren.`);
+    console.log(
+      `\n  Hochgerechnet auf die Spalte: rund ${est.toLocaleString("de-AT")} veraltete Vektoren.`
+    );
   }
 
   await engine.disconnect();

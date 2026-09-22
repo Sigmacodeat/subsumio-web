@@ -94,7 +94,9 @@ async function main() {
   verdict(
     models.length === 1,
     "genau ein Vektorraum",
-    models.length === 1 ? models[0]!.modell : `${models.length} verschiedene Modelle — nicht vergleichbar`
+    models.length === 1
+      ? models[0]!.modell
+      : `${models.length} verschiedene Modelle — nicht vergleichbar`
   );
 
   // ── Form der Vektoren ────────────────────────────────────────────────
@@ -115,7 +117,11 @@ async function main() {
               WHERE "${COLUMN}" IS NOT NULL ORDER BY random() LIMIT $1) s`,
     [SAMPLE]
   );
-  verdict(Number(allSameDim.cnt) === 1, "einheitliche Dimension", `${shape.dims} bei allen geprüften`);
+  verdict(
+    Number(allSameDim.cnt) === 1,
+    "einheitliche Dimension",
+    `${shape.dims} bei allen geprüften`
+  );
   verdict(
     Number(shape.min_norm) > 0.99 && Number(shape.max_norm) < 1.01,
     "Vektoren normiert (Länge 1)",
@@ -186,7 +192,12 @@ async function main() {
        JOIN content_chunks y ON y.id = d.b`
   );
   if (Number(repeat.paare) === 0) {
-    verdict(true, "gleicher Text ⇒ nahezu gleicher Vektor", "keine Dubletten in der Stichprobe", true);
+    verdict(
+      true,
+      "gleicher Text ⇒ nahezu gleicher Vektor",
+      "keine Dubletten in der Stichprobe",
+      true
+    );
   } else {
     verdict(
       repeat.nah === repeat.paare,
@@ -219,7 +230,9 @@ async function main() {
   verdict(
     Number(trigger.cnt) > 0,
     "Trigger gegen Textänderungen aktiv",
-    Number(trigger.cnt) > 0 ? "ein geänderter Text löscht seinen Vektor" : "FEHLT — Re-Importe hinterlassen veraltete Vektoren"
+    Number(trigger.cnt) > 0
+      ? "ein geänderter Text löscht seinen Vektor"
+      : "FEHLT — Re-Importe hinterlassen veraltete Vektoren"
   );
 
   // ── Fragt die Suche im selben Raum? ──────────────────────────────────
@@ -232,8 +245,7 @@ async function main() {
   const searchDims = fileCfg.embedding_dimensions;
   const storedSig = models.length === 1 ? models[0]!.modell : "";
   const storedModel = storedSig.replace(/:\d+$/, "");
-  const sameSpace =
-    storedModel === searchModel || storedModel === searchModel.replace(/:\d+$/, "");
+  const sameSpace = storedModel === searchModel || storedModel === searchModel.replace(/:\d+$/, "");
   if (COLUMN === "embedding") {
     verdict(
       sameSpace,

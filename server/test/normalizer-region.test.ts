@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  mapToCanonical,
-  parseRaw,
-  regionOfDocId,
-} from "../scripts/normalize/normalize-corpus.ts";
+import { mapToCanonical, parseRaw, regionOfDocId } from "../scripts/normalize/normalize-corpus.ts";
 
 /**
  * Nine states legislate on the same subjects in near-identical words; the
@@ -34,7 +30,9 @@ describe("regionOfDocId", () => {
 
 describe("mapToCanonical — region", () => {
   const rawFile = (frontmatter: string) =>
-    parseRaw(`---\n${frontmatter}\n---\n\n# Wiener Kinder- und Jugendhilfegesetz 2013\n\n§ 12 Text.\n`);
+    parseRaw(
+      `---\n${frontmatter}\n---\n\n# Wiener Kinder- und Jugendhilfegesetz 2013\n\n§ 12 Text.\n`
+    );
 
   test("a state-law file without `bundesland` still gets its state", () => {
     const fm = mapToCanonical(
