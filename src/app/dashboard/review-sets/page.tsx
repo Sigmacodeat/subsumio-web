@@ -601,13 +601,33 @@ export default function ReviewSetsPage() {
                   </div>
                   {qc.conflictItems.length > 0 && (
                     <ul className="mt-2 space-y-0.5 text-xs text-[color:var(--ds-danger-text)]">
-                      {qc.conflictItems.map((c) => (
-                        <li key={c.slug} className="font-mono">
-                          {c.slug}: {REVIEW_DECISION_LABELS_DE[c.decision]} →{" "}
-                          {REVIEW_DECISION_LABELS_DE[c.qcDecision]}
-                        </li>
-                      ))}
+                      {qc.conflictItems.map((c) => {
+                        const doc = docs.find((d) => d.slug === c.slug);
+                        return (
+                          <li key={c.slug} className="font-mono">
+                            {c.slug}: {REVIEW_DECISION_LABELS_DE[c.decision]} →{" "}
+                            {REVIEW_DECISION_LABELS_DE[c.qcDecision]}
+                            {doc?.finalDecision && (
+                              <span className="ml-2 text-[color:var(--ds-success-text)]">
+                                → {REVIEW_DECISION_LABELS_DE[doc.finalDecision]}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
+                  )}
+                  {qc.openConflicts > 0 && (
+                    <div
+                      role="alert"
+                      className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+                    >
+                      <AlertCircle size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+                      {t("review_sets.qc_open_conflicts_warn" as DashboardKey).replace(
+                        "{{count}}",
+                        String(qc.openConflicts)
+                      )}
+                    </div>
                   )}
                 </div>
               );

@@ -881,6 +881,7 @@ export default function ContactsPage() {
           }}
           phone={smsContact.phone}
           contactName={smsContact.name}
+          contactRef={smsContact.slug}
         />
       )}
     </div>

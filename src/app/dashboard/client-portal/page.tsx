@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Share2,
   Download,
+  Star,
 } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,6 +44,17 @@ interface SharedSpace {
   expires_at?: string;
 }
 
+interface FeedbackSummary {
+  total: number;
+  nps: number | null;
+  average: number | null;
+  promoters: number;
+  passives: number;
+  detractors: number;
+  latest: Array<{ caseSlug: string; score: number; comment: string | null; submittedAt: string }>;
+  byCase: Array<{ caseSlug: string; count: number; average: number }>;
+}
+
 export default function ClientPortalPage() {
   const { t } = useLang();
   // Vorschau-Modus: Diese Seite zeigt dem ANWALT, wie das Mandanten-Portal
@@ -52,6 +64,7 @@ export default function ClientPortalPage() {
   const [previewing, setPreviewing] = useState(false);
   const [cases, setCases] = useState<ClientCase[]>([]);
   const [sharedSpaces, setSharedSpaces] = useState<SharedSpace[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -101,6 +114,14 @@ export default function ClientPortalPage() {
       if (spacesRes.ok) {
         const spacesData = await spacesRes.json();
         setSharedSpaces(spacesData.data || []);
+      }
+
+      // Mandanten-Feedback (NPS) — bewusst fehlertolerant: ohne Bewertungen
+      // wird die Sektion einfach ausgeblendet.
+      const fbRes = await fetch("/api/legal/feedback", { signal: AbortSignal.timeout(10_000) });
+      if (fbRes.ok) {
+        const fbData = await fbRes.json();
+        if (fbData?.data?.total > 0) setFeedback(fbData.data);
       }
     } catch {
       // Plain wording only — transport errors are not shown to the lawyer.
@@ -237,6 +258,61 @@ export default function ClientPortalPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Mandanten-Feedback (NPS) */}
+      {feedback && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Star size={16} className="text-[color:var(--ds-text-muted)]" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Mandanten-Feedback
+            </h2>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
+              <div>
+                <p className="text-3xl font-semibold text-[color:var(--ds-text)] tabular-nums">
+                  {feedback.nps ?? "—"}
+                </p>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Net Promoter Score · {feedback.total}{" "}
+                  {feedback.total === 1 ? "Bewertung" : "Bewertungen"}
+                </p>
+              </div>
+              <div className="flex gap-4 text-xs text-[color:var(--ds-text-muted)]">
+                <span>Ø {feedback.average ?? "—"}/10</span>
+                <span className="text-[color:var(--ds-success-text)]">
+                  {feedback.promoters} Promoter
+                </span>
+                <span>{feedback.passives} Passive</span>
+                <span className="text-[color:var(--ds-danger-text)]">
+                  {feedback.detractors} Detraktoren
+                </span>
+              </div>
+            </div>
+            {feedback.latest.some((e) => e.comment) && (
+              <ul className="mt-3 space-y-1.5 border-t border-[color:var(--ds-border)] pt-3">
+                {feedback.latest
+                  .filter((e) => e.comment)
+                  .slice(0, 5)
+                  .map((e, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs">
+                      <Badge variant="default" className="text-xs tabular-nums">
+                        {e.score}
+                      </Badge>
+                      <span className="min-w-0 flex-1 text-[color:var(--ds-text-muted)]">
+                        „{e.comment}“
+                      </span>
+                      <span className="shrink-0 font-mono text-[color:var(--ds-text-subtle)]">
+                        {formatDate(e.submittedAt)}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 

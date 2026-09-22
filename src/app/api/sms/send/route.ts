@@ -60,7 +60,8 @@ export const POST = createHandler(
       return apiError(
         `sms_blocked`,
         `SMS-Versand geblockt: ${result.reason}${result.providerError ? ` (${result.providerError})` : ""}`,
-        status
+        status,
+        { reason: result.reason }
       );
     }
     return Response.json({ ok: true, sid: result.sid, sentTo: normalized.slice(-4) });

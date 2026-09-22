@@ -2,6 +2,12 @@ import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { buildBeaImportBundle, parseBeaXmlBatch } from "@/lib/bea-import";
+import { beaDeadlineSuggestions, eebZustellungsdatum } from "@/lib/bea-deadlines";
+import { mergeSuggestedDeadlines } from "@/lib/email/mail-filing";
+import { caseDocumentsLockKey } from "@/lib/case-documents";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import type { SuggestedDeadline } from "@/lib/matter-detail-types";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { logger } from "@/lib/logger";
 
@@ -154,8 +160,18 @@ export const POST = createHandler(
         case_number: string;
         confidence: string;
       }> = [];
+      // WP-6.33: eEB-Frist-Auslösung — Vorschläge je Akte sammeln.
+      const suggestionsByCase = new Map<string, SuggestedDeadline[]>();
       for (const page of bundle.messagePages) {
         const fm = page.frontmatter as Record<string, unknown>;
+        // eEB: das Bereitstellungsdatum ist der rechtliche Zustelltag
+        // (§ 174 ZPO i.V.m. § 4 ERVG) — als Provenienz auf die Nachricht
+        // stempeln, auch wenn keine Akte zugeordnet wurde.
+        const received = String(fm.received_date || fm.sent_date || "");
+        const eeb = eebZustellungsdatum(received);
+        if (eeb) {
+          page.frontmatter = { ...page.frontmatter, eeb_zustellungsdatum: eeb };
+        }
         const match = await autoAssignCase(ctx.headers, {
           case_ref: String(fm.case_ref || ""),
           sender: String(fm.sender || ""),
@@ -176,8 +192,47 @@ export const POST = createHandler(
             case_number: match.case_number,
             confidence: match.confidence,
           });
+          // Fristen im Nachrichtentext erkennen und auf den eEB-
+          // Zustelltag verankern (DE-Engine, §§ 187–193 BGB).
+          const suggestions = beaDeadlineSuggestions({
+            text: page.content,
+            receivedDate: received || undefined,
+            sourceLabel: `beA: ${String(fm.subject || page.title)}`,
+          });
+          if (suggestions.length > 0) {
+            const list = suggestionsByCase.get(match.case_slug) ?? [];
+            suggestionsByCase.set(match.case_slug, [...list, ...suggestions]);
+          }
         }
         await brain.createPage(page);
+      }
+
+      // Vorschläge gelockt auf die `suggested_deadlines` der Akte mergen —
+      // ein Anwalt bestätigt sie dort, bevor sie ins Fristenbuch kommen.
+      let deadlineSuggestions = 0;
+      for (const [caseSlug, incoming] of suggestionsByCase) {
+        try {
+          await withKeyedLock(caseDocumentsLockKey(ctx.brainId, caseSlug), async () => {
+            const casePage = await brain.getPage(caseSlug).catch(() => null);
+            if (!casePage) return;
+            const existing = casePage.frontmatter?.suggested_deadlines as
+              | SuggestedDeadline[]
+              | undefined;
+            const merged = mergeSuggestedDeadlines(existing, incoming);
+            const added = merged.length - (existing?.length ?? 0);
+            if (added <= 0) return;
+            const res = await enginePatchPage(engineHeadersForBrain(ctx.brainId), {
+              slug: casePage.slug,
+              frontmatter: { suggested_deadlines: merged },
+            });
+            if (res.ok) deadlineSuggestions += added;
+          });
+        } catch (err) {
+          log.warn(
+            "[bea-import] deadline suggestions failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+        }
       }
 
       broadcastSseEvent(ctx.brainId, "bea.import.created", {
@@ -195,6 +250,7 @@ export const POST = createHandler(
           import_slug: bundle.importPage.slug,
           message_slugs: bundle.messagePages.map((page) => page.slug),
           auto_assignments: assignments.length > 0 ? assignments : undefined,
+          deadline_suggestions: deadlineSuggestions > 0 ? deadlineSuggestions : undefined,
         },
         undefined,
         parsed.error_count > 0 ? 207 : 201

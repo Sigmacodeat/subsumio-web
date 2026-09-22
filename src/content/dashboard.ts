@@ -7136,6 +7136,10 @@ export const D = {
     de: "Konflikt durch Endentscheidung gelöst",
     en: "Conflict resolved by final decision",
   },
+  "review_sets.qc_open_conflicts_warn": {
+    de: "{{count}} QC-Konflikt(e) ohne Endentscheidung — bitte vor der Produktion klären (Meet-and-Confer).",
+    en: "{{count}} QC conflict(s) without a final decision — resolve before production (meet-and-confer).",
+  },
   "review_sets.export_protocol": {
     de: "Protokoll exportieren",
     en: "Export protocol",

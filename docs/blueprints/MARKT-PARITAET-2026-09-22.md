@@ -55,7 +55,10 @@ Copilot-Memory, Planning-Panel, Word-Add-in Summarize/Draft.
   - pizzip 3, `{{platzhalter}}` über Run-Grenzen, `{{#loop}}`-Serienbrief),
     Route `POST /api/legal/docx-fill` (Base64-Template × Akte/Kanzlei-
     Variablen via `resolveKnownVariables` × Empfänger-Zeilen → docx/zip).
-    6 Tests.
+    6 Tests. UI geliefert: `TemplateUseDialog` + `SerienbriefDialog` auf
+    `/dashboard/templates`, Briefpapier-Overlay via
+    `buildLetterheadFromKanzleiSettings` → `/api/word-export`, Beteiligte
+    aus Akte als Serienbrief-Empfänger (Dedupe, Toast-Feedback).
 
 Verifikation: `bun run verify` grün (tsc ×2, 459 Routen, Grounding,
 Tokens, Links, Nested-Interactive); 70 Tests grün.
@@ -474,6 +477,26 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
       File-Upload-Queue, Reconnect-Flush via online-Event) verdrahtet
       in `MobileSyncBanner` (Mobile-Layout), Sidebar und
       `matter-detail-context`; Tests vorhanden
+    - ✅ SMS-UI: `SmsSendDialog` im Kontakt-Menü (`/dashboard/contacts`,
+      nur bei vorhandener Telefonnummer), Restlängen-Badge
+    - ✅ Mobile-Note-Offline: `mobile/note` queued via `enqueueMutation`
+      (auch bei Netzwerkfehler trotz navigator.onLine), queued-Badge
+
+### QC-/Review-Härtung (Batch 2)
+
+- ✅ **Stratifiziertes Sampling:** `sampleForQC` akzeptiert `strata`
+  (Rate pro Entscheidung — withhold/privileged/redact auf 1.0);
+  UI-Checkbox „Stratifiziert" im Review-Set-Dialog
+- ✅ **QC-Konflikt-Resolution:** `finalDecision`/`finalBy`/`finalAt`/
+  `finalNotes` am Dokument; `computeCodingConsistency` liefert
+  `resolvedConflicts`/`openConflicts`; Endentscheidung-Select nur an
+  Konflikt-Docs; Protokoll enthält Endentscheidungs-Spalten
+- ✅ **Protokoll-Hash:** `exportProductionProtocolSigned` — SHA-256-
+  Integritäts-Footer über dem CSV-Body (`# sha256:…`), manipulationssicher
+  nachweisbar; Route `GET ?export=protocol` liefert signierte Variante
+- ✅ **AT-only Sidebar-Filter:** `AT_ONLY_HREFS` (judgements-sync,
+  verfahrensdoku) symmetrisch zu `DE_ONLY_HREFS`; fao-tracking nach
+  DE_ONLY verschoben (FAO = deutsche Fachanwaltsordnung)
 
 ## NICHT codierbar — Entscheidung/User-Aufgabe (Welle C)
 

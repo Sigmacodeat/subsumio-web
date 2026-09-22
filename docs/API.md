@@ -3,7 +3,7 @@
 > Automatisch generiert aus den Route-Dateien. Regenerieren:
 > `bun x tsx scripts/generate-api-docs.ts`
 
-**502 Endpunkte** — Stand: 2026-09-22
+**511 Endpunkte** — Stand: 2026-09-22
 
 ## Authentifizierung
 
@@ -116,6 +116,7 @@
 | `/api/bea/receipt`                                          | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/bea/send`                                             | POST                     | Session                   | `brain.write`                     | heavy    |
 | `/api/bea/send/retry`                                       | POST                     | Session                   | `brain.write`                     | heavy    |
+| `/api/bea/status`                                           | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/billing/auto-reload-cron`                             | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/billing/case-usage`                                   | GET                      | Session                   | `billing.read`                    | standard |
 | `/api/billing/checkout`                                     | POST                     | Session                   | `billing.write`                   | standard |
@@ -137,6 +138,8 @@
 | `/api/brain/stats`                                          | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/brains`                                               | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/bulk-cases`                                           | POST                     | Session                   | `brain.write`                     | heavy    |
+| `/api/calendar/{token}/dav/documents`                       | GET                      | Intern/spezial            | `—`                               | standard |
+| `/api/calendar/{token}/dav/documents/{slug}`                | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/calendar/{token}/fristen.ics`                         | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cases/access`                                         | GET, PUT                 | Session                   | `brain.read`                      | standard |
 | `/api/cases/ethical-wall`                                   | GET, PATCH               | Intern/spezial            | `—`                               | standard |
@@ -241,7 +244,7 @@
 | `/api/docusign/webhook`                                     | POST                     | Webhook-Signatur          | `—`                               | standard |
 | `/api/e-invoice/generate`                                   | POST                     | Session                   | `invoice.e_invoice`               | standard |
 | `/api/e-invoice/parse`                                      | POST                     | Session                   | `invoice.e_invoice`               | standard |
-| `/api/e-invoice/send`                                       | POST                     | Session                   | `invoice.e_invoice`               | standard |
+| `/api/e-invoice/send`                                       | GET, POST                | Session                   | `invoice.e_invoice`               | standard |
 | `/api/e-invoice/validate`                                   | POST                     | Session                   | `invoice.e_invoice`               | standard |
 | `/api/email-import`                                         | POST                     | Session                   | `brain.write`                     | heavy    |
 | `/api/email/accounts`                                       | GET, POST                | Session                   | `settings.read`                   | standard |
@@ -297,6 +300,7 @@
 | `/api/legal/analytics/{slug}`                               | GET, PATCH, DELETE       | Session                   | `brain.read`                      | standard |
 | `/api/legal/analyze`                                        | POST                     | Session                   | `legal.document_review`           | heavy    |
 | `/api/legal/anonymize`                                      | POST                     | Session → Engine          | `legal.anonymize`                 | standard |
+| `/api/legal/appointments/video-link`                        | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/legal/auto-playbook`                                  | POST                     | Session → Engine          | `legal.playbook`                  | standard |
 | `/api/legal/batch-pipeline`                                 | POST                     | Session                   | `brain.write`                     | heavy    |
 | `/api/legal/berufungsgruende`                               | POST                     | Session                   | `legal.berufungsgruende`          | heavy    |
@@ -361,6 +365,7 @@
 | `/api/legal/review-sets`                                    | GET, POST                | Session                   | `brain.read`                      | standard |
 | `/api/legal/review-sets/{slug}`                             | GET, PATCH, DELETE       | Session                   | `brain.read`                      | standard |
 | `/api/legal/risk-analysis`                                  | POST                     | Session → Engine          | `legal.risk_analysis`             | standard |
+| `/api/legal/rksv`                                           | GET, POST                | Session                   | `brain.read`                      | standard |
 | `/api/legal/rvg`                                            | GET, POST                | Session                   | `legal.rvg`                       | standard |
 | `/api/legal/save-to-matter`                                 | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/legal/schriftsatz`                                    | POST                     | Session → Engine          | `legal.schriftsatz`               | standard |
@@ -419,6 +424,7 @@
 | `/api/portal/chat`                                          | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/portal/document`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/portal/document-requests`                             | GET                      | Öffentlich (rate-limited) | `case.view`                       | standard |
+| `/api/portal/feedback`                                      | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/portal/generate`                                      | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/portal/invoices`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/portal/manifest`                                      | GET                      | Intern/spezial            | `—`                               | standard |
@@ -479,6 +485,9 @@
 | `/api/signature/qes/pdf/{token}`                            | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/signature/qes/start`                                  | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/signature/qes/status`                                 | GET                      | Session                   | `brain.read`                      | standard |
+| `/api/sms/consent`                                          | GET, POST                | Session                   | `agent.write`                     | standard |
+| `/api/sms/send`                                             | POST                     | Session                   | `agent.write`                     | standard |
+| `/api/staff`                                                | GET, POST, PATCH         | Session                   | `brain.write`                     | standard |
 | `/api/stats`                                                | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/team`                                                 | GET                      | Session                   | `settings.read`                   | standard |
 | `/api/team/role`                                            | POST, PATCH              | Session                   | `team.role_change`                | standard |
