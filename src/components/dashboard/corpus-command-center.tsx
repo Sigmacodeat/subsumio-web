@@ -1031,11 +1031,10 @@ function PipelineSection({
                     {/* Live-Fortschritt: Progress-Bar + Rate + ETA, alle 5s
                         aktualisiert solange ein Job läuft */}
                     {liveRow && (
-                      <div
-                        className="space-y-1"
-                        aria-live="polite"
-                        aria-label={`Live-Fortschritt ${s.source}`}
-                      >
+                      // Kein aria-live hier: die Zahlen aktualisieren sich alle
+                      // 5s — jeder Poll wäre eine SR-Ansage (Spam). Die Bar trägt
+                      // role=progressbar, der Stall-Badge ist das echte Signal.
+                      <div className="space-y-1">
                         {liveRow.progressPct !== null && (
                           <div
                             className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]"
