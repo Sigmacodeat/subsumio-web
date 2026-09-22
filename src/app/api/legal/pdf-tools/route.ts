@@ -5,11 +5,7 @@ import type { AuditAction } from "@/lib/audit";
 
 export const maxDuration = 120;
 
-const querySchema = z.object({
-  op: z.enum(["merge", "stamp-merge"]),
-  label: z.string().max(60).optional(),
-  aktenzeichen: z.string().max(60).optional(),
-});
+const opSchema = z.enum(["merge", "stamp-merge"]);
 
 /**
  * PDF-Werkzeuge: Zusammenführen und Anlagenstempel.
@@ -20,15 +16,18 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "heavy",
-    query: querySchema,
-    audit: (ctx, _body, query) => ({
+    audit: (_ctx, _body, _query, req) => ({
       action: "legal.pdf_tools" as unknown as AuditAction,
       entityType: "document",
-      details: { op: query?.op },
+      details: { op: req ? new URL(req.url).searchParams.get("op") : null },
     }),
   },
-  async (ctx, _body, query, req) => {
-    if (!query) return apiError("validation_failed", "op fehlt", 400);
+  async (ctx, _body, _query, req) => {
+    const sp = req ? new URL(req.url).searchParams : new URLSearchParams();
+    const op = opSchema.safeParse(sp.get("op"));
+    if (!op.success) return apiError("validation_failed", "op=merge|stamp-merge erwartet", 400);
+    const label = sp.get("label")?.slice(0, 60) || undefined;
+    const aktenzeichen = sp.get("aktenzeichen")?.slice(0, 60) || undefined;
     const form = await req.formData().catch(() => null);
     if (!form) return apiError("invalid_form", "Multipart-Formular erwartet", 400);
     const files = form.getAll("files").filter((f): f is File => f instanceof File);
@@ -40,16 +39,13 @@ export const POST = createHandler(
 
     try {
       const out =
-        query.op === "merge"
+        op.data === "merge"
           ? await mergePdfs(buffers)
-          : await mergeStampedAttachments(buffers, {
-              label: query.label,
-              aktenzeichen: query.aktenzeichen,
-            });
+          : await mergeStampedAttachments(buffers, { label, aktenzeichen });
       return new Response(Buffer.from(out), {
         headers: {
           "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${query.op === "merge" ? "zusammengefuehrt" : "anlagen"}.pdf"`,
+          "Content-Disposition": `attachment; filename="${op.data === "merge" ? "zusammengefuehrt" : "anlagen"}.pdf"`,
         },
       });
     } catch (err) {
