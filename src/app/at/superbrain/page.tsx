@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   keywords: keywordsFor("superbrain"),
   alternates: {
     canonical: "/at/superbrain",
+    languages: {
+      "de-AT": "/at/superbrain",
+      "de-DE": "/de/superbrain",
+      "x-default": "/at/superbrain",
+    },
   },
   openGraph: {
     title: "SuperBrain – das Gedächtnis Ihrer Kanzlei",

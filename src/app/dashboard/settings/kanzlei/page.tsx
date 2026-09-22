@@ -36,7 +36,7 @@ export default function KanzleiSettingsPage() {
       });
   }, []);
 
-  const update = (field: keyof KanzleiSettings, value: string | boolean) => {
+  const update = (field: keyof KanzleiSettings, value: string | boolean | number) => {
     setSettings((s) => (s ? { ...s, [field]: value } : s));
     setSaved(false);
   };
@@ -309,6 +309,60 @@ export default function KanzleiSettingsPage() {
             </p>
           </div>
         </label>
+      </Section>
+
+      <Section
+        title={L("Öffentliche Terminbuchung", "Public appointment booking")}
+        description={L(
+          "Mandanten und Interessierte können unter /termin freie Zeitfenster buchen. Belegte Termine (inkl. WhatsApp-Buchungen) werden automatisch berücksichtigt; die Kanzlei wird per E-Mail benachrichtigt.",
+          "Clients and prospects can book free time slots at /termin. Booked appointments (including WhatsApp bookings) are respected automatically; the firm is notified by email."
+        )}
+      >
+        <label htmlFor="booking-enabled" className="flex cursor-pointer items-start gap-3">
+          <input
+            id="booking-enabled"
+            type="checkbox"
+            checked={settings.bookingEnabled ?? false}
+            onChange={(e) => update("bookingEnabled", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {L("Online-Terminbuchung aktivieren", "Enable online appointment booking")}
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              {L(
+                "Aktiviert die öffentliche Buchungsseite /termin für diese Kanzlei-Instanz.",
+                "Enables the public booking page /termin for this firm instance."
+              )}
+            </p>
+          </div>
+        </label>
+        {settings.bookingEnabled && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field
+              id="booking-start"
+              label={L("Buchbar ab", "Bookable from")}
+              value={settings.bookingStart ?? "09:00"}
+              onChange={(v) => update("bookingStart", v)}
+            />
+            <Field
+              id="booking-end"
+              label={L("Buchbar bis", "Bookable until")}
+              value={settings.bookingEnd ?? "17:00"}
+              onChange={(v) => update("bookingEnd", v)}
+            />
+            <Field
+              id="booking-minutes"
+              label={L("Slot-Länge (Minuten)", "Slot length (minutes)")}
+              value={String(settings.bookingSlotMinutes ?? 30)}
+              onChange={(v) => {
+                const n = Number(v);
+                if (Number.isFinite(n) && n >= 15 && n <= 240) update("bookingSlotMinutes", n);
+              }}
+            />
+          </div>
+        )}
       </Section>
 
       <Section

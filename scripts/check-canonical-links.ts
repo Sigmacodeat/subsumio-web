@@ -169,4 +169,6 @@ if (issues.length) {
   process.exit(1);
 }
 
-console.log("[check-canonical-links] ✅ All marketing links resolve to canonical /at routes");
+console.log(
+  "[check-canonical-links] ✅ All marketing links resolve to canonical market-prefixed (/at|/de) routes"
+);

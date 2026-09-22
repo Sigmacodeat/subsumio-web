@@ -58,6 +58,12 @@ export interface KanzleiSettings {
   fibuBmdSteuercode20?: string;
   fibuBmdSteuercode13?: string;
   fibuBmdSteuercode10?: string;
+  // Öffentliche Terminbuchung (/termin + api/booking/public): Opt-in —
+  // ohne bookingEnabled antwortet die öffentliche Route 404.
+  bookingEnabled?: boolean;
+  bookingStart?: string;
+  bookingEnd?: string;
+  bookingSlotMinutes?: number;
 }
 
 export const KANZLEI_SETTINGS_SLUG = "legal/settings/kanzlei";

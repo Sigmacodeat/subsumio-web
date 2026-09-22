@@ -2,6 +2,7 @@
 // Data objects are built per page; keep claims consistent with visible copy.
 
 import { ENGINE_REPO_URL } from "@/content/site";
+import type { Market } from "@/lib/market";
 
 export function JsonLd({ data }: { data: object }) {
   return (
@@ -29,7 +30,7 @@ export function organizationLd() {
   };
 }
 
-export function softwareApplicationLd() {
+export function softwareApplicationLd(market: Market = "at") {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -37,7 +38,9 @@ export function softwareApplicationLd() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Self-hosted",
     description:
-      "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Aktenverwaltung, Fristenkontrolle, belegte KI-Antworten mit Fundstellen, Honorarverwaltung und Kollisionsprüfung. On-Premise oder EU-Cloud.",
+      market === "de"
+        ? "KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Deutschland: Aktenverwaltung, Fristenkontrolle nach BGB/ZPO, belegte KI-Antworten mit Fundstellen, Honorarverwaltung nach RVG und Kollisionsprüfung. On-Premise oder EU-Cloud."
+        : "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Aktenverwaltung, Fristenkontrolle, belegte KI-Antworten mit Fundstellen, Honorarverwaltung und Kollisionsprüfung. On-Premise oder EU-Cloud.",
     offers: [
       {
         "@type": "Offer",
@@ -130,6 +133,7 @@ export function serviceLd(opts: {
   description: string;
   url: string;
   audience?: string;
+  areaServed?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -139,7 +143,7 @@ export function serviceLd(opts: {
     url: opts.url.startsWith("http") ? opts.url : `${BASE}${opts.url}`,
     provider: { "@type": "Organization", name: "Subsumio", url: BASE },
     serviceType: "KI-Kanzleisoftware",
-    areaServed: ["AT"],
+    areaServed: [opts.areaServed ?? "AT"],
     audience: opts.audience ? { "@type": "BusinessAudience", name: opts.audience } : undefined,
   };
 }

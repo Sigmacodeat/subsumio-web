@@ -9,6 +9,14 @@
  *     Prozessführung, Forderungsbetreibung, Gerichtsgebühren, Steuern) und vor
  *     der ersten Verfügung zu melden.
  *
+ * Deutschland:
+ *   - § 43a Abs. 3 BRAO: Fremdgeld ist unverzüglich auf ein Anderkonto
+ *     einzuzahlen oder an den Berechtigten auszuzahlen.
+ *   - § 43a Abs. 3 Satz 4 BRAO: Fremdgeld über 15 000 Euro → auf Verlangen
+ *     des Berechtigten Einzelanderkonto; Wertpapiere/Sparbriefe immer.
+ *   - § 43a Abs. 5 BRAO: Hinweispflicht — der Berechtigte ist zu
+ *     unterrichten, wo das Fremdgeld angelegt ist.
+ *
  * Buchungsregeln (validateTrustBooking):
  *   - Buchungen sind unveränderlich und fortlaufend nummeriert. Fehler werden
  *     storniert, nicht überschrieben.
@@ -16,6 +24,8 @@
  *     eine andere verwendet werden: Auszahlungen und Honorarentnahmen dürfen
  *     das Guthaben der Akte nicht übersteigen.
  */
+
+export type TrustJurisdiction = "at" | "de";
 
 export type TrustTransactionType =
   | "deposit"
@@ -38,6 +48,9 @@ export type BookableTrustType = (typeof BOOKABLE_TRUST_TYPES)[number];
 
 /** Treuhanderlag above which § 10a Abs. 2 RAO requires the chamber's trust institution. */
 export const TREUHANDEINRICHTUNG_THRESHOLD = 40_000;
+/** Fremdgeld-Schwelle (DE), ab der der Berechtigte ein Einzelanderkonto
+ *  verlangen kann (§ 43a Abs. 3 Satz 4 BRAO). */
+export const ANDERKONTO_EINZEL_THRESHOLD = 15_000;
 export type TrustAccountStatus = "active" | "frozen" | "closed" | "overdrawn";
 export type ReconciliationStatus = "balanced" | "discrepancy" | "pending";
 
@@ -63,6 +76,9 @@ export interface TrustTransaction {
 
 export interface TrustAccount {
   slug: string;
+  /** Rechtsraum des Kontos — steuert § 10a RAO (AT) vs. § 43a BRAO (DE)
+   *  Prüfregeln und Hinweistexte. Default "at" für Altbestand. */
+  jurisdiction?: TrustJurisdiction;
   accountName: string;
   accountNumber: string;
   bankName?: string;
@@ -199,7 +215,7 @@ const euro = (n: number) =>
   n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
 
 export function validateTrustBooking(
-  account: Pick<TrustAccount, "status" | "transactions">,
+  account: Pick<TrustAccount, "status" | "transactions" | "jurisdiction">,
   input: TrustBookingInput
 ): TrustBookingCheck {
   const fail = (code: string, message: string) => ({ ok: false as const, code, message });
@@ -255,7 +271,16 @@ export function validateTrustBooking(
   const warnings: string[] = [];
   if (input.type === "deposit") {
     const deposits = matterDeposits(txs, input.matterSlug) + input.amount;
-    if (deposits > TREUHANDEINRICHTUNG_THRESHOLD) {
+    if (account.jurisdiction === "de") {
+      if (deposits > ANDERKONTO_EINZEL_THRESHOLD) {
+        warnings.push(
+          `Das Fremdgeld dieser Akte übersteigt 15.000 € (${euro(deposits)}). Nach § 43a Abs. 3 BRAO kann der Berechtigte die Einrichtung eines Einzelanderkontos verlangen; Wertpapiere und Sparbriefe sind immer auf einem Einzelanderkonto zu verwahren.`
+        );
+      }
+      warnings.push(
+        "Fremdgeld ist unverzüglich auf ein Anderkonto einzuzahlen oder an den Berechtigten auszuzahlen (§ 43a Abs. 3 BRAO). Hinweispflicht gegenüber dem Berechtigten beachten (§ 43a Abs. 5 BRAO)."
+      );
+    } else if (deposits > TREUHANDEINRICHTUNG_THRESHOLD) {
       warnings.push(
         `Der Treuhanderlag dieser Akte übersteigt 40.000 € (${euro(deposits)}). Nach § 10a Abs. 2 RAO ist die Treuhandschaft über die Treuhandeinrichtung der Rechtsanwaltskammer abzuwickeln und vor der ersten Verfügung zu melden, sofern keine gesetzliche Ausnahme vorliegt.`
       );
@@ -330,6 +355,44 @@ export function buildTreuhandMeldung(opts: {
     `und verbleiben mit freundlichen Grüßen.`,
     ``,
     `— Entwurf, vor Versand anwaltlich zu prüfen (§ 10a RAO, Ausnahmen Abs. 3 beachten) —`,
+  ].join("\n");
+}
+
+/**
+ * § 43a Abs. 5 BRAO (DE): Unterrichtung des Berechtigten darüber, wo das
+ * Fremdgeld angelegt ist. Reiner Textentwurf — der Anwalt prüft, ergänzt
+ * und versendet ihn.
+ */
+export function buildAnderkontoMitteilung(opts: {
+  kanzleiName: string;
+  matterTitle: string;
+  matterSlug: string;
+  accountIban: string;
+  bankName?: string;
+  deposits: number;
+  heute?: Date;
+}): string {
+  const datum = (opts.heute ?? new Date()).toLocaleDateString("de-DE");
+  return [
+    `Betreff: Unterrichtung über Fremdgeldanlage gemäß § 43a Abs. 5 BRAO`,
+    `Datum: ${datum}`,
+    ``,
+    `Sehr geehrte Damen und Herren,`,
+    ``,
+    `wir unterrichten Sie gemäß § 43a Abs. 5 BRAO darüber, dass das von`,
+    `Ihnen überlassene Fremdgeld wie folgt angelegt ist:`,
+    ``,
+    `  Kanzlei:            ${opts.kanzleiName}`,
+    `  Akte / Aktenzeichen: ${opts.matterTitle} (${opts.matterSlug})`,
+    `  Fremdgeldbetrag:    ${euro(opts.deposits)}`,
+    `  Anderkonto (IBAN):  ${opts.accountIban}${opts.bankName ? `, ${opts.bankName}` : ""}`,
+    ``,
+    `Bei Fremdgeld über 15.000 € können Sie die Einrichtung eines`,
+    `Einzelanderkontos verlangen (§ 43a Abs. 3 Satz 4 BRAO).`,
+    ``,
+    `Mit freundlichen Grüßen`,
+    ``,
+    `— Entwurf, vor Versand anwaltlich zu prüfen —`,
   ].join("\n");
 }
 
@@ -439,6 +502,8 @@ export function parseTrustAccount(
   const openingBalance = (frontmatter.opening_balance as number) ?? 0;
   return {
     slug,
+    jurisdiction:
+      (frontmatter.jurisdiction as TrustJurisdiction | undefined) === "de" ? "de" : "at",
     accountName: (frontmatter.account_name as string) ?? slug,
     accountNumber: (frontmatter.account_number as string) ?? "",
     bankName: frontmatter.bank_name as string | undefined,

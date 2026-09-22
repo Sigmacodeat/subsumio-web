@@ -80,6 +80,7 @@ export default function CityPage({ params }: { params: Promise<{ slug: string }>
             description: city.metaDesc,
             url: `/de/cities/${city.slug}`,
             audience: `Rechtsanwälte in ${city.city}`,
+            areaServed: "DE",
           })}
         />
         <JsonLd data={faqPageLd(city.faq)} />

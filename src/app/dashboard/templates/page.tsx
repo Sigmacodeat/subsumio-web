@@ -14,6 +14,7 @@ import {
   Save,
   X,
   FileCheck,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ import { PrimaryAction } from "@/components/dashboard/primary-action";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { TemplateUseDialog } from "@/components/legal/TemplateUseDialog";
+import { SerienbriefDialog } from "@/components/legal/SerienbriefDialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
@@ -100,6 +102,7 @@ export default function TemplateLibraryPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
   const [useTemplateTarget, setUseTemplateTarget] = useState<TemplateItem | null>(null);
+  const [serienbriefOpen, setSerienbriefOpen] = useState(false);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -274,7 +277,15 @@ export default function TemplateLibraryPage() {
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("templates.title") },
         ]}
-        actions={<PrimaryAction onClick={startCreate}>{t("templates.btn_new")}</PrimaryAction>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => setSerienbriefOpen(true)}>
+              <Users size={14} className="mr-1.5" aria-hidden />
+              Serienbrief
+            </Button>
+            <PrimaryAction onClick={startCreate}>{t("templates.btn_new")}</PrimaryAction>
+          </div>
+        }
       />
 
       {/* Search + Filters */}
@@ -634,6 +645,8 @@ export default function TemplateLibraryPage() {
           onClose={() => setUseTemplateTarget(null)}
         />
       )}
+
+      <SerienbriefDialog open={serienbriefOpen} onClose={() => setSerienbriefOpen(false)} />
     </div>
   );
 }

@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   keywords: keywordsFor("benchmark"),
   alternates: {
     canonical: "/at/benchmark-methodology",
-    languages: { "de-AT": "/at/benchmark-methodology" },
+    languages: {
+      "de-AT": "/at/benchmark-methodology",
+      "de-DE": "/de/benchmark-methodology",
+      "x-default": "/at/benchmark-methodology",
+    },
   },
   openGraph: {
     title: "Benchmark-Methodik — Subsumio KI-Kanzleisoftware",

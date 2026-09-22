@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description: SECURITY.metaDesc,
   alternates: {
     canonical: "/at/security",
+    languages: { "de-AT": "/at/security", "de-DE": "/de/security", "x-default": "/at/security" },
   },
   openGraph: {
     title: SECURITY.metaTitle,

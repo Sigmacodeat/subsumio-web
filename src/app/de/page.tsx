@@ -40,7 +40,7 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={softwareApplicationLd("de")} />
       <JsonLd data={faqPageLd(LANDING.faq)} />
       <JsonLd data={howToLd(LANDING.how)} />
       <LandingPage market="de" />

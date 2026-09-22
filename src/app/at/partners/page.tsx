@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner. KI-Kanzleisoftware für österreichische Kanzleien.",
   alternates: {
     canonical: "/at/partners",
+    languages: { "de-AT": "/at/partners", "de-DE": "/de/partners", "x-default": "/at/partners" },
   },
   openGraph: {
     title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",

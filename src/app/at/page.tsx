@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   keywords: keywordsFor("root"),
   alternates: {
     canonical: "/at",
+    languages: { "de-AT": "/at", "de-DE": "/de", "x-default": "/at" },
   },
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für Österreich",

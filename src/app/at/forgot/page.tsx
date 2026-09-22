@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   robots: { index: false },
   alternates: {
     canonical: "/at/forgot",
+    languages: { "de-AT": "/at/forgot", "de-DE": "/de/forgot", "x-default": "/at/forgot" },
   },
 };
 

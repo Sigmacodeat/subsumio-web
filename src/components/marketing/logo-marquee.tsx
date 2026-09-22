@@ -15,7 +15,7 @@ interface FoundationGroup {
   items: string[];
 }
 
-const GROUPS: FoundationGroup[] = [
+const GROUPS_AT: FoundationGroup[] = [
   {
     icon: Scale,
     title: "Berufsrecht",
@@ -50,9 +50,49 @@ const GROUPS: FoundationGroup[] = [
   },
 ];
 
+const GROUPS_DE: FoundationGroup[] = [
+  {
+    icon: Scale,
+    title: "Berufsrecht",
+    items: [
+      "Verschwiegenheit nach § 43a Abs. 2 BRAO",
+      "Kollisionsprüfung nach § 43a Abs. 4 BRAO",
+      "Tarifleistungen nach RVG",
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    title: "Datenschutz",
+    items: [
+      "DSGVO-konform",
+      "Auftragsverarbeitung nach Art. 28 DSGVO",
+      "Kein Training auf Ihren Daten",
+    ],
+  },
+  {
+    icon: Server,
+    title: "Betrieb",
+    items: [
+      "EU-Cloud oder On-Premise",
+      "Aufbewahrung nach § 147 AO",
+      "Nachvollziehbares Protokoll",
+    ],
+  },
+  {
+    icon: Plug,
+    title: "Anbindungen",
+    items: [
+      "Rechtsquellen von gesetze-im-internet.de",
+      "Word-Add-in und E-Mail-Postfach",
+      "beA und DocuSign",
+    ],
+  },
+];
+
 export default function LogoMarquee({ market = "at" }: { market?: Market }) {
   const { ui: UI_STRINGS } = contentFor(market);
   const p = pBind(market);
+  const groups = market === "de" ? GROUPS_DE : GROUPS_AT;
 
   const eyebrow = UI_STRINGS.certificationsEyebrow;
   const heading = UI_STRINGS.trustHeading;
@@ -75,7 +115,7 @@ export default function LogoMarquee({ market = "at" }: { market?: Market }) {
           stagger={0.06}
           y={10}
         >
-          {GROUPS.map((group) => {
+          {groups.map((group) => {
             const Icon = group.icon;
             return (
               <StaggerItem key={group.title}>

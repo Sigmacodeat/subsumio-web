@@ -35,7 +35,7 @@ export default function Page() {
     <>
       <JsonLd
         data={{
-          ...softwareApplicationLd(),
+          ...softwareApplicationLd("de"),
           offers: [
             ...offers,
             {

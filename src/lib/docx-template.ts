@@ -48,6 +48,34 @@ export function fillDocxTemplate(template: Buffer | ArrayBuffer, values: DocxFil
   return doc.getZip().generate({ type: "nodebuffer", compression: "DEFLATE" });
 }
 
+const VAR_RE = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g;
+
+/**
+ * Listet alle `{{variable}}`-Platzhalter einer .docx-Vorlage — für das
+ * Serienbrief-Formular, das pro Variable ein Feld anbietet. Loop-Marker
+ * ({{#…}} / {{/…}}) werden nicht als Variable gelistet.
+ */
+export function extractDocxVariables(template: Buffer | ArrayBuffer): string[] {
+  let zip: PizZip;
+  try {
+    zip = new PizZip(Buffer.isBuffer(template) ? template : Buffer.from(template));
+  } catch {
+    throw new DocxTemplateError("Die Datei ist keine gültige .docx-Vorlage.");
+  }
+  const doc = new Docxtemplater(zip, {
+    delimiters: { start: "{{", end: "}}" },
+    nullGetter: () => "",
+  });
+  const text = doc.getFullText();
+  const out = new Set<string>();
+  for (const m of text.matchAll(VAR_RE)) {
+    const key = m[1]!;
+    if (key.startsWith("#") || key.startsWith("/") || key.startsWith("^")) continue;
+    out.add(key);
+  }
+  return [...out];
+}
+
 /**
  * Serienbrief: eine Vorlage × N Empfängerzeilen → N fertige .docx.
  * Jede Zeile liefert die Platzhalterwerte (`values`).

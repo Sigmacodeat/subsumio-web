@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description: DOWNLOAD.metaDesc,
   alternates: {
     canonical: "/at/download",
+    languages: { "de-AT": "/at/download", "de-DE": "/de/download", "x-default": "/at/download" },
   },
   openGraph: {
     title: DOWNLOAD.metaTitle,

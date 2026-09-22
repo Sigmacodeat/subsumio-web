@@ -8,7 +8,10 @@ export const metadata: Metadata = {
   description:
     "KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Österreich: Fristen nach ZPO und ABGB, belegte KI-Antworten mit Fundstellen und Verschwiegenheit nach § 9 Abs. 2 RAO — in Wien, Graz, Linz, Salzburg und Innsbruck.",
   keywords: keywordsFor("cities"),
-  alternates: { canonical: "/at/cities", languages: { "de-AT": "/at/cities" } },
+  alternates: {
+    canonical: "/at/cities",
+    languages: { "de-AT": "/at/cities", "de-DE": "/de/cities", "x-default": "/at/cities" },
+  },
   openGraph: {
     title: "KI-Kanzleisoftware Österreich — Subsumio für Anwälte",
     description:

@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     "Allgemeine Geschäftsbedingungen für Subsumio — Nutzungsrechte, Pflichten und Haftungsbeschränkungen.",
   alternates: {
     canonical: "/at/terms",
+    languages: { "de-AT": "/at/terms", "de-DE": "/de/terms", "x-default": "/at/terms" },
   },
   openGraph: {
     title: "AGB — Subsumio",

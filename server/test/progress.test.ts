@@ -230,7 +230,10 @@ describe("progress reporter", () => {
 
   test("only one process-level signal handler installed across many reporters", () => {
     // Baseline: one handler already installed by prior tests in this file.
+    // liveReporters is process-global — a neighbor file in the same bun shard
+    // may hold a live reporter; assert no NEW leaks, not absolute zero.
     const installedBefore = __signalHandlerInstalledForTest();
+    const liveBefore = __liveReporterCountForTest();
     const { stream } = sink(false);
     for (let i = 0; i < 50; i++) {
       const p = createProgress({ mode: "json", stream, minIntervalMs: 0, minItems: 1 });
@@ -239,7 +242,7 @@ describe("progress reporter", () => {
     }
     // After 50 reporter lifecycles, still exactly one handler and zero leaked live entries.
     expect(__signalHandlerInstalledForTest()).toBe(installedBefore || true);
-    expect(__liveReporterCountForTest()).toBe(0);
+    expect(__liveReporterCountForTest()).toBe(liveBefore);
   });
 
   test("startHeartbeat() fires heartbeats and stop() clears", async () => {

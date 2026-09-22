@@ -1052,7 +1052,7 @@ vars, `.gbrain-*` dotfiles) and specializes the platform for the legal vertical.
 
 - **Synthesis, not a hit list.** Synthesized, well-cited prose across people,
   companies, deals, and ideas — plus an explicit note on what the brain does
-  *not* know yet.
+  _not_ know yet.
 - **A self-wiring knowledge graph.** Every page write extracts entity refs and
   creates typed edges (`attended`, `works_at`, `invested_in`, `founded`,
   `advises`) with zero LLM calls. Benchmarked at **P@5 49.1%, R@5 97.9%** on the

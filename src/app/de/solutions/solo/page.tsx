@@ -34,7 +34,7 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={softwareApplicationLd("de")} />
       <JsonLd data={faqPageLd(content.faq)} />
       <JsonLd
         data={breadcrumbLd([

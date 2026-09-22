@@ -207,6 +207,9 @@ const API_CSRF_EXEMPT_PATHS = new Set([
   // anonymous visitors have no CSRF cookie. The route itself bounds abuse
   // with a per-IP rate limit (5/h) and a honeypot field.
   "/api/intake/public",
+  // Public appointment booking (/termin): same anonymous profile — per-IP
+  // rate limits (60/h GET, 10/h POST) and a honeypot inside the route.
+  "/api/booking/public",
   // Live-demo session bootstrap: anonymous POST, issues the signed demo
   // session cookie. Per-IP rate limited inside the route.
   "/api/demo/session",

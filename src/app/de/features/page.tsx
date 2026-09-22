@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={softwareApplicationLd("de")} />
       <JsonLd data={faqPageLd(FEATURES_PAGE.faq)} />
       <JsonLd
         data={breadcrumbLd([

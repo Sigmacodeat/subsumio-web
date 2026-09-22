@@ -56,7 +56,7 @@ export default function LandingPage({ market = "at" }: { market?: Market }) {
         <LandingHero />
 
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
-        <LogoMarquee />
+        <LogoMarquee market={market} />
 
         {/* Pain + Stats — merged: cost of inaction, then proof metrics in one section. */}
         {"pains" in t && t.pains && (

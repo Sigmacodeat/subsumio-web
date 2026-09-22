@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in Österreich.",
   alternates: {
     canonical: "/at/imprint",
+    languages: { "de-AT": "/at/imprint", "de-DE": "/de/imprint", "x-default": "/at/imprint" },
   },
   openGraph: {
     title: "Impressum — Subsumio",

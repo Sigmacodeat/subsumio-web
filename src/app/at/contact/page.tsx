@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV, Berufsgeheimnis (§ 9 Abs. 2 RAO) und technisch-organisatorischen Maßnahmen.",
   alternates: {
     canonical: "/at/contact",
+    languages: { "de-AT": "/at/contact", "de-DE": "/de/contact", "x-default": "/at/contact" },
   },
   openGraph: {
     title: "Kontakt — Subsumio KI-Kanzleisoftware",

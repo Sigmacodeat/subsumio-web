@@ -9,6 +9,7 @@ export const metadata: Metadata = {
     "Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, Enterprise auf Anfrage. Monatlich kündbar, 30 Tage kostenlos testen.",
   alternates: {
     canonical: "/at/pricing",
+    languages: { "de-AT": "/at/pricing", "de-DE": "/de/pricing", "x-default": "/at/pricing" },
   },
   openGraph: {
     title: "Subsumio Preise — Solo, Kanzlei und Enterprise",

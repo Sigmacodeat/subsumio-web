@@ -15,6 +15,7 @@ const createSchema = z.object({
   matterSlug: z.string().optional(),
   matterTitle: z.string().optional(),
   clientName: z.string().optional(),
+  jurisdiction: z.enum(["at", "de"]).optional(),
 });
 
 export const GET = createHandler(
@@ -70,6 +71,7 @@ export const POST = createHandler(
         content: `Trust account: ${body.accountName}`,
         frontmatter: {
           type: "trust_account",
+          jurisdiction: body.jurisdiction ?? ctx.user.jurisdiction ?? "at",
           account_name: body.accountName,
           account_number: body.accountNumber,
           bank_name: body.bankName ?? null,

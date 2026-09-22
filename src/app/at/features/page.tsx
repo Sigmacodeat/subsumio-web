@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   keywords: keywordsFor("features"),
   alternates: {
     canonical: "/at/features",
+    languages: { "de-AT": "/at/features", "de-DE": "/de/features", "x-default": "/at/features" },
   },
   openGraph: {
     title: FEATURES_PAGE.metaTitle,

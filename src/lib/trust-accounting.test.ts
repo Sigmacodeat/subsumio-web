@@ -408,3 +408,62 @@ describe("buildTreuhandMeldung (§ 10a RAO)", () => {
     expect(text).toContain("anwaltlich zu prüfen");
   });
 });
+
+describe("Anderkonto § 43a BRAO (DE)", () => {
+  const deAccount = {
+    status: "active" as const,
+    jurisdiction: "de" as const,
+    transactions: [],
+  };
+  const input = {
+    type: "deposit" as const,
+    amount: 1_000,
+    date: "2026-09-22",
+    description: "Fremdgeld",
+    matterSlug: "m",
+  };
+
+  it("warnt bei DE-Einzahlung auf die Unverzüglichkeits- und Hinweispflicht", () => {
+    const check = validateTrustBooking(deAccount, input);
+    expect(check.ok).toBe(true);
+    if (check.ok) {
+      expect(check.warnings.some((w) => w.includes("§ 43a Abs. 3 BRAO"))).toBe(true);
+      expect(check.warnings.some((w) => w.includes("§ 43a Abs. 5 BRAO"))).toBe(true);
+    }
+  });
+
+  it("warnt ab 15.000 € auf das Einzelanderkonto-Verlangen", () => {
+    const check = validateTrustBooking(deAccount, { ...input, amount: 16_000 });
+    expect(check.ok).toBe(true);
+    if (check.ok) {
+      expect(check.warnings.some((w) => w.includes("Einzelanderkonto"))).toBe(true);
+    }
+  });
+
+  it("warnt bei AT nicht auf DE-Regeln", () => {
+    const check = validateTrustBooking({ status: "active", transactions: [] }, input);
+    expect(check.ok).toBe(true);
+    if (check.ok) {
+      expect(check.warnings.some((w) => w.includes("BRAO"))).toBe(false);
+    }
+  });
+});
+
+describe("buildAnderkontoMitteilung (§ 43a Abs. 5 BRAO)", () => {
+  it("erzeugt einen Unterrichtungsentwurf mit IBAN und Schwelle", async () => {
+    const { buildAnderkontoMitteilung } = await import("./trust-accounting");
+    const text = buildAnderkontoMitteilung({
+      kanzleiName: "Kanzlei Muster",
+      matterTitle: "Kauf GmbH-Anteile",
+      matterSlug: "cases/26-0101",
+      accountIban: "DE89370400440532013000",
+      bankName: "Musterbank",
+      deposits: 80_000,
+      heute: new Date("2026-09-22"),
+    });
+    expect(text).toContain("§ 43a Abs. 5 BRAO");
+    expect(text).toContain("DE89370400440532013000");
+    expect(text).toContain("15.000");
+    expect(text).toContain("anwaltlich zu prüfen");
+  });
+});

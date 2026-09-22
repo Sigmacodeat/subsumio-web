@@ -29,7 +29,11 @@ export function generateMetadata({
       description: city.metaDesc,
       alternates: {
         canonical: `/at/cities/${city.slug}`,
-        languages: { "de-AT": `/at/cities/${city.slug}` },
+        languages: {
+          "de-AT": `/at/cities/${city.slug}`,
+          "de-DE": `/de/cities/${city.slug}`,
+          "x-default": `/at/cities/${city.slug}`,
+        },
       },
       openGraph: {
         title: city.metaTitle,

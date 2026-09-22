@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Assistent erkennt die Akte und legt alles erst nach Ihrer Bestätigung ab.",
   alternates: {
     canonical: "/at/whatsapp",
+    languages: { "de-AT": "/at/whatsapp", "de-DE": "/de/whatsapp", "x-default": "/at/whatsapp" },
   },
   openGraph: {
     title: "Subsumio auf WhatsApp — die Kanzlei in der Hosentasche",
