@@ -69,6 +69,7 @@ import {
 import { inspectUploadBytes, inspectUploadFile } from "../core/upload-security.ts";
 import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
+import { mountWebDav } from "./webdav.ts";
 import { pipeline } from "stream/promises";
 import {
   legalPipelineIdempotencyKey,
@@ -2348,6 +2349,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     );
     ensuredSources.add(sourceId);
   }
+
+  // ── WP-8.53: read-only WebDAV mount for desktop sync ─────────────────
+  // Authenticates via access_tokens (gbrain_* MCP tokens) as Bearer or Basic
+  // password — NOT via the shared web-api key, so it must mount outside the
+  // guard. Source isolation + matter scope come from the token's permissions.
+  mountWebDav(app, engine, invokeOp);
 
   // ── CORS for direct-to-engine browser uploads ────────────────────────
   // Applied BEFORE the guard so OPTIONS preflight doesn't get 401'd.

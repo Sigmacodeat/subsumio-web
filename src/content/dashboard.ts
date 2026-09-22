@@ -7146,6 +7146,7 @@ export const D = {
     en: "AML / KYC",
   },
   "nav.absences": { de: "Urlaubsvertretung", en: "Vacation Delegation" },
+  "nav.personal": { de: "Personal", en: "Staff" },
   "nav.case_assignment": { de: "Akten-Zuweisung", en: "Case Assignment" },
   "nav.case_search": { de: "Akten-Suche", en: "Case Search" },
   "nav.ethical_wall": { de: "Ethical Wall", en: "Ethical Wall" },
@@ -8331,21 +8332,6 @@ export const D = {
   "casesdetail.folder_dialog_save": { de: "Speichern", en: "Save" },
   "casesdetail.folder_dialog_busy": { de: "Verschiebe…", en: "Moving…" },
   "casesdetail.folder_dialog_close": { de: "Dialog schließen", en: "Close dialog" },
-  "casesdetail.folder_exists": { de: "Ordner existiert bereits", en: "Folder already exists" },
-  "casesdetail.folder_invalid": { de: "Ordnername ungültig", en: "Invalid folder name" },
-  "casesdetail.folder_created": { de: "Ordner angelegt", en: "Folder created" },
-  "casesdetail.folder_renamed": {
-    de: "Ordner umbenannt — {{count}} Dokumente verschoben",
-    en: "Folder renamed — {{count}} documents moved",
-  },
-  "casesdetail.folder_rename_partial": {
-    de: "{{count}} Dokumente konnten nicht verschoben werden",
-    en: "{{count}} documents could not be moved",
-  },
-  "casesdetail.folder_drag_hint": {
-    de: "Ziehen, um in einen Ordner zu verschieben",
-    en: "Drag to move into a folder",
-  },
   "casesdetail.already_linked": { de: "verknüpft", en: "linked" },
   "casesdetail.doc_empty_desc": {
     de: "Hochladen, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.",

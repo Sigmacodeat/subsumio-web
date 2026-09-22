@@ -585,6 +585,13 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         tooltipKey: "nav.tooltip.absences",
       },
       {
+        href: "/dashboard/personal",
+        icon: Users,
+        labelKey: "nav.personal",
+        keywords: "personal mitarbeiter staff urlaubskonto personalakte hr",
+        audienceTier: "erweitert",
+      },
+      {
         href: "/dashboard/case-assignment",
         icon: Users,
         labelKey: "nav.case_assignment",

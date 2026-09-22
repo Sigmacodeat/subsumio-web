@@ -151,7 +151,7 @@ describe("FolderTree", () => {
   it("ignores drops with foreign dataTransfer types", () => {
     const onDrop = vi.fn();
     renderTree("all", vi.fn(), { onDropDocument: onDrop });
-    const dt = { types: ["text/plain"], getData: () => "x", setData: vi.fn() };
+    const dt = { ...makeDataTransfer(), types: ["text/plain"] };
     const row = screen.getByText("Verträge").closest("button")!;
     fireEvent.dragOver(row, { dataTransfer: dt });
     fireEvent.drop(row, { dataTransfer: dt });
