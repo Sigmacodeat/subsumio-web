@@ -327,6 +327,278 @@ function PartyList({
   );
 }
 
+type RechnerKey =
+  | "gkg"
+  | "streitwert"
+  | "familienrecht"
+  | "arbeitsrecht"
+  | "verkehrsrecht"
+  | "mietrecht"
+  | "erbrecht";
+
+const RECHNER_OPTIONS: Array<{ key: RechnerKey; label: string }> = [
+  { key: "gkg", label: "GKG-Gerichtskosten" },
+  { key: "streitwert", label: "Streitwert bestimmen" },
+  { key: "familienrecht", label: "Familienrecht" },
+  { key: "arbeitsrecht", label: "Arbeitsrecht" },
+  { key: "verkehrsrecht", label: "Verkehrsrecht" },
+  { key: "mietrecht", label: "Mietrecht" },
+  { key: "erbrecht", label: "Erbrecht" },
+];
+
+const eur = (n: number) => n.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
+
+function FachrechnerCard() {
+  const [rechner, setRechner] = useState<RechnerKey>("gkg");
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<Record<string, unknown> | number | null>(null);
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setFields((f) => ({ ...f, [k]: e.target.value }));
+  const num = (k: string) => (fields[k] ? Number(fields[k]) : undefined);
+
+  async function calculate() {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const input: Record<string, unknown> = {};
+      switch (rechner) {
+        case "gkg":
+          input.streitwert = num("streitwert") ?? 0;
+          break;
+        case "streitwert":
+          input.art = fields.streitwertArt ?? "einmalig";
+          input.betrag = num("betrag") ?? 0;
+          if (num("faktor")) input.faktor = num("faktor");
+          break;
+        case "familienrecht":
+          input.verfahrensart = fields.verfahrensart ?? "ehesachen";
+          input.streitwert = num("streitwert") ?? 0;
+          if (num("einkommenMonatlich")) input.einkommenMonatlich = num("einkommenMonatlich");
+          break;
+        case "arbeitsrecht":
+          input.streitwert = num("streitwert") ?? 0;
+          input.withTermin = fields.withTermin === "on" || fields.withTermin === "true";
+          break;
+        case "verkehrsrecht":
+          for (const k of [
+            "reparaturkosten",
+            "gutachterkosten",
+            "mietwagenkosten",
+            "nutzungsausfall",
+            "heilbehandlungskosten",
+            "schmerzensgeld",
+            "verdienstausfall",
+            "generalpauschale",
+          ]) {
+            if (num(k)) input[k] = num(k);
+          }
+          break;
+        case "mietrecht":
+          input.art = fields.mietArt ?? "raeumungsklage";
+          input.streitwert = num("streitwert") ?? 0;
+          if (num("monatsmiete")) input.monatsmiete = num("monatsmiete");
+          if (num("monateRueckstand")) input.monateRueckstand = num("monateRueckstand");
+          break;
+        case "erbrecht":
+          input.art = fields.erbArt ?? "erbschein";
+          input.nachlasswert = num("nachlasswert") ?? 0;
+          break;
+      }
+      const res = await fetch("/api/fachrechner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ rechner, input }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      setResult(data.data ?? data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Berechnung fehlgeschlagen");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const renderResult = (v: unknown, depth = 0): React.ReactNode => {
+    if (typeof v === "number") return <span className="font-medium tabular-nums">{eur(v)}</span>;
+    if (typeof v === "string") return <span className="font-medium">{v}</span>;
+    if (Array.isArray(v))
+      return (
+        <div className="space-y-0.5">
+          {v.map((item, i) => (
+            <div key={i}>{renderResult(item, depth + 1)}</div>
+          ))}
+        </div>
+      );
+    if (v && typeof v === "object") {
+      return (
+        <div className={depth > 0 ? "space-y-0.5" : "divide-y divide-[color:var(--ds-border)]"}>
+          {Object.entries(v as Record<string, unknown>).map(([k, val]) => (
+            <div key={k} className="flex justify-between gap-4 py-0.5">
+              <span className="text-[color:var(--ds-text-muted)]">{k}</span>
+              <span className="text-right">{renderResult(val, depth + 1)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const money = (k: string, label: string) => (
+    <div key={k}>
+      <Label htmlFor={`fr-${k}`}>{label}</Label>
+      <Input
+        id={`fr-${k}`}
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+        value={fields[k] ?? ""}
+        onChange={set(k)}
+      />
+    </div>
+  );
+  const select = (k: string, label: string, options: Array<[string, string]>) => (
+    <div key={k}>
+      <Label htmlFor={`fr-${k}`}>{label}</Label>
+      <select
+        id={`fr-${k}`}
+        value={fields[k] ?? ""}
+        onChange={set(k)}
+        className="h-9 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm text-[color:var(--ds-text)]"
+      >
+        {options.map(([v, l]) => (
+          <option key={v} value={v}>
+            {l}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  return (
+    <Tool
+      title="Fachrechner (DE)"
+      subtitle="Gerichtskosten, Streitwert und rechtsgebietsbezogene Berechnungen."
+    >
+      <div>
+        <Label htmlFor="fr-rechner">Rechner</Label>
+        <select
+          id="fr-rechner"
+          value={rechner}
+          onChange={(e) => {
+            setRechner(e.target.value as RechnerKey);
+            setResult(null);
+            setError(null);
+          }}
+          className="h-9 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm text-[color:var(--ds-text)]"
+        >
+          {RECHNER_OPTIONS.map((o) => (
+            <option key={o.key} value={o.key}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(rechner === "gkg" || rechner === "familienrecht" || rechner === "arbeitsrecht") &&
+          money("streitwert", "Streitwert (EUR)")}
+        {rechner === "streitwert" && (
+          <>
+            {select("streitwertArt", "Art", [
+              ["einmalig", "Einmalige Leistung"],
+              ["unterhalt_monatlich", "Unterhalt (monatlich)"],
+              ["rente_monatlich", "Rente (monatlich)"],
+              ["wohnung_miete", "Wohnung/Miete"],
+            ])}
+            {money("betrag", "Betrag (EUR)")}
+            {money("faktor", "Faktor (optional)")}
+          </>
+        )}
+        {rechner === "familienrecht" && (
+          <>
+            {select("verfahrensart", "Verfahrensart", [
+              ["ehesachen", "Ehesache"],
+              ["folgesachen", "Folgesache"],
+              ["elterliche_sorge", "Elterliche Sorge"],
+              ["unterhalt", "Unterhalt"],
+              ["verfahrenskostenhilfe", "Verfahrenskostenhilfe"],
+            ])}
+            {money("einkommenMonatlich", "Einkommen monatlich (opt.)")}
+          </>
+        )}
+        {rechner === "arbeitsrecht" && (
+          <label className="flex items-center gap-2 pt-6 text-sm text-[color:var(--ds-text)]">
+            <input
+              type="checkbox"
+              checked={fields.withTermin === "on"}
+              onChange={set("withTermin")}
+            />
+            mit Termin
+          </label>
+        )}
+        {rechner === "verkehrsrecht" && (
+          <>
+            {money("reparaturkosten", "Reparaturkosten")}
+            {money("gutachterkosten", "Gutachterkosten")}
+            {money("mietwagenkosten", "Mietwagenkosten")}
+            {money("nutzungsausfall", "Nutzungsausfall")}
+            {money("schmerzensgeld", "Schmerzensgeld")}
+            {money("verdienstausfall", "Verdienstausfall")}
+          </>
+        )}
+        {rechner === "mietrecht" && (
+          <>
+            {select("mietArt", "Art", [
+              ["raeumungsklage", "Räumungsklage"],
+              ["mieterhoehung", "Mieterhöhung"],
+              ["mietminderung", "Mietminderung"],
+              ["betriebskostenabrechnung", "Betriebskostenabrechnung"],
+            ])}
+            {money("streitwert", "Streitwert (EUR)")}
+            {money("monatsmiete", "Monatsmiete (opt.)")}
+            {money("monateRueckstand", "Monate Rückstand (opt.)")}
+          </>
+        )}
+        {rechner === "erbrecht" && (
+          <>
+            {select("erbArt", "Art", [
+              ["erbschein", "Erbschein"],
+              ["nachlassverwaltung", "Nachlassverwaltung"],
+              ["erbstreitigkeit", "Erbstreitigkeit"],
+            ])}
+            {money("nachlasswert", "Nachlasswert (EUR)")}
+          </>
+        )}
+      </div>
+      <Button onClick={() => void calculate()} disabled={busy} size="sm">
+        {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+        Berechnen
+      </Button>
+      {error && (
+        <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+          {error}
+        </p>
+      )}
+      {result !== null && (
+        <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-sm">
+          {typeof result === "number" ? (
+            <Row label="Ergebnis:" value={eur(result)} />
+          ) : (
+            renderResult(result)
+          )}
+        </div>
+      )}
+    </Tool>
+  );
+}
+
 export function KanzleiTools() {
   const capabilities = CAPABILITIES;
   return (
@@ -350,6 +622,7 @@ export function KanzleiTools() {
         <CreditCard />
         <FaxCard />
         <RubrumCard />
+        <FachrechnerCard />
       </div>
       <h2 className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
         Weitere Kanzleiabläufe

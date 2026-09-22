@@ -15,6 +15,7 @@ import {
   BarChart3,
   MoreHorizontal,
   FileCode2,
+  RefreshCw,
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,6 +93,9 @@ interface Invoice {
   parentInvoiceId?: string;
   caseSlugs?: string[];
   leitwegId?: string;
+  eInvoiceChannel?: "peppol" | "erechnung_gv_at";
+  eInvoiceReference?: string;
+  eInvoiceStatus?: "queued" | "delivered" | "failed";
 }
 
 interface InvoiceCase {
@@ -239,6 +243,9 @@ export default function InvoicingPage() {
           reminderFee: fm.reminder_fee,
           invoiceType: fm.invoice_type,
           parentInvoiceId: fm.parent_invoice_id,
+          eInvoiceChannel: fm.e_invoice_channel,
+          eInvoiceReference: fm.e_invoice_reference,
+          eInvoiceStatus: fm.e_invoice_status,
           caseSlugs: fm.case_slugs,
           leitwegId: fm.leitweg_id,
         };
@@ -671,9 +678,72 @@ export default function InvoicingPage() {
         payload.status === "not_configured" ? "error" : "success",
         8000
       );
+      // Transport-Referenz persistieren, damit der Zustellstatus später
+      // gepollt werden kann (queued → delivered).
+      if (payload.reference && (payload.status === "queued" || payload.status === "delivered")) {
+        const refFrontmatter = {
+          e_invoice_channel: channel,
+          e_invoice_reference: payload.reference,
+          e_invoice_status: payload.status,
+        };
+        try {
+          await api.invoices.update(inv.id, refFrontmatter);
+          setInvoices((prev) =>
+            prev.map((i) =>
+              i.id === inv.id
+                ? {
+                    ...i,
+                    eInvoiceChannel: channel,
+                    eInvoiceReference: payload.reference,
+                    eInvoiceStatus: payload.status,
+                  }
+                : i
+            )
+          );
+        } catch {
+          // Referenz-Persistenz ist best-effort — Versand selbst war erfolgreich.
+        }
+      }
     } catch (err) {
       setStatusMessage("e-Rechnung konnte nicht versendet werden.", "error", 6000);
       console.error("[e-invoice] send failed:", err);
+    }
+  }
+
+  async function pollEInvoice(inv: Invoice) {
+    if (!inv.eInvoiceChannel || !inv.eInvoiceReference || busySlug) return;
+    setBusySlug(inv.id);
+    setStatusMessage("Zustellstatus wird abgefragt …");
+    try {
+      const res = await fetch(
+        `/api/e-invoice/send?channel=${inv.eInvoiceChannel}&reference=${encodeURIComponent(inv.eInvoiceReference)}`,
+        { credentials: "same-origin" }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setStatusMessage(
+          invoiceErrorText(data.error, "Statusabfrage fehlgeschlagen."),
+          "error",
+          6000
+        );
+        return;
+      }
+      const payload = data.data ?? data;
+      setStatusMessage(payload.message, payload.status === "failed" ? "error" : "success", 8000);
+      if (payload.status !== inv.eInvoiceStatus) {
+        try {
+          await api.invoices.update(inv.id, { e_invoice_status: payload.status });
+        } catch {
+          // best-effort
+        }
+        setInvoices((prev) =>
+          prev.map((i) => (i.id === inv.id ? { ...i, eInvoiceStatus: payload.status } : i))
+        );
+      }
+    } catch {
+      setStatusMessage("Statusabfrage fehlgeschlagen.", "error", 6000);
+    } finally {
+      setBusySlug(null);
     }
   }
 
@@ -1321,6 +1391,17 @@ export default function InvoicingPage() {
                             <Send size={13} />
                             {t("inv.einvoice_send_peppol")}
                           </DropdownMenuItem>
+                          {inv.eInvoiceReference && (
+                            <DropdownMenuItem
+                              onClick={() => void pollEInvoice(inv)}
+                              disabled={busy}
+                              className="gap-2 text-xs"
+                            >
+                              <RefreshCw size={13} />
+                              Zustellstatus prüfen
+                              {inv.eInvoiceStatus ? ` (${inv.eInvoiceStatus})` : ""}
+                            </DropdownMenuItem>
+                          )}
                         </>
                       )}
                       {canManage && inv.status === "draft" && (

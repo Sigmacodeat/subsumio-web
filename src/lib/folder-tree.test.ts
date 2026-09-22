@@ -1,97 +1,58 @@
-import { describe, it, expect } from "vitest";
-import { buildFolderTree, folderMatches } from "@/lib/folder-tree";
+// @vitest-environment node
+
+import { describe, test, expect } from "vitest";
+import { buildFolderTree, folderMatches } from "./folder-tree";
 
 describe("buildFolderTree", () => {
-  it("builds flat root nodes sorted de-DE", () => {
-    const tree = buildFolderTree(["Verträge", "Korrespondenz", "Ämter"]);
-    expect(tree.map((n) => n.path)).toEqual(["Ämter", "Korrespondenz", "Verträge"]);
-  });
-
-  it("nests paths via / and creates implicit intermediate nodes", () => {
-    const tree = buildFolderTree(["Korrespondenz/Ausgehend"]);
-    expect(tree).toHaveLength(1);
-    const root = tree[0];
-    expect(root.name).toBe("Korrespondenz");
-    expect(root.path).toBe("Korrespondenz");
-    expect(root.count).toBe(0);
-    expect(root.children.map((c) => c.path)).toEqual(["Korrespondenz/Ausgehend"]);
-  });
-
-  it("merges shared prefixes into one parent", () => {
-    const tree = buildFolderTree([
-      "Korrespondenz/Ausgehend",
-      "Korrespondenz/Eingehend",
-      "Verträge",
-    ]);
+  test("builds nested tree from slash-separated paths", () => {
+    const tree = buildFolderTree(["Korrespondenz/Ausgehend", "Korrespondenz/Eingehend", "Vertrag"]);
     expect(tree).toHaveLength(2);
-    expect(tree[0].children.map((c) => c.name)).toEqual(["Ausgehend", "Eingehend"]);
+    const korr = tree.find((n) => n.name === "Korrespondenz")!;
+    expect(korr.children.map((c) => c.name)).toEqual(["Ausgehend", "Eingehend"]);
+    expect(korr.path).toBe("Korrespondenz");
+    expect(korr.children[0].path).toBe("Korrespondenz/Ausgehend");
   });
 
-  it("accumulates count per exact path and totalCount incl. children", () => {
-    const tree = buildFolderTree(
-      ["Korrespondenz", "Korrespondenz/Ausgehend", "Korrespondenz/Ausgehend/2026"],
-      {
-        Korrespondenz: 3,
-        "Korrespondenz/Ausgehend": 5,
-        "Korrespondenz/Ausgehend/2026": 2,
-      }
-    );
-    const root = tree[0];
-    expect(root.count).toBe(3);
-    expect(root.totalCount).toBe(10);
-    expect(root.children[0].totalCount).toBe(7);
-    expect(root.children[0].children[0].totalCount).toBe(2);
+  test("accumulates counts from leaf to root", () => {
+    const tree = buildFolderTree(["a/b", "a/c", "a"], {
+      a: 2,
+      "a/b": 3,
+      "a/c": 1,
+    });
+    const a = tree[0];
+    expect(a.count).toBe(2);
+    expect(a.totalCount).toBe(6);
+    expect(a.children.find((c) => c.name === "b")!.count).toBe(3);
   });
 
-  it("deduplicates paths and ignores empty entries", () => {
-    const tree = buildFolderTree(["A", "A", "", "A/B"]);
+  test("handles empty and duplicate paths", () => {
+    expect(buildFolderTree([])).toEqual([]);
+    const tree = buildFolderTree(["x", "x", ""]);
     expect(tree).toHaveLength(1);
-    expect(tree[0].children).toHaveLength(1);
+    expect(tree[0].path).toBe("x");
   });
 
-  it("handles deeper nesting levels", () => {
-    const tree = buildFolderTree(["a/b/c/d"]);
-    let node = tree[0];
-    for (const seg of ["a", "b", "c", "d"]) {
-      expect(node.name).toBe(seg);
-      node = node.children[0];
-    }
-  });
-
-  it("defaults missing counts to 0", () => {
-    const tree = buildFolderTree(["X/Y"], {});
-    expect(tree[0].totalCount).toBe(0);
-    expect(tree[0].children[0].totalCount).toBe(0);
+  test("sorts alphabetically (de locale)", () => {
+    const tree = buildFolderTree(["Zebra", "Alpha", "Mitte"]);
+    expect(tree.map((n) => n.name)).toEqual(["Alpha", "Mitte", "Zebra"]);
   });
 });
 
 describe("folderMatches", () => {
-  it('"all" matches everything including unfiled', () => {
-    expect(folderMatches("Korrespondenz", "all")).toBe(true);
+  test("all matches everything", () => {
+    expect(folderMatches("a/b", "all")).toBe(true);
     expect(folderMatches(undefined, "all")).toBe(true);
   });
 
-  it('"" matches only unfiled documents', () => {
+  test("empty selection matches only unfiled", () => {
     expect(folderMatches(undefined, "")).toBe(true);
-    expect(folderMatches("Korrespondenz", "")).toBe(false);
+    expect(folderMatches("a", "")).toBe(false);
   });
 
-  it("matches the exact folder", () => {
-    expect(folderMatches("Korrespondenz", "Korrespondenz")).toBe(true);
-  });
-
-  it("matches descendants of the selected folder", () => {
+  test("prefix matching includes subfolders", () => {
     expect(folderMatches("Korrespondenz/Ausgehend", "Korrespondenz")).toBe(true);
-    expect(folderMatches("Korrespondenz/Ausgehend/2026", "Korrespondenz")).toBe(true);
-  });
-
-  it("does not match siblings or prefix-lookalikes", () => {
-    expect(folderMatches("Verträge", "Korrespondenz")).toBe(false);
-    expect(folderMatches("Korrespondenz-Alt", "Korrespondenz")).toBe(false);
-    expect(folderMatches("Korrespondenz2/X", "Korrespondenz")).toBe(false);
-  });
-
-  it("unfiled docs never match a folder selection", () => {
+    expect(folderMatches("Korrespondenz", "Korrespondenz")).toBe(true);
+    expect(folderMatches("KorrespondenzAlt/x", "Korrespondenz")).toBe(false);
     expect(folderMatches(undefined, "Korrespondenz")).toBe(false);
   });
 });

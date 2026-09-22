@@ -83,9 +83,19 @@ function BeaPageInner() {
   >({});
   const [sendingSlug, setSendingSlug] = useState<string | null>(null);
   const [retryingSlug, setRetryingSlug] = useState<string | null>(null);
+  const [transportStatus, setTransportStatus] = useState<{
+    configured: boolean;
+    reachable: boolean;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    fetch("/api/bea/status", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.data) setTransportStatus(d.data);
+      })
+      .catch(() => {});
     (async () => {
       try {
         const batch = await api.brain.batchListPages(
@@ -493,19 +503,47 @@ function BeaPageInner() {
         }
       />
 
-      {/* Honest framing: Subsumio does NOT send via beA */}
+      {/* Transport-Status: ehrlich anzeigen, ob Middleware-Versand aktiv ist */}
       <div
-        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
+        className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+          transportStatus?.configured && transportStatus.reachable
+            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
+            : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+        }`}
         role="note"
       >
         <Info
           size={16}
-          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          className={`mt-0.5 shrink-0 ${
+            transportStatus?.configured && transportStatus.reachable
+              ? "text-[color:var(--ds-success-text)]"
+              : "text-[color:var(--ds-warning-text)]"
+          }`}
           aria-hidden="true"
         />
-        <div className="text-sm text-[color:var(--ds-warning-text)]">
-          <p className="mb-1 font-medium">{t("bea.no_send_title")}</p>
-          <p className="text-xs leading-relaxed">{t("bea.no_send_desc")}</p>
+        <div
+          className={`text-sm ${
+            transportStatus?.configured && transportStatus.reachable
+              ? "text-[color:var(--ds-success-text)]"
+              : "text-[color:var(--ds-warning-text)]"
+          }`}
+        >
+          {transportStatus?.configured && transportStatus.reachable ? (
+            <>
+              <p className="mb-1 font-medium">{t("bea.transport_ok_title")}</p>
+              <p className="text-xs leading-relaxed">{t("bea.transport_ok_desc")}</p>
+            </>
+          ) : transportStatus?.configured && !transportStatus.reachable ? (
+            <>
+              <p className="mb-1 font-medium">{t("bea.transport_down_title")}</p>
+              <p className="text-xs leading-relaxed">{t("bea.transport_down_desc")}</p>
+            </>
+          ) : (
+            <>
+              <p className="mb-1 font-medium">{t("bea.no_send_title")}</p>
+              <p className="text-xs leading-relaxed">{t("bea.no_send_desc")}</p>
+            </>
+          )}
         </div>
       </div>
 

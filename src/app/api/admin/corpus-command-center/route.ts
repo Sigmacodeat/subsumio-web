@@ -23,10 +23,11 @@ const CORPUS_DIR_OVERRIDES: Record<string, string> = {
   "eu-regulations": "eu/regulations",
 };
 
-// Corpora deren Import-Pfad auf _normalized zeigt (corpus-pipeline.ts
-// importCmd viaNormalized). Alle anderen lesen aus dem Raw-Dir.
-const NORMALIZED_IMPORT_CORPORA = new Set(["at-landesrecht", "at-staatsvertraege"]);
-
+// Disk-Wahrheit = max(_normalized, raw): _normalized ist die
+// Normalisierungs-Gate-Ausgabe (viaNormalized — jeder Import liest daraus),
+// raw enthält zusätzlich frisch gefetchte, noch nicht normalisierte Dateien.
+// max() bildet "was wir lokal haben" vollständig ab.
+//
 // Rekursiver .md-Scan kostet ~7s über den ganzen Bestand — pro Corpus
 // gecacht, damit das 5s-Polling das FS nicht dauerhaft rödelt.
 const DISK_COUNT_TTL_MS = 30_000;
@@ -45,23 +46,15 @@ function countMdFiles(dir: string): number {
   }
 }
 
-/** Live-Disk-Count: Raw-Dir ist die Import-Quelle (außer NORMALIZED_IMPORT_CORPORA);
- *  Fallback auf den Normalized-Index für Corpora ohne Raw-Dir. */
 function corpusDiskCount(corpus: string): number {
   const hit = diskCountCache.get(corpus);
   if (hit && Date.now() - hit.t < DISK_COUNT_TTL_MS) return hit.n;
   const rel = CORPUS_DIR_OVERRIDES[corpus] ?? corpus;
-  const primary = NORMALIZED_IMPORT_CORPORA.has(corpus)
-    ? join(NORMALIZED_ROOT, rel)
-    : join(RAW_ROOT, rel);
-  const secondary = NORMALIZED_IMPORT_CORPORA.has(corpus)
-    ? join(RAW_ROOT, rel)
-    : join(NORMALIZED_ROOT, rel);
-  let n = countMdFiles(primary);
-  if (n === 0) {
-    n = countMdFiles(secondary);
-    if (n === 0) n = getCorpusIndex(corpus).length;
-  }
+  const n = Math.max(
+    countMdFiles(join(NORMALIZED_ROOT, rel)),
+    countMdFiles(join(RAW_ROOT, rel)),
+    getCorpusIndex(corpus).length
+  );
   diskCountCache.set(corpus, { n, t: Date.now() });
   return n;
 }

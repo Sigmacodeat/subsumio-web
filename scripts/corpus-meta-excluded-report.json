@@ -1,9 +1,81 @@
 {
-  "generated_at": "2026-09-12T15:09:41.123Z",
-  "total_collected": 76402,
-  "total_resolved": 7800,
-  "total_excluded": 68602,
+  "generated_at": "2026-09-22T21:26:33.658Z",
+  "total_collected": 80566,
+  "total_resolved": 11955,
+  "total_excluded": 68611,
   "excluded_sample": [
+    {
+      "file": "de/wofg.md",
+      "label": "WOFG",
+      "abbreviation": "WOFG",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"WOFG\" (de) — selected \"de/wof_g.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/vwgmbhg.md",
+      "label": "VWGMBHG",
+      "abbreviation": "VWGMBHG",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"VWGMBHG\" (de) — selected \"de/vwgmbh_g.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/atzv.md",
+      "label": "ATZV",
+      "abbreviation": "ATZV",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"ATZV\" (de) — selected \"de/atz_v.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/urv.md",
+      "label": "URV",
+      "abbreviation": "URV",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"URV\" (de) — selected \"de/ur_v.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/dbv.md",
+      "label": "DBV",
+      "abbreviation": "DBV",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"DBV\" (de) — selected \"de/d_bv.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/wpg.md",
+      "label": "WPG",
+      "abbreviation": "WPG",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"WPG\" (de) — selected \"de/wp_g.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/bafg.md",
+      "label": "BAFG",
+      "abbreviation": "BAFG",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"BAFG\" (de) — selected \"de/baf_g.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/sg.md",
+      "label": "SG",
+      "abbreviation": "SG",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"SG\" (de) — selected \"de/s_g.md\" with gesetzesnummer \"null\" over \"null\""
+    },
+    {
+      "file": "de/a_g.md",
+      "label": "A_G",
+      "abbreviation": "A_G",
+      "jurisdiction": "de",
+      "gesetzesnummer": null,
+      "reason": "Ambiguous abbreviation \"A_G\" (de) — selected \"de/_ag.md\" with gesetzesnummer \"null\" over \"null\""
+    },
     {
       "file": "ch-it/stgb.md",
       "label": "STGB",
@@ -3931,78 +4003,6 @@
       "jurisdiction": "at",
       "gesetzesnummer": null,
       "reason": "Ambiguous abbreviation \"Europäisches\" (at) — selected \"at-staatsvertraege/europaisches-abkommen-uber-die-gleichwertigkeit-der-akademischen-grade-und-hochschulzeugnisse.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/europaisches-wahrungsabkommen-zusatzprotokoll-nr-4.md",
-      "label": "Europäisches",
-      "abbreviation": "Europäisches",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Europäisches\" (at) — selected \"at-staatsvertraege/europaisches-abkommen-uber-die-gleichwertigkeit-der-akademischen-grade-und-hochschulzeugnisse.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/europaisches-wahrungsabkommen.md",
-      "label": "Europäisches",
-      "abbreviation": "Europäisches",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Europäisches\" (at) — selected \"at-staatsvertraege/europaisches-abkommen-uber-die-gleichwertigkeit-der-akademischen-grade-und-hochschulzeugnisse.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/handels-und-schiffahrtsvertrag-protokoll.md",
-      "label": "Handels-",
-      "abbreviation": "Handels-",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Handels-\" (at) — selected \"at-staatsvertraege/handels-und-schiffahrtsabkommen-zwischen-osterreich-und-finnland.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/handels-und-schiffahrtsvertrag-zusatzabkommen.md",
-      "label": "Handels-",
-      "abbreviation": "Handels-",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Handels-\" (at) — selected \"at-staatsvertraege/handels-und-schiffahrtsabkommen-zwischen-osterreich-und-finnland.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/handels-und-schiffahrtsvertrag-zusatzprotokoll.md",
-      "label": "Handels-",
-      "abbreviation": "Handels-",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Handels-\" (at) — selected \"at-staatsvertraege/handels-und-schiffahrtsabkommen-zwischen-osterreich-und-finnland.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/auslieferungsubereinkommen-erganzung-und-erleichterung-tschechische-r.md",
-      "label": "Auslieferungsübereinkommen",
-      "abbreviation": "Auslieferungsübereinkommen",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Auslieferungsübereinkommen\" (at) — selected \"at-staatsvertraege/auslieferungsubereinkommen-erganzung-und-erleichterung-slowakei.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/auslieferungsubereinkommen-erganzung-und-erleichterung-ungarn.md",
-      "label": "Auslieferungsübereinkommen",
-      "abbreviation": "Auslieferungsübereinkommen",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Auslieferungsübereinkommen\" (at) — selected \"at-staatsvertraege/auslieferungsubereinkommen-erganzung-und-erleichterung-slowakei.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/auslieferungsubereinkommen-liechtenstein.md",
-      "label": "Auslieferungsübereinkommen",
-      "abbreviation": "Auslieferungsübereinkommen",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Auslieferungsübereinkommen\" (at) — selected \"at-staatsvertraege/auslieferungsubereinkommen-erganzung-und-erleichterung-slowakei.md\" with gesetzesnummer \"null\" over \"null\""
-    },
-    {
-      "file": "at-staatsvertraege/auslieferungsubereinkommen-niederlande.md",
-      "label": "Auslieferungsübereinkommen",
-      "abbreviation": "Auslieferungsübereinkommen",
-      "jurisdiction": "at",
-      "gesetzesnummer": null,
-      "reason": "Ambiguous abbreviation \"Auslieferungsübereinkommen\" (at) — selected \"at-staatsvertraege/auslieferungsubereinkommen-erganzung-und-erleichterung-slowakei.md\" with gesetzesnummer \"null\" over \"null\""
     }
   ],
   "excluded_by_reason": [
@@ -4029,6 +4029,10 @@
     {
       "reason": "Ambiguous abbreviation \"…\"Schulerhalterverband Allgemeine Sonderschule Region Kummenberg\\\"…\" (at) — selected \"…\" with gesetzesnummer \"…\" over \"…\"",
       "count": 10
+    },
+    {
+      "reason": "Ambiguous abbreviation \"…\" (de) — selected \"…\" with gesetzesnummer \"…\" over \"…\"",
+      "count": 9
     },
     {
       "reason": "Ambiguous abbreviation \"…\" (ch) — selected \"…\" with gesetzesnummer \"…\" over \"…\"",

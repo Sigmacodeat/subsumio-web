@@ -6,6 +6,13 @@ import {
   buildCoverageInquiryEmail,
   type RSVCaseData,
 } from "@/lib/legal-insurance";
+import {
+  resolveInsuranceProvider,
+  InsuranceNotConfiguredError,
+} from "@/lib/legal/insurance-adapter";
+import { logger } from "@/lib/logger";
+
+const log = logger("api/legal-insurance");
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +48,34 @@ export const POST = createHandler(
 
     const email = buildCoverageInquiryEmail(rsv, body.matter, body.legal_area, body.dispute_value);
 
+    // Konfigurierte Provider-API (z. B. drebis) zuerst versuchen; ohne
+    // Partnerzugang bleibt der strukturierte E-Mail-Fallback der Weg.
+    let coverageResult: Awaited<
+      ReturnType<ReturnType<typeof resolveInsuranceProvider>["inquireCoverage"]>
+    > | null = null;
+    const provider = resolveInsuranceProvider(body.insurance_provider, {
+      endpoint: process.env.RSV_PROVIDER_ENDPOINT,
+      apiKey: process.env.RSV_PROVIDER_API_KEY,
+    });
+    try {
+      coverageResult = await provider.inquireCoverage({
+        case_slug: body.case_slug,
+        client_name: body.client_name,
+        insurance_number: body.insurance_number,
+        matter: body.matter,
+        legal_area: body.legal_area,
+        dispute_value: body.dispute_value,
+      });
+      rsv.coverage_reference = coverageResult.reference;
+    } catch (err) {
+      if (!(err instanceof InsuranceNotConfiguredError)) {
+        log.error(
+          "[legal-insurance] provider inquiry failed:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    }
+
     rsv.coverage_status = "pending";
     rsv.inquired_at = new Date().toISOString();
 
@@ -56,7 +91,13 @@ export const POST = createHandler(
       signal: AbortSignal.timeout(10_000),
     });
 
-    return apiSuccess({ rsv, inquiryEmail: email });
+    return apiSuccess({
+      rsv,
+      inquiryEmail: email,
+      provider: coverageResult
+        ? { mode: "api" as const, coverage: coverageResult }
+        : { mode: "email" as const },
+    });
   }
 );
 

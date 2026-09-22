@@ -87,6 +87,54 @@ async function postXml(
   };
 }
 
+function channelEndpoint(channel: EInvoiceChannel): { url?: string; token?: string } {
+  return channel === "peppol"
+    ? { url: process.env.EINVOICE_PEPPOL_URL, token: process.env.EINVOICE_PEPPOL_TOKEN }
+    : { url: process.env.EINVOICE_ERV_URL, token: process.env.EINVOICE_ERV_TOKEN };
+}
+
+/**
+ * Zustellstatus einer bereits eingereichten e-Rechnung abfragen
+ * (Referenz vom Access Point). Konvention: GET {url}/status?reference=<id>.
+ */
+export async function pollEInvoiceStatus(
+  channel: EInvoiceChannel,
+  reference: string
+): Promise<TransportResult> {
+  const { url, token } = channelEndpoint(channel);
+  if (!url || !token) return notConfigured(channel);
+  try {
+    const base = url.replace(/\/+$/, "");
+    const res = await fetch(`${base}/status?reference=${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`Transport HTTP ${res.status}`);
+    const body = (await res.json()) as { status?: string; message?: string };
+    const status: TransportStatus =
+      body.status === "delivered" ? "delivered" : body.status === "failed" ? "failed" : "queued";
+    return {
+      status,
+      channel,
+      reference,
+      message:
+        body.message ??
+        (status === "delivered"
+          ? "Zustellung bestätigt."
+          : status === "failed"
+            ? "Zustellung fehlgeschlagen."
+            : "Übertragung noch in Bearbeitung."),
+    };
+  } catch (err) {
+    return {
+      status: "failed",
+      channel,
+      reference,
+      message: `Statusabfrage fehlgeschlagen: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
 export async function sendEInvoice(
   channel: EInvoiceChannel,
   xml: string,

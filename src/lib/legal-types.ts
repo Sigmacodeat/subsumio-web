@@ -478,6 +478,11 @@ export interface InvoiceFrontmatter {
   case_slugs?: string[];
   // E-Rechnung
   leitweg_id?: string;
+  /** Transport-Kanal der letzten e-Rechnung-Übertragung. */
+  e_invoice_channel?: "peppol" | "erechnung_gv_at";
+  /** Übertragungs-Referenz des Access Points (für Status-Poll). */
+  e_invoice_reference?: string;
+  e_invoice_status?: "queued" | "delivered" | "failed";
 }
 
 export interface ContactFrontmatter {

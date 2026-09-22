@@ -5,11 +5,37 @@ import {
   generateXRechnungXml,
   invoiceToEInvoiceData,
 } from "@/lib/e-invoice";
-import { sendEInvoice, transportAvailability } from "@/lib/e-invoice/transport";
+import { sendEInvoice, pollEInvoiceStatus, transportAvailability } from "@/lib/e-invoice/transport";
 import type { InvoiceFrontmatter } from "@/lib/legal-types";
 import type { KanzleiSettings } from "@/lib/kanzlei-settings";
 
 export const dynamic = "force-dynamic";
+
+const pollSchema = z.object({
+  channel: z.enum(["peppol", "erechnung_gv_at"]),
+  reference: z.string().min(1).max(300),
+});
+
+/**
+ * Zustellstatus-Poll: GET /api/e-invoice/send?channel=…&reference=…
+ * fragt den Transport nach dem aktuellen Status einer eingereichten
+ * e-Rechnung (queued → delivered/failed).
+ */
+export const GET = createHandler(
+  { action: "invoice.e_invoice", rateTier: "standard", query: pollSchema },
+  async (_ctx, _body, query) => {
+    const result = await pollEInvoiceStatus(query.channel, query.reference);
+    if (result.status === "failed") {
+      return apiError("status_failed", result.message, 502);
+    }
+    return apiSuccess({
+      status: result.status,
+      channel: result.channel,
+      reference: result.reference,
+      message: result.message,
+    });
+  }
+);
 
 const sendSchema = z.object({
   channel: z.enum(["peppol", "erechnung_gv_at"]),

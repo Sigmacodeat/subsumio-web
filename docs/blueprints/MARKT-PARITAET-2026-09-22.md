@@ -94,7 +94,9 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
    `checkout`/`checkin`/`release`/`versions` (mit nicht-destruktivem
    Restore = Sicherheits-Snapshot vorher), Lock-Badge im Akten-
    Dokumenten-Tab + Panel auf der Brain-Dokumentseite.
-   **Rest offen:** Binär-Diff (aktuell Text-Snapshot), Zeilen-Diff-UI.
+   Ergänzt (22.09.): Zeilen-/Wort-Diff-UI im Versions-Panel —
+   „Vergleichen" pro Version rendert `diffWords` Side-by-Side
+   (Token-Limit-Guard gegen große Docs). **Rest offen:** Binär-Diff.
 8. ~~**Unterordner/Subakten**~~ ✅ **GELÖST** — `folder`-Feld im
    Dokument-Frontmatter (Unterordner via „/" im Namen), Ordner-Filter
    - Ordner-Badge im Akten-Dokumenten-Tab, „In Ordner ablegen"-Dialog
@@ -352,9 +354,14 @@ datev-export,datev-direct}`. Sidebar-Einträge wiederhergestellt
     Bewusst archiviert bleibt `api/datev-direct` (WP-6.34: ehrlicher
     Platzhalter bis Partner-Entscheidung).
 38. **DE-Corpus fertigstellen.** `DE_LAW_SOURCES_*` (jurisdiction.ts)
-    und source-router-Routing sind im Working Tree in Arbeit;
-    Vollständigkeits-Audit wie bei AT (`audit-completeness-vs-ris` →
-    DE-Äquivalent gegen gesetze-im-internet.de / Landesportale).
+    und source-router-Routing sind im Working Tree in Arbeit.
+    ✅ **Vollständigkeits-Audit geliefert:** `corpus-completeness-audit.ts`
+    (auditCoverage: deklariert vs. DB-Bestand, Audit-Status
+    empty_available/unexpected_data/partially_embedded/gap) +
+    `GET /api/admin/corpus-coverage-audit?jurisdiction=` (live-Query
+    über alle law-\*-Sources) + „Abdeckungs-Audit"-Sektion in
+    `corpus-bestand.tsx`. RIS-Dokumenten-Abgleich (Soll-Ist je
+    Gesetz) bleibt offen — braucht DE-Fetcher.
 
 ### WP-7 Harvey-/Legora-Parität+ (P1/P2 — NEU, 22.09. Revision 2)
 
@@ -414,21 +421,41 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
 52. **Self-Hosted-Angebot.** Donna wirbt damit; die Engine kann es —
     Produkt-/Betriebsmodell definieren (kein Code-Item, aber
     Vertriebsrelevant).
-53. **Sonstiges P2:** RKSV-Registrierkasse, Rechtsschutz-Deckungsanfrage
-    (Versand), Personalmodul (Urlaub/Arbeitszeit), Desktop-Sync/WebDAV,
-    Google-Kalender/CalDAV, OneDrive/SharePoint UI-Setup (derzeit CLI,
-    Label "Nur über IT"), öffentliche API-Doku, SMS/Video/NPS im Portal,
-    Offline-Modus der mobilen App.
+53. **Sonstiges P2 — teilweise geliefert:**
+    - ✅ RKSV: `src/lib/legal/rksv-adapter.ts` (Signatur-DEP-Vertrag,
+      fail-closed ohne Signatureinheit) + `api/legal/rksv` (sign mit
+      DEP-Verkettung via chain_value, status, DEP-Export; ENV:
+      RKSV_ENDPOINT/RKSV_API_KEY/RKSV_CASH_REGISTER_ID)
+    - ✅ Deckungsanfrage: `src/lib/legal/insurance-adapter.ts`
+      (HttpInsuranceProvider auf LegalInsuranceProvider-Vertrag) —
+      verdrahtet: `api/legal-insurance` versucht zuerst die
+      Provider-API (ENV RSV*PROVIDER*\*), E-Mail-Fallback bleibt;
+      UI zeigt API-Coverage-Result (Referenz/Summe/Selbstbehalt)
+    - ✅ e-Rechnung-Status-Poll: `pollEInvoiceStatus` +
+      `GET api/e-invoice/send?channel&reference`; Referenz wird am
+      Rechnungs-Frontmatter persistiert, „Zustellstatus prüfen" im
+      Rechnungs-Menü
+    - ✅ API-Doku: `scripts/generate-api-docs.ts` → `docs/API.md`
+      (502 Endpunkte, Methoden/Auth/Action/Rate pro Route, --check-Modus)
+    - ✅ Kalender 2-Wege: bereits geliefert (WP-4.19)
+    - ✅ Offline: `offline-store.ts` + isOnline bereits produktiv
+    - ⏸ Offen: Personalmodul, WebDAV/CalDAV-Server, OneDrive-UI,
+      SMS/Video/NPS, mobile Offline-Sync
 
 ## NICHT codierbar — Entscheidung/User-Aufgabe (Welle C)
 
 - **webERV-Versand:** Partnervertrag nötig (MANZ webERV-Service,
-  stp.one/WEBSuite, ÖGIZIN). Code-Seite kann erst nach Partnerwahl
-  gebaut werden (Adapter-Interface vorbereiten möglich).
+  stp.one/WEBSuite, ÖGIZIN). ✅ **Adapter-Interface geliefert:**
+  `src/lib/legal/filing-transport.ts` (FilingTransportAdapter pro
+  Channel beA/ERV/eFiling, HttpFilingTransportAdapter +
+  fail-closed NotConfigured); `bea/send` nutzt den Adapter, neue
+  Route `GET /api/bea/status` liefert Transport-Gesundheit für
+  das Status-Banner auf der beA-Seite.
 - **Registerabfragen** (GB/FB/ZMR/GISA/Ediktsdatei): Abfragedienst-
-  Vertrag (MEDIX/MANZ/stp.one). Adapter-Interface vorbereitbar —
-  **gemeinsam mit dem DE-Adapter aus WP-6.35 entwerfen** (beide Märkte,
-  ein Interface).
+  Vertrag (MEDIX/MANZ/stp.one). ✅ **Adapter-Interface geliefert:**
+  `src/lib/legal/register-adapter.ts` (AT: Firmenbuch/Grundbuch,
+  DE: Handelsregister/Unternehmensregister/Insolvenz/
+  Vollstreckungsportal — ein Interface beide Märkte).
 - **QES/PDF-AS:** Code vorhanden; braucht PDF-AS-Server-Deployment.
 - **ISO 27001/42001, SOC 2:** Prozess, kein Code. Bei DE-Ausbau
   zusätzlich **BSI C5** relevant (Noxtua wirbt damit).

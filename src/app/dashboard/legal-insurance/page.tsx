@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { caseFrontmatter } from "@/lib/legal-types";
-import type { RSVCaseData } from "@/lib/legal-insurance";
+import type { RSVCaseData, CoverageResult } from "@/lib/legal-insurance";
 import { formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -64,6 +64,7 @@ export default function LegalInsurancePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState<{ subject: string; body: string } | null>(null);
+  const [coverage, setCoverage] = useState<CoverageResult | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
   const load = useCallback(async () => {
@@ -123,7 +124,12 @@ export default function LegalInsurancePage() {
         setSubmitError("Die Anfrage wurde nicht erstellt. Bitte prüfen Sie die Pflichtfelder.");
         return;
       }
-      setEmail(j.data?.inquiryEmail ?? null);
+      const provider = j.data?.provider as
+        | { mode: "api"; coverage: CoverageResult }
+        | { mode: "email" }
+        | undefined;
+      setCoverage(provider?.mode === "api" ? provider.coverage : null);
+      setEmail(provider?.mode === "api" ? null : (j.data?.inquiryEmail ?? null));
       setCopied(false);
       setForm(EMPTY_FORM);
       await load();
@@ -242,6 +248,57 @@ export default function LegalInsurancePage() {
           {tr("workspace.rsv.create")}
         </Button>
       </section>
+
+      {coverage && (
+        <section className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-success-text)]">
+            <ShieldCheck size={15} aria-hidden="true" />
+            Antwort der Versicherung (API)
+          </h2>
+          <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+            <div className="flex justify-between gap-3">
+              <dt className="text-[color:var(--ds-text-muted)]">Referenz</dt>
+              <dd className="font-mono font-medium">{coverage.reference}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-[color:var(--ds-text-muted)]">Deckung</dt>
+              <dd className="font-medium">
+                {coverage.covered ? "Gedeckt" : "Nicht gedeckt"}
+                {coverage.requires_pre_approval ? " (Vorabgenehmigung nötig)" : ""}
+              </dd>
+            </div>
+            {coverage.coverage_amount != null && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-[color:var(--ds-text-muted)]">Deckungssumme</dt>
+                <dd className="font-medium tabular-nums">
+                  {coverage.coverage_amount.toLocaleString("de-AT", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </dd>
+              </div>
+            )}
+            {coverage.deductible != null && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-[color:var(--ds-text-muted)]">Selbstbehalt</dt>
+                <dd className="font-medium tabular-nums">
+                  {coverage.deductible.toLocaleString("de-AT", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </dd>
+              </div>
+            )}
+          </dl>
+          {coverage.conditions && coverage.conditions.length > 0 && (
+            <ul className="list-inside list-disc text-xs text-[color:var(--ds-text-muted)]">
+              {coverage.conditions.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {email && (
         <section className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">

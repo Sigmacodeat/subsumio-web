@@ -4453,6 +4453,22 @@ export const D = {
     de: "Der beA-Versand erfolgt über einen zertifizierten Middleware-Anbieter, der das beA-Protokoll, die Signatur und den VPN-Tunnel kapselt. Bei nicht konfigurierter Middleware wird ein XJustiz-XML zum manuellen Upload im beA-Portal generiert. Empfangene beA-Nachrichten werden via XML-Import (Konnektor bea-import) automatisch importiert.",
     en: "beA sending is handled via a certified middleware provider that encapsulates the beA protocol, signature and VPN tunnel. When no middleware is configured, an XJustiz XML is generated for manual upload in the beA portal. Incoming beA messages are automatically imported via XML import (connector bea-import).",
   },
+  "bea.transport_ok_title": {
+    de: "beA-Middleware verbunden",
+    en: "beA middleware connected",
+  },
+  "bea.transport_ok_desc": {
+    de: "Der Versand-Adapter ist konfiguriert und erreichbar — Filings werden direkt über die Middleware versendet.",
+    en: "The transport adapter is configured and reachable — filings are sent directly via the middleware.",
+  },
+  "bea.transport_down_title": {
+    de: "beA-Middleware nicht erreichbar",
+    en: "beA middleware unreachable",
+  },
+  "bea.transport_down_desc": {
+    de: "Die Middleware ist konfiguriert, antwortet aber nicht. Filings können derzeit nur als XJustiz-XML exportiert und manuell im beA-Portal hochgeladen werden.",
+    en: "The middleware is configured but not responding. Filings can currently only be exported as XJustiz XML and uploaded manually in the beA portal.",
+  },
   "bea.error_load": {
     de: "beA-Daten konnten nicht geladen werden.",
     en: "beA data could not be loaded.",

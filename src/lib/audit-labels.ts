@@ -46,6 +46,8 @@ export type AuditAction =
   | "invoice.e_invoice_generate"
   | "invoice.e_invoice_parse"
   | "invoice.e_invoice_validate"
+  | "invoice.rksv_sign"
+  | "invoice.rksv_dep_export"
   | "document.upload"
   | "document.download"
   | "document.delete"
@@ -352,6 +354,8 @@ const ACTION_LABELS: Record<string, string> = {
   "invoice.e_invoice_generate": "E-Rechnung generiert",
   "invoice.e_invoice_parse": "E-Rechnung importiert",
   "invoice.e_invoice_validate": "E-Rechnung validiert",
+  "invoice.rksv_sign": "RKSV-Beleg signiert",
+  "invoice.rksv_dep_export": "RKSV-DEP exportiert",
   "document.upload": "Dokument hochgeladen",
   "document.download": "Dokument heruntergeladen",
   "document.delete": "Dokument gelöscht",
