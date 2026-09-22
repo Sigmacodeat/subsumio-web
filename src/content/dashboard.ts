@@ -204,6 +204,7 @@ export const D = {
   "nav.word_addin": { de: "Word Add-in", en: "Word Add-in" },
   "nav.verfahrensdoku": { de: "Verfahrensdokumentation", en: "Process Documentation" },
   "nav.legal_hold": { de: "Aufbewahrungssperre", en: "Legal Hold" },
+  "nav.papierkorb": { de: "Papierkorb", en: "Trash" },
   "nav.data_export": { de: "Datenexport", en: "Data Export" },
 
   // ── Sidebar: nav tooltips ──
@@ -334,6 +335,10 @@ export const D = {
   "nav.tooltip.legal_hold": {
     de: "Aufbewahrungssperren verwalten — Akten vor Löschung und Änderung schützen",
     en: "Manage legal holds — protect matters from deletion and modification",
+  },
+  "nav.tooltip.papierkorb": {
+    de: "Gelöschte Dokumente und archivierte Akten einsehen und wiederherstellen",
+    en: "View and restore deleted documents and archived matters",
   },
   "nav.tooltip.case_assignment": {
     de: "Akten Teammitgliedern zuweisen und Arbeitslastverteilung anzeigen",
@@ -2944,6 +2949,10 @@ export const D = {
   "cases.detail_conflict_409": {
     de: "Die Akte wurde zwischenzeitlich von einer anderen Person bearbeitet (Version {version}). Bitte laden Sie die Seite neu, bevor Sie weitere Änderungen speichern.",
     en: "This case has been edited by another user (version {version}). Please reload the page before saving further changes.",
+  },
+  "cases.detail_conflict_pending": {
+    de: "Kollisionsprüfung ausstehend",
+    en: "Conflict check pending",
   },
   "cases.detail_save_failed": {
     de: "Speichern fehlgeschlagen: {error}",
@@ -6280,6 +6289,9 @@ export const D = {
   "wamplates.col_status": { de: "Status", en: "Status" },
   "wamplates.col_language": { de: "Sprache", en: "Language" },
   "wamplates.col_updated": { de: "Aktualisiert", en: "Updated" },
+  "wamplates.toast_created": { de: "Vorlage erstellt", en: "Template created" },
+  "wamplates.toast_saved": { de: "Vorlage gespeichert", en: "Template saved" },
+  "wamplates.toast_deleted": { de: "Vorlage gelöscht", en: "Template deleted" },
 
   // ── Brain Detail page ──
   "braindetail.loading": { de: "Seite wird geladen…", en: "Loading page…" },
