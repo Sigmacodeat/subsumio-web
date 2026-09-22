@@ -155,6 +155,9 @@ describe("middleware CSRF webhook exemptions", () => {
   const providerWebhooks = [
     "/api/billing/webhook",
     "/api/whatsapp/webhook",
+    // Meta POSTs RSA-encrypted flow payloads here — server-to-server, no
+    // browser cookie exists to protect.
+    "/api/whatsapp/flow-endpoint",
     "/api/email/webhook/resend",
     "/api/docusign/webhook",
     "/api/webhook/incoming",
@@ -165,6 +168,15 @@ describe("middleware CSRF webhook exemptions", () => {
 
     expect(res.status).not.toBe(403);
   });
+
+  it.each(["/api/concierge", "/api/concierge/lead", "/api/intake/public"])(
+    "anonymous public endpoint %s bypasses browser CSRF",
+    async (path) => {
+      const res = await run(path, { method: "POST" });
+
+      expect(res.status).not.toBe(403);
+    }
+  );
 
   it("still rejects normal state-changing API requests without CSRF", async () => {
     const res = await run("/api/legal/analyze", { method: "POST" });

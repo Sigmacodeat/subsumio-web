@@ -174,6 +174,10 @@ const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   "/api/webhook/",
   "/api/billing/webhook",
   "/api/whatsapp/webhook",
+  // WhatsApp Flows endpoint: Meta POSTs RSA-encrypted flow payloads here —
+  // server-to-server, no browser cookie, abuse bounded by the route's own
+  // per-IP rate limit and payload decryption.
+  "/api/whatsapp/flow-endpoint",
   "/api/email/webhook/resend",
   "/api/docusign/webhook",
 ] as const;
@@ -193,6 +197,10 @@ const API_CSRF_EXEMPT_PATHS = new Set([
   // by per-IP rate limits and (for leads) a honeypot inside the routes.
   "/api/concierge",
   "/api/concierge/lead",
+  // Public Erstanfrage form (/erstanfrage): same profile as the concierge —
+  // anonymous visitors have no CSRF cookie. The route itself bounds abuse
+  // with a per-IP rate limit (5/h) and a honeypot field.
+  "/api/intake/public",
 ]);
 
 function isWebhookCsrfExempt(pathname: string): boolean {
