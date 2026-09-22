@@ -133,22 +133,28 @@ export const GET = createCronHandler(async () => {
       }
       const touchedRules = new Map<string, { rule: AutomationRule; keys: string[] }>();
 
-      await mapWithConcurrency([...byEntity.entries()], 4, async ([fireKey, group]) => {
-        const event = group[0]!.rule.event;
-        try {
-          const res = await dispatchAutomations(brainId, event, group[0]!.payload);
-          if (res.errors.length > 0) errors.push(...res.errors.map((e) => `${brainId}:${e}`));
-          dispatched += res.executed;
-          for (const p of group) {
-            if (!ruleMatches(p.rule, event, p.payload)) continue;
-            const t = touchedRules.get(p.rule.slug) ?? { rule: p.rule, keys: [] };
-            if (!t.keys.includes(fireKey)) t.keys.push(fireKey);
-            touchedRules.set(p.rule.slug, t);
+      await mapWithConcurrency(
+        [...byEntity.entries()],
+        async ([fireKey, group]) => {
+          const event = group[0]!.rule.event;
+          try {
+            const res = await dispatchAutomations(brainId, event, group[0]!.payload);
+            if (res.errors.length > 0) errors.push(...res.errors.map((e) => `${brainId}:${e}`));
+            dispatched += res.executed;
+            for (const p of group) {
+              if (!ruleMatches(p.rule, event, p.payload)) continue;
+              const t = touchedRules.get(p.rule.slug) ?? { rule: p.rule, keys: [] as string[] };
+              if (!t.keys.includes(fireKey)) t.keys.push(fireKey);
+              touchedRules.set(p.rule.slug, t);
+            }
+          } catch (err) {
+            errors.push(
+              `${brainId}:${fireKey}: ${err instanceof Error ? err.message : String(err)}`
+            );
           }
-        } catch (err) {
-          errors.push(`${brainId}:${fireKey}: ${err instanceof Error ? err.message : String(err)}`);
-        }
-      });
+        },
+        4
+      );
 
       // fired_keys persistieren — PUT ersetzt das Frontmatter, daher muss
       // die gemergte Liste vollständig zurückgeschrieben werden.

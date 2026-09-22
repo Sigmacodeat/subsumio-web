@@ -99,14 +99,6 @@ export const POST = createHandler(
     if (!res.ok) {
       return apiError("engine_write_failed", "Posteingang konnte nicht gespeichert werden", 502);
     }
-    // WP-4.17: „wenn Nachricht eingegangen → …"-Regeln anstoßen.
-    void dispatchAutomations(ctx.brainId, "message.received", {
-      case_slug: caseSlug || undefined,
-      title: body.subject,
-      channel: body.channel,
-      sender: body.sender_name ?? body.sender_address ?? "",
-      entry_id: entry.id,
-    });
     return apiSuccess({ entry });
   }
 );

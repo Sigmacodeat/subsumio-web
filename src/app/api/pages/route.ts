@@ -7,7 +7,6 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
-import { dispatchAutomations } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
@@ -378,24 +377,6 @@ export const POST = createHandler(
         at: new Date().toISOString(),
         action: isMerge ? "updated" : "created",
       });
-
-      // WP-4.17: „wenn X dann Y"-Regeln anstoßen (fire-and-forget).
-      if (isMerge && body.type === "legal_case" && typeof body.frontmatter?.status === "string") {
-        void dispatchAutomations(ctx.brainId, "case.status_changed", {
-          case_slug: body.slug,
-          title: body.title ?? body.slug,
-          status: body.frontmatter.status,
-        });
-      } else if (!isMerge && (body.type === "legal_deadline" || isDeadlineSlug(body.slug))) {
-        void dispatchAutomations(ctx.brainId, "deadline.created", {
-          case_slug:
-            typeof body.frontmatter?.case_slug === "string"
-              ? body.frontmatter.case_slug
-              : undefined,
-          title: body.title ?? body.slug,
-          due_date: body.frontmatter?.due_date,
-        });
-      }
 
       return Response.json({ ...result, conflictWarning });
     } catch (e) {

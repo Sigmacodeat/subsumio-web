@@ -81,6 +81,12 @@
 # pass ?auto_apply=true to auto-apply without manual approval.
 0 9 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/auto-playbook || true
 
+# ── Every hour — Automations (wenn-dann-Regeln, WP-4.17) ──
+# Evaluates automation_rule pages per brain: deadline_approaching,
+# invoice_overdue, case_created, document_uploaded, booking_created.
+# Idempotent per entity via fired_keys on the rule page.
+15 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/automations || true
+
 # ── Every hour — Appointment reminders ──
 0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders || true
 
