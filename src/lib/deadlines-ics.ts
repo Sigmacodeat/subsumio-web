@@ -17,8 +17,6 @@ export interface FristEntry {
   case_slug?: string;
 }
 
-type Headers = Record<string, string>;
-
 function escapeIcs(value: string): string {
   return value.replace(/[\\,;]/g, "\\$&").replace(/\r?\n/g, " ");
 }
@@ -71,7 +69,7 @@ export function buildIcs(fristen: FristEntry[], calendarName = "Subsumio Fristen
 
 /** Deadlines from the matters in the brain (fallback when the engine feed is empty). */
 export async function collectFristenFromBrain(
-  headers: Headers,
+  headers: HeadersInit,
   caseFilter?: string
 ): Promise<FristEntry[]> {
   const fristen: FristEntry[] = [];
@@ -130,7 +128,7 @@ export async function collectFristenFromBrain(
  * The calendar for one caller, as text. `headers` must already carry that
  * person's identity, so the engine applies the matter access rules.
  */
-export async function deadlinesIcsFor(headers: Headers, caseSlug?: string): Promise<string> {
+export async function deadlinesIcsFor(headers: HeadersInit, caseSlug?: string): Promise<string> {
   const url = `${ENGINE_URL}/api/legal/deadlines.ics${
     caseSlug ? `?case=${encodeURIComponent(caseSlug)}` : ""
   }`;

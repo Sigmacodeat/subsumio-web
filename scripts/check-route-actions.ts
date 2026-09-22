@@ -93,8 +93,14 @@ function checkRouteFile(filePath: string): void {
   // Skip calendar feed tokens — subscribed calendar clients (Outlook, Apple,
   // Google) fetch with a bare HTTP request; the secret in the path is the
   // credential, only its SHA-256 is stored, and the feed is rate-limited
-  // (see calendar/[token]/fristen.ics).
-  if (content.includes("parseFeedToken(") && content.includes("secretsMatch(")) return;
+  // (see calendar/[token]/fristen.ics). resolveFeedToken (src/lib/feed-auth.ts)
+  // is the consolidated helper: it parses, rate-limits via hit() and verifies
+  // secretsMatch internally — fail-closed.
+  if (
+    content.includes("resolveFeedToken(") ||
+    (content.includes("parseFeedToken(") && content.includes("secretsMatch("))
+  )
+    return;
 
   // Check if file exports any HTTP method handlers
   const hasHttpExport = HTTP_METHODS.some((method) =>

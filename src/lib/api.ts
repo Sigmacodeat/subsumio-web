@@ -1877,6 +1877,40 @@ export const api = {
     },
   },
 
+  dms: {
+    status(): Promise<{ configured: boolean; provider?: string; ready?: boolean }> {
+      return request("/api/dms/status");
+    },
+
+    search(params: { q?: string; limit?: number; folderId?: string }): Promise<{
+      documents: Array<{
+        id: string;
+        name: string;
+        type: string;
+        author: string;
+        modifiedDate: string;
+        size?: number;
+        version?: string;
+        checkoutStatus?: string;
+      }>;
+      folders: Array<{ id: string; name: string; path: string; documentCount?: number }>;
+      totalCount: number;
+    }> {
+      const sp = new URLSearchParams();
+      if (params.q) sp.set("q", params.q);
+      if (params.limit) sp.set("limit", String(params.limit));
+      if (params.folderId) sp.set("folderId", params.folderId);
+      return request(`/api/dms/search?${sp.toString()}`);
+    },
+
+    import(documentId: string): Promise<{ slug: string; success: boolean }> {
+      return request("/api/dms/import", {
+        method: "POST",
+        body: JSON.stringify({ documentId }),
+      });
+    },
+  },
+
   email: {
     import(email: { subject: string; from: string; body: string; date?: string }): Promise<{
       success: boolean;

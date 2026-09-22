@@ -28,6 +28,7 @@ import {
   Languages,
   FileSignature,
   Sparkles,
+  Cloud,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { OcrErrorBanner } from "@/components/documents/ocr-error-banner";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { DmsBrowserDialog } from "@/components/legal/DmsBrowserDialog";
 import type { DashboardKey } from "@/content/dashboard";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { formatDate } from "@/lib/utils";
@@ -234,6 +236,7 @@ export default function VaultPage() {
     attorney_review_required: true;
   } | null>(null);
   const [deepAnalysisError, setDeepAnalysisError] = useState<string | null>(null);
+  const [showDmsBrowser, setShowDmsBrowser] = useState(false);
 
   const reviewForm = useDashboardForm({
     schema: vaultReviewSchema,
@@ -468,8 +471,8 @@ export default function VaultPage() {
         <HubLink href="/dashboard/tabular-review" icon={Table2} label={t("nav.tabular_review")} />
       </div>
 
-      {/* Prominente Upload-CTAs: Dokument zu Akte / Kanzleiwissen importieren */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* Prominente Upload-CTAs: Dokument zu Akte / Kanzleiwissen / DMS */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/dashboard/upload?mode=case"
           className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-[var(--ds-duration-fast)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
@@ -508,7 +511,32 @@ export default function VaultPage() {
             </p>
           </div>
         </Link>
+        <button
+          type="button"
+          onClick={() => setShowDmsBrowser(true)}
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[border-color,background-color,transform] duration-[var(--ds-duration-fast)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-warning-bg,var(--ds-surface-2))]">
+            <Cloud size={18} className="text-[color:var(--ds-text-muted)]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                Aus DMS importieren
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              SharePoint, OneDrive, iManage oder NetDocuments durchsuchen und Dokumente übernehmen.
+            </p>
+          </div>
+        </button>
       </div>
+
+      <DmsBrowserDialog
+        open={showDmsBrowser}
+        onOpenChange={setShowDmsBrowser}
+        onImported={() => void loadDocs()}
+      />
 
       {capped && !query.trim() && <CappedResultsNotice limit={DOCS_LIMIT} />}
 

@@ -48,6 +48,14 @@ export interface ReviewSetDocument {
   qcBy?: string;
   qcAt?: string;
   qcNotes?: string;
+  /**
+   * QC-Konflikt-Resolution: weichen Erst- und QC-Entscheidung ab, trifft ein
+   * Partner die bindende Endentscheidung (Meet-and-Confer-Nachweis).
+   */
+  finalDecision?: ReviewDecision;
+  finalBy?: string;
+  finalAt?: string;
+  finalNotes?: string;
 }
 
 export interface ReviewSet {
@@ -201,12 +209,22 @@ function hashSeed(seed: string): number {
  */
 export function sampleForQC(
   documents: ReviewSetDocument[],
-  opts: { rate: number; seed: string }
+  opts: { rate: number; seed: string; strata?: Partial<Record<ReviewDecision, number>> }
 ): string[] {
   const rate = Math.min(1, Math.max(0, opts.rate));
   const decided = documents.filter((d) => d.decision && d.decision !== undefined);
   const rnd = mulberry32(hashSeed(opts.seed));
-  return decided.filter(() => rnd() < rate).map((d) => d.slug);
+  // Stratifizierung: sensible Entscheidungen (z. B. withhold/privileged) können
+  // mit eigener Rate — üblicherweise 1.0 = vollständige QC-Prüfung — gezogen
+  // werden, der Rest mit der Basisrate.
+  const strata = opts.strata ?? {};
+  return decided
+    .filter((d) => {
+      const r = strata[d.decision];
+      const effective = r !== undefined ? Math.min(1, Math.max(0, r)) : rate;
+      return rnd() < effective;
+    })
+    .map((d) => d.slug);
 }
 
 export interface CodingConsistency {
@@ -219,6 +237,10 @@ export interface CodingConsistency {
   /** Cohen's kappa over the five decision categories, null without QC data */
   kappa: number | null;
   conflictItems: Array<{ slug: string; decision: ReviewDecision; qcDecision: ReviewDecision }>;
+  /** Konflikte mit verbindlicher Endentscheidung (Partner-Resolution). */
+  resolvedConflicts: number;
+  /** Konflikte ohne Endentscheidung — müssen vor Produktion auf 0 stehen. */
+  openConflicts: number;
 }
 
 /** Inter-rater reliability between first-level and QC decisions. */
@@ -248,6 +270,10 @@ export function computeCodingConsistency(documents: ReviewSetDocument[]): Coding
     }
   }
 
+  const resolvedConflicts = qcReviewed.filter(
+    (d) => d.decision !== d.qcDecision && d.finalDecision
+  ).length;
+
   const n = qcReviewed.length;
   if (n === 0) {
     return {
@@ -258,6 +284,8 @@ export function computeCodingConsistency(documents: ReviewSetDocument[]): Coding
       agreementRate: null,
       kappa: null,
       conflictItems: [],
+      resolvedConflicts: 0,
+      openConflicts: 0,
     };
   }
 
@@ -277,6 +305,8 @@ export function computeCodingConsistency(documents: ReviewSetDocument[]): Coding
     agreementRate,
     kappa,
     conflictItems,
+    resolvedConflicts,
+    openConflicts: conflictItems.length - resolvedConflicts,
   };
 }
 
@@ -301,6 +331,9 @@ export function exportProductionProtocol(set: ReviewSet): string {
     "QC-Reviewer",
     "QC-Zeitpunkt",
     "Übereinstimmung",
+    "Endentscheidung",
+    "Endentscheidung von",
+    "Endentscheidung Zeitpunkt",
   ];
   const rows = set.documents.map((d) => [
     d.batesNumber ?? "",
@@ -317,6 +350,9 @@ export function exportProductionProtocol(set: ReviewSet): string {
     d.qcBy ?? "",
     d.qcAt ?? "",
     d.qcDecision ? (d.qcDecision === d.decision ? "ja" : "NEIN") : "",
+    d.finalDecision ? (REVIEW_DECISION_LABELS_DE[d.finalDecision] ?? d.finalDecision) : "",
+    d.finalBy ?? "",
+    d.finalAt ?? "",
   ]);
   const c = computeCodingConsistency(set.documents);
   const meta = [
@@ -333,12 +369,34 @@ export function exportProductionProtocol(set: ReviewSet): string {
     ],
     ["Cohen-Kappa", c.kappa !== null ? c.kappa.toFixed(3) : ""],
     ["Konflikte", String(c.conflicts)],
+    ["Konflikte gelöst", String(c.resolvedConflicts)],
+    ["Konflikte offen", String(c.openConflicts)],
   ];
   return [
     ...[headers, ...rows].map((r) => r.map(csvEsc).join(",")),
     "",
     ...meta.map((r) => r.map(csvEsc).join(",")),
   ].join("\n");
+}
+
+/**
+ * SHA-256 over the protocol CSV — makes the defensibility record tamper-evident.
+ * Uses WebCrypto so the same code runs in the route handler and the browser.
+ */
+export async function protocolIntegrityHash(csv: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(csv));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Protocol with an integrity footer: the hash covers every preceding line, so
+ * any post-export edit invalidates it. The footer itself is marked so a
+ * re-hash can exclude it.
+ */
+export async function exportProductionProtocolSigned(set: ReviewSet): Promise<string> {
+  const csv = exportProductionProtocol(set);
+  const hash = await protocolIntegrityHash(csv);
+  return `${csv}\n\n# INTEGRITAET\n# sha256:${hash}`;
 }
 
 export function exportPrivilegeLog(documents: ReviewSetDocument[]): string {

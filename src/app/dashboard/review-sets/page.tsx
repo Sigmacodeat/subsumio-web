@@ -39,7 +39,7 @@ import {
   REDACTION_CODE_LABELS_DE,
   computeCodingConsistency,
   exportPrivilegeLog,
-  exportProductionProtocol,
+  exportProductionProtocolSigned,
   parseReviewSet,
   type ReviewSetDocument,
   type ReviewDecision,
@@ -114,6 +114,7 @@ export default function ReviewSetsPage() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [qcStratified, setQcStratified] = useState(true);
 
   const [newTitle, setNewTitle] = useState("");
   const [newCaseSlug, setNewCaseSlug] = useState("");
@@ -257,9 +258,31 @@ export default function ReviewSetsPage() {
     setSaving(true);
     try {
       await api.legal.reviewSets.update(selectedSet.slug, {
-        qcSample: { rate: 0.1 },
+        qcSample: {
+          rate: 0.1,
+          // Stratifiziert: sensible Entscheidungen werden vollständig
+          // QC-geprüft — eDiscovery-üblich für withhold/privileged.
+          strata: qcStratified ? { withhold: 1.0, privileged: 1.0, redact: 1.0 } : undefined,
+        },
       });
       showToast(t("review_sets.qc_sample_drawn" as DashboardKey));
+      await loadSets();
+    } catch {
+      setError(SAVE_FAILED);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleFinalDecision(docSlug: string, finalDecision: ReviewDecision) {
+    if (!selectedSet?.frontmatter?.documents) return;
+    const docs = selectedSet.frontmatter.documents.map((d) =>
+      d.slug === docSlug ? { ...d, finalDecision, finalAt: new Date().toISOString() } : d
+    );
+    setSaving(true);
+    try {
+      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
+      showToast(t("review_sets.qc_conflict_resolved" as DashboardKey));
       await loadSets();
     } catch {
       setError(SAVE_FAILED);
@@ -284,7 +307,7 @@ export default function ReviewSetsPage() {
     }
   }
 
-  function handleExportProtocol() {
+  async function handleExportProtocol() {
     if (!selectedSet) return;
     const parsed = parseReviewSet(
       selectedSet.slug,
@@ -292,7 +315,7 @@ export default function ReviewSetsPage() {
       "review_set"
     );
     if (!parsed) return;
-    const csv = exportProductionProtocol(parsed);
+    const csv = await exportProductionProtocolSigned(parsed);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -564,6 +587,17 @@ export default function ReviewSetsPage() {
                     >
                       {t("review_sets.qc_conflicts" as DashboardKey)}: {qc.conflicts}
                     </span>
+                    {qc.conflicts > 0 && (
+                      <span
+                        className={
+                          qc.openConflicts > 0
+                            ? "font-semibold text-[color:var(--ds-danger-text)]"
+                            : "text-[color:var(--ds-success-text)]"
+                        }
+                      >
+                        {t("review_sets.qc_conflicts_open" as DashboardKey)}: {qc.openConflicts}
+                      </span>
+                    )}
                   </div>
                   {qc.conflictItems.length > 0 && (
                     <ul className="mt-2 space-y-0.5 text-xs text-[color:var(--ds-danger-text)]">
@@ -591,6 +625,15 @@ export default function ReviewSetsPage() {
                 <RefreshCw size={14} />
                 {t("review_sets.qc_draw_sample" as DashboardKey)}
               </Button>
+              <label className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                <input
+                  type="checkbox"
+                  checked={qcStratified}
+                  onChange={(e) => setQcStratified(e.target.checked)}
+                  className="h-3.5 w-3.5"
+                />
+                {t("review_sets.qc_stratified" as DashboardKey)}
+              </label>
               <Button
                 variant="ghost"
                 size="sm"
@@ -733,9 +776,35 @@ export default function ReviewSetsPage() {
                             ))}
                           </select>
                           {doc.qcDecision && doc.qcDecision !== doc.decision && (
-                            <p className="mt-0.5 text-xs font-semibold text-[color:var(--ds-danger-text)]">
-                              {t("review_sets.qc_conflict" as DashboardKey)}
-                            </p>
+                            <div className="mt-1 space-y-1">
+                              <p className="text-xs font-semibold text-[color:var(--ds-danger-text)]">
+                                {t("review_sets.qc_conflict" as DashboardKey)}
+                              </p>
+                              <select
+                                value={doc.finalDecision ?? ""}
+                                aria-label={`${t("review_sets.qc_final_decision" as DashboardKey)}: ${doc.title}`}
+                                onChange={(e) =>
+                                  e.target.value &&
+                                  handleFinalDecision(doc.slug, e.target.value as ReviewDecision)
+                                }
+                                disabled={saving}
+                                className="w-full rounded border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs"
+                              >
+                                <option value="">
+                                  {t("review_sets.qc_final_decision" as DashboardKey)}…
+                                </option>
+                                {DECISIONS.map((d) => (
+                                  <option key={d} value={d}>
+                                    {REVIEW_DECISION_LABELS_DE[d]}
+                                  </option>
+                                ))}
+                              </select>
+                              {doc.finalDecision && (
+                                <p className="text-xs text-[color:var(--ds-success-text)]">
+                                  ✓ {REVIEW_DECISION_LABELS_DE[doc.finalDecision]}
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}

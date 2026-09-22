@@ -45,6 +45,8 @@ export interface Appointment {
   caseTitle?: string;
   status: string;
   type: AppointmentType;
+  /** Jitsi-Raum-Link, serverseitig generiert und im Frontmatter persistiert. */
+  videoLink?: string;
 }
 
 export interface CaseOption {
@@ -86,7 +88,9 @@ interface CalendarEditDialogProps {
   cases: CaseOption[];
   /** Bestehende Termine und Fristen — der Dialog warnt vor Überschneidungen. */
   existingEntries?: CalendarEntry[];
-  onSave: (data: Partial<Appointment> & { isNew: boolean }) => Promise<void>;
+  onSave: (
+    data: Partial<Appointment> & { isNew: boolean; wantsVideoLink?: boolean }
+  ) => Promise<void>;
   onDelete?: (slug: string) => Promise<void>;
 }
 
@@ -114,6 +118,7 @@ export function CalendarEditDialog({
     description: "",
     caseSlug: NO_CASE,
     type: "meeting" as AppointmentType,
+    videoLink: false,
   });
 
   useEffect(() => {
@@ -128,6 +133,7 @@ export function CalendarEditDialog({
         description: appointment.description || "",
         caseSlug: appointment.caseSlug || NO_CASE,
         type: appointment.type,
+        videoLink: Boolean(appointment.videoLink),
       });
     } else {
       setForm({
@@ -139,6 +145,7 @@ export function CalendarEditDialog({
         description: "",
         caseSlug: NO_CASE,
         type: "meeting",
+        videoLink: false,
       });
     }
   }, [appointment, presetDate, open]);
@@ -221,6 +228,7 @@ export function CalendarEditDialog({
         description: form.description,
         caseSlug: form.caseSlug === NO_CASE ? undefined : form.caseSlug,
         type: form.type,
+        wantsVideoLink: form.videoLink,
         isNew: !appointment,
       });
       onOpenChange(false);
@@ -391,6 +399,50 @@ export function CalendarEditDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <label
+              htmlFor="appt-video"
+              className="flex items-center gap-2 text-xs font-medium [color:var(--mk-text)]"
+            >
+              <input
+                id="appt-video"
+                type="checkbox"
+                checked={form.videoLink}
+                onChange={(e) => setForm({ ...form, videoLink: e.target.checked })}
+                className="h-4 w-4 rounded border-[color:var(--mk-border)] accent-[var(--brand-primary)] focus-visible:ring-2 focus-visible:outline-none"
+              />
+              {t("calendar.video_link" as DashboardKey)}
+            </label>
+            {appointment?.videoLink && (
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={appointment.videoLink}
+                  aria-label={t("calendar.video_link" as DashboardKey)}
+                  className="text-xs"
+                  onFocus={(e) => e.target.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(appointment.videoLink!)
+                      .then(() =>
+                        addToast({
+                          type: "success",
+                          title: t("calendar.video_copied" as DashboardKey),
+                        })
+                      );
+                  }}
+                >
+                  {t("calendar.video_copy" as DashboardKey)}
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1">
             <Label htmlFor="appt-case" className="text-xs">
               {t("calendar.case" as DashboardKey)}
@@ -494,6 +546,7 @@ function mapAppointment(p: BrainPage): Appointment {
     time: typeof fm.time === "string" && fm.time ? fm.time.slice(0, 5) : undefined,
     duration: typeof fm.duration === "number" ? fm.duration : undefined,
     location: typeof fm.location === "string" ? fm.location : undefined,
+    videoLink: typeof fm.video_link === "string" ? fm.video_link : undefined,
     description: p.content?.slice(0, 500) ?? "",
     caseSlug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
     caseTitle: typeof fm.case_title === "string" ? fm.case_title : undefined,
@@ -552,7 +605,7 @@ export function useAppointments() {
   );
 
   const save = useCallback(
-    async (data: Partial<Appointment> & { isNew: boolean }) => {
+    async (data: Partial<Appointment> & { isNew: boolean; wantsVideoLink?: boolean }) => {
       const slug = data.isNew ? `legal/appointments/appt-${Date.now()}` : data.slug!;
       const caseTitle = data.caseSlug
         ? casePages.find((c) => c.slug === data.caseSlug)?.title
@@ -581,6 +634,25 @@ export function useAppointments() {
           updated_at: new Date().toISOString(),
         },
       });
+
+      // WP-8.53: Videotermin — der Server erzeugt den Jitsi-Raum (HMAC des
+      // Slugs, keine Mandantendaten) und persistiert ihn ins Frontmatter.
+      // Ohne JITSI_DOMAIN meldet die Route ehrlich not_configured.
+      if (data.wantsVideoLink && !data.videoLink) {
+        const vl = await csrfFetch("/api/legal/appointments/video-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug }),
+        }).catch(() => null);
+        if (vl && vl.status === 503) {
+          addToast({
+            type: "warning",
+            title: t("calendar.video_not_configured" as DashboardKey),
+          });
+        } else if (vl && !vl.ok) {
+          addToast({ type: "warning", title: t("calendar.video_link_failed" as DashboardKey) });
+        }
+      }
 
       // Mirror new appointments to Outlook. Start and end are both local
       // Vienna wall-clock times (converting the end via toISOString shifted it to UTC).

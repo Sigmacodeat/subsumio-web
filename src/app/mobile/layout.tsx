@@ -14,6 +14,7 @@
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { FolderOpen, CalendarClock, PenLine, Clock, FileText } from "lucide-react";
+import { MobileSyncBanner } from "@/components/mobile/mobile-sync-banner";
 
 const TABS = [
   { path: "/mobile/cases", label: "Akten", icon: FolderOpen },
@@ -53,6 +54,9 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
+
+      {/* Offline-Queue: drained pendinge Mutationen beim Online-Event */}
+      <MobileSyncBanner />
 
       {/* Bottom Tab Bar */}
       <nav

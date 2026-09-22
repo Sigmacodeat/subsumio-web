@@ -444,8 +444,36 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
       (502 Endpunkte, Methoden/Auth/Action/Rate pro Route, --check-Modus)
     - ✅ Kalender 2-Wege: bereits geliefert (WP-4.19)
     - ✅ Offline: `offline-store.ts` + isOnline bereits produktiv
-    - ⏸ Offen: Personalmodul, WebDAV/CalDAV-Server, OneDrive-UI,
-      SMS/Video/NPS, mobile Offline-Sync
+    - ✅ Personalmodul: `/dashboard/personal` (Personalstamm +
+      Urlaubskonto, abgeleitet aus Absence-Records) + `api/staff`
+    - ✅ WebDAV/CalDAV-Server: `scripts/dav-server.ts` — read-only
+      DAV-Bridge (PROPFIND/REPORT/GET; Next.js kann DAV-Methoden
+      nicht dispatchen), Auth via Feed-Token `<userId>.<secret>`
+      (Basic-Password; derselbe in Settings widerrufbare Link wie
+      der Kalender-Feed). Mounts: `/fristen/` (CalDAV, ICS via
+      Feed) + `/dokumente/` (WebDAV, `dav-xml.ts` Multistatus).
+      Backend: `api/calendar/[token]/dav/documents` +
+      `lib/feed-auth.ts` (fail-closed 404, Rate-Limit 60/min,
+      Source-Isolation via `engineHeadersForUserId`).
+    - ✅ OneDrive/SharePoint-UI: `DmsBrowserDialog` (Suche, Ordner-
+      Drilldown, Import via `api/dms/import`, ehrliches
+      `not_configured`) — verdrahtet im Vault und als
+      Einstiegs-Karte auf der Connectors-Seite
+    - ✅ SMS: `src/lib/sms/` (Twilio-Adapter env-gated, eigener
+      Consent-Kanal `subsumio_sms_consent`, Consent+Quiet-Hours-Gate
+      ohne 24h-Fenster), `api/sms/send` + `api/sms/consent`
+      (Opt-in/Opt-out mit DSGVO-Proof), Audit `sms.*`
+    - ✅ Video-Termin: `video_link`-Frontmatter via
+      `api/legal/appointments/video-link` (JITSI_DOMAIN, Raum =
+      HMAC des Slugs — keine Mandantendaten), Checkbox +
+      Copy-Button im Termin-Dialog
+    - ✅ NPS/Mandanten-Feedback: `api/portal/feedback` (Score 0–10,
+      7-Tage-Update statt Duplikat, brain-isoliert als
+      `client_feedback`-Page) + `PortalFeedback`-Widget im Portal
+    - ✅ Mobile Offline-Sync: `useMutationQueue` (Retry-Cap 5,
+      File-Upload-Queue, Reconnect-Flush via online-Event) verdrahtet
+      in `MobileSyncBanner` (Mobile-Layout), Sidebar und
+      `matter-detail-context`; Tests vorhanden
 
 ## NICHT codierbar — Entscheidung/User-Aufgabe (Welle C)
 

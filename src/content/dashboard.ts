@@ -7120,6 +7120,22 @@ export const D = {
     de: "Konflikt mit Erstprüfung",
     en: "Conflict with first-level review",
   },
+  "review_sets.qc_conflicts_open": {
+    de: "davon offen",
+    en: "of them unresolved",
+  },
+  "review_sets.qc_stratified": {
+    de: "Stratifiziert (sensible Entscheidungen zu 100 %)",
+    en: "Stratified (sensitive decisions at 100%)",
+  },
+  "review_sets.qc_final_decision": {
+    de: "Endentscheidung",
+    en: "Final decision",
+  },
+  "review_sets.qc_conflict_resolved": {
+    de: "Konflikt durch Endentscheidung gelöst",
+    en: "Conflict resolved by final decision",
+  },
   "review_sets.export_protocol": {
     de: "Protokoll exportieren",
     en: "Export protocol",
@@ -8878,6 +8894,50 @@ export const D = {
   "portal.wf_status_completed": { de: "Abgeschlossen", en: "Completed" },
   "portal.wf_status_failed": { de: "Fehlgeschlagen", en: "Failed" },
   "portal.wf_status_paused": { de: "Pausiert", en: "Paused" },
+  "portal.feedback_title": {
+    de: "Wie zufrieden sind Sie mit uns?",
+    en: "How satisfied are you with us?",
+  },
+  "portal.feedback_hint": {
+    de: "0 = gar nicht, 10 = sehr zufrieden",
+    en: "0 = not at all, 10 = very satisfied",
+  },
+  "portal.feedback_low": { de: "Gar nicht", en: "Not at all" },
+  "portal.feedback_high": { de: "Sehr zufrieden", en: "Very satisfied" },
+  "portal.feedback_comment_ph": {
+    de: "Optionaler Kommentar…",
+    en: "Optional comment…",
+  },
+  "portal.feedback_submit": { de: "Feedback senden", en: "Send feedback" },
+  "portal.feedback_sending": { de: "Wird gesendet…", en: "Sending…" },
+  "portal.feedback_thanks": {
+    de: "Danke für Ihr Feedback!",
+    en: "Thank you for your feedback!",
+  },
+  "portal.feedback_error": {
+    de: "Feedback konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.",
+    en: "Feedback could not be sent. Please try again later.",
+  },
+  "calendar.video_link": { de: "Videotermin (Jitsi-Link)", en: "Video meeting (Jitsi link)" },
+  "calendar.video_copy": { de: "Kopieren", en: "Copy" },
+  "calendar.video_copied": { de: "Link kopiert", en: "Link copied" },
+  "calendar.video_not_configured": {
+    de: "Videotermine sind nicht konfiguriert (JITSI_DOMAIN fehlt)",
+    en: "Video meetings are not configured (JITSI_DOMAIN missing)",
+  },
+  "calendar.video_link_failed": {
+    de: "Video-Link konnte nicht erstellt werden",
+    en: "Video link could not be created",
+  },
+  "connectors.dms_title": {
+    de: "Dokumentenverwaltung durchsuchen",
+    en: "Browse document management",
+  },
+  "connectors.dms_hint": {
+    de: "SharePoint, OneDrive, iManage oder NetDocuments durchsuchen und Dokumente importieren.",
+    en: "Browse SharePoint, OneDrive, iManage or NetDocuments and import documents.",
+  },
+  "connectors.dms_open": { de: "DMS öffnen", en: "Open DMS" },
   "portal.doc_requests_title": {
     de: "Angeforderte Unterlagen",
     en: "Requested Documents",

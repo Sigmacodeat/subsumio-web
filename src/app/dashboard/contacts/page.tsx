@@ -20,6 +20,7 @@ import {
   Building2,
   Search,
   Scale,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import { OFFLINE_KEYS, isOnline, enqueueMutation, getCache, setCache } from "@/l
 import type { BrainPage } from "@/lib/types";
 import type { ContactFrontmatter } from "@/lib/legal-types";
 import type { DashboardKey } from "@/content/dashboard";
+import { SmsSendDialog } from "@/components/legal/SmsSendDialog";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { contactFormSchema, type ContactFormData } from "@/lib/schemas/contact";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -179,6 +181,7 @@ export default function ContactsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [smsContact, setSmsContact] = useState<ContactItem | null>(null);
 
   const loadContacts = useCallback(async () => {
     setLoading(true);
@@ -662,6 +665,15 @@ export default function ContactsPage() {
                             <Pencil size={13} />
                             {t("contacts.aria_edit_action")}
                           </DropdownMenuItem>
+                          {contact.phone && (
+                            <DropdownMenuItem
+                              onClick={() => setSmsContact(contact)}
+                              className="gap-2 text-xs"
+                            >
+                              <MessageSquare size={13} />
+                              SMS senden
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => void deleteContact(contact.slug)}
@@ -860,6 +872,17 @@ export default function ContactsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {smsContact?.phone && (
+        <SmsSendDialog
+          open={smsContact !== null}
+          onOpenChange={(open) => {
+            if (!open) setSmsContact(null);
+          }}
+          phone={smsContact.phone}
+          contactName={smsContact.name}
+        />
+      )}
     </div>
   );
 }

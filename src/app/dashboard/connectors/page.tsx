@@ -25,6 +25,7 @@ import { cn, formatDateTime } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { DmsBrowserDialog } from "@/components/legal/DmsBrowserDialog";
 import {
   getCoverageMatrix,
   isWebSelfServiceConnector,
@@ -127,6 +128,7 @@ export default function ConnectorsPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCoverage, setShowCoverage] = useState(false);
+  const [showDmsBrowser, setShowDmsBrowser] = useState(false);
   const [advokatPath, setAdvokatPath] = useState("/imports/advokat");
   const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
   const advokatInputRef = useRef<HTMLInputElement>(null);
@@ -448,6 +450,20 @@ export default function ConnectorsPage() {
       </div>
 
       {showCoverage && <CoverageMatrix />}
+
+      {/* WP-8.53: OneDrive/SharePoint — DMS-Browser (Suche/Ordner/Import) */}
+      <div className="flex items-center justify-between rounded-xl border [border-color:var(--ds-border)] p-4 [background:var(--ds-surface)]">
+        <div>
+          <h3 className="text-sm font-semibold">{t("connectors.dms_title" as DashboardKey)}</h3>
+          <p className="mt-1 text-xs [color:var(--ds-text-muted)]">
+            {t("connectors.dms_hint" as DashboardKey)}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setShowDmsBrowser(true)}>
+          {t("connectors.dms_open" as DashboardKey)}
+        </Button>
+      </div>
+      <DmsBrowserDialog open={showDmsBrowser} onOpenChange={setShowDmsBrowser} />
     </div>
   );
 }

@@ -7,13 +7,25 @@
  */
 
 import { useState, useRef, useCallback } from "react";
-import { Mic, MicOff, Save, CheckCircle2, Loader2, X, Tag, FolderOpen } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Save,
+  CheckCircle2,
+  Loader2,
+  X,
+  Tag,
+  FolderOpen,
+  WifiOff,
+} from "lucide-react";
 import { api } from "@/lib/api";
+import { isOnline, enqueueMutation } from "@/lib/offline-store";
 
 interface SavedNote {
   timestamp: string;
   text: string;
   slug: string;
+  queued?: boolean;
 }
 
 export default function MobileNotePage() {
@@ -129,7 +141,7 @@ export default function MobileNotePage() {
         .filter(Boolean);
       const title = text.slice(0, 60) + (text.length > 60 ? "…" : "");
       const now = new Date().toISOString();
-      const result = await api.brain.createPage({
+      const pagePayload = {
         slug: `note-${Date.now()}`,
         title: `Notiz ${new Date().toLocaleDateString("de-AT")} – ${title}`,
         content: text,
@@ -141,8 +153,26 @@ export default function MobileNotePage() {
           tags: tagList,
           source: "mobile_quick_note",
         },
-      });
-      setSaved({ timestamp: now, text, slug: result.slug });
+      };
+      if (!isOnline()) {
+        // Offline: in die Mutation-Queue legen — wird beim nächsten
+        // Online-Event automatisch synchronisiert (useMutationQueue).
+        await enqueueMutation({ type: "createPage", payload: pagePayload });
+        setSaved({ timestamp: now, text, slug: pagePayload.slug, queued: true });
+        setText("");
+        setTags("");
+        setMatter("");
+        return;
+      }
+      try {
+        const result = await api.brain.createPage(pagePayload);
+        setSaved({ timestamp: now, text, slug: result.slug });
+      } catch {
+        // Netzwerkfehler trotz navigator.onLine → ebenfalls queuen statt
+        // die Notiz zu verlieren.
+        await enqueueMutation({ type: "createPage", payload: pagePayload });
+        setSaved({ timestamp: now, text, slug: pagePayload.slug, queued: true });
+      }
       setText("");
       setTags("");
       setMatter("");
@@ -167,10 +197,35 @@ export default function MobileNotePage() {
           textAlign: "center",
         }}
       >
-        <CheckCircle2 size={48} style={{ color: "var(--signal-success-500)", marginBottom: 16 }} />
+        {saved.queued ? (
+          <WifiOff
+            size={48}
+            style={{ color: "var(--signal-attention-500, #d97706)", marginBottom: 16 }}
+          />
+        ) : (
+          <CheckCircle2
+            size={48}
+            style={{ color: "var(--signal-success-500)", marginBottom: 16 }}
+          />
+        )}
         <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ds-text)", marginBottom: 8 }}>
-          Notiz gespeichert
+          {saved.queued ? "Notiz vorgemerkt" : "Notiz gespeichert"}
         </div>
+        {saved.queued && (
+          <div
+            role="note"
+            style={{
+              fontSize: 12,
+              color: "var(--ds-text-subtle)",
+              marginBottom: 10,
+              maxWidth: 280,
+              lineHeight: 1.5,
+            }}
+          >
+            Kein Empfang — die Notiz wird automatisch synchronisiert, sobald das Gerät wieder online
+            ist.
+          </div>
+        )}
         <div
           style={{
             fontSize: 13,

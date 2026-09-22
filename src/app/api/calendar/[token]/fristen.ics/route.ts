@@ -1,8 +1,5 @@
-import { getStore } from "@/lib/auth/store";
-import { engineHeadersForUserId } from "@/lib/engine";
 import { deadlinesIcsFor } from "@/lib/deadlines-ics";
-import { hashFeedSecret, parseFeedToken, secretsMatch } from "@/lib/calendar-feed";
-import { hit } from "@/lib/auth/rate-limit";
+import { resolveFeedToken } from "@/lib/feed-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,48 +15,32 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_req: Request, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;
-  const parsed = parseFeedToken(token ?? "");
   const deny = () =>
     new Response("Dieser Kalender-Link gilt nicht mehr.", {
       status: 404,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
 
-  if (!parsed) return deny();
-
-  // A wrong secret must not be cheap to guess at scale.
-  const rate = await hit(`calendar-feed:${parsed.userId}`, 60, 60_000);
-  if (!rate.ok) {
-    return new Response("Zu viele Abrufe. Bitte später erneut versuchen.", {
-      status: 429,
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-    });
+  const auth = await resolveFeedToken(token ?? "");
+  if (!auth.ok) {
+    if (auth.status === 429) {
+      return new Response("Zu viele Abrufe. Bitte später erneut versuchen.", {
+        status: 429,
+        headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
+    return deny();
   }
-
-  const store = getStore();
-  const user = await store.getById(parsed.userId);
-  if (!user?.calendarFeedTokenHash) return deny();
-
-  const presented = await hashFeedSecret(parsed.secret);
-  if (!secretsMatch(presented, user.calendarFeedTokenHash)) return deny();
-
-  const engine = await engineHeadersForUserId(parsed.userId);
-  if (!engine) return deny();
 
   let ics: string;
   try {
-    ics = await deadlinesIcsFor(engine.headers);
+    ics = await deadlinesIcsFor(auth.headers);
   } catch {
     return new Response("Kalender derzeit nicht verfügbar.", {
       status: 502,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
-
-  // Best effort: shows in the settings when a calendar last fetched the feed.
-  void store
-    .update(parsed.userId, { calendarFeedLastUsedAt: new Date().toISOString() })
-    .catch(() => {});
 
   return new Response(ics, {
     headers: {

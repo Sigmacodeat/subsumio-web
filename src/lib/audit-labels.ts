@@ -136,6 +136,10 @@ export type AuditAction =
   | "whatsapp.briefing_feedback"
   | "whatsapp.flow_case_created"
   | "whatsapp.flow_appointment_booked"
+  | "sms.consent_granted"
+  | "sms.consent_revoked"
+  | "sms.outbound_sent"
+  | "sms.outbound_blocked"
   | "feedback.submit"
   | "time.auto_extract"
   | "admin.user_update"
@@ -428,6 +432,10 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
   "whatsapp.flow_case_created": "WhatsApp-Flow: Akte angelegt",
   "whatsapp.flow_appointment_booked": "WhatsApp-Flow: Termin gebucht",
+  "sms.consent_granted": "SMS-Einwilligung erteilt",
+  "sms.consent_revoked": "SMS-Einwilligung widerrufen",
+  "sms.outbound_sent": "SMS gesendet",
+  "sms.outbound_blocked": "SMS-Versand geblockt",
   "time.auto_extract": "KI-Zeiterfassung generiert",
   "feedback.submit": "Retrieval-Feedback",
   "admin.user_update": "Admin: Benutzer aktualisiert",

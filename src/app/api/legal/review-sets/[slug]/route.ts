@@ -4,7 +4,7 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import {
   computeStatistics,
   computeCodingConsistency,
-  exportProductionProtocol,
+  exportProductionProtocolSigned,
   generateBatesNumber,
   parseReviewSet,
   sampleForQC,
@@ -61,6 +61,11 @@ const updateSchema = z.object({
         qcBy: z.string().optional(),
         qcAt: z.string().optional(),
         qcNotes: z.string().optional(),
+        // QC-Konflikt-Resolution: verbindliche Endentscheidung bei Dissens.
+        finalDecision: z.enum(VALID_DECISIONS).optional(),
+        finalBy: z.string().optional(),
+        finalAt: z.string().optional(),
+        finalNotes: z.string().optional(),
       })
     )
     .optional(),
@@ -72,6 +77,8 @@ const updateSchema = z.object({
     .object({
       rate: z.number().min(0.01).max(1),
       seed: z.string().min(1).optional(),
+      /** Stratifizierung: eigene Rate pro Entscheidung (z. B. withhold: 1.0). */
+      strata: z.record(z.enum(VALID_DECISIONS), z.number().min(0).max(1)).optional(),
     })
     .optional(),
   criteria: z
@@ -125,7 +132,7 @@ export const GET = createHandler(
         set.type as string | undefined
       );
       if (!parsed) return apiError("not_found", "Review set not found", 404);
-      const csv = exportProductionProtocol(parsed);
+      const csv = await exportProductionProtocolSigned(parsed);
       return new Response(csv, {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
@@ -185,7 +192,11 @@ export const PATCH = createHandler(
     let sampledSlugs: string[] = [];
     if (body.qcSample) {
       const seed = body.qcSample.seed ?? `${decoded}:${now}`;
-      sampledSlugs = sampleForQC(documents, { rate: body.qcSample.rate, seed });
+      sampledSlugs = sampleForQC(documents, {
+        rate: body.qcSample.rate,
+        seed,
+        strata: body.qcSample.strata,
+      });
       const sampleSet = new Set(sampledSlugs);
       documents = documents.map((d) => (sampleSet.has(d.slug) ? { ...d, qcSampled: true } : d));
       qcMeta = {

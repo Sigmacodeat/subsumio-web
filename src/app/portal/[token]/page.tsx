@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CitationPanel } from "@/components/legal/CitationPanel";
 import { SignatureDialog } from "@/components/legal/SignatureDialog";
+import { PortalFeedback } from "@/components/portal/PortalFeedback";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -1003,6 +1004,9 @@ export default function PortalPage() {
                 )}
               </div>
             )}
+
+            {/* WP-8.53: NPS / Mandanten-Feedback */}
+            <PortalFeedback token={token} />
 
             {/* Requested documents */}
             {documentRequests.some((request) => request.frontmatter.status !== "fulfilled") && (

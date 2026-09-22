@@ -351,3 +351,68 @@ describe("WP-8.50: exportProductionProtocol", () => {
     expect(conflictRow).toContain("NEIN");
   });
 });
+
+describe("WP-8.53: stratified sampling + conflict resolution + protocol hash", () => {
+  test("strata overrides base rate per decision", () => {
+    const docs = Array.from({ length: 40 }, (_, i) =>
+      doc({
+        slug: `d${i}`,
+        decision: i < 20 ? "responsive" : i < 30 ? "withhold" : "privileged",
+      })
+    );
+    const sampled = sampleForQC(docs, {
+      rate: 0,
+      seed: "s1",
+      strata: { withhold: 1.0, privileged: 1.0 },
+    });
+    // Base rate 0 → keine responsive; alle withhold (10) + privileged (10)
+    expect(sampled).toHaveLength(20);
+    expect(sampled.every((s) => parseInt(s.slice(1), 10) >= 20)).toBe(true);
+  });
+
+  test("strata is deterministic for same seed", () => {
+    const docs = Array.from({ length: 50 }, (_, i) => doc({ slug: `d${i}` }));
+    const a = sampleForQC(docs, { rate: 0.2, seed: "x", strata: { responsive: 0.5 } });
+    const b = sampleForQC(docs, { rate: 0.2, seed: "x", strata: { responsive: 0.5 } });
+    expect(a).toEqual(b);
+  });
+
+  test("resolved conflicts counted separately from open", () => {
+    const docs = [
+      doc({ slug: "a", decision: "responsive", qcSampled: true, qcDecision: "non_responsive" }),
+      doc({
+        slug: "b",
+        decision: "responsive",
+        qcSampled: true,
+        qcDecision: "privileged",
+        finalDecision: "privileged",
+      }),
+    ];
+    const c = computeCodingConsistency(docs);
+    expect(c.conflicts).toBe(2);
+    expect(c.resolvedConflicts).toBe(1);
+    expect(c.openConflicts).toBe(1);
+  });
+
+  test("signed protocol carries sha256 integrity footer", async () => {
+    const { exportProductionProtocolSigned, protocolIntegrityHash } = await import("./review-sets");
+    const set = {
+      slug: "s1",
+      title: "T",
+      status: "produced" as const,
+      documents: [doc({ slug: "d1", batesNumber: "SUB0000001" })],
+      criteria: {},
+      production: { produced: true, producedAt: "2026-01-05T00:00:00Z", format: "pdf" as const },
+      statistics: computeStatistics([]),
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-05T00:00:00Z",
+    };
+    const signed = await exportProductionProtocolSigned(set as never);
+    expect(signed).toContain("# INTEGRITAET");
+    expect(signed).toMatch(/# sha256:[a-f0-9]{64}/);
+    // Hash covers the unsigned body — re-hashing it must reproduce the footer.
+    const unsigned = exportProductionProtocol(set as never);
+    const expected = await protocolIntegrityHash(unsigned);
+    expect(signed).toContain(`# sha256:${expected}`);
+  });
+});

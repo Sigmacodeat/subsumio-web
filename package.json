@@ -18,6 +18,7 @@
     "dev": "next dev",
     "build": "bun scripts/build-office-addins.ts && NODE_OPTIONS=--max-old-space-size=16384 next build --turbopack",
     "start": "next start",
+    "dav": "tsx scripts/dav-server.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",

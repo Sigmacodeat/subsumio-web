@@ -146,13 +146,19 @@ type NavSection = {
   colorVar?: string;
 };
 
-// Germany-only surfaces (beA, DATEV) — reactivated in WP-6.37. Hidden for
-// AT/CH firms; shown when the signed-in user's jurisdiction is "DE".
+// Germany-only surfaces (beA, DATEV, FAO-Fachanwalt) — reactivated in WP-6.37.
+// Hidden for AT/CH firms; shown when the signed-in user's jurisdiction is "DE".
 export const DE_ONLY_HREFS = new Set([
   "/dashboard/bea",
   "/dashboard/datev-export",
   "/dashboard/datev-direct",
+  "/dashboard/fao-tracking",
 ]);
+
+// Austria-only surfaces — symmetric counterpart to DE_ONLY_HREFS. Hidden for
+// DE firms: RIS-Judikatur-Sync (nur AT-Quellen) und die BAO-Verfahrensdoku
+// (trotz historischem "gobd"-Dateinamen österreichisches Recht).
+export const AT_ONLY_HREFS = new Set(["/dashboard/judgements-sync", "/dashboard/verfahrensdoku"]);
 
 // Workflow-ordered sidebar with all items grouped into collapsible sections.
 // Primary items (overview, cases, deadlines, intake, chat) are always visible.
@@ -1334,7 +1340,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     (item: NavItem) =>
       isTierVisible(item) &&
       isAudienceVisible(item) &&
-      (!DE_ONLY_HREFS.has(item.href) || _jurisdiction === "DE"),
+      (!DE_ONLY_HREFS.has(item.href) || _jurisdiction === "DE") &&
+      (!AT_ONLY_HREFS.has(item.href) || _jurisdiction !== "DE"),
     [isTierVisible, isAudienceVisible, _jurisdiction]
   );
   const adminSection = useMemo(
