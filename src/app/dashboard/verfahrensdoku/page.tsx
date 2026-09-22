@@ -13,6 +13,7 @@ import { buildVerfahrensdoku, type VerfahrensdokuInput } from "@/lib/gobd-verfah
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { verfahrensdokuSchema, type VerfahrensdokuFormData } from "@/lib/schemas/verfahrensdoku";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
 
 const DOC_SLUG = "legal/gobd/verfahrensdokumentation";
@@ -318,22 +319,21 @@ export default function VerfahrensdokuPage() {
             >
               <Download size={14} /> {t("verfahrensdoku.btn_word")}
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
+            <PrimaryAction
+              icon={
+                saving ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : saved ? (
+                  <CheckCircle2 size={15} />
+                ) : (
+                  <Save size={15} />
+                )
+              }
               onClick={save}
               disabled={saving}
-              className="gap-1.5 text-xs whitespace-nowrap"
             >
-              {saving ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : saved ? (
-                <CheckCircle2 size={14} />
-              ) : (
-                <Save size={14} />
-              )}
               {saved ? t("verfahrensdoku.btn_saved") : t("verfahrensdoku.btn_save")}
-            </Button>
+            </PrimaryAction>
           </div>
         }
       />

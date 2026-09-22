@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -350,16 +351,21 @@ export default function WorkflowBuilderPage() {
             <Button variant="secondary" asChild className="whitespace-nowrap">
               <Link href="/dashboard/workflows">{t("workflows.cancel")}</Link>
             </Button>
-            <Button onClick={save} disabled={saving} className="whitespace-nowrap">
-              {saving ? (
-                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-              ) : saveStatus === "saved" ? (
-                <CheckCircle size={14} aria-hidden="true" />
-              ) : (
-                <Save size={14} aria-hidden="true" />
-              )}
+            <PrimaryAction
+              icon={
+                saving ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : saveStatus === "saved" ? (
+                  <CheckCircle size={15} aria-hidden="true" />
+                ) : (
+                  <Save size={15} aria-hidden="true" />
+                )
+              }
+              onClick={save}
+              disabled={saving}
+            >
               {saveStatus === "saved" ? "Gespeichert" : "Ablauf speichern"}
-            </Button>
+            </PrimaryAction>
           </div>
         }
       />

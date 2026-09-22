@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, BookOpen, ChevronRight, Loader2, AlertCircle } from "lucide-react";
+import { Search, BookOpen, ChevronRight, Loader2, AlertCircle, Upload } from "lucide-react";
 import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import type { BrainPage, SearchResult } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   BRAIN_TYPE_PLURALS,
@@ -154,9 +155,12 @@ export default function BrainPage() {
           { label: t("nav.brain") },
         ]}
         actions={
-          <Button onClick={() => router.push("/dashboard/upload")} className="whitespace-nowrap">
+          <PrimaryAction
+            icon={<Upload size={15} aria-hidden="true" />}
+            onClick={() => router.push("/dashboard/upload")}
+          >
             {t("brain.btn_upload")}
-          </Button>
+          </PrimaryAction>
         }
       />
 

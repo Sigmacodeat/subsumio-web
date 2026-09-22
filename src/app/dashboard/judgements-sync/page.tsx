@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Play, CheckCircle2, AlertTriangle, Database, Globe, RefreshCw, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
 
 interface Source {
@@ -96,19 +96,19 @@ export default function JudgementsSyncPage() {
           { label: t("judgements.sync_title") },
         ]}
         actions={
-          <Button
-            variant="primary"
-            className="brand-bg brand-bg gap-2 text-sm text-white"
+          <PrimaryAction
+            icon={
+              overallStatus === "running" ? (
+                <RefreshCw size={15} className="animate-spin" />
+              ) : (
+                <Play size={15} />
+              )
+            }
             onClick={startSync}
             disabled={overallStatus === "running"}
           >
-            {overallStatus === "running" ? (
-              <RefreshCw size={14} className="animate-spin" />
-            ) : (
-              <Play size={14} />
-            )}
             {overallStatus === "running" ? t("judgements.syncing") : t("judgements.sync_button")}
-          </Button>
+          </PrimaryAction>
         }
       />
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, Send, FileText, Download } from "lucide-react";
+import { Loader2, Send, FileText, Download } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,13 +114,7 @@ export default function OutboundRegisterPage() {
                 <Download size={14} aria-hidden="true" /> Als CSV exportieren
               </a>
             </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowCreate(!showCreate)}
-              className="gap-1.5 whitespace-nowrap"
-            >
-              <Plus size={14} aria-hidden="true" /> Neuer Eintrag
-            </Button>
+            <PrimaryAction onClick={() => setShowCreate(!showCreate)}>Neuer Eintrag</PrimaryAction>
           </div>
         }
       />

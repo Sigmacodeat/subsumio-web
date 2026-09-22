@@ -12,15 +12,14 @@ import {
   PenTool,
   Settings,
   ExternalLink,
-  Plus,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
 import { usePortalVisitEvents } from "@/lib/use-portal-visit-events";
 import { SignatureQuickCreateDialog } from "@/components/legal/SignatureQuickCreateDialog";
@@ -161,14 +160,9 @@ export default function SignaturePage() {
               <Settings size={14} />
               {t("sig.btn_configure")}
             </Link>
-            <Button
-              variant="primary"
-              className="gap-2 whitespace-nowrap"
-              onClick={() => setQuickCreateOpen(true)}
-            >
-              <Plus size={14} />
+            <PrimaryAction onClick={() => setQuickCreateOpen(true)}>
               {t("signature.btn_request")}
-            </Button>
+            </PrimaryAction>
           </div>
         }
       />

@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/card";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useScimStatus, useScimSync, type SyncStatus } from "@/lib/queries/scim";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
@@ -255,16 +256,14 @@ export default function ScimSettingsPage() {
         ]}
         actions={
           workosConfigured ? (
-            <Button
-              variant="glow"
-              size="md"
+            <PrimaryAction
+              icon={<RefreshCw size={15} className={cn(isSyncing && "animate-spin")} />}
               onClick={() => syncMutation.mutate()}
               disabled={isSyncing}
-              className="shrink-0 whitespace-nowrap"
+              className="shrink-0"
             >
-              <RefreshCw size={15} className={cn(isSyncing && "animate-spin")} />
               {isSyncing ? t("scim.sync_syncing") : t("scim.sync_manual")}
-            </Button>
+            </PrimaryAction>
           ) : undefined
         }
       />

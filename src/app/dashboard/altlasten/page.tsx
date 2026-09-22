@@ -22,6 +22,7 @@ import { cn, encodeSlugPath } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { csrfFetch } from "@/lib/csrf";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -427,19 +428,18 @@ export default function AltlastenPage() {
                 Wiedervorlage anlegen ({urgentCount})
               </Button>
             )}
-            <Button
+            <PrimaryAction
+              icon={!batchTriggering && <Zap size={15} aria-hidden="true" />}
               onClick={handleBatchTrigger}
               disabled={
                 batchTriggering || loading || (selectedSlugs.size === 0 && pipelineNotRan === 0)
               }
               loading={batchTriggering}
-              className="gap-2 whitespace-nowrap"
             >
-              {!batchTriggering && <Zap className="h-4 w-4" aria-hidden="true" />}
               {selectedSlugs.size > 0
                 ? `${selectedSlugs.size} ${selectedSlugs.size === 1 ? "Akte" : "Akten"} prüfen`
                 : `Ungeprüfte prüfen${pipelineNotRan > 0 ? ` (${pipelineNotRan})` : ""}`}
-            </Button>
+            </PrimaryAction>
           </div>
         }
       />

@@ -26,6 +26,7 @@ import { pageTypeOf } from "@/lib/types";
 import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
@@ -314,20 +315,23 @@ export default function BrainDetailPage() {
               <Button variant="secondary" onClick={cancelEdit} disabled={saving}>
                 {t("braindetail.btn_cancel")}
               </Button>
-              <Button onClick={handleSave} disabled={saving} className="whitespace-nowrap">
-                {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+              <PrimaryAction
+                icon={saving && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+                onClick={handleSave}
+                disabled={saving}
+              >
                 {t("braindetail.btn_save")}
-              </Button>
+              </PrimaryAction>
             </div>
           ) : (
             <div className="flex items-center gap-2 overflow-x-auto">
               {isDocument && (
-                <Button asChild className="whitespace-nowrap">
+                <PrimaryAction asChild>
                   <a href={`${fileHref}?inline=1`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink size={14} aria-hidden="true" />
+                    <ExternalLink size={15} aria-hidden="true" />
                     {t("braindetail.doc_open_original")}
                   </a>
-                </Button>
+                </PrimaryAction>
               )}
               {isDocument && (
                 <Button variant="secondary" asChild className="whitespace-nowrap">

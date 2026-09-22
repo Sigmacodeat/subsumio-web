@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/toast";
 import { Table2, Loader2, Plus, X, AlertTriangle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -207,10 +208,7 @@ function TabularReviewPageInner() {
         ]}
         actions={
           runSlug ? (
-            <Button variant="secondary" size="sm" className="gap-1.5 text-xs" onClick={clearRun}>
-              <Plus size={12} />
-              {t("tabular.new_run")}
-            </Button>
+            <PrimaryAction onClick={clearRun}>{t("tabular.new_run")}</PrimaryAction>
           ) : undefined
         }
       />

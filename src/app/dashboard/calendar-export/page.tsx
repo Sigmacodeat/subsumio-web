@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { cn, daysUntil, formatDate, formatDaysUntil } from "@/lib/utils";
 import { minutesToTime, parseTimeToMinutes, toLocalIsoDate } from "@/lib/calendar-conflicts";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -285,16 +286,13 @@ export default function CalendarExportPage() {
           { label: t("calexport.title") },
         ]}
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            className="gap-2 whitespace-nowrap"
+          <PrimaryAction
+            icon={<Download size={15} aria-hidden="true" />}
             onClick={downloadIcal}
             disabled={loading || filtered.length === 0}
           >
-            <Download size={14} aria-hidden="true" />
             iCal herunterladen
-          </Button>
+          </PrimaryAction>
         }
       />
 

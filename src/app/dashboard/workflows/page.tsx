@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { usePages, useCreatePage } from "@/lib/queries/brain";
@@ -244,17 +245,15 @@ export default function WorkflowsPage() {
                   {t("workflows.builder.open")}
                 </Link>
               </Button>
-              <Button
-                className="whitespace-nowrap"
+              <PrimaryAction
                 onClick={() => {
                   // Opens the template picker; the user chooses the kind of Ablauf.
                   setSelectedTemplate(null);
                   setShowPicker(true);
                 }}
               >
-                <Plus size={16} aria-hidden="true" />
                 {t("workflows.new")}
-              </Button>
+              </PrimaryAction>
             </div>
           }
         />

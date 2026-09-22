@@ -10,10 +10,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Plus,
   RotateCcw,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -384,15 +384,7 @@ export default function CalendarPage() {
                 Exportieren
               </Link>
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => openNew()}
-              className="gap-2 whitespace-nowrap"
-            >
-              <Plus size={14} aria-hidden="true" />
-              {t("calendar.new")}
-            </Button>
+            <PrimaryAction onClick={() => openNew()}>{t("calendar.new")}</PrimaryAction>
           </div>
         }
       />
