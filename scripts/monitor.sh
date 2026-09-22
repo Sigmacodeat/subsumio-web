@@ -188,9 +188,9 @@ render_local() {
   fi
 }
 
-# ── HETZNER: Server Processes ───────────────────────────────────────
+# ── NETCUP: Server Processes ────────────────────────────────────────
 render_server() {
-  section "🖥  HETZNER (167.233.134.25)"
+  section "🖥  NETCUP ($SSH_HOST)"
 
   # Docker containers
   echo ""
