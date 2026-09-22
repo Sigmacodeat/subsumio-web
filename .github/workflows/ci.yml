@@ -58,6 +58,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run typecheck || npx tsc --noEmit
+      - run: bun run typecheck:tests
 
   test:
     runs-on: ubuntu-latest
