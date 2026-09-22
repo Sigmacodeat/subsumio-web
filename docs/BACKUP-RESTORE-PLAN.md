@@ -2,7 +2,7 @@
 
 > Status: **geplant, NICHT implementiert.** Existenzieller Punkt: aktuell liegt
 > das einzige Backup auf **derselben VM** wie die Produktion. Ein VM-Verlust
-> (Hardware, Ransomware, Fehl-`rm`, Hetzner-Ausfall) löscht alle Mandantenakten
+> (Hardware, Ransomware, Fehl-`rm`, Hoster-Ausfall) löscht alle Mandantenakten
 > **endgültig**. Für eine Kanzlei ist das berufsrechtlich (§ 50 BRAO) und nach
 > DSGVO Art. 32 (1)(c) — „Wiederherstellbarkeit nach einem Zwischenfall" — nicht
 > tragbar.
@@ -12,7 +12,7 @@
 
 ## Ist-Zustand (verifiziert)
 
-Drei zustandsbehaftete Docker-Volumes auf der Hetzner-VM
+Drei zustandsbehaftete Docker-Volumes auf der Server-VM
 (`server/deploy/hetzner/docker-compose.yml`):
 
 | Volume        | Inhalt                                                                              | Kritikalität                               |
@@ -23,7 +23,7 @@ Drei zustandsbehaftete Docker-Volumes auf der Hetzner-VM
 
 Datei-Storage ist `local | s3 | supabase` (`server/src/core/storage.ts`). Bei
 `s3`/`r2` liegen Originale schon außerhalb der VM; bei `local` liegen sie NUR auf
-`engine-data`. Heutige Doku (`deploy/hetzner/README.md`): manuelles
+`engine-data`. Heutige Doku (`server/deploy/netcup/RUNBOOK.md`): manuelles
 `pg_dump > backup.sql` — **kein Offsite, keine Verschlüsselung, kein Restore-Test.**
 
 ## Ziel (RPO / RTO)
@@ -42,14 +42,14 @@ Ein Tool deckt vier Anforderungen ab: **clientseitige Verschlüsselung**
 `restic restore`. Alternative `pgBackRest` ist mächtiger (PITR) aber schwerer;
 für den ersten belastbaren Stand ist restic die richtige Größe.
 
-**Offsite-Ziel** (du wählst, anderer Anbieter/Standort als die Hetzner-VM):
+**Offsite-Ziel** (du wählst, anderer Anbieter/Standort als die Server-VM):
 Cloudflare R2, Backblaze B2 oder AWS S3 (alle S3-kompatibel). Empfehlung: **R2
 oder B2** (günstig, kein Egress bei R2). Bucket mit **Object Lock / Versioning**
 für Ransomware-Schutz (unveränderliche Backups).
 
 ## Was du als Infra bereitstellst (kein Code)
 
-1. **Offsite-Bucket** bei R2/B2/S3 anlegen (eigene Region, NICHT Hetzner-VM).
+1. **Offsite-Bucket** bei R2/B2/S3 anlegen (eigene Region, NICHT die Server-VM).
 2. **Zugangs-Keys** mit Schreibrecht nur auf diesen Bucket (least privilege).
 3. **restic-Repo-Passwort** generieren (`openssl rand -base64 48`) und sicher
    ablegen (Passwort-Manager + Offline-Kopie). **Ohne dieses Passwort sind die
@@ -150,7 +150,7 @@ BACKUP_S3_SECRET_ACCESS_KEY=
 QUEUE_ALERT_EMAIL=               # bereits aus Gap 8 — Backup-Alarme gehen hierhin
 ```
 
-`deploy/hetzner/README.md`: den manuellen `pg_dump`-Hinweis durch das
+`server/deploy/netcup/RUNBOOK.md`: den manuellen `pg_dump`-Hinweis durch das
 Backup/Restore-Runbook ersetzen.
 
 ## DSGVO-Wechselwirkung (festhalten)

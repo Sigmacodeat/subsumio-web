@@ -2,12 +2,12 @@
 -- P0 Data Integrity Fixes — sigmabrain production DB
 -- 2026-07-20
 --
--- 3 reversible, <1s fixes identified during the Hetzner DB audit.
+-- 3 reversible, <1s fixes identified during the production DB audit.
 -- All wrapped in a single transaction. ROLLBACK if anything looks wrong.
 --
 -- Usage:
---   ssh hetzner-web-1 -- psql -U sigmabrain -d sigmabrain -f /tmp/p0-fixes.sql
---   (or pipe via SSH: cat p0-fixes.sql | ssh hetzner -- psql -U sigmabrain -d sigmabrain -v ON_ERROR_STOP=1)
+--   ssh subsumio-engine-web-1 -- psql -U sigmabrain -d sigmabrain -f /tmp/p0-fixes.sql
+--   (or pipe via SSH: cat p0-fixes.sql | ssh subsumio-netcup -- psql -U sigmabrain -d sigmabrain -v ON_ERROR_STOP=1)
 --
 -- Safety:
 --   - Transaction-wrapped (ROLLBACK on any error via ON_ERROR_STOP=1)

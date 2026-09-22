@@ -7,8 +7,8 @@
  * rechunk-orphans.ts) to prevent concurrent rechunk processes.
  *
  * Usage on server:
- *   docker exec hetzner-web-1 bash -c "cd /app/server && bun scripts/simple-rechunk.ts --limit 100"
- *   docker exec hetzner-web-1 bash -c "cd /app/server && bun scripts/simple-rechunk.ts"
+ *   docker exec subsumio-engine-web-1 bash -c "cd /app/server && bun scripts/simple-rechunk.ts --limit 100"
+ *   docker exec subsumio-engine-web-1 bash -c "cd /app/server && bun scripts/simple-rechunk.ts"
  */
 import { parseArgs } from "util";
 

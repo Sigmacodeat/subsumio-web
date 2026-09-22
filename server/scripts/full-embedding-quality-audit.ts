@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Full Embedding & Corpus Quality Audit — Hetzner Postgres via local tunnel.
+ * Full Embedding & Corpus Quality Audit — production Postgres via local tunnel.
  * Fast, focused report for cleaning up embeddings and corpus completeness.
  *
  * Usage:

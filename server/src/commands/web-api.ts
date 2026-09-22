@@ -3347,7 +3347,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   );
 
   // Speech-to-text for WhatsApp voice notes. Lives in the engine so the
-  // provider key stays in ONE place (the web container has none on Hetzner).
+  // provider key stays in ONE place (the web container has none in production).
   app.post(
     "/api/llm/transcribe",
     express.json({ limit: "40mb" }),

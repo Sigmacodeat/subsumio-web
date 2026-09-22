@@ -120,7 +120,7 @@ export const GET = createHandler(
     cacheMaxAge: 30,
   },
   async () => {
-    // ── 2. DB-Stats (Hetzner) ──
+    // ── 2. DB-Stats (Server) ──
     const pool = getSharedPgPool();
     const dbStats: Record<
       string,

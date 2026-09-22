@@ -49,13 +49,14 @@ const FIXES = (values.fix as string)
   .map((s) => parseInt(s.trim(), 10))
   .filter((n) => !isNaN(n));
 
-const DB_CMD = "docker exec hetzner-db-1 psql -U sigmabrain -d sigmabrain -P pager=off -t -c";
+const DB_CMD =
+  "docker exec subsumio-engine-db-1 psql -U sigmabrain -d sigmabrain -P pager=off -t -c";
 
 function sshExec(cmd: string, timeoutMs = 120000): string {
   try {
     return execFileSync(
       "ssh",
-      ["-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no", "subsumio-hetzner", cmd],
+      ["-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no", "subsumio-netcup", cmd],
       {
         timeout: timeoutMs,
         encoding: "utf-8",

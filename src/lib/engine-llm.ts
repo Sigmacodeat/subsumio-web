@@ -5,7 +5,7 @@
  *
  * Why: these used to call OpenRouter directly with a second API key. That
  * bypassed the engine's model tiers, budget tracking and prompt sanitiser,
- * duplicated provider config, and on Hetzner the web container has no key at
+ * duplicated provider config, and in production the web container has no key at
  * all — so the features silently did nothing. Now every call goes to
  * `POST /api/llm/complete` / `/api/llm/transcribe` on the engine.
  */

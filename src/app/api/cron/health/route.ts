@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  *   - Engine reachability
  *
  * This endpoint should be polled by external monitoring
- * (e.g. Hetzner Uptime Kuma, Better Stack) to detect silent cron failures.
+ * (e.g. self-hosted Uptime Kuma, Better Stack) to detect silent cron failures.
  * Auth: Bearer CRON_SECRET (same as all cron endpoints).
  */
 export async function GET(req: NextRequest) {

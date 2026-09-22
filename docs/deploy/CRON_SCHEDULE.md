@@ -1,7 +1,7 @@
-# Cron-Wahrheit: Hetzner-Crontab vs. `vercel.json`
+# Cron-Wahrheit: Server-Crontab vs. `vercel.json`
 
 Stand 2026-09-16 (Launch-Megaplan Phase 4, Repo-Seite). Die App läuft selbst gehostet auf
-Hetzner; die Jobs feuert **supercronic** im Compose-Service `cron` aus
+Netcup; die Jobs feuert **supercronic** im Compose-Service `cron` aus
 [`server/deploy/hetzner/crontab`](../../server/deploy/hetzner/crontab) (gemountet als
 `/etc/crontab`, ruft `http://web:3000/api/cron/*` mit `CRON_SECRET`). **Dieser Crontab ist
 die Quelle der Wahrheit.** `vercel.json` stammte aus der Vercel-Zeit, wurde von keinem Deploy

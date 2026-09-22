@@ -12,7 +12,7 @@ import { createInboundEntry } from "@/lib/inbound-register";
 import { logger } from "@/lib/logger";
 const log = logger("api/upload");
 
-// Hetzner/self-hosted agency uploads can be scanned + proxied synchronously up
+// Self-hosted agency uploads can be scanned + proxied synchronously up
 // to MAX_FILE_SIZE. If this route runs behind a stricter web host/proxy, that
 // layer must be raised too; otherwise the request fails before this handler runs.
 export const maxDuration = 600;

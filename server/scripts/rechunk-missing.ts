@@ -1,6 +1,6 @@
 /**
  * Re-chunk pages that have content but 0 chunks.
- * Runs directly on the Hetzner server inside the docker container.
+ * Runs directly on the production server inside the docker container.
  *
  * Uses cursor-based batch processing to avoid loading all pages into memory.
  * Skips placeholder pages (content < 200 chars) that have no real text.
@@ -12,9 +12,9 @@
  * this script exits immediately with a clear message.
  *
  * Usage (on server):
- *   docker exec hetzner-web-1 bun /app/server/scripts/rechunk-missing.ts
- *   docker exec hetzner-web-1 bun /app/server/scripts/rechunk-missing.ts --dry-run
- *   docker exec hetzner-web-1 bun /app/server/scripts/rechunk-missing.ts --batch-size 500
+ *   docker exec subsumio-engine-web-1 bun /app/server/scripts/rechunk-missing.ts
+ *   docker exec subsumio-engine-web-1 bun /app/server/scripts/rechunk-missing.ts --dry-run
+ *   docker exec subsumio-engine-web-1 bun /app/server/scripts/rechunk-missing.ts --batch-size 500
  */
 import { parseArgs } from "util";
 

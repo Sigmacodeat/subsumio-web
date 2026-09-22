@@ -95,7 +95,7 @@ services:
       retries: 6
     # Published on localhost only — allows SSH-tunnel access for local dev
     # without exposing the DB to the internet. Engine still uses the compose
-    # network internally. To tunnel: ssh -L 15432:localhost:5432 subsumio-hetzner
+    # network internally. To tunnel: ssh -L 15432:localhost:5432 subsumio-netcup
     ports:
       - "127.0.0.1:5432:5432"
 

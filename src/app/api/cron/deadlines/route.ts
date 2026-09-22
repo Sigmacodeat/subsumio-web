@@ -18,7 +18,7 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/deadlines — täglicher Fristen-Digest per E-Mail.
  *
- * Läuft als supercronic Cron (Hetzner) oder manuell:
+ * Läuft als supercronic Cron (Netcup) oder manuell:
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/deadlines
  *
  * Pro Brain (Kanzlei): sammelt Fristen aus legal_case-Frontmattern und

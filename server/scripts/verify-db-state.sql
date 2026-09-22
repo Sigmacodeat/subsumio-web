@@ -2,10 +2,10 @@
 -- Verification Queries — Run BEFORE and AFTER P0 fixes
 --
 -- Usage (read-only, safe to run anytime):
---   ssh hetzner-web-1 -- psql -U sigmabrain -d sigmabrain -f /tmp/verify-db-state.sql
+--   ssh subsumio-engine-web-1 -- psql -U sigmabrain -d sigmabrain -f /tmp/verify-db-state.sql
 --
 -- Or pipe via SSH:
---   cat server/scripts/verify-db-state.sql | ssh hetzner -- psql -U sigmabrain -d sigmabrain
+--   cat server/scripts/verify-db-state.sql | ssh subsumio-netcup -- psql -U sigmabrain -d sigmabrain
 -- ════════════════════════════════════════════════════════════════════════════
 
 \echo '═══════════════════════════════════════════════════════════════'

@@ -22,9 +22,9 @@
  *     not from what a previous run claims to have done.
  *   - DB-BACKED STATE: all pipeline state lives in the `pipeline_state` table,
  *     not a JSON file. This is multi-instance safe via pg_advisory_lock and
- *     survives container restarts on Hetzner.
+ *     survives container restarts on the server.
  *   - SINGLE-SUPERVISOR GUARANTEE: a Postgres advisory lock ensures only one
- *     pipeline cycle runs at a time — across Docker containers, Hetzner, and
+ *     pipeline cycle runs at a time — across Docker containers, hosts, and
  *     local dev. Prevents duplicate process spawns and DB deadlocks.
  *   - PID TRACKING + TIMEOUT: child processes are tracked by OS PID in the DB.
  *     Stale PIDs (exceeded configurable timeout) are killed and the source
@@ -744,7 +744,7 @@ function needsImport(dir: string, sinceIso: string | undefined): boolean {
 }
 
 function dbUrl(): string {
-  // In Docker/Hetzner, DATABASE_URL is set as an environment variable.
+  // In Docker, DATABASE_URL is set as an environment variable.
   // Locally, fall back to reading server/.env.
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   try {

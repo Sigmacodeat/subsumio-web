@@ -429,7 +429,7 @@ async function main() {
       await engine.connect({ database_path: DB_OVERRIDE });
     } else {
       // Respect the CONFIGURED engine: Postgres in production (DATABASE_URL is
-      // set on the Hetzner engine), PGLite for a local file brain. Hardcoding
+      // set on the production engine), PGLite for a local file brain. Hardcoding
       // PGLite here meant the per-§ corpus could never reach the Postgres prod
       // brain — statutes would only ever be the unembeddable monolith there.
       const { loadConfig, toEngineConfig } = await import("../src/core/config.ts");

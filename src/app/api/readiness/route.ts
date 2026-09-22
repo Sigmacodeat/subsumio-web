@@ -39,7 +39,7 @@ export const GET = createPublicHandler(
       const headers: Record<string, string> = {};
       if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 
-      // Use first real user's brainId as tenant header (Hetzner has REQUIRE_TENANT=true)
+      // Use first real user's brainId as tenant header (production has REQUIRE_TENANT=true)
       try {
         const { getStore } = await import("@/lib/auth/store");
         const users = await getStore().list();

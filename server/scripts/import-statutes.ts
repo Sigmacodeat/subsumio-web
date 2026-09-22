@@ -10,7 +10,7 @@
  *   2. Engine must be running: gbrain serve --http --port 3001
  *   3. SUBSUMIO_WEB_API_KEY or --key must be set
  *
- * Usage on engine host (e.g. Hetzner prod):
+ * Usage on engine host (e.g. production):
  *   bun server/scripts/import-statutes.ts \
  *     [--engine http://localhost:3001] \
  *     [--key API_KEY] \

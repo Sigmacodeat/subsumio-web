@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Live-Smoke-Test gegen die echte Hetzner-Produktion.
+# Live-Smoke-Test gegen die echte Produktion (Netcup).
 #
 # Ersetzt die Mock-basierte tests/e2e-workflow-simulation.ts (die immer grün ist,
 # weil sie nur API-Vertragsformen gegen ein In-Memory-Mock prüft). Dieser Test

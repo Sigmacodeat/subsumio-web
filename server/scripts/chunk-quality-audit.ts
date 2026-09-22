@@ -3,7 +3,7 @@
  * Chunk & Embedding Quality Audit — comprehensive quality check for
  * chunks and embeddings in the DACH/EU legal corpus.
  *
- * Runs ~20 SQL queries against the Hetzner production DB via SSH
+ * Runs ~20 SQL queries against the production DB via SSH
  * (same pattern as embed-monitor.ts) and produces a structured report
  * covering structural integrity, chunk-text quality, chunker version
  * distribution, legal metadata coverage, and orphan/consistency checks.
@@ -45,7 +45,8 @@ const JSON_OUTPUT = values.json as boolean;
 const VERBOSE = values.verbose as boolean;
 const SAMPLE_SIZE = parseInt(String(values["sample-size"] || "1000")) || 1000;
 
-const DB_CMD = "docker exec hetzner-db-1 psql -U sigmabrain -d sigmabrain -P pager=off -t -c";
+const DB_CMD =
+  "docker exec subsumio-engine-db-1 psql -U sigmabrain -d sigmabrain -P pager=off -t -c";
 
 interface AuditResult {
   timestamp: string;
@@ -108,7 +109,7 @@ function sshExec(cmd: string, timeoutMs = 60000): string {
   try {
     return execFileSync(
       "ssh",
-      ["-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no", "subsumio-hetzner", cmd],
+      ["-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no", "subsumio-netcup", cmd],
       {
         timeout: timeoutMs,
         encoding: "utf-8",
@@ -636,7 +637,7 @@ function printReport(r: AuditResult): void {
 
 function main(): void {
   if (!JSON_OUTPUT) {
-    console.log("Chunk & Embedding Quality Audit — connecting to Hetzner DB via SSH...");
+    console.log("Chunk & Embedding Quality Audit — connecting to production DB via SSH...");
     console.log();
   }
 

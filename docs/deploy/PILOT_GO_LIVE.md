@@ -10,11 +10,11 @@ Aktueller Serverzustand und die offenen Punkte: `docs/deploy/SERVER_STATUS_2026-
       `bun run typecheck`, `bun run test:unit`, `bun run build` grün.
 - [ ] Pushen. Kein Deploy vor Schritt 2.
 
-## 2. Server vorbereiten (Hetzner, `/opt/subsumio`)
+## 2. Server vorbereiten (Netcup, `/opt/subsumio`)
 
-- [ ] **Vor dem Pull:** `sh server/deploy/hetzner/move-corpus-out-of-repo.sh`
-      Prüfung: Ausgabe „fehlend am Ziel: 0“. Ohne diesen Schritt löscht `git pull`
-      die bisher getrackten Korpusdateien.
+- [ ] **Hinweis (Netcup-Ära):** Deploys nutzen `server/deploy/netcup/deploy-code.sh` (saubere
+      Release-Kopie pro Commit, kein `git pull` auf dem Server). Das alte
+      `move-corpus-out-of-repo.sh` ist entfernt worden.
 - [ ] `server/deploy/hetzner/.env` ergänzen:
   - `LAW_CORPUS_HOST_DIR=/opt/subsumio-data/law-corpus`
   - `OPS_DOMAIN=ops.subsum.eu`

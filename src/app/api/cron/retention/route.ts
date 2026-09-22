@@ -17,7 +17,7 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/retention — tägliche Aufbewahrungsfrist-Prüfung.
  *
- * Läuft als supercronic Cron (Hetzner) oder manuell:
+ * Läuft als supercronic Cron (Netcup) oder manuell:
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/retention
  *
  * Pro Brain (Kanzlei): sammelt geschlossene Akten (legal_case mit closed_at),

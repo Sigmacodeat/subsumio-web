@@ -14,7 +14,7 @@ const presenceSchema = z.object({
 
 // ── Presence Store Abstraction ────────────────────────────────────────
 // Automatically upgrades to Redis when REDIS_URL is set.
-// Falls back to in-memory Map for single-instance deployments (Hetzner).
+// Falls back to in-memory Map for single-instance deployments.
 
 interface PresenceEntry {
   email: string;

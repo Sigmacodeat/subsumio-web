@@ -12,7 +12,7 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/case-scanner — Nightly Legal Case Scanner.
  *
- * Läuft als supercronic Cron (Hetzner) oder manuell:
+ * Läuft als supercronic Cron (Netcup) oder manuell:
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/case-scanner
  *
  * Pro Brain (Kanzlei): scannt alle legal_case Pages und startet

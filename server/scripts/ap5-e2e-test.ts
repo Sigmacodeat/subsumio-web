@@ -9,7 +9,7 @@
  * 4. Cross-model verification runs
  *
  * Prerequisites:
- * - SSH tunnel: ssh -L 15432:localhost:5432 subsumio-hetzner
+ * - SSH tunnel: ssh -L 15432:localhost:5432 subsumio-netcup
  * - Engine running: gbrain serve (port 8080)
  * - API key in .env: SUBSUMIO_WEB_API_KEY
  */

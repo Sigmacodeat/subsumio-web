@@ -1,6 +1,6 @@
 #!/bin/bash
 # Backfill source_id in content_chunks in small batches
-# Usage: ssh subsumio-hetzner "bash -s" < scripts/backfill-source-id.sh
+# Usage: ssh subsumio-netcup "bash -s" < scripts/backfill-source-id.sh
 
 BATCH_SIZE=2000
 TOTAL=2087403

@@ -233,7 +233,7 @@ export async function findStoredUploadForPage(
 
 /**
  * Resolve the storage backend config. When the caller has none configured, fall
- * back to LocalStorage rooted under the gbrain home dir (the Hetzner /data
+ * back to LocalStorage rooted under the gbrain home dir (the production /data
  * volume), so bytes are always persisted somewhere durable.
  */
 function resolveStorageConfig(storageConfig?: unknown): StorageConfig {

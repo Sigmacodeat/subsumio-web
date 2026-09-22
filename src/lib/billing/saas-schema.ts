@@ -6,7 +6,7 @@ import { createSchemaInit } from "@/lib/schema-init";
  * v134–v138 in server/src/core/migrate.ts.
  *
  * Why the web app carries this DDL too: the credits gate, trial grants and
- * Stripe sync query these tables through the auth-DB pool. On Hetzner the
+ * Stripe sync query these tables through the auth-DB pool. In production the
  * engine and the auth store share one database, so the engine's migrations
  * create them; with a separate auth database (local dev, e2e, any split
  * install) nothing did — the first AI request failed with

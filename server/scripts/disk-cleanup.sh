@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# disk-cleanup.sh — reclaim disk space on the Hetzner server
+# disk-cleanup.sh — reclaim disk space on the server
 #
 # Safe operations only: VACUUM, prune old page versions, prune unused Docker
 # resources. Does NOT delete any user data or corpus files.
@@ -32,7 +32,7 @@ echo ""
 # 4. Postgres VACUUM FULL ANALYZE (reclaims dead tuples → disk space)
 echo "🗄️  Running VACUUM FULL ANALYZE on PostgreSQL..."
 echo "  (This may take several minutes on large databases...)"
-docker exec hetzner-db-1 psql -U subsumio -d subsumio -c "VACUUM FULL ANALYZE;" 2>&1 || \
+docker exec subsumio-engine-db-1 psql -U subsumio -d subsumio -c "VACUUM FULL ANALYZE;" 2>&1 || \
   docker exec subsumio-engine-db-1 psql -U subsumio -d subsumio -c "VACUUM FULL ANALYZE;" 2>&1 || \
   echo "  ⚠️  Could not run VACUUM — check container name"
 echo "  Done."
@@ -40,7 +40,7 @@ echo ""
 
 # 5. Prune old page versions (keep only latest 3 per page)
 echo "📜 Pruning old page versions (keeping latest 3 per page)..."
-docker exec hetzner-db-1 psql -U subsumio -d subsumio -c "
+docker exec subsumio-engine-db-1 psql -U subsumio -d subsumio -c "
   DELETE FROM page_versions
   WHERE id NOT IN (
     SELECT id FROM (
@@ -65,7 +65,7 @@ echo ""
 
 # 6. VACUUM again after version pruning to reclaim the freed space
 echo "🗄️  Running VACUUM FULL after version prune..."
-docker exec hetzner-db-1 psql -U subsumio -d subsumio -c "VACUUM FULL ANALYZE;" 2>&1 || \
+docker exec subsumio-engine-db-1 psql -U subsumio -d subsumio -c "VACUUM FULL ANALYZE;" 2>&1 || \
   docker exec subsumio-engine-db-1 psql -U subsumio -d subsumio -c "VACUUM FULL ANALYZE;" 2>&1 || true
 echo "  Done."
 echo ""

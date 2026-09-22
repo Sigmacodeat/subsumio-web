@@ -1,13 +1,14 @@
 # Deploying Subsumio (go-live runbook)
 
-For DACH legal workloads, the recommended production path is the full Hetzner
-stack: Next.js dashboard, engine, worker, Postgres+pgvector, and Caddy on one EU
-box. The older split path (frontend on Vercel, engine elsewhere) still works for
-small files, but it puts browser uploads through Vercel Function limits.
+For DACH legal workloads, the recommended production path is the full
+self-hosted EU stack (production runs on Netcup): Next.js dashboard, engine,
+worker, Postgres+pgvector, and Caddy on one box. The older split path
+(frontend on Vercel, engine elsewhere) still works for small files, but it
+puts browser uploads through Vercel Function limits.
 
 Vercel can't host the engine (it's a long-running process + worker, not a
-serverless function). Hetzner avoids that split and keeps large legal-document
-uploads on one host.
+serverless function). A single EU VM avoids that split and keeps large
+legal-document uploads on one host.
 
 ---
 
@@ -25,21 +26,21 @@ for the hosted SaaS.
 
 ---
 
-## Option A — Hetzner (EU, empfohlen für Subsumio)
+## Option A — Netcup (EU, empfohlen für Subsumio)
 
 Single EU box running Next.js web + Postgres+pgvector + engine+worker + Caddy
-(auto-HTTPS), fully scripted. EU/Germany data residency is the legal
-confidentiality argument, avoids Vercel upload caps, and is the cheapest path to
-**sellable storage** with real margin. Full runbook + the "what you provide"
-checklist:
+(auto-HTTPS). EU/Germany data residency is the legal confidentiality argument,
+avoids Vercel upload caps, and is the cheapest path to **sellable storage** with
+real margin. Deploys upload a clean copy of one commit to `/opt/subsumio` —
+full runbook + server layout:
 
-➡️ **[`server/deploy/hetzner/README.md`](../server/deploy/hetzner/README.md)**
+➡️ **[`server/deploy/netcup/RUNBOOK.md`](../server/deploy/netcup/RUNBOOK.md)**
 
 ```bash
-cd server/deploy/hetzner
-export HCLOUD_TOKEN=<your Hetzner API token>
-SSH_KEY=<your hcloud ssh key name> bash provision.sh   # creates firewall + server
-# → point DNS, ssh in, cp .env.example .env, edit, docker compose up -d --build
+bash scripts/deploy.sh            # commit + push + deploy
+# or directly:
+sh server/deploy/netcup/deploy-code.sh          # full deploy
+sh server/deploy/netcup/deploy-code.sh --app    # web + engine only
 ```
 
 ## Option B — any Docker host / VPS
@@ -60,7 +61,7 @@ docker run -d --name subsumio-engine -p 3131:3131 \
 
 ## Wire the frontend
 
-On the recommended Hetzner stack these variables live in
+On the recommended self-hosted stack these variables live in
 `server/deploy/hetzner/.env` and are consumed by Docker Compose:
 
 | Variable                     | Value                                       |
@@ -100,7 +101,7 @@ Operational notes for big files:
   `clamd.conf` set `StreamMaxLength 1024M` and `MaxFileSize 1024M`, then restart
   `clamd`. Without `CLAMAV_HOST`, the magic-byte/executable checks still run and
   have no size cap.
-- **Reverse proxy.** Caddy (the Hetzner default) has **no** request-body size limit
+- **Reverse proxy.** Caddy (the compose default) has **no** request-body size limit
   out of the box, so 1 GB uploads pass through to the web container. If you put
   nginx, Cloudflare, or another proxy in front, raise that layer's body limit too.
 
@@ -168,7 +169,7 @@ DATABASE_URL=<engine postgres url> bun run server/scripts/auto-embed-pg.ts
 
 ## Still owner-only (accounts, not code)
 
-- Domain (subsumio.com/.de/.ai) + email; point DNS A-records to the Hetzner box.
+- Domain (subsumio.com/.de/.ai) + email; point DNS A-records to the server.
 - Stripe (products/prices + `STRIPE_*` keys + webhook → `/api/stripe/webhook`).
 - Resend (`RESEND_API_KEY` + verified `MAIL_FROM` domain) for digests/invites.
 - Upstash Redis (`UPSTASH_REDIS_REST_*`) for distributed rate limiting.

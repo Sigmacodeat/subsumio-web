@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 import { SUPPORTED_UPLOAD_MIME_TYPES, isSupportedUploadName } from "@/lib/upload-formats";
 
 /**
- * Upload size limits. Agency-level deployments (Hetzner self-hosted, no platform
+ * Upload size limits. Agency-level deployments (self-hosted, no platform
  * body cap) accept files up to the defaults below — 500 MB for documents,
  * 200 MB for images, 20 MB for spreadsheets. Override per-environment with
  * MAX_UPLOAD_BYTES / MAX_IMAGE_BYTES / MAX_TABULAR_UPLOAD_BYTES (Next.js
@@ -26,7 +26,7 @@ export const MAX_IMAGE_SIZE = resolveLimit("MAX_IMAGE_BYTES", 200 * 1024 * 1024)
 export const MAX_TABULAR_SIZE = resolveLimit("MAX_TABULAR_UPLOAD_BYTES", 20 * 1024 * 1024); // 20 MB
 
 // Browser uploads POST through the web app's /api/upload route. In the documented
-// Hetzner/self-hosted deployment the web upload limit is 1 GB; if the web app is
+// Self-hosted deployment the web upload limit is 1 GB; if the web app is
 // hosted behind a stricter platform/proxy, set NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES
 // to that lower transport limit so the UI fails before the network does.
 const directUploadRaw = process.env.NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES;

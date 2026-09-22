@@ -1,7 +1,7 @@
 #!/bin/bash
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║  SUBSUMIO PIPELINE MONITOR — Live Dashboard                      ║
-# ║  Zeigt alle laufenden Prozesse auf Laptop + Hetzner Server        ║
+# ║  Zeigt alle laufenden Prozesse auf Laptop + Netcup Server        ║
 # ║  Usage:                                                           ║
 # ║    ./scripts/monitor.sh              # Einmalige Ausgabe          ║
 # ║    ./scripts/monitor.sh --watch      # Auto-Refresh alle 5s       ║
@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-SSH_HOST="subsumio-hetzner"
+SSH_HOST="subsumio-netcup"
 REFRESH_INTERVAL=5
 SHOW_LOGS=false
 SHOW_DB=false
@@ -189,7 +189,7 @@ render_local() {
 }
 
 # ── HETZNER: Server Processes ───────────────────────────────────────
-render_hetzner() {
+render_server() {
   section "🖥  HETZNER (167.233.134.25)"
 
   # Docker containers
@@ -301,10 +301,10 @@ render_db() {
   printf "${C_BOLD}  📊 Datenbank Stats:${C_RESET}\n"
 
   local db_query="SELECT relname||chr(124)||n_live_tup FROM pg_stat_user_tables WHERE relname IN ('pages','content_chunks','links','sources') ORDER BY relname;"
-  local db_stats=$(ssh_run "docker exec hetzner-db-1 psql -U sigmabrain -d sigmabrain -t -c \"$db_query\" 2>/dev/null" || echo "")
+  local db_stats=$(ssh_run "docker exec subsumio-engine-db-1 psql -U sigmabrain -d sigmabrain -t -c \"$db_query\" 2>/dev/null" || echo "")
   # Fallback: try simpler query if above fails
   if [ -z "$db_stats" ]; then
-    db_stats=$(ssh_run "docker exec hetzner-db-1 psql -U sigmabrain -d sigmabrain -t -c \"SELECT 'pages|' || COUNT(*) FROM pages; SELECT 'chunks|' || COUNT(*) FROM content_chunks; SELECT 'embedded|' || COUNT(*) FROM content_chunks WHERE embedding IS NOT NULL; SELECT 'pending|' || COUNT(*) FROM content_chunks WHERE embedding IS NULL; SELECT 'links|' || COUNT(*) FROM links; SELECT 'sources|' || COUNT(*) FROM sources;\" 2>/dev/null" || echo "")
+    db_stats=$(ssh_run "docker exec subsumio-engine-db-1 psql -U sigmabrain -d sigmabrain -t -c \"SELECT 'pages|' || COUNT(*) FROM pages; SELECT 'chunks|' || COUNT(*) FROM content_chunks; SELECT 'embedded|' || COUNT(*) FROM content_chunks WHERE embedding IS NOT NULL; SELECT 'pending|' || COUNT(*) FROM content_chunks WHERE embedding IS NULL; SELECT 'links|' || COUNT(*) FROM links; SELECT 'sources|' || COUNT(*) FROM sources;\" 2>/dev/null" || echo "")
   fi
 
   if [ -n "$db_stats" ]; then
@@ -320,7 +320,7 @@ render_db() {
     done
 
     # Embedding progress
-    local embed_pct=$(ssh_run "docker exec hetzner-db-1 psql -U sigmabrain -d sigmabrain -t -c \"SELECT COALESCE(ROUND(100.0 * COUNT(CASE WHEN embedding IS NOT NULL THEN 1 END) / NULLIF(COUNT(*),0), 1), 0) FROM content_chunks;\" 2>/dev/null" | xargs || echo "0")
+    local embed_pct=$(ssh_run "docker exec subsumio-engine-db-1 psql -U sigmabrain -d sigmabrain -t -c \"SELECT COALESCE(ROUND(100.0 * COUNT(CASE WHEN embedding IS NOT NULL THEN 1 END) / NULLIF(COUNT(*),0), 1), 0) FROM content_chunks;\" 2>/dev/null" | xargs || echo "0")
     if [ "$embed_pct" != "0" ] && [ -n "$embed_pct" ]; then
       local ep_int=$(echo "$embed_pct" | cut -d. -f1)
       printf "    Embedding Coverage: "; bar "$ep_int" 20; printf " %s%%\n" "$embed_pct"
@@ -333,7 +333,7 @@ render_db() {
 # ── Log Tails ───────────────────────────────────────────────────────
 render_logs() {
   echo ""
-  printf "${C_BOLD}  📜 Letzte Log-Zeilen (Hetzner):${C_RESET}\n"
+  printf "${C_BOLD}  📜 Letzte Log-Zeilen (Netcup):${C_RESET}\n"
 
   # Pipeline logs
   local log_files=$(ssh_run 'ls -t /root/subsumio-pipeline-logs/*.log 2>/dev/null | head -5' || echo "")
@@ -365,8 +365,8 @@ render_logs() {
 
   # Docker logs for engine
   echo ""
-  printf "    ${C_MAGENTA}📄 Docker: hetzner-engine-1 (letzte 3 Zeilen)${C_RESET}\n"
-  local engine_log=$(ssh_run 'docker logs hetzner-engine-1 --tail 3 2>&1' || echo "")
+  printf "    ${C_MAGENTA}📄 Docker: subsumio-engine-engine-1 (letzte 3 Zeilen)${C_RESET}\n"
+  local engine_log=$(ssh_run 'docker logs subsumio-engine-engine-1 --tail 3 2>&1' || echo "")
   if [ -n "$engine_log" ]; then
     echo "$engine_log" | while IFS= read -r logline; do
       printf "      ${C_DIM}%s${C_RESET}\n" "$logline"
@@ -391,7 +391,7 @@ render_balancer() {
   echo ""
   printf "${C_BOLD}${C_MAGENTA}  ⚖  LOAD BALANCER:${C_RESET}\n"
 
-  # Get Hetzner RAM info
+  # Get Server RAM info
   local hz_mem_info=$(ssh_run 'free -m | awk "/Mem:/{print \$2, \$3, \$7}"' 2>/dev/null | xargs || echo "0 0 0")
   local hz_mem_total=$(echo "$hz_mem_info" | awk '{print $1}')
   local hz_mem_used=$(echo "$hz_mem_info" | awk '{print $2}')
@@ -406,11 +406,11 @@ render_balancer() {
 
   local mac_mem_free_gb=$(( mac_mem_free_mb / 1024 ))
   printf "  ${C_DIM}MacBook RAM: ${C_RESET}${C_GREEN}%sGB frei${C_RESET} / %sGB total\n" "$mac_mem_free_gb" "$mac_mem_total_gb"
-  printf "  ${C_DIM}Hetzner RAM: ${C_RESET}${C_RED}%sMB frei${C_RESET} / %sMB total (%s%% belegt)\n" "$hz_mem_avail" "$hz_mem_total" "$(( hz_mem_used * 100 / hz_mem_total ))"
+  printf "  ${C_DIM}Server RAM: ${C_RESET}${C_RED}%sMB frei${C_RESET} / %sMB total (%s%% belegt)\n" "$hz_mem_avail" "$hz_mem_total" "$(( hz_mem_used * 100 / hz_mem_total ))"
 
-  # Get top RAM-consuming processes on Hetzner
+  # Get top RAM-consuming processes on the server
   echo ""
-  printf "  ${C_BOLD}Hetzner Top RAM-Prozesse (Kandidaten für Umzug):${C_RESET}\n"
+  printf "  ${C_BOLD}Netcup Top RAM-Prozesse (Kandidaten für Umzug):${C_RESET}\n"
   printf "  ${C_DIM}%-7s %-8s %-7s %s${C_RESET}\n" "PID" "RAM(MB)" "%MEM" "COMMAND"
 
   local hz_procs=$(ssh_run 'ps aux --sort=-%mem | grep -E "bun scripts/|bun /app/scripts/" | grep -v grep | grep -v "ps aux" | grep -v defunct | head -10' 2>/dev/null || echo "")
@@ -459,19 +459,19 @@ render_balancer() {
     fi
 
     if [ "$movable_ram_int" -gt 0 ] 2>/dev/null; then
-      printf "    ${C_YELLOW}%sMB RAM auf Hetzner durch Import-Prozesse belegt${C_RESET}\n" "$movable_ram_int"
-      printf "    ${C_DIM}→ Umzug auf MacBook würde Hetzner %sMB entlasten${C_RESET}\n" "$movable_ram_int"
+      printf "    ${C_YELLOW}%sMB RAM auf dem Server durch Import-Prozesse belegt${C_RESET}\n" "$movable_ram_int"
+      printf "    ${C_DIM}→ Umzug auf MacBook würde Netcup %sMB entlasten${C_RESET}\n" "$movable_ram_int"
     fi
 
     # Show rebalance commands
     echo ""
     printf "  ${C_BOLD}Rebalance Commands:${C_RESET}\n"
-    local imports_on_hetzner=$(ssh_run 'ps aux | grep -E "bun scripts/import-judikatur|bun /app/scripts/import-judikatur" | grep -v grep | grep -v defunct | sed "s/.*--source //" | awk "{print \$1}" | sort -u' 2>/dev/null || echo "")
-    if [ -n "$imports_on_hetzner" ]; then
-      echo "$imports_on_hetzner" | while IFS= read -r src; do
+    local imports_on_server=$(ssh_run 'ps aux | grep -E "bun scripts/import-judikatur|bun /app/scripts/import-judikatur" | grep -v grep | grep -v defunct | sed "s/.*--source //" | awk "{print \$1}" | sort -u' 2>/dev/null || echo "")
+    if [ -n "$imports_on_server" ]; then
+      echo "$imports_on_server" | while IFS= read -r src; do
         [ -z "$src" ] && continue
-        printf "    ${C_CYAN}# %s auf Hetzner killen + auf MacBook starten:${C_RESET}\n" "$src"
-        printf "    ${C_DIM}ssh subsumio-hetzner 'pkill -f \"import-judikatur.*--source $src\"'${C_RESET}\n"
+        printf "    ${C_CYAN}# %s auf dem Server killen + auf MacBook starten:${C_RESET}\n" "$src"
+        printf "    ${C_DIM}ssh subsumio-netcup 'pkill -f \"import-judikatur.*--source $src\"'${C_RESET}\n"
         printf "    ${C_DIM}MONITOR_DATABASE_URL=<Postgres-URL über SSH-Tunnel> \\\\\n"
         printf "    ${C_DIM}DATABASE_URL=\"$MONITOR_DATABASE_URL\" \\\\\n"
         printf "    ${C_DIM}bun run server/scripts/import-judikatur.ts --source $src --no-embed${C_RESET}\n"
@@ -482,17 +482,17 @@ render_balancer() {
     echo ""
     local tunnel=$(lsof -i :5433 -P 2>/dev/null | grep LISTEN | head -1)
     if [ -n "$tunnel" ]; then
-      printf "  ${C_GREEN}●${C_RESET} SSH Tunnel zur Hetzner DB aktiv (localhost:5433)\n"
+      printf "  ${C_GREEN}●${C_RESET} SSH Tunnel zur Server-DB aktiv (localhost:5433)\n"
     else
       printf "  ${C_YELLOW}○${C_RESET} SSH Tunnel nicht aktiv — starten mit:\n"
-      printf "    ${C_DIM}ssh -L 5433:localhost:5432 subsumio-hetzner -N &${C_RESET}\n"
+      printf "    ${C_DIM}ssh -L 5433:localhost:5432 subsumio-netcup -N &${C_RESET}\n"
     fi
   else
     printf "  ${C_DIM}keine verschiebbaren Prozesse gefunden${C_RESET}\n"
   fi
 }
 
-# ── Rebalance: Auto-move processes from Hetzner to MacBook ──────────
+# ── Rebalance: Auto-move processes from Netcup to MacBook ──────────
 do_rebalance() {
   echo ""
   printf "${C_BOLD}${C_MAGENTA}  ⚖  AUTO-REBALANCE START${C_RESET}\n"
@@ -506,8 +506,8 @@ do_rebalance() {
   # 1. Check SSH tunnel
   local tunnel=$(lsof -i :5433 -P 2>/dev/null | grep LISTEN | head -1)
   if [ -z "$tunnel" ]; then
-    printf "${C_YELLOW}  → Starte SSH Tunnel zur Hetzner DB...${C_RESET}\n"
-    ssh -L 5433:localhost:5432 subsumio-hetzner -N -f 2>/dev/null
+    printf "${C_YELLOW}  → Starte SSH Tunnel zur Server-DB...${C_RESET}\n"
+    ssh -L 5433:localhost:5432 subsumio-netcup -N -f 2>/dev/null
     sleep 2
     tunnel=$(lsof -i :5433 -P 2>/dev/null | grep LISTEN | head -1)
     if [ -z "$tunnel" ]; then
@@ -517,11 +517,11 @@ do_rebalance() {
   fi
   printf "${C_GREEN}  ✓ SSH Tunnel aktiv (localhost:5433)${C_RESET}\n"
 
-  # 2. Find import processes on Hetzner that can be moved
+  # 2. Find import processes on Netcup that can be moved
   local imports=$(ssh_run 'ps aux | grep -E "bun scripts/import-judikatur|bun /app/scripts/import-judikatur" | grep -v grep | grep -v defunct | sed "s/.*--source //" | awk "{print \$1}" | sort -u' 2>/dev/null || echo "")
 
   if [ -z "$imports" ]; then
-    printf "${C_DIM}  Keine Import-Prozesse auf Hetzner gefunden${C_RESET}\n"
+    printf "${C_DIM}  Keine Import-Prozesse auf dem Server gefunden${C_RESET}\n"
     return 0
   fi
 
@@ -544,8 +544,8 @@ do_rebalance() {
 
     printf "${C_CYAN}  → Umzug: import-judikatur --source %s${C_RESET}\n" "$src"
 
-    # Kill on Hetzner
-    printf "    ${C_DIM}Killen auf Hetzner...${C_RESET}\n"
+    # Kill on the server
+    printf "    ${C_DIM}Killen auf dem Server...${C_RESET}\n"
     ssh_run "pkill -f 'import-judikatur.*--source $src'" 2>/dev/null
     sleep 1
 
@@ -608,7 +608,7 @@ emit() {
   RENDER_LINES+=("$1")
 }
 
-# ── Kill Zombies on Hetzner ─────────────────────────────────────────
+# ── Kill Zombies on Netcup ─────────────────────────────────────────
 kill_zombies() {
   local zombies=$(ssh_run 'ps aux | grep "\[bun\] <defunct>" | awk "{print \$2}"' 2>/dev/null || echo "")
   if [ -n "$zombies" ]; then
@@ -650,7 +650,7 @@ _render_all() {
   local tmpfile=$(mktemp)
   {
     render_local
-    render_hetzner
+    render_server
     if $SHOW_DB; then render_db; fi
     if $SHOW_LOGS; then render_logs; fi
     if $SHOW_DISK; then render_disk; fi

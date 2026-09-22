@@ -4,7 +4,7 @@
  * The web app used to call OpenRouter directly (memory extraction, WhatsApp
  * intent parsing, LLM deadline extraction, briefing polish) with its own key:
  * a second provider path with no model tiers, no budget tracking, no prompt
- * sanitising, and — on Hetzner — no key at all in the web container, so those
+ * sanitising, and — in production — no key at all in the web container, so those
  * features silently did nothing. Every such call now goes through this
  * function via `POST /api/llm/complete`: model resolved by tier (or the
  * per-purpose config key `models.purpose.<purpose>`), the same gateway as

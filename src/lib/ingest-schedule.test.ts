@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * The Hetzner stack fires cron jobs through supercronic from
+ * The server stack fires cron jobs through supercronic from
  * server/deploy/hetzner/crontab — that file is the scheduler of record
  * (see docs/deploy/CRON_SCHEDULE.md). These tests pin that the document
  * ingest recovery workers stay scheduled there.
