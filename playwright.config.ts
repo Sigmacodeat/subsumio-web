@@ -85,7 +85,10 @@ const MOCK_ENGINE_WEB_ENV: Record<string, string> = {
   // passwordless localhost socket-adjacent default.
   SUBSUMIO_AUTH_DATABASE_URL:
     process.env.SUBSUMIO_E2E_DB_URL ?? "postgres://localhost:5432/subsumio_e2e?sslmode=disable",
-  SUBSUMIO_API_URL: "",
+  // Points at the mock engine on :3001 — this IS the engine under test, not a
+  // real one. Blank would fall back to the same default in engine.ts but makes
+  // isEngineLLMAvailable() false, disabling engine-backed surfaces (concierge).
+  SUBSUMIO_API_URL: "http://localhost:3001",
 };
 
 const REAL_ENGINE_WEB_ENV: Record<string, string> = {

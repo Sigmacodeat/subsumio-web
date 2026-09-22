@@ -21,6 +21,26 @@ function getTestEmail() {
   return `kbd-${Date.now()}-${testCounter}@subsumio.local`;
 }
 
+const PALETTE_INPUT =
+  'input[role="combobox"], input[aria-label*="earch"], input[placeholder*="uche"], input[placeholder*="earch"]';
+
+/**
+ * Opens the command palette reliably. React hydration can lag behind
+ * `waitUntil: "load"` — a Meta+k or a click landing before hydration is
+ * silently dropped. Retrying is safe: we only re-press while the palette is
+ * closed, and Meta+k toggles, so a late-firing press can't strand it open.
+ */
+async function openCommandPalette(page: import("@playwright/test").Page) {
+  const input = page.locator(PALETTE_INPUT).first();
+  for (let i = 0; i < 10; i++) {
+    if (await input.isVisible().catch(() => false)) return input;
+    await page.keyboard.press("Meta+k");
+    await page.waitForTimeout(700);
+  }
+  await expect(input).toBeVisible({ timeout: 5_000 });
+  return input;
+}
+
 test.describe("Keyboard-Only Walkthrough", () => {
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(120_000);
@@ -128,16 +148,8 @@ test.describe("Keyboard-Only Walkthrough", () => {
       await page.goto("/dashboard", { waitUntil: "load" });
       await expect(page.locator("#main-content")).toBeVisible();
 
-      // Open command palette via keyboard
-      await page.keyboard.press("Meta+k");
-
-      // Palette input should be focused
-      const paletteInput = page
-        .locator(
-          'input[role="combobox"], input[aria-label*="earch"], input[placeholder*="uche"], input[placeholder*="earch"]'
-        )
-        .first();
-      await expect(paletteInput).toBeVisible({ timeout: 3_000 });
+      // Open command palette via keyboard (retry until hydrated)
+      const paletteInput = await openCommandPalette(page);
 
       // Type a query
       await page.keyboard.type("Akten");
@@ -194,18 +206,14 @@ test.describe("Keyboard-Only Walkthrough", () => {
       await page.goto("/dashboard", { waitUntil: "load" });
       await expect(page.locator("#main-content")).toBeVisible();
 
-      // Open command palette by clicking the search trigger button
-      // (Meta+k may not reliably keep the palette open in production builds)
+      // Open command palette (click the trigger, retried until hydrated)
       const searchTrigger = page.locator('button[aria-haspopup="dialog"]').first();
       await expect(searchTrigger).toBeVisible({ timeout: 5_000 });
-      await searchTrigger.click();
-
-      // Palette input should be visible
-      const paletteInput = page
-        .locator(
-          'input[role="combobox"], input[aria-label*="earch"], input[placeholder*="uche"], input[placeholder*="earch"]'
-        )
-        .first();
+      const paletteInput = page.locator(PALETTE_INPUT).first();
+      for (let i = 0; i < 10 && !(await paletteInput.isVisible().catch(() => false)); i++) {
+        await searchTrigger.click();
+        await page.waitForTimeout(700);
+      }
       await expect(paletteInput).toBeVisible({ timeout: 5_000 });
       // Fill the search query
       await paletteInput.fill("Akten");

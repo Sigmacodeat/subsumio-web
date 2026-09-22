@@ -454,7 +454,10 @@ export default function WorkflowBuilderPage() {
 
         {/* Canvas */}
         <section aria-label="Arbeitsfläche" className="min-w-0">
-          <div className="h-[520px] overflow-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+          <div
+            tabIndex={0}
+            className="h-[520px] overflow-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
+          >
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Pointer-driven drag-and-drop canvas; clicking empty canvas only clears the selection (steps remain editable via the inspector). */}
             <div
               ref={canvasRef}

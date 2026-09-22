@@ -550,12 +550,15 @@ export function CommandPalette({
           api.search(q, 5, "document"),
         ]);
         if (requestId !== searchRequestIdRef.current) return;
-        setSearchResults(brainRes.status === "fulfilled" ? brainRes.value : []);
+        // The proxy forwards the engine body verbatim — a malformed payload
+        // (object instead of array) must not take the whole dashboard down.
+        const asArray = <T,>(v: T[] | unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+        setSearchResults(brainRes.status === "fulfilled" ? asArray(brainRes.value) : []);
         setFedResults({
-          cases: casesRes.status === "fulfilled" ? casesRes.value : [],
-          contacts: contactsRes.status === "fulfilled" ? contactsRes.value : [],
-          deadlines: deadlinesRes.status === "fulfilled" ? deadlinesRes.value : [],
-          documents: docsRes.status === "fulfilled" ? docsRes.value : [],
+          cases: casesRes.status === "fulfilled" ? asArray(casesRes.value) : [],
+          contacts: contactsRes.status === "fulfilled" ? asArray(contactsRes.value) : [],
+          deadlines: deadlinesRes.status === "fulfilled" ? asArray(deadlinesRes.value) : [],
+          documents: docsRes.status === "fulfilled" ? asArray(docsRes.value) : [],
         });
         setSearchFailures(
           [brainRes, casesRes, contactsRes, deadlinesRes, docsRes].filter(

@@ -396,6 +396,8 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
           p.slug.toLowerCase().includes(q.toLowerCase())
       );
     }
+    // Same contract as the real engine's /api/search (server/src/commands/
+    // web-api.ts mapSearchResults): a bare array — no { results, total } wrap.
     const results = matched.slice(0, limit).map((p) => ({
       slug: p.slug,
       title: p.title,
@@ -404,7 +406,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       snippet: p.content.slice(0, 200),
       score: 0.9,
     }));
-    return sendJson(res, 200, { results, total: results.length });
+    return sendJson(res, 200, results);
   }
 
   // ── Think (SSE) ─────────────────────────────────────────────────────
