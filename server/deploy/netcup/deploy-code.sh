@@ -27,6 +27,11 @@
 # against.
 set -eu
 
+# git archive roots the tarball at the current directory — running this from
+# server/ ships a server-only release that then fails the remote layout
+# checks. Anchor to the repo root so the script works from any cwd.
+cd "$(git rev-parse --show-toplevel)"
+
 HOST="${DEPLOY_HOST:-subsumio-netcup}"
 APP=/opt/subsumio
 H=server/deploy/netcup
