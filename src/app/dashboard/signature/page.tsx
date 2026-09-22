@@ -143,7 +143,7 @@ export default function SignaturePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("sig.breadcrumb")}
         description={t("sig.desc")}
@@ -261,7 +261,7 @@ export default function SignaturePage() {
                     <button
                       onClick={() => setSendReq(req)}
                       disabled={!req.caseSlug}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-40 motion-reduce:transition-none"
                       title={req.caseSlug ? t("sig.aria_ext_sent") : t("sig.no_case")}
                       aria-label={t("sig.aria_ext_sent")}
                     >

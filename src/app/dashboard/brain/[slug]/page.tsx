@@ -246,7 +246,7 @@ export default function BrainDetailPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto w-full max-w-[1200px] p-4 md:p-6 lg:p-8">
+      <div className="ds-page p-4 md:p-6 lg:p-8">
         <PageSkeleton rows={8} className="p-0" />
       </div>
     );
@@ -254,7 +254,7 @@ export default function BrainDetailPage() {
 
   if (!page) {
     return (
-      <div className="mx-auto w-full max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title={loadFailed ? "Eintrag derzeit nicht verfügbar" : "Eintrag nicht gefunden"}
           breadcrumbs={[
@@ -298,7 +298,7 @@ export default function BrainDetailPage() {
   ].filter(Boolean);
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={page.title || readableTarget(slug)}
         description={metaParts.join(" · ")}

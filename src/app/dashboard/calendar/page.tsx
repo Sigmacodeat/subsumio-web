@@ -368,7 +368,7 @@ export default function CalendarPage() {
   const loadFailed = fristenQuery.isError || appts.error;
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("calendar.title")}
         description="Fristen, Verhandlungen und Termine aller Akten in einem Kalender — Überschneidungen werden markiert."

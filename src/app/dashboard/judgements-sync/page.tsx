@@ -87,7 +87,7 @@ export default function JudgementsSyncPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("judgements.sync_title")}
         description={t("judgements.sync_desc")}
@@ -157,7 +157,7 @@ export default function JudgementsSyncPage() {
               <button
                 onClick={() => navigator.clipboard.writeText(cmd)}
                 aria-label={t("judgements.copy")}
-                className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               >
                 {t("judgements.copy")}
               </button>
