@@ -389,16 +389,24 @@ const TOOL_SPECS: ToolSpec[] = [
   {
     tool: "create_task",
     label: "chat.tool.create_task",
+    // case_slug is optional here (not required by transform) even though the
+    // server requires it — this tool is in MATTER_SCOPED_TOOLS, so
+    // detectToolCalls fills case_slug from the open matter afterwards when
+    // the model omits it, the same way email_draft/search_deadlines do.
+    // Requiring it here would make that auto-fill unreachable: the marker
+    // would already be dropped as "missing required attribute" before
+    // auto-injection ever ran.
     transform: (a) =>
-      a.case_slug && a.title
+      a.title
         ? { case_slug: a.case_slug, title: a.title, due_date: a.due_date || undefined }
         : null,
   },
   {
     tool: "create_deadline",
     label: "chat.tool.create_deadline",
+    // Same reasoning as create_task above — case_slug left to auto-inject.
     transform: (a) =>
-      a.case_slug && a.title && a.due_date
+      a.title && a.due_date
         ? { case_slug: a.case_slug, title: a.title, due_date: a.due_date }
         : null,
   },
@@ -419,8 +427,9 @@ const TOOL_SPECS: ToolSpec[] = [
   {
     tool: "request_signature",
     label: "chat.tool.request_signature",
+    // Same reasoning as create_task above — case_slug left to auto-inject.
     transform: (a) =>
-      a.case_slug && a.document_name && a.recipient_name
+      a.document_name && a.recipient_name
         ? {
             case_slug: a.case_slug,
             document_name: a.document_name,
