@@ -53,11 +53,29 @@ const CONTENT = {
   ctaButton: "Kontakt aufnehmen",
 } as const;
 
+// DE-Markt-Variante: gleiche Story, deutsche Rechtsreferenzen. Der Anbieter
+// bleibt ehrlich österreichisch — nur der Kundenfokus wechselt.
+const CONTENT_DE = {
+  ...CONTENT,
+  h1a: "Aus Österreich",
+  h1b: "für deutsche Kanzleien.",
+  sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheitspflicht, die Präzision und die berufsrechtlichen Anforderungen deutscher Kanzleien.",
+  values: CONTENT.values.map((v) =>
+    v.title === "Österreich zuerst"
+      ? {
+          ...v,
+          title: "Österreich und Deutschland",
+          desc: "Gebaut für BGB, ZPO, StGB, BRAO und RVG — mit gesetze-im-internet.de als Rechtsquelle. Lieber zwei Rechtsräume richtig als drei halb.",
+        }
+      : v
+  ),
+} as const;
+
 export default function AboutPage({ market = "at" }: { market?: Market }) {
   const { ui: UI_STRINGS } = contentFor(market);
   const p = pBind(market);
 
-  const c = CONTENT;
+  const c = market === "de" ? CONTENT_DE : CONTENT;
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       <PageHero

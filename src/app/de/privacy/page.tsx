@@ -20,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  return <PrivacyContent home="/de" />;
+  return <PrivacyContent home="/de" market="de" />;
 }

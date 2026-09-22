@@ -138,6 +138,9 @@ export type AuditAction =
   | "admin.user_update"
   | "admin.tenant_suspend"
   | "admin.tenant_reactivate"
+  | "automation.create"
+  | "automation.update"
+  | "automation.delete"
   | "admin.tenant_role_change"
   | "admin.tenant_owner_transfer"
   | "admin.user_deactivate"
@@ -640,6 +643,9 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.outbound": "WhatsApp-Nachricht gesendet",
   "workflow.approve": "Ablauf: Schritt freigegeben",
   "workflow.start": "Ablauf gestartet",
+  "automation.create": "Automatisierung angelegt",
+  "automation.update": "Automatisierung geändert",
+  "automation.delete": "Automatisierung gelöscht",
 };
 
 /** Anzeige für Aktionen, die weder ein Label noch eine lesbare Ableitung haben. */

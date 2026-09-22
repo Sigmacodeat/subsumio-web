@@ -297,7 +297,13 @@ const SIMPLE: SimpleSource[] = [
     key: "statutes-de",
     dir: "de",
     sourceId: "law-de",
-    importCmd: ["scripts/import-statutes-split.ts", "--jurisdiction", "de", "--no-embed"],
+    importCmd: [
+      "scripts/import-statutes-split.ts",
+      "--jurisdiction",
+      "de",
+      "--auto-de",
+      "--no-embed",
+    ],
   },
   {
     kind: "statutes",

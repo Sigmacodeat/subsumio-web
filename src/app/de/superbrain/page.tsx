@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "SuperBrain – das Gedächtnis Ihrer Kanzlei | Subsumio",
   description:
     "Das Subsumio SuperBrain prüft jede Nacht die neuen Dokumente Ihrer Kanzlei. Am Morgen sehen Sie neue Widersprüche, anstehende Fristen und fehlende Unterlagen – mit Fundstellen. EU-Hosting, deutsches Recht von gesetze-im-internet.de.",
-  keywords: keywordsFor("superbrain"),
+  keywords: keywordsFor("superbrain", "de"),
   alternates: {
     canonical: "/de/superbrain",
     languages: {

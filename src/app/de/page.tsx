@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Subsumio — KI-Kanzleisoftware für Deutschland",
   description:
     "KI-Kanzleisoftware für Kanzleien in Deutschland: Aktenverwaltung, Fristenkontrolle, belegte KI-Antworten mit Fundstellen, Honorarverwaltung und Kollisionsprüfung nach § 43a Abs. 4 BRAO. EU-Cloud oder On-Premise.",
-  keywords: keywordsFor("root"),
+  keywords: keywordsFor("root", "de"),
   alternates: {
     canonical: "/de",
     languages: { "de-DE": "/de", "de-AT": "/at", "x-default": "/at" },

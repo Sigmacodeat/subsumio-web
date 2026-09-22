@@ -480,8 +480,7 @@ export async function runPhaseLegalPrecedentLinkage(
           const candidateSlug = `legal/statutes/${jur}/${abbr}/§-${sectionNum}`;
           if (statuteSlugs.has(candidateSlug)) {
             try {
-              await engine.addLink(
-                // gbrain-allow-direct-insert: legal-dream cycle phase — statute link reconciliation
+              const statuteLink: Parameters<typeof engine.addLink> = [
                 caseRow.slug,
                 candidateSlug,
                 ref,
@@ -489,8 +488,9 @@ export async function runPhaseLegalPrecedentLinkage(
                 "legal-dream",
                 undefined,
                 undefined,
-                linkOpts
-              );
+                linkOpts,
+              ];
+              await engine.addLink(...statuteLink); // gbrain-allow-direct-insert: legal-dream cycle phase — statute link reconciliation
               linksCreated++;
               statuteLinks++;
             } catch {
@@ -510,8 +510,7 @@ export async function runPhaseLegalPrecedentLinkage(
 
       if (opponentTarget && entitySlugs.has(opponentTarget)) {
         try {
-          await engine.addLink(
-            // gbrain-allow-direct-insert: legal-dream cycle phase — opponent link reconciliation
+          const opponentLink: Parameters<typeof engine.addLink> = [
             caseRow.slug,
             opponentTarget,
             "opponent",
@@ -519,8 +518,9 @@ export async function runPhaseLegalPrecedentLinkage(
             "legal-dream",
             undefined,
             undefined,
-            linkOpts
-          );
+            linkOpts,
+          ];
+          await engine.addLink(...opponentLink); // gbrain-allow-direct-insert: legal-dream cycle phase — opponent link reconciliation
           linksCreated++;
           opponentLinks++;
         } catch {
@@ -544,8 +544,7 @@ export async function runPhaseLegalPrecedentLinkage(
 
         if (target && entitySlugs.has(target)) {
           try {
-            await engine.addLink(
-              // gbrain-allow-direct-insert: legal-dream cycle phase — entity-to-case link reconciliation
+            const entityLink: Parameters<typeof engine.addLink> = [
               target,
               caseRow.slug,
               ef.role,
@@ -553,8 +552,9 @@ export async function runPhaseLegalPrecedentLinkage(
               "legal-dream",
               undefined,
               undefined,
-              linkOpts
-            );
+              linkOpts,
+            ];
+            await engine.addLink(...entityLink); // gbrain-allow-direct-insert: legal-dream cycle phase — entity-to-case link reconciliation
             linksCreated++;
             entityLinks++;
           } catch {
@@ -590,8 +590,7 @@ export async function runPhaseLegalPrecedentLinkage(
 
         for (const matchCase of matchingCases) {
           try {
-            await engine.addLink(
-              // gbrain-allow-direct-insert: legal-dream cycle phase — precedent link reconciliation
+            const precedentLink: Parameters<typeof engine.addLink> = [
               caseRow.slug,
               matchCase.slug,
               caseRef,
@@ -599,8 +598,9 @@ export async function runPhaseLegalPrecedentLinkage(
               "legal-dream",
               undefined,
               undefined,
-              linkOpts
-            );
+              linkOpts,
+            ];
+            await engine.addLink(...precedentLink); // gbrain-allow-direct-insert: legal-dream cycle phase — precedent link reconciliation
             linksCreated++;
           } catch {
             // best-effort

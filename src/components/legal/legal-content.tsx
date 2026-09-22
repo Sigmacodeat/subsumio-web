@@ -127,7 +127,15 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
   );
 }
 
-export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
+export function PrivacyContent({
+  home,
+  lang = "de",
+  market = "at",
+}: {
+  home: string;
+  lang?: Lang;
+  market?: "at" | "de";
+}) {
   const t = T;
   return (
     <Shell home={home} lang={lang} title={t.privacyTitle} subtitle={t.privacySubtitle}>
@@ -191,8 +199,9 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <strong className="[color:var(--mk-text)]">Sie der Verantwortliche</strong> und wir handeln
         als <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Art. 28 DSGVO).
         Vor einer solchen Nutzung ist ein AVV abzuschließen (Vorlage wird bereitgestellt).
-        Rechtsanwältinnen und Rechtsanwälte beachten zusätzlich § 9 Abs. 2 RAO; wir unterzeichnen
-        dazu auf Wunsch eine gesonderte Verschwiegenheitsverpflichtung.
+        Rechtsanwältinnen und Rechtsanwälte beachten zusätzlich{" "}
+        {market === "de" ? "§ 43a Abs. 2 BRAO" : "§ 9 Abs. 2 RAO"}; wir unterzeichnen dazu auf
+        Wunsch eine gesonderte Verschwiegenheitsverpflichtung.
       </p>
 
       <H2>6. KI-Funktionen</H2>
@@ -272,7 +281,15 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
   );
 }
 
-export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
+export function TermsContent({
+  home,
+  lang = "de",
+  market = "at",
+}: {
+  home: string;
+  lang?: Lang;
+  market?: "at" | "de";
+}) {
   const t = T;
   return (
     <Shell home={home} lang={lang} title={t.termsTitle} subtitle={t.termsSubtitle}>
@@ -281,8 +298,9 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         (1) Diese AGB gelten für die Nutzung des gehosteten Subsumio-Dienstes (&bdquo;Dienst&ldquo;)
         zwischen RCIID — Rocket Chain Investigation &amp; Intelligence Division
         (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich ausschließlich an
-        Unternehmer i. S. d. UGB und juristische Personen des öffentlichen Rechts (B2B). (3)
-        Abweichende Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher Zustimmung.
+        Unternehmer i. S. d. {market === "de" ? "§ 14 BGB" : "UGB"} und juristische Personen des
+        öffentlichen Rechts (B2B). (3) Abweichende Bedingungen des Kunden gelten nur bei
+        ausdrücklicher schriftlicher Zustimmung.
       </p>
 
       <H2>§ 2 Vertragsschluss</H2>
@@ -329,9 +347,9 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         (1) Bei Verarbeitung personenbezogener Daten Dritter schließen die Parteien einen AVV (Art.
         28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Mit Rechtsanwältinnen und
         Rechtsanwälten schließt der Anbieter auf Wunsch eine gesonderte
-        Verschwiegenheitsverpflichtung (§ 9 Abs. 2 RAO). (3) Keine Nutzung von Kundeninhalten zum
-        KI-Training. (4) Bei Vertragsende kann der Kunde seine Daten selbst exportieren; danach
-        Löschung nach Maßgabe der Datenschutzerklärung.
+        Verschwiegenheitsverpflichtung ({market === "de" ? "§ 43a Abs. 2 BRAO" : "§ 9 Abs. 2 RAO"}
+        ). (3) Keine Nutzung von Kundeninhalten zum KI-Training. (4) Bei Vertragsende kann der Kunde
+        seine Daten selbst exportieren; danach Löschung nach Maßgabe der Datenschutzerklärung.
       </p>
 
       <H2>§ 7 KI-spezifische Hinweise</H2>

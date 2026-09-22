@@ -50,6 +50,7 @@ const ONLY_PREFIXED =
       )
     : null;
 const AUTO_AT = args.includes("--auto-at");
+const AUTO_DE = args.includes("--auto-de");
 const jurIdx = args.indexOf("--jurisdiction");
 const JURISDICTION_FILTER = jurIdx !== -1 ? args[jurIdx + 1] : null;
 const dbIdx = args.indexOf("--db");
@@ -60,7 +61,13 @@ const DB_OVERRIDE = dbIdx !== -1 ? args[dbIdx + 1] : null;
 const srcIdx = args.indexOf("--source");
 const SOURCE_ID = srcIdx !== -1 ? args[srcIdx + 1] : null;
 
-const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
+// The corpus is DATA living outside the app tree — resolve via env first
+// (SUBSUMIO_LAW_CORPUS_DIR / LAW_CORPUS_ROOT, same convention as
+// src/lib/corpus-paths.ts), fall back to a repo-local law-corpus/ dir.
+const CORPUS =
+  process.env.SUBSUMIO_LAW_CORPUS_DIR ??
+  process.env.LAW_CORPUS_ROOT ??
+  join(import.meta.dir, "..", "..", "law-corpus");
 
 interface StatuteFile {
   file: string; // relative to law-corpus/
@@ -177,13 +184,13 @@ const FILES: StatuteFile[] = [
   { file: "de/ustg.md", abbr: "ustg", jurisdiction: "de" },
   { file: "de/kstg.md", abbr: "kstg", jurisdiction: "de" },
   { file: "de/gewstg.md", abbr: "gewstg", jurisdiction: "de" },
-  { file: "de/erbstg.md", abbr: "erbstg", jurisdiction: "de" },
+  { file: "de/erbstg_1974.md", abbr: "erbstg", jurisdiction: "de" },
   { file: "de/bewg.md", abbr: "bewg", jurisdiction: "de" },
-  { file: "de/grestg.md", abbr: "grestg", jurisdiction: "de" },
+  { file: "de/grestg_1983.md", abbr: "grestg", jurisdiction: "de" },
   { file: "de/lstdv.md", abbr: "lstdv", jurisdiction: "de" },
   { file: "de/rvg.md", abbr: "rvg", jurisdiction: "de" },
   { file: "de/stberg.md", abbr: "stberg", jurisdiction: "de" },
-  { file: "de/stbvv.md", abbr: "stbvv", jurisdiction: "de" },
+  { file: "de/stbgebv.md", abbr: "stbvv", jurisdiction: "de" },
   // DE — corporate + commercial
   { file: "de/gmbhg.md", abbr: "gmbhg", jurisdiction: "de" },
   { file: "de/inso.md", abbr: "inso", jurisdiction: "de" },
@@ -246,6 +253,27 @@ if (AUTO_AT) {
     console.log(`[auto-at] Discovered ${discovered} additional AT statute files.`);
   } catch (e) {
     console.warn(`[auto-at] Could not scan ${atDir}: ${e}`);
+  }
+}
+
+// Same discovery for the German corpus: --auto-de scans de/ for the
+// thousands of Bundesgesetze fetched from gesetze-im-internet.de.
+if (AUTO_DE) {
+  const deDir = join(CORPUS, "de");
+  let discovered = 0;
+  try {
+    const entries = await Array.fromAsync(new Bun.Glob("*.md").scan({ cwd: deDir }));
+    const existing = new Set(FILES.filter((f) => f.jurisdiction === "de").map((f) => f.file));
+    for (const file of entries.sort()) {
+      const rel = `de/${file}`;
+      if (existing.has(rel)) continue;
+      const abbr = file.replace(/\.md$/, "").toLowerCase();
+      FILES.push({ file: rel, abbr, jurisdiction: "de" });
+      discovered++;
+    }
+    console.log(`[auto-de] Discovered ${discovered} additional DE statute files.`);
+  } catch (e) {
+    console.warn(`[auto-de] Could not scan ${deDir}: ${e}`);
   }
 }
 

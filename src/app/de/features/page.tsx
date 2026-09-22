@@ -7,7 +7,7 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: FEATURES_PAGE.metaTitle,
   description: FEATURES_PAGE.metaDesc,
-  keywords: keywordsFor("features"),
+  keywords: keywordsFor("features", "de"),
   alternates: {
     canonical: "/de/features",
     languages: { "de-DE": "/de/features", "de-AT": "/at/features", "x-default": "/at/features" },

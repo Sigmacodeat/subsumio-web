@@ -139,10 +139,20 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
     `caseAccessForUser`, `Promise.allSettled` für Teilausfall),
     `CommunicationsPanel` im Aktivitäts-Tab mit Kanal-Filter,
     Richtungs-Icons und Zustellstatus.
-15. **Öffentliche Terminbuchung** mit echter Kalenderprüfung
-    (msgraph.ts existiert; Verfügbarkeits-Slots + Buchungsseite).
-16. **Nachricht an Mandant als Leistung buchen** (Kontaktzeit →
-    time_entries).
+15. ~~**Öffentliche Terminbuchung**~~ ✅ **GELÖST** —
+    `GET/POST /api/booking/public` (anonym, `createPublicHandler`,
+    per-IP-Limit + Honeypot), Slot-Generierung via `generateSlots` gegen
+    belegte `booking`- UND `appointment`-Seiten (WhatsApp-Flow-Buchungen
+    eingeschlossen), serverseitige Re-Verifizierung beim Buchen (409 bei
+    Parallelkonflikt), Opt-in via Kanzlei-Settings (`bookingEnabled` +
+    Arbeitszeiten/Slot-Länge in den Settings), öffentliche Seite `/termin`,
+    Kanzlei-Mail-Benachrichtigung (nie an den Anfragenden).
+16. ~~**Nachricht an Mandant als Leistung buchen**~~ ✅ **GELÖST** —
+    `POST /api/portal/reply` nimmt optional `bill_minutes` entgegen und
+    hängt einen `time_entry` (billable, Anwalt, activity_type=email) an die
+    Akte — mit dem Verify-Retry gegen Lost-Updates aus api/time. Antwort-
+    Dialog in `/dashboard/communications` mit Checkbox + Minuten-Input;
+    Toast meldet „gesendet + verbucht" bzw. warnt bei Billing-Fehler.
 
 ### WP-4 Kanzleialltag (P1)
 

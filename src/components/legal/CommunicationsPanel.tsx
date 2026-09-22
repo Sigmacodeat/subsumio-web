@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Inbox, Loader2, MessagesSquare } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Inbox, Loader2, MessagesSquare, Timer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 import { formatDateTime } from "@/lib/utils";
 
 interface CommunicationItem {
@@ -38,9 +41,51 @@ const SOURCE_LABEL: Record<CommunicationItem["source"], string> = {
 
 /** Kommunikationsverlauf der Akte über alle Kanäle (WP-3.14). */
 export function CommunicationsPanel({ caseSlug }: { caseSlug: string }) {
+  const { addToast } = useToast();
   const [items, setItems] = useState<CommunicationItem[] | null>(null);
   const [error, setError] = useState(false);
   const [channelFilter, setChannelFilter] = useState("all");
+  /** WP-3.16: Kommunikation als abrechenbare Leistung buchen. */
+  const [billingFor, setBillingFor] = useState<string | null>(null);
+  const [billMinutes, setBillMinutes] = useState("6");
+  const [billBusy, setBillBusy] = useState(false);
+
+  async function bookAsService(item: CommunicationItem) {
+    const mins = parseInt(billMinutes, 10);
+    if (!mins || mins <= 0) return;
+    setBillBusy(true);
+    try {
+      const res = await fetch("/api/time", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          case_slug: caseSlug,
+          description:
+            `Korrespondenz: ${item.title} (${CHANNEL_LABEL[item.channel] ?? item.channel}${item.party ? `, ${item.party}` : ""})`.slice(
+              0,
+              500
+            ),
+          minutes: mins,
+          date: item.at ? item.at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          billable: true,
+          activity_type: "correspondence",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Buchung fehlgeschlagen");
+      addToast({ type: "success", title: `${mins} min als Leistung gebucht` });
+      setBillingFor(null);
+      setBillMinutes("6");
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Buchung fehlgeschlagen",
+      });
+    } finally {
+      setBillBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -140,6 +185,50 @@ export function CommunicationsPanel({ caseSlug }: { caseSlug: string }) {
                   {i.at ? formatDateTime(i.at) : "—"}
                   {i.party ? ` · ${i.party}` : ""} · {SOURCE_LABEL[i.source]}
                 </p>
+                {billingFor === i.id ? (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={480}
+                      value={billMinutes}
+                      onChange={(e) => setBillMinutes(e.target.value)}
+                      aria-label="Minuten"
+                      className="h-7 w-20 text-xs"
+                      disabled={billBusy}
+                    />
+                    <span className="text-xs text-[color:var(--ds-text-muted)]">min</span>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={billBusy || !parseInt(billMinutes, 10)}
+                      onClick={() => void bookAsService(i)}
+                    >
+                      {billBusy && <Loader2 size={11} className="animate-spin" />}
+                      Buchen
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs"
+                      disabled={billBusy}
+                      onClick={() => setBillingFor(null)}
+                    >
+                      Abbrechen
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBillingFor(i.id);
+                      setBillMinutes("6");
+                    }}
+                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--brand-primary)]"
+                  >
+                    <Timer size={11} aria-hidden /> Als Leistung buchen
+                  </button>
+                )}
               </div>
             </li>
           ))}

@@ -37,6 +37,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { AutomationsPanel } from "@/components/legal/AutomationsPanel";
 import { usePages, useCreatePage } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
@@ -515,6 +516,8 @@ export default function WorkflowsPage() {
           )}
         </section>
       )}
+
+      <AutomationsPanel />
     </div>
   );
 }

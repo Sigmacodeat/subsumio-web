@@ -20,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  return <TermsContent home="/de" />;
+  return <TermsContent home="/de" market="de" />;
 }

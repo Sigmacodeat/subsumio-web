@@ -1359,8 +1359,7 @@ export async function extractLinksForSlugs(
         globalBasename,
       })) {
         try {
-          await engine.addLink(
-            // gbrain-allow-direct-insert: gbrain extract — canonical link extraction from markdown body
+          const linkArgs: Parameters<typeof engine.addLink> = [
             link.from_slug,
             link.to_slug,
             link.context,
@@ -1368,8 +1367,9 @@ export async function extractLinksForSlugs(
             link.link_source,
             undefined,
             undefined,
-            linkOpts
-          );
+            linkOpts,
+          ];
+          await engine.addLink(...linkArgs); // gbrain-allow-direct-insert: gbrain extract — canonical link extraction from markdown body
           created++;
         } catch {
           /* skip */
@@ -1400,8 +1400,7 @@ export async function extractTimelineForSlugs(
       const content = readFileSync(filePath, "utf-8");
       for (const entry of extractTimelineFromContent(content, slug)) {
         try {
-          await engine.addTimelineEntry(
-            // gbrain-allow-direct-insert: gbrain extract — canonical timeline extraction from markdown body
+          const timelineArgs: Parameters<typeof engine.addTimelineEntry> = [
             entry.slug,
             {
               date: entry.date,
@@ -1409,8 +1408,9 @@ export async function extractTimelineForSlugs(
               summary: entry.summary,
               detail: entry.detail,
             },
-            entryOpts
-          );
+            entryOpts,
+          ];
+          await engine.addTimelineEntry(...timelineArgs); // gbrain-allow-direct-insert: gbrain extract — canonical timeline extraction from markdown body
           created++;
         } catch {
           /* skip */
@@ -1901,10 +1901,8 @@ async function extractStaleFromDB(
     // ON CONFLICT DO NOTHING + timeline dedups, so partial-chunk writes are
     // idempotent on re-extraction.
     for (let i = 0; i < linkRows.length; i += BATCH_SIZE) {
-      linksCreated += await engine.addLinksBatch(linkRows.slice(i, i + BATCH_SIZE), {
-        // gbrain-allow-direct-insert: gbrain extract --stale — canonical link reconciliation from markdown body
-        auditSite: "extract.stale",
-      }); // gbrain-allow-direct-insert: gbrain extract --stale — canonical link reconciliation from markdown body
+      const batchOpts: Parameters<typeof engine.addLinksBatch>[1] = { auditSite: "extract.stale" };
+      linksCreated += await engine.addLinksBatch(linkRows.slice(i, i + BATCH_SIZE), batchOpts); // gbrain-allow-direct-insert: gbrain extract --stale — canonical link reconciliation from markdown body
     }
     for (let i = 0; i < timelineRows.length; i += BATCH_SIZE) {
       timelineCreated += await engine.addTimelineEntriesBatch(

@@ -177,6 +177,8 @@ export const POST = createPublicHandler(
           error: err instanceof Error ? err.message : String(err),
         });
       }
+      // WP-4.17: booking-Pages werden vom Automations-Cron ausgewertet
+      // (Trigger "booking_created") — kein Instant-Dispatch nötig.
     })();
 
     return apiSuccess({ confirmed: true, booking_id: bookingId, start: slot.start, end: slot.end });

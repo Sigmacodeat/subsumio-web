@@ -27,6 +27,7 @@ import {
   Reply,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useSidebarBadges } from "@/lib/queries/sidebar-badges";
 import {
@@ -273,6 +274,8 @@ export default function CommunicationsPage() {
   const [replyTarget, setReplyTarget] = useState<UnifiedMessage | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replyBusy, setReplyBusy] = useState(false);
+  const [replyBill, setReplyBill] = useState(false);
+  const [replyBillMinutes, setReplyBillMinutes] = useState("6");
   const [view, setView] = useState<View>("messages");
   const [channel, setChannel] = useState<Channel>("all");
   const [search, setSearch] = useState("");
@@ -381,11 +384,18 @@ export default function CommunicationsPage() {
     const text = replyText.trim();
     if (!replyTarget?.caseSlug || !text) return;
     setReplyBusy(true);
+    const billMinutes = replyBill
+      ? Math.max(1, Math.min(600, Math.round(Number(replyBillMinutes) || 0)))
+      : 0;
     try {
       const res = await csrfFetch("/api/portal/reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ case_slug: replyTarget.caseSlug, message: text }),
+        body: JSON.stringify({
+          case_slug: replyTarget.caseSlug,
+          message: text,
+          ...(billMinutes > 0 ? { bill_minutes: billMinutes } : {}),
+        }),
       });
       if (!res.ok) {
         const json = await res.json().catch(() => null);
@@ -393,9 +403,20 @@ export default function CommunicationsPage() {
           json?.error?.message ?? json?.message ?? "Antwort konnte nicht gesendet werden"
         );
       }
-      addToast({ type: "success", title: "Antwort steht im Mandantenportal" });
+      const json = (await res.json().catch(() => null)) as { billed?: boolean } | null;
+      addToast({
+        type: billMinutes > 0 && json?.billed === false ? "warning" : "success",
+        title:
+          billMinutes > 0
+            ? json?.billed === false
+              ? "Antwort gesendet — Zeiteintrag fehlgeschlagen"
+              : `Antwort gesendet und ${billMinutes} Min verbucht`
+            : "Antwort steht im Mandantenportal",
+      });
       setReplyTarget(null);
       setReplyText("");
+      setReplyBill(false);
+      setReplyBillMinutes("6");
       await batchQuery.refetch();
     } catch (err) {
       addToast({
@@ -990,6 +1011,38 @@ export default function CommunicationsPage() {
                   : "Die Mandantin oder der Mandant sieht die Antwort im Nachrichten-Tab des Portals."}
               </p>
             </div>
+            {/* WP-3.16: Kontaktzeit als Leistung auf die Akte buchen. */}
+            <label
+              htmlFor="portal-reply-bill"
+              className="flex cursor-pointer items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+            >
+              <input
+                id="portal-reply-bill"
+                type="checkbox"
+                checked={replyBill}
+                onChange={(e) => setReplyBill(e.target.checked)}
+                className="h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+              />
+              {lang === "en" ? "Bill as billable service" : "Als Leistung auf die Akte buchen"}
+            </label>
+            {replyBill && (
+              <div className="flex items-center gap-2 pl-6">
+                <Input
+                  id="portal-reply-minutes"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={600}
+                  value={replyBillMinutes}
+                  onChange={(e) => setReplyBillMinutes(e.target.value)}
+                  className="w-24"
+                  aria-label={lang === "en" ? "Minutes" : "Minuten"}
+                />
+                <span className="text-xs text-[color:var(--ds-text-muted)]">
+                  {lang === "en" ? "minutes" : "Minuten"}
+                </span>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReplyTarget(null)} disabled={replyBusy}>

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "KI-Kanzleisoftware Deutschland — Subsumio für Anwälte",
   description:
     "KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Deutschland: Fristen nach ZPO und BGB, belegte KI-Antworten mit Fundstellen und Verschwiegenheit nach § 43a Abs. 2 BRAO — in Berlin, München, Hamburg, Köln und Frankfurt am Main.",
-  keywords: keywordsFor("cities"),
+  keywords: keywordsFor("cities", "de"),
   alternates: {
     canonical: "/de/cities",
     languages: { "de-DE": "/de/cities", "de-AT": "/at/cities", "x-default": "/at/cities" },

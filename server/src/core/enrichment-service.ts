@@ -112,12 +112,12 @@ export async function enrichEntity(
   // 4. Add timeline entry
   let timelineAdded = false;
   try {
-    await engine.addTimelineEntry(slug, {
-      // gbrain-allow-direct-insert: auto-timeline reconciliation triggered by entity reference in source markdown
+    const entry: Parameters<typeof engine.addTimelineEntry>[1] = {
       date: new Date().toISOString().split("T")[0] ?? "",
       summary: `Referenced in [${request.sourceSlug}](${request.sourceSlug}) — ${request.context}`,
       source: request.sourceSlug,
-    });
+    };
+    await engine.addTimelineEntry(slug, entry); // gbrain-allow-direct-insert: auto-timeline reconciliation triggered by entity reference in source markdown
     timelineAdded = true;
   } catch {
     // Timeline add failed (page might not support it)

@@ -119,7 +119,9 @@ const timePostSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_required_iso"),
   rate: z.number().min(0).optional(),
   billable: z.boolean().default(true),
-  activity_type: z.enum(["research", "drafting", "court", "meeting", "other"]).default("other"),
+  activity_type: z
+    .enum(["research", "drafting", "court", "meeting", "correspondence", "other"])
+    .default("other"),
   lawyer: z.string().max(100).optional(),
 });
 

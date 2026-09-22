@@ -8,6 +8,7 @@ import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { acquireUploadSlot } from "@/lib/upload-concurrency";
 import { createInboundEntry } from "@/lib/inbound-register";
+import { dispatchAutomations } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/upload");
@@ -280,6 +281,15 @@ export const POST = createHandler(
                 reconciliation = { attempted: true, ok: false, error: message };
               }
             }
+            // WP-4.17: „wenn Dokument hochgeladen → …"-Regeln anstoßen.
+            void dispatchAutomations(ctx.brainId, "document.uploaded", {
+              case_slug: caseSlugStr || undefined,
+              title: uploadResult.title ?? result.cleanName,
+              document_slug: uploadResult.slug,
+              doc_type: (formData.get("doc_type") as string) || undefined,
+              source,
+            });
+
             const isDeferred = deferPipeline === "true";
             let analysisStatus: "pending" | "queued" | "failed" | "deferred" = isDeferred
               ? "deferred"

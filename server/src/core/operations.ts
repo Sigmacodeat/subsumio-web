@@ -2683,8 +2683,9 @@ const add_link: Operation = {
     const linkOpts = ctx.sourceId
       ? { fromSourceId: ctx.sourceId, toSourceId: ctx.sourceId, originSourceId: ctx.sourceId }
       : undefined;
-    await ctx.engine.addLink(
-      // gbrain-allow-direct-insert: add_link MCP op is the explicit canonical surface for manual link creation; auto-link reconciliation runs separately via auto_link post-hook
+    // Hoisted args: the allow-list marker must share the call line, so the
+    // call stays single-line (a trailing comment on `(` gets reformatted away).
+    const linkArgs: Parameters<typeof ctx.engine.addLink> = [
       p.from as string,
       p.to as string,
       (p.context as string) || "",
@@ -2692,8 +2693,9 @@ const add_link: Operation = {
       linkSource,
       undefined,
       undefined,
-      linkOpts
-    );
+      linkOpts,
+    ];
+    await ctx.engine.addLink(...linkArgs); // gbrain-allow-direct-insert: add_link MCP op is the explicit canonical surface for manual link creation; auto-link reconciliation runs via auto_link post-hook
     return { status: "ok" };
   },
   cliHints: { name: "link", aliases: ["link-add"], positional: ["from", "to"] },
@@ -2940,8 +2942,7 @@ const add_timeline_entry: Operation = {
     }
     // v0.31.8 (D7): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
-    await ctx.engine.addTimelineEntry(
-      // gbrain-allow-direct-insert: add_timeline_entry MCP op is the explicit canonical surface for manual timeline entries
+    const timelineArgs: Parameters<typeof ctx.engine.addTimelineEntry> = [
       p.slug as string,
       {
         date,
@@ -2949,8 +2950,9 @@ const add_timeline_entry: Operation = {
         summary: p.summary as string,
         detail: (p.detail as string) || "",
       },
-      sourceOpts
-    );
+      sourceOpts,
+    ];
+    await ctx.engine.addTimelineEntry(...timelineArgs); // gbrain-allow-direct-insert: add_timeline_entry MCP op is the canonical surface for manual timeline entries
     return { status: "ok" };
   },
   cliHints: { name: "timeline-add", positional: ["slug", "date", "summary"] },

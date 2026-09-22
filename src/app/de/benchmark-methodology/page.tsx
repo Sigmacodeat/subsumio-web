@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Benchmark-Methodik — Subsumio KI-Kanzleisoftware",
   description:
     "Eine belegte Kennzahl, offen beschrieben: In einem öffentlichen Test mit 500 Fragen (LongMemEval) lag die richtige Textstelle in 99,8 % der Fälle unter den ersten acht Treffern. Mit Grenzen der Aussage.",
-  keywords: keywordsFor("benchmark"),
+  keywords: keywordsFor("benchmark", "de"),
   alternates: {
     canonical: "/de/benchmark-methodology",
     languages: {

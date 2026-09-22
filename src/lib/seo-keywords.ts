@@ -145,6 +145,33 @@ const SEO_KEYWORDS = {
 
 export { SEO_KEYWORDS };
 
-export function keywordsFor(page: keyof typeof SEO_KEYWORDS): Metadata["keywords"] {
-  return [...SEO_KEYWORDS[page]];
+/** DE-Markt: nur die Einträge ersetzen, die AT-Recht/AT-Orte nennen. */
+const SEO_KEYWORDS_DE: Partial<Record<keyof typeof SEO_KEYWORDS, string[]>> = {
+  features: SEO_KEYWORDS.features.map((k) => (k === "webERV Anbindung" ? "beA Anbindung" : k)),
+  security: SEO_KEYWORDS.security.map((k) =>
+    k === "§ 9 Abs. 2 RAO Kanzleisoftware" ? "§ 43a Abs. 2 BRAO Kanzleisoftware" : k
+  ),
+  about: SEO_KEYWORDS.about.map((k) =>
+    k === "Legal Tech Österreich" ? "Legal Tech Deutschland" : k
+  ),
+  whatsapp: SEO_KEYWORDS.whatsapp.map((k) => (k === "webERV WhatsApp" ? "beA WhatsApp" : k)),
+  cities: [
+    "KI-Kanzleisoftware Berlin",
+    "Anwaltssoftware München",
+    "Kanzleisoftware Deutschland",
+    "Anwaltssoftware Deutschland",
+    "law firm software Germany",
+    "law firm software Berlin",
+  ],
+  superbrain: SEO_KEYWORDS.superbrain.map((k) =>
+    k === "Kanzleisoftware KI Österreich" ? "Kanzleisoftware KI Deutschland" : k
+  ),
+};
+
+export function keywordsFor(
+  page: keyof typeof SEO_KEYWORDS,
+  market: "at" | "de" = "at"
+): Metadata["keywords"] {
+  const list = market === "de" ? (SEO_KEYWORDS_DE[page] ?? SEO_KEYWORDS[page]) : SEO_KEYWORDS[page];
+  return [...list];
 }

@@ -45,7 +45,11 @@ export default function PdfToolsPage() {
   const { addToast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
   const [aktenzeichen, setAktenzeichen] = useState("");
-  const [busy, setBusy] = useState<"merge" | "stamp" | "redact" | null>(null);
+  const [busy, setBusy] = useState<"merge" | "stamp" | "redact" | "letterhead" | null>(null);
+
+  // ── Briefpapier-Overlay: Briefpapier-PDF unter jede Seite legen ──
+  const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
+  const [letterheadContent, setLetterheadContent] = useState<File | null>(null);
 
   // ── Schwärzen (clientseitig, rasterisiert → echte Redaktion) ──
   const [redactFile, setRedactFile] = useState<File | null>(null);
@@ -217,6 +221,38 @@ export default function PdfToolsPage() {
   }, [redactFile, renderRedactFile]);
 
   const redactCount = redactRects.length;
+
+  async function applyLetterhead() {
+    if (!letterheadFile || !letterheadContent) return;
+    setBusy("letterhead");
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const lhDoc = await PDFDocument.load(await letterheadFile.arrayBuffer());
+      const contentDoc = await PDFDocument.load(await letterheadContent.arrayBuffer());
+      const out = await PDFDocument.create();
+      const [lhPage] = await out.embedPdf(lhDoc, [0]);
+      const contentPages = contentDoc.getPages();
+      const embedded = await out.embedPdf(
+        contentDoc,
+        contentPages.map((_, i) => i)
+      );
+      contentPages.forEach((srcPage, i) => {
+        const { width, height } = srcPage.getSize();
+        const page = out.addPage([width, height]);
+        // Briefpapier als Hintergrund (auf Seitenformat skaliert), Inhalt darüber.
+        page.drawPage(lhPage, { x: 0, y: 0, width, height });
+        page.drawPage(embedded[i]!, { x: 0, y: 0, width, height });
+      });
+      const bytes = await out.save();
+      const name = letterheadContent.name.replace(/\.pdf$/i, "") + "-briefpapier.pdf";
+      downloadBlob(new Blob([bytes as BlobPart], { type: "application/pdf" }), name);
+      addToast({ type: "success", title: "Briefpapier angewendet" });
+    } catch {
+      addToast({ type: "error", title: "Briefpapier-Overlay fehlgeschlagen" });
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
@@ -431,6 +467,53 @@ export default function PdfToolsPage() {
               </Button>
             </>
           )}
+        </section>
+
+        {/* Briefpapier-Overlay */}
+        <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
+            <Stamp size={15} aria-hidden /> Briefpapier anwenden
+          </h2>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            Legt die erste Seite eines Briefpapier-PDFs als Hintergrund unter jede Seite des
+            Dokuments — z.&nbsp;B. für Ausfertigungen ohne gedrucktes Papier.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="lh-file" className="text-xs">
+                Briefpapier (PDF, 1. Seite)
+              </Label>
+              <Input
+                id="lh-file"
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setLetterheadFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="lh-content" className="text-xs">
+                Dokument (PDF)
+              </Label>
+              <Input
+                id="lh-content"
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setLetterheadContent(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          </div>
+          <Button
+            size="sm"
+            disabled={busy !== null || !letterheadFile || !letterheadContent}
+            onClick={() => void applyLetterhead()}
+          >
+            {busy === "letterhead" ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Stamp size={13} />
+            )}
+            Briefpapier anwenden
+          </Button>
         </section>
       </div>
     </div>
