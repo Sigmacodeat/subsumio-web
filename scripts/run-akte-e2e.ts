@@ -330,7 +330,7 @@ async function main() {
     ...uploaded.map((item) => ({
       label: "aktenzuordnung",
       value: item.slug,
-      found: String((item.extraction.frontmatter ?? {}).case_slug ?? "") === caseSlug,
+      found: String(((item.extraction.frontmatter ?? {}) as Json).case_slug ?? "") === caseSlug,
     })),
     ...originalAvailability.map((item) => ({
       label: "originaldatei",

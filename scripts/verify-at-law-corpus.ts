@@ -270,7 +270,8 @@ async function verifyNorm(norm: {
     };
   }
 
-  const text = page.body ?? page.content ?? page.text ?? "";
+  const p = page as { body?: string; content?: string; text?: string };
+  const text = p.body ?? p.content ?? p.text ?? "";
   if (!text || text.length < 100) {
     return {
       norm: norm.norm,
