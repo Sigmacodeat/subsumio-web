@@ -4510,14 +4510,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const chunks = await engine.executeRaw<{ id: number }>(
           `INSERT INTO content_chunks
-           (page_id, chunk_index, chunk_text, chunk_source, embedding, model,
+           (page_id, source_id, chunk_index, chunk_text, chunk_source, embedding, model,
             token_count, embedded_at, modality, embedding_image,
             embedding_multimodal, search_vector, document_type, statute_abbr,
             paragraph_ref, absatz, ziffer, literal, chunk_role, court,
             case_number, ecli, decision_date, legal_area, canonical_label,
             language, symbol_name, symbol_type, start_line, end_line,
             parent_symbol_path, doc_comment, symbol_name_qualified)
-         SELECT pn.id, c.chunk_index, c.chunk_text, c.chunk_source, c.embedding,
+         SELECT pn.id, $2, c.chunk_index, c.chunk_text, c.chunk_source, c.embedding,
                 c.model, c.token_count, c.embedded_at, c.modality,
                 c.embedding_image, c.embedding_multimodal, c.search_vector,
                 c.document_type, c.statute_abbr, c.paragraph_ref, c.absatz,
