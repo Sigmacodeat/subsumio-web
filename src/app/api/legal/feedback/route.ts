@@ -76,6 +76,29 @@ export const GET = createHandler({ action: "brain.read", rateTier: "standard" },
     }))
     .sort((a, b) => b.count - a.count);
 
+  // 90-Tage-Trend: ISO-Wochen-Buckets (Mo-Start), älteste → neueste.
+  const trendBuckets = new Map<string, { sum: number; count: number }>();
+  const cutoff = Date.now() - 90 * 24 * 3600 * 1000;
+  for (const e of entries) {
+    const ts = Date.parse(e.submittedAt);
+    if (!Number.isFinite(ts) || ts < cutoff) continue;
+    const d = new Date(ts);
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); // Wochenstart Mo
+    const key = d.toISOString().slice(0, 10);
+    const cur = trendBuckets.get(key) ?? { sum: 0, count: 0 };
+    cur.sum += e.score;
+    cur.count += 1;
+    trendBuckets.set(key, cur);
+  }
+  const weeklyTrend = [...trendBuckets.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([week, v]) => ({
+      week,
+      average: Math.round((v.sum / v.count) * 10) / 10,
+      count: v.count,
+    }));
+
   return apiSuccess({
     total,
     nps,
@@ -85,5 +108,6 @@ export const GET = createHandler({ action: "brain.read", rateTier: "standard" },
     detractors,
     latest: entries.slice(0, 10),
     byCase,
+    weeklyTrend,
   });
 });

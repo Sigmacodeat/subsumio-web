@@ -68,6 +68,13 @@ dav.example-kanzlei.at {
 }
 ```
 
+Healthcheck (unauthentifiziert, liefert nur `{"ok":true}`):
+
+```bash
+curl -sf http://dav:4080/health   # im Compose-Service:
+# healthcheck: ["CMD", "curl", "-sf", "http://localhost:4080/health"]
+```
+
 Alternativ systemd auf dem Host:
 
 ```ini

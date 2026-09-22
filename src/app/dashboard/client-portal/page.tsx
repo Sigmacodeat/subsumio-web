@@ -53,6 +53,7 @@ interface FeedbackSummary {
   detractors: number;
   latest: Array<{ caseSlug: string; score: number; comment: string | null; submittedAt: string }>;
   byCase: Array<{ caseSlug: string; count: number; average: number }>;
+  weeklyTrend?: Array<{ week: string; average: number; count: number }>;
 }
 
 export default function ClientPortalPage() {
@@ -291,6 +292,29 @@ export default function ClientPortalPage() {
                   {feedback.detractors} Detraktoren
                 </span>
               </div>
+              {feedback.weeklyTrend && feedback.weeklyTrend.length > 1 && (
+                <svg
+                  role="img"
+                  aria-label={`Bewertungsverlauf 90 Tage: ${feedback.weeklyTrend.map((w) => w.average).join(", ")}`}
+                  viewBox="0 0 160 40"
+                  className="h-10 w-40 shrink-0 self-center"
+                >
+                  <polyline
+                    fill="none"
+                    stroke="var(--brand-primary)"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    points={feedback.weeklyTrend
+                      .map((w, i) => {
+                        const x = (i / Math.max(feedback.weeklyTrend!.length - 1, 1)) * 150 + 5;
+                        const y = 38 - (w.average / 10) * 36;
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                      })
+                      .join(" ")}
+                  />
+                </svg>
+              )}
             </div>
             {feedback.latest.some((e) => e.comment) && (
               <ul className="mt-3 space-y-1.5 border-t border-[color:var(--ds-border)] pt-3">

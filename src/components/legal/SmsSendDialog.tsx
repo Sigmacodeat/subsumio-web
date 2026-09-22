@@ -90,7 +90,9 @@ export function SmsSendDialog({
   }
 
   async function recordConsent() {
-    if (consenting) return;
+    // Nachweis ist Pflicht — eine Einwilligung ohne dokumentierten Beleg
+    // (Mandatsvertrag, Formular, E-Mail) ist vor BAO/DSGVO nicht haltbar.
+    if (consenting || !consentProof.trim()) return;
     setConsenting(true);
     setError(null);
     try {
@@ -103,7 +105,7 @@ export function SmsSendDialog({
           subjectType: "client",
           subjectRef: contactRef || contactName,
           proof: {
-            basis: consentProof.trim() || "mündlich/schriftlich dokumentiert",
+            basis: consentProof.trim(),
             recorded_via: "sms_send_dialog",
           },
         }),
@@ -178,8 +180,9 @@ export function SmsSendDialog({
                 type="text"
                 value={consentProof}
                 onChange={(e) => setConsentProof(e.target.value)}
-                placeholder="Nachweis, z. B. „Mandatsvertrag vom 12.03.“"
-                aria-label="Nachweis der Einwilligung"
+                placeholder="Nachweis (Pflicht), z. B. „Mandatsvertrag vom 12.03.“"
+                aria-label="Nachweis der Einwilligung (Pflichtfeld)"
+                aria-required="true"
                 className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
               />
               <Button
@@ -187,7 +190,7 @@ export function SmsSendDialog({
                 variant="outline"
                 size="sm"
                 onClick={() => void recordConsent()}
-                disabled={consenting}
+                disabled={consenting || !consentProof.trim()}
               >
                 {consenting && <Loader2 size={12} className="mr-1.5 animate-spin" />}
                 Einwilligung dokumentieren

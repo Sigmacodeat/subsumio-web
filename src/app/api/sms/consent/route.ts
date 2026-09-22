@@ -35,6 +35,17 @@ const consentSchema = z.object({
 export const POST = createHandler(
   { action: "agent.write", rateTier: "standard", body: consentSchema },
   async (ctx, body) => {
+    // Einwilligung ohne dokumentierten Beleg ist vor DSGVO/BAO nicht
+    // haltbar — `proof.basis` ist für Grants Pflicht (Widerruf nicht).
+    const basis = body.proof.basis;
+    if (!body.revoke && (typeof basis !== "string" || !basis.trim())) {
+      return apiError(
+        "consent_proof_required",
+        "Nachweis der Einwilligung fehlt (proof.basis)",
+        400
+      );
+    }
+
     const hash = phoneHash(normalizePhone(body.phone));
     const store = getSmsConsentStore();
     const now = new Date().toISOString();

@@ -92,9 +92,13 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
 6. **DOCX-Vorlagen-Befüllung.** ✅ Engine geliefert (22.09.):
    `src/lib/docx-template.ts` (docxtemplater 3.69.3 + pizzip,
    `{{platzhalter}}` über Run-Grenzen, `{{#loop}}`-Serienbrief),
-   `POST /api/legal/docx-fill`. **Rest offen:** UI-Anbindung in
-   `templates/page.tsx` (heute nur Zwischenablage), Briefpapier-Overlay,
-   Serienbrief-UI (Beteiligten-Auswahl → N Dokumente).
+   `POST /api/legal/docx-fill`. **UI geliefert:** `TemplateUseDialog`
+   (Akte-Auswahl → Auto-Befüllung bekannter Platzhalter, Vorschau,
+   Kopieren + DOCX-Download via `api/word-export` mit Briefpapier aus
+   Kanzlei-Settings) und `SerienbriefDialog` (.docx-Upload →
+   `extractDocxVariables` → Empfängerzeilen inkl. Beteiligten-Import aus
+   der Akte → `docx-fill` mit `rows` → ZIP-Download) sind beide in
+   `templates/page.tsx` verdrahtet.
 7. ~~**Dateiversionen + Check-in/Check-out.**~~ ✅ **GELÖST** —
    Lock `checked_out_by` im Dokument-Frontmatter, Snapshots als
    `document_version`-Seiten (`legal/doc-versions/<doc>/v<N>`),
@@ -324,10 +328,20 @@ frist-engine-de.ts` (539 Zeilen, 20 Tests): §§ 187–193 BGB, alle 16
     vollständig.
 33. **beA nativer Versand + eEB.** Import existiert
     (`server/src/core/ingestion/connectors/bea-import.ts`), Versand nur
-    über externe Middleware. Bauen: beA-Versand aus dem Akt,
-    eEB-Empfangsbekanntmachung mit Frist-Auslösung (automatische
-    Fristenerkennung existiert — eEB-Datum als Fristbeginn verdrahten).
-    Archivierte UI wieder aktivieren: `src/app/_archive/de/dashboard/bea/`.
+    über externe Middleware.
+    ✅ **eEB-Frist-Auslösung geliefert (22.09.):** `src/lib/
+bea-deadlines.ts` — `eebZustellungsdatum` wendet die Zustellfiktion
+    § 174 ZPO i.V.m. § 4 ERVG an (`zustellungBea`: Tag nach
+    Bereitstellung, Sonnabend → nächster Werktag);
+    `beaDeadlineSuggestions` erkennt Fristen im Nachrichtentext und
+    verankert sie deterministisch über die DE-Registry
+    (`berechneFristArtDE`, §§ 187–193 BGB — kein vhfZ). Der Import
+    (`api/bea/import`) stempelt `eeb_zustellungsdatum` auf die
+    Nachrichten-Page und merged Vorschläge gelockt auf
+    `suggested_deadlines` der zugeordneten Akte — Anwalt bestätigt im
+    bestehenden Review-Inbox. 11 Tests grün.
+    **Offen bleibt:** nativer beA-Versand (eigene Zertifizierung vs.
+    Middleware-Partner — Entscheidung Welle C).
 34. **DATEV-Strategie klären.** `src/lib/datev-direct.ts` ist ein
     ehrlich gelabelter Platzhalter (kein API-Call; Details:
     `docs/DATEV_DIRECT_INTEGRATION_GAP.md`). Echter Export existiert:

@@ -115,6 +115,14 @@ const server = createServer(async (req, res) => {
   const method = (req.method ?? "GET").toUpperCase();
   const path = decodeURIComponent(new URL(req.url ?? "/", "http://dav").pathname);
 
+  // Unauthenticated liveness probe for Docker/Caddy healthchecks — exposes
+  // nothing beyond process aliveness.
+  if (path === "/health" && (method === "GET" || method === "HEAD")) {
+    return reply(res, 200, JSON.stringify({ ok: true }), {
+      "Content-Type": "application/json",
+    });
+  }
+
   // CORS-style preflight + DAV discovery.
   if (method === "OPTIONS") {
     res.writeHead(204, {
