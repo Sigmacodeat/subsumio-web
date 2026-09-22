@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { Section, H2_CTA_CLASS, EYEBROW_CLASS } from "./primitives";
 import { ICONS, accentTile } from "./icons";
-import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { EASE } from "./motion-system";
 import Link from "next/link";
@@ -720,8 +719,9 @@ const BENTO_WIDE = new Set([0, 6, 10]);
 /** Bento feature grid — every capability. Tone-flexible: inherits the
  *  surrounding section tone (place inside a <Section tone=…>). */
 export function FeatureBento() {
+  const { verticals } = useMarket();
   const c = COPY;
-  const features = VERTICALS.legal.features;
+  const features = verticals.legal.features;
   const reduce = useReducedMotion() ?? false;
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">

@@ -99,6 +99,10 @@ jobs:
         with:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      # The server tsconfig maps "@/*" to the repo-root src/, so `tsc --noEmit`
+      # typechecks web-app files too — root devDeps (vitest types, pg) must be
+      # installed or the typecheck fails in CI though it passes locally.
+      - run: bun install
       - run: bun install
         working-directory: server
       - run: bun run verify
@@ -121,6 +125,7 @@ jobs:
         with:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install
       - run: bun install
         working-directory: server
       - run: bun run test:serial
@@ -148,6 +153,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install
+      - run: bun install
         working-directory: server
       - run: bun test test/eval-longmemeval-e2e.slow.test.ts --timeout=60000
         working-directory: server
@@ -171,6 +177,7 @@ jobs:
         with:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install
       - run: bun install
         working-directory: server
       - run: bun test test/entity-resolve-perf.slow.test.ts --timeout=300000
@@ -212,6 +219,7 @@ jobs:
         with:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install
       - run: bun install
         working-directory: server
       - name: Run test shard ${{ matrix.shard }}/10

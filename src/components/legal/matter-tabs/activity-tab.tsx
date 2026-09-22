@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail, STATUS_CONFIG } from "@/lib/matter-detail-context";
 import { parseCitations } from "@/components/legal/CitationLink";
+import { CommunicationsPanel } from "@/components/legal/CommunicationsPanel";
 import type { DashboardKey } from "@/content/dashboard";
 
 export function ActivityTab() {
@@ -116,6 +117,11 @@ export function ActivityTab() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Kommunikationsverlauf über alle Kanäle (E-Mail, Portal, ERV, WhatsApp, Post) */}
+      <div className="max-w-3xl">
+        <CommunicationsPanel caseSlug={caseData.slug} />
       </div>
 
       {/* Entity Graph */}

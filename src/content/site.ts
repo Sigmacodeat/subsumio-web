@@ -41,9 +41,15 @@ export const ENGINE_REPO_URL =
   process.env.NEXT_PUBLIC_ENGINE_REPO_URL || "https://github.com/subsumio";
 export const ENGINE_REPO_INSTALL = ENGINE_REPO_URL.replace("https://github.com/", "github:");
 
+/** Routes that live outside the market prefix — the public demo, the app,
+ * the client portal. p() passes them through unchanged so content can link
+ * them from either market. */
+const NON_MARKET_PREFIXES = ["/demo", "/dashboard", "/portal", "/api", "/admin", "/ops"] as const;
+
 /** Build a public-site path for a market. Default stays Austria — every
  * public route lives under /{market}. */
 export function pFor(market: Market, path: string): string {
+  if (NON_MARKET_PREFIXES.some((pre) => path === pre || path.startsWith(`${pre}/`))) return path;
   return path === "" || path === "/" ? `/${market}` : `/${market}${path}`;
 }
 

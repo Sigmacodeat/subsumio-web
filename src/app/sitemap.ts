@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/content/blog";
 import { getAllCitySlugs } from "@/content/city-pages";
+import { getAllCitySlugsDe } from "@/content/city-pages-de";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
-// Public marketing routes for the Austria-only pilot. Every entry is served
-// canonically under /at — the root variants 308 to these URLs.
+// Public marketing routes per market. Every entry is served canonically
+// under /at or /de — the root variants 308 to the /at URLs. Austria-only
+// pages (blog, docs handbook — Austrian-law content) have no /de twin.
 const PAGES = [
   "",
   "/superbrain",
@@ -14,7 +16,6 @@ const PAGES = [
   "/security",
   "/partners",
   "/download",
-  "/docs",
   "/whatsapp",
   "/about",
   "/contact",
@@ -22,21 +23,41 @@ const PAGES = [
   "/solutions/solo",
   "/solutions/in-house",
   "/benchmark-methodology",
-  "/blog",
 ];
+const AT_ONLY_PAGES = ["/docs", "/blog"];
+
+function langAlts(path: string): Record<string, string> {
+  return {
+    "de-AT": `${BASE}/at${path}`,
+    "de-DE": `${BASE}/de${path}`,
+    "x-default": `${BASE}/at${path}`,
+  };
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   const entries: MetadataRoute.Sitemap = [];
 
   for (const page of PAGES) {
-    const path = `/at${page}`;
+    for (const market of ["at", "de"] as const) {
+      const path = `/${market}${page}`;
+      entries.push({
+        url: `${BASE}${path}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: page === "" ? 1 : 0.7,
+        alternates: { languages: langAlts(page) },
+      });
+    }
+  }
+  for (const page of AT_ONLY_PAGES) {
+    const url = `${BASE}/at${page}`;
     entries.push({
-      url: `${BASE}${path}`,
+      url,
       lastModified: now,
       changeFrequency: "weekly",
-      priority: page === "" ? 1 : 0.7,
-      alternates: { languages: { "de-AT": `${BASE}${path}`, "x-default": `${BASE}${path}` } },
+      priority: 0.7,
+      alternates: { languages: { "de-AT": url, "x-default": url } },
     });
   }
 
@@ -46,22 +67,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.9,
-    alternates: { languages: { "de-AT": `${BASE}/demo`, "x-default": `${BASE}/demo` } },
+    alternates: {
+      languages: {
+        "de-AT": `${BASE}/demo`,
+        "de-DE": `${BASE}/demo`,
+        "x-default": `${BASE}/demo`,
+      },
+    },
   });
 
-  // Legal pages — Austrian canonical only (auth pages remain noindex).
-  for (const page of ["/privacy", "/imprint", "/terms"]) {
-    const url = `${BASE}/at${page}`;
-    entries.push({
-      url,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.3,
-      alternates: { languages: { "de-AT": url, "x-default": url } },
-    });
+  // Legal pages — canonical in both markets (auth pages remain noindex).
+  for (const page of ["/privacy", "/imprint", "/terms", "/dpa"]) {
+    for (const market of ["at", "de"] as const) {
+      const url = `${BASE}/${market}${page}`;
+      entries.push({
+        url,
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.3,
+        alternates: { languages: langAlts(page) },
+      });
+    }
   }
 
-  // Blog posts — individual entries with post dates as lastModified
+  // Blog posts — Austrian-law content, AT market only.
   for (const post of getAllPosts()) {
     const url = `${BASE}/at/blog/${post.slug}`;
     entries.push({
@@ -73,25 +102,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
-  // Austrian city landing pages only.
-  entries.push({
-    url: `${BASE}/at/cities`,
-    lastModified: now,
-    changeFrequency: "monthly",
-    priority: 0.5,
-    alternates: {
-      languages: { "de-AT": `${BASE}/at/cities`, "x-default": `${BASE}/at/cities` },
-    },
-  });
-  for (const slug of getAllCitySlugs()) {
-    const url = `${BASE}/at/cities/${slug}`;
+  // City landing pages per market.
+  for (const [market, slugs] of [
+    ["at", getAllCitySlugs()],
+    ["de", getAllCitySlugsDe()],
+  ] as const) {
     entries.push({
-      url,
+      url: `${BASE}/${market}/cities`,
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.6,
-      alternates: { languages: { "de-AT": url, "x-default": url } },
+      priority: 0.5,
+      alternates: { languages: langAlts("/cities") },
     });
+    for (const slug of slugs) {
+      const url = `${BASE}/${market}/cities/${slug}`;
+      entries.push({
+        url,
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
+        alternates:
+          market === "at"
+            ? { languages: { "de-AT": url, "x-default": url } }
+            : { languages: { "de-DE": url, "x-default": url } },
+      });
+    }
   }
 
   return entries;

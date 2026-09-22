@@ -18,6 +18,7 @@ import {
   Brain,
   Database,
   GitBranch,
+  Globe,
   Shield,
   Network,
   Search,
@@ -27,7 +28,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EASE } from "./motion-system";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
-import { type NavContent, type NavFeaturedContent } from "@/content/site";
+import { altPath, type NavContent, type NavFeaturedContent } from "@/content/site";
 import { useMarket } from "@/lib/use-market";
 import { ICONS } from "./icons";
 
@@ -1046,7 +1047,19 @@ function SocialX({ size = 16 }: { size?: number }) {
 }
 
 export function MarketingFooter() {
-  const { footer, ui: UI_STRINGS, p } = useMarket();
+  const { footer, ui: UI_STRINGS, p, market } = useMarket();
+  const pathname = usePathname();
+  // AT-only routes (blog, docs handbook) have no /de twin — the switcher
+  // falls back to the other market's root instead of producing a 404.
+  const isAtOnly = /^\/at\/(blog|docs)/.test(pathname ?? "");
+  const marketSwitch =
+    market === "at"
+      ? {
+          label: "Deutschland",
+          href: isAtOnly ? "/de" : altPath("de", pathname ?? "/"),
+          current: "Österreich",
+        }
+      : { label: "Österreich", href: altPath("at", pathname ?? "/"), current: "Deutschland" };
   return (
     <footer
       className="relative z-10 border-t [border-color:var(--mk-border)] px-4 py-14 sm:px-6 lg:px-8"
@@ -1135,7 +1148,19 @@ export function MarketingFooter() {
           <p className="text-sm [color:var(--mk-text-subtle)]">
             © {new Date().getFullYear()} Subsumio · {UI_STRINGS.footerLegalTagline}
           </p>
-          <p className="text-sm [color:var(--mk-text-subtle)]">{UI_STRINGS.footerHostingLine}</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href={marketSwitch.href}
+              className="inline-flex min-h-[28px] items-center gap-1.5 text-sm [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] motion-reduce:transition-none"
+              aria-label={`Markt wechseln: ${marketSwitch.label}`}
+            >
+              <Globe size={14} aria-hidden />
+              <span>{marketSwitch.current}</span>
+              <span aria-hidden>·</span>
+              <span className="underline underline-offset-2">{marketSwitch.label}</span>
+            </Link>
+            <p className="text-sm [color:var(--mk-text-subtle)]">{UI_STRINGS.footerHostingLine}</p>
+          </div>
         </div>
       </div>
     </footer>

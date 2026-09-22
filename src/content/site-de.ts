@@ -14,7 +14,19 @@ import { deepMerge, FOOTER, LANDING, NAV, PRODUCT_DEMO, UI_STRINGS } from "./sit
 export const NAV_DE = deepMerge(NAV, {
   sections: NAV.sections.map((s) =>
     s.label === "Ressourcen"
-      ? { ...s, items: s.items.filter((i) => i.href !== "/blog") }
+      ? {
+          ...s,
+          items: s.items.filter((i) => i.href !== "/blog" && i.href !== "/docs"),
+          // Both deep-links pointed at the Austrian-law handbook — no /de twin.
+          ctaBottom: undefined,
+          featuredContent: {
+            title: "Subsumio im Selbstversuch",
+            description:
+              "Die öffentliche Demo zeigt eine fiktive Akte mit belegten Antworten und Fristen — ohne Registrierung",
+            href: "/demo",
+            icon: "Zap",
+          },
+        }
       : s.label === "Unternehmen"
         ? {
             ...s,
@@ -36,7 +48,7 @@ export const FOOTER_DE = deepMerge(FOOTER, {
   columns: FOOTER.columns.map((col) => ({
     ...col,
     links: col.links
-      .filter((l) => l.href !== "/blog")
+      .filter((l) => l.href !== "/blog" && l.href !== "/docs")
       .map((l) => (l.href === "/cities" ? { ...l, label: "Standorte in Deutschland" } : l)),
   })),
 });

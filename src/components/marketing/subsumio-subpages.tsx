@@ -9,7 +9,6 @@ import Link from "next/link";
 import { ArrowRight, MessageSquare, Clock, Paperclip, Mic, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { contentFor, pBind, type Market } from "@/lib/market";
-import { SECURITY } from "@/content/security";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { Section, SectionHeading, PageHero, CTASection } from "./primitives";
 import { H2_CTA_CLASS, H3_CLASS, SECTION_PAD } from "./typography";
@@ -35,7 +34,7 @@ const COPY = {
 // --- Pages -----------------------------------------------------------------
 
 export function WhatsAppPage({ market = "at" }: { market?: Market }) {
-  const { ui: UI_STRINGS } = contentFor(market);
+  const { ui: UI_STRINGS, security: SECURITY } = contentFor(market);
   const p = pBind(market);
 
   const c = COPY.whatsapp;

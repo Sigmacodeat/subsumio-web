@@ -642,15 +642,26 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
       create: (params, callOpts) => realClient.messages.create(params, callOpts),
     };
   };
-  const fallbackClient = useOpenAI ? openaiFallbackClient : anthropicFallbackClient;
+  // Lazily construct the SDK fallback: `new OpenAI()`/`new Anthropic()` throw
+  // when the API key env var is absent — which would crash runs that inject a
+  // stub client and never call the fallback (CI has no provider keys).
+  const lazyFallbackClient = (): ThinkLLMClient => {
+    let inner: ThinkLLMClient | null = null;
+    return {
+      create: (params, callOpts) => {
+        inner ??= (useOpenAI ? openaiFallbackClient : anthropicFallbackClient)();
+        return inner.create(params, callOpts);
+      },
+    };
+  };
 
   // Stub injection: runOpts.client overrides answer-gen, runOpts.extractorClient
   // overrides the trajectory extractor. When only runOpts.client is set (tests
   // that stub answer-gen but let the extractor use a real or silently-failing
   // SDK client), the extractor falls through to the provider fallback — NOT to
   // runOpts.client — so the stub's call log only records answer-gen calls.
-  const client = runOpts.client ?? fallbackClient();
-  const extractorClient = runOpts.extractorClient ?? fallbackClient();
+  const client = runOpts.client ?? lazyFallbackClient();
+  const extractorClient = runOpts.extractorClient ?? lazyFallbackClient();
   const trajectoryEnabled = opts.trajectory && !opts.noTrajectory;
   const extractorModel = trajectoryEnabled
     ? await resolveModel(null, {

@@ -239,7 +239,14 @@ export async function runCheckUpdate(args: string[]) {
   };
 
   if (json) {
-    console.log(JSON.stringify(result, null, 2));
+    // changelog_diff can push the payload past the 64KB pipe buffer — async
+    // stdout writes let the process exit before the pipe drains, truncating
+    // stdout mid-JSON. Awaiting the write callback holds the event loop until
+    // the kernel has accepted every byte.
+    const payload = JSON.stringify(result, null, 2) + "\n";
+    await new Promise<void>((resolve, reject) => {
+      process.stdout.write(payload, (err) => (err ? reject(err) : resolve()));
+    });
   } else if (updateAvailable) {
     console.log(`GBrain update available: ${VERSION} → ${latestVersion}`);
     console.log(`Run: ${upgradeCmd}`);

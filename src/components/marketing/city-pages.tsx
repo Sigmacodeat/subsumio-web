@@ -51,7 +51,7 @@ function TrialActions({ market }: { market: Market }) {
 }
 
 export function CityPage({ city, market = "at" }: { city: CityPageContent; market?: Market }) {
-  const { ui: UI_STRINGS } = contentFor(market);
+  const { ui: UI_STRINGS, cities: CITIES } = contentFor(market);
   const p = pBind(market);
   const others = Object.values(CITIES).filter((c) => c.slug !== city.slug);
   return (

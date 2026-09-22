@@ -54,6 +54,7 @@ import type { CaseDetail } from "@/lib/matter-detail-types";
 import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
 import { ActIntelligencePanel } from "@/components/legal/ActIntelligencePanel";
 import { VerjaehrungPanel } from "@/components/legal/VerjaehrungPanel";
+import { QuestionnairesPanel } from "@/components/legal/QuestionnairesPanel";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -294,6 +295,8 @@ export function OverviewTab() {
       <MatterWorkflowCockpit />
 
       <VerjaehrungPanel caseSlug={caseData.slug} />
+
+      <QuestionnairesPanel caseSlug={caseData.slug} />
 
       {/* Status Change Dialog */}
       {ctx.showStatusDialog && (

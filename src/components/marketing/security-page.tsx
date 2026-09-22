@@ -6,7 +6,6 @@ import { Check, Shield, Layers, Lock, Eye, ArrowRight, type LucideIcon } from "l
 import Link from "next/link";
 import { contentFor, pBind, type Market } from "@/lib/market";
 import { Button } from "@/components/ui/button";
-import { SECURITY } from "@/content/security";
 import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
 import { ICONS } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
@@ -16,7 +15,7 @@ import { IllusVaultShield } from "./brand-illustrations";
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
 export default function SecurityPage({ market = "at" }: { market?: Market }) {
-  const { ui: UI_STRINGS } = contentFor(market);
+  const { ui: UI_STRINGS, security: SECURITY } = contentFor(market);
   const p = pBind(market);
 
   const t = SECURITY;

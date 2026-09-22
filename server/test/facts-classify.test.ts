@@ -16,9 +16,9 @@ import { setEnvForFile } from "./helpers/with-env.ts";
 import type { FactRow } from "../src/core/engine.ts";
 
 // These tests pin the "no API key" cosine-fallback contract. The
-// legacy-embedding preload snapshotted process.env — including real provider
-// keys from the developer's .env — into the gateway's _config.env, where
-// per-test `delete process.env.X` cannot reach. Re-configure the gateway
+// legacy-embedding preload snapshotted the ambient env — including real
+// provider keys from the developer's .env — into the gateway's _config.env,
+// which key-deletion inside a test cannot reach. Re-configure the gateway
 // with a scrubbed env for the duration of this file, then reset so the
 // scrub doesn't leak into later files of the same shard process.
 let releaseEnv: () => void;

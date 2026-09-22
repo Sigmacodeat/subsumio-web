@@ -146,17 +146,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const hdrs = await headers();
+  const nonce = hdrs.get("x-nonce") ?? undefined;
+  const pathname = hdrs.get("x-pathname") ?? "";
+  const htmlLang = pathname === "/de" || pathname.startsWith("/de/") ? "de-DE" : "de-AT";
 
   return (
     <html
-      lang="de-AT"
+      lang={htmlLang}
       className={`h-full ${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}
       style={{ colorScheme: "light dark" }}
       suppressHydrationWarning
     >
       <head>
-        <meta httpEquiv="content-language" content="de-AT" />
+        <meta httpEquiv="content-language" content={htmlLang} />
         <link
           rel="alternate"
           type="application/rss+xml"

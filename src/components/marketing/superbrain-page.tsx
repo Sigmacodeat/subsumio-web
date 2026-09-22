@@ -2,6 +2,7 @@
 // ./superbrain/*.tsx so they stay individually reviewable and testable.
 
 import { getCopy } from "./superbrain-content";
+import type { Market } from "@/content/site";
 import { HeroSection } from "./superbrain/hero";
 import { StatsBand, OthersSection, OursSection } from "./superbrain/story";
 import { ArchitectureSection, DreamCycleSection, FineTuneSection } from "./superbrain/architecture";
@@ -10,14 +11,14 @@ import { LearningSection } from "./superbrain/learning";
 import { PrivacySection, UseCasesSection, TrustSection, FAQSection } from "./superbrain/proof";
 import { StickyCTA, CTASection } from "./superbrain/cta";
 
-export default function SuperbrainPage() {
-  const t = getCopy();
+export default function SuperbrainPage({ market = "at" }: { market?: Market }) {
+  const t = getCopy(market);
 
   return (
     <div
       data-tone="light"
       className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang="de-AT"
+      lang={market === "de" ? "de-DE" : "de-AT"}
     >
       <HeroSection t={t} />
       <StatsBand t={t} />

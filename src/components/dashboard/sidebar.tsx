@@ -46,6 +46,7 @@ import {
   ClipboardList,
   Inbox,
   FileClock,
+  FileText,
   Award,
   Bot,
   Receipt,
@@ -650,6 +651,13 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         icon: FileClock,
         labelKey: "nav.inbound_register",
         keywords: "posteingangsbuch eingang eingangsstempel inbound register",
+        audienceTier: "dach-integration",
+      },
+      {
+        href: "/dashboard/pdf-tools",
+        icon: FileText,
+        labelKey: "nav.pdf_tools",
+        keywords: "pdf zusammenführen stempel anlage schwärzen redact merge",
         audienceTier: "dach-integration",
       },
       {

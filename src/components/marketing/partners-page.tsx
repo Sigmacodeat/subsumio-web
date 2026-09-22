@@ -6,7 +6,6 @@ import Link from "next/link";
 import { ArrowRight, Check, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { contentFor, pBind, type Market } from "@/lib/market";
-import { PARTNERS } from "@/content/partners";
 import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
 import { H3_CLASS } from "./typography";
 import { ICONS } from "./icons";
@@ -15,7 +14,7 @@ import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system
 import { IllusHandshake } from "./brand-illustrations";
 
 export default function PartnersPage({ market = "at" }: { market?: Market }) {
-  const { ui: UI_STRINGS } = contentFor(market);
+  const { ui: UI_STRINGS, partners: PARTNERS } = contentFor(market);
   const p = pBind(market);
 
   const t = PARTNERS;

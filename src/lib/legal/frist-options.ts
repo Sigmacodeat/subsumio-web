@@ -18,6 +18,13 @@ import {
   type FristArt,
 } from "@/lib/legal/frist-engine";
 import {
+  FRISTEN_REGISTRY_DE,
+  berechneFristArtDE,
+  fristArtDE,
+  zustellungBea,
+  type Bundesland as DEBundesland,
+} from "@/lib/legal/frist-engine-de";
+import {
   DEADLINE_RULES,
   computeDueDate,
   type Bundesland,
@@ -56,6 +63,13 @@ const VERFAHREN_LABEL: Record<FristArt["verfahrenstyp"], string> = {
   alle: "Materielles Recht und Abgaben",
 };
 
+const VERFAHREN_LABEL_DE: Record<string, string> = {
+  zivil: "Zivilverfahren",
+  straf: "Strafverfahren",
+  verwaltungsrecht: "Verwaltungsverfahren",
+  alle: "Materielles Recht",
+};
+
 /** Registry entries that belong to another jurisdiction (e.g. `steuer_einspruch_de`). */
 function isForeignArt(art: FristArt): boolean {
   return /_(de|ch)$/.test(art.key);
@@ -75,6 +89,27 @@ export function fristOptionsFor(country?: string): FristOption[] {
       group: art.regime === "materiell" ? VERFAHREN_LABEL.alle : VERFAHREN_LABEL[art.verfahrenstyp],
       notfrist: art.notfrist,
     }));
+  }
+  if (resolveFristCountry(country) === "DE") {
+    const registryKeys = new Set(FRISTEN_REGISTRY_DE.map((f) => f.key));
+    return [
+      ...FRISTEN_REGISTRY_DE.map((art) => ({
+        key: art.key,
+        label: art.bezeichnung,
+        law: art.rechtsgrundlage,
+        description: art.hinweis ?? "",
+        group: VERFAHREN_LABEL_DE[art.verfahrenstyp] ?? "",
+        notfrist: art.notfrist,
+      })),
+      ...DEADLINE_RULES.filter((r) => !registryKeys.has(r.key)).map((rule) => ({
+        key: rule.key,
+        label: rule.label,
+        law: rule.law,
+        description: rule.description,
+        group: "",
+        notfrist: false,
+      })),
+    ];
   }
   return DEADLINE_RULES.map((rule) => ({
     key: rule.key,
@@ -127,6 +162,32 @@ export function computeFrist(
       notfrist: art.notfrist,
       hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
     };
+  }
+
+  if (country === "DE") {
+    const art = fristArtDE(key);
+    if (art) {
+      const land = opts.state as DEBundesland | undefined;
+      const applyBea = opts.ervEinlangen === true;
+      const zustellung = applyBea ? zustellungBea(startIso, land) : startIso;
+      const result = berechneFristArtDE(key, zustellung, land);
+      const hinweise = applyBea
+        ? [
+            `beA-Zustellungsfiktion (§ 174 ZPO i.V.m. § 4 ERVG): zugestellt am ${zustellung}`,
+            ...result.hinweise,
+          ]
+        : result.hinweise;
+      return {
+        key,
+        label: art.bezeichnung,
+        law: art.rechtsgrundlage,
+        fristbeginn: result.fristbeginn,
+        dueDate: result.fristende,
+        vorfrist: result.vorfrist,
+        notfrist: art.notfrist,
+        hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
+      };
+    }
   }
 
   const rule = DEADLINE_RULES.find((r) => r.key === key);

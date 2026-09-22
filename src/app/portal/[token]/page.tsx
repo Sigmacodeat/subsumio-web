@@ -28,6 +28,7 @@ import { useLang } from "@/lib/use-lang";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import type { DashboardKey } from "@/content/dashboard";
 import type { GroundingMetadata } from "@/lib/citation-gate-client";
+import type { Questionnaire } from "@/lib/questionnaires";
 
 interface PortalCase {
   slug: string;
@@ -170,7 +171,25 @@ export default function PortalPage() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [documentPassword, setDocumentPassword] = useState("");
   const [documentRequests, setDocumentRequests] = useState<PortalDocumentRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<"info" | "chat" | "sign" | "files">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "chat" | "sign" | "files" | "invoices">(
+    "info"
+  );
+  const [invoices, setInvoices] = useState<
+    Array<{
+      slug: string;
+      invoice_number: string;
+      status: "sent" | "overdue" | "paid";
+      date?: string;
+      due_date?: string;
+      total: number;
+      epc_qr?: string;
+    }>
+  >([]);
+  const [invoicesState, setInvoicesState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
+  const [qnAnswers, setQnAnswers] = useState<Record<string, Record<string, string>>>({});
+  const [qnSubmitting, setQnSubmitting] = useState<string | null>(null);
+  const [qnError, setQnError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<
     Array<{ role: "user" | "bot"; text: string; grounding?: GroundingMetadata }>
   >([]);
@@ -211,6 +230,7 @@ export default function PortalPage() {
           await loadCase();
           await loadDocumentRequests();
           await loadMessages(verifyData.caseSlug);
+          void loadQuestionnaires();
           const docs = await loadSignableDocs();
           // Deep-Link: if ?sign=[slug] present, auto-open SignatureDialog
           if (deepLinkSignSlug) {
@@ -245,6 +265,65 @@ export default function PortalPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  async function loadQuestionnaires() {
+    try {
+      const res = await fetch(`/api/portal/questionnaires?token=${encodeURIComponent(token)}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setQuestionnaires(data.data?.questionnaires ?? data.questionnaires ?? []);
+    } catch {
+      // best-effort — Fragebögen sind ein optionales Portal-Modul
+    }
+  }
+
+  async function submitQuestionnaire(q: Questionnaire) {
+    setQnSubmitting(q.id);
+    setQnError(null);
+    try {
+      const res = await fetch("/api/portal/questionnaires", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          questionnaire_id: q.id,
+          answers: qnAnswers[q.id] ?? {},
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setQnError(
+          data.code === "required_fields_missing"
+            ? t("portal.qn_required")
+            : (data.message ?? t("portal.qn_error"))
+        );
+        return;
+      }
+      await loadQuestionnaires();
+    } catch {
+      setQnError(t("portal.qn_error"));
+    } finally {
+      setQnSubmitting(null);
+    }
+  }
+
+  async function loadInvoices() {
+    if (invoicesState === "loading" || invoicesState === "done") return;
+    setInvoicesState("loading");
+    try {
+      const res = await fetch(`/api/portal/invoices?token=${encodeURIComponent(token)}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      setInvoices(data.data?.invoices ?? data.invoices ?? []);
+      setInvoicesState("done");
+    } catch {
+      setInvoicesState("error");
+    }
+  }
 
   async function loadMessages(caseSlug: string) {
     try {
@@ -598,6 +677,20 @@ export default function PortalPage() {
             <FileText size={14} />
             {t("portal.tab_files")}
           </button>
+          <button
+            onClick={() => {
+              setActiveTab("invoices");
+              void loadInvoices();
+            }}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
+              activeTab === "invoices"
+                ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
+                : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
+            }`}
+          >
+            <FileText size={14} />
+            {t("portal.tab_invoices")}
+          </button>
         </div>
         {activeTab === "info" && (
           <>
@@ -912,6 +1005,136 @@ export default function PortalPage() {
           </>
         )}
 
+        {activeTab === "info" && questionnaires.length > 0 && (
+          <div className="space-y-4">
+            {questionnaires.map((q) => (
+              <div
+                key={q.id}
+                className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold">{q.title}</h3>
+                  <Badge
+                    variant={q.status === "answered" ? "success" : "attention"}
+                    className="text-xs"
+                  >
+                    {q.status === "answered" ? t("portal.qn_answered") : t("portal.qn_open")}
+                  </Badge>
+                </div>
+                {q.status === "answered" ? (
+                  <dl className="space-y-1.5 text-sm">
+                    {q.fields.map((f) => (
+                      <div key={f.key} className="flex gap-2">
+                        <dt className="w-40 shrink-0 text-xs [color:var(--mk-text-subtle)]">
+                          {f.label}
+                        </dt>
+                        <dd className="min-w-0 flex-1 text-xs [color:var(--mk-text)]">
+                          {q.answers?.[f.key] || "—"}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <div className="space-y-3">
+                    {q.fields.map((f) => (
+                      <div key={f.key} className="space-y-1">
+                        <label
+                          htmlFor={`qn-${q.id}-${f.key}`}
+                          className="block text-xs font-medium [color:var(--mk-text)]"
+                        >
+                          {f.label}
+                          {f.required && <span className="text-red-500"> *</span>}
+                        </label>
+                        {f.type === "textarea" ? (
+                          <textarea
+                            id={`qn-${q.id}-${f.key}`}
+                            rows={3}
+                            value={qnAnswers[q.id]?.[f.key] ?? ""}
+                            onChange={(e) =>
+                              setQnAnswers((prev) => ({
+                                ...prev,
+                                [q.id]: { ...prev[q.id], [f.key]: e.target.value },
+                              }))
+                            }
+                            className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-glow)] focus:outline-none"
+                          />
+                        ) : f.type === "select" ? (
+                          <select
+                            id={`qn-${q.id}-${f.key}`}
+                            value={qnAnswers[q.id]?.[f.key] ?? ""}
+                            onChange={(e) =>
+                              setQnAnswers((prev) => ({
+                                ...prev,
+                                [q.id]: { ...prev[q.id], [f.key]: e.target.value },
+                              }))
+                            }
+                            className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)]"
+                          >
+                            <option value="">—</option>
+                            {(f.options ?? []).map((o) => (
+                              <option key={o} value={o}>
+                                {o}
+                              </option>
+                            ))}
+                          </select>
+                        ) : f.type === "checkbox" ? (
+                          <label className="flex items-center gap-2 text-sm [color:var(--mk-text)]">
+                            <input
+                              id={`qn-${q.id}-${f.key}`}
+                              type="checkbox"
+                              checked={qnAnswers[q.id]?.[f.key] === "ja"}
+                              onChange={(e) =>
+                                setQnAnswers((prev) => ({
+                                  ...prev,
+                                  [q.id]: {
+                                    ...prev[q.id],
+                                    [f.key]: e.target.checked ? "ja" : "nein",
+                                  },
+                                }))
+                              }
+                              className="h-4 w-4"
+                            />
+                            {t("portal.qn_yes")}
+                          </label>
+                        ) : (
+                          <input
+                            id={`qn-${q.id}-${f.key}`}
+                            type={f.type === "date" ? "date" : "text"}
+                            value={qnAnswers[q.id]?.[f.key] ?? ""}
+                            onChange={(e) =>
+                              setQnAnswers((prev) => ({
+                                ...prev,
+                                [q.id]: { ...prev[q.id], [f.key]: e.target.value },
+                              }))
+                            }
+                            className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-glow)] focus:outline-none"
+                          />
+                        )}
+                      </div>
+                    ))}
+                    {qnError && (
+                      <p role="alert" className="text-xs text-red-500">
+                        {qnError}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => void submitQuestionnaire(q)}
+                      disabled={qnSubmitting !== null}
+                      className="rounded-lg bg-[color:var(--brand-solid)] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                    >
+                      {qnSubmitting === q.id ? (
+                        <Loader2 size={14} className="inline animate-spin" />
+                      ) : (
+                        t("portal.qn_submit")
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {activeTab === "chat" && (
           <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
             <div className="flex items-center gap-2">
@@ -1149,6 +1372,83 @@ export default function PortalPage() {
                     >
                       {t("portal.download")}
                     </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "invoices" && (
+        <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6">
+          <h3 className="text-sm font-semibold">{t("portal.invoices_title")}</h3>
+          {invoicesState === "loading" ? (
+            <p className="flex items-center gap-2 text-xs [color:var(--mk-text-muted)]">
+              <Loader2 size={14} className="animate-spin" /> {t("portal.invoices_loading")}
+            </p>
+          ) : invoicesState === "error" ? (
+            <p className="rounded-xl border border-dashed [border-color:var(--mk-border)] px-4 py-6 text-center text-sm [color:var(--mk-text-muted)]">
+              {t("portal.invoices_error")}
+            </p>
+          ) : invoices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed [border-color:var(--mk-border)] py-12 text-center">
+              <FileText size={28} className="mb-3 [color:var(--mk-text-muted)]" />
+              <p className="text-sm font-medium">{t("portal.invoices_empty")}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {invoices.map((inv) => (
+                <div
+                  key={inv.slug}
+                  className="rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{inv.invoice_number || "Rechnung"}</div>
+                      <div className="text-xs [color:var(--mk-text-muted)]">
+                        {inv.date ? new Date(inv.date).toLocaleDateString("de-AT") : ""}
+                        {inv.due_date &&
+                          ` · ${t("portal.invoice_due")} ${new Date(inv.due_date).toLocaleDateString("de-AT")}`}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold tabular-nums">
+                        {inv.total.toLocaleString("de-AT", {
+                          style: "currency",
+                          currency: "EUR",
+                        })}
+                      </span>
+                      <Badge
+                        variant={
+                          inv.status === "paid"
+                            ? "success"
+                            : inv.status === "overdue"
+                              ? "danger"
+                              : "default"
+                        }
+                        className="text-xs"
+                      >
+                        {inv.status === "paid"
+                          ? t("portal.invoice_status_paid")
+                          : inv.status === "overdue"
+                            ? t("portal.invoice_status_overdue")
+                            : t("portal.invoice_status_sent")}
+                      </Badge>
+                    </div>
+                  </div>
+                  {inv.epc_qr && inv.status !== "paid" && (
+                    <div className="mt-3 flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] p-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={inv.epc_qr}
+                        alt={`EPC-QR Rechnung ${inv.invoice_number}`}
+                        className="h-20 w-20 shrink-0 rounded"
+                      />
+                      <p className="text-xs [color:var(--mk-text-muted)]">
+                        {t("portal.invoice_pay_hint")}
+                      </p>
+                    </div>
                   )}
                 </div>
               ))}

@@ -47,6 +47,7 @@ export function isPublicRoute(pathname: string): boolean {
   return (
     pathname.startsWith("/portal") ||
     pathname.startsWith("/at") ||
+    pathname.startsWith("/de") ||
     pathname.startsWith("/join") ||
     pathname === "/demo"
   );

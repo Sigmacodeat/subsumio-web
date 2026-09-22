@@ -15,6 +15,18 @@ import {
   type Market,
 } from "@/content/site";
 import { FOOTER_DE, LANDING_DE, NAV_DE, PRODUCT_DEMO_DE, UI_STRINGS_DE } from "@/content/site-de";
+import { CITIES } from "@/content/city-pages";
+import { CITIES_DE } from "@/content/city-pages-de";
+import { FEATURES_PAGE } from "@/content/features";
+import { FEATURES_PAGE_DE } from "@/content/features-de";
+import { PARTNERS } from "@/content/partners";
+import { PARTNERS_DE } from "@/content/partners-de";
+import { SECURITY } from "@/content/security";
+import { SECURITY_DE } from "@/content/security-de";
+import { SOLUTIONS } from "@/content/solutions";
+import { SOLUTIONS_DE } from "@/content/solutions-de";
+import { VERTICALS } from "@/content/verticals";
+import { VERTICALS_DE } from "@/content/verticals-de";
 
 export type { Market };
 export { pFor };
@@ -39,6 +51,12 @@ export interface MarketContent {
   valueProps: typeof VALUE_PROPS;
   scrollStory: typeof SCROLL_STORY;
   productDemo: typeof PRODUCT_DEMO;
+  verticals: typeof VERTICALS;
+  features: typeof FEATURES_PAGE;
+  security: typeof SECURITY;
+  partners: typeof PARTNERS;
+  solutions: typeof SOLUTIONS;
+  cities: typeof CITIES;
 }
 
 const AT: MarketContent = {
@@ -50,6 +68,12 @@ const AT: MarketContent = {
   valueProps: VALUE_PROPS,
   scrollStory: SCROLL_STORY,
   productDemo: PRODUCT_DEMO,
+  verticals: VERTICALS,
+  features: FEATURES_PAGE,
+  security: SECURITY,
+  partners: PARTNERS,
+  solutions: SOLUTIONS,
+  cities: CITIES,
 };
 
 const DE: MarketContent = {
@@ -61,6 +85,12 @@ const DE: MarketContent = {
   valueProps: VALUE_PROPS,
   scrollStory: SCROLL_STORY,
   productDemo: PRODUCT_DEMO_DE,
+  verticals: VERTICALS_DE,
+  features: FEATURES_PAGE_DE,
+  security: SECURITY_DE,
+  partners: PARTNERS_DE,
+  solutions: SOLUTIONS_DE,
+  cities: CITIES_DE,
 };
 
 export function contentFor(market: Market): MarketContent {

@@ -79,6 +79,9 @@ const OPS_HOST_PASSTHROUGH_PREFIXES = [
   "/at/login",
   "/at/forgot",
   "/at/reset",
+  "/de/login",
+  "/de/forgot",
+  "/de/reset",
 ];
 
 function isOpsPath(pathname: string): boolean {
@@ -242,7 +245,9 @@ function isApiKeyCsrfExempt(req: NextRequest): boolean {
   return !req.cookies.get(SESSION_COOKIE)?.value;
 }
 
-const RETIRED_PUBLIC_LOCALE_PREFIXES = ["/de", "/ch", "/en"] as const;
+// /de is a live market since the Germany launch — only /ch and /en stay
+// retired and redirect to /at.
+const RETIRED_PUBLIC_LOCALE_PREFIXES = ["/ch", "/en"] as const;
 const AUSTRIA_PUBLIC_ALIASES = new Set([
   "/",
   "/about",

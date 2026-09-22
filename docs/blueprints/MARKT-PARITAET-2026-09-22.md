@@ -111,17 +111,34 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
     **deterministische Aktenzuordnung** (`suggestCaseForInbound` in
     `inbound-register.ts`: Aktenzeichen > Parteien > Titel-Tokens,
     als „Vorschlag" markiert, nie still übernommen) + 2 Route-Tests.
-11. **PDF-Werkzeuge.** Zusammenfügen, Schwärzen (review-sets hat Bates —
-    generalisieren), Anlagen nummerieren/stempeln. pdf-lib ist im Projekt.
+11. ~~**PDF-Werkzeuge.**~~ ✅ **GELÖST** — `src/lib/pdf-tools.ts`
+    (mergePdfs, stampAttachments mit Anlagennummer + AZ + Seitenzählung,
+    mergeStampedAttachments), `POST /api/legal/pdf-tools?op=merge|stamp-merge`,
+    UI `dashboard/pdf-tools` (Reihenfolge per Pfeilen, AZ-Feld).
+    **Schwärzung** läuft bewusst clientseitig: pdfjs rendert Seiten,
+    Nutzer zieht Rahmen, Export rasterisiert zu bildbasierter PDF —
+    irreversibel, keine Textschicht, Dokument verlässt die Kanzlei nie.
 
 ### WP-3 Mandanten & Kommunikation (P1)
 
-12. **Rechnungen im Portal** einsehen + bezahlen (EPC-QR existiert;
-    eps/Karte via Stripe Payment Link — Stripe ist im Projekt).
-13. **Fragebögen im Portal** (definierbare Felder pro Akte → Antworten
-    landen im Akt-Frontmatter).
-14. **Kommunikationsverlauf pro Akte** über alle Kanäle (Mail/Portal/
-    WhatsApp/ERV) — Timeline im Akt.
+12. ~~**Rechnungen im Portal**~~ ✅ **GELÖST** — `GET
+/api/portal/invoices` (token-verifiziert, nur sent/overdue/paid der
+    Akte), EPC-QR pro offener Rechnung als Data-URL (GiroCode,
+    Banking-App), neuer „Rechnungen"-Tab im Portal mit Status-Badges
+    und de-AT-Beträgen. Stripe-Payment-Link-Route (`fibu/payment-links`)
+    existiert bereits für Kartenzahlung.
+13. ~~**Fragebögen im Portal**~~ ✅ **GELÖST** — `src/lib/questionnaires.ts`
+    (text/textarea/date/select/checkbox, Pflichtfelder, Immutable-Answers),
+    `POST/GET /api/legal/questionnaires` (Kanzlei) + `GET/POST
+/api/portal/questionnaires` (Mandant, token-verifiziert),
+    Kanzlei-UI `QuestionnairesPanel` im Akten-Overview, Portal-Formular
+    im Info-Tab. Antworten landen in `frontmatter.questionnaires`.
+14. ~~**Kommunikationsverlauf pro Akte**~~ ✅ **GELÖST** —
+    `GET /api/legal/communications?case_slug=` aggregiert Posteingang,
+    Postausgang, Portal-Nachrichten und E-Mails (Ethical-Wall-Prüfung via
+    `caseAccessForUser`, `Promise.allSettled` für Teilausfall),
+    `CommunicationsPanel` im Aktivitäts-Tab mit Kanal-Filter,
+    Richtungs-Icons und Zustellstatus.
 15. **Öffentliche Terminbuchung** mit echter Kalenderprüfung
     (msgraph.ts existiert; Verfügbarkeits-Slots + Buchungsseite).
 16. **Nachricht an Mandant als Leistung buchen** (Kontaktzeit →
