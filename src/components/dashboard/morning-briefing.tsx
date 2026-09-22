@@ -160,7 +160,7 @@ export function MorningBriefing({ compact = false }: { compact?: boolean } = {})
         <button
           type="button"
           onClick={() => fetchBriefing(true)}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           title={lang === "en" ? "Retry" : "Aktualisieren"}
         >
           <RefreshCw size={11} />
@@ -255,7 +255,7 @@ export function MorningBriefing({ compact = false }: { compact?: boolean } = {})
             <button
               type="button"
               onClick={() => fetchBriefing(true)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               title={lang === "en" ? "Refresh" : "Aktualisieren"}
               aria-label={lang === "en" ? "Refresh briefing" : "Briefing aktualisieren"}
             >

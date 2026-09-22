@@ -273,7 +273,7 @@ export function DashboardGuide({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setEditMode((prev) => !prev)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   aria-label={editMode ? "Bearbeiten beenden" : "Bearbeiten"}
                   aria-pressed={editMode}
                 >
@@ -281,7 +281,7 @@ export function DashboardGuide({
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   aria-label={t("topbar.close")}
                 >
                   <X size={18} />
@@ -416,7 +416,7 @@ export function DashboardGuide({
                       key={link.href}
                       href={link.href}
                       onClick={onClose}
-                      className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
+                      className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                     >
                       {link.label}
                     </Link>
@@ -437,7 +437,7 @@ export function DashboardGuide({
                       href={`/at/docs#${handbookChapter.id}`}
                       target="_blank"
                       rel="noopener"
-                      className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
+                      className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-[0.97] motion-reduce:transition-none"
                       onClick={onClose}
                     >
                       Im Handbuch: {handbookChapter.title}
@@ -447,14 +447,14 @@ export function DashboardGuide({
                     href="/at/docs"
                     target="_blank"
                     rel="noopener"
-                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
+                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-[0.97] motion-reduce:transition-none"
                     onClick={onClose}
                   >
                     {t("cmd.action.help.docs")}
                   </a>
                   <Link
                     href="/dashboard/chat"
-                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
+                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-[0.97] motion-reduce:transition-none"
                     onClick={onClose}
                   >
                     {t("nav.assistant")}
@@ -469,14 +469,14 @@ export function DashboardGuide({
                   restartTour();
                   onClose();
                 }}
-                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none"
+                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
               >
                 <Sparkles size={15} className="brand-text" />
                 {t("guide.restart_tour")}
               </button>
               <a
                 href="mailto:support@subsum.io"
-                className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
+                className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 <LifeBuoy size={15} />
                 {t("guide.contact_support")}

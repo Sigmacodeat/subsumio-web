@@ -227,7 +227,7 @@ function MatterAccessContent() {
     (state?.members ?? []).filter((m) => !exclude.includes(m.id));
 
   return (
-    <div className="mx-auto max-w-[960px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={L("Zugriff & Freigaben", "Access & sharing")}
         description={

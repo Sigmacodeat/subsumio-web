@@ -1,6 +1,7 @@
 "use client";
 
-// Sticky bottom CTA bar — appears after the hero scrolls past. Driven by
+// Sticky bottom CTA bar — appears after the hero scrolls past and leaves again
+// when the closing CTA (`data-closing-cta`) scrolls in. Driven by
 // useMotionValueEvent (fires only on scroll change) with a threshold-crossing
 // guard so React re-renders at most twice (show/hide), not once per frame —
 // keeps INP healthy vs. a raw scroll listener + per-frame setState.
@@ -21,7 +22,13 @@ export default function StickyCta() {
   const { scrollY: globalScrollY } = useScroll();
   const [stickyVisible, setStickyVisible] = useState(false);
   useMotionValueEvent(globalScrollY, "change", (latest) => {
-    const shouldShow = latest > 600;
+    // Step aside once the closing CTA section is on screen — two identical
+    // trial buttons stacked on top of each other is one too many.
+    const closing = document.querySelector("[data-closing-cta]");
+    const closingInView = closing
+      ? closing.getBoundingClientRect().top < window.innerHeight
+      : false;
+    const shouldShow = latest > 600 && !closingInView;
     setStickyVisible((prev) => (prev === shouldShow ? prev : shouldShow));
   });
 
@@ -43,7 +50,7 @@ export default function StickyCta() {
         <div className="flex items-center gap-3">
           <SubsumioMark size={24} />
           <span className="text-sm font-semibold [color:var(--mk-text)]">{ui.trySubsumio}</span>
-          <span className="hidden text-sm [color:var(--mk-text-subtle)] sm:inline">
+          <span className="hidden text-sm [color:var(--mk-text-muted)] sm:inline">
             {ui.trialDaysFree}
           </span>
         </div>

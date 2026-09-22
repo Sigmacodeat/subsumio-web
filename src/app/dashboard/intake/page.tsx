@@ -410,7 +410,7 @@ export default function IntakePage() {
   const loadError = listQuery.isError ? t("intake.err_load") : null;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("intake.title")}
         description={t("intake.description")}
@@ -525,7 +525,7 @@ export default function IntakePage() {
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   aria-label="Suche leeren"
                 >
                   <X size={15} />
@@ -660,7 +660,7 @@ export default function IntakePage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                             aria-label={t("intake.aria_menu")}
                           >
                             <MoreVertical size={15} />
@@ -750,7 +750,7 @@ export default function IntakePage() {
                             void navigator.clipboard.writeText(item.frontmatter.phone_hash || "");
                             addToast({ type: "info", title: t("intake.toast_copy_hash") });
                           }}
-                          className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                         >
                           <Copy size={12} />
                           {t("intake.copy_hash")}
@@ -1149,7 +1149,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
                 {card.rawSlug && (
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(card.rawSlug)}`}
-                    className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                    className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                     title={t("intake.aria_details")}
                   >
                     <ChevronRight size={14} />

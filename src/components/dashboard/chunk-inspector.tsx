@@ -575,10 +575,12 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 </div>
               )}
 
-              {/* Desktop: Table */}
-              <div className="hidden max-h-[60vh] overflow-auto md:block">
+              {/* Desktop: Table. overscroll-contain: this box has its own
+                  bounded scroll (max-h-[60vh]) — without it, scrolling to its
+                  bottom edge chains into the page behind it and the page jumps. */}
+              <div className="hidden max-h-[60vh] overflow-auto overscroll-contain md:block">
                 <table className="w-full text-sm text-[color:var(--ds-text)]">
-                  <thead>
+                  <thead className="sticky top-0 z-10 [background:var(--ds-surface)]">
                     <tr className="border-b border-[color:var(--ds-border)] text-left text-xs text-[color:var(--ds-text)]">
                       <th scope="col" className="pr-2 pb-2">
                         <Checkbox
@@ -689,7 +691,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
               </div>
 
               {/* Mobile: Cards */}
-              <div className="max-h-[55vh] space-y-2 overflow-y-auto md:hidden">
+              <div className="max-h-[55vh] space-y-2 overflow-y-auto overscroll-contain md:hidden">
                 {chunks.map((c) => (
                   <div
                     key={c.id}
@@ -790,7 +792,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
             </DialogTitle>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-6 pt-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pt-2">
             {detailQuery.isLoading && (
               <div className="space-y-3">
                 <Skeleton className="h-4 w-full" />
@@ -1161,7 +1163,7 @@ function ChunkDetailContent({
             autoFocus
           />
         ) : (
-          <pre className="max-h-[300px] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ds-text)]">
+          <pre className="max-h-[300px] overflow-y-auto overscroll-contain rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ds-text)]">
             {detail.chunkText}
           </pre>
         )}
@@ -1248,7 +1250,7 @@ function ChunkDetailContent({
           <summary className="cursor-pointer text-xs font-medium text-[color:var(--ds-text-muted)]">
             Frontmatter der Parent-Datei ({Object.keys(detail.frontmatter).length} Felder)
           </summary>
-          <pre className="mt-2 max-h-[200px] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs whitespace-pre-wrap text-[color:var(--ds-text)]">
+          <pre className="mt-2 max-h-[200px] overflow-y-auto overscroll-contain rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs whitespace-pre-wrap text-[color:var(--ds-text)]">
             {JSON.stringify(detail.frontmatter, null, 2)}
           </pre>
         </details>

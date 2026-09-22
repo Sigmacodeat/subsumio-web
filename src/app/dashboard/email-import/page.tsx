@@ -62,7 +62,7 @@ export default function EmailImportPage() {
   const unmatchedCount = Object.values(results).filter((r) => !r.success).length;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("email_import.title")}
         description={t("email_import.desc")}

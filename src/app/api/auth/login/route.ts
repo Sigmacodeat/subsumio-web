@@ -13,6 +13,7 @@ import {
   ACCOUNT_BLOCKED_MESSAGE,
   isAccountBlocked,
 } from "@/lib/auth/account-status";
+import { orgRequires2FA } from "@/lib/kanzlei-settings-server";
 import { z } from "zod";
 
 // Extended schema with trimmed email for internal validation
@@ -88,9 +89,16 @@ export const POST = createPublicHandler(
       return NextResponse.json({ error: "2fa_required", challengeToken });
     }
 
-    const session = await createSession(user.id, user.email, user.role);
+    // Kanzlei-wide 2FA requirement (settings/kanzlei "require2FA" checkbox):
+    // previously stored and displayed but never enforced. A user who hasn't
+    // enabled their own 2FA still logs in normally here — blocking login
+    // outright would lock them out with no path to set it up — but the
+    // session carries must2fa so middleware.ts confines them to the security
+    // settings page until they complete setup.
+    const must2fa = !user.twoFactorEnabled && (await orgRequires2FA(user.brainId));
+    const session = await createSession(user.id, user.email, user.role, { must2fa });
     void logAudit("user.login", "user", { entityId: user.id, details: { ip } });
-    const res = NextResponse.json({ user: toPublic(user) });
+    const res = NextResponse.json({ user: toPublic(user), must2fa });
     res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     return res;
   }

@@ -160,7 +160,7 @@ export default function DataExportPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("dataexport.title")}
         description="Laden Sie die strukturierten Daten Ihrer Kanzlei in einem maschinenlesbaren Format herunter."

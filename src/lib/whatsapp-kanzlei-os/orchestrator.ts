@@ -232,12 +232,21 @@ function caseSlugFromText(text: string): string | undefined {
  * every approval built for a client fell back to no case link unless the
  * text happened to name one explicitly, even though a single-matter client's
  * matter is already known from their identity.
+ *
+ * For a client, an explicit case reference in the text is only trusted when
+ * it's inside their own matterScope — same rule as client-ingest.ts's
+ * resolveClientMatter. Without this check, a verified client could type
+ * "akt 2026-099" for a matter that isn't theirs and have the built approval
+ * (and, for document_request, an actual document-request page) linked to a
+ * case they have no access to. Non-client senders (lawyer/assistant) keep
+ * the unrestricted caseSlugFromText behavior — they're already
+ * matter-scoped elsewhere (resolveAuthorizedCase in legal-chat/actions.ts).
  */
 function resolveClientCaseSlug(sender: WhatsAppIdentity, text: string): string | undefined {
   const explicit = caseSlugFromText(text);
-  if (explicit) return explicit;
-  if (!isClientRole(sender.role)) return undefined;
+  if (!isClientRole(sender.role)) return explicit;
   const scope = Array.isArray(sender.matterScope) ? sender.matterScope.filter(Boolean) : [];
+  if (explicit && scope.includes(explicit)) return explicit;
   return scope.length === 1 ? scope[0] : undefined;
 }
 
@@ -372,7 +381,13 @@ export async function orchestrateWhatsAppMessage(
       const written = await writeIntakeRequest(sender.brainId, intake, deps.fetchImpl);
       targetSlug = written.slug;
     } else if (risk.intent === "document_request") {
-      const caseSlug = caseSlugFromText(normalizedText);
+      // clientCaseSlug, not a fresh caseSlugFromText(normalizedText) call: a
+      // verified single-matter client asking for documents without naming
+      // their case explicitly ("Ich brauche noch die Vollmacht") used to
+      // fall through here with no case, so the approval got built with a
+      // case_slug but no backing document-request page for the lawyer to
+      // actually send.
+      const caseSlug = clientCaseSlug;
       if (caseSlug) {
         const request = await buildDocumentRequest({
           brainId: sender.brainId,
@@ -434,7 +449,11 @@ export async function orchestrateWhatsAppMessage(
     }
 
     return {
-      reply: safeClientReply(),
+      // clientIngestReply carries the specific reply client-ingest.ts built
+      // for this case (e.g. the appointment_request acknowledgment) — using
+      // the generic safeClientReply() unconditionally here meant that reply
+      // was computed and then silently discarded for every client sender.
+      reply: clientIngestReply || safeClientReply(),
       eventSlug: event.slug,
       actionSlug: approvalRecord.slug,
       notificationEvent,

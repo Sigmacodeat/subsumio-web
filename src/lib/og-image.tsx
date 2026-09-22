@@ -1,4 +1,28 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+// The site's display serif (Newsreader, SIL OFL) as static TTFs — next/og
+// cannot use next/font. Loaded once per process; if the files are missing the
+// image still renders, in the default sans.
+type OgFont = { name: string; data: Buffer; weight: 500 | 600; style: "normal" };
+let cachedFonts: OgFont[] | null = null;
+function serifFonts(): OgFont[] {
+  if (cachedFonts) return cachedFonts;
+  try {
+    const dir = path.join(process.cwd(), "public", "fonts");
+    cachedFonts = ([500, 600] as const).map((weight) => ({
+      name: "Newsreader",
+      data: readFileSync(path.join(dir, `newsreader-latin-${weight}-normal.ttf`)),
+      weight,
+      style: "normal" as const,
+    }));
+  } catch {
+    cachedFonts = [];
+  }
+  return cachedFonts;
+}
+const SERIF = "Newsreader, Georgia, serif";
 
 export const ogImageSize = { width: 1200, height: 630 };
 export const ogImageContentType = "image/png";
@@ -33,28 +57,41 @@ export function renderOgImage(title: string, eyebrow = "Subsumio") {
             </linearGradient>
           </defs>
           <rect x="2" y="2" width="68" height="68" rx="17" fill="url(#t)" />
-          <rect x="16" y="19" width="7" height="34" rx="2.5" fill="#ffffff" />
-          <rect x="31" y="20" width="25" height="7" rx="3.5" fill="#ffffff" fillOpacity="0.5" />
+          <rect x="16" y="20" width="7" height="33" rx="3.5" fill="#ffffff" />
+          <rect x="31" y="20" width="25" height="7" rx="3.5" fill="#ffffff" fillOpacity="0.56" />
           <rect x="31" y="33" width="25" height="7" rx="3.5" fill="#d8b86a" />
-          <rect x="31" y="46" width="17" height="7" rx="3.5" fill="#ffffff" fillOpacity="0.5" />
+          <rect x="31" y="46" width="17" height="7" rx="3.5" fill="#ffffff" fillOpacity="0.56" />
         </svg>
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             marginLeft: 20,
-            fontSize: 40,
-            fontWeight: 700,
-            letterSpacing: -1,
+            fontFamily: SERIF,
+            fontSize: 42,
+            fontWeight: 600,
+            letterSpacing: -0.6,
           }}
         >
-          Subsum<span style={{ color: "#d8b86a" }}>•</span>io
+          Subsum
+          {/* Same drawn disc as the site wordmark (brand/subsumio-logo.tsx). */}
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              margin: "0 5px 0",
+              background: "#d8b86a",
+            }}
+          />
+          io
         </div>
       </div>
       <div
         style={{
-          fontSize: 26,
+          fontSize: 22,
           fontWeight: 600,
-          letterSpacing: 2,
+          letterSpacing: 3.5,
           textTransform: "uppercase",
           color: "#d8b86a",
           marginBottom: 24,
@@ -64,10 +101,13 @@ export function renderOgImage(title: string, eyebrow = "Subsumio") {
       </div>
       <div
         style={{
-          fontSize: 64,
-          fontWeight: 700,
-          lineHeight: 1.15,
-          maxWidth: 980,
+          // Same voice as the page headlines: the serif, medium weight.
+          fontFamily: SERIF,
+          fontSize: 68,
+          fontWeight: 500,
+          lineHeight: 1.1,
+          letterSpacing: -1.4,
+          maxWidth: 1000,
         }}
       >
         {title}
@@ -82,6 +122,6 @@ export function renderOgImage(title: string, eyebrow = "Subsumio") {
         subsum.io
       </div>
     </div>,
-    { ...ogImageSize }
+    { ...ogImageSize, fonts: serifFonts() }
   );
 }

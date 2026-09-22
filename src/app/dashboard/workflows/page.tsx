@@ -227,7 +227,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" data-tour="workflows-page">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8" data-tour="workflows-page">
       <div data-tour="workflows-intro">
         <PageHeader
           title={t("workflows.title")}

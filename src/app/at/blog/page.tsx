@@ -100,9 +100,9 @@ export default function BlogPage() {
         </Section>
         <CTASection
           title="Bereit für belegte KI-Antworten?"
-          sub="Starten Sie Ihre 14-tägige Testphase — keine Kreditkarte nötig."
+          sub="Starten Sie Ihre 30-tägige Testphase — keine Kreditkarte nötig."
           href="/at/signup"
-          label="30 Tage testen"
+          label="30 Tage kostenlos testen"
           secondaryHref="/at/contact"
           secondaryLabel={UI_STRINGS.writeUs}
         />

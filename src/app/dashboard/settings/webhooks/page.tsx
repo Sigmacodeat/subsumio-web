@@ -128,7 +128,7 @@ export default function WebhooksPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={L("Webhooks", "Webhooks")}
         description={L(
@@ -188,7 +188,7 @@ export default function WebhooksPage() {
                       form.events.includes(evt)
                         ? "brand-soft brand-text brand-border"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-3)]"
-                    } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
+                    } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99]`}
                   >
                     {eventLabel(evt)}
                   </button>

@@ -121,7 +121,7 @@ export function DraftReviewCard({ draft, onSign, onCopy, className }: DraftRevie
               variant="secondary"
               size="sm"
               onClick={handleCopy}
-              className="gap-1.5 active:scale-[0.98]"
+              className="gap-1.5 active:scale-[0.99]"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? t("draftreview.copied") : t("draftreview.copy")}
@@ -132,7 +132,7 @@ export function DraftReviewCard({ draft, onSign, onCopy, className }: DraftRevie
                 variant="secondary"
                 size="sm"
                 onClick={() => onSign(draft)}
-                className="gap-1.5 active:scale-[0.98]"
+                className="gap-1.5 active:scale-[0.99]"
               >
                 <PenTool size={14} />
                 {t("draftreview.sign")}

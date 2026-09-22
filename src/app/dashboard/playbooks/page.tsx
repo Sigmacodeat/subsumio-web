@@ -304,7 +304,7 @@ export default function PlaybooksPage() {
   const isFormOpen = creating || editingSlug !== null;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("playbooks.title")}
         description={t("playbooks.description")}
@@ -685,7 +685,7 @@ function PlaybookEditor(props: {
                   selected
                     ? "border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
-                } active:scale-[0.97]`}
+                } active:scale-[0.99]`}
               >
                 {t}
               </button>
@@ -779,7 +779,7 @@ function RuleRow({
         />
         <button
           onClick={onDuplicate}
-          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
+          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] motion-reduce:transition-none"
           title={t("playbooks.title_duplicate")}
           aria-label={t("playbooks.title_duplicate")}
         >
@@ -787,7 +787,7 @@ function RuleRow({
         </button>
         <button
           onClick={onRemove}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
           title={t("playbooks.title_remove")}
           aria-label={t("playbooks.title_remove")}
         >

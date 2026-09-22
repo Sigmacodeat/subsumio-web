@@ -184,7 +184,7 @@ export default function TimeSuggestionsPage() {
   const totalMinutes = pending.reduce((acc, s) => acc + s.duration_minutes, 0);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("time_sugg.title")}
         description={t("time_sugg.description")}

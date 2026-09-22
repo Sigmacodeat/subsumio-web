@@ -24,7 +24,11 @@ import { cn, formatDateTime } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { getCoverageMatrix, type ConnectorCoverageEntry } from "@/lib/connector-coverage";
+import {
+  getCoverageMatrix,
+  isWebSelfServiceConnector,
+  type ConnectorCoverageEntry,
+} from "@/lib/connector-coverage";
 import type { DashboardKey } from "@/content/dashboard";
 
 const CONNECTOR_ICONS: Record<string, React.ElementType> = {
@@ -206,7 +210,7 @@ export default function ConnectorsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("connectors.title")}
         description={t("connectors.description")}
@@ -497,6 +501,13 @@ function CoverageMatrix() {
                 <span className={cn("font-medium", statusColors[c.status])}>
                   {statusLabels[c.status]}
                 </span>
+                {c.status === "available" && (
+                  <div className="mt-0.5 text-[10px] text-[color:var(--ds-text-subtle)]">
+                    {isWebSelfServiceConnector(c.id)
+                      ? "Im Dashboard einrichten"
+                      : "Nur über IT (Kommandozeile)"}
+                  </div>
+                )}
               </td>
               <td className="hidden px-3 py-2 text-[color:var(--ds-text-muted)] md:table-cell">
                 {SYNC_MODE_LABEL[c.sync_mode] ?? c.sync_mode}

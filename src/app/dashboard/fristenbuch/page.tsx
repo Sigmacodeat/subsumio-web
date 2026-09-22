@@ -327,7 +327,7 @@ export default function FristenbuchPage() {
     .filter((c) => c.count > 0 || filter === c.key);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" data-tour="fristenbuch">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8" data-tour="fristenbuch">
       <PageHeader
         title={t("deadlines.fristenbuch")}
         description="Das Fristenbuch der Kanzlei: alle Fristen chronologisch, mit Zuständigkeit und Erledigungsvermerk — zum Ausdrucken für die tägliche Fristenkontrolle."

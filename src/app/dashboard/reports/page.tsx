@@ -270,7 +270,7 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
                   type="button"
                   aria-label={t("reports.btn_view")}
                   onClick={() => onView(latest)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                   title={t("reports.btn_view")}
                 >
                   <Eye size={12} />
@@ -363,7 +363,7 @@ function ReportRow({
             type="button"
             aria-label={`${t("reports.btn_view")}: #${job.id}`}
             onClick={() => onView(job)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
             title={t("reports.btn_view")}
           >
             <Eye size={12} />
@@ -377,7 +377,7 @@ function ReportRow({
             aria-label={`${t("reports.btn_replay")}: #${job.id}`}
             onClick={() => onReplay(job.id)}
             disabled={replaying}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
             title={t("reports.btn_replay")}
           >
             {replaying ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
@@ -432,7 +432,7 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
             type="button"
             aria-label="Schließen"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
             <X size={16} />
           </button>
@@ -599,7 +599,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("reports.title")}
         description={t("reports.subtitle")}
@@ -638,7 +638,7 @@ export default function ReportsPage() {
               aria-selected={tab === tabItem.id}
               onClick={() => setTab(tabItem.id)}
               className={cn(
-                "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                 tab === tabItem.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

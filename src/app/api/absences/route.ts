@@ -37,7 +37,7 @@ export const POST = createHandler(
 
     const absence = createAbsence(body);
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -48,6 +48,16 @@ export const POST = createHandler(
       }),
       signal: AbortSignal.timeout(10_000),
     });
+    // Was fire-and-forget: a failed engine write still returned 200 with
+    // the absence record, so a Vertretung (deadline stand-in during the
+    // absence) could silently fail to be registered.
+    if (!res.ok) {
+      return apiError(
+        "engine_write_failed",
+        "Abwesenheit konnte nicht gespeichert werden",
+        res.status >= 500 ? 502 : res.status
+      );
+    }
 
     return apiSuccess({ absence });
   }

@@ -34,6 +34,7 @@ import type { DeadlineEntry } from "@/lib/legal-types";
 import type { DeadlineFormData } from "@/lib/schemas/case-detail";
 import { csrfFetch } from "@/lib/csrf";
 import CommentThread from "@/components/legal/CommentThread";
+import { useTeam } from "@/lib/queries/settings";
 
 export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
@@ -44,6 +45,10 @@ export function DeadlinesTasksTab() {
   const router = useRouter();
   const [secondCheckIndex, setSecondCheckIndex] = useState<number | null>(null);
   const [secondCheckBusy, setSecondCheckBusy] = useState(false);
+  const [newTaskDueDate, setNewTaskDueDate] = useState("");
+  const [newTaskAssigneeId, setNewTaskAssigneeId] = useState("");
+  const { data: teamData } = useTeam();
+  const teamMembers = teamData?.members ?? [];
 
   // Auto-expand form when editing
   useEffect(() => {
@@ -63,6 +68,39 @@ export function DeadlinesTasksTab() {
   const caseData = ctx.caseData;
   const slug = ctx.slug;
 
+  function addTask() {
+    if (!ctx.newTask.trim()) return;
+    const assignee = teamMembers.find((m) => m.id === newTaskAssigneeId);
+    const updated = [
+      ...ctx.tasks,
+      {
+        id: Date.now().toString(),
+        text: ctx.newTask.trim(),
+        done: false,
+        createdAt: new Date().toISOString(),
+        dueDate: newTaskDueDate || undefined,
+        assigneeId: assignee?.id,
+        assigneeName: assignee?.name || assignee?.email,
+      },
+    ];
+    ctx.setTasks(updated);
+    ctx.setNewTask("");
+    setNewTaskDueDate("");
+    setNewTaskAssigneeId("");
+    ctx.saveCaseUpdate({ tasks: updated });
+  }
+
+  function reassignTask(taskId: string, assigneeId: string) {
+    const assignee = teamMembers.find((m) => m.id === assigneeId);
+    const updated = ctx.tasks.map((t) =>
+      t.id === taskId
+        ? { ...t, assigneeId: assignee?.id, assigneeName: assignee?.name || assignee?.email }
+        : t
+    );
+    ctx.setTasks(updated);
+    ctx.saveCaseUpdate({ tasks: updated });
+  }
+
   return (
     <div className="space-y-4">
       {/* Deadline Form — collapsed by default (Progressive Disclosure) */}
@@ -71,7 +109,7 @@ export function DeadlinesTasksTab() {
           <button
             onClick={() => setShowDeadlineForm(true)}
             disabled={caseData?.status === "archived"}
-            className="flex w-full items-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+            className="flex w-full items-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
           >
             <Plus size={16} className="shrink-0" />
             {t("cases.detail_dl_add")}
@@ -607,7 +645,7 @@ export function DeadlinesTasksTab() {
                           ctx.setDeadlinesList(updated);
                           ctx.saveCaseUpdate({ deadlines: updated });
                         }}
-                        className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-success-text)] active:scale-[0.97] motion-reduce:transition-none"
+                        className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-success-text)] active:scale-[0.99] motion-reduce:transition-none"
                       >
                         {dl.review_status === "approved"
                           ? t("cases.detail_dl_review_open")
@@ -619,7 +657,7 @@ export function DeadlinesTasksTab() {
                           ctx.setEditingDeadlineIndex(i);
                           ctx.deadlineForm.reset(dl as DeadlineFormData);
                         }}
-                        className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none"
+                        className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none"
                       >
                         {t("cases.detail_dl_edit_btn")}
                       </button>
@@ -630,7 +668,7 @@ export function DeadlinesTasksTab() {
                           ctx.setDeadlinesList(updated);
                           ctx.saveCaseUpdate({ deadlines: updated });
                         }}
-                        className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+                        className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -742,27 +780,14 @@ export function DeadlinesTasksTab() {
 
       {/* Tasks Section */}
       <div className="max-w-3xl space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[180px] flex-1">
             <input
               id="matter-new-task"
               value={ctx.newTask}
               onChange={(e) => ctx.setNewTask(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && ctx.newTask.trim()) {
-                  const updated = [
-                    ...ctx.tasks,
-                    {
-                      id: Date.now().toString(),
-                      text: ctx.newTask.trim(),
-                      done: false,
-                      createdAt: new Date().toISOString(),
-                    },
-                  ];
-                  ctx.setTasks(updated);
-                  ctx.setNewTask("");
-                  ctx.saveCaseUpdate({ tasks: updated });
-                }
+                if (e.key === "Enter" && ctx.newTask.trim()) addTask();
               }}
               placeholder={t("cases.new_task")}
               aria-label={t("cases.new_task")}
@@ -770,26 +795,33 @@ export function DeadlinesTasksTab() {
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50 motion-reduce:transition-none"
             />
           </div>
+          <input
+            type="date"
+            value={newTaskDueDate}
+            onChange={(e) => setNewTaskDueDate(e.target.value)}
+            aria-label="Fälligkeit"
+            disabled={caseData?.status === "archived"}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-2 text-sm text-[color:var(--ds-text)] disabled:opacity-50"
+          />
+          <select
+            value={newTaskAssigneeId}
+            onChange={(e) => setNewTaskAssigneeId(e.target.value)}
+            aria-label="Zuständig"
+            disabled={caseData?.status === "archived"}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-2 text-sm text-[color:var(--ds-text)] disabled:opacity-50"
+          >
+            <option value="">Nicht zugewiesen</option>
+            {teamMembers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name || m.email}
+              </option>
+            ))}
+          </select>
           <Button
             variant="primary"
             disabled={caseData?.status === "archived"}
             className="brand-bg brand-bg gap-2 text-sm text-white"
-            onClick={() => {
-              if (ctx.newTask.trim()) {
-                const updated = [
-                  ...ctx.tasks,
-                  {
-                    id: Date.now().toString(),
-                    text: ctx.newTask.trim(),
-                    done: false,
-                    createdAt: new Date().toISOString(),
-                  },
-                ];
-                ctx.setTasks(updated);
-                ctx.setNewTask("");
-                ctx.saveCaseUpdate({ tasks: updated });
-              }
-            }}
+            onClick={() => addTask()}
           >
             <Plus size={14} /> {t("cases.detail_tasks_add")}
           </Button>
@@ -823,7 +855,7 @@ export function DeadlinesTasksTab() {
                     ctx.saveCaseUpdate({ tasks: updated });
                   }}
                   className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] motion-reduce:transition-none",
                     task.done
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "hover:brand-border border-[color:var(--ds-border)]"
@@ -831,16 +863,46 @@ export function DeadlinesTasksTab() {
                 >
                   {task.done && <Check size={12} />}
                 </button>
-                <span
-                  className={cn(
-                    "flex-1 text-sm",
-                    task.done
-                      ? "text-[color:var(--ds-text-muted)] line-through"
-                      : "text-[color:var(--ds-text)]"
+                <div className="min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      "text-sm",
+                      task.done
+                        ? "text-[color:var(--ds-text-muted)] line-through"
+                        : "text-[color:var(--ds-text)]"
+                    )}
+                  >
+                    {task.text}
+                  </span>
+                  {task.dueDate && (
+                    <span
+                      className={cn(
+                        "ml-2 text-xs tabular-nums",
+                        !task.done &&
+                          task.dueDate < new Date().toISOString().slice(0, 10) &&
+                          "text-[color:var(--ds-danger-text)]",
+                        !(!task.done && task.dueDate < new Date().toISOString().slice(0, 10)) &&
+                          "text-[color:var(--ds-text-subtle)]"
+                      )}
+                    >
+                      {formatDate(task.dueDate)}
+                    </span>
                   )}
+                </div>
+                <select
+                  value={task.assigneeId ?? ""}
+                  onChange={(e) => reassignTask(task.id, e.target.value)}
+                  disabled={caseData?.status === "archived"}
+                  aria-label={`Zuständig für „${task.text}"`}
+                  className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-1 text-xs text-[color:var(--ds-text)] disabled:opacity-50"
                 >
-                  {task.text}
-                </span>
+                  <option value="">Nicht zugewiesen</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name || m.email}
+                    </option>
+                  ))}
+                </select>
                 <button
                   disabled={caseData?.status === "archived"}
                   onClick={() => {
@@ -848,7 +910,7 @@ export function DeadlinesTasksTab() {
                     ctx.setTasks(updated);
                     ctx.saveCaseUpdate({ tasks: updated });
                   }}
-                  className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+                  className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
                 >
                   <Trash2 size={14} />
                 </button>

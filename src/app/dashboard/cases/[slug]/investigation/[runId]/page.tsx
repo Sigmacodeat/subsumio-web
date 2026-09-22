@@ -292,7 +292,7 @@ export default function InvestigationPage({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title="Sachverhaltsprüfung"
           description="Widersprüche, Beweislücken und offene Fragen aus den Aktendokumenten."
@@ -326,7 +326,7 @@ export default function InvestigationPage({
 
   if (error) {
     return (
-      <div className="mx-auto max-w-[800px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title="Sachverhaltsprüfung"
           breadcrumbs={[
@@ -367,7 +367,7 @@ export default function InvestigationPage({
   };
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Sachverhaltsprüfung"
         description={`${result.claims_count} Tatsachenbehauptungen aus den Aktendokumenten geprüft.`}
@@ -453,7 +453,7 @@ export default function InvestigationPage({
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] active:scale-[0.98] motion-reduce:transition-none",
+                "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] active:scale-[0.99] motion-reduce:transition-none",
                 isActive
                   ? "bg-[color:var(--brand-solid)] text-white shadow-sm"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
@@ -1026,7 +1026,7 @@ function FilterChip({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] active:scale-[0.97] motion-reduce:transition-none",
+        "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] active:scale-[0.99] motion-reduce:transition-none",
         active
           ? "bg-[color:var(--brand-solid)] text-white"
           : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

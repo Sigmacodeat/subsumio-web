@@ -199,7 +199,11 @@ async function connect() {
 
 async function loadRecentCases() {
   try {
-    const pages = await apiGet<BrainPage[]>("/api/pages?type=case&limit=10");
+    // Cases are stored with the engine type "legal_case" (see
+    // src/app/dashboard/cases/new/page.tsx and api/pages/route.ts) — this
+    // was querying the wrong type and always returned an empty list, so the
+    // case-select dropdowns in the add-in stayed empty.
+    const pages = await apiGet<BrainPage[]>("/api/pages?type=legal_case&limit=10");
     const selects = document.querySelectorAll<HTMLSelectElement>(".case-select");
     selects.forEach((sel) => {
       sel.innerHTML =

@@ -141,7 +141,7 @@ export default function OpponentsPage() {
   }, [opponents, query]);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("opponents.title")}
         description={t("opponents.desc")}
@@ -221,7 +221,7 @@ export default function OpponentsPage() {
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
               aria-label={t("opponents.search_clear")}
             >
               <X size={15} />
@@ -253,7 +253,7 @@ export default function OpponentsPage() {
             <div className="space-y-4">
               <button
                 onClick={() => setSelectedOpponent(null)}
-                className="text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                className="text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
               >
                 {t("opponents.back")}
               </button>

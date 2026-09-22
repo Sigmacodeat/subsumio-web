@@ -126,3 +126,13 @@ describe("markdownToPlainText", async () => {
     );
   });
 });
+
+describe("ordered lists", () => {
+  it("keeps the numbering: numbered items render as <ol>, bullets as <ul>", () => {
+    const html = renderMarkdown("1. Rekurs\n2. Klagebeantwortung\n\n- Vollmacht\n- Beilage");
+    expect(html).toContain("<ol><li>Rekurs</li>");
+    expect(html).toContain("<ul><li>Vollmacht</li>");
+    expect(html).not.toContain("data-o");
+    expect(html).not.toContain("<p><ol>");
+  });
+});

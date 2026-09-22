@@ -170,7 +170,7 @@ function MaskedInput({
           type="button"
           onClick={() => setShow(!show)}
           aria-label={show ? "Wert verbergen" : "Wert anzeigen"}
-          className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+          className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
           {show ? <EyeOff size={13} /> : <Eye size={13} />}
         </button>
@@ -179,7 +179,7 @@ function MaskedInput({
             type="button"
             onClick={copy}
             aria-label="Wert kopieren"
-            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             {copied ? (
               <Check size={13} className="text-[color:var(--ds-success-text)]" />
@@ -908,7 +908,7 @@ function SettingsPageInner() {
                             kanzleiForm.setValue("tarifModell", opt.key, { shouldDirty: true })
                           }
                           className={cn(
-                            "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                            "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                             tarifModellWatch === opt.key
                               ? "brand-soft brand-text brand-border"
                               : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"

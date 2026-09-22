@@ -324,7 +324,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
   const currentStepIndex = steps.findIndex((s) => s.key === step);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("strategy.title")}
         description={t("strategy.description")}

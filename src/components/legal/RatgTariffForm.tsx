@@ -197,7 +197,12 @@ export function RatgTariffForm({
     }
   };
 
-  const total = lines.reduce((s, l) => s + l.amount, 0);
+  // `lines` is shared with AhkTariffForm (both append to the same invoice
+  // position list, InvoiceQuickCreateDialog.tsx) — show and total only
+  // this form's own entries, identified by the "ratg-" id prefix `add()`
+  // gives them below.
+  const ownLines = lines.filter((l) => l.id.startsWith("ratg-"));
+  const total = ownLines.reduce((s, l) => s + l.amount, 0);
 
   return (
     <section
@@ -543,9 +548,9 @@ export function RatgTariffForm({
         </p>
       </div>
 
-      {lines.length > 0 && (
+      {ownLines.length > 0 && (
         <ul className="divide-y divide-[color:var(--ds-border)] rounded-md border border-[color:var(--ds-border)] text-sm">
-          {lines.map((l) => (
+          {ownLines.map((l) => (
             <li key={l.id} className="flex items-start justify-between gap-3 px-3 py-2">
               <span className="min-w-0 break-words text-[color:var(--ds-text)]">
                 {l.description}

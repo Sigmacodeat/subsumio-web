@@ -110,12 +110,15 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
     <>
       <Button
         variant="ghost"
-        size="sm"
-        className={cn("gap-1.5", className)}
+        // size="icon" + p-0: with size="sm" the 24 px horizontal padding left
+        // 4 px for the icon inside a 28 px button — it rendered as a dot.
+        size="icon"
+        className={cn("p-0 text-[color:var(--ds-text-muted)]", className)}
         onClick={() => setShowModal(true)}
-        title="Voice-to-Prompt"
+        title="Diktieren"
+        aria-label="Diktieren"
       >
-        <Mic size={16} />
+        <Mic size={15} className="shrink-0" />
       </Button>
 
       {showModal && (
@@ -155,7 +158,7 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
               <button
                 onClick={handleToggle}
                 className={cn(
-                  "flex h-16 w-16 items-center justify-center rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                  "flex h-16 w-16 items-center justify-center rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                   voice.isListening
                     ? "animate-pulse bg-[color:var(--ds-danger-solid)] text-white shadow-lg shadow-[color:var(--ds-danger-solid)]/30"
                     : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

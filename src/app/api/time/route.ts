@@ -19,6 +19,67 @@ const log = logger("api/time");
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Every write below is a read-modify-write on the case page's single
+ * `time_entries` array field: fetch the case, compute a new array in
+ * application code, POST the whole array back via merge-update. There is no
+ * atomic array-append/patch primitive on the engine for this — two
+ * concurrent writes (e.g. two lawyers logging time on the same case within
+ * the same second) can both read the same starting array, and whichever
+ * merge-update lands second silently overwrites the first's entry with no
+ * error to either caller.
+ *
+ * This doesn't make the write atomic (that needs an engine-side primitive —
+ * flagged separately), but it turns "silently lose data" into "detect the
+ * clobber and retry with a fresh read", which closes the race for the
+ * common case (two people saving moments apart) and fails loudly instead of
+ * silently for the rare case (landing in the same sub-request window
+ * repeatedly).
+ */
+const TIME_ENTRIES_WRITE_MAX_ATTEMPTS = 5;
+
+class TimeEntriesNotFoundError extends Error {}
+class TimeEntriesWriteConflictError extends Error {}
+
+async function writeTimeEntriesWithRetry<M>(
+  brain: ReturnType<typeof createServerBrainClient>,
+  caseSlug: string,
+  compute: (
+    freshEntries: TimeEntry[],
+    freshFrontmatter: Record<string, unknown>
+  ) => { nextEntries: TimeEntry[]; meta: M } | { notFound: true }
+): Promise<{ entries: TimeEntry[]; meta: M }> {
+  for (let attempt = 0; attempt < TIME_ENTRIES_WRITE_MAX_ATTEMPTS; attempt++) {
+    const casePage = await brain.getPage(caseSlug);
+    const fm = casePage.frontmatter as Record<string, unknown>;
+    const freshEntries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
+
+    const outcome = compute(freshEntries, fm);
+    if ("notFound" in outcome) throw new TimeEntriesNotFoundError();
+
+    await brain.updatePage({
+      slug: caseSlug,
+      frontmatter: { ...fm, time_entries: outcome.nextEntries },
+    });
+
+    // Verify nothing else wrote to time_entries between our read and our
+    // write landing — a concurrent writer's own merge-update would have
+    // been based on the same freshEntries snapshot and so produces a
+    // different resulting array than ours.
+    const verifyPage = await brain.getPage(caseSlug);
+    const verifyEntries = Array.isArray(verifyPage.frontmatter?.time_entries)
+      ? (verifyPage.frontmatter.time_entries as TimeEntry[])
+      : [];
+    if (JSON.stringify(verifyEntries) === JSON.stringify(outcome.nextEntries)) {
+      return { entries: outcome.nextEntries, meta: outcome.meta };
+    }
+    log.warn("[time] write_conflict, retrying", { caseSlug, attempt });
+    await new Promise((r) => setTimeout(r, 25 + Math.random() * 75));
+  }
+  log.error("[time] write_conflict exhausted retries", { caseSlug });
+  throw new TimeEntriesWriteConflictError();
+}
+
 /** The engine returns at most 100 pages per request; page through the rest. */
 async function listAllOfType(
   brain: ReturnType<typeof createServerBrainClient>,
@@ -202,17 +263,24 @@ export const POST = createHandler(
       activity_type: body.activity_type,
     });
 
-    const casePage = await brain.getPage(body.case_slug).catch(() => null);
-    if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+    const exists = await brain.getPage(body.case_slug).catch(() => null);
+    if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-    const fm = casePage.frontmatter as Record<string, unknown>;
-    const existing = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
-    existing.push(entry);
-
-    await brain.updatePage({
-      slug: body.case_slug,
-      frontmatter: { ...fm, time_entries: existing },
-    });
+    try {
+      await writeTimeEntriesWithRetry(brain, body.case_slug, (freshEntries) => ({
+        nextEntries: [...freshEntries, entry],
+        meta: null,
+      }));
+    } catch (err) {
+      if (err instanceof TimeEntriesWriteConflictError) {
+        return apiError(
+          "write_conflict",
+          "Zeiteintrag konnte nicht gespeichert werden — bitte erneut versuchen.",
+          409
+        );
+      }
+      throw err;
+    }
 
     broadcastSseEvent(ctx.brainId, "time.entry.created", {
       case_slug: body.case_slug,
@@ -236,39 +304,49 @@ export const PATCH = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const brain = createServerBrainClient(ctx.headers);
-    const casePage = await brain.getPage(body.case_slug).catch(() => null);
-    if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
-
-    const fm = casePage.frontmatter as Record<string, unknown>;
-    const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
+    const exists = await brain.getPage(body.case_slug).catch(() => null);
+    if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
     // ── Bulk mark-billed mode ──
     if (body.mark_billed && body.entry_ids && body.invoice_number) {
-      const entriesWithCase: TimeEntryWithCase[] = entries.map((e) => ({
-        ...e,
-        case_slug: body.case_slug,
-      }));
-      const result = markEntriesBilled(entriesWithCase, body.entry_ids, body.invoice_number);
-
-      if (result.updated === 0) {
-        return apiError("time_entry_not_found", "Keine der angegebenen Zeiteinträge gefunden", 404);
+      let billedResult: { updated: number; not_found: string[] };
+      try {
+        const { meta } = await writeTimeEntriesWithRetry(brain, body.case_slug, (freshEntries) => {
+          const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
+            ...e,
+            case_slug: body.case_slug,
+          }));
+          const result = markEntriesBilled(entriesWithCase, body.entry_ids!, body.invoice_number!);
+          return {
+            nextEntries: result.entries.map(({ case_slug: _cs, ...e }) => e),
+            meta: { updated: result.updated, not_found: result.not_found },
+          };
+        });
+        billedResult = meta;
+      } catch (err) {
+        if (err instanceof TimeEntriesWriteConflictError) {
+          return apiError(
+            "write_conflict",
+            "Zeiteinträge konnten nicht als abgerechnet markiert werden — bitte erneut versuchen.",
+            409
+          );
+        }
+        throw err;
       }
 
-      const updatedEntries = result.entries.map(({ case_slug: _cs, ...e }) => e);
-      await brain.updatePage({
-        slug: body.case_slug,
-        frontmatter: { ...fm, time_entries: updatedEntries },
-      });
+      if (billedResult.updated === 0) {
+        return apiError("time_entry_not_found", "Keine der angegebenen Zeiteinträge gefunden", 404);
+      }
 
       broadcastSseEvent(ctx.brainId, "time.entry.billed", {
         case_slug: body.case_slug,
         invoice_number: body.invoice_number,
-        updated: result.updated,
+        updated: billedResult.updated,
       });
 
       return apiSuccess({
-        updated: result.updated,
-        not_found: result.not_found,
+        updated: billedResult.updated,
+        not_found: billedResult.not_found,
         invoice_number: body.invoice_number,
       });
     }
@@ -293,20 +371,39 @@ export const PATCH = createHandler(
       }
     }
 
-    const result = updateEntry(entries, body.id, allowedUpdates);
-    if (!result.found) return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
-
-    await brain.updatePage({
-      slug: body.case_slug,
-      frontmatter: { ...fm, time_entries: result.entries },
-    });
+    let updated: TimeEntry;
+    try {
+      const { meta } = await writeTimeEntriesWithRetry<TimeEntry>(
+        brain,
+        body.case_slug,
+        (freshEntries) => {
+          const result = updateEntry(freshEntries, body.id, allowedUpdates);
+          if (!result.found || !result.updated) return { notFound: true };
+          const meta: TimeEntry = result.updated;
+          return { nextEntries: result.entries, meta };
+        }
+      );
+      updated = meta;
+    } catch (err) {
+      if (err instanceof TimeEntriesNotFoundError) {
+        return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
+      }
+      if (err instanceof TimeEntriesWriteConflictError) {
+        return apiError(
+          "write_conflict",
+          "Zeiteintrag konnte nicht aktualisiert werden — bitte erneut versuchen.",
+          409
+        );
+      }
+      throw err;
+    }
 
     broadcastSseEvent(ctx.brainId, "time.entry.updated", {
       case_slug: body.case_slug,
       entry_id: body.id,
     });
 
-    return apiSuccess({ entry: result.updated });
+    return apiSuccess({ entry: updated });
   }
 );
 
@@ -323,18 +420,28 @@ export const DELETE = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const brain = createServerBrainClient(ctx.headers);
-    const casePage = await brain.getPage(body.case_slug).catch(() => null);
-    if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+    const exists = await brain.getPage(body.case_slug).catch(() => null);
+    if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-    const fm = casePage.frontmatter as Record<string, unknown>;
-    const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
-    const result = deleteEntry(entries, body.id);
-    if (!result.found) return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
-
-    await brain.updatePage({
-      slug: body.case_slug,
-      frontmatter: { ...fm, time_entries: result.entries },
-    });
+    try {
+      await writeTimeEntriesWithRetry(brain, body.case_slug, (freshEntries) => {
+        const result = deleteEntry(freshEntries, body.id);
+        if (!result.found) return { notFound: true };
+        return { nextEntries: result.entries, meta: null };
+      });
+    } catch (err) {
+      if (err instanceof TimeEntriesNotFoundError) {
+        return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
+      }
+      if (err instanceof TimeEntriesWriteConflictError) {
+        return apiError(
+          "write_conflict",
+          "Zeiteintrag konnte nicht gelöscht werden — bitte erneut versuchen.",
+          409
+        );
+      }
+      throw err;
+    }
 
     broadcastSseEvent(ctx.brainId, "time.entry.deleted", {
       case_slug: body.case_slug,

@@ -91,7 +91,7 @@ function CopyableField({
           onClick={copy}
           disabled={!value}
           aria-label={`${label} kopieren`}
-          className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
+          className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-30 motion-reduce:transition-none"
         >
           {copied ? (
             <Check size={14} className="text-[color:var(--ds-success-text)]" />
@@ -210,7 +210,7 @@ export default function ScimSettingsPage() {
   // RBAC: Only admin can access this page
   if (userRole !== "admin") {
     return (
-      <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title="Benutzerabgleich (SCIM)"
           description={t("scim.description")}
@@ -244,7 +244,7 @@ export default function ScimSettingsPage() {
   const anyConfigured = bearerTokenConfigured || workosConfigured;
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Benutzerabgleich (SCIM)"
         description="Übernimmt Mitarbeiter und Rollen automatisch aus dem Benutzerverzeichnis Ihrer Kanzlei (z. B. Microsoft Entra ID)."

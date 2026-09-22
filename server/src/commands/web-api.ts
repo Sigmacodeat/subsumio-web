@@ -274,10 +274,17 @@ function maxBytesForUpload(filename: string): number {
 
 /**
  * Persist the original upload bytes through the binary-storage SSOT
- * (`persistFileBuffer` → `files` table + StorageBackend). Best-effort: a storage
- * failure must not fail the upload, since the extracted markdown already landed.
- * Returns a result so the caller can surface persistence failures in the API
- * response — a silent GoBD-original loss is a compliance violation (§ 147 AO).
+ * (`persistFileBuffer` → `files` table + StorageBackend).
+ *
+ * NOT best-effort: a silent GoBD-original loss is a compliance violation
+ * (§ 147 AO), so this returns a result rather than swallowing the failure,
+ * and every call site below checks `persistRes.ok` and fails the request
+ * with 500 `persist_failed` when it's false — the upload response is never
+ * allowed to report success while the original bytes didn't actually land.
+ * (An earlier version of this comment described the opposite — "a storage
+ * failure must not fail the upload" — which was already stale relative to
+ * the enforcement below; corrected so it can't mislead the next reader into
+ * "fixing" a bug that isn't there.)
  */
 interface PersistResult {
   ok: boolean;

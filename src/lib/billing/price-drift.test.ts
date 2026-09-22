@@ -50,7 +50,12 @@ describe("trial length in the copy matches the trial the product grants", () => 
     const { TRIAL_DAYS } = await import("./trial");
     const out = execFileSync(
       "grep",
-      ["-rnoE", '[0-9]+[ -]Tage?[^"`]{0,40}(testen|kostenlos|gratis|Testversion|Testphase)', "src"],
+      [
+        "-rnoE",
+        // "30 Tage …" and the adjective form "30-tägige Testphase".
+        '[0-9]+[ -](Tage?|tägige[nr]?)[^"`]{0,40}(testen|kostenlos|gratis|Testversion|Testphase)',
+        "src",
+      ],
       { cwd: process.cwd(), encoding: "utf8" }
     );
     const hits = out

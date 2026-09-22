@@ -246,7 +246,7 @@ export default function GraphPage() {
     "rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none";
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={title}
         description={

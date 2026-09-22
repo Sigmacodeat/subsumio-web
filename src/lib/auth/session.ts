@@ -29,12 +29,13 @@ import {
 export async function createSession(
   userId: string,
   email: string,
-  role: SessionPayload["role"]
+  role: SessionPayload["role"],
+  opts?: { must2fa?: boolean }
 ): Promise<SessionResult> {
   const minVersion = await getMinRevocationVersion(userId);
   const version = minVersion + 1;
   const token = await signSession(
-    { uid: userId, email, role },
+    { uid: userId, email, role, ...(opts?.must2fa ? { must2fa: true } : {}) },
     getAuthSecret(),
     SESSION_TTL_SECONDS,
     version

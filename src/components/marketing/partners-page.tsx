@@ -129,7 +129,7 @@ export default function PartnersPage() {
       </Section>
 
       {/* Earnings illustration */}
-      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-3xl text-center">
           <TrendingUp size={28} className="brand-text mx-auto mb-6" />
           <SectionHeading title={t.calcTitle} />
@@ -149,8 +149,8 @@ export default function PartnersPage() {
         </Reveal>
         <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.12}>
           {t.how.map((item) => (
-            <StaggerItem key={item.step}>
-              <GlowCard className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none">
+            <StaggerItem key={item.step} className="h-full">
+              <GlowCard className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:shadow-lg motion-reduce:transition-none">
                 <span className="mb-4 block font-mono text-sm [color:var(--mk-text-subtle)]">
                   {item.step}
                 </span>
@@ -163,7 +163,7 @@ export default function PartnersPage() {
       </Section>
 
       {/* FAQ */}
-      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />

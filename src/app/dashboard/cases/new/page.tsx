@@ -217,6 +217,7 @@ export default function NewCasePage() {
       additionalOpponents: [],
       relatedCaseSlugs: [],
       mandateId: "",
+      disputeValue: "",
       courtName: "",
       courtSlug: "",
       lawyerName: "",
@@ -233,7 +234,22 @@ export default function NewCasePage() {
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
-      const slug = `legal/cases/${slugPart(data.caseNumber?.trim() || Date.now().toString(36))}-${slugPart(data.title)}`;
+
+      let caseNumber = data.caseNumber?.trim();
+      if (!caseNumber) {
+        // Was Date.now().toString(36) — an unrecognizable "number" that
+        // ended up as both the slug and the displayed Aktenzeichen when the
+        // field was left blank. Allocate a real sequential one instead; if
+        // that call itself fails (offline, engine down), fall back to the
+        // timestamp so case creation is never blocked on this.
+        try {
+          const allocated = await api.legal.allocateCaseNumber();
+          caseNumber = allocated.caseNumber;
+        } catch {
+          caseNumber = Date.now().toString(36);
+        }
+      }
+      const slug = `legal/cases/${slugPart(caseNumber)}-${slugPart(data.title)}`;
       let createdSlug = slug;
 
       const pagePayload = {
@@ -242,7 +258,7 @@ export default function NewCasePage() {
         type: "legal_case" as const,
         content: data.facts || "",
         frontmatter: {
-          case_number: data.caseNumber?.trim() || slug.split("/").pop(),
+          case_number: caseNumber,
           legal_area: data.legalArea || undefined,
           sub_area: data.subArea || undefined,
           jurisdiction: data.jurisdiction,
@@ -261,6 +277,16 @@ export default function NewCasePage() {
               ? data.relatedCaseSlugs
               : undefined,
           mandate_id: data.mandateId || undefined,
+          // dispute_value — same field name and parseFloat convention
+          // bulk-cases.ts uses for its "Streitwert"/"dispute_value" CSV
+          // column, so a case created here and one imported both feed the
+          // RATG/AHK fee calculation the same way. Was missing from the
+          // form entirely — a case could only get a dispute value via CSV
+          // import or a standalone calculator, never on the case itself.
+          dispute_value:
+            data.disputeValue?.trim() && !Number.isNaN(parseFloat(data.disputeValue))
+              ? parseFloat(data.disputeValue)
+              : undefined,
           court_name: data.courtName || undefined,
           court_slug: data.courtSlug || undefined,
           own_lawyer_name: data.lawyerName || undefined,
@@ -486,7 +512,7 @@ export default function NewCasePage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("casesnew.title")}
         description={t("casesnew.description")}
@@ -660,7 +686,11 @@ export default function NewCasePage() {
                 <Label htmlFor="case-number" className="mb-1.5 block text-xs">
                   {t("casesnew.label_case_number")}
                 </Label>
-                <Input id="case-number" {...register("caseNumber")} placeholder="z. B. 2026-001" />
+                <Input
+                  id="case-number"
+                  {...register("caseNumber")}
+                  placeholder="Leer lassen für automatische Vergabe"
+                />
               </div>
               <div>
                 <Label htmlFor="case-status" className="mb-1.5 block text-xs">
@@ -764,6 +794,26 @@ export default function NewCasePage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="case-dispute-value" className="mb-1.5 block text-xs">
+                  Streitwert (€)
+                </Label>
+                <Input
+                  id="case-dispute-value"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  inputMode="decimal"
+                  {...register("disputeValue")}
+                  placeholder="z. B. 50000"
+                />
+                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                  Grundlage für RATG/AHK-Honorarberechnung. Kann später ergänzt werden.
+                </p>
               </div>
             </div>
           </div>

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
-import { Section, SectionHeading, CTASection, PageHero, H2_CTA_CLASS } from "./primitives";
+import { Section, SectionHeading, CTASection, PageHero } from "./primitives";
+import { H2_CTA_CLASS, H3_CLASS } from "./typography";
 import { ICONS, accentTile } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
@@ -21,7 +22,7 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
         actions={
           <>
             <Button size="lg" variant="primary" className="group min-h-[48px]" asChild>
-              <Link href={p("/signup")}>
+              <Link href={p(content.ctaHref ?? "/signup")}>
                 {content.ctaButton}
                 <ArrowRight
                   size={16}
@@ -50,12 +51,15 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
           <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.08}>
             {content.pains.map((pain) => (
               <StaggerItem key={pain.title}>
-                <GlowCard
-                  glowColor="var(--ds-category-rose-text)"
-                  intensity={0.1}
-                  className="h-full rounded-2xl border border-[color:var(--ds-category-rose-border)] bg-[color:var(--ds-category-rose-bg)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-[color:var(--ds-category-rose-border)] dark:bg-[color:var(--ds-category-rose-bg)]"
-                >
-                  <AlertCircle size={20} className="mb-3 [color:var(--ds-category-rose-text)]" />
+                {/* Same card as everywhere else; only the icon carries the warning
+                    tone. The rose category tokens do not resolve on the marketing
+                    surface — the border fell back to near-black. */}
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-surface)]">
+                  <AlertCircle
+                    size={20}
+                    strokeWidth={1.75}
+                    className="mb-3 [color:var(--ds-danger-text)]"
+                  />
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {pain.title}
                   </h3>
@@ -73,14 +77,19 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <SectionHeading title={content.featuresTitle} tone="light" />
-          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.06}>
+          {/* Four columns only when the cards fill them; six cards in four
+              columns left two holes in the second row. */}
+          <StaggerContainer
+            className={`grid gap-6 sm:grid-cols-2 ${content.features.length % 4 === 0 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+            stagger={0.06}
+          >
             {content.features.map((feat) => {
               const Icon = ICONS[feat.icon] ?? ICONS.Layers;
               return (
                 <StaggerItem key={feat.title}>
-                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg motion-reduce:transition-none">
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg motion-reduce:transition-none">
                     <div
-                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 ${accentTile("violet", "light")}`}
+                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-[var(--ds-duration-normal)] hover:scale-105 ${accentTile("violet", "light")}`}
                     >
                       <Icon size={18} />
                     </div>
@@ -124,9 +133,10 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
       </Section>
 
       {/* Cross-link: not quite the right fit? */}
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <SectionHeading badge={UI_STRINGS.notQuiteRight} title={UI_STRINGS.seeSolution} />
+          {/* A quiet cross-link, not a chapter: the question is the heading. */}
+          <h2 className={`mb-6 text-center ${H3_CLASS}`}>{UI_STRINGS.notQuiteRight}</h2>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {SOLUTION_SLUGS.filter((slug) => slug !== content.slug).map((slug: SolutionSlug) => {
               const link = SOLUTION_CROSS_LINKS[slug];
@@ -150,7 +160,7 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
       <CTASection
         title={content.ctaTitle}
         sub={content.ctaSub}
-        href={p("/signup")}
+        href={p(content.ctaHref ?? "/signup")}
         label={content.ctaButton}
         secondaryHref={p("/superbrain")}
         secondaryLabel={UI_STRINGS.watchDemo}

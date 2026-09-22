@@ -834,7 +834,7 @@ function TourOverlay({
               </div>
               <button
                 onClick={onClose}
-                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("tour.close")}
               >
                 <X size={16} />
@@ -866,7 +866,7 @@ function TourOverlay({
               aria-selected={i === currentStep}
               aria-label={t("tour.step_label").replace("{current}", String(i + 1))}
               onClick={() => onGoTo(i)}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 active:scale-[0.97] motion-reduce:transition-none"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 active:scale-[0.99] motion-reduce:transition-none"
             >
               <span
                 className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ${
@@ -909,7 +909,7 @@ function TourOverlay({
         {/* Skip link */}
         <button
           onClick={onClose}
-          className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+          className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
         >
           {t("tour.skip")}
         </button>

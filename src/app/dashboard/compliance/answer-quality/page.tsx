@@ -54,7 +54,7 @@ export default function AnswerQualityPage() {
   const share = data && total > 0 ? Math.round((data.up / total) * 100) : null;
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Antwortqualität des Copilots"
         description="Wie Ihre Kanzlei die Antworten bewertet hat – als Nachweis der menschlichen Kontrolle und um schwache Antworten gezielt zu prüfen."

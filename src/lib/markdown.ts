@@ -30,7 +30,9 @@ export function renderMarkdown(text: string): string {
     // Unordered lists
     .replace(/^\s*[-*+]\s+(.*$)/gim, "<li>$1</li>")
     // Ordered lists
-    .replace(/^\s*\d+\.\s+(.*$)/gim, "<li>$1</li>")
+    // Marked, so the numbers survive: a numbered enumeration ("1. Rekurs …
+    // 2. Klagebeantwortung …") used to come out as bullets.
+    .replace(/^\s*\d+\.\s+(.*$)/gim, '<li data-o="1">$1</li>')
     // Links (sanitize href to block javascript:/data: URLs and attribute injection)
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, href) => {
       const safe = /^(https?:|mailto:|\/(?!\/)|#)/i.test(href) && !/["'<>\s]/.test(href);
@@ -45,6 +47,12 @@ export function renderMarkdown(text: string): string {
     const items = match.trim();
     return `<ul>${items}</ul>`;
   });
+  // …and consecutive numbered items in <ol> (after the <ul> pass: once the
+  // marker is stripped they are plain <li> too).
+  html = html.replace(/(<li data-o="1">.*<\/li>\n?)+/g, (match) => {
+    const items = match.trim().replace(/ data-o="1"/g, "");
+    return `<ol>${items}</ol>`;
+  });
 
   // Convert line breaks to <br> or wrap in <p>
   const lines = html.split("\n");
@@ -58,7 +66,7 @@ export function renderMarkdown(text: string): string {
       continue;
     }
 
-    const isBlock = /^<(h[1-6]|pre|blockquote|ul|hr)/.test(trimmed);
+    const isBlock = /^<(h[1-6]|pre|blockquote|ul|ol|hr)/.test(trimmed);
     if (isBlock) {
       out.push(line);
       inBlock = false;

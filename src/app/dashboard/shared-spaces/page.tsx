@@ -54,7 +54,7 @@ export default function DataRoomsPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1100px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Datenräume"
         description="Unterlagen einer Akte gezielt mit anderen Kanzleien teilen – Korrespondenzanwalt, Mitverteidigung, Gegenseite. Nur freigegebene Dokumente, befristbar, jeder Abruf protokolliert."

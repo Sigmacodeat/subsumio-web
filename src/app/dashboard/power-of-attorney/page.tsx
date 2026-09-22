@@ -161,7 +161,7 @@ export default function PowerOfAttorneyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("poa.title")}
         description={t("poa.description")}
@@ -348,7 +348,7 @@ export default function PowerOfAttorneyPage() {
                     size="sm"
                     onClick={() => handleGeneratePdf(poa)}
                     disabled={generatingPdf === poa.id}
-                    className="gap-1.5 active:scale-[0.98]"
+                    className="gap-1.5 active:scale-[0.99]"
                     aria-label={t("poa.btn_pdf_aria")}
                     title={t("poa.btn_pdf")}
                   >
@@ -365,7 +365,7 @@ export default function PowerOfAttorneyPage() {
                         variant="secondary"
                         size="sm"
                         onClick={() => setSendPoa(poa)}
-                        className="gap-1.5 active:scale-[0.98]"
+                        className="gap-1.5 active:scale-[0.99]"
                         aria-label={
                           poa.status === "sent" ? t("poa.btn_resend_aria") : t("poa.btn_send_aria")
                         }
@@ -380,7 +380,7 @@ export default function PowerOfAttorneyPage() {
                         variant="secondary"
                         size="sm"
                         onClick={() => setSignPoa(poa)}
-                        className="gap-1.5 active:scale-[0.98]"
+                        className="gap-1.5 active:scale-[0.99]"
                         aria-label={t("poa.btn_sign_aria")}
                         title={t("poa.btn_sign")}
                       >

@@ -316,9 +316,12 @@ export function ChunkQuality({
       <Card>
         <CardContent className="pt-4">
           <h3 className="mb-4 text-sm font-medium">Pro Source</h3>
-          <div className="overflow-x-auto">
+          {/* overscroll-x-contain: without it, a horizontal swipe past this
+              table's left/right edge falls through to the browser's
+              back/forward gesture instead of stopping at the table's own edge. */}
+          <div className="overflow-x-auto overscroll-x-contain">
             <table className="w-full text-sm text-[color:var(--ds-text)]">
-              <thead>
+              <thead className="sticky top-0 z-10 [background:var(--ds-surface)]">
                 <tr className="border-b text-left text-xs text-[color:var(--ds-text-subtle)]">
                   <th scope="col" className="pr-3 pb-2 font-medium">
                     Source

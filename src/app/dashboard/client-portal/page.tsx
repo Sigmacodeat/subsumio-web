@@ -119,7 +119,7 @@ export default function ClientPortalPage() {
 
   if (!previewing) {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title={t("client_portal.preview_title")}
           description={t("client_portal.preview_desc")}
@@ -155,7 +155,7 @@ export default function ClientPortalPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("client_portal.title")}
         description={t("client_portal.desc")}

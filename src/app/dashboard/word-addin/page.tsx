@@ -64,7 +64,7 @@ export default function WordAddinPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("wordaddin.title")}
         description="Arbeiten Sie mit Subsumio direkt in Microsoft Word — Texte prüfen, Verträge entwerfen und Ergebnisse in der Akte ablegen."

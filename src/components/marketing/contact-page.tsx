@@ -80,7 +80,7 @@ export default function ContactPage() {
                     href={ch.href}
                     className="group rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
                   >
-                    <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--brand-primary)] hover:shadow-xl motion-reduce:transition-none">
+                    <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-0.5 hover:[border-color:var(--brand-primary)] hover:shadow-xl motion-reduce:transition-none">
                       <IconTile icon={Icon} />
                       <h3 className={`mb-1 ${H3_CLASS}`}>{ch.title}</h3>
                       <p className="brand-text mb-2 font-mono text-sm">{ch.value}</p>

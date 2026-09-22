@@ -737,7 +737,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
             <>
               <button
                 onClick={handleSaveSession}
-                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 title="Sitzung speichern"
               >
                 {savedFlash ? (
@@ -752,7 +752,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               </button>
               <button
                 onClick={() => setShowSessions((v) => !v)}
-                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                 title="Gespeicherte Sitzungen"
               >
                 <FolderOpen className="h-3 w-3" /> Laden
@@ -764,7 +764,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               </button>
               <button
                 onClick={handleReset}
-                className="text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               >
                 Zurücksetzen
               </button>
@@ -773,7 +773,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
           {onClose && (
             <button
               onClick={onClose}
-              className="text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+              className="text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               aria-label="Schließen"
             >
               <svg
@@ -957,7 +957,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                   <div className="mt-2 flex items-center gap-1">
                     <button
                       onClick={() => handleCopy(msg.content, i)}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                       title="In Zwischenablage kopieren"
                     >
                       {copiedIdx === i ? (
@@ -972,7 +972,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                     </button>
                     <button
                       onClick={() => handleExport(msg.content, i)}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                       title="Als Markdown exportieren"
                     >
                       <Download className="h-3 w-3" /> Export
@@ -1061,7 +1061,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                     type="button"
                     onClick={() => setFollowUp(suggestion)}
                     disabled={isStreaming}
-                    className="rounded-full border border-[var(--ds-border)] px-2.5 py-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
+                    className="rounded-full border border-[var(--ds-border)] px-2.5 py-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-40 motion-reduce:transition-none"
                   >
                     {suggestion}
                   </button>

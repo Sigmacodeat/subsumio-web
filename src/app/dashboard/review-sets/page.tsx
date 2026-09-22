@@ -278,7 +278,7 @@ export default function ReviewSetsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("review_sets.title" as DashboardKey)}
         description={t("review_sets.description" as DashboardKey)}

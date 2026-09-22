@@ -20,6 +20,36 @@ import { logger } from "@/lib/logger";
 
 const log = logger("autonomous-engine");
 
+/** Case jurisdiction values the legal/memo endpoint understands. */
+type Jurisdiction = "de" | "at" | "ch" | "eu";
+
+/**
+ * Resolve a case's Rechtsraum for memo generation. Both AI-drafting handlers
+ * below (email_draft, client_update) used to hardcode "de" regardless of the
+ * actual case — wrong for the AT-first product (cases default to "at" at
+ * creation, cases/new/page.tsx:212) and silently wrong for any DE/CH case
+ * too. Falls back to "at" (the product default) rather than "de" when the
+ * case can't be read or carries no jurisdiction of its own.
+ */
+async function resolveCaseJurisdiction(
+  headers: HeadersInit,
+  caseSlug: unknown
+): Promise<Jurisdiction> {
+  if (typeof caseSlug !== "string" || !caseSlug) return "at";
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return "at";
+    const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+    const j = page.frontmatter?.jurisdiction;
+    return j === "de" || j === "at" || j === "ch" || j === "eu" ? j : "at";
+  } catch {
+    return "at";
+  }
+}
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
@@ -475,13 +505,14 @@ Verwende eine formelle Anrede und Grußformel.`;
 
   try {
     const draftId = `email-drafts/${case_slug ?? "general"}-${Date.now()}`;
+    const jurisdiction = await resolveCaseJurisdiction(headers, case_slug);
     const res = await fetch(`${ENGINE_URL}/api/legal/memo`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({
         question: prompt,
         facts: String(context ?? ""),
-        jurisdiction: "de",
+        jurisdiction,
         case_slug: case_slug ?? undefined,
         language: "de",
         depth: "standard",
@@ -582,6 +613,7 @@ async function executeClientUpdate(
 
   try {
     const slug = `client-updates/${case_slug ?? "general"}-${Date.now()}`;
+    const jurisdiction = await resolveCaseJurisdiction(headers, case_slug);
     const res = await fetch(`${ENGINE_URL}/api/legal/memo`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
@@ -593,7 +625,7 @@ ${caseContext}
 
 Das Update soll verständlich, höflich und informativ sein. Verwende eine formelle Anrede.`,
         facts: caseContext || "Keine spezifischen Aktivitäten verfügbar.",
-        jurisdiction: "de",
+        jurisdiction,
         case_slug: case_slug ?? undefined,
         language: "de",
         depth: "brief",

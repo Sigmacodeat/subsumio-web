@@ -158,7 +158,7 @@ export function ChatHeader(props: ChatHeaderProps) {
             <div ref={sessionsRef} className="relative">
               <button
                 onClick={() => setShowSessions((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 <MessageSquareText size={12} />
                 {props.activeSessionId ? t("chat.session_label") : t("chat.new_session")}
@@ -192,7 +192,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                           props.onNewSession();
                           setShowSessions(false);
                         }}
-                        className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 motion-reduce:transition-none"
+                        className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-[0.97] motion-reduce:transition-none"
                       >
                         <Plus size={13} />
                         {t("chat.new_session")}
@@ -390,12 +390,33 @@ export function ChatHeader(props: ChatHeaderProps) {
           {props.features.modeSelector && (
             <div className="flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] p-1">
               {[
-                { value: "auto", label: "Auto" },
-                { value: "fast", label: "Fast" },
-                { value: "deep", label: "Deep" },
+                {
+                  value: "auto",
+                  label: "Auto",
+                  hint:
+                    lang === "en" ? "Picks depth per question" : "Wählt die Tiefe je nach Frage",
+                },
+                {
+                  value: "fast",
+                  label: lang === "en" ? "Fast" : "Schnell",
+                  hint:
+                    lang === "en"
+                      ? "Short answer, fewer sources"
+                      : "Kurze Antwort, weniger Quellen",
+                },
+                {
+                  value: "deep",
+                  label: lang === "en" ? "Deep" : "Gründlich",
+                  hint:
+                    lang === "en"
+                      ? "Reads the whole matter — takes longer"
+                      : "Liest die ganze Akte — dauert länger",
+                },
               ].map((mode) => (
                 <button
                   key={mode.value}
+                  title={mode.hint}
+                  aria-pressed={agentMode === mode.value}
                   onClick={() => {
                     if (mode.value === "auto") {
                       props.onModelChange("auto");
@@ -428,7 +449,7 @@ export function ChatHeader(props: ChatHeaderProps) {
             <>
               <button
                 onClick={() => setShowActions((v) => !v)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                 aria-label={t("copilot.more_actions")}
                 title={t("copilot.more_actions")}
                 aria-haspopup="true"

@@ -87,7 +87,7 @@ export default function TeamPage() {
   if (loading) {
     return (
       <div
-        className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8"
+        className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8"
         role="status"
         aria-label={t("team.loading")}
       >
@@ -104,7 +104,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("nav.team")}
         description={t("team.description")}

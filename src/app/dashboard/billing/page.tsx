@@ -299,7 +299,7 @@ function BillingInner() {
   const currentPlanName = BILLING_PLANS_DISPLAY.find((p) => p.id === shownPlan)?.name ?? shownPlan;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("billing.title")}
         description={t("billing.desc")}
@@ -473,7 +473,7 @@ export default function BillingPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" aria-busy="true">
+        <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8" aria-busy="true">
           <Skeleton className="h-16 w-72 rounded-lg" />
           <Skeleton className="h-40 rounded-xl" />
           <Skeleton className="h-64 rounded-xl" />

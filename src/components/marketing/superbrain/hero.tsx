@@ -89,7 +89,7 @@ export function BrainVisualization({ t }: { t: SuperbrainCopyDe }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.92 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.8, ease: EASE.out, delay: 0.5 }}
       className="relative mx-auto mt-16 max-w-3xl"

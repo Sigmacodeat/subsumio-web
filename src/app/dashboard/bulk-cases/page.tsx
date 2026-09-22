@@ -70,7 +70,7 @@ export default function BulkCasesPage() {
     en ? `${n} ${n === 1 ? "case" : "cases"}` : `${n} ${n === 1 ? "Akte" : "Akten"}`;
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={tr("workspace.bulk.title")}
         description={

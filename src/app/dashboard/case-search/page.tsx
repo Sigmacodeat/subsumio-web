@@ -342,7 +342,7 @@ export default function CaseSearchPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={isEn ? "Case search" : "Akten-Suche"}
         description={
@@ -448,7 +448,7 @@ export default function CaseSearchPage() {
                           key={value}
                           onClick={() => toggleFilter(facet.key, value)}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                            "flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs transition-[background-color,border-color,color] active:scale-[0.99] motion-reduce:transition-none",
                             isSelected
                               ? "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -508,7 +508,7 @@ export default function CaseSearchPage() {
                   <button
                     key={`${facetKey}-${value}`}
                     onClick={() => toggleFilter(facetKey as keyof FacetFilters, value)}
-                    className="flex items-center gap-1 rounded-full border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)]/10 active:scale-[0.97] motion-reduce:transition-none"
+                    className="flex items-center gap-1 rounded-full border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)]/10 active:scale-[0.99] motion-reduce:transition-none"
                   >
                     {fmtValue(facetKey, value)}
                     <X size={10} />

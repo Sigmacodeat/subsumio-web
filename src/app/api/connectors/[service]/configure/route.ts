@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { getConnectorByEngineService } from "@/lib/connector-coverage";
+import {
+  getConnectorByEngineService,
+  WEB_SELF_SERVICE_CONNECTOR_IDS,
+} from "@/lib/connector-coverage";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/connectors/[service]/configure");
@@ -37,7 +40,7 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, req) => {
     const { service } = await (req as unknown as { params: Promise<{ service: string }> }).params;
-    if (!["advokat-import", "bea-import"].includes(service)) {
+    if (!(WEB_SELF_SERVICE_CONNECTOR_IDS as readonly string[]).includes(service)) {
       return apiError("invalid_service", "Nur lokale Ordner-Connectoren sind hier erlaubt", 400);
     }
     if (!getConnectorByEngineService(service)) {

@@ -37,6 +37,7 @@ import {
 import { api } from "@/lib/api";
 import { tracking } from "@/lib/tracking";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { TimeTrackingWidget } from "@/components/dashboard/time-tracking-widget";
 
 const ALL_CASES = "__all";
 
@@ -332,7 +333,7 @@ export default function TimeEntriesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("nav.time_tracking")}
         description="Leistungszeiten je Akte erfassen, prüfen und als Grundlage für Honorarnoten exportieren."
@@ -377,6 +378,18 @@ export default function TimeEntriesPage() {
           </>
         }
       />
+
+      {/*
+        The live start/stop timer widget existed as a component
+        (time-tracking-widget.tsx, backed by working /api/time-tracking/*
+        routes) but was never mounted anywhere — /dashboard/time-tracking
+        had only error.tsx/loading.tsx, no page.tsx. Per the "one canonical
+        page per feature" convention (CLAUDE.md), it belongs here on the
+        canonical time page rather than getting its own route.
+      */}
+      <div className="max-w-sm">
+        <TimeTrackingWidget />
+      </div>
 
       {/* Kennzahlen */}
       {isLoading ? (

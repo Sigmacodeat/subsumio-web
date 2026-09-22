@@ -287,7 +287,7 @@ export default function KYCPage() {
   ).length;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("kyc.title")}
         description="Identifizierung und Risikoprüfung nach §§ 8a ff. RAO. Ohne abgeschlossene Prüfung wird ein Auftrag nicht angenommen."

@@ -42,7 +42,7 @@ export default function FreigabenPage() {
   const done = summary?.categories.filter((c) => c.count === 0) ?? [];
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Freigaben"
         description="Alles, was auf Ihre Entscheidung wartet: KI-Fristen, Aktionen von Copilot und Agenten, Mandanteneingaben, Analysen und Zeitvorschläge."

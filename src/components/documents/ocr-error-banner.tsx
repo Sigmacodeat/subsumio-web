@@ -110,7 +110,7 @@ export function OcrErrorBanner({
           <button
             onClick={handleRetry}
             disabled={retrying}
-            className="mt-2 flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+            className="mt-2 flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
           >
             {retrying ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             {t("ocr.retry" as DashboardKey)}
@@ -119,7 +119,7 @@ export function OcrErrorBanner({
       </div>
       <button
         onClick={() => setDismissed(true)}
-        className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+        className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
         aria-label="Hinweis ausblenden"
       >
         <X size={14} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Lang } from "@/content/site";
-import { H1_CLASS, H3_CLASS, Section } from "@/components/marketing/primitives";
+import { Section } from "@/components/marketing/primitives";
+import { H1_CLASS, H3_CLASS } from "@/components/marketing/typography";
 
 // Legal content (de-AT) — used by /privacy, /terms, /imprint and /dpa.
 // `home` sets the back-link. Drafts: professionally complete, but have a

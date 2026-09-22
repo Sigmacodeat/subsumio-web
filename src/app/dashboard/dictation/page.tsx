@@ -192,7 +192,7 @@ export default function DictationPage() {
     caseOptions.find((c) => c.slug === slug)?.title ?? slug.split("/").pop();
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("dictation.title")}
         description="Diktieren Sie direkt im Browser. Die Aufnahme wird verschriftet und als Text gespeichert; die Audiodatei selbst wird nicht aufbewahrt."

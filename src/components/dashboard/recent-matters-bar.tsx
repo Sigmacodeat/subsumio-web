@@ -39,7 +39,7 @@ export function RecentMattersBar() {
             className={cn(
               "group inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
               "focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
-              "active:scale-[0.98]",
+              "active:scale-[0.99]",
               isPinned
                 ? "border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-glow)] text-[color:var(--brand-primary)] hover:border-[color:var(--brand-primary)]/60 hover:bg-[color:var(--brand-glow)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-hover)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"

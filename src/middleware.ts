@@ -280,6 +280,9 @@ const PARKED_DASHBOARD_REDIRECTS: ReadonlyArray<readonly [string, string]> = [
   ["/dashboard/mobile", "/dashboard"],
   ["/dashboard/online-booking", "/dashboard"],
   ["/dashboard/team-meeting", "/dashboard"],
+  // Never had a page.tsx (only error.tsx/loading.tsx) — the timer widget it
+  // was scaffolded for lives on the canonical /dashboard/time page instead.
+  ["/dashboard/time-tracking", "/dashboard/time"],
 ];
 const RETIRED_PILOT_API_PREFIXES = [
   "/api/bea",
@@ -461,6 +464,19 @@ export async function middleware(req: NextRequest) {
       const login = new URL("/at/login", req.url);
       login.searchParams.set("next", pathname);
       return applyCsp(NextResponse.redirect(login));
+    }
+
+    // Kanzlei-wide 2FA requirement (settings/kanzlei "require2FA"): the
+    // login route bakes must2fa into the session when the org requires 2FA
+    // and this user hasn't set it up yet (see auth/login/route.ts). Confine
+    // them to the security settings page — where the setup/verify flow
+    // lives — until /api/auth/2fa/verify re-issues a session without the
+    // flag. This is the actual enforcement; before this the setting was
+    // only ever read back into the settings form, never acted on.
+    if (session.must2fa && !isOpsPath(pathname) && pathname !== "/dashboard/settings/security") {
+      const setup = new URL("/dashboard/settings/security", req.url);
+      setup.searchParams.set("require2fa", "1");
+      return applyCsp(NextResponse.redirect(setup));
     }
 
     // Set CSRF cookie if not present

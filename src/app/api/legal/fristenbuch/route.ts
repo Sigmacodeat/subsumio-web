@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler } from "@/lib/api-handler";
 import { normalizeFristenbuchStatus, computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { z } from "zod";
@@ -61,53 +62,43 @@ export const GET = createHandler(
       if (engineCount === 0) {
         try {
           const caseFilter = query.case ?? undefined;
-          const caseUrl = new URL(`${ENGINE_URL}/api/pages`);
-          caseUrl.searchParams.set("type", "legal_case");
-          caseUrl.searchParams.set("limit", "300");
-          const caseRes = await fetch(caseUrl.toString(), {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(15_000),
-          });
-          if (caseRes.ok) {
-            const caseRaw = await caseRes.json();
-            const casePages = Array.isArray(caseRaw) ? caseRaw : [];
-            const eintraege: Record<string, unknown>[] = [];
-            for (const page of casePages) {
-              if (caseFilter && (page as { slug?: string }).slug !== caseFilter) continue;
-              const fm = ((page as { frontmatter?: Record<string, unknown> }).frontmatter ??
-                {}) as {
-                deadlines?: Array<{ title?: string; due_date?: string; law?: string }>;
-              };
-              for (const d of fm.deadlines ?? []) {
-                if (!d.due_date) continue;
-                const status = computeDeadlineStatus(d.due_date);
-                eintraege.push({
-                  case_slug: (page as { slug?: string }).slug,
-                  frist: d.title || "Frist",
-                  datum: d.due_date,
-                  rechtsgrundlage: d.law ?? "",
-                  status:
-                    status === "overdue"
-                      ? "ueberfaellig"
-                      : status === "critical"
-                        ? "kritisch"
-                        : "ok",
-                });
-              }
+          // Was a single fetch with limit=300 against an engine that caps
+          // listings at 200 — a Kanzlei with more than 200 cases silently
+          // lost deadlines from this fallback with no error surfaced.
+          // listEnginePages pages past that cap (see
+          // engine-list-cap-and-tombstones).
+          const casePages = await listEnginePages(ctx.headers, "legal_case", 2000);
+          const eintraege: Record<string, unknown>[] = [];
+          for (const page of casePages) {
+            if (caseFilter && (page as { slug?: string }).slug !== caseFilter) continue;
+            const fm = ((page as { frontmatter?: Record<string, unknown> }).frontmatter ?? {}) as {
+              deadlines?: Array<{ title?: string; due_date?: string; law?: string }>;
+            };
+            for (const d of fm.deadlines ?? []) {
+              if (!d.due_date) continue;
+              const status = computeDeadlineStatus(d.due_date);
+              eintraege.push({
+                case_slug: (page as { slug?: string }).slug,
+                frist: d.title || "Frist",
+                datum: d.due_date,
+                rechtsgrundlage: d.law ?? "",
+                status:
+                  status === "overdue" ? "ueberfaellig" : status === "critical" ? "kritisch" : "ok",
+              });
             }
-            if (eintraege.length > 0) {
-              data.eintraege = eintraege;
-              const overdue = eintraege.filter((e) => e.status === "ueberfaellig").length;
-              const critical = eintraege.filter((e) => e.status === "kritisch").length;
-              data.zusammenfassung = {
-                gesamt: eintraege.length,
-                ueberfaellig: overdue,
-                kritisch: critical,
-                vorfrist: 0,
-                ok: eintraege.length - overdue - critical,
-                unparsebar: 0,
-              };
-            }
+          }
+          if (eintraege.length > 0) {
+            data.eintraege = eintraege;
+            const overdue = eintraege.filter((e) => e.status === "ueberfaellig").length;
+            const critical = eintraege.filter((e) => e.status === "kritisch").length;
+            data.zusammenfassung = {
+              gesamt: eintraege.length,
+              ueberfaellig: overdue,
+              kritisch: critical,
+              vorfrist: 0,
+              ok: eintraege.length - overdue - critical,
+              unparsebar: 0,
+            };
           }
         } catch {
           // Fallback failed — return what we have from the engine

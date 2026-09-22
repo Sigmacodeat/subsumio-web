@@ -263,7 +263,7 @@ export function SendLinkDialog({
             <Button
               onClick={() => send("copy")}
               disabled={sending !== null}
-              className="brand-bg gap-2 text-white active:scale-[0.98]"
+              className="brand-bg gap-2 text-white active:scale-[0.99]"
             >
               {sending === "copy" ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -279,7 +279,7 @@ export function SendLinkDialog({
             <Button
               onClick={() => send("whatsapp")}
               disabled={sending !== null || phone.trim().length < 6}
-              className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)] active:scale-[0.98]"
+              className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)] active:scale-[0.99]"
             >
               {sending === "whatsapp" ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -293,7 +293,7 @@ export function SendLinkDialog({
             <Button
               onClick={() => send("email")}
               disabled={sending !== null || !email.includes("@")}
-              className="gap-2 bg-[color:var(--ds-info-solid)] text-white hover:bg-[color:var(--ds-info-solid)] active:scale-[0.98]"
+              className="gap-2 bg-[color:var(--ds-info-solid)] text-white hover:bg-[color:var(--ds-info-solid)] active:scale-[0.99]"
             >
               {sending === "email" ? (
                 <Loader2 size={16} className="animate-spin" />

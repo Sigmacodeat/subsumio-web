@@ -428,7 +428,7 @@ export default function ImportKanzleiPage() {
   const warningCount = plan ? plan.rows.filter((r) => r.warnings.length > 0).length : 0;
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("importkanzlei.title")}
         description={t("importkanzlei.description")}

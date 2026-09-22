@@ -1,6 +1,7 @@
 // Features page — Server Component composer. Sections: animated
-// knowledge-graph hero (client island) · count-up stats band ·
-// interactive category explorer · "everything at a glance" grid · CTA.
+// knowledge-graph hero (client island) · one documented figure · how it works ·
+// workflow demo · WhatsApp spotlight + full capability bento · the five areas
+// in detail · security cross-link · FAQ · CTA.
 // All hook-driven pieces live in ./features-interactive.tsx; the static
 // sections render server-side inside serializable motion islands.
 
@@ -12,6 +13,7 @@ import { FEATURES_PAGE } from "@/content/features";
 import { PROOF } from "@/content/proof-points";
 import SubsumioShowcase from "./subsumio-showcase";
 import { PageHero, SectionHeading, CTASection, Section } from "./primitives";
+import { SECTION_PAD, SECTION_PAD_FLUSH, SECTION_COLUMN, H2_CTA_CLASS } from "./typography";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GraphHero,
@@ -61,7 +63,7 @@ export default function FeaturesPage() {
         visual={
           <div className="relative">
             <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
-            <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
+            <div className="glass relative rounded-3xl p-6 shadow-xl shadow-[hsl(222_40%_12%/0.10)]">
               <GraphHero />
               {/* -muted, not -subtle: on the glass panel the subtle tone only
                   reached 3.5:1, below the 4.5:1 a caption needs. */}
@@ -74,18 +76,20 @@ export default function FeaturesPage() {
       />
 
       {/* Stats band */}
-      <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
+      <Section tone="light" className={SECTION_PAD_FLUSH}>
         <StaggerContainer className="mx-auto grid max-w-2xl grid-cols-1 gap-6" stagger={0.08}>
           {stats.map((s) => (
             <StaggerItem
               key={s.label}
-              className="rounded-2xl border [border-color:var(--mk-border)] p-6 text-center transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none"
+              className="rounded-2xl border [border-color:var(--mk-border)] px-6 py-8 text-center [box-shadow:var(--mk-card-shadow)] [background:var(--mk-surface)]"
             >
-              <div className="gradient-text mb-1 text-3xl font-bold md:text-4xl">
+              <div className="mb-2 [font-family:var(--font-display)] text-5xl leading-none font-normal tracking-[-0.025em] [color:var(--mk-text)] tabular-nums">
                 {s.prefix ?? ""}
                 <AnimatedCounter to={s.to} decimals={s.dec} suffix={s.suffix ?? ""} />
               </div>
-              <p className="text-sm leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
+              <p className="mx-auto max-w-md text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+                {s.label}
+              </p>
               <Link
                 href={p("/benchmark-methodology")}
                 className="brand-text mt-3 inline-flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
@@ -109,18 +113,17 @@ export default function FeaturesPage() {
       <CategoryExplorer />
 
       {/* Security cross-link — replaces former Security & Teams category */}
-      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-        <Reveal variant="up">
-          <div className="brand-border relative overflow-hidden rounded-3xl border p-8 text-center [background:var(--mk-surface)] md:p-12">
-            <div className="brand-soft absolute inset-0 opacity-30 blur-3xl" />
-            <div className="relative">
-              <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
-                <Shield size={24} className="brand-text" />
+      <Section tone="light" className={SECTION_PAD}>
+        <Reveal variant="up" className={SECTION_COLUMN}>
+          <div className="brand-border relative overflow-hidden rounded-3xl border px-6 py-12 text-center [box-shadow:var(--mk-card-shadow)] [background:var(--mk-surface)] md:px-12 md:py-16">
+            <div className="relative mx-auto max-w-2xl">
+              <div className="brand-soft brand-border mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-xl border">
+                <Shield size={22} strokeWidth={1.75} className="brand-text" />
               </div>
-              <SectionHeading
-                title={UI_STRINGS.featuresSecurityTitle}
-                sub={UI_STRINGS.featuresSecuritySub}
-              />
+              <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{UI_STRINGS.featuresSecurityTitle}</h2>
+              <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+                {UI_STRINGS.featuresSecuritySub}
+              </p>
               <Button size="lg" variant="secondary" asChild>
                 <Link href={p("/security")}>
                   {UI_STRINGS.exploreSecurity} <ArrowRight size={16} />
@@ -132,11 +135,9 @@ export default function FeaturesPage() {
       </Section>
 
       {/* FAQ */}
-      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className={`${SECTION_PAD} [background:var(--mk-surface)]`}>
         <div className="mx-auto max-w-5xl">
-          <Reveal variant="up" className="mb-10 text-center">
-            <SectionHeading title={t.faqTitle} />
-          </Reveal>
+          <SectionHeading title={t.faqTitle} />
           <AnimatedFaqList items={t.faq} tone="light" />
         </div>
       </Section>

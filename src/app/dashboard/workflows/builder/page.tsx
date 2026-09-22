@@ -336,7 +336,7 @@ export default function WorkflowBuilderPage() {
   const title = t("workflows.builder.open");
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page min-w-0 space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={title}
         description="Stellen Sie Arbeitsschritte zu einem Ablauf zusammen und speichern Sie ihn als wiederverwendbare Vorlage."

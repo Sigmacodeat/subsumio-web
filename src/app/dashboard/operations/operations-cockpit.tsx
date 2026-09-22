@@ -228,7 +228,7 @@ export default function OperationsCockpitPageWrapper({
 
 function OperationsLoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <Skeleton className="h-12 w-full rounded-lg" />
       <Skeleton className="h-20 w-full rounded-xl" />
       <Skeleton className="h-64 w-full rounded-xl" />
@@ -727,7 +727,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
 
   if (query.isLoading) {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title={lang === "en" ? "Open items" : "Offene Vorgänge"}
           breadcrumbs={[
@@ -744,7 +744,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
 
   if (query.isError) {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader
           title={lang === "en" ? "Open items" : "Offene Vorgänge"}
           breadcrumbs={[
@@ -780,7 +780,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
   ).length;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={lang === "en" ? "Open items" : "Offene Vorgänge"}
         description={
@@ -1156,7 +1156,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               disabled={isBusy}
                               onClick={() => decideApproval(item.id, "approved")}
                               aria-label={lang === "en" ? "Approve" : "Freigeben"}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                             >
                               {isBusy ? (
                                 <Loader2 size={14} className="animate-spin" />
@@ -1169,7 +1169,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               disabled={isBusy}
                               onClick={() => decideApproval(item.id, "rejected")}
                               aria-label={lang === "en" ? "Reject" : "Ablehnen"}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                             >
                               <X size={14} />
                             </button>
@@ -1185,7 +1185,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                               retryMutation.mutate({ slug: item.id });
                             }}
                             aria-label={lang === "en" ? "Retry" : "Erneut versuchen"}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                           >
                             {isBusy ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -1305,7 +1305,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             disabled={isBusy}
                             onClick={() => decideApproval(item.id, "approved")}
                             aria-label={lang === "en" ? "Approve" : "Freigeben"}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                           >
                             {isBusy ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -1318,7 +1318,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             disabled={isBusy}
                             onClick={() => decideApproval(item.id, "rejected")}
                             aria-label={lang === "en" ? "Reject" : "Ablehnen"}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                           >
                             <X size={14} />
                           </button>
@@ -1334,7 +1334,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                             retryMutation.mutate({ slug: item.id });
                           }}
                           aria-label={lang === "en" ? "Retry" : "Erneut versuchen"}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {isBusy ? (
                             <Loader2 size={14} className="animate-spin" />

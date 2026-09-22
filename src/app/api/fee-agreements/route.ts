@@ -29,7 +29,7 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const agreement = createFeeAgreement(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -40,6 +40,16 @@ export const POST = createHandler(
       }),
       signal: AbortSignal.timeout(10_000),
     });
+    // Was fire-and-forget: a failed engine write still returned 200 with
+    // the fee agreement, so a Budget-Ampel (budget_cap tracking) could
+    // silently be missing for a case that believed it had one.
+    if (!res.ok) {
+      return apiError(
+        "engine_write_failed",
+        "Honorarvereinbarung konnte nicht gespeichert werden",
+        res.status >= 500 ? 502 : res.status
+      );
+    }
     return apiSuccess({ agreement });
   }
 );

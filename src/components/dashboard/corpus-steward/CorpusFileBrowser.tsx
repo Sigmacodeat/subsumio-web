@@ -996,9 +996,12 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
           {/* Tabelle */}
           {!isLoading && !isError && currentEntries.length > 0 && (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overscroll-x-contain">
                 <table className="w-full text-sm" role="table">
-                  <thead className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]/50">
+                  {/* Opaque, not the /50 translucent tint the header uses at rest:
+                      once sticky, body rows scroll directly underneath it and a
+                      translucent header would show their text bleeding through. */}
+                  <thead className="sticky top-0 z-10 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
                     <tr>
                       <th className="w-10 px-3 py-2 text-left">
                         <Checkbox

@@ -175,67 +175,67 @@ export function CorpusProtokoll() {
               Keine Einträge für diese Auswahl.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Zeitpunkt</TableHead>
-                    <TableHead>Quelle</TableHead>
-                    <TableHead>Dokument</TableHead>
-                    <TableHead>Art</TableHead>
-                    <TableHead>Über</TableHead>
-                    <TableHead>RIS</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.entries.map((e) => {
-                    const ris = officialRisUrl(e.risUrl);
-                    return (
-                      <TableRow key={e.id}>
-                        <TableCell className="text-xs whitespace-nowrap tabular-nums">
-                          {new Date(e.occurredAt).toLocaleString("de-AT", {
-                            dateStyle: "short",
-                            timeStyle: "medium",
-                          })}
-                        </TableCell>
-                        <TableCell className="text-xs">{e.sourceLabel}</TableCell>
-                        <TableCell>
-                          <div className="max-w-[28rem] truncate text-sm" title={e.title ?? e.slug}>
-                            {e.title ?? e.slug}
-                          </div>
-                          <div className="text-xs text-[color:var(--ds-text-subtle)]">
-                            {e.docId ?? "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={ACTION_STYLE[e.action]}>
-                            {INGEST_ACTION_LABELS[e.action]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
-                          {e.origin}
-                        </TableCell>
-                        <TableCell>
-                          {ris ? (
-                            <a
-                              href={ris}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs underline"
-                              aria-label={`${e.title ?? e.docId ?? "Dokument"} im RIS öffnen`}
-                            >
-                              öffnen <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ) : (
-                            <span className="text-xs text-[color:var(--ds-text-subtle)]">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <Table>
+              {/* Sticky against the page's own scroll: a page of 50 rows
+                  otherwise scrolls the column headers away almost immediately. */}
+              <TableHeader className="sticky top-0 z-10 [background:var(--ds-surface)]">
+                <TableRow>
+                  <TableHead>Zeitpunkt</TableHead>
+                  <TableHead>Quelle</TableHead>
+                  <TableHead>Dokument</TableHead>
+                  <TableHead>Art</TableHead>
+                  <TableHead>Über</TableHead>
+                  <TableHead>RIS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.entries.map((e) => {
+                  const ris = officialRisUrl(e.risUrl);
+                  return (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-xs whitespace-nowrap tabular-nums">
+                        {new Date(e.occurredAt).toLocaleString("de-AT", {
+                          dateStyle: "short",
+                          timeStyle: "medium",
+                        })}
+                      </TableCell>
+                      <TableCell className="text-xs">{e.sourceLabel}</TableCell>
+                      <TableCell>
+                        <div className="max-w-[28rem] truncate text-sm" title={e.title ?? e.slug}>
+                          {e.title ?? e.slug}
+                        </div>
+                        <div className="text-xs text-[color:var(--ds-text-subtle)]">
+                          {e.docId ?? "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={ACTION_STYLE[e.action]}>
+                          {INGEST_ACTION_LABELS[e.action]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-[color:var(--ds-text-muted)]">
+                        {e.origin}
+                      </TableCell>
+                      <TableCell>
+                        {ris ? (
+                          <a
+                            href={ris}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs underline"
+                            aria-label={`${e.title ?? e.docId ?? "Dokument"} im RIS öffnen`}
+                          >
+                            öffnen <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-[color:var(--ds-text-subtle)]">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
           {data && data.total > PAGE_SIZE && (
             <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-3">

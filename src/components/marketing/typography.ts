@@ -19,3 +19,13 @@ export const EYEBROW_CLASS =
 /** Standard H3 class for card titles and feature headings. */
 export const H3_CLASS =
   "text-xl font-semibold tracking-tight text-balance [color:var(--mk-text)] md:text-2xl";
+
+// --- Vertical rhythm ---------------------------------------------------------
+// One section rhythm site-wide: every section carries 96 px above and below
+// (py-24) — 96 px to a tone edge, 192 px between two same-tone sections.
+// FLUSH is only for a band that belongs to the block above it (the proof band
+// right under a hero), where a second 96 px would tear the two apart.
+export const SECTION_PAD = "px-4 py-24 sm:px-6 lg:px-8";
+export const SECTION_PAD_FLUSH = "px-4 pb-24 sm:px-6 lg:px-8";
+/** Content column — aligns section content with the hero and the navigation. */
+export const SECTION_COLUMN = "mx-auto w-full max-w-7xl";
