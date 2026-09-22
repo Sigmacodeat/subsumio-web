@@ -23,7 +23,10 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Dependency layer (cached unless package.json/bun.lock change).
+# patches/ must land before bun install — package.json's patchedDependencies
+# points at patch files that bun resolves during install.
 COPY package.json bun.lock ./
+COPY patches ./patches
 RUN bun install --frozen-lockfile --production || bun install --production
 
 # App source (skills/, schema packs, src/ …).
