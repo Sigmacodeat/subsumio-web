@@ -98,6 +98,7 @@ import {
   LogOut,
   ChevronsDownUp,
   BrainCog,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -629,6 +630,13 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         keywords: "legal hold litigation hold beweissicherungsbeschluss erhaltung",
         audienceTier: "dach-integration",
         tooltipKey: "nav.tooltip.legal_hold",
+      },
+      {
+        href: "/dashboard/papierkorb",
+        icon: Trash2,
+        labelKey: "nav.papierkorb",
+        keywords: "papierkorb trash gelöscht wiederherstellen archiviert restore",
+        tooltipKey: "nav.tooltip.papierkorb",
       },
       {
         href: "/dashboard/outbound-register",

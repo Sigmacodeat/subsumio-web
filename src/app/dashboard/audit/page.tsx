@@ -128,7 +128,12 @@ function formatRelative(ts: string): string {
 
 export default function AuditLogPage() {
   const { t, lang } = useLang();
-  const [search, setSearch] = useState("");
+  // Deep links (e.g. from the Papierkorb) prefill the free-text filter via ?q=.
+  const [search, setSearch] = useState(
+    () =>
+      new URLSearchParams(typeof window !== "undefined" ? window.location.search : "").get("q") ??
+      ""
+  );
   const [filterAction, setFilterAction] = useState("");
   const [filterEntityType, setFilterEntityType] = useState("");
   const [filterFrom, setFilterFrom] = useState("");

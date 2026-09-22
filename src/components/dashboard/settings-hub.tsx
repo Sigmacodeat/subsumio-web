@@ -200,6 +200,18 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         keywords: "2fa passwort totp",
       },
       {
+        id: "privacy",
+        label: { de: "Ihre Daten (DSGVO)", en: "Your data (GDPR)" },
+        desc: {
+          de: "Persönlichen Datenexport herunterladen oder Ihr Konto endgültig löschen.",
+          en: "Download your personal data export or permanently delete your account.",
+        },
+        icon: ShieldCheck,
+        href: "/dashboard/settings/privacy",
+        allowed: ALL,
+        keywords: "dsgvo gdpr datenexport privacy konto löschen",
+      },
+      {
         id: "compliance",
         label: { de: "Compliance-Selbstauskunft", en: "Compliance self-assessment" },
         desc: {

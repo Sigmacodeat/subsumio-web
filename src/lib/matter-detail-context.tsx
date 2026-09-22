@@ -1221,21 +1221,14 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       if (!confirmed) return;
       setRestoring(true);
       try {
-        const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
-        const res = await csrfFetch(`/api/pages/${slugPath}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "If-Match": String(caseData.version || 0),
-          },
+        // /api/trash restores the matter AND reactivates the documents the
+        // archive cascade tombstoned (tombstone_reason === "case_archived").
+        const res = await csrfFetch("/api/trash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            frontmatter: {
-              status: targetStatus,
-              restored_at: new Date().toISOString(),
-              archived_at: null,
-              archived_by: null,
-            },
-            merge: true,
+            slug: caseData.slug,
+            status: targetStatus === "dormant" ? "dormant" : "open",
           }),
         });
         if (res.ok) {

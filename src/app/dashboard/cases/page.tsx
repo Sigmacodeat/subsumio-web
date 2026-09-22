@@ -342,22 +342,12 @@ export default function CasesPage() {
     if (!confirmed) return;
 
     try {
-      const slugPath = slug.split("/").map(encodeURIComponent).join("/");
-      const res = await csrfFetch(`/api/pages/${slugPath}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "If-Match": String(caseItem?.version ?? 0),
-        },
-        body: JSON.stringify({
-          frontmatter: {
-            status: "open",
-            restored_at: new Date().toISOString(),
-            archived_at: null,
-            archived_by: null,
-          },
-          merge: true,
-        }),
+      // /api/trash restores the matter AND reactivates the documents the
+      // archive cascade tombstoned (tombstone_reason === "case_archived").
+      const res = await csrfFetch("/api/trash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
       });
       if (res.ok) {
         const next = cases.map((c) => (c.slug === slug ? { ...c, status: "open" } : c));
@@ -417,22 +407,10 @@ export default function CasesPage() {
       let succeeded = 0;
       let failed = 0;
       for (const row of selectedRows) {
-        const slugPath = row.slug.split("/").map(encodeURIComponent).join("/");
-        const res = await csrfFetch(`/api/pages/${slugPath}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "If-Match": String(row.version ?? 0),
-          },
-          body: JSON.stringify({
-            frontmatter: {
-              status: "open",
-              restored_at: new Date().toISOString(),
-              archived_at: null,
-              archived_by: null,
-            },
-            merge: true,
-          }),
+        const res = await csrfFetch("/api/trash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug: row.slug }),
         });
         if (res.ok) {
           succeeded++;

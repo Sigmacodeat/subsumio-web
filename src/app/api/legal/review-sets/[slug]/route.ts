@@ -183,6 +183,7 @@ export const DELETE = createHandler(
         frontmatter: {
           status: "tombstoned",
           tombstoned_at: new Date().toISOString(),
+          tombstoned_by: ctx.user.email,
           tombstone_reason: "manual_delete",
         },
       },
