@@ -8,6 +8,7 @@ import { phoneHash } from "@/lib/whatsapp/verify";
 import { identityCanAccessMatter } from "@/lib/whatsapp/identity";
 import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
@@ -71,6 +72,7 @@ export type ParsedIntent =
     }
   | { kind: "create_client"; name: string; phone?: string; email?: string; note?: string }
   | { kind: "close_case"; caseRef: string }
+  | { kind: "send_to_client"; caseRef: string; message: string }
   | { kind: "create_invoice"; caseRef: string; amount: number; description: string }
   | {
       kind: "appointment";
@@ -206,6 +208,21 @@ export function parseIntent(text: string): ParsedIntent {
   const noteMatch = trimmed.match(/^notiz\s+(?:zu\s+)?(?:(?:akt|akte)\s+)?([^:]+):\s*(.+)$/i);
   if (noteMatch) {
     return { kind: "case_note", caseRef: noteMatch[1].trim(), note: noteMatch[2].trim() };
+  }
+
+  // "sende mandant akte 2026-014: Bitte bringen Sie die Vollmacht mit." — an
+  // explicit verb is required (unlike notiz/status) so ordinary prose that
+  // happens to mention "an mandant" never accidentally triggers an outbound
+  // WhatsApp message to a real client.
+  const sendToClientMatch = trimmed.match(
+    /^(?:sende?|schreib(?:e)?|nachricht)\s+(?:an\s+)?mandant(?:en)?\s+(?:(?:akt|akte)\s+)?([^:]+):\s*(.+)$/i
+  );
+  if (sendToClientMatch) {
+    return {
+      kind: "send_to_client",
+      caseRef: sendToClientMatch[1].trim(),
+      message: sendToClientMatch[2].trim(),
+    };
   }
 
   const statusMatch = trimmed.match(
@@ -776,6 +793,25 @@ async function resolveAuthorizedCase(
   return { ok: false, message: await caseLookupHelp(ctx, caseRef) };
 }
 
+/**
+ * The client's WhatsApp number for a case, read from the linked contact
+ * (`client_slug`, role=client — the same contact the Kontakte dashboard and
+ * the portal send-link flow use), never guessed or reverse-looked-up from
+ * WhatsApp identities. A client who has never messaged the firm on WhatsApp
+ * still has a phone number on file, and this is the one place case data
+ * already carries it reliably.
+ */
+async function resolveCaseClientPhone(brainId: string, casePage: BrainPage): Promise<string> {
+  const clientSlug = str(fm(casePage).client_slug);
+  if (!clientSlug) return "";
+  try {
+    const contact = await getPage(brainId, clientSlug);
+    return str(fm(contact).phone);
+  } catch {
+    return "";
+  }
+}
+
 async function createInboxPage(ctx: ChatContext, intent: ParsedIntent): Promise<void> {
   const slug = `legal/chat/whatsapp/${safeSlugPart(ctx.messageId)}`;
   await putPage(ctx.sender.brainId, {
@@ -1021,7 +1057,8 @@ async function createPendingAction(
         | "cancel_deadline"
         | "update_appointment"
         | "cancel_appointment"
-        | "review_document";
+        | "review_document"
+        | "send_to_client";
     }
   >,
   target?: BrainPage
@@ -1061,7 +1098,9 @@ async function createPendingAction(
                                   ? "Termin verschieben bestätigen"
                                   : intent.kind === "cancel_appointment"
                                     ? "Termin absagen bestätigen"
-                                    : "Dokument-Review bestätigen";
+                                    : intent.kind === "send_to_client"
+                                      ? "Mandanten-Nachricht bestätigen"
+                                      : "Dokument-Review bestätigen";
   await putPage(ctx.sender.brainId, {
     slug,
     title,
@@ -1223,6 +1262,32 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     });
     await markAction(ctx, action, "executed");
     return `✅ Akte "${casePage.title}" wurde abgeschlossen und archiviert.`;
+  }
+
+  if (front.intent === "send_to_client") {
+    if (!targetSlug) throw new Error("send_to_client: no target case");
+    const casePage = await getPage(ctx.sender.brainId, targetSlug);
+    const message = str(payload.message);
+    if (!message) throw new Error("send_to_client: no message");
+    // Re-resolved fresh rather than trusting a phone captured 30 minutes ago
+    // at preview time — the contact could have changed in the meantime.
+    const phone = await resolveCaseClientPhone(ctx.sender.brainId, casePage);
+    if (!phone) {
+      await markAction(ctx, action, "failed", "no_client_phone");
+      return `Für die Akte "${casePage.title}" ist keine Mandanten-Telefonnummer mehr hinterlegt. Nachricht wurde nicht gesendet.`;
+    }
+    const result = await sendProactiveMessage({
+      to: phone,
+      brainId: ctx.sender.brainId,
+      scope: "client_reminder",
+      freeform: message,
+    });
+    if (!result.sent) {
+      await markAction(ctx, action, "failed", result.decision.reason ?? "blocked");
+      return `Nachricht an Mandant konnte nicht gesendet werden (${result.decision.reason ?? "blockiert"}). Bitte im Portal oder per E-Mail senden.`;
+    }
+    await markAction(ctx, action, "executed");
+    return `✅ Nachricht an Mandant (Akte "${casePage.title}") wurde gesendet.`;
   }
 
   // create_invoice needs the target case
@@ -2032,6 +2097,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       "",
       "👤 Mandanten:",
       "  neuer mandant Thomas Müller +49 170 1234567 — anlegen",
+      "  sende mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit — WhatsApp-Nachricht an den Mandanten (braucht hinterlegte Telefonnummer, JA zum Bestätigen)",
       "",
       "⏱️ Erfassen:",
       "  zeit 20m akt 2026-014 telefonat mit mandant",
@@ -2834,6 +2900,22 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
     const target = resolved.page;
     await createPendingAction(ctx, intent, target);
     return `Erkannt: Akte "${target.title}" abschließen und archivieren. Antworte mit JA zum Bestätigen.`;
+  }
+
+  if (intent.kind === "send_to_client") {
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
+    const phone = await resolveCaseClientPhone(ctx.sender.brainId, target);
+    if (!phone) {
+      return `Für die Akte "${target.title}" ist keine Mandanten-Telefonnummer hinterlegt. Bitte im Kontakt zur Akte ergänzen, dann erneut versuchen.`;
+    }
+    await createPendingAction(ctx, intent, target);
+    return [
+      `Nachricht an Mandant (Akte "${target.title}"):`,
+      `"${intent.message}"`,
+      `Wird an die hinterlegte Nummer gesendet. Antworte mit JA zum Versenden.`,
+    ].join("\n");
   }
 
   if (intent.kind === "create_invoice") {

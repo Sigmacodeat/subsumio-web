@@ -31,6 +31,13 @@ interface SignatureDialogProps {
   documentType: "signature_request" | "power_of_attorney" | "legal_document";
   /** Document title shown in the dialog header. */
   documentTitle: string;
+  /**
+   * Full document text, shown read-only above the signature pad so the
+   * signer can actually read what they're signing (e.g. an NDA's terms) —
+   * not every request has one: some are metadata-only pointers to an
+   * externally provided document.
+   */
+  documentContent?: string;
   /** Pre-filled signer name (e.g. from case/client data). */
   signerName?: string;
   /** Pre-filled signer email. */
@@ -54,6 +61,7 @@ export function SignatureDialog({
   documentSlug,
   documentType,
   documentTitle,
+  documentContent,
   signerName = "",
   signerEmail,
   legalLevel = "simple",
@@ -150,6 +158,18 @@ export function SignatureDialog({
         </DialogHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-2">
+          {/* Document text — read before you sign. */}
+          {documentContent && documentContent.trim().length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("sigdialog.document_text")}
+              </span>
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 text-sm whitespace-pre-wrap text-[color:var(--ds-text)]">
+                {documentContent}
+              </div>
+            </div>
+          )}
+
           {/* Legal level badge — DACH requirement */}
           <div
             className={`flex items-start gap-3 rounded-xl border p-3 ${
@@ -249,7 +269,7 @@ export function SignatureDialog({
           <Button
             onClick={handleSign}
             disabled={!canSubmit}
-            className="brand-bg gap-2 text-white active:scale-[0.98]"
+            className="brand-bg gap-2 text-white active:scale-[0.99]"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <PenTool size={16} />}
             {t("sigdialog.btn_sign")}

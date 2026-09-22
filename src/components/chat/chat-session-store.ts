@@ -163,16 +163,19 @@ export async function listSessions(filter?: {
       req.onerror = () => resolve([]);
     });
 
-    // Per-Matter Isolation: filter sessions by caseSlug if provided
-    // When caseSlug is provided, only show sessions for that matter + global sessions
-    // When no caseSlug, show all sessions (global context)
+    // Per-Matter Isolation: filter sessions by caseSlug if provided.
+    // caseSlug is the actual isolation boundary, not contextType — "global"
+    // and "brain_page" (a document with no matter) are both "no matter"
+    // conversations and must stay visible to each other; filtering strictly
+    // by contextType used to hide a plain Assistant conversation the moment
+    // you opened a matter-less document, and vice versa.
+    // When caseSlug is provided, only show sessions for that matter + no-matter sessions.
+    // When no caseSlug, show every no-matter session regardless of contextType.
     let filtered = sessions;
     if (filter?.caseSlug) {
-      filtered = sessions.filter(
-        (s) => s.caseSlug === filter.caseSlug || (!s.caseSlug && s.contextType === "global")
-      );
-    } else if (filter?.contextType) {
-      filtered = sessions.filter((s) => s.contextType === filter.contextType);
+      filtered = sessions.filter((s) => s.caseSlug === filter.caseSlug || !s.caseSlug);
+    } else {
+      filtered = sessions.filter((s) => !s.caseSlug);
     }
 
     return filtered.sort((a, b) => {

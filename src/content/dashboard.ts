@@ -5126,6 +5126,12 @@ export const D = {
   "chat.tool.tabular_review": { de: "Massenreview", en: "Bulk review" },
   "chat.tool.client_lookup": { de: "Mandanten-Lookup", en: "Client lookup" },
   "chat.tool.deadline_mark_done": { de: "Frist erledigen", en: "Mark deadline done" },
+  "chat.tool.search_tasks": { de: "Aufgaben durchsuchen", en: "Search tasks" },
+  "chat.tool.search_calendar": { de: "Kalender durchsuchen", en: "Search calendar" },
+  "chat.tool.create_task": { de: "Aufgabe anlegen", en: "Create task" },
+  "chat.tool.create_deadline": { de: "Frist anlegen", en: "Create deadline" },
+  "chat.tool.create_contact": { de: "Kontakt anlegen", en: "Create contact" },
+  "chat.tool.request_signature": { de: "Signatur anfordern", en: "Request signature" },
 
   // ── Chat: deadline card labels ──
   "chat.deadline.status_pending": { de: "Offen", en: "Open" },
@@ -5212,7 +5218,10 @@ export const D = {
   "chat.streaming.synthesize": { de: "Antwort wird erstellt…", en: "Building answer…" },
   "chat.streaming.verify": { de: "Quellen werden geprüft…", en: "Checking sources…" },
   "chat.done": { de: "Fertig", en: "Done" },
-  "chat.typing": { de: "Assistent schreibt…", en: "Copilot is typing…" },
+  "chat.typing": {
+    de: "Durchsucht Akten und Rechtsquellen …",
+    en: "Searching matters and legal sources …",
+  },
   "chat.follow_ups": { de: "Das könnte Sie auch interessieren", en: "You might also want to ask" },
   "chat.follow_up.more_details": { de: "Mehr Details dazu", en: "More details on this" },
   "chat.follow_up.related": { de: "Verwandte Rechtsfrage", en: "Related legal question" },
@@ -7207,6 +7216,19 @@ export const D = {
   "signature.quick_select_draft": {
     de: "Entwurf auswählen (optional)",
     en: "Select draft (optional)",
+  },
+  "signature.quick_template": { de: "Vorlage", en: "Template" },
+  "signature.quick_template_manual": {
+    de: "Ohne Vorlage (externes Dokument)",
+    en: "No template (external document)",
+  },
+  "signature.quick_template_nda": {
+    de: "Geheimhaltungsvereinbarung (NDA)",
+    en: "Non-disclosure agreement (NDA)",
+  },
+  "signature.quick_template_nda_hint": {
+    de: "Fügt einen Standard-Vertragstext ein, den der Mandant im Portal vor der Unterschrift lesen kann. Bitte vor dem Versand prüfen.",
+    en: "Inserts standard NDA text the client can read in the portal before signing. Please review before sending.",
   },
   "signature.quick_manual": { de: "Manuell eingeben", en: "Enter manually" },
   "signature.quick_document": { de: "Dokument", en: "Document" },
@@ -9520,6 +9542,7 @@ export const D = {
     de: "Zeichnen oder tippen Sie Ihre Unterschrift. Sie wird als einfache elektronische Signatur mit Zeitpunkt beim Dokument gespeichert.",
     en: "Draw or type your signature. It will be legally stored in the document.",
   },
+  "sigdialog.document_text": { de: "Dokumenttext", en: "Document text" },
   "sigdialog.legal_level": { de: "Rechtsform", en: "Legal level" },
   "sigdialog.signer_name": { de: "Unterzeichner-Name", en: "Signer name" },
   "sigdialog.signer_email": { de: "E-Mail", en: "Email" },

@@ -45,6 +45,10 @@ const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutz
 - Übersetzen: [TOOL:translate_text target_language="en" text="Zu übersetzender Vertragstext"]
 - Vertragspflichten extrahieren: [TOOL:obligation_extract document_slug="vertrag-2026" jurisdiction="at"]
 - Massenreview: [TOOL:tabular_review questions="Kündigungsfrist?; Haftungsbegrenzung?" document_slugs="vertrag-a;vertrag-b"]
+- Aufgabe anlegen: [TOOL:create_task case_slug="cases/123" title="Schriftsatz entwerfen" due_date="2026-10-15"]
+- Frist anlegen: [TOOL:create_deadline case_slug="cases/123" title="Berufungsfrist" due_date="2026-10-15"] (wird als ungeprüft markiert — der Anwalt muss sie im Fristenkalender bestätigen)
+- Kontakt anlegen: [TOOL:create_contact name="Max Mustermann" role="client" email="max@example.com" phone="+43 660 1234567"]
+- Signatur/NDA anfordern: [TOOL:request_signature case_slug="cases/123" document_name="Geheimhaltungsvereinbarung" recipient_name="Max Mustermann" recipient_email="max@example.com" template="nda"] (legt nur den Entwurf an — der Anwalt versendet ihn danach im Signaturbereich)
 
 ## PROAKTIVE FRISTEN-WARNUNGEN (Hybrid)
 Wenn du im Kontext einer Akte antwortest und aus den Akten-Vitals oder der Konversation erkennst, dass Fristen kritisch oder überfällig sind (< 7 Tage), erwähne PROAKTIV am Anfang deiner Antwort:

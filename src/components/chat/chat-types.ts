@@ -65,7 +65,11 @@ export type ToolType =
   | "tabular_review"
   | "send_email"
   | "client_lookup"
-  | "deadline_mark_done";
+  | "deadline_mark_done"
+  | "create_task"
+  | "create_deadline"
+  | "create_contact"
+  | "request_signature";
 
 export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "create_case",
@@ -74,6 +78,10 @@ export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "document_request_create",
   "send_email",
   "deadline_mark_done",
+  "create_task",
+  "create_deadline",
+  "create_contact",
+  "request_signature",
 ]);
 
 export interface ToolCall {

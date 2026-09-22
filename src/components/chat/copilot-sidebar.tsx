@@ -928,7 +928,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             <div className="flex items-center gap-0.5">
               <button
                 onClick={handleOpenFullscreen}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("copilot.open_fullscreen")}
                 title={t("copilot.open_fullscreen")}
               >
@@ -940,7 +940,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   setMobileOpen(false);
                   onToggle();
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.99] motion-reduce:transition-none"
                 aria-label={t("copilot.close_esc")}
               >
                 <X size={16} />
@@ -961,17 +961,24 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             t={t}
           />
 
-          {/* Chat — mobile */}
-          <ChatPanel
-            ref={chatRef}
-            context={routeContext}
-            className="h-full rounded-none border-0"
-            placeholder={
-              routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
-            }
-            onStreamingChange={setIsStreaming}
-            exampleQueries={pageExampleQueries}
-          />
+          {/* Chat — mobile. Mounted only on mobile: the desktop panel below
+              renders the same component with the same ref, and mounting
+              both at once split one conversation into two independent
+              state trees (each creating its own session on first load) with
+              a ref that arbitrarily pointed at whichever mounted last. */}
+          {isMobile && (
+            <ChatPanel
+              ref={chatRef}
+              context={routeContext}
+              className="h-full rounded-none border-0"
+              placeholder={
+                routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
+              }
+              onStreamingChange={setIsStreaming}
+              exampleQueries={pageExampleQueries}
+              isVisible={mobileOpen}
+            />
+          )}
         </div>
       </motion.div>
 
@@ -1077,41 +1084,48 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               t={t}
             />
 
-            {/* Chat panel — desktop */}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              <ChatPanel
-                ref={chatRef}
-                context={routeContext}
-                className="h-full rounded-none border-0"
-                placeholder={
-                  routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
-                }
-                onStreamingChange={setIsStreaming}
-                exampleQueries={pageExampleQueries}
-                headerActions={
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleOpenFullscreen}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                      aria-label={t("copilot.open_fullscreen")}
-                      title={t("copilot.open_fullscreen")}
-                    >
-                      <Maximize2 size={14} aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onToggle}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                      aria-label={t("copilot.close_panel")}
-                      title={t("copilot.close_panel")}
-                    >
-                      <PanelRightClose size={15} aria-hidden />
-                    </button>
-                  </>
-                }
-              />
-            </div>
+            {/* Chat panel — desktop. Mounted only off mobile: see the note on
+                the mobile ChatPanel above — the same component with the same
+                ref must never be mounted twice at once. */}
+            {!isMobile && (
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                <ChatPanel
+                  ref={chatRef}
+                  context={routeContext}
+                  className="h-full rounded-none border-0"
+                  placeholder={
+                    routeContext.caseSlug
+                      ? t("chat.placeholder_case")
+                      : t("chat.placeholder_global")
+                  }
+                  onStreamingChange={setIsStreaming}
+                  exampleQueries={pageExampleQueries}
+                  isVisible={open}
+                  headerActions={
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleOpenFullscreen}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
+                        aria-label={t("copilot.open_fullscreen")}
+                        title={t("copilot.open_fullscreen")}
+                      >
+                        <Maximize2 size={14} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onToggle}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
+                        aria-label={t("copilot.close_panel")}
+                        title={t("copilot.close_panel")}
+                      >
+                        <PanelRightClose size={15} aria-hidden />
+                      </button>
+                    </>
+                  }
+                />
+              </div>
+            )}
           </motion.div>
         </motion.div>
       </motion.aside>

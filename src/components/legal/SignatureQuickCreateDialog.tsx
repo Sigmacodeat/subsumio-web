@@ -30,6 +30,9 @@ import { useToast } from "@/components/ui/toast";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
 import type { BrainPage } from "@/lib/types";
 import { enqueueMutation, isOnline } from "@/lib/offline-store";
+import { buildNdaTemplate } from "@/lib/nda-template";
+
+type DocumentTemplate = "manual" | "nda";
 
 interface SignatureQuickCreateDialogProps {
   open: boolean;
@@ -48,6 +51,7 @@ export function SignatureQuickCreateDialog({
   const { addToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
+  const [template, setTemplate] = useState<DocumentTemplate>("manual");
 
   const sigForm = useForm<SignatureRequestFormData>({
     resolver: zodResolver(signatureRequestSchema) as never,
@@ -61,6 +65,7 @@ export function SignatureQuickCreateDialog({
 
   const resetForm = useCallback(() => {
     sigForm.reset({ documentName: "", recipientName: "", recipientEmail: "", expiresDays: "14" });
+    setTemplate("manual");
   }, [sigForm]);
 
   useEffect(() => {
@@ -83,12 +88,16 @@ export function SignatureQuickCreateDialog({
       .replace(/[^a-z0-9äöüß]+/g, "-")
       .slice(0, 60)}`;
     const expiresAt = new Date(Date.now() + parseInt(data.expiresDays) * 86400000).toISOString();
+    const content =
+      template === "nda"
+        ? buildNdaTemplate({ recipientName: data.recipientName.trim() })
+        : `Empfänger: ${data.recipientName} <${data.recipientEmail}>`;
     try {
       const payload = {
         slug,
         title: `Signatur: ${data.documentName.trim()}`,
         type: "signature_request",
-        content: `Empfänger: ${data.recipientName} <${data.recipientEmail}>`,
+        content,
         frontmatter: {
           type: "signature_request",
           document_name: data.documentName.trim(),
@@ -97,7 +106,11 @@ export function SignatureQuickCreateDialog({
           status: "draft",
           expires_at: expiresAt,
           created_at: now.toISOString(),
-          provider: "external",
+          // "template": the text stored on this page IS the document — the
+          // portal renders it before signing. "external": this row only
+          // tracks who needs to sign what; the actual document lives
+          // elsewhere (paper, DocuSign, an emailed PDF).
+          provider: template === "nda" ? "template" : "external",
           case_slug: presetCaseSlug || undefined,
         },
       };
@@ -141,6 +154,43 @@ export function SignatureQuickCreateDialog({
           </DialogHeader>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-2">
+            {/* Template selector */}
+            <div className="space-y-1.5">
+              <Label htmlFor="quick-sig-template" className="text-xs">
+                {t("signature.quick_template" as DashboardKey)}
+              </Label>
+              <Select
+                value={template}
+                onValueChange={(v) => {
+                  const next = v as DocumentTemplate;
+                  setTemplate(next);
+                  if (next === "nda" && !sigForm.getValues("documentName")) {
+                    sigForm.setValue(
+                      "documentName",
+                      t("signature.quick_template_nda" as DashboardKey)
+                    );
+                  }
+                }}
+              >
+                <SelectTrigger id="quick-sig-template">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">
+                    {t("signature.quick_template_manual" as DashboardKey)}
+                  </SelectItem>
+                  <SelectItem value="nda">
+                    {t("signature.quick_template_nda" as DashboardKey)}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {template === "nda" && (
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {t("signature.quick_template_nda_hint" as DashboardKey)}
+                </p>
+              )}
+            </div>
+
             {/* Draft selector */}
             {(drafts ?? []).length > 0 && (
               <div className="space-y-1.5">

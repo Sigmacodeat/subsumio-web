@@ -87,6 +87,30 @@ describe("isToolAvailable", () => {
   test("returns false for unknown tools", () => {
     expect(isToolAvailable("unknown_tool", { role: "admin" })).toBe(false);
   });
+
+  // search_tasks/search_calendar were wired into the tool schema and the
+  // chat-panel detection rules but never registered here — every call
+  // 403'd regardless of role, silently, since isToolAvailable() treats an
+  // unregistered name the same as an unknown one.
+  test("search_tasks and search_calendar are available to lawyers (regression)", () => {
+    expect(isToolAvailable("search_tasks", { role: "lawyer" })).toBe(true);
+    expect(isToolAvailable("search_calendar", { role: "lawyer" })).toBe(true);
+  });
+
+  test("case-scoped write tools need role and case context", () => {
+    expect(isToolAvailable("create_task", { role: "lawyer", hasCaseContext: true })).toBe(true);
+    expect(isToolAvailable("create_task", { role: "lawyer", hasCaseContext: false })).toBe(false);
+    expect(isToolAvailable("create_deadline", { role: "lawyer", hasCaseContext: true })).toBe(
+      true
+    );
+    expect(isToolAvailable("request_signature", { role: "lawyer", hasCaseContext: true })).toBe(
+      true
+    );
+    expect(isToolAvailable("create_contact", { role: "lawyer" })).toBe(true);
+    expect(isToolAvailable("create_task", { role: "client_viewer", hasCaseContext: true })).toBe(
+      false
+    );
+  });
 });
 
 describe("getToolList", () => {

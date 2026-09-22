@@ -87,13 +87,24 @@ describe("chat-session-store", () => {
     expect(list.map((s) => s.id)).toEqual(["sc", "sg"]);
   });
 
-  it("filters sessions by contextType", async () => {
-    const s1: ChatSession = { ...baseSession, id: "c1", contextType: "case" };
-    const s2: ChatSession = { ...baseSession, id: "g1", contextType: "global" };
-    await createSession(s1);
-    await createSession(s2);
-    const list = await listSessions({ contextType: "case" });
-    expect(list.map((s) => s.id)).toEqual(["c1"]);
+  it("shows global and brain_page sessions together when no matter is selected", async () => {
+    // caseSlug is the real isolation boundary, not the exact contextType — a
+    // plain Assistant conversation ("global") must stay visible while viewing
+    // a matter-less document ("brain_page"), and vice versa. A matter-scoped
+    // session must still be excluded.
+    const globalSession: ChatSession = { ...baseSession, id: "g1", contextType: "global" };
+    const pageSession: ChatSession = { ...baseSession, id: "p1", contextType: "brain_page" };
+    const caseSession: ChatSession = {
+      ...baseSession,
+      id: "c1",
+      contextType: "case",
+      caseSlug: "case-a",
+    };
+    await createSession(globalSession);
+    await createSession(pageSession);
+    await createSession(caseSession);
+    const list = await listSessions({ contextType: "brain_page" });
+    expect(list.map((s) => s.id).sort()).toEqual(["g1", "p1"]);
   });
 
   it("updates session metadata", async () => {

@@ -12,7 +12,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Reply, X, ArrowDown, Quote } from "lucide-react";
+import { Reply, X, ArrowDown, Quote, MessageSquare, Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -118,6 +118,15 @@ interface ChatPanelProps {
   onStreamingChange?: (isStreaming: boolean) => void;
   exampleQueries?: string[];
   headerActions?: ReactNode;
+  /**
+   * Whether this panel is currently visible to the user (open sidebar drawer,
+   * or a page that's always visible). A panel that stays mounted while
+   * collapsed — the docked copilot sidebar — doesn't re-fetch the session
+   * list on its own; pass this so a session started elsewhere (the other
+   * mounted instance, or the fullscreen /dashboard/chat page) shows up the
+   * moment the panel is opened rather than only after a reload.
+   */
+  isVisible?: boolean;
 }
 
 function queryModeToThinkMode(mode: QueryMode): ThinkMode {
@@ -131,244 +140,313 @@ function queryModeToThinkMode(mode: QueryMode): ThinkMode {
 // ── Copilot Tool Detection ────────────────────────────────────────────
 // Parses AI response for structured tool-use markers and executes tools.
 
-interface ToolDetectionRule {
-  pattern: RegExp;
+interface ToolSpec {
   tool: ToolType;
   label: string;
-  extractParams: (match: RegExpMatchArray) => Record<string, unknown>;
+  /**
+   * Turns a marker's key="value" attributes (order-independent — see
+   * parseToolMarkerAttrs below) into the tool's params. Returns null when a
+   * required attribute is missing, so that marker is skipped exactly like an
+   * unmatched regex used to be skipped.
+   */
+  transform: (attrs: Record<string, string>) => Record<string, unknown> | null;
 }
 
-const TOOL_RULES: ToolDetectionRule[] = [
+// Each tool used to have its own regex with a fixed attribute order
+// (`route="…"` had to come before nothing, `search_deadlines` required
+// `status` to be the LAST attribute the model emitted, etc.) — if the model
+// wrote the same attributes in a different order, the whole marker silently
+// failed to match and the tool never ran. TOOL_SPECS instead only declares
+// how to turn a name→value attribute map into params; parseToolMarkers below
+// finds every `[TOOL:name ...]` block generically and reads its attributes
+// regardless of order.
+const TOOL_SPECS: ToolSpec[] = [
+  { tool: "navigate", label: "chat.tool.navigate", transform: (a) => (a.route ? { route: a.route } : null) },
   {
-    pattern: /\[TOOL:navigate\s+route="([^"]+)"\]/i,
-    tool: "navigate",
-    label: "chat.tool.navigate",
-    extractParams: (m) => ({ route: m[1] }),
-  },
-  {
-    pattern: /\[TOOL:search_cases\s+query="([^"]+)"\]/i,
     tool: "search_cases",
     label: "chat.tool.search_cases",
-    extractParams: (m) => ({ query: m[1] }),
+    transform: (a) => (a.query ? { query: a.query } : null),
   },
   {
-    pattern: /\[TOOL:search_deadlines(?:\s+case_slug="([^"]+)")?\s+status="([^"]+)"\]/i,
     tool: "search_deadlines",
     label: "chat.tool.search_deadlines",
-    extractParams: (m) => ({ case_slug: m[1] || undefined, status: m[2] }),
+    transform: (a) => (a.status ? { case_slug: a.case_slug || undefined, status: a.status } : null),
   },
   {
-    pattern: /\[TOOL:search_knowledge\s+query="([^"]+)"\]/i,
     tool: "search_knowledge",
     label: "chat.tool.search_knowledge",
-    extractParams: (m) => ({ query: m[1] }),
+    transform: (a) => (a.query ? { query: a.query } : null),
   },
   {
-    pattern:
-      /\[TOOL:create_case\s+title="([^"]+)"(?:\s+client_name="([^"]+)")?(?:\s+opponent_name="([^"]+)")?(?:\s+case_type="([^"]+)")?\]/i,
     tool: "create_case",
     label: "chat.tool.create_case",
-    extractParams: (m) => ({
-      title: m[1],
-      client_name: m[2] || undefined,
-      opponent_name: m[3] || undefined,
-      case_type: m[4] || undefined,
-    }),
+    transform: (a) =>
+      a.title
+        ? {
+            title: a.title,
+            client_name: a.client_name || undefined,
+            opponent_name: a.opponent_name || undefined,
+            case_type: a.case_type || undefined,
+          }
+        : null,
   },
   {
-    pattern: /\[TOOL:case_summary\s+case_slug="([^"]+)"\]/i,
     tool: "case_summary",
     label: "chat.tool.case_summary",
-    extractParams: (m) => ({ case_slug: m[1] }),
+    transform: (a) => (a.case_slug ? { case_slug: a.case_slug } : null),
   },
   {
-    pattern:
-      /\[TOOL:email_draft\s+subject="([^"]+)"(?:\s+recipient="([^"]+)")?(?:\s+case_slug="([^"]+)")?(?:\s+tone="([^"]+)")?\]/i,
     tool: "email_draft",
     label: "chat.tool.email_draft",
-    extractParams: (m) => ({
-      subject: m[1],
-      recipient: m[2] || undefined,
-      case_slug: m[3] || undefined,
-      tone: (m[4] as "formal" | "neutral" | "urgent") || "formal",
-    }),
+    transform: (a) =>
+      a.subject
+        ? {
+            subject: a.subject,
+            recipient: a.recipient || undefined,
+            case_slug: a.case_slug || undefined,
+            tone: (a.tone as "formal" | "neutral" | "urgent") || "formal",
+          }
+        : null,
   },
-  // No send_email rule: the Copilot is never offered sending mail, so a
+  // No send_email spec: the Copilot is never offered sending mail, so a
   // send_email marker can only come from injected text. Mail goes out from
   // the mailbox after a draft (email_draft).
   {
-    pattern: /\[TOOL:deadline_extract\s+document_slug="([^"]+)"\]/i,
     tool: "deadline_extract",
     label: "chat.tool.deadline_extract",
-    extractParams: (m) => ({ document_slug: m[1] }),
+    transform: (a) => (a.document_slug ? { document_slug: a.document_slug } : null),
   },
   {
-    pattern: /\[TOOL:document_summary\s+document_slug="([^"]+)"\]/i,
     tool: "document_summary",
     label: "chat.tool.document_summary",
-    extractParams: (m) => ({ document_slug: m[1] }),
+    transform: (a) => (a.document_slug ? { document_slug: a.document_slug } : null),
   },
   {
-    pattern: /\[TOOL:conflict_check\s+name="([^"]+)"\]/i,
     tool: "conflict_check",
     label: "chat.tool.conflict_check",
-    extractParams: (m) => ({ name: m[1] }),
+    transform: (a) => (a.name ? { name: a.name } : null),
   },
   {
-    pattern:
-      /\[TOOL:time_entry\s+case_slug="([^"]+)"\s+description="([^"]+)"(?:\s+hours="([^"]+)")?(?:\s+activity_type="([^"]+)")?\]/i,
     tool: "time_entry",
     label: "chat.tool.time_entry",
-    extractParams: (m) => ({
-      case_slug: m[1],
-      description: m[2],
-      hours: m[3] ? parseFloat(m[3]) : undefined,
-      activity_type:
-        (m[4] as "research" | "drafting" | "review" | "meeting" | "correspondence" | "other") ||
-        "other",
-    }),
+    transform: (a) =>
+      a.case_slug && a.description
+        ? {
+            case_slug: a.case_slug,
+            description: a.description,
+            hours: a.hours ? parseFloat(a.hours) : undefined,
+            activity_type:
+              (a.activity_type as
+                | "research"
+                | "drafting"
+                | "review"
+                | "meeting"
+                | "correspondence"
+                | "other") || "other",
+          }
+        : null,
   },
   {
-    pattern: /\[TOOL:client_update\s+case_slug="([^"]+)"(?:\s+update_type="([^"]+)")?\]/i,
     tool: "client_update",
     label: "chat.tool.client_update",
-    extractParams: (m) => ({
-      case_slug: m[1],
-      update_type: (m[2] as "status" | "deadline" | "next_steps" | "summary") || "status",
-    }),
+    transform: (a) =>
+      a.case_slug
+        ? {
+            case_slug: a.case_slug,
+            update_type: (a.update_type as "status" | "deadline" | "next_steps" | "summary") || "status",
+          }
+        : null,
   },
   {
-    pattern: /\[TOOL:meeting_tasks\s+notes="([^"]+)"(?:\s+case_slug="([^"]+)")?\]/i,
     tool: "meeting_tasks",
     label: "chat.tool.meeting_tasks",
-    extractParams: (m) => ({ notes: m[1], case_slug: m[2] || undefined }),
+    transform: (a) => (a.notes ? { notes: a.notes, case_slug: a.case_slug || undefined } : null),
   },
   {
-    pattern:
-      /\[TOOL:intake_create\s+client_name="([^"]+)"\s+matter_type="([^"]+)"(?:\s+jurisdiction="([^"]+)")?(?:\s+urgency="([^"]+)")?\]/i,
     tool: "intake_create",
     label: "chat.tool.intake_create",
-    extractParams: (m) => ({
-      client_name: m[1],
-      matter_type: m[2],
-      jurisdiction: "at",
-      urgency: (m[4] as "low" | "medium" | "high" | "critical") || "medium",
-    }),
+    transform: (a) =>
+      a.client_name && a.matter_type
+        ? {
+            client_name: a.client_name,
+            matter_type: a.matter_type,
+            jurisdiction: "at",
+            urgency: (a.urgency as "low" | "medium" | "high" | "critical") || "medium",
+          }
+        : null,
   },
   {
-    pattern:
-      /\[TOOL:document_request_create\s+case_slug="([^"]+)"(?:\s+items="([^"]+)")?(?:\s+message="([^"]+)")?\]/i,
     tool: "document_request_create",
     label: "chat.tool.document_request_create",
-    extractParams: (m) => ({
-      case_slug: m[1],
-      items: m[2]
-        ? m[2]
-            .split(";")
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : undefined,
-      message_draft: m[3] || undefined,
-    }),
+    transform: (a) =>
+      a.case_slug
+        ? {
+            case_slug: a.case_slug,
+            items: a.items
+              ? a.items
+                  .split(";")
+                  .map((item) => item.trim())
+                  .filter(Boolean)
+              : undefined,
+            message_draft: a.message || undefined,
+          }
+        : null,
   },
   {
-    pattern:
-      /\[TOOL:precedent_search\s+query="([^"]+)"(?:\s+jurisdiction="([^"]+)")?(?:\s+legal_area="([^"]+)")?\]/i,
     tool: "precedent_search",
     label: "chat.tool.precedent_search",
-    extractParams: (m) => ({
-      query: m[1],
-      jurisdiction: m[2]?.toLowerCase() === "at" ? "at" : undefined,
-      legal_area: m[3] || undefined,
-    }),
+    transform: (a) =>
+      a.query
+        ? {
+            query: a.query,
+            jurisdiction: a.jurisdiction?.toLowerCase() === "at" ? "at" : undefined,
+            legal_area: a.legal_area || undefined,
+          }
+        : null,
   },
   {
-    pattern:
-      /\[TOOL:translate_text\s+target_language="([^"]+)"(?:\s+source_language="([^"]+)")?(?:\s+text="([^"]+)")?(?:\s+document_slug="([^"]+)")?\]/i,
     tool: "translate_text",
     label: "chat.tool.translate_text",
-    extractParams: (m) => ({
-      target_language: m[1],
-      source_language: m[2] || undefined,
-      text: m[3] || undefined,
-      document_slug: m[4] || undefined,
-    }),
+    transform: (a) =>
+      a.target_language
+        ? {
+            target_language: a.target_language,
+            source_language: a.source_language || undefined,
+            text: a.text || undefined,
+            document_slug: a.document_slug || undefined,
+          }
+        : null,
   },
   {
-    pattern:
-      /\[TOOL:obligation_extract(?:\s+document_slug="([^"]+)")?(?:\s+jurisdiction="([^"]+)")?(?:\s+text="([^"]+)")?\]/i,
     tool: "obligation_extract",
     label: "chat.tool.obligation_extract",
-    extractParams: (m) => ({
-      document_slug: m[1] || undefined,
-      jurisdiction: m[2]?.toLowerCase() === "all" ? "all" : "at",
-      text: m[3] || undefined,
+    transform: (a) => ({
+      document_slug: a.document_slug || undefined,
+      jurisdiction: a.jurisdiction?.toLowerCase() === "all" ? "all" : "at",
+      text: a.text || undefined,
     }),
   },
   {
-    pattern:
-      /\[TOOL:tabular_review\s+questions="([^"]+)"(?:\s+document_slugs="([^"]+)")?(?:\s+case_slug="([^"]+)")?\]/i,
     tool: "tabular_review",
     label: "chat.tool.tabular_review",
-    extractParams: (m) => ({
-      questions: m[1]
-        .split(";")
-        .map((question) => question.trim())
-        .filter(Boolean),
-      document_slugs: m[2]
-        ? m[2]
-            .split(";")
-            .map((slug) => slug.trim())
-            .filter(Boolean)
-        : undefined,
-      case_slug: m[3] || undefined,
-    }),
+    transform: (a) =>
+      a.questions
+        ? {
+            questions: a.questions
+              .split(";")
+              .map((question) => question.trim())
+              .filter(Boolean),
+            document_slugs: a.document_slugs
+              ? a.document_slugs
+                  .split(";")
+                  .map((slug) => slug.trim())
+                  .filter(Boolean)
+              : undefined,
+            case_slug: a.case_slug || undefined,
+          }
+        : null,
   },
   {
-    pattern: /\[TOOL:client_lookup\s+query="([^"]+)"(?:\s+deadline_status="([^"]+)")?\]/i,
     tool: "client_lookup",
     label: "chat.tool.client_lookup",
-    extractParams: (m) => ({
-      query: m[1],
-      deadline_status: (m[2] as "open" | "critical" | "overdue" | "all") || "open",
-    }),
+    transform: (a) =>
+      a.query
+        ? {
+            query: a.query,
+            deadline_status: (a.deadline_status as "open" | "critical" | "overdue" | "all") || "open",
+          }
+        : null,
   },
   {
-    pattern: /\[TOOL:deadline_mark_done\s+deadline_slug="([^"]+)"\]/i,
     tool: "deadline_mark_done",
     label: "chat.tool.deadline_mark_done",
-    extractParams: (m) => ({ deadline_slug: m[1] }),
+    transform: (a) => (a.deadline_slug ? { deadline_slug: a.deadline_slug } : null),
   },
   {
-    pattern:
-      /\[TOOL:search_tasks(?:\s+case_slug="([^"]+)")?(?:\s+status="([^"]+)")?(?:\s+priority="([^"]+)")?\]/i,
     tool: "search_tasks",
     label: "chat.tool.search_tasks",
-    extractParams: (m) => ({
-      case_slug: m[1] || undefined,
-      status: (m[2] as "open" | "done" | "all") || "open",
-      priority: (m[3] as "low" | "medium" | "high" | "critical" | "all") || "all",
+    transform: (a) => ({
+      case_slug: a.case_slug || undefined,
+      status: (a.status as "open" | "done" | "all") || "open",
+      priority: (a.priority as "low" | "medium" | "high" | "critical" | "all") || "all",
     }),
   },
   {
-    pattern:
-      /\[TOOL:search_calendar(?:\s+date="([^"]+)")?(?:\s+range="([^"]+)")?(?:\s+case_slug="([^"]+)")?\]/i,
     tool: "search_calendar",
     label: "chat.tool.search_calendar",
-    extractParams: (m) => ({
-      date: m[1] || undefined,
-      range: (m[2] as "today" | "week" | "month") || "week",
-      case_slug: m[3] || undefined,
+    transform: (a) => ({
+      date: a.date || undefined,
+      range: (a.range as "today" | "week" | "month") || "week",
+      case_slug: a.case_slug || undefined,
     }),
+  },
+  {
+    tool: "create_task",
+    label: "chat.tool.create_task",
+    transform: (a) =>
+      a.case_slug && a.title
+        ? { case_slug: a.case_slug, title: a.title, due_date: a.due_date || undefined }
+        : null,
+  },
+  {
+    tool: "create_deadline",
+    label: "chat.tool.create_deadline",
+    transform: (a) =>
+      a.case_slug && a.title && a.due_date
+        ? { case_slug: a.case_slug, title: a.title, due_date: a.due_date }
+        : null,
+  },
+  {
+    tool: "create_contact",
+    label: "chat.tool.create_contact",
+    transform: (a) =>
+      a.name
+        ? {
+            name: a.name,
+            role: a.role || undefined,
+            email: a.email || undefined,
+            phone: a.phone || undefined,
+            company: a.company || undefined,
+          }
+        : null,
+  },
+  {
+    tool: "request_signature",
+    label: "chat.tool.request_signature",
+    transform: (a) =>
+      a.case_slug && a.document_name && a.recipient_name
+        ? {
+            case_slug: a.case_slug,
+            document_name: a.document_name,
+            recipient_name: a.recipient_name,
+            recipient_email: a.recipient_email || undefined,
+            template: a.template === "nda" ? "nda" : "manual",
+          }
+        : null,
   },
 ];
 
+const TOOL_SPEC_BY_NAME = new Map(TOOL_SPECS.map((spec) => [spec.tool as string, spec]));
+
+/** Matches one `[TOOL:name key="value" key2="value2" …]` marker, attributes in any order. */
+const TOOL_MARKER_PATTERN = /\[TOOL:([a-z_]+)((?:\s+[a-z_]+="[^"]*")*)\s*\]/gi;
+const TOOL_ATTR_PATTERN = /([a-z_]+)="([^"]*)"/gi;
+
+function parseToolMarkerAttrs(raw: string): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  const re = new RegExp(TOOL_ATTR_PATTERN.source, "gi");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw))) {
+    attrs[m[1].toLowerCase()] = m[2];
+  }
+  return attrs;
+}
+
 // Detect all tool markers in AI response — supports multiple tools per response (G16)
-function detectToolCalls(
+export function detectToolCalls(
   answer: string,
   context: { type: ChatContextType; caseSlug?: string; pageSlug?: string }
 ): ToolCall[] {
-  const calls: Array<{ toolCall: ToolCall; position: number }> = [];
   const matterSlug = context.caseSlug;
 
   // Tools that benefit from automatic matter-scoping
@@ -380,45 +458,40 @@ function detectToolCalls(
     "case_summary",
     "search_deadlines",
     "client_lookup",
+    "create_task",
+    "create_deadline",
+    "request_signature",
   ]);
 
-  for (const rule of TOOL_RULES) {
-    // Use matchAll to find ALL occurrences of each tool marker (G16: tool chaining)
-    let cursor = 0;
-    while (cursor < answer.length) {
-      const slice = answer.slice(cursor);
-      const match = slice.match(rule.pattern);
-      if (!match || match.index === undefined) break;
+  const calls: ToolCall[] = [];
+  const re = new RegExp(TOOL_MARKER_PATTERN.source, "gi");
+  let match: RegExpExecArray | null;
+  // A single left-to-right scan finds every marker — of any tool, repeated
+  // any number of times — already in the order the model emitted them (G16:
+  // tool chaining), so no separate per-rule pass or position sort is needed.
+  while ((match = re.exec(answer))) {
+    const spec = TOOL_SPEC_BY_NAME.get(match[1].toLowerCase());
+    if (!spec) continue; // unknown tool name — left for the display-side stripper to remove
 
-      const params = rule.extractParams(match);
+    const params = spec.transform(parseToolMarkerAttrs(match[2] ?? ""));
+    if (!params) continue; // a required attribute was missing
 
-      // Auto-inject case_slug from context for matter-scoped tools
-      if (matterSlug && MATTER_SCOPED_TOOLS.has(rule.tool) && !params.case_slug) {
-        params.case_slug = matterSlug;
-      }
-
-      const isDestructive = DESTRUCTIVE_TOOLS.has(rule.tool);
-
-      const toolCall: ToolCall = {
-        id: `${rule.tool}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        type: rule.tool,
-        label: rule.label,
-        params,
-        status: isDestructive ? "pending" : "executing",
-        requiresConfirmation: isDestructive,
-      };
-
-      // Track absolute position in answer for correct ordering
-      const absolutePos = cursor + match.index;
-      calls.push({ toolCall, position: absolutePos });
-
-      cursor += match.index + match[0].length;
+    if (matterSlug && MATTER_SCOPED_TOOLS.has(spec.tool) && !params.case_slug) {
+      params.case_slug = matterSlug;
     }
+
+    const isDestructive = DESTRUCTIVE_TOOLS.has(spec.tool);
+    calls.push({
+      id: `${spec.tool}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: spec.tool,
+      label: spec.label,
+      params,
+      status: isDestructive ? "pending" : "executing",
+      requiresConfirmation: isDestructive,
+    });
   }
 
-  // Sort by position in the answer string (order the AI emitted them)
-  calls.sort((a, b) => a.position - b.position);
-  return calls.map((c) => c.toolCall);
+  return calls;
 }
 
 // Execute a single tool call (used for both immediate and confirmed execution)
@@ -725,7 +798,7 @@ function SuggestedFollowUps({
           <button
             key={i}
             onClick={() => onSelect(s.query)}
-            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-[var(--ds-duration-normal)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-[var(--ds-duration-normal)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
             {s.label}
           </button>
@@ -749,6 +822,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     onStreamingChange,
     exampleQueries: providedExampleQueries,
     headerActions,
+    isVisible,
   },
   ref
 ) {
@@ -951,6 +1025,19 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   useEffect(() => {
     refreshSessions();
   }, [refreshSessions]);
+
+  // A panel that stays mounted while hidden (the docked copilot sidebar)
+  // never re-runs the effect above on its own, so a session started in the
+  // other mounted instance — or in the fullscreen /dashboard/chat page —
+  // wouldn't show up until something else changed the deps. Re-fetch the
+  // instant this panel becomes visible.
+  const wasVisibleRef = useRef(isVisible);
+  useEffect(() => {
+    if (isVisible && !wasVisibleRef.current) {
+      refreshSessions();
+    }
+    wasVisibleRef.current = isVisible;
+  }, [isVisible, refreshSessions]);
 
   // Auto-scroll
   useEffect(() => {
@@ -2389,28 +2476,34 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         trailingActions={headerActions}
       />
 
-      {/* Subsumtion Toggle */}
-      <div className="flex items-center gap-1 border-b border-[var(--ds-border)] bg-[var(--ds-surface-1)] px-3 py-1.5">
-        <button
-          onClick={() => setSubsumptionMode(false)}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
-            !subsumptionMode
-              ? "bg-[color:var(--brand-solid)] text-white"
-              : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
-          } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
+      {/* Work mode: conversation or structured subsumption — a segmented
+          control, same pattern as the Auto/Schnell/Gründlich switch above. */}
+      <div className="flex items-center border-b border-[var(--ds-border)] px-3 py-2">
+        <div
+          role="tablist"
+          aria-label={lang === "en" ? "Work mode" : "Arbeitsmodus"}
+          className="inline-flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] p-1"
         >
-          {t("copilot.copilot")}
-        </button>
-        <button
-          onClick={() => setSubsumptionMode(true)}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
-            subsumptionMode
-              ? "bg-[color:var(--brand-solid)] text-white"
-              : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
-          } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
-        >
-          ⚖️ Subsumtion
-        </button>
+          {[
+            { on: !subsumptionMode, set: false, label: t("copilot.copilot"), Icon: MessageSquare },
+            { on: subsumptionMode, set: true, label: "Subsumtion", Icon: Scale },
+          ].map(({ on, set, label, Icon }) => (
+            <button
+              key={label}
+              role="tab"
+              aria-selected={on}
+              onClick={() => setSubsumptionMode(set)}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-[background-color,color,box-shadow] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${
+                on
+                  ? "bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
+                  : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              }`}
+            >
+              <Icon size={13} aria-hidden="true" />
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Subsumption Mode */}
@@ -2455,9 +2548,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                       }
                     >
                       {showDateSeparator && (
-                        <div className="my-2 flex items-center gap-2 px-4">
+                        <div className="mx-auto my-3 flex w-full max-w-3xl items-center gap-3 px-4">
                           <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
-                          <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
+                          <span className="text-[11px] font-medium tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
                             {getDateLabel(msg.createdAt)}
                           </span>
                           <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
@@ -2484,21 +2577,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                     </div>
                   );
                 })}
-                {isStreaming &&
-                  messages.length > 0 &&
-                  messages[messages.length - 1].role === "assistant" &&
-                  !messages[messages.length - 1].content && (
-                    <div className="px-4 py-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-flex items-center gap-0.5">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" />
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-40 [animation-delay:150ms]" />
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-20 [animation-delay:300ms]" />
-                        </span>
-                        {t("chat.typing")}
-                      </span>
-                    </div>
-                  )}
+                {/* The waiting state lives inside the pending answer itself
+                    (chat-message.tsx) — a second "is typing" line below an empty
+                    bubble said the same thing twice. */}
                 {/* Suggested follow-ups after last AI message */}
                 {!isStreaming &&
                   messages.length > 0 &&
@@ -2521,7 +2602,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           {showScrollBtn && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none"
+              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
               aria-label={t("chat.scroll_bottom")}
             >
               <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />

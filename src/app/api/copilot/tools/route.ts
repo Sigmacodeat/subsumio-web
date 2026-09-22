@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { engineThink } from "@/lib/engine-think";
 import {
@@ -6,7 +7,9 @@ import {
   createToolConfirmation,
 } from "@/lib/copilot-confirmation";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
-import { ENGINE_URL, recordCreditConsumption } from "@/lib/engine";
+import { ENGINE_URL, recordCreditConsumption, enginePatchPage } from "@/lib/engine";
+import { buildNdaTemplate } from "@/lib/nda-template";
+import type { TaskEntry, DeadlineEntry } from "@/lib/legal-types";
 import {
   CREDIT_COSTS,
   checkCredits,
@@ -246,6 +249,35 @@ const deadlineMarkDoneSchema = z.object({
   deadline_slug: z.string().min(1).max(300),
 });
 
+const createTaskSchema = z.object({
+  case_slug: z.string().min(1).max(300),
+  title: z.string().min(1).max(500),
+  due_date: z.string().max(20).optional(),
+});
+
+const createDeadlineSchema = z.object({
+  case_slug: z.string().min(1).max(300),
+  title: z.string().min(1).max(500),
+  due_date: z.string().min(1).max(20),
+});
+
+const createContactSchema = z.object({
+  name: z.string().min(1).max(300),
+  role: z.enum(["client", "opponent", "court", "lawyer", "other"]).default("client"),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().max(50).optional(),
+  company: z.string().max(200).optional(),
+});
+
+const requestSignatureSchema = z.object({
+  case_slug: z.string().min(1).max(300),
+  document_name: z.string().min(1).max(300),
+  recipient_name: z.string().min(1).max(300),
+  recipient_email: z.string().email().optional().or(z.literal("")),
+  template: z.enum(["manual", "nda"]).default("manual"),
+  expires_days: z.number().min(1).max(90).default(14),
+});
+
 const searchTasksSchema = z.object({
   case_slug: z.string().max(200).optional(),
   status: z.enum(["open", "done", "all"]).default("open"),
@@ -288,6 +320,10 @@ const toolSchema = z.object({
     "send_email",
     "client_lookup",
     "deadline_mark_done",
+    "create_task",
+    "create_deadline",
+    "create_contact",
+    "request_signature",
   ]),
   params: z.record(z.unknown()).default({}),
   /** "prepare" returns a confirmation token for a tool in CONFIRMED_TOOLS. */
@@ -1926,6 +1962,269 @@ async function executeDeadlineMarkDone(
   }
 }
 
+async function fetchCasePage(
+  headers: Record<string, string>,
+  caseSlug: string
+): Promise<{
+  slug: string;
+  title: string;
+  content: string;
+  frontmatter?: Record<string, unknown>;
+} | null> {
+  const path = caseSlug.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+    headers,
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function executeCreateTask(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof createTaskSchema>
+): Promise<ToolResponse> {
+  try {
+    const page = await fetchCasePage(ctx.headers, params.case_slug);
+    if (!page) {
+      return {
+        success: false,
+        error: "case_not_found",
+        display: {
+          kind: "confirmation",
+          title: "Akte nicht gefunden",
+          message: `"${params.case_slug}" wurde nicht gefunden.`,
+        },
+      };
+    }
+    const safeTitle = sanitizeUserInput(params.title);
+    const fm = (page.frontmatter ?? {}) as { tasks?: TaskEntry[] };
+    const current = Array.isArray(fm.tasks) ? fm.tasks : [];
+    const task: TaskEntry & { source?: string } = {
+      id: randomUUID(),
+      text: params.due_date ? `${safeTitle} (bis ${params.due_date})` : safeTitle,
+      done: false,
+      createdAt: new Date().toISOString(),
+      source: "copilot",
+    };
+    const res = await enginePatchPage(ctx.headers, {
+      slug: page.slug,
+      frontmatter: { tasks: [...current, task] },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return {
+      success: true,
+      data: { task },
+      display: {
+        kind: "confirmation",
+        title: `Aufgabe angelegt: ${safeTitle}`,
+        href: `/dashboard/cases/${page.slug.replace(/^cases\//, "")}`,
+        message: `Aufgabe wurde zur Akte "${page.title}" hinzugefügt.`,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Create task failed",
+      display: {
+        kind: "confirmation",
+        title: "Aufgabe konnte nicht angelegt werden",
+        message: "Engine nicht erreichbar.",
+      },
+    };
+  }
+}
+
+async function executeCreateDeadline(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof createDeadlineSchema>
+): Promise<ToolResponse> {
+  try {
+    const page = await fetchCasePage(ctx.headers, params.case_slug);
+    if (!page) {
+      return {
+        success: false,
+        error: "case_not_found",
+        display: {
+          kind: "confirmation",
+          title: "Akte nicht gefunden",
+          message: `"${params.case_slug}" wurde nicht gefunden.`,
+        },
+      };
+    }
+    const safeTitle = sanitizeUserInput(params.title);
+    const fm = (page.frontmatter ?? {}) as { deadlines?: DeadlineEntry[] };
+    const current = Array.isArray(fm.deadlines) ? fm.deadlines : [];
+    // AI-proposed deadlines start unreviewed — same human-in-the-loop bar as
+    // every other deadline source (docs/AUDIT_KI_AGENTEN_PIPELINE_2026-09-19.md):
+    // this tool call itself already needed the lawyer's explicit confirmation
+    // in the chat UI, and the deadline still shows as needing review afterwards.
+    const deadline: DeadlineEntry = {
+      id: randomUUID(),
+      title: safeTitle,
+      description: safeTitle,
+      due_date: params.due_date,
+      status: "pending",
+      type: "deadline",
+      source: "copilot",
+      review_status: "unreviewed",
+      created_at: new Date().toISOString(),
+    };
+    const res = await enginePatchPage(ctx.headers, {
+      slug: page.slug,
+      frontmatter: { deadlines: [...current, deadline] },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return {
+      success: true,
+      data: { deadline },
+      display: {
+        kind: "confirmation",
+        title: `Frist angelegt: ${safeTitle}`,
+        href: "/dashboard/deadlines",
+        message: `Frist "${safeTitle}" (${params.due_date}) wurde zur Akte "${page.title}" hinzugefügt — bitte fachlich prüfen.`,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Create deadline failed",
+      display: {
+        kind: "confirmation",
+        title: "Frist konnte nicht angelegt werden",
+        message: "Engine nicht erreichbar.",
+      },
+    };
+  }
+}
+
+async function executeCreateContact(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof createContactSchema>
+): Promise<ToolResponse> {
+  try {
+    const safeName = sanitizeUserInput(params.name);
+    // Same page shape the Kontakte dashboard writes (dashboard/contacts/page.tsx)
+    // — a different type here ("client" is a tempting but wrong name, used by
+    // the older WhatsApp create_client path) means the contact never shows up
+    // in that list.
+    const slug = `contact/${safeName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9äöüß]+/gi, "-")
+      .replace(/^-|-$/g, "")}-${Date.now()}`;
+    const body = {
+      slug,
+      title: safeName,
+      type: "legal_contact",
+      content: "",
+      frontmatter: {
+        type: "legal_contact",
+        role: params.role,
+        name: safeName,
+        company: params.company ? sanitizeUserInput(params.company) : undefined,
+        email: params.email || undefined,
+        phone: params.phone || undefined,
+      },
+    };
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ctx.headers },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return {
+      success: true,
+      data: { slug },
+      display: {
+        kind: "confirmation",
+        title: `Kontakt angelegt: ${safeName}`,
+        href: "/dashboard/contacts",
+        message: `Kontakt "${safeName}" wurde angelegt.`,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Create contact failed",
+      display: {
+        kind: "confirmation",
+        title: "Kontakt konnte nicht angelegt werden",
+        message: "Engine nicht erreichbar.",
+      },
+    };
+  }
+}
+
+async function executeRequestSignature(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof requestSignatureSchema>
+): Promise<ToolResponse> {
+  try {
+    const safeDocName = sanitizeUserInput(params.document_name);
+    const safeRecipientName = sanitizeUserInput(params.recipient_name);
+    const now = new Date();
+    const slug = `legal/signatures/${now.toISOString().split("T")[0]}-${safeDocName
+      .toLowerCase()
+      .replace(/[^a-z0-9äöüß]+/g, "-")
+      .slice(0, 60)}`;
+    const expiresAt = new Date(Date.now() + params.expires_days * 86400000).toISOString();
+    // Same shape SignatureQuickCreateDialog writes — status "draft": this
+    // creates the request, it does not send anything. The Copilot is
+    // deliberately never given a send step here, same as email_draft; a
+    // lawyer opens the Signatur page and picks WhatsApp/E-Mail/link there.
+    const content =
+      params.template === "nda"
+        ? buildNdaTemplate({ recipientName: safeRecipientName })
+        : `Empfänger: ${safeRecipientName} <${params.recipient_email || ""}>`;
+    const body = {
+      slug,
+      title: `Signatur: ${safeDocName}`,
+      type: "signature_request",
+      content,
+      frontmatter: {
+        type: "signature_request",
+        document_name: safeDocName,
+        recipient_name: safeRecipientName,
+        recipient_email: params.recipient_email || undefined,
+        status: "draft",
+        expires_at: expiresAt,
+        created_at: now.toISOString(),
+        provider: params.template === "nda" ? "template" : "external",
+        case_slug: params.case_slug,
+      },
+    };
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ctx.headers },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return {
+      success: true,
+      data: { slug },
+      display: {
+        kind: "confirmation",
+        title: `Signaturanfrage erstellt: ${safeDocName}`,
+        href: "/dashboard/signature",
+        message: `Entwurf für "${safeDocName}" an ${safeRecipientName} wurde angelegt. Zum Versenden im Signaturbereich öffnen und Kanal wählen.`,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Request signature failed",
+      display: {
+        kind: "confirmation",
+        title: "Signaturanfrage fehlgeschlagen",
+        message: "Engine nicht erreichbar.",
+      },
+    };
+  }
+}
+
 // ── GET: List available tools for current user (Agent Conditionals) ──
 
 export const GET = createHandler(
@@ -2151,6 +2450,26 @@ export const POST = createHandler(
         case "deadline_mark_done": {
           const params = deadlineMarkDoneSchema.parse(body.params);
           result = await executeDeadlineMarkDone(ctx, params);
+          break;
+        }
+        case "create_task": {
+          const params = createTaskSchema.parse(body.params);
+          result = await executeCreateTask(ctx, params);
+          break;
+        }
+        case "create_deadline": {
+          const params = createDeadlineSchema.parse(body.params);
+          result = await executeCreateDeadline(ctx, params);
+          break;
+        }
+        case "create_contact": {
+          const params = createContactSchema.parse(body.params);
+          result = await executeCreateContact(ctx, params);
+          break;
+        }
+        case "request_signature": {
+          const params = requestSignatureSchema.parse(body.params);
+          result = await executeRequestSignature(ctx, params);
           break;
         }
         case "search_tasks": {

@@ -181,6 +181,35 @@ describe("parseIntent — notes", () => {
   });
 });
 
+describe("parseIntent — send_to_client", () => {
+  test.each([
+    ["sende mandant akte 2026-014: Bitte bringen Sie die Vollmacht mit."],
+    ["sende an mandant akte 2026-014: Bitte bringen Sie die Vollmacht mit."],
+    ["sende mandanten akt 2026-014: Bitte bringen Sie die Vollmacht mit."],
+    ["schreibe mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit."],
+    ["nachricht mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit."],
+  ])("%# %s → send_to_client, caseRef 2026-014", (input) => {
+    const r = parseIntent(input);
+    expect(r.kind).toBe("send_to_client");
+    if (r.kind !== "send_to_client") return;
+    expect(r.caseRef).toBe("2026-014");
+    expect(r.message).toBe("Bitte bringen Sie die Vollmacht mit.");
+  });
+
+  // An explicit send verb is required — ordinary case notes/prose that
+  // happen to mention "mandant" must never be misread as an instruction to
+  // fire off a real WhatsApp message to a client.
+  test("a case note that merely mentions the client does not trigger send_to_client", () => {
+    const r = parseIntent("notiz akt 2026-014: mandant hat heute angerufen");
+    expect(r.kind).not.toBe("send_to_client");
+  });
+
+  test("free text mentioning 'an mandant' without a send verb stays free_text", () => {
+    const r = parseIntent("Frage an mandant klären, ob er noch Interesse hat");
+    expect(r.kind).not.toBe("send_to_client");
+  });
+});
+
 // ─── Invoice Status (table-driven) ────────────────────────────────────────────
 
 describe("parseIntent — invoice_status", () => {

@@ -118,6 +118,8 @@ interface SignableDoc {
   recipient_name?: string;
   recipient_email?: string;
   expires_at?: string;
+  /** Full document text, so the client can read it before signing. */
+  content?: string;
 }
 
 export default function PortalPage() {
@@ -182,6 +184,7 @@ export default function PortalPage() {
     document_type: "signature_request" | "power_of_attorney" | "legal_document";
     recipient_name?: string;
     recipient_email?: string;
+    content?: string;
   } | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [signNotice, setSignNotice] = useState<string | null>(null);
@@ -221,6 +224,7 @@ export default function PortalPage() {
                   document_type: deepLinkType ?? doc.document_type ?? "signature_request",
                   recipient_name: doc.recipient_name,
                   recipient_email: doc.recipient_email,
+                  content: doc.content,
                 });
                 setActiveTab("sign");
               }, 100);
@@ -1044,7 +1048,7 @@ export default function PortalPage() {
                         </div>
                         <button
                           onClick={() => setSignDoc(doc)}
-                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[color:var(--brand-glow)] px-3 py-2 text-sm font-medium text-[color:var(--brand-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--brand-glow)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[color:var(--brand-glow)] px-3 py-2 text-sm font-medium text-[color:var(--brand-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--brand-glow)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                         >
                           <PenTool size={14} />
                           {t("portal.sign_btn")}
@@ -1160,6 +1164,7 @@ export default function PortalPage() {
           documentSlug={signDoc.slug}
           documentType={signDoc.document_type}
           documentTitle={signDoc.title}
+          documentContent={signDoc.content}
           signerName={signDoc.recipient_name}
           signerEmail={signDoc.recipient_email}
           legalLevel="simple"

@@ -1,5 +1,6 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { applyMatterKnowledgeMutation } from "@/lib/matter-knowledge";
+import { signPortalToken } from "@/lib/portal-token";
 import type { CaseFrontmatter } from "@/lib/legal-types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import type { WhatsAppIdentity, WhatsAppIncomingMessage } from "@/lib/whatsapp/types";
@@ -17,7 +18,13 @@ export interface WhatsAppClientIngestResult {
   reply: string;
   caseSlug?: string;
   submissionSlug?: string;
-  reason?: "not_client" | "unverified" | "no_scope" | "ambiguous_scope" | "no_content";
+  reason?:
+    | "not_client"
+    | "unverified"
+    | "no_scope"
+    | "ambiguous_scope"
+    | "no_content"
+    | "appointment_request";
 }
 
 function isClientRole(role: WhatsAppIdentity["role"] | undefined): boolean {
@@ -58,6 +65,93 @@ function ambiguousReply(sender: WhatsAppIdentity): string {
     matters
       ? `Bitte nennen Sie das Aktenzeichen, damit wir die Unterlage korrekt zuordnen koennen. Bekannte Akten: ${matters}.`
       : "Bitte nennen Sie das Aktenzeichen, damit wir die Unterlage korrekt zuordnen koennen.",
+  ].join("\n");
+}
+
+// A verified client's message is normally just filed to the matter as a
+// submission ("wird geprüft") — even something like "Wie ist der Stand
+// meiner Akte?" got that same generic reply, never an actual answer. status
+// and portal_link are read-only or point at data the client is already
+// authorized to see, so they answer directly. appointment_request is
+// different — scheduling needs the lawyer's actual availability — so it
+// doesn't answer on its own; it just stops the message from being silently
+// filed as a generic submission, so the caller can route it to the lawyer
+// approval queue with a clear "this is a scheduling request" label instead
+// of a vague "someone contacted us" intake.
+type ClientQuickIntent = "status" | "portal_link" | "appointment_request" | null;
+
+function classifyClientQuickIntent(text: string): ClientQuickIntent {
+  const t = text.trim().toLowerCase();
+  if (/^(status|stand|wie ist der stand|wie weit sind wir|aktenstatus)\b/.test(t)) return "status";
+  // Anchored to the start (a short command, like "status" above) or an
+  // explicit request phrase — NOT a bare mention of "unterschreiben"
+  // anywhere, which a client narrating what they already did ("Ich habe den
+  // Vertrag unterschrieben und sende ihn hier.") would otherwise trip,
+  // misrouting real content away from being filed to the matter.
+  if (/^(?:portal|link|portallink|zugang)\b/.test(t)) return "portal_link";
+  if (
+    /\b(?:schicken?\s+sie\s+mir\s+(?:den\s+|einen\s+)?link|wo\s+ist\s+der\s+link|(?:kann\s+ich|ich\s+möchte|ich\s+will)\s+(?:online\s+)?unterschreiben)\b/.test(
+      t
+    )
+  ) {
+    return "portal_link";
+  }
+  // Same discipline: anchored start, or an explicit "termin vereinbaren"-
+  // style request phrase — NOT a bare mention of "Termin" anywhere, which a
+  // client explaining they missed one ("Ich konnte den Termin am Montag
+  // leider nicht wahrnehmen.") would otherwise trip.
+  if (/^(?:termin|gerichtstermin|besprechungstermin)\b/.test(t)) return "appointment_request";
+  if (/\b(?:termin|gespräch|besprechung)\b[^.!?]{0,40}\b(?:vereinbaren|ausmachen|buchen)\b/.test(t)) {
+    return "appointment_request";
+  }
+  return null;
+}
+
+function nextOpenDeadline(
+  deadlines: CaseFrontmatter["deadlines"]
+): { title: string; due_date: string } | undefined {
+  if (!Array.isArray(deadlines)) return undefined;
+  const today = new Date().toISOString().slice(0, 10);
+  return deadlines
+    .filter((d) => d.due_date && d.status !== "done" && d.due_date.slice(0, 10) >= today)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    .map((d) => ({ title: d.title || d.description || "Frist", due_date: d.due_date.slice(0, 10) }))[0];
+}
+
+async function statusReply(
+  sender: WhatsAppIdentity,
+  caseSlug: string,
+  fetchImpl: typeof fetch
+): Promise<string> {
+  const page = await readCaseFrontmatter(sender.brainId, caseSlug, fetchImpl);
+  const fm = page.frontmatter;
+  const label = caseSlug.replace(/^legal\/cases\//, "");
+  const lines = [`Stand Ihrer Akte ${label}:`, `Status: ${fm.status || "aktiv"}`];
+  const next = nextOpenDeadline(fm.deadlines);
+  lines.push(
+    next
+      ? `Nächster Termin/Frist: ${next.title} am ${next.due_date}`
+      : "Keine offene Frist hinterlegt."
+  );
+  lines.push("Für Details wenden Sie sich bitte an Ihre Kanzlei.");
+  return lines.join("\n");
+}
+
+async function portalLinkReply(
+  sender: WhatsAppIdentity,
+  caseSlug: string,
+  fetchImpl: typeof fetch
+): Promise<string> {
+  const page = await readCaseFrontmatter(sender.brainId, caseSlug, fetchImpl);
+  if (!page.frontmatter.portal_enabled) {
+    return "Das Mandantenportal ist für diese Akte noch nicht freigeschaltet. Bitte wenden Sie sich an Ihre Kanzlei.";
+  }
+  const token = await signPortalToken(caseSlug, 30 * 24 * 3600, sender.brainId);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.subsum.io";
+  return [
+    "Hier ist Ihr Zugang zum Mandantenportal (30 Tage gültig):",
+    `${baseUrl}/portal/${token}`,
+    "Dort finden Sie den Stand Ihrer Akte, Dokumente zum Herunterladen und zur Unterschrift.",
   ].join("\n");
 }
 
@@ -224,6 +318,40 @@ export async function ingestVerifiedClientWhatsAppSubmission(
       caseSlug,
       reply: "Danke, Ihre Nachricht ist eingegangen. Bitte senden Sie noch Text oder eine Datei.",
     };
+  }
+
+  if (!input.media) {
+    const quickIntent = classifyClientQuickIntent(input.normalizedText);
+    if (quickIntent === "appointment_request") {
+      // Scheduling needs the lawyer's actual availability — this can't be
+      // answered here. handled: false (with this reason, not the ambient
+      // "no_scope"/"unverified" ones) tells the orchestrator to route it to
+      // the lawyer approval queue, case-linked, instead of filing it as a
+      // generic submission that the lawyer would have to notice on their own.
+      return {
+        handled: false,
+        reason: "appointment_request",
+        caseSlug,
+        reply:
+          "Danke, Ihre Terminanfrage wurde an die Kanzlei weitergeleitet. Wir melden uns mit einem Vorschlag.",
+      };
+    }
+    try {
+      if (quickIntent === "status") {
+        return { handled: true, caseSlug, reply: await statusReply(input.sender, caseSlug, fetchImpl) };
+      }
+      if (quickIntent === "portal_link") {
+        return {
+          handled: true,
+          caseSlug,
+          reply: await portalLinkReply(input.sender, caseSlug, fetchImpl),
+        };
+      }
+    } catch (err) {
+      // Fall through to the generic submission path rather than surfacing an
+      // engine error to the client — the message still gets filed either way.
+      void err;
+    }
   }
 
   const statement = submissionStatement(input, caseSlug);

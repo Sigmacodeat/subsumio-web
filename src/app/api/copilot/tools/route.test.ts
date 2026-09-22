@@ -115,4 +115,130 @@ describe("POST /api/copilot/tools", () => {
     const res = await call({ tool: "email_draft", params: { subject: "Termin" } });
     expect(res.status).toBe(402);
   });
+
+  async function confirmedCall(tool: string, params: Record<string, unknown>) {
+    const prepared = await (await call({ tool, params, mode: "prepare" })).json();
+    return call({ tool, params, confirmation: prepared.data.confirmation });
+  }
+
+  it("appends a task to the case's tasks[] instead of writing a standalone page", async () => {
+    const patches: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/api/pages/") && !init?.method) {
+          return Response.json({
+            slug: "cases/mueller",
+            title: "Müller",
+            content: "Akte",
+            frontmatter: { tasks: [{ id: "t0", text: "Alt", done: false, createdAt: "x" }] },
+          });
+        }
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          const body = JSON.parse(String(init.body));
+          patches.push(body);
+          return Response.json({ ok: true });
+        }
+        return Response.json({ ok: true, slug: "x" });
+      })
+    );
+    const res = await confirmedCall("create_task", {
+      case_slug: "cases/mueller",
+      title: "Schriftsatz entwerfen",
+      due_date: "2026-10-15",
+    });
+    expect(res.status).toBe(200);
+    expect(patches).toHaveLength(1);
+    expect(patches[0].merge).toBe(true);
+    const tasks = (patches[0].frontmatter as { tasks: Array<{ text: string }> }).tasks;
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0].text).toBe("Alt");
+    expect(tasks[1].text).toContain("Schriftsatz entwerfen");
+    expect(tasks[1].text).toContain("2026-10-15");
+  });
+
+  it("appends an unreviewed deadline to the case's deadlines[]", async () => {
+    const patches: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/api/pages/") && !init?.method) {
+          return Response.json({
+            slug: "cases/mueller",
+            title: "Müller",
+            content: "Akte",
+            frontmatter: {},
+          });
+        }
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          patches.push(JSON.parse(String(init.body)));
+          return Response.json({ ok: true });
+        }
+        return Response.json({ ok: true, slug: "x" });
+      })
+    );
+    const res = await confirmedCall("create_deadline", {
+      case_slug: "cases/mueller",
+      title: "Berufungsfrist",
+      due_date: "2026-10-15",
+    });
+    expect(res.status).toBe(200);
+    const deadlines = (patches[0].frontmatter as { deadlines: Array<Record<string, unknown>> })
+      .deadlines;
+    expect(deadlines[0]).toMatchObject({
+      title: "Berufungsfrist",
+      due_date: "2026-10-15",
+      status: "pending",
+      review_status: "unreviewed",
+    });
+  });
+
+  it("creates a contact as a legal_contact page, matching the Kontakte dashboard's type", async () => {
+    const creates: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          creates.push(JSON.parse(String(init.body)));
+          return Response.json({ ok: true });
+        }
+        return Response.json({ ok: true, slug: "x" });
+      })
+    );
+    const res = await confirmedCall("create_contact", {
+      name: "Max Mustermann",
+      role: "client",
+      email: "max@example.com",
+    });
+    expect(res.status).toBe(200);
+    expect(creates[0].type).toBe("legal_contact");
+    expect((creates[0].frontmatter as Record<string, unknown>).type).toBe("legal_contact");
+  });
+
+  it("creates an NDA signature request as a draft with real document text, never sending anything", async () => {
+    const creates: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          creates.push(JSON.parse(String(init.body)));
+          return Response.json({ ok: true });
+        }
+        return Response.json({ ok: true, slug: "x" });
+      })
+    );
+    const res = await confirmedCall("request_signature", {
+      case_slug: "cases/mueller",
+      document_name: "Geheimhaltungsvereinbarung",
+      recipient_name: "Max Mustermann",
+      recipient_email: "max@example.com",
+      template: "nda",
+    });
+    expect(res.status).toBe(200);
+    const fm = creates[0].frontmatter as Record<string, unknown>;
+    expect(fm.status).toBe("draft");
+    expect(fm.case_slug).toBe("cases/mueller");
+    expect(String(creates[0].content)).toContain("GEHEIMHALTUNGSVEREINBARUNG");
+    expect(String((await res.json()).display.message)).not.toMatch(/gesendet|versendet/i);
+  });
 });

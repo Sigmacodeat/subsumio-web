@@ -18,6 +18,10 @@ export const CONFIRMED_TOOLS: ReadonlySet<string> = new Set([
   "document_request_create",
   "send_email",
   "deadline_mark_done",
+  "create_task",
+  "create_deadline",
+  "create_contact",
+  "request_signature",
 ]);
 
 const TTL_SECONDS = 10 * 60;

@@ -217,6 +217,37 @@ describe("orchestrateWhatsAppMessage", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("routes an existing client's appointment request to the approval queue, linked to their known matter — not a generic new-contact intake", async () => {
+    const fetchImpl = caseFetch();
+    const handleText = vi.fn(async () => "should not happen");
+    const client = {
+      ...identity("client"),
+      matterScope: ["legal/cases/2026-014"],
+    };
+    const message: WhatsAppTextMessage = {
+      id: "wamid.CLIENT-APPOINTMENT",
+      from: "+491701234567",
+      type: "text",
+      text: "Termin bitte, ich möchte vorbeikommen.",
+    };
+
+    const result = await orchestrateWhatsAppMessage(message, client, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      handleText,
+    });
+
+    expect(result.status).toBe("pending_approval");
+    expect(handleText).not.toHaveBeenCalled();
+    const bodies = fetchImpl.mock.calls
+      .filter((c) => c[1]?.method === "POST")
+      .map((c) => JSON.parse(String(c[1]?.body)));
+    expect(bodies.some((b) => b.type === "intake_request")).toBe(false);
+    const approvalBody = bodies.find((b) => b.type === "agent_action");
+    expect(approvalBody).toBeDefined();
+    expect(approvalBody.frontmatter.payload.case_slug).toBe("legal/cases/2026-014");
+    expect(approvalBody.frontmatter.target_slug).toBeFalsy();
+  });
+
   it("creates a document_request draft before approval for internal document requests", async () => {
     const fetchImpl = okFetch();
     const handleText = vi.fn(async () => "should not happen");

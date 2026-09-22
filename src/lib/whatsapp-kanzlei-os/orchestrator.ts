@@ -226,6 +226,21 @@ function caseSlugFromText(text: string): string | undefined {
   return `legal/cases/${ref}`;
 }
 
+/**
+ * A verified client rarely types their own case number ("akt 2026-014") when
+ * asking for something like an appointment — they just ask. Without this,
+ * every approval built for a client fell back to no case link unless the
+ * text happened to name one explicitly, even though a single-matter client's
+ * matter is already known from their identity.
+ */
+function resolveClientCaseSlug(sender: WhatsAppIdentity, text: string): string | undefined {
+  const explicit = caseSlugFromText(text);
+  if (explicit) return explicit;
+  if (!isClientRole(sender.role)) return undefined;
+  const scope = Array.isArray(sender.matterScope) ? sender.matterScope.filter(Boolean) : [];
+  return scope.length === 1 ? scope[0] : undefined;
+}
+
 function phoneFromText(text: string): string | undefined {
   const match = text.match(/(?:\+|00)?\d[\d\s()./-]{7,}\d/);
   if (!match) return undefined;
@@ -323,6 +338,11 @@ export async function orchestrateWhatsAppMessage(
       },
       deps.fetchImpl
     );
+    // appointment_request is handled: false on purpose — scheduling needs
+    // the lawyer's actual availability, so instead of returning here it
+    // falls through to the approval queue below, case-linked via
+    // resolveClientCaseSlug (clientIngest already resolved it once; the
+    // sender's matterScope re-resolves the same thing there).
     if (clientIngest.handled) {
       return {
         reply: clientIngest.reply,
@@ -336,7 +356,11 @@ export async function orchestrateWhatsAppMessage(
 
   if (!canAutoRouteWhatsApp({ risk, senderRole: sender.role })) {
     let targetSlug: string | undefined;
-    if (isClientRole(sender.role)) {
+    const clientCaseSlug = resolveClientCaseSlug(sender, normalizedText);
+    if (isClientRole(sender.role) && !clientCaseSlug) {
+      // No matter to link this to — a new or unscoped contact. Filing it as
+      // an intake is right here: this really is a first contact, not an
+      // existing client's follow-up.
       const intake = buildIntakeRequest({
         source: "whatsapp",
         summary: normalizedText || `[${message.type}]`,
@@ -379,7 +403,7 @@ export async function orchestrateWhatsAppMessage(
       normalizedText,
       risk,
       targetSlug,
-      caseSlug: caseSlugFromText(normalizedText),
+      caseSlug: clientCaseSlug,
       recipientPhone: isClientRole(sender.role) ? sender.phone : phoneFromText(normalizedText),
       messageDraft: documentMessageDraft,
       documentItems,
@@ -395,7 +419,7 @@ export async function orchestrateWhatsAppMessage(
       notificationEvent = createApprovalRequestEvent({
         brain_id: sender.brainId,
         org_id: sender.orgId,
-        case_slug: caseSlugFromText(normalizedText),
+        case_slug: clientCaseSlug,
         action_slug: approvalRecord.slug,
         action_type: approvalRecord.actionType,
         summary: normalizedText.slice(0, 200),

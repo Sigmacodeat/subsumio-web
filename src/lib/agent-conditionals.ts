@@ -15,6 +15,8 @@ export type CopilotToolName =
   | "search_cases"
   | "search_deadlines"
   | "search_knowledge"
+  | "search_tasks"
+  | "search_calendar"
   | "create_case"
   | "case_summary"
   | "email_draft"
@@ -35,7 +37,11 @@ export type CopilotToolName =
   | "case_investigation"
   | "send_email"
   | "client_lookup"
-  | "deadline_mark_done";
+  | "deadline_mark_done"
+  | "create_task"
+  | "create_deadline"
+  | "create_contact"
+  | "request_signature";
 
 export interface ToolConditionContext {
   role: string;
@@ -69,6 +75,18 @@ export const TOOL_CONDITIONS: Record<CopilotToolName, ToolCondition> = {
   },
   search_knowledge: {
     description: "Search the firm knowledge base (brain)",
+  },
+  // search_tasks/search_calendar existed in the tool schema and the chat-panel
+  // detection rules but were never registered here — isToolAvailable() treats
+  // an unregistered name as always unavailable, so both tools 403'd on every
+  // call regardless of role or context.
+  search_tasks: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Search open tasks",
+  },
+  search_calendar: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Search calendar entries and appointments",
   },
   create_case: {
     roles: ["admin", "lawyer", "assistant"],
@@ -160,6 +178,25 @@ export const TOOL_CONDITIONS: Record<CopilotToolName, ToolCondition> = {
   deadline_mark_done: {
     roles: ["admin", "lawyer", "assistant"],
     description: "Mark a deadline as done/completed",
+  },
+  create_task: {
+    roles: ["admin", "lawyer", "assistant"],
+    requiresCaseContext: true,
+    description: "Create a task on a case",
+  },
+  create_deadline: {
+    roles: ["admin", "lawyer", "assistant"],
+    requiresCaseContext: true,
+    description: "Create a deadline on a case",
+  },
+  create_contact: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Create a contact (client, opponent, court, …)",
+  },
+  request_signature: {
+    roles: ["admin", "lawyer", "assistant"],
+    requiresCaseContext: true,
+    description: "Request a signature or NDA from a client",
   },
 };
 
