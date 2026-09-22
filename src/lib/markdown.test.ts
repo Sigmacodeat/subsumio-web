@@ -117,12 +117,19 @@ describe("markdownToPlainText", async () => {
     const md =
       "## 3-Satz-Briefing\n### Fristen\n1. **Demo-Akte** — siehe [Akte](/dashboard/cases/x).\n- *zwei* offene Punkte";
     expect(markdownToPlainText(md)).toBe(
-      "3-Satz-Briefing Fristen Demo-Akte — siehe Akte. zwei offene Punkte"
+      "3-Satz-Briefing. Fristen. Demo-Akte — siehe Akte. zwei offene Punkte"
     );
   });
   it("is a no-op for plain prose", () => {
     expect(markdownToPlainText("Heute sind zwei Fristen fällig.")).toBe(
       "Heute sind zwei Fristen fällig."
+    );
+  });
+  it("separates a whole-line bold title from the following paragraph", () => {
+    const md =
+      "**Morgen-Briefing**\n\nEs liegen derzeit keine dringenden Aufgaben vor. Alle Fristen sind abgearbeitet.";
+    expect(markdownToPlainText(md)).toBe(
+      "Morgen-Briefing. Es liegen derzeit keine dringenden Aufgaben vor. Alle Fristen sind abgearbeitet."
     );
   });
 });

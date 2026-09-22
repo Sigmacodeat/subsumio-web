@@ -210,7 +210,7 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
     }
     parts.push("");
     parts.push(
-      "Format: 3 sentences. First sentence: most urgent items. Second: what needs attention. Third: recommendation."
+      "Format: 3 sentences. First sentence: most urgent items. Second: what needs attention. Third: recommendation. Plain prose only — no title, no heading, no markdown formatting."
     );
     return parts.join("\n");
   }
@@ -249,7 +249,7 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
   }
   parts.push("");
   parts.push(
-    "Format: 3 Sätze. Erster Satz: Dringendstes. Zweiter: Was Aufmerksamkeit braucht. Dritter: Empfehlung."
+    "Format: 3 Sätze. Erster Satz: Dringendstes. Zweiter: Was Aufmerksamkeit braucht. Dritter: Empfehlung. Nur Fließtext — kein Titel, keine Überschrift, keine Markdown-Formatierung."
   );
   return parts.join("\n");
 }

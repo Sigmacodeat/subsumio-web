@@ -86,21 +86,47 @@ export function renderMarkdown(text: string): string {
 /**
  * Reduce markdown to plain prose for surfaces that render a short narrative in
  * a single paragraph (morning briefing, toast previews). Headers, emphasis,
- * list markers and links are dropped; paragraph breaks become spaces.
+ * list markers and links are dropped. A heading or a whole-line bold label
+ * (models often title their answer "**Morgen-Briefing**" instead of using
+ * `#`) starts a new sentence instead of running into the next line with no
+ * separator — a bare newline-to-space join turned "**Titel**\n\nText…" into
+ * the unpunctuated "Titel Text…".
  */
 export function markdownToPlainText(text: string): string {
   if (!text) return "";
-  return text
+
+  const cleanInline = (line: string): string =>
+    line
+      .replace(/\*\*\*(.*?)\*\*\*/g, "$1")
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1$2")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+  const lines = text
     .replace(/```[\s\S]*?```/g, " ")
-    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, "")
-    .replace(/^\s*>\s?/gm, "")
-    .replace(/\*\*\*(.*?)\*\*\*/g, "$1")
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1$2")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\s*\n+\s*/g, " ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+    .split("\n")
+    .map((line) => {
+      const isHeading = /^\s{0,3}#{1,6}\s+/.test(line) || /^\s*\*\*[^*]+\*\*:?\s*$/.test(line);
+      const stripped = line
+        .replace(/^\s{0,3}#{1,6}\s+/, "")
+        .replace(/^\s*(?:[-*+]|\d+\.)\s+/, "")
+        .replace(/^\s*>\s?/, "");
+      return { isHeading, text: cleanInline(stripped).trim() };
+    })
+    .filter((line) => line.text.length > 0);
+
+  let result = "";
+  lines.forEach((line, i) => {
+    if (i === 0) {
+      result = line.text;
+      return;
+    }
+    const prev = lines[i - 1];
+    const isBlockBoundary = line.isHeading || prev.isHeading;
+    const prevEndsSentence = /[.!?:]$/.test(prev.text);
+    result += isBlockBoundary && !prevEndsSentence ? `. ${line.text}` : ` ${line.text}`;
+  });
+
+  return result.replace(/\s{2,}/g, " ").trim();
 }

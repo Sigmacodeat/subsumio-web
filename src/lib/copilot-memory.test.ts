@@ -224,6 +224,45 @@ describe("session-memory — 3-layer architecture", () => {
   });
 });
 
+describe("copilot-memory — server-side path (headers argument)", () => {
+  // /api/copilot/memory itself runs server-side, where api.brain.* resolves
+  // against the engine directly and sends no auth — the bug this covers.
+  // Passing `headers` must bypass api.brain.* entirely and call fetch()
+  // against the engine with those headers, never touching api.brain.*.
+  test("listMemories fetches the engine directly and never calls api.brain.listPages", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { listMemories } = await import("@/lib/copilot-memory");
+    await listMemories({}, { "x-subsumio-api-key": "test-key" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain("/api/pages?");
+    expect(String(url)).toContain("type=copilot_memory");
+    expect((init as RequestInit).headers).toMatchObject({ "x-subsumio-api-key": "test-key" });
+
+    vi.unstubAllGlobals();
+  });
+
+  test("listMemories without headers still uses the api.brain.* client (unchanged client-side path)", async () => {
+    vi.mocked(api.brain.listPages).mockResolvedValue([]);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { listMemories } = await import("@/lib/copilot-memory");
+    await listMemories({});
+
+    expect(api.brain.listPages).toHaveBeenCalledWith({ type: "copilot_memory", limit: 200 });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+});
+
 describe("copilot-memory-llm — extraction module", () => {
   test("isLLMExtractionAvailable follows the engine configuration", async () => {
     const original = process.env.SUBSUMIO_API_URL;
