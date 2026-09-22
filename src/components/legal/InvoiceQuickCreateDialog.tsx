@@ -38,6 +38,10 @@ import { RatgTariffForm, type TariffInvoiceLine } from "@/components/legal/RatgT
 import { AhkTariffForm } from "@/components/legal/AhkTariffForm";
 import { GggTariffForm } from "@/components/legal/GggTariffForm";
 import { NtgTariffForm } from "@/components/legal/NtgTariffForm";
+import { GkgTariffForm } from "@/components/legal/GkgTariffForm";
+import { JvegTariffForm } from "@/components/legal/JvegTariffForm";
+import { RvgTariffForm } from "@/components/legal/RvgTariffForm";
+import { useMe } from "@/lib/queries/auth";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;
@@ -161,6 +165,10 @@ export function InvoiceQuickCreateDialog({
 }: InvoiceQuickCreateDialogProps) {
   const { t } = useLang();
   const { addToast } = useToast();
+  const meQuery = useMe();
+  // Tarifrecht ist länderspezifisch: AT-Kanzleien sehen RATG/AHK/GGG/NTG,
+  // deutsche Kanzleien RVG/GKG/JVEG.
+  const tariffJurisdiction = meQuery.data?.user?.jurisdiction === "de" ? "de" : "at";
 
   const [selectedCaseSlug, setSelectedCaseSlug] = useState(presetCaseSlug ?? "");
   const [invoiceType, setInvoiceType] = useState<Invoice["invoiceType"]>("standard");
@@ -631,10 +639,21 @@ export function InvoiceQuickCreateDialog({
               </div>
             )}
 
-            {selectedCaseSlug && <RatgTariffForm lines={tariffLines} onChange={setTariffLines} />}
-            {selectedCaseSlug && <AhkTariffForm lines={tariffLines} onChange={setTariffLines} />}
-            {selectedCaseSlug && <GggTariffForm lines={tariffLines} onChange={setTariffLines} />}
-            {selectedCaseSlug && <NtgTariffForm lines={tariffLines} onChange={setTariffLines} />}
+            {selectedCaseSlug && tariffJurisdiction === "de" && (
+              <>
+                <RvgTariffForm lines={tariffLines} onChange={setTariffLines} />
+                <GkgTariffForm lines={tariffLines} onChange={setTariffLines} />
+                <JvegTariffForm lines={tariffLines} onChange={setTariffLines} />
+              </>
+            )}
+            {selectedCaseSlug && tariffJurisdiction !== "de" && (
+              <>
+                <RatgTariffForm lines={tariffLines} onChange={setTariffLines} />
+                <AhkTariffForm lines={tariffLines} onChange={setTariffLines} />
+                <GggTariffForm lines={tariffLines} onChange={setTariffLines} />
+                <NtgTariffForm lines={tariffLines} onChange={setTariffLines} />
+              </>
+            )}
 
             {/* Invoice type + Advance payment */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
