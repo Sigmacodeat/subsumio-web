@@ -5,23 +5,14 @@
 // assigned to matters and triaged; replies go out from the firm's address.
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  Inbox,
-  Loader2,
-  Mail,
-  Pause,
-  Play,
-  Plus,
-  RefreshCw,
-  ShieldCheck,
-  Trash2,
-} from "lucide-react";
+import { Inbox, Loader2, Mail, Pause, Play, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { csrfFetch } from "@/lib/csrf";
@@ -247,9 +238,7 @@ export default function EmailSettingsPage() {
         ]}
         actions={
           !showForm && accounts.length > 0 ? (
-            <Button variant="primary" size="sm" className="gap-2" onClick={() => setShowForm(true)}>
-              <Plus size={14} /> Weiteres Postfach
-            </Button>
+            <PrimaryAction onClick={() => setShowForm(true)}>Weiteres Postfach</PrimaryAction>
           ) : undefined
         }
       />

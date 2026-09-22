@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
-  Plus,
   ChevronRight,
   Clock,
   PauseCircle,
@@ -26,6 +25,7 @@ import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { csrfFetch } from "@/lib/csrf";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { DataTable, type Column } from "@/components/dashboard/data-table";
@@ -714,14 +714,7 @@ export default function CasesPage() {
           { label: t("cases.title") },
         ]}
         actions={
-          <Button
-            variant="glow"
-            className="gap-2 whitespace-nowrap"
-            onClick={() => setQuickCreateOpen(true)}
-          >
-            <Plus size={16} />
-            {t("cases.new")}
-          </Button>
+          <PrimaryAction onClick={() => setQuickCreateOpen(true)}>{t("cases.new")}</PrimaryAction>
         }
       />
 

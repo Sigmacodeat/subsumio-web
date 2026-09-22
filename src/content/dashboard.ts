@@ -6903,6 +6903,7 @@ export const D = {
   "nav.fibu": { de: "FiBu", en: "Accounting" },
   "nav.kanzlei_tools": { de: "Kanzlei-Werkzeuge", en: "Firm tools" },
   "nav.outbound_register": { de: "Postausgangsbuch", en: "Outbound Register" },
+  "nav.inbound_register": { de: "Posteingangsbuch", en: "Inbound Register" },
   "nav.power_of_attorney": { de: "Vollmachten", en: "Powers of Attorney" },
   "nav.fao_tracking": { de: "FAO-Tracking", en: "FAO Tracking" },
   "nav.team_meeting": { de: "Team-Besprechung", en: "Team Meeting" },

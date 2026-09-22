@@ -12,7 +12,6 @@ import {
   FileSearch,
   Loader2,
   RotateCcw,
-  Plus,
   ShieldCheck,
   Printer,
   Sparkles,
@@ -48,6 +47,7 @@ import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { computeFrist, fristOptionsFor } from "@/lib/legal/frist-options";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { DataTable, type Column } from "@/components/dashboard/data-table";
@@ -943,15 +943,9 @@ export default function DeadlinesPage() {
               <FileSearch size={14} />
               {t("deadlines.detect")}
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setQuickCreateOpen(true)}
-              className="gap-2 whitespace-nowrap"
-            >
-              <Plus size={14} />
+            <PrimaryAction onClick={() => setQuickCreateOpen(true)}>
               {t("deadlines.create")}
-            </Button>
+            </PrimaryAction>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Weitere Aktionen">

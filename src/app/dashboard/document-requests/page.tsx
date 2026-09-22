@@ -22,6 +22,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { Badge } from "@/components/ui/badge";
@@ -295,14 +296,7 @@ export default function DocumentRequestsPage() {
               <RefreshCw size={14} aria-hidden="true" />
               Aktualisieren
             </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 whitespace-nowrap"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus size={14} aria-hidden="true" />
-              Neue Anfrage
-            </Button>
+            <PrimaryAction onClick={() => setCreateOpen(true)}>Neue Anfrage</PrimaryAction>
           </>
         }
       />

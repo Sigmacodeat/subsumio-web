@@ -638,6 +638,13 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         audienceTier: "dach-integration",
       },
       {
+        href: "/dashboard/posteingangsbuch",
+        icon: FileClock,
+        labelKey: "nav.inbound_register",
+        keywords: "posteingangsbuch eingang eingangsstempel inbound register",
+        audienceTier: "dach-integration",
+      },
+      {
         href: "/dashboard/data-export",
         icon: Download,
         labelKey: "nav.data_export",

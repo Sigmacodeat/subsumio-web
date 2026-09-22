@@ -2,17 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import {
-  Plus,
-  Trash2,
-  Edit3,
-  Save,
-  X,
-  FileText,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-} from "lucide-react";
+import { Trash2, Edit3, Save, X, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -25,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
@@ -171,10 +162,9 @@ export default function WhatsAppTemplatesPage() {
           { label: t("wamplates.breadcrumb") },
         ]}
         actions={
-          <Button size="sm" className="gap-1.5 whitespace-nowrap" onClick={() => setCreating(true)}>
-            <Plus size={14} />
+          <PrimaryAction onClick={() => setCreating(true)}>
             {t("wamplates.btn_create")}
-          </Button>
+          </PrimaryAction>
         }
       />
 

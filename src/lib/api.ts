@@ -3059,6 +3059,38 @@ export const api = {
     },
   },
 
+  invoices: {
+    /**
+     * Status/field changes on an ISSUED invoice — routes through
+     * /api/invoices/[slug] (PATCH), which refuses any change once status is
+     * sent/paid/overdue (GoBD/§ 132 BAO immutability). invoicing/page.tsx's
+     * updateStatus/deleteInvoice used to call api.brain.updatePage/
+     * deletePage directly — the generic /api/pages route, which has no such
+     * check — so a "cancelled"/deleted issued invoice bypassed that
+     * protection entirely. Drafts can still go through api.brain.* freely;
+     * this is specifically for invoices that already exist as pages.
+     */
+    update(
+      slug: string,
+      frontmatter: Record<string, unknown>
+    ): Promise<{ slug: string; success: boolean } | Record<string, unknown>> {
+      const path = slug.split("/").map(encodeURIComponent).join("/");
+      return request(`/api/invoices/${path}`, {
+        method: "PATCH",
+        body: JSON.stringify(frontmatter),
+      });
+    },
+    delete(slug: string): Promise<{ ok: boolean }> {
+      const path = slug.split("/").map(encodeURIComponent).join("/");
+      return request(`/api/invoices/${path}`, { method: "DELETE" });
+    },
+    /** § GoBD Storno: creates a separate, negated invoice referencing this one — never mutates the original. */
+    storno(slug: string): Promise<{ slug: string; invoice_number: string }> {
+      const path = slug.split("/").map(encodeURIComponent).join("/");
+      return request(`/api/invoices/${path}/storno`, { method: "POST" });
+    },
+  },
+
   time: {
     list(params?: {
       from?: string;

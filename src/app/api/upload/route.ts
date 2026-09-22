@@ -7,6 +7,7 @@ import { MAX_FILE_SIZE } from "@/lib/upload-validation";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { acquireUploadSlot } from "@/lib/upload-concurrency";
+import { createInboundEntry } from "@/lib/inbound-register";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/upload");
@@ -330,6 +331,37 @@ export const POST = createHandler(
                   pipeline_deferred: true,
                 });
               }
+            }
+            // Posteingangsbuch: every successful upload is an inbound-mail
+            // event. Was entirely missing before — the raw document page
+            // existed, but nothing stamped an "eingegangen am" entry with a
+            // running channel/sender overview the way outbound-register.ts
+            // already does for outgoing mail. Best-effort: a failed stamp
+            // must never fail the upload itself.
+            if (uploadResult.slug) {
+              const entry = createInboundEntry({
+                channel: "upload",
+                subject: uploadResult.title ?? result.cleanName,
+                caseSlug: caseSlugStr || undefined,
+                documentSlug: uploadResult.slug,
+                receivedBy: ctx.user.name || ctx.user.email,
+              });
+              fetch(`${ENGINE_URL}/api/pages`, {
+                method: "POST",
+                headers: { ...ctx.headers, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  slug: `legal/inbound-register/${entry.id}`,
+                  title: `Posteingang: ${entry.subject}`,
+                  type: "inbound_entry",
+                  frontmatter: entry,
+                }),
+                signal: AbortSignal.timeout(10_000),
+              }).catch((err) =>
+                log.error(
+                  "[upload] inbound-register stamp failed:",
+                  err instanceof Error ? err.message : String(err)
+                )
+              );
             }
             // Determine final status: 207 if any sub-operation failed (reconciliation
             // or GoBD persistence), otherwise the upstream status.

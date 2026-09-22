@@ -33,6 +33,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { contactFormSchema, type ContactFormData } from "@/lib/schemas/contact";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { useToast } from "@/components/ui/toast";
@@ -477,10 +478,7 @@ export default function ContactsPage() {
                 {t("nav.opponents")}
               </Link>
             </Button>
-            <Button onClick={openCreate} size="sm" className="gap-1.5 whitespace-nowrap">
-              <Plus size={14} aria-hidden="true" />
-              {t("contacts.btn_new_contact")}
-            </Button>
+            <PrimaryAction onClick={openCreate}>{t("contacts.btn_new_contact")}</PrimaryAction>
           </>
         }
       />

@@ -7,7 +7,6 @@ import { useLang, type TFunc } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import {
   ShieldCheck,
-  Plus,
   Loader2,
   FileText,
   X,
@@ -32,6 +31,7 @@ import type { BrainPage, TabularReviewResponse } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { RotateCcw, GitCompare } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -379,9 +379,7 @@ export default function ContractsPage() {
             >
               <Table2 size={14} /> Massenprüfung
             </Button>
-            <Button onClick={() => setQuickCreateOpen(true)} className="gap-2 whitespace-nowrap">
-              <Plus size={14} /> Vertrag anlegen
-            </Button>
+            <PrimaryAction onClick={() => setQuickCreateOpen(true)}>Vertrag anlegen</PrimaryAction>
           </>
         }
       />

@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { formatDate, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -231,18 +232,15 @@ export default function FibuPage() {
         breadcrumbs={[{ label: t("breadcrumb.dashboard"), href: "/dashboard" }, { label: "FiBu" }]}
         actions={
           <>
-            <Button
-              variant="primary"
-              size="sm"
-              className="whitespace-nowrap"
+            <PrimaryAction
+              icon={<Banknote size={15} aria-hidden="true" />}
               onClick={() => {
                 setShowImport(!showImport);
                 setShowPaymentLink(false);
               }}
             >
-              <Banknote size={14} aria-hidden="true" />
               Bankbuchung erfassen
-            </Button>
+            </PrimaryAction>
             <Button
               variant="outline"
               size="sm"

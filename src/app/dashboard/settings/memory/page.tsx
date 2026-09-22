@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Brain, Pin, PinOff, Trash2, Search, Plus, Loader2, Tag, Clock } from "lucide-react";
+import { Brain, Pin, PinOff, Trash2, Search, Loader2, Tag, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -171,14 +172,9 @@ export default function MemoryManagementPage() {
           { label: t("memory.breadcrumb_memory") },
         ]}
         actions={
-          <Button
-            size="sm"
-            className="whitespace-nowrap"
-            onClick={() => setShowCreateForm(!showCreateForm)}
-          >
-            <Plus className="h-4 w-4" />
+          <PrimaryAction onClick={() => setShowCreateForm(!showCreateForm)}>
             {t("memory.new_btn")}
-          </Button>
+          </PrimaryAction>
         }
       />
 

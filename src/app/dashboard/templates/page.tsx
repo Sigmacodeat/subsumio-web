@@ -33,6 +33,7 @@ import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -271,11 +272,7 @@ export default function TemplateLibraryPage() {
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("templates.title") },
         ]}
-        actions={
-          <Button onClick={startCreate} className="gap-2 whitespace-nowrap">
-            <Plus size={15} /> {t("templates.btn_new")}
-          </Button>
-        }
+        actions={<PrimaryAction onClick={startCreate}>{t("templates.btn_new")}</PrimaryAction>}
       />
 
       {/* Search + Filters */}

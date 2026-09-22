@@ -42,6 +42,7 @@ import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import type {
   BrainPage,
@@ -312,11 +313,7 @@ export default function PlaybooksPage() {
           { label: t("playbooks.breadcrumb_dashboard"), href: "/dashboard" },
           { label: t("playbooks.breadcrumb_playbooks") },
         ]}
-        actions={
-          <Button onClick={startCreate} className="gap-2 whitespace-nowrap">
-            <Plus size={14} /> {t("playbooks.btn_create")}
-          </Button>
-        }
+        actions={<PrimaryAction onClick={startCreate}>{t("playbooks.btn_create")}</PrimaryAction>}
       />
 
       {/* Form: Create / Edit */}

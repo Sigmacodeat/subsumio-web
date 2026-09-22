@@ -27,6 +27,7 @@ import {
   Landmark,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -429,14 +430,7 @@ export default function IntakePage() {
               <RefreshCw size={14} />
               {t("intake.btn_refresh")}
             </Button>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              size="sm"
-              className="gap-1.5 whitespace-nowrap"
-            >
-              <Plus size={14} aria-hidden="true" />
-              {t("intake.btn_new")}
-            </Button>
+            <PrimaryAction onClick={() => setCreateOpen(true)}>{t("intake.btn_new")}</PrimaryAction>
           </div>
         }
       />

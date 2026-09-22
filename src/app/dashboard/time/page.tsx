@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Download, Pencil, Trash2, FileText, Plus } from "lucide-react";
+import { Clock, Download, Pencil, Trash2, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { formatDate, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -342,15 +343,7 @@ export default function TimeEntriesPage() {
         ]}
         actions={
           <>
-            <Button
-              variant="primary"
-              size="sm"
-              className="whitespace-nowrap"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Neuer Eintrag
-            </Button>
+            <PrimaryAction onClick={() => setCreateOpen(true)}>Neuer Eintrag</PrimaryAction>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

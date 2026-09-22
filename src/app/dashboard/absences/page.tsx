@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { CalendarDays, UserCheck, Plus, Loader2, Plane, AlertCircle, X } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,19 +179,15 @@ export default function AbsencePage() {
           { label: t("absence.title") },
         ]}
         actions={
-          <Button
-            variant="primary"
-            size="sm"
+          <PrimaryAction
             onClick={() => {
               setShowCreate(!showCreate);
               setFormError(null);
             }}
             aria-expanded={showCreate}
-            className="gap-2 whitespace-nowrap"
           >
-            <Plus size={14} aria-hidden="true" />
             {t("absence.plan")}
-          </Button>
+          </PrimaryAction>
         }
       />
 

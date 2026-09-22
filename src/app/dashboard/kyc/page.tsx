@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Loader2, Plus, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate, formatDateTime } from "@/lib/utils";
@@ -296,9 +297,7 @@ export default function KYCPage() {
           { label: t("kyc.title") },
         ]}
         actions={
-          <Button onClick={() => setShowCreate((v) => !v)} className="brand-bg gap-2 text-white">
-            <Plus size={16} aria-hidden /> Identitätsprüfung
-          </Button>
+          <PrimaryAction onClick={() => setShowCreate((v) => !v)}>Identitätsprüfung</PrimaryAction>
         }
       />
 

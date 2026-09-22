@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, Loader2, FileCheck, AlertTriangle, FileDown, PenTool, Send } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
@@ -170,9 +171,9 @@ export default function PowerOfAttorneyPage() {
           { label: t("poa.title") },
         ]}
         actions={
-          <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
-            <Plus size={16} /> {t("poa.btn_create")}
-          </Button>
+          <PrimaryAction onClick={() => setShowCreate(!showCreate)}>
+            {t("poa.btn_create")}
+          </PrimaryAction>
         }
       />
 

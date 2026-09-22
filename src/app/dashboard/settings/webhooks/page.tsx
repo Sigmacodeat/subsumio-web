@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Webhook, Plus, Trash2, Loader2, Link as LinkIcon } from "lucide-react";
+import { Webhook, Trash2, Loader2, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { formatDateTime } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { unwrapApiBody } from "@/lib/api-body";
 
@@ -142,10 +143,7 @@ export default function WebhooksPage() {
         ]}
         actions={
           webhooks.length > 0 && !showForm ? (
-            <Button onClick={() => setShowForm(true)} className="gap-2 whitespace-nowrap">
-              <Plus size={14} />
-              {t("webhooks.new")}
-            </Button>
+            <PrimaryAction onClick={() => setShowForm(true)}>{t("webhooks.new")}</PrimaryAction>
           ) : undefined
         }
       />

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   FileText,
-  Plus,
   Send,
   CheckCircle2,
   XCircle,
@@ -43,6 +42,7 @@ import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kan
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
@@ -88,7 +88,7 @@ interface Invoice {
   reminderCount?: number;
   reminderSentAt?: string[];
   reminderFee?: number;
-  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift";
+  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift" | "storno";
   parentInvoiceId?: string;
   caseSlugs?: string[];
   leitwegId?: string;
@@ -801,19 +801,25 @@ export default function InvoicingPage() {
         : { paidAt: inv.paidAt, paidAmount: inv.paidAmount };
     setStatusMessage(null);
     try {
-      const updatePayload = {
-        slug: inv.id,
-        frontmatter: {
-          status,
-          ...(status === "paid"
-            ? { paid_at: paidPatch.paidAt, paid_amount: paidPatch.paidAmount }
-            : {}),
-        },
+      const statusFrontmatter = {
+        status,
+        ...(status === "paid"
+          ? { paid_at: paidPatch.paidAt, paid_amount: paidPatch.paidAmount }
+          : {}),
       };
       if (isOnline()) {
-        await api.brain.updatePage(updatePayload);
+        // Was api.brain.updatePage — the generic /api/pages route, which
+        // has no invoice-immutability check. api.invoices.update goes
+        // through /api/invoices/[slug] instead, which refuses this once
+        // the invoice is already sent/paid/overdue (see that route's PATCH
+        // handler) rather than silently letting a "finalized" invoice's
+        // status keep changing.
+        await api.invoices.update(inv.id, statusFrontmatter);
       } else {
-        await enqueueMutation({ type: "updatePage", payload: updatePayload });
+        await enqueueMutation({
+          type: "updatePage",
+          payload: { slug: inv.id, frontmatter: statusFrontmatter },
+        });
       }
       const nextInvoices = invoices.map((i) =>
         i.id === inv.id ? { ...i, status, ...paidPatch } : i
@@ -839,7 +845,10 @@ export default function InvoicingPage() {
     if (!ok) return;
     try {
       if (isOnline()) {
-        await api.brain.deletePage(inv.id);
+        // Was api.brain.deletePage — bypassed /api/invoices/[slug]'s own
+        // "only drafts can be deleted" check (protectedStatuses: sent,
+        // paid, overdue). api.invoices.delete goes through that route.
+        await api.invoices.delete(inv.id);
       } else {
         await enqueueMutation({ type: "deletePage", payload: { slug: inv.id } });
       }
@@ -850,6 +859,45 @@ export default function InvoicingPage() {
     } catch (err) {
       console.error("[invoicing] delete failed:", err instanceof Error ? err.message : err);
       setStatusMessage(t("inv.delete_fail"), "error");
+    }
+  }
+
+  // A sent/paid/overdue invoice can't be edited in place (immutability —
+  // see api.invoices.update above). Correcting a mistake means issuing a
+  // Storno-Note instead: a second, negated invoice referencing this one via
+  // parent_invoice_id (api/invoices/[slug]/storno/route.ts), never touching
+  // the original. This tracks which invoices already have one so the
+  // action only offers itself once.
+  const stornoedInvoiceSlugs = useMemo(
+    () =>
+      new Set(
+        invoices
+          .filter((i) => i.invoiceType === "storno" && i.parentInvoiceId)
+          .map((i) => i.parentInvoiceId as string)
+      ),
+    [invoices]
+  );
+
+  async function stornoInvoice(inv: Invoice) {
+    if (busySlug) return;
+    const ok = await confirm({
+      title: "Rechnung stornieren",
+      message: `Für ${inv.number} wird eine eigene Storno-Note mit negierten Beträgen erstellt. Die Originalrechnung bleibt unverändert bestehen (GoBD-Grundsatz), erscheint danach aber als storniert.`,
+      confirmLabel: "Storno-Note erstellen",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setBusySlug(inv.id);
+    setStatusMessage(null);
+    try {
+      await api.invoices.storno(inv.id);
+      await loadAll();
+      setStatusMessage(`Storno-Note für ${inv.number} erstellt.`, "success", 5000);
+    } catch (err) {
+      console.error("[invoicing] storno failed:", err instanceof Error ? err.message : err);
+      setStatusMessage("Storno-Note konnte nicht erstellt werden.", "error");
+    } finally {
+      setBusySlug(null);
     }
   }
 
@@ -894,15 +942,9 @@ export default function InvoicingPage() {
                 e.target.value = "";
               }}
             />
-            <Button
-              variant="primary"
-              size="sm"
-              className="whitespace-nowrap"
-              onClick={() => setQuickCreateOpen(true)}
-            >
-              <Plus size={14} aria-hidden="true" />
+            <PrimaryAction onClick={() => setQuickCreateOpen(true)}>
               {t("inv.create")}
-            </Button>
+            </PrimaryAction>
             <Button
               variant="outline"
               size="sm"
@@ -1200,7 +1242,7 @@ export default function InvoicingPage() {
                         <FileText size={13} />
                         ZUGFeRD-PDF
                       </DropdownMenuItem>
-                      {canManage && inv.status !== "paid" && inv.status !== "cancelled" && (
+                      {canManage && inv.status === "draft" && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -1212,6 +1254,28 @@ export default function InvoicingPage() {
                             {t("inv.cancel_invoice")}
                           </DropdownMenuItem>
                         </>
+                      )}
+                      {canManage &&
+                        (inv.status === "sent" ||
+                          inv.status === "paid" ||
+                          inv.status === "overdue") &&
+                        !stornoedInvoiceSlugs.has(inv.id) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => void stornoInvoice(inv)}
+                              disabled={busy}
+                              className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
+                            >
+                              <XCircle size={13} />
+                              Stornieren (Storno-Note erstellen)
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      {stornoedInvoiceSlugs.has(inv.id) && (
+                        <div className="px-2 py-1.5 text-xs text-[color:var(--ds-text-subtle)]">
+                          Bereits storniert
+                        </div>
                       )}
                       {canManage && (
                         <DropdownMenuItem

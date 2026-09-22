@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Loader2, Wallet } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { csrfFetch } from "@/lib/csrf";
 import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
 import { encodeSlugPath, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -147,14 +148,7 @@ export default function FeeAgreementsPage() {
           { label: t("fee.title") },
         ]}
         actions={
-          <Button
-            size="sm"
-            className="whitespace-nowrap"
-            onClick={() => setShowCreate(!showCreate)}
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {t("fee.new")}
-          </Button>
+          <PrimaryAction onClick={() => setShowCreate(!showCreate)}>{t("fee.new")}</PrimaryAction>
         }
       />
 

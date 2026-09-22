@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -344,14 +345,9 @@ export default function LitigationFlowPage() {
         title={t("litigation.title" as DashboardKey)}
         description={t("litigation.description" as DashboardKey)}
         actions={
-          <Button
-            variant="primary"
-            className="brand-bg gap-2 text-sm text-white"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} />
+          <PrimaryAction onClick={() => setShowCreate(true)}>
             {t("litigation.new" as DashboardKey)}
-          </Button>
+          </PrimaryAction>
         }
       />
 

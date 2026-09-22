@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   FileSearch,
-  Plus,
   Search,
   Trash2,
   ChevronRight,
@@ -287,14 +287,9 @@ export default function ReviewSetsPage() {
           { label: t("review_sets.title" as DashboardKey) },
         ]}
         actions={
-          <Button
-            variant="primary"
-            className="gap-2 whitespace-nowrap"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} />
+          <PrimaryAction onClick={() => setShowCreate(true)}>
             {t("review_sets.new" as DashboardKey)}
-          </Button>
+          </PrimaryAction>
         }
       />
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Library, AlertTriangle, Plus, Search, Copy, Check, FileText, Tag } from "lucide-react";
+import { Library, AlertTriangle, Search, Copy, Check, FileText, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
 import { ClauseQuickCreateDialog } from "@/components/legal/ClauseQuickCreateDialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -105,9 +106,9 @@ export default function ClauseLibraryPage() {
           { label: t("clauses.breadcrumb") },
         ]}
         actions={
-          <Button onClick={() => setQuickCreateOpen(true)} className="gap-2 whitespace-nowrap">
-            <Plus size={15} /> {t("clauses.btn_create")}
-          </Button>
+          <PrimaryAction onClick={() => setQuickCreateOpen(true)}>
+            {t("clauses.btn_create")}
+          </PrimaryAction>
         }
       />
 

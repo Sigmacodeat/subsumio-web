@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, Circle, Loader2, Plus, RotateCcw } from "lucide-react";
+import { CalendarClock, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -90,10 +91,7 @@ export default function WiedervorlagenPage() {
           { label: t("practice.followup.title") },
         ]}
         actions={
-          <Button size="sm" onClick={openCreateDialog} className="gap-2 whitespace-nowrap">
-            <Plus size={14} aria-hidden="true" />
-            {t("practice.followup.new")}
-          </Button>
+          <PrimaryAction onClick={openCreateDialog}>{t("practice.followup.new")}</PrimaryAction>
         }
       />
       {query.isLoading ? (

@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -406,15 +407,9 @@ export default function TrustAccountingPage() {
           { label: t("trust.title" as DashboardKey) },
         ]}
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            className="whitespace-nowrap"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} aria-hidden="true" />
+          <PrimaryAction onClick={() => setShowCreate(true)}>
             {t("trust.new" as DashboardKey)}
-          </Button>
+          </PrimaryAction>
         }
       />
 

@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -824,15 +825,14 @@ export default function MonitoringPage() {
           { label: t("monitoring.breadcrumb") },
         ]}
         actions={
-          <Button
+          <PrimaryAction
             onClick={() => {
               setEditingMonitor(null);
               setDialogOpen(true);
             }}
-            className="gap-1.5 whitespace-nowrap"
           >
-            <Plus size={15} aria-hidden="true" /> {t("monitoring.new_monitor")}
-          </Button>
+            {t("monitoring.new_monitor")}
+          </PrimaryAction>
         }
       />
 

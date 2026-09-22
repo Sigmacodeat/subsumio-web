@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, FileText, FileQuestion } from "lucide-react";
+import { Loader2, FileText, FileQuestion } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,10 +82,9 @@ export default function DocumentInterviewsPage() {
           { label: "Interviews" },
         ]}
         actions={
-          <Button onClick={() => setShowCreate(!showCreate)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <PrimaryAction onClick={() => setShowCreate(!showCreate)}>
             {t("interview.new")}
-          </Button>
+          </PrimaryAction>
         }
       />
 
