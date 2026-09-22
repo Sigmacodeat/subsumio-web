@@ -1,2 +1,3 @@
+bun install --frozen-lockfile
 bun run typecheck
 bash scripts/check-template-leaks.sh

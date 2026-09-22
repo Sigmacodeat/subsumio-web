@@ -34,6 +34,7 @@ cd "$(dirname "$0")/.."
 # the line — the parallel runner doesn't care about count.
 # ──────────────────────────────────────────────────────────────────────────
 CHECKS=(
+  "check:format"
   "check:privacy"
   "check:proposal-pii"
   "check:test-names"

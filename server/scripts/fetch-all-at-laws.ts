@@ -15,6 +15,8 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
 const RIS_UA = {
@@ -211,7 +213,7 @@ async function discoverAllLaws(): Promise<RisLaw[]> {
       if (LIMIT && all.length >= LIMIT) break;
 
       // Rate limit — be nice to RIS
-      await new Promise((r) => setTimeout(r, 300));
+      await risMassPause("AT-Laws-Fetch");
     } catch (err) {
       console.log(` error: ${err} — stopping`);
       break;
@@ -325,7 +327,7 @@ async function fetchLawViaOgd(
       }
 
       if ((refs as Array<Record<string, unknown>>).length < 100) break;
-      await new Promise((r) => setTimeout(r, 200));
+      await risMassPause("AT-Laws-Fetch");
     } catch {
       break;
     }
@@ -356,6 +358,7 @@ async function fetchLawViaOgd(
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
+  await acquireRisLock();
   console.log("╔══════════════════════════════════════════════════════════╗");
   console.log("║  Subsumio — Fetch ALL Austrian Federal Laws from RIS     ║");
   console.log("╚══════════════════════════════════════════════════════════╝");
@@ -444,7 +447,7 @@ async function main() {
     }
 
     // Rate limit
-    await new Promise((r) => setTimeout(r, 500));
+    await risMassPause("AT-Laws-Fetch");
   }
 
   console.log(`\n📊 Results:`);
@@ -455,7 +458,9 @@ async function main() {
   console.log(`\n✅ Done! Run import-statutes-split.ts to import the new laws.`);
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+main()
+  .finally(() => releaseRisLock())
+  .catch((err) => {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  });

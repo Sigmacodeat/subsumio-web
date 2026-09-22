@@ -71,6 +71,7 @@
     "check:batch-audit-site": "bash scripts/check-batch-audit-site.sh",
     "check:worker-lock-renewal-shape": "bash scripts/check-worker-lock-renewal-shape.sh",
     "check:source-id-projection": "bash scripts/check-source-id-projection.sh",
+    "check:format": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\"",
     "check:privacy": "scripts/check-privacy.sh",
     "check:proposal-pii": "scripts/check-proposal-pii.sh",
     "check:eval-glossary": "scripts/check-eval-glossary-fresh.sh",

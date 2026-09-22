@@ -20,6 +20,8 @@
 
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 
 const RIS_OGD_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 
@@ -179,7 +181,7 @@ async function searchRis(
     if (refs.length < 100) break;
 
     // Rate limit: be respectful
-    await new Promise((r) => setTimeout(r, 500));
+    await risMassPause("OGH-Import");
   }
 
   return results;
@@ -217,6 +219,7 @@ function toMarkdown(ref: RisReference, text: string): string {
 // ── Main ─────────────────────────────────────────────────────
 
 async function main() {
+  await acquireRisLock();
   const args = process.argv.slice(2);
   const flags: Record<string, string | boolean> = {};
   for (let i = 0; i < args.length; i++) {
@@ -302,7 +305,7 @@ async function main() {
       totalImported++;
 
       // Rate limit
-      await new Promise((r) => setTimeout(r, 300));
+      await risMassPause("OGH-Import");
     }
   }
 
@@ -318,7 +321,9 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+main()
+  .finally(() => releaseRisLock())
+  .catch((err) => {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  });

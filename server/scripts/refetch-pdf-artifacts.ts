@@ -23,19 +23,13 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import { $ } from "bun";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const SOURCE =
   args.find((a) => a.startsWith("--source="))?.split("=")[1] ?? args[args.indexOf("--source") + 1];
-const BATCH_SIZE = parseInt(
-  args.find((a) => a.startsWith("--batch-size="))?.split("=")[1] ?? "100",
-  10
-);
-const SLEEP_MS = parseInt(
-  args.find((a) => a.startsWith("--sleep-ms="))?.split("=")[1] ?? "200",
-  10
-);
 const LIMIT = parseInt(args.find((a) => a.startsWith("--limit="))?.split("=")[1] ?? "0", 10);
 
 const CORPUS_ROOT = `${process.cwd()}/law-corpus`;
@@ -325,8 +319,9 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`Source:     ${SOURCE ?? "alle"}`);
   console.log(`Dry run:    ${DRY ? "JA" : "NEIN"}`);
-  console.log(`Batch:      ${BATCH_SIZE} Dateien, Sleep ${SLEEP_MS}ms`);
   console.log("");
+
+  if (!DRY) await acquireRisLock();
 
   // 1. Defekte aus DB lesen
   const DEFECT_TYPE =
@@ -407,7 +402,10 @@ async function main() {
 
     try {
       const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${config.risType}/${docId}/${docId}.xml`;
-      const response = await fetch(xmlUrl);
+      await risMassPause("PDF-Refetch");
+      const response = await fetch(xmlUrl, {
+        headers: { "User-Agent": RIS_USER_AGENT },
+      });
       if (!response.ok) {
         failed++;
         appendLog(logPath, {
@@ -483,11 +481,6 @@ async function main() {
     if ((i + 1) % 100 === 0) {
       printProgress(i + 1, entries.length, refetched, unchanged, failed, noXml);
     }
-
-    // Rate limiting
-    if ((i + 1) % BATCH_SIZE === 0 && !DRY) {
-      await sleep(SLEEP_MS);
-    }
   }
 
   console.log("\n────────────────────────────────────────────────────────────");
@@ -522,8 +515,4 @@ function printProgress(
   );
 }
 
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-await main();
+await main().finally(() => releaseRisLock());

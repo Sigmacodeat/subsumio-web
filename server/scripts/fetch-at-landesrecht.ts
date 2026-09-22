@@ -16,9 +16,10 @@ import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-const RATE_LIMIT_MS = 200;
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
 
@@ -153,6 +154,7 @@ function loadExistingIds(): Set<string> {
 }
 
 async function main() {
+  await acquireRisLock();
   const args = process.argv.slice(2);
   const skipText = args.includes("--skip-text");
   const targetIdx = args.indexOf("--target");
@@ -227,7 +229,7 @@ async function main() {
             }
           } catch {}
         }
-        await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+        await risMassPause("Landesrecht-Fetch");
       }
 
       const frontmatter = yamlDump(
@@ -266,7 +268,7 @@ ${body}
 
     console.log(`  Page ${page}: ${refs.length} refs (total written: ${written})`);
     if (refs.length < 100) break;
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+    await risMassPause("Landesrecht-Fetch");
   }
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
@@ -276,7 +278,9 @@ ${body}
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+main()
+  .finally(() => releaseRisLock())
+  .catch((err) => {
+    console.error("Fatal:", err);
+    process.exit(1);
+  });

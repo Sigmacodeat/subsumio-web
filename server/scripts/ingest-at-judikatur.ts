@@ -28,7 +28,8 @@ import {
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const DEFAULT_TARGET = 8000;
-const RATE_LIMIT_MS = 200;
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
 
@@ -350,6 +351,7 @@ ${text}
 }
 
 async function main() {
+  await acquireRisLock();
   const args = process.argv.slice(2);
   const courtIdx = args.indexOf("--court");
   const courtKey = courtIdx >= 0 ? args[courtIdx + 1] : "ogh";
@@ -480,11 +482,11 @@ async function main() {
             );
           }
 
-          await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+          await risMassPause("Judikatur-Ingest");
         }
 
         if (refs.length < 100) break;
-        await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+        await risMassPause("Judikatur-Ingest");
       }
 
       if (yearCount > 0) {
@@ -492,7 +494,7 @@ async function main() {
           `  ${term}/${year}: +${yearCount} (norm total: ${normTotal}, grand total: ${totalFetched})`
         );
       }
-      if (totalFetched < target) await new Promise((r) => setTimeout(r, 100));
+      if (totalFetched < target) await risMassPause("Judikatur-Ingest");
     }
 
     if (normTotal > 0) {
@@ -566,10 +568,10 @@ async function main() {
           if (totalWritten % 100 === 0) {
             console.log(`  [${totalWritten}] ${doc.court} ${doc.az} (${slugDate})`);
           }
-          await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+          await risMassPause("Judikatur-Ingest");
         }
         if (refs.length < 100) break;
-        await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+        await risMassPause("Judikatur-Ingest");
       }
       console.log(`  → ${topicCount} for ${topic}`);
     }
@@ -586,7 +588,9 @@ async function main() {
   console.log(`  bun run scripts/import-judikatur.ts --source ${courtKey}`);
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+main()
+  .finally(() => releaseRisLock())
+  .catch((err) => {
+    console.error("Fatal:", err);
+    process.exit(1);
+  });

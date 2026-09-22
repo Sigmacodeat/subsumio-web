@@ -86,10 +86,26 @@ interface PipelineStateRow {
   pidCmd: string | null;
   startedAt: string | null;
   lastUpdated: string | null;
+  heartbeatAt: string | null;
   diskCount: number;
   dbPages: number;
   risTotal: number | null;
   alertFlags: Array<{ type: string; severity: string; message: string; raised_at: string }>;
+}
+
+interface PipelineLiveRow {
+  source: string;
+  stage: string;
+  elapsedS: number | null;
+  dbDocsLive: number | null;
+  diskFilesLive: number | null;
+  target: number | null;
+  progressPct: number | null;
+  lastWriteAgoS: number | null;
+  docsPerMin: number | null;
+  filesPerMin: number | null;
+  etaMin: number | null;
+  stalled: boolean;
 }
 
 interface TrustRow {
@@ -139,6 +155,7 @@ interface CommandCenterData {
   pipeline: {
     paused: boolean;
     states: PipelineStateRow[];
+    live: PipelineLiveRow[];
   };
   trust: {
     rows: TrustRow[];
@@ -776,13 +793,31 @@ function WorkQueueSection({
 
 // ── Section 3: Pipeline Live ─────────────────────────────────────────────
 
+/** Sekunden → kompakte Laufzeit ("38h 12m", "4m 05s"). */
+function fmtElapsed(s: number): string {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
+  const sec = s % 60;
+  return m > 0 ? `${m}m ${String(sec).padStart(2, "0")}s` : `${sec}s`;
+}
+
+/** Minuten → kompakte ETA ("≈ 2,5h", "≈ 45min", "≈ 2d"). */
+function fmtEta(min: number): string {
+  if (min >= 2880) return `≈ ${(min / 1440).toFixed(1).replace(".", ",")}d`;
+  if (min >= 90) return `≈ ${(min / 60).toFixed(1).replace(".", ",")}h`;
+  return `≈ ${Math.max(1, Math.round(min))}min`;
+}
+
 function PipelineSection({
   paused,
   states,
+  live,
   onActionComplete,
 }: {
   paused: boolean;
   states: PipelineStateRow[];
+  live: PipelineLiveRow[];
   onActionComplete?: () => void;
 }) {
   const { addToast } = useToast();
@@ -838,6 +873,7 @@ function PipelineSection({
   };
 
   const running = states.filter((s) => s.pid !== null);
+  const liveBySource = new Map(live.map((l) => [l.source, l]));
   const alertStates = states.filter((s) => s.alertFlags.length > 0);
   const gapStates = states.filter(
     (s) => s.risTotal && s.diskCount > 0 && s.diskCount < s.risTotal * 0.95
@@ -942,6 +978,7 @@ function PipelineSection({
                 const isRunning = s.pid !== null;
                 const hasAlerts = s.alertFlags.length > 0;
                 const sourceId = sourceKeyToSourceId[s.source] || s.source;
+                const liveRow = liveBySource.get(s.source);
                 return (
                   <div
                     key={i}
@@ -950,19 +987,21 @@ function PipelineSection({
                     <div className="flex items-center gap-3">
                       <Badge
                         variant={
-                          isRunning
-                            ? "success"
-                            : s.stage === "done" || s.stage === "ok"
-                              ? "default"
-                              : s.stage === "failed"
-                                ? "danger"
-                                : s.stage === "idle" || s.stage === "empty"
-                                  ? "default"
-                                  : "warning"
+                          liveRow?.stalled
+                            ? "danger"
+                            : isRunning
+                              ? "success"
+                              : s.stage === "done" || s.stage === "ok"
+                                ? "default"
+                                : s.stage === "failed"
+                                  ? "danger"
+                                  : s.stage === "idle" || s.stage === "empty"
+                                    ? "default"
+                                    : "warning"
                         }
                         className="flex-shrink-0 text-[10px]"
                       >
-                        {s.stage}
+                        {liveRow?.stalled ? `${s.stage} · stalled` : s.stage}
                       </Badge>
                       <div className="min-w-0 flex-1">
                         <span className="font-mono">{s.source}</span>
@@ -972,6 +1011,11 @@ function PipelineSection({
                             title={s.pidCmd}
                           >
                             · PID {s.pid}
+                          </span>
+                        )}
+                        {liveRow?.elapsedS !== null && liveRow?.elapsedS !== undefined && (
+                          <span className="ml-2 text-[color:var(--ds-text-subtle)]">
+                            seit {fmtElapsed(liveRow.elapsedS)}
                           </span>
                         )}
                       </div>
@@ -984,6 +1028,75 @@ function PipelineSection({
                         </span>
                       )}
                     </div>
+                    {/* Live-Fortschritt: Progress-Bar + Rate + ETA, alle 5s
+                        aktualisiert solange ein Job läuft */}
+                    {liveRow && (
+                      <div
+                        className="space-y-1"
+                        aria-live="polite"
+                        aria-label={`Live-Fortschritt ${s.source}`}
+                      >
+                        {liveRow.progressPct !== null && (
+                          <div
+                            className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]"
+                            role="progressbar"
+                            aria-valuenow={Math.round(liveRow.progressPct)}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`${s.source}: ${liveRow.progressPct.toFixed(1)} Prozent`}
+                          >
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                liveRow.stalled
+                                  ? "bg-[color:var(--ds-danger-text)]"
+                                  : "bg-[color:var(--brand-solid)]"
+                              )}
+                              style={{ width: `${Math.min(liveRow.progressPct, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-[color:var(--ds-text-subtle)]">
+                          {liveRow.dbDocsLive !== null && (
+                            <span className="tabular-nums">
+                              {fmt(liveRow.dbDocsLive)}
+                              {liveRow.target !== null ? ` / ${fmt(liveRow.target)}` : ""} DB-Docs
+                            </span>
+                          )}
+                          {liveRow.diskFilesLive !== null && (
+                            <span className="tabular-nums">
+                              {fmt(liveRow.diskFilesLive)}
+                              {liveRow.target !== null ? ` / ${fmt(liveRow.target)}` : ""} Dateien
+                            </span>
+                          )}
+                          {liveRow.docsPerMin !== null && (
+                            <span className="tabular-nums">{liveRow.docsPerMin} Docs/min</span>
+                          )}
+                          {liveRow.filesPerMin !== null && (
+                            <span className="tabular-nums">{liveRow.filesPerMin} Dateien/min</span>
+                          )}
+                          {liveRow.etaMin !== null && (
+                            <span className="tabular-nums">ETA {fmtEta(liveRow.etaMin)}</span>
+                          )}
+                          {liveRow.lastWriteAgoS !== null && (
+                            <span
+                              className={cn(
+                                "tabular-nums",
+                                liveRow.lastWriteAgoS > 600 &&
+                                  "font-medium text-[color:var(--ds-warning-text)]"
+                              )}
+                            >
+                              letzter Write vor {fmtElapsed(liveRow.lastWriteAgoS)}
+                            </span>
+                          )}
+                          {liveRow.stalled && (
+                            <Badge variant="danger" className="text-[9px]">
+                              Kein Fortschritt — Job prüfen
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {/* Alert details */}
                     {hasAlerts && (
                       <div className="space-y-1 border-l-2 border-[color:var(--ds-warning-border)] pl-2">
@@ -1503,7 +1616,13 @@ export function CorpusCommandCenter({
       if (!res.ok) throw new Error("Command Center Daten nicht ladbar");
       return res.json().then((d) => d.data);
     },
-    refetchInterval: 30_000,
+    // Adaptives Polling: 5s solange Pipeline-Stages laufen (Echtzeit-Fortschritt),
+    // 30s im Leerlauf. Funktionsform = TanStack-Best-Practice für Job-Polling.
+    refetchInterval: (query) => {
+      const d = query.state.data;
+      const running = d?.pipeline?.states?.some((s) => s.pid !== null);
+      return running ? 5_000 : 30_000;
+    },
   });
 
   if (isLoading) {
@@ -1629,6 +1748,7 @@ export function CorpusCommandCenter({
         <PipelineSection
           paused={data.pipeline.paused}
           states={data.pipeline.states}
+          live={data.pipeline.live ?? []}
           onActionComplete={() => refetch()}
         />
       )}

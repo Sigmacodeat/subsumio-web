@@ -17,11 +17,11 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync, unlin
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause, massDownloadAllowed, waitForRisWindow, RIS_PAUSE_MS } from "./ris-pace";
 import {
   hasProxies,
   proxyFetchOptions,
   getUserAgent,
-  recommendedConcurrency,
   PROXY_DELAY_MS,
   logProxyConfig,
   reportProxyFailure,
@@ -55,22 +55,15 @@ const forceReFetch = args.includes("--force-refetch");
 const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/at-judikatur-vfgh";
 // RIS OGD requires single connection — default concurrency is 1.
 // For non-RIS sources (EU), higher concurrency is safe.
-const isRIS = TARGET_DIR.includes("judikatur");
-const CONCURRENCY =
-  concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : isRIS ? recommendedConcurrency() : 5;
+const isRIS =
+  TARGET_DIR.includes("judikatur") || TARGET_DIR.startsWith("at-") || TARGET_DIR.includes("/at-");
+// RIS erlaubt max. 0,5 req/s pro Prozess (RIS-IT-Mail 2026-09-22) — eine
+// zweite Verbindung läuft über einen eigenen Prozess mit eigenem Slot
+// (ris-lock.ts), nicht über In-Prozess-Concurrency. Proxys ändern daran
+// nichts: das Limit gilt pro Prozess, nicht pro IP.
+const CONCURRENCY = isRIS ? 1 : concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
-const RATE_LIMIT_MS = isRIS ? (hasProxies() ? PROXY_DELAY_MS : 1500) : 500; // RIS: 1.5s (or proxy delay), EU: 500ms
-
-/** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
-function isRisOffHours(): boolean {
-  const now = new Date();
-  const cetHour = parseInt(
-    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-  );
-  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
-  const isWeekend = day === "Sat" || day === "Sun";
-  return isWeekend || cetHour < 8 || cetHour >= 18;
-}
+const RATE_LIMIT_MS = isRIS ? Math.max(PROXY_DELAY_MS, RIS_PAUSE_MS) : 500; // RIS: ≥2s, EU: 500ms
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
@@ -510,15 +503,14 @@ async function main() {
     process.exit(1);
   }
 
-  // Global RIS lock — only for RIS sources without proxies and without --no-lock.
-  // With proxies, each request goes through a different IP so parallel is safe.
-  // With --no-lock, caller takes responsibility for rate limiting across processes.
-  if (isRIS && !hasProxies() && !noLock) {
-    console.log("🔒 Acquiring RIS lock (single-connection mode)...");
+  // Global RIS semaphore — max. 2 Prozesse (RIS-IT-Mail 2026-09-22:
+  // 0,5 req/s je Prozess). Proxys hebeln das nicht aus: das Limit gilt
+  // pro Prozess, und mehr als zwei Prozesse sind nicht erlaubt.
+  // --no-lock bleibt als Escape-Hatch für nicht-RIS-Läufe.
+  if (isRIS && !noLock) {
+    console.log("🔒 Acquiring RIS slot (max 2 Prozesse, je 0.5 req/s)...");
     await acquireRisLock();
-    console.log("✅ RIS lock acquired.");
-  } else if (isRIS && hasProxies()) {
-    console.log("✅ RIS proxy mode — skipping global lock (proxies handle rate limiting).");
+    console.log("✅ RIS slot acquired.");
   } else if (isRIS && noLock) {
     console.log("✅ RIS no-lock mode — caller manages rate limiting across processes.");
   }
@@ -554,21 +546,14 @@ async function main() {
   console.log(`  Concurrency: ${CONCURRENCY}${isRIS ? " (RIS single-connection)" : ""}`);
   console.log(`  Rate limit: ${RATE_LIMIT_MS}ms between requests`);
   if (isRIS && offHoursOnly) {
-    console.log(`  Off-hours only: waiting until 18:00 CET or weekend`);
+    console.log(`  Off-hours only: 20:00–05:00, Wochenende, AT-Feiertage (Europe/Vienna)`);
   }
   console.log(`═══════════════════════════════════════════════════════════\n`);
 
-  // RIS off-hours enforcement
-  if (isRIS && offHoursOnly && !isRisOffHours()) {
-    const now = new Date();
-    const cetHour = parseInt(
-      now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-    );
-    const waitHours = 18 - cetHour;
-    console.log(`⏳ Waiting ${waitHours}h until 18:00 CET (RIS OGD guidelines).`);
-    while (!isRisOffHours()) {
-      await new Promise((r) => setTimeout(r, 60_000));
-    }
+  // RIS off-hours enforcement — massDownloadAllowed kennt das offizielle
+  // Fenster (20:00–05:00, Wochenenden, österreichische Feiertage).
+  if (isRIS && offHoursOnly && !massDownloadAllowed()) {
+    await waitForRisWindow("Corpus-Backfill");
     console.log(`✅ Off-hours reached. Starting backfill.`);
   }
 
@@ -585,9 +570,14 @@ async function main() {
     skip += result.skip;
     fail += result.fail;
 
-    // Rate limit between batches for RIS compliance
-    if (isRIS && i + CONCURRENCY < files.length) {
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+    // Rate limit between requests — RIS bekommt zusätzlich das Fenster-Gate,
+    // damit ein Lauf, der um 05:00 noch läuft, sauber pausiert.
+    if (i + CONCURRENCY < files.length) {
+      if (isRIS) {
+        await risMassPause("Corpus-Backfill");
+      } else {
+        await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      }
     }
 
     const processed = Math.min(i + CONCURRENCY, files.length);
@@ -610,10 +600,10 @@ async function main() {
 
 main()
   .then(() => {
-    if (isRIS && !hasProxies() && !noLock) releaseRisLock();
+    if (isRIS && !noLock) releaseRisLock();
   })
   .catch((err) => {
     console.error("Fatal:", err);
-    if (isRIS && !hasProxies() && !noLock) releaseRisLock();
+    if (isRIS && !noLock) releaseRisLock();
     process.exit(1);
   });

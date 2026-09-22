@@ -4,6 +4,7 @@ import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
+import { deriveLiveRows } from "@/lib/corpus-pipeline-live";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/admin/corpus-command-center");
@@ -71,6 +72,9 @@ interface PipelineStateRow {
   pidCmd: string | null;
   startedAt: string | null;
   lastUpdated: string | null;
+  /** Orchestrator-Heartbeat — pipeline_state.updated_at wird pro Zyklus
+   *  angefasst; >20min alt heißt: Orchestrator läuft nicht mehr. */
+  heartbeatAt: string | null;
   diskCount: number;
   dbPages: number;
   risTotal: number | null;
@@ -124,7 +128,15 @@ export const GET = createHandler(
     const pool = getSharedPgPool();
     const dbStats: Record<
       string,
-      { pages: number; documents: number; chunks: number; embedded: number }
+      {
+        pages: number;
+        documents: number;
+        chunks: number;
+        embedded: number;
+        /** Letzter Write auf pages dieser Source — Live-Heartbeat für
+         *  Import-Stages (measure-don't-remember). */
+        lastWrite: string | null;
+      }
     > = {};
     let pipelineState: PipelineStateRow[] = [];
     let pipelinePaused = false;
@@ -144,7 +156,8 @@ export const GET = createHandler(
             COUNT(DISTINCT p.id) FILTER (WHERE p.deleted_at IS NULL) AS pages,
             COUNT(DISTINCT p.import_filename) FILTER (WHERE p.deleted_at IS NULL AND p.import_filename IS NOT NULL) AS documents,
             COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL) AS chunks,
-            COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL AND cc.embedding IS NOT NULL) AS embedded
+            COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL AND cc.embedding IS NOT NULL) AS embedded,
+            MAX(p.updated_at) FILTER (WHERE p.deleted_at IS NULL) AS last_write
           FROM pages p
           LEFT JOIN content_chunks cc ON cc.page_id = p.id
           GROUP BY p.source_id
@@ -156,6 +169,7 @@ export const GET = createHandler(
             documents: parseInt(r.documents ?? "0", 10),
             chunks: parseInt(r.chunks ?? "0", 10),
             embedded: parseInt(r.embedded ?? "0", 10),
+            lastWrite: r.last_write ? new Date(r.last_write).toISOString() : null,
           };
         }
       } catch (err) {
@@ -178,6 +192,7 @@ export const GET = createHandler(
           pidCmd: r.pid_cmd || null,
           startedAt: r.pid_started_at ? new Date(r.pid_started_at).toISOString() : null,
           lastUpdated: r.last_cycle_at ? new Date(r.last_cycle_at).toISOString() : null,
+          heartbeatAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
           diskCount: r.disk_count || 0,
           dbPages: r.db_pages || 0,
           risTotal: r.ris_total || null,
@@ -585,6 +600,7 @@ export const GET = createHandler(
       pipeline: {
         paused: pipelinePaused,
         states: pipelineState,
+        live: deriveLiveRows(pipelineState, dbStats, Date.now()),
       },
       trust: {
         rows: trustRows,

@@ -24,12 +24,12 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { risMassPause } from "./ris-pace";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 2000;
-const DELAY_MS = 1500; // RIS OGD: 1.5s between requests
 
 const args = process.argv.slice(2);
 const courtIdx = args.indexOf("--court");
@@ -305,7 +305,7 @@ async function scanCourt(courtKey: string, court: CourtConfig): Promise<void> {
       }
 
       if (refs.length < 100) break;
-      await new Promise((r) => setTimeout(r, DELAY_MS));
+      await risMassPause("Gap-Discovery");
     }
 
     if (yearApi > 0) {
