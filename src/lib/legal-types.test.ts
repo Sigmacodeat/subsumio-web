@@ -218,9 +218,9 @@ describe("invoiceFrontmatter", () => {
 
 describe("DeadlineEntry type contract", () => {
   test("minimal deadline entry", () => {
-    const d: DeadlineEntry = { title: "Frist", date: "2026-03-01" };
+    const d: DeadlineEntry = { title: "Frist", due_date: "2026-03-01" };
     expect(d.title).toBe("Frist");
-    expect(d.date).toBe("2026-03-01");
+    expect(d.due_date).toBe("2026-03-01");
   });
 
   test("full deadline entry with all fields", () => {
@@ -228,9 +228,8 @@ describe("DeadlineEntry type contract", () => {
       id: "d1",
       title: "Klagefrist",
       description: "Frist zur Klageerhebung",
-      date: "2026-03-01",
       due_date: "2026-03-01",
-      status: "open",
+      status: "pending",
       type: "legal_deadline",
       source: "court",
       court: "LG Wien",
@@ -260,7 +259,7 @@ describe("DeadlineEntry type contract", () => {
       "rejected",
     ];
     for (const s of statuses) {
-      const d: DeadlineEntry = { review_status: s };
+      const d: DeadlineEntry = { due_date: "2026-01-01", review_status: s };
       expect(d.review_status).toBe(s);
     }
   });

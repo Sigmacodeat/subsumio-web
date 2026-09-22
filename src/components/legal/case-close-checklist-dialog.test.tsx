@@ -1,3 +1,4 @@
+import type { BrainPage } from "@/lib/types";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
@@ -57,10 +58,10 @@ describe("CaseCloseChecklistDialog", () => {
         deadlines: [{ status: "done" }],
         document_requests: [{ status: "fulfilled" }],
       },
-    });
+    } as unknown as BrainPage);
     vi.mocked(api.brain.listPages).mockResolvedValueOnce([
       { frontmatter: { case_slugs: ["legal/cases/test"], status: "paid" } },
-    ]);
+    ] as unknown as BrainPage[]);
 
     render(
       <CaseCloseChecklistDialog
@@ -85,7 +86,7 @@ describe("CaseCloseChecklistDialog", () => {
         deadlines: [],
         document_requests: [],
       },
-    });
+    } as unknown as BrainPage);
     vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
 
     render(
@@ -116,7 +117,7 @@ describe("CaseCloseChecklistDialog", () => {
         deadlines: [],
         document_requests: [],
       },
-    });
+    } as unknown as BrainPage);
     vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
 
     render(
@@ -150,7 +151,7 @@ describe("CaseCloseChecklistDialog", () => {
         deadlines: [],
         document_requests: [],
       },
-    });
+    } as unknown as BrainPage);
     vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
 
     const onConfirm = vi.fn();
@@ -179,7 +180,7 @@ describe("CaseCloseChecklistDialog", () => {
   it("calls onOpenChange(false) when cancel button clicked", async () => {
     vi.mocked(api.brain.getPage).mockResolvedValueOnce({
       frontmatter: {},
-    });
+    } as unknown as BrainPage);
     vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
 
     const onOpenChange = vi.fn();
@@ -211,10 +212,10 @@ describe("CaseCloseChecklistDialog", () => {
         deadlines: [{ status: "done" }],
         document_requests: [{ status: "pending" }], // pending → warning
       },
-    });
+    } as unknown as BrainPage);
     vi.mocked(api.brain.listPages).mockResolvedValueOnce([
       { frontmatter: { case_slugs: ["legal/cases/test"], status: "paid" } },
-    ]);
+    ] as unknown as BrainPage[]);
 
     render(
       <CaseCloseChecklistDialog

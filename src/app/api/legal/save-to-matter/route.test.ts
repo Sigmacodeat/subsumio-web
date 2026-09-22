@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -36,7 +37,7 @@ function req(b: unknown) {
   return new Request("http://x/api/legal/save-to-matter", {
     method: "POST",
     body: JSON.stringify(b),
-  });
+  }) as unknown as NextRequest;
 }
 
 describe("POST /api/legal/save-to-matter", () => {

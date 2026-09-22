@@ -75,8 +75,12 @@ describe("Pipeline A: Intake → Case → Deadlines → Digest", () => {
     expect(casePage.frontmatter.source_intake_slug).toBe(intake.slug);
     expect(casePage.frontmatter.portal_enabled).toBe(true);
     expect(casePage.content).toContain("Mandant Müller GmbH");
-    expect(casePage.frontmatter.tasks).toHaveLength(3);
-    expect(casePage.frontmatter.tasks?.[0].text).toContain("Vertrag");
+    expect(
+      casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined
+    ).toHaveLength(3);
+    expect(
+      (casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined)?.[0].text
+    ).toContain("Vertrag");
 
     // ── Stage 3: AI Deadline Detection from case content ──────────────
     const detected = detectDeadlines(intake.content);
@@ -233,11 +237,23 @@ describe("Pipeline A: Intake → Case → Deadlines → Digest", () => {
     );
 
     // Tasks should mirror missing documents
-    expect(casePage.frontmatter.tasks).toHaveLength(3);
-    expect(casePage.frontmatter.tasks?.[0].text).toContain("Kündigung");
-    expect(casePage.frontmatter.tasks?.[1].text).toContain("Vollmacht");
-    expect(casePage.frontmatter.tasks?.[2].text).toContain("Zustellnachweis");
-    expect(casePage.frontmatter.tasks?.every((t) => t.done === false)).toBe(true);
+    expect(
+      casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined
+    ).toHaveLength(3);
+    expect(
+      (casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined)?.[0].text
+    ).toContain("Kündigung");
+    expect(
+      (casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined)?.[1].text
+    ).toContain("Vollmacht");
+    expect(
+      (casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined)?.[2].text
+    ).toContain("Zustellnachweis");
+    expect(
+      (casePage.frontmatter.tasks as { text: string; done?: boolean }[] | undefined)?.every(
+        (t) => t.done === false
+      )
+    ).toBe(true);
 
     // AI detection should also find the deadline in the summary
     const detected = detectDeadlines(intake.content);

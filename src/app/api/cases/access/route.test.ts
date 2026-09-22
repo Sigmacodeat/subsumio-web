@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -72,7 +73,7 @@ function put(body: Record<string, unknown>) {
     new Request("http://x/api/cases/access", {
       method: "PUT",
       body: JSON.stringify({ case_slug: "cases/mueller", ...body }),
-    })
+    }) as unknown as NextRequest
   );
 }
 
@@ -120,7 +121,9 @@ describe("/api/cases/access", () => {
   it("tells the caller what they may do", async () => {
     stored = { visibility: "restricted", grants: [{ user_id: "u-assistant", level: "read" }] };
     user.current = { id: "u-assistant", role: "assistant", email: "s@x.at", orgId: "org-1" };
-    const res = await GET(new Request("http://x/api/cases/access?case_slug=cases/mueller"));
+    const res = await GET(
+      new Request("http://x/api/cases/access?case_slug=cases/mueller") as unknown as NextRequest
+    );
     const { data } = await res.json();
     expect(data).toMatchObject({ my_level: "read", can_manage: false, can_grant: false });
     expect(data.members.map((m: { id: string }) => m.id)).not.toContain("u-other");

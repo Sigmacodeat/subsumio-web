@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -57,7 +58,7 @@ function post(body: unknown) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    })
+    }) as unknown as NextRequest
   );
 }
 
@@ -144,7 +145,9 @@ describe("GET /api/inbound-register", () => {
     ]);
 
     const res = await GET(
-      new Request("http://localhost/api/inbound-register?case_slug=legal/cases/one")
+      new Request(
+        "http://localhost/api/inbound-register?case_slug=legal/cases/one"
+      ) as unknown as NextRequest
     );
     expect(res.status).toBe(200);
     expect(mockListEnginePages).toHaveBeenCalledWith(
@@ -171,7 +174,9 @@ describe("GET /api/inbound-register", () => {
       },
     ]);
 
-    const res = await GET(new Request("http://localhost/api/inbound-register?format=csv"));
+    const res = await GET(
+      new Request("http://localhost/api/inbound-register?format=csv") as unknown as NextRequest
+    );
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/csv");
     const csv = await res.text();
@@ -181,7 +186,9 @@ describe("GET /api/inbound-register", () => {
 
   test("returns 502 when listing fails", async () => {
     mockListEnginePages.mockRejectedValueOnce(new Error("down"));
-    const res = await GET(new Request("http://localhost/api/inbound-register"));
+    const res = await GET(
+      new Request("http://localhost/api/inbound-register") as unknown as NextRequest
+    );
     expect(res.status).toBe(502);
   });
 });

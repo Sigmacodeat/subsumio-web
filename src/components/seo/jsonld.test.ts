@@ -34,7 +34,7 @@ describe("JSON-LD Schema Functions", () => {
 
   describe("softwareApplicationLd", () => {
     it("returns SoftwareApplication with offers", () => {
-      const data = softwareApplicationLd("de");
+      const data = softwareApplicationLd();
       expect(data["@type"]).toBe("SoftwareApplication");
       expect(data.applicationCategory).toBe("BusinessApplication");
       expect(Array.isArray(data.offers)).toBe(true);
@@ -82,7 +82,7 @@ describe("JSON-LD Schema Functions", () => {
 
   describe("howToLd", () => {
     it("builds HowTo with steps", () => {
-      const data = howToLd([{ title: "Upload", desc: "Upload documents" }], "en");
+      const data = howToLd([{ title: "Upload", desc: "Upload documents" }]);
       expect(data["@type"]).toBe("HowTo");
       expect(data.step).toHaveLength(1);
       expect(data.step[0].position).toBe(1);
@@ -95,7 +95,6 @@ describe("JSON-LD Schema Functions", () => {
         name: "Legal AI",
         description: "AI for lawyers",
         url: "/solutions/law-firms",
-        lang: "en",
       });
       expect(data["@type"]).toBe("Service");
       expect(data.provider.name).toBe("Subsumio");
@@ -109,7 +108,6 @@ describe("JSON-LD Schema Functions", () => {
         name: "Test",
         description: "Test",
         url: "/test",
-        lang: "de",
         audience: "Rechtsanwälte in Wien",
       });
       expect(data.audience!.name).toBe("Rechtsanwälte in Wien");
@@ -200,11 +198,11 @@ describe("JSON-LD Schema Consistency", () => {
   it("all schema functions include @context", () => {
     const schemas = [
       organizationLd(),
-      softwareApplicationLd("de"),
+      softwareApplicationLd(),
       breadcrumbLd([{ name: "A", url: "/" }]),
       faqPageLd([{ q: "Q", a: "A" }]),
-      howToLd([{ title: "T", desc: "D" }], "de"),
-      serviceLd({ name: "N", description: "D", url: "/", lang: "de" }),
+      howToLd([{ title: "T", desc: "D" }]),
+      serviceLd({ name: "N", description: "D", url: "/" }),
       localBusinessLd(),
       productLd({ name: "N", description: "D", url: "/", offers: [] }),
       apiReferenceLd({ name: "N", description: "D", url: "/" }),
@@ -218,11 +216,11 @@ describe("JSON-LD Schema Consistency", () => {
   it("all schema functions have @type", () => {
     const schemas = [
       organizationLd(),
-      softwareApplicationLd("de"),
+      softwareApplicationLd(),
       breadcrumbLd([{ name: "A", url: "/" }]),
       faqPageLd([{ q: "Q", a: "A" }]),
-      howToLd([{ title: "T", desc: "D" }], "de"),
-      serviceLd({ name: "N", description: "D", url: "/", lang: "de" }),
+      howToLd([{ title: "T", desc: "D" }]),
+      serviceLd({ name: "N", description: "D", url: "/" }),
       localBusinessLd(),
       productLd({ name: "N", description: "D", url: "/", offers: [] }),
       apiReferenceLd({ name: "N", description: "D", url: "/" }),

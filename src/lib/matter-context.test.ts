@@ -59,7 +59,7 @@ describe("detectGaps", () => {
   });
 
   it("detects missing client", () => {
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true);
     expect(gaps.some((g) => g.type === "missing_client_info")).toBe(true);
   });
 
@@ -69,7 +69,7 @@ describe("detectGaps", () => {
   });
 
   it("detects unclear opponent for open cases", () => {
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true);
     expect(gaps.some((g) => g.type === "unclear_opponent")).toBe(true);
   });
 
@@ -93,7 +93,7 @@ describe("detectGaps", () => {
       {
         title: "Klagefrist",
         date: "2020-01-01",
-        status: "open",
+        status: "pending",
         urgency: "overdue",
         source: "court",
       },
@@ -129,7 +129,7 @@ describe("detectGaps", () => {
       {
         title: "Frist",
         date: "2025-12-01",
-        status: "open",
+        status: "pending",
         urgency: "normal",
         source: "court",
         court: "LG Wien",
@@ -243,13 +243,13 @@ describe("buildDeadlineSummaries", () => {
   });
 
   it("filters out deadlines without dates", () => {
-    const deadlines: DeadlineEntry[] = [{ title: "No date", description: "test" }];
+    const deadlines: DeadlineEntry[] = [{ title: "No date", description: "test" } as DeadlineEntry];
     expect(buildDeadlineSummaries(deadlines)).toEqual([]);
   });
 
   it("marks overdue deadlines correctly", () => {
     const deadlines: DeadlineEntry[] = [
-      { title: "Old deadline", due_date: "2020-01-01", status: "open" },
+      { title: "Old deadline", due_date: "2020-01-01", status: "pending" },
     ];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].urgency).toBe("overdue");
@@ -789,14 +789,16 @@ describe("buildDeadlineSummaries — additional edge cases", () => {
 
   it("marks critical urgency for deadlines within 3 days", () => {
     const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const deadlines: DeadlineEntry[] = [{ title: "Soon", due_date: soon, status: "open" }];
+    const deadlines: DeadlineEntry[] = [{ title: "Soon", due_date: soon, status: "pending" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].urgency).toBe("critical");
   });
 
   it("marks upcoming urgency for deadlines within 14 days", () => {
     const upcoming = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const deadlines: DeadlineEntry[] = [{ title: "Upcoming", due_date: upcoming, status: "open" }];
+    const deadlines: DeadlineEntry[] = [
+      { title: "Upcoming", due_date: upcoming, status: "pending" },
+    ];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].urgency).toBe("upcoming");
   });
@@ -1249,7 +1251,7 @@ describe("detectGaps — communication & permission gaps", () => {
   };
 
   it("detects missing_communication_log for open cases", () => {
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], null);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, [], null);
     expect(gaps.some((g) => g.type === "missing_communication_log")).toBe(true);
   });
 
@@ -1270,7 +1272,7 @@ describe("detectGaps — communication & permission gaps", () => {
         has_attachments: false,
       },
     ];
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, comms, null);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, comms, null);
     expect(gaps.some((g) => g.type === "missing_communication_log")).toBe(false);
   });
 
@@ -1294,7 +1296,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: [],
       ethical_wall_active: false,
     };
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, comms, perms);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, comms, perms);
     expect(gaps.some((g) => g.type === "unprivileged_communication")).toBe(true);
   });
 
@@ -1318,7 +1320,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: [],
       ethical_wall_active: false,
     };
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, comms, perms);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, comms, perms);
     expect(gaps.some((g) => g.type === "unprivileged_communication")).toBe(false);
   });
 
@@ -1331,7 +1333,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: ["user2"],
       ethical_wall_active: true,
     };
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], perms);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, [], perms);
     const violation = gaps.find((g) => g.type === "ethical_wall_violation");
     expect(violation).toBeDefined();
     expect(violation?.severity).toBe("critical");
@@ -1346,7 +1348,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: ["user2"],
       ethical_wall_active: true,
     };
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], perms);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, [], perms);
     expect(gaps.some((g) => g.type === "ethical_wall_violation")).toBe(false);
   });
 
@@ -1359,7 +1361,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: [],
       ethical_wall_active: false,
     };
-    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], perms);
+    const gaps = detectGaps({ status: "pending" }, [], [], [], emptyCoverage, true, [], perms);
     expect(gaps.some((g) => g.type === "ethical_wall_violation")).toBe(false);
   });
 

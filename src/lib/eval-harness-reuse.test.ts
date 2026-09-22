@@ -77,8 +77,8 @@ function makeAiQualityReport(overrides: Partial<AIQualityReport> = {}): AIQualit
     deadlines: {
       total_detected: 5,
       correct: 4,
-      incorrect: 1,
-      missed: 0,
+      false_positives: 1,
+      false_negatives: 0,
       precision: 0.8,
       recall: 1.0,
       f1: 0.89,
@@ -86,8 +86,8 @@ function makeAiQualityReport(overrides: Partial<AIQualityReport> = {}): AIQualit
     contract_issues: {
       total_detected: 3,
       correct: 2,
-      incorrect: 1,
-      missed: 0,
+      false_positives: 1,
+      false_negatives: 0,
       precision: 0.67,
       recall: 1.0,
       f1: 0.8,

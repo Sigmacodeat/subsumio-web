@@ -156,7 +156,6 @@ describe("ChatInput", () => {
     vi.mocked(api.upload.file).mockResolvedValue({
       slug: "file-1",
       title: "vertrag.pdf",
-      url: "/uploads/file-1",
     });
     const { onSend, container } = renderChatInput();
     const file = new File(["pdf content"], "vertrag.pdf", { type: "application/pdf" });
@@ -206,7 +205,6 @@ describe("ChatInput", () => {
     vi.mocked(api.upload.file).mockResolvedValue({
       slug: "file-1",
       title: "vertrag.pdf",
-      url: "/uploads/file-1",
     });
     const { container } = renderChatInput();
     const file = new File(["pdf content"], "vertrag.pdf", { type: "application/pdf" });

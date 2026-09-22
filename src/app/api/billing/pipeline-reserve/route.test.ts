@@ -56,20 +56,20 @@ describe("POST /api/billing/pipeline-reserve", () => {
   });
 
   it("rejects requests without the engine key", async () => {
-    const response = await POST(request(), {});
+    const response = await POST(request());
 
     expect(response.status).toBe(401);
     expect(mocks.reserveCredits).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid engine key", async () => {
-    const response = await POST(request("wrong-secret"), {});
+    const response = await POST(request("wrong-secret"));
 
     expect(response.status).toBe(401);
   });
 
   it("creates the pipeline key on the server and reserves the estimate", async () => {
-    const response = await POST(request("engine-secret"), {});
+    const response = await POST(request("engine-secret"));
     const result = (await response.json()) as {
       pipeline_key: string;
       reserved_credits: number;
@@ -89,7 +89,7 @@ describe("POST /api/billing/pipeline-reserve", () => {
       idempotencyKey: "unused",
     });
 
-    const response = await POST(request("engine-secret"), {});
+    const response = await POST(request("engine-secret"));
 
     expect(response.status).toBe(402);
   });

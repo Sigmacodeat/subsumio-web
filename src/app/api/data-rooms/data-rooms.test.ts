@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -83,7 +84,10 @@ function as(user: User, brainId: string) {
   who.brainId = brainId;
 }
 const req = (method: string, path: string, body?: unknown) =>
-  new Request(`http://x${path}`, { method, ...(body ? { body: JSON.stringify(body) } : {}) });
+  new Request(`http://x${path}`, {
+    method,
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  }) as unknown as NextRequest;
 const params = (id: string) => ({ params: Promise.resolve({ id }) });
 
 beforeEach(() => {

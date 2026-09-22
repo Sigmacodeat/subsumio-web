@@ -178,7 +178,7 @@ describe("FileUserStore (dev mode)", () => {
     delete process.env.DATABASE_URL;
     delete process.env.POSTGRES_URL;
     delete process.env.POSTGRES_PRISMA_URL;
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     process.env.SUBSUMIO_DATA_DIR = TMP_DIR;
   });
 
@@ -351,7 +351,7 @@ describe("FileOrgStore (dev mode)", () => {
     delete process.env.DATABASE_URL;
     delete process.env.POSTGRES_URL;
     delete process.env.POSTGRES_PRISMA_URL;
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     process.env.SUBSUMIO_DATA_DIR = TMP_DIR + "-orgs";
   });
 
@@ -470,7 +470,7 @@ describe("getSharedPgPool", () => {
 
 describe("Onboarding progress", () => {
   beforeEach(() => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     process.env.SUBSUMIO_DATA_DIR = path.join(process.cwd(), ".data-test-" + Date.now());
   });
 

@@ -45,7 +45,7 @@ describe("resolveSenderIdentity", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
-    process.env.NODE_ENV = origEnv;
+    (process.env as { NODE_ENV?: string }).NODE_ENV = origEnv;
     if (origAllowed === undefined) delete process.env.WHATSAPP_ALLOWED_SENDERS_JSON;
     else process.env.WHATSAPP_ALLOWED_SENDERS_JSON = origAllowed;
     if (origPhone === undefined) delete process.env.WHATSAPP_ALLOWED_PHONE;

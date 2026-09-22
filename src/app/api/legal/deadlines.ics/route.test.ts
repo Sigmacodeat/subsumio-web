@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -41,7 +42,9 @@ describe("GET /api/legal/deadlines.ics", () => {
       new Response(mockIcs, { status: 200, headers: { "Content-Type": "text/calendar" } })
     );
 
-    const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
+    const req = new Request("http://localhost/api/legal/deadlines.ics", {
+      method: "GET",
+    }) as unknown as NextRequest;
     const res = await GET(req);
 
     expect(res.status).toBe(200);
@@ -59,7 +62,7 @@ describe("GET /api/legal/deadlines.ics", () => {
 
     const req = new Request("http://localhost/api/legal/deadlines.ics?case=legal/cases/test", {
       method: "GET",
-    });
+    }) as unknown as NextRequest;
     await GET(req);
 
     const fetchUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
@@ -80,7 +83,9 @@ describe("GET /api/legal/deadlines.ics", () => {
         ])
       );
 
-    const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
+    const req = new Request("http://localhost/api/legal/deadlines.ics", {
+      method: "GET",
+    }) as unknown as NextRequest;
     const res = await GET(req);
     expect(res.status).toBe(200);
     const body = await res.text();
@@ -97,7 +102,9 @@ describe("GET /api/legal/deadlines.ics", () => {
       .mockResolvedValueOnce(Response.json([]))
       .mockResolvedValueOnce(Response.json([]));
 
-    const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
+    const req = new Request("http://localhost/api/legal/deadlines.ics", {
+      method: "GET",
+    }) as unknown as NextRequest;
     const res = await GET(req);
     expect(res.status).toBe(200);
     const body = await res.text();
@@ -109,7 +116,9 @@ describe("GET /api/legal/deadlines.ics", () => {
     // subscribed client already holds, so the route reports the failure.
     (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("ECONNREFUSED"));
 
-    const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
+    const req = new Request("http://localhost/api/legal/deadlines.ics", {
+      method: "GET",
+    }) as unknown as NextRequest;
     const res = await GET(req);
     expect(res.status).toBe(502);
     const body = await res.text();
@@ -121,7 +130,9 @@ describe("GET /api/legal/deadlines.ics", () => {
       new Response("BEGIN:VCALENDAR\nBEGIN:VEVENT\nEND:VEVENT\nEND:VCALENDAR", { status: 200 })
     );
 
-    const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
+    const req = new Request("http://localhost/api/legal/deadlines.ics", {
+      method: "GET",
+    }) as unknown as NextRequest;
     const res = await GET(req);
     expect(res.status).toBe(200);
 

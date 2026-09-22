@@ -203,7 +203,7 @@ describe("createWebhookHandler", () => {
       async () => Response.json({ ok: true })
     );
 
-    const res = await handler(makeMockRequest("POST", { owner: "org-1" }), {});
+    const res = await handler(makeMockRequest("POST", { owner: "org-1" }));
 
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("17");

@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -51,7 +52,7 @@ describe("POST /api/cases/legal-hold", () => {
         legal_hold: true,
         reason: "Beweissicherungsmaßnahme",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -89,7 +90,7 @@ describe("POST /api/cases/legal-hold", () => {
     const req = new Request("http://localhost/api/cases/legal-hold", {
       method: "POST",
       body: JSON.stringify({ case_slug: "legal/cases/test", legal_hold: false }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -105,7 +106,7 @@ describe("POST /api/cases/legal-hold", () => {
     const req = new Request("http://localhost/api/cases/legal-hold", {
       method: "POST",
       body: JSON.stringify({ case_slug: "legal/cases/test", legal_hold: true }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(502);
@@ -115,7 +116,7 @@ describe("POST /api/cases/legal-hold", () => {
     const req = new Request("http://localhost/api/cases/legal-hold", {
       method: "POST",
       body: JSON.stringify({ legal_hold: true }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -125,7 +126,7 @@ describe("POST /api/cases/legal-hold", () => {
     const req = new Request("http://localhost/api/cases/legal-hold", {
       method: "POST",
       body: JSON.stringify({ case_slug: "legal/cases/test" }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);

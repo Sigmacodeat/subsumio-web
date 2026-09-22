@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock audit so denial is observable and no real audit-log I/O happens.
-const audit = vi.fn(async () => undefined);
+const audit = vi.fn(async (..._a: unknown[]) => undefined);
 vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => audit(...a) }));
 
 import { handleLegalChatMessage } from "./actions";

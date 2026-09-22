@@ -256,7 +256,7 @@ describe("WP3: engineHeadersWithCaseJurisdiction", () => {
     );
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    const url = fetchFn.mock.calls[0][0] as string;
+    const url = (fetchFn.mock.calls[0] as unknown[])[0] as string;
     expect(url).toContain("legal/cases/trimmed");
   });
 });

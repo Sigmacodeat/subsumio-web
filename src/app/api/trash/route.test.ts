@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -62,7 +63,7 @@ function post(body: unknown) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    })
+    }) as unknown as NextRequest
   );
 }
 
@@ -113,7 +114,7 @@ describe("GET /api/trash", () => {
       return Promise.resolve([]);
     });
 
-    const res = await GET(new Request("http://localhost/api/trash"));
+    const res = await GET(new Request("http://localhost/api/trash") as unknown as NextRequest);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items).toHaveLength(2);
@@ -127,7 +128,9 @@ describe("GET /api/trash", () => {
 
   test("honours the type filter", async () => {
     mockListEnginePages.mockResolvedValue([]);
-    const res = await GET(new Request("http://localhost/api/trash?type=invoice"));
+    const res = await GET(
+      new Request("http://localhost/api/trash?type=invoice") as unknown as NextRequest
+    );
     expect(res.status).toBe(200);
     expect(mockListEnginePages).toHaveBeenCalledTimes(1);
     expect(mockListEnginePages).toHaveBeenCalledWith(
@@ -140,7 +143,7 @@ describe("GET /api/trash", () => {
 
   test("returns 503 when the engine listing fails", async () => {
     mockListEnginePages.mockRejectedValue(new Error("down"));
-    const res = await GET(new Request("http://localhost/api/trash"));
+    const res = await GET(new Request("http://localhost/api/trash") as unknown as NextRequest);
     expect(res.status).toBe(503);
   });
 });

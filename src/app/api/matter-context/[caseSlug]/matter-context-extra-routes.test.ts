@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -79,9 +80,9 @@ vi.mock("@/lib/case-investigation-suggest", () => ({
   })),
 }));
 
-function makeReq(caseSlug: string, path: string): Request {
+function makeReq(caseSlug: string, path: string): NextRequest {
   const url = `http://localhost/api/matter-context/${encodeURIComponent(caseSlug)}/${path}`;
-  const req = new Request(url, { method: "GET" });
+  const req = new Request(url, { method: "GET" }) as unknown as NextRequest;
   (req as unknown as { params: Promise<{ caseSlug: string }> }).params = Promise.resolve({
     caseSlug,
   });
@@ -106,7 +107,7 @@ describe("GET /api/matter-context/[caseSlug]/understanding", () => {
   test("returns 400 when caseSlug is missing", async () => {
     const req = new Request("http://localhost/api/matter-context//understanding", {
       method: "GET",
-    });
+    }) as unknown as NextRequest;
     (req as unknown as { params: Promise<{ caseSlug: string }> }).params = Promise.resolve({
       caseSlug: "",
     });
@@ -134,7 +135,7 @@ describe("GET /api/matter-context/[caseSlug]/investigation-suggest", () => {
   test("returns 400 when caseSlug is missing", async () => {
     const req = new Request("http://localhost/api/matter-context//investigation-suggest", {
       method: "GET",
-    });
+    }) as unknown as NextRequest;
     (req as unknown as { params: Promise<{ caseSlug: string }> }).params = Promise.resolve({
       caseSlug: "",
     });

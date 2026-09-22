@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildCaseFromIntake } from "./intake-conversion";
+import { buildCaseFromIntake, type IntakeConversionInput } from "./intake-conversion";
 import { defaultAcceptanceWorkflow } from "./intake-acceptance";
 import type { IntakeRequestFrontmatter } from "./intake";
 
-function intake(overrides: Partial<IntakeRequestFrontmatter> = {}) {
+function intake(overrides: Partial<IntakeRequestFrontmatter> = {}): IntakeConversionInput {
   const now = "2026-06-20T10:00:00.000Z";
   return {
     slug: "legal/intake/2026-06-20/max",
@@ -34,7 +34,7 @@ function intake(overrides: Partial<IntakeRequestFrontmatter> = {}) {
       },
       ...overrides,
     },
-  } as const;
+  };
 }
 
 describe("buildCaseFromIntake", () => {

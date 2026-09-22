@@ -21,8 +21,8 @@ vi.mock("@/lib/auth/store", () => ({
   getOrgStore: () => ({ getById: (id: string) => getOrgById(id) }),
 }));
 
-const startSupportSession = vi.fn();
-const getActiveSupportSession = vi.fn(async () => null as unknown);
+const startSupportSession = vi.fn(async (_input: unknown) => ({}) as unknown);
+const getActiveSupportSession = vi.fn(async (_id: string) => null as unknown);
 vi.mock("@/lib/support-session", () => ({
   startSupportSession: (input: unknown) => startSupportSession(input),
   getActiveSupportSession: (id: string) => getActiveSupportSession(id),

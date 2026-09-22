@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock the network send layer — no real WhatsApp credentials in tests.
-const sendText = vi.fn(async () => ({ messageId: "wamid.text.test" }));
-const sendTemplate = vi.fn(async () => ({ messageId: "wamid.test" }));
+const sendText = vi.fn(async (..._a: unknown[]) => ({ messageId: "wamid.text.test" }));
+const sendTemplate = vi.fn(async (..._a: unknown[]) => ({ messageId: "wamid.test" }));
 vi.mock("./send", () => ({
   sendWhatsAppText: (...a: unknown[]) => sendText(...a),
   sendWhatsAppTemplate: (...a: unknown[]) => sendTemplate(...a),
 }));
 // Mock audit to keep the test pure (no file/db writes).
-const audit = vi.fn(async () => undefined);
+const audit = vi.fn(async (..._a: unknown[]) => undefined);
 vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => audit(...a) }));
 // Mock outbound tracker — no DB in tests.
 vi.mock("./outbound-tracker", () => ({

@@ -260,11 +260,11 @@ describe("Portal Token — Production Secret Enforcement", () => {
     const originalEnv = process.env.NODE_ENV;
     const originalSecret = process.env.PORTAL_TOKEN_SECRET;
     delete process.env.PORTAL_TOKEN_SECRET;
-    process.env.NODE_ENV = "production";
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
     try {
       expect(() => getPortalSecret()).toThrow();
     } finally {
-      process.env.NODE_ENV = originalEnv;
+      (process.env as { NODE_ENV?: string }).NODE_ENV = originalEnv;
       if (originalSecret === undefined) delete process.env.PORTAL_TOKEN_SECRET;
       else process.env.PORTAL_TOKEN_SECRET = originalSecret;
     }
@@ -273,12 +273,12 @@ describe("Portal Token — Production Secret Enforcement", () => {
   test("returns env secret in production when set", () => {
     const originalEnv = process.env.NODE_ENV;
     const originalSecret = process.env.PORTAL_TOKEN_SECRET;
-    process.env.NODE_ENV = "production";
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
     process.env.PORTAL_TOKEN_SECRET = "prod-secret-abc123";
     try {
       expect(getPortalSecret()).toBe("prod-secret-abc123");
     } finally {
-      process.env.NODE_ENV = originalEnv;
+      (process.env as { NODE_ENV?: string }).NODE_ENV = originalEnv;
       if (originalSecret === undefined) delete process.env.PORTAL_TOKEN_SECRET;
       else process.env.PORTAL_TOKEN_SECRET = originalSecret;
     }

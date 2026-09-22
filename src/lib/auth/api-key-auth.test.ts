@@ -78,13 +78,17 @@ describe("verifyApiKey", () => {
   });
 
   test("returns null when key not found in store", async () => {
-    const { mockStore } = await import("@/lib/api-key-store");
+    const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
+      mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    };
     mockStore.findByHash.mockResolvedValue(null);
     expect(await verifyApiKey("Bearer sk_live_notfound")).toBeNull();
   });
 
   test("returns EngineContext for valid API key", async () => {
-    const { mockStore } = await import("@/lib/api-key-store");
+    const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
+      mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    };
     mockStore.findByHash.mockResolvedValue({
       id: "key-1",
       ownerId: "user-1",
@@ -106,7 +110,9 @@ describe("verifyApiKey", () => {
   });
 
   test("updates lastUsedAt on successful auth", async () => {
-    const { mockStore } = await import("@/lib/api-key-store");
+    const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
+      mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    };
     mockStore.findByHash.mockResolvedValue({
       id: "key-1",
       ownerId: "user-1",
@@ -131,7 +137,9 @@ describe("verifyApiKey", () => {
   });
 
   test("returns null when owner user not found", async () => {
-    const { mockStore } = await import("@/lib/api-key-store");
+    const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
+      mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    };
     mockStore.findByHash.mockResolvedValue({
       id: "key-2",
       ownerId: "nonexistent-user",

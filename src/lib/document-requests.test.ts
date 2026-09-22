@@ -38,7 +38,7 @@ describe("document requests", () => {
   });
 
   it("writes document requests as mergeable brain pages", async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
       async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
     );
     const request = await buildDocumentRequest({
@@ -61,7 +61,7 @@ describe("document requests", () => {
       content: "Bitte senden",
       frontmatter: (await buildDocumentRequest({ caseSlug: "legal/cases/1", items: ["Vollmacht"] }))
         .frontmatter,
-    } as BrainPage;
+    } as unknown as BrainPage;
 
     expect(documentRequestFromPage(page)?.frontmatter.type).toBe("document_request");
     expect(

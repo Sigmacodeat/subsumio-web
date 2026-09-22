@@ -1,5 +1,10 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "target": "ES2022",
+    "incremental": false
+  },
   "include": [
     "next-env.d.ts",
     "src/**/*.d.ts",

@@ -33,7 +33,7 @@ describe("intake requests", () => {
   });
 
   it("writes intake requests as mergeable brain pages", async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
       async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
     );
     const intake = buildIntakeRequest({ source: "manual", summary: "Neue Anfrage" });
@@ -52,7 +52,7 @@ describe("intake requests", () => {
       title: "Intake",
       content: "Hallo",
       frontmatter: buildIntakeRequest({ source: "web", summary: "Hallo" }).frontmatter,
-    } as BrainPage;
+    } as unknown as BrainPage;
 
     expect(intakeFromPage(page)?.frontmatter.type).toBe("intake_request");
     expect(

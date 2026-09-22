@@ -25,6 +25,7 @@ function makeGrounding(overrides: Partial<GroundingMetadata> = {}): GroundingMet
     corpus_checked: true,
     grounded_citations: [],
     analyzed_at: new Date().toISOString(),
+    has_unverified: false,
     ...overrides,
   };
 }

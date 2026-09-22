@@ -277,15 +277,15 @@ export function createHandler<
     query: ValidatedQuery<Q>,
     req: NextRequest
   ) => Promise<Response>
-): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
-  return (req: NextRequest, routeContext: RouteContext) => {
+): (req: NextRequest, routeContext?: RouteContext) => Promise<Response> {
+  return (req: NextRequest, routeContext?: RouteContext) => {
     const requestId = resolveRequestId(req?.headers?.get?.("x-request-id"));
     return withRequestId(requestId, () => runHandler(req, routeContext, requestId));
   };
 
   async function runHandler(
     req: NextRequest,
-    routeContext: RouteContext,
+    routeContext: RouteContext | undefined,
     requestId: string
   ): Promise<Response> {
     // Attach params from Next.js route context to req so handlers can access them
@@ -586,7 +586,7 @@ export function createPublicHandler<
     query: ValidatedQuery<Q>,
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
-): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+): (req: NextRequest, routeContext?: RouteContext) => Promise<Response> {
   const {
     rateLimitKey,
     rateLimitMax = 20,
@@ -651,7 +651,7 @@ export function createScimHandler<
     query: ValidatedQuery<Q>,
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
-): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+): (req: NextRequest, routeContext?: RouteContext) => Promise<Response> {
   return createHandler(
     { ...options, action: "scim" as RouteAction, skipCsrf: true, customAuth: options.customAuth },
     async (ctx, body, query, req) =>
@@ -676,7 +676,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
     rateLimitWindowMs?: number;
   },
   handler: (body: ValidatedBody<B>, req: NextRequest) => Promise<Response>
-): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+): (req: NextRequest, routeContext?: RouteContext) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
     const corsResponse = handleCors(req, options.cors ?? false);
@@ -773,7 +773,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
 export function createCronHandler(
   handler: (req: NextRequest) => Promise<Response>,
   _options?: { maxDuration?: number }
-): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+): (req: NextRequest, routeContext?: RouteContext) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
     const corsResponse = handleCors(req, false);
@@ -940,7 +940,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
    * defaults to brain_id.
    */
   receiptProductRef?: (body: z.infer<B>) => string;
-}): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+}): (req: NextRequest, routeContext?: RouteContext) => Promise<Response> {
   const label = options.label ?? options.enginePath;
   return createHandler(
     {

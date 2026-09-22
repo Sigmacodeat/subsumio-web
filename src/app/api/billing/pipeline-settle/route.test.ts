@@ -53,14 +53,14 @@ describe("POST /api/billing/pipeline-settle", () => {
   });
 
   it("rejects browser/session calls without the engine key", async () => {
-    const response = await POST(request(), {});
+    const response = await POST(request());
 
     expect(response.status).toBe(401);
     expect(mocks.getCreditReservation).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid engine key", async () => {
-    const response = await POST(request(validBody, "wrong-secret"), {});
+    const response = await POST(request(validBody, "wrong-secret"));
 
     expect(response.status).toBe(401);
   });
@@ -68,7 +68,7 @@ describe("POST /api/billing/pipeline-settle", () => {
   it("rejects a forged pipeline key", async () => {
     mocks.getCreditReservation.mockResolvedValue(null);
 
-    const response = await POST(request(validBody, "engine-secret"), {});
+    const response = await POST(request(validBody, "engine-secret"));
 
     expect(response.status).toBe(404);
     expect(mocks.refundCredits).not.toHaveBeenCalled();
@@ -76,8 +76,7 @@ describe("POST /api/billing/pipeline-settle", () => {
 
   it("rejects a caller-supplied amount that differs from the ledger", async () => {
     const response = await POST(
-      request({ ...validBody, reserved_credits: 10_000 }, "engine-secret"),
-      {}
+      request({ ...validBody, reserved_credits: 10_000 }, "engine-secret")
     );
 
     expect(response.status).toBe(409);
@@ -85,7 +84,7 @@ describe("POST /api/billing/pipeline-settle", () => {
   });
 
   it("settles only a verified owner-scoped reservation", async () => {
-    const response = await POST(request(validBody, "engine-secret"), {});
+    const response = await POST(request(validBody, "engine-secret"));
 
     expect(response.status).toBe(200);
     expect(mocks.getCreditReservation).toHaveBeenCalledWith("org-1", "org", "pipeline-real");

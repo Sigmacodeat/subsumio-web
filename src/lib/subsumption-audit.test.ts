@@ -51,7 +51,7 @@ describe.skipIf(!existsSync(LAW_CORPUS))("T2.2 Subsumption Case Audit", () => {
       expect(c.expected_law).toBeTruthy();
       expect(c.expected_section).toBeTruthy();
       expect(c.expected_keywords).toBeInstanceOf(Array);
-      expect(c.expected_keywords.length).toBeGreaterThan(0);
+      expect(c.expected_keywords!.length).toBeGreaterThan(0);
       expect(c.expected_conclusion).toBeTruthy();
       expect(c.expected_conclusion.length).toBeGreaterThan(10);
     }
@@ -158,7 +158,7 @@ describe.skipIf(!existsSync(LAW_CORPUS))("T2.2 Subsumption Case Audit", () => {
     for (const id of knownErrors) {
       const regCase = regressionCases.find((c) => c.case_id === id);
       expect(regCase).toBeDefined();
-      expect(regCase.audit_status).toBe("corrected");
+      expect(regCase!.audit_status).toBe("corrected");
     }
   });
 
@@ -167,7 +167,7 @@ describe.skipIf(!existsSync(LAW_CORPUS))("T2.2 Subsumption Case Audit", () => {
     for (const id of disputedIds) {
       const regCase = regressionCases.find((c) => c.case_id === id);
       expect(regCase).toBeDefined();
-      expect(regCase.audit_status).toBe("disputed");
+      expect(regCase!.audit_status).toBe("disputed");
     }
   });
 

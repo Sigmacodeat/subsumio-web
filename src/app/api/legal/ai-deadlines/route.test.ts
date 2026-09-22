@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -95,7 +96,7 @@ describe("POST /api/legal/ai-deadlines", () => {
         text: "Berufung binnen 4 Wochen ab Zustellung vom 2026-11-01",
         caseSlug: "legal/cases/test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -126,7 +127,7 @@ describe("POST /api/legal/ai-deadlines", () => {
       body: JSON.stringify({
         text: "Berufung binnen 4 Wochen",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -139,7 +140,7 @@ describe("POST /api/legal/ai-deadlines", () => {
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
       body: JSON.stringify({ text: "Frist bis 2026-12-01" }),
-    });
+    }) as unknown as NextRequest;
 
     await POST(req);
     expect(groundAnswerCitations).toHaveBeenCalled();
@@ -151,7 +152,7 @@ describe("POST /api/legal/ai-deadlines", () => {
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
       body: JSON.stringify({ text: "Frist" }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     const body = await res.json();
@@ -170,7 +171,7 @@ describe("POST /api/legal/ai-deadlines", () => {
         text: "Berufung binnen 4 Wochen",
         caseSlug: "legal/cases/test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     await POST(req);
     expect(recordQuota).toHaveBeenCalled();
@@ -180,7 +181,7 @@ describe("POST /api/legal/ai-deadlines", () => {
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
       body: JSON.stringify({ text: "" }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -190,7 +191,7 @@ describe("POST /api/legal/ai-deadlines", () => {
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
       body: JSON.stringify({ text: "x".repeat(50_001) }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -200,6 +201,7 @@ describe("POST /api/legal/ai-deadlines", () => {
     // Bug fix: Route now checks res.ok — failed creates are NOT pushed
     vi.mocked(detectDeadlines).mockReturnValueOnce([
       {
+        type: "frist",
         description: "Frist 1",
         date: "2026-12-01",
         confidence: "high",
@@ -210,6 +212,7 @@ describe("POST /api/legal/ai-deadlines", () => {
         zustellungsdatum: undefined,
       },
       {
+        type: "frist",
         description: "Frist 2",
         date: "2027-01-01",
         confidence: "high",
@@ -231,7 +234,7 @@ describe("POST /api/legal/ai-deadlines", () => {
         text: "Frist 1 und Frist 2",
         caseSlug: "legal/cases/test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);

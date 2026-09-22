@@ -98,7 +98,7 @@ beforeEach(() => {
   mockEnginePatch.mockReset();
   mockEnginePatch.mockResolvedValue(new Response("{}", { status: 200 }));
   mockEnqueue.mockReset();
-  mockEnqueue.mockResolvedValue({ enqueued: 3 });
+  mockEnqueue.mockResolvedValue(undefined);
 });
 
 function makeRequest(body: unknown): NextRequest {

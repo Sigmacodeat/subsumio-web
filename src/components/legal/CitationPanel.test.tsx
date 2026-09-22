@@ -42,6 +42,7 @@ describe("CitationPanel", () => {
         },
       ],
       analyzed_at: "2026-06-20T10:00:00.000Z",
+      has_unverified: false,
     },
     isStreaming: false,
   };
@@ -89,6 +90,7 @@ describe("CitationPanel", () => {
           { code: "BGB", paragraph: "§ 999", context: "", verified: false },
         ],
         analyzed_at: "2026-06-20T10:00:00.000Z",
+        has_unverified: false,
       },
     };
     render(<CitationPanel data={data} />);
@@ -104,6 +106,7 @@ describe("CitationPanel", () => {
         corpus_checked: false,
         grounded_citations: [],
         analyzed_at: "2026-06-20T10:00:00.000Z",
+        has_unverified: false,
       },
     };
     render(<CitationPanel data={data} />);
@@ -143,6 +146,7 @@ describe("CitationPanel", () => {
         corpus_checked: true,
         grounded_citations: [{ code: "BGB", paragraph: "§ 999", context: "", verified: false }],
         analyzed_at: "2026-06-20T10:00:00.000Z",
+        has_unverified: false,
       },
     };
     render(<CitationPanel data={data} />);
@@ -226,6 +230,7 @@ describe("CitationBadgesInline", () => {
         corpus_checked: true,
         grounded_citations: [],
         analyzed_at: "2026-06-20T10:00:00.000Z",
+        has_unverified: false,
       },
       isStreaming: false,
     };

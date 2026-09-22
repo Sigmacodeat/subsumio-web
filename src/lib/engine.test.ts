@@ -99,13 +99,13 @@ describe("engineConfigurationResponse", () => {
   }
 
   test("returns null in development mode", async () => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     const { engineConfigurationResponse } = await freshImport();
     expect(engineConfigurationResponse()).toBeNull();
   });
 
   test("returns null in production with configured engine URL and API key", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.SUBSUMIO_API_URL = "http://engine:3001";
     process.env.SUBSUMIO_WEB_API_KEY = "key";
     const { engineConfigurationResponse } = await freshImport();
@@ -113,7 +113,7 @@ describe("engineConfigurationResponse", () => {
   });
 
   test("returns 503 in production without engine URL", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     delete process.env.SUBSUMIO_API_URL;
     const { engineConfigurationResponse } = await freshImport();
     const res = engineConfigurationResponse();
@@ -122,7 +122,7 @@ describe("engineConfigurationResponse", () => {
   });
 
   test("returns 503 in production with engine URL but no API key", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.SUBSUMIO_API_URL = "http://engine:3001";
     delete process.env.SUBSUMIO_WEB_API_KEY;
     const { engineConfigurationResponse } = await freshImport();

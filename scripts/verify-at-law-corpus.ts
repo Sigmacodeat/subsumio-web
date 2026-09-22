@@ -7,7 +7,7 @@
  * Usage:
  *   bun run scripts/verify-at-law-corpus.ts [SERVER_URL]
  *
- * Default server: http://localhost:13131 (SSH tunnel to engine on Hetzner)
+ * Default server: http://localhost:13131 (SSH tunnel to the production engine)
  * For on-server execution: use scripts/verify-at-engine.js
  */
 

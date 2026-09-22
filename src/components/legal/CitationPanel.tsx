@@ -23,7 +23,7 @@ import { assessGroundedness } from "@/lib/groundedness";
 import { formatCitationTitle } from "@/lib/ogh-format";
 import type { GroundedCitation } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
-import { extractStatuteCitations } from "@/lib/citation-gate-client";
+import { extractStatuteCitations, type GroundingMetadata } from "@/lib/citation-gate-client";
 import { openNormReader, readerJurisdiction } from "@/lib/norm-reader-events";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -34,15 +34,7 @@ export interface CitationPanelData {
   /** Gaps reported by the engine. */
   gaps?: string[];
   /** Corpus grounding metadata from citation-gate. */
-  grounding?: {
-    citations_verified: number;
-    citations_unverified: number;
-    corpus_checked: boolean;
-    grounded_citations: GroundedCitation[];
-    analyzed_at: string;
-    has_unverified?: boolean;
-    warning?: string;
-  } | null;
+  grounding?: GroundingMetadata | null;
   /** Whether the AI output has been fully streamed / is final. */
   isStreaming?: boolean;
   /** Whether attorney review is required (default: true for legal AI). */

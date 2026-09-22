@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -69,7 +70,7 @@ const req = (method: string, body?: unknown, query = "") =>
   new Request(`http://x/api/chat/sessions${query}`, {
     method,
     ...(body ? { body: JSON.stringify(body) } : {}),
-  });
+  }) as unknown as NextRequest;
 
 const session = {
   id: "s1",

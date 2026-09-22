@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -121,7 +122,7 @@ describe("POST /api/intake/convert", () => {
       new Request("http://localhost/api/intake/convert", {
         method: "POST",
         body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
-      })
+      }) as unknown as NextRequest
     );
 
     expect(res.status).toBe(422);
@@ -175,7 +176,7 @@ describe("POST /api/intake/convert", () => {
       new Request("http://localhost/api/intake/convert", {
         method: "POST",
         body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
-      })
+      }) as unknown as NextRequest
     );
 
     expect(res.status).toBe(200);
@@ -236,7 +237,7 @@ describe("POST /api/intake/convert", () => {
       new Request("http://localhost/api/intake/convert", {
         method: "POST",
         body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
-      })
+      }) as unknown as NextRequest
     );
     expect(res.status).toBe(422);
     expect((await res.json()).details?.code).toBe(code);

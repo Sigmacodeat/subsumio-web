@@ -564,6 +564,7 @@ const ASSISTANT_CITATIONS: CitationPanelData = {
     citations_verified: 2,
     citations_unverified: 0,
     corpus_checked: true,
+    has_unverified: false,
     analyzed_at: new Date().toISOString(),
     grounded_citations: [
       {

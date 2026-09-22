@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -22,7 +23,7 @@ const mockBundle = {
   coverage: { completeness: 0.85 },
   gaps: [],
   generated_at: "2026-09-12T10:00:00.000Z",
-};
+} as unknown as MatterContextBundle;
 
 vi.mock("@/lib/matter-context", () => ({
   buildMatterContext: vi.fn(async () => mockBundle),
@@ -46,10 +47,11 @@ vi.mock("@/lib/api-handler", () => ({
 
 import { GET } from "./route";
 import { buildMatterContext } from "@/lib/matter-context";
+type MatterContextBundle = Awaited<ReturnType<typeof buildMatterContext>>;
 
-function makeRequest(caseSlug: string): Request {
+function makeRequest(caseSlug: string): NextRequest {
   const url = `http://localhost/api/matter-context/${encodeURIComponent(caseSlug)}`;
-  return new Request(url, { method: "GET" });
+  return new Request(url, { method: "GET" }) as unknown as NextRequest;
 }
 
 describe("GET /api/matter-context/[caseSlug]", () => {

@@ -2,13 +2,16 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { orchestrateWhatsAppMessage } from "./orchestrator";
 import type { WhatsAppIdentity, WhatsAppTextMessage } from "@/lib/whatsapp/types";
 
-const wasBriefingSentTodayMock = vi.fn(async () => false);
+const wasBriefingSentTodayMock = vi.fn(async (..._args: unknown[]) => false);
 vi.mock("@/lib/whatsapp/daily-briefing", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/whatsapp/daily-briefing")>()),
   wasBriefingSentToday: (...args: unknown[]) => wasBriefingSentTodayMock(...args),
 }));
 
-const recordBriefingFeedbackMock = vi.fn(async () => ({ recorded: true, feedback_id: "fb-1" }));
+const recordBriefingFeedbackMock = vi.fn(async (..._args: unknown[]) => ({
+  recorded: true,
+  feedback_id: "fb-1",
+}));
 vi.mock("@/lib/whatsapp/briefing-feedback", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/whatsapp/briefing-feedback")>()),
   recordBriefingFeedback: (...args: unknown[]) => recordBriefingFeedbackMock(...args),
@@ -34,7 +37,10 @@ function identity(role: WhatsAppIdentity["role"] = "lawyer"): WhatsAppIdentity {
 }
 
 function okFetch() {
-  return vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  return vi.fn(
+    async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+  );
 }
 
 function caseFetch() {
@@ -129,7 +135,7 @@ describe("orchestrateWhatsAppMessage", () => {
     const downloadMedia = vi.fn(async () => ({ slug: "media/x", mimeType: "application/pdf" }));
     const result = await orchestrateWhatsAppMessage(
       { id: "wamid.UNVERIFIED", from: "+491701234567", type: "document", mediaId: "m-1" },
-      { ...identity("client"), verifiedAt: undefined },
+      { ...identity("client"), verifiedAt: null },
       {
         fetchImpl: fetchImpl as unknown as typeof fetch,
         handleMedia,

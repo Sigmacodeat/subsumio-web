@@ -138,9 +138,9 @@ describe("sanitizeObjectStrings", () => {
       ],
     };
     const result = sanitizeObjectStrings(obj);
-    expect(result.items[0].text).toBe("safe");
-    expect(result.items[0].meta.prompt).toContain("[REDACTED]");
-    expect(result.items[1].text).toBe("also safe");
+    expect(result.items[0]!.text).toBe("safe");
+    expect(result.items[0]!.meta!.prompt).toContain("[REDACTED]");
+    expect(result.items[1]!.text).toBe("also safe");
   });
 
   it("preserves normal legal text unchanged", () => {

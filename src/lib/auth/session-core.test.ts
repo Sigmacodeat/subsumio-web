@@ -40,14 +40,14 @@ describe("session-core", () => {
 
     test("returns dev secret in non-production", async () => {
       delete process.env.AUTH_SECRET;
-      process.env.NODE_ENV = "development";
+      vi.stubEnv("NODE_ENV", "development");
       const { getAuthSecret } = await import("./session-core");
       expect(getAuthSecret()).toBe("subsumio-dev-secret-change-me");
     });
 
     test("throws in production without AUTH_SECRET", async () => {
       delete process.env.AUTH_SECRET;
-      process.env.NODE_ENV = "production";
+      vi.stubEnv("NODE_ENV", "production");
       const { getAuthSecret } = await import("./session-core");
       expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
     });

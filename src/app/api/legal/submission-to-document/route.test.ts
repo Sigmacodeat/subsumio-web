@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment jsdom
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -74,7 +75,7 @@ describe("POST /api/legal/submission-to-document", () => {
       new Request("http://localhost/api/legal/submission-to-document", {
         method: "POST",
         body: JSON.stringify({}),
-      })
+      }) as unknown as NextRequest
     );
     expect(res.status).toBe(400);
   });
@@ -86,7 +87,7 @@ describe("POST /api/legal/submission-to-document", () => {
       new Request("http://localhost/api/legal/submission-to-document", {
         method: "POST",
         body: JSON.stringify({ submissionSlug: "legal/submissions/whatsapp/test-1" }),
-      })
+      }) as unknown as NextRequest
     );
     expect(res.status).toBe(404);
   });
@@ -103,7 +104,7 @@ describe("POST /api/legal/submission-to-document", () => {
       new Request("http://localhost/api/legal/submission-to-document", {
         method: "POST",
         body: JSON.stringify({ submissionSlug: "legal/submissions/whatsapp/test-1" }),
-      })
+      }) as unknown as NextRequest
     );
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -131,7 +132,7 @@ describe("POST /api/legal/submission-to-document", () => {
       new Request("http://localhost/api/legal/submission-to-document", {
         method: "POST",
         body: JSON.stringify({ submissionSlug: "legal/submissions/whatsapp/test-1" }),
-      })
+      }) as unknown as NextRequest
     );
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -172,7 +173,7 @@ describe("POST /api/legal/submission-to-document", () => {
       new Request("http://localhost/api/legal/submission-to-document", {
         method: "POST",
         body: JSON.stringify({ submissionSlug: "legal/submissions/whatsapp/test-1" }),
-      })
+      }) as unknown as NextRequest
     );
 
     expect(res.status).toBe(200);
@@ -211,7 +212,7 @@ describe("POST /api/legal/submission-to-document", () => {
       new Request("http://localhost/api/legal/submission-to-document", {
         method: "POST",
         body: JSON.stringify({ submissionSlug: "legal/submissions/whatsapp/test-1" }),
-      })
+      }) as unknown as NextRequest
     );
 
     expect(res.status).toBe(200);

@@ -136,6 +136,7 @@ describe("TODO 8: Insights-Engine", () => {
 
   it("generates extraction_issue insight for failed document analysis", () => {
     const input: InsightInput = {
+      cases: [],
       recentDocuments: [
         {
           slug: "doc-1",

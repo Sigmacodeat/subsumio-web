@@ -50,13 +50,13 @@ describe("getAuthSecret", () => {
   });
 
   test("throws in production without secret", () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     delete process.env.AUTH_SECRET;
     expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
   });
 
   test("returns fallback in dev", () => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     delete process.env.AUTH_SECRET;
     expect(getAuthSecret()).toBe("subsumio-dev-secret-change-me");
   });

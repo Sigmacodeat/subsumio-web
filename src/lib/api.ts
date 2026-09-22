@@ -805,22 +805,7 @@ export const api = {
       return request(`/api/legal/judgements-search?${params.toString()}`);
     },
 
-    ground(text: string): Promise<{
-      citations_verified: number;
-      citations_unverified: number;
-      corpus_checked: boolean;
-      grounded_citations: Array<{
-        code: string;
-        paragraph: string;
-        context: string;
-        verified: boolean;
-        source_text?: string;
-        source_url?: string;
-      }>;
-      analyzed_at: string;
-      has_unverified: boolean;
-      warning?: string;
-    }> {
+    ground(text: string): Promise<GroundingMetadata> {
       return request("/api/legal/ground", {
         method: "POST",
         body: JSON.stringify({ text }),
@@ -3096,20 +3081,17 @@ export const api = {
       slug: string,
       frontmatter: Record<string, unknown>
     ): Promise<{ slug: string; success: boolean } | Record<string, unknown>> {
-      const path = slug.split("/").map(encodeURIComponent).join("/");
-      return request(`/api/invoices/${path}`, {
+      return request(`/api/invoices/${encodeURIComponent(slug)}`, {
         method: "PATCH",
         body: JSON.stringify(frontmatter),
       });
     },
     delete(slug: string): Promise<{ ok: boolean }> {
-      const path = slug.split("/").map(encodeURIComponent).join("/");
-      return request(`/api/invoices/${path}`, { method: "DELETE" });
+      return request(`/api/invoices/${encodeURIComponent(slug)}`, { method: "DELETE" });
     },
     /** § GoBD Storno: creates a separate, negated invoice referencing this one — never mutates the original. */
     storno(slug: string): Promise<{ slug: string; invoice_number: string }> {
-      const path = slug.split("/").map(encodeURIComponent).join("/");
-      return request(`/api/invoices/${path}/storno`, { method: "POST" });
+      return request(`/api/invoices/${encodeURIComponent(slug)}/storno`, { method: "POST" });
     },
   },
 

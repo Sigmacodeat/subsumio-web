@@ -147,8 +147,8 @@ describe("agentActionFrontmatter", () => {
     });
     const after = new Date().toISOString();
 
-    expect(fm.proposed_at >= before).toBe(true);
-    expect(fm.proposed_at <= after).toBe(true);
+    expect((fm.proposed_at as string) >= before).toBe(true);
+    expect((fm.proposed_at as string) <= after).toBe(true);
   });
 
   test("includes target_slug when provided", () => {

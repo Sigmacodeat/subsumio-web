@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import type { BrainPage } from "@/lib/types";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 // Mock the api module
@@ -98,10 +99,10 @@ describe("addComment", () => {
       content: "Test",
     });
     const call = mockCreatePage.mock.calls[0][0];
-    expect(call.frontmatter).toHaveProperty("parent_slug", "cases/2024-001");
-    expect(call.frontmatter).toHaveProperty("parent_type", "case");
-    expect(call.frontmatter).toHaveProperty("author_id", "user-1");
-    expect(call.frontmatter).toHaveProperty("author_name", "Max");
+    expect(call.frontmatter!).toHaveProperty("parent_slug", "cases/2024-001");
+    expect(call.frontmatter!).toHaveProperty("parent_type", "case");
+    expect(call.frontmatter!).toHaveProperty("author_id", "user-1");
+    expect(call.frontmatter!).toHaveProperty("author_name", "Max");
   });
 
   test("extracts mentions and stores in frontmatter", async () => {
@@ -113,8 +114,8 @@ describe("addComment", () => {
       content: "Hey @anna check this",
     });
     const call = mockCreatePage.mock.calls[0][0];
-    expect(call.frontmatter).toHaveProperty("mentions");
-    expect(call.frontmatter.mentions).toContain("anna");
+    expect(call.frontmatter!).toHaveProperty("mentions");
+    expect(call.frontmatter!.mentions).toContain("anna");
   });
 
   test("sets mentions to null when no mentions", async () => {
@@ -126,7 +127,7 @@ describe("addComment", () => {
       content: "No mentions here",
     });
     const call = mockCreatePage.mock.calls[0][0];
-    expect(call.frontmatter.mentions).toBeNull();
+    expect(call.frontmatter!.mentions).toBeNull();
   });
 
   test("generates threadId from parentCommentId when provided", async () => {
@@ -190,7 +191,9 @@ describe("listComments", () => {
           created_at: "2024-01-01T10:00:00Z",
           thread_id: "t1",
         },
+        title: "t",
         created_at: "2024-01-01T10:00:00Z",
+        updated_at: "2024-01-01T10:00:00Z",
       },
       {
         slug: "comment/cases-2/2",
@@ -204,6 +207,8 @@ describe("listComments", () => {
           thread_id: "t2",
         },
         created_at: "2024-01-01T11:00:00Z",
+        title: "t",
+        updated_at: "2024-01-01T10:00:00Z",
       },
     ]);
     const result = await listComments("cases/1");
@@ -225,7 +230,9 @@ describe("listComments", () => {
           thread_id: "t1",
           deleted_at: "2024-06-01T00:00:00Z",
         },
+        title: "t",
         created_at: "2024-01-01T10:00:00Z",
+        updated_at: "2024-01-01T10:00:00Z",
       },
     ]);
     const result = await listComments("cases/1");
@@ -244,6 +251,8 @@ describe("listComments", () => {
           thread_id: "t2",
         },
         created_at: "2024-06-01T10:00:00Z",
+        title: "t",
+        updated_at: "2024-01-01T10:00:00Z",
       },
       {
         slug: "c1",
@@ -253,7 +262,9 @@ describe("listComments", () => {
           created_at: "2024-01-01T10:00:00Z",
           thread_id: "t1",
         },
+        title: "t",
         created_at: "2024-01-01T10:00:00Z",
+        updated_at: "2024-01-01T10:00:00Z",
       },
     ]);
     const result = await listComments("cases/1");
@@ -268,7 +279,7 @@ describe("deleteComment", () => {
   });
 
   test("returns success:false when comment not found", async () => {
-    mockGetPage.mockResolvedValueOnce(null);
+    mockGetPage.mockResolvedValueOnce(null as unknown as BrainPage);
     const result = await deleteComment({
       commentId: "nonexistent",
       authorId: "u1",
@@ -281,7 +292,7 @@ describe("deleteComment", () => {
     mockGetPage.mockResolvedValueOnce({
       slug: "comment/1",
       frontmatter: { author_id: "u1" },
-    });
+    } as unknown as BrainPage);
     const result = await deleteComment({
       commentId: "comment/1",
       authorId: "u2",
@@ -294,7 +305,7 @@ describe("deleteComment", () => {
     mockGetPage.mockResolvedValueOnce({
       slug: "comment/1",
       frontmatter: { author_id: "u1" },
-    });
+    } as unknown as BrainPage);
     const result = await deleteComment({
       commentId: "comment/1",
       authorId: "u1",
@@ -308,7 +319,7 @@ describe("deleteComment", () => {
     mockGetPage.mockResolvedValueOnce({
       slug: "comment/1",
       frontmatter: { author_id: "u1" },
-    });
+    } as unknown as BrainPage);
     const result = await deleteComment({
       commentId: "comment/1",
       authorId: "u2",
@@ -322,10 +333,10 @@ describe("deleteComment", () => {
     mockGetPage.mockResolvedValueOnce({
       slug: "comment/1",
       frontmatter: { author_id: "u1", parent_slug: "cases/1" },
-    });
+    } as unknown as BrainPage);
     await deleteComment({ commentId: "comment/1", authorId: "u1", userRole: "lawyer" });
     const call = mockUpdatePage.mock.calls[0][0];
     expect(call.content).toBe("[gelöscht]");
-    expect(call.frontmatter).toHaveProperty("deleted_at");
+    expect(call.frontmatter!).toHaveProperty("deleted_at");
   });
 });

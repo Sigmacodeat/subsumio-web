@@ -69,6 +69,7 @@ const CITATIONS: CitationPanelData = {
     citations_verified: 2,
     citations_unverified: 0,
     corpus_checked: true,
+    has_unverified: false,
     analyzed_at: "2026-09-17T09:12:00.000Z",
     grounded_citations: [
       {

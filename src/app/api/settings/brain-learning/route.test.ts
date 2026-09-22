@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -58,13 +59,17 @@ import { GET, PATCH } from "./route";
 
 const fetchMock = vi.fn();
 const get = async () =>
-  (await (await GET(new Request("http://x/api/settings/brain-learning"))).json()).data;
+  (
+    await (
+      await GET(new Request("http://x/api/settings/brain-learning") as unknown as NextRequest)
+    ).json()
+  ).data;
 const patch = (enabled: boolean) =>
   PATCH(
     new Request("http://x/api/settings/brain-learning", {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
-    })
+    }) as unknown as NextRequest
   );
 
 beforeEach(() => {

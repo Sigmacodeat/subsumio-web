@@ -6,7 +6,7 @@ const file = (name: string, bytes: Uint8Array | ArrayBuffer) => ({
   name,
   arrayBuffer: async () =>
     bytes instanceof Uint8Array
-      ? bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+      ? (bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer)
       : bytes,
 });
 

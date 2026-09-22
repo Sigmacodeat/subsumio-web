@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -46,7 +47,10 @@ import { POST } from "./route";
 
 function call(body: Record<string, unknown>) {
   return POST(
-    new Request("http://x/api/copilot/tools", { method: "POST", body: JSON.stringify(body) })
+    new Request("http://x/api/copilot/tools", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }) as unknown as NextRequest
   );
 }
 

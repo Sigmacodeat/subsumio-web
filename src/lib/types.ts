@@ -336,15 +336,7 @@ export interface DocumentAnalysisResult {
     relevance_reason: string;
   }>;
   warnings?: string[];
-  _grounding?: {
-    citations_verified: number;
-    citations_unverified: number;
-    corpus_checked: boolean;
-    analyzed_at: string;
-    grounded_citations?: GroundedCitation[];
-    has_unverified?: boolean;
-    warning?: string;
-  };
+  _grounding?: GroundingMetadata;
   _warnings?: string[];
   _degraded?: boolean;
 }

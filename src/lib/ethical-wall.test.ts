@@ -14,8 +14,8 @@ import {
   getDataResidencyForConfidentiality,
   getCombinedDataResidency,
   createEthicalWallAudit,
-  type PermissionInfo,
 } from "@/lib/ethical-wall";
+import type { PermissionInfo } from "@/lib/legal-types";
 import type { ModelEntry } from "@/lib/model-config";
 
 // ── Fixtures ──────────────────────────────────────────────────────────
@@ -36,6 +36,7 @@ function makeModel(overrides: Partial<ModelEntry> = {}): ModelEntry {
     description: "Test",
     capabilities: ["tool-use"],
     brainScoped: true,
+    dataResidency: "non_eu",
     ...overrides,
   };
 }

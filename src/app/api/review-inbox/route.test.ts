@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -69,7 +70,9 @@ describe("/api/review-inbox", () => {
 
   test("returns empty items when no pages exist", async () => {
     mockFetch(() => mockFetchResponse([]));
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     expect(data.items).toEqual([]);
     expect(data.total).toBe(0);
@@ -125,7 +128,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     expect(data.total).toBe(3);
     expect(data.items).toHaveLength(3);
@@ -162,7 +167,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     expect(data.items).toHaveLength(1);
     expect(data.items[0].type).toBe("document_request");
@@ -196,7 +203,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     expect(data.items).toHaveLength(1);
     expect(data.items[0].type).toBe("suggested_deadline");
@@ -220,7 +229,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     const partyItems = data.items.filter((i: { type: string }) => i.type === "suggested_party");
     expect(partyItems).toHaveLength(1);
@@ -259,7 +270,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     const factItems = data.items.filter((i: { type: string }) => i.type === "pending_fact");
     expect(factItems).toHaveLength(1);
@@ -293,7 +306,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     // Both are high priority (client_submission default), sorted by createdAt desc
     expect(data.items[0].id).toBe("sub/high-prio");
@@ -330,7 +345,9 @@ describe("/api/review-inbox", () => {
       return Promise.resolve(mockFetchResponse([]));
     });
 
-    const res = await GET(new Request("http://localhost/api/review-inbox"));
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
     const data = await res.json();
     const sdItems = data.items.filter((i: { type: string }) => i.type === "suggested_deadline");
     expect(sdItems).toHaveLength(1);

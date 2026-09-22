@@ -319,7 +319,6 @@ describe("Berufungs-Agent Steps", () => {
       const onGruendeChange = vi.fn();
       const reorderSpy = vi.spyOn(api.legal, "reorderGruende").mockResolvedValue({
         success: true,
-        order: ["g2", "g1"],
       });
       withQueryClient(
         <BerufungsgruendeStep
@@ -438,7 +437,9 @@ describe("Berufungs-Agent Steps", () => {
     });
 
     test("manual save uses createPage when slug was NOT auto-created (normal flow)", async () => {
-      const createPageSpy = vi.spyOn(api.brain, "createPage").mockResolvedValue({});
+      const createPageSpy = vi
+        .spyOn(api.brain, "createPage")
+        .mockResolvedValue({ slug: "legal/berufungs-entwurf/test-manual" });
       const updatePageSpy = vi.spyOn(api.brain, "updatePage").mockResolvedValue({
         slug: "legal/berufungs-entwurf/test-manual",
         success: true,

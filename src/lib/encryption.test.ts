@@ -175,10 +175,10 @@ describe("Encryption Production Guard", () => {
     const oldEnv = process.env.NODE_ENV;
     const oldKey = process.env.SUBSUMIO_ENCRYPTION_KEY;
     delete process.env.SUBSUMIO_ENCRYPTION_KEY;
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     const { isEncryptionEnabled } = await import("./encryption");
     expect(() => isEncryptionEnabled()).toThrow();
-    process.env.NODE_ENV = oldEnv;
+    (process.env as { NODE_ENV?: string }).NODE_ENV = oldEnv;
     if (oldKey) process.env.SUBSUMIO_ENCRYPTION_KEY = oldKey;
     vi.resetModules();
   });

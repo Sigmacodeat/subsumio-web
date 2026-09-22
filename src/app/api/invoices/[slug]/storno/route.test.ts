@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -72,7 +73,7 @@ const originalInvoice = {
 function post(slug = originalInvoice.slug) {
   const req = new Request(`http://localhost/api/invoices/${encodeURIComponent(slug)}/storno`, {
     method: "POST",
-  });
+  }) as unknown as NextRequest;
   (req as unknown as { params: Promise<{ slug: string }> }).params = Promise.resolve({ slug });
   return POST(req);
 }
@@ -81,7 +82,9 @@ describe("POST /api/invoices/[slug]/storno", () => {
   beforeEach(() => vi.clearAllMocks());
 
   test("rejects malformed slugs before touching the engine", async () => {
-    const req = new Request("http://localhost/api/invoices/../secret/storno", { method: "POST" });
+    const req = new Request("http://localhost/api/invoices/../secret/storno", {
+      method: "POST",
+    }) as unknown as NextRequest;
     (req as unknown as { params: Promise<{ slug: string }> }).params = Promise.resolve({
       slug: "..%2Fsecret",
     });

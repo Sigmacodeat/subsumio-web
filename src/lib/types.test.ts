@@ -269,6 +269,8 @@ describe("Type instantiation — types.ts", () => {
         citations_unverified: 1,
         corpus_checked: true,
         analyzed_at: "2024-01-01",
+        grounded_citations: [],
+        has_unverified: true,
       },
     };
     expect(result._grounding?.citations_verified).toBe(5);

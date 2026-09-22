@@ -17,7 +17,7 @@ function makeReq(body: unknown): NextRequest {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }) as unknown as NextRequest;
   return req as unknown as NextRequest;
 }
 
@@ -38,7 +38,7 @@ describe("validateRequest", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "not json",
-    });
+    }) as unknown as NextRequest;
     const result = await validateRequest(req, schema);
     expect(result.ok).toBe(false);
     if (!result.ok) {

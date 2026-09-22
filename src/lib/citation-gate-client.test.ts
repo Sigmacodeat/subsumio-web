@@ -67,8 +67,8 @@ describe("extractStatuteCitations", () => {
       "Lorem ipsum dolor sit amet. § 433 BGB regelt den Kaufvertrag. Consectetur adipiscing elit.";
     const result = extractStatuteCitations(text);
     expect(result).toHaveLength(1);
-    expect(result[0].context).toContain("§ 433 BGB");
-    expect(result[0].context.length).toBeGreaterThan(0);
+    expect(result[0]!.context).toContain("§ 433 BGB");
+    expect(result[0]!.context!.length).toBeGreaterThan(0);
   });
 
   test("handles paragraph numbers with letters (e.g. § 1a)", () => {

@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -45,7 +46,12 @@ vi.mock("@/lib/api-handler", () => ({
 import { POST } from "./route";
 
 const post = (body: Record<string, unknown>) =>
-  POST(new Request("http://x/api/copilot/memory", { method: "POST", body: JSON.stringify(body) }));
+  POST(
+    new Request("http://x/api/copilot/memory", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }) as unknown as NextRequest
+  );
 
 beforeEach(() => {
   learning.on = true;

@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,7 +30,10 @@ import { GET, POST } from "./route";
 
 const rate = (body: Record<string, unknown>) =>
   POST(
-    new Request("http://x/api/copilot/feedback", { method: "POST", body: JSON.stringify(body) })
+    new Request("http://x/api/copilot/feedback", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }) as unknown as NextRequest
   );
 
 describe("/api/copilot/feedback", () => {
@@ -54,10 +58,15 @@ describe("/api/copilot/feedback", () => {
       answer: "…",
     });
 
-    expect((await GET(new Request("http://x/api/copilot/feedback"))).status).toBe(403);
+    expect(
+      (await GET(new Request("http://x/api/copilot/feedback") as unknown as NextRequest)).status
+    ).toBe(403);
     who.role = "admin";
-    const summary = (await (await GET(new Request("http://x/api/copilot/feedback?days=30"))).json())
-      .data;
+    const summary = (
+      await (
+        await GET(new Request("http://x/api/copilot/feedback?days=30") as unknown as NextRequest)
+      ).json()
+    ).data;
     expect(summary).toMatchObject({ up: 0, down: 2, reasons: { wrong: 1, missing_source: 1 } });
     expect(summary.recentDown.map((d: { question: string }) => d.question).sort()).toEqual([
       "Frist?",

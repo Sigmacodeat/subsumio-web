@@ -37,7 +37,7 @@ describe("SENSITIVE_USER_FIELDS — real encryption round-trip", () => {
       const { encryptFields: encryptFresh, decryptFields: decryptFresh } =
         await import("@/lib/encryption");
 
-      const plain = {
+      const plain: Record<string, unknown> = {
         id: "u1",
         docusignAccessToken: "secret-access-token-value",
         docusignRefreshToken: "secret-refresh-token-value",

@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -76,7 +77,7 @@ describe("POST /api/cases/send-email", () => {
         subject: "Ihre Akte",
         body: "Sehr geehrter Mandant,\n\nanbei erhalten Sie...",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -110,7 +111,7 @@ describe("POST /api/cases/send-email", () => {
         body: "Test",
         caseSlug: "legal/cases/test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -130,7 +131,7 @@ describe("POST /api/cases/send-email", () => {
         subject: "Test",
         body: "Test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -144,7 +145,7 @@ describe("POST /api/cases/send-email", () => {
         subject: "",
         body: "Test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -158,7 +159,7 @@ describe("POST /api/cases/send-email", () => {
         subject: "Test",
         body: "",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -167,7 +168,13 @@ describe("POST /api/cases/send-email", () => {
   test("returns 403 when verification policy denies", async () => {
     // Use the mocked VerificationPolicyError class so instanceof check passes
     const { VerificationPolicyError } = await import("@/lib/verification-policy");
-    const err = new VerificationPolicyError("content_blocked_by_policy");
+    const err = new VerificationPolicyError({
+      allowed: false,
+      action: "send_client",
+      output_id: "out-1",
+      state: "NEEDS_HUMAN_REVIEW",
+      reason: "content_blocked_by_policy",
+    });
     vi.mocked(assertOutputActionAllowed).mockRejectedValueOnce(err);
 
     const req = new Request("http://localhost/api/cases/send-email", {
@@ -181,7 +188,7 @@ describe("POST /api/cases/send-email", () => {
           content_hash: "a".repeat(64),
         },
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(403);
@@ -202,7 +209,7 @@ describe("POST /api/cases/send-email", () => {
           content_hash: "a".repeat(64),
         },
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
@@ -223,7 +230,7 @@ describe("POST /api/cases/send-email", () => {
         subject: "Test",
         body: "Test",
       }),
-    });
+    }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);

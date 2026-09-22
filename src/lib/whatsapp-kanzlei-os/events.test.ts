@@ -58,7 +58,7 @@ describe("conversation events", () => {
   });
 
   it("writes conversation events as mergeable brain pages", async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
       async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
     );
     const message: WhatsAppTextMessage = {

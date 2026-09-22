@@ -19,6 +19,7 @@ vi.mock("@/lib/auth/store", () => ({
 }));
 
 import { logAudit, listAuditLogs, auditLabel, verifyAuditChain } from "./audit";
+import type { AuditAction } from "@/lib/audit-labels";
 import { api } from "@/lib/api";
 
 const mockCreatePage = vi.mocked(api.brain.createPage);
@@ -49,13 +50,13 @@ describe("logAudit (dev fallback — brain pages)", () => {
   });
 
   test("uses 'system' as brainId when not provided", async () => {
-    await logAudit("system.cleanup", "system");
+    await logAudit("system.cleanup" as AuditAction, "system");
     const call = mockCreatePage.mock.calls[0][0];
     expect(call.frontmatter).toHaveProperty("action", "system.cleanup");
   });
 
   test("includes details in frontmatter", async () => {
-    await logAudit("case.created", "case", {
+    await logAudit("case.created" as AuditAction, "case", {
       details: { caseSlug: "case-2024-001" },
     });
     const call = mockCreatePage.mock.calls[0][0];
@@ -63,7 +64,7 @@ describe("logAudit (dev fallback — brain pages)", () => {
   });
 
   test("includes timestamp in frontmatter", async () => {
-    await logAudit("doc.uploaded", "document");
+    await logAudit("doc.uploaded" as AuditAction, "document");
     const call = mockCreatePage.mock.calls[0][0];
     expect(call.frontmatter).toHaveProperty("timestamp");
     expect(call.frontmatter).toHaveProperty("date");
@@ -77,7 +78,7 @@ describe("logAudit (dev fallback — brain pages)", () => {
 
   test("does not throw when api.brain.createPage fails", async () => {
     mockCreatePage.mockRejectedValueOnce(new Error("network error"));
-    await expect(logAudit("test.action", "test")).resolves.not.toThrow();
+    await expect(logAudit("test.action" as AuditAction, "test")).resolves.not.toThrow();
   });
 });
 
@@ -114,6 +115,7 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
           date: "2024-01-01",
         },
         created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
       },
     ]);
     const result = await listAuditLogs({ brainId: "brain-1" });
@@ -129,11 +131,17 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
         slug: "a1",
         frontmatter: { action: "user.login", entity_type: "user", timestamp: "2024-01-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
       {
         slug: "a2",
         frontmatter: { action: "case.created", entity_type: "case", timestamp: "2024-01-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
     ]);
     const result = await listAuditLogs({ brainId: "b1", action: "user" });
@@ -147,11 +155,17 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
         slug: "a1",
         frontmatter: { action: "x", entity_type: "user", timestamp: "2024-01-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
       {
         slug: "a2",
         frontmatter: { action: "y", entity_type: "case", timestamp: "2024-01-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
     ]);
     const result = await listAuditLogs({ brainId: "b1", entityType: "case" });
@@ -165,16 +179,25 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
         slug: "a1",
         frontmatter: { action: "x", entity_type: "y", timestamp: "2024-01-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
       {
         slug: "a2",
         frontmatter: { action: "x", entity_type: "y", timestamp: "2024-06-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
       {
         slug: "a3",
         frontmatter: { action: "x", entity_type: "y", timestamp: "2024-12-01" },
         content: "{}",
+        title: "t",
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
       },
     ]);
     const result = await listAuditLogs({ brainId: "b1", from: "2024-03-01", to: "2024-09-01" });

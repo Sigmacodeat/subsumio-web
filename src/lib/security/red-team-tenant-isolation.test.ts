@@ -476,7 +476,6 @@ describe("Red-Team: Ethical Wall Bypass", () => {
         privileged: false,
         legal_hold: false,
         allowed_users: [],
-        ethical_wall_active: true,
       }
     );
     expect(result.allowed).toBe(false);
@@ -493,7 +492,6 @@ describe("Red-Team: Ethical Wall Bypass", () => {
         privileged: false,
         legal_hold: false,
         allowed_users: ["user-clean"],
-        ethical_wall_active: false,
       }
     );
     expect(result.allowed).toBe(false);
@@ -507,7 +505,6 @@ describe("Red-Team: Ethical Wall Bypass", () => {
       privileged: false,
       legal_hold: false,
       allowed_users: [],
-      ethical_wall_active: true,
     });
     expect(wallResult.allowed).toBe(false);
     expect(wallResult.ethical_wall_active).toBe(true);

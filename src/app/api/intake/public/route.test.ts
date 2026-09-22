@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -59,7 +60,7 @@ function post(body: unknown) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    })
+    }) as unknown as NextRequest
   );
 }
 

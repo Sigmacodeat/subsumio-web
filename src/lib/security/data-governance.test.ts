@@ -297,7 +297,7 @@ describe("Data Governance: Legal Hold", () => {
   });
 
   it("missing legal_hold allows retention processing", () => {
-    const fm = { closed_at: "2015-01-01" };
+    const fm: Record<string, unknown> = { closed_at: "2015-01-01" };
     const shouldSkip = fm.legal_hold === true;
     expect(shouldSkip).toBe(false);
   });

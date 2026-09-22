@@ -1,3 +1,4 @@
+import type { User } from "@/lib/auth/store";
 // @vitest-environment node
 
 import { describe, test, expect, vi, afterEach } from "vitest";
@@ -19,18 +20,7 @@ import {
   type WorkOSDirectoryUser,
 } from "./scim";
 // Minimal mock user type matching the fields used by userToScim
-interface MockUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  brainId: string;
-  createdAt: string;
-  updatedAt: string;
-  deactivatedAt: string | null;
-  scimExternalId: string | null;
-  ssoProvider: string | null;
-}
+type MockUser = User;
 
 function makeUser(overrides: Partial<MockUser> = {}): MockUser {
   return {
@@ -38,9 +28,14 @@ function makeUser(overrides: Partial<MockUser> = {}): MockUser {
     email: "max@example.com",
     name: "Max Mustermann",
     role: "lawyer",
+    passwordHash: "",
+    plan: "free",
+    locale: "de",
+    referralCode: "ref-1",
+    referredBy: null,
+    stripeCustomerId: null,
     brainId: "brain-123",
     createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
     deactivatedAt: null,
     scimExternalId: null,
     ssoProvider: null,

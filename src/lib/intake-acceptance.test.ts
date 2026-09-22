@@ -9,15 +9,16 @@ import {
   updateConflictCheck,
   validateAcceptanceForConversion,
   waiveConflictCheck,
+  type IntakeAcceptanceWorkflow,
 } from "./intake-acceptance";
 
-function clearWorkflow() {
+function clearWorkflow(): IntakeAcceptanceWorkflow {
   return {
     ...defaultAcceptanceWorkflow(),
-    conflict_check: { ...defaultAcceptanceWorkflow().conflict_check, status: "clear" as const },
-    kyc: { ...defaultAcceptanceWorkflow().kyc, status: "verified" as const },
-    poa: { ...defaultAcceptanceWorkflow().poa, status: "signed" as const },
-    engagement_letter: { status: "sent" as const },
+    conflict_check: { ...defaultAcceptanceWorkflow().conflict_check, status: "clear" },
+    kyc: { ...defaultAcceptanceWorkflow().kyc, status: "verified" },
+    poa: { ...defaultAcceptanceWorkflow().poa, status: "signed" },
+    engagement_letter: { status: "sent" },
   };
 }
 
@@ -58,7 +59,14 @@ describe("updateConflictCheck", () => {
         severity: "critical",
         explanation: "",
         matches: [
-          { slug: "case-1", title: "A", role: "opponent", matched_name: "Max Muster", exact: true },
+          {
+            slug: "case-1",
+            title: "A",
+            role: "opponent",
+            status: "open",
+            matched_name: "Max Muster",
+            exact: true,
+          },
         ],
         checked_cases: 1,
         disclaimer: "",

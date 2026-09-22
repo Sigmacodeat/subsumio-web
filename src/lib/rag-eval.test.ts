@@ -383,6 +383,7 @@ function makeGrounding(overrides: Partial<GroundingMetadata> = {}): GroundingMet
     corpus_checked: true,
     grounded_citations: [],
     analyzed_at: new Date().toISOString(),
+    has_unverified: false,
     ...overrides,
   };
 }
@@ -478,7 +479,7 @@ describe("computeDeadlineQuality", () => {
         confidence: "low",
         sourceSnippet: "",
         matchedRule: "r3",
-      },
+      } as DetectedDeadline,
     ];
     const result = computeDeadlineQuality(extraDetected, expected);
     expect(result.false_positives).toBe(1);

@@ -4,7 +4,7 @@ import { REMIND_AT_DAYS_LEFT, trialReminderMail } from "./route";
 
 const users: Array<Record<string, unknown>> = [];
 const update = vi.fn(async () => undefined);
-const sendMail = vi.fn(async () => ({ ok: true }));
+const sendMail = vi.fn(async (..._a: unknown[]) => ({ ok: true }));
 
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({ list: async () => users, update }),

@@ -38,7 +38,7 @@ describe("TODO 1: Canonical Fristen-Domänenmodell", () => {
     const rule = DEADLINE_RULES.find((r) => r.key === "zpo-berufung")!;
     const result = calculateDeadline(rule, "2026-07-01");
     expect(result.due_date).toBeDefined();
-    expect(result.date).toBeUndefined();
+    expect((result as unknown as Record<string, unknown>).date).toBeUndefined();
   });
 
   it("timelineToDeadline no longer writes deprecated date field", () => {
@@ -47,7 +47,7 @@ describe("TODO 1: Canonical Fristen-Domänenmodell", () => {
       "test"
     );
     expect(result.due_date).toBe("2026-07-15");
-    expect(result.date).toBeUndefined();
+    expect((result as unknown as Record<string, unknown>).date).toBeUndefined();
   });
 
   it("DeadlineEntry type has date field removed (canonical due_date only)", () => {

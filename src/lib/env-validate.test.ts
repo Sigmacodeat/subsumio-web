@@ -28,7 +28,7 @@ describe("validateEnv", () => {
   });
 
   it("reports all required vars as missing in production when unset", () => {
-    process.env.NODE_ENV = "production";
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
     for (const k of REQUIRED) delete process.env[k];
 
     const result = validateEnv();
@@ -39,7 +39,7 @@ describe("validateEnv", () => {
   });
 
   it("passes in production when all required vars are present", () => {
-    process.env.NODE_ENV = "production";
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
     for (const k of REQUIRED) process.env[k] = "set";
 
     const result = validateEnv();
@@ -48,7 +48,7 @@ describe("validateEnv", () => {
   });
 
   it("only warns (never blocks) in development", () => {
-    process.env.NODE_ENV = "development";
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "development";
     for (const k of REQUIRED) delete process.env[k];
 
     const result = validateEnv();

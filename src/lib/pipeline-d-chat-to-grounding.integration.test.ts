@@ -99,9 +99,9 @@ describe("Pipeline D: Chat → Intent → Routing → Citation → Grounding", (
     expect(codes).toContain("BGB");
 
     const paragraphs = citations.map((c) => c.paragraph);
-    expect(paragraphs.some((p) => p.includes("433"))).toBe(true);
-    expect(paragraphs.some((p) => p.includes("437"))).toBe(true);
-    expect(paragraphs.some((p) => p.includes("195"))).toBe(true);
+    expect(paragraphs.some((p) => p?.includes("433"))).toBe(true);
+    expect(paragraphs.some((p) => p?.includes("437"))).toBe(true);
+    expect(paragraphs.some((p) => p?.includes("195"))).toBe(true);
 
     // ── Stage 4: Ground citations against corpus ──────────────────────
     // The mock has to look like a real corpus file. lookupCorpusParagraph

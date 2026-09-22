@@ -18,6 +18,7 @@ import {
   buildWorkProductReceipt,
   invalidateReceipt,
   isReceiptValid,
+  type BuildReceiptOptions,
   type WorkProductReceipt,
   type WorkProductType,
 } from "@/lib/work-product-receipts";
@@ -26,7 +27,7 @@ import { createEngineProxy } from "@/lib/api-handler";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function makeReceipt(opts: Partial<WorkProductReceipt> = {}): WorkProductReceipt {
+function makeReceipt(opts: Partial<BuildReceiptOptions> = {}): WorkProductReceipt {
   return buildWorkProductReceipt({
     product_type: opts.product_type ?? "draft",
     product_ref: opts.product_ref ?? "doc-1",

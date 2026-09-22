@@ -4,11 +4,14 @@ import { middleware } from "./middleware";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { withEnv } from "../test/helpers/with-env";
 
-function request(pathname: string, init?: RequestInit): NextRequest {
+function request(
+  pathname: string,
+  init?: ConstructorParameters<typeof NextRequest>[1]
+): NextRequest {
   return new NextRequest(`https://subsumio.test${pathname}`, init);
 }
 
-async function run(pathname: string, init?: RequestInit) {
+async function run(pathname: string, init?: ConstructorParameters<typeof NextRequest>[1]) {
   return middleware(request(pathname, init));
 }
 

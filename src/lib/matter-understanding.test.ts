@@ -28,14 +28,45 @@ function makeBundle(overrides: Partial<MatterContextBundle> = {}): MatterContext
       { slug: "contacts/client-1", name: "Max Mustermann", role: "client" },
       { slug: "contacts/opponent-1", name: "Anna Schmidt", role: "opponent" },
     ],
-    deadlines: [{ id: "d1", title: "Klageantwort", date: "2024-08-15", urgency: "upcoming" }],
-    documents: [
-      { slug: "docs/1", name: "Vertrag.pdf", ocr_status: "ocr_complete" },
-      { slug: "docs/2", name: "Klage.pdf", ocr_status: "text_layer" },
+    deadlines: [
+      {
+        id: "d1",
+        title: "Klageantwort",
+        date: "2024-08-15",
+        urgency: "upcoming",
+        status: "open",
+        source: "manual",
+      },
     ],
-    recent_activity: [{ at: "2024-07-01T10:00:00Z", action: "document_uploaded", actor: "lawyer" }],
-    facts: [{ id: "f1", fact: "Schadensersatz claim", source: "strategy", confidence: "high" }],
+    documents: [
+      {
+        slug: "docs/1",
+        name: "Vertrag.pdf",
+        ocr_status: "ocr_complete",
+        uploaded_at: "2024-07-01T00:00:00Z",
+      },
+      {
+        slug: "docs/2",
+        name: "Klage.pdf",
+        ocr_status: "text_layer",
+        uploaded_at: "2024-07-01T00:00:00Z",
+      },
+    ],
+    recent_activity: [
+      {
+        at: "2024-07-01T10:00:00Z",
+        action: "document_uploaded",
+        actor: "lawyer",
+        description: "activity",
+      },
+    ],
+    facts: [
+      { id: "f1", statement: "Schadensersatz claim", source: "strategy", confidence: "high" },
+    ],
     communications: [],
+    document_requests: [],
+    intake_requests: [],
+    conversation_events: [],
     permissions: {
       visibility: "full",
       privileged: false,
@@ -54,6 +85,8 @@ function makeBundle(overrides: Partial<MatterContextBundle> = {}): MatterContext
           index_fresh: true,
           document_count: 5,
           last_sync_at: "2024-07-01T10:00:00Z",
+          source_label: "src",
+          ocr_complete: true,
         },
         {
           source_id: "email",
@@ -62,11 +95,18 @@ function makeBundle(overrides: Partial<MatterContextBundle> = {}): MatterContext
           index_fresh: false,
           document_count: 3,
           last_sync_at: "2024-06-15T08:00:00Z",
+          source_label: "src",
+          ocr_complete: true,
         },
       ],
       stale_sources: 1,
       fresh_sources: 1,
       total_sources: 2,
+      connected_sources: 2,
+      error_sources: 0,
+      ocr_pending: 0,
+      overall_freshness: "fresh",
+      warnings: [],
     },
     gaps: [
       {
@@ -74,6 +114,8 @@ function makeBundle(overrides: Partial<MatterContextBundle> = {}): MatterContext
         severity: "high",
         title: "Vollmacht fehlt",
         recommendation: "Vollmacht anfordern.",
+        description: "gap",
+        detected_at: "2024-07-01T00:00:00Z",
       },
     ],
     generated_at: "2024-07-01T12:00:00Z",
@@ -112,20 +154,34 @@ describe("buildUnderstandingPanel — Basic Structure", () => {
   it("preserves facts from bundle", () => {
     const bundle = makeBundle({
       facts: [
-        { id: "f1", fact: "Claim A", source: "strategy", confidence: "high" },
-        { id: "f2", fact: "Claim B", source: "evidence", confidence: "medium" },
+        { id: "f1", statement: "Claim A", source: "strategy", confidence: "high" },
+        { id: "f2", statement: "Claim B", source: "evidence", confidence: "medium" },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
     expect(panel.facts).toHaveLength(2);
-    expect(panel.facts[0].fact).toBe("Claim A");
+    expect(panel.facts[0].statement).toBe("Claim A");
   });
 
   it("preserves gaps from bundle", () => {
     const bundle = makeBundle({
       gaps: [
-        { type: "missing_power_of_attorney", severity: "high", title: "Vollmacht fehlt" },
-        { type: "overdue_deadline", severity: "critical", title: "Frist abgelaufen" },
+        {
+          type: "missing_power_of_attorney",
+          severity: "high",
+          title: "Vollmacht fehlt",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+        {
+          type: "missing_deadline",
+          severity: "critical",
+          title: "Frist abgelaufen",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -144,9 +200,25 @@ describe("deriveRisks", () => {
           severity: "high",
           title: "Vollmacht fehlt",
           recommendation: "Anfordern.",
+          description: "gap",
+          detected_at: "2024-07-01T00:00:00Z",
         },
-        { type: "overdue_deadline", severity: "critical", title: "Frist abgelaufen" },
-        { type: "missing_client_info", severity: "low", title: "Klient info fehlt" },
+        {
+          type: "missing_deadline",
+          severity: "critical",
+          title: "Frist abgelaufen",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+        {
+          type: "missing_client_info",
+          severity: "low",
+          title: "Klient info fehlt",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -158,8 +230,22 @@ describe("deriveRisks", () => {
   it("does not derive risks from low/medium gaps", () => {
     const bundle = makeBundle({
       gaps: [
-        { type: "missing_client_info", severity: "low", title: "Info fehlt" },
-        { type: "unreviewed_document", severity: "medium", title: "Dokument nicht geprüft" },
+        {
+          type: "missing_client_info",
+          severity: "low",
+          title: "Info fehlt",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+        {
+          type: "unreviewed_document",
+          severity: "medium",
+          title: "Dokument nicht geprüft",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -168,7 +254,16 @@ describe("deriveRisks", () => {
 
   it("derives risk from overdue deadlines", () => {
     const bundle = makeBundle({
-      deadlines: [{ id: "d1", title: "Berufungsfrist", date: "2024-01-01", urgency: "overdue" }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "Berufungsfrist",
+          date: "2024-01-01",
+          urgency: "overdue",
+          status: "open",
+          source: "manual",
+        },
+      ],
     });
     const panel = buildUnderstandingPanel(bundle);
     const deadlineRisk = panel.risks.find((r) => r.source === "deadline_monitor");
@@ -179,7 +274,16 @@ describe("deriveRisks", () => {
 
   it("does not derive risk from non-overdue deadlines", () => {
     const bundle = makeBundle({
-      deadlines: [{ id: "d1", title: "Klageantwort", date: "2024-12-01", urgency: "upcoming" }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "Klageantwort",
+          date: "2024-12-01",
+          urgency: "upcoming",
+          status: "open",
+          source: "manual",
+        },
+      ],
     });
     const panel = buildUnderstandingPanel(bundle);
     expect(panel.risks.find((r) => r.source === "deadline_monitor")).toBeUndefined();
@@ -188,10 +292,20 @@ describe("deriveRisks", () => {
   it("derives risk when more than 3 unreviewed documents", () => {
     const bundle = makeBundle({
       documents: [
-        { slug: "d1", name: "A.pdf", ocr_status: "unknown" },
-        { slug: "d2", name: "B.pdf", ocr_status: "ocr_needed" },
-        { slug: "d3", name: "C.pdf", ocr_status: "unknown" },
-        { slug: "d4", name: "D.pdf", ocr_status: "ocr_needed" },
+        { slug: "d1", name: "A.pdf", ocr_status: "unknown", uploaded_at: "2024-07-01T00:00:00Z" },
+        {
+          slug: "d2",
+          name: "B.pdf",
+          ocr_status: "ocr_needed",
+          uploaded_at: "2024-07-01T00:00:00Z",
+        },
+        { slug: "d3", name: "C.pdf", ocr_status: "unknown", uploaded_at: "2024-07-01T00:00:00Z" },
+        {
+          slug: "d4",
+          name: "D.pdf",
+          ocr_status: "ocr_needed",
+          uploaded_at: "2024-07-01T00:00:00Z",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -204,9 +318,19 @@ describe("deriveRisks", () => {
   it("does not derive risk when 3 or fewer unreviewed documents", () => {
     const bundle = makeBundle({
       documents: [
-        { slug: "d1", name: "A.pdf", ocr_status: "unknown" },
-        { slug: "d2", name: "B.pdf", ocr_status: "ocr_needed" },
-        { slug: "d3", name: "C.pdf", ocr_status: "ocr_complete" },
+        { slug: "d1", name: "A.pdf", ocr_status: "unknown", uploaded_at: "2024-07-01T00:00:00Z" },
+        {
+          slug: "d2",
+          name: "B.pdf",
+          ocr_status: "ocr_needed",
+          uploaded_at: "2024-07-01T00:00:00Z",
+        },
+        {
+          slug: "d3",
+          name: "C.pdf",
+          ocr_status: "ocr_complete",
+          uploaded_at: "2024-07-01T00:00:00Z",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -221,6 +345,8 @@ describe("deriveRisks", () => {
           severity: "high",
           title: "Vollmacht",
           recommendation: "Sofort anfordern.",
+          description: "gap",
+          detected_at: "2024-07-01T00:00:00Z",
         },
       ],
     });
@@ -244,6 +370,9 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: true,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
           {
             source_id: "s2",
@@ -251,6 +380,9 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: true,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
           {
             source_id: "s3",
@@ -258,11 +390,19 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: false,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
         ],
         stale_sources: 1,
         fresh_sources: 2,
         total_sources: 3,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -283,6 +423,9 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: false,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
           {
             source_id: "s2",
@@ -290,6 +433,9 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: false,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
           {
             source_id: "s3",
@@ -297,6 +443,9 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: false,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
           {
             source_id: "s4",
@@ -304,11 +453,19 @@ describe("assessFreshness", () => {
             connected: true,
             index_fresh: true,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
         ],
         stale_sources: 3,
         fresh_sources: 1,
         total_sources: 4,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -323,6 +480,11 @@ describe("assessFreshness", () => {
         stale_sources: 0,
         fresh_sources: 0,
         total_sources: 0,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -333,8 +495,18 @@ describe("assessFreshness", () => {
   it("uses last activity timestamp from recent_activity", () => {
     const bundle = makeBundle({
       recent_activity: [
-        { at: "2024-07-15T14:00:00Z", action: "document_uploaded", actor: "user" },
-        { at: "2024-07-10T10:00:00Z", action: "deadline_updated", actor: "lawyer" },
+        {
+          at: "2024-07-15T14:00:00Z",
+          action: "document_uploaded",
+          actor: "user",
+          description: "activity",
+        },
+        {
+          at: "2024-07-10T10:00:00Z",
+          action: "deadline_updated",
+          actor: "lawyer",
+          description: "activity",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -355,6 +527,11 @@ describe("assessFreshness", () => {
         stale_sources: 0,
         fresh_sources: 0,
         total_sources: 0,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -377,6 +554,8 @@ describe("deriveRecentlyChangedSources", () => {
             index_fresh: false,
             document_count: 2,
             last_sync_at: "2024-01-01T00:00:00Z",
+            source_label: "src",
+            ocr_complete: true,
           },
           {
             source_id: "new",
@@ -385,6 +564,8 @@ describe("deriveRecentlyChangedSources", () => {
             index_fresh: true,
             document_count: 5,
             last_sync_at: "2024-07-01T00:00:00Z",
+            source_label: "src",
+            ocr_complete: true,
           },
           {
             source_id: "mid",
@@ -393,11 +574,18 @@ describe("deriveRecentlyChangedSources", () => {
             index_fresh: true,
             document_count: 3,
             last_sync_at: "2024-04-01T00:00:00Z",
+            source_label: "src",
+            ocr_complete: true,
           },
         ],
         stale_sources: 1,
         fresh_sources: 2,
         total_sources: 3,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -410,10 +598,12 @@ describe("deriveRecentlyChangedSources", () => {
   it("limits to 10 sources", () => {
     const sources = Array.from({ length: 15 }, (_, i) => ({
       source_id: `s${i}`,
-      source_type: "upload",
+      source_type: "upload" as const,
+      source_label: "src",
       connected: true,
       index_fresh: true,
       document_count: 1,
+      ocr_complete: true,
       last_sync_at: `2024-01-${String(i + 1).padStart(2, "0")}T00:00:00Z`,
     }));
     const bundle = makeBundle({
@@ -423,6 +613,11 @@ describe("deriveRecentlyChangedSources", () => {
         stale_sources: 0,
         fresh_sources: 15,
         total_sources: 15,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -441,6 +636,8 @@ describe("deriveRecentlyChangedSources", () => {
             index_fresh: true,
             document_count: 1,
             last_sync_at: "2024-07-01T00:00:00Z",
+            source_label: "src",
+            ocr_complete: true,
           },
           {
             source_id: "no-sync",
@@ -448,11 +645,19 @@ describe("deriveRecentlyChangedSources", () => {
             connected: true,
             index_fresh: true,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
         ],
         stale_sources: 0,
         fresh_sources: 2,
         total_sources: 2,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -471,11 +676,19 @@ describe("deriveRecentlyChangedSources", () => {
             connected: true,
             index_fresh: true,
             document_count: 0,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
         ],
         stale_sources: 0,
         fresh_sources: 1,
         total_sources: 1,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -500,6 +713,8 @@ describe("deriveRecentlyChangedSources", () => {
             index_fresh: true,
             document_count: 1,
             last_sync_at: "2024-07-01T00:00:00Z",
+            source_label: "src",
+            ocr_complete: true,
           },
           {
             source_id: "stale",
@@ -508,11 +723,18 @@ describe("deriveRecentlyChangedSources", () => {
             index_fresh: false,
             document_count: 1,
             last_sync_at: "2024-06-01T00:00:00Z",
+            source_label: "src",
+            ocr_complete: true,
           },
         ],
         stale_sources: 1,
         fresh_sources: 1,
         total_sources: 2,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -532,12 +754,20 @@ describe("calculateUnderstandingScore", () => {
       documents: [],
       facts: [],
       communications: [],
+      document_requests: [],
+      intake_requests: [],
+      conversation_events: [],
       coverage: {
         completeness_score: 0,
         sources: [],
         stale_sources: 0,
         fresh_sources: 0,
         total_sources: 0,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
       gaps: [],
     });
@@ -548,12 +778,39 @@ describe("calculateUnderstandingScore", () => {
 
   it("penalizes critical risks", () => {
     const bundleWithCriticalGap = makeBundle({
-      gaps: [{ type: "overdue_deadline", severity: "critical", title: "Frist abgelaufen" }],
-      deadlines: [{ id: "d1", title: "Overdue", date: "2024-01-01", urgency: "overdue" }],
+      gaps: [
+        {
+          type: "missing_deadline",
+          severity: "critical",
+          title: "Frist abgelaufen",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+      ],
+      deadlines: [
+        {
+          id: "d1",
+          title: "Overdue",
+          date: "2024-01-01",
+          urgency: "overdue",
+          status: "open",
+          source: "manual",
+        },
+      ],
     });
     const bundleWithoutGaps = makeBundle({
       gaps: [],
-      deadlines: [{ id: "d1", title: "OK", date: "2024-12-01", urgency: "upcoming" }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "OK",
+          date: "2024-12-01",
+          urgency: "upcoming",
+          status: "open",
+          source: "manual",
+        },
+      ],
     });
     const withRisk = buildUnderstandingPanel(bundleWithCriticalGap);
     const withoutRisk = buildUnderstandingPanel(bundleWithoutGaps);
@@ -563,9 +820,12 @@ describe("calculateUnderstandingScore", () => {
   it("penalizes many gaps", () => {
     const manyGaps = makeBundle({
       gaps: Array.from({ length: 10 }, (_, i) => ({
-        type: `gap_${i}`,
+        type: "missing_document",
         severity: "low" as const,
         title: `Gap ${i}`,
+        description: "gap",
+        recommendation: "fix",
+        detected_at: "2024-07-01T00:00:00Z",
       })),
     });
     const fewGaps = makeBundle({ gaps: [] });
@@ -582,12 +842,20 @@ describe("calculateUnderstandingScore", () => {
       documents: [],
       facts: [],
       communications: [],
+      document_requests: [],
+      intake_requests: [],
+      conversation_events: [],
       coverage: {
         completeness_score: 0,
         sources: [],
         stale_sources: 0,
         fresh_sources: 0,
         total_sources: 0,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
       gaps: [],
     });
@@ -598,9 +866,25 @@ describe("calculateUnderstandingScore", () => {
   it("score is always between 0 and 1", () => {
     const excellent = makeBundle({
       parties: [{ slug: "c1", name: "A", role: "client" }],
-      deadlines: [{ id: "d1", title: "F", date: "2024-12-01", urgency: "upcoming" }],
-      documents: [{ slug: "d1", name: "Doc", ocr_status: "ocr_complete" }],
-      facts: [{ id: "f1", fact: "F", source: "strategy", confidence: "high" }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "F",
+          date: "2024-12-01",
+          urgency: "upcoming",
+          status: "open",
+          source: "manual",
+        },
+      ],
+      documents: [
+        {
+          slug: "d1",
+          name: "Doc",
+          ocr_status: "ocr_complete",
+          uploaded_at: "2024-07-01T00:00:00Z",
+        },
+      ],
+      facts: [{ id: "f1", statement: "F", source: "strategy", confidence: "high" }],
       communications: [
         {
           id: "comm1",
@@ -609,6 +893,7 @@ describe("calculateUnderstandingScore", () => {
           subject: "S",
           timestamp: "2024-07-01",
           privileged: false,
+          has_attachments: false,
         },
       ],
       coverage: {
@@ -620,11 +905,19 @@ describe("calculateUnderstandingScore", () => {
             connected: true,
             index_fresh: true,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
         ],
         stale_sources: 0,
         fresh_sources: 1,
         total_sources: 1,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
       gaps: [],
       engine_reachable: true,
@@ -656,6 +949,7 @@ describe("buildSummary", () => {
           subject: "Test",
           timestamp: "2024-07-01",
           privileged: false,
+          has_attachments: false,
         },
       ],
     });
@@ -665,7 +959,16 @@ describe("buildSummary", () => {
 
   it("includes critical gaps count when present", () => {
     const bundle = makeBundle({
-      gaps: [{ type: "overdue_deadline", severity: "critical", title: "Frist" }],
+      gaps: [
+        {
+          type: "missing_deadline",
+          severity: "critical",
+          title: "Frist",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+      ],
     });
     const panel = buildUnderstandingPanel(bundle);
     expect(panel.summary).toContain("kritische Lücke");
@@ -685,9 +988,25 @@ describe("buildSummary", () => {
   it("says 'gut verstanden' for high scores", () => {
     const bundle = makeBundle({
       parties: [{ slug: "c1", name: "A", role: "client" }],
-      deadlines: [{ id: "d1", title: "F", date: "2024-12-01", urgency: "upcoming" }],
-      documents: [{ slug: "d1", name: "Doc", ocr_status: "ocr_complete" }],
-      facts: [{ id: "f1", fact: "F", source: "strategy", confidence: "high" }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "F",
+          date: "2024-12-01",
+          urgency: "upcoming",
+          status: "open",
+          source: "manual",
+        },
+      ],
+      documents: [
+        {
+          slug: "d1",
+          name: "Doc",
+          ocr_status: "ocr_complete",
+          uploaded_at: "2024-07-01T00:00:00Z",
+        },
+      ],
+      facts: [{ id: "f1", statement: "F", source: "strategy", confidence: "high" }],
       coverage: {
         completeness_score: 1,
         sources: [
@@ -697,11 +1016,19 @@ describe("buildSummary", () => {
             connected: true,
             index_fresh: true,
             document_count: 1,
+            source_label: "src",
+            ocr_complete: true,
+            last_sync_at: null,
           },
         ],
         stale_sources: 0,
         fresh_sources: 1,
         total_sources: 1,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
       gaps: [],
       engine_reachable: true,
@@ -717,14 +1044,31 @@ describe("buildSummary", () => {
       documents: [],
       facts: [],
       communications: [],
+      document_requests: [],
+      intake_requests: [],
+      conversation_events: [],
       coverage: {
         completeness_score: 0,
         sources: [],
         stale_sources: 0,
         fresh_sources: 0,
         total_sources: 0,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
-      gaps: [{ type: "overdue_deadline", severity: "critical", title: "Frist" }],
+      gaps: [
+        {
+          type: "missing_deadline",
+          severity: "critical",
+          title: "Frist",
+          description: "gap",
+          recommendation: "fix",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+      ],
       engine_reachable: true,
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -742,12 +1086,20 @@ describe("Edge Cases", () => {
       documents: [],
       facts: [],
       communications: [],
+      document_requests: [],
+      intake_requests: [],
+      conversation_events: [],
       coverage: {
         completeness_score: 0,
         sources: [],
         stale_sources: 0,
         fresh_sources: 0,
         total_sources: 0,
+        connected_sources: 0,
+        error_sources: 0,
+        ocr_pending: 0,
+        overall_freshness: "unknown",
+        warnings: [],
       },
       gaps: [],
       recent_activity: [],
@@ -769,9 +1121,30 @@ describe("Edge Cases", () => {
   it("handles all critical gaps", () => {
     const bundle = makeBundle({
       gaps: [
-        { type: "g1", severity: "critical", title: "A" },
-        { type: "g2", severity: "critical", title: "B" },
-        { type: "g3", severity: "critical", title: "C" },
+        {
+          type: "missing_document",
+          severity: "critical",
+          title: "A",
+          description: "d",
+          recommendation: "r",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+        {
+          type: "missing_deadline",
+          severity: "critical",
+          title: "B",
+          description: "d",
+          recommendation: "r",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
+        {
+          type: "unclear_opponent",
+          severity: "critical",
+          title: "C",
+          description: "d",
+          recommendation: "r",
+          detected_at: "2024-07-01T00:00:00Z",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -783,7 +1156,8 @@ describe("Edge Cases", () => {
       documents: Array.from({ length: 20 }, (_, i) => ({
         slug: `doc-${i}`,
         name: `Doc${i}.pdf`,
-        ocr_status: "ocr_complete" as const,
+        ocr_status: "ocr_complete",
+        uploaded_at: "2024-07-01T00:00:00Z" as const,
       })),
     });
     const panel = buildUnderstandingPanel(bundle);

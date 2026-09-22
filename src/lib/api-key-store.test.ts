@@ -35,7 +35,7 @@ describe("FileApiKeyStore (dev mode)", () => {
       await fs.rm(TEST_DIR, { recursive: true, force: true });
     } catch {}
     process.env.SUBSUMIO_DATA_DIR = TEST_DIR;
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     delete process.env.DATABASE_URL;
     delete process.env.SUBSUMIO_AUTH_DATABASE_URL;
     delete process.env.POSTGRES_URL;

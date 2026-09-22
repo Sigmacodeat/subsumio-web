@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { BrainPage } from "@/lib/types";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 vi.mock("@/lib/api", () => ({
@@ -77,7 +78,7 @@ describe("CaseHandover", () => {
         },
         content: "",
       },
-    ]);
+    ] as unknown as BrainPage[]);
 
     render(<CaseHandover />);
     await waitFor(() => {
@@ -109,7 +110,7 @@ describe("CaseHandover", () => {
         },
         content: "",
       },
-    ]);
+    ] as unknown as BrainPage[]);
 
     render(<CaseHandover />);
     await waitFor(() => {
@@ -205,7 +206,7 @@ describe("CaseHandover", () => {
         },
         content: "",
       },
-    ]);
+    ] as unknown as BrainPage[]);
 
     render(<CaseHandover />);
     await waitFor(() => {
