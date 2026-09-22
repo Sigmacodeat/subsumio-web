@@ -2,12 +2,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// The server crontab (server/deploy/hetzner/crontab) calls every job with
+// The server crontab (server/deploy/netcup/crontab) calls every job with
 // `curl -fsS … || true`: a plain GET, and a failure is swallowed. A route that
 // only exports POST therefore never runs in production, silently. This guard
 // keeps every scheduled path callable the way the crontab calls it.
 const root = process.cwd();
-const crontab = readFileSync(join(root, "server/deploy/hetzner/crontab"), "utf8");
+const crontab = readFileSync(join(root, "server/deploy/netcup/crontab"), "utf8");
 
 // Scheduled in the crontab but POST-only, so they have never run on the
 // server. Both act on their own (drafts, client updates, follow-ups) and spend

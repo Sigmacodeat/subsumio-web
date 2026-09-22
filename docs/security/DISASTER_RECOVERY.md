@@ -15,38 +15,38 @@ This plan defines the technical procedures for recovering Subsumio's production 
 
 ## 2. Disaster Scenarios
 
-| Scenario                       | Probability | Impact   | RTO  | Strategy                        |
-| ------------------------------ | ----------- | -------- | ---- | ------------------------------- |
-| Data center loss (Falkenstein) | Low         | Critical | 4 h  | Failover to Helsinki            |
-| Database corruption            | Medium      | Critical | 2 h  | Point-in-time recovery from WAL |
-| Ransomware / cyber attack      | Low         | Critical | 8 h  | Rebuild from immutable backups  |
-| Accidental data deletion       | Medium      | High     | 2 h  | Point-in-time recovery          |
-| Configuration destruction      | Low         | High     | 1 h  | Git restore + redeploy          |
-| Full system compromise         | Very Low    | Critical | 12 h | Full rebuild from scratch       |
+| Scenario                  | Probability | Impact   | RTO  | Strategy                        |
+| ------------------------- | ----------- | -------- | ---- | ------------------------------- |
+| Data center loss          | Low         | Critical | 4 h  | Failover to zweiter Standort    |
+| Database corruption       | Medium      | Critical | 2 h  | Point-in-time recovery from WAL |
+| Ransomware / cyber attack | Low         | Critical | 8 h  | Rebuild from immutable backups  |
+| Accidental data deletion  | Medium      | High     | 2 h  | Point-in-time recovery          |
+| Configuration destruction | Low         | High     | 1 h  | Git restore + redeploy          |
+| Full system compromise    | Very Low    | Critical | 12 h | Full rebuild from scratch       |
 
 ---
 
 ## 3. Recovery Infrastructure
 
-### 3.1 Primary Site (Falkenstein, DE)
+### 3.1 Primary Site (Deutschland)
 
-| Component     | Spec                                  | Provider |
-| ------------- | ------------------------------------- | -------- |
-| Web Server    | CX33 (8 vCPU, 16 GB RAM)              | Hetzner  |
-| Engine Server | CX33 (8 vCPU, 16 GB RAM)              | Hetzner  |
-| PostgreSQL    | CX33 (8 vCPU, 16 GB RAM, 160 GB NVMe) | Hetzner  |
-| Redis         | CX22 (4 vCPU, 8 GB RAM)               | Hetzner  |
-| Storage Box   | 1 TB                                  | Hetzner  |
+| Component     | Spec                    | Provider |
+| ------------- | ----------------------- | -------- |
+| Web Server    | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| Engine Server | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| PostgreSQL    | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| Redis         | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| Storage Box   | 1 TB                    | Netcup   |
 
-### 3.2 DR Site (Helsinki, FI)
+### 3.2 DR Site (zweiter Standort)
 
-| Component     | Spec                                  | Provider |
-| ------------- | ------------------------------------- | -------- |
-| Web Server    | CX33 (8 vCPU, 16 GB RAM)              | Hetzner  |
-| Engine Server | CX33 (8 vCPU, 16 GB RAM)              | Hetzner  |
-| PostgreSQL    | CX33 (8 vCPU, 16 GB RAM, 160 GB NVMe) | Hetzner  |
-| Redis         | CX22 (4 vCPU, 8 GB RAM)               | Hetzner  |
-| Storage Box   | 1 TB                                  | Hetzner  |
+| Component     | Spec                    | Provider |
+| ------------- | ----------------------- | -------- |
+| Web Server    | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| Engine Server | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| PostgreSQL    | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| Redis         | RS (16 vCPU, 64 GB RAM) | Netcup   |
+| Storage Box   | 1 TB                    | Netcup   |
 
 ### 3.3 DNS & Routing
 
@@ -60,7 +60,7 @@ This plan defines the technical procedures for recovering Subsumio's production 
 
 ## 4. Recovery Procedures
 
-### 4.1 PostgreSQL Failover (Falkenstein → Helsinki)
+### 4.1 PostgreSQL Failover (Deutschland → zweiter Standort)
 
 **RTO: 15 minutes**
 
@@ -85,7 +85,7 @@ systemctl restart subsumio-web
 systemctl restart subsumio-engine
 
 # 5. Update DNS
-# Cloudflare API: Update A record to Helsinki IP
+# Cloudflare API: Update A record to zweiter Standort IP
 curl -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
   -H "Authorization: Bearer $CF_TOKEN" \
   -H "Content-Type: application/json" \
@@ -282,7 +282,7 @@ After failover to DR site, return to primary site:
 | DR Coordinator     | CTO              | Engineering Lead | +43 XXX            |
 | DB Admin           | Engineering Lead | Senior Engineer  | +43 XXX            |
 | Network            | Engineering Lead | CTO              | +43 XXX            |
-| Hetzner Support    | —                | —                | +49 30 9 83 87 999 |
+| Netcup Support     | —                | —                | +49 30 9 83 87 999 |
 | Cloudflare Support | —                | —                | Enterprise plan    |
 | Customer Comms     | Head of CS       | CTO              | +43 XXX            |
 
@@ -290,14 +290,14 @@ After failover to DR site, return to primary site:
 
 ## 9. Pre-positioned Resources
 
-| Resource                     | Location                  | Status               |
-| ---------------------------- | ------------------------- | -------------------- |
-| DR servers (pre-provisioned) | Helsinki                  | ✅ Running (replica) |
-| Latest backups               | Storage Box (Helsinki)    | ✅ Daily             |
-| Ansible playbooks            | GitHub + local            | ✅ Versioned         |
-| DNS failover config          | Cloudflare dashboard      | ✅ Configured        |
-| Emergency credentials        | 1Password (offline vault) | ✅ Updated quarterly |
-| Runbook (this doc)           | GitHub + printed          | ✅                   |
+| Resource                     | Location                       | Status               |
+| ---------------------------- | ------------------------------ | -------------------- |
+| DR servers (pre-provisioned) | zweiter Standort               | ✅ Running (replica) |
+| Latest backups               | Storage Box (zweiter Standort) | ✅ Daily             |
+| Ansible playbooks            | GitHub + local                 | ✅ Versioned         |
+| DNS failover config          | Cloudflare dashboard           | ✅ Configured        |
+| Emergency credentials        | 1Password (offline vault)      | ✅ Updated quarterly |
+| Runbook (this doc)           | GitHub + printed               | ✅                   |
 
 ---
 

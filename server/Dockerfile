@@ -6,7 +6,7 @@
 # packs ship in the image.
 #
 # Build context is the server/ directory. Deploy on Netcup via
-# server/deploy/netcup/deploy-code.sh (compose: deploy/hetzner/docker-compose.yml), or any Docker host.
+# server/deploy/netcup/deploy-code.sh (compose: deploy/netcup/docker-compose.yml), or any Docker host.
 
 FROM oven/bun:1
 

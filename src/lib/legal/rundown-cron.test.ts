@@ -17,7 +17,7 @@ const cronRouteSource = readFileSync(cronRoutePath, "utf-8");
 const manualTriggerPath = join(process.cwd(), "src/app/api/agents/rundown/route.ts");
 const manualTriggerSource = readFileSync(manualTriggerPath, "utf-8");
 
-const crontabPath = join(process.cwd(), "server/deploy/hetzner/crontab");
+const crontabPath = join(process.cwd(), "server/deploy/netcup/crontab");
 const crontabSource = readFileSync(crontabPath, "utf-8");
 
 describe("TODO 7: Rundown Cron — Prompt Structure", () => {

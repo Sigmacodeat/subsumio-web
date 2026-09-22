@@ -26,11 +26,11 @@ This document prepares Subsumio for an external penetration test, defines the sc
 | Document Vault              | Grey-box             | Path traversal, file upload, access control |
 | PostgreSQL                  | White-box (internal) | Privilege escalation, injection             |
 | CI/CD Pipeline              | White-box            | Secret leakage, deployment security         |
-| Infrastructure (Hetzner)    | External scan        | Open ports, services, hardening             |
+| Infrastructure              | External scan        | Open ports, services, hardening             |
 
 ### 2.2 Out of Scope
 
-- Hetzner data center physical security (covered by Hetzner SOC 2)
+- Netcup data center physical security (covered by Netcup SOC 2)
 - Cloudflare infrastructure (covered by Cloudflare SOC 2)
 - Third-party APIs (OpenAI, DocuSign, Meta) — tested via integration layer only
 - Customer self-hosted instances (PGLite)

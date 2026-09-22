@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 
 /**
  * The server stack fires cron jobs through supercronic from
- * server/deploy/hetzner/crontab — that file is the scheduler of record
+ * server/deploy/netcup/crontab — that file is the scheduler of record
  * (see docs/deploy/CRON_SCHEDULE.md). These tests pin that the document
  * ingest recovery workers stay scheduled there.
  */
 function crontabPaths(): string[] {
-  const raw = readFileSync(resolve(process.cwd(), "server/deploy/hetzner/crontab"), "utf8");
+  const raw = readFileSync(resolve(process.cwd(), "server/deploy/netcup/crontab"), "utf8");
   const paths: string[] = [];
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();

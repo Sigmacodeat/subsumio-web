@@ -241,7 +241,7 @@ Required fields:
 | Tool                           | Purpose                   | Access                 |
 | ------------------------------ | ------------------------- | ---------------------- |
 | UptimeRobot                    | External monitoring       | On-call + CTO          |
-| Hetzner Cloud Console          | Infrastructure management | CTO + Engineering Lead |
+| Netcup Console                 | Infrastructure management | CTO + Engineering Lead |
 | Cloudflare Dashboard           | CDN, DDoS, WAF            | CTO + Engineering Lead |
 | GitHub Actions                 | CI/CD, deployment         | Engineering team       |
 | Slack                          | Incident coordination     | All engineers          |

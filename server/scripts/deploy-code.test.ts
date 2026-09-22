@@ -20,7 +20,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 const SCRIPT = join(__dirname, "..", "deploy", "netcup", "deploy-code.sh");
-const H = "server/deploy/hetzner";
+const H = "server/deploy/netcup";
 
 /** The heredoc blocks the script pipes into `ssh … sh -s`, in order. */
 function remoteBlocks(): string[] {

@@ -14,8 +14,8 @@
 | Company name     | Sigmacode AT GmbH                  |
 | Product          | Subsumio AI Platform (Legal + Tax) |
 | Headquarters     | Austria                            |
-| Hosting location | Falkenstein, Germany (EU)          |
-| DR site          | Helsinki, Finland (EU)             |
+| Hosting location | Deutschland, Germany (EU)          |
+| DR site          | zweiter Standort, Finland (EU)     |
 | Founded          | 2025                               |
 | Employees        | < 10                               |
 | Website          | https://subsum.eu                  |
@@ -28,8 +28,8 @@
 
 All customer data is stored exclusively in the European Union:
 
-- Primary: Hetzner Online GmbH, Falkenstein, Germany
-- DR: Hetzner Online GmbH, Helsinki, Finland
+- Primary: netcup GmbH, Deutschland, Germany
+- DR: netcup GmbH, zweiter Standort, Finland
 - No data is transferred to third countries (no SCC or Privacy Shield required)
 
 ### 2.2 What data is processed?
@@ -99,7 +99,7 @@ All customer data is stored exclusively in the European Union:
 
 ### 4.1 Hosting
 
-- Provider: Hetzner Online GmbH (ISO 27001 certified, SOC 2 Type II certified data centers)
+- Provider: netcup GmbH (ISO 27001 certified, SOC 2 Type II certified data centers)
 - Location: EU only (Germany + Finland)
 - Server isolation: Dedicated servers per environment
 - Network segmentation: Private network between components
@@ -160,7 +160,7 @@ Documented Incident Response Plan with defined severity levels, response times, 
 ### 7.1 Availability
 
 - SLA: 99.5% (Pro), 99.9% (Enterprise)
-- Active-active redundancy between Falkenstein (DE) and Helsinki (FI)
+- Active-active redundancy between Deutschland (DE) and zweiter Standort (FI)
 - DNS failover: < 5 minutes
 - PostgreSQL failover: < 15 minutes
 
@@ -209,17 +209,17 @@ Documented Incident Response Plan with defined severity levels, response times, 
 
 ## 9. Sub-Processors
 
-| Provider            | Purpose                 | Location       | DPA |
-| ------------------- | ----------------------- | -------------- | --- |
-| Hetzner Online GmbH | Hosting & storage       | DE + FI        | ✅  |
-| Cloudflare, Inc.    | CDN & WAF               | EU edge        | ✅  |
-| OpenAI (Azure)      | AI inference (optional) | EU             | ✅  |
-| Anthropic           | AI inference (optional) | EU             | ✅  |
-| Meta (WhatsApp)     | WhatsApp Business API   | EU             | ✅  |
-| DocuSign            | E-signature             | EU (Frankfurt) | ✅  |
-| GitHub              | Source code hosting     | US (SCC)       | ✅  |
-| 1Password           | Credential management   | EU             | ✅  |
-| UptimeRobot         | Status monitoring       | EU             | ✅  |
+| Provider         | Purpose                 | Location       | DPA |
+| ---------------- | ----------------------- | -------------- | --- |
+| netcup GmbH      | Hosting & storage       | DE + FI        | ✅  |
+| Cloudflare, Inc. | CDN & WAF               | EU edge        | ✅  |
+| OpenAI (Azure)   | AI inference (optional) | EU             | ✅  |
+| Anthropic        | AI inference (optional) | EU             | ✅  |
+| Meta (WhatsApp)  | WhatsApp Business API   | EU             | ✅  |
+| DocuSign         | E-signature             | EU (Frankfurt) | ✅  |
+| GitHub           | Source code hosting     | US (SCC)       | ✅  |
+| 1Password        | Credential management   | EU             | ✅  |
+| UptimeRobot      | Status monitoring       | EU             | ✅  |
 
 Customers are notified 30 days before adding any new sub-processor.
 
@@ -227,8 +227,8 @@ Customers are notified 30 days before adding any new sub-processor.
 
 ## 10. Physical Security
 
-- Data centers: Hetzner Online GmbH (SOC 2 Type II certified, ISO 27001 certified)
-- Physical access: Restricted to authorized Hetzner personnel
+- Data centers: netcup GmbH (SOC 2 Type II certified, ISO 27001 certified)
+- Physical access: Restricted to authorized Netcup personnel
 - Video surveillance: 24/7
 - Environmental controls: Fire suppression, climate control, redundant power
 - Office: Access controlled, visitor logging, workstation lock policy

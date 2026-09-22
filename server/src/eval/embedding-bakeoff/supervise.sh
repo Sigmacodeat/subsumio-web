@@ -15,7 +15,7 @@
 # Stop:   pkill -f bakeoff-supervise.sh
 
 C=subsumio-engine-engine-1
-ENV_FILE=/opt/subsumio/server/deploy/hetzner/.env
+ENV_FILE=/opt/subsumio/server/deploy/netcup/.env
 OUT=/data/eval/embedding-bakeoff
 HOST_OUT=/var/lib/docker/volumes/hetzner_engine-data/_data/eval/embedding-bakeoff
 CODE=/data/eval/code

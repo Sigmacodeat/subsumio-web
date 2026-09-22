@@ -88,7 +88,7 @@ supervision handles host-level failures. You usually want both.
 
 | Environment               | Recommendation                                                                                                                                                                                                                             |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Docker / Hetzner**      | `gbrain jobs supervisor` runs as PID 1 inside the container. Docker/Compose restarts the container on host failure; supervisor restarts the worker on in-process crash. See the [systemd](#deployment-systemd) snippet for the VM layer.   |
+| **Docker / VPS**          | `gbrain jobs supervisor` runs as PID 1 inside the container. Docker/Compose restarts the container on host failure; supervisor restarts the worker on in-process crash. See the [systemd](#deployment-systemd) snippet for the VM layer.   |
 | **Linux VM with systemd** | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#deployment-systemd). |
 | **Dev laptop / macOS**    | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed.                                                                                                                                                     |
 
@@ -186,17 +186,17 @@ and `ReadWritePaths=$GBRAIN_WORKSPACE,$HOME/.gbrain` (for the PID file and
 audit log). `LimitNOFILE=65535` covers Bun + Postgres pool + concurrent
 LLM subagent calls without hitting the default 1024 cap.
 
-## Deployment: Docker / Hetzner
+## Deployment: Docker / VPS
 
 The engine's `docker-entrypoint.sh` starts `gbrain serve --http --with-worker`,
 which runs the supervisor in-process. No extra config needed — just set
-`DATABASE_URL` + `GBRAIN_ALLOW_SHELL_JOBS=1` in `server/deploy/hetzner/.env`
+`DATABASE_URL` + `GBRAIN_ALLOW_SHELL_JOBS=1` in `server/deploy/netcup/.env`
 and `docker compose up -d`.
 
-For the Hetzner full-stack (web + engine + Postgres + Caddy):
+For the self-hosted full-stack (web + engine + Postgres + Caddy):
 
 ```bash
-cd server/deploy/hetzner
+cd server/deploy/netcup
 # Edit .env (copy from .env.example)
 docker compose up -d --build
 ```
@@ -343,7 +343,7 @@ sudo rm /etc/systemd/system/gbrain-worker.service /etc/gbrain.env
 sudo systemctl daemon-reload
 ```
 
-**Docker / Hetzner:** remove `GBRAIN_ALLOW_SHELL_JOBS=1` from `.env`,
+**Docker / VPS:** remove `GBRAIN_ALLOW_SHELL_JOBS=1` from `.env`,
 then `docker compose up -d engine` to restart without the flag.
 
 **Inline `--follow`:** remove the cron entry. Nothing else to clean up

@@ -199,7 +199,7 @@ declare global {
 
 /**
  * Build a StorageConfig from environment variables.
- * Supports Cloudflare R2, Hetzner Object Storage, MinIO, or any S3-compatible backend.
+ * Supports Cloudflare R2, MinIO, or any S3-compatible backend.
  * Returns undefined when the required vars are not set (falls back to local disk).
  *
  * Required: R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET

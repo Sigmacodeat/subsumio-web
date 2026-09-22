@@ -29,7 +29,7 @@ set -eu
 
 HOST="${DEPLOY_HOST:-subsumio-netcup}"
 APP=/opt/subsumio
-H=server/deploy/hetzner
+H=server/deploy/netcup
 # The compose file also defines a legacy caddy service; the shared proxy lives
 # in /opt/caddy. Start only db, clamav and these.
 APP_SERVICES="engine web cron backup corpus-pipeline"

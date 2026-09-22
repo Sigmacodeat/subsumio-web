@@ -1,4 +1,4 @@
-# Subsumio engine — single-box production stack for Hetzner Cloud (EU).
+# Subsumio engine — single-box production stack on Netcup (EU).
 #   db     — Postgres 16 + pgvector (brain + web auth store)
 #   engine — the gbrain HTTP API + in-process ingestion worker (parses PDFs,
 #            builds embeddings, answers queries) on :3131
@@ -6,7 +6,7 @@
 #   caddy  — reverse proxy with automatic Let's Encrypt HTTPS for APP_DOMAIN
 #            and ENGINE_DOMAIN
 #
-# Bring up:  cd server/deploy/hetzner && cp .env.example .env && <edit .env> &&
+# Bring up:  cd server/deploy/netcup && cp .env.example .env && <edit .env> &&
 #            docker compose up -d --build
 # All secrets come from .env (never committed). Files live on named volumes;
 # point APP_DOMAIN + ENGINE_DOMAIN DNS A-records at this box first so Caddy
@@ -14,15 +14,15 @@
 #
 # `name:` below pins the Compose project id explicitly. Without it, Compose
 # derives the project name from the containing directory's basename — and
-# this directory is literally named "hetzner", same as sibling deploy dirs
-# for other apps sharing this box (e.g. a shop's own deploy/hetzner/). Two
-# compose files resolving to the same implicit project name means `docker
-# compose up` in ONE app's directory can remove the OTHER app's containers
-# as "orphans" (2026-07-14 incident: a sibling app's deploy wiped this
-# entire stack — db, engine, clamav, web, caddy, cron, backup — while its
-# own container survived, because they collided on the "hetzner" project
-# name). Pinning an explicit name here makes this project immune to that
-# collision regardless of what any other compose file on the box is named.
+# sibling apps share this box with deploy dirs of the same name (e.g. a
+# shop's own deploy/netcup/). Two compose files resolving to the same
+# implicit project name means `docker compose up` in ONE app's directory can
+# remove the OTHER app's containers as "orphans" (2026-07-14 incident: a
+# sibling app's deploy wiped this entire stack — db, engine, clamav, web,
+# caddy, cron, backup — while its own container survived, because they
+# collided on the same implicit project name). Pinning an explicit name here
+# makes this project immune to that collision regardless of what any other
+# compose file on the box is named.
 name: subsumio-engine
 
 # Container logs are capped: one unrotated log grew to 1.4 GB and filled the
@@ -324,8 +324,8 @@ services:
       # holding another's vectors, and nothing would look wrong until
       # answers quietly got worse. Missing value = the service refuses to
       # start, with this message.
-      SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:?in server/deploy/hetzner/.env setzen — muss zum Vektorraum der Spalte content_chunks.embedding passen}
-      SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:?in server/deploy/hetzner/.env setzen — Breite der Spalte content_chunks.embedding}
+      SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:?in server/deploy/netcup/.env setzen — muss zum Vektorraum der Spalte content_chunks.embedding passen}
+      SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:?in server/deploy/netcup/.env setzen — Breite der Spalte content_chunks.embedding}
       # RIS Proxy — disabled: all 10 proxies were dead (timeout on every HTTPS request).
       # Re-enable by setting RIS_PROXY_URLS in .env with working proxy URLs.
       RIS_PROXY_URLS: ""
@@ -368,7 +368,9 @@ services:
 
 volumes:
   # external:true + explicit name: these volumes were created under the old
-  # implicit "hetzner" project name before the `name:` pin above was added.
+  # implicit project name before the `name:` pin above was added. The
+  # hetzner_* names are the live volumes on the production box — they keep
+  # their historical prefix because renaming a Docker volume orphans data.
   # Declaring them external keeps Compose attached to the SAME data instead
   # of provisioning fresh empty volumes under the new "subsumio-engine_*"
   # names. Do not remove `external: true` without migrating the data first.

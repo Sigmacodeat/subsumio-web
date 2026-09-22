@@ -13,7 +13,7 @@
 ## Ist-Zustand (verifiziert)
 
 Drei zustandsbehaftete Docker-Volumes auf der Server-VM
-(`server/deploy/hetzner/docker-compose.yml`):
+(`server/deploy/netcup/docker-compose.yml`):
 
 | Volume        | Inhalt                                                                              | Kritikalität                               |
 | ------------- | ----------------------------------------------------------------------------------- | ------------------------------------------ |
@@ -54,7 +54,7 @@ für Ransomware-Schutz (unveränderliche Backups).
 3. **restic-Repo-Passwort** generieren (`openssl rand -base64 48`) und sicher
    ablegen (Passwort-Manager + Offline-Kopie). **Ohne dieses Passwort sind die
    Backups unwiederbringlich** — es darf NICHT nur auf der VM liegen.
-4. Werte in `server/deploy/hetzner/.env` setzen (siehe `.env.example`-Block unten).
+4. Werte in `server/deploy/netcup/.env` setzen (siehe `.env.example`-Block unten).
 5. Object Lock / Versioning am Bucket aktivieren (Anbieter-UI).
 
 > Credentials werden NUR von dir gesetzt — der Code liest sie aus der Umgebung,
@@ -87,7 +87,7 @@ backup:
   entrypoint: ["/bin/sh", "/backup/run.sh"] # Script unten, als Config-Mount
 ```
 
-### 2. `server/deploy/hetzner/backup/run.sh` (NEU)
+### 2. `server/deploy/netcup/backup/run.sh` (NEU)
 
 Loop (oder über supercronic getaktet), pro Lauf:
 
@@ -107,9 +107,9 @@ restic check --read-data-subset=5%
 ```
 
 Takt: **täglich 01:00 UTC** (vor dem Dream-Cycle). Eintrag im
-`server/deploy/hetzner/crontab` ODER als `setInterval` im Entrypoint.
+`server/deploy/netcup/crontab` ODER als `setInterval` im Entrypoint.
 
-### 3. `server/deploy/hetzner/backup/restore.sh` (NEU — das Runbook als Skript)
+### 3. `server/deploy/netcup/backup/restore.sh` (NEU — das Runbook als Skript)
 
 ```sh
 # Holt den jüngsten (oder per --snapshot gewählten) Stand und stellt wieder her.
@@ -139,7 +139,7 @@ RTO/RPO **nachweisbar** statt behauptet.
 
 ### 5. Doku + `.env.example`
 
-`server/deploy/hetzner/.env.example` ergänzen:
+`server/deploy/netcup/.env.example` ergänzen:
 
 ```sh
 # ── Offsite-Backup (restic) ──────────────────────────────────────────────

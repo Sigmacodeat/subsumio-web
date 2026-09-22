@@ -412,7 +412,7 @@ To ensure the physical security of Subsumio's infrastructure.
 
 ## 11.2 Data Center Security
 
-- Data centers are SOC 2 Type II certified (Hetzner EU)
+- Data centers are SOC 2 Type II certified (Netcup EU)
 - Access to data centers is restricted to authorized personnel
 - Video surveillance is in place
 - Environmental controls are monitored

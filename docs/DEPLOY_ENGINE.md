@@ -62,7 +62,7 @@ docker run -d --name subsumio-engine -p 3131:3131 \
 ## Wire the frontend
 
 On the recommended self-hosted stack these variables live in
-`server/deploy/hetzner/.env` and are consumed by Docker Compose:
+`server/deploy/netcup/.env` and are consumed by Docker Compose:
 
 | Variable                     | Value                                       |
 | ---------------------------- | ------------------------------------------- |

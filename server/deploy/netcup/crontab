@@ -1,6 +1,6 @@
 # Subsumio cron jobs — triggered by supercronic inside the Docker stack.
 # Each job calls the Next.js /api/cron/* endpoint with CRON_SECRET auth.
-# Times are in UTC (Hetzner default). Adjust for CET/CEST if needed.
+# Times are in UTC (server default). Adjust for CET/CEST if needed.
 
 # ── 02:45 UTC (04:45 CEST) — Statute currency check ──
 # Checks DB statute version_date against live sources (RIS-OGD, buzer.de, OpenCaseLaw).
@@ -165,7 +165,7 @@
 # ─────────────────────────────────────────────────────────────────────────
 # Abrechnung / SaaS-Billing
 # Diese fünf Jobs standen bisher nur in vercel.json. Beim Betrieb auf
-# Hetzner (supercronic) lief die Abrechnungsautomatik dadurch still nicht.
+# Der supercronic-Job lief die Abrechnungsautomatik dadurch still nicht.
 # Zeitpläne sind 1:1 aus vercel.json übernommen — beide Scheduler müssen
 # gemeinsam gepflegt werden.
 # ─────────────────────────────────────────────────────────────────────────

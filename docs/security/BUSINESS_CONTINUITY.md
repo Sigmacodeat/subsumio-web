@@ -47,13 +47,13 @@ beA → External API (no dependency)
 
 ### 3.1 Active-Active Redundancy
 
-| Component       | Primary                           | Secondary               | Failover                   |
-| --------------- | --------------------------------- | ----------------------- | -------------------------- |
-| Web Application | Hetzner CX33 (Falkenstein)        | Hetzner CX33 (Helsinki) | DNS failover (< 5 min)     |
-| Engine API      | Hetzner CX33 (Falkenstein)        | Hetzner CX33 (Helsinki) | DNS failover (< 5 min)     |
-| PostgreSQL      | Primary (Falkenstein)             | Replica (Helsinki)      | Promote replica (< 15 min) |
-| Redis           | Primary (Falkenstein)             | Replica (Helsinki)      | Auto-failover (< 30 sec)   |
-| Document Vault  | Hetzner Storage Box (Falkenstein) | S3 (Helsinki)           | Manual switch (< 1 h)      |
+| Component       | Primary                   | Secondary                      | Failover                   |
+| --------------- | ------------------------- | ------------------------------ | -------------------------- |
+| Web Application | Netcup CX33               | Netcup CX33 (zweiter Standort) | DNS failover (< 5 min)     |
+| Engine API      | Netcup CX33               | Netcup CX33 (zweiter Standort) | DNS failover (< 5 min)     |
+| PostgreSQL      | Primary                   | Replica (zweiter Standort)     | Promote replica (< 15 min) |
+| Redis           | Primary                   | Replica (zweiter Standort)     | Auto-failover (< 30 sec)   |
+| Document Vault  | Offsite-Storage (SFTP/S3) | S3 (zweiter Standort)          | Manual switch (< 1 h)      |
 
 ### 3.2 Graceful Degradation
 
@@ -95,15 +95,15 @@ If full failover is not immediately possible, Subsumio degrades gracefully:
 
 ## 5. Disruption Scenarios
 
-### 5.1 Data Center Outage (Falkenstein)
+### 5.1 Data Center Outage
 
-**Trigger:** Hetzner status page reports Falkenstein outage OR monitoring detects total loss.
+**Trigger:** Provider status page reports Deutschland outage OR monitoring detects total loss.
 
 **Response:**
 
 1. **0–15 min:** Declare BC event, assess scope
-2. **15–30 min:** Promote Helsinki PostgreSQL replica, update DNS to Helsinki
-3. **30–60 min:** Verify services on Helsinki infrastructure
+2. **15–30 min:** Promote zweiter Standort PostgreSQL replica, update DNS to zweiter Standort
+3. **30–60 min:** Verify services on zweiter Standort infrastructure
 4. **60–90 min:** Customer notification (status page + e-mail + WhatsApp)
 5. **Ongoing:** Monitor, plan return to primary
 
@@ -116,7 +116,7 @@ If full failover is not immediately possible, Subsumio degrades gracefully:
 1. **0–15 min:** Assess via monitoring, identify affected regions
 2. **15–30 min:** Implement CDN-level routing adjustments (Cloudflare)
 3. **30–60 min:** Customer notification if > 5% affected
-4. **Ongoing:** Monitor, coordinate with Hetzner support
+4. **Ongoing:** Monitor, coordinate with Netcup support
 
 ### 5.3 Key Personnel Unavailable
 
@@ -125,7 +125,7 @@ If full failover is not immediately possible, Subsumio degrades gracefully:
 **Response:**
 
 1. **0–4 h:** Identify backup role holder
-2. **4–8 h:** Transfer access credentials (1Password, Hetzner, Cloudflare)
+2. **4–8 h:** Transfer access credentials (1Password, Netcup, Cloudflare)
 3. **8–24 h:** Brief backup role holder on current state
 4. **Ongoing:** Cross-training ensures no single point of knowledge
 
@@ -189,20 +189,20 @@ If full failover is not immediately possible, Subsumio degrades gracefully:
 
 ### 7.2 Infrastructure
 
-| Resource                  | Primary            | Backup                       |
-| ------------------------- | ------------------ | ---------------------------- |
-| Hetzner Cloud             | CX33 (Falkenstein) | CX33 (Helsinki)              |
-| Hetzner Storage Box       | Falkenstein        | Helsinki                     |
-| Cloudflare                | EU edge            | Global edge (auto)           |
-| GitHub                    | Primary            | Local mirror + GitLab backup |
-| 1Password                 | Cloud              | Local vault backup           |
-| Status page (UptimeRobot) | Cloud              | Static HTML fallback         |
+| Resource                  | Primary     | Backup                       |
+| ------------------------- | ----------- | ---------------------------- |
+| Netcup                    | CX33        | CX33 (zweiter Standort)      |
+| Offsite-Storage (SFTP/S3) | Deutschland | zweiter Standort             |
+| Cloudflare                | EU edge     | Global edge (auto)           |
+| GitHub                    | Primary     | Local mirror + GitLab backup |
+| 1Password                 | Cloud       | Local vault backup           |
+| Status page (UptimeRobot) | Cloud       | Static HTML fallback         |
 
 ### 7.3 Financial Provisions
 
 - Emergency fund: 10.000 € (immediately available)
 - Insurance: Cyber liability insurance (planned Q3 2026)
-- Cloud credit reserve: 2.000 € Hetzner + 500 € Cloudflare
+- Cloud credit reserve: 2.000 € Netcup + 500 € Cloudflare
 
 ---
 
@@ -223,7 +223,7 @@ If full failover is not immediately possible, Subsumio degrades gracefully:
 | ---------------- | ------------------------------------- | ------------- |
 | Tabletop         | Walkthrough of scenario, no execution | Quarterly     |
 | Partial failover | Failover one service to backup        | Semi-annually |
-| Full failover    | Complete failover to Helsinki         | Annually      |
+| Full failover    | Complete failover to zweiter Standort | Annually      |
 | Surprise drill   | Unannounced scenario                  | Annually      |
 
 ### 8.3 Exercise Documentation

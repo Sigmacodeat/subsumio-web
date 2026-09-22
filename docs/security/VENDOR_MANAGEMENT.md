@@ -17,16 +17,16 @@ To ensure that all third-party vendors and sub-processors meet Subsumio's securi
 
 ### 2.1 Critical Vendors (Sub-Processors)
 
-| Vendor              | Service                  | Data Accessed                      | Location                    | DPA | Risk   |
-| ------------------- | ------------------------ | ---------------------------------- | --------------------------- | --- | ------ |
-| Hetzner Online GmbH | Hosting, Storage, Backup | All customer data (infrastructure) | Falkenstein/Helsinki, DE/FI | ✅  | Medium |
-| Cloudflare, Inc.    | CDN, DDoS, WAF, DNS      | HTTP traffic (TLS terminated)      | EU Edge                     | ✅  | Low    |
-| OpenAI / Anthropic  | AI Inference (optional)  | Query text (no PII if configured)  | EU (Azure)                  | ✅  | Medium |
-| Meta Platforms      | WhatsApp Business API    | Phone numbers, message content     | EU                          | ✅  | Medium |
-| DocuSign            | E-Signature              | Document content, signer data      | EU (Frankfurt)              | ✅  | Low    |
-| GitHub              | Source code hosting      | Source code (no customer data)     | US (with SCC)               | ✅  | Low    |
-| 1Password           | Password management      | Credentials                        | EU (AWS)                    | ✅  | Low    |
-| UptimeRobot         | Status monitoring        | URLs only                          | EU                          | ✅  | Low    |
+| Vendor             | Service                  | Data Accessed                      | Location                            | DPA | Risk   |
+| ------------------ | ------------------------ | ---------------------------------- | ----------------------------------- | --- | ------ |
+| netcup GmbH        | Hosting, Storage, Backup | All customer data (infrastructure) | Deutschland/zweiter Standort, DE/FI | ✅  | Medium |
+| Cloudflare, Inc.   | CDN, DDoS, WAF, DNS      | HTTP traffic (TLS terminated)      | EU Edge                             | ✅  | Low    |
+| OpenAI / Anthropic | AI Inference (optional)  | Query text (no PII if configured)  | EU (Azure)                          | ✅  | Medium |
+| Meta Platforms     | WhatsApp Business API    | Phone numbers, message content     | EU                                  | ✅  | Medium |
+| DocuSign           | E-Signature              | Document content, signer data      | EU (Frankfurt)                      | ✅  | Low    |
+| GitHub             | Source code hosting      | Source code (no customer data)     | US (with SCC)                       | ✅  | Low    |
+| 1Password          | Password management      | Credentials                        | EU (AWS)                            | ✅  | Low    |
+| UptimeRobot        | Status monitoring        | URLs only                          | EU                                  | ✅  | Low    |
 
 ### 2.2 Non-Critical Vendors
 
@@ -63,7 +63,7 @@ To ensure that all third-party vendors and sub-processors meet Subsumio's securi
 
 | Vendor           | Score | Level  | Justification                                                         |
 | ---------------- | ----- | ------ | --------------------------------------------------------------------- |
-| Hetzner          | 45    | Medium | Hosts all data, but SOC 2 certified data center, EU-only              |
+| Netcup           | 45    | Medium | Hosts all data, but SOC 2 certified data center, EU-only              |
 | Cloudflare       | 25    | Low    | TLS-terminated, no access to payloads, EU edge                        |
 | OpenAI/Anthropic | 50    | Medium | Processes query text, but EU deployment, no training on customer data |
 | Meta (WhatsApp)  | 55    | Medium | Access to message content, but Business API terms, EU data            |

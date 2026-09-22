@@ -2,7 +2,7 @@
  * StorageBackend — pluggable interface for binary file storage.
  *
  * GBrain is agnostic about where files live. The setup skill picks
- * the backend (S3/R2/MinIO/Hetzner Object Storage), gbrain doesn't care.
+ * the backend (S3/R2/MinIO), gbrain doesn't care.
  */
 
 export interface PresignedUploadResult {

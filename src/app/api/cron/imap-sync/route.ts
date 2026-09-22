@@ -10,7 +10,7 @@ const log = logger("api/cron/imap-sync");
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-/** Every 5 minutes (server/deploy/hetzner/crontab): fetch new mail for all connected mailboxes. */
+/** Every 5 minutes (server/deploy/netcup/crontab): fetch new mail for all connected mailboxes. */
 export const GET = createCronHandler(async (_req: NextRequest) => {
   let accounts;
   try {

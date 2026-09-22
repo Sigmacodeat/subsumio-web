@@ -17,22 +17,22 @@ To maintain a comprehensive inventory of all Subsumio physical and logical asset
 
 ### 2.1 Servers
 
-| Asset ID | Name               | Type | Location        | IP             | OS        | Purpose            | Owner | Classification |
-| -------- | ------------------ | ---- | --------------- | -------------- | --------- | ------------------ | ----- | -------------- |
-| SRV-001  | subsumio-web-01    | CX33 | Falkenstein, DE | 167.233.134.25 | Debian 12 | Web Application    | CTO   | Confidential   |
-| SRV-002  | subsumio-engine-01 | CX33 | Falkenstein, DE | 167.233.134.26 | Debian 12 | Engine API         | CTO   | Confidential   |
-| SRV-003  | subsumio-db-01     | CX33 | Falkenstein, DE | 167.233.134.27 | Debian 12 | PostgreSQL Primary | CTO   | Restricted     |
-| SRV-004  | subsumio-redis-01  | CX22 | Falkenstein, DE | 167.233.134.28 | Debian 12 | Redis Cache        | CTO   | Confidential   |
-| SRV-005  | subsumio-web-dr    | CX33 | Helsinki, FI    | (DR)           | Debian 12 | Web App (DR)       | CTO   | Confidential   |
-| SRV-006  | subsumio-db-dr     | CX33 | Helsinki, FI    | (DR)           | Debian 12 | PostgreSQL Replica | CTO   | Restricted     |
+| Asset ID | Name               | Type | Location         | IP             | OS        | Purpose            | Owner | Classification |
+| -------- | ------------------ | ---- | ---------------- | -------------- | --------- | ------------------ | ----- | -------------- |
+| SRV-001  | subsumio-web-01    | CX33 | Deutschland      | 167.233.134.25 | Debian 12 | Web Application    | CTO   | Confidential   |
+| SRV-002  | subsumio-engine-01 | CX33 | Deutschland      | 167.233.134.26 | Debian 12 | Engine API         | CTO   | Confidential   |
+| SRV-003  | subsumio-db-01     | CX33 | Deutschland      | 167.233.134.27 | Debian 12 | PostgreSQL Primary | CTO   | Restricted     |
+| SRV-004  | subsumio-redis-01  | CX22 | Deutschland      | 167.233.134.28 | Debian 12 | Redis Cache        | CTO   | Confidential   |
+| SRV-005  | subsumio-web-dr    | CX33 | zweiter Standort | (DR)           | Debian 12 | Web App (DR)       | CTO   | Confidential   |
+| SRV-006  | subsumio-db-dr     | CX33 | zweiter Standort | (DR)           | Debian 12 | PostgreSQL Replica | CTO   | Restricted     |
 
 ### 2.2 Storage
 
-| Asset ID | Name          | Type                | Location        | Capacity | Purpose        | Encryption  | Owner |
-| -------- | ------------- | ------------------- | --------------- | -------- | -------------- | ----------- | ----- |
-| STO-001  | storage-box-1 | Hetzner Storage Box | Falkenstein, DE | 1 TB     | DB backups     | AES-256-GCM | CTO   |
-| STO-002  | storage-box-2 | Hetzner Storage Box | Helsinki, FI    | 1 TB     | DR backups     | AES-256-GCM | CTO   |
-| STO-003  | vault-storage | Local NVMe          | Falkenstein, DE | 160 GB   | Document Vault | AES-256-GCM | CTO   |
+| Asset ID | Name          | Type                      | Location         | Capacity | Purpose        | Encryption  | Owner |
+| -------- | ------------- | ------------------------- | ---------------- | -------- | -------------- | ----------- | ----- |
+| STO-001  | storage-box-1 | Offsite-Storage (SFTP/S3) | Deutschland      | 1 TB     | DB backups     | AES-256-GCM | CTO   |
+| STO-002  | storage-box-2 | Offsite-Storage (SFTP/S3) | zweiter Standort | 1 TB     | DR backups     | AES-256-GCM | CTO   |
+| STO-003  | vault-storage | Local NVMe                | Deutschland      | 160 GB   | Document Vault | AES-256-GCM | CTO   |
 
 ### 2.3 Network
 
@@ -86,7 +86,7 @@ To maintain a comprehensive inventory of all Subsumio physical and logical asset
 | DAT-003  | Documents (uploaded files)     | Vault (NVMe)       | Confidential   | Contract + 30d    | AES-256    | CTO           |
 | DAT-004  | AI queries & responses         | PostgreSQL         | Internal       | 90 days           | AES-256    | Eng Lead      |
 | DAT-005  | Audit logs                     | PostgreSQL         | Restricted     | 365 days          | AES-256    | Security Lead |
-| DAT-006  | System logs                    | Server / Hetzner   | Internal       | 90 days           | Disk-level | Eng Lead      |
+| DAT-006  | System logs                    | Server / Netcup    | Internal       | 90 days           | Disk-level | Eng Lead      |
 | DAT-007  | Backup data                    | Storage Box        | Restricted     | Per backup policy | AES-256    | CTO           |
 | DAT-008  | Source code                    | GitHub             | Confidential   | Indefinite        | git-crypt  | CTO           |
 | DAT-009  | Configuration & secrets        | GitHub (git-crypt) | Restricted     | Indefinite        | GPG        | CTO           |
@@ -107,7 +107,7 @@ To maintain a comprehensive inventory of all Subsumio physical and logical asset
 | CRY-007  | OpenAI API key      | AI inference         | On compromise            | Env var + 1Password     | CTO      |
 | CRY-008  | GPG key (git-crypt) | Secret encryption    | Annually                 | Hardware token + backup | CTO      |
 | CRY-009  | SSH key (deploy)    | Server deployment    | Annually                 | 1Password               | Eng Lead |
-| CRY-010  | Hetzner API token   | Infrastructure mgmt  | On compromise            | 1Password               | CTO      |
+| CRY-010  | Netcup API token    | Infrastructure mgmt  | On compromise            | 1Password               | CTO      |
 
 ---
 
@@ -154,7 +154,7 @@ To maintain a comprehensive inventory of all Subsumio physical and logical asset
 | Production servers (SSH) | ✅  | ✅        | ❌           | ❌            | ✅             |
 | PostgreSQL (admin)       | ✅  | ✅        | ❌           | ❌            | ✅ (read)      |
 | Cloudflare dashboard     | ✅  | ✅        | ❌           | ❌            | ❌             |
-| Hetzner console          | ✅  | ✅        | ❌           | ❌            | ❌             |
+| Netcup console           | ✅  | ✅        | ❌           | ❌            | ❌             |
 | GitHub (admin)           | ✅  | ✅        | ✅ (repo)    | ❌            | ❌             |
 | 1Password vaults         | ✅  | ✅        | ✅ (limited) | ✅ (security) | ✅ (on-call)   |
 | Production env vars      | ✅  | ✅        | ❌           | ❌            | ✅ (via vault) |

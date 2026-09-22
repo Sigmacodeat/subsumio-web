@@ -15,7 +15,7 @@ Aktueller Serverzustand und die offenen Punkte: `docs/deploy/SERVER_STATUS_2026-
 - [ ] **Hinweis (Netcup-Ära):** Deploys nutzen `server/deploy/netcup/deploy-code.sh` (saubere
       Release-Kopie pro Commit, kein `git pull` auf dem Server). Das alte
       `move-corpus-out-of-repo.sh` ist entfernt worden.
-- [ ] `server/deploy/hetzner/.env` ergänzen:
+- [ ] `server/deploy/netcup/.env` ergänzen:
   - `LAW_CORPUS_HOST_DIR=/opt/subsumio-data/law-corpus`
   - `OPS_DOMAIN=ops.subsum.eu`
   - `PLATFORM_OPERATOR_EMAILS=<Betreiber-E-Mail(s)>`

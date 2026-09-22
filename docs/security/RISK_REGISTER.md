@@ -53,7 +53,7 @@ To identify, assess, prioritize, and track risks to Subsumio's business, infrast
 | ID     | Risk                                  | Likelihood | Impact | Score | Level  | Mitigation                                              | Status         | Owner         |
 | ------ | ------------------------------------- | ---------- | ------ | ----- | ------ | ------------------------------------------------------- | -------------- | ------------- |
 | TR-001 | Database corruption or loss           | 2          | 5      | 10    | High   | WAL streaming, daily backups, monthly restore tests     | ✅ Mitigated   | Eng Lead      |
-| TR-002 | Single data center outage             | 2          | 4      | 8     | Medium | DR site in Helsinki, DNS failover                       | ✅ Mitigated   | CTO           |
+| TR-002 | Single data center outage             | 2          | 4      | 8     | Medium | DR site in zweiter Standort, DNS failover               | ✅ Mitigated   | CTO           |
 | TR-003 | DDoS attack                           | 3          | 3      | 9     | Medium | Cloudflare DDoS protection, rate limiting               | ✅ Mitigated   | Eng Lead      |
 | TR-004 | SQL injection                         | 1          | 5      | 5     | Medium | Parameterized queries, input validation, WAF            | ✅ Mitigated   | Eng Lead      |
 | TR-005 | XSS attack                            | 2          | 3      | 6     | Medium | CSP headers, output encoding, React auto-escaping       | ✅ Mitigated   | Eng Lead      |

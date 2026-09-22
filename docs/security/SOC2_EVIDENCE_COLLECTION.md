@@ -24,7 +24,7 @@
 
 - **System name:** Subsumio AI Platform (Legal + Tax)
 - **Components:** Web Application, Engine API, PostgreSQL, Redis, Document Vault, WhatsApp Bot
-- **Hosting:** Hetzner Online GmbH (Falkenstein, DE + Helsinki, FI)
+- **Hosting:** netcup GmbH (Deutschland + zweiter Standort)
 - **CDN/WAF:** Cloudflare, Inc. (EU edge)
 - **Monitoring:** UptimeRobot (external), application-level (internal)
 
@@ -84,7 +84,7 @@
 | CC6.3: User de-provisioning | Offboarding checklists                   | HR system                      | On termination | ✅     |
 | CC6.4: Access review        | Quarterly access review records          | Git commits to inventory       | Quarterly      | ✅     |
 | CC6.5: Authentication       | MFA enrollment records, password policy  | 1Password + Auth system        | Continuous     | ✅     |
-| CC6.6: Physical access      | Data center access logs (Hetzner)        | Hetzner portal                 | On request     | ✅     |
+| CC6.6: Physical access      | Data center access logs                  | Netcup portal                  | On request     | ✅     |
 
 ### CC7 — System Operations
 
@@ -116,7 +116,7 @@
 | Control                         | Evidence                                | Source                 | Frequency  | Status |
 | ------------------------------- | --------------------------------------- | ---------------------- | ---------- | ------ |
 | A1.1: Performance monitoring    | UptimeRobot data, response time metrics | UptimeRobot            | Continuous | ✅     |
-| A1.2: Environmental protections | Data center certifications (Hetzner)    | Hetzner SOC 2 report   | Annually   | ✅     |
+| A1.2: Environmental protections | Data center certifications              | Netcup SOC 2 report    | Annually   | ✅     |
 | A1.3: Recovery infrastructure   | DR site, backup verification            | `DISASTER_RECOVERY.md` | Monthly    | ✅     |
 
 ### C1 — Confidentiality
@@ -144,7 +144,7 @@
 - [ ] CI/CD pipeline configuration
 - [ ] Penetration test report (latest)
 - [ ] Security training records
-- [ ] Physical security description (Hetzner SOC 2 report)
+- [ ] Physical security description (Netcup SOC 2 report)
 
 ### 3.2 During Audit (continuous evidence)
 
@@ -168,18 +168,18 @@
 
 ## 4. Evidence Retention
 
-| Evidence Type       | Retention         | Storage                 | Format          |
-| ------------------- | ----------------- | ----------------------- | --------------- |
-| Security policies   | Current + 7 years | GitHub (git history)    | Markdown        |
-| Access reviews      | 7 years           | GitHub (git commits)    | Markdown        |
-| Incident records    | 7 years           | GitHub + Hetzner backup | Markdown + logs |
-| Backup test records | 7 years           | GitHub                  | Markdown        |
-| Change logs         | 7 years           | GitHub (git history)    | Git commits     |
-| Training records    | 7 years           | HR system               | PDF             |
-| Vendor assessments  | 7 years           | GitHub                  | Markdown        |
-| Risk register       | 7 years           | GitHub (git history)    | Markdown        |
-| Pen test reports    | 7 years           | 1Password (encrypted)   | PDF             |
-| Audit reports       | 7 years           | 1Password (encrypted)   | PDF             |
+| Evidence Type       | Retention         | Storage                | Format          |
+| ------------------- | ----------------- | ---------------------- | --------------- |
+| Security policies   | Current + 7 years | GitHub (git history)   | Markdown        |
+| Access reviews      | 7 years           | GitHub (git commits)   | Markdown        |
+| Incident records    | 7 years           | GitHub + Netcup backup | Markdown + logs |
+| Backup test records | 7 years           | GitHub                 | Markdown        |
+| Change logs         | 7 years           | GitHub (git history)   | Git commits     |
+| Training records    | 7 years           | HR system              | PDF             |
+| Vendor assessments  | 7 years           | GitHub                 | Markdown        |
+| Risk register       | 7 years           | GitHub (git history)   | Markdown        |
+| Pen test reports    | 7 years           | 1Password (encrypted)  | PDF             |
+| Audit reports       | 7 years           | 1Password (encrypted)  | PDF             |
 
 ---
 

@@ -30,16 +30,16 @@ This policy applies to:
 
 ### 3.1 PostgreSQL (Production)
 
-| Attribute        | Value                                                           |
-| ---------------- | --------------------------------------------------------------- |
-| **Method**       | WAL streaming + pg_basebackup                                   |
-| **Frequency**    | Continuous WAL archiving + hourly incremental                   |
-| **Full Backup**  | Daily at 02:00 CET                                              |
-| **Retention**    | 30 days (daily), 12 weeks (weekly), 12 months (monthly)         |
-| **Storage**      | Hetzner Storage Box (Falkenstein, DE) + S3-compatible (offsite) |
-| **Encryption**   | AES-256-GCM at rest                                             |
-| **Compression**  | zstd level 3                                                    |
-| **Verification** | Daily checksum + monthly restore test                           |
+| Attribute        | Value                                                             |
+| ---------------- | ----------------------------------------------------------------- |
+| **Method**       | WAL streaming + pg_basebackup                                     |
+| **Frequency**    | Continuous WAL archiving + hourly incremental                     |
+| **Full Backup**  | Daily at 02:00 CET                                                |
+| **Retention**    | 30 days (daily), 12 weeks (weekly), 12 months (monthly)           |
+| **Storage**      | Offsite-Storage (SFTP/S3) (Deutschland) + S3-compatible (offsite) |
+| **Encryption**   | AES-256-GCM at rest                                               |
+| **Compression**  | zstd level 3                                                      |
+| **Verification** | Daily checksum + monthly restore test                             |
 
 ### 3.2 Document Vault
 
@@ -48,7 +48,7 @@ This policy applies to:
 | **Method**       | rsync incremental + tar full                                 |
 | **Frequency**    | Daily incremental at 03:00 CET, weekly full Sunday 03:00 CET |
 | **Retention**    | 90 days (daily), 12 months (weekly)                          |
-| **Storage**      | Hetzner Storage Box (Falkenstein, DE)                        |
+| **Storage**      | Offsite-Storage (SFTP/S3) (Deutschland)                      |
 | **Encryption**   | AES-256-GCM (files encrypted before upload)                  |
 | **Verification** | Weekly checksum verification                                 |
 
@@ -70,7 +70,7 @@ This policy applies to:
 | **Method**       | Git (GitHub)                  |
 | **Frequency**    | On every commit               |
 | **Retention**    | Indefinite                    |
-| **Storage**      | GitHub + Hetzner local mirror |
+| **Storage**      | GitHub + Netcup local mirror  |
 | **Verification** | CI build + test on every push |
 
 ### 3.5 Engine Brain Data
@@ -80,7 +80,7 @@ This policy applies to:
 | **Method**       | Engine export API (`/api/export`) |
 | **Frequency**    | Daily at 04:00 CET                |
 | **Retention**    | 30 days                           |
-| **Storage**      | Hetzner Storage Box               |
+| **Storage**      | Offsite-Storage (SFTP/S3)         |
 | **Encryption**   | AES-256-GCM                       |
 | **Verification** | Daily import test (staging)       |
 
@@ -125,17 +125,17 @@ Upon legal hold notification:
 
 ### 6.1 Storage Locations
 
-| Location    | Provider                | Region          | Encryption  | Redundancy     |
-| ----------- | ----------------------- | --------------- | ----------- | -------------- |
-| Primary     | Hetzner Storage Box     | Falkenstein, DE | AES-256-GCM | RAID-6         |
-| Offsite     | S3-compatible (Hetzner) | Helsinki, FI    | AES-256-GCM | 3x replication |
-| Code Mirror | Hetzner local           | Falkenstein, DE | git-crypt   | RAID-1         |
+| Location    | Provider                  | Region           | Encryption  | Redundancy     |
+| ----------- | ------------------------- | ---------------- | ----------- | -------------- |
+| Primary     | Offsite-Storage (SFTP/S3) | Deutschland      | AES-256-GCM | RAID-6         |
+| Offsite     | S3-compatible             | zweiter Standort | AES-256-GCM | 3x replication |
+| Code Mirror | Netcup local              | Deutschland      | git-crypt   | RAID-1         |
 
 ### 6.2 Access Control
 
 - Backup storage access restricted to CTO + Engineering Lead
 - SSH key-based authentication only
-- All backup access logged (syslog + Hetzner audit log)
+- All backup access logged (syslog + provider audit log)
 - Backup decryption keys stored in 1Password (separate from backup storage)
 - Key rotation: Annually or upon personnel change
 
@@ -143,7 +143,7 @@ Upon legal hold notification:
 
 - Weekly and monthly backups are set to immutable (WORM) for retention period
 - Immutable backups cannot be deleted or modified by any user (including root)
-- Immutability is enforced at storage layer (Hetzner Storage Box feature)
+- Immutability is enforced at storage layer (Offsite-Storage (SFTP/S3) feature)
 
 ---
 

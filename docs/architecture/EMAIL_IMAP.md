@@ -6,7 +6,7 @@ Stand: 17.09.2026
 
 Eine Kanzlei verbindet unter **Einstellungen → E-Mail-Postfach** ihr eigenes Postfach.
 Subsumio ruft es alle fünf Minuten per IMAP ab (`/api/cron/imap-sync`, Eintrag in
-`server/deploy/hetzner/crontab`), speichert neue E-Mails in `subsumio_mail_messages`, ordnet
+`server/deploy/netcup/crontab`), speichert neue E-Mails in `subsumio_mail_messages`, ordnet
 sie der Akte zu, stuft sie ein und schlägt Fristen vor. Antworten gehen über den SMTP-Server
 des Postfachs hinaus, also von der Adresse der Kanzlei, mit `In-Reply-To` und `References`.
 

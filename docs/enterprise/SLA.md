@@ -124,13 +124,13 @@ Service Credits werden mit der nächsten Rechnung verrechnet. Ein Credit-Anspruc
 
 ### 6.1 Backup-Schedule
 
-| System                  | Frequenz              | Retention | Storage                            |
-| ----------------------- | --------------------- | --------- | ---------------------------------- |
-| PostgreSQL (Production) | Stündlich (WAL)       | 30 Tage   | Hetzner Storage Box, Falkenstein   |
-| PostgreSQL (Full Dump)  | Täglich 02:00 CET     | 90 Tage   | Hetzner Storage Box + S3 (offsite) |
-| PGLite (Self-hosted)    | Täglich (automated)   | 30 Tage   | Kundenseitig                       |
-| Document Vault          | Täglich (incremental) | 90 Tage   | Hetzner Storage Box                |
-| Configuration & Secrets | Bei Änderung          | 365 Tage  | Versioniert (git-crypt)            |
+| System                  | Frequenz              | Retention | Storage                                  |
+| ----------------------- | --------------------- | --------- | ---------------------------------------- |
+| PostgreSQL (Production) | Stündlich (WAL)       | 30 Tage   | Offsite-Storage (SFTP/S3), Deutschland   |
+| PostgreSQL (Full Dump)  | Täglich 02:00 CET     | 90 Tage   | Offsite-Storage (SFTP/S3) + S3 (offsite) |
+| PGLite (Self-hosted)    | Täglich (automated)   | 30 Tage   | Kundenseitig                             |
+| Document Vault          | Täglich (incremental) | 90 Tage   | Offsite-Storage (SFTP/S3)                |
+| Configuration & Secrets | Bei Änderung          | 365 Tage  | Versioniert (git-crypt)                  |
 
 ### 6.2 Recovery Objectives
 
@@ -194,7 +194,7 @@ Service Credits werden mit der nächsten Rechnung verrechnet. Ein Credit-Anspruc
 
 ### 8.3 Data Processing
 
-- Hosting: Hetzner Online GmbH, Falkenstein (DE)
+- Hosting: netcup GmbH, Deutschland (DE)
 - Datenverarbeitung ausschließlich in der EU
 - Keine Datenübertragung an Drittländer (kein SCC, kein Privacy Shield nötig)
 - Sub-Auftragsverarbeiter: Siehe Anhang A
@@ -223,13 +223,13 @@ Folgende Ereignisse gelten nicht als Downtime im Sinne dieses SLA:
 
 ## Anhang A: Sub-Auftragsverarbeiter
 
-| Anbieter            | Zweck                   | Standort        | DPA |
-| ------------------- | ----------------------- | --------------- | --- |
-| Hetzner Online GmbH | Hosting & Storage       | Falkenstein, DE | ✅  |
-| Cloudflare, Inc.    | CDN & DDoS-Schutz       | EU-Edge         | ✅  |
-| OpenAI / Anthropic  | KI-Inference (optional) | EU (Azure)      | ✅  |
-| Meta (WhatsApp)     | WhatsApp Business API   | EU              | ✅  |
-| DocuSign            | E-Signature             | EU (Frankfurt)  | ✅  |
+| Anbieter           | Zweck                   | Standort       | DPA |
+| ------------------ | ----------------------- | -------------- | --- |
+| netcup GmbH        | Hosting & Storage       | Deutschland    | ✅  |
+| Cloudflare, Inc.   | CDN & DDoS-Schutz       | EU-Edge        | ✅  |
+| OpenAI / Anthropic | KI-Inference (optional) | EU (Azure)     | ✅  |
+| Meta (WhatsApp)    | WhatsApp Business API   | EU             | ✅  |
+| DocuSign           | E-Signature             | EU (Frankfurt) | ✅  |
 
 ---
 

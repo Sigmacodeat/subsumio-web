@@ -24,7 +24,7 @@ Die Engine bot nur `think`: die schwere Pipeline (Suche, Guardrails, Zitatprüfu
 Modell). Für Mini-Aufgaben wie „extrahiere Präferenzen aus dieser Nachricht" war das zu
 langsam und zu teuer, also riefen fünf Web-Module OpenRouter direkt mit DeepSeek auf.
 Folgen: ein zweiter API-Key, keine Modell-Tiers, kein Budget-/Spend-Tracking, kein
-Prompt-Sanitizer, andere Fehlerbehandlung (429 im Log) — und auf Hetzner hatte der
+Prompt-Sanitizer, andere Fehlerbehandlung (429 im Log) — und in Produktion hatte der
 Web-Container den Key gar nicht, die Funktionen liefen dort stumm ins Leere.
 
 ## Wie `/api/llm/complete` arbeitet

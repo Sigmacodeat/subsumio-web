@@ -1,5 +1,5 @@
 #!/bin/sh
-# Production readiness gate for the single-box Hetzner deployment.
+# Production readiness gate for the single-box Netcup deployment.
 # Reads .env as data (never sources it) and refuses unsafe SaaS launches.
 set -eu
 

@@ -11,7 +11,7 @@
 #
 # Env (set by the compose `backup` service from .env):
 #   RESTIC_REPOSITORY, RESTIC_PASSWORD       — restic repo + encryption key
-#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY — for s3: repos (Hetzner Object Storage)
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY — for s3: repos (S3-compatible storage)
 #   BACKUP_LOCAL_DIR, BACKUP_LOCAL_PASSPHRASE — local encrypted copy
 #   BACKUP_LOCAL_KEEP_DAYS                   — local retention (default 14)
 #   BACKUP_STATUS_FILE                       — written on success, read by /api/cron/health

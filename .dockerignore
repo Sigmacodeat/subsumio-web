@@ -9,7 +9,7 @@ coverage
 .env.*
 !.env.example
 server/.env
-server/deploy/hetzner/.env
+server/deploy/netcup/.env
 *.log
 *.tsbuildinfo
 
