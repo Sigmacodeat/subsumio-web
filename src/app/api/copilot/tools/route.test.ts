@@ -248,4 +248,45 @@ describe("POST /api/copilot/tools", () => {
     expect(String(creates[0].content)).toContain("GEHEIMHALTUNGSVEREINBARUNG");
     expect(String((await res.json()).display.message)).not.toMatch(/gesendet|versendet/i);
   });
+
+  it("creates automation rules in the one model the UI lists and the cron runs", async () => {
+    const creates: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          creates.push(JSON.parse(String(init.body)));
+          return Response.json({ ok: true });
+        }
+        return Response.json({ ok: true, slug: "x" });
+      })
+    );
+    const res = await confirmedCall("create_automation_rule", {
+      name: "Mahnung bei Überfälligkeit",
+      // The spelling the chat marker used to carry is still understood.
+      event: "invoice_overdue",
+      action: { type: "send_mail", recipient: "buchhaltung@kanzlei.at" },
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).success).toBe(true);
+    expect(creates).toHaveLength(1);
+    expect(creates[0].type).toBe("automation");
+    const fm = creates[0].frontmatter as Record<string, unknown>;
+    expect(fm).toMatchObject({
+      event: "invoice.overdue",
+      enabled: true,
+      // Runs as the user who asked for it, only on events from now on.
+      owner_user_id: "u-lawyer",
+      actions: [{ type: "send_mail", recipient: "buchhaltung@kanzlei.at" }],
+    });
+    expect(typeof fm.active_since).toBe("string");
+
+    const bad = await confirmedCall("create_automation_rule", {
+      name: "Ohne Empfänger",
+      event: "case.created",
+      action: { type: "send_mail" },
+    });
+    expect((await bad.json()).success).toBe(false);
+    expect(creates).toHaveLength(1);
+  });
 });

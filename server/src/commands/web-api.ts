@@ -4276,7 +4276,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           slug: String(pg.slug ?? ""),
           title: String(pg.title ?? pg.slug ?? ""),
           content: "",
-          created_at: "",
+          created_at:
+            pg.created_at instanceof Date
+              ? Number.isNaN(pg.created_at.getTime())
+                ? ""
+                : pg.created_at.toISOString()
+              : String(pg.created_at ?? ""),
           updated_at: String(pg.updated_at ?? ""),
           source: undefined,
           tags: Array.isArray(fm.tags) ? fm.tags : [],
