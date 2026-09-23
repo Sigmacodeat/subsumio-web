@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDialogFetch } from "@/lib/use-dialog-fetch";
 import {
@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Check,
   Loader2,
   Plus,
   Sparkles,
@@ -287,6 +289,25 @@ export function CaseQuickCreateDialog({
     [templates]
   );
 
+  const templateRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // APG-Radiogroup: Pfeiltasten bewegen Fokus + Auswahl, Home/End an die Ränder
+  const handleTemplateKeyDown = useCallback(
+    (e: React.KeyboardEvent, index: number) => {
+      const last = templates.length - 1;
+      let next: number | null = null;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") next = index === last ? 0 : index + 1;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = index === 0 ? last : index - 1;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = last;
+      if (next === null) return;
+      e.preventDefault();
+      templateRefs.current[next]?.focus();
+      applyTemplate(templates[next].id);
+    },
+    [templates, applyTemplate]
+  );
+
   const resetForm = useCallback(() => {
     setTitle("");
     setClientSlug("");
@@ -433,35 +454,60 @@ export function CaseQuickCreateDialog({
 
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-2">
             {/* Templates */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-              {templates.map((tpl) => {
+            <p className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              {t("casesnew.quick_templates" as DashboardKey)}
+            </p>
+            <div
+              role="radiogroup"
+              aria-label={t("casesnew.quick_templates" as DashboardKey)}
+              className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+            >
+              {templates.map((tpl, index) => {
                 const Icon = tpl.icon;
                 const active = selectedTemplate === tpl.id;
                 return (
                   <button
                     key={tpl.id}
+                    ref={(el) => {
+                      templateRefs.current[index] = el;
+                    }}
                     type="button"
+                    role="radio"
+                    aria-checked={active}
+                    tabIndex={active || (selectedTemplate === null && index === 0) ? 0 : -1}
+                    onKeyDown={(e) => handleTemplateKeyDown(e, index)}
                     onClick={() => applyTemplate(tpl.id)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
+                      "group relative flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2.5 py-3 text-center transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--ds-surface-2)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                       active
-                        ? "border-[color:var(--brand-primary)]/50 bg-[color:var(--brand-glow)]"
-                        : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
+                        ? "border-[color:var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
+                        : "border-[color:var(--ds-border-strong)] hover:border-[color:var(--ds-text-subtle)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
-                    <Icon
-                      size={16}
-                      className={active ? "brand-text" : "text-[color:var(--ds-text-muted)]"}
-                    />
+                    {active ? (
+                      <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white">
+                        <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                      </span>
+                    ) : null}
                     <span
                       className={cn(
-                        "text-xs font-medium",
-                        active ? "text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-muted)]"
+                        "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors duration-[var(--ds-duration-fast)]",
+                        active
+                          ? "brand-border bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
+                          : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] group-hover:text-[color:var(--ds-text)]"
+                      )}
+                    >
+                      <Icon size={16} />
+                    </span>
+                    <span
+                      className={cn(
+                        "w-full min-w-0 text-xs leading-snug font-medium break-words hyphens-auto",
+                        active ? "text-[color:var(--brand-text)]" : "text-[color:var(--ds-text)]"
                       )}
                     >
                       {t(tpl.labelKey as DashboardKey)}
                     </span>
-                    <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                    <span className="line-clamp-2 w-full min-w-0 text-[11px] leading-snug break-words hyphens-auto text-[color:var(--ds-text-muted)]">
                       {t(tpl.descKey as DashboardKey)}
                     </span>
                   </button>
@@ -471,7 +517,7 @@ export function CaseQuickCreateDialog({
 
             {/* Title */}
             <div className="space-y-1.5">
-              <Label htmlFor="quick-title" className="text-xs">
+              <Label htmlFor="quick-title" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("casesnew.label_title" as DashboardKey)} *
               </Label>
               <div className="relative">
@@ -505,7 +551,7 @@ export function CaseQuickCreateDialog({
             {/* Parties */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="quick-client" className="text-xs">
+                <Label htmlFor="quick-client" className="text-xs text-[color:var(--ds-text-muted)]">
                   {t("casesnew.label_client" as DashboardKey)}
                 </Label>
                 <Select value={clientSlug} onValueChange={setClientSlug} disabled={loadingContacts}>
@@ -527,7 +573,10 @@ export function CaseQuickCreateDialog({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="quick-opponent" className="text-xs">
+                <Label
+                  htmlFor="quick-opponent"
+                  className="text-xs text-[color:var(--ds-text-muted)]"
+                >
                   {t("casesnew.label_opponent" as DashboardKey)}
                 </Label>
                 <Select
@@ -556,7 +605,10 @@ export function CaseQuickCreateDialog({
 
             {/* Jurisdiction */}
             <div className="space-y-1.5">
-              <Label htmlFor="quick-jurisdiction" className="text-xs">
+              <Label
+                htmlFor="quick-jurisdiction"
+                className="text-xs text-[color:var(--ds-text-muted)]"
+              >
                 {t("casesnew.label_jurisdiction" as DashboardKey)}
               </Label>
               <Select value={jurisdiction} onValueChange={(v) => setJurisdiction(v as "at" | "eu")}>
@@ -591,10 +643,13 @@ export function CaseQuickCreateDialog({
 
             {/* Advanced fields */}
             {showAdvanced && (
-              <div className="space-y-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
+              <div className="space-y-4 rounded-xl border border-[color:var(--ds-border-strong)] p-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-case-number" className="text-xs">
+                    <Label
+                      htmlFor="quick-case-number"
+                      className="text-xs text-[color:var(--ds-text-muted)]"
+                    >
                       {t("casesnew.label_case_number" as DashboardKey)}
                     </Label>
                     <Input
@@ -605,7 +660,10 @@ export function CaseQuickCreateDialog({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-priority" className="text-xs">
+                    <Label
+                      htmlFor="quick-priority"
+                      className="text-xs text-[color:var(--ds-text-muted)]"
+                    >
                       {t("casesnew.label_priority" as DashboardKey)}
                     </Label>
                     <Select
@@ -629,7 +687,10 @@ export function CaseQuickCreateDialog({
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-legal-area" className="text-xs">
+                    <Label
+                      htmlFor="quick-legal-area"
+                      className="text-xs text-[color:var(--ds-text-muted)]"
+                    >
                       {t("casesnew.label_area" as DashboardKey)}
                     </Label>
                     <Input
@@ -640,7 +701,10 @@ export function CaseQuickCreateDialog({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-sub-area" className="text-xs">
+                    <Label
+                      htmlFor="quick-sub-area"
+                      className="text-xs text-[color:var(--ds-text-muted)]"
+                    >
                       {t("casesnew.label_sub_area" as DashboardKey)}
                     </Label>
                     <Input
@@ -654,7 +718,7 @@ export function CaseQuickCreateDialog({
               </div>
             )}
 
-            <p className="text-xs text-[color:var(--ds-text-subtle)]">
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
               {t("casesnew.quick_full_form_hint" as DashboardKey)}{" "}
               <Link
                 href="/dashboard/cases/new"
@@ -669,15 +733,17 @@ export function CaseQuickCreateDialog({
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                <input
-                  type="checkbox"
-                  checked={createAnother}
-                  onChange={(e) => setCreateAnother(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-[color:var(--ds-border)]"
-                />
+              <Checkbox
+                id="quick-create-another"
+                checked={createAnother}
+                onCheckedChange={(v) => setCreateAnother(v === true)}
+              />
+              <Label
+                htmlFor="quick-create-another"
+                className="text-xs font-normal text-[color:var(--ds-text-muted)]"
+              >
                 {t("casesnew.create_another" as DashboardKey)}
-              </label>
+              </Label>
             </div>
             <div className="flex gap-2">
               <Button

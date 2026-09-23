@@ -11,6 +11,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SignaturePad, type SignaturePadChange } from "@/components/ui/signature-pad";
 import { useToast } from "@/components/ui/toast";
@@ -251,15 +253,20 @@ export function SignatureDialog({
           />
 
           {/* Confirmation checkbox */}
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="signature-confirm"
               checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border)] accent-[color:var(--brand-primary)]"
+              onCheckedChange={(v) => setConfirmed(v === true)}
+              className="mt-0.5"
             />
-            <span className="text-[color:var(--ds-text-muted)]">{t("sigdialog.confirm")}</span>
-          </label>
+            <Label
+              htmlFor="signature-confirm"
+              className="cursor-pointer text-sm font-normal text-[color:var(--ds-text-muted)]"
+            >
+              {t("sigdialog.confirm")}
+            </Label>
+          </div>
         </div>
 
         <DialogFooter className="px-6 pb-6">
