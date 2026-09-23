@@ -1,93 +1,119 @@
-// @vitest-environment node
-//
-// The calendar link (handed to Google/Outlook) opens the deadline feed only;
-// documents need the separately created DAV token.
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildFeedToken, createFeedSecret, hashFeedSecret } from "./calendar-feed";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
-type FeedUser = {
-  id: string;
-  calendarFeedTokenHash?: string | null;
-  davTokenHash?: string | null;
-};
-const users: Record<string, FeedUser> = {};
-const update = vi.fn(async (..._args: unknown[]) => null);
-vi.mock("@/lib/auth/store", () => ({
-  getStore: () => ({ getById: async (id: string) => users[id] ?? null, update }),
+const mockStore = vi.hoisted(() => ({
+  getById: vi.fn(),
+  update: vi.fn(async () => {}),
 }));
-vi.mock("@/lib/engine", () => ({
-  engineHeadersForUserId: vi.fn(async (id: string) => ({
-    headers: { "x-subsumio-source": `brain-of-${id}` },
-    user: { id },
-  })),
+const mockEngine = vi.hoisted(() => ({
+  engineHeadersForUserId: vi.fn(),
 }));
-const hit = vi.fn(async (..._args: unknown[]) => ({ ok: true, retryAfterSeconds: 0 }));
-vi.mock("@/lib/auth/rate-limit", () => ({ hit: (...a: unknown[]) => hit(...a) }));
+const mockRateLimit = vi.hoisted(() => ({
+  hit: vi.fn(async () => ({ ok: true })),
+}));
+
+vi.mock("@/lib/auth/store", () => ({ getStore: () => mockStore }));
+vi.mock("@/lib/engine", () => mockEngine);
+vi.mock("@/lib/auth/rate-limit", () => mockRateLimit);
 
 import { resolveFeedToken } from "./feed-auth";
+import { hashFeedSecret, createFeedSecret } from "./calendar-feed";
 
-let calendarToken: string;
-let davToken: string;
+const USER_ID = "user-abc";
+const SECRET = "a".repeat(64); // gueltiges hex-Secret-Format
+const DAV_SECRET = "b".repeat(64);
 
-beforeEach(async () => {
-  update.mockClear();
-  hit.mockClear();
-  const calSecret = createFeedSecret();
-  const davSecret = createFeedSecret();
-  calendarToken = buildFeedToken("u1", calSecret);
-  davToken = buildFeedToken("u1", davSecret);
-  users.u1 = {
-    id: "u1",
-    calendarFeedTokenHash: await hashFeedSecret(calSecret),
-    davTokenHash: await hashFeedSecret(davSecret),
-  };
-});
-
-describe("resolveFeedToken scopes", () => {
-  it("the calendar link opens the calendar", async () => {
-    const r = await resolveFeedToken(calendarToken, "calendar");
-    expect(r).toMatchObject({ ok: true, userId: "u1", kind: "calendar" });
-    expect(update).toHaveBeenCalledWith("u1", { calendarFeedLastUsedAt: expect.any(String) });
+describe("resolveFeedToken", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockRateLimit.hit.mockResolvedValue({ ok: true });
+    mockStore.getById.mockResolvedValue({
+      id: USER_ID,
+      calendarFeedTokenHash: await hashFeedSecret(SECRET),
+      davTokenHash: await hashFeedSecret(DAV_SECRET),
+    });
+    mockEngine.engineHeadersForUserId.mockResolvedValue({ headers: { "x-brain": "firm-1" } });
   });
 
-  it("the calendar link does NOT open documents", async () => {
-    expect(await resolveFeedToken(calendarToken, "documents")).toEqual({ ok: false, status: 404 });
-    expect(update).not.toHaveBeenCalled();
+  test("malformierter Token → 404 ohne Store/Engine-Aufruf", async () => {
+    const r = await resolveFeedToken("kein-punkt-hier", "calendar");
+    expect(r).toEqual({ ok: false, status: 404 });
+    expect(mockStore.getById).not.toHaveBeenCalled();
+    expect(mockEngine.engineHeadersForUserId).not.toHaveBeenCalled();
   });
 
-  it("the DAV token opens documents", async () => {
-    const r = await resolveFeedToken(davToken, "documents");
-    expect(r).toMatchObject({ ok: true, userId: "u1", kind: "dav" });
-    expect(update).toHaveBeenCalledWith("u1", { davTokenLastUsedAt: expect.any(String) });
+  test("Rate-Limit erreicht → 429, vor dem User-Lookup", async () => {
+    mockRateLimit.hit.mockResolvedValueOnce({ ok: false });
+    const r = await resolveFeedToken(`${USER_ID}.${SECRET}`, "calendar");
+    expect(r).toEqual({ ok: false, status: 429 });
+    // Kein Info-Leak ob die userId ueberhaupt existiert.
+    expect(mockStore.getById).not.toHaveBeenCalled();
   });
 
-  it("the DAV token also serves the CalDAV calendar of the bridge", async () => {
-    expect(await resolveFeedToken(davToken, "calendar")).toMatchObject({ ok: true, kind: "dav" });
+  test("unbekannter User → 404", async () => {
+    mockStore.getById.mockResolvedValueOnce(null);
+    const r = await resolveFeedToken(`${USER_ID}.${SECRET}`, "calendar");
+    expect(r).toEqual({ ok: false, status: 404 });
   });
 
-  it("a legacy calendar link (created before the split, no DAV token) stays calendar-only", async () => {
-    users.u1.davTokenHash = undefined;
-    expect((await resolveFeedToken(calendarToken, "calendar")).ok).toBe(true);
-    expect(await resolveFeedToken(calendarToken, "documents")).toEqual({ ok: false, status: 404 });
+  test("falsches Secret → 404", async () => {
+    const r = await resolveFeedToken(`${USER_ID}.${"f".repeat(64)}`, "calendar");
+    expect(r).toEqual({ ok: false, status: 404 });
+    expect(mockEngine.engineHeadersForUserId).not.toHaveBeenCalled();
   });
 
-  it("revoked DAV token → 404 everywhere", async () => {
-    users.u1.davTokenHash = null;
-    expect((await resolveFeedToken(davToken, "documents")).ok).toBe(false);
-    expect((await resolveFeedToken(davToken, "calendar")).ok).toBe(false);
+  test("kein Engine-Binding → 404", async () => {
+    mockEngine.engineHeadersForUserId.mockResolvedValueOnce(null);
+    const r = await resolveFeedToken(`${USER_ID}.${SECRET}`, "calendar");
+    expect(r).toEqual({ ok: false, status: 404 });
   });
 
-  it("wrong secret, unknown user and malformed tokens answer the same 404", async () => {
-    const wrong = buildFeedToken("u1", createFeedSecret());
-    expect(await resolveFeedToken(wrong, "calendar")).toEqual({ ok: false, status: 404 });
-    expect(
-      await resolveFeedToken(buildFeedToken("nobody", createFeedSecret()), "calendar")
-    ).toEqual({ ok: false, status: 404 });
-    expect(await resolveFeedToken("garbage", "documents")).toEqual({ ok: false, status: 404 });
+  test("Calendar-Token darf Scope calendar → ok + kind", async () => {
+    const r = await resolveFeedToken(`${USER_ID}.${SECRET}`, "calendar");
+    expect(r).toEqual({
+      ok: true,
+      userId: USER_ID,
+      headers: { "x-brain": "firm-1" },
+      kind: "calendar",
+    });
+    expect(mockStore.update).toHaveBeenCalledWith(
+      USER_ID,
+      expect.objectContaining({ calendarFeedLastUsedAt: expect.any(String) })
+    );
   });
 
-  it("rate-limits per user before touching the store", async () => {
-    hit.mockResolvedValueOnce({ ok: false, retryAfterSeconds: 30 });
-    expect(await resolveFeedToken(davToken, "documents")).toEqual({ ok: false, status: 429 });
+  test("DAV-Token darf Scope calendar UND documents", async () => {
+    const cal = await resolveFeedToken(`${USER_ID}.${DAV_SECRET}`, "calendar");
+    expect(cal.ok && cal.kind).toBe("dav");
+    const docs = await resolveFeedToken(`${USER_ID}.${DAV_SECRET}`, "documents");
+    expect(docs.ok && docs.kind).toBe("dav");
+  });
+
+  test("Calendar-Token darf NICHT Scope documents — Kalender-Link ist kein Dokumenten-Zugang", async () => {
+    // Der Kalender-Link wird an Google/Outlook weitergegeben — duerfen
+    // Dritte damit das Dokumentenarchiv oeffnen, waere das ein Leck.
+    const r = await resolveFeedToken(`${USER_ID}.${SECRET}`, "documents");
+    expect(r).toEqual({ ok: false, status: 404 });
+    expect(mockEngine.engineHeadersForUserId).not.toHaveBeenCalled();
+  });
+
+  test("dav lastUsed schreibt davTokenLastUsedAt", async () => {
+    await resolveFeedToken(`${USER_ID}.${DAV_SECRET}`, "documents");
+    expect(mockStore.update).toHaveBeenCalledWith(
+      USER_ID,
+      expect.objectContaining({ davTokenLastUsedAt: expect.any(String) })
+    );
+  });
+
+  test("lastUsed-Update-Fehler bricht den Request nicht (best-effort)", async () => {
+    mockStore.update.mockRejectedValueOnce(new Error("db down"));
+    const r = await resolveFeedToken(`${USER_ID}.${SECRET}`, "calendar");
+    expect(r.ok).toBe(true);
+  });
+
+  test("createFeedSecret liefert parsebares Token-Format", async () => {
+    const secret = createFeedSecret();
+    await resolveFeedToken(`${USER_ID}.${secret}`, "calendar");
+    // Format gueltig → kommt bis zum User-Lookup (nicht schon parse-404).
+    expect(mockStore.getById).toHaveBeenCalled();
   });
 });

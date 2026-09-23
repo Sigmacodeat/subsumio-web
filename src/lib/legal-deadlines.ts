@@ -733,9 +733,8 @@ export function computeDueDate(
   country?: "DE" | "AT" | "CH",
   ervZustelldatum?: string
 ): DueDateResult {
-  // TODO 4: If ERV-Zustelldatum is set, it becomes the Fristbeginn
-  // (§ 173 ZPO: elektronischer Zustellungstag gilt als Zustelltag).
-  // The caller's startDate may be the manual/processing date; ERV overrides it.
+  // ERV-Zustelldatum wird zum Fristbeginn (§ 173 ZPO: elektronischer
+  // Zustellungstag gilt als Zustelltag) und überstimmt das manuelle Datum.
   const effectiveStart = ervZustelldatum ?? startDate;
   const start = parseISODate(effectiveStart);
   let due: Date;

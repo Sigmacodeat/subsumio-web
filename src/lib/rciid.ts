@@ -19,6 +19,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { AppError } from "@/lib/errors";
 import { createIdempotencyStore } from "@/lib/idempotency";
+import { getSharedPgPool } from "@/lib/auth/store";
+import { createSchemaInit } from "@/lib/schema-init";
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -615,4 +619,147 @@ export function parseWebhookEvent(rawBody: string): RciidWebhookEvent | null {
   } catch {
     return null;
   }
+}
+
+// ── Case Registry (case_id → brain/akte mapping für Webhooks) ───────────────
+//
+// Der Webhook-Endpoint ist unauthenticated und kennt weder User noch Brain.
+// Beim Submit registrieren wir daher, zu welcher Akte ein RCIID-Case gehört,
+// damit `report_ready` den Bericht der richtigen Akte zuordnen kann.
+// Postgres-backed mit In-Memory-Fallback (gleiches Pattern wie Idempotency).
+
+export interface RciidCaseRegistration {
+  brainId: string;
+  caseSlug: string;
+  userId?: string;
+}
+
+const ensureRciidCaseSchema = createSchemaInit(`
+  CREATE TABLE IF NOT EXISTS subsumio_rciid_cases (
+    case_id text PRIMARY KEY,
+    brain_id text NOT NULL,
+    case_slug text NOT NULL,
+    user_id text,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )
+`);
+
+const rciidCaseMemory = new Map<string, RciidCaseRegistration>();
+
+export async function registerRciidCase(
+  caseId: string,
+  registration: RciidCaseRegistration
+): Promise<void> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureRciidCaseSchema();
+      await pool.query(
+        `INSERT INTO subsumio_rciid_cases (case_id, brain_id, case_slug, user_id)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (case_id) DO NOTHING`,
+        [caseId, registration.brainId, registration.caseSlug, registration.userId ?? null]
+      );
+      return;
+    } catch (err) {
+      log.error("registerRciidCase failed", {
+        caseId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  // ON CONFLICT DO NOTHING-Parität: erste Registrierung gewinnt.
+  if (!rciidCaseMemory.has(caseId)) rciidCaseMemory.set(caseId, registration);
+}
+
+export async function resolveRciidCase(caseId: string): Promise<RciidCaseRegistration | null> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureRciidCaseSchema();
+      const result = await pool.query<{
+        brain_id: string;
+        case_slug: string;
+        user_id: string | null;
+      }>(`SELECT brain_id, case_slug, user_id FROM subsumio_rciid_cases WHERE case_id = $1`, [
+        caseId,
+      ]);
+      const row = result.rows[0];
+      if (row) {
+        return { brainId: row.brain_id, caseSlug: row.case_slug, userId: row.user_id ?? undefined };
+      }
+      return null; // Postgres vorhanden = autoritativ, kein Memory-Stale-Read
+    } catch (err) {
+      log.error("resolveRciidCase failed", {
+        caseId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return rciidCaseMemory.get(caseId) ?? null;
+}
+
+// ── Report Auto-Download (report_ready Webhook) ──────────────────────────────
+
+export interface ReportFileResult {
+  saved: boolean;
+  docSlug?: string;
+}
+
+/**
+ * Lädt den fertigen RCIID-Forensikbericht als PDF und legt ihn als Dokument
+ * in der zugehörigen Akte ab. Danach läuft die normale Post-Upload-Pipeline
+ * (reconcile_case → case.documents[], analyze, contradiction) via Outbox-Cron.
+ *
+ * Wirft bei Download-/Upload-Fehlern — der Webhook-Caller loggt und antwortet
+ * ehrlich mit `report_saved: false` (manuelles Abrufen bleibt möglich).
+ */
+export async function fileReportToCase(
+  caseId: string,
+  registration: RciidCaseRegistration
+): Promise<ReportFileResult> {
+  const pdf = await downloadReportPdf(caseId);
+
+  const safeId = caseId.replace(/[^a-zA-Z0-9-]/g, "-").slice(0, 64);
+  const fileName = `rciid-forensikbericht-${safeId}.pdf`;
+
+  const form = new FormData();
+  form.append("file", new File([new Uint8Array(pdf)], fileName, { type: "application/pdf" }));
+  form.append("title", `RCIID Forensikbericht ${caseId}`);
+  form.append("source", "rciid");
+  form.append("tags", JSON.stringify([registration.caseSlug, "rciid", "forensics-report"]));
+  form.append("case_slug", registration.caseSlug);
+
+  const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
+    method: "POST",
+    headers: engineHeadersForBrain(registration.brainId),
+    body: form,
+    signal: externalFetchTimeout(120_000),
+  });
+
+  if (!upstream.ok) {
+    const detail = await upstream.text().catch(() => "");
+    throw new RciidError(
+      `Engine-Upload des RCIID-Berichts fehlgeschlagen: HTTP ${upstream.status} ${detail.slice(0, 200)}`,
+      { code: "RCIID_UPLOAD_FAILED", details: { caseId, status: upstream.status } }
+    );
+  }
+
+  const upload = (await upstream.json()) as { slug?: string };
+  if (!upload.slug) {
+    throw new RciidError("Engine-Upload ohne Dokument-Slug", {
+      code: "RCIID_UPLOAD_FAILED",
+      details: { caseId },
+    });
+  }
+
+  await enqueueAllPostUploadTasks({
+    doc_slug: upload.slug,
+    case_slug: registration.caseSlug,
+    brain_id: registration.brainId,
+    doc_title: fileName,
+    doc_size: pdf.byteLength,
+  });
+
+  return { saved: true, docSlug: upload.slug };
 }

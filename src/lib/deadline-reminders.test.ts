@@ -201,6 +201,7 @@ describe("recording what was sent", () => {
       stage: 1,
       vorfristReached: false,
       isNotfrist: false,
+      unreviewedAi: false,
     };
     const { deadlines, changed } = markCaseDeadlines(
       [
@@ -224,6 +225,7 @@ describe("recording what was sent", () => {
       stage: 0,
       vorfristReached: false,
       isNotfrist: false,
+      unreviewedAi: false,
     };
     const { deadlines, changed } = markCaseDeadlines(
       [{ title: "Frist", date: inDays(0) }],

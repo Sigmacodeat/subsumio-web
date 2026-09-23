@@ -5,6 +5,8 @@ import {
   isWebhookProcessed,
   markWebhookProcessed,
   isConfigured,
+  resolveRciidCase,
+  fileReportToCase,
   type RciidWebhookEvent,
 } from "@/lib/rciid";
 import { env } from "@/lib/env";
@@ -13,7 +15,7 @@ import { logger } from "@/lib/logger";
 const log = logger("rciid-webhook");
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60; // report_ready laedt+uploadet den Bericht inline
 
 const webhookSchema = z.object({
   event_id: z.string().min(1),
@@ -107,10 +109,33 @@ export const POST = createWebhookHandler(
 
     await markWebhookProcessed(event.event_id, event.case_id, event.event_type);
 
-    // 4. If report is ready, we could trigger a background download
+    // 4. report_ready: Bericht laden und als Dokument in der Akte ablegen.
+    //    Schlägt Download/Upload fehl, bleibt der manuelle Abruf über die
+    //    Report-API möglich — die Antwort zeigt das ehrlich via report_saved.
+    let reportSaved = false;
+    let reportError: string | undefined;
     if (event.event_type === "report_ready" && isConfigured()) {
-      // TODO: Trigger background report download and save as case document
-      // For now, the dashboard will pick this up via polling
+      const registration = await resolveRciidCase(event.case_id);
+      if (!registration) {
+        log.warn("report_ready ohne lokale Akten-Zuordnung", { caseId: event.case_id });
+        reportError = "no_case_registration";
+      } else {
+        try {
+          const result = await fileReportToCase(event.case_id, registration);
+          reportSaved = result.saved;
+          log.info("RCIID report filed to case", {
+            caseId: event.case_id,
+            caseSlug: registration.caseSlug,
+            docSlug: result.docSlug,
+          });
+        } catch (err) {
+          reportError = err instanceof Error ? err.message : String(err);
+          log.error("RCIID report auto-download failed", {
+            caseId: event.case_id,
+            error: reportError,
+          });
+        }
+      }
     }
 
     // 5. If quality feedback received, store it for the dashboard to display
@@ -133,6 +158,9 @@ export const POST = createWebhookHandler(
       caseId: event.case_id,
       status: event.status,
       processed: true,
+      ...(event.event_type === "report_ready"
+        ? { report_saved: reportSaved, report_error: reportError }
+        : {}),
     });
   }
 );

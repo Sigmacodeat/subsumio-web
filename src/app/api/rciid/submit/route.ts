@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { submitCaseWithContext, isConfigured, type RciidCaseContextSubmission } from "@/lib/rciid";
+import {
+  submitCaseWithContext,
+  isConfigured,
+  registerRciidCase,
+  type RciidCaseContextSubmission,
+} from "@/lib/rciid";
+import { logger } from "@/lib/logger";
+
+const log = logger("rciid-submit");
 import { isAddressValid } from "@/lib/crypto-checksum";
 
 export const dynamic = "force-dynamic";
@@ -161,6 +169,23 @@ export const POST = createHandler(
 
     try {
       const rciidCase = await submitCaseWithContext(submission);
+
+      // Ohne diese Zuordnung kann der report_ready-Webhook den Bericht keiner
+      // Akte zuordnen — best-effort, das Submit selbst war erfolgreich.
+      try {
+        await registerRciidCase(rciidCase.case_id, {
+          brainId: ctx.brainId,
+          caseSlug: body.caseSlug,
+          userId: ctx.user.id,
+        });
+      } catch (err) {
+        log.error("rciid case registration failed", {
+          caseId: rciidCase.case_id,
+          caseSlug: body.caseSlug,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+
       return apiSuccess({
         ok: true,
         caseId: rciidCase.case_id,
