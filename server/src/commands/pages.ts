@@ -5,6 +5,10 @@
  * Manual escape hatch alongside the autopilot purge phase. Hard-deletes pages
  * whose `deleted_at` is older than the cutoff; cascades to content_chunks,
  * page_links, chunk_relations via existing FKs.
+ *
+ * `pages audit-agent-writes` is a read-only report of pages agent runs wrote
+ * without a matter binding (core/agent-write-audit.ts). CLI only — it is not
+ * an operation, so neither MCP nor the HTTP API can reach it.
  */
 import type { BrainEngine } from "../core/engine.ts";
 
@@ -81,6 +85,47 @@ async function runPurgeDeleted(engine: BrainEngine, args: string[]): Promise<voi
   }
 }
 
+function flagValue(args: string[], name: string): string | undefined {
+  const idx = args.indexOf(name);
+  if (idx === -1 || idx === args.length - 1) return undefined;
+  return args[idx + 1];
+}
+
+async function runAuditAgentWrites(engine: BrainEngine, args: string[]): Promise<void> {
+  const json = args.includes("--json");
+  const sourceId = flagValue(args, "--source");
+  const sinceRaw = flagValue(args, "--since");
+  let since: Date | undefined;
+  if (sinceRaw !== undefined) {
+    since = new Date(sinceRaw);
+    if (Number.isNaN(since.getTime())) {
+      console.error(`Invalid --since value: "${sinceRaw}". Expected a date (e.g. 2026-09-01).`);
+      process.exit(2);
+    }
+  }
+  const { auditUnboundAgentPages } = await import("../core/agent-write-audit.ts");
+  const report = await auditUnboundAgentPages(engine, { sourceId, since });
+  if (json) {
+    console.log(JSON.stringify({ read_only: true, ...report }, null, 2));
+    return;
+  }
+  const c = report.counts;
+  console.log(
+    `Agent pages without a matter binding: ${c.total} ` +
+      `(web user runs: ${c.web_run}, job unknown: ${c.job_unknown}, CLI/cron: ${c.unstamped_run}).`
+  );
+  console.log("Read-only report — nothing was changed. Review web user runs first.");
+  for (const r of report.rows) {
+    const job =
+      r.job_id !== null ? `job ${r.job_id}${r.job_name ? ` (${r.job_name})` : ""}` : "job ?";
+    const who = r.owner_user_id ? ` owner=${r.owner_user_id}` : "";
+    const ref = r.case_ref ? ` case_ref=${r.case_ref}` : "";
+    console.log(
+      `  [${r.risk}] ${r.source_id}:${r.slug}  ${job}${who}${ref}  created=${r.created_at ?? "?"}`
+    );
+  }
+}
+
 function printHelp(): void {
   console.log(`gbrain pages — page-level operator commands (v0.26.5)
 
@@ -89,6 +134,10 @@ Subcommands:
                                     Hard-delete soft-deleted pages older than the cutoff
                                     (default 72h). Cascades to chunks/links/edges.
                                     Mirror of the autopilot purge phase.
+  audit-agent-writes [--source ID] [--since DATE] [--json]
+                                    Read-only: list pages agent runs wrote without a
+                                    matter binding (no case_slug, not private), with the
+                                    writing job and whether a web user started it.
 
 Notes:
   Soft-delete a page via the MCP \`delete_page\` op. Restore via \`restore_page\`.
@@ -104,6 +153,8 @@ export async function runPages(engine: BrainEngine, args: string[]): Promise<voi
   switch (sub) {
     case "purge-deleted":
       return runPurgeDeleted(engine, rest);
+    case "audit-agent-writes":
+      return runAuditAgentWrites(engine, rest);
     case undefined:
     case "--help":
     case "-h":
