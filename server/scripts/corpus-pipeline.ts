@@ -375,6 +375,26 @@ const SIMPLE: SimpleSource[] = [
   },
   {
     kind: "dirimport",
+    // DE-Rechtsprechung (rechtsprechung-im-internet.de, BGH/BVerfG etc.) —
+    // kein RIS-Applikations-Pendant, daher dirimport-Tracking; der Importer
+    // ist trotzdem import-judikatur (schreibt judikatur-cites-Edges zu den
+    // zitierten §§ und Slugs unter legal/judikatur/de).
+    key: "judikatur-de",
+    dir: "de-judikatur",
+    sourceId: "law-de-judikatur",
+    importCmd: ["scripts/import-judikatur.ts", "--source", "de", "--bulk", "--no-embed"],
+  },
+  {
+    kind: "dirimport",
+    // CH-Rechtsprechung (4.3k Entscheide auf Disk) — gleicher Importer,
+    // Slugs unter legal/judikatur/ch.
+    key: "judikatur-ch",
+    dir: "ch-judikatur",
+    sourceId: "law-ch-judikatur",
+    importCmd: ["scripts/import-judikatur.ts", "--source", "ch", "--bulk", "--no-embed"],
+  },
+  {
+    kind: "dirimport",
     key: "literatur-at",
     dir: "at-literatur",
     sourceId: "law-at-literatur",
