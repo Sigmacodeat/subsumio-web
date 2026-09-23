@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import {
   reviewDraft,
   persistReviewResult,
@@ -53,6 +53,9 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "search",
+    // One tokenmax reasoning call reviewing a Schriftsatz — priced like the
+    // contract redline / red-team analysis.
+    credits: "subsumption",
     body: draftReviewPostSchema,
     audit: (_ctx, body) => {
       const b = body as {
@@ -92,6 +95,7 @@ export const POST = createHandler(
           type: type ?? "document_draft",
           draftSlug,
         });
+        void recordCreditConsumption(ctx, "subsumption");
 
         // Persist non-blocking, but never silently: a lost review means the
         // lawyer's issue tracking for this draft is gone.

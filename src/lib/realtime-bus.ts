@@ -32,6 +32,10 @@ export function broadcastDeadlineAlert(
     deadlineId: string;
     urgency: "urgent" | "warning" | "normal";
     dueDate: string;
+    title?: string;
+    /** Unreviewed AI suggestion — the dashboard labels it as such. */
+    unreviewed?: boolean;
+    label?: string;
   }
 ): void {
   broadcastSseEvent(brainId, "deadline.alert", data);

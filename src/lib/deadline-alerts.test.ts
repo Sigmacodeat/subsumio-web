@@ -4,6 +4,7 @@ import {
   alertStageFor,
   collectDueAlerts,
   hoursUntil,
+  isUnreviewedAiSuggestion,
   markCaseAlerts,
   stagesPassed,
   type AlertPage,
@@ -149,5 +150,68 @@ describe("markCaseAlerts", () => {
   it("reports no change when nothing matches", () => {
     const deadlines = [{ id: "f1", title: "Berufung", due_date: "2026-09-22" }];
     expect(markCaseAlerts(deadlines, [], "2026-09-20T09:00:00Z").changed).toBe(false);
+  });
+});
+
+describe("unreviewed AI suggestions", () => {
+  it("recognises an AI deadline nobody approved — and only by AI origin", () => {
+    expect(isUnreviewedAiSuggestion({ source: "ai_detected", review_status: "unreviewed" })).toBe(
+      true
+    );
+    expect(isUnreviewedAiSuggestion({ source: "llm_detected" })).toBe(true);
+    expect(isUnreviewedAiSuggestion({ source: "copilot", review_status: "unreviewed" })).toBe(true);
+    expect(isUnreviewedAiSuggestion({ ai_confidence: "high", review_status: "needs_review" })).toBe(
+      true
+    );
+    // Approved AI deadlines and manual ones (which also start "unreviewed") alert normally.
+    expect(isUnreviewedAiSuggestion({ source: "ai_detected", review_status: "approved" })).toBe(
+      false
+    );
+    expect(isUnreviewedAiSuggestion({ source: "manual", review_status: "unreviewed" })).toBe(false);
+    expect(isUnreviewedAiSuggestion({ review_status: "unreviewed" })).toBe(false);
+  });
+
+  it("still alerts in-app, but labelled", () => {
+    const [alert] = collectDueAlerts(
+      [],
+      [deadlinePage({ source: "ai_detected", review_status: "unreviewed" })],
+      NOW
+    );
+    expect(alert).toMatchObject({ unreviewedAi: true, label: "ungeprüfter KI-Vorschlag" });
+    const [manual] = collectDueAlerts([], [deadlinePage({ source: "manual" })], NOW);
+    expect(manual.unreviewedAi).toBe(false);
+    expect(manual.label).toBeUndefined();
+  });
+
+  it("does not alert for a rejected suggestion", () => {
+    expect(
+      collectDueAlerts(
+        [],
+        [deadlinePage({ source: "ai_detected", review_status: "rejected" })],
+        NOW
+      )
+    ).toEqual([]);
+  });
+
+  it("remembers unreviewed stages separately, so approval releases the full alert", () => {
+    const fields = alertSentFields({}, "warning", "2026-09-20T09:00:00Z", true);
+    expect(fields.alert_stages_unreviewed).toEqual(["warning", "normal"]);
+    expect(fields.alert_stages_sent).toBeUndefined();
+
+    // Same stage, still unreviewed → quiet.
+    expect(
+      collectDueAlerts(
+        [],
+        [deadlinePage({ source: "ai_detected", review_status: "unreviewed", ...fields })],
+        NOW
+      )
+    ).toEqual([]);
+    // Approved meanwhile → the regular alert for that stage fires once.
+    const [approved] = collectDueAlerts(
+      [],
+      [deadlinePage({ source: "ai_detected", review_status: "approved", ...fields })],
+      NOW
+    );
+    expect(approved).toMatchObject({ urgency: "warning", unreviewedAi: false });
   });
 });

@@ -65,6 +65,7 @@ import {
   type CaseContact,
   parseCaseDetail,
   mergeCaseDeadlines,
+  matterDeadlineQuery,
 } from "@/lib/matter-detail-types";
 
 // ── Status Config ─────────────────────────────────────────────────────
@@ -500,14 +501,17 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         const [page, batch] = await Promise.all([
           api.brain.getPage(slug),
           api.brain
-            .batchListPages(["legal_contact", "legal_deadline"], 300)
+            .batchListPages(["legal_contact"], 300)
             .catch(() => ({}) as Record<string, BrainPage[]>),
         ]);
         const allContacts = batch["legal_contact"] ?? [];
-        const allDeadlinePages = batch["legal_deadline"] ?? [];
+        const detail = parseCaseDetail(page);
+        // This matter's deadlines, complete (server-side filter over all pages).
+        const matterDeadlinePages = await api.brain
+          .listPages(matterDeadlineQuery(detail))
+          .catch(() => [] as BrainPage[]);
         if (!cancelled) {
-          const detail = parseCaseDetail(page);
-          const mergedDeadlines = mergeCaseDeadlines(detail, allDeadlinePages);
+          const mergedDeadlines = mergeCaseDeadlines(detail, matterDeadlinePages);
           setCaseData(detail);
           setTasks(detail.tasks);
           setTimeEntries(detail.timeEntries);
@@ -564,10 +568,10 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     if (!caseData) return;
     try {
       const page = await api.brain.getPage(slug);
-      const deadlinePages = await api.brain
-        .listPages({ type: "legal_deadline", limit: 300 })
-        .catch(() => [] as BrainPage[]);
       const detail = parseCaseDetail(page);
+      const deadlinePages = await api.brain
+        .listPages(matterDeadlineQuery(detail))
+        .catch(() => [] as BrainPage[]);
       setCaseData(detail);
       setTasks(detail.tasks);
       setTimeEntries(detail.timeEntries);

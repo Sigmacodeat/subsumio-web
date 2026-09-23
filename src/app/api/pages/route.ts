@@ -7,6 +7,13 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
+import {
+  GUARD_READ_FAILED,
+  checkInvoiceWrite,
+  guardSecondCheckWrite,
+  readCurrentPage,
+  rejectionResponse,
+} from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
@@ -21,7 +28,32 @@ const pagesQuerySchema = z.object({
   cursor: z.string().optional(),
   /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
   include_tombstoned: z.string().optional(),
+  /**
+   * Pages of `type` that belong to one matter — linked by frontmatter
+   * case_slug, case_title or case_number (any of them). The engine cannot
+   * filter by frontmatter and caps a list at 100 rows, so the server pages
+   * through the whole type and filters; the result is complete, not the
+   * newest N of the firm.
+   */
+  case_slug: z.string().max(500).optional(),
+  case_title: z.string().max(500).optional(),
+  case_number: z.string().max(200).optional(),
 });
+
+/** Upper bound for a matter-scoped scan (pages of one type, firm-wide). */
+const MATTER_SCAN_MAX = 50_000;
+
+function belongsToMatter(
+  fm: Record<string, unknown> | undefined,
+  q: { case_slug?: string; case_title?: string; case_number?: string }
+): boolean {
+  if (!fm) return false;
+  return (
+    (!!q.case_slug && fm.case_slug === q.case_slug) ||
+    (!!q.case_title && fm.case_title === q.case_title) ||
+    (!!q.case_number && fm.case_number === q.case_number)
+  );
+}
 
 // One route, two intents: `merge: true` is a partial update (the engine keeps
 // title/body/type when omitted — see enginePatchPage in src/lib/engine.ts),
@@ -88,6 +120,21 @@ export const GET = createHandler(
     query: pagesQuerySchema,
   },
   async (ctx, _body, query, _req) => {
+    if (query.case_slug || query.case_title || query.case_number) {
+      if (!query.type) {
+        return apiError("type_required", "Für eine Aktenfilterung ist type erforderlich", 400);
+      }
+      try {
+        const all = await listEnginePages(ctx.headers, query.type, MATTER_SCAN_MAX, {
+          includeTombstoned: query.include_tombstoned === "1",
+          timeoutMs: 15_000,
+        });
+        return Response.json(all.filter((p) => belongsToMatter(p.frontmatter, query)));
+      } catch (err) {
+        log.error("[pages] matter list failed:", err instanceof Error ? err.message : String(err));
+        return apiError("service_unavailable", "Seiten derzeit nicht verfügbar", 503);
+      }
+    }
     const params = new URLSearchParams();
     for (const key of ["limit", "offset", "source", "type", "tag", "q", "cursor"] as const) {
       const val = query[key];
@@ -190,40 +237,27 @@ async function refreshAktenblattForDeadline(
  * user is rejected with 409. Lock management itself goes through
  * /api/legal/documents/* which writes via the engine directly — no loop.
  */
-async function enforceDocumentLock(
-  headers: Record<string, string>,
-  slug: string,
+function enforceDocumentLock(
+  page: { frontmatter?: Record<string, unknown> } | null,
   userId: string
-): Promise<Response | null> {
-  try {
-    const path = slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-      headers,
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) return null;
-    const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
-    const lock = page.frontmatter?.checked_out_by;
-    if (
-      lock &&
-      typeof lock === "object" &&
-      typeof (lock as { userId?: unknown }).userId === "string" &&
-      (lock as { userId: string }).userId !== userId
-    ) {
-      return Response.json(
-        {
-          error: "document_locked",
-          message: `Dokument ist bei ${(lock as { userEmail?: string }).userEmail ?? "einem Kollegen"} ausgecheckt.`,
-          lockedBy: lock,
-        },
-        { status: 409 }
-      );
-    }
-    return null;
-  } catch {
-    // Engine nicht erreichbar → nicht blockieren (fail-open wie übrige Policy-Reads).
-    return null;
+): Response | null {
+  const lock = page?.frontmatter?.checked_out_by;
+  if (
+    lock &&
+    typeof lock === "object" &&
+    typeof (lock as { userId?: unknown }).userId === "string" &&
+    (lock as { userId: string }).userId !== userId
+  ) {
+    return Response.json(
+      {
+        error: "document_locked",
+        message: `Dokument ist bei ${(lock as { userEmail?: string }).userEmail ?? "einem Kollegen"} ausgecheckt.`,
+        lockedBy: lock,
+      },
+      { status: 409 }
+    );
   }
+  return null;
 }
 
 export const POST = createHandler(
@@ -251,6 +285,31 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
+      // Every write — merge or create — is judged against the stored page, so
+      // a create over an existing slug cannot slip past the guards. Fail
+      // closed: an unreadable page is not written.
+      const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
+      if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+      const current = currentRead.kind === "found" ? currentRead.page : null;
+
+      // § 132 BAO / UStG: an issued invoice is frozen — only payment and
+      // delivery bookkeeping may change; never overwritten by a create.
+      const invoiceRejection = checkInvoiceWrite(current, {
+        mode: body.merge === true ? "merge" : "replace",
+        title: body.title,
+        content: body.content,
+        type: body.type,
+        frontmatter: body.frontmatter,
+      });
+      if (invoiceRejection) return rejectionResponse(invoiceRejection);
+
+      // Vier-Augen-Kontrolle: second_check_* only via the second-check route.
+      if (body.frontmatter) {
+        const guarded = guardSecondCheckWrite(body.frontmatter, current?.frontmatter ?? null);
+        if ("reject" in guarded) return rejectionResponse(guarded.reject);
+        body.frontmatter = guarded.frontmatter;
+      }
+
       let conflictWarning:
         | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
         | undefined;
@@ -331,7 +390,7 @@ export const POST = createHandler(
       }
 
       if (body.merge === true) {
-        const locked = await enforceDocumentLock(ctx.headers, body.slug, ctx.user.id);
+        const locked = enforceDocumentLock(current, ctx.user.id);
         if (locked) return locked;
       }
 

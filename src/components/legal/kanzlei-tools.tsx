@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
+import { useMe } from "@/lib/queries/auth";
 import { interpretCreditScore } from "@/lib/credit-check";
 import { generateRubrum, type RubrumParty } from "@/lib/letterhead-rubrum";
 import { validateFaxNumber, formatFaxNumber } from "@/lib/fax-gateway";
@@ -601,6 +602,12 @@ function FachrechnerCard() {
 
 export function KanzleiTools() {
   const capabilities = CAPABILITIES;
+  // The Fachrechner (GKG, Streitwert, RVG-nahe Rechner) is German law and
+  // its API is a DE surface — same gating as the sidebar's DE_ONLY_HREFS.
+  // Austrian firms price court fees and fees in the invoice dialog
+  // (RATG/AHK/GGG); for them the card would only answer 410.
+  const { data: me } = useMe();
+  const showGermanCalculators = me?.user?.jurisdiction === "DE";
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
       <PageHeader
@@ -622,7 +629,7 @@ export function KanzleiTools() {
         <CreditCard />
         <FaxCard />
         <RubrumCard />
-        <FachrechnerCard />
+        {showGermanCalculators && <FachrechnerCard />}
       </div>
       <h2 className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
         Weitere Kanzleiabläufe

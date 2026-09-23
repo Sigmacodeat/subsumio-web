@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { groundAnswerCitations } from "@/lib/citation-gate";
 import { userJurisdiction } from "@/lib/citation-gate-client";
-import { checkSupport } from "@/lib/support-check";
+import { checkSupport, type SupportCheckMeta } from "@/lib/support-check";
 
 export const maxDuration = 60;
 
@@ -20,6 +20,8 @@ export const POST = createHandler(
   {
     action: "legal.research",
     rateTier: "heavy",
+    // One utility-tier model call judging all citation pairs.
+    credits: "think",
     body: bodySchema,
     audit: (_ctx, body) => ({
       action: "query.submit",
@@ -32,7 +34,11 @@ export const POST = createHandler(
       jurisdiction: body.jurisdiction,
       fallbackJurisdiction: userJurisdiction(ctx.user.jurisdiction),
     });
-    const results = await checkSupport(ctx.headers, body.text, grounding.grounded_citations);
+    const meta: SupportCheckMeta = {};
+    const results = await checkSupport(ctx.headers, body.text, grounding.grounded_citations, meta);
+    // checkSupport sets meta.model only when the model actually answered —
+    // no verified citations (or a failed call) means nothing was spent.
+    if (meta.model) void recordCreditConsumption(ctx, "think");
     return Response.json({ results, checked_at: new Date().toISOString() });
   }
 );

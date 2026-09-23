@@ -46,7 +46,12 @@ async function markSent(brainId: string, items: DueAlert[], nowIso: string): Pro
         headers,
         {
           slug: item.ref.slug,
-          frontmatter: alertSentFields(page.frontmatter ?? {}, item.urgency, nowIso),
+          frontmatter: alertSentFields(
+            page.frontmatter ?? {},
+            item.urgency,
+            nowIso,
+            item.unreviewedAi
+          ),
         },
         { timeoutMs: 30_000 }
       );
@@ -94,7 +99,8 @@ async function markSent(brainId: string, items: DueAlert[], nowIso: string): Pro
 
 /**
  * Live alerts for deadlines coming due — into the open dashboard, and as a
- * `deadline.critical` webhook for the ones inside 24 hours.
+ * `deadline.critical` webhook for the ones inside 24 hours (reviewed
+ * deadlines only; unreviewed AI suggestions stay in-app, labelled).
  *
  * Two faults fixed on 2026-09-20: the job read the "system" brain and
  * therefore never saw a firm's deadlines, and it had no memory, so every
@@ -126,9 +132,14 @@ async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
         deadlineId: item.ref.kind === "page" ? item.ref.slug : `${item.ref.caseSlug}#${item.title}`,
         urgency: item.urgency,
         dueDate: item.dueDate,
+        title: item.title,
+        unreviewed: item.unreviewedAi,
+        ...(item.label ? { label: item.label } : {}),
       });
 
-      if (item.urgency === "urgent") {
+      // External systems only hear about deadlines a lawyer has confirmed —
+      // an unreviewed AI suggestion stays an in-app hint.
+      if (item.urgency === "urgent" && !item.unreviewedAi) {
         try {
           await dispatchWebhookEvent("deadline.critical", {
             case_slug: item.caseSlug ?? "unknown",

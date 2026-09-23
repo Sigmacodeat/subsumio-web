@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
+import { canAffordOptionalLlm } from "@/lib/billing/optional-llm-credits";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { hybridSearch } from "@/lib/legal-graph/search";
 import { embedQuery, checkEmbeddingAvailability } from "@/lib/legal-graph/embedding";
@@ -46,7 +47,7 @@ export const GET = createHandler(
       details: { q: query.q, jurisdiction: query.jurisdiction },
     }),
   },
-  async (_ctx, _body, query, _req) => {
+  async (ctx, _body, query, _req) => {
     const pool = getSharedPgPool();
     if (!pool) {
       return Response.json({ error: "Database not configured" }, { status: 503 });
@@ -85,11 +86,19 @@ export const GET = createHandler(
     let finalResults = results;
     let reranked = false;
     let rerankModel = "";
+    let rerankSkipped: string | undefined;
     if (query.rerank && results.length > 0) {
-      const rerankResult = await rerankResults(query.q, results, { topK: query.rerankTopK });
-      finalResults = rerankResult.results;
-      reranked = rerankResult.reranked;
-      rerankModel = rerankResult.model;
+      // LLM reranking is billed ("think"); without balance the plain hybrid
+      // ranking is returned instead of refusing the search.
+      if (await canAffordOptionalLlm(ctx, "think")) {
+        const rerankResult = await rerankResults(query.q, results, { topK: query.rerankTopK });
+        finalResults = rerankResult.results;
+        reranked = rerankResult.reranked;
+        rerankModel = rerankResult.model;
+        if (reranked) void recordCreditConsumption(ctx, "think");
+      } else {
+        rerankSkipped = "insufficient_credits";
+      }
     }
 
     // Apply offset + limit after reranking
@@ -105,6 +114,7 @@ export const GET = createHandler(
       offset,
       reranked,
       rerank_model: rerankModel,
+      ...(rerankSkipped ? { rerank_skipped: rerankSkipped } : {}),
       results: paginatedResults,
     });
   }

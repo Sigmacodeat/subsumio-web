@@ -5,6 +5,8 @@ import { apiSuccess } from "@/lib/api-response";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { findCallerMatches, normalisePhone, parseCtiPayload, resolveCtiBrainId } from "@/lib/cti";
+import { listEnginePages } from "@/lib/engine-pages";
+import { timingSafeCompare } from "@/lib/crypto-utils";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/cti/webhook");
@@ -15,9 +17,11 @@ export const maxDuration = 30;
 /**
  * POST /api/cti/webhook — Telefonie-Webhook (Placetel, sipgate, 3CX).
  *
- * Auth: `Authorization: Bearer ${CTI_WEBHOOK_SECRET}` oder ?secret=.
- * Ohne konfiguriertes Secret antwortet die Route 503 — sie ist dann
- * schlicht nicht aktiv statt ungeschützt offen.
+ * Auth: nur `Authorization: Bearer ${CTI_WEBHOOK_SECRET}`, zeitkonstant
+ * verglichen. Ein `?secret=` in der URL wird NICHT angenommen — URLs landen in
+ * Proxy-/Access-Logs und Browser-Verläufen. Ohne konfiguriertes Secret
+ * antwortet die Route 503 — sie ist dann schlicht nicht aktiv statt
+ * ungeschützt offen.
  *
  * Ablauf: eingehender Ruf → Anruferkennung über Kontakt-Telefonnummern →
  * Telefonnotiz (legal_phone_note) in der Akte + SSE-Event für das
@@ -25,6 +29,15 @@ export const maxDuration = 30;
  */
 
 const bodySchema = z.record(z.string(), z.unknown());
+
+/** Upper bound for the paged lists (contacts, matters, phone notes). */
+const LIST_MAX = 20_000;
+
+/** The note of a call is keyed by its call id — ended events find it directly. */
+function noteSlugFor(callId: string): string | null {
+  const id = callId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40);
+  return id ? `legal/phone-notes/cti-${id}` : null;
+}
 
 const EVENT_LABEL: Record<string, string> = {
   ringing: "Eingehender Anruf",
@@ -46,10 +59,8 @@ export const POST = createPublicHandler(
       return apiError("cti_not_configured", "CTI ist nicht konfiguriert (CTI_WEBHOOK_SECRET)", 503);
     }
     const auth = req.headers.get("authorization") ?? "";
-    const token = auth.startsWith("Bearer ")
-      ? auth.slice(7)
-      : (new URL(req.url).searchParams.get("secret") ?? "");
-    if (token !== secret) {
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (!token || !timingSafeCompare(token, secret)) {
       return apiError("unauthorized", "Ungültiger CTI-Token", 401);
     }
 
@@ -65,32 +76,14 @@ export const POST = createPublicHandler(
 
     const headers = engineHeadersForBrain(brainId);
 
-    // Kontakte + Akten laden für die Anruferkennung.
-    const [contactsRes, casesRes] = await Promise.all([
-      fetch(`${ENGINE_URL}/api/pages?type=contact&limit=1000`, {
-        headers,
-        signal: AbortSignal.timeout(10_000),
-      }),
-      fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=1000`, {
-        headers,
-        signal: AbortSignal.timeout(10_000),
-      }),
+    // Kontakte + Akten laden für die Anruferkennung. Kontakte liegen als
+    // `legal_contact` (Kontakte-Seite, Akten-Parteien) — nicht `contact`.
+    // Die Engine liefert höchstens 100 Seiten pro Abruf; listEnginePages
+    // blättert, sonst bliebe jeder Anrufer ab Kontakt 101 unerkannt.
+    const [contacts, cases] = await Promise.all([
+      listEnginePages(headers, "legal_contact", LIST_MAX, { timeoutMs: 10_000 }),
+      listEnginePages(headers, "legal_case", LIST_MAX, { timeoutMs: 10_000 }),
     ]);
-    const unwrap = async (res: Response) => {
-      if (!res.ok) return [];
-      const d = (await res.json().catch(() => [])) as unknown;
-      return Array.isArray(d) ? d : ((d as { pages?: unknown[] }).pages ?? []);
-    };
-    const contacts = (await unwrap(contactsRes)) as Array<{
-      slug: string;
-      title: string;
-      frontmatter?: Record<string, unknown>;
-    }>;
-    const cases = (await unwrap(casesRes)) as Array<{
-      slug: string;
-      title: string;
-      frontmatter?: Record<string, unknown>;
-    }>;
 
     const matches = findCallerMatches(event.caller, contacts, cases);
     const primary = matches[0];
@@ -98,15 +91,21 @@ export const POST = createPublicHandler(
 
     if (event.event === "ended") {
       // Dauer in die bestehende Notiz schreiben (per call_id finden).
-      const listRes = await fetch(`${ENGINE_URL}/api/pages?type=legal_phone_note&limit=200`, {
-        headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      const notes = (await unwrap(listRes)) as Array<{
-        slug: string;
-        frontmatter?: Record<string, unknown>;
-      }>;
-      const note = notes.find((n) => n.frontmatter?.call_id === event.callId);
+      // Die Notiz trägt die call_id im Slug (siehe unten) — direkt lesen statt
+      // alle Telefonnotizen der Kanzlei zu listen. Ohne vorherige Notiz wird
+      // nichts angelegt (ein Merge auf einen fehlenden Slug würde eine leere
+      // Seite erzeugen).
+      const noteSlug = noteSlugFor(event.callId);
+      const noteRes = noteSlug
+        ? await fetch(
+            `${ENGINE_URL}/api/pages/${noteSlug.split("/").map(encodeURIComponent).join("/")}`,
+            {
+              headers,
+              signal: AbortSignal.timeout(10_000),
+            }
+          ).catch(() => null)
+        : null;
+      const note = noteSlug && noteRes?.ok ? { slug: noteSlug } : null;
       if (note) {
         await enginePatchPage(
           headers,
@@ -125,7 +124,8 @@ export const POST = createPublicHandler(
     }
 
     // ringing / answered / missed → Notiz + Dashboard-Banner.
-    const noteSlug = `legal/phone-notes/cti-${event.callId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40) || Date.now().toString(36)}`;
+    const noteSlug =
+      noteSlugFor(event.callId) ?? `legal/phone-notes/cti-${Date.now().toString(36)}`;
     const label = EVENT_LABEL[event.event] ?? "Anruf";
     const title = `${label}: ${primary?.contactName ?? normalisePhone(event.caller)}`;
     const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
