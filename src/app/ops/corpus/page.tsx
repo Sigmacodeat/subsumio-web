@@ -13,6 +13,13 @@ import { CorpusFileBrowser } from "@/components/dashboard/corpus-steward/CorpusF
 import { CorpusFileViewer } from "@/components/dashboard/corpus-steward/CorpusFileViewer";
 import { PublishBanner } from "@/components/dashboard/corpus-steward/PublishBanner";
 import { CorpusAlertBanner } from "@/components/dashboard/corpus-steward/CorpusAlertBanner";
+import {
+  corpusFileListQuery,
+  corpusFileSampleQuery,
+  corpusFileSearchQuery,
+  corpusListParams,
+  corpusSearchMode,
+} from "@/components/dashboard/corpus-steward/corpus-files-queries";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   Database,
@@ -101,9 +108,25 @@ export default function CorpusPage() {
           queryKey: ["corpus-ingest-log", "limit=50&offset=0"],
           queryFn: () => json("/api/admin/corpus-ingest-log?limit=50&offset=0"),
         });
+      } else if (id === "steward") {
+        // Dieselbe Param-Ableitung wie CorpusFileBrowser (corpusSearchMode /
+        // corpusListParams) — die URL-Params überleben den Tabwechsel, der
+        // Prefetch muss daher exakt den Query treffen, den die Komponente
+        // beim Mount stellen wird.
+        const mode = corpusSearchMode(searchParams);
+        if (mode === "list") {
+          const { page, sort, flag } = corpusListParams(searchParams);
+          void queryClient.prefetchQuery(corpusFileListQuery(stewardCorpus, page, sort, flag));
+        } else if (mode === "search") {
+          const q = searchParams.get("q") ?? "";
+          if (q.length >= 2)
+            void queryClient.prefetchQuery(corpusFileSearchQuery(stewardCorpus, q));
+        } else {
+          void queryClient.prefetchQuery(corpusFileSampleQuery(stewardCorpus));
+        }
       }
     },
-    [queryClient]
+    [queryClient, searchParams, stewardCorpus]
   );
 
   // Unread corpus-alerts count for badge on Übersicht tab

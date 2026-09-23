@@ -26,7 +26,7 @@ export const GET = createHandler(
     rateTier: "standard",
     query: dmsContentSchema,
   },
-  async (_ctx, _body, query) => {
+  async (_ctx, _body, query, req) => {
     const connector = await getConnector();
     if (!connector || !connector.isConfigured()) {
       return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
@@ -51,14 +51,54 @@ export const GET = createHandler(
         mime === "application/pdf" ||
         mime === "text/plain" ||
         /^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(mime);
+      const total = content.data.byteLength;
+      const baseHeaders: Record<string, string> = {
+        "Content-Type": content.mimeType,
+        "Content-Disposition": `${safeInline ? "inline" : "attachment"}; filename*=UTF-8''${filename}`,
+        "X-Content-Type-Options": "nosniff",
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "private, no-store",
+      };
+
+      // Byte-Range-Support (RFC 9110 §14.1.2): Browser-PDF-Viewer laden
+      // große Dokumente in Häppchen — ohne 206-Antworten buffern sie das
+      // ganze File, bevor die erste Seite rendert. Multi-Ranges werden
+      // nicht unterstützt und fallen auf die volle Antwort zurück.
+      const rangeHeader = req.headers.get("range");
+      if (rangeHeader) {
+        const m = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+        if (m && (m[1] !== "" || m[2] !== "")) {
+          let start: number;
+          let end: number;
+          if (m[1] === "") {
+            // Suffix-Range „bytes=-N": die letzten N Bytes.
+            const suffix = parseInt(m[2], 10);
+            start = Math.max(0, total - suffix);
+            end = total - 1;
+          } else {
+            start = parseInt(m[1], 10);
+            end = m[2] === "" ? total - 1 : Math.min(parseInt(m[2], 10), total - 1);
+          }
+          if (start > end || start >= total) {
+            return new Response(null, {
+              status: 416,
+              headers: { ...baseHeaders, "Content-Range": `bytes */${total}` },
+            });
+          }
+          return new Response(content.data.slice(start, end + 1), {
+            status: 206,
+            headers: {
+              ...baseHeaders,
+              "Content-Length": String(end - start + 1),
+              "Content-Range": `bytes ${start}-${end}/${total}`,
+            },
+          });
+        }
+        // Unparsbarer/Multi-Range-Header → Server darf Range ignorieren (200).
+      }
+
       return new Response(content.data, {
-        headers: {
-          "Content-Type": content.mimeType,
-          "Content-Length": String(content.data.byteLength),
-          "Content-Disposition": `${safeInline ? "inline" : "attachment"}; filename*=UTF-8''${filename}`,
-          "X-Content-Type-Options": "nosniff",
-          "Cache-Control": "private, no-store",
-        },
+        headers: { ...baseHeaders, "Content-Length": String(total) },
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

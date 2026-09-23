@@ -66,47 +66,16 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  corpusFileListQuery,
+  corpusFileSampleQuery,
+  corpusFileSearchQuery,
+  corpusListParams,
+  corpusSearchMode,
+  type FileEntry,
+} from "./corpus-files-queries";
 
 // ── Types ────────────────────────────────────────────────────────────────
-
-interface FileEntry {
-  path: string;
-  name: string;
-  size: number;
-  modified: string;
-  flag: string | null;
-}
-
-interface ListResponse {
-  corpus: string;
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-  files: FileEntry[];
-  indexMissing: boolean;
-  indexStale: boolean;
-}
-
-interface SearchResult {
-  path: string;
-  name: string;
-  snippet?: string;
-  matchIn: "filename" | "content" | "both";
-}
-
-interface SearchResponse {
-  query: string;
-  corpus: string;
-  total: number;
-  results: SearchResult[];
-}
-
-interface SampleResponse {
-  corpus: string;
-  total: number;
-  sample: FileEntry[];
-}
 
 interface CreateResponse {
   created: boolean;
@@ -241,12 +210,9 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
   const queryClient = useQueryClient();
 
   // URL-State (teilbar, bookmarkbar)
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
-  const sort = (searchParams.get("sort") as "name" | "date" | "size") ?? "name";
-  const flagFilter = (searchParams.get("flag") ?? "all") as QualityFlag | "all";
+  const { page, sort, flag: flagFilter } = corpusListParams(searchParams);
   const searchQuery = searchParams.get("q") ?? "";
-  const searchMode =
-    searchParams.get("mode") === "sample" ? "sample" : searchQuery ? "search" : "list";
+  const searchMode = corpusSearchMode(searchParams);
 
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [searchInput, setSearchInput] = useState(searchQuery);
@@ -287,64 +253,20 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
   );
 
   // ── List Query ────────────────────────────────────────────────────────
-  const listQuery = useQuery<ListResponse>({
-    queryKey: ["corpus-files-list", selectedCorpus, page, sort, flagFilter],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        corpus: selectedCorpus,
-        page: String(page),
-        pageSize: "50",
-        sort,
-        flag: flagFilter,
-      });
-      const res = await fetch(`/api/admin/corpus-files/list?${params}`, {
-        credentials: "same-origin",
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.error?.message ?? "Liste nicht ladbar");
-      }
-      const json = await res.json();
-      return json.data ?? json;
-    },
+  const listQuery = useQuery({
+    ...corpusFileListQuery(selectedCorpus, page, sort, flagFilter),
     enabled: searchMode === "list" && !!selectedCorpus,
   });
 
   // ── Search Query ──────────────────────────────────────────────────────
-  const searchQueryFn = useQuery<SearchResponse>({
-    queryKey: ["corpus-files-search", selectedCorpus, searchQuery],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        corpus: selectedCorpus,
-        q: searchQuery,
-        limit: "50",
-        mode: "both",
-      });
-      const res = await fetch(`/api/admin/corpus-files/search?${params}`, {
-        credentials: "same-origin",
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.error?.message ?? "Suche fehlgeschlagen");
-      }
-      const json = await res.json();
-      return json.data ?? json;
-    },
+  const searchQueryFn = useQuery({
+    ...corpusFileSearchQuery(selectedCorpus, searchQuery),
     enabled: searchMode === "search" && searchQuery.length >= 2,
   });
 
   // ── Sample Query ──────────────────────────────────────────────────────
-  const sampleQuery = useQuery<SampleResponse>({
-    queryKey: ["corpus-files-sample", selectedCorpus],
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/admin/corpus-files/sample?corpus=${encodeURIComponent(selectedCorpus)}&n=20`,
-        { credentials: "same-origin" }
-      );
-      if (!res.ok) throw new Error("Stichprobe fehlgeschlagen");
-      const json = await res.json();
-      return json.data ?? json;
-    },
+  const sampleQuery = useQuery({
+    ...corpusFileSampleQuery(selectedCorpus),
     enabled: searchMode === "sample",
   });
 

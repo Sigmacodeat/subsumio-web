@@ -193,3 +193,31 @@ describe("request dedupe", () => {
     expect(csrfFetch).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("response envelope contract", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("request() gibt das JSON-Body direkt zurück — kein data-Unwrap", async () => {
+    // Routes liefern entweder Rohtypen ({ count, lastAt }) oder die
+    // apiSuccess-Hülle ({ data: ... }); request() parst nur — die
+    // Entscheidung liegt beim Aufrufer. Pinnt den Contract, damit ein
+    // späteres apiSuccess-Refactoring einer Route nicht lautlos
+    // { data: undefined } an den Client liefert.
+    vi.mocked(csrfFetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ count: 3, lastAt: null }), { status: 200 })
+    );
+    const raw = await api.whatsapp.muted();
+    expect(raw).toEqual({ count: 3, lastAt: null });
+    expect("data" in raw).toBe(false);
+
+    vi.mocked(csrfFetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: { count: 3, lastAt: null } }), { status: 200 })
+    );
+    const enveloped = await api.whatsapp.muted();
+    // Ein apiSuccess-Envelope käme unverändert als { data: ... } an —
+    // der Aufrufer müsste .data selbst lesen (aktuelle Route tut das nicht).
+    expect(enveloped).toEqual({ data: { count: 3, lastAt: null } });
+  });
+});
