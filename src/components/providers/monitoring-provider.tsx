@@ -21,6 +21,9 @@ function usePostHogInit() {
         capture_pageview: true,
         persistence: "localStorage+cookie",
       });
+    } else if (POSTHOG_KEY && consent === "accepted" && posthog.__loaded) {
+      // Erneute Einwilligung nach einem Widerruf in derselben Sitzung.
+      posthog.opt_in_capturing();
     } else if (POSTHOG_KEY && consent === "declined" && posthog.__loaded) {
       posthog.opt_out_capturing();
     }

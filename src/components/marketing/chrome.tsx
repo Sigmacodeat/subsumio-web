@@ -28,6 +28,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EASE } from "./motion-system";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
+import { openAnalyticsConsentSettings } from "./analytics-consent";
 import { altPath, type NavContent, type NavFeaturedContent } from "@/content/site";
 import { useMarket } from "@/lib/use-market";
 import { ICONS } from "./icons";
@@ -1148,7 +1149,14 @@ export function MarketingFooter() {
           <p className="text-sm [color:var(--mk-text-subtle)]">
             © {new Date().getFullYear()} Subsumio · {UI_STRINGS.footerLegalTagline}
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={openAnalyticsConsentSettings}
+              className="inline-flex min-h-[28px] items-center text-sm [color:var(--mk-text-subtle)] underline-offset-2 transition-colors hover:[color:var(--mk-text)] hover:underline motion-reduce:transition-none"
+            >
+              Cookie-Einstellungen
+            </button>
             <Link
               href={marketSwitch.href}
               className="inline-flex min-h-[28px] items-center gap-1.5 text-sm [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] motion-reduce:transition-none"
