@@ -8901,6 +8901,7 @@ export const D = {
     de: "Abwesenheit wirklich stornieren? Der Vertretungshinweis verschwindet sofort von den Fristen.",
     en: "Really cancel this absence? The delegation hint disappears from deadlines immediately.",
   },
+  "absence.reactivate": { de: "Wieder aktivieren", en: "Reactivate" },
   "absence.updated": { de: "Abwesenheit aktualisiert", en: "Absence updated" },
   "absence.update_failed": {
     de: "Abwesenheit konnte nicht aktualisiert werden",

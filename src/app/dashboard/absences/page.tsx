@@ -10,6 +10,7 @@ import {
   AlertCircle,
   X,
   CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
@@ -172,7 +173,7 @@ export default function AbsencePage() {
     }
   }
 
-  async function handleTransition(id: string, action: "complete" | "cancel") {
+  async function handleTransition(id: string, action: "activate" | "complete" | "cancel") {
     if (action === "cancel" && !window.confirm(t("absence.cancel_confirm"))) return;
     setBusyId(id);
     try {
@@ -480,6 +481,23 @@ export default function AbsencePage() {
                 <div className="w-full pl-11 text-sm text-[color:var(--ds-text)] tabular-nums sm:w-auto sm:shrink-0 sm:pl-0 sm:text-right">
                   {formatDate(absence.start_date)} – {formatDate(absence.end_date)}
                 </div>
+                {(status === "completed" || status === "cancelled") && (
+                  <div className="flex w-full shrink-0 items-center gap-2 pl-11 sm:w-auto sm:pl-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busyId === absence.id}
+                      onClick={() => void handleTransition(absence.id, "activate")}
+                    >
+                      {busyId === absence.id ? (
+                        <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <RotateCcw size={13} aria-hidden="true" />
+                      )}
+                      {t("absence.reactivate")}
+                    </Button>
+                  </div>
+                )}
                 {(status === "planned" || status === "active") && (
                   <div className="flex w-full shrink-0 items-center gap-2 pl-11 sm:w-auto sm:pl-0">
                     {status === "active" && (

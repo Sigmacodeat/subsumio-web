@@ -6,6 +6,7 @@ import type { PostUploadTask } from "@/lib/post-upload-outbox";
 import { MAX_ATTEMPTS } from "@/lib/post-upload-outbox";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
+import { stampInboundEntry } from "@/lib/inbound-register-stamp";
 import { listEnginePages } from "@/lib/engine-pages";
 
 import { logger } from "@/lib/logger";
@@ -84,9 +85,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const attempt = (fm.attempts ?? 0) + 1;
     const headers = engineHeadersForBrain(brain_id);
 
-    // Reconciliation may run immediately, but analysis and contradiction must
-    // never inspect the async placeholder or a document without embeddings.
-    if (task_type !== "reconcile_case") {
+    // Reconciliation and inbound-register retries may run immediately, but
+    // analysis and contradiction must never inspect the async placeholder or
+    // a document without embeddings.
+    if (task_type !== "reconcile_case" && task_type !== "inbound_stamp") {
       const readiness = await documentReadiness(headers, doc_slug);
       if (!readiness.ready && readiness.terminal) {
         // The document will never become analysable — close the task instead
@@ -176,6 +178,18 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
             signal: AbortSignal.timeout(30_000),
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          success = true;
+        }
+      } else if (task_type === "inbound_stamp") {
+        // Retry the Posteingangsbuch entry that failed during intake. The
+        // fixed entry_id makes the retry upsert idempotent.
+        if (!fm.inbound) {
+          success = true;
+          errorMsg = "skipped_no_stamp_payload";
+        } else {
+          await stampInboundEntry(headers, fm.inbound.input, {
+            entryId: fm.inbound.entry_id,
+          });
           success = true;
         }
       } else {

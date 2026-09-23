@@ -3,7 +3,7 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
-import { stampInboundEntry } from "@/lib/inbound-register-stamp";
+import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/email-import");
@@ -104,7 +104,7 @@ async function importEmailIntoCase(
   matchedCase: { slug: string; title: string; case_number?: string; documents?: unknown[] },
   body: z.infer<typeof emailImportSchema>,
   threadId: string | undefined,
-  ctx: { headers: Record<string, string>; user: { name?: string; email?: string } }
+  ctx: { headers: Record<string, string>; brainId: string; user: { name?: string; email?: string } }
 ) {
   const existingDocs = (matchedCase.documents || []) as Array<{
     id?: string;
@@ -151,18 +151,17 @@ async function importEmailIntoCase(
 
   // Posteingangsbuch: importierte E-Mails sind Eingänge — ohne Stempel fehlen
   // sie in der revisionssicheren Übersicht. Best-effort wie beim Upload.
-  await stampInboundEntry(ctx.headers, {
-    channel: "email",
-    subject: body.subject,
-    senderAddress: body.from,
-    caseSlug: matchedCase.slug,
-    receivedBy: ctx.user.name || ctx.user.email,
-    notes: threadId ? `Thread: ${threadId}` : undefined,
-  }).catch((err) =>
-    log.error(
-      "[email-import] inbound-register stamp failed:",
-      err instanceof Error ? err.message : String(err)
-    )
+  await stampInboundEntryBestEffort(
+    ctx.headers,
+    {
+      channel: "email",
+      subject: body.subject,
+      senderAddress: body.from,
+      caseSlug: matchedCase.slug,
+      receivedBy: ctx.user.name || ctx.user.email,
+      notes: threadId ? `Thread: ${threadId}` : undefined,
+    },
+    ctx.brainId
   );
 
   return Response.json({

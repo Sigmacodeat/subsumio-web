@@ -7,7 +7,7 @@ import { MAX_FILE_SIZE } from "@/lib/upload-validation";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { acquireUploadSlot } from "@/lib/upload-concurrency";
-import { stampInboundEntry } from "@/lib/inbound-register-stamp";
+import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/upload");
@@ -339,17 +339,16 @@ export const POST = createHandler(
             // already does for outgoing mail. Best-effort: a failed stamp
             // must never fail the upload itself.
             if (uploadResult.slug) {
-              await stampInboundEntry(ctx.headers, {
-                channel: "upload",
-                subject: uploadResult.title ?? result.cleanName,
-                caseSlug: caseSlugStr || undefined,
-                documentSlug: uploadResult.slug,
-                receivedBy: ctx.user.name || ctx.user.email,
-              }).catch((err) =>
-                log.error(
-                  "[upload] inbound-register stamp failed:",
-                  err instanceof Error ? err.message : String(err)
-                )
+              await stampInboundEntryBestEffort(
+                ctx.headers,
+                {
+                  channel: "upload",
+                  subject: uploadResult.title ?? result.cleanName,
+                  caseSlug: caseSlugStr || undefined,
+                  documentSlug: uploadResult.slug,
+                  receivedBy: ctx.user.name || ctx.user.email,
+                },
+                ctx.brainId
               );
             }
             // Determine final status: 207 if any sub-operation failed (reconciliation

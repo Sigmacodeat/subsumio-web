@@ -22,10 +22,7 @@ import {
 } from "@/lib/portal-fulfillment";
 import type { BrainPage } from "@/lib/types";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
-import { stampInboundEntry } from "@/lib/inbound-register-stamp";
-import { logger } from "@/lib/logger";
-
-const log = logger("api/portal-upload");
+import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 
 export const dynamic = "force-dynamic";
 
@@ -291,17 +288,16 @@ export const POST = createPublicHandler(
     // Posteingangsbuch: Mandanten-Uploads sind Eingänge wie jeder andere
     // Kanal — ohne Stempel fehlen sie in der revisionssicheren Übersicht.
     // Best-effort wie beim Dashboard-Upload.
-    await stampInboundEntry(engineHeadersForBrain(payload.brain_id), {
-      channel: "portal",
-      subject: upload.title || scan.cleanName,
-      senderName: "Mandantenportal",
-      caseSlug: payload.case_slug,
-      documentSlug: upload.slug,
-    }).catch((err) =>
-      log.error(
-        "[portal-upload] inbound-register stamp failed:",
-        err instanceof Error ? err.message : String(err)
-      )
+    await stampInboundEntryBestEffort(
+      engineHeadersForBrain(payload.brain_id),
+      {
+        channel: "portal",
+        subject: upload.title || scan.cleanName,
+        senderName: "Mandantenportal",
+        caseSlug: payload.case_slug,
+        documentSlug: upload.slug,
+      },
+      payload.brain_id
     );
 
     // Portal uploads must enter the exact same durable analysis pipeline as

@@ -11,6 +11,7 @@
  */
 
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import type { StampInboundInput } from "@/lib/inbound-register-stamp";
 import { createHash } from "node:crypto";
 
 import { logger } from "@/lib/logger";
@@ -19,9 +20,11 @@ const log = logger("lib/post-upload-outbox");
 export type PostUploadTaskType =
   | "reconcile_case" // update case.documents[] array
   | "analyze" // run legal analysis on the document
-  | "contradiction"; // run contradiction probe for the case
+  | "contradiction" // run contradiction probe for the case
+  | "inbound_stamp"; // retry a failed Posteingangsbuch register entry
 
 export interface PostUploadTask {
+  /** For `inbound_stamp` tasks this is the fixed inbound-entry id. */
   doc_slug: string;
   case_slug?: string;
   brain_id: string;
@@ -35,6 +38,8 @@ export interface PostUploadTask {
    *  embedding failed); retrying would only burn attempts or paid calls. */
   status: "pending" | "done" | "exhausted" | "blocked";
   last_error?: string;
+  /** Payload for `inbound_stamp` tasks — the register entry to retry. */
+  inbound?: { entry_id: string; input: StampInboundInput };
 }
 
 export const MAX_ATTEMPTS = 4;

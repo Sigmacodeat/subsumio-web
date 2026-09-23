@@ -108,7 +108,13 @@ export const PATCH = createHandler(
     if (!record || record.id !== body.id) {
       return apiError("absence_not_found", "Abwesenheit nicht gefunden", 404);
     }
-    if (record.status === "cancelled" || record.status === "completed") {
+    // Closed records only accept `activate` — that is the deliberate undo
+    // for a mistakenly completed/cancelled absence. complete/cancel on a
+    // closed record is a real conflict.
+    if (
+      body.action !== "activate" &&
+      (record.status === "cancelled" || record.status === "completed")
+    ) {
       return apiError(
         "absence_closed",
         "Diese Abwesenheit ist bereits abgeschlossen oder storniert.",

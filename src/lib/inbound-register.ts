@@ -133,6 +133,10 @@ export function suggestCaseForInbound(
   return best && best.score >= 6 ? best : null;
 }
 
+export function newInboundEntryId(): string {
+  return `in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function createInboundEntry(input: {
   channel: InboundChannel;
   subject: string;
@@ -145,7 +149,7 @@ export function createInboundEntry(input: {
 }): InboundEntry {
   const now = new Date().toISOString();
   return {
-    id: `in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: newInboundEntryId(),
     received_at: now,
     channel: input.channel,
     direction: "inbound",

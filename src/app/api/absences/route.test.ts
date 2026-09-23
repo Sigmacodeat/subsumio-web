@@ -114,11 +114,23 @@ describe("PATCH /api/absences", () => {
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
-  test("bereits storniert/abgeschlossen → 409 (kein Reopen über Lifecycle)", async () => {
+  test("complete/cancel auf storniert → 409", async () => {
     mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
-    const res = await patch({ id: "absence-1", action: "activate" });
+    const res = await patch({ id: "absence-1", action: "cancel" });
     expect(res.status).toBe(409);
     expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  test("activate auf storniert/abgeschlossen → Reopen erlaubt (Undo-Pfad)", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absence.status).toBe("active");
+
+    mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "completed" }));
+    const res2 = await patch({ id: "absence-1", action: "activate" });
+    expect(res2.status).toBe(200);
   });
 
   test("id im Frontmatter muss übereinstimmen (kein fremder Slug)", async () => {

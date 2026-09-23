@@ -1,5 +1,6 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { applyMatterKnowledgeMutation } from "@/lib/matter-knowledge";
+import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 import { signPortalToken } from "@/lib/portal-token";
 import type { CaseFrontmatter } from "@/lib/legal-types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
@@ -388,6 +389,25 @@ export async function ingestVerifiedClientWhatsAppSubmission(
     caseSlug,
     { ...page, frontmatter: mutation.frontmatter },
     fetchImpl
+  );
+
+  // Posteingangsbuch: eine verifizierte Mandanten-Einreichung ist ein
+  // Eingang wie Portal-Upload oder E-Mail — ohne Stempel fehlt sie in der
+  // revisionssicheren Übersicht. Best-effort mit durablem Retry.
+  await stampInboundEntryBestEffort(
+    engineHeadersForBrain(input.sender.brainId),
+    {
+      channel: "whatsapp",
+      subject: (input.media?.filename ?? input.normalizedText.trim()).slice(0, 200),
+      senderName: input.sender.name,
+      caseSlug,
+      documentSlug: submissionSlug,
+      notes: input.media
+        ? `WhatsApp-Datei (${input.media.mimeType}), Nachricht ${input.message.id}`
+        : `WhatsApp-Nachricht ${input.message.id}`,
+    },
+    input.sender.brainId,
+    { fetchImpl }
   );
 
   return {

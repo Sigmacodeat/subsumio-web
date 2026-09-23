@@ -170,6 +170,21 @@ describe("ingestVerifiedClientWhatsAppSubmission — quick intents", () => {
     expect(writes.length).toBeGreaterThan(0);
   });
 
+  it("stamps a Posteingangsbuch entry for every filed submission", async () => {
+    const result = await ingestVerifiedClientWhatsAppSubmission(
+      input("Ich sende die unterschriebene Vollmacht."),
+      fetchImpl
+    );
+    expect(result.handled).toBe(true);
+    const stamp = writes.find((w) => w.type === "inbound_entry");
+    expect(stamp).toBeDefined();
+    const fm = stamp!.frontmatter as Record<string, unknown>;
+    expect(fm.channel).toBe("whatsapp");
+    expect(fm.case_slug).toBe("legal/cases/mueller");
+    expect(fm.document_slug).toBe(result.submissionSlug);
+    expect(fm.sender_name).toBe("Max Mustermann");
+  });
+
   it("falls back to filing the message if the quick-intent lookup fails", async () => {
     let calls = 0;
     fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
