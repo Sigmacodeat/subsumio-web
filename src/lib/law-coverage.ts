@@ -19,6 +19,8 @@ export interface RisIndexEntry {
 
 interface RisIndexLine {
   nor?: string;
+  /** Legacy-Schema des XML-Fetchers (fetch-at-landesrecht-xml.ts): `id` statt `nor`. */
+  id?: string;
   gnr?: string;
   kurztitel?: string | null;
   abk?: string | null;
@@ -41,13 +43,14 @@ export function parseRisInforceIndex(jsonl: string): Map<string, RisIndexEntry> 
     } catch {
       continue;
     }
-    if (!d.nor || !d.gnr || d.apa === "§ 0") continue;
+    const nor = d.nor ?? d.id;
+    if (!nor || !d.gnr || d.apa === "§ 0") continue;
     let entry = map.get(d.gnr);
     if (!entry) {
       entry = { gnr: d.gnr, kurztitel: d.kurztitel ?? null, abk: d.abk ?? null, docs: new Map() };
       map.set(d.gnr, entry);
     }
-    entry.docs.set(d.nor, d.apa ?? null);
+    entry.docs.set(nor, d.apa ?? null);
     if (!entry.kurztitel && d.kurztitel) entry.kurztitel = d.kurztitel;
     if (!entry.abk && d.abk) entry.abk = d.abk;
   }

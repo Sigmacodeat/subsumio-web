@@ -431,6 +431,7 @@ async function main() {
       inventory.push(
         JSON.stringify({
           id: docId,
+          nor: docId,
           land: landOfDocId(docId),
           gnr: gn || null,
           apa,

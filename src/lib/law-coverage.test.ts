@@ -43,6 +43,18 @@ describe("parseRisInforceIndex", () => {
     );
     expect(idx.size).toBe(0);
   });
+
+  test("Legacy-Schema: `id` wird als nor gelesen (Landesrecht-XML-Fetcher)", () => {
+    const idx = parseRisInforceIndex(
+      JSON.stringify({ id: "NOR-LR-1", gnr: "9001", apa: "§ 5" }) +
+        "\n" +
+        JSON.stringify({ nor: "NOR-LR-2", gnr: "9001", apa: "§ 6" })
+    );
+    const g = idx.get("9001")!;
+    expect(g.docs.has("NOR-LR-1")).toBe(true);
+    expect(g.docs.has("NOR-LR-2")).toBe(true);
+    expect(g.docs.get("NOR-LR-1")).toBe("§ 5");
+  });
 });
 
 describe("computeLawCoverage", () => {

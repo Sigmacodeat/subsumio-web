@@ -10,7 +10,7 @@
  *   RIS, and without an in_force_to date explaining why. Dated older
  *   versions are expected and reported separately.
  * - State law: document-level the same way once fetch-at-landesrecht-xml.ts
- *   has written its inventory (_state/ris-landesrecht-inforce.jsonl);
+ *   has written its inventory (_state/ris-inforce-landesrecht.jsonl);
  *   before that, count-level.
  * - Courts: count-level against RIS hit totals, one request per application. For OGH/VwGH/VfGH RIS counts Rechtssätze, so the
  *   database side counts Rechtssätze too (decision texts are reported in the
@@ -34,7 +34,7 @@ import { risPause } from "./ris-pace.ts";
 const DRY = process.argv.includes("--dry-run");
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const INVENTORY = join(ROOT, "_state", "ris-inforce.jsonl");
-const LR_INVENTORY = join(ROOT, "_state", "ris-landesrecht-inforce.jsonl");
+const LR_INVENTORY = join(ROOT, "_state", "ris-inforce-landesrecht.jsonl");
 const API = "https://data.bka.gv.at/ris/api/v2.6";
 
 /** source_id → RIS application; `rs` = RIS counts Rechtssätze for this court. */
@@ -177,7 +177,11 @@ async function main() {
     if (existsSync(LR_INVENTORY)) {
       const ris = new Set<string>();
       for (const line of readFileSync(LR_INVENTORY, "utf8").split("\n")) {
-        if (line.trim()) ris.add((JSON.parse(line) as { id: string }).id);
+        if (line.trim()) {
+          const r = JSON.parse(line) as { nor?: string; id?: string };
+          const docId = r.nor ?? r.id;
+          if (docId) ris.add(docId);
+        }
       }
       const lrRows = await q(
         `SELECT frontmatter->>'doc_id' AS id, (frontmatter->>'in_force_to') < $1 AS historisch FROM pages

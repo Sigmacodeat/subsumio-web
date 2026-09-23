@@ -17,7 +17,7 @@
  *   bun scripts/mark-superseded-versions.ts --source law-at-landesrecht            # report
  *   bun scripts/mark-superseded-versions.ts --source law-at-landesrecht --apply    # write
  *
- * Inventories: _state/ris-landesrecht-inforce.jsonl (fetch-at-landesrecht-xml.ts),
+ * Inventories: _state/ris-inforce-landesrecht.jsonl (fetch-at-landesrecht-xml.ts),
  * _state/ris-inforce.jsonl (ris-inforce-crawl.ts).
  */
 
@@ -103,7 +103,7 @@ export function findSuperseded(
 }
 
 const INVENTORIES: Record<string, { file: string; idOf: (row: any) => string | undefined }> = {
-  "law-at-landesrecht": { file: "ris-landesrecht-inforce.jsonl", idOf: (r) => r.id },
+  "law-at-landesrecht": { file: "ris-inforce-landesrecht.jsonl", idOf: (r) => r.nor ?? r.id },
   "law-at-normen": { file: "ris-inforce.jsonl", idOf: (r) => r.nor },
 };
 
