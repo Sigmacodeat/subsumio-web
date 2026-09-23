@@ -759,7 +759,10 @@ export default function NewCasePage() {
                 </Label>
                 <Select
                   value={jurisdiction}
-                  onValueChange={(v) => setValue("jurisdiction", v as CaseFormData["jurisdiction"])}
+                  onValueChange={(v) => {
+                    setValue("jurisdiction", v as CaseFormData["jurisdiction"]);
+                    if (v !== "de") setValue("bundesland", undefined);
+                  }}
                 >
                   <SelectTrigger id="case-jurisdiction" className="w-full">
                     <SelectValue />
