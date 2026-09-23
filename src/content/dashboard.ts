@@ -495,6 +495,11 @@ export const D = {
   "sync.rename_label": { de: "Neuer Slug für die Kopie", en: "New slug for the copy" },
   "sync.rename_submit": { de: "Kopie speichern", en: "Save copy" },
   "sync.server_fetched": { de: "Server-Stand von", en: "Server state from" },
+  "sync.retries": { de: "Fehlversuche", en: "failed attempts" },
+  "sync.retries_hint": {
+    de: "So oft wurde versucht, diese Änderung zu synchronisieren, bevor der Konflikt erkannt wurde.",
+    en: "How often this change was attempted before the conflict was detected.",
+  },
   "sync.unchanged_lines": { de: "unveränderte Zeilen", en: "unchanged lines" },
   "sync.diff_truncated": {
     de: "weitere geänderte Zeilen — vollständig vergleichen via „Ansehen“",

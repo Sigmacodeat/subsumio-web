@@ -108,6 +108,14 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
         <span className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[11px] text-[color:var(--ds-text-muted)]">
           {mut.type}
         </span>
+        {(mut.retries ?? 0) > 0 && (
+          <span
+            className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[11px] text-[color:var(--ds-text-muted)]"
+            title={t("sync.retries_hint" as DashboardKey)}
+          >
+            {mut.retries}× {t("sync.retries" as DashboardKey)}
+          </span>
+        )}
         {ageDays > 0 && (
           <span className="flex items-center gap-1 text-[11px] text-[color:var(--ds-warning-text)]">
             <Clock size={11} aria-hidden />

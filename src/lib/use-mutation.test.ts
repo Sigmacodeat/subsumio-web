@@ -417,6 +417,31 @@ describe("useMutationQueue", () => {
     expect(removeMutation).not.toHaveBeenCalled();
   });
 
+  test("fehlgeschlagener keep-mine laesst Konflikt resolvierbar", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "updatePage" as const,
+      payload: { slug: "cases/neu", title: "x" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    vi.mocked(api.brain.updatePage).mockRejectedValueOnce(new Error("boom"));
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "keep-mine");
+    });
+
+    // Eintrag bleibt conflicted in der Queue — weiterhin sichtbar/resolvierbar
+    expect(removeMutation).not.toHaveBeenCalled();
+    expect(result.current.lastError).toContain("boom");
+    expect(result.current.conflicts).toHaveLength(1);
+    expect(result.current.conflicts[0].conflicted).toBe(true);
+  });
+
   test("resolveConflict discard entfernt ohne Replay", async () => {
     const { result } = renderHook(() => useMutationQueue());
     await act(async () => {
