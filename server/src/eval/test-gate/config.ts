@@ -48,7 +48,9 @@ const formatCheck: GateCheck = {
   name: "Prettier Format Check",
   category: "lint",
   command: "bun run format:check",
-  timeout_ms: 60_000,
+  // `prettier --check .` walks the whole repo — ~90s on a workstation,
+  // slower on CI runners. 60s was structurally unpassable.
+  timeout_ms: 240_000,
   required: true,
   description: "Prettier formatting check",
 };
