@@ -32,8 +32,23 @@ vi.mock("@/lib/api-handler", () => ({
 vi.mock("@/lib/sms/twilio-verify", () => ({ verifyTwilioSignature: () => true }));
 vi.mock("@/lib/env", () => ({ env: () => "token" }));
 
+const seenKeys = new Set<string>();
+vi.mock("@/lib/caselaw-dedup", () => ({
+  filterNewIds: vi.fn(async (_b: string, _ns: string, ids: string[]) => {
+    const fresh = new Set<number>();
+    ids.forEach((id, i) => {
+      if (!seenKeys.has(id)) {
+        seenKeys.add(id);
+        fresh.add(i);
+      }
+    });
+    return fresh;
+  }),
+}));
+
 import type { NextRequest } from "next/server";
-import { GET } from "./route";
+import { GET, POST } from "./route";
+import { logAudit } from "@/lib/audit";
 
 function req(url: string) {
   return new Request(url) as unknown as NextRequest;
@@ -73,5 +88,55 @@ describe("GET /api/sms/status", () => {
     )) as Response;
     const { deliveries } = await res.json();
     expect(deliveries).toEqual([]);
+  });
+});
+
+function twilioCallback(params: Record<string, string>): NextRequest {
+  const body = new URLSearchParams(params).toString();
+  return new Request("https://app.example.com/api/sms/status", {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "x-twilio-signature": "sig",
+    },
+    body,
+  }) as unknown as NextRequest;
+}
+
+describe("POST /api/sms/status — Replay-Dedup", () => {
+  beforeEach(() => {
+    seenKeys.clear();
+    vi.mocked(logAudit).mockClear();
+  });
+
+  const base = {
+    MessageSid: "SM001",
+    MessageStatus: "delivered",
+    To: "+436641234567",
+  };
+
+  // Der gemockte createWebhookHandler gibt den inneren Handler zurück:
+  // Signatur (body, req) — body ist hier undefined, req trägt das Formular.
+  async function post(params: Record<string, string>): Promise<Response> {
+    const handler = POST as unknown as (b: unknown, r: NextRequest) => Promise<Response>;
+    return handler(undefined, twilioCallback(params));
+  }
+
+  test("identischer Callback (sid+status) wird nur einmal auditiert", async () => {
+    const first = await post(base);
+    expect(first.status).toBe(200);
+    expect(vi.mocked(logAudit)).toHaveBeenCalledTimes(1);
+
+    const replay = await post(base);
+    expect(replay.status).toBe(200);
+    expect((await replay.json()).deduped).toBe(true);
+    expect(vi.mocked(logAudit)).toHaveBeenCalledTimes(1); // kein zweiter Eintrag
+  });
+
+  test("Status-Progression gleicher Sid wird NICHT gededupt", async () => {
+    await post({ ...base, MessageStatus: "queued" });
+    await post({ ...base, MessageStatus: "sent" });
+    await post(base); // delivered
+    expect(vi.mocked(logAudit)).toHaveBeenCalledTimes(3);
   });
 });
