@@ -264,6 +264,16 @@ export function useMutationQueue() {
     return () => window.removeEventListener("online", onOnline);
   }, [refreshPending, syncPending]);
 
+  // Erfolgs-Notices verschwinden nach kurzer Zeit von selbst —
+  // Fehler bleiben bewusst kleben bis dismissed.
+  useEffect(() => {
+    if (!state.lastNotice) return;
+    const timer = setTimeout(() => {
+      setState((s) => ({ ...s, lastNotice: null }));
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [state.lastNotice]);
+
   /** Konflikt auflösen: "keep-mine" replayed die gequeuete Änderung
    *  erneut (bewusstes Überschreiben), "discard" verwirft sie,
    *  "rename" (nur createPage) legt sie unter einem neuen Slug an —

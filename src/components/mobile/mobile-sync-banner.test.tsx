@@ -140,18 +140,18 @@ describe("MobileSyncBanner", () => {
     await waitFor(() => expect(mockQueue.syncPending).toHaveBeenCalled());
   });
 
-  test("lastError rendert danger-Banner mit Alter", () => {
+  test("lastError rendert danger-Banner mit Alter + role=alert", () => {
     mockQueue.lastError = "Netzwerkfehler";
     mockQueue.lastErrorAt = Date.now() - 60_000;
     render(<MobileSyncBanner />);
-    expect(screen.getByText(/Netzwerkfehler/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Netzwerkfehler");
     expect(screen.getByText(/seit/)).toBeInTheDocument();
   });
 
-  test("lastNotice rendert success-Banner mit Dismiss", () => {
+  test("lastNotice rendert success-Banner mit Dismiss + role=status", () => {
     mockQueue.lastNotice = "Kopie gespeichert als cases/neu-2";
     render(<MobileSyncBanner />);
-    expect(screen.getByText("Kopie gespeichert als cases/neu-2")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Kopie gespeichert als cases/neu-2");
     fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
     expect(mockQueue.clearNotice).toHaveBeenCalled();
   });

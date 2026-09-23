@@ -696,4 +696,30 @@ describe("useMutationQueue", () => {
     expect(result.current.lastError).toContain("1 fehlgeschlagen");
     expect(result.current.lastNotice).toBeNull();
   });
+
+  test("lastNotice verschwindet nach 8s automatisch", async () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useMutationQueue());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      await act(async () => {
+        await result.current.resolveConflict("m1", "discard");
+      });
+      expect(result.current.lastNotice).toContain("verworfen");
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(7000);
+      });
+      expect(result.current.lastNotice).toContain("verworfen");
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500);
+      });
+      expect(result.current.lastNotice).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

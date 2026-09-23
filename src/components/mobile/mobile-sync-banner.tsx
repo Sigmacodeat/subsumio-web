@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertTriangle, X, GitMerge } from "lucide-react";
 import { useMutationQueue } from "@/lib/use-mutation";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
@@ -38,10 +38,18 @@ export function MobileSyncBanner() {
     }
   }, [syncing]);
 
+  const justSyncedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (justSyncedTimer.current) clearTimeout(justSyncedTimer.current);
+    };
+  }, []);
+
   const handleSync = useCallback(async () => {
     await syncPending();
     setJustSynced(true);
-    setTimeout(() => setJustSynced(false), 3000);
+    if (justSyncedTimer.current) clearTimeout(justSyncedTimer.current);
+    justSyncedTimer.current = setTimeout(() => setJustSynced(false), 3000);
   }, [syncPending]);
 
   const [resolvingIds, setResolvingIds] = useState<Set<string>>(new Set());
@@ -100,7 +108,10 @@ export function MobileSyncBanner() {
   // Erfolgs-Hinweis (z. B. „Kopie gespeichert als …") — quittierbar
   if (lastNotice) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-2 backdrop-blur-sm">
+      <div
+        role="status"
+        className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-2 backdrop-blur-sm"
+      >
         <CheckCircle2 size={16} className="shrink-0 text-[color:var(--ds-success-text)]" />
         <span className="flex-1 truncate text-xs text-[color:var(--ds-success-text)]">
           {lastNotice}
@@ -209,7 +220,10 @@ export function MobileSyncBanner() {
   // Error state
   if (lastError && !dismissed) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 backdrop-blur-sm">
+      <div
+        role="alert"
+        className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 backdrop-blur-sm"
+      >
         <AlertTriangle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
         <span className="flex-1 truncate text-xs text-[color:var(--ds-danger-text)]">
           {t("mobile.sync_error" as DashboardKey)}: {lastError}
