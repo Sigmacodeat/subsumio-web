@@ -12,7 +12,7 @@ import {
   type LawSourceId,
 } from "@/lib/law-coverage";
 import {
-  corpusFileForSlug,
+  corpusFileCandidatesForSlug,
   LAW_SOURCE_CFG,
   loadLawFetchState,
   loadRisIndex,
@@ -102,10 +102,11 @@ export const GET = createHandler(
       // Datei je gespeichertem § — nur Pfade, die es auf der Platte gibt,
       // damit „Text ansehen" nie in einen leeren Betrachter führt.
       const fileFor = (slug: string): string | null => {
-        const rel = corpusFileForSlug(source, slug);
-        if (!rel) return null;
-        const abs = safeCorpusPath(rel);
-        return abs && existsSync(abs) ? rel : null;
+        for (const rel of corpusFileCandidatesForSlug(source, slug)) {
+          const abs = safeCorpusPath(rel);
+          if (abs && existsSync(abs)) return rel;
+        }
+        return null;
       };
       const withFile = detail.present.map((p) => ({ p, file: fileFor(p.slug) }));
       const extraWithFile = detail.extra.map((p) => ({ p, file: fileFor(p.slug) }));

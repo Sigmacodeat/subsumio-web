@@ -14,7 +14,7 @@ import {
   type DbLawDoc,
   type DbLawPage,
 } from "./law-coverage";
-import { corpusFileForSlug } from "./law-coverage-server";
+import { corpusFileCandidatesForSlug, corpusFileForSlug } from "./law-coverage-server";
 
 const INDEX_SAMPLE = [
   { nor: "NOR1", gnr: "10001", kurztitel: "Testgesetz", abk: "TG", apa: "§ 1" },
@@ -231,5 +231,30 @@ describe("corpusFileForSlug", () => {
     expect(corpusFileForSlug("law-at-normen", "legal/statutes/at/landesrecht/x/art-1")).toBeNull();
     expect(corpusFileForSlug("law-at-normen", "legal/statutes/at/../../etc/passwd")).toBeNull();
     expect(corpusFileForSlug("law-de", "legal/statutes/de/bgb/p-1")).toBeNull();
+  });
+});
+
+describe("corpusFileCandidatesForSlug", () => {
+  it("Bundesrecht has exactly one place", () => {
+    expect(corpusFileCandidatesForSlug("law-at-normen", "legal/statutes/at/abgb/p-1044")).toEqual([
+      "at-normen/abgb/p-1044.md",
+    ]);
+  });
+
+  it("Landesrecht is also looked up in every Bundesland folder (the slug has no state)", () => {
+    const c = corpusFileCandidatesForSlug(
+      "law-at-landesrecht",
+      "legal/statutes/at/landesrecht/gnr-20000248/p-34a"
+    );
+    expect(c[0]).toBe("at-landesrecht/gnr-20000248/p-34a.md");
+    expect(c).toContain("at-landesrecht/ktn/gnr-20000248/p-34a.md");
+    expect(c).toHaveLength(10);
+  });
+
+  it("rejects what corpusFileForSlug rejects", () => {
+    expect(corpusFileCandidatesForSlug("law-de", "legal/statutes/de/bgb/p-1")).toEqual([]);
+    expect(
+      corpusFileCandidatesForSlug("law-at-landesrecht", "legal/statutes/at/landesrecht/../x")
+    ).toEqual([]);
   });
 });

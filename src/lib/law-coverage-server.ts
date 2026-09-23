@@ -125,3 +125,31 @@ export function corpusFileForSlug(source: string, slug: string): string | null {
   if (!rel || rel.includes("..") || rel.startsWith("/")) return null;
   return `${files.dir}/${rel}.md`;
 }
+
+/** Landesrecht liegt gemischt: direkt unter at-landesrecht/ und in einem
+ *  Ordner je Bundesland (der Slug trägt das Bundesland nicht). */
+export const LANDESRECHT_STATE_DIRS = [
+  "bgld",
+  "ktn",
+  "noe",
+  "ooe",
+  "sbg",
+  "stmk",
+  "tir",
+  "vbg",
+  "wien",
+] as const;
+
+/**
+ * Alle Pfade, unter denen die Textdatei eines Slugs liegen kann — in der
+ * Reihenfolge, in der der Aufrufer auf Existenz prüfen soll. Bundesrecht hat
+ * genau einen Ort; Landesrecht zusätzlich die Bundesland-Ordner.
+ */
+export function corpusFileCandidatesForSlug(source: string, slug: string): string[] {
+  const flat = corpusFileForSlug(source, slug);
+  if (!flat) return [];
+  if (source !== "law-at-landesrecht") return [flat];
+  const files = LAW_SOURCE_CFG[source]!.files!;
+  const rel = slug.slice(files.slugPrefix.length);
+  return [flat, ...LANDESRECHT_STATE_DIRS.map((state) => `${files.dir}/${state}/${rel}.md`)];
+}
