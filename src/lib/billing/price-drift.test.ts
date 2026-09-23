@@ -93,8 +93,8 @@ describe("included AI requests are one number everywhere", () => {
     const total = PLANS.kanzlei.included_credit * PLAN_LIMITS.team.seats;
     expect(team).toContain(total.toLocaleString("de-AT").replace(/\s/g, "."));
 
-    // The Community plan must not advertise included AI requests: a cloud
-    // account holds no credits once the trial expired.
+    // The plan-free state after a trial must not advertise included AI
+    // requests: an account without a plan gets no monthly credits.
     const free = BILLING_PLANS_DISPLAY.find((p) => p.id === "free")!.features.join(" ");
     expect(free).not.toMatch(/KI-Anfragen/);
   });

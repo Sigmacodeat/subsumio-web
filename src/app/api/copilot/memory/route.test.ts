@@ -4,18 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const learning = vi.hoisted(() => ({ on: true }));
 const created = vi.hoisted(() => [] as Array<Record<string, unknown>>);
-const llm = vi.hoisted(() => ({ available: false, affordable: true, charge: vi.fn() }));
 
 vi.mock("@/lib/brain-learning", () => ({ isFirmLearningEnabled: async () => learning.on }));
 vi.mock("@/lib/copilot-memory-llm", () => ({
-  extractMemoriesWithLLM: vi.fn(async (_m: string, opts?: { meta?: { modelCalled?: boolean } }) => {
-    if (opts?.meta) opts.meta.modelCalled = true;
-    return [{ type: "preference", key: "stil", value: "Kurz antworten" }];
-  }),
-  isLLMExtractionAvailable: () => llm.available,
-}));
-vi.mock("@/lib/billing/optional-llm-credits", () => ({
-  canAffordOptionalLlm: vi.fn(async () => llm.affordable),
+  extractMemoriesWithLLM: vi.fn(async () => []),
+  isLLMExtractionAvailable: () => false,
 }));
 vi.mock("@/lib/copilot-memory", () => ({
   listMemories: vi.fn(async () => []),
@@ -48,7 +41,6 @@ vi.mock("@/lib/api-handler", () => ({
     },
   apiError: (code: string, message: string, status: number) =>
     Response.json({ error: { code, message } }, { status }),
-  recordCreditConsumption: (...args: unknown[]) => llm.charge(...args),
 }));
 
 import { POST } from "./route";
@@ -64,27 +56,6 @@ const post = (body: Record<string, unknown>) =>
 beforeEach(() => {
   learning.on = true;
   created.length = 0;
-  llm.available = false;
-  llm.affordable = true;
-  llm.charge.mockClear();
-});
-
-describe("/api/copilot/memory — credits for the LLM extraction", () => {
-  it("charges a think credit when the model extracted memories", async () => {
-    llm.available = true;
-    const res = await post({ action: "infer", message: "Bitte immer kurz antworten." });
-    expect((await res.json()).method).toBe("llm");
-    expect(llm.charge).toHaveBeenCalledWith(expect.anything(), "think", undefined);
-  });
-
-  it("falls back to the free rules without balance and charges nothing", async () => {
-    llm.available = true;
-    llm.affordable = false;
-    const res = await post({ action: "infer", message: "Bitte immer auf Deutsch antworten." });
-    expect((await res.json()).method).toBe("regex");
-    expect(created).toHaveLength(1);
-    expect(llm.charge).not.toHaveBeenCalled();
-  });
 });
 
 describe("/api/copilot/memory and 'Kanzlei-Gehirn lernt mit'", () => {

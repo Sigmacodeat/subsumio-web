@@ -4,8 +4,16 @@
 // Staged escalation 7 → 3 → 1 → 0 days before; the Vorfrist once when reached.
 
 import { isVorfristReached } from "@/lib/legal/vorfrist";
+import { isUnreviewedAiSuggestion } from "@/lib/deadline-alerts";
 
 export const REMINDER_STAGES_DAYS = [7, 3, 1, 0] as const;
+
+/**
+ * Shown next to an AI-proposed deadline nobody confirmed yet, on every channel.
+ * Every AI result needs human verification (ÖRAK KI-Leitfaden 2025); changed
+ * deadlines must stay recognisable (BGH XII ZB 338/24).
+ */
+export const UNCONFIRMED_AI_NOTICE = "Unbestätigte KI-Frist – bitte prüfen";
 
 export interface ReminderDeadline {
   id?: string;
@@ -21,6 +29,11 @@ export interface ReminderDeadline {
   vorfrist_reminder_sent_at?: string;
   is_notfrist?: boolean;
   erv_zustelldatum?: string;
+  /** Origin marks of an AI-proposed deadline (see isUnreviewedAiSuggestion). */
+  source?: string;
+  ai_confidence?: string;
+  ai_generated?: boolean;
+  matched_rule?: string;
 }
 
 export interface ReminderPage {
@@ -43,6 +56,12 @@ export interface DueReminder {
   vorfristReached: boolean;
   isNotfrist: boolean;
   ervZustelldatum?: string;
+  /**
+   * An AI-proposed deadline nobody confirmed yet. It still reminds on every
+   * channel — a missed real Frist weighs more than a false alarm — but the
+   * reminder says so, so nobody mistakes it for a confirmed entry.
+   */
+  unreviewedAi: boolean;
 }
 
 export interface ReminderGroup {
@@ -99,6 +118,7 @@ function dueReminder(
     vorfristReached,
     isNotfrist: d.is_notfrist === true,
     ervZustelldatum: d.erv_zustelldatum,
+    unreviewedAi: isUnreviewedAiSuggestion(d),
   };
 }
 

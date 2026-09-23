@@ -14,6 +14,7 @@ import {
   collectDueReminders,
   markCaseDeadlines,
   sentFields,
+  UNCONFIRMED_AI_NOTICE,
   type DueReminder,
   type ReminderDeadline,
 } from "@/lib/deadline-reminders";
@@ -173,7 +174,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const rawHtml = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
 <p>folgende Fristen stehen an:</p>
 <ul>
-${due.map((i) => `<li><strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${i.ervZustelldatum ? ` <em>[ERV-Zustellung: ${esc(i.ervZustelldatum)}]</em>` : ""}</li>`).join("\n")}
+${due.map((i) => `<li><strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${i.unreviewedAi ? ` <strong>[${UNCONFIRMED_AI_NOTICE}]</strong>` : ""}${i.ervZustelldatum ? ` <em>[ERV-Zustellung: ${esc(i.ervZustelldatum)}]</em>` : ""}</li>`).join("\n")}
 </ul>
 <p>${group.caseSlug ? `Akte: ${esc(group.caseLabel)} — ${esc(group.caseTitle ?? "")}` : "Diese Fristen sind keiner Akte zugeordnet."}</p>
 <p>Subsumio Kanzlei-OS</p>`;
@@ -238,7 +239,7 @@ ${due.map((i) => `<li><strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${
           "⚖️ Fristen-Erinnerung:",
           ...due.map(
             (i) =>
-              `• ${i.title} — ${i.dueDate} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " [Notfrist]" : ""}${i.ervZustelldatum ? ` [ERV: ${i.ervZustelldatum}]` : ""}`
+              `• ${i.title} — ${i.dueDate} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " [Notfrist]" : ""}${i.unreviewedAi ? ` [${UNCONFIRMED_AI_NOTICE}]` : ""}${i.ervZustelldatum ? ` [ERV: ${i.ervZustelldatum}]` : ""}`
           ),
           `Akte: ${group.caseLabel}`,
           "",
@@ -306,7 +307,8 @@ ${due.map((i) => `<li><strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${
 
         // P1-4: Send push notification to all recipients with registered devices
         const pushTitle = `⚖️ Frist: ${due[0].title} ${stageLabel(due[0].stage, due[0].vorfristReached)}`;
-        const pushBody = `${group.caseSlug ? `Akte ${group.caseLabel}` : "Ohne Akte"} — ${due.length} Frist(en) anstehend`;
+        const unconfirmed = due.filter((i) => i.unreviewedAi).length;
+        const pushBody = `${group.caseSlug ? `Akte ${group.caseLabel}` : "Ohne Akte"} — ${due.length} Frist(en) anstehend${unconfirmed ? `, davon ${unconfirmed} unbestätigte KI-Vorschläge – bitte prüfen` : ""}`;
         let pushSentAny = false;
         for (const recipient of recipients) {
           try {

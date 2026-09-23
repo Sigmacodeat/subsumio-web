@@ -139,19 +139,16 @@ describe("perspektiven-room", () => {
 describe("legal/support", () => {
   const text = "Nach § 1295 ABGB haftet der Schädiger.";
 
-  it("books a think credit only when the model answered", async () => {
-    h.support.mockImplementation(async (_h, _t, _c, meta: { model?: string }) => {
-      meta.model = "haiku";
+  // Automatic follow-up of an already billed answer (useGroundedAnswer) — no
+  // vendor bills citation checks separately, and the check must never be
+  // skipped for lack of balance.
+  it("never books credits and never asks for a balance", async () => {
+    h.support.mockImplementation(async (_h, _t, _c, meta?: { model?: string }) => {
+      if (meta) meta.model = "haiku";
       return [];
     });
     await call(support, "sp", { text });
-    expect(h.opts.get("sp")?.credits).toBe("think");
-    expect(h.charge).toHaveBeenCalledWith(expect.anything(), "think");
-  });
-
-  it("books nothing when there was nothing to check", async () => {
-    h.support.mockResolvedValue([]);
-    await call(support, "sp", { text });
+    expect(h.opts.get("sp")?.credits).toBeUndefined();
     expect(h.charge).not.toHaveBeenCalled();
   });
 });

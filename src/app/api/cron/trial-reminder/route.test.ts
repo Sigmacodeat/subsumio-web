@@ -86,6 +86,7 @@ describe("trial reminder", () => {
     expect(mail.subject).toContain("3 Tagen");
     expect(mail.text).toContain("20.10.2026");
     expect(mail.text).toContain("/dashboard/billing");
-    expect(mail.text).toContain("Community");
+    expect(mail.text).toContain("Fristenerinnerungen laufen weiter");
+    expect(mail.text).not.toContain("Community");
   });
 });

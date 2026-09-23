@@ -46,6 +46,13 @@ const NOT_BILLED: Record<string, string> = {
   "email/accounts": "connecting an account runs the first background mail sync",
   "email/accounts/[id]/sync": "manual trigger of the background mail sync",
   "email/oauth/[provider]/callback": "OAuth connect runs the first background mail sync",
+  // Automatic follow-ups of ONE user question, already billed with that
+  // question. No legal-AI vendor bills citation checks or memory separately
+  // (research 2026-09-23: AI:ssociate, Noxtua, Harvey count the user action).
+  // Both are rate-limited per user; the citation check must also never be
+  // skipped for lack of balance.
+  "legal/support": "automatic citation-support check after an answer (useGroundedAnswer)",
+  "copilot/memory": "automatic memory extraction after a chat turn",
 };
 
 function files(dir: string, keep: (name: string) => boolean): string[] {
