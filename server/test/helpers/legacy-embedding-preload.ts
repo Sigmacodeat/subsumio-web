@@ -18,8 +18,12 @@
  * `configureGateway()` explicitly in their own beforeAll, which
  * overwrites this preload.
  */
-import { configureGateway, getEmbeddingDimensions } from "../../src/core/ai/gateway.ts";
-import { beforeEach } from "bun:test";
+import {
+  configureGateway,
+  getEmbeddingDimensions,
+  resetGateway,
+} from "../../src/core/ai/gateway.ts";
+import { beforeEach, afterAll } from "bun:test";
 
 const LEGACY_CONFIG = {
   embedding_model: "openai:text-embedding-3-large",
@@ -61,5 +65,22 @@ beforeEach(() => {
     getEmbeddingDimensions();
   } catch {
     applyLegacy();
+  }
+});
+
+// Per-file cleanup — a file that configures a non-legacy gateway model
+// (e.g. via configureGateway in its own beforeAll) would otherwise leak
+// that config into the NEXT file in the same shard process: the empty-slot
+// check above only re-applies when the slot is empty, not when it holds a
+// foreign model. Resetting after each file guarantees the next file starts
+// from a clean slate and gets the legacy pin from the beforeEach above.
+// Observed failure: sync-cost-preview's unconfigured-fallback test saw the
+// 0.02/MTok default instead of the 0.13 fallback because a prior shard file
+// had configured the gateway.
+afterAll(() => {
+  try {
+    resetGateway();
+  } catch {
+    // ignore — cleanup must never fail a file that already passed
   }
 });
