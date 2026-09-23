@@ -23,6 +23,7 @@ const LOCAL_ONLY = new Set([
   "scripts/sync-statutes-at.ts",
   "scripts/sync-statutes-ch.ts",
   "scripts/sync-statutes-de.ts",
+  "scripts/ingest-law-corpus.ts",
   "scripts/run-release-gate-eval.ts",
 ]);
 
