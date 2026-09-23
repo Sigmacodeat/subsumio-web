@@ -2783,6 +2783,8 @@ async function executeCreateAutomationRule(
       },
       created_at: new Date().toISOString(),
       created_by: `copilot:${ctx.user.id}`,
+      // Runs with this user's matter access (see cron/automations).
+      owner_user_id: ctx.user.id,
     };
     const ok = await saveAutomation(ctx, rule);
     if (!ok) throw new Error("save failed");

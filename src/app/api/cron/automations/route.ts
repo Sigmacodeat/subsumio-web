@@ -7,15 +7,18 @@ import {
   type EnginePage,
 } from "@/lib/cron-utils";
 import {
-  dispatchAutomations,
   listAutomations,
   mergeFiredKeys,
+  groupRulesByRunner,
   ruleMatches,
+  runAutomationRule,
   updateAutomation,
+  type AutomationCaller,
   type AutomationEventPayload,
   type AutomationRule,
   type TriggerEvent,
 } from "@/lib/automation";
+import { listEnginePages } from "@/lib/engine-pages";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -199,14 +202,38 @@ export function collectObservations(
   return out;
 }
 
+/** The entity page types the cron observes. */
+const OBSERVED_TYPES = ["legal_case", "invoice", "document", "inbound_entry", "booking"];
+
+/**
+ * Pages of the observed types as `caller` sees them: the firm view for
+ * ownerless rules, the owner's view (walls, restricted matters, grants
+ * applied by the engine) for everyone else.
+ */
+async function pagesFor(caller: AutomationCaller): Promise<Record<string, EnginePage[]>> {
+  if (typeof caller === "string") return batchFetchPages(caller, OBSERVED_TYPES, 1000);
+  const entries = await Promise.all(
+    OBSERVED_TYPES.map(
+      async (type) => [type, await listEnginePages(caller.headers, type, 1000)] as const
+    )
+  );
+  return Object.fromEntries(entries);
+}
+
 /**
  * WP-4.17 — „Wenn X dann Y"-Cron-Evaluator.
  *
  * Alle Trigger werden zustandsbasiert ausgewertet: der Cron scannt die
  * Entity-Pages (Cases, Dokumente, Posteingang, Buchungen, Rechnungen),
- * dispatcht ein Event pro beobachteter Entity und merkt sich in
+ * führt die passenden Regeln pro beobachteter Entity aus und merkt sich in
  * `fired_keys` der Regel, für welche Entities sie bereits ausgelöst hat —
  * kein Doppel-Feuern bei wiederholten Läufen.
+ *
+ * Ethical Walls: jede Regel läuft mit der Akten-Sicht ihres Besitzers
+ * (owner_user_id) — sie sieht nur Entities, die er sehen darf, und schreibt
+ * mit seinen Rechten. Regeln ohne Besitzer laufen nur, wenn sie nichts nach
+ * außen senden; E-Mail-Regeln ohne Besitzer werden pausiert
+ * („Besitzer fehlt — bitte neu speichern").
  */
 export const GET = createCronHandler(async () => {
   const recipientsByBrain = await getRecipientsByBrain();
@@ -214,6 +241,8 @@ export const GET = createCronHandler(async () => {
 
   let brainsChecked = 0;
   let dispatched = 0;
+  let skippedRules = 0;
+  let pausedRules = 0;
   const errors: string[] = [];
 
   for (const [brainId] of recipientsByBrain) {
@@ -222,57 +251,62 @@ export const GET = createCronHandler(async () => {
       const rules = (await listAutomations(brainId)).filter((r) => r.enabled);
       if (rules.length === 0) continue;
 
-      const pages = await batchFetchPages(
-        brainId,
-        ["legal_case", "invoice", "document", "inbound_entry", "booking"],
-        1000
-      );
-      const observations = collectObservations(rules, pages, now);
-      if (observations.length === 0) continue;
-
-      // Regeln je Event gruppieren; Dedup-Check pro (Regel, fireKey).
-      const rulesByEvent = new Map<TriggerEvent, AutomationRule[]>();
-      for (const r of rules) {
-        const list = rulesByEvent.get(r.event) ?? [];
-        list.push(r);
-        rulesByEvent.set(r.event, list);
-      }
-
-      const pending: { obs: Observation; matching: AutomationRule[] }[] = [];
-      for (const obs of observations) {
-        const candidates = rulesByEvent.get(obs.event) ?? [];
-        const matching = candidates.filter(
-          (r) =>
-            !(r.fired_keys ?? []).includes(obs.fireKey) && ruleMatches(r, obs.event, obs.payload)
+      const { groups, paused, skipped } = await groupRulesByRunner(brainId, rules);
+      for (const rule of paused) {
+        pausedRules++;
+        if (rule.paused_reason === "owner_missing") continue;
+        log.warn("automation paused: no owner for an outgoing action", {
+          brainId,
+          rule: rule.slug,
+        });
+        await updateAutomation(brainId, { ...rule, paused_reason: "owner_missing" }).catch(
+          () => {}
         );
-        if (matching.length > 0) pending.push({ obs, matching });
       }
-      if (pending.length === 0) continue;
+      for (const slug of skipped) {
+        skippedRules++;
+        log.warn("automation skipped: owner no longer active in this firm", {
+          brainId,
+          rule: slug,
+        });
+      }
 
       const touchedRules = new Map<string, { rule: AutomationRule; keys: string[] }>();
 
-      await mapWithConcurrency(
-        pending,
-        async ({ obs, matching }) => {
-          try {
-            const res = await dispatchAutomations(brainId, obs.event, obs.payload);
-            if (res.errors.length > 0) {
-              errors.push(...res.errors.map((e) => `${brainId}:${e}`));
+      for (const group of groups) {
+        const pages = await pagesFor(group.caller);
+        const observations = collectObservations(group.rules, pages, now);
+        if (observations.length === 0) continue;
+
+        const pending: { obs: Observation; rule: AutomationRule }[] = [];
+        for (const obs of observations) {
+          for (const rule of group.rules) {
+            if (
+              !(rule.fired_keys ?? []).includes(obs.fireKey) &&
+              ruleMatches(rule, obs.event, obs.payload)
+            ) {
+              pending.push({ obs, rule });
             }
-            dispatched += res.executed;
-            for (const rule of matching) {
-              const t = touchedRules.get(rule.slug) ?? { rule, keys: [] };
-              t.keys.push(obs.fireKey);
-              touchedRules.set(rule.slug, t);
-            }
-          } catch (err) {
-            errors.push(
-              `${brainId}:${obs.fireKey}: ${err instanceof Error ? err.message : String(err)}`
-            );
           }
-        },
-        4
-      );
+        }
+
+        await mapWithConcurrency(
+          pending,
+          async ({ obs, rule }) => {
+            const outcome = await runAutomationRule(brainId, rule, obs.payload, group.caller);
+            if (outcome === "skipped") return;
+            if (outcome !== "executed") {
+              errors.push(`${brainId}:${outcome.error}`);
+              return;
+            }
+            dispatched++;
+            const t = touchedRules.get(rule.slug) ?? { rule, keys: [] };
+            t.keys.push(obs.fireKey);
+            touchedRules.set(rule.slug, t);
+          },
+          4
+        );
+      }
 
       // fired_keys persistieren — PUT ersetzt das Frontmatter, daher muss
       // die gemergte Liste vollständig zurückgeschrieben werden.
@@ -287,6 +321,19 @@ export const GET = createCronHandler(async () => {
     }
   }
 
-  log.info("automations evaluated", { brainsChecked, dispatched, errors: errors.length });
-  return NextResponse.json({ ok: errors.length === 0, brainsChecked, dispatched, errors });
+  log.info("automations evaluated", {
+    brainsChecked,
+    dispatched,
+    skippedRules,
+    pausedRules,
+    errors: errors.length,
+  });
+  return NextResponse.json({
+    ok: errors.length === 0,
+    brainsChecked,
+    dispatched,
+    skippedRules,
+    pausedRules,
+    errors,
+  });
 });

@@ -9,8 +9,8 @@
  * damit ein fehlerhafter Trigger den fachlichen Ablauf nicht blockiert.
  */
 
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { ENGINE_URL, engineHeadersForBrain, engineHeadersForUserId } from "@/lib/engine";
+import { broadcastSseEvent, broadcastSseEventToUser } from "@/lib/realtime-bus";
 import { sendMail } from "@/lib/mail";
 import {
   buildWorkflowFrontmatter,
@@ -94,6 +94,26 @@ export interface AutomationRule {
   fired_keys?: string[];
   created_at: string;
   created_by: string;
+  /**
+   * The web user the rule runs for (who created or last saved it). The cron
+   * evaluates the rule with this person's matter access; without an owner a
+   * rule never sends matter content out (see ruleSendsExternally).
+   */
+  owner_user_id?: string;
+  /** Set by the cron when the rule cannot run; cleared by saving it again. */
+  paused_reason?: AutomationPauseReason;
+}
+
+export type AutomationPauseReason = "owner_missing";
+
+/** Shown to the firm for a rule the cron paused. */
+export const AUTOMATION_PAUSE_MESSAGES: Record<AutomationPauseReason, string> = {
+  owner_missing: "Besitzer fehlt — bitte neu speichern",
+};
+
+/** Actions that carry event content (matter titles, names) out of the firm. */
+export function ruleSendsExternally(rule: Pick<AutomationRule, "action">): boolean {
+  return rule.action.type === "send_mail";
 }
 
 /** Cap der Idempotenz-Keys pro Regel (FIFO-Verdrängung, älteste zuerst). */
@@ -204,6 +224,10 @@ export function fmToAutomation(page: EnginePage): AutomationRule | null {
       : undefined,
     created_at: typeof fm.created_at === "string" ? fm.created_at : "",
     created_by: typeof fm.created_by === "string" ? fm.created_by : "",
+    ...(typeof fm.owner_user_id === "string" && fm.owner_user_id
+      ? { owner_user_id: fm.owner_user_id }
+      : {}),
+    ...(fm.paused_reason === "owner_missing" ? { paused_reason: "owner_missing" as const } : {}),
   };
 }
 
@@ -217,6 +241,10 @@ export function automationToFrontmatter(rule: AutomationRule): Record<string, un
     fired_keys: rule.fired_keys ?? [],
     created_at: rule.created_at,
     created_by: rule.created_by,
+    // Merge updates cannot delete keys — write explicit empties instead.
+    owner_user_id: rule.owner_user_id ?? null,
+    paused_reason: rule.paused_reason ?? null,
+    status_message: rule.paused_reason ? AUTOMATION_PAUSE_MESSAGES[rule.paused_reason] : null,
   };
 }
 
@@ -302,27 +330,139 @@ export interface DispatchResult {
   matched: number;
   executed: number;
   errors: string[];
+  /** Rules not run: owner gone, owner may not see the matter, no owner for mail. */
+  skipped?: number;
+}
+
+/**
+ * Run one rule for one event as `caller` (see resolveRuleRunner). Skips —
+ * and logs — when the runner may not see the event's matter. Never throws.
+ */
+export async function runAutomationRule(
+  brainId: string,
+  rule: AutomationRule,
+  payload: AutomationEventPayload,
+  caller: AutomationCaller
+): Promise<"executed" | "skipped" | { error: string }> {
+  try {
+    if (!(await runnerSeesMatter(caller, payload))) {
+      log.warn("automation skipped: owner may not see the matter", { rule: rule.slug });
+      return "skipped";
+    }
+    await executeAction(brainId, rule, payload, caller);
+    return "executed";
+  } catch (err) {
+    const msg = `${rule.slug}: ${err instanceof Error ? err.message : "unknown"}`;
+    log.warn("automation action failed", { rule: rule.slug, error: msg });
+    return { error: msg };
+  }
+}
+
+/**
+ * Who a rule runs as:
+ *   - its owner (identity-bearing headers — the engine applies the owner's
+ *     matter access to every read and write of the rule);
+ *   - the firm, for rules without owner that send nothing out;
+ *   - nobody (skip) when the owner no longer exists or left the firm, or an
+ *     ownerless rule would send content out.
+ */
+export type RuleRunner =
+  | { ok: true; caller: AutomationCaller; ownerId?: string }
+  | { ok: false; reason: "owner_missing" | "owner_inactive" };
+
+export async function resolveRuleRunner(
+  brainId: string,
+  rule: AutomationRule
+): Promise<RuleRunner> {
+  if (!rule.owner_user_id) {
+    return ruleSendsExternally(rule)
+      ? { ok: false, reason: "owner_missing" }
+      : { ok: true, caller: brainId };
+  }
+  const owner = await engineHeadersForUserId(rule.owner_user_id).catch(() => null);
+  // Deleted, deactivated, suspended — or now working in another firm's brain.
+  if (!owner || owner.headers["x-subsumio-source"] !== brainId) {
+    return { ok: false, reason: "owner_inactive" };
+  }
+  return { ok: true, caller: { headers: owner.headers }, ownerId: rule.owner_user_id };
+}
+
+export interface RuleGroup {
+  label: string;
+  caller: AutomationCaller;
+  rules: AutomationRule[];
+}
+
+/**
+ * Splits a firm's active rules by whom they run for. Ownerless rules that
+ * would send content out are paused (visible on the rule) instead of run;
+ * rules whose owner no longer works in this firm are skipped and logged.
+ */
+export async function groupRulesByRunner(
+  brainId: string,
+  rules: AutomationRule[],
+  resolve: typeof resolveRuleRunner = resolveRuleRunner
+): Promise<{ groups: RuleGroup[]; paused: AutomationRule[]; skipped: string[] }> {
+  const groups = new Map<string, RuleGroup>();
+  const paused: AutomationRule[] = [];
+  const skipped: string[] = [];
+  for (const rule of rules) {
+    const runner = await resolve(brainId, rule);
+    if (!runner.ok) {
+      if (runner.reason === "owner_missing") paused.push(rule);
+      else skipped.push(rule.slug);
+      continue;
+    }
+    const key = runner.ownerId ?? "";
+    const group = groups.get(key) ?? {
+      label: runner.ownerId ? `owner:${runner.ownerId}` : "firm",
+      caller: runner.caller,
+      rules: [],
+    };
+    group.rules.push(rule);
+    groups.set(key, group);
+  }
+  return { groups: [...groups.values()], paused, skipped };
+}
+
+/** True when the rule's runner may see the matter the event is about. */
+async function runnerSeesMatter(
+  caller: AutomationCaller,
+  payload: AutomationEventPayload
+): Promise<boolean> {
+  if (typeof caller === "string" || !payload.case_slug) return true;
+  const res = await engineFetch(caller, `/api/pages/${encodeURIComponent(payload.case_slug)}`);
+  return res.ok;
 }
 
 async function executeAction(
   brainId: string,
   rule: AutomationRule,
-  payload: AutomationEventPayload
+  payload: AutomationEventPayload,
+  caller: AutomationCaller = brainId
 ): Promise<void> {
   const a = rule.action;
   const title = interpolateTemplate(a.title ?? rule.name, payload);
   const message = interpolateTemplate(a.message ?? "", payload);
 
   switch (a.type) {
-    case "notify":
-      broadcastSseEvent(brainId, "automation.fired", {
+    case "notify": {
+      const data = {
         rule: rule.slug,
         event: rule.event,
         title,
         message,
         case_slug: payload.case_slug,
-      });
+      };
+      // Matter events go to the rule's owner only: colleagues behind an
+      // ethical wall must not receive them through the firm-wide stream.
+      if (payload.case_slug && rule.owner_user_id) {
+        broadcastSseEventToUser(brainId, rule.owner_user_id, "automation.fired", data);
+      } else {
+        broadcastSseEvent(brainId, "automation.fired", data);
+      }
       return;
+    }
 
     case "send_mail": {
       const recipient = interpolateTemplate(a.recipient ?? "", payload);
@@ -340,7 +480,7 @@ async function executeAction(
     case "create_task": {
       const caseSlug = payload.case_slug;
       if (!caseSlug) throw new Error("create_task: kein case_slug im Event");
-      const pageRes = await engineFetch(brainId, `/api/pages/${encodeURIComponent(caseSlug)}`);
+      const pageRes = await engineFetch(caller, `/api/pages/${encodeURIComponent(caseSlug)}`);
       if (!pageRes.ok) throw new Error(`create_task: Akte ${caseSlug} nicht lesbar`);
       const page = (await pageRes.json()) as EnginePage;
       const tasks = Array.isArray(page.frontmatter?.tasks)
@@ -359,7 +499,7 @@ async function executeAction(
         createdAt: new Date().toISOString(),
         source: `automation:${rule.slug}`,
       });
-      const putRes = await engineFetch(brainId, `/api/pages/${encodeURIComponent(caseSlug)}`, {
+      const putRes = await engineFetch(caller, `/api/pages/${encodeURIComponent(caseSlug)}`, {
         method: "PUT",
         body: JSON.stringify({
           frontmatter: { ...(page.frontmatter ?? {}), tasks },
@@ -379,7 +519,7 @@ async function executeAction(
         started_by: `automation:${rule.slug}`,
         case_slug: payload.case_slug,
       });
-      const res = await engineFetch(brainId, "/api/pages", {
+      const res = await engineFetch(caller, "/api/pages", {
         method: "POST",
         body: JSON.stringify({
           slug: buildWorkflowSlug(tplId),
@@ -405,20 +545,22 @@ export async function dispatchAutomations(
   event: TriggerEvent,
   payload: AutomationEventPayload
 ): Promise<DispatchResult> {
-  const result: DispatchResult = { matched: 0, executed: 0, errors: [] };
+  const result: DispatchResult = { matched: 0, executed: 0, errors: [], skipped: 0 };
   try {
     const rules = await listAutomations(brainId);
     const matching = rules.filter((r) => ruleMatches(r, event, payload));
     result.matched = matching.length;
     for (const rule of matching) {
-      try {
-        await executeAction(brainId, rule, payload);
-        result.executed += 1;
-      } catch (err) {
-        const msg = `${rule.slug}: ${err instanceof Error ? err.message : "unknown"}`;
-        result.errors.push(msg);
-        log.warn("automation action failed", { rule: rule.slug, error: msg });
+      const runner = await resolveRuleRunner(brainId, rule);
+      if (!runner.ok) {
+        result.skipped = (result.skipped ?? 0) + 1;
+        log.warn("automation skipped", { rule: rule.slug, reason: runner.reason });
+        continue;
       }
+      const outcome = await runAutomationRule(brainId, rule, payload, runner.caller);
+      if (outcome === "executed") result.executed += 1;
+      else if (outcome === "skipped") result.skipped = (result.skipped ?? 0) + 1;
+      else result.errors.push(outcome.error);
     }
   } catch (err) {
     result.errors.push(err instanceof Error ? err.message : "dispatch failed");
