@@ -941,6 +941,10 @@ describe("useMutationQueue", () => {
     expect(removeMutation).toHaveBeenCalledWith("m1");
     expect(removeMutation).toHaveBeenCalledWith("m2");
     expect(api.brain.updatePage).not.toHaveBeenCalled();
+    // Bulk-Optimierung: refreshPending laeuft einmal am Ende, nicht
+    // pro Item — 4 IDB-Reads statt 6 (1 Mount + 2 Slug-Lookups +
+    // 1 finaler Refresh).
+    expect(getPendingMutations).toHaveBeenCalledTimes(4);
   });
 
   test("syncPending: Server-Edit innerhalb Skew-Toleranz ist KEIN Konflikt", async () => {

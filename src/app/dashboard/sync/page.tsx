@@ -117,10 +117,10 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
             {mut.retries}× {t("sync.retries" as DashboardKey)}
           </span>
         )}
-        {ageDays > 0 && (
+        {mut.conflictAt && (
           <span className="flex items-center gap-1 text-[11px] text-[color:var(--ds-warning-text)]">
             <Clock size={11} aria-hidden />
-            seit {ageDays}d
+            {ageDays === 0 ? t("sync.conflict_today" as DashboardKey) : `seit ${ageDays}d`}
           </span>
         )}
       </div>

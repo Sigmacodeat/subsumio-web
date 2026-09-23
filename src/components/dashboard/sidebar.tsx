@@ -113,6 +113,7 @@ import {
   formatPendingLabel,
   oldestConflictDays,
   sortConflictsOldestFirst,
+  conflictAgeDays,
   STALE_CONFLICT_DAYS,
 } from "@/lib/use-mutation";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -1274,12 +1275,13 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
             .map((c) => {
               const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
               const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
-              const ageDays = c.conflictAt
-                ? Math.max(
-                    1,
-                    Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
-                  )
-                : null;
+              const ageDays = c.conflictAt ? conflictAgeDays(c.conflictAt) : null;
+              const ageLabel =
+                ageDays === null
+                  ? null
+                  : ageDays === 0
+                    ? t("sync.conflict_today" as DashboardKey)
+                    : `${ageDays}d`;
               return (
                 <li key={c.id} className="flex items-center gap-1">
                   <GitMerge
@@ -1289,16 +1291,16 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
                   />
                   <span
                     className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
-                    title={ageDays !== null ? `${slug} — seit ${ageDays} Tagen ungelöst` : slug}
+                    title={ageLabel !== null ? `${slug} — seit ${ageLabel} ungelöst` : slug}
                   >
                     {slug || c.type}
                   </span>
-                  {ageDays !== null && (
+                  {ageLabel !== null && (
                     <span
                       className="shrink-0 text-[10px] text-[color:var(--ds-warning-text)] tabular-nums opacity-70"
                       aria-hidden
                     >
-                      {ageDays}d
+                      {ageLabel}
                     </span>
                   )}
                   <a
@@ -1349,7 +1351,10 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
                 href="/dashboard/sync"
                 className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
               >
-                +{conflicts.length - 3} weitere
+                {t("mobile.conflicts_more" as DashboardKey).replace(
+                  "{n}",
+                  String(conflicts.length - 3)
+                )}
               </Link>
             </li>
           )}

@@ -211,6 +211,27 @@ describe("Sidebar accordion", () => {
     expect(screen.getByText("3d")).toBeInTheDocument();
   });
 
+  test("Konflikt von heute zeigt 'heute' statt 0d", () => {
+    const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/heute" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+        conflictAt: oneHourAgo,
+      },
+    ];
+    renderSidebar();
+
+    // <24h-Alter ist kein „1d" (falsche Auskunft) und kein „0d"
+    // (raetselhaft) — sondern „heute", konsistent auf allen
+    // drei Oberflaechen.
+    expect(screen.getByText("heute")).toBeInTheDocument();
+    expect(screen.queryByText("0d")).toBeNull();
+  });
+
   test("updatePage-Konflikt zeigt keinen Kopie-Button", () => {
     mockQueue.pendingCount = 1;
     mockQueue.conflicts = [

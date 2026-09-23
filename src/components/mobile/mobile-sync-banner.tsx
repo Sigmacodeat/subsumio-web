@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertTriangle, X, GitMerge } from "lucide-react";
-import { useMutationQueue, formatPendingLabel, sortConflictsOldestFirst } from "@/lib/use-mutation";
+import {
+  useMutationQueue,
+  formatPendingLabel,
+  sortConflictsOldestFirst,
+  conflictAgeDays,
+} from "@/lib/use-mutation";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -162,9 +167,7 @@ export function MobileSyncBanner() {
             .map((c) => {
               const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
               const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
-              const ageDays = c.conflictAt
-                ? Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
-                : 0;
+              const ageDays = c.conflictAt ? conflictAgeDays(c.conflictAt) : null;
               return (
                 <li
                   key={c.id}
@@ -172,7 +175,15 @@ export function MobileSyncBanner() {
                 >
                   <span className="min-w-0 flex-1 truncate font-mono">
                     {slug || c.type}
-                    {ageDays > 0 && <span className="opacity-70"> · seit {ageDays}d</span>}
+                    {ageDays !== null && (
+                      <span className="opacity-70">
+                        {" "}
+                        ·{" "}
+                        {ageDays === 0
+                          ? t("sync.conflict_today" as DashboardKey)
+                          : `seit ${ageDays}d`}
+                      </span>
+                    )}
                   </span>
                   <a
                     href={href}
@@ -215,7 +226,10 @@ export function MobileSyncBanner() {
                 href="/dashboard/sync"
                 className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
               >
-                +{conflicts.length - 3} weitere — alle anzeigen
+                {t("mobile.conflicts_more" as DashboardKey).replace(
+                  "{n}",
+                  String(conflicts.length - 3)
+                )}
               </a>
             </li>
           )}

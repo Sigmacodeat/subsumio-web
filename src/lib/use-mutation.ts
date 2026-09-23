@@ -339,7 +339,8 @@ async function syncPending() {
 async function resolveConflict(
   id: string,
   mode: "keep-mine" | "discard" | "rename",
-  customSlug?: string
+  customSlug?: string,
+  refreshAfter = true
 ) {
   if (mode === "discard") {
     const pending = await getPendingMutations();
@@ -349,13 +350,13 @@ async function resolveConflict(
       ...s,
       lastNotice: `Änderung${typeof slug === "string" && slug ? ` an ${slug}` : ""} verworfen`,
     }));
-    await refreshPending();
+    if (refreshAfter) await refreshPending();
     return;
   }
   const pending = await getPendingMutations();
   const mut = pending.find((m) => m.id === id && m.conflicted);
   if (!mut) {
-    await refreshPending();
+    if (refreshAfter) await refreshPending();
     return;
   }
   const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
@@ -406,7 +407,7 @@ async function resolveConflict(
       lastErrorAt: s.lastError ? s.lastErrorAt : Date.now(),
     }));
   }
-  await refreshPending();
+  if (refreshAfter) await refreshPending();
 }
 
 /** Alle offenen Konflikte mit demselben Modus auflösen — bei >3
@@ -416,9 +417,13 @@ async function resolveConflict(
  *  der Aufrufer sollte den Button nur bei reiner createPage-
  *  Liste anbieten. */
 async function resolveAllConflicts(mode: "keep-mine" | "discard" | "rename") {
+  // refreshPending pro Item waere ein IDB-Re-Read je Konflikt — bei
+  // grossen Bulk-Listen spuerbar. Einmal am Ende reicht: die Queue
+  // in IDB ist die Quelle, der Store folgt danach.
   for (const c of state.conflicts) {
-    await resolveConflict(c.id, mode);
+    await resolveConflict(c.id, mode, undefined, false);
   }
+  await refreshPending();
 }
 
 async function mutate<T>(

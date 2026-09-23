@@ -516,6 +516,11 @@ export const D = {
     de: "Ältester Konflikt: {n}d",
     en: "Oldest conflict: {n}d",
   },
+  "sync.conflict_today": { de: "heute", en: "today" },
+  "mobile.conflicts_more": {
+    de: "+{n} weitere — alle anzeigen & auflösen",
+    en: "+{n} more — view & resolve all",
+  },
   "sync.keep_all": { de: "Alle meine senden", en: "Keep all mine" },
   "sync.discard_all": { de: "Alle verwerfen", en: "Discard all" },
   "sync.copy_all": {
