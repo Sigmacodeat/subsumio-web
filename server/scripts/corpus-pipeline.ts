@@ -535,10 +535,22 @@ function psqlJSON<T = Record<string, unknown>>(query: string): T[] {
   const raw = psqlQuery(query);
   if (!raw) return [];
   try {
-    return JSON.parse(raw);
+    // json_agg liefert NULL bei 0 Zeilen — kein Array.
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
   } catch {
     return [];
   }
+}
+
+/** True wenn source_key zuletzt vor < intervalS Sekunden lief. */
+function ranWithin(key: string, intervalS: number): boolean {
+  const row = psqlJSON<{ last_cycle_at: string | null }>(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
+  );
+  if (row.length === 0 || !row[0].last_cycle_at) return false;
+  const elapsed = (Date.now() - new Date(row[0].last_cycle_at).getTime()) / 1000;
+  return elapsed < intervalS;
 }
 
 /** Load all pipeline_state rows as a Map keyed by source_key. */
@@ -982,14 +994,7 @@ function runFreshnessCheck(): void {
   ensureSourceRow(key);
 
   // Check if we already ran in the last 24h
-  const row = psqlJSON<{ last_cycle_at: string | null }>(
-    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
-  );
-  if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
-    const lastRun = new Date(row[0].last_cycle_at);
-    const hoursSince = (Date.now() - lastRun.getTime()) / 3_600_000;
-    if (hoursSince < 24) return; // Skip — already ran today
-  }
+  if (ranWithin(key, 24 * 3600)) return; // Skip — already ran today
 
   console.log("  [freshness] Running statute freshness check...");
   const output = sh(
@@ -1042,14 +1047,7 @@ function runHashIntegrityCheck(): void {
   ensureSourceRow(key);
 
   // Check if we already ran in the last 6h
-  const row = psqlJSON<{ last_cycle_at: string | null }>(
-    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
-  );
-  if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
-    const lastRun = new Date(row[0].last_cycle_at);
-    const hoursSince = (Date.now() - lastRun.getTime()) / 3_600_000;
-    if (hoursSince < 6) return;
-  }
+  if (ranWithin(key, 6 * 3600)) return;
 
   console.log("  [hash-integrity] Checking content_hash consistency...");
 
@@ -1136,14 +1134,7 @@ function runFassungsSync(): void {
   ensureSourceRow(key);
 
   // Check if we already ran in the last 12h
-  const row = psqlJSON<{ last_cycle_at: string | null }>(
-    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
-  );
-  if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
-    const lastRun = new Date(row[0].last_cycle_at);
-    const hoursSince = (Date.now() - lastRun.getTime()) / 3_600_000;
-    if (hoursSince < 12) return;
-  }
+  if (ranWithin(key, 12 * 3600)) return;
 
   console.log("  [fassungs-sync] Checking statute version dates...");
 
@@ -1243,14 +1234,7 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
 
   // Check if we already ran in the last 24h (unless manually triggered)
   const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
-  const row = psqlJSON<{ last_cycle_at: string | null }>(
-    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
-  );
-  if (!manualTrigger && Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
-    const lastRun = new Date(row[0].last_cycle_at);
-    const elapsed = (Date.now() - lastRun.getTime()) / 1000;
-    if (elapsed < intervalS) return;
-  }
+  if (!manualTrigger && ranWithin(key, intervalS)) return;
 
   // Check if delta-watcher is already running
   const procState = checkSourceProcess(key, state);

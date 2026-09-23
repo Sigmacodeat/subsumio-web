@@ -314,6 +314,15 @@ export default function CommunicationsPage() {
     staleTime: 30_000,
   });
 
+  // Stumme Opt-out-Eingänge: auditiert, aber bewusst nicht zugestellt.
+  const mutedQuery = useQuery({
+    queryKey: ["whatsapp-muted"],
+    queryFn: api.whatsapp.muted,
+    staleTime: 60_000,
+  });
+  const mutedCount = mutedQuery.data?.count ?? 0;
+  const mutedLastAt = mutedQuery.data?.lastAt ?? null;
+
   // Mail from connected firm mailboxes lives in the mailbox table, not in brain pages.
   const mailQuery = useQuery({
     queryKey: ["communications", "mail"],
@@ -652,6 +661,29 @@ export default function CommunicationsPage() {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* Opt-out-Hinweis: eingegangene Nachrichten abgemeldeter Nummern
+              werden auditiert, aber nicht zugestellt — diskret sichtbar. */}
+          {mutedCount > 0 && (channel === "all" || channel === "whatsapp") && (
+            <div
+              role="status"
+              className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
+            >
+              <MessageSquareText size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span>
+                {lang === "en"
+                  ? `${mutedCount} inbound WhatsApp ${mutedCount === 1 ? "message" : "messages"} from opted-out numbers were not delivered (logged only).`
+                  : `${mutedCount} eingegangene WhatsApp-${mutedCount === 1 ? "Nachricht" : "Nachrichten"} von abgemeldeten Nummern ${mutedCount === 1 ? "wurde" : "wurden"} nicht zugestellt (nur protokolliert).`}
+                {mutedLastAt && (
+                  <span className="ml-1 text-[color:var(--ds-text-muted)]">
+                    {lang === "en"
+                      ? `Last: ${timeLabel(lang, mutedLastAt)}`
+                      : `Zuletzt: ${timeLabel(lang, mutedLastAt)}`}
+                  </span>
+                )}
+              </span>
             </div>
           )}
 

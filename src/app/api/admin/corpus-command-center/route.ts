@@ -2,6 +2,7 @@ import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
 import { readFileSync, existsSync, readdirSync } from "fs";
+import { readdir } from "fs/promises";
 import { join } from "path";
 import { lawCorpusDir, lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 import { deriveLiveRows, PIPELINE_KEY_TO_DIR } from "@/lib/corpus-pipeline-live";
@@ -33,12 +34,20 @@ const CORPUS_DIR_OVERRIDES: Record<string, string> = {
 const DISK_COUNT_TTL_MS = 30_000;
 const diskCountCache = new Map<string, { n: number; t: number }>();
 
-function countMdFiles(dir: string): number {
+// Async-Walk statt readdirSync(recursive): ein synchroner Scan über ~700k
+// Dateien blockiert den Event Loop für Sekunden — hier yieldet jede
+// Verzeichnis-Ebene, damit das 5s-Polling andere Requests nicht ausbremst.
+async function countMdFiles(dir: string): Promise<number> {
   if (!existsSync(dir)) return 0;
   try {
     let n = 0;
-    for (const f of readdirSync(dir, { recursive: true })) {
-      if (typeof f === "string" && f.endsWith(".md")) n++;
+    const stack = [dir];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      for (const e of await readdir(current, { withFileTypes: true })) {
+        if (e.isDirectory()) stack.push(join(current, e.name));
+        else if (e.name.endsWith(".md")) n++;
+      }
     }
     return n;
   } catch {
@@ -46,15 +55,15 @@ function countMdFiles(dir: string): number {
   }
 }
 
-function corpusDiskCount(corpus: string): number {
+async function corpusDiskCount(corpus: string): Promise<number> {
   const hit = diskCountCache.get(corpus);
   if (hit && Date.now() - hit.t < DISK_COUNT_TTL_MS) return hit.n;
   const rel = CORPUS_DIR_OVERRIDES[corpus] ?? corpus;
-  const n = Math.max(
+  const [normalized, raw] = await Promise.all([
     countMdFiles(join(NORMALIZED_ROOT, rel)),
     countMdFiles(join(RAW_ROOT, rel)),
-    getCorpusIndex(corpus).length
-  );
+  ]);
+  const n = Math.max(normalized, raw, getCorpusIndex(corpus).length);
   diskCountCache.set(corpus, { n, t: Date.now() });
   return n;
 }
@@ -323,9 +332,7 @@ export const GET = createHandler(
 
     const corpora = [...corpusSet].sort();
     const diskCounts: Record<string, number> = {};
-    for (const c of corpora) {
-      diskCounts[c] = corpusDiskCount(c);
-    }
+    await Promise.all(corpora.map(async (c) => (diskCounts[c] = await corpusDiskCount(c))));
 
     if (corpora.length === 0) {
       // Fallback (Web-Container ohne law-corpus Volume):
@@ -453,7 +460,7 @@ export const GET = createHandler(
       if (!corpusSet.has(corpus)) {
         corpusSet.add(corpus);
         corpora.push(corpus);
-        diskCounts[corpus] = corpusDiskCount(corpus);
+        diskCounts[corpus] = await corpusDiskCount(corpus);
       }
     }
     for (const p of pipelineState) {
@@ -464,7 +471,7 @@ export const GET = createHandler(
       if (!corpusSet.has(corpus)) {
         corpusSet.add(corpus);
         corpora.push(corpus);
-        diskCounts[corpus] = corpusDiskCount(corpus);
+        diskCounts[corpus] = await corpusDiskCount(corpus);
       }
     }
     corpora.sort();

@@ -37,11 +37,19 @@ export interface DMSPushResult {
   error?: string;
 }
 
+export interface DMSContent {
+  data: ArrayBuffer;
+  mimeType: string;
+}
+
 export interface DMSConnector {
   name: string;
   isConfigured(): boolean;
   search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult>;
   getDocument(docId: string): Promise<DMSDocument | null>;
+  /** On-Demand-Download — für Dokumente, die zu groß für
+   *  `document_base64`-Inline-Storage sind (`document_oversized`). */
+  getDocumentContent(docId: string): Promise<DMSContent | null>;
   getFolderContents(folderId: string): Promise<DMSSearchResult>;
   importToBrain(
     doc: DMSDocument,
@@ -101,6 +109,26 @@ export async function dmsFetchJson<T>(url: string, init?: RequestInit): Promise<
   } catch {
     throw new Error(`DMS request to ${url} returned a non-JSON response`);
   }
+}
+
+/** Binärer Content-Download aus dem DMS. Großzügigerer Timeout als
+ *  dmsFetchJson — das Haupt-Einsatzgebiet sind übergroße Dokumente. */
+export async function fetchDmsContent(url: string): Promise<DMSContent | null> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: dmsAuthHeaders(),
+      redirect: "follow",
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch {
+    return null;
+  }
+  if (!res.ok) return null;
+  return {
+    data: await res.arrayBuffer(),
+    mimeType: res.headers.get("content-type") ?? "application/octet-stream",
+  };
 }
 
 // --- Shared importToBrain implementation ------------------------------------

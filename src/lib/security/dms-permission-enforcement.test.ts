@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import type { DMSConnector, DMSDocument, DMSSearchResult } from "@/lib/dms/index";
+import type { DMSConnector, DMSContent, DMSDocument, DMSSearchResult } from "@/lib/dms/index";
 
 // ── Mock DMS Connector ───────────────────────────────────────────────
 
@@ -74,6 +74,10 @@ class MockDMSConnector implements DMSConnector {
       folders: [],
       totalCount: docs.length,
     };
+  }
+
+  async getDocumentContent(_docId: string): Promise<DMSContent | null> {
+    return null;
   }
 
   async importToBrain(

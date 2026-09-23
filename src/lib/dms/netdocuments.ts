@@ -11,6 +11,7 @@ import {
   DMS_BASE,
   dmsAuthHeaders,
   dmsFetchJson,
+  fetchDmsContent,
   isDmsConfigured,
   importToBrainCommon,
 } from "./index";
@@ -86,6 +87,10 @@ export const netDocumentsConnector: DMSConnector = {
       version: d.version,
       checkoutStatus: d.checkedOut ? "checked_out" : "available",
     };
+  },
+
+  async getDocumentContent(docId: string) {
+    return fetchDmsContent(`${DMS_BASE}/v1/Documents/${docId}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

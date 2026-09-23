@@ -19,6 +19,7 @@ import {
   DMS_BASE,
   dmsAuthHeaders,
   dmsFetchJson,
+  fetchDmsContent,
   isDmsConfigured,
   importToBrainCommon,
 } from "./index";
@@ -145,6 +146,12 @@ export const sharePointConnector: DMSConnector = {
     } catch {
       return null;
     }
+  },
+
+  async getDocumentContent(docId: string) {
+    const siteId = await resolveSiteId();
+    const driveId = await resolveDriveId(siteId);
+    return fetchDmsContent(`${graphBase()}/drives/${driveId}/items/${docId}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

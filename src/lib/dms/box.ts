@@ -16,6 +16,7 @@ import {
   type DMSPushResult,
   dmsAuthHeaders,
   dmsFetchJson,
+  fetchDmsContent,
   isDmsConfigured,
 } from "./index";
 
@@ -122,6 +123,10 @@ export const boxConnector: DMSConnector = {
     } catch {
       return null;
     }
+  },
+
+  async getDocumentContent(docId: string) {
+    return fetchDmsContent(`${BOX_API}/files/${docId}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

@@ -304,9 +304,21 @@ export function DmsBrowserDialog({ open, onOpenChange, onImported }: DmsBrowserD
                         </div>
                       </div>
                       {imported.has(d.id) ? (
-                        <Badge variant="success" className="gap-1">
-                          <CheckCircle2 size={11} aria-hidden="true" /> Importiert
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="success" className="gap-1">
+                            <CheckCircle2 size={11} aria-hidden="true" /> Importiert
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-xs"
+                            aria-label={`${d.name} aus dem DMS öffnen`}
+                            onClick={() => window.open(api.dms.contentUrl(d.id), "_blank")}
+                          >
+                            <Download size={12} aria-hidden="true" />
+                            Öffnen
+                          </Button>
+                        </div>
                       ) : (
                         <Button
                           variant="ghost"

@@ -11,6 +11,7 @@ import {
   DMS_BASE,
   dmsAuthHeaders,
   dmsFetchJson,
+  fetchDmsContent,
   isDmsConfigured,
   importToBrainCommon,
 } from "./index";
@@ -95,6 +96,10 @@ export const iManageConnector: DMSConnector = {
       version: d.version,
       checkoutStatus: d.checkout_status,
     };
+  },
+
+  async getDocumentContent(docId: string) {
+    return fetchDmsContent(`${DMS_BASE}/api/v2/documents/${docId}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

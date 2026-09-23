@@ -1727,6 +1727,12 @@ export const api = {
       return request("/api/whatsapp/identities");
     },
 
+    /** Eingegangene Nachrichten von vollständig abgemeldeten Nummern
+     *  (Opt-out) — archiviert/auditiert, aber nicht zugestellt. */
+    muted(): Promise<{ count: number; lastAt: string | null }> {
+      return request("/api/whatsapp/muted");
+    },
+
     createIdentity(input: {
       phone: string;
       name?: string;
@@ -1914,6 +1920,12 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ documentId }),
       });
+    },
+
+    /** Download-URL für Binär-Content — on-demand aus dem DMS, auch für
+     *  `document_oversized`-Dokumente ohne Inline-Content. */
+    contentUrl(documentId: string): string {
+      return `/api/dms/content?id=${encodeURIComponent(documentId)}`;
     },
   },
 
