@@ -1266,6 +1266,12 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
           {conflicts.slice(0, 3).map((c) => {
             const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
             const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+            const ageDays = c.conflictAt
+              ? Math.max(
+                  1,
+                  Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
+                )
+              : null;
             return (
               <li key={c.id} className="flex items-center gap-1">
                 <GitMerge
@@ -1275,14 +1281,18 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
                 />
                 <span
                   className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
-                  title={
-                    c.conflictAt
-                      ? `${slug} — seit ${Math.max(1, Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000))} Tagen ungelöst`
-                      : slug
-                  }
+                  title={ageDays !== null ? `${slug} — seit ${ageDays} Tagen ungelöst` : slug}
                 >
                   {slug || c.type}
                 </span>
+                {ageDays !== null && (
+                  <span
+                    className="shrink-0 text-[10px] text-[color:var(--ds-warning-text)] tabular-nums opacity-70"
+                    aria-hidden
+                  >
+                    {ageDays}d
+                  </span>
+                )}
                 <a
                   href={href}
                   aria-label={t("mobile.conflict_view" as DashboardKey)}

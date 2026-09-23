@@ -68,6 +68,7 @@ const mockQueue = vi.hoisted(() => ({
     payload: Record<string, unknown>;
     createdAt: string;
     conflicted?: boolean;
+    conflictAt?: string;
   }>,
   syncPending: vi.fn(),
   resolveConflict: vi.fn(async () => {}),
@@ -189,6 +190,25 @@ describe("Sidebar accordion", () => {
     fireEvent.click(screen.getByRole("button", { name: "Meine Version senden" }));
     await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
     expect(mockQueue.resolveConflict).not.toHaveBeenCalled();
+  });
+
+  test("zeigt Konflikt-Alter als sichtbaren Nd-Suffix", () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/alt" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+        conflictAt: threeDaysAgo,
+      },
+    ];
+    renderSidebar();
+
+    // Alter war vorher nur im title-Tooltip — jetzt sichtbar wie
+    // auf /dashboard/sync, damit Dringlichkeit ohne Hover lesbar ist.
+    expect(screen.getByText("3d")).toBeInTheDocument();
   });
 
   test("updatePage-Konflikt zeigt keinen Kopie-Button", () => {

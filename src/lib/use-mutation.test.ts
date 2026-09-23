@@ -148,6 +148,45 @@ describe("useMutationQueue", () => {
     expect(getPendingMutations).not.toHaveBeenCalled();
   });
 
+  test("syncPending-Re-Entry: paralleler Call waehrend laufendem Sync ist no-op", async () => {
+    // Zwei syncPending-Calls duerfen nicht parallel laufen — der
+    // state.syncing-Guard muss den zweiten frueh returnen lassen,
+    // sonst kaeme es zu doppelten Replays (z.B. online-Event +
+    // manueller Button-Klick gleichzeitig).
+    let resolveSlow!: (v: Awaited<ReturnType<typeof getPendingMutations>>) => void;
+    const slow = new Promise<Awaited<ReturnType<typeof getPendingMutations>>>((r) => {
+      resolveSlow = r;
+    });
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount-refreshPending
+      .mockReturnValueOnce(slow) // erster syncPending haengt
+      .mockResolvedValue([]); // refreshPending am Ende + evtl. zweiter Sync
+    const { result } = renderHook(() => useMutationQueue());
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    const p1 = result.current.syncPending();
+    const p2 = result.current.syncPending();
+    resolveSlow([
+      {
+        id: "m1",
+        type: "createPage",
+        payload: { slug: "test", title: "Test" },
+        createdAt: "2024-01-01",
+      },
+    ]);
+    await act(async () => {
+      await Promise.all([p1, p2]);
+    });
+
+    // Waere der zweite Call nicht geblockt worden, haette er die
+    // Mutation ein zweites Mal replayed — createPage darf genau
+    // einmal gelaufen sein.
+    expect(api.brain.createPage).toHaveBeenCalledTimes(1);
+  });
+
   test("syncPending processes createPage mutations", async () => {
     // First call from mount effect, second from syncPending
     vi.mocked(getPendingMutations)

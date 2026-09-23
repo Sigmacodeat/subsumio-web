@@ -27,7 +27,9 @@ Queud Mutations werden **in `createdAt`-Reihenfolge** replayed:
   Mobile-Banner und Desktop-Sidebar (`SyncStatus`) sichtbar.
   Writes aus dem eigenen Replay (`updated_at > syncStart`) zählen nicht
   als Konflikt — sonst würde ein zweites eigenes Queued-Update auf
-  derselben Seite fälschlich verwarfen.
+  derselben Seite fälschlich verwarfen. Die 60-s-Grenze ist beidseitig
+  test-gepinnt (`use-mutation.test.ts`: 30-s-Diff → Replay, 90-s-Diff →
+  Konflikt).
 - `createPage` → existiert der Slug bereits auf dem Server (`getPage`
   200), wird die Mutation ebenfalls `conflicted` — ein Create würde den
   bestehenden Inhalt überschreiben.
@@ -72,7 +74,9 @@ Mobile-Tab-Bar teilen denselben State. Ein `resolveConflict` auf der
 Sync-Page aktualisiert sofort Banner + Nav-Badge. Nebeneffekte: genau
 ein `online`-Listener + ein `syncPending`-Re-Entry-Guard
 (`state.syncing`) — vorher registrierte jede Komponenten-Instanz
-einen eigenen Listener (parallele Sync-Läufe möglich). Tests nutzen
+einen eigenen Listener (parallele Sync-Läufe möglich). Der Guard ist
+gegen doppelte Calls getestet (online-Event + Button-Klick
+gleichzeitig → zweiter Call ist no-op). Tests nutzen
 `__resetMutationQueueForTests()` in `beforeEach`.
 
 ## Queue-Abdeckung
@@ -92,6 +96,40 @@ mit Feld-Diff pro Konflikt: lokaler Payload vs. Server-Version
 (`diffConflictFields` in `src/lib/conflict-diff.ts`) — title, content
 (Zeichenzahl) und pro-Key Frontmatter-Vergleich. Auflösung wie im
 Banner: Meine senden / Kopie (createPage) / Verwerfen.
+
+Konflikte sind **älteste zuerst sortiert** (`conflictAt`, fehlendes
+Datum zählt als ältestes). Jede Karte zeigt das Alter sichtbar
+(„seit Nd"), die Sidebar-Liste zeigt es als `Nd`-Suffix neben dem
+Slug, der Nav-Badge-Tooltip meldet das älteste Alter
+(`sync.oldest_conflict`, `{n}`-Platzhalter).
+
+### Bulk-Auflösung
+
+Bei mehr als einem Konflikt bietet die Seite `resolveAllConflicts`:
+
+- **„Alle meine senden" / „Alle verwerfen"** — destruktiv, laufen über
+  den danger-`useConfirm`-Dialog mit `{n}`-Count-Interpolation.
+- **„Alle als Kopie speichern"** — nur sichtbar wenn ALLE Konflikte
+  `createPage` sind (rename greift nicht für updatePage); nicht-
+  destruktiv, daher ohne Confirm. Pro Item `nextCopySlug` +
+  `getPage`-Preflight gegen Slug-Kollision — keine Silent-Overwrites.
+
+Bulk iteriert best-effort über `resolveConflict` pro Eintrag — ein
+Fehlschlag bricht die restlichen Auflösungen nicht ab, `lastError`
+bleibt sichtbar.
+
+## Pending-Labels & Badges
+
+`formatPendingLabel` (in `use-mutation.ts`) ist der geteilte Helper
+für alle drei Oberflächen (Banner, Sidebar, Sync-Page) und trennt
+Mutations von Uploads: „N Änderung(en) + M Upload(s) ausstehend" —
+Datei-Uploads werden nicht mehr still in der Änderungs-Summe
+mitgezählt. `pendingUploads` ist ein eigenes State-Feld neben
+`pendingCount`.
+
+Nav-Badges: Desktop-Sidebar und Mobile-More-Sheet zeigen
+`conflictCount` als warning-Badge auf `/dashboard/sync` mit
+Tooltip „Ältester Konflikt: Nd" (`SidebarBadge.label`).
 
 ## SWR in useOfflineSync
 
