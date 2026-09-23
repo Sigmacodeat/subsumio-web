@@ -18,13 +18,184 @@ const T = {
   imprintTitle: "Impressum",
   imprintSubtitle: "Angaben gemäß § 5 ECG und Offenlegung gemäß § 25 MedienG",
   privacyTitle: "Datenschutzerklärung",
-  privacySubtitle: "Stand: Juni 2026",
+  privacySubtitle: "Stand: September 2026",
   termsTitle: "Allgemeine Geschäftsbedingungen",
   termsSubtitle: "Stand: Juni 2026 · gilt für den gehosteten Subsumio-Dienst",
   dpaTitle: "Auftragsverarbeitungsvertrag (AVV)",
   dpaSubtitle:
-    "Stand: Juni 2026 · Art. 28 DSGVO — Vorlage für Kunden der gehosteten Subsumio-Cloud",
+    "Stand: September 2026 · Art. 28 DSGVO — Vorlage für Kunden der gehosteten Subsumio-Cloud",
 } as const;
+
+// Übermittlungsgrundlage für Empfänger außerhalb des EWR — bewusst generisch:
+// welche der beiden Grundlagen im Einzelfall greift, hängt vom Vertrag bzw.
+// der Zertifizierung des jeweiligen Anbieters ab.
+const THIRD_COUNTRY = "Standardvertragsklauseln bzw. EU-US Data Privacy Framework";
+
+type Processor = {
+  name: string;
+  purpose: string;
+  data: string;
+  location: string;
+  /** Nur im Einsatz, wenn die Bedingung erfüllt ist (z. B. Funktion aktiviert). */
+  condition?: string;
+};
+
+// Einzige Quelle für die Liste der Auftragsverarbeiter — Datenschutzerklärung
+// (Abschnitt 8) und AVV (§ 4) rendern dieselbe Tabelle. Nur aufnehmen, was der
+// Code tatsächlich anspricht; bei neuen Anbindungen hier ergänzen.
+export const PROCESSORS: readonly Processor[] = [
+  {
+    name: "netcup GmbH",
+    purpose: "Hosting von Anwendung, Datenbank und hochgeladenen Dateien",
+    data: "Alle im Dienst gespeicherten Daten (Konto-, Akten- und Dokumentdaten)",
+    location: "Rechenzentrum Wien, Österreich (EU)",
+  },
+  {
+    name: "Anthropic PBC",
+    purpose: "KI-Antworten: Assistent, Rechtsrecherche, Entwürfe sowie der Chat auf dieser Website",
+    data: "Ihre Frage und die dafür ausgewählten Textausschnitte aus Akten, Dokumenten und Rechtsquellen",
+    location: `USA — ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "OpenRouter",
+    purpose:
+      "Vermittlung an weitere KI-Modellanbieter: Aufbereitung von Texten für die Suche (über OpenAI); Ausweichweg für KI-Antworten und für das Sortieren von Suchergebnissen, wenn der Hauptanbieter nicht erreichbar ist (u. a. über Google und Anbieter des Modells Qwen)",
+    data: "Suchanfragen und Textausschnitte aus Dokumenten und Rechtsquellen",
+    location: `USA; die weitergeleiteten Modellanbieter können ihren Sitz ebenfalls außerhalb der EU haben — ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "Stripe",
+    purpose: "Abrechnung kostenpflichtiger Pläne",
+    data: "Name, E-Mail-Adresse, Rechnungsanschrift; Zahlungsdaten erhebt Stripe direkt",
+    location: `USA — ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "Resend",
+    purpose:
+      "Versand von E-Mails aus dem Dienst (z. B. Passwort zurücksetzen, Fristenübersicht, Benachrichtigungen)",
+    data: "E-Mail-Adressen, Namen, Inhalt der Nachricht",
+    location: `USA — ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "Sentry",
+    purpose: "Erkennen und Beheben technischer Fehler",
+    data: "Fehlermeldungen, aufgerufene Adresse, Browser- und Geräteangaben, IP-Adresse",
+    location: `USA oder EU, je nach gewählter Region — bei USA ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "Speicheranbieter für externe Sicherungen",
+    purpose: "Aufbewahrung verschlüsselter Sicherungskopien außerhalb des Hauptrechenzentrums",
+    data: "Sicherungen von Datenbank und Dateien — vor der Übertragung verschlüsselt, der Schlüssel bleibt bei uns",
+    location: "Anbieter und Standort nennen wir auf Anfrage",
+  },
+  {
+    name: "Meta Platforms Ireland Ltd. (WhatsApp Business)",
+    purpose: "Nachrichten mit Mandanten und dem Assistenten über WhatsApp",
+    data: "Telefonnummern, Nachrichteninhalte, übermittelte Dateien",
+    location: `Irland (EU); Übermittlung an Meta Platforms, Inc., USA möglich — ${THIRD_COUNTRY}`,
+    condition: "nur wenn die Kanzlei die Funktion aktiviert",
+  },
+  {
+    name: "Twilio",
+    purpose: "Versand von SMS",
+    data: "Telefonnummer, Nachrichtentext",
+    location: `USA — ${THIRD_COUNTRY}`,
+    condition: "nur wenn die Kanzlei die Funktion aktiviert",
+  },
+  {
+    name: "DocuSign",
+    purpose: "Elektronische Signatur von Dokumenten",
+    data: "Zu signierendes Dokument, Namen und E-Mail-Adressen der Unterzeichnenden",
+    location: `USA oder EU, je nach Konto — bei USA ${THIRD_COUNTRY}`,
+    condition: "nur wenn die Kanzlei die Funktion aktiviert",
+  },
+  {
+    name: "WorkOS",
+    purpose:
+      "Anmeldung über den Identitätsanbieter der Kanzlei und automatische Benutzerverwaltung",
+    data: "Name, E-Mail-Adresse, Gruppenzugehörigkeit, Anmeldeereignisse",
+    location: `USA — ${THIRD_COUNTRY}`,
+    condition: "nur wenn die Kanzlei die Funktion aktiviert (Enterprise)",
+  },
+  {
+    name: "OpenSanctions",
+    purpose: "Abgleich mit Listen politisch exponierter Personen (PEP)",
+    data: "Namen der zu prüfenden Personen",
+    location: "EU",
+    condition: "nur wenn die Kanzlei die Funktion aktiviert",
+  },
+  {
+    name: "Apple Inc., Google LLC und die Push-Dienste der Browser-Hersteller",
+    purpose: "Zustellung von Push-Benachrichtigungen auf Geräte",
+    data: "Geräte- bzw. Browserkennung für Benachrichtigungen, Titel und Text der Benachrichtigung",
+    location: `USA — ${THIRD_COUNTRY}`,
+    condition: "nur wenn Nutzer Benachrichtigungen aktivieren",
+  },
+  {
+    name: "Signaturdienst PDF-AS",
+    purpose: "Qualifizierte elektronische Signatur von PDF-Dokumenten",
+    data: "Zu signierendes Dokument, Signaturdaten",
+    location: "Betreiber und Standort nennen wir vor der Aktivierung",
+    condition: "nur wenn die Kanzlei die Funktion aktiviert",
+  },
+  {
+    name: "Upstash",
+    purpose: "Begrenzung der Anfragen je Zeitraum (Schutz vor Missbrauch)",
+    data: "IP-Adresse bzw. Nutzerkennung als Zählerschlüssel",
+    location: `USA oder EU, je nach gewählter Region — bei USA ${THIRD_COUNTRY}`,
+    condition: "nur wenn von uns eingerichtet",
+  },
+  {
+    name: "PostHog",
+    purpose: "Auswertung der Nutzung dieser Website",
+    data: "Aufgerufene Seiten, Browser- und Geräteangaben, IP-Adresse, Cookie-Kennung",
+    location: `USA oder EU, je nach gewählter Region — bei USA ${THIRD_COUNTRY}`,
+    condition: "nur nach Ihrer Einwilligung",
+  },
+];
+
+function ProcessorTable() {
+  const cell = "border-b [border-color:var(--mk-border)] px-2 py-2 align-top";
+  return (
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full min-w-[640px] border-collapse text-left text-xs">
+        <thead>
+          <tr className="[color:var(--mk-text)]">
+            <th scope="col" className={`${cell} font-semibold`}>
+              Anbieter
+            </th>
+            <th scope="col" className={`${cell} font-semibold`}>
+              Zweck
+            </th>
+            <th scope="col" className={`${cell} font-semibold`}>
+              Datenkategorien
+            </th>
+            <th scope="col" className={`${cell} font-semibold`}>
+              Ort und Übermittlungsgrundlage
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {PROCESSORS.map((p) => (
+            <tr key={p.name}>
+              <td className={cell}>
+                <span className="[color:var(--mk-text)]">{p.name}</span>
+                {p.condition && (
+                  <span className="mt-1 block [color:var(--mk-text-subtle)] italic">
+                    {p.condition}
+                  </span>
+                )}
+              </td>
+              <td className={cell}>{p.purpose}</td>
+              <td className={cell}>{p.data}</td>
+              <td className={cell}>{p.location}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function Shell({
   home,
@@ -171,8 +342,11 @@ export function PrivacyContent({
           keinen Zugriff.
         </li>
         <li>
-          <strong className="[color:var(--mk-text)]">Gehostete EU-Cloud:</strong> Wir verarbeiten
-          Inhalte ausschließlich zur Erbringung des Dienstes — niemals zum Training von KI-Modellen.
+          <strong className="[color:var(--mk-text)]">Gehosteter Dienst:</strong> Anwendung und Daten
+          liegen in einem Rechenzentrum in Wien. Für KI-Funktionen und einzelne Zusatzfunktionen
+          setzen wir die in Abschnitt 8 genannten Auftragsverarbeiter ein, teils mit Sitz in den
+          USA. Wir verarbeiten Inhalte ausschließlich zur Erbringung des Dienstes — nicht zum
+          Training von KI-Modellen.
         </li>
       </ul>
 
@@ -180,8 +354,19 @@ export function PrivacyContent({
       <p>
         Beim Aufruf verarbeitet der Hosting-Dienstleister technisch notwendige Server-Logdaten
         (IP-Adresse, Zeitpunkt, abgerufene Ressource, User-Agent) zur Auslieferung und Absicherung —
-        berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Es werden keine
-        Marketing-/Tracking-Cookies ohne Einwilligung gesetzt.
+        berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Zur Erkennung technischer Fehler werden
+        Fehlermeldungen samt Browser- und Geräteangaben an einen Dienst zur Fehlerüberwachung
+        übermittelt (Art. 6 Abs. 1 lit. f DSGVO; Abschnitt 8).
+      </p>
+      <p className="mt-2">
+        <strong className="[color:var(--mk-text)]">Website-Analyse:</strong> Nur wenn Sie im
+        Cookie-Hinweis einwilligen, setzen wir PostHog ein, um zu verstehen, wie diese Website
+        genutzt wird. Dabei werden Cookies bzw. Einträge im lokalen Speicher Ihres Browsers gesetzt
+        und Nutzungsdaten (aufgerufene Seiten, Browser- und Geräteangaben, IP-Adresse) an PostHog
+        übermittelt. Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 165 Abs. 3
+        TKG 2021). Sie können sie jederzeit mit Wirkung für die Zukunft über den Link
+        &bdquo;Cookie-Einstellungen&ldquo; am Seitenende widerrufen. Ohne Einwilligung findet keine
+        Analyse statt.
       </p>
 
       <H2>4. Konto, Authentifizierung, Abrechnung</H2>
@@ -234,32 +419,29 @@ export function PrivacyContent({
 
       <H2>8. Auftragsverarbeiter und Empfänger</H2>
       <p>
-        Je nach Konfiguration können folgende Kategorien eingebunden sein (alle mit AVV;
-        Drittland-Transfers nur auf Basis von EU-Standardvertragsklauseln, Art. 46 DSGVO):
+        Die folgende Tabelle nennt die Dienstleister, an die der gehostete Dienst und diese Website
+        personenbezogene Daten übermitteln können. Einträge ohne Zusatz sind immer im Einsatz;
+        Einträge mit Zusatz sind nur unter der genannten Bedingung beteiligt. Mit den
+        Auftragsverarbeitern bestehen Vereinbarungen nach Art. 28 DSGVO. Übermittlungen in Länder
+        außerhalb des EWR stützen sich auf Standardvertragsklauseln der EU-Kommission (Art. 46
+        DSGVO) bzw. auf das EU-US Data Privacy Framework (Art. 45 DSGVO), soweit der jeweilige
+        Anbieter danach zertifiziert ist.
       </p>
-      <ul className="mt-2 list-disc space-y-1 pl-5">
-        <li>Hosting/Infrastruktur, vorrangig EU-Rechenzentren</li>
-        <li>Anbieter von KI-Sprachmodellen (Antworten) und Suchfunktionen</li>
-        <li>Zahlungsdienstleister für kostenpflichtige Pläne</li>
-        <li>
-          E-Mail-Versanddienst für transaktionale Nachrichten (Fristenübersicht, Passwort
-          zurücksetzen)
-        </li>
-        <li>Optional: Dienst zur verteilten Ratenbegrenzung</li>
-      </ul>
-      <p className="mt-2">
-        Aktuelle Anbieter: Hosting über ein EU-Rechenzentrum (netcup GmbH, Rechenzentrum Wien, AT);
-        KI-Sprachmodelle über Anthropic (Anthropic PBC, US, EU-Standardvertragsklauseln) und, als
-        Ausweichweg sowie für Suchfunktionen, über OpenRouter (US, EU-Standardvertragsklauseln);
-        Zahlung über Stripe (US, EU-Standardvertragsklauseln); E-Mail über Resend (US,
-        EU-Standardvertragsklauseln). Alle Auftragsverarbeiter sind durch AVV gebunden.
+      <ProcessorTable />
+      <p className="mt-3">
+        Verbinden Sie Ihr eigenes E-Mail-Postfach, Ihren Kalender oder Ihre Dokumentenablage (z. B.
+        Microsoft 365, Google), tauscht Subsumio Daten mit diesem Anbieter aus. Dieser ist Ihr
+        eigener Dienstleister, nicht unser Unterauftragsverarbeiter. Bei On-Premise-Betrieb
+        (Enterprise) bestimmen Sie selbst, welche dieser Dienste angebunden werden.
       </p>
 
       <H2>9. Speicherdauer</H2>
       <p>
         Kontodaten für die Vertragsdauer; Löschung nach Kündigung, soweit keine
-        Aufbewahrungspflichten (§ 132 BAO) entgegenstehen. Inhalte werden auf Ihre Weisung bzw. mit
-        Vertragsende gelöscht. Server-Logs werden 14 Tage aufbewahrt.
+        Aufbewahrungspflichten (§ 132 BAO) entgegenstehen. Inhalte werden auf Ihre Weisung gelöscht;
+        nach Vertragsende können Sie Ihre Daten exportieren und die Löschung beantragen.
+        Verschlüsselte Sicherungskopien werden rollierend bis zu sechs Monate aufbewahrt und danach
+        überschrieben. Server-Logs werden 14 Tage aufbewahrt.
       </p>
 
       <H2>10. Ihre Rechte</H2>
@@ -488,21 +670,23 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
       <H2>§ 4 Unterauftragsverarbeiter</H2>
       <p>
         (1) Der Verantwortliche erteilt die allgemeine Genehmigung für die in der
-        Datenschutzerklärung (§ 7) aufgeführten Unterauftragsverarbeiter. Der Auftragsverarbeiter
-        informiert den Verantwortlichen über beabsichtigte Änderungen hinzuzufügender oder
-        ersetzender Unterauftragsverarbeiter und gibt ihm die Möglichkeit zum Widerspruch.
+        Datenschutzerklärung (Abschnitt 8) aufgeführten Unterauftragsverarbeiter. Der
+        Auftragsverarbeiter informiert den Verantwortlichen über beabsichtigte Änderungen
+        hinzuzufügender oder ersetzender Unterauftragsverarbeiter und gibt ihm die Möglichkeit zum
+        Widerspruch.
       </p>
       <p>
-        (2) Aktuelle Unterauftragsverarbeiter: Hosting (netcup GmbH, Rechenzentrum Wien, AT/EU);
-        Anbieter von KI-Sprachmodellen (Anthropic PBC, US — EU-Standardvertragsklauseln); Anbieter
-        von KI-Sprachmodellen als Ausweichweg und von Suchfunktionen (OpenRouter, US —
-        EU-Standardvertragsklauseln); Zahlung (Stripe, US — EU-Standardvertragsklauseln); E-Mail
-        (Resend, US — EU-Standardvertragsklauseln); optionaler Dienst zur Ratenbegrenzung (Upstash,
-        US — EU-Standardvertragsklauseln).
+        (2) Aktuelle Unterauftragsverarbeiter (identisch mit Abschnitt 8 der Datenschutzerklärung).
+        Einträge mit Zusatz sind nur beteiligt, wenn der Verantwortliche die jeweilige Funktion
+        aktiviert bzw. die genannte Bedingung erfüllt ist; PostHog betrifft ausschließlich die
+        Website, nicht die Inhalte des Verantwortlichen.
       </p>
+      <ProcessorTable />
       <p>
         (3) Bei Unterauftragsverarbeitern außerhalb des EWR erfolgen Übermittlungen auf Basis von
-        EU-Standardvertragsklauseln (Art. 46 DSGVO) und ergänzenden Maßnahmen, soweit erforderlich.
+        Standardvertragsklauseln der EU-Kommission (Art. 46 DSGVO) bzw. des EU-US Data Privacy
+        Framework (Art. 45 DSGVO), soweit der Anbieter danach zertifiziert ist, und ergänzenden
+        Maßnahmen, soweit erforderlich.
       </p>
       <p>
         (4) Der Auftragsverarbeiter haftet voll für Unterauftragsverarbeiter wie für eigene
@@ -513,8 +697,12 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
       <p>Der Auftragsverarbeiter trifft folgende TOM:</p>
       <ul className="mt-2 list-disc space-y-1 pl-5">
         <li>
-          <strong className="[color:var(--mk-text)]">Verschlüsselung:</strong> TLS 1.2+ in Transit,
-          AES-256 at-rest für Datenbank und Backups.
+          <strong className="[color:var(--mk-text)]">Verschlüsselung:</strong> TLS 1.2 oder höher
+          bei der Übertragung. Hochgeladene Originaldateien werden mit AES-256-GCM verschlüsselt
+          abgelegt; Zugangsdaten angebundener Dienste (z. B. Postfach-Passwörter) werden
+          verschlüsselt gespeichert; externe Sicherungskopien werden vor der Übertragung
+          verschlüsselt. Die Datenbank selbst ist nicht zusätzlich auf Anwendungsebene
+          verschlüsselt.
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Zugriffskontrolle:</strong> Rollenbasierte
@@ -534,7 +722,8 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Backup:</strong> Tägliche verschlüsselte
-          Backups mit Verify- und Restore-Verfahren; Aufbewahrung nach gesetzlichen Vorgaben.
+          Sicherung von Datenbank und Dateien, wöchentliche Wiederherstellungsprobe; rollierende
+          Aufbewahrung der Sicherungen bis zu sechs Monate.
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Datenisolation:</strong> Multi-Tenant-Isolation
@@ -550,7 +739,8 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Incident Response:</strong> Dokumentiertes
-          Verletzungsmitteilungsverfahren innerhalb von 72 Stunden an den Verantwortlichen.
+          Verfahren zur Meldung von Datenschutzverletzungen an den Verantwortlichen — unverzüglich,
+          spätestens binnen 48 Stunden nach Kenntniserlangung (§ 7).
         </li>
       </ul>
 
@@ -560,7 +750,11 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         auf Auskunftsersuchen betroffener Personen zu antworten (Auskunft, Berichtigung, Löschung,
         Einschränkung, Übertragbarkeit, Widerspruch). Der Verantwortliche kann alle Daten über{" "}
         <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span>{" "}
-        exportieren. Löschungsanfragen können über den GDPR-Data-Deletion-Endpunkt ausgelöst werden.
+        exportieren. Nutzt eine Einzelperson ohne Team den Dienst, kann sie die Löschung ihres
+        Kontos samt Inhalten selbst in den Einstellungen auslösen. Bei Kanzleien mit mehreren
+        Nutzern löscht die Selbstlöschung nur das persönliche Konto, nicht die gemeinsamen
+        Kanzleidaten; deren Löschung nimmt der Auftragsverarbeiter auf Weisung des Verantwortlichen
+        vor.
       </p>
 
       <H2>§ 7 Verletzung des Schutzes personenbezogener Daten</H2>
