@@ -54,17 +54,74 @@ echo "[preflight] Prüfe Production-Konfiguration: $env_file"
 for key in \
   APP_DOMAIN ENGINE_DOMAIN POSTGRES_PASSWORD SUBSUMIO_WEB_API_KEY \
   AUTH_SECRET SUBSUMIO_INTERNAL_SECRET SUBSUMIO_ENCRYPTION_KEY CRON_SECRET \
-  ENGINE_WEBHOOK_API_KEY OPENROUTER_API_KEY BACKUP_RESTIC_REPOSITORY \
+  ENGINE_WEBHOOK_API_KEY BACKUP_RESTIC_REPOSITORY \
   BACKUP_RESTIC_PASSWORD SUBSUMIO_STORAGE_ENCRYPTION_KEY \
   RESEND_API_KEY MAIL_FROM RESEND_WEBHOOK_SECRET PORTAL_TOKEN_SECRET; do
   require_value "$key"
 done
 
 require_exact SUBSUMIO_REQUIRE_TENANT true
-require_exact SUBSUMIO_AI_PROVIDER openrouter
-require_exact SUBSUMIO_EMBEDDING_MODEL openrouter:openai/text-embedding-3-small
-require_exact SUBSUMIO_EMBEDDING_DIMENSIONS 1536
 require_exact SUBSUMIO_WEB_URL http://web:3000
+
+# Chat models: the direct provider (Anthropic) is the default — fewer
+# sub-processors. SUBSUMIO_AI_PROVIDER=openrouter routes everything through
+# OpenRouter instead; then its key is mandatory. Without it OpenRouter is only
+# an optional fallback.
+ai_provider="$(value SUBSUMIO_AI_PROVIDER | tr '[:upper:]' '[:lower:]')"
+case "$ai_provider" in
+  "" | native | direct | anthropic)
+    echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=${ai_provider:-leer} (direkt, Anthropic)"
+    require_value ANTHROPIC_API_KEY
+    warn_value OPENROUTER_API_KEY "kein OpenRouter-Fallback, falls Anthropic ausfällt."
+    ;;
+  openrouter)
+    echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=openrouter"
+    require_value OPENROUTER_API_KEY
+    ;;
+  *)
+    echo "[preflight] INVALID  SUBSUMIO_AI_PROVIDER muss leer, 'anthropic' oder 'openrouter' sein (ist '$ai_provider')." >&2
+    failed=1
+    ;;
+esac
+
+# Embeddings: the model must be set explicitly (it defines the vector space of
+# content_chunks.embedding, together with the dimensions) and its provider
+# needs its own key, whatever the chat provider is.
+require_value SUBSUMIO_EMBEDDING_MODEL
+require_value SUBSUMIO_EMBEDDING_DIMENSIONS
+embedding_model="$(value SUBSUMIO_EMBEDDING_MODEL)"
+if [ -n "$embedding_model" ]; then
+  embedding_key=""
+  case "$embedding_model" in
+    openrouter:*) embedding_key=OPENROUTER_API_KEY ;;
+    openai:*) embedding_key=OPENAI_API_KEY ;;
+    voyage:*) embedding_key=VOYAGE_API_KEY ;;
+    zeroentropyai:*) embedding_key=ZEROENTROPY_API_KEY ;;
+    mistral:*) embedding_key=MISTRAL_API_KEY ;;
+    google:*) embedding_key=GOOGLE_GENERATIVE_AI_API_KEY ;;
+    cohere:*) embedding_key=COHERE_API_KEY ;;
+    dashscope:*) embedding_key=DASHSCOPE_API_KEY ;;
+    together:*) embedding_key=TOGETHER_API_KEY ;;
+    ollama:* | llama-server:* | litellm-proxy:*) embedding_key="" ;;
+    *)
+      echo "[preflight] INVALID  SUBSUMIO_EMBEDDING_MODEL braucht die Form <anbieter>:<modell> mit bekanntem Anbieter (ist '$embedding_model')." >&2
+      failed=1
+      embedding_key="-"
+      ;;
+  esac
+  case "$embedding_key" in
+    "") echo "[preflight] OK       Embedding-Anbieter ohne API-Schlüssel ($embedding_model)" ;;
+    -) ;;
+    *)
+      if [ -z "$(value "$embedding_key")" ]; then
+        echo "[preflight] MISSING  $embedding_key (für SUBSUMIO_EMBEDDING_MODEL=$embedding_model)" >&2
+        failed=1
+      else
+        echo "[preflight] OK       $embedding_key (Embeddings)"
+      fi
+      ;;
+  esac
+fi
 
 require_value PLATFORM_OPERATOR_EMAILS
 

@@ -6,6 +6,7 @@ import {
   fmToAutomation,
   interpolateTemplate,
   ruleMatches,
+  ruleSendsExternally,
   type AutomationRule,
 } from "./automation";
 
@@ -107,6 +108,38 @@ describe("fmToAutomation", () => {
         frontmatter: { type: "automation", event: "booking.created", action: { type: "bogus" } },
       })
     ).toBeNull();
+  });
+
+  test("Besitzer und Pausengrund überleben den Roundtrip; Neuspeichern leert die Pause", () => {
+    const paused = rule({ owner_user_id: undefined, paused_reason: "owner_missing" });
+    const fm = automationToFrontmatter(paused);
+    expect(fm.status_message).toBe("Besitzer fehlt — bitte neu speichern");
+    expect(fmToAutomation({ slug: "x", title: "x", frontmatter: fm })?.paused_reason).toBe(
+      "owner_missing"
+    );
+    const resaved = automationToFrontmatter({
+      ...paused,
+      owner_user_id: "u1",
+      paused_reason: undefined,
+    });
+    // Merge updates cannot drop keys: the pause is cleared explicitly.
+    expect(resaved).toMatchObject({
+      owner_user_id: "u1",
+      paused_reason: null,
+      status_message: null,
+    });
+    const parsed = fmToAutomation({ slug: "x", title: "x", frontmatter: resaved });
+    expect(parsed?.owner_user_id).toBe("u1");
+    expect(parsed?.paused_reason).toBeUndefined();
+  });
+
+  test("nur E-Mail-Aktionen senden Inhalte nach außen", () => {
+    expect(ruleSendsExternally(rule({ action: { type: "send_mail", recipient: "a@b.at" } }))).toBe(
+      true
+    );
+    for (const type of ["notify", "create_task", "start_workflow"] as const) {
+      expect(ruleSendsExternally(rule({ action: { type } }))).toBe(false);
+    }
   });
 
   test("fremder Seitentyp → null", () => {

@@ -1,5 +1,7 @@
 interface SseConnection {
   brainId: string;
+  /** The signed-in user of this stream (for events meant for one person). */
+  userId?: string;
   send: (event: string, data: unknown) => void;
 }
 
@@ -16,6 +18,18 @@ export function removeSseConnection(conn: SseConnection): void {
 export function broadcastSseEvent(brainId: string, event: string, data: unknown): void {
   for (const conn of sseConnections) {
     if (conn.brainId === brainId) conn.send(event, data);
+  }
+}
+
+/** Send an event only to one user's open streams in this brain. */
+export function broadcastSseEventToUser(
+  brainId: string,
+  userId: string,
+  event: string,
+  data: unknown
+): void {
+  for (const conn of sseConnections) {
+    if (conn.brainId === brainId && conn.userId === userId) conn.send(event, data);
   }
 }
 

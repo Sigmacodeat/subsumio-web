@@ -3,7 +3,8 @@
  *
  * GET    → alle Regeln der Brain
  * POST   → neue Regel anlegen
- * PATCH  → Regel aktivieren/deaktivieren oder umbenennen
+ * PATCH  → Regel aktivieren/deaktivieren, umbenennen oder neu speichern
+ *          (wer speichert, wird Besitzer — die Regel läuft mit seiner Sicht)
  * DELETE → Regel löschen
  */
 
@@ -11,6 +12,7 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { apiSuccess } from "@/lib/api-response";
 import {
+  AUTOMATION_PAUSE_MESSAGES,
   TRIGGER_ACTION_TYPES,
   TRIGGER_EVENTS,
   buildAutomationSlug,
@@ -52,7 +54,11 @@ const deleteSchema = z.object({
 
 export const GET = createHandler({ action: "admin.*", rateTier: "standard" }, async (ctx) => {
   try {
-    const rules = await listAutomations(ctx);
+    const rules = (await listAutomations(ctx)).map((r) => ({
+      ...r,
+      // Paused by the cron (e.g. an e-mail rule without owner): say why.
+      ...(r.paused_reason ? { status_message: AUTOMATION_PAUSE_MESSAGES[r.paused_reason] } : {}),
+    }));
     return apiSuccess({ rules, total: rules.length });
   } catch (err) {
     return apiError(
@@ -90,6 +96,8 @@ export const POST = createHandler(
       action: body.action,
       created_at: new Date().toISOString(),
       created_by: ctx.user?.email ?? "system",
+      // The rule runs with this person's matter access (see cron/automations).
+      owner_user_id: ctx.user.id,
     };
     if (!(await saveAutomation(ctx, rule))) {
       return apiError("automation_create_failed", "Regel konnte nicht gespeichert werden", 502);
@@ -114,10 +122,14 @@ export const PATCH = createHandler(
     const rules = await listAutomations(ctx);
     const rule = rules.find((r) => r.slug === body.slug);
     if (!rule) return apiError("automation_not_found", "Regel nicht gefunden", 404);
+    // Saving a rule makes the saver its owner: from now on it runs with
+    // their matter access. This also resumes a rule paused for lack of one.
     const updated: AutomationRule = {
       ...rule,
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+      owner_user_id: ctx.user.id,
+      paused_reason: undefined,
     };
     if (!(await updateAutomation(ctx, updated))) {
       return apiError("automation_update_failed", "Regel konnte nicht aktualisiert werden", 502);

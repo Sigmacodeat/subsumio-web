@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       }, 30_000);
 
       // Register this connection in the global SSE registry
-      const conn = { brainId, send };
+      const conn = { brainId, userId: user.id, send };
       addSseConnection(conn);
 
       // Cleanup on abort
