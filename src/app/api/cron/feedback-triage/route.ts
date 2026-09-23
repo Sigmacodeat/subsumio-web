@@ -2,8 +2,15 @@ import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { sendMail } from "@/lib/mail";
 import { createCronHandler } from "@/lib/api-handler";
-import { filterNewHitIds } from "@/lib/caselaw-dedup";
+import { filterNewIds } from "@/lib/caselaw-dedup";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  detractorsSince,
+  escalatedCaseSlugs,
+  staffRecipients,
+  DETRACTOR_MAX,
+  type FeedbackPage,
+} from "@/lib/nps-triage";
 import { env } from "@/lib/env";
 
 import { logger } from "@/lib/logger";
@@ -26,21 +33,10 @@ export const maxDuration = 120;
  * kein weiterer Review-Schritt nötig.
  */
 
-const DETRACTOR_MAX = 6;
 const LOOKBACK_MS = 48 * 3600 * 1000;
 /** Wiederholte Kritik an derselben Akte innerhalb von 30 Tagen → Eskalation. */
 const ESCALATION_WINDOW_MS = 30 * 24 * 3600 * 1000;
 const ESCALATION_THRESHOLD = 2;
-
-interface FeedbackPage {
-  slug: string;
-  frontmatter?: {
-    case_slug?: string;
-    nps_score?: number;
-    comment?: string | null;
-    submitted_at?: string;
-  };
-}
 
 async function listFeedback(brainId: string): Promise<FeedbackPage[]> {
   try {
@@ -69,39 +65,17 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     brainsChecked++;
     try {
       const pages = await listFeedback(brainId);
-      const detractors = pages.filter((p) => {
-        const score = p.frontmatter?.nps_score;
-        const ts = Date.parse(p.frontmatter?.submitted_at ?? "");
-        return (
-          typeof score === "number" && score <= DETRACTOR_MAX && Number.isFinite(ts) && ts >= cutoff
-        );
-      });
+      const detractors = detractorsSince(pages, cutoff);
       if (detractors.length === 0) continue;
 
       // Eskalation: ≥2 Detraktoren derselben Akte innerhalb von 30 Tagen.
-      const escalationCutoff = Date.now() - ESCALATION_WINDOW_MS;
-      const perCase30d = new Map<string, number>();
-      for (const p of pages) {
-        const fm = p.frontmatter ?? {};
-        const ts = Date.parse(fm.submitted_at ?? "");
-        if (
-          typeof fm.nps_score === "number" &&
-          fm.nps_score <= DETRACTOR_MAX &&
-          Number.isFinite(ts) &&
-          ts >= escalationCutoff &&
-          fm.case_slug
-        ) {
-          perCase30d.set(fm.case_slug, (perCase30d.get(fm.case_slug) ?? 0) + 1);
-        }
-      }
-      const escalated = new Set(
-        [...perCase30d.entries()].filter(([, n]) => n >= ESCALATION_THRESHOLD).map(([c]) => c)
-      );
+      const escalated = escalatedCaseSlugs(pages, ESCALATION_THRESHOLD, ESCALATION_WINDOW_MS);
 
       // Dedup: jede Feedback-Page wird nur einmal gemeldet.
-      const fresh = await filterNewHitIds(
+      const fresh = await filterNewIds(
         brainId,
-        detractors.map((p) => `nps:${p.slug}`)
+        "nps",
+        detractors.map((p) => p.slug)
       );
       const freshDetractors = detractors.filter((_, i) => fresh.has(i));
       if (freshDetractors.length === 0) continue;
@@ -132,8 +106,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
       // Kritisches Mandanten-Feedback geht nur an Anwälte/Admins —
       // nicht an client_viewer-Rollen.
-      const staff = recipients.filter((u) => u.role === "admin" || u.role === "lawyer");
-      for (const user of staff) {
+      for (const user of staffRecipients(recipients)) {
         const r = await sendMail({ to: user.email, subject, text });
         if (r.sent) mailsSent++;
       }

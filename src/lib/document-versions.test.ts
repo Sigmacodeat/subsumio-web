@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  isBinaryVersion,
   isDocumentLock,
   isLockedFor,
   nextVersionNumber,
@@ -70,5 +71,41 @@ describe("versionSlug / nextVersionNumber", () => {
     expect(nextVersionNumber([])).toBe(1);
     expect(nextVersionNumber([1, 2, 3])).toBe(4);
     expect(nextVersionNumber([7, 2])).toBe(8);
+  });
+});
+
+describe("isBinaryVersion", () => {
+  const base = {
+    doc_slug: "legal/akte/doc",
+    version: 1,
+    checked_in_by: "a@b.c",
+    checked_in_at: "2026-01-01T00:00:00Z",
+    doc_frontmatter: {},
+    doc_content: "Vertragstext",
+    doc_title: "Vertrag",
+  };
+
+  test("Text-MIME → nicht binär", () => {
+    expect(isBinaryVersion({ ...base, doc_frontmatter: { mime_type: "text/plain" } })).toBe(false);
+    expect(isBinaryVersion({ ...base, doc_frontmatter: { mime_type: "application/json" } })).toBe(
+      false
+    );
+  });
+
+  test("PDF/Office/Bild-MIME → binär", () => {
+    for (const mime of [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/png",
+      "application/octet-stream",
+    ]) {
+      expect(isBinaryVersion({ ...base, doc_frontmatter: { mime_type: mime } })).toBe(true);
+    }
+  });
+
+  test("ohne MIME: NUL-Byte oder data:-URL → binär, sonst Text", () => {
+    expect(isBinaryVersion({ ...base, doc_content: "a\u0000bc" })).toBe(true);
+    expect(isBinaryVersion({ ...base, doc_content: "data:application/pdf;base64,XX" })).toBe(true);
+    expect(isBinaryVersion({ ...base, doc_content: "normaler Text" })).toBe(false);
   });
 });

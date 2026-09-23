@@ -1,6 +1,8 @@
 /**
- * Shared caselaw deduplication — used by both /api/cron/case-law and
- * /api/cron/regulatory-monitors to filter out already-seen hits.
+ * Shared deduplication — used by /api/cron/case-law,
+ * /api/cron/regulatory-monitors and /api/cron/feedback-triage to filter
+ * out already-seen hits. New consumers: use `filterNewIds` with a
+ * namespace so features cannot collide on identical ids.
  *
  * Table: subsumio_caselaw_seen (brain_id, hit_id) PRIMARY KEY.
  */
@@ -25,6 +27,23 @@ const ensureCaselawSeenSchema = createSchemaInit(`
  * @param hitIds Hit IDs to check (already prefixed with monitorId if needed).
  * @returns Array of indices (into the input array) of fresh hits.
  */
+/**
+ * Generalized variant with an explicit namespace — the shared table is
+ * reused beyond caselaw (e.g. NPS feedback triage uses "nps"), so new
+ * callers MUST namespace their ids to avoid cross-feature collisions.
+ * Existing caselaw rows stay unprefixed for backward compatibility.
+ */
+export async function filterNewIds(
+  brainId: string,
+  namespace: string,
+  ids: string[]
+): Promise<Set<number>> {
+  return filterNewHitIds(
+    brainId,
+    ids.map((id) => `${namespace}:${id}`)
+  );
+}
+
 export async function filterNewHitIds(brainId: string, hitIds: string[]): Promise<Set<number>> {
   const pool = getSharedPgPool();
   if (!pool) {

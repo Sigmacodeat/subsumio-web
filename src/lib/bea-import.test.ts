@@ -188,3 +188,52 @@ describe("buildBeaImportBundle", () => {
     expect(bundle.importPage.content).toContain("bad.xml");
   });
 });
+
+describe("parseBeaXml — direction detection", () => {
+  const WITH_DIRECTION = (dir: string) => `<?xml version="1.0"?>
+<message direction="${dir}">
+  <subject>Test</subject>
+  <sender name="Gericht">ag@bea.de</sender>
+  <recipient name="Kanzlei">kanzlei@bea.de</recipient>
+  <sentDate>2026-06-15T10:30:00+02:00</sentDate>
+</message>`;
+
+  test("direction=incoming → inbound", () => {
+    expect(parseBeaXml(WITH_DIRECTION("incoming"))!.direction).toBe("inbound");
+    expect(parseBeaXml(WITH_DIRECTION("eingang"))!.direction).toBe("inbound");
+  });
+
+  test("direction=outgoing/ausgang → outbound", () => {
+    expect(parseBeaXml(WITH_DIRECTION("outgoing"))!.direction).toBe("outbound");
+    expect(parseBeaXml(WITH_DIRECTION("Ausgang"))!.direction).toBe("outbound");
+  });
+
+  test("kein direction-Feld → undefined", () => {
+    expect(parseBeaXml(SAMPLE_XML, "x.xml")!.direction).toBeUndefined();
+  });
+
+  test("eigene Safe-ID als Absender → outbound (BEA_OWN_SAFE_ID)", () => {
+    const prev = process.env.BEA_OWN_SAFE_ID;
+    process.env.BEA_OWN_SAFE_ID = "RA-MUELLER-001";
+    try {
+      expect(parseBeaXml(SAMPLE_XML, "x.xml")!.direction).toBe("outbound");
+    } finally {
+      if (prev === undefined) delete process.env.BEA_OWN_SAFE_ID;
+      else process.env.BEA_OWN_SAFE_ID = prev;
+    }
+  });
+
+  test("direction landet im Page-Frontmatter", () => {
+    const bundle = buildBeaImportBundle(
+      {
+        messages: [parseBeaXml(WITH_DIRECTION("ausgang"), "m.xml")!],
+        errors: [],
+        total_count: 1,
+        valid_count: 1,
+        error_count: 0,
+      },
+      { importedAt: "2026-06-22T11:00:00.000Z" }
+    );
+    expect(bundle.messagePages[0].frontmatter.direction).toBe("outbound");
+  });
+});

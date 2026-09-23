@@ -9,7 +9,6 @@ import { H2_CTA_CLASS } from "@/components/marketing/typography";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 export const dynamicParams = false;
-export const dynamic = "force-static";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));

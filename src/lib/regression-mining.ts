@@ -14,7 +14,7 @@
  * Fixture format: JSONL compatible with lab-dach and eval-harness patterns.
  */
 
-import type { TriageEntry, ErrorClass, RootCause } from "@/lib/feedback-triage";
+import type { TriageEntry, ErrorClass, RootCause } from "@/lib/ai-feedback-triage";
 
 // ── Types ─────────────────────────────────────────────────────────────
 

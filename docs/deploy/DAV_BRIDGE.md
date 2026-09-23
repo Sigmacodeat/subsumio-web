@@ -60,6 +60,12 @@ dav:
     DAV_PORT: "4080"
     DAV_BIND: 0.0.0.0 # im Docker-Netz; TLS via Caddy
   restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "curl", "-sf", "http://localhost:4080/health"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 10s
 ```
 
 ```caddy

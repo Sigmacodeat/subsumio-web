@@ -24,7 +24,7 @@ import {
   type RootCause,
   type ErrorSeverity,
   type TriageState,
-} from "@/lib/feedback-triage";
+} from "@/lib/ai-feedback-triage";
 import type { HumanReviewFeedback } from "@/lib/human-review";
 
 const ORG_ID = "org-test-123";

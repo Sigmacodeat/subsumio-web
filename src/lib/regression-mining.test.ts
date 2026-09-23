@@ -20,7 +20,7 @@ import {
   applyTriageDecision,
   _resetTriageStore,
   type TriageEntry,
-} from "@/lib/feedback-triage";
+} from "@/lib/ai-feedback-triage";
 
 const ORG_ID = "org-test-123";
 const REVIEWER_ID = "jurist-001";
