@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 const mockQueue = vi.hoisted(() => ({
   pendingCount: 0,
+  pendingUploads: 0,
   conflictCount: 0,
   syncing: false,
   lastError: null as string | null,
@@ -74,6 +75,7 @@ const serverPage = {
 describe("SyncPage", () => {
   beforeEach(() => {
     mockQueue.pendingCount = 0;
+    mockQueue.pendingUploads = 0;
     mockQueue.conflicts = [];
     mockQueue.lastError = null;
     mockQueue.lastNotice = null;

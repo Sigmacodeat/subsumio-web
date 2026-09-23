@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { GitMerge, Check, Copy, Trash2, Eye, RefreshCw, Clock } from "lucide-react";
 import { api } from "@/lib/api";
-import { useMutationQueue, nextCopySlug } from "@/lib/use-mutation";
+import { useMutationQueue, nextCopySlug, formatPendingLabel } from "@/lib/use-mutation";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import type { BrainPage } from "@/lib/types";
@@ -305,6 +305,7 @@ export default function SyncPage() {
   const {
     conflicts,
     pendingCount,
+    pendingUploads,
     syncing,
     lastError,
     lastErrorAt,
@@ -358,6 +359,17 @@ export default function SyncPage() {
             </span>
           )}
         </div>
+      )}
+
+      {pendingCount > 0 && (
+        <p className="mt-3 text-xs text-[color:var(--ds-text-muted)]">
+          {formatPendingLabel(
+            t as (k: string) => string,
+            pendingCount,
+            pendingUploads,
+            "mobile.pending_suffix"
+          )}
+        </p>
       )}
 
       {lastNotice && (

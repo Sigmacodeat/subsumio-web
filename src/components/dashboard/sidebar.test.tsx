@@ -57,6 +57,7 @@ vi.mock("@/lib/use-lang", async () => {
 
 const mockQueue = vi.hoisted(() => ({
   pendingCount: 0,
+  pendingUploads: 0,
   syncing: false,
   lastError: null as string | null,
   lastNotice: null as string | null,
@@ -75,9 +76,10 @@ const mockQueue = vi.hoisted(() => ({
   refreshPending: vi.fn(),
 }));
 
-vi.mock("@/lib/use-mutation", () => ({
-  useMutationQueue: () => mockQueue,
-}));
+vi.mock("@/lib/use-mutation", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/use-mutation")>("@/lib/use-mutation");
+  return { ...actual, useMutationQueue: () => mockQueue };
+});
 
 vi.mock("@/lib/use-offline-sync", () => ({
   useNetworkStatus: () => true,
@@ -129,6 +131,7 @@ describe("Sidebar accordion", () => {
     pathname = "/dashboard";
     localStorage.clear();
     mockQueue.pendingCount = 0;
+    mockQueue.pendingUploads = 0;
     mockQueue.syncing = false;
     mockQueue.conflictCount = 0;
     mockQueue.conflicts = [];

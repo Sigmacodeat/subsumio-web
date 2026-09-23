@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertTriangle, X, GitMerge } from "lucide-react";
-import { useMutationQueue } from "@/lib/use-mutation";
+import { useMutationQueue, formatPendingLabel } from "@/lib/use-mutation";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -59,14 +59,8 @@ export function MobileSyncBanner() {
   // Queues; nur eine Summe würde Uploads als Seiten-Änderungen
   // verkaufen.
   const pendingLabel = useCallback(
-    (suffixKey: DashboardKey) => {
-      const mutations = pendingCount - pendingUploads;
-      const parts: string[] = [];
-      if (mutations > 0) parts.push(`${mutations} ${t("mobile.changes_short" as DashboardKey)}`);
-      if (pendingUploads > 0)
-        parts.push(`${pendingUploads} ${t("mobile.uploads_short" as DashboardKey)}`);
-      return `${parts.join(" + ")} ${t(suffixKey)}`;
-    },
+    (suffixKey: DashboardKey) =>
+      formatPendingLabel(t as (k: string) => string, pendingCount, pendingUploads, suffixKey),
     [pendingCount, pendingUploads, t]
   );
 

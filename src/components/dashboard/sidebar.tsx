@@ -108,7 +108,7 @@ import {
   Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMutationQueue } from "@/lib/use-mutation";
+import { useMutationQueue, formatPendingLabel } from "@/lib/use-mutation";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { SubsumioMark, SubsumioWordmark } from "@/components/brand/subsumio-logo";
@@ -1230,15 +1230,12 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
           {pendingCount > 0
-            ? (() => {
-                const mutations = pendingCount - pendingUploads;
-                const parts: string[] = [];
-                if (mutations > 0)
-                  parts.push(`${mutations} ${t("mobile.changes_short" as DashboardKey)}`);
-                if (pendingUploads > 0)
-                  parts.push(`${pendingUploads} ${t("mobile.uploads_short" as DashboardKey)}`);
-                return `${parts.join(" + ")} ${t("mobile.pending_suffix" as DashboardKey)}`;
-              })()
+            ? formatPendingLabel(
+                t as (k: string) => string,
+                pendingCount,
+                pendingUploads,
+                "mobile.pending_suffix"
+              )
             : `${conflicts.length} ${t("mobile.conflict_count" as DashboardKey)}`}
         </span>
         {pendingCount > 0 && (
@@ -1484,10 +1481,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       "/dashboard/sync": {
         count: conflictCount,
         variant: "warning",
-        label: oldestDays > 0 ? `Ältester Konflikt: ${oldestDays}d` : undefined,
+        label:
+          oldestDays > 0
+            ? t("sync.oldest_conflict" as DashboardKey).replace("{n}", String(oldestDays))
+            : undefined,
       },
     };
-  }, [badgesQuery.data, conflictCount, conflicts]);
+  }, [badgesQuery.data, conflictCount, conflicts, t]);
   useReviewInboxRealtime();
   const logoutMutation = useLogout();
 

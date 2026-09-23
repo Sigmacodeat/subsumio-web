@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 const mockQueue = vi.hoisted(() => ({
   pendingCount: 0,
+  pendingUploads: 0,
   conflictCount: 0,
   syncing: false,
   lastError: null as string | null,
@@ -27,9 +28,10 @@ const mockQueue = vi.hoisted(() => ({
   refreshPending: vi.fn(async () => {}),
 }));
 
-vi.mock("@/lib/use-mutation", () => ({
-  useMutationQueue: () => mockQueue,
-}));
+vi.mock("@/lib/use-mutation", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/use-mutation")>("@/lib/use-mutation");
+  return { ...actual, useMutationQueue: () => mockQueue };
+});
 
 const mockOnline = vi.hoisted(() => ({ value: true }));
 
@@ -63,6 +65,7 @@ describe("MobileSyncBanner", () => {
   beforeEach(() => {
     mockOnline.value = true;
     mockQueue.pendingCount = 0;
+    mockQueue.pendingUploads = 0;
     mockQueue.conflictCount = 0;
     mockQueue.conflicts = [];
     mockQueue.lastError = null;

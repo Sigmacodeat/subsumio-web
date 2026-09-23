@@ -86,6 +86,23 @@ export function nextCopySlug(slug: string): string {
   return m ? `${m[1]}-${parseInt(m[2], 10) + 1}` : `${slug}-2`;
 }
 
+/** „N Änderung(en) + M Upload(s) <suffix>" — pendingCount enthält
+ *  Mutations + Uploads; nur die Summe würde Uploads als
+ *  Seiten-Änderungen verkaufen. `t` ist die Dashboard-`t()` aus
+ *  useLang, suffixKey z. B. "mobile.pending_suffix". */
+export function formatPendingLabel(
+  t: (key: string) => string,
+  pendingCount: number,
+  pendingUploads: number,
+  suffixKey: string
+): string {
+  const mutations = pendingCount - pendingUploads;
+  const parts: string[] = [];
+  if (mutations > 0) parts.push(`${mutations} ${t("mobile.changes_short")}`);
+  if (pendingUploads > 0) parts.push(`${pendingUploads} ${t("mobile.uploads_short")}`);
+  return `${parts.join(" + ")} ${t(suffixKey)}`;
+}
+
 // ---------------------------------------------------------------------------
 // Module-level store: Banner, Sidebar, Sync-Page und Tab-Bar teilen sich
 // denselben Queue-State — ein resolveConflict auf /dashboard/sync muss auch
