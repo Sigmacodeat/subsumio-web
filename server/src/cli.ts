@@ -135,11 +135,16 @@ const CLI_ONLY = new Set([
   "self-upgrade",
   "connector",
   "legal",
+  // Page-level operator commands (purge-deleted, audit-agent-writes,
+  // backfill-case-slug). The dispatch case existed, but without this entry
+  // every `gbrain pages …` died as "Unknown command" before reaching it.
+  "pages",
 ]);
 // CLI-only commands whose handlers print their own --help text. These are
 // excluded from the generic short-circuit so detailed per-command and
 // per-subcommand usage stays reachable.
 const CLI_ONLY_SELF_HELP = new Set([
+  "pages",
   "upgrade",
   "post-upgrade",
   "check-update",
