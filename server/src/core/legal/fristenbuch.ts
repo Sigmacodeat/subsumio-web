@@ -29,6 +29,7 @@ import {
   type FristStatus,
 } from "./frist-engine.ts";
 import { matterScopeAllows, type MatterScope } from "../matter-access.ts";
+import { pageBindingAllowed, resolveRowBindings } from "../matter-binding.ts";
 
 export interface FristenbuchEngine {
   executeRaw<T>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -191,17 +192,27 @@ export async function ladeFristenbuch(
   const eintraege: FristenbuchEintrag[] = [];
   let unparsebar = 0;
 
-  for (const page of pages) {
+  // The calendar belongs to its matter by path and by every frontmatter
+  // matter binding (case_slug, the pipeline's case_ref, …) — all must be
+  // visible to the caller. Bindings are resolved in bulk.
+  const restricted = opts.matterScope !== undefined && opts.matterScope !== "all";
+  const bindings = restricted
+    ? await resolveRowBindings(
+        engine,
+        pages.map((p) => ({
+          slug: p.slug,
+          frontmatter: p.frontmatter ?? {},
+          ...(opts.sourceId ? { source_id: opts.sourceId } : {}),
+        })),
+        { sourceId: opts.sourceId }
+      )
+    : [];
+
+  for (const [i, page] of pages.entries()) {
     const caseSlug = page.slug.replace(/^deadline-calendars\//, "");
-    // The calendar belongs to its matter by path and, when set, by
-    // frontmatter.case_slug — both must be visible to the caller.
-    const boundCase =
-      typeof page.frontmatter?.case_slug === "string" && page.frontmatter.case_slug
-        ? page.frontmatter.case_slug
-        : undefined;
     if (
       !matterScopeAllows(opts.matterScope, page.slug, caseSlug) ||
-      (boundCase !== undefined && !matterScopeAllows(opts.matterScope, page.slug, boundCase))
+      (restricted && !pageBindingAllowed(opts.matterScope, page.slug, bindings[i]!))
     ) {
       continue;
     }

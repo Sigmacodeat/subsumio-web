@@ -46,7 +46,7 @@ export interface AgentWriteAuditRow {
   owner_user_id: string | null;
   /** The job had a matter-access stamp (`_matter_scope` / `_matter_read_only`). */
   job_matter_stamped: boolean;
-  /** Pipeline-style binding the walls do not evaluate (only `case_slug` counts). */
+  /** Pipeline-style binding (the walls resolve it; `pages backfill-case-slug` stamps case_slug). */
   case_ref: string | null;
   risk: AgentWriteRisk;
 }

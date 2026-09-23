@@ -273,6 +273,7 @@ export async function runJudikaturWatch(
           compiled_truth: md,
           frontmatter: {
             case_ref: caseSlug,
+            case_slug: caseSlug,
             lauf: heute,
             seit: since,
             normen: caseAlerts.map((a) => a.norm),
@@ -290,7 +291,7 @@ export async function runJudikaturWatch(
           type: "judikatur_watch_state",
           title: `Judikatur-Wächter Seen-Liste — ${caseSlug}`,
           compiled_truth: `# Seen-Liste ${caseSlug}\n\n${seen.size} Dokumentnummern beobachtet (Stand ${heute}).`,
-          frontmatter: { case_ref: caseSlug, seen: [...seen], stand: heute },
+          frontmatter: { case_ref: caseSlug, case_slug: caseSlug, seen: [...seen], stand: heute },
         },
         { sourceId: opts.sourceId && opts.sourceId !== "default" ? opts.sourceId : undefined }
       );

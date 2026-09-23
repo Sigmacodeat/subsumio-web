@@ -9,6 +9,10 @@
  * `pages audit-agent-writes` is a read-only report of pages agent runs wrote
  * without a matter binding (core/agent-write-audit.ts). CLI only — it is not
  * an operation, so neither MCP nor the HTTP API can reach it.
+ *
+ * `pages backfill-case-slug` stamps the canonical case_slug on pages bound to
+ * a matter only by case_ref & co. (core/case-slug-backfill.ts). Dry run by
+ * default; CLI only, like the audit.
  */
 import type { BrainEngine } from "../core/engine.ts";
 
@@ -126,6 +130,41 @@ async function runAuditAgentWrites(engine: BrainEngine, args: string[]): Promise
   }
 }
 
+async function runBackfillCaseSlug(engine: BrainEngine, args: string[]): Promise<void> {
+  const json = args.includes("--json");
+  const apply = args.includes("--apply");
+  if (apply && args.includes("--dry-run")) {
+    console.error("Pass either --apply or --dry-run, not both.");
+    process.exit(2);
+  }
+  const sourceId = flagValue(args, "--source");
+  const { backfillCaseSlugs } = await import("../core/case-slug-backfill.ts");
+  const report = await backfillCaseSlugs(engine, { sourceId, apply });
+  if (json) {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+  const c = report.counts;
+  const done = report.dry_run ? `would stamp: ${c.would_stamp}` : `stamped: ${c.stamped}`;
+  console.log(
+    `${report.dry_run ? "(dry-run) " : ""}Pages bound to a matter without case_slug: ${c.total} ` +
+      `(${done}, ambiguous: ${c.ambiguous}, unresolved: ${c.unresolved}).`
+  );
+  if (report.dry_run) console.log("Nothing was changed. Re-run with --apply to write case_slug.");
+  console.log(
+    "Ambiguous and unresolved pages stay unstamped; the matter walls hide them from walled users."
+  );
+  for (const r of report.rows) {
+    const target = r.matters.length > 0 ? ` -> ${r.matters.join(", ")}` : "";
+    const missing =
+      r.unresolved_refs.length > 0 ? ` unresolved=${r.unresolved_refs.join(", ")}` : "";
+    const deleted = r.deleted ? " (deleted)" : "";
+    console.log(
+      `  [${r.status}] ${r.source_id}:${r.slug}${deleted}  refs=${r.refs.join(", ")}${target}${missing}`
+    );
+  }
+}
+
 function printHelp(): void {
   console.log(`gbrain pages — page-level operator commands (v0.26.5)
 
@@ -138,6 +177,11 @@ Subcommands:
                                     Read-only: list pages agent runs wrote without a
                                     matter binding (no case_slug, not private), with the
                                     writing job and whether a web user started it.
+  backfill-case-slug [--source ID] [--apply] [--json]
+                                    Stamp the canonical case_slug on pages bound to a
+                                    matter only by case_ref & co. Dry run unless --apply;
+                                    reports pages whose reference names no matter
+                                    (unresolved) or several (ambiguous). Idempotent.
 
 Notes:
   Soft-delete a page via the MCP \`delete_page\` op. Restore via \`restore_page\`.
@@ -155,6 +199,8 @@ export async function runPages(engine: BrainEngine, args: string[]): Promise<voi
       return runPurgeDeleted(engine, rest);
     case "audit-agent-writes":
       return runAuditAgentWrites(engine, rest);
+    case "backfill-case-slug":
+      return runBackfillCaseSlug(engine, rest);
     case undefined:
     case "--help":
     case "-h":
