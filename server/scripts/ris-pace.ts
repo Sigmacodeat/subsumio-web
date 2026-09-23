@@ -24,7 +24,8 @@ export const RIS_PAUSE_MS = 2000;
  * identify themselves; browser-lookalike strings hid who we are and would
  * make the announcement worthless.
  */
-export const RIS_USER_AGENT = "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)";
+export const RIS_USER_AGENT =
+  "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 

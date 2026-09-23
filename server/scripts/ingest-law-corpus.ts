@@ -699,7 +699,7 @@ async function fetchDe(
 }
 
 const RIS_UA = {
-  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)",
+  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
 };
 
 /** Resolve the RIS Gesetzesnummer via the OGD API + one norm page (the
@@ -912,7 +912,7 @@ async function fetchAtViaOgd(
 const ODAT_API = "https://api.odat.ch/api/v1";
 const ODAT_HTML = "https://www.odat.ch/de/cc";
 const ODAT_UA = {
-  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)",
+  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
 };
 
 /** Fetch a Swiss consolidated law via the odat.ch API.
@@ -1013,7 +1013,7 @@ async function fetchEu(law: EuLaw): Promise<{ markdown: string; versionDate: str
     const url = `${EURLEX_CELLAR_BASE}/DE/TXT/HTML/?uri=CELEX:${law.celex}&qid=1`;
     const res = await fetch(url, {
       headers: {
-        "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)",
+        "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
       },
       redirect: "follow",
     });

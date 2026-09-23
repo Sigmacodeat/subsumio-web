@@ -19,7 +19,9 @@ import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
-const RIS_UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
+const RIS_UA = {
+  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
+};
 const corpusDir = "law-corpus/at";
 
 const args = process.argv.slice(2);

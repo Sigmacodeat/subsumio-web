@@ -49,7 +49,7 @@ const base = (
   .trim()
   .split("\n")[0];
 const URL_ = base.replace(/\/[^/?]+(\?|$)/, `/${DB}$1`);
-const UA = "subsumio-law-corpus/1.0 (corpus verification; contact: hello@subsum.io)";
+const UA = "subsumio-law-corpus/1.0 (corpus verification; contact: mesic.sigmacode@gmail.com)";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Substanztext: ohne Überschriften, Leerraum vereinheitlicht. */
