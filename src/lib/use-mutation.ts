@@ -50,6 +50,7 @@ export function useMutationQueue() {
   const syncPending = useCallback(async () => {
     if (!isOnline()) return;
     setState((s) => ({ ...s, syncing: true, lastError: null }));
+    let dropped = 0;
     try {
       const pending = await getPendingMutations();
       for (const mut of pending) {
@@ -57,6 +58,7 @@ export function useMutationQueue() {
         if (retryCount >= MAX_RETRIES) {
           console.warn(`[mutation-sync] dropping ${mut.id} after ${MAX_RETRIES} retries`);
           await removeMutation(mut.id);
+          dropped++;
           continue;
         }
         try {
@@ -111,6 +113,7 @@ export function useMutationQueue() {
         if (retryCount >= MAX_RETRIES) {
           console.warn(`[file-upload-sync] dropping ${fu.id} after ${MAX_RETRIES} retries`);
           await removeFileUpload(fu.id);
+          dropped++;
           continue;
         }
         try {
@@ -130,7 +133,14 @@ export function useMutationQueue() {
     } catch (err) {
       setState((s) => ({ ...s, lastError: err instanceof Error ? err.message : String(err) }));
     } finally {
-      setState((s) => ({ ...s, syncing: false }));
+      setState((s) => ({
+        ...s,
+        syncing: false,
+        lastError:
+          dropped > 0
+            ? `${dropped} Offline-Änderung(en) konnten nicht synchronisiert werden`
+            : s.lastError,
+      }));
     }
   }, [refreshPending]);
 
