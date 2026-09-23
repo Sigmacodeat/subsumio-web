@@ -2,6 +2,7 @@
 
 Stand 2026-09-23. Detaillierte technische Quelle:
 `docs/blueprints/MARKT-PARITAET-2026-09-22.md`.
+Der Verifikations-Block unten wird per `bun run status` regeneriert.
 
 ## Kurzfassung
 
@@ -45,6 +46,12 @@ bereits gebaut und geht live, sobald der Vertrag steht.
 
 ## Verifikation
 
-Letzter vollständiger Lauf (22./23.09.): `bun run verify` grün —
-TypeScript 0 Fehler, 512 API-Routen validiert, 22 AI-Flächen grounded,
-Design-Tokens/Links/Nested-Interactive sauber, Build erfolgreich.
+Generiert von `bun run status` am 2026-09-23 (Commit `82b4e648a6`).
+
+- **API-Routen:** 513 (gezählt aus `src/app/api/**/route.ts`)
+- **Verify:** `bun run verify` — TypeScript, Route-Actions, Grounding-
+  Invariant, Design-Tokens, Canonical-Links, Nested-Interactive
+- **Tests:** `bun run test:unit` (vitest, inkl. DAV-Bridge-Smoke-Test)
+
+Detail-Nachweis: `docs/blueprints/MARKT-PARITAET-2026-09-22.md`,
+Deploy-Crons: `docs/deploy/CRON_SCHEDULE.md`.

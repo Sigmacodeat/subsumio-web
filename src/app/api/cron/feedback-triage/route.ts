@@ -1,0 +1,118 @@
+import { NextRequest } from "next/server";
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { sendMail } from "@/lib/mail";
+import { createCronHandler } from "@/lib/api-handler";
+import { filterNewHitIds } from "@/lib/caselaw-dedup";
+import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { env } from "@/lib/env";
+
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/feedback-triage");
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 120;
+
+/**
+ * GET /api/cron/feedback-triage — NPS-Detraktor-Triage.
+ *
+ * Läuft täglich (supercronic). Für jede Kanzlei (Brain):
+ *   1. Liest client_feedback-Pages (geschrieben von /api/portal/feedback)
+ *   2. Filtert Detraktoren (Score ≤ 6) der letzten 48h
+ *   3. Dedup via subsumio_caselaw_seen (Prefix "nps:") — jedes Feedback
+ *      wird nur einmal gemeldet
+ *   4. Mail an alle Brain-Nutzer mit Score, Kommentar und Akten-Link
+ *
+ * Bewusst Mail statt neuer Page-Typ: der Weg zur Akte ist ein Link,
+ * kein weiterer Review-Schritt nötig.
+ */
+
+const DETRACTOR_MAX = 6;
+const LOOKBACK_MS = 48 * 3600 * 1000;
+
+interface FeedbackPage {
+  slug: string;
+  frontmatter?: {
+    case_slug?: string;
+    nps_score?: number;
+    comment?: string | null;
+    submitted_at?: string;
+  };
+}
+
+async function listFeedback(brainId: string): Promise<FeedbackPage[]> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=client_feedback&slug_prefix=${encodeURIComponent("feedback-")}&limit=500`,
+      { headers: engineHeadersForBrain(brainId), signal: AbortSignal.timeout(15_000) }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data) ? data : (data.pages ?? [])) as FeedbackPage[];
+  } catch {
+    return [];
+  }
+}
+
+export const GET = createCronHandler(async (_req: NextRequest) => {
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.io";
+  const recipientsByBrain = await getRecipientsByBrain();
+  const cutoff = Date.now() - LOOKBACK_MS;
+
+  let brainsChecked = 0;
+  let detractorsFound = 0;
+  let mailsSent = 0;
+
+  for (const [brainId, recipients] of recipientsByBrain) {
+    brainsChecked++;
+    try {
+      const pages = await listFeedback(brainId);
+      const detractors = pages.filter((p) => {
+        const score = p.frontmatter?.nps_score;
+        const ts = Date.parse(p.frontmatter?.submitted_at ?? "");
+        return (
+          typeof score === "number" && score <= DETRACTOR_MAX && Number.isFinite(ts) && ts >= cutoff
+        );
+      });
+      if (detractors.length === 0) continue;
+
+      // Dedup: jede Feedback-Page wird nur einmal gemeldet.
+      const fresh = await filterNewHitIds(
+        brainId,
+        detractors.map((p) => `nps:${p.slug}`)
+      );
+      const freshDetractors = detractors.filter((_, i) => fresh.has(i));
+      if (freshDetractors.length === 0) continue;
+      detractorsFound += freshDetractors.length;
+
+      const lines = freshDetractors.map((p) => {
+        const fm = p.frontmatter ?? {};
+        const caseUrl = `${appUrl}/dashboard/cases/${encodeURIComponent(fm.case_slug ?? "")}`;
+        const comment = fm.comment?.trim() ? ` — „${fm.comment.trim().slice(0, 300)}"` : "";
+        return `• Score ${fm.nps_score}/10 (${fm.submitted_at?.slice(0, 10) ?? "?"})${comment}\n  Akte: ${caseUrl}`;
+      });
+
+      const subject = `[Subsumio] ${freshDetractors.length} kritische(s) Mandanten-Feedback(s)`;
+      const text =
+        `Neue Bewertung(en) mit Score ≤ ${DETRACTOR_MAX} im Mandantenportal:\n\n` +
+        lines.join("\n") +
+        `\n\nAuswertung: ${appUrl}/dashboard/client-portal`;
+
+      for (const user of recipients) {
+        const r = await sendMail({ to: user.email, subject, text });
+        if (r.sent) mailsSent++;
+      }
+    } catch (err) {
+      log.error(
+        `[feedback-triage] brain ${brainId} failed:`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+  }
+
+  return Response.json({
+    ok: true,
+    brains_checked: brainsChecked,
+    detractors_found: detractorsFound,
+    mails_sent: mailsSent,
+  });
+});

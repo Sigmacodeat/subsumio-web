@@ -20,7 +20,9 @@ Abgleich unten bleibt als Beleg. `src/lib/ingest-schedule.test.ts` prüft seithe
 | `/api/cron/case-scanner`             | `0 22 * * *`   | `0 2 * * *`    | Zeitplan weicht ab |
 | `/api/cron/contradiction-probe`      | `0 23 * * *`   | `0 3 * * *`    | Zeitplan weicht ab |
 | `/api/cron/daily-briefing`           | `0 7 * * *`    | `30 6 * * *`   | Zeitplan weicht ab |
+| `/api/cron/agent-tasks`              | —              | `*/15 * * * *` | nur im Crontab     |
 | `/api/cron/dream-cycle`              | `0 2 * * *`    | `30 2 * * *`   | Zeitplan weicht ab |
+| `/api/cron/feedback-triage`          | —              | `20 8 * * *`   | nur im Crontab     |
 | `/api/cron/health`                   | —              | `*/10 * * * *` | nur im Crontab     |
 | `/api/cron/integrity-recheck`        | —              | `30 3 * * *`   | nur im Crontab     |
 | `/api/cron/judgements-sync`          | `0 5 * * *`    | `30 3 * * *`   | Zeitplan weicht ab |

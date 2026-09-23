@@ -208,3 +208,12 @@
 
 # Law corpus inventory for the operator dashboard (/ops/corpus → Bestand).
 17 * * * *     curl -fsS --max-time 890 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/corpus-inventory || true
+
+# ── 08:20 UTC (10:20 CEST) — NPS-Detraktor-Triage ──
+# Meldet neue Mandanten-Feedbacks mit Score ≤ 6 per Mail an die Kanzlei.
+20 8 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/feedback-triage || true
+
+# ── Alle 15 Minuten — Agent-Tasks (assigneeType=agent, pending) ──
+# Bearbeitet agentische Aufgaben mit Aktenkontext; Ergebnis landet als
+# needs_review in der Akte. Budget-Deckel: max. 10 Tasks pro Lauf.
+*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/agent-tasks || true
