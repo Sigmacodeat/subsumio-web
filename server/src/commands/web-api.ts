@@ -1224,6 +1224,8 @@ export async function runExtractionAndImport(
           ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
           trigger: "post_upload",
           workflow_id: "aktencheck",
+          // The uploader's matter access reaches every child agent.
+          ...jobMatterStamp(matterScope, undefined),
           owner_id: ownerId,
           owner_type: ownerType,
           ...(userId ? { user_id: userId } : {}),
@@ -7160,6 +7162,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // The handler reads `source_id`; `_source_id` was ignored and
           // silently dropped tenant scope on every pipeline run.
           source_id: requestSourceId(req),
+          // The pipeline's child agents see only what the caller may see
+          // (inherited by every child job), and belong to the caller.
+          ...agentMatterStamp(req),
+          ...jobOwnerStamp(req.userId, caseSlug),
         };
 
         // Billing context: owner_id (org or user), owner_type, user_id.

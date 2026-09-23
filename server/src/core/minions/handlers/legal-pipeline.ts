@@ -61,6 +61,8 @@ import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
 import type { Page } from "../../types.ts";
 import { MinionQueue } from "../queue.ts";
+import { StampedMinionQueue } from "../stamped-queue.ts";
+import { inheritedAgentStamps } from "../../matter-access.ts";
 import { createHash } from "node:crypto";
 import { resolveSpecialist } from "../specialist-defs.ts";
 import { getLayerDeclaration } from "../pipeline-registry.ts";
@@ -902,7 +904,10 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         // This gives pipeline subagents (Law Matcher, Counter-Arguments, etc.)
         // search access to the correct national law corpus + EU law.
         const lawSourceIds = resolveLawSourceIds(data.jurisdiction ?? "at");
-        const queue = new MinionQueue(engine);
+        // Every child agent searches and writes on the caller's behalf: the
+        // caller's matter access, the owner and the bound matter reach every
+        // job this pipeline submits (see StampedMinionQueue).
+        const queue: MinionQueue = new StampedMinionQueue(engine, inheritedAgentStamps(ctx.data));
         const stateSlug = `pipeline/state-${data.case_slug}`;
         const startTime = Date.now();
 
