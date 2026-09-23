@@ -13,8 +13,9 @@ vi.mock("@/lib/api", () => ({
     },
   },
 }));
+const me = vi.hoisted(() => ({ jurisdiction: "AT" }));
 vi.mock("@/lib/queries/auth", () => ({
-  useMe: () => ({ data: { user: { jurisdiction: "AT" } } }),
+  useMe: () => ({ data: { user: { jurisdiction: me.jurisdiction } } }),
 }));
 
 describe("KanzleiTools", () => {
@@ -25,6 +26,9 @@ describe("KanzleiTools", () => {
       </QueryClientProvider>
     );
     expect(screen.queryByText("GKG-Rechner")).not.toBeInTheDocument();
+    // German Fachrechner (GKG/Streitwert) is not offered to Austrian firms —
+    // its API is a retired DE surface; AT prices fees in the invoice dialog.
+    expect(screen.queryByText("Fachrechner (DE)")).not.toBeInTheDocument();
     expect(screen.queryByText("Gerichtsverzeichnis")).not.toBeInTheDocument();
     expect(screen.getByText("Fax-Prüfung")).toBeInTheDocument();
     expect(screen.getByText("Rubrum-Generator")).toBeInTheDocument();
@@ -36,5 +40,16 @@ describe("KanzleiTools", () => {
       "href",
       "/dashboard/legal-insurance"
     );
+  });
+
+  it("keeps the German Fachrechner for German firms", () => {
+    me.jurisdiction = "DE";
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <KanzleiTools />
+      </QueryClientProvider>
+    );
+    expect(screen.getByText("Fachrechner (DE)")).toBeInTheDocument();
+    me.jurisdiction = "AT";
   });
 });
