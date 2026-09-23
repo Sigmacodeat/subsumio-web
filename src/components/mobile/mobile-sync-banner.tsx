@@ -44,17 +44,43 @@ export function MobileSyncBanner() {
     setTimeout(() => setJustSynced(false), 3000);
   }, [syncPending]);
 
-  // keep-mine ueberschreibt die Server-Version — anwaltssicher mit
-  // expliziter Bestaetigung (Verlust der fremden Aenderung).
-  const confirmKeepMine = useCallback(
-    async (id: string) => {
-      const ok = await confirm({
-        title: t("sync.confirm_keep_title" as DashboardKey),
-        message: t("sync.confirm_keep_msg" as DashboardKey),
-        confirmLabel: t("sync.confirm_overwrite" as DashboardKey),
-        variant: "danger",
-      });
-      if (ok) await resolveConflict(id, "keep-mine");
+  const [resolvingIds, setResolvingIds] = useState<Set<string>>(new Set());
+
+  // keep-mine ueberschreibt die Server-Version, discard loescht die
+  // lokale Aenderung — beides destruktiv, beides mit Bestaetigung.
+  const handleResolve = useCallback(
+    async (id: string, mode: "keep-mine" | "discard" | "rename") => {
+      if (mode === "keep-mine" || mode === "discard") {
+        const ok = await confirm({
+          title: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_keep_title"
+              : "sync.confirm_discard_title") as DashboardKey
+          ),
+          message: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_keep_msg"
+              : "sync.confirm_discard_msg") as DashboardKey
+          ),
+          confirmLabel: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_overwrite"
+              : "mobile.conflict_discard") as DashboardKey
+          ),
+          variant: "danger",
+        });
+        if (!ok) return;
+      }
+      setResolvingIds((s) => new Set(s).add(id));
+      try {
+        await resolveConflict(id, mode);
+      } finally {
+        setResolvingIds((s) => {
+          const next = new Set(s);
+          next.delete(id);
+          return next;
+        });
+      }
     },
     [confirm, resolveConflict, t]
   );
@@ -125,23 +151,26 @@ export function MobileSyncBanner() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => void confirmKeepMine(c.id)}
-                  className="shrink-0 rounded px-1.5 py-0.5 font-medium transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  disabled={resolvingIds.has(c.id)}
+                  onClick={() => void handleResolve(c.id, "keep-mine")}
+                  className="shrink-0 rounded px-1.5 py-0.5 font-medium transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                 >
                   {t("mobile.conflict_keep" as DashboardKey)}
                 </button>
                 {c.type === "createPage" && (
                   <button
                     type="button"
-                    onClick={() => void resolveConflict(c.id, "rename")}
-                    className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                    disabled={resolvingIds.has(c.id)}
+                    onClick={() => void handleResolve(c.id, "rename")}
+                    className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                   >
                     {t("mobile.conflict_rename" as DashboardKey)}
                   </button>
                 )}
                 <button
                   type="button"
-                  onClick={() => void resolveConflict(c.id, "discard")}
+                  disabled={resolvingIds.has(c.id)}
+                  onClick={() => void handleResolve(c.id, "discard")}
                   className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
                 >
                   {t("mobile.conflict_discard" as DashboardKey)}

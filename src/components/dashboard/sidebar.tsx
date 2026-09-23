@@ -1184,17 +1184,42 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
   } = useMutationQueue();
   const { t } = useLang();
   const confirm = useConfirm();
-  // keep-mine ueberschreibt die Server-Version — explizite Bestaetigung,
-  // sonst geht die fremde Aenderung mit einem Icon-Klick verloren.
-  const confirmKeepMine = useCallback(
-    async (id: string) => {
-      const ok = await confirm({
-        title: t("sync.confirm_keep_title" as DashboardKey),
-        message: t("sync.confirm_keep_msg" as DashboardKey),
-        confirmLabel: t("sync.confirm_overwrite" as DashboardKey),
-        variant: "danger",
-      });
-      if (ok) await resolveConflict(id, "keep-mine");
+  const [resolvingIds, setResolvingIds] = useState<Set<string>>(new Set());
+  // keep-mine ueberschreibt die Server-Version, discard loescht die
+  // lokale Aenderung — beides destruktiv, beides mit Bestaetigung.
+  const handleResolve = useCallback(
+    async (id: string, mode: "keep-mine" | "discard" | "rename") => {
+      if (mode === "keep-mine" || mode === "discard") {
+        const ok = await confirm({
+          title: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_keep_title"
+              : "sync.confirm_discard_title") as DashboardKey
+          ),
+          message: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_keep_msg"
+              : "sync.confirm_discard_msg") as DashboardKey
+          ),
+          confirmLabel: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_overwrite"
+              : "mobile.conflict_discard") as DashboardKey
+          ),
+          variant: "danger",
+        });
+        if (!ok) return;
+      }
+      setResolvingIds((s) => new Set(s).add(id));
+      try {
+        await resolveConflict(id, mode);
+      } finally {
+        setResolvingIds((s) => {
+          const next = new Set(s);
+          next.delete(id);
+          return next;
+        });
+      }
     },
     [confirm, resolveConflict, t]
   );
@@ -1261,30 +1286,33 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
                 </a>
                 <button
                   type="button"
-                  onClick={() => void confirmKeepMine(c.id)}
+                  disabled={resolvingIds.has(c.id)}
+                  onClick={() => void handleResolve(c.id, "keep-mine")}
                   aria-label={t("mobile.conflict_keep" as DashboardKey)}
                   title={t("mobile.conflict_keep" as DashboardKey)}
-                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                 >
                   <Check size={12} aria-hidden />
                 </button>
                 {c.type === "createPage" && (
                   <button
                     type="button"
-                    onClick={() => void resolveConflict(c.id, "rename")}
+                    disabled={resolvingIds.has(c.id)}
+                    onClick={() => void handleResolve(c.id, "rename")}
                     aria-label={t("mobile.conflict_rename" as DashboardKey)}
                     title={t("mobile.conflict_rename" as DashboardKey)}
-                    className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                    className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                   >
                     <Copy size={12} aria-hidden />
                   </button>
                 )}
                 <button
                   type="button"
-                  onClick={() => void resolveConflict(c.id, "discard")}
+                  disabled={resolvingIds.has(c.id)}
+                  onClick={() => void handleResolve(c.id, "discard")}
                   aria-label={t("mobile.conflict_discard" as DashboardKey)}
                   title={t("mobile.conflict_discard" as DashboardKey)}
-                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                 >
                   <X size={12} aria-hidden />
                 </button>
@@ -1427,7 +1455,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   });
   const sidebarWidth = collapsed && isDesktop ? 64 : isDesktop ? expandedWidth : 240;
   const badgesQuery = useSidebarBadges();
-  const badges: SidebarBadges = badgesQuery.data ?? {};
+  const { conflictCount } = useMutationQueue();
+  // Lokale Sync-Konflikte als Badge auf dem /dashboard/sync-Nav-Item —
+  // client-seitig, der Server kennt IndexedDB-Konflikte nicht.
+  const badges: SidebarBadges = useMemo(() => {
+    const base = badgesQuery.data ?? {};
+    if (conflictCount <= 0) return base;
+    return {
+      ...base,
+      "/dashboard/sync": { count: conflictCount, variant: "warning" },
+    };
+  }, [badgesQuery.data, conflictCount]);
   useReviewInboxRealtime();
   const logoutMutation = useLogout();
 

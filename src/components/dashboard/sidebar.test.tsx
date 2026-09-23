@@ -60,6 +60,7 @@ const mockQueue = vi.hoisted(() => ({
   syncing: false,
   lastError: null as string | null,
   lastNotice: null as string | null,
+  conflictCount: 0,
   conflicts: [] as Array<{
     id: string;
     type: "createPage" | "updatePage" | "deletePage";
@@ -129,6 +130,7 @@ describe("Sidebar accordion", () => {
     localStorage.clear();
     mockQueue.pendingCount = 0;
     mockQueue.syncing = false;
+    mockQueue.conflictCount = 0;
     mockQueue.conflicts = [];
     mockQueue.lastError = null;
     mockQueue.lastNotice = null;
@@ -159,9 +161,14 @@ describe("Sidebar accordion", () => {
     await waitFor(() => expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine"));
     expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ variant: "danger" }));
     fireEvent.click(screen.getByRole("button", { name: "Als Kopie speichern" }));
-    expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "rename");
+    await waitFor(() => expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "rename"));
+    // Busy-Guard: Button ist disabled bis die Resolution fertig ist —
+    // naechsten Klick erst nach Enable ausloesen.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Verwerfen" })).not.toBeDisabled()
+    );
     fireEvent.click(screen.getByRole("button", { name: "Verwerfen" }));
-    expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "discard");
+    await waitFor(() => expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "discard"));
   });
 
   test("keep-mine ohne Bestätigung löst nichts aus", async () => {
@@ -373,6 +380,36 @@ describe("Sidebar restructured nav", () => {
       "href",
       "/dashboard/compliance"
     );
+  });
+
+  test("conflictCount zeigt Badge am /dashboard/sync Nav-Item", async () => {
+    mockQueue.conflictCount = 2;
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "a" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+      {
+        id: "m2",
+        type: "updatePage",
+        payload: { slug: "b" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    renderSidebar();
+    // Item liegt im "Kanzlei & Compliance"-Workspace (firm_ops) — aufklappen
+    fireEvent.click(screen.getByRole("button", { name: /Kanzlei & Compliance/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /Synchronisation/ })).toHaveAttribute(
+        "href",
+        "/dashboard/sync"
+      );
+    });
+    expect(screen.getByRole("link", { name: /Synchronisation/ }).textContent).toContain("2");
   });
 
   test("sync page is reachable via nav for non-admin users", () => {

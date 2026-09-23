@@ -59,11 +59,23 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
   const confirm = useConfirm();
   const resolve = useCallback(
     async (mode: "keep-mine" | "discard" | "rename") => {
-      if (mode === "keep-mine") {
+      if (mode === "keep-mine" || mode === "discard") {
         const ok = await confirm({
-          title: t("sync.confirm_keep_title" as DashboardKey),
-          message: t("sync.confirm_keep_msg" as DashboardKey),
-          confirmLabel: t("sync.confirm_overwrite" as DashboardKey),
+          title: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_keep_title"
+              : "sync.confirm_discard_title") as DashboardKey
+          ),
+          message: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_keep_msg"
+              : "sync.confirm_discard_msg") as DashboardKey
+          ),
+          confirmLabel: t(
+            (mode === "keep-mine"
+              ? "sync.confirm_overwrite"
+              : "mobile.conflict_discard") as DashboardKey
+          ),
           variant: "danger",
         });
         if (!ok) return;

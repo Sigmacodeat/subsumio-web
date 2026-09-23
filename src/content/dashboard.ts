@@ -479,6 +479,14 @@ export const D = {
     en: "The server change will be replaced by your offline version. This cannot be undone.",
   },
   "sync.confirm_overwrite": { de: "Überschreiben", en: "Overwrite" },
+  "sync.confirm_discard_title": {
+    de: "Offline-Änderung verwerfen?",
+    en: "Discard offline change?",
+  },
+  "sync.confirm_discard_msg": {
+    de: "Ihre nicht synchronisierte Änderung wird unwiderruflich gelöscht. Die Server-Version bleibt erhalten.",
+    en: "Your unsynced change will be permanently deleted. The server version remains.",
+  },
   "sync.unchanged_lines": { de: "unveränderte Zeilen", en: "unchanged lines" },
   "sync.diff_truncated": {
     de: "weitere geänderte Zeilen — vollständig vergleichen via „Ansehen“",
