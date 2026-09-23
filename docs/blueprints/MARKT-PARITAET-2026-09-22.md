@@ -354,8 +354,10 @@ bea-deadlines.ts` — `eebZustellungsdatum` wendet die Zustellfiktion
     Ausgangskopien erzeugen keine Fristvorschläge mehr.
     **Bundesland** aus `legal/settings/kanzlei` (`rechtsraumState`,
     im Kanzlei-Profil für DE-Mandate wählbar) steuert die §-193-BGB-
-    Landesfeiertage. Offene beA-Vorschläge werden auf der beA-Seite mit
-    Link zur Eingangsprüfung angezeigt.
+    Landesfeiertage; die Akte kann via `bundesland`-Feld (Select im
+    Neuanlegen-Formular, nur bei Rechtskreis DE sichtbar) überstimmen —
+    Präzedenz Akte > Kanzlei, pro Akte gecacht. Offene beA-Vorschläge
+    werden auf der beA-Seite mit Link zur Eingangsprüfung angezeigt.
     **Offen bleibt:** nativer beA-Versand (eigene Zertifizierung vs.
     Middleware-Partner — Entscheidung Welle C).
 34. **DATEV-Strategie klären.** `src/lib/datev-direct.ts` ist ein
@@ -471,6 +473,12 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
 51. ✅ **WhatsApp Mandant bidirektional** — geliefert: Consent-Store
     (opt-in/opt-out pro Scope, DSGVO-Proof) war angelegt; jetzt verdrahtet:
     STOPP/START-Keywords im Webhook, Outbound-Gate prüft Consent.
+    Ergänzt (23.09.): volles Opt-out mutet auch Inbound
+    (`whatsapp.inbound_muted`-Audit statt Orchestrator-Forwarding,
+    STOPP-Text sagt das explizit); `GET api/whatsapp/muted` liefert
+    Zähler+Zeitpunkt der letzten 30 Tage und die Kommunikations-Akte
+    zeigt einen diskreten Hinweis („nicht zugestellt, nur
+    protokolliert").
 52. **Self-Hosted-Angebot.** Donna wirbt damit; die Engine kann es —
     Produkt-/Betriebsmodell definieren (kein Code-Item, aber
     Vertriebsrelevant).
@@ -497,7 +505,16 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
     Source-Isolation via `engineHeadersForUserId`). - ✅ OneDrive/SharePoint-UI: `DmsBrowserDialog` (Suche, Ordner-
     Drilldown, Import via `api/dms/import`, ehrliches
     `not_configured`) — verdrahtet im Vault und als
-    Einstiegs-Karte auf der Connectors-Seite - ✅ SMS: `src/lib/sms/` (Twilio-Adapter env-gated, eigener
+    Einstiegs-Karte auf der Connectors-Seite. Ergänzt (23.09.):
+    `GET api/dms/content?id=` streamt Binär-Content on-demand aus
+    dem DMS (`getDocumentContent` im Connector-Interface, alle vier
+    Konnektoren) — für `document_oversized`-Importe ohne
+    Inline-Base64; „Öffnen"-Button im `DmsBrowserDialog` nach dem
+    Import; auf der Dokument-Detailseite ersetzt „Im DMS öffnen" den
+    Original-Link wenn `document_oversized` gesetzt ist. Range-
+    Requests (206/416) für Browser-PDF-Viewer, MIME-Allowlist +
+    `nosniff` gegen Stored-XSS, jeder Zugriff auditiert
+    (`dms.content_download`). - ✅ SMS: `src/lib/sms/` (Twilio-Adapter env-gated, eigener
     Consent-Kanal `subsumio_sms_consent`, Consent+Quiet-Hours-Gate
     ohne 24h-Fenster), `api/sms/send` + `api/sms/consent`
     (Opt-in/Opt-out mit DSGVO-Proof), Audit `sms.*`.

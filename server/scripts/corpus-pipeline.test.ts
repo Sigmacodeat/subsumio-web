@@ -14,7 +14,7 @@ import { describe, test, expect } from "vitest";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SIMPLE, JUDIKATUR } from "../scripts/corpus-pipeline";
+import { SIMPLE, JUDIKATUR } from "./corpus-pipeline";
 import {
   AT_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_ALL,

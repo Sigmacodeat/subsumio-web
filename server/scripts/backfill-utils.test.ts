@@ -8,7 +8,7 @@
  *  - validateFetchedText: Text-Validierung gegen leere/chrome-kontaminierte Inhalte
  *  - atomicWrite: Atomic-Write-Garantie
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   contentHash,
   contentMatchesDocument,

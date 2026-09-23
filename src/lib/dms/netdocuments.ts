@@ -90,7 +90,7 @@ export const netDocumentsConnector: DMSConnector = {
   },
 
   async getDocumentContent(docId: string) {
-    return fetchDmsContent(`${DMS_BASE}/v1/Documents/${docId}/content`);
+    return fetchDmsContent(`${DMS_BASE}/v1/Documents/${encodeURIComponent(docId)}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

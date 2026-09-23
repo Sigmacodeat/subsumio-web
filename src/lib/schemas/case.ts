@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { bundeslandSchema } from "./legal";
 
 export const caseStatusSchema = z.enum([
   "open",
@@ -47,6 +48,9 @@ export const caseFormSchema = z.object({
   legalArea: z.string().max(100).optional(),
   subArea: z.string().max(100).optional(),
   jurisdiction: caseJurisdictionSchema,
+  /** DE-Fälle: Bundesland für landesspezifische Feiertage (§ 193 BGB) —
+   *  überstimmt das Kanzlei-Bundesland in eEB-/Frist-Berechnungen. */
+  bundesland: bundeslandSchema.optional(),
   status: caseStatusSchema,
   priority: casePrioritySchema,
   clientName: z.string().max(200).optional(),

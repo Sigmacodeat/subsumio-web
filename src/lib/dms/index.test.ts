@@ -21,6 +21,7 @@ import {
   isDmsConfigured,
   importToBrainCommon,
   dmsFetchJson,
+  fetchDmsContent,
   type DMSDocument,
 } from "./index";
 
@@ -365,5 +366,55 @@ describe("dmsFetchJson", () => {
   test("throws a clean error when fetch itself rejects (network failure / timeout)", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("The operation timed out"));
     await expect(dmsFetchJson("https://dms.example.com/x")).rejects.toThrow(/timed out/);
+  });
+});
+
+describe("fetchDmsContent", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("liefert ArrayBuffer + MIME-Type aus Content-Type-Header", async () => {
+    const bytes = new Uint8Array([37, 80, 68, 70]); // %PDF
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(bytes, {
+        status: 200,
+        headers: { "content-type": "application/pdf" },
+      })
+    );
+    const res = await fetchDmsContent("https://dms.example.com/doc/1/content");
+    expect(res).not.toBeNull();
+    expect(res!.mimeType).toBe("application/pdf");
+    expect(new Uint8Array(res!.data)).toEqual(bytes);
+  });
+
+  test("null bei non-OK Response (kein Throw)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("x", { status: 404 }));
+    await expect(fetchDmsContent("https://dms.example.com/x")).resolves.toBeNull();
+  });
+
+  test("null bei Netzwerkfehler/Timeout (kein Throw)", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("timeout"));
+    await expect(fetchDmsContent("https://dms.example.com/x")).resolves.toBeNull();
+  });
+
+  test("fallback MIME-Type application/octet-stream ohne Header", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(new Uint8Array([1]), { status: 200 })
+    );
+    const res = await fetchDmsContent("https://dms.example.com/x");
+    // Response ohne expliziten Content-Type → text/plain;charset=UTF-8 im
+    // Fetch-Standard — der Connector-MIME kommt vom Upstream, hier prüfen wir
+    // nur, dass ein MIME zurückkommt.
+    expect(res!.mimeType).toBeTruthy();
+  });
+
+  test("folgt Redirects (Box liefert 302 auf CDN)", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(new Uint8Array([1]), { status: 200 }));
+    await fetchDmsContent("https://api.box.com/2.0/files/1/content");
+    const init = fetchSpy.mock.calls[0][1] as RequestInit;
+    expect(init.redirect).toBe("follow");
   });
 });

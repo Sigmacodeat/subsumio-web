@@ -42,6 +42,7 @@ import {
   type CaseFormData,
   type AdditionalOpponentFormData,
 } from "@/lib/schemas/case";
+import { BUNDESLAENDER } from "@/lib/legal/frist-engine-de";
 import {
   checkInternalConflict,
   type ContactRef,
@@ -262,6 +263,7 @@ export default function NewCasePage() {
           legal_area: data.legalArea || undefined,
           sub_area: data.subArea || undefined,
           jurisdiction: data.jurisdiction,
+          bundesland: data.bundesland || undefined,
           status: data.status,
           priority: data.priority,
           client_name: data.clientName || undefined,
@@ -403,6 +405,7 @@ export default function NewCasePage() {
   const title = watch("title");
   const priority = watch("priority");
   const jurisdiction = watch("jurisdiction");
+  const bundesland = watch("bundesland");
   const legalArea = watch("legalArea");
   const clientName = watch("clientName");
   const clientSlug = watch("clientSlug");
@@ -775,6 +778,42 @@ export default function NewCasePage() {
                   </p>
                 )}
               </div>
+              {jurisdiction === "de" && (
+                <div>
+                  <Label htmlFor="case-bundesland" className="mb-1.5 block text-xs">
+                    Bundesland
+                  </Label>
+                  <Select
+                    value={bundesland ?? ""}
+                    onValueChange={(v) =>
+                      setValue("bundesland", (v || undefined) as CaseFormData["bundesland"])
+                    }
+                  >
+                    <SelectTrigger id="case-bundesland" className="w-full">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bundesland && (
+                        <>
+                          <SelectItem value="" className="text-[color:var(--ds-text-muted)]">
+                            —
+                          </SelectItem>
+                          <SelectSeparator />
+                        </>
+                      )}
+                      {BUNDESLAENDER.map((b) => (
+                        <SelectItem key={b.code} value={b.code}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    Für landesspezifische Feiertage in Fristberechnungen (§ 193 BGB). Leer =
+                    Kanzlei-Bundesland.
+                  </p>
+                </div>
+              )}
               <div>
                 <Label htmlFor="case-priority" className="mb-1.5 block text-xs">
                   {t("casesnew.label_priority")}

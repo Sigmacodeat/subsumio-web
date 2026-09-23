@@ -55,6 +55,7 @@ const baseDoc: DeltaDocument = {
   htmlUrl: null,
   pdfUrl: null,
   kurztitel: "Testgesetz",
+  abkuerzung: null,
   gesetzesnummer: "10001622",
   geschaeftszahl: null,
   artikelParagraphAnlage: "§ 1152",

@@ -126,7 +126,7 @@ export const boxConnector: DMSConnector = {
   },
 
   async getDocumentContent(docId: string) {
-    return fetchDmsContent(`${BOX_API}/files/${docId}/content`);
+    return fetchDmsContent(`${BOX_API}/files/${encodeURIComponent(docId)}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

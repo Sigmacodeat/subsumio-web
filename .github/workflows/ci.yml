@@ -91,6 +91,11 @@ jobs:
       # folder (see server/deploy/netcup/deploy-code.sh). Runs the script's own
       # server-side blocks against a temporary folder.
       - run: sh -n server/deploy/netcup/deploy-code.sh
+      # Typecheck der gepflegten Pipeline-Scripts (tsconfig.scripts.json scoped
+      # auf die von CI-Tests gedeckten Entry-Points — One-off-Utility-Scripts
+      # bleiben bewusst außen vor).
+      - run: bunx tsc --noEmit -p tsconfig.scripts.json
+        working-directory: server
       # Läuft über alle server/scripts/*.test.ts (deploy-code, ris-delta,
       # corpus-pipeline-Integrität u.a.) — nicht nur deploy-code.
       - run: npx vitest run --config vitest.config.scripts.ts

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getConnector } from "@/lib/dms";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { logAudit } from "@/lib/audit";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/dms/content");
@@ -10,6 +11,8 @@ export const maxDuration = 60;
 
 const dmsContentSchema = z.object({
   id: z.string().min(1).max(500),
+  /** "1" erzwingt Content-Disposition: attachment (Download statt Vorschau). */
+  download: z.enum(["0", "1"]).optional(),
 });
 
 /**
@@ -26,7 +29,7 @@ export const GET = createHandler(
     rateTier: "standard",
     query: dmsContentSchema,
   },
-  async (_ctx, _body, query, req) => {
+  async (ctx, _body, query, req) => {
     const connector = await getConnector();
     if (!connector || !connector.isConfigured()) {
       return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
@@ -42,6 +45,14 @@ export const GET = createHandler(
         return apiError("content_unavailable", "Dokumentinhalt nicht abrufbar", 502);
       }
 
+      // Zugriff auditieren — Mandantengeheimnis/Revisions­sicherheit verlangt
+      // nachvollziehbar, wer welches DMS-Dokument geöffnet hat.
+      await logAudit("dms.content_download", "dms_document", {
+        brainId: ctx.brainId,
+        entityId: query.id,
+        details: { name: doc.name, user: ctx.user?.email ?? null },
+      });
+
       const filename = encodeURIComponent(doc.name).replace(/'/g, "%27");
       // Inline nur für MIME-Typen ohne aktiven Content — ein als HTML/SVG
       // abgelegtes DMS-Dokument würde sonst mit App-Origin-Session
@@ -54,7 +65,7 @@ export const GET = createHandler(
       const total = content.data.byteLength;
       const baseHeaders: Record<string, string> = {
         "Content-Type": content.mimeType,
-        "Content-Disposition": `${safeInline ? "inline" : "attachment"}; filename*=UTF-8''${filename}`,
+        "Content-Disposition": `${safeInline && query.download !== "1" ? "inline" : "attachment"}; filename*=UTF-8''${filename}`,
         "X-Content-Type-Options": "nosniff",
         "Accept-Ranges": "bytes",
         "Cache-Control": "private, no-store",

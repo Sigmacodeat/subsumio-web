@@ -1,5 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src", "test", "scripts"],
+  "include": [
+    "src",
+    "test",
+    "scripts/corpus-pipeline.ts",
+    "scripts/deploy-code.ts",
+    "scripts/backfill-utils.ts",
+    "scripts/ris-delta.ts",
+    "scripts/ris-delta-watcher.ts",
+    "scripts/ingest-law-corpus.ts",
+    "scripts/normalize/normalize-corpus.ts",
+    "scripts/*.test.ts"
+  ],
   "exclude": []
 }

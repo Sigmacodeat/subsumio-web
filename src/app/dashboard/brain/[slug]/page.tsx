@@ -133,7 +133,15 @@ export default function BrainDetailPage() {
   // A citation link opens the page at the cited passage (?hl=…).
   useHighlightQuoteFromUrl(!!page && !loading);
   const sourceFormat = typeof fm.source_format === "string" ? fm.source_format.toLowerCase() : "";
-  const fileHref = `/api/files/${encodeSlugPath(slug)}`;
+  // Übergroße DMS-Importe tragen keinen Inline-Content — „Original öffnen"
+  // lädt sie on-demand aus dem DMS, statt auf den leeren File-Endpoint.
+  const dmsDocumentId =
+    fm.document_oversized === true && typeof fm.dms_document_id === "string"
+      ? fm.dms_document_id
+      : null;
+  const fileHref = dmsDocumentId
+    ? api.dms.contentUrl(dmsDocumentId)
+    : `/api/files/${encodeSlugPath(slug)}`;
   const canPreview = isDocument && sourceFormat === "pdf";
   const caseHref = caseSlug
     ? `/dashboard/cases/${encodeSlugPath(caseSlug)}${isDocument ? "/documents" : ""}`
@@ -329,15 +337,19 @@ export default function BrainDetailPage() {
             <div className="flex items-center gap-2 overflow-x-auto">
               {isDocument && (
                 <PrimaryAction asChild>
-                  <a href={`${fileHref}?inline=1`} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={dmsDocumentId ? fileHref : `${fileHref}?inline=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <ExternalLink size={15} aria-hidden="true" />
-                    {t("braindetail.doc_open_original")}
+                    {dmsDocumentId ? "Im DMS öffnen" : t("braindetail.doc_open_original")}
                   </a>
                 </PrimaryAction>
               )}
               {isDocument && (
                 <Button variant="secondary" asChild className="whitespace-nowrap">
-                  <a href={fileHref}>
+                  <a href={dmsDocumentId ? `${fileHref}&download=1` : fileHref}>
                     <Download size={14} aria-hidden="true" />
                     {t("braindetail.doc_download")}
                   </a>

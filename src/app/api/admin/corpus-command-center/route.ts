@@ -41,19 +41,25 @@ const diskCountCache = new Map<string, { n: number; t: number }>();
 // Zusätzlich mtime-memoisiert pro Verzeichnis: ein Dir ohne mtime-Änderung
 // kann seinen Subtree-Count wiederverwenden, ohne nochmal readdir'd zu
 // werden — der Re-Scan kostet dann nur noch O(changed dirs) statt O(files).
+// ctime wird mitverglichen: auf Dateisystemen mit grober mtime-Granularität
+// (mancher NFS/FUSE-Mounts ~1s) kann eine Add+Remove-Sequenz in derselben
+// Sekunde an mtime vorbeigehen — ctime deckt Inode-Metadaten zusätzlich ab.
 // fs.watch wäre die Alternative, skaliert aber nicht (inotify-Limits bei
 // 700k Dateien).
-const dirScanCache = new Map<string, Map<string, { mtimeMs: number; n: number }>>();
+const dirScanCache = new Map<
+  string,
+  Map<string, { mtimeMs: number; ctimeMs: number; n: number }>
+>();
 
 async function countMdFiles(root: string): Promise<number> {
   const prev = dirScanCache.get(root) ?? new Map();
-  const next = new Map<string, { mtimeMs: number; n: number }>();
+  const next = new Map<string, { mtimeMs: number; ctimeMs: number; n: number }>();
 
   const walk = async (dir: string): Promise<number> => {
     const st1 = await stat(dir).catch(() => null);
     if (!st1?.isDirectory()) return 0;
     const hit = prev.get(dir);
-    if (hit && hit.mtimeMs === st1.mtimeMs) {
+    if (hit && hit.mtimeMs === st1.mtimeMs && hit.ctimeMs === st1.ctimeMs) {
       next.set(dir, hit);
       return hit.n;
     }
@@ -66,7 +72,8 @@ async function countMdFiles(root: string): Promise<number> {
     // Double-stat: änderte sich das Dir während des Reads, ist der Count
     // racy — dann nicht cachen (nächster Scan sieht die neuere mtime).
     const st2 = await stat(dir).catch(() => null);
-    if (st2 && st2.mtimeMs === st1.mtimeMs) next.set(dir, { mtimeMs: st1.mtimeMs, n });
+    if (st2 && st2.mtimeMs === st1.mtimeMs && st2.ctimeMs === st1.ctimeMs)
+      next.set(dir, { mtimeMs: st1.mtimeMs, ctimeMs: st1.ctimeMs, n });
     return n;
   };
 

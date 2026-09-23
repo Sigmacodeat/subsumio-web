@@ -127,7 +127,16 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       );
       await logAudit("whatsapp.inbound_muted", "whatsapp_identity", {
         brainId: sender.brainId,
-        details: { phoneHash: phoneHash(message.from) },
+        details: {
+          phoneHash: phoneHash(message.from),
+          messageType: message.type,
+          // Kurzes Snippet statt Volltext: die Kanzlei muss erkennen können,
+          // OB ein rechtserheblicher Eingang ankam (z.B. Kündigung), ohne
+          // die Nachricht inhaltlich zu verarbeiten. 200 Zeichen reichen
+          // für diese Einordnung.
+          bodySnippet: message.type === "text" ? message.text.trim().slice(0, 200) : null,
+          bodyLength: message.type === "text" ? message.text.trim().length : null,
+        },
       });
       results.push({ id: message.id, status: "opted_out" });
       continue;

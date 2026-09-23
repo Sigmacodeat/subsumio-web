@@ -57,7 +57,13 @@ function isRisOffHours(): boolean {
 }
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const CORPUS_ROOT = join(_scriptDir, "..", "..", "law-corpus");
+// Env first (corpus-paths.ts convention; the pipeline container sets
+// LAW_CORPUS_ROOT=/law-corpus) — the ../../ fallback keeps bare checkouts
+// working where law-corpus is a sibling of the repo.
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ??
+  process.env.SUBSUMIO_LAW_CORPUS_DIR ??
+  join(_scriptDir, "..", "..", "law-corpus");
 
 interface CourtConfig {
   applikation: string;
@@ -382,7 +388,8 @@ async function fullScanCourt(
   court: CourtConfig,
   fromYear: number,
   skipText: boolean,
-  target: number
+  target: number,
+  skipListPath: string | null
 ): Promise<{ fetched: number; written: number; skipped: number }> {
   const outDir = join(CORPUS_ROOT, court.outDir);
   mkdirSync(outDir, { recursive: true });
@@ -393,6 +400,22 @@ async function fullScanCourt(
   // otherwise it would block its own repair forever. Every naming generation
   // is recognised (see judikatur-file.ts), so nothing valid is fetched twice.
   const existing = loadExistingDocs(join(CORPUS_ROOT, "_normalized", court.outDir));
+  // --skip-list: newline-separated filename stems of files that exist on a
+  // DIFFERENT machine (parallel-fetch setup: laptop fetches court A while the
+  // server fetches court B — each needs the other's disk state without
+  // downloading the files). Stems match fileKeys by construction
+  // (decisionFileName = dokNr.toLowerCase()).
+  if (skipListPath) {
+    const lines = (await Bun.file(skipListPath).text())
+      .split("\n")
+      .map((l) => l.trim().replace(/\.md$/i, ""))
+      .filter(Boolean);
+    for (const key of lines) {
+      existing.fileKeys.add(key);
+      existing.undatedKeys.add(key.replace(/^\d{4}-\d{2}-\d{2}-/, ""));
+    }
+    console.log(`  skip-list: ${lines.length} remote-known files loaded from ${skipListPath}`);
+  }
   const existingCount = existing.fileKeys.size;
   const toYear = new Date().getFullYear();
   const years: number[] = [];
@@ -519,13 +542,20 @@ async function main() {
   console.log("✅ RIS lock acquired.");
 
   const args = process.argv.slice(2);
+  // --source is the pipeline's trigger vocabulary (corpus-pipeline.ts maps
+  // source_key → this script); --court is the manual CLI flag. Without the
+  // alias a triggered single-court fetch silently falls back to "all".
   const courtIdx = args.indexOf("--court");
-  const courtArg = courtIdx >= 0 ? args[courtIdx + 1] : "all";
+  const sourceIdx = args.indexOf("--source");
+  const courtArg =
+    courtIdx >= 0 ? args[courtIdx + 1] : sourceIdx >= 0 ? args[sourceIdx + 1] : "all";
   const fromIdx = args.indexOf("--from");
   const skipText = args.includes("--skip-text");
   const offHoursOnly = args.includes("--off-hours-only");
   const targetIdx = args.indexOf("--target");
   const targetOverride = targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : 0;
+  const skipListIdx = args.indexOf("--skip-list");
+  const skipListPath = skipListIdx >= 0 ? args[skipListIdx + 1] : null;
 
   // BKA requires large downloads outside business hours (18:00–06:00) or weekends.
   // If --off-hours-only is set and we're within business hours, wait.
@@ -565,7 +595,7 @@ async function main() {
     const fromYear = fromIdx >= 0 ? parseInt(args[fromIdx + 1], 10) : court.defaultFrom;
     const target = targetOverride || court.knownTotal;
 
-    const result = await fullScanCourt(courtKey, court, fromYear, skipText, target);
+    const result = await fullScanCourt(courtKey, court, fromYear, skipText, target, skipListPath);
     grandWritten += result.written;
     grandSkipped += result.skipped;
   }

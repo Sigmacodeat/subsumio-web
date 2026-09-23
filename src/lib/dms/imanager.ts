@@ -99,7 +99,7 @@ export const iManageConnector: DMSConnector = {
   },
 
   async getDocumentContent(docId: string) {
-    return fetchDmsContent(`${DMS_BASE}/api/v2/documents/${docId}/content`);
+    return fetchDmsContent(`${DMS_BASE}/api/v2/documents/${encodeURIComponent(docId)}/content`);
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {

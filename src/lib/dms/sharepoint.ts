@@ -151,7 +151,9 @@ export const sharePointConnector: DMSConnector = {
   async getDocumentContent(docId: string) {
     const siteId = await resolveSiteId();
     const driveId = await resolveDriveId(siteId);
-    return fetchDmsContent(`${graphBase()}/drives/${driveId}/items/${docId}/content`);
+    return fetchDmsContent(
+      `${graphBase()}/drives/${driveId}/items/${encodeURIComponent(docId)}/content`
+    );
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {
