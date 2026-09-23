@@ -8,18 +8,59 @@ import {
   getPendingMutations,
   removeMutation,
   incrementMutationRetries,
+  setMutationConflicted,
   setOfflineErrorReporter,
   getPendingFileUploads,
   removeFileUpload,
   incrementFileUploadRetries,
+  type QueuedMutation,
 } from "./offline-store";
 
 const MAX_RETRIES = 5;
+/** Client-`createdAt` vs. Server-`updated_at`: Toleranz gegen Uhren-Skew,
+ *  sonst wirkt ein Server mit vorgehender Uhr wie ein externer Edit. */
+const SKEW_TOLERANCE_MS = 60_000;
+
+async function replayMutation(mut: QueuedMutation): Promise<void> {
+  if (mut.type === "createPage") {
+    await api.brain.createPage(
+      mut.payload as {
+        slug: string;
+        title: string;
+        type: string;
+        content?: string;
+        frontmatter?: Record<string, unknown>;
+      }
+    );
+  } else if (mut.type === "updatePage") {
+    await api.brain.updatePage(
+      mut.payload as {
+        slug: string;
+        title?: string;
+        content?: string;
+        frontmatter?: Record<string, unknown>;
+      }
+    );
+  } else if (mut.type === "deletePage") {
+    const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
+    if (!slug) throw new Error("deletePage mutation missing slug");
+    try {
+      await api.brain.deletePage(slug);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("404")) {
+        // Tombstone: page already deleted — treat as success
+      } else {
+        throw err;
+      }
+    }
+  }
+}
 
 interface MutationState {
   pendingCount: number;
   syncing: boolean;
   lastError: string | null;
+  conflicts: QueuedMutation[];
 }
 
 export function useMutationQueue() {
@@ -27,6 +68,7 @@ export function useMutationQueue() {
     pendingCount: 0,
     syncing: false,
     lastError: null,
+    conflicts: [],
   });
 
   // Wire IndexedDB errors into the hook's lastError state
@@ -44,7 +86,11 @@ export function useMutationQueue() {
       getPendingMutations(),
       getPendingFileUploads(),
     ]);
-    setState((s) => ({ ...s, pendingCount: pending.length + pendingFiles.length }));
+    setState((s) => ({
+      ...s,
+      pendingCount: pending.length + pendingFiles.length,
+      conflicts: pending.filter((m) => m.conflicted),
+    }));
   }, []);
 
   const syncPending = useCallback(async () => {
@@ -57,6 +103,7 @@ export function useMutationQueue() {
     try {
       const pending = await getPendingMutations();
       for (const mut of pending) {
+        if (mut.conflicted) continue; // wartet auf User-Entscheidung
         const retryCount = mut.retries ?? 0;
         if (retryCount >= MAX_RETRIES) {
           console.warn(`[mutation-sync] dropping ${mut.id} after ${MAX_RETRIES} retries`);
@@ -65,57 +112,41 @@ export function useMutationQueue() {
           continue;
         }
         try {
-          if (mut.type === "createPage") {
-            await api.brain.createPage(
-              mut.payload as {
-                slug: string;
-                title: string;
-                type: string;
-                content?: string;
-                frontmatter?: Record<string, unknown>;
-              }
-            );
-          } else if (mut.type === "updatePage") {
-            const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
-            if (slug) {
-              try {
-                const current = await api.brain.getPage(slug);
-                const updatedAt = new Date(current.updated_at).getTime();
-                if (updatedAt > new Date(mut.createdAt).getTime() && updatedAt <= syncStart) {
-                  // Externe Änderung zwischen Offline-Edit und Sync —
-                  // still überschreiben würde parallele Edits verlieren
-                  // lassen. Writes aus diesem Replay (updated_at >
-                  // syncStart) zählen nicht als Konflikt, sonst würde ein
-                  // zweites eigenes Queued-Update falsch verwarfen.
-                  await removeMutation(mut.id);
-                  conflicts.push(slug);
-                  continue;
-                }
-              } catch {
-                /* Read fehlgeschlagen — Replay versuchen */
-              }
-            }
-            await api.brain.updatePage(
-              mut.payload as {
-                slug: string;
-                title?: string;
-                content?: string;
-                frontmatter?: Record<string, unknown>;
-              }
-            );
-          } else if (mut.type === "deletePage") {
-            const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
-            if (!slug) throw new Error("deletePage mutation missing slug");
+          const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
+          if (mut.type === "createPage" && slug) {
             try {
-              await api.brain.deletePage(slug);
-            } catch (err) {
-              if (err instanceof Error && err.message.includes("404")) {
-                // Tombstone: page already deleted — treat as success
-              } else {
-                throw err;
+              await api.brain.getPage(slug);
+              // Seite existiert bereits — create wuerde sie
+              // ueberschreiben. Konflikt statt Silent-Overwrite.
+              await setMutationConflicted(mut.id, true);
+              conflicts.push(slug);
+              continue;
+            } catch {
+              /* 404/Read-Fehler → frei, erstellen */
+            }
+          } else if (mut.type === "updatePage" && slug) {
+            try {
+              const current = await api.brain.getPage(slug);
+              const updatedAt = new Date(current.updated_at).getTime();
+              if (
+                updatedAt > new Date(mut.createdAt).getTime() + SKEW_TOLERANCE_MS &&
+                updatedAt <= syncStart + SKEW_TOLERANCE_MS
+              ) {
+                // Externe Änderung zwischen Offline-Edit und Sync —
+                // still überschreiben würde parallele Edits verlieren
+                // lassen. Writes aus diesem Replay (updated_at >
+                // syncStart) zählen nicht als Konflikt, sonst würde ein
+                // zweites eigenes Queued-Update falsch verwarfen.
+                // Bleibt als `conflicted` in der Queue — User entscheidet.
+                await setMutationConflicted(mut.id, true);
+                conflicts.push(slug);
+                continue;
               }
+            } catch {
+              /* Read fehlgeschlagen — Replay versuchen */
             }
           }
+          await replayMutation(mut);
           await removeMutation(mut.id);
         } catch (err) {
           console.error(
@@ -159,7 +190,7 @@ export function useMutationQueue() {
       if (conflicts.length > 0) {
         const shown = conflicts.slice(0, 3).join(", ");
         parts.push(
-          `${conflicts.length} Änderung(en) verworfen — Seite wurde am Server geändert (${shown}${conflicts.length > 3 ? " …" : ""})`
+          `${conflicts.length} Sync-Konflikt(e) bei ${shown}${conflicts.length > 3 ? " …" : ""} — bitte entscheiden`
         );
       }
       if (droppedMutations > 0) parts.push(`${droppedMutations} Änderung(en)`);
@@ -183,6 +214,35 @@ export function useMutationQueue() {
     return () => window.removeEventListener("online", onOnline);
   }, [refreshPending, syncPending]);
 
+  /** Konflikt auflösen: "keep-mine" replayed die gequeuete Änderung
+   *  erneut (bewusstes Überschreiben), "discard" verwirft sie. */
+  const resolveConflict = useCallback(
+    async (id: string, mode: "keep-mine" | "discard") => {
+      if (mode === "discard") {
+        await removeMutation(id);
+        await refreshPending();
+        return;
+      }
+      const pending = await getPendingMutations();
+      const mut = pending.find((m) => m.id === id && m.conflicted);
+      if (!mut) {
+        await refreshPending();
+        return;
+      }
+      try {
+        await replayMutation(mut);
+        await removeMutation(mut.id);
+      } catch (err) {
+        setState((s) => ({
+          ...s,
+          lastError: err instanceof Error ? err.message : String(err),
+        }));
+      }
+      await refreshPending();
+    },
+    [refreshPending]
+  );
+
   const mutate = useCallback(
     async <T>(
       type: "createPage" | "updatePage" | "deletePage",
@@ -202,5 +262,5 @@ export function useMutationQueue() {
     [refreshPending]
   );
 
-  return { ...state, syncPending, mutate, refreshPending };
+  return { ...state, syncPending, mutate, refreshPending, resolveConflict };
 }

@@ -11,25 +11,33 @@ Status: implementiert · Quelle: `src/lib/offline-store.ts`, `src/lib/use-mutati
 | **Replay**        | `syncPending` beim `online`-Event + manuell aus dem Sync-Banner                               |
 | **Datei-Uploads** | eigene Queue (`getPendingFileUploads`), gleiches Retry-Regime                                 |
 
-## Konflikt-Policy: Detect-and-Reject bei `updatePage`
+## Konflikt-Policy: Detect-and-Resolve
 
 Queud Mutations werden **in `createdAt`-Reihenfolge** replayed:
 
-- `updatePage` → vor dem Replay `getPage`: ist `updated_at` **nach**
-  `mut.createdAt` **und vor Sync-Start** geändert worden, hat ein externer
-  Edit stattgefunden → die Offline-Änderung wird **verworfen und gemeldet**
-  (`lastError` im Sync-Banner, mit Slug). Kein stilles Überschreiben.
+- `updatePage` → vor dem Replay `getPage`: ist `updated_at` **mehr als
+  `SKEW_TOLERANCE_MS` (60 s) nach** `mut.createdAt` **und vor Sync-Start
+  (+ Skew-Toleranz)** geändert worden, hat ein externer Edit
+  stattgefunden → die Mutation wird als **`conflicted` markiert und
+  bleibt in der Queue**. Das Sync-Banner zeigt den Konflikt mit Slug und
+  bietet „Meine Version senden" (bewusstes Überschreiben) / „Verwerfen" /
+  „Ansehen" (Server-Stand). Kein stilles Überschreiben, kein stiller
+  Datenverlust.
   Writes aus dem eigenen Replay (`updated_at > syncStart`) zählen nicht
   als Konflikt — sonst würde ein zweites eigenes Queued-Update auf
   derselben Seite fälschlich verwarfen.
+- `createPage` → existiert der Slug bereits auf dem Server (`getPage`
+  200), wird die Mutation ebenfalls `conflicted` — ein Create würde den
+  bestehenden Inhalt überschreiben.
 - `deletePage` → 404 wird als **Tombstone** behandelt (Erfolg, kein Retry).
-- `createPage` → bei Slug-Kollision entscheidet der Server (bestehendes
-  Dedup/Conflict-Verhalten der Brain-API).
 
-**Grenzen:** die Prüfung ist heuristisch (Zeitvergleich, kein ETag) —
-eine externe Änderung _während_ des Replays (nach Sync-Start) wird nicht
-erkannt. Echte Optimistic Concurrency (Version/If-Match auf `updatePage`)
-bleibt der nächste Schritt, wenn Multi-Gerät-Edit häufig wird.
+**Grenzen:** die Prüfung ist heuristisch (Zeitvergleich mit 60-s-Skew-
+Toleranz, kein ETag) — eine externe Änderung _während_ des Replays
+(nach Sync-Start) wird nicht erkannt; bei Server-Uhr weit hinter der
+Client-Uhr können externe Edits unterschlagen werden (fail-Richtung wie
+bisheriges LWW). Echte Optimistic Concurrency (Version/If-Match auf
+`updatePage`) bleibt der nächste Schritt, wenn Multi-Gerät-Edit häufig
+wird.
 
 ## Retry & Drop
 

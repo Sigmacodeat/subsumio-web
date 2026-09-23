@@ -9,6 +9,7 @@ vi.mock("./offline-store", () => ({
   enqueueMutation: vi.fn(async () => {}),
   getPendingMutations: vi.fn(async () => []),
   removeMutation: vi.fn(async () => {}),
+  setMutationConflicted: vi.fn(async () => {}),
   setOfflineErrorReporter: vi.fn(),
   getPendingFileUploads: vi.fn(async () => []),
   removeFileUpload: vi.fn(async () => {}),
@@ -23,7 +24,11 @@ vi.mock("./api", () => ({
       createPage: vi.fn(async () => ({ slug: "test" })),
       updatePage: vi.fn(async () => ({ slug: "test", success: true })),
       deletePage: vi.fn(async () => ({ success: true })),
-      getPage: vi.fn(async () => ({ slug: "test", updated_at: "2024-01-01" })),
+      // Default: Seite existiert nicht (404) — create/update duerfen laufen.
+      // Konflikt-Tests ueberschreiben mit mockResolvedValueOnce.
+      getPage: vi.fn(async () => {
+        throw new Error("404");
+      }),
     },
     upload: {
       file: vi.fn(async () => ({ slug: "test-doc", title: "test" })),
@@ -37,6 +42,7 @@ import {
   enqueueMutation,
   getPendingMutations,
   removeMutation,
+  setMutationConflicted,
   setOfflineErrorReporter,
   getPendingFileUploads,
 } from "./offline-store";
@@ -189,18 +195,48 @@ describe("useMutationQueue", () => {
     expect(api.brain.updatePage).toHaveBeenCalledWith({ slug: "test", title: "Updated" });
   });
 
-  test("syncPending verwirft updatePage bei Server-Konflikt (updated_at nach Enqueue)", async () => {
+  test("syncPending markiert updatePage bei Server-Konflikt (bleibt in Queue)", async () => {
     vi.mocked(api.brain.getPage).mockResolvedValueOnce({
       slug: "test",
       updated_at: "2024-06-01T00:00:00Z",
+    } as never);
+    const conflicted = {
+      id: "m1",
+      type: "updatePage" as const,
+      payload: { slug: "test", title: "Offline-Edit" },
+      createdAt: "2024-01-01T00:00:00Z",
+    };
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValueOnce([conflicted]) // syncPending
+      .mockResolvedValue([conflicted]); // refreshPending danach
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.brain.updatePage).not.toHaveBeenCalled();
+    expect(removeMutation).not.toHaveBeenCalledWith("m1");
+    expect(setMutationConflicted).toHaveBeenCalledWith("m1", true);
+    expect(result.current.lastError).toContain("test");
+  });
+
+  test("syncPending markiert createPage-Kollision als Konflikt", async () => {
+    // getPage liefert eine Seite → Slug existiert bereits
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "cases/neu",
+      updated_at: "2024-01-01T00:00:00Z",
     } as never);
     vi.mocked(getPendingMutations)
       .mockResolvedValueOnce([]) // mount
       .mockResolvedValueOnce([
         {
           id: "m1",
-          type: "updatePage",
-          payload: { slug: "test", title: "Offline-Edit" },
+          type: "createPage",
+          payload: { slug: "cases/neu", title: "Offline erstellt", type: "legal_case" },
           createdAt: "2024-01-01T00:00:00Z",
         },
       ]);
@@ -212,9 +248,66 @@ describe("useMutationQueue", () => {
       await result.current.syncPending();
     });
 
+    expect(api.brain.createPage).not.toHaveBeenCalled();
+    expect(setMutationConflicted).toHaveBeenCalledWith("m1", true);
+  });
+
+  test("syncPending ueberspringt conflicted Mutationen", async () => {
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValueOnce([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Edit" },
+          createdAt: "2024-01-01T00:00:00Z",
+          conflicted: true,
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
     expect(api.brain.updatePage).not.toHaveBeenCalled();
+    expect(api.brain.getPage).not.toHaveBeenCalled();
+  });
+
+  test("resolveConflict keep-mine replayed die Mutation", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "updatePage" as const,
+      payload: { slug: "test", title: "Meine Version" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "keep-mine");
+    });
+
+    expect(api.brain.updatePage).toHaveBeenCalledWith({ slug: "test", title: "Meine Version" });
     expect(removeMutation).toHaveBeenCalledWith("m1");
-    expect(result.current.lastError).toContain("test");
+  });
+
+  test("resolveConflict discard entfernt ohne Replay", async () => {
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "discard");
+    });
+
+    expect(removeMutation).toHaveBeenCalledWith("m1");
+    expect(api.brain.updatePage).not.toHaveBeenCalled();
   });
 
   test("syncPending replayt updatePage wenn updated_at aus diesem Sync stammt", async () => {

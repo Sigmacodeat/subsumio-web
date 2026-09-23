@@ -431,6 +431,16 @@ export const D = {
   },
   "mobile.syncing": { de: "Synchronisiere…", en: "Syncing…" },
   "mobile.sync_now": { de: "Jetzt syncen", en: "Sync now" },
+  "mobile.conflict_title": {
+    de: "Sync-Konflikt — Server-Version ist neuer",
+    en: "Sync conflict — server version is newer",
+  },
+  "mobile.conflict_keep": {
+    de: "Meine Version senden",
+    en: "Send my version",
+  },
+  "mobile.conflict_discard": { de: "Verwerfen", en: "Discard" },
+  "mobile.conflict_view": { de: "Ansehen", en: "View" },
   "mobile.zoom_in": { de: "Vergrößern", en: "Zoom in" },
   "mobile.zoom_out": { de: "Verkleinern", en: "Zoom out" },
   "mobile.download": { de: "Herunterladen", en: "Download" },

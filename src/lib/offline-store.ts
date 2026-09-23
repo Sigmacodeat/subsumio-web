@@ -23,6 +23,9 @@ export interface QueuedMutation {
   payload: Record<string, unknown>;
   createdAt: string;
   retries?: number;
+  /** Server-seitig geaenderte Seite erkannt — wartet auf User-Entscheidung
+   *  (erneut senden / verwerfen), wird vom Replay uebersprungen. */
+  conflicted?: boolean;
 }
 
 type OfflineErrorReporter = (error: Error, context: string) => void;
@@ -221,6 +224,32 @@ export async function incrementMutationRetries(id: string): Promise<void> {
     });
   } catch (e) {
     report(e, "incrementMutationRetries");
+  }
+}
+
+export async function setMutationConflicted(id: string, conflicted: boolean): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(MUTATION_STORE, "readwrite");
+    const store = tx.objectStore(MUTATION_STORE);
+    const req = store.get(id);
+    await new Promise<void>((resolve) => {
+      req.onsuccess = () => {
+        const mut = req.result as QueuedMutation | undefined;
+        if (mut) {
+          mut.conflicted = conflicted;
+          store.put(mut);
+        }
+        resolve();
+      };
+      req.onerror = () => resolve();
+    });
+    await new Promise<void>((resolve) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch (e) {
+    report(e, "setMutationConflicted");
   }
 }
 
