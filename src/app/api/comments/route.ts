@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { addComment, listComments, deleteComment } from "@/lib/comments";
+import { addComment, listComments, deleteComment, CommentAccessError } from "@/lib/comments";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
@@ -28,21 +28,27 @@ const commentsDeleteSchema = z.object({
   id: z.string().min(1, "id_required"),
 });
 
+/** A thread in a matter the caller may not see looks like a missing one. */
+function threadNotFound(): Response {
+  return apiError("not_found", "Kommentar-Thread nicht gefunden", 404);
+}
+
 export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
     query: commentsQuerySchema,
   },
-  async (_ctx, _body, query, _req) => {
+  async (ctx, _body, query, _req) => {
     const parentSlug = query.parentSlug || "";
     if (!parentSlug.trim()) {
       return apiError("parentSlug_required", "parentSlug erforderlich", 400);
     }
     try {
-      const comments = await listComments(parentSlug);
+      const comments = await listComments(ctx.headers, parentSlug);
       return Response.json({ comments, total: comments.length });
     } catch (err) {
+      if (err instanceof CommentAccessError) return threadNotFound();
       log.error("[comments] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentare konnten nicht geladen werden", 500);
     }
@@ -63,7 +69,7 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
-      const comment = await addComment({
+      const comment = await addComment(ctx.headers, {
         parentSlug: body.parent_slug,
         parentType: "page",
         authorId: ctx.user.id,
@@ -79,6 +85,7 @@ export const POST = createHandler(
       });
       return Response.json({ comment }, { status: 201 });
     } catch (err) {
+      if (err instanceof CommentAccessError) return threadNotFound();
       log.error("[comments] create failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentar konnte nicht erstellt werden", 500);
     }
@@ -93,7 +100,7 @@ export const DELETE = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
-      const result = await deleteComment({
+      const result = await deleteComment(ctx.headers, {
         commentId: body.id,
         authorId: ctx.user.id,
         userRole: ctx.user.role,

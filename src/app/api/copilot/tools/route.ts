@@ -2784,7 +2784,7 @@ async function executeCreateAutomationRule(
       created_at: new Date().toISOString(),
       created_by: `copilot:${ctx.user.id}`,
     };
-    const ok = await saveAutomation(ctx.brainId, rule);
+    const ok = await saveAutomation(ctx, rule);
     if (!ok) throw new Error("save failed");
     return {
       success: true,

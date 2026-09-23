@@ -1,5 +1,5 @@
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { buildMatterContext } from "@/lib/matter-context";
 import { shouldSuggestInvestigation } from "@/lib/case-investigation-suggest";
 
@@ -22,12 +22,7 @@ export const GET = createHandler(
     }
 
     try {
-      const bundle = await buildMatterContext(
-        caseSlug,
-        ENGINE_URL,
-        engineHeadersForBrain(ctx.brainId),
-        ctx.user.id
-      );
+      const bundle = await buildMatterContext(caseSlug, ENGINE_URL, ctx.headers, ctx.user.id);
       const suggestion = shouldSuggestInvestigation(bundle);
       return apiSuccess(suggestion);
     } catch (err) {

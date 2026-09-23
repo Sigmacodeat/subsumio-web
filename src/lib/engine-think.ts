@@ -18,6 +18,8 @@ export interface EngineThinkRequest {
   /** System-prompt instructions (persona, output format). */
   instructions?: string;
   mode?: "conservative" | "balanced" | "tokenmax";
+  /** Retrieval profile (e.g. "deep_matter"); the engine picks its default when omitted. */
+  queryMode?: string;
   caseSlug?: string;
   timeoutMs?: number;
 }
@@ -57,6 +59,7 @@ export async function engineThink(
       query: req.query,
       ...(req.instructions ? { instructions: req.instructions } : {}),
       mode: req.mode ?? "balanced",
+      ...(req.queryMode ? { query_mode: req.queryMode } : {}),
       ...(req.caseSlug ? { case_slug: req.caseSlug } : {}),
     }),
     signal: AbortSignal.timeout(req.timeoutMs ?? 120_000),

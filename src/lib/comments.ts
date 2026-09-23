@@ -23,7 +23,8 @@
  *     mentions: string[] (optional — @mentioned usernames)
  */
 
-import { api } from "./api";
+import { getEnginePage, writeEnginePage, type EngineHeaders } from "./engine-page-io";
+import { listEnginePages } from "./engine-pages";
 import { getSharedPgPool } from "./auth/store";
 import { env } from "./env";
 import { createSchemaInit } from "@/lib/schema-init";
@@ -66,20 +67,62 @@ export interface Comment {
   mentions?: string[];
 }
 
-export async function addComment(opts: {
-  parentSlug: string;
-  parentType: string;
-  authorId: string;
-  authorName: string;
-  content: string;
-  threadId?: string;
-  parentCommentId?: string;
-}): Promise<Comment> {
+/**
+ * The caller may not see the matter this thread belongs to (ethical wall,
+ * restricted matter). Routes answer it like a missing thread.
+ */
+export class CommentAccessError extends Error {
+  constructor() {
+    super("comment_thread_not_accessible");
+    this.name = "CommentAccessError";
+  }
+}
+
+/**
+ * The matter a thread hangs off. Threads in the matter tabs use
+ * `legal/cases/<id>/evidence/<n>` style parents, which are no pages of their
+ * own — the matter page decides who may read and write the thread.
+ */
+export function commentMatterSlug(parentSlug: string): string | undefined {
+  const match = /^legal\/cases\/[^/]+/.exec(parentSlug);
+  return match ? match[0] : undefined;
+}
+
+/** Throws CommentAccessError when the caller cannot see the thread's matter. */
+async function assertThreadVisible(headers: EngineHeaders, parentSlug: string): Promise<void> {
+  const matter = commentMatterSlug(parentSlug);
+  if (!matter) return;
+  const page = await getEnginePage(headers, matter);
+  if (!page) throw new CommentAccessError();
+}
+
+function commentSlugPrefix(parentSlug: string): string {
+  return `comment/${parentSlug.replace(/\//g, "-")}/`;
+}
+
+/**
+ * Every function takes the calling route's `ctx.headers` (tenant, API key and
+ * signed caller identity), so the engine applies the matter access rules.
+ */
+export async function addComment(
+  headers: EngineHeaders,
+  opts: {
+    parentSlug: string;
+    parentType: string;
+    authorId: string;
+    authorName: string;
+    content: string;
+    threadId?: string;
+    parentCommentId?: string;
+  }
+): Promise<Comment> {
+  await assertThreadVisible(headers, opts.parentSlug);
   const now = Date.now();
-  const slug = `comment/${opts.parentSlug.replace(/\//g, "-")}/${now}`;
+  const slug = `${commentSlugPrefix(opts.parentSlug)}${now}`;
   const threadId = opts.threadId || opts.parentCommentId || slug;
   const mentions = extractMentions(opts.content);
-  await api.brain.createPage({
+  const matter = commentMatterSlug(opts.parentSlug);
+  await writeEnginePage(headers, {
     slug,
     title: `Kommentar zu ${opts.parentSlug}`,
     type: "comment",
@@ -88,6 +131,11 @@ export async function addComment(opts: {
       type: "comment",
       parent_slug: opts.parentSlug,
       parent_type: opts.parentType,
+      // Stamps the matter, so the engine's wall and restriction filters cover
+      // the comment page itself (its own slug is not under the matter path).
+      ...(matter ? { case_slug: matter } : {}),
+      // Page listings carry no body; the thread view reads the text from here.
+      content: opts.content,
       author_id: opts.authorId,
       author_name: opts.authorName,
       thread_id: threadId,
@@ -119,24 +167,26 @@ export async function addComment(opts: {
   };
 }
 
-export async function listComments(parentSlug: string): Promise<Comment[]> {
+/** Throws CommentAccessError when the caller cannot see the thread's matter. */
+export async function listComments(headers: EngineHeaders, parentSlug: string): Promise<Comment[]> {
+  await assertThreadVisible(headers, parentSlug);
   try {
-    const pages = await api.brain.listPages({ type: "comment", limit: 200 });
+    const pages = await listEnginePages(headers, "comment", 500, {
+      slugPrefix: commentSlugPrefix(parentSlug),
+    });
     return pages
-      .filter((p) => {
-        const fm = p.frontmatter as Record<string, unknown>;
-        return String(fm.parent_slug ?? "") === parentSlug;
-      })
+      .filter((p) => String(p.frontmatter?.parent_slug ?? "") === parentSlug)
       .map((p) => {
-        const fm = p.frontmatter as Record<string, unknown>;
+        const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+        const text = typeof fm.content === "string" ? fm.content : p.content || "";
         return {
           id: p.slug,
           parentSlug: String(fm.parent_slug ?? ""),
           parentType: String(fm.parent_type ?? ""),
           authorId: String(fm.author_id ?? ""),
           authorName: String(fm.author_name ?? "Unbekannt"),
-          content: fm.deleted_at ? "[gelöscht]" : p.content || "",
-          createdAt: String(fm.created_at ?? p.created_at),
+          content: fm.deleted_at ? "[gelöscht]" : text,
+          createdAt: String(fm.created_at ?? p.created_at ?? ""),
           threadId: String(fm.thread_id ?? p.slug),
           parentCommentId: fm.parent_comment_id ? String(fm.parent_comment_id) : undefined,
           deletedAt: fm.deleted_at ? String(fm.deleted_at) : undefined,
@@ -153,27 +203,41 @@ export async function listComments(parentSlug: string): Promise<Comment[]> {
  * Soft-Delete a comment. Only the author or an admin can delete.
  * The comment content is replaced with "[gelöscht]" but the record stays for audit.
  */
-export async function deleteComment(opts: {
-  commentId: string;
-  authorId: string;
-  userRole: string;
-}): Promise<{ success: boolean }> {
-  const page = await api.brain.getPage(opts.commentId);
+export async function deleteComment(
+  headers: EngineHeaders,
+  opts: {
+    commentId: string;
+    authorId: string;
+    userRole: string;
+  }
+): Promise<{ success: boolean }> {
+  if (!opts.commentId.startsWith("comment/")) return { success: false };
+  const page = await getEnginePage(headers, opts.commentId);
   if (!page) {
     return { success: false };
   }
-  const fm = page.frontmatter as Record<string, unknown>;
+  const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+  try {
+    await assertThreadVisible(headers, String(fm.parent_slug ?? ""));
+  } catch (err) {
+    if (err instanceof CommentAccessError) return { success: false };
+    throw err;
+  }
   const isAuthor = String(fm.author_id ?? "") === opts.authorId;
   const isAdmin = opts.userRole === "admin";
   if (!isAuthor && !isAdmin) {
     return { success: false };
   }
   // Soft-delete: update frontmatter with deleted_at, replace content
-  await api.brain.updatePage({
-    slug: opts.commentId,
-    content: "[gelöscht]",
-    frontmatter: { ...fm, deleted_at: new Date().toISOString() },
-  });
+  await writeEnginePage(
+    headers,
+    {
+      slug: opts.commentId,
+      content: "[gelöscht]",
+      frontmatter: { deleted_at: new Date().toISOString(), content: "[gelöscht]" },
+    },
+    { merge: true }
+  );
   return { success: true };
 }
 

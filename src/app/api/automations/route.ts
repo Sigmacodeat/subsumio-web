@@ -52,7 +52,7 @@ const deleteSchema = z.object({
 
 export const GET = createHandler({ action: "admin.*", rateTier: "standard" }, async (ctx) => {
   try {
-    const rules = await listAutomations(ctx.brainId);
+    const rules = await listAutomations(ctx);
     return apiSuccess({ rules, total: rules.length });
   } catch (err) {
     return apiError(
@@ -91,7 +91,7 @@ export const POST = createHandler(
       created_at: new Date().toISOString(),
       created_by: ctx.user?.email ?? "system",
     };
-    if (!(await saveAutomation(ctx.brainId, rule))) {
+    if (!(await saveAutomation(ctx, rule))) {
       return apiError("automation_create_failed", "Regel konnte nicht gespeichert werden", 502);
     }
     return apiSuccess({ rule });
@@ -111,7 +111,7 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body) => {
-    const rules = await listAutomations(ctx.brainId);
+    const rules = await listAutomations(ctx);
     const rule = rules.find((r) => r.slug === body.slug);
     if (!rule) return apiError("automation_not_found", "Regel nicht gefunden", 404);
     const updated: AutomationRule = {
@@ -119,7 +119,7 @@ export const PATCH = createHandler(
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
     };
-    if (!(await updateAutomation(ctx.brainId, updated))) {
+    if (!(await updateAutomation(ctx, updated))) {
       return apiError("automation_update_failed", "Regel konnte nicht aktualisiert werden", 502);
     }
     return apiSuccess({ rule: updated });
@@ -139,7 +139,7 @@ export const DELETE = createHandler(
     }),
   },
   async (ctx, body) => {
-    if (!(await deleteAutomation(ctx.brainId, body.slug))) {
+    if (!(await deleteAutomation(ctx, body.slug))) {
       return apiError("automation_delete_failed", "Regel konnte nicht gelöscht werden", 502);
     }
     return apiSuccess({ deleted: body.slug });

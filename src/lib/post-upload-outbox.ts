@@ -67,6 +67,7 @@ export async function enqueuePostUploadTask(
   opts: { force?: boolean } = {}
 ): Promise<void> {
   const slug = taskSlug(task.doc_slug, task.task_type);
+  // Queue bookkeeping for the background worker, not a read on a user's behalf.
   const headers = {
     ...engineHeadersForBrain(brainId),
     "Content-Type": "application/json",

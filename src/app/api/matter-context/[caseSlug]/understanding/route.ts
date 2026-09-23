@@ -1,5 +1,5 @@
 import { createHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { buildMatterContext, buildUnderstandingPanel } from "@/lib/matter-context";
 
 export const maxDuration = 30;
@@ -19,12 +19,7 @@ export const GET = createHandler(
       );
     }
 
-    const bundle = await buildMatterContext(
-      caseSlug,
-      ENGINE_URL,
-      engineHeadersForBrain(ctx.brainId),
-      ctx.user.id
-    );
+    const bundle = await buildMatterContext(caseSlug, ENGINE_URL, ctx.headers, ctx.user.id);
 
     const panel = buildUnderstandingPanel(bundle);
 

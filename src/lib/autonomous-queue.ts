@@ -298,7 +298,11 @@ export async function markTaskRequiresApproval(
 /**
  * Get task queue stats.
  */
-export async function getQueueStats(brainId: string): Promise<{
+export async function getQueueStats(
+  brainId: string,
+  /** The signed-in caller's `ctx.headers`, so walled matters' tasks are not counted. */
+  callerHeaders?: Record<string, string>
+): Promise<{
   pending: number;
   running: number;
   completed: number;
@@ -306,7 +310,7 @@ export async function getQueueStats(brainId: string): Promise<{
   requires_approval: number;
   by_priority: Record<TaskPriority, number>;
 }> {
-  const headers = engineHeadersForBrain(brainId);
+  const headers = callerHeaders ?? engineHeadersForBrain(brainId);
   const params = new URLSearchParams({ type: "autonomous_task", limit: "500" });
 
   const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {

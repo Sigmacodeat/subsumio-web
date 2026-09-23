@@ -220,16 +220,28 @@ export function automationToFrontmatter(rule: AutomationRule): Record<string, un
   };
 }
 
-async function engineFetch(brainId: string, path: string, init?: RequestInit): Promise<Response> {
+/**
+ * Who a rule call is made for: a route passes its `ctx` (identity-bearing
+ * headers, so the engine applies the matter access rules to the signed-in
+ * user); the automations cron, which has no user, passes the firm's brainId.
+ */
+export type AutomationCaller = string | { headers: Record<string, string> };
+
+async function engineFetch(
+  caller: AutomationCaller,
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
+  const headers = typeof caller === "string" ? engineHeadersForBrain(caller) : caller.headers;
   return fetch(`${ENGINE_URL}${path}`, {
     ...init,
-    headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
     signal: AbortSignal.timeout(15_000),
   });
 }
 
-export async function listAutomations(brainId: string): Promise<AutomationRule[]> {
-  const res = await engineFetch(brainId, "/api/pages?type=automation&limit=200");
+export async function listAutomations(caller: AutomationCaller): Promise<AutomationRule[]> {
+  const res = await engineFetch(caller, "/api/pages?type=automation&limit=200");
   if (!res.ok) return [];
   const raw = await res.json();
   const pages = Array.isArray(raw)
@@ -242,8 +254,11 @@ export async function listAutomations(brainId: string): Promise<AutomationRule[]
     .filter((r): r is AutomationRule => r !== null);
 }
 
-export async function saveAutomation(brainId: string, rule: AutomationRule): Promise<boolean> {
-  const res = await engineFetch(brainId, "/api/pages", {
+export async function saveAutomation(
+  caller: AutomationCaller,
+  rule: AutomationRule
+): Promise<boolean> {
+  const res = await engineFetch(caller, "/api/pages", {
     method: "POST",
     body: JSON.stringify({
       slug: rule.slug,
@@ -256,9 +271,12 @@ export async function saveAutomation(brainId: string, rule: AutomationRule): Pro
   return res.ok;
 }
 
-export async function updateAutomation(brainId: string, rule: AutomationRule): Promise<boolean> {
+export async function updateAutomation(
+  caller: AutomationCaller,
+  rule: AutomationRule
+): Promise<boolean> {
   // Die Engine kennt kein PUT auf /api/pages — Merge-Update via POST.
-  const res = await engineFetch(brainId, "/api/pages", {
+  const res = await engineFetch(caller, "/api/pages", {
     method: "POST",
     body: JSON.stringify({
       slug: rule.slug,
@@ -271,8 +289,8 @@ export async function updateAutomation(brainId: string, rule: AutomationRule): P
   return res.ok;
 }
 
-export async function deleteAutomation(brainId: string, slug: string): Promise<boolean> {
-  const res = await engineFetch(brainId, `/api/pages/${encodeURIComponent(slug)}`, {
+export async function deleteAutomation(caller: AutomationCaller, slug: string): Promise<boolean> {
+  const res = await engineFetch(caller, `/api/pages/${encodeURIComponent(slug)}`, {
     method: "DELETE",
   });
   return res.ok;

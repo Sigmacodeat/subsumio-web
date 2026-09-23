@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Called periodically by client to keep activity alive.
  */
 async function heartbeatHandler(ctx: HandlerContext) {
-  await updateActivityHeartbeat(ctx.brainId, ctx.user.id);
+  await updateActivityHeartbeat(ctx.brainId, ctx.user.id, ctx.headers);
   return NextResponse.json({ ok: true, heartbeat: true });
 }
 

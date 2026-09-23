@@ -13,7 +13,11 @@ vi.mock("@/lib/api-handler", () => ({
       handler: (ctx: unknown, body: unknown) => Promise<Response>
     ) =>
     async (req: Request) => {
-      const ctx = { brainId: "org_brain1", user: { id: "u1", role: "admin" } };
+      const ctx = {
+        brainId: "org_brain1",
+        user: { id: "u1", role: "admin" },
+        headers: { "x-subsumio-source": "org_brain1", "x-subsumio-identity-token": "signed" },
+      };
       const body =
         opts.body && req.method !== "GET" ? opts.body.parse(await req.json()) : undefined;
       return handler(ctx, body);
@@ -47,6 +51,8 @@ describe("/api/settings/mcp-tokens", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://engine.test/api/mcp-tokens");
     expect((init.headers as Record<string, string>)["x-subsumio-source"]).toBe("org_brain1");
+    // The signed-in caller's identity travels along (matter access rules).
+    expect((init.headers as Record<string, string>)["x-subsumio-identity-token"]).toBe("signed");
   });
 
   it("creates a token and returns the one-time secret", async () => {

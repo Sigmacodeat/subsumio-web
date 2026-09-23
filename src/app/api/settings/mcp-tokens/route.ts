@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ const createSchema = z.object({
  */
 export const GET = createHandler({ action: "settings.read", rateTier: "standard" }, async (ctx) => {
   const res = await fetch(`${ENGINE_URL}/api/mcp-tokens`, {
-    headers: engineHeadersForBrain(ctx.brainId),
+    headers: ctx.headers,
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return apiError("engine_error", "Token-Liste konnte nicht geladen werden", 502);
@@ -43,7 +43,7 @@ export const POST = createHandler(
   async (ctx, body) => {
     const res = await fetch(`${ENGINE_URL}/api/mcp-tokens`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...engineHeadersForBrain(ctx.brainId) },
+      headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify({ name: body.name }),
       signal: AbortSignal.timeout(15_000),
     });

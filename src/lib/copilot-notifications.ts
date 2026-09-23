@@ -16,7 +16,7 @@
  * - no_tasks: Active case with no open tasks
  */
 
-import { api } from "@/lib/api";
+import { listEnginePages } from "@/lib/engine-pages";
 import type { BrainPage } from "@/lib/types";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { persistNotificationUpsert, type Notification } from "@/lib/comments";
@@ -88,11 +88,15 @@ function daysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
 
-async function scanCases(_brainId?: string): Promise<CaseScanResult[]> {
-  const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+/**
+ * `headers` are the calling route's `ctx.headers` (tenant, API key, signed
+ * caller identity): the engine then only returns matters this person may see.
+ */
+async function scanCases(headers: Record<string, string>): Promise<CaseScanResult[]> {
+  const pages = await listEnginePages(headers, "legal_case", 500);
   const now = new Date().toISOString();
 
-  return (pages as BrainPage[]).map((page) => {
+  return (pages as unknown as BrainPage[]).map((page) => {
     const fm = caseFrontmatter(page);
     const deadlines = fm.deadlines ?? [];
     const openDeadlines = deadlines.filter((d) => String(d.status ?? "pending") !== "done");
@@ -342,11 +346,12 @@ function generateNotificationsFromScan(
 }
 
 export async function generateCopilotNotifications(
+  headers: Record<string, string>,
   brainId: string,
   userId: string,
   isEn: boolean
 ): Promise<CopilotNotification[]> {
-  const scan = await scanCases(brainId);
+  const scan = await scanCases(headers);
   const notifications = generateNotificationsFromScan(scan, isEn);
 
   // Persist as in-app notifications
@@ -385,6 +390,7 @@ export async function dismissCopilotNotification(
 }
 
 export async function getCopilotNotifications(
+  headers: Record<string, string>,
   brainId: string,
   userId: string,
   isEn: boolean
@@ -414,7 +420,7 @@ export async function getCopilotNotifications(
 
   // If no stored notifications, generate fresh ones
   if (copilotNotifs.length === 0) {
-    return generateCopilotNotifications(brainId, userId, isEn);
+    return generateCopilotNotifications(headers, brainId, userId, isEn);
   }
 
   return copilotNotifs;

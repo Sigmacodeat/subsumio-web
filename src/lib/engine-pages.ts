@@ -14,6 +14,8 @@ export interface ListedPage {
   frontmatter?: Record<string, unknown>;
   updated_at?: string;
   created_at?: string;
+  /** Always empty in listings — the engine sends bodies only for single-page reads. */
+  content?: string;
 }
 
 /**
@@ -25,14 +27,15 @@ export async function listEnginePages(
   headers: Record<string, string>,
   type: string,
   limit: number,
-  opts: { includeTombstoned?: boolean; timeoutMs?: number } = {}
+  opts: { includeTombstoned?: boolean; timeoutMs?: number; slugPrefix?: string } = {}
 ): Promise<ListedPage[]> {
+  const prefix = opts.slugPrefix ? `&slug_prefix=${encodeURIComponent(opts.slugPrefix)}` : "";
   const out = new Map<string, ListedPage>();
   try {
     for (let offset = 0; offset < limit; offset += ENGINE_LIST_MAX) {
       const size = Math.min(ENGINE_LIST_MAX, limit - offset);
       const res = await fetch(
-        `${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${size}&offset=${offset}`,
+        `${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${size}&offset=${offset}${prefix}`,
         { headers, signal: AbortSignal.timeout(opts.timeoutMs ?? 15_000) }
       );
       if (!res.ok) break;

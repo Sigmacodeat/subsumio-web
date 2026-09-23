@@ -32,7 +32,7 @@ const startActivitySchema = z.object({
  * Get current activity for the authenticated user.
  */
 async function getCurrentActivityHandler(ctx: HandlerContext) {
-  const current = await getCurrentActivity(ctx.brainId, ctx.user.id);
+  const current = await getCurrentActivity(ctx.brainId, ctx.user.id, ctx.headers);
   return NextResponse.json({ current });
 }
 
@@ -54,21 +54,24 @@ async function startActivityHandler(
   body: z.infer<typeof startActivitySchema>
 ) {
   // Stop any current activity first
-  const existingEntryId = await stopCurrentActivity(ctx.brainId, ctx.user.id);
+  const existingEntryId = await stopCurrentActivity(ctx.brainId, ctx.user.id, ctx.headers);
   if (existingEntryId) {
     broadcastTimeActivityStopped(ctx.brainId, { userId: ctx.user.id, entryId: existingEntryId });
   }
 
   // Start new activity
-  await setCurrentActivity({
-    user_id: ctx.user.id,
-    brain_id: ctx.brainId,
-    activity_type: body.activity_type as ActivityType,
-    description: body.description,
-    case_slug: body.case_slug,
-    started_at: new Date().toISOString(),
-    last_activity_at: new Date().toISOString(),
-  });
+  await setCurrentActivity(
+    {
+      user_id: ctx.user.id,
+      brain_id: ctx.brainId,
+      activity_type: body.activity_type as ActivityType,
+      description: body.description,
+      case_slug: body.case_slug,
+      started_at: new Date().toISOString(),
+      last_activity_at: new Date().toISOString(),
+    },
+    ctx.headers
+  );
 
   broadcastTimeActivityStarted(ctx.brainId, {
     userId: ctx.user.id,

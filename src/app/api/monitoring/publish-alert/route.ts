@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { apiSuccess } from "@/lib/api-response";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import {
   alertToFrontmatter,
   frontmatterToAlert,
@@ -57,7 +57,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const headers = engineHeadersForBrain(ctx.brainId);
+    const headers = ctx.headers;
     const impactNote = sanitizeUserInput(body.impact_note.trim());
 
     // 1. Alert laden

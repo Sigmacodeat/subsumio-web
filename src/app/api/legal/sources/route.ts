@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import {
   buildSourceRegistry,
   loadSyncStatus,
@@ -33,7 +33,7 @@ export const GET = createHandler(
     }),
   },
   async (ctx, _body, query, _req) => {
-    const syncStatus = await loadSyncStatus(ENGINE_URL, engineHeadersForBrain(ctx.brainId));
+    const syncStatus = await loadSyncStatus(ENGINE_URL, ctx.headers);
     const registry = await buildSourceRegistry(syncStatus);
 
     let sources = registry.sources;
@@ -77,7 +77,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const syncStatus = await loadSyncStatus(ENGINE_URL, engineHeadersForBrain(ctx.brainId));
+    const syncStatus = await loadSyncStatus(ENGINE_URL, ctx.headers);
     const registry = await buildSourceRegistry(syncStatus);
     const source = registry.sources.find((s) => s.id === body.source_id);
 
@@ -93,7 +93,7 @@ export const POST = createHandler(
       try {
         const res = await fetch(`${ENGINE_URL}/api/legal/judgements-sync`, {
           method: "POST",
-          headers: { ...engineHeadersForBrain(ctx.brainId), "Content-Type": "application/json" },
+          headers: { ...ctx.headers, "Content-Type": "application/json" },
           body: JSON.stringify({
             jurisdiction: source.jurisdiction.toLowerCase(),
             limit: 50,
@@ -117,7 +117,7 @@ export const POST = createHandler(
           last_sync_at: now,
           last_error: undefined,
         };
-        await saveSyncStatus(ENGINE_URL, engineHeadersForBrain(ctx.brainId), syncStatus);
+        await saveSyncStatus(ENGINE_URL, ctx.headers, syncStatus);
 
         return Response.json({
           success: true,
@@ -137,7 +137,7 @@ export const POST = createHandler(
           last_sync_at: new Date().toISOString(),
           last_error: errorMsg,
         };
-        await saveSyncStatus(ENGINE_URL, engineHeadersForBrain(ctx.brainId), syncStatus);
+        await saveSyncStatus(ENGINE_URL, ctx.headers, syncStatus);
 
         return Response.json({ error: "sync_failed", source_id: source.id }, { status: 502 });
       }
@@ -149,7 +149,7 @@ export const POST = createHandler(
         last_sync_at: now,
         last_error: undefined,
       };
-      await saveSyncStatus(ENGINE_URL, engineHeadersForBrain(ctx.brainId), syncStatus);
+      await saveSyncStatus(ENGINE_URL, ctx.headers, syncStatus);
 
       return Response.json({
         success: true,
