@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search, DownloadCloud } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -279,6 +280,35 @@ function LawCoverage() {
   const [source, setSource] = useState<string>("law-at-normen");
   const [search, setSearch] = useState("");
   const query = useQuery(corpusLawCoverageQuery(source));
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+
+  // Fehlende Gesetze zur Nachladung vormerken — die Pipeline holt sie im
+  // nächsten RIS-Fenster (ris-xml-fetch-normen --gnr), der Import folgt
+  // automatisch über den normalen normen-at-Step.
+  const refetch = useMutation({
+    mutationFn: async (gnr: string) => {
+      const r = await fetch("/api/admin/corpus-law-coverage/refetch", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "law-at-normen", gnr }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    onSuccess: (_data, gnr) => {
+      addToast({ title: `Gesetz ${gnr} zum Nachladen vorgemerkt`, type: "success" });
+      void queryClient.invalidateQueries({ queryKey: ["corpus-law-coverage", source] });
+    },
+    onError: (err) => {
+      addToast({
+        title: "Nachladen fehlgeschlagen",
+        description: err instanceof Error ? err.message : undefined,
+        type: "error",
+      });
+    },
+  });
 
   const body = (() => {
     if (query.isLoading) return <Skeleton className="mt-3 h-40 w-full" />;
@@ -389,6 +419,7 @@ function LawCoverage() {
                   <TableHead className="text-right">fehlen</TableHead>
                   <TableHead className="text-right">Abschnitte</TableHead>
                   <TableHead className="text-right">eingebettet</TableHead>
+                  {source === "law-at-normen" && <TableHead className="text-right" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -438,6 +469,22 @@ function LawCoverage() {
                     <TableCell className="text-right tabular-nums">
                       {l.embedPct !== null ? `${l.embedPct} %` : "—"}
                     </TableCell>
+                    {source === "law-at-normen" && (
+                      <TableCell className="text-right">
+                        {l.missingCount > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={refetch.isPending}
+                            onClick={() => refetch.mutate(l.key)}
+                            title={`${fmt(l.missingCount)} fehlende Normen von RIS nachladen`}
+                          >
+                            <DownloadCloud className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                            Nachladen
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

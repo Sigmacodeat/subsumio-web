@@ -249,6 +249,7 @@ export type AuditAction =
   | "corpus_files.validate_schema"
   | "corpus_alerts.mark_read"
   | "corpus_command_center.trigger_delta"
+  | "corpus.law_refetch"
   | "acl.group_create"
   | "docusign.disconnect"
   | "copilot.explain"
@@ -536,6 +537,7 @@ const ACTION_LABELS: Record<string, string> = {
   "corpus_files.validate_schema": "Corpus-Schema validiert",
   "corpus_alerts.mark_read": "Corpus-Alerts als gelesen markiert",
   "corpus_command_center.trigger_delta": "Corpus-Delta getriggert",
+  "corpus.law_refetch": "Gesetz zum Nachladen vorgemerkt",
   "acl.group_create": "ACL-Gruppe erstellt",
   "docusign.disconnect": "DocuSign getrennt",
   "copilot.explain": "Assistent: Begründung abgerufen",

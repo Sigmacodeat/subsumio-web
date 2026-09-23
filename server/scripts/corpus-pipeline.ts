@@ -1355,6 +1355,104 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
   }
 }
 
+// ── RIS In-force-Index Refresh ─────────────────────────────────────────
+// Der §-genaue Gesetzes-Abgleich im Ops-Dashboard (/api/admin/corpus-law-
+// coverage) liest _state/ris-inforce{,-landesrecht}.jsonl als Upstream-Soll.
+// Wöchentlicher Re-Crawl, damit Novellen/außer-Kraft-Tretungen im Soll
+// nicht veralten. Beide Crawler nehmen selbst den RIS-Lock + Pacing.
+
+const INFORCE_REFRESH_INTERVAL_S = 7 * 86400;
+const INFORCE_INDEX_DIR = "/law-corpus/_state";
+
+function runInforceIndexRefresh(state: CycleState): void {
+  const jobs = [
+    { key: "ris-inforce-br", script: "scripts/ris-inforce-crawl.ts", out: "ris-inforce.jsonl" },
+    {
+      key: "ris-inforce-lr",
+      script: "scripts/ris-inforce-crawl-landesrecht.ts",
+      out: "ris-inforce-landesrecht.jsonl",
+    },
+  ];
+  for (const job of jobs) {
+    ensureSourceRow(job.key);
+    if (ranWithin(job.key, INFORCE_REFRESH_INTERVAL_S)) continue;
+    if (checkSourceProcess(job.key, state).running) continue;
+    startProcess(
+      job.key,
+      [job.script, "--out", `${INFORCE_INDEX_DIR}/${job.out}`],
+      job.key,
+      4 * 3600
+    );
+    updateSourceState(job.key, { stage: "running", last_cycle_at: new Date().toISOString() });
+    appendHistory(job.key, "index-refresh", "scheduled weekly recrawl");
+  }
+}
+
+// ── Law-Fetch-Queue ────────────────────────────────────────────────────
+// Das Ops-Dashboard (corpus-law-coverage/refetch) legt fehlende Gesetze als
+// {source, gnr}-Einträge in pipeline_config.law_fetch_queue ab. Pro Zyklus
+// wird höchstens ein Gesetz geholt (RIS-Pacing); läuft noch einer, wird
+// gewartet. Die frischen Dateien landen in at-normen/ und gehen über den
+// normalen normen-at-Import in die DB.
+
+function runLawFetchQueue(state: CycleState): void {
+  const key = "law-fetch";
+  ensureSourceRow(key);
+
+  const raw = psqlQuery(
+    "SELECT value::text FROM pipeline_config WHERE key = 'law_fetch_queue'"
+  ).trim();
+  if (!raw) return;
+
+  let queue: Array<{ source?: string; gnr?: string }>;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    queue = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    queue = [];
+  }
+  if (queue.length === 0) {
+    psqlQuery("DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'");
+    return;
+  }
+
+  if (checkSourceProcess(key, state).running) {
+    console.log(`  [law-fetch] Läuft bereits — ${queue.length} in Queue`);
+    return;
+  }
+
+  const [next, ...rest] = queue;
+  // Ungültige/nicht unterstützte Einträge still verwerfen — die Route
+  // validiert bereits, dies ist nur der Defensiv-Pfad.
+  if (next?.source !== "law-at-normen" || !next.gnr || !/^\d{4,12}$/.test(next.gnr)) {
+    console.log(`  [law-fetch] Ungültiger Eintrag verworfen: ${JSON.stringify(next)}`);
+  } else {
+    startProcess(
+      `law-fetch-${next.gnr}`,
+      [
+        "scripts/ris-xml-fetch-normen.ts",
+        "--ris",
+        `${INFORCE_INDEX_DIR}/ris-inforce.jsonl`,
+        "--gnr",
+        next.gnr,
+      ],
+      key,
+      4 * 3600
+    );
+    updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
+    appendHistory(key, "fetch", `gnr ${next.gnr} (${rest.length} weitere in Queue)`);
+  }
+
+  if (rest.length === 0) {
+    psqlQuery("DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'");
+  } else {
+    psqlQuery(
+      `UPDATE pipeline_config SET value = ${sqlLiteral(JSON.stringify(rest))}::jsonb,
+       updated_at = now() WHERE key = 'law_fetch_queue'`
+    );
+  }
+}
+
 // ── Import-Queue Drain ─────────────────────────────────────────────────
 //
 // Die Import-Warteschlange (law-corpus/_normalized/_import-warteschlange.json)
@@ -1676,6 +1774,10 @@ async function cycle(): Promise<void> {
     ensureSourceRow("fassungs-sync");
     // Also ensure ris-delta source row
     ensureSourceRow("ris-delta");
+    // Also ensure inforce-index + law-fetch source rows
+    ensureSourceRow("ris-inforce-br");
+    ensureSourceRow("ris-inforce-lr");
+    ensureSourceRow("law-fetch");
 
     // Reload state after ensuring rows
     const freshDbState = loadDBState();
@@ -2129,6 +2231,12 @@ async function cycle(): Promise<void> {
 
     // ── Layer 7: RIS Delta-Watcher (at most once per 24h or manual trigger) ──
     await runDeltaWatcher(state as CycleState);
+
+    // ── RIS In-force-Indizes wöchentlich auffrischen (Dashboard-Soll) ──
+    runInforceIndexRefresh(state as CycleState);
+
+    // ── Law-Fetch-Queue: vom Dashboard vorgemerkte Gesetze nachladen ──
+    runLawFetchQueue(state as CycleState);
 
     // ── Import-Queue abräumen (nach erfolgreichem Import der Sources) ──
     drainImportQueue(state as CycleState);
