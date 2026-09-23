@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import type { BrainEngine } from "../core/engine.ts";
+import {
+  AT_LAW_SOURCES_ALL,
+  AT_LAW_SOURCES_JUDIKATUR,
+  DE_LAW_SOURCES_ALL,
+  DE_LAW_SOURCES_JUDIKATUR,
+  CH_LAW_SOURCES_ALL,
+  CH_LAW_SOURCES_JUDIKATUR,
+} from "./legal/jurisdiction.ts";
 
 // Minimal mock engine — hardSourceFilter/sourceScopeOpts don't call it,
 // but OperationContext requires one.
@@ -198,13 +206,23 @@ describe("WP1: readSourcesFor — Case > User > Fail-Closed jurisdiction", () =>
   // decision tree from web-api.ts readSourcesFor(), since the function
   // requires a full Express Request object.
 
+  // Nutzt die kanonischen Konstanten — kein Drift zwischen Test-Replik
+  // und web-api.ts JURISDICTION_LAW_SOURCES.
   const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
-    DE: ["law-de", "law-eu"],
-    AT: ["law-at", "law-at-judikatur", "law-eu"],
-    CH: ["law-ch", "law-eu"],
+    DE: DE_LAW_SOURCES_ALL,
+    AT: AT_LAW_SOURCES_ALL,
+    CH: CH_LAW_SOURCES_ALL,
   };
 
-  const SHARED_READ_SOURCES = ["law-at", "law-de", "law-ch", "law-eu", "law-at-judikatur"];
+  const SHARED_READ_SOURCES = [
+    "law-at",
+    "law-de",
+    "law-ch",
+    "law-eu",
+    ...AT_LAW_SOURCES_JUDIKATUR,
+    ...DE_LAW_SOURCES_JUDIKATUR,
+    ...CH_LAW_SOURCES_JUDIKATUR,
+  ];
 
   function readSourcesForImpl(
     ownSource: string,
@@ -284,9 +302,10 @@ describe("WP1: readSourcesFor — Case > User > Fail-Closed jurisdiction", () =>
     expect(unique.size).toBe(result!.length);
   });
 
-  it("CH jurisdiction gets law-ch + law-eu only", () => {
+  it("CH jurisdiction gets law-ch + law-ch-judikatur + law-eu", () => {
     const result = readSourcesForImpl("brain_abc", "CH");
     expect(result).toContain("law-ch");
+    expect(result).toContain("law-ch-judikatur");
     expect(result).toContain("law-eu");
     expect(result).not.toContain("law-de");
     expect(result).not.toContain("law-at");

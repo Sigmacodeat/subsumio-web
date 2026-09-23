@@ -1908,6 +1908,7 @@ export const api = {
       success: boolean;
       alreadyImported?: boolean;
       updated?: boolean;
+      oversized?: boolean;
     }> {
       return request("/api/dms/import", {
         method: "POST",

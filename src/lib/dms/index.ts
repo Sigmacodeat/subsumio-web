@@ -47,7 +47,13 @@ export interface DMSConnector {
     doc: DMSDocument,
     brainId: string,
     headers: Record<string, string>
-  ): Promise<{ slug: string; success: boolean; alreadyImported?: boolean; updated?: boolean }>;
+  ): Promise<{
+    slug: string;
+    success: boolean;
+    alreadyImported?: boolean;
+    updated?: boolean;
+    oversized?: boolean;
+  }>;
   pushToDms(
     filename: string,
     contentBase64: string,
@@ -129,7 +135,13 @@ export async function importToBrainCommon(
   headers: Record<string, string>,
   providerName: string,
   contentUrl: string
-): Promise<{ slug: string; success: boolean; alreadyImported?: boolean; updated?: boolean }> {
+): Promise<{
+  slug: string;
+  success: boolean;
+  alreadyImported?: boolean;
+  updated?: boolean;
+  oversized?: boolean;
+}> {
   let content = doc.content;
   if (!content) {
     try {
@@ -154,6 +166,7 @@ export async function importToBrainCommon(
 
   const slug = `dms/import/${doc.id}`;
   const docFields = inlineDocumentFields(content);
+  const oversized = docFields.document_oversized === true;
 
   // Idempotenz: gleiche DMS-Version nicht doppelt importieren, neuere
   // Version aktualisiert die vorhandene Page statt eines Duplikats.
@@ -164,7 +177,11 @@ export async function importToBrainCommon(
     );
     if (existing.ok) {
       const prev = (await existing.json()) as {
-        frontmatter?: { dms_version?: string; dms_modified?: string };
+        frontmatter?: {
+          dms_version?: string;
+          dms_modified?: string;
+          document_oversized?: boolean;
+        };
       };
       // Skip nur bei identischer Version UND unverändertem modifiedDate —
       // DMS ohne Versionsnummern liefern Änderungen sonst nie nach.
@@ -172,7 +189,12 @@ export async function importToBrainCommon(
       const sameModified =
         !doc.modifiedDate || (prev.frontmatter?.dms_modified ?? null) === doc.modifiedDate;
       if (sameVersion && sameModified) {
-        return { slug, success: true, alreadyImported: true };
+        return {
+          slug,
+          success: true,
+          alreadyImported: true,
+          oversized: prev.frontmatter?.document_oversized === true,
+        };
       }
       const patch = await enginePatchPage(headers, {
         slug,
@@ -188,7 +210,7 @@ export async function importToBrainCommon(
           imported_at: new Date().toISOString(),
         },
       });
-      return { slug, success: patch.ok, updated: true };
+      return { slug, success: patch.ok, updated: true, oversized };
     }
   } catch {
     // Lookup fehlgeschlagen → normalen Import-Pfad weitergehen lassen;
@@ -216,7 +238,7 @@ export async function importToBrainCommon(
     signal: AbortSignal.timeout(15_000),
   });
 
-  return { slug, success: pageRes.ok };
+  return { slug, success: pageRes.ok, oversized };
 }
 
 export async function getConnector(): Promise<DMSConnector | null> {

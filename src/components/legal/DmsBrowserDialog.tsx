@@ -129,12 +129,14 @@ export function DmsBrowserDialog({ open, onOpenChange, onImported }: DmsBrowserD
       if (res.success) {
         setImported((s) => new Set(s).add(doc.id));
         addToast({
-          type: "success",
+          type: res.oversized ? "warning" : "success",
           description: res.alreadyImported
             ? `„${doc.name}“ ist bereits importiert (unverändert).`
             : res.updated
               ? `„${doc.name}“ wurde auf die neue DMS-Version aktualisiert.`
-              : `„${doc.name}“ wurde importiert.`,
+              : res.oversized
+                ? `„${doc.name}“ wurde importiert — die Datei ist größer als 25 MB, daher nur die Metadaten.`
+                : `„${doc.name}“ wurde importiert.`,
         });
         onImported?.(res.slug);
       } else {

@@ -88,7 +88,9 @@ jobs:
       # folder (see server/deploy/netcup/deploy-code.sh). Runs the script's own
       # server-side blocks against a temporary folder.
       - run: sh -n server/deploy/netcup/deploy-code.sh
-      - run: npx vitest run --config vitest.config.scripts.ts server/scripts/deploy-code.test.ts
+      # Läuft über alle server/scripts/*.test.ts (deploy-code, ris-delta,
+      # corpus-pipeline-Integrität u.a.) — nicht nur deploy-code.
+      - run: npx vitest run --config vitest.config.scripts.ts
 
   workflow-simulation:
     name: E2E Workflow Simulation (42-step legal workflow)
