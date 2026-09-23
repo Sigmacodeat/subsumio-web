@@ -729,18 +729,6 @@ function pidAlive(pid: number): boolean {
   return true;
 }
 
-/** Check if a PID is alive AND not exceeding its timeout. Returns {alive, stale}. */
-function pidStatus(
-  pid: number,
-  startedAt: string,
-  timeoutS: number
-): { alive: boolean; stale: boolean } {
-  const alive = pidAlive(pid);
-  if (!alive) return { alive: false, stale: false };
-  const elapsedS = (Date.now() - new Date(startedAt).getTime()) / 1000;
-  return { alive: true, stale: elapsedS > timeoutS };
-}
-
 /** Kill a stale process by PID (SIGTERM then SIGKILL after 5s). */
 function killStalePid(pid: number, key: string): void {
   console.log(`  ⏱️ Killing stale PID ${pid} for ${key} (timeout exceeded)`);
@@ -911,7 +899,24 @@ function checkSourceProcess(key: string, state: CycleState): { running: boolean;
     // No PID tracked — use legacy grep as fallback (for manually started processes)
     return { running: false, stale: false };
   }
-  const { alive, stale } = pidStatus(pidInfo.pid, pidInfo.startedAt, pidInfo.timeoutS);
+  // PID-recycling guard: a container recreate reuses PID numbers, so a stale
+  // row can pin this source to an unrelated live process (2026-09-23: jud-bvwg
+  // "running" was a `grep` that inherited the old import's PID). Compare the
+  // process's cmdline with the recorded script path — mismatch means dead.
+  const scriptPath = pidInfo.cmd.replace(/^bun /, "").split(" ")[0];
+  let actual = "";
+  if (scriptPath) {
+    try {
+      actual = readFileSync(`/proc/${pidInfo.pid}/cmdline`, "utf-8");
+    } catch {
+      /* non-Linux or process gone */
+    }
+  }
+  // Empty cmdline = zombie (kernel keeps the PID) or foreign host — fall back
+  // to the zombie-aware signal check in that case.
+  const alive = actual ? actual.includes(scriptPath) : pidAlive(pidInfo.pid);
+  const stale =
+    alive && Date.now() - new Date(pidInfo.startedAt).getTime() > pidInfo.timeoutS * 1000;
   if (!alive) {
     // Process finished — clear PID in DB
     updateSourceState(key, { pid: null, pid_cmd: null, pid_started_at: null });
