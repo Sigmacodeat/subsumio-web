@@ -8,8 +8,16 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 
 export function MobileSyncBanner() {
-  const { pendingCount, syncing, lastError, conflicts, syncPending, resolveConflict } =
-    useMutationQueue();
+  const {
+    pendingCount,
+    syncing,
+    lastError,
+    lastNotice,
+    conflicts,
+    syncPending,
+    resolveConflict,
+    clearNotice,
+  } = useMutationQueue();
   const isOnline = useNetworkStatus();
   const { t } = useLang();
   const [dismissed, setDismissed] = useState(false);
@@ -35,7 +43,27 @@ export function MobileSyncBanner() {
 
   // Don't render anything if online, no pending, no error, no sync confirmation
   if (dismissed && !lastError) return null;
-  if (isOnline && pendingCount === 0 && !lastError && !justSynced) return null;
+  if (isOnline && pendingCount === 0 && !lastError && !justSynced && !lastNotice) return null;
+
+  // Erfolgs-Hinweis (z. B. „Kopie gespeichert als …") — quittierbar
+  if (lastNotice) {
+    return (
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-2 backdrop-blur-sm">
+        <CheckCircle2 size={16} className="shrink-0 text-[color:var(--ds-success-text)]" />
+        <span className="flex-1 truncate text-xs text-[color:var(--ds-success-text)]">
+          {lastNotice}
+        </span>
+        <button
+          type="button"
+          onClick={clearNotice}
+          aria-label={t("mobile.close" as DashboardKey)}
+          className="shrink-0 text-[color:var(--ds-success-text)] transition-opacity hover:opacity-70"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    );
+  }
 
   // Conflict state — wartet auf User-Entscheidung, darf nicht dismissbar sein
   if (conflicts.length > 0) {

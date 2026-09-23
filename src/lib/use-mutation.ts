@@ -60,7 +60,17 @@ interface MutationState {
   pendingCount: number;
   syncing: boolean;
   lastError: string | null;
+  /** Kurzer Erfolgs-Hinweis (z. B. „Kopie gespeichert als cases/neu-2") —
+   *  wird im Sync-Banner gezeigt und via clearNotice quittiert. */
+  lastNotice: string | null;
   conflicts: QueuedMutation[];
+}
+
+/** `cases/neu` → `cases/neu-2`, `cases/neu-2` → `cases/neu-3` —
+ *  zählt einen trailing -N-Suffix hoch statt -2-2-Ketten zu bauen. */
+function nextCopySlug(slug: string): string {
+  const m = slug.match(/^(.*)-(\d+)$/);
+  return m ? `${m[1]}-${parseInt(m[2], 10) + 1}` : `${slug}-2`;
 }
 
 export function useMutationQueue() {
@@ -68,6 +78,7 @@ export function useMutationQueue() {
     pendingCount: 0,
     syncing: false,
     lastError: null,
+    lastNotice: null,
     conflicts: [],
   });
 
@@ -235,6 +246,7 @@ export function useMutationQueue() {
           if (mut.type !== "createPage") return;
           const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
           if (!slug) return;
+          const copySlug = nextCopySlug(slug);
           await api.brain.createPage({
             ...(mut.payload as {
               slug: string;
@@ -243,8 +255,12 @@ export function useMutationQueue() {
               content?: string;
               frontmatter?: Record<string, unknown>;
             }),
-            slug: `${slug}-2`,
+            slug: copySlug,
           });
+          setState((s) => ({
+            ...s,
+            lastNotice: `Kopie gespeichert als ${copySlug}`,
+          }));
         } else {
           await replayMutation(mut);
         }
@@ -279,5 +295,9 @@ export function useMutationQueue() {
     [refreshPending]
   );
 
-  return { ...state, syncPending, mutate, refreshPending, resolveConflict };
+  const clearNotice = useCallback(() => {
+    setState((s) => ({ ...s, lastNotice: null }));
+  }, []);
+
+  return { ...state, syncPending, mutate, refreshPending, resolveConflict, clearNotice };
 }

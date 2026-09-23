@@ -322,6 +322,28 @@ describe("useMutationQueue", () => {
     expect(removeMutation).toHaveBeenCalledWith("m1");
   });
 
+  test("resolveConflict rename zaehlt -N-Suffix hoch (Kaskade)", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "createPage" as const,
+      payload: { slug: "cases/neu-2", title: "Kopie", type: "legal_case" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "rename");
+    });
+
+    expect(api.brain.createPage).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "cases/neu-3" })
+    );
+  });
+
   test("resolveConflict rename ignoriert Nicht-createPage", async () => {
     const conflicted = {
       id: "m1",
