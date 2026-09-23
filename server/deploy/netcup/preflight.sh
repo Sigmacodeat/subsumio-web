@@ -26,6 +26,18 @@ require_value() {
   fi
 }
 
+# Optional features: a missing value only disables the feature — warn, don't block.
+warn_value() {
+  key="$1"
+  hint="$2"
+  val="$(value "$key")"
+  if [ -z "$val" ]; then
+    echo "[preflight] WARN     $key leer — $hint"
+  else
+    echo "[preflight] OK       $key"
+  fi
+}
+
 require_exact() {
   key="$1"
   expected="$2"
@@ -44,7 +56,7 @@ for key in \
   AUTH_SECRET SUBSUMIO_INTERNAL_SECRET SUBSUMIO_ENCRYPTION_KEY CRON_SECRET \
   ENGINE_WEBHOOK_API_KEY OPENROUTER_API_KEY BACKUP_RESTIC_REPOSITORY \
   BACKUP_RESTIC_PASSWORD SUBSUMIO_STORAGE_ENCRYPTION_KEY \
-  RESEND_API_KEY MAIL_FROM RESEND_WEBHOOK_SECRET; do
+  RESEND_API_KEY MAIL_FROM RESEND_WEBHOOK_SECRET PORTAL_TOKEN_SECRET; do
   require_value "$key"
 done
 
@@ -55,6 +67,28 @@ require_exact SUBSUMIO_EMBEDDING_DIMENSIONS 1536
 require_exact SUBSUMIO_WEB_URL http://web:3000
 
 require_value PLATFORM_OPERATOR_EMAILS
+
+# Optionale Funktionen — fehlen sie, läuft der Dienst, aber die Funktion ist aus.
+warn_value NEXT_PUBLIC_SENTRY_DSN "keine Fehlerüberwachung der Web-App (Wert wird beim Build eingebacken)."
+warn_value SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID "öffentliches Erstanfrage-Formular hat kein Ziel-Kanzleiwissen."
+warn_value SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID "öffentliche Terminbuchung ist nicht erreichbar."
+for key in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRICE_SOLO STRIPE_PRICE_KANZLEI; do
+  warn_value "$key" "Online-Abrechnung (Stripe) ist deaktiviert oder unvollständig."
+done
+for key in WEB_PUSH_PUBLIC_KEY WEB_PUSH_PRIVATE_KEY; do
+  warn_value "$key" "keine Web-Push-Benachrichtigungen."
+done
+if [ -n "$(value DOCUSIGN_INTEGRATION_KEY)" ]; then
+  docusign_base="$(value DOCUSIGN_BASE_URL)"
+  case "$docusign_base" in
+    "" | *demo.docusign.net*)
+      echo "[preflight] WARN     DOCUSIGN_BASE_URL zeigt auf die DocuSign-Demo-Umgebung (${docusign_base:-Standard}) — Signaturen sind dort nicht rechtsgültig."
+      ;;
+    *)
+      echo "[preflight] OK       DOCUSIGN_BASE_URL"
+      ;;
+  esac
+fi
 
 # Backups: an offsite repo is the goal, a local encrypted copy the minimum.
 # A production launch without either loses a firm's files on one disk failure.
