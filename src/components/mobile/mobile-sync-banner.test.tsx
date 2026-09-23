@@ -92,6 +92,12 @@ describe("MobileSyncBanner", () => {
     expect(screen.getByText(/1 Sync-Konflikt —/)).toBeInTheDocument();
   });
 
+  test("Konflikt-Block hat role=alert (assertive Ansage)", () => {
+    mockQueue.conflicts = [conflict("m1", "cases/a")];
+    render(<MobileSyncBanner />);
+    expect(screen.getByRole("alert")).toHaveTextContent("1 Sync-Konflikt");
+  });
+
   test("keep-mine fragt per Confirm nach", async () => {
     mockQueue.conflicts = [conflict("m1", "cases/a")];
     render(<MobileSyncBanner />);

@@ -584,4 +584,116 @@ describe("useMutationQueue", () => {
 
     expect(result.current.syncing).toBe(false);
   });
+
+  test("syncPending setzt lastNotice bei vollstaendigem Erfolg", async () => {
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "cases/x", title: "Edit" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(result.current.lastError).toBeNull();
+    expect(result.current.lastNotice).toBe("1 Änderung(en) synchronisiert");
+  });
+
+  test("syncPending zaehlt Datei-Uploads separat in der Notice", async () => {
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "m1",
+          type: "deletePage",
+          payload: { slug: "cases/x" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    vi.mocked(getPendingFileUploads)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "fu1",
+          bytes: new Uint8Array([1, 2]).buffer,
+          fileName: "dok.pdf",
+          fileType: "application/pdf",
+          fileSize: 2,
+          metadata: {},
+          createdAt: "2024-01-01T00:00:00Z",
+          retries: 0,
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.upload.file).toHaveBeenCalled();
+    expect(result.current.lastNotice).toBe("1 Änderung(en) und 1 Datei(en) synchronisiert");
+  });
+
+  test("syncPending setzt keine Erfolgs-Notice bei Konflikt", async () => {
+    // Eine Mutation synct, eine kollidiert → Fehler statt Erfolgs-Notice
+    vi.mocked(api.brain.getPage).mockResolvedValue({
+      slug: "cases/konflikt",
+      updated_at: "2024-06-01T00:00:00Z",
+    } as never);
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "cases/konflikt", title: "Lokal" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(result.current.lastNotice).toBeNull();
+    expect(result.current.lastError).toContain("Sync-Konflikt");
+  });
+
+  test("syncPending meldet fehlgeschlagene Retries im Fehler", async () => {
+    vi.mocked(api.brain.updatePage).mockRejectedValueOnce(new Error("500"));
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "cases/x", title: "Edit" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(result.current.lastError).toContain("1 fehlgeschlagen");
+    expect(result.current.lastNotice).toBeNull();
+  });
 });

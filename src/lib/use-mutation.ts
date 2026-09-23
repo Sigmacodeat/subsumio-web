@@ -122,6 +122,9 @@ export function useMutationQueue() {
     const syncStart = Date.now();
     let droppedMutations = 0;
     let droppedUploads = 0;
+    let syncedMutations = 0;
+    let syncedUploads = 0;
+    let failedItems = 0;
     const conflicts: string[] = [];
     try {
       const pending = await getPendingMutations();
@@ -171,6 +174,7 @@ export function useMutationQueue() {
           }
           await replayMutation(mut);
           await removeMutation(mut.id);
+          syncedMutations++;
         } catch (err) {
           console.error(
             "[mutation-sync] failed for",
@@ -178,6 +182,7 @@ export function useMutationQueue() {
             err instanceof Error ? err.message : String(err)
           );
           await incrementMutationRetries(mut.id);
+          failedItems++;
         }
       }
       await refreshPending();
@@ -196,6 +201,7 @@ export function useMutationQueue() {
           const file = new File([fu.bytes], fu.fileName, { type: fu.fileType || undefined });
           await api.upload.file(file, fu.metadata);
           await removeFileUpload(fu.id);
+          syncedUploads++;
         } catch (err) {
           console.error(
             "[file-upload-sync] failed for",
@@ -203,6 +209,7 @@ export function useMutationQueue() {
             err instanceof Error ? err.message : String(err)
           );
           await incrementFileUploadRetries(fu.id);
+          failedItems++;
         }
       }
       await refreshPending();
@@ -223,7 +230,17 @@ export function useMutationQueue() {
       }
       if (droppedMutations > 0) parts.push(`${droppedMutations} Änderung(en)`);
       if (droppedUploads > 0) parts.push(`${droppedUploads} Datei-Upload(s)`);
+      if (failedItems > 0)
+        parts.push(`${failedItems} fehlgeschlagen (erneuter Versuch ausstehend)`);
       const dropMsg = parts.length > 0 ? `${parts.join("; ")} — nicht synchronisiert` : null;
+      const syncedTotal = syncedMutations + syncedUploads;
+      let notice: string | null = null;
+      if (syncedTotal > 0 && !dropMsg) {
+        const done: string[] = [];
+        if (syncedMutations > 0) done.push(`${syncedMutations} Änderung(en)`);
+        if (syncedUploads > 0) done.push(`${syncedUploads} Datei(en)`);
+        notice = `${done.join(" und ")} synchronisiert`;
+      }
       setState((s) => {
         const merged = [s.lastError, dropMsg].filter(Boolean).join(" — ") || null;
         return {
@@ -231,6 +248,7 @@ export function useMutationQueue() {
           syncing: false,
           lastError: merged,
           lastErrorAt: merged ? (s.lastErrorAt ?? Date.now()) : null,
+          lastNotice: notice ?? s.lastNotice,
         };
       });
     }

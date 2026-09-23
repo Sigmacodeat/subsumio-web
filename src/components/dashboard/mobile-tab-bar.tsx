@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -26,6 +26,7 @@ import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
 import { useSidebarBadges } from "@/lib/queries/sidebar-badges";
+import { useMutationQueue } from "@/lib/use-mutation";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { DE_ONLY_HREFS, navForIndustry } from "@/components/dashboard/sidebar";
 
@@ -74,7 +75,14 @@ export function MobileTabBar({
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
   const [createOnly, setCreateOnly] = useState(false);
-  const badges = useSidebarBadges().data ?? {};
+  const badgesQuery = useSidebarBadges();
+  const { conflictCount } = useMutationQueue();
+  // Lokale Sync-Konflikte als Badge — client-seitig, wie in der Sidebar.
+  const badges = useMemo(() => {
+    const base = badgesQuery.data ?? {};
+    if (conflictCount <= 0) return base;
+    return { ...base, "/dashboard/sync": { count: conflictCount, variant: "warning" as const } };
+  }, [badgesQuery.data, conflictCount]);
   const { brains, activeBrain, selectBrain } = useBrainSelector();
   const moreRef = useRef<HTMLDivElement>(null);
   const {
@@ -329,6 +337,8 @@ export function MobileTabBar({
                     href={item.href}
                     icon={item.icon}
                     label={t(item.labelKey)}
+                    badgeCount={badges[item.href]?.count}
+                    badgeVariant={badges[item.href]?.variant}
                   />
                 ))}
               </MoreSheetSection>
@@ -508,18 +518,38 @@ function MoreSheetLink({
   href,
   icon: Icon,
   label,
+  badgeCount,
+  badgeVariant = "info",
 }: {
   href: string;
   icon: IconType;
   label: string;
+  badgeCount?: number;
+  badgeVariant?: "danger" | "warning" | "info";
 }) {
+  const badgeClasses = {
+    danger: "bg-[color:var(--ds-danger-text)]",
+    warning: "bg-[color:var(--ds-warning-text)]",
+    info: "bg-[color:var(--ds-info-text)]",
+  }[badgeVariant];
   return (
     <Link
       href={href}
       className="flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
+      <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
         <Icon size={15} />
+        {(badgeCount ?? 0) > 0 && (
+          <span
+            className={cn(
+              "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white",
+              badgeClasses
+            )}
+            aria-label={`${badgeCount}`}
+          >
+            {badgeCount}
+          </span>
+        )}
       </div>
       <span className="line-clamp-1 text-center text-xs leading-tight font-medium">{label}</span>
     </Link>

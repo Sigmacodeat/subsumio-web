@@ -120,7 +120,10 @@ export function MobileSyncBanner() {
   // Conflict state — wartet auf User-Entscheidung, darf nicht dismissbar sein
   if (conflicts.length > 0) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 border-b border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2 backdrop-blur-sm">
+      <div
+        role="alert"
+        className="fixed inset-x-0 top-0 z-50 border-b border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2 backdrop-blur-sm"
+      >
         <div className="flex items-center gap-2">
           <GitMerge size={16} className="shrink-0 text-[color:var(--ds-warning-text)]" />
           <span className="flex-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
