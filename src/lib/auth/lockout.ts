@@ -8,6 +8,12 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 const log = logger("lib/auth/lockout");
 
+// The file below is only the fallback when no auth Postgres is configured
+// (dev / self-hosted without DB). Production requires an auth DB (see
+// createUserStore in ./store.ts), so lockouts live in subsumio_lockouts and
+// survive deploys. If the file fallback ever runs inside the web container,
+// note that /app/.data is not a volume there (server/deploy/netcup/
+// docker-compose.yml) — its contents would be lost on every deploy.
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const LOCKOUT_FILE = path.join(DATA_DIR, "lockouts.json");
 

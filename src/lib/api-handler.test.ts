@@ -17,6 +17,7 @@ import { z } from "zod";
 vi.mock("./engine", () => ({
   engineConfigurationResponse: () => null,
   requireEngineContext: vi.fn(),
+  applyUsageGuards: vi.fn(async () => null),
 }));
 
 vi.mock("./audit", () => ({
@@ -94,7 +95,8 @@ vi.mock("./csrf", async () => {
 });
 
 // Import after mocks are set up
-import { requireEngineContext } from "./engine";
+import { requireEngineContext, applyUsageGuards } from "./engine";
+import { verifyApiKey } from "./auth/api-key-auth";
 import { logAudit } from "./audit";
 import { validateCsrf } from "./csrf";
 import { hit } from "./auth/rate-limit";
@@ -745,5 +747,130 @@ describe("Credit enforcement in createHandler", () => {
     expect(res.status).toBe(200);
     const callArgs = vi.mocked(requireEngineContext).mock.calls[0];
     expect(callArgs?.[4]).toBeUndefined();
+  });
+});
+
+describe("createHandler API-key path (sk_live_)", () => {
+  function apiKeyRequest(method: string, body?: unknown): NextRequest {
+    const headers = new Headers({ authorization: "Bearer sk_live_test" });
+    const init: RequestInit = { method, headers };
+    if (body !== undefined) {
+      init.body = JSON.stringify(body);
+      headers.set("Content-Type", "application/json");
+    }
+    return new NextRequestImpl(
+      "http://localhost:3000/api/test",
+      init as ConstructorParameters<typeof NextRequestImpl>[1]
+    ) as unknown as NextRequest;
+  }
+
+  function keyFor(scopes: string[], role = "lawyer") {
+    return {
+      ctx: mockCtx({ role, id: "key_owner" }),
+      key: { id: "k1", scopes, ownerId: "key_owner", active: true },
+    } as any;
+  }
+
+  beforeEach(() => {
+    // No session on these requests.
+    vi.mocked(requireEngineContext).mockResolvedValue(
+      Response.json({ error: "unauthorized" }, { status: 401 }) as any
+    );
+    vi.mocked(applyUsageGuards).mockReset();
+    vi.mocked(applyUsageGuards).mockResolvedValue(null);
+    vi.mocked(verifyApiKey).mockReset();
+  });
+
+  it("a read-scoped key may GET, and goes through rate/credit/quota guards", async () => {
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["read"]));
+    const handler = vi.fn(async () => Response.json({ ok: true }));
+    const GET = createHandler(
+      { action: "brain.read", rateTier: "search", quota: "queries", credits: "think" as any },
+      handler
+    );
+
+    const res = await GET(apiKeyRequest("GET"));
+
+    expect(res.status).toBe(200);
+    expect(handler).toHaveBeenCalled();
+    expect(applyUsageGuards).toHaveBeenCalledWith(
+      expect.objectContaining({ user: expect.objectContaining({ id: "key_owner" }) }),
+      "search",
+      "queries",
+      "think"
+    );
+  });
+
+  it("a read-scoped key may not mutate (403 insufficient_scope)", async () => {
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["read"]));
+    const handler = vi.fn(async () => Response.json({ ok: true }));
+    const POST = createHandler({ action: "brain.write" }, handler);
+
+    const res = await POST(apiKeyRequest("POST", { a: 1 }));
+
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.code).toBe("insufficient_scope");
+    expect(body.details).toEqual({ requiredScope: "write" });
+    expect(handler).not.toHaveBeenCalled();
+    expect(applyUsageGuards).not.toHaveBeenCalled();
+  });
+
+  it("a write-scoped key may mutate", async () => {
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["write"]));
+    const POST = createHandler({ action: "brain.write" }, async () => Response.json({ ok: true }));
+
+    expect((await POST(apiKeyRequest("POST", { a: 1 }))).status).toBe(200);
+  });
+
+  it("settings/admin routes need the admin scope, even for an admin's key", async () => {
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["write"], "admin"));
+    const handler = vi.fn(async () => Response.json({ ok: true }));
+    const settingsPost = createHandler({ action: "settings.write" }, handler);
+    const adminGet = createHandler({ action: "admin.*" }, handler);
+
+    expect((await settingsPost(apiKeyRequest("POST", {}))).status).toBe(403);
+    expect((await adminGet(apiKeyRequest("GET"))).status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["admin"], "admin"));
+    expect((await settingsPost(apiKeyRequest("POST", {}))).status).toBe(200);
+  });
+
+  it("the admin scope never lifts the owner's role", async () => {
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["admin"], "assistant"));
+    const POST = createHandler({ action: "settings.write" }, async () => Response.json({}));
+
+    const res = await POST(apiKeyRequest("POST", {}));
+
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("forbidden");
+  });
+
+  it("a rate-limited / out-of-credit key gets the guard's refusal", async () => {
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["read"]));
+    vi.mocked(applyUsageGuards).mockResolvedValueOnce(
+      Response.json({ error: "rate_limited" }, { status: 429 })
+    );
+    const handler = vi.fn(async () => Response.json({ ok: true }));
+    const GET = createHandler({ action: "brain.read" }, handler);
+
+    const res = await GET(apiKeyRequest("GET"));
+
+    expect(res.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("a refused session (not 401) is never swapped for a key", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValueOnce(
+      Response.json({ error: "two_factor_setup_required" }, { status: 403 }) as any
+    );
+    vi.mocked(verifyApiKey).mockResolvedValue(keyFor(["admin"], "admin"));
+    const GET = createHandler({ action: "brain.read" }, async () => Response.json({ ok: true }));
+
+    const res = await GET(apiKeyRequest("GET"));
+
+    expect(res.status).toBe(403);
+    expect(verifyApiKey).not.toHaveBeenCalled();
   });
 });

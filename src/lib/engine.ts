@@ -23,6 +23,10 @@ import {
   type OwnerType,
 } from "@/lib/billing/credits";
 import { requireApiRate, type RateTier } from "@/lib/rate-limit-api";
+import {
+  isAllowedDuringTwoFactorSetup,
+  twoFactorSetupRequiredResponse,
+} from "@/lib/auth/two-factor-gate";
 import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
@@ -121,6 +125,10 @@ export interface EngineContext {
   /** Set only while a platform operator is inside a time-boxed support
    *  session (see src/lib/support-session.ts) — never for firm users. */
   supportSession?: SupportSession;
+  /** The session was issued with must2fa (firm requires 2FA, the user has not
+   *  set it up). requireEngineContext() confines it to the setup routes —
+   *  see src/lib/auth/two-factor-gate.ts. */
+  must2fa?: boolean;
   /** Set for public live-demo visitors (POST /api/demo/session). brainId is
    *  the visitor's isolated demo-s-* source; api-handler restricts dangerous
    *  actions and bills LLM use against the session budget, not credits. */
@@ -260,7 +268,15 @@ export async function engineContext(): Promise<EngineContext | null> {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;
   }
   addCallerIdentity(headers, brainId, effectiveUser);
-  return { headers, brainId, plan, user: effectiveUser, billing, supportSession };
+  return {
+    headers,
+    brainId,
+    plan,
+    user: effectiveUser,
+    billing,
+    supportSession,
+    ...(session.must2fa ? { must2fa: true } : {}),
+  };
 }
 
 /**
@@ -284,6 +300,24 @@ export function addCallerIdentity(
 }
 
 /**
+ * The brain a user's work lives in — the firm's shared brain for a team
+ * member (`org.brainId`), otherwise their personal one. Same resolution as
+ * engineContext() (minus support sessions, which never apply to a login).
+ * A member's own `user.brainId` is the unused personal workspace from their
+ * signup (org/join leaves it untouched), so firm-wide settings must never be
+ * read from it. Returns null when the firm is suspended. Store errors throw.
+ */
+export async function firmBrainIdFor(
+  user: Pick<User, "brainId" | "orgId">
+): Promise<string | null> {
+  if (!user.orgId) return user.brainId;
+  const org = await getOrgStore().getById(user.orgId);
+  if (org?.suspendedAt) return null;
+  // `orgId` without a firm behind it: the person works alone (see engineContext).
+  return org ? org.brainId : user.brainId;
+}
+
+/**
  * Engine headers for a known user WITHOUT a browser session — used by the
  * calendar subscription, where Outlook or Google fetches the feed on its own.
  * Resolves the same brain the person would get when signed in and signs their
@@ -296,12 +330,8 @@ export async function engineHeadersForUserId(
   const user = await getStore().getById(userId);
   if (!user || user.deactivatedAt) return null;
 
-  let brainId = user.brainId;
-  if (user.orgId) {
-    const org = await getOrgStore().getById(user.orgId);
-    if (org?.suspendedAt) return null;
-    if (org) brainId = org.brainId;
-  }
+  const brainId = await firmBrainIdFor(user);
+  if (!brainId) return null;
 
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");
@@ -519,11 +549,45 @@ export async function requireEngineContext(
   const ctx = await engineContext();
   if (!ctx) return unauthorized();
 
+  // 0. Firm-wide 2FA requirement: a must2fa session reaches only the 2FA
+  //    setup routes (middleware.ts applies the same gate to /api/* at the
+  //    edge; this is the per-route enforcement for every createHandler route).
+  if (ctx.must2fa) {
+    let pathname = "";
+    try {
+      pathname = new URL(req.url).pathname;
+    } catch {
+      // Unparseable URL → not on the allowlist → refused below.
+    }
+    if (!isAllowedDuringTwoFactorSetup(pathname, req.method)) {
+      return twoFactorSetupRequiredResponse();
+    }
+  }
+
   // 1. RBAC
   if (!can(ctx.user, action)) {
     return forbidden(action);
   }
 
+  const guard = await applyUsageGuards(ctx, rateTier, quotaField, creditOp);
+  if (guard) return guard;
+  return ctx;
+}
+
+/**
+ * Rate limit, credit and quota checks for an already authenticated caller —
+ * shared by the session path (requireEngineContext) and the API-key path
+ * (createHandler in src/lib/api-handler.ts), so a `sk_live_` key cannot skip
+ * what a browser session is held to. The rate-limit bucket is the acting
+ * user's: a key shares its owner's budget, and several keys cannot multiply it.
+ * Returns the refusal Response, or null when the request may proceed.
+ */
+export async function applyUsageGuards(
+  ctx: EngineContext,
+  rateTier: RateTier,
+  quotaField?: QuotaType,
+  creditOp?: CreditOperation
+): Promise<Response | null> {
   // 2. Rate-Limit
   const rateCheck = await requireApiRate(ctx.user.id, rateTier);
   if (rateCheck) return rateCheck;
@@ -557,7 +621,7 @@ export async function requireEngineContext(
     }
   }
 
-  return ctx;
+  return null;
 }
 
 /**
@@ -620,6 +684,8 @@ export async function recordCreditConsumption(
 export async function requireAuthAction(action: RouteAction): Promise<GuardedContext | Response> {
   const ctx = await engineContext();
   if (!ctx) return unauthorized();
+  // No request path here, so nothing is on the 2FA-setup allowlist.
+  if (ctx.must2fa) return twoFactorSetupRequiredResponse();
   if (!can(ctx.user, action)) return forbidden(action);
   return ctx;
 }

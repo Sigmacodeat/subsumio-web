@@ -8,7 +8,30 @@
 // the 90-day sb_ref cookie only after the visitor agrees.
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
+import { verifySessionCore, SESSION_COOKIE, b64urlDecodeUtf8 } from "@/lib/auth/session-core";
+import {
+  isAllowedDuringTwoFactorSetup,
+  TWO_FACTOR_SETUP_PAGE,
+  twoFactorSetupRequiredBody,
+} from "@/lib/auth/two-factor-gate";
+
+/**
+ * Cheap pre-check before the HMAC verification: does the (not yet verified)
+ * session payload claim must2fa at all? Only then is the cookie verified —
+ * a normal session costs no extra crypto on every API request. A forged
+ * claim is harmless here: it can only get its own request refused, and the
+ * route handler verifies the signature anyway.
+ */
+function sessionClaimsMust2fa(token: string): boolean {
+  const dot = token.lastIndexOf(".");
+  if (dot <= 0) return false;
+  try {
+    const payload = JSON.parse(b64urlDecodeUtf8(token.slice(0, dot))) as { must2fa?: unknown };
+    return payload?.must2fa === true;
+  } catch {
+    return false;
+  }
+}
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { env } from "@/lib/env";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
@@ -443,6 +466,22 @@ export async function middleware(req: NextRequest) {
     return applyCsp(NextResponse.redirect(canonical, { status: 308 }));
   }
 
+  // --- Firm-wide 2FA requirement on the API ---
+  // A session minted with must2fa (see auth/login/route.ts) may only call the
+  // 2FA setup routes until /api/auth/2fa/verify re-issues it without the
+  // flag. The /dashboard redirect below covers pages; this covers every API
+  // route, including the few that read the session themselves instead of
+  // going through requireEngineContext() (which enforces the same list).
+  if (pathname.startsWith("/api/")) {
+    const sessionCookie = req.cookies.get(SESSION_COOKIE)?.value;
+    if (sessionCookie && sessionClaimsMust2fa(sessionCookie)) {
+      const apiSession = await verifySessionCore(sessionCookie);
+      if (apiSession?.must2fa && !isAllowedDuringTwoFactorSetup(pathname, method)) {
+        return applyCsp(NextResponse.json(twoFactorSetupRequiredBody(), { status: 403 }));
+      }
+    }
+  }
+
   // --- CSRF validation for state-changing API requests ---
   if (pathname.startsWith("/api/") && !SAFE_METHODS.has(method)) {
     // Auth endpoints are exempt (login/signup don't have a CSRF cookie yet)
@@ -513,8 +552,8 @@ export async function middleware(req: NextRequest) {
     // lives — until /api/auth/2fa/verify re-issues a session without the
     // flag. This is the actual enforcement; before this the setting was
     // only ever read back into the settings form, never acted on.
-    if (session.must2fa && !isOpsPath(pathname) && pathname !== "/dashboard/settings/security") {
-      const setup = new URL("/dashboard/settings/security", req.url);
+    if (session.must2fa && !isOpsPath(pathname) && pathname !== TWO_FACTOR_SETUP_PAGE) {
+      const setup = new URL(TWO_FACTOR_SETUP_PAGE, req.url);
       setup.searchParams.set("require2fa", "1");
       return applyCsp(NextResponse.redirect(setup));
     }

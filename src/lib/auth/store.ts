@@ -95,6 +95,14 @@ export interface User {
   calendarFeedCreatedAt?: string | null;
   /** Last time a calendar client fetched the feed (ISO). */
   calendarFeedLastUsedAt?: string | null;
+  /** SHA-256 of the secret of the separate WebDAV/CalDAV access token
+   *  (read-only drive + deadlines via scripts/dav-server.ts). Unlike the
+   *  calendar link it opens documents; see src/lib/feed-auth.ts. */
+  davTokenHash?: string | null;
+  /** When the current DAV access token was created (ISO). */
+  davTokenCreatedAt?: string | null;
+  /** Last time a DAV client used the token (ISO). */
+  davTokenLastUsedAt?: string | null;
   createdAt: string;
 }
 
@@ -771,6 +779,8 @@ export type PublicUser = Omit<
   | "openaiKey"
   | "anthropicKey"
   | "zeroEntropyKey"
+  | "calendarFeedTokenHash"
+  | "davTokenHash"
 >;
 export function toPublic(user: User): PublicUser {
   const {
@@ -787,6 +797,9 @@ export function toPublic(user: User): PublicUser {
     openaiKey: _oak,
     anthropicKey: _aak,
     zeroEntropyKey: _zek,
+    // Feed/DAV credential hashes never leave the server.
+    calendarFeedTokenHash: _cfh,
+    davTokenHash: _dth,
     ...pub
   } = user;
   void _ph;
@@ -802,6 +815,8 @@ export function toPublic(user: User): PublicUser {
   void _oak;
   void _aak;
   void _zek;
+  void _cfh;
+  void _dth;
   return pub;
 }
 

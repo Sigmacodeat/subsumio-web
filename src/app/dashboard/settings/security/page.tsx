@@ -47,8 +47,14 @@ export default function SecuritySettingsPage() {
   const loading = meQuery.isLoading;
 
   useEffect(() => {
+    // Middleware sends a must2fa session here with ?require2fa=1. While 2FA
+    // is not set up, that session may not read the firm settings (every API
+    // outside the setup flow answers 403), so the hint must not depend on it.
+    if (new URLSearchParams(window.location.search).get("require2fa") === "1") {
+      setOrgRequires2FA(true);
+    }
     loadKanzleiSettings()
-      .then((s) => setOrgRequires2FA(s.require2FA ?? false))
+      .then((s) => setOrgRequires2FA((prev) => prev || (s.require2FA ?? false)))
       .catch((err) =>
         console.warn(
           "[security] Failed to load 2FA settings:",

@@ -21,7 +21,7 @@ export async function GET(_req: Request, context: { params: Promise<{ token: str
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
 
-  const auth = await resolveFeedToken(token ?? "");
+  const auth = await resolveFeedToken(token ?? "", "calendar");
   if (!auth.ok) {
     if (auth.status === 429) {
       return new Response("Zu viele Abrufe. Bitte später erneut versuchen.", {

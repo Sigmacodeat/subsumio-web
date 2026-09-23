@@ -24,6 +24,8 @@ const log = logger("lib/auth/api-key-auth");
 
 const BEARER_PREFIX = "Bearer ";
 
+export { requiredApiKeyScope, apiKeyHasScope, type ApiKeyScope } from "./api-key-scopes";
+
 export function extractBearerToken(authHeader: string | null): string | null {
   if (!authHeader || !authHeader.startsWith(BEARER_PREFIX)) return null;
   const token = authHeader.slice(BEARER_PREFIX.length).trim();

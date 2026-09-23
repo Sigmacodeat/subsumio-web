@@ -7,13 +7,16 @@ export const dynamic = "force-dynamic";
  * GET /api/calendar/<userId>.<secret>/dav/documents — JSON document listing
  * for the read-only WebDAV bridge (`scripts/dav-server.ts`).
  *
- * Same credential as the calendar subscription: `<userId>.<secret>` in the
- * path. The bridge proxies with it, so mounted drives see exactly the
- * documents the token owner may see (engine-side matterScope applies).
+ * Credential: the separate DAV access token `<userId>.<secret>` in the path
+ * (scope "documents", see src/lib/feed-auth.ts). The calendar subscription
+ * link is refused here — it is handed to Google/Outlook and must never open
+ * the document archive. The bridge proxies with the DAV token, so mounted
+ * drives see exactly the documents the token owner may see (engine-side
+ * matterScope applies).
  */
 export async function GET(_req: Request, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;
-  const auth = await resolveFeedToken(token ?? "");
+  const auth = await resolveFeedToken(token ?? "", "documents");
   if (!auth.ok) {
     return Response.json(
       { error: auth.status === 429 ? "rate_limited" : "not_found" },
