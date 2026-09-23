@@ -712,10 +712,21 @@ function sh(cmd: string): string {
 function pidAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
   }
+  // Linux: kill(pid,0) succeeds for zombies — the PID exists until the
+  // parent reaps it, but the process is dead work-wise. Treating it as
+  // alive freezes the source forever (2026-09-23: four finished imports
+  // stayed "importing" because their unreaped sh-wrappers looked alive).
+  try {
+    const stat = readFileSync(`/proc/${pid}/stat`, "utf-8");
+    const state = stat.slice(stat.lastIndexOf(")") + 2, stat.lastIndexOf(")") + 3);
+    if (state === "Z" || state === "X") return false;
+  } catch {
+    /* non-Linux or already reaped — the kill(0) result stands */
+  }
+  return true;
 }
 
 /** Check if a PID is alive AND not exceeding its timeout. Returns {alive, stale}. */
