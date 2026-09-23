@@ -38,6 +38,7 @@ vi.mock("@/lib/engine", () => ({
 }));
 vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: async (headers: Record<string, string>, type: string) => {
+    if (type === "automation") return state.rules;
     if (type !== "legal_case") return [];
     const walled = state.walls.get(headers["x-test-user"] ?? "") ?? [];
     return CASES.filter((c) => !walled.includes(c.slug));

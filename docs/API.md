@@ -107,8 +107,7 @@
 | `/api/auth/sso/callback`                                    | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/sso/workos`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/verify`                                          | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
-| `/api/automation-rules`                                     | GET, POST, PATCH         | Session                   | `brain.read`                      | standard |
-| `/api/automations`                                          | GET, POST, PATCH, DELETE | Session                   | `admin.*`                         | standard |
+| `/api/automations`                                          | GET, POST, PATCH, DELETE | Session                   | `agent.read`                      | standard |
 | `/api/autonomous/queue-stats`                               | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/autonomous/tasks`                                     | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/bea/export`                                           | POST                     | Session                   | `brain.write`                     | heavy    |

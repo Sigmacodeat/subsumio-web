@@ -27,7 +27,14 @@ export async function listEnginePages(
   headers: Record<string, string>,
   type: string,
   limit: number,
-  opts: { includeTombstoned?: boolean; timeoutMs?: number; slugPrefix?: string } = {}
+  opts: {
+    includeTombstoned?: boolean;
+    timeoutMs?: number;
+    slugPrefix?: string;
+    /** Throw when a batch fails instead of returning what was read so far —
+     *  for callers that must not mistake a failed read for "nothing there". */
+    strict?: boolean;
+  } = {}
 ): Promise<ListedPage[]> {
   const prefix = opts.slugPrefix ? `&slug_prefix=${encodeURIComponent(opts.slugPrefix)}` : "";
   const out = new Map<string, ListedPage>();
@@ -38,7 +45,10 @@ export async function listEnginePages(
         `${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${size}&offset=${offset}${prefix}`,
         { headers, signal: AbortSignal.timeout(opts.timeoutMs ?? 15_000) }
       );
-      if (!res.ok) break;
+      if (!res.ok) {
+        if (opts.strict) throw new Error(`list ${type} failed: HTTP ${res.status}`);
+        break;
+      }
       const raw = (await res.json()) as unknown;
       const batch = (
         Array.isArray(raw)
@@ -50,7 +60,8 @@ export async function listEnginePages(
       for (const page of batch) if (page?.slug) out.set(page.slug, page);
       if (batch.length < size) break;
     }
-  } catch {
+  } catch (err) {
+    if (opts.strict) throw err;
     // keep what was read
   }
   const pages = [...out.values()];

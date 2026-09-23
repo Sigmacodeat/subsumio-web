@@ -57,17 +57,38 @@ async function replayMutation(mut: QueuedMutation): Promise<void> {
 }
 
 interface MutationState {
+  /** Synctbare Eintraege — Konflikte warten auf User-Entscheidung und
+   *  zaehlen hier nicht mit (sonst steht "3 ausstehend" obwohl nur 1
+   *  wirklich gesynct wird). */
   pendingCount: number;
+  /** Auf Entscheidung wartende Sync-Konflikte. */
+  conflictCount: number;
   syncing: boolean;
   lastError: string | null;
+  /** Zeitpunkt des ERSTEN Fehlers der aktuellen Fehlerstrecke — bleibt
+   *  stehen solange lastError non-null ist ("klebt seit …" sichtbar). */
+  lastErrorAt: number | null;
+  /** Kurzer Erfolgs-Hinweis (z. B. „Kopie gespeichert als cases/neu-2") —
+   *  wird im Sync-Banner gezeigt und via clearNotice quittiert. */
+  lastNotice: string | null;
   conflicts: QueuedMutation[];
+}
+
+/** `cases/neu` → `cases/neu-2`, `cases/neu-2` → `cases/neu-3` —
+ *  zählt einen trailing -N-Suffix hoch statt -2-2-Ketten zu bauen. */
+function nextCopySlug(slug: string): string {
+  const m = slug.match(/^(.*)-(\d+)$/);
+  return m ? `${m[1]}-${parseInt(m[2], 10) + 1}` : `${slug}-2`;
 }
 
 export function useMutationQueue() {
   const [state, setState] = useState<MutationState>({
     pendingCount: 0,
+    conflictCount: 0,
     syncing: false,
     lastError: null,
+    lastErrorAt: null,
+    lastNotice: null,
     conflicts: [],
   });
 
@@ -86,16 +107,18 @@ export function useMutationQueue() {
       getPendingMutations(),
       getPendingFileUploads(),
     ]);
+    const conflicts = pending.filter((m) => m.conflicted);
     setState((s) => ({
       ...s,
-      pendingCount: pending.length + pendingFiles.length,
-      conflicts: pending.filter((m) => m.conflicted),
+      pendingCount: pending.length - conflicts.length + pendingFiles.length,
+      conflictCount: conflicts.length,
+      conflicts,
     }));
   }, []);
 
   const syncPending = useCallback(async () => {
     if (!isOnline()) return;
-    setState((s) => ({ ...s, syncing: true, lastError: null }));
+    setState((s) => ({ ...s, syncing: true, lastError: null, lastErrorAt: null }));
     const syncStart = Date.now();
     let droppedMutations = 0;
     let droppedUploads = 0;
@@ -184,7 +207,12 @@ export function useMutationQueue() {
       }
       await refreshPending();
     } catch (err) {
-      setState((s) => ({ ...s, lastError: err instanceof Error ? err.message : String(err) }));
+      const msg = err instanceof Error ? err.message : String(err);
+      setState((s) => ({
+        ...s,
+        lastError: msg,
+        lastErrorAt: s.lastError ? s.lastErrorAt : Date.now(),
+      }));
     } finally {
       const parts: string[] = [];
       if (conflicts.length > 0) {
@@ -196,11 +224,15 @@ export function useMutationQueue() {
       if (droppedMutations > 0) parts.push(`${droppedMutations} Änderung(en)`);
       if (droppedUploads > 0) parts.push(`${droppedUploads} Datei-Upload(s)`);
       const dropMsg = parts.length > 0 ? `${parts.join("; ")} — nicht synchronisiert` : null;
-      setState((s) => ({
-        ...s,
-        syncing: false,
-        lastError: [s.lastError, dropMsg].filter(Boolean).join(" — ") || null,
-      }));
+      setState((s) => {
+        const merged = [s.lastError, dropMsg].filter(Boolean).join(" — ") || null;
+        return {
+          ...s,
+          syncing: false,
+          lastError: merged,
+          lastErrorAt: merged ? (s.lastErrorAt ?? Date.now()) : null,
+        };
+      });
     }
   }, [refreshPending]);
 
@@ -215,11 +247,18 @@ export function useMutationQueue() {
   }, [refreshPending, syncPending]);
 
   /** Konflikt auflösen: "keep-mine" replayed die gequeuete Änderung
-   *  erneut (bewusstes Überschreiben), "discard" verwirft sie. */
+   *  erneut (bewusstes Überschreiben), "discard" verwirft sie,
+   *  "rename" (nur createPage) legt sie unter `<slug>-2` als Kopie an. */
   const resolveConflict = useCallback(
-    async (id: string, mode: "keep-mine" | "discard") => {
+    async (id: string, mode: "keep-mine" | "discard" | "rename") => {
       if (mode === "discard") {
+        const pending = await getPendingMutations();
+        const slug = pending.find((m) => m.id === id)?.payload.slug;
         await removeMutation(id);
+        setState((s) => ({
+          ...s,
+          lastNotice: `Änderung${typeof slug === "string" && slug ? ` an ${slug}` : ""} verworfen`,
+        }));
         await refreshPending();
         return;
       }
@@ -229,13 +268,39 @@ export function useMutationQueue() {
         await refreshPending();
         return;
       }
+      const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
       try {
-        await replayMutation(mut);
+        if (mode === "rename") {
+          if (mut.type !== "createPage") return;
+          if (!slug) return;
+          const copySlug = nextCopySlug(slug);
+          await api.brain.createPage({
+            ...(mut.payload as {
+              slug: string;
+              title: string;
+              type: string;
+              content?: string;
+              frontmatter?: Record<string, unknown>;
+            }),
+            slug: copySlug,
+          });
+          setState((s) => ({
+            ...s,
+            lastNotice: `Kopie gespeichert als ${copySlug}`,
+          }));
+        } else {
+          await replayMutation(mut);
+          setState((s) => ({
+            ...s,
+            lastNotice: `Änderung${slug ? ` an ${slug}` : ""} gesendet`,
+          }));
+        }
         await removeMutation(mut.id);
       } catch (err) {
         setState((s) => ({
           ...s,
           lastError: err instanceof Error ? err.message : String(err),
+          lastErrorAt: s.lastError ? s.lastErrorAt : Date.now(),
         }));
       }
       await refreshPending();
@@ -262,5 +327,9 @@ export function useMutationQueue() {
     [refreshPending]
   );
 
-  return { ...state, syncPending, mutate, refreshPending, resolveConflict };
+  const clearNotice = useCallback(() => {
+    setState((s) => ({ ...s, lastNotice: null }));
+  }, []);
+
+  return { ...state, syncPending, mutate, refreshPending, resolveConflict, clearNotice };
 }

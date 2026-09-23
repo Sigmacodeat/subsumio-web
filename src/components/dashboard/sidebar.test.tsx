@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
-import { NAV_SECTIONS, Sidebar } from "./sidebar";
+import { NAV_SECTIONS, ALL_NAV_ITEMS, Sidebar } from "./sidebar";
 
 // jsdom doesn't implement matchMedia — mock it for use-media-query hook
 if (typeof window !== "undefined" && !window.matchMedia) {
@@ -55,12 +55,27 @@ vi.mock("@/lib/use-lang", async () => {
   };
 });
 
+const mockQueue = vi.hoisted(() => ({
+  pendingCount: 0,
+  syncing: false,
+  lastError: null as string | null,
+  lastNotice: null as string | null,
+  conflicts: [] as Array<{
+    id: string;
+    type: "createPage" | "updatePage" | "deletePage";
+    payload: Record<string, unknown>;
+    createdAt: string;
+    conflicted?: boolean;
+  }>,
+  syncPending: vi.fn(),
+  resolveConflict: vi.fn(async () => {}),
+  clearNotice: vi.fn(),
+  mutate: vi.fn(),
+  refreshPending: vi.fn(),
+}));
+
 vi.mock("@/lib/use-mutation", () => ({
-  useMutationQueue: () => ({
-    pendingCount: 0,
-    syncing: false,
-    syncPending: vi.fn(),
-  }),
+  useMutationQueue: () => mockQueue,
 }));
 
 vi.mock("@/lib/use-offline-sync", () => ({
@@ -105,6 +120,55 @@ describe("Sidebar accordion", () => {
   beforeEach(() => {
     pathname = "/dashboard";
     localStorage.clear();
+    mockQueue.pendingCount = 0;
+    mockQueue.syncing = false;
+    mockQueue.conflicts = [];
+    mockQueue.lastError = null;
+    mockQueue.lastNotice = null;
+    mockQueue.resolveConflict.mockClear();
+  });
+
+  test("zeigt Sync-Konflikte mit allen vier Aktionen", () => {
+    mockQueue.pendingCount = 1;
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "createPage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    renderSidebar();
+
+    expect(screen.getByText("cases/neu")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ansehen" })).toHaveAttribute(
+      "href",
+      "/dashboard/brain/cases/neu"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Meine Version senden" }));
+    expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine");
+    fireEvent.click(screen.getByRole("button", { name: "Als Kopie speichern" }));
+    expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "rename");
+    fireEvent.click(screen.getByRole("button", { name: "Verwerfen" }));
+    expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "discard");
+  });
+
+  test("updatePage-Konflikt zeigt keinen Kopie-Button", () => {
+    mockQueue.pendingCount = 1;
+    mockQueue.conflicts = [
+      {
+        id: "m2",
+        type: "updatePage",
+        payload: { slug: "cases/bestehend" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    renderSidebar();
+
+    expect(screen.getByText("cases/bestehend")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Als Kopie speichern" })).toBeNull();
   });
 
   test("exposes the profile footer as the account settings destination", () => {
@@ -282,6 +346,17 @@ describe("Sidebar restructured nav", () => {
       "href",
       "/dashboard/compliance"
     );
+  });
+
+  test("sync page is reachable via nav for non-admin users", () => {
+    // Must live in a regular module section — ADMIN_SECTION items are
+    // filtered out for non-admin users.
+    const inSections = NAV_SECTIONS.flatMap((s) => s.items).find(
+      (i) => i.href === "/dashboard/sync"
+    );
+    expect(inSections).toBeDefined();
+    expect(inSections!.labelKey).toBe("nav.sync");
+    expect(ALL_NAV_ITEMS.some((i) => i.href === "/dashboard/sync")).toBe(true);
   });
 
   test("communication channels (beA, WhatsApp) are not in sidebar sections", async () => {

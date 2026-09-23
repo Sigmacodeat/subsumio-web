@@ -1864,6 +1864,9 @@ const list_pages: Operation = {
       type: pg.type,
       title: pg.title,
       updated_at: pg.updated_at,
+      // First-write time (kept on every upsert) — lets the web app tell a
+      // new record from an old one that was merely edited.
+      created_at: pg.created_at,
       ...(pg.deleted_at ? { deleted_at: pg.deleted_at } : {}),
       ...(includeFrontmatter ? { frontmatter: pg.frontmatter ?? {} } : {}),
     }));
