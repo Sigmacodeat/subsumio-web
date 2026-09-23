@@ -11,6 +11,7 @@ import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { sendPushToUser } from "@/lib/push-send";
 import {
+  annotateDelegations,
   collectDueReminders,
   markCaseDeadlines,
   sentFields,
@@ -18,6 +19,7 @@ import {
   type DueReminder,
   type ReminderDeadline,
 } from "@/lib/deadline-reminders";
+import type { AbsenceRecord } from "@/lib/absence";
 
 export const dynamic = "force-dynamic";
 
@@ -118,13 +120,29 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
-    const [casePages, deadlinePages, followUpPages] = await Promise.all([
+    const [casePages, deadlinePages, followUpPages, absencePages] = await Promise.all([
       fetchPages(brainId, "legal_case", 10_000),
       fetchPages(brainId, "legal_deadline", 10_000),
       fetchPages(brainId, "legal_follow_up", 10_000),
+      fetchPages(brainId, "absence_record", 10_000),
     ]);
     const groups = collectDueReminders(casePages, deadlinePages, now, followUpPages);
     if (groups.length === 0) continue;
+
+    // Vertretungsregelung: die Erinnerung geht an alle Kanzlei-Mitglieder —
+    // was fehlte, ist die Zurechnung. Ist die verantwortliche Person der
+    // Akte abwesend, nennt die Nachricht die Vertretung mit Rückkehrdatum.
+    const responsibleByCase = new Map<string, string>();
+    for (const c of casePages) {
+      const lawyer = c.frontmatter?.own_lawyer_name;
+      if (typeof lawyer === "string" && lawyer.trim()) {
+        responsibleByCase.set(c.slug, lawyer.trim());
+      }
+    }
+    const absenceRecords = absencePages
+      .map((p) => p.frontmatter as unknown as AbsenceRecord | undefined)
+      .filter((r): r is AbsenceRecord => Boolean(r?.user_email));
+    annotateDelegations(groups, responsibleByCase, absenceRecords, now);
 
     // P3-3: Send email to ALL recipients, not just the first one
     const emailRecipients = recipients.map((r) => r.email).filter((e): e is string => !!e);
@@ -177,6 +195,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 <ul>
 ${due.map((i) => `<li>${i.isFollowUp ? "<em>[Wiedervorlage]</em> " : ""}<strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${i.unreviewedAi ? ` <strong>[${UNCONFIRMED_AI_NOTICE}]</strong>` : ""}${i.ervZustelldatum ? ` <em>[ERV-Zustellung: ${esc(i.ervZustelldatum)}]</em>` : ""}</li>`).join("\n")}
 </ul>
+${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.delegateName)} vertritt ${esc(group.delegation.responsible)} (abwesend bis ${esc(group.delegation.until)}).</p>` : ""}
 <p>${group.caseSlug ? `Akte: ${esc(group.caseLabel)} — ${esc(group.caseTitle ?? "")}` : "Diese Fristen sind keiner Akte zugeordnet."}</p>
 <p>Subsumio Kanzlei-OS</p>`;
       const html = injectTracking(rawHtml, trackingId);
@@ -243,6 +262,11 @@ ${due.map((i) => `<li>${i.isFollowUp ? "<em>[Wiedervorlage]</em> " : ""}<strong>
               `• ${i.isFollowUp ? "WV: " : ""}${i.title} — ${i.dueDate} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " [Notfrist]" : ""}${i.unreviewedAi ? ` [${UNCONFIRMED_AI_NOTICE}]` : ""}${i.ervZustelldatum ? ` [ERV: ${i.ervZustelldatum}]` : ""}`
           ),
           `Akte: ${group.caseLabel}`,
+          ...(group.delegation
+            ? [
+                `Vertretung: ${group.delegation.delegateName} vertritt ${group.delegation.responsible} (bis ${group.delegation.until})`,
+              ]
+            : []),
           "",
           "Bitte rechtzeitig prüfen.",
         ];

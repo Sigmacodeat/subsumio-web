@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import type { PostUploadTask } from "@/lib/post-upload-outbox";
 import {
   createInboundEntry,
   filterInboundByDateRange,
@@ -127,6 +128,35 @@ export const GET = createHandler(
     } catch {
       return apiError("engine_error", "Engine request failed", 502);
     }
+
+    // Stamps that exhausted every drain retry are invisible without this —
+    // the register stays complete-looking while an entry is actually lost.
+    // Surfaced as a warning card with a retry affordance in the UI.
+    let failedStamps: Array<{
+      task_slug: string;
+      subject: string;
+      channel?: string;
+      last_error?: string;
+      attempts?: number;
+    }> = [];
+    try {
+      // The drain flips the page type to post_upload_task_exhausted when it
+      // gives up — pending tasks stay post_upload_task, so only the
+      // exhausted type needs scanning here.
+      const taskPages = await listEnginePages(ctx.headers, "post_upload_task_exhausted", 5000);
+      failedStamps = taskPages
+        .map((p) => ({ slug: p.slug, ...(p.frontmatter as Partial<PostUploadTask>) }))
+        .filter((t) => t.task_type === "inbound_stamp" && t.status === "exhausted")
+        .map((t) => ({
+          task_slug: t.slug,
+          subject: String(t.inbound?.input.subject ?? t.doc_slug),
+          channel: t.inbound?.input.channel,
+          last_error: t.last_error,
+          attempts: t.attempts,
+        }));
+    } catch {
+      // Best-effort — a failed task listing must not break the register.
+    }
     if (query?.case_slug) {
       items = items.filter((e) => e.case_slug === query.case_slug);
     }
@@ -143,6 +173,6 @@ export const GET = createHandler(
         },
       });
     }
-    return apiSuccess({ items });
+    return apiSuccess({ items, failed_stamps: failedStamps });
   }
 );

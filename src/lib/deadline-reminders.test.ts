@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  annotateDelegations,
   collectDueReminders,
   isClosedDeadline,
   markCaseDeadlines,
@@ -8,6 +9,7 @@ import {
   type DueReminder,
   type ReminderPage,
 } from "./deadline-reminders";
+import type { AbsenceRecord } from "./absence";
 
 const now = new Date("2026-09-17T06:00:00.000Z");
 const inDays = (n: number) => new Date(Date.UTC(2026, 8, 17 + n)).toISOString().slice(0, 10);
@@ -346,5 +348,68 @@ describe("wiedervorlagen (legal_follow_up)", () => {
       }),
     ]);
     expect(groups).toHaveLength(0);
+  });
+});
+
+describe("annotateDelegations", () => {
+  const absence = (over: Partial<AbsenceRecord> = {}): AbsenceRecord => ({
+    id: "absence-1",
+    user_email: "mueller@kanzlei.at",
+    user_name: "RA Müller",
+    delegate_email: "vertreter@kanzlei.at",
+    delegate_name: "RA Vertreter",
+    start_date: "2026-09-10",
+    end_date: "2026-09-25",
+    status: "active",
+    auto_route_enabled: true,
+    reassigned_rundown_items: [],
+    forwarded_deadlines: [],
+    created_at: "2026-09-01T00:00:00Z",
+    updated_at: "2026-09-01T00:00:00Z",
+    ...over,
+  });
+
+  it("names the stand-in when the responsible lawyer is absent", () => {
+    const groups = collectDueReminders(
+      [matter({ slug: "legal/cases/1" })],
+      [deadlinePage("d/1", { title: "Berufung", due_date: inDays(1), case_slug: "legal/cases/1" })],
+      now
+    );
+    annotateDelegations(groups, new Map([["legal/cases/1", "RA Müller"]]), [absence()], now);
+    expect(groups[0].delegation).toEqual({
+      responsible: "RA Müller",
+      delegateName: "RA Vertreter",
+      delegateEmail: "vertreter@kanzlei.at",
+      until: "2026-09-25",
+    });
+  });
+
+  it("ignores absences outside their window and cancelled ones", () => {
+    const groups = collectDueReminders(
+      [matter({ slug: "legal/cases/1" })],
+      [deadlinePage("d/1", { title: "Berufung", due_date: inDays(1), case_slug: "legal/cases/1" })],
+      now
+    );
+    const cases = new Map([["legal/cases/1", "RA Müller"]]);
+    annotateDelegations(
+      groups,
+      cases,
+      [
+        absence({ status: "cancelled" }),
+        absence({ id: "a2", start_date: "2026-12-01", end_date: "2026-12-10" }),
+      ],
+      now
+    );
+    expect(groups[0].delegation).toBeUndefined();
+  });
+
+  it("leaves groups without a responsible lawyer or without a case untouched", () => {
+    const groups = collectDueReminders(
+      [],
+      [deadlinePage("d/free", { title: "Freie Frist", due_date: inDays(1) })],
+      now
+    );
+    annotateDelegations(groups, new Map(), [absence()], now);
+    expect(groups[0].delegation).toBeUndefined();
   });
 });

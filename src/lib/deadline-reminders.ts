@@ -5,6 +5,7 @@
 
 import { isVorfristReached } from "@/lib/legal/vorfrist";
 import { isUnreviewedAiSuggestion } from "@/lib/deadline-alerts";
+import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
 
 export const REMINDER_STAGES_DAYS = [7, 3, 1, 0] as const;
 
@@ -46,6 +47,14 @@ export type ReminderRef =
   | { kind: "case"; caseSlug: string; id?: string; title?: string; dueDate: string }
   | { kind: "page"; slug: string };
 
+export interface ReminderDelegation {
+  /** Responsible lawyer of the matter (own_lawyer_name), currently absent. */
+  responsible: string;
+  delegateName: string;
+  delegateEmail: string;
+  until: string;
+}
+
 export interface DueReminder {
   ref: ReminderRef;
   title: string;
@@ -71,6 +80,8 @@ export interface ReminderGroup {
   caseLabel: string;
   caseTitle?: string;
   items: DueReminder[];
+  /** Set when the responsible lawyer is absent — names the stand-in. */
+  delegation?: ReminderDelegation;
 }
 
 const CLOSED_STATUS = /^(done|erledigt|completed|abgeschlossen|cancelled|storniert|tombstoned)$/i;
@@ -245,6 +256,32 @@ export function sentFields(
  * Applies sent marks to a freshly read matter list. Entries are matched by id,
  * else by title and date, so edits made since the reminder run are kept.
  */
+/**
+ * Annotates each group whose responsible lawyer (the matter's
+ * own_lawyer_name) is currently absent with the stand-in's details.
+ * Reminders already reach every firm member — this makes visible WHO is
+ * covering, so the delegate knows the item is theirs to act on.
+ */
+export function annotateDelegations(
+  groups: ReminderGroup[],
+  responsibleByCase: Map<string, string>,
+  absences: AbsenceRecord[],
+  now: Date
+): void {
+  for (const group of groups) {
+    const responsible = group.caseSlug ? responsibleByCase.get(group.caseSlug) : undefined;
+    const delegate = activeDelegateFor(responsible, absences, now);
+    if (responsible && delegate) {
+      group.delegation = {
+        responsible,
+        delegateName: delegate.name,
+        delegateEmail: delegate.email,
+        until: delegate.until,
+      };
+    }
+  }
+}
+
 export function markCaseDeadlines(
   current: ReminderDeadline[],
   items: DueReminder[],

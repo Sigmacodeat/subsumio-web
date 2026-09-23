@@ -269,7 +269,9 @@ export const POST = createHandler(
               senderName: String(fm.sender || "") || undefined,
               caseSlug: match?.case_slug,
               documentSlug: page.slug,
-              receivedBy: ctx.user.name || ctx.user.email,
+              // Das Register will den beA-Empfänger der Nachricht (die
+              // Kanzlei-Adresse), nicht den importierenden User.
+              receivedBy: String(fm.recipient || "") || ctx.user.name || ctx.user.email,
               notes: eeb ? `eEB-Zustelltag: ${eeb}` : undefined,
             },
             ctx.brainId

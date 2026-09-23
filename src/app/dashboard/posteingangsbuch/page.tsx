@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Inbox, Loader2, Plus } from "lucide-react";
+import { AlertTriangle, Download, Inbox, Loader2, Plus, RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
@@ -33,9 +33,19 @@ import { formatDateTime } from "@/lib/utils";
  * ist (Briefpost, Fax), gibt es unten einen manuellen Eintrag — dasselbe
  * Muster wie das bereits vorhandene Postausgangsbuch.
  */
+interface FailedStamp {
+  task_slug: string;
+  subject: string;
+  channel?: string;
+  last_error?: string;
+  attempts?: number;
+}
+
 export default function PosteingangsbuchPage() {
   const { addToast } = useToast();
   const [entries, setEntries] = useState<InboundEntry[]>([]);
+  const [failedStamps, setFailedStamps] = useState<FailedStamp[]>([]);
+  const [retrying, setRetrying] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,6 +64,7 @@ export default function PosteingangsbuchPage() {
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
       setEntries((data.items ?? data.data?.items ?? []) as InboundEntry[]);
+      setFailedStamps((data.failed_stamps ?? data.data?.failed_stamps ?? []) as FailedStamp[]);
     } catch {
       addToast({ type: "error", title: "Posteingangsbuch konnte nicht geladen werden" });
     } finally {
@@ -89,6 +100,27 @@ export default function PosteingangsbuchPage() {
       addToast({ type: "error", title: "Eintrag konnte nicht gespeichert werden" });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function retryStamp(taskSlug: string) {
+    setRetrying(taskSlug);
+    try {
+      const res = await csrfFetch("/api/inbound-register/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_slug: taskSlug }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setFailedStamps((list) => list.filter((s) => s.task_slug !== taskSlug));
+      addToast({
+        type: "success",
+        title: "Erneut eingereiht — der Eintrag wird automatisch nachgeholt",
+      });
+    } catch {
+      addToast({ type: "error", title: "Erneutes Einreihen fehlgeschlagen" });
+    } finally {
+      setRetrying(null);
     }
   }
 
@@ -177,6 +209,57 @@ export default function PosteingangsbuchPage() {
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Speichern
           </Button>
+        </div>
+      )}
+
+      {failedStamps.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle
+              size={16}
+              className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="text-sm font-medium">
+                {failedStamps.length === 1
+                  ? "1 Eingang konnte nicht registriert werden"
+                  : `${failedStamps.length} Eingänge konnten nicht registriert werden`}
+              </p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Die Dokumente sind gespeichert, aber der Register-Eintrag ist nach mehreren
+                automatischen Versuchen fehlgeschlagen.
+              </p>
+              <ul className="space-y-1.5">
+                {failedStamps.map((s) => (
+                  <li key={s.task_slug} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate">
+                      {s.channel && s.channel in INBOUND_CHANNEL_LABEL
+                        ? `${INBOUND_CHANNEL_LABEL[s.channel as InboundChannel]} — `
+                        : ""}
+                      {s.subject}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={retrying === s.task_slug}
+                      onClick={() => void retryStamp(s.task_slug)}
+                    >
+                      {retrying === s.task_slug ? (
+                        <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <RotateCcw size={13} aria-hidden="true" />
+                      )}
+                      Erneut eintragen
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 

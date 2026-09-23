@@ -225,4 +225,77 @@ describe("GET /api/inbound-register", () => {
     );
     expect(res.status).toBe(502);
   });
+
+  test("surfaces exhausted inbound_stamp tasks as failed_stamps", async () => {
+    mockListEnginePages
+      .mockResolvedValueOnce([
+        {
+          slug: "e1",
+          frontmatter: {
+            id: "in-1",
+            received_at: "2026-01-01T10:00:00.000Z",
+            channel: "email",
+            subject: "Alt",
+            direction: "inbound",
+          },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          slug: "legal/post-upload-tasks/inbound_stamp/in-x-abc",
+          frontmatter: {
+            task_type: "inbound_stamp",
+            status: "exhausted",
+            doc_slug: "in-x",
+            attempts: 4,
+            last_error: "inbound_stamp_failed_503",
+            inbound: { entry_id: "in-x", input: { channel: "portal", subject: "Vollmacht.pdf" } },
+          },
+        },
+        {
+          // unrelated exhausted task — must not surface here
+          slug: "legal/post-upload-tasks/analyze/doc-1",
+          frontmatter: { task_type: "analyze", status: "exhausted", doc_slug: "d/1" },
+        },
+      ]);
+
+    const res = await GET(
+      new Request("http://localhost/api/inbound-register") as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.items).toHaveLength(1);
+    expect(body.data.failed_stamps).toHaveLength(1);
+    expect(body.data.failed_stamps[0]).toMatchObject({
+      task_slug: "legal/post-upload-tasks/inbound_stamp/in-x-abc",
+      subject: "Vollmacht.pdf",
+      channel: "portal",
+      last_error: "inbound_stamp_failed_503",
+    });
+  });
+
+  test("a failing task scan still returns the register entries", async () => {
+    mockListEnginePages
+      .mockResolvedValueOnce([
+        {
+          slug: "e1",
+          frontmatter: {
+            id: "in-1",
+            received_at: "2026-01-01T10:00:00.000Z",
+            channel: "email",
+            subject: "Alt",
+            direction: "inbound",
+          },
+        },
+      ])
+      .mockRejectedValueOnce(new Error("task scan down"));
+
+    const res = await GET(
+      new Request("http://localhost/api/inbound-register") as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.items).toHaveLength(1);
+    expect(body.data.failed_stamps).toEqual([]);
+  });
 });
