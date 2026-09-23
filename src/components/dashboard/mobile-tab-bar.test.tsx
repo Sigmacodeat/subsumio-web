@@ -75,11 +75,13 @@ vi.mock("@/lib/queries/sidebar-badges", () => ({
 
 const mockQueue = vi.hoisted(() => ({
   conflictCount: 0,
+  conflicts: [] as Array<{ conflictAt?: string }>,
 }));
 
-vi.mock("@/lib/use-mutation", () => ({
-  useMutationQueue: () => mockQueue,
-}));
+vi.mock("@/lib/use-mutation", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/use-mutation")>("@/lib/use-mutation");
+  return { ...actual, useMutationQueue: () => mockQueue };
+});
 
 vi.mock("@/lib/use-brain-selector", () => ({
   useBrainSelector: () => ({
@@ -132,6 +134,7 @@ describe("MobileTabBar", () => {
   beforeEach(() => {
     pathname = "/dashboard";
     mockQueue.conflictCount = 0;
+    mockQueue.conflicts = [];
     mockBadges.data = {};
   });
 
@@ -143,6 +146,18 @@ describe("MobileTabBar", () => {
     const link = screen.getByRole("link", { name: /Synchronisation/i });
     expect(link).toHaveAttribute("href", "/dashboard/sync");
     expect(link.querySelector("[aria-label='3']")).not.toBeNull();
+  });
+
+  test("Badge eskaliert auf danger bei >=7 Tage altem Konflikt", () => {
+    const stale = new Date(Date.now() - 8 * 86_400_000).toISOString();
+    mockQueue.conflictCount = 1;
+    mockQueue.conflicts = [{ conflictAt: stale }];
+    renderTabBar();
+    fireEvent.click(screen.getByRole("button", { name: /mehr/i }));
+    const link = screen.getByRole("link", { name: /Synchronisation/i });
+    const badge = link.querySelector("[aria-label='1']");
+    expect(badge).not.toBeNull();
+    expect(badge?.className).toContain("ds-danger-text");
   });
 
   test("kein Badge ohne Konflikte", () => {

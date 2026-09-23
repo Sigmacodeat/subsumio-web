@@ -86,6 +86,24 @@ export function nextCopySlug(slug: string): string {
   return m ? `${m[1]}-${parseInt(m[2], 10) + 1}` : `${slug}-2`;
 }
 
+/** Konflikte älter als so viele Tage eskalieren das Nav-Badge von
+ *  warning auf danger — ein Konflikt, der eine Woche liegen bleibt,
+ *  ist ein Datenverlust-Risiko, keine Unbequemlichkeit mehr. */
+export const STALE_CONFLICT_DAYS = 7;
+
+/** Alter des ältesten Konflikts in Tagen (0 wenn kein `conflictAt`
+ *  gesetzt ist). Geteilt zwischen Sidebar- und Tab-Bar-Badge, damit
+ *  die Eskalations-Schwelle nicht doppelt gepflegt wird. */
+export function oldestConflictDays(conflicts: QueuedMutation[]): number {
+  let oldest = 0;
+  for (const c of conflicts) {
+    if (!c.conflictAt) continue;
+    const days = Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000);
+    if (days > oldest) oldest = days;
+  }
+  return oldest;
+}
+
 /** „N Änderung(en) + M Upload(s) <suffix>" — pendingCount enthält
  *  Mutations + Uploads; nur die Summe würde Uploads als
  *  Seiten-Änderungen verkaufen. `t` ist die Dashboard-`t()` aus

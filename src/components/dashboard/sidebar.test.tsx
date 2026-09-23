@@ -435,6 +435,52 @@ describe("Sidebar restructured nav", () => {
     expect(screen.getByRole("link", { name: /Synchronisation/ }).textContent).toContain("2");
   });
 
+  test("Sync-Badge eskaliert auf danger bei >=7 Tage altem Konflikt", async () => {
+    const stale = new Date(Date.now() - 8 * 86_400_000).toISOString();
+    mockQueue.conflictCount = 1;
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/alt" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+        conflictAt: stale,
+      },
+    ];
+    renderSidebar();
+    fireEvent.click(screen.getByRole("button", { name: /Kanzlei & Compliance/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /Synchronisation/ })).toBeInTheDocument();
+    });
+    const link = screen.getByRole("link", { name: /Synchronisation/ });
+    // Woche-alte Konflikte sind Datenverlust-Risiko → danger statt warning.
+    expect(link.querySelector("[class*='ds-danger-text']")).not.toBeNull();
+  });
+
+  test("Sync-Badge bleibt warning bei frischem Konflikt", async () => {
+    const fresh = new Date(Date.now() - 2 * 86_400_000).toISOString();
+    mockQueue.conflictCount = 1;
+    mockQueue.conflicts = [
+      {
+        id: "m2",
+        type: "updatePage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+        conflictAt: fresh,
+      },
+    ];
+    renderSidebar();
+    fireEvent.click(screen.getByRole("button", { name: /Kanzlei & Compliance/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /Synchronisation/ })).toBeInTheDocument();
+    });
+    const link = screen.getByRole("link", { name: /Synchronisation/ });
+    expect(link.querySelector("[class*='ds-danger-text']")).toBeNull();
+    expect(link.querySelector("[class*='ds-warning-text']")).not.toBeNull();
+  });
+
   test("sync page is reachable via nav for non-admin users", () => {
     // Must live in a regular module section — ADMIN_SECTION items are
     // filtered out for non-admin users.

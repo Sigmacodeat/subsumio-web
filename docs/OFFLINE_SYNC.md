@@ -128,8 +128,13 @@ mitgezählt. `pendingUploads` ist ein eigenes State-Feld neben
 `pendingCount`.
 
 Nav-Badges: Desktop-Sidebar und Mobile-More-Sheet zeigen
-`conflictCount` als warning-Badge auf `/dashboard/sync` mit
-Tooltip „Ältester Konflikt: Nd" (`SidebarBadge.label`).
+`conflictCount` als Badge auf `/dashboard/sync` mit Tooltip
+„Ältester Konflikt: Nd" (`SidebarBadge.label`). Die Variante
+eskaliert von `warning` auf `danger`, sobald der älteste Konflikt
+`STALE_CONFLICT_DAYS` (7 Tage) erreicht — ein Konflikt, der eine
+Woche liegen bleibt, ist Datenverlust-Risiko, keine Unbequemlichkeit.
+Geteilter Helper: `oldestConflictDays(conflicts)` in
+`use-mutation.ts` — beide Oberflächen nutzen dieselbe Schwelle.
 
 ## SWR in useOfflineSync
 

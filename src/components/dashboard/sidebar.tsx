@@ -108,7 +108,12 @@ import {
   Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMutationQueue, formatPendingLabel } from "@/lib/use-mutation";
+import {
+  useMutationQueue,
+  formatPendingLabel,
+  oldestConflictDays,
+  STALE_CONFLICT_DAYS,
+} from "@/lib/use-mutation";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { SubsumioMark, SubsumioWordmark } from "@/components/brand/subsumio-logo";
@@ -1479,18 +1484,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     const base = badgesQuery.data ?? {};
     if (conflictCount <= 0) return base;
     // Tooltip mit dem Alter des ältesten Konflikts — Zahl allein
-    // transportiert keine Dringlichkeit.
-    let oldestDays = 0;
-    for (const c of conflicts) {
-      if (!c.conflictAt) continue;
-      const days = Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000);
-      if (days > oldestDays) oldestDays = days;
-    }
+    // transportiert keine Dringlichkeit. Ab STALE_CONFLICT_DAYS
+    // eskaliert die Badge-Farbe auf danger.
+    const oldestDays = oldestConflictDays(conflicts);
     return {
       ...base,
       "/dashboard/sync": {
         count: conflictCount,
-        variant: "warning",
+        variant: oldestDays >= STALE_CONFLICT_DAYS ? "danger" : "warning",
         label:
           oldestDays > 0
             ? t("sync.oldest_conflict" as DashboardKey).replace("{n}", String(oldestDays))

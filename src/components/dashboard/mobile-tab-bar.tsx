@@ -26,7 +26,7 @@ import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
 import { useSidebarBadges } from "@/lib/queries/sidebar-badges";
-import { useMutationQueue } from "@/lib/use-mutation";
+import { useMutationQueue, oldestConflictDays, STALE_CONFLICT_DAYS } from "@/lib/use-mutation";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { DE_ONLY_HREFS, navForIndustry } from "@/components/dashboard/sidebar";
 
@@ -76,13 +76,21 @@ export function MobileTabBar({
   const [moreOpen, setMoreOpen] = useState(false);
   const [createOnly, setCreateOnly] = useState(false);
   const badgesQuery = useSidebarBadges();
-  const { conflictCount } = useMutationQueue();
-  // Lokale Sync-Konflikte als Badge — client-seitig, wie in der Sidebar.
+  const { conflictCount, conflicts } = useMutationQueue();
+  // Lokale Sync-Konflikte als Badge — client-seitig, wie in der
+  // Sidebar. Gleiche Eskalation: ab STALE_CONFLICT_DAYS danger.
   const badges = useMemo(() => {
     const base = badgesQuery.data ?? {};
     if (conflictCount <= 0) return base;
-    return { ...base, "/dashboard/sync": { count: conflictCount, variant: "warning" as const } };
-  }, [badgesQuery.data, conflictCount]);
+    const stale = oldestConflictDays(conflicts) >= STALE_CONFLICT_DAYS;
+    return {
+      ...base,
+      "/dashboard/sync": {
+        count: conflictCount,
+        variant: stale ? ("danger" as const) : ("warning" as const),
+      },
+    };
+  }, [badgesQuery.data, conflictCount, conflicts]);
   const { brains, activeBrain, selectBrain } = useBrainSelector();
   const moreRef = useRef<HTMLDivElement>(null);
   const {
