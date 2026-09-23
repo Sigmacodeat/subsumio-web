@@ -27,6 +27,7 @@ import {
   statSync,
 } from "fs";
 import { join, dirname, relative } from "path";
+import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import {
   SCHEMA_VERSION,
@@ -68,8 +69,9 @@ const RESUME = args.includes("--resume");
  */
 const FILE_LIST = arg("--file-list");
 
-const CORPUS_ROOT =
-  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
+// import.meta.dir ist Bun-only; unter vitest (node) fällt es auf dirname aus.
+const MODULE_DIR = import.meta.dir ?? dirname(fileURLToPath(import.meta.url));
+const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(MODULE_DIR, "..", "..", "..", "law-corpus");
 const OUT_ROOT = process.env.NORMALIZED_ROOT ?? join(CORPUS_ROOT, "_normalized");
 const STATE_DIR = join(OUT_ROOT, "_state");
 
