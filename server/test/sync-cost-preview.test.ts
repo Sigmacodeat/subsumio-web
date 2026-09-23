@@ -13,17 +13,22 @@
  * envelope paths don't depend on DB state.
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import {
   EMBEDDING_COST_PER_1K_TOKENS,
   estimateEmbeddingCostUsd,
   willEmbedSynchronously,
   shouldBlockSync,
 } from "../src/core/embedding.ts";
+import { resetGateway } from "../src/core/ai/gateway.ts";
 import { lookupEmbeddingPrice } from "../src/core/embedding-pricing.ts";
 import { estimateTokens } from "../src/core/chunkers/code.ts";
 
 describe("Layer 8 D1 — embedding cost model", () => {
+  // Shards run several test files in one process — a prior file may have
+  // configured the gateway, which would make estimateEmbeddingCostUsd resolve
+  // the configured model's rate instead of the unconfigured fallback.
+  beforeEach(() => resetGateway());
   test("EMBEDDING_COST_PER_1K_TOKENS back-compat constant is the OpenAI 3-large rate", () => {
     // Retained only for back-compat imports. Live cost math now resolves the
     // CONFIGURED model's rate via embedding-pricing.ts (see model-aware test
