@@ -81,7 +81,7 @@ function pageUrl(seite: number): string {
   return `${API}?Applikation=LrKons&DokumenteProSeite=OneHundred&Seitennummer=${seite}&Fassung.FassungVom=${FASSUNG}`;
 }
 
-async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
+async function fetchPage(seite: number, attempt = 0): Promise<Norm[] | null> {
   try {
     const res = await fetch(pageUrl(seite), { headers: UA, signal: AbortSignal.timeout(30_000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -119,7 +119,14 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
       await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
       return fetchPage(seite, attempt + 1);
     }
-    throw err;
+    // Einzelne kaputte Seiten (RIS liefert persistent HTTP 500, beobachtet
+    // 2026-09-23 auf LrKons Seite 1106) duerfen den Lauf nicht toeten —
+    // caller ueberspringt sie, sammelt sie in skippedPages und schreibt
+    // sie in ein Sidecar-File zum gezielten Nachladen.
+    console.warn(
+      `  ⚠️  Seite ${seite} nach ${attempt + 1} Versuchen fehlgeschlagen — wird uebersprungen`
+    );
+    return null;
   }
 }
 
@@ -158,18 +165,33 @@ async function main() {
     mkdirSync(dirname(OUT), { recursive: true });
 
     const first = await fetchPage(1);
-    const totalHint = first.length;
-    if (totalHint === 0) {
+    if (first === null || first.length === 0) {
       console.error("Erste Seite lieferte 0 Dokumente — Fassungsfilter oder Applikation prüfen.");
       process.exit(1);
     }
     selfCheck(first);
 
     const all: Norm[] = [...first];
+    const skippedPages: number[] = [];
+    let consecutiveFailures = 0;
     let page = 2;
     let lastLog = Date.now();
     while (true) {
       const batch = await fetchPage(page);
+      if (batch === null) {
+        skippedPages.push(page);
+        consecutiveFailures++;
+        if (consecutiveFailures >= 10) {
+          throw new Error(
+            `${consecutiveFailures} aufeinanderfolgende Seiten fehlgeschlagen (ab Seite ${page - 9}) — ` +
+              `sieht nach RIS-Ausfall aus, nicht nach Einzelseiten. Abbruch zum Schutz vor Muell-Index.`
+          );
+        }
+        page++;
+        await risMassPause("Landesrecht-Inventar");
+        continue;
+      }
+      consecutiveFailures = 0;
       if (batch.length === 0) break;
       all.push(...batch);
       if (Date.now() - lastLog > 5000) {
@@ -182,6 +204,13 @@ async function main() {
 
     const nonGnr = all.filter((n) => !n.gnr).length;
     console.log(`\n${all.length} Dokumente, davon ${nonGnr} ohne Gesetzesnummer`);
+    if (skippedPages.length > 0) {
+      console.warn(`⚠️  ${skippedPages.length} Seiten uebersprungen: ${skippedPages.join(", ")}`);
+      writeFileSync(
+        OUT + ".skipped.json",
+        JSON.stringify({ pages: skippedPages, at: new Date().toISOString() }) + "\n"
+      );
+    }
     selfCheck(all.slice(0, SELF_CHECK_SAMPLE));
 
     writeFileSync(OUT, all.map((n) => JSON.stringify(n)).join("\n") + "\n");
