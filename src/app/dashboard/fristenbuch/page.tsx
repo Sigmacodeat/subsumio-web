@@ -192,7 +192,12 @@ export default function FristenbuchPage() {
     hideOnMobile: true,
     width: "w-[1%] whitespace-nowrap",
     cell: (e) => (
-      <span className="text-xs text-[color:var(--ds-text)]">{e.responsible ?? "—"}</span>
+      <div className="text-xs">
+        <span className="text-[color:var(--ds-text)]">{e.responsible ?? "—"}</span>
+        {e.deputy ? (
+          <span className="block text-[color:var(--ds-text-muted)]">Vertretung: {e.deputy}</span>
+        ) : null}
+      </div>
     ),
   };
 

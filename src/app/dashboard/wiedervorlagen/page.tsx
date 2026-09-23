@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
+import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
 
 function openCreateDialog() {
   window.dispatchEvent(new Event("subsumio:create-wiedervorlage"));
@@ -32,6 +33,11 @@ export default function WiedervorlagenPage() {
     queryFn: () => api.cases.list({ limit: 200 }),
     staleTime: 60_000,
   });
+  const absencesQuery = useQuery({
+    queryKey: ["wiedervorlagen-absences"],
+    queryFn: () => api.brain.listPages({ type: "absence_record", limit: 100 }),
+    staleTime: 60_000,
+  });
 
   // The create dialog lives in the layout; refresh once it reports a new entry.
   useEffect(() => {
@@ -45,6 +51,23 @@ export default function WiedervorlagenPage() {
     for (const c of casesQuery.data ?? []) map.set(c.slug, c.title);
     return map;
   }, [casesQuery.data]);
+
+  const caseResponsible = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of casesQuery.data ?? []) {
+      const lawyer = c.frontmatter?.own_lawyer_name;
+      if (typeof lawyer === "string" && lawyer.trim()) map.set(c.slug, lawyer);
+    }
+    return map;
+  }, [casesQuery.data]);
+
+  const absences = useMemo(
+    () =>
+      (absencesQuery.data ?? [])
+        .map((p) => p.frontmatter as unknown as AbsenceRecord)
+        .filter((a) => a.user_name && a.start_date && a.end_date),
+    [absencesQuery.data]
+  );
 
   // Offene zuerst (nach Datum), erledigte am Ende.
   const items = useMemo(
@@ -131,6 +154,13 @@ export default function WiedervorlagenPage() {
             const date = String(item.frontmatter?.date ?? "");
             const caseSlug =
               typeof item.frontmatter?.case_slug === "string" ? item.frontmatter.case_slug : "";
+            const ownResponsible =
+              typeof item.frontmatter?.responsible === "string" &&
+              item.frontmatter.responsible.trim()
+                ? item.frontmatter.responsible.trim()
+                : undefined;
+            const responsible = ownResponsible ?? caseResponsible.get(caseSlug);
+            const deputy = responsible ? activeDelegateFor(responsible, absences) : null;
             const days = daysUntil(date);
             const overdue = !completed && days !== null && days < 0;
             const busy = busySlug === item.slug;
@@ -172,6 +202,12 @@ export default function WiedervorlagenPage() {
                     >
                       {caseTitles.get(caseSlug) ?? "Akte öffnen"}
                     </Link>
+                  ) : null}
+                  {responsible ? (
+                    <span className="block truncate text-xs text-[color:var(--ds-text-subtle)]">
+                      {ownResponsible ? `Zuständig: ${responsible}` : responsible}
+                      {deputy ? ` — Vertretung: ${deputy.name}` : ""}
+                    </span>
                   ) : null}
                 </div>
                 <div className="shrink-0 text-right tabular-nums">
