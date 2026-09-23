@@ -234,3 +234,31 @@ describe("recording what was sent", () => {
     expect(deadlines[0].reminder_stages_sent).toEqual([7, 3, 1, 0]);
   });
 });
+
+describe("unconfirmed AI deadlines", () => {
+  it("still remind, but are flagged as an unconfirmed AI suggestion", () => {
+    const groups = collectDueReminders(
+      [matter({ slug: "legal/cases/1" })],
+      [
+        deadlinePage("d/ai", { title: "Berufung", due_date: inDays(3), source: "ai_document" }),
+        deadlinePage("d/manual", {
+          title: "Klagebeantwortung",
+          due_date: inDays(3),
+          review_status: "unreviewed",
+        }),
+        deadlinePage("d/confirmed", {
+          title: "Rekurs",
+          due_date: inDays(3),
+          source: "ai_document",
+          review_status: "approved",
+        }),
+      ],
+      now
+    );
+    const byTitle = Object.fromEntries(groups.flatMap((g) => g.items).map((i) => [i.title, i]));
+    expect(byTitle.Berufung.unreviewedAi).toBe(true);
+    // Manually entered deadlines start "unreviewed" too — no AI origin, no flag.
+    expect(byTitle.Klagebeantwortung.unreviewedAi).toBe(false);
+    expect(byTitle.Rekurs.unreviewedAi).toBe(false);
+  });
+});

@@ -4011,8 +4011,8 @@ export const D = {
   "billing.active": { de: "Aktiv", en: "Active" },
   "billing.trial": { de: "Testphase", en: "Trial" },
   "billing.trial_notice": {
-    de: "Sie testen den vollen Kanzlei-Umfang bis {date} (noch {days} Tage). Wählen Sie bis dahin einen Tarif, beginnt die Zahlung erst nach dem Testende. Ohne Tarif wechselt das Konto automatisch auf Community; Ihre Daten bleiben erhalten.",
-    en: "You are trying the full Kanzlei plan until {date} ({days} days left). If you choose a plan before then, billing starts only when the trial ends. Without a plan the account moves to Community automatically; your data stays.",
+    de: "Sie testen den vollen Kanzlei-Umfang bis {date} (noch {days} Tage). Wählen Sie bis dahin einen Tarif, beginnt die Zahlung erst nach dem Testende. Ohne Tarif bleiben Ihre Daten erhalten und Fristenerinnerungen laufen weiter; KI-Funktionen gibt es dann nur mit Tarif oder zugekauftem Guthaben.",
+    en: "You are trying the full Kanzlei plan until {date} ({days} days left). If you choose a plan before then, billing starts only when the trial ends. Without a plan your data stays and deadline reminders continue; AI features then need a plan or purchased credits.",
   },
   "billing.manage_plan": { de: "Plan verwalten", en: "Manage plan" },
   "billing.referrals": { de: "Empfehlung", en: "referral" },

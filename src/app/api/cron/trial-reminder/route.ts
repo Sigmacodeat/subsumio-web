@@ -32,8 +32,9 @@ export function trialReminderMail(name: string, daysLeft: number, endsAt: string
     text: [
       `Guten Tag${name ? ` ${name}` : ""},`,
       "",
-      `Ihre Testphase läuft noch bis ${day}. Danach wechselt Ihr Konto automatisch auf Community —`,
-      "Ihre Akten und Dokumente bleiben erhalten, die KI-Funktionen stehen dann nicht mehr zur Verfügung.",
+      `Ihre Testphase läuft noch bis ${day}. Wählen Sie bis dahin keinen Tarif, bleiben Ihre Akten,`,
+      "Fristen und Dokumente erhalten und die Fristenerinnerungen laufen weiter. KI-Funktionen gibt es",
+      "danach nur mit einem Tarif oder zugekauftem KI-Guthaben.",
       "",
       `Tarif wählen: ${siteUrl()}/dashboard/billing`,
       "",
