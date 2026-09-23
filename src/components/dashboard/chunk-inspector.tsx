@@ -588,12 +588,13 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 </div>
               )}
 
-              {/* Desktop: Table. overscroll-contain: this box has its own
-                  bounded scroll (max-h-[60vh]) — without it, scrolling to its
-                  bottom edge chains into the page behind it and the page jumps. */}
-              <div className="hidden max-h-[60vh] overflow-auto overscroll-contain md:block">
+              {/* Desktop: Tabelle ohne eigenen Scroll-Kasten — die Seite
+                  scrollt (eine Seite der Paginierung), der Kopf klebt unter der
+                  Reiterleiste. Zellen kürzen per truncate, die Tabelle passt in
+                  die Breite. */}
+              <div className="hidden md:block">
                 <table className="w-full text-sm text-[color:var(--ds-text)]">
-                  <thead className="sticky top-0 z-10 [background:var(--ds-surface)]">
+                  <thead className="sticky top-[var(--corpus-sticky-top,0px)] z-10 [background:var(--ds-surface)]">
                     <tr className="border-b border-[color:var(--ds-border)] text-left text-xs text-[color:var(--ds-text)]">
                       <th scope="col" className="pr-2 pb-2">
                         <Checkbox
@@ -704,7 +705,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
               </div>
 
               {/* Mobile: Cards */}
-              <div className="max-h-[55vh] space-y-2 overflow-y-auto overscroll-contain md:hidden">
+              <div className="space-y-2 md:hidden">
                 {chunks.map((c) => (
                   <div
                     key={c.id}

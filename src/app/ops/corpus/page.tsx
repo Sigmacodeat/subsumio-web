@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -138,22 +138,38 @@ export default function CorpusPage() {
   });
   const unreadAlerts = alertData?.unreadCount ?? 0;
 
+  // Beim Reiterwechsel an den Anfang springen — aber NICHT beim ersten
+  // Rendern: kommt der Nutzer von einer Gesetzes-Detailseite zurück
+  // (/ops/corpus?…#gesetz-…), holt die Liste die Zeile selbst wieder ins Bild.
+  // The ops shell has no scrolling <main>; the whole document scrolls, hence
+  // window.scrollTo. Instant, not smooth: clicking through tabs quickly would
+  // otherwise stack overlapping scroll animations.
+  const prevTab = useRef(activeTab);
   useEffect(() => {
-    // The ops shell (OpsShell) has no independent scrolling <main> — its id
-    // is "ops-main", not "main-content" (that id belongs to the *dashboard*
-    // layout), and even "ops-main" never sets overflow-y: the whole document
-    // scrolls. `getElementById("main-content")` was always null here, so
-    // this reset silently never ran — switch to a tab further down the page
-    // and every other tab opened mid-scroll instead of at its own top.
-    // Instant, not smooth: a context switch should land immediately: an
-    // animated scroll here fights whatever position the new tab's own layout
-    // settles into, and clicking through tabs quickly stacks overlapping
-    // scroll animations.
+    if (prevTab.current === activeTab) return;
+    prevTab.current = activeTab;
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
   }, [activeTab]);
 
+  // Höhe der klebenden Reiterleiste als CSS-Variable: Spaltenköpfe langer
+  // Listen kleben direkt darunter (top: var(--corpus-sticky-top)) statt
+  // unter ihr zu verschwinden — auch wenn die Leiste auf dem Handy umbricht.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    const tabs = tabsRef.current;
+    if (!root || !tabs || typeof ResizeObserver === "undefined") return;
+    const apply = () =>
+      root.style.setProperty("--corpus-sticky-top", `${tabs.getBoundingClientRect().height}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(tabs);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
+    <div ref={rootRef} className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Rechtskorpus"
         description="Bestand, Eingang und Abgleich mit dem RIS — Stand der Datenbank auf dem Server"
@@ -164,7 +180,10 @@ export default function CorpusPage() {
         {/* Sticky unter dem Viewport-Rand: auf langen Listen (Bestand,
             Protokoll) bleibt der Reiterwechsel erreichbar ohne hochzuscrollen.
             Labels immer sichtbar — Icon-only-Tabs sind auf Touch unklar. */}
-        <TabsList className="sticky top-0 z-20 flex h-auto w-full [scrollbar-width:none] justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <TabsList
+          ref={tabsRef}
+          className="sticky top-0 z-20 flex h-auto w-full [scrollbar-width:none] justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
           {/* Trigger sind echte Links (asChild → <a role="tab">): Rechtsklick
               „Link kopieren" und Middle-Click funktionieren nativ, normaler
               Klick bleibt SPA-Tabwechsel ohne Reload. */}

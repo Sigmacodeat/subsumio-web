@@ -221,10 +221,11 @@ export function CorpusProtokoll() {
               )}
             </div>
           ) : (
-            <Table>
-              {/* Sticky against the page's own scroll: a page of 50 rows
-                  otherwise scrolls the column headers away almost immediately. */}
-              <TableHeader className="sticky top-0 z-10 [background:var(--ds-surface)]">
+            <Table wrapperClassName="lg:overflow-x-visible">
+              {/* Klebt am Fensterrand unter der Reiterleiste: eine Seite mit 50
+                  Zeilen schiebt die Spaltenköpfe sonst sofort aus dem Bild. Ab lg
+                  ohne eigenen Scroll-Container, sonst klebt der Kopf nur an ihm. */}
+              <TableHeader className="sticky top-[var(--corpus-sticky-top,0px)] z-10 [background:var(--ds-surface)]">
                 <TableRow>
                   <TableHead>Zeitpunkt</TableHead>
                   <TableHead>Quelle</TableHead>
@@ -241,8 +242,12 @@ export function CorpusProtokoll() {
                     <TableRow key={e.id}>
                       <TableCell className="text-xs whitespace-nowrap tabular-nums">
                         {new Date(e.occurredAt).toLocaleString("de-AT", {
-                          dateStyle: "short",
-                          timeStyle: "medium",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
                         })}
                       </TableCell>
                       <TableCell className="text-xs">{e.sourceLabel}</TableCell>
