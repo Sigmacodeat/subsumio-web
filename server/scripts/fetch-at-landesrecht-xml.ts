@@ -66,7 +66,7 @@ const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
 const OUT_DIR = join(_corpusRoot, "at-landesrecht");
 /** Every state-law paragraph in force at RIS, one JSON line each (reconcile-ris.ts). */
-const INVENTORY = join(_corpusRoot, "_state", "ris-landesrecht-inforce.jsonl");
+const INVENTORY = join(_corpusRoot, "_state", "ris-inforce-landesrecht.jsonl");
 
 function arg(name: string, fb?: string): string {
   const i = process.argv.indexOf(`--${name}`);
