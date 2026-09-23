@@ -26,6 +26,18 @@ require_value() {
   fi
 }
 
+# Optional features: a missing value only disables the feature — warn, don't block.
+warn_value() {
+  key="$1"
+  hint="$2"
+  val="$(value "$key")"
+  if [ -z "$val" ]; then
+    echo "[preflight] WARN     $key leer — $hint"
+  else
+    echo "[preflight] OK       $key"
+  fi
+}
+
 require_exact() {
   key="$1"
   expected="$2"
@@ -42,19 +54,133 @@ echo "[preflight] Prüfe Production-Konfiguration: $env_file"
 for key in \
   APP_DOMAIN ENGINE_DOMAIN POSTGRES_PASSWORD SUBSUMIO_WEB_API_KEY \
   AUTH_SECRET SUBSUMIO_INTERNAL_SECRET SUBSUMIO_ENCRYPTION_KEY CRON_SECRET \
-  ENGINE_WEBHOOK_API_KEY OPENROUTER_API_KEY BACKUP_RESTIC_REPOSITORY \
+  ENGINE_WEBHOOK_API_KEY BACKUP_RESTIC_REPOSITORY \
   BACKUP_RESTIC_PASSWORD SUBSUMIO_STORAGE_ENCRYPTION_KEY \
-  RESEND_API_KEY MAIL_FROM RESEND_WEBHOOK_SECRET; do
+  RESEND_API_KEY MAIL_FROM RESEND_WEBHOOK_SECRET PORTAL_TOKEN_SECRET; do
   require_value "$key"
 done
 
 require_exact SUBSUMIO_REQUIRE_TENANT true
-require_exact SUBSUMIO_AI_PROVIDER openrouter
-require_exact SUBSUMIO_EMBEDDING_MODEL openrouter:openai/text-embedding-3-small
-require_exact SUBSUMIO_EMBEDDING_DIMENSIONS 1536
 require_exact SUBSUMIO_WEB_URL http://web:3000
 
+# Chat models: the direct provider (Anthropic) is the default — fewer
+# sub-processors. SUBSUMIO_AI_PROVIDER=openrouter routes everything through
+# OpenRouter instead; then its key is mandatory. Without it OpenRouter is only
+# an optional fallback.
+ai_provider="$(value SUBSUMIO_AI_PROVIDER | tr '[:upper:]' '[:lower:]')"
+case "$ai_provider" in
+  "" | native | direct | anthropic)
+    echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=${ai_provider:-leer} (direkt, Anthropic)"
+    require_value ANTHROPIC_API_KEY
+    warn_value OPENROUTER_API_KEY "kein OpenRouter-Fallback, falls Anthropic ausfällt."
+    echo "[preflight] WARN     Anthropic direkt verarbeitet nicht in der EU — für Mandantendaten (ÖRAK § 40 Abs 3 RL-BA) SUBSUMIO_AI_PROVIDER=bedrock-eu verwenden." >&2
+    ;;
+  openrouter)
+    echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=openrouter"
+    require_value OPENROUTER_API_KEY
+    ;;
+  bedrock-eu)
+    echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=bedrock-eu (Claude über AWS Bedrock, EU-Profile)"
+    if [ -z "$(value AWS_BEARER_TOKEN_BEDROCK)" ]; then
+      require_value AWS_ACCESS_KEY_ID
+      require_value AWS_SECRET_ACCESS_KEY
+    fi
+    case "$(value AWS_REGION)" in
+      "" | eu-central-1 | eu-west-1 | eu-west-3 | eu-north-1 | eu-south-1 | eu-south-2) ;;
+      *)
+        echo "[preflight] INVALID  AWS_REGION muss eine Region in einem EU-Mitgliedsstaat sein (ist '$(value AWS_REGION)')." >&2
+        failed=1
+        ;;
+    esac
+    ;;
+  *)
+    echo "[preflight] INVALID  SUBSUMIO_AI_PROVIDER muss leer, 'anthropic', 'openrouter' oder 'bedrock-eu' sein (ist '$ai_provider')." >&2
+    failed=1
+    ;;
+esac
+
+# EU-only: the engine refuses every non-EU provider at runtime; these checks
+# catch the configurations that would make it refuse everything, or leave a
+# bypass open, before the deploy switches over.
+if [ "$(value SUBSUMIO_EU_ONLY)" = "1" ]; then
+  if [ "$ai_provider" != "bedrock-eu" ]; then
+    echo "[preflight] INVALID  SUBSUMIO_EU_ONLY=1 verlangt SUBSUMIO_AI_PROVIDER=bedrock-eu." >&2
+    failed=1
+  fi
+  if [ -n "$(value ANTHROPIC_API_KEY)" ]; then
+    echo "[preflight] INVALID  ANTHROPIC_API_KEY unter SUBSUMIO_EU_ONLY=1 entfernen (Direktweg alter Subagent-Jobs)." >&2
+    failed=1
+  fi
+  require_value SUBSUMIO_ENSEMBLE_CRITIC_MODELS
+  if [ "$(value SUBSUMIO_EU_ONLY_EMBEDDINGS)" != "1" ]; then
+    echo "[preflight] WARN     Embeddings laufen weiter über einen Nicht-EU-Anbieter (SUBSUMIO_EU_ONLY_EMBEDDINGS nicht gesetzt)." >&2
+  fi
+elif [ "$ai_provider" = "bedrock-eu" ]; then
+  echo "[preflight] WARN     bedrock-eu ohne SUBSUMIO_EU_ONLY=1: EU-Verarbeitung wird nicht erzwungen." >&2
+fi
+
+# Embeddings: the model must be set explicitly (it defines the vector space of
+# content_chunks.embedding, together with the dimensions) and its provider
+# needs its own key, whatever the chat provider is.
+require_value SUBSUMIO_EMBEDDING_MODEL
+require_value SUBSUMIO_EMBEDDING_DIMENSIONS
+embedding_model="$(value SUBSUMIO_EMBEDDING_MODEL)"
+if [ -n "$embedding_model" ]; then
+  embedding_key=""
+  case "$embedding_model" in
+    openrouter:*) embedding_key=OPENROUTER_API_KEY ;;
+    openai:*) embedding_key=OPENAI_API_KEY ;;
+    voyage:*) embedding_key=VOYAGE_API_KEY ;;
+    zeroentropyai:*) embedding_key=ZEROENTROPY_API_KEY ;;
+    mistral:*) embedding_key=MISTRAL_API_KEY ;;
+    google:*) embedding_key=GOOGLE_GENERATIVE_AI_API_KEY ;;
+    cohere:*) embedding_key=COHERE_API_KEY ;;
+    dashscope:*) embedding_key=DASHSCOPE_API_KEY ;;
+    together:*) embedding_key=TOGETHER_API_KEY ;;
+    ollama:* | llama-server:* | litellm-proxy:*) embedding_key="" ;;
+    *)
+      echo "[preflight] INVALID  SUBSUMIO_EMBEDDING_MODEL braucht die Form <anbieter>:<modell> mit bekanntem Anbieter (ist '$embedding_model')." >&2
+      failed=1
+      embedding_key="-"
+      ;;
+  esac
+  case "$embedding_key" in
+    "") echo "[preflight] OK       Embedding-Anbieter ohne API-Schlüssel ($embedding_model)" ;;
+    -) ;;
+    *)
+      if [ -z "$(value "$embedding_key")" ]; then
+        echo "[preflight] MISSING  $embedding_key (für SUBSUMIO_EMBEDDING_MODEL=$embedding_model)" >&2
+        failed=1
+      else
+        echo "[preflight] OK       $embedding_key (Embeddings)"
+      fi
+      ;;
+  esac
+fi
+
 require_value PLATFORM_OPERATOR_EMAILS
+
+# Optionale Funktionen — fehlen sie, läuft der Dienst, aber die Funktion ist aus.
+warn_value NEXT_PUBLIC_SENTRY_DSN "keine Fehlerüberwachung der Web-App (Wert wird beim Build eingebacken)."
+warn_value SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID "öffentliches Erstanfrage-Formular hat kein Ziel-Kanzleiwissen."
+warn_value SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID "öffentliche Terminbuchung ist nicht erreichbar."
+for key in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRICE_SOLO STRIPE_PRICE_KANZLEI; do
+  warn_value "$key" "Online-Abrechnung (Stripe) ist deaktiviert oder unvollständig."
+done
+for key in WEB_PUSH_PUBLIC_KEY WEB_PUSH_PRIVATE_KEY; do
+  warn_value "$key" "keine Web-Push-Benachrichtigungen."
+done
+if [ -n "$(value DOCUSIGN_INTEGRATION_KEY)" ]; then
+  docusign_base="$(value DOCUSIGN_BASE_URL)"
+  case "$docusign_base" in
+    "" | *demo.docusign.net*)
+      echo "[preflight] WARN     DOCUSIGN_BASE_URL zeigt auf die DocuSign-Demo-Umgebung (${docusign_base:-Standard}) — Signaturen sind dort nicht rechtsgültig."
+      ;;
+    *)
+      echo "[preflight] OK       DOCUSIGN_BASE_URL"
+      ;;
+  esac
+fi
 
 # Backups: an offsite repo is the goal, a local encrypted copy the minimum.
 # A production launch without either loses a firm's files on one disk failure.

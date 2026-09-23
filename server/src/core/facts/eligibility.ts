@@ -19,6 +19,8 @@
  *   - parsed is non-null
  *   - slug does NOT start with `wiki/agents/` (subagent scratch is its
  *     own world; not user-meaningful for hot memory)
+ *   - slug does NOT start with `chat-sessions/` (owner-only conversations
+ *     and private agent pages; extracted facts would lose that privacy)
  *   - frontmatter.dream_generated is NOT `true` (anti-loop: never extract
  *     from dream-generated pages — they're already a digest)
  *   - body length >= 80 chars (skip TODO-style snippets)
@@ -95,6 +97,9 @@ export function isFactsBackstopEligible(
 ): EligibilityResult {
   if (!parsed) return { ok: false, reason: "no_parsed_page" };
   if (slug.startsWith("wiki/agents/")) return { ok: false, reason: "subagent_namespace" };
+  // Copilot conversations and the private pages of a user's agent runs are
+  // visible to their owner only; facts extracted from them would not be.
+  if (slug.startsWith("chat-sessions/")) return { ok: false, reason: "private_area" };
   if (parsed.frontmatter && parsed.frontmatter.dream_generated === true) {
     return { ok: false, reason: "dream_generated" };
   }

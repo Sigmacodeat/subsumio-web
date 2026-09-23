@@ -79,3 +79,21 @@ describe("review-inbox-realtime", () => {
     delete (globalThis as { Notification?: unknown }).Notification;
   });
 });
+
+describe("toastTextFor — deadline alerts", () => {
+  test("labels an unreviewed AI suggestion", async () => {
+    const { toastTextFor } = await import("./review-inbox-realtime");
+    const text = toastTextFor("deadline.alert", {
+      unreviewed: true,
+      label: "ungeprüfter KI-Vorschlag",
+      title: "Berufungsfrist",
+    });
+    expect(text?.title).toBe("Frist-Alarm — ungeprüfter KI-Vorschlag");
+    expect(text?.body).toContain("Berufungsfrist");
+  });
+
+  test("keeps the plain text for confirmed deadlines", async () => {
+    const { toastTextFor } = await import("./review-inbox-realtime");
+    expect(toastTextFor("deadline.alert", {})?.title).toBe("Frist-Alarm");
+  });
+});

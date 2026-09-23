@@ -10,6 +10,33 @@ interface ReviewInboxEventPayload {
   caseSlug?: string;
   by?: string;
   type?: string;
+  /** deadline.alert */
+  deadlineId?: string;
+  title?: string;
+  unreviewed?: boolean;
+  label?: string;
+}
+
+/**
+ * Title/body for a toast. A deadline alert for an unreviewed AI suggestion is
+ * labelled as such, so nobody mistakes it for a confirmed Frist.
+ */
+export function toastTextFor(
+  event: string,
+  payload: ReviewInboxEventPayload
+): { title: string; body: string } | null {
+  const config = TOAST_EVENTS[event];
+  if (!config) return null;
+  if (event === "deadline.alert" && payload.unreviewed) {
+    const label = payload.label ?? "ungeprüfter KI-Vorschlag";
+    return {
+      title: `${config.title} — ${label}`,
+      body: payload.title
+        ? `„${payload.title}“ ist ein ${label}. Bitte prüfen und bestätigen.`
+        : `Eine Frist ist ein ${label}. Bitte prüfen und bestätigen.`,
+    };
+  }
+  return { title: config.title, body: config.body };
 }
 
 const TOAST_EVENTS: Record<
@@ -116,7 +143,7 @@ export function useReviewInboxRealtime() {
       const config = TOAST_EVENTS[event];
       if (!config) return;
 
-      const dedupKey = `${event}:${payload.slug ?? ""}`;
+      const dedupKey = `${event}:${payload.slug ?? payload.deadlineId ?? ""}`;
       if (shownSlugs.current.has(dedupKey)) return;
       shownSlugs.current.add(dedupKey);
 
@@ -125,11 +152,13 @@ export function useReviewInboxRealtime() {
         if (first) shownSlugs.current.delete(first);
       }
 
+      const text = toastTextFor(event, payload) ?? { title: config.title, body: config.body };
+
       // In-App Toast (only when tab is visible)
       if (isTabVisible()) {
         addToast({
           type: config.icon as "success" | "error" | "info" | "warning",
-          title: config.title,
+          title: text.title,
           duration: 5000,
         });
       }
@@ -137,7 +166,7 @@ export function useReviewInboxRealtime() {
       // Browser Push Notification (only when tab is hidden and event warrants push)
       if (!isTabVisible() && config.push) {
         const tag = `${NOTIFICATION_TAG_PREFIX}:${event}`;
-        showBrowserNotification(config.title, config.body, tag);
+        showBrowserNotification(text.title, text.body, tag);
       }
     },
     [addToast, invalidateAll]

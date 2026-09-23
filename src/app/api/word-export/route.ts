@@ -54,6 +54,9 @@ const postSchema = z.object({
   title: z.string().optional(),
   markdown: z.string().max(500_000).optional(),
   formData: z.record(z.unknown()).optional(),
+  /** KI-Kennzeichnung (Art. 50 KI-VO). Standard true — nur Exporte ohne
+   *  KI-Anteil (z. B. aus Vorlagen befüllte Schreiben) setzen false. */
+  ai_generated: z.boolean().optional(),
   verification: verificationSchema.optional(),
   /** Kanzlei-Briefpapier für die erste Seite — siehe docx-export.ts. */
   letterhead: letterheadSchema.optional(),
@@ -141,7 +144,12 @@ export const POST = createHandler(
     }
 
     const title = body.title || "Subsumio Dokument";
-    const docx = await generateDocx(md, { title, caseRef, letterhead: body.letterhead });
+    const docx = await generateDocx(md, {
+      title,
+      caseRef,
+      letterhead: body.letterhead,
+      aiGenerated: body.ai_generated !== false,
+    });
     const buf = docx.buffer.slice(
       docx.byteOffset,
       docx.byteOffset + docx.byteLength

@@ -81,6 +81,16 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "openrouter:anthropic/claude-fable-5.1": { input: 10.0, output: 50.0 },
   "openrouter:mistralai/mistral-large": { input: 2.0, output: 6.0 },
   "anthropic:claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
+  // Amazon Bedrock, EU geo inference profiles (eu.anthropic.*). Anthropic's
+  // pricing page (platform.claude.com/docs/en/about-claude/pricing, checked
+  // 2026-09-23) states that on Bedrock "regional and multi-region endpoints
+  // include a 10% premium over global endpoints" for Haiku 4.5 and all later
+  // models; global = Anthropic list price. So EU = list × 1.1. The AWS pricing
+  // page itself is script-rendered and could not be read — UNVERIFIED against
+  // the AWS price list; check the first AWS invoice / Cost Explorer.
+  "bedrock:eu.anthropic.claude-haiku-4-5-20251001-v1:0": { input: 1.1, output: 5.5 },
+  "bedrock:eu.anthropic.claude-sonnet-5": { input: 2.2, output: 11.0 },
+  "bedrock:eu.anthropic.claude-opus-5": { input: 5.5, output: 27.5 },
   "anthropic:claude-3-5-sonnet-20241022": { input: 3.0, output: 15.0 },
   "anthropic:claude-3-5-haiku-20241022": { input: 0.8, output: 4.0 },
 

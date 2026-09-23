@@ -43,6 +43,7 @@ import { foreignStatutePrefixes } from "./source-boost.ts";
 import { expandLegalQuery } from "../think/legal-query-expand.ts";
 import { expandConceptQuery, extractSectionNumbers } from "../legal/concept-map.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
+import { isAllowedUnderEuPolicy, isEuOnly } from "../ai/eu-policy.ts";
 
 export const RRF_K = 60;
 const COMPILED_TRUTH_BOOST = 2.0;
@@ -2261,7 +2262,17 @@ export async function applyLLMReranker(
   let response = "";
   // v0.46: Try primary model first, then fallback chain. Each model gets
   // its own timeout. Fail-open: if ALL models fail, return unreranked results.
-  const modelsToTry = [model, ...LLM_RERANK_FALLBACK_CHAIN.filter((m) => m !== model)];
+  // EU-only: skip non-EU rerankers up front (the gateway would refuse them
+  // anyway); with none left the results keep their non-LLM (RRF) order.
+  const modelsToTry = [model, ...LLM_RERANK_FALLBACK_CHAIN.filter((m) => m !== model)].filter((m) =>
+    isAllowedUnderEuPolicy(m, process.env)
+  );
+  if (modelsToTry.length === 0) {
+    if (isEuOnly(process.env)) {
+      console.warn("[llm-rerank] EU-only: no EU reranker configured, keeping RRF order");
+    }
+    return results;
+  }
   let lastError: unknown = null;
   let succeeded = false;
   for (const tryModel of modelsToTry) {

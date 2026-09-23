@@ -232,6 +232,9 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
       if (!row) return { ok: false };
       const rowId = row.id as string;
       const rowName = row.name as string;
+      // Firm MCP tokens act for a web user and need its matter guard, which
+      // only the OAuth server (serve-http) applies — never accept them here.
+      if (rowName.startsWith("web-mcp:")) return { ok: false };
       // Debounced last_used_at update — only writes once per token per 60s.
       // SQL-level WHERE clause keeps this race-tolerant even under concurrent requests.
       sql`UPDATE access_tokens

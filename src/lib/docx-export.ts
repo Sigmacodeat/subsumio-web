@@ -11,7 +11,10 @@
  * - Numbered lists
  * - Paragraphs mit korrektem Spacing
  * - Header mit Titel + Datum
- * - Footer mit Seitenzahl + "Generiert von Subsumio"
+ * - Footer mit Seitenzahl + sichtbarem KI-Hinweis
+ * - Maschinenlesbare KI-Kennzeichnung (Art. 50 Abs. 2 VO (EU) 2024/1689) in
+ *   den Dokumenteigenschaften: docProps/core.xml (Beschreibung, Stichwörter)
+ *   und docProps/custom.xml (AIGenerated = true u. a.)
  */
 
 import JSZip from "jszip";
@@ -28,6 +31,62 @@ interface DocxOptions {
    * Briefpapier, nur einen generischen "Titel — Datum"-Kopf auf jeder Seite.
    */
   letterhead?: LetterheadConfig;
+  /**
+   * Inhalt ist (ganz oder teilweise) KI-erzeugt. Standard: true — beide
+   * Aufrufer exportieren Entwürfe/Arbeitsergebnisse aus dem KI-Workflow. Nur
+   * für nachweislich rein menschlich verfasste Inhalte auf false setzen.
+   */
+  aiGenerated?: boolean;
+}
+
+/** Sichtbarer und maschinenlesbarer KI-Hinweis (Art. 50 Abs. 2 KI-VO). */
+export const AI_DOCX_NOTICE = "KI-generiert (Subsumio), anwaltlich zu prüfen";
+const AI_ACT_REFERENCE = "Art. 50 Abs. 2 VO (EU) 2024/1689";
+
+const xmlEscape = (s: string): string =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
+/** docProps/core.xml — Titel, Autor, Zeitstempel und (bei KI-Inhalt) Kennzeichnung. */
+function corePropsXml(opts: DocxOptions, aiGenerated: boolean, now: Date): string {
+  const iso = now.toISOString().replace(/\.\d{3}Z$/, "Z");
+  const aiFields = aiGenerated
+    ? `
+  <dc:description>${xmlEscape(`${AI_DOCX_NOTICE} — Kennzeichnung nach ${AI_ACT_REFERENCE}`)}</dc:description>
+  <cp:keywords>${xmlEscape(`KI-generiert; Subsumio; anwaltlich zu prüfen`)}</cp:keywords>`
+    : "";
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>${xmlEscape(opts.title)}</dc:title>
+  <dc:creator>${xmlEscape(opts.author || "Subsumio")}</dc:creator>${aiFields}
+  <dcterms:created xsi:type="dcterms:W3CDTF">${iso}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${iso}</dcterms:modified>
+</cp:coreProperties>`;
+}
+
+/** docProps/custom.xml — eindeutige, maschinenlesbare KI-Kennzeichnung. */
+function customPropsXml(): string {
+  const fmtid = "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}";
+  const props: Array<[string, string]> = [
+    ["AIGenerated", "<vt:bool>true</vt:bool>"],
+    ["AIGenerator", "<vt:lpwstr>Subsumio</vt:lpwstr>"],
+    ["AIReviewStatus", `<vt:lpwstr>${xmlEscape("anwaltlich zu prüfen")}</vt:lpwstr>`],
+    ["AIDisclosure", `<vt:lpwstr>${xmlEscape(AI_ACT_REFERENCE)}</vt:lpwstr>`],
+  ];
+  const body = props
+    .map(
+      ([name, value], i) =>
+        `  <property fmtid="${fmtid}" pid="${i + 2}" name="${name}">${value}</property>`
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+${body}
+</Properties>`;
 }
 
 /**
@@ -173,6 +232,7 @@ function markdownToDocxParagraphs(md: string): string[] {
  */
 export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8Array> {
   const zip = new JSZip();
+  const aiGenerated = opts.aiGenerated !== false;
 
   // ── [Content_Types].xml ──────────────────────────────────
   zip.file(
@@ -185,6 +245,12 @@ export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
   <Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>
   <Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${
+    aiGenerated
+      ? `
+  <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>`
+      : ""
+  }
 </Types>`
   );
 
@@ -194,8 +260,18 @@ export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>${
+    aiGenerated
+      ? `
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/>`
+      : ""
+  }
 </Relationships>`
   );
+
+  // ── docProps (Dokumenteigenschaften) ─────────────────────
+  zip.file("docProps/core.xml", corePropsXml(opts, aiGenerated, new Date()));
+  if (aiGenerated) zip.file("docProps/custom.xml", customPropsXml());
 
   // ── word/_rels/document.xml.rels ─────────────────────────
   zip.file(
@@ -271,7 +347,7 @@ export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8
 <w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:p><w:pPr><w:pStyle w:val="Normal"/><w:jc w:val="right"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr>
-  <w:t xml:space="preserve">${opts.title} — ${headerDate}${opts.caseRef ? " — " + opts.caseRef : ""}</w:t></w:r></w:p>
+  <w:t xml:space="preserve">${xmlEscape(`${opts.title} — ${headerDate}${opts.caseRef ? " — " + opts.caseRef : ""}`)}</w:t></w:r></w:p>
 </w:hdr>`
   );
 
@@ -299,7 +375,7 @@ export async function generateDocx(md: string, opts: DocxOptions): Promise<Uint8
   ${footerLetterheadRun(footerVatLine)}
   <w:p><w:pPr><w:pStyle w:val="Normal"/><w:jc w:val="center"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr>
-  <w:t xml:space="preserve">Generiert von Subsumio Legal AI — Seite </w:t></w:r>
+  <w:t xml:space="preserve">${aiGenerated ? xmlEscape(AI_DOCX_NOTICE) : "Erstellt mit Subsumio"} — Seite </w:t></w:r>
   <w:r><w:fldChar w:fldCharType="begin"/></w:r>
   <w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>
   <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>

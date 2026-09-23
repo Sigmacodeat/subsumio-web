@@ -27,6 +27,7 @@ import { mistral } from "./mistral.ts";
 import { xai } from "./xai.ts";
 import { cohere } from "./cohere.ts";
 import { moonshot } from "./moonshot.ts";
+import { bedrock } from "./bedrock.ts";
 
 const ALL: Recipe[] = [
   openai,
@@ -50,6 +51,7 @@ const ALL: Recipe[] = [
   xai,
   cohere,
   moonshot,
+  bedrock,
 ];
 
 /** Map from `provider:id` key to recipe. */

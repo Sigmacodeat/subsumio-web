@@ -7,6 +7,13 @@ import { lstatSync, realpathSync } from "fs";
 import { resolve, relative, sep } from "path";
 import type { BrainEngine } from "./engine.ts";
 import { matterScopeAllows } from "./matter-access.ts";
+import {
+  filterRowsByMatterBinding,
+  invalidateMatterIndex,
+  pageBindingAllowed,
+  pageMatterBinding,
+  type BindingRow,
+} from "./matter-binding.ts";
 import { clampSearchLimit } from "./engine.ts";
 import type { GBrainConfig } from "./config.ts";
 import type { PageType } from "./types.ts";
@@ -391,6 +398,14 @@ export interface AuthInfo {
    * with no matter_scope set).
    */
   matterScope?: string[] | "all";
+  /**
+   * Set for MCP tokens minted in the firm settings (`web-mcp:` access
+   * tokens): the web user the token acts for, resolved at every request
+   * (see core/web-mcp-token.ts). Such callers run under the matter guard.
+   */
+  webUserId?: string;
+  /** Matters the bound web user may read but not change. */
+  matterReadOnly?: string[];
 }
 
 export interface OperationContext {
@@ -447,6 +462,14 @@ export interface OperationContext {
    * v0.15 behavior; pure addition, no regression).
    */
   allowedSlugPrefixes?: string[];
+  /**
+   * The private area (`chat-sessions/private/<owner>/`) a web user's agent
+   * run writes into when it has no matter (see matter-access
+   * agentWriteBinding). Set only by the subagent tool guard, which moves the
+   * page there; put_page checks the agent namespace on the slug below it, so
+   * the namespace rule still holds and only the owner's own area is accepted.
+   */
+  agentPrivatePrefix?: string;
   /**
    * Resolved global CLI options (--quiet / --progress-json / --progress-interval).
    * CLI callers populate this from `getCliOptions()`. MCP / library callers
@@ -636,12 +659,6 @@ export function hardSourceFilter<T extends { source_id?: string }>(
  * caller. This is the engine-side enforcement that closes the gap between
  * the web-app's resolveAuthorizedCase() and the engine's retrieval layer.
  */
-function frontmatterCaseSlug(frontmatter: unknown): string | undefined {
-  if (!frontmatter || typeof frontmatter !== "object") return undefined;
-  const raw = (frontmatter as Record<string, unknown>).case_slug;
-  return typeof raw === "string" && raw.length > 0 ? raw : undefined;
-}
-
 function isMatterScopeMatch(
   scope: string[] | "all" | undefined,
   slug: string,
@@ -650,17 +667,52 @@ function isMatterScopeMatch(
   return matterScopeAllows(scope, slug, caseSlug);
 }
 
+/**
+ * Pure, database-free variant: decides on what each row carries (its
+ * frontmatter, or the projected case_slug). A matter reference other than
+ * case_slug cannot be resolved without the database and therefore fails
+ * closed. Read paths use matterScopeFilterResolved.
+ */
 export function matterScopeFilter<
-  T extends { slug?: string; case_slug?: string; frontmatter?: Record<string, unknown> },
+  T extends {
+    slug?: string;
+    type?: string | null;
+    case_slug?: string;
+    frontmatter?: Record<string, unknown>;
+  },
 >(results: T[], ctx: OperationContext): T[] {
   const scope = ctx.matterScope;
   if (!scope) return results;
   if (scope === "all") return results;
   if (scope.length === 0) return [];
-  return results.filter((r) => {
-    const slug = r.slug ?? "";
-    const caseSlug = r.case_slug ?? frontmatterCaseSlug(r.frontmatter);
-    return isMatterScopeMatch(scope, slug, caseSlug);
+  return results.filter((r) =>
+    pageBindingAllowed(
+      scope,
+      r.slug ?? "",
+      pageMatterBinding({
+        slug: r.slug,
+        type: r.type,
+        frontmatter: r.frontmatter,
+        case_slug: r.case_slug,
+      })
+    )
+  );
+}
+
+/**
+ * The canonical matter-scope filter for read paths: every frontmatter field
+ * that binds a page to a matter (case_slug, case_ref, …) is resolved to the
+ * matter it names (core/matter-binding.ts). Rows without frontmatter (search
+ * hits) get their current binding from the database in one query; matter
+ * indexes are loaded once per source.
+ */
+export async function matterScopeFilterResolved<T extends BindingRow>(
+  results: T[],
+  ctx: OperationContext
+): Promise<T[]> {
+  return filterRowsByMatterBinding(ctx.engine, results, ctx.matterScope, {
+    sourceId: ctx.sourceId,
+    sources: ctx.auth?.allowedSources,
   });
 }
 
@@ -934,8 +986,19 @@ const get_page: Operation = {
       );
     }
     if (
-      matterScopeFilter([{ slug: page.slug, frontmatter: page.frontmatter ?? {} }], ctx).length ===
-      0
+      (
+        await matterScopeFilterResolved(
+          [
+            {
+              slug: page.slug,
+              type: page.type,
+              frontmatter: page.frontmatter ?? {},
+              source_id: (page as { source_id?: string }).source_id,
+            },
+          ],
+          ctx
+        )
+      ).length === 0
     ) {
       throw new OperationError(
         "page_not_found",
@@ -1121,11 +1184,21 @@ const put_page: Operation = {
         );
       }
       const allowList = ctx.allowedSlugPrefixes;
+      // A private page of a web user's run: the namespace rules apply to the
+      // slug below the owner's area. Only a well-formed private-area prefix
+      // counts; anything else is checked as-is (and fails).
+      const privatePrefix = ctx.agentPrivatePrefix;
+      const nsSlug =
+        typeof privatePrefix === "string" &&
+        /^chat-sessions\/private\/[A-Za-z0-9_-]+\/$/.test(privatePrefix) &&
+        slug.startsWith(privatePrefix)
+          ? slug.slice(privatePrefix.length)
+          : slug;
       if (allowList && allowList.length > 0) {
         // Trusted-workspace path: explicit allow-list bounds writes.
         // Set only by cycle.ts (synthesize/patterns) which submits subagent
         // jobs under PROTECTED_JOB_NAMES — MCP cannot reach this branch.
-        if (!matchesSlugAllowList(slug, allowList)) {
+        if (!matchesSlugAllowList(nsSlug, allowList)) {
           throw new OperationError(
             "permission_denied",
             `put_page slug '${slug}' is not within the trusted-workspace allow-list (${allowList.join(", ")})`
@@ -1134,7 +1207,7 @@ const put_page: Operation = {
       } else {
         // Legacy default: agent-namespace confinement.
         const prefix = `wiki/agents/${ctx.subagentId}/`;
-        if (!slug.startsWith(prefix) || slug.length === prefix.length) {
+        if (!nsSlug.startsWith(prefix) || nsSlug.length === prefix.length) {
           throw new OperationError(
             "permission_denied",
             `put_page via subagent must write under '${prefix}...'`
@@ -1218,6 +1291,10 @@ const put_page: Operation = {
       source_uri: provenanceUri,
       ingested_via: provenanceVia,
     });
+    // A new or changed matter changes what matter references resolve to.
+    if (existingPage?.type === "legal_case" || result.parsedPage?.type === "legal_case") {
+      invalidateMatterIndex(ctx.sourceId ?? "default");
+    }
 
     // v0.39 T13 — auto-prompt on first unknown-type write.
     //
@@ -1844,16 +1921,33 @@ const list_pages: Operation = {
       ...scope,
     });
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
-    let result = pages.map((pg) => ({
+    // Matter scope is checked on the full page (slug AND every frontmatter
+    // matter binding) before the projection below drops the frontmatter —
+    // otherwise a document bound to a walled matter by case_slug or case_ref
+    // alone would slip through.
+    const inScope = (
+      await matterScopeFilterResolved(
+        pages.map((pg) => ({
+          slug: pg.slug,
+          type: pg.type,
+          frontmatter: pg.frontmatter ?? {},
+          source_id: (pg as { source_id?: string }).source_id,
+          page: pg,
+        })),
+        ctx
+      )
+    ).map((x) => x.page);
+    let result = inScope.map((pg) => ({
       slug: pg.slug,
       type: pg.type,
       title: pg.title,
       updated_at: pg.updated_at,
+      // First-write time (kept on every upsert) — lets the web app tell a
+      // new record from an old one that was merely edited.
+      created_at: pg.created_at,
       ...(pg.deleted_at ? { deleted_at: pg.deleted_at } : {}),
       ...(includeFrontmatter ? { frontmatter: pg.frontmatter ?? {} } : {}),
     }));
-
-    result = matterScopeFilter(result, ctx);
 
     // Subsumio R3: Filter by document-level ACLs.
     if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
@@ -1958,7 +2052,7 @@ const search: Operation = {
       // Subsumio WP4: Defense-in-depth hard source filter
       const sourceFiltered = hardSourceFilter(results, ctx);
       // Subsumio P0-SECR-002: Filter by verified matter scope
-      const scoped = matterScopeFilter(sourceFiltered, ctx);
+      const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
       // Subsumio R3: Filter by document-level ACLs
       const finalResults = await aclFilter(scoped, ctx);
       if (wantRefine) {
@@ -2001,7 +2095,7 @@ const search: Operation = {
     // Subsumio WP4: Defense-in-depth hard source filter
     const sourceFiltered = hardSourceFilter(results, ctx);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    const scoped = matterScopeFilter(sourceFiltered, ctx);
+    const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
     // Subsumio R3: Filter by document-level ACLs
     const finalResults = await aclFilter(scoped, ctx);
     if (wantRefine) {
@@ -2359,7 +2453,7 @@ const query: Operation = {
     // differ from ctx.sourceId when the caller passed a per-call source_id.
     const sourceFiltered = hardSourceFilter(results, ctx, querySourceScope);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    return matterScopeFilter(sourceFiltered, ctx);
+    return matterScopeFilterResolved(sourceFiltered, ctx);
   },
   scope: "read",
   cliHints: { name: "query", positional: ["query"] },

@@ -36,6 +36,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createBedrockAnthropic } from "@ai-sdk/amazon-bedrock/anthropic";
 import { z } from "zod";
 
 import {
@@ -61,6 +62,8 @@ import { queryInstructionFor } from "./embedding-instructions.ts";
 import { hasAnthropicKey } from "./anthropic-key.ts";
 import { AIConfigError, AITransientError, normalizeAIError } from "./errors.ts";
 import { providerFailoverModel } from "./provider-failover.ts";
+import { assertEuEmbedding, assertEuResidency, EuResidencyError } from "./eu-policy.ts";
+import { bedrockRuntimeBaseUrl, resolveBedrockRegion } from "./bedrock-config.ts";
 import { runGuardrails, hasGuardrails, type GuardrailHook } from "../guardrails.ts";
 
 // ---- Gateway-wide AI-HTTP timeout (v0.42.20.0, #1762/#1775) ----
@@ -203,6 +206,27 @@ let _embedTransportInstalled = false;
 // Test-only seam for chat(). When set, chat() skips provider resolution and
 // returns this function's result directly. See __setChatTransportForTests.
 let _chatTransport: ((opts: ChatOpts) => Promise<ChatResult>) | null = null;
+
+/**
+ * Env the EU-only policy reads: the gateway's configure-time snapshot. Before
+ * configureGateway() (bootstrap, some tests) there is no snapshot yet; the
+ * policy then reads process.env so the switch can never be bypassed by
+ * calling early.
+ */
+function policyEnv(): Record<string, string | undefined> {
+  return _config?.env ?? process.env;
+}
+
+/**
+ * Test seam for the Bedrock factory: replaces the fetch the Bedrock SDK uses,
+ * so tests drive the real `createBedrockAnthropic` request path (SigV4 or
+ * Bearer signing, URL, body transform) against a stub — no AWS call.
+ */
+let _bedrockFetch: typeof fetch | null = null;
+export function __setBedrockFetchForTests(fn: typeof fetch | null): void {
+  _bedrockFetch = fn;
+  _modelCache.clear();
+}
 
 /**
  * Per-recipe shrink-on-miss state. When a recipe's pre-split misses the
@@ -872,6 +896,8 @@ export function isAvailable(touchpoint: TouchpointKind, modelOverride?: string):
     const touchpointConfig = recipe.touchpoints[touchpoint as "expansion" | "chat" | "reranker"];
     if (!touchpointConfig) return false;
 
+    // Recipes with composite auth (Bedrock: key pair OR API key) decide themselves.
+    if (recipe.hasCredentials) return recipe.hasCredentials(_config.env);
     // For openai-compatible without auth requirements (Ollama local), treat as always-available.
     const required = recipe.auth_env?.required ?? [];
     if (required.length === 0) return true;
@@ -1302,6 +1328,10 @@ function instantiateEmbedding(recipe: Recipe, modelId: string, cfg: AIGatewayCon
       throw new AIConfigError(
         `Anthropic has no embedding model. Use openai or google for embeddings.`
       );
+    case "native-bedrock":
+      throw new AIConfigError(
+        `The bedrock recipe serves Claude chat only; Bedrock embeddings are not wired (re-embed migration, see docs/architecture/LLM_GATEWAY.md).`
+      );
     case "openai-compatible": {
       // D12=A: unified auth via Recipe.resolveAuth (or default).
       const auth = applyResolveAuth(recipe, cfg, "embedding");
@@ -1439,6 +1469,7 @@ export async function embed(texts: string[], opts?: EmbedOpts): Promise<Float32A
   // global default. resolveEmbeddingProvider validates the override at the
   // recipe layer — bad model strings throw AIConfigError with a clear hint.
   const resolveTarget = opts?.embeddingModel ?? getEmbeddingModel();
+  assertEuEmbedding(resolveTarget, opts?.inputType, cfg.env);
   const tracker = __budgetStore.getStore() ?? null;
   const { model, recipe, modelId } = await resolveEmbeddingProvider(resolveTarget);
   // Instruction-tuned models (Qwen3-Embedding) need their query prefix on
@@ -1794,6 +1825,7 @@ export async function embedMultimodal(
   // text embeddings can route multimodal to Voyage without changing the
   // primary embedding_model. Falls back to embedding_model for single-model setups.
   const modelStr = cfg.embedding_multimodal_model ?? cfg.embedding_model ?? DEFAULT_EMBEDDING_MODEL;
+  assertEuEmbedding(modelStr, opts.inputType, cfg.env);
   const { parsed, recipe } = resolveRecipe(modelStr);
   const touchpoint = recipe.touchpoints.embedding;
   if (!touchpoint?.supports_multimodal) {
@@ -2219,6 +2251,9 @@ export async function embedMultimodalSafe(
 async function resolveExpansionProvider(
   modelStr: string
 ): Promise<{ model: any; recipe: Recipe; modelId: string }> {
+  // EU-only: expansion and OCR send client text/images — refuse non-EU.
+  // expand() catches this (AIConfigError) and falls back to the raw query.
+  assertEuResidency(modelStr, "expansion", policyEnv());
   const { parsed, recipe } = resolveRecipe(modelStr);
   assertTouchpoint(
     recipe,
@@ -2263,6 +2298,8 @@ function instantiateExpansion(recipe: Recipe, modelId: string, cfg: AIGatewayCon
         );
       return createAnthropic({ apiKey }).languageModel(modelId);
     }
+    case "native-bedrock":
+      return instantiateBedrock(recipe, modelId, cfg);
     case "openai-compatible": {
       // D12=A: unified auth via Recipe.resolveAuth (or default).
       const auth = applyResolveAuth(recipe, cfg, "expansion");
@@ -2858,6 +2895,45 @@ function openRouterTransformInner(body: Record<string, unknown>): Record<string,
   return body;
 }
 
+/**
+ * Claude on Amazon Bedrock via the Anthropic Messages API (InvokeModel).
+ * Region, endpoint and credentials come from the gateway env snapshot and are
+ * passed explicitly — the SDK's own process.env fallbacks (AWS_REGION,
+ * AWS_ENDPOINT_URL*) are never consulted, so the residency the EU-only check
+ * evaluated is the one that is called.
+ */
+function instantiateBedrock(recipe: Recipe, modelId: string, cfg: AIGatewayConfig): any {
+  const env = cfg.env;
+  const region = resolveBedrockRegion(env);
+  const bearer = env.AWS_BEARER_TOKEN_BEDROCK?.trim();
+  const accessKeyId = env.AWS_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = env.AWS_SECRET_ACCESS_KEY?.trim();
+  if (!bearer && !(accessKeyId && secretAccessKey)) {
+    throw new AIConfigError(
+      `Amazon Bedrock requires AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY or AWS_BEARER_TOKEN_BEDROCK.`,
+      recipe.setup_hint
+    );
+  }
+  const provider = createBedrockAnthropic({
+    region,
+    baseURL: bedrockRuntimeBaseUrl(region),
+    ...(bearer
+      ? { apiKey: bearer }
+      : {
+          // "" (not undefined) blocks the SDK's AWS_BEARER_TOKEN_BEDROCK
+          // process.env fallback, so SigV4 stays the chosen auth.
+          apiKey: "",
+          accessKeyId,
+          secretAccessKey,
+          // Explicit keys → the SDK ignores AWS_SESSION_TOKEN from process.env,
+          // so pass the snapshot value (temporary STS credentials).
+          ...(env.AWS_SESSION_TOKEN?.trim() ? { sessionToken: env.AWS_SESSION_TOKEN.trim() } : {}),
+        }),
+    ...(_bedrockFetch ? { fetch: _bedrockFetch } : {}),
+  });
+  return provider.languageModel(modelId);
+}
+
 function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig): any {
   switch (recipe.implementation) {
     case "native-openai": {
@@ -2881,6 +2957,8 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
         throw new AIConfigError(`Anthropic chat requires ANTHROPIC_API_KEY.`, recipe.setup_hint);
       return createAnthropic({ apiKey }).languageModel(modelId);
     }
+    case "native-bedrock":
+      return instantiateBedrock(recipe, modelId, cfg);
     case "openai-compatible": {
       // D12=A: unified auth via Recipe.resolveAuth (or default).
       const auth = applyResolveAuth(recipe, cfg, "chat");
@@ -3076,6 +3154,8 @@ function logProviderFailover(primary: string, alternate: string, err: unknown): 
 async function chatDirect(opts: ChatOpts): Promise<ChatResult> {
   const tracker = __budgetStore.getStore() ?? null;
   const modelStrEarly = opts.model ?? getChatModel();
+  // EU-only: refuse before guardrails, budget reservation or any transport.
+  assertEuResidency(modelStrEarly, "chat", policyEnv());
 
   // Guardrail seam: classify ONLY the latest user message before provider
   // inference. Observe-only / fail-open; no-op without a registered guardrail.
@@ -3489,6 +3569,7 @@ async function* chatStreamDirect(
 > {
   const tracker = __budgetStore.getStore() ?? null;
   const modelStr = opts.model ?? getChatModel();
+  assertEuResidency(modelStr, "stream", policyEnv());
 
   // Guardrail seam (same as chat()).
   if (hasGuardrails()) {
@@ -4263,6 +4344,14 @@ export async function rerank(input: RerankInput): Promise<RerankResult[]> {
   }
 
   const modelStr = input.model ?? getRerankerModel() ?? DEFAULT_RERANKER_MODEL;
+  // EU-only: a non-EU reranker is refused before the query and documents
+  // leave the process. applyReranker() fails open to RRF order.
+  try {
+    assertEuResidency(modelStr, "rerank", policyEnv());
+  } catch (e) {
+    if (e instanceof EuResidencyError) throw new RerankError(e.message, "unknown");
+    throw e;
+  }
 
   const tracker = __budgetStore.getStore() ?? null;
   if (tracker) {

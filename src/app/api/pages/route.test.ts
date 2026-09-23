@@ -176,3 +176,148 @@ describe("GET /api/pages", () => {
     expect((await res.json()) as unknown[]).toHaveLength(2);
   });
 });
+
+describe("POST /api/pages — server-side write guards", () => {
+  let engineCalls: Array<{ url: string; body: any }>;
+  let stored: unknown;
+  let readStatus: number;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    engineCalls = [];
+    stored = null;
+    readStatus = 200;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        engineCalls.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+        if (init?.body === undefined) {
+          return readStatus === 200
+            ? Response.json(stored)
+            : new Response("{}", { status: readStatus });
+        }
+        return Response.json({ slug: "x", success: true });
+      })
+    );
+  });
+
+  const writes = () => engineCalls.filter((c) => Object.keys(c.body).length > 0);
+
+  it("rejects a merge that marks a Notfrist done with a client-set second check", async () => {
+    stored = {
+      slug: "legal/deadlines/f1",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", second_check_required: true },
+    };
+    const res = await post({
+      slug: "legal/deadlines/f1",
+      merge: true,
+      frontmatter: { status: "done", second_check_by: "Anwalt", second_check_at: "t" },
+    });
+    expect(res.status).toBe(403);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("drops client second_check fields from any merge", async () => {
+    stored = { slug: "legal/deadlines/f2", type: "legal_deadline", frontmatter: {} };
+    const res = await post({
+      slug: "legal/deadlines/f2",
+      merge: true,
+      frontmatter: { note: "ok", second_check_by: "Anwalt", second_check_at: "t" },
+    });
+    expect(res.status).toBe(200);
+    expect(writes()[0].body.frontmatter).toEqual({ note: "ok" });
+  });
+
+  it("rejects a merge that edits an issued invoice", async () => {
+    stored = {
+      slug: "legal/invoices/r-1",
+      type: "invoice",
+      frontmatter: { status: "paid", total: 780 },
+    };
+    const res = await post({ slug: "legal/invoices/r-1", merge: true, frontmatter: { total: 1 } });
+    expect(res.status).toBe(409);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("rejects a create that would overwrite an issued invoice", async () => {
+    stored = { slug: "legal/invoices/r-1", type: "invoice", frontmatter: { status: "sent" } };
+    const res = await post({
+      slug: "legal/invoices/r-1",
+      title: "Rechnung",
+      type: "invoice",
+      frontmatter: { status: "draft", total: 1 },
+    });
+    expect(res.status).toBe(409);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("fails closed when the stored page cannot be read", async () => {
+    readStatus = 502;
+    const res = await post({ slug: "legal/invoices/r-1", merge: true, frontmatter: { total: 1 } });
+    expect(res.status).toBe(503);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("still creates a new page when the slug does not exist yet", async () => {
+    readStatus = 404;
+    const res = await post({ slug: "legal/invoices/r-2", title: "Rechnung", type: "invoice" });
+    expect(res.status).toBe(200);
+    expect(writes()).toHaveLength(1);
+  });
+});
+
+describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
+  const deadlines = Array.from({ length: 250 }, (_, i) => ({
+    slug: `legal/deadlines/d-${i}`,
+    title: `Frist ${i}`,
+    frontmatter:
+      i === 7
+        ? { case_title: "Muster gegen Beispiel" }
+        : i % 50 === 0 || i === 249
+          ? { case_slug: "legal/cases/akte-1" }
+          : { case_slug: "legal/cases/andere" },
+  }));
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        const limit = Number(u.searchParams.get("limit"));
+        const offset = Number(u.searchParams.get("offset") ?? 0);
+        return Response.json(deadlines.slice(offset, offset + Math.min(limit, 100)));
+      })
+    );
+  });
+
+  it("pages past the engine cap and returns only the matter's deadlines", async () => {
+    const res = await GET(
+      new NextRequest(
+        "http://localhost:3000/api/pages?type=legal_deadline&case_slug=legal/cases/akte-1&case_title=Muster%20gegen%20Beispiel"
+      )
+    );
+    const slugs = ((await res.json()) as Array<{ slug: string }>).map((p) => p.slug);
+    expect(slugs.sort()).toEqual(
+      [
+        "legal/deadlines/d-0",
+        "legal/deadlines/d-100",
+        "legal/deadlines/d-150",
+        "legal/deadlines/d-200",
+        "legal/deadlines/d-249",
+        "legal/deadlines/d-50",
+        "legal/deadlines/d-7",
+      ].sort()
+    );
+  });
+
+  it("requires a type for a matter filter", async () => {
+    const res = await GET(
+      new NextRequest("http://localhost:3000/api/pages?case_slug=legal/cases/akte-1")
+    );
+    expect(res.status).toBe(400);
+  });
+});

@@ -111,7 +111,9 @@ function mapJob(j: Record<string, unknown>): AgentJob {
     name,
     status,
     role,
-    prompt: String(j.prompt ?? ""),
+    // Runs whose content the viewer may not see (matter walls) arrive as
+    // metadata only — say so instead of showing an empty prompt.
+    prompt: j.restricted ? "Inhalt nicht sichtbar (Akten-Zugriffsregeln)" : String(j.prompt ?? ""),
     model: j.model ? String(j.model) : undefined,
     progress: j.progress
       ? (j.progress as { step: number; total: number; message: string })

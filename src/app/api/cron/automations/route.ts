@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
+import { getRecipientsByBrain, type EnginePage } from "@/lib/cron-utils";
+import { engineHeadersForBrain } from "@/lib/engine";
 import {
-  batchFetchPages,
-  getRecipientsByBrain,
-  mapWithConcurrency,
-  type EnginePage,
-} from "@/lib/cron-utils";
-import {
-  dispatchAutomations,
+  groupRulesByRunner,
   listAutomations,
   mergeFiredKeys,
-  ruleMatches,
-  updateAutomation,
-  type AutomationEventPayload,
-  type AutomationRule,
-  type TriggerEvent,
+  needsBaseline,
+  patchAutomationState,
+  runAutomationRule,
+  type AutomationCaller,
+  type AutomationRunState,
 } from "@/lib/automation";
+import { collectObservations, planRuleRuns } from "@/lib/automation-observe";
+import { migrateLegacyAutomationRules, ownerByEmailIn } from "@/lib/automation-migration";
+import { listEnginePages } from "@/lib/engine-pages";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -23,180 +22,28 @@ export const maxDuration = 60;
 
 const log = logger("cron/automations");
 
-/** Fristen gelten als „bald fällig" wenn sie in <= 7 Tagen ablaufen. */
-const DUE_SOON_DAYS = 7;
-
-interface DeadlineLike {
-  id?: string;
-  title?: string;
-  due_date?: string;
-  status?: string;
-}
-
-/** Eine beobachtete Entity, die ein Trigger-Event auslösen kann. */
-interface Observation {
-  event: TriggerEvent;
-  /** Idempotenz-Key — dedupliziert über fired_keys der Regel. */
-  fireKey: string;
-  payload: AutomationEventPayload;
-}
-
-function fm(page: EnginePage): Record<string, unknown> {
-  return page.frontmatter ?? {};
-}
-
-function str(v: unknown): string | undefined {
-  return typeof v === "string" && v.trim() ? v : undefined;
-}
+/** The entity page types the cron observes. */
+const OBSERVED_TYPES = ["legal_case", "invoice", "document", "inbound_entry", "booking"];
 
 /**
- * Scannt die Entity-Pages einer Brain und erzeugt Observations für jeden
- * Trigger-Typ. „Erstellt"-Events feuern einmal pro Entity; „Status geändert"
- * einmal pro Statuswert; „bald fällig/überfällig" einmal pro Frist/Rechnung.
+ * Pages of the observed types as `caller` sees them: the firm view for
+ * ownerless rules, the owner's view (walls, restricted matters, grants
+ * applied by the engine) for everyone else. Throws when a read fails — a
+ * failed read must never look like "nothing there" (the first run after a
+ * new cutoff would otherwise record an empty inventory and later replay it).
  */
-export function collectObservations(
-  rules: AutomationRule[],
-  pages: Record<string, EnginePage[]>,
-  now: Date
-): Observation[] {
-  const events = new Set(rules.map((r) => r.event));
-  const out: Observation[] = [];
-  const cases = pages.legal_case ?? [];
+async function pagesFor(caller: AutomationCaller): Promise<Record<string, EnginePage[]>> {
+  const headers = typeof caller === "string" ? engineHeadersForBrain(caller) : caller.headers;
+  const entries = await Promise.all(
+    OBSERVED_TYPES.map(
+      async (type) => [type, await listEnginePages(headers, type, 1000, { strict: true })] as const
+    )
+  );
+  return Object.fromEntries(entries);
+}
 
-  if (events.has("case.created") || events.has("case.status_changed")) {
-    for (const c of cases) {
-      if (events.has("case.created")) {
-        out.push({
-          event: "case.created",
-          fireKey: `case:${c.slug}`,
-          payload: { case_slug: c.slug, title: c.title ?? c.slug },
-        });
-      }
-      const status = str(fm(c).status);
-      if (events.has("case.status_changed") && status) {
-        out.push({
-          event: "case.status_changed",
-          fireKey: `status:${c.slug}:${status}`,
-          payload: { case_slug: c.slug, title: c.title ?? c.slug, status },
-        });
-      }
-    }
-  }
-
-  if (events.has("document.uploaded")) {
-    for (const d of pages.document ?? []) {
-      const m = fm(d);
-      out.push({
-        event: "document.uploaded",
-        fireKey: `doc:${d.slug}`,
-        payload: {
-          case_slug: str(m.case_slug),
-          title: d.title ?? d.slug,
-          document_slug: d.slug,
-          doc_type: str(m.doc_type),
-          source: str(m.source),
-        },
-      });
-    }
-  }
-
-  if (events.has("message.received")) {
-    for (const e of pages.inbound_entry ?? []) {
-      const m = fm(e);
-      out.push({
-        event: "message.received",
-        fireKey: `msg:${e.slug}`,
-        payload: {
-          case_slug: str(m.case_slug),
-          title: e.title ?? str(m.subject) ?? e.slug,
-          channel: str(m.channel),
-          sender: str(m.sender_name) ?? str(m.sender_address),
-        },
-      });
-    }
-  }
-
-  if (events.has("booking.created")) {
-    for (const b of pages.booking ?? []) {
-      const m = fm(b);
-      out.push({
-        event: "booking.created",
-        fireKey: `booking:${b.slug}`,
-        payload: {
-          title: b.title ?? b.slug,
-          name: str(m.client_name),
-          email: str(m.client_email),
-          matter: str(m.matter),
-          legal_area: str(m.legal_area),
-          date: str(m.slot_start)?.slice(0, 10),
-          start: str(m.slot_start),
-          end: str(m.slot_end),
-        },
-      });
-    }
-  }
-
-  if (events.has("deadline.created") || events.has("deadline.due_soon")) {
-    for (const c of cases) {
-      const deadlines = Array.isArray(fm(c).deadlines) ? (fm(c).deadlines as DeadlineLike[]) : [];
-      for (const dl of deadlines) {
-        if (!dl.due_date || dl.status === "done") continue;
-        const dlId = dl.id ?? dl.due_date;
-        const base: AutomationEventPayload = {
-          case_slug: c.slug,
-          case_title: c.title ?? c.slug,
-          deadline_id: dlId,
-          deadline_title: dl.title ?? "Frist",
-          due_date: dl.due_date,
-          title: dl.title ?? c.title ?? c.slug,
-        };
-        if (events.has("deadline.created")) {
-          out.push({
-            event: "deadline.created",
-            fireKey: `dl:${c.slug}:${dlId}`,
-            payload: base,
-          });
-        }
-        if (events.has("deadline.due_soon")) {
-          const due = new Date(`${dl.due_date}T00:00:00Z`);
-          const daysLeft = Number.isNaN(due.getTime())
-            ? null
-            : Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
-          if (daysLeft !== null && daysLeft >= 0 && daysLeft <= DUE_SOON_DAYS) {
-            out.push({
-              event: "deadline.due_soon",
-              fireKey: `due:${c.slug}:${dlId}`,
-              payload: { ...base, days_left: String(daysLeft) },
-            });
-          }
-        }
-      }
-    }
-  }
-
-  if (events.has("invoice.overdue")) {
-    const today = now.toISOString().slice(0, 10);
-    for (const inv of pages.invoice ?? []) {
-      const m = fm(inv);
-      if (m.status === "paid" || m.status === "draft" || m.status === "cancelled") continue;
-      const due = str(m.due_date);
-      if (!due || due >= today) continue;
-      const nr = str(m.invoice_number) ?? inv.slug;
-      out.push({
-        event: "invoice.overdue",
-        fireKey: `invoice:${inv.slug}`,
-        payload: {
-          case_slug: str(m.case_slug),
-          invoice_slug: inv.slug,
-          invoice_number: nr,
-          due_date: due,
-          title: `Rechnung ${nr}`,
-        },
-      });
-    }
-  }
-
-  return out;
+function shortError(msg: string): string {
+  return msg.length > 500 ? `${msg.slice(0, 497)}…` : msg;
 }
 
 /**
@@ -204,89 +51,147 @@ export function collectObservations(
  *
  * Alle Trigger werden zustandsbasiert ausgewertet: der Cron scannt die
  * Entity-Pages (Cases, Dokumente, Posteingang, Buchungen, Rechnungen),
- * dispatcht ein Event pro beobachteter Entity und merkt sich in
+ * führt die passenden Regeln pro beobachteter Entity aus und merkt sich in
  * `fired_keys` der Regel, für welche Entities sie bereits ausgelöst hat —
- * kein Doppel-Feuern bei wiederholten Läufen.
+ * kein Doppel-Feuern bei wiederholten Läufen. Regeln reagieren nur auf
+ * Ereignisse ab ihrem Stichtag (active_since); alte werden nie nachgeholt.
+ *
+ * Vorab übernimmt der Cron Regeln des früheren UI-Modells (automation_rule)
+ * idempotent in das eine Modell (automation-migration.ts).
+ *
+ * Ethical Walls: jede Regel läuft mit der Akten-Sicht ihres Besitzers
+ * (owner_user_id) — sie sieht nur Entities, die er sehen darf, und schreibt
+ * mit seinen Rechten. Regeln ohne Besitzer laufen nur, wenn sie nichts nach
+ * außen senden; E-Mail-Regeln ohne Besitzer werden pausiert
+ * („Besitzer fehlt — bitte neu speichern").
  */
 export const GET = createCronHandler(async () => {
   const recipientsByBrain = await getRecipientsByBrain();
   const now = new Date();
+  const nowIso = now.toISOString();
 
   let brainsChecked = 0;
   let dispatched = 0;
+  let skippedRules = 0;
+  let pausedRules = 0;
+  let migratedRules = 0;
+  let baselinedRules = 0;
   const errors: string[] = [];
 
   for (const [brainId] of recipientsByBrain) {
     brainsChecked++;
     try {
+      const migration = await migrateLegacyAutomationRules(brainId, ownerByEmailIn(brainId), now);
+      migratedRules += migration.migrated.length;
+      for (const slug of migration.failed)
+        errors.push(`${brainId}:${slug}: Übernahme fehlgeschlagen`);
+
       const rules = (await listAutomations(brainId)).filter((r) => r.enabled);
       if (rules.length === 0) continue;
 
-      const pages = await batchFetchPages(
-        brainId,
-        ["legal_case", "invoice", "document", "inbound_entry", "booking"],
-        1000
-      );
-      const observations = collectObservations(rules, pages, now);
-      if (observations.length === 0) continue;
-
-      // Regeln je Event gruppieren; Dedup-Check pro (Regel, fireKey).
-      const rulesByEvent = new Map<TriggerEvent, AutomationRule[]>();
-      for (const r of rules) {
-        const list = rulesByEvent.get(r.event) ?? [];
-        list.push(r);
-        rulesByEvent.set(r.event, list);
-      }
-
-      const pending: { obs: Observation; matching: AutomationRule[] }[] = [];
-      for (const obs of observations) {
-        const candidates = rulesByEvent.get(obs.event) ?? [];
-        const matching = candidates.filter(
-          (r) =>
-            !(r.fired_keys ?? []).includes(obs.fireKey) && ruleMatches(r, obs.event, obs.payload)
+      const { groups, paused, skipped } = await groupRulesByRunner(brainId, rules);
+      for (const rule of paused) {
+        pausedRules++;
+        if (rule.paused_reason === "owner_missing") continue;
+        log.warn("automation paused: no owner for an outgoing action", {
+          brainId,
+          rule: rule.slug,
+        });
+        await patchAutomationState(brainId, rule.slug, { paused_reason: "owner_missing" }).catch(
+          () => false
         );
-        if (matching.length > 0) pending.push({ obs, matching });
       }
-      if (pending.length === 0) continue;
+      for (const rule of skipped) {
+        skippedRules++;
+        if (rule.paused_reason === "owner_inactive") continue;
+        log.warn("automation paused: owner no longer active in this firm", {
+          brainId,
+          rule: rule.slug,
+        });
+        await patchAutomationState(brainId, rule.slug, { paused_reason: "owner_inactive" }).catch(
+          () => false
+        );
+      }
 
-      const touchedRules = new Map<string, { rule: AutomationRule; keys: string[] }>();
+      for (const group of groups) {
+        let pages: Record<string, EnginePage[]>;
+        try {
+          pages = await pagesFor(group.caller);
+        } catch (err) {
+          // Nothing runs and no inventory is recorded — next run tries again.
+          errors.push(`${brainId}:${group.label}: ${err instanceof Error ? err.message : err}`);
+          continue;
+        }
+        const observations = collectObservations(group.rules, pages, now);
+        const { runs, baseline } = planRuleRuns(group.rules, observations);
 
-      await mapWithConcurrency(
-        pending,
-        async ({ obs, matching }) => {
-          try {
-            const res = await dispatchAutomations(brainId, obs.event, obs.payload);
-            if (res.errors.length > 0) {
-              errors.push(...res.errors.map((e) => `${brainId}:${e}`));
-            }
-            dispatched += res.executed;
-            for (const rule of matching) {
-              const t = touchedRules.get(rule.slug) ?? { rule, keys: [] };
-              t.keys.push(obs.fireKey);
-              touchedRules.set(rule.slug, t);
-            }
-          } catch (err) {
-            errors.push(
-              `${brainId}:${obs.fireKey}: ${err instanceof Error ? err.message : String(err)}`
-            );
+        const executedKeys = new Map<string, string[]>();
+        const ruleErrors = new Map<string, string[]>();
+        // One after the other: several rules may write the same matter
+        // (tasks, status) — parallel read-modify-writes would lose updates.
+        for (const { rule, obs } of runs) {
+          const outcome = await runAutomationRule(brainId, rule, obs.payload, group.caller);
+          if (outcome === "skipped") continue;
+          if (outcome.errors.length > 0) {
+            ruleErrors.set(rule.slug, [...(ruleErrors.get(rule.slug) ?? []), ...outcome.errors]);
+            errors.push(...outcome.errors.map((e) => `${brainId}:${e}`));
           }
-        },
-        4
-      );
+          // Once any action ran, the event counts as handled — a retry
+          // would repeat the actions that did run (e.g. a sent e-mail).
+          if (outcome.executed > 0) {
+            dispatched++;
+            executedKeys.set(rule.slug, [...(executedKeys.get(rule.slug) ?? []), obs.fireKey]);
+          }
+        }
 
-      // fired_keys persistieren — PUT ersetzt das Frontmatter, daher muss
-      // die gemergte Liste vollständig zurückgeschrieben werden.
-      for (const { rule, keys } of touchedRules.values()) {
-        await updateAutomation(brainId, {
-          ...rule,
-          fired_keys: mergeFiredKeys(rule.fired_keys, keys),
-        }).catch(() => {});
+        for (const rule of group.rules) {
+          const ran = executedKeys.get(rule.slug) ?? [];
+          const known = baseline.get(rule.slug) ?? [];
+          const errs = ruleErrors.get(rule.slug) ?? [];
+          const state: AutomationRunState = {};
+          const clear: Array<keyof AutomationRunState> = [];
+          if (ran.length > 0 || known.length > 0) {
+            state.fired_keys = mergeFiredKeys(rule.fired_keys, [...known, ...ran]);
+          }
+          if (needsBaseline(rule)) {
+            state.baseline_done_for = rule.active_since;
+            if (known.length > 0) baselinedRules++;
+          }
+          if (ran.length > 0) state.last_run_at = nowIso;
+          if (errs.length > 0) {
+            state.last_error = shortError(errs[0]!);
+            state.last_error_at = nowIso;
+          } else if (ran.length > 0 && rule.last_error) {
+            clear.push("last_error", "last_error_at");
+          }
+          // Runs again (e.g. its owner is back): drop the stale pause notice.
+          if (rule.paused_reason) clear.push("paused_reason");
+          if (Object.keys(state).length === 0 && clear.length === 0) continue;
+          await patchAutomationState(brainId, rule.slug, state, clear).catch(() => false);
+        }
       }
     } catch (err) {
       errors.push(`${brainId}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
-  log.info("automations evaluated", { brainsChecked, dispatched, errors: errors.length });
-  return NextResponse.json({ ok: errors.length === 0, brainsChecked, dispatched, errors });
+  log.info("automations evaluated", {
+    brainsChecked,
+    dispatched,
+    skippedRules,
+    pausedRules,
+    migratedRules,
+    baselinedRules,
+    errors: errors.length,
+  });
+  return NextResponse.json({
+    ok: errors.length === 0,
+    brainsChecked,
+    dispatched,
+    skippedRules,
+    pausedRules,
+    migratedRules,
+    baselinedRules,
+    errors,
+  });
 });

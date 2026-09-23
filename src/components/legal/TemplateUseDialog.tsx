@@ -117,6 +117,8 @@ export function TemplateUseDialog({
         body: JSON.stringify({
           title: template.title,
           markdown: filled,
+          // Aus der Vorlage befüllt, kein KI-Text — keine KI-Kennzeichnung.
+          ai_generated: false,
           letterhead: kanzlei ? buildLetterheadFromKanzleiSettings(kanzlei) : undefined,
         }),
       });

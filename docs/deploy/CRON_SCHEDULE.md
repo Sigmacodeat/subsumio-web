@@ -63,8 +63,12 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
 - `/api/cron/agent-tasks` (WP-7.42): bearbeitet Aufgaben mit `assigneeType:
 "agent"` im Aktenkontext; Ergebnisse kommen als `needs_review` zurück —
   anwaltliche Prüfung bleibt Pflicht. Empfohlener Zeitplan `*/15 * * * *`.
-- `/api/cron/automations` (WP-4.17): wertet „Wenn X dann Y"-Regeln aus —
-  idempotent über `fired_keys` pro Regel. Empfohlener Zeitplan `0 * * * *`.
+- `/api/cron/automations` (WP-4.17): wertet „Wenn X dann Y"-Regeln aus (ein
+  Modell: `automation`-Seiten aus Oberfläche und Copilot) — idempotent über
+  `fired_keys` pro Regel; jede Regel reagiert nur auf Ereignisse ab ihrem
+  Stichtag `active_since` (Anlage, Übernahme, Reaktivierung, neuer Besitzer).
+  Übernimmt vorab Regeln des Altmodells `automation_rule` an Ort und Stelle
+  (wiederholbar). Empfohlener Zeitplan `0 * * * *`.
 - `/api/cron/outlook-user-sync` (WP-4.19): 2-Wege-Kalendersync pro Nutzer
   via delegiertem Microsoft-OAuth. Empfohlener Zeitplan `*/15 * * * *`.
 - `/api/cron/sanctions-sync` prüft jetzt EU + UN + OFAC (WP-4.18).

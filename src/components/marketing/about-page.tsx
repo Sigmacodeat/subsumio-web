@@ -22,7 +22,7 @@ const CONTENT = {
     {
       icon: "Shield",
       title: "Vertraulichkeit zuerst",
-      desc: "EU-Cloud oder On-Premise (Enterprise), verschlüsselt und je Kanzlei getrennt verarbeitet. Kein Training von KI-Modellen mit Mandantendaten; alle Auftragsverarbeiter sind im AVV benannt.",
+      desc: "Gehostet in Wien oder On-Premise (Enterprise), verschlüsselt übertragen und je Kanzlei getrennt verarbeitet. Kein Training von KI-Modellen mit Mandantendaten; alle Auftragsverarbeiter sind im AVV benannt.",
     },
     {
       icon: "Brain",

@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, realpathSync } from "fs";
 import { resolve, relative } from "path";
 import { z } from "zod";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { fmToReview, filterByFixture, type EvalFixtureReview } from "@/lib/eval-fixture-review";
 
@@ -96,7 +96,7 @@ export const GET = createHandler(
     let reviews: EvalFixtureReview[] = [];
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=eval_fixture_review&limit=500`, {
-        headers: engineHeadersForBrain(ctx.brainId),
+        headers: ctx.headers,
         signal: AbortSignal.timeout(10_000),
       });
       if (res.ok) {

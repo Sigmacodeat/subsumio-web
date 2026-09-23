@@ -187,7 +187,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       {
         icon: "ShieldCheck",
         title: "Vertraulichkeit von Anfang an",
-        desc: "In der EU gehostet, verschlüsselt übertragen und gespeichert. Ihre Mandantendaten werden nicht zum Training von Sprachmodellen verwendet; die Auftragsverarbeiter sind im AVV benannt.",
+        desc: "Gehostet in Wien, verschlüsselt übertragen; hochgeladene Originaldateien werden verschlüsselt abgelegt. Ihre Mandantendaten werden nicht zum Training von Sprachmodellen verwendet; die Auftragsverarbeiter für KI-Funktionen sind in AVV und Datenschutzerklärung benannt.",
       },
     ],
     proofTitle: "Dieselbe Suche wie im Kanzlei-Tarif",

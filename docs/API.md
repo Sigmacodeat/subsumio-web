@@ -18,7 +18,7 @@
 
 | Pfad                                                        | Methoden                 | Auth                      | Action                            | Rate     |
 | ----------------------------------------------------------- | ------------------------ | ------------------------- | --------------------------------- | -------- |
-| `/api/2fa/qrcode`                                           | POST                     | Session                   | `settings.write`                  | standard |
+| `/api/2fa/qrcode`                                           | POST                     | Session                   | `auth.2fa`                        | standard |
 | `/api/absences`                                             | GET, POST                | Session                   | `brain.write`                     | standard |
 | `/api/acls/groups`                                          | GET, POST                | Session                   | `settings.read`                   | standard |
 | `/api/acls/groups/{groupId}`                                | DELETE                   | Session                   | `settings.write`                  | standard |
@@ -107,8 +107,7 @@
 | `/api/auth/sso/callback`                                    | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/sso/workos`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/verify`                                          | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
-| `/api/automation-rules`                                     | GET, POST, PATCH         | Session                   | `brain.read`                      | standard |
-| `/api/automations`                                          | GET, POST, PATCH, DELETE | Session                   | `admin.*`                         | standard |
+| `/api/automations`                                          | GET, POST, PATCH, DELETE | Session                   | `agent.read`                      | standard |
 | `/api/autonomous/queue-stats`                               | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/autonomous/tasks`                                     | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/bea/export`                                           | POST                     | Session                   | `brain.write`                     | heavy    |
@@ -472,6 +471,7 @@
 | `/api/settings/api-keys`                                    | GET, POST                | Session                   | `settings.write`                  | standard |
 | `/api/settings/brain-learning`                              | GET, PATCH               | Session                   | `settings.read`                   | standard |
 | `/api/settings/calendar-feed`                               | GET, POST, DELETE        | Session                   | `settings.read`                   | standard |
+| `/api/settings/dav-access`                                  | GET, POST, DELETE        | Session                   | `settings.read`                   | standard |
 | `/api/settings/gdpr/data-deletion`                          | POST                     | Session                   | `settings.write`                  | heavy    |
 | `/api/settings/gdpr/data-export`                            | GET                      | Session                   | `settings.read`                   | heavy    |
 | `/api/settings/jurisdiction`                                | POST                     | Session                   | `settings.write`                  | standard |

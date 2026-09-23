@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { withKeyedLock } from "@/lib/keyed-lock";
 import { logger } from "@/lib/logger";
 
@@ -41,7 +41,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const headers = engineHeadersForBrain(ctx.brainId);
+    const headers = ctx.headers;
     const from = body.from;
     const to = body.to;
 

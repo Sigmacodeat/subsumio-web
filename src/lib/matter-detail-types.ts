@@ -271,6 +271,27 @@ function standaloneDeadlineForCase(page: BrainPage, detail: CaseDetail): Deadlin
   };
 }
 
+/**
+ * The list query for every standalone deadline page of one matter. The server
+ * pages through all legal_deadline pages and filters by case_slug / case_title
+ * / case_number (the same links standaloneDeadlineForCase accepts) — a plain
+ * firm-wide `limit: 300` list silently dropped deadlines once the firm had
+ * more than the engine's list cap.
+ */
+export function matterDeadlineQuery(detail: Pick<CaseDetail, "slug" | "title" | "caseNumber">): {
+  type: "legal_deadline";
+  caseSlug: string;
+  caseTitle?: string;
+  caseNumber?: string;
+} {
+  return {
+    type: "legal_deadline",
+    caseSlug: detail.slug,
+    caseTitle: detail.title || undefined,
+    caseNumber: detail.caseNumber || undefined,
+  };
+}
+
 export function mergeCaseDeadlines(detail: CaseDetail, deadlinePages: BrainPage[] = []) {
   const base =
     detail.deadlines.length > 0

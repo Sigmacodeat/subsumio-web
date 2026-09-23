@@ -55,7 +55,12 @@ Maximal 5 Extraktionen pro Nachricht.`;
 
 export async function extractMemoriesWithLLM(
   message: string,
-  opts?: { caseSlug?: string; headers?: Record<string, string> }
+  opts?: {
+    caseSlug?: string;
+    headers?: Record<string, string>;
+    /** Set to true when the model answered — the caller bills credits for it. */
+    meta?: { modelCalled?: boolean };
+  }
 ): Promise<ExtractedMemory[]> {
   if (!opts?.headers || !isEngineLLMAvailable()) return [];
   const userPrompt = opts?.caseSlug
@@ -70,6 +75,7 @@ export async function extractMemoriesWithLLM(
     maxTokens: 500,
     timeoutMs: 10_000,
   });
+  if (result && opts.meta) opts.meta.modelCalled = true;
   const content = result?.text?.trim();
   if (!content) return [];
   const parsed = parseJsonObject<unknown>(content);

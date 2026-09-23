@@ -8,8 +8,10 @@ import {
 import {
   hybridDeadlineDetection,
   isLLMDeadlineExtractionAvailable,
+  type LlmCallMeta,
 } from "@/lib/llm-deadline-extract";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
+import { canAffordOptionalLlm } from "@/lib/billing/optional-llm-credits";
 import { groundAnswerCitations, emptyGroundingMetadata } from "@/lib/citation-gate";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
@@ -40,8 +42,15 @@ export const POST = createHandler(
     const rawDetected = detectDeadlines(safeText);
     const enrichedRegex = enrichAllDeadlines(rawDetected, safeText);
 
-    // LLM Fallback: wenn Regex keine/wenige Fristen findet, rufe LLM an
-    const detected = await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers);
+    // LLM Fallback: wenn Regex keine/wenige Fristen findet, rufe LLM an.
+    // Kostenpflichtig (deadline_detect) — ohne Guthaben bleibt es beim
+    // kostenlosen Regex-Ergebnis statt die ganze Erkennung abzulehnen.
+    const llmAffordable = await canAffordOptionalLlm(ctx, "deadline_detect");
+    const llmMeta: LlmCallMeta = {};
+    const detected = llmAffordable
+      ? await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers, { meta: llmMeta })
+      : enrichedRegex;
+    if (llmMeta.modelCalled) void recordCreditConsumption(ctx, "deadline_detect", body.caseSlug);
     const llmUsed = detected.some((d) => d.matchedRule === "llm_fallback");
 
     const createdSlugs: string[] = [];
@@ -107,6 +116,7 @@ export const POST = createHandler(
       created: createdSlugs.length > 0 ? createdSlugs : undefined,
       llm_fallback_used: llmUsed,
       llm_available: isLLMDeadlineExtractionAvailable(),
+      ...(llmAffordable ? {} : { llm_skipped: "insufficient_credits" }),
     };
 
     try {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { explainRetrieval } from "@/lib/matter-context";
 import type { QueryMode } from "@/lib/matter-context-types";
 
@@ -139,12 +139,7 @@ export const POST = createHandler(
 
     try {
       // Get retrieval explanations for the query
-      const results = await explainRetrieval(
-        query,
-        ENGINE_URL,
-        engineHeadersForBrain(ctx.brainId),
-        mode ?? "balanced"
-      );
+      const results = await explainRetrieval(query, ENGINE_URL, ctx.headers, mode ?? "balanced");
 
       const sources: ExplanationResponse["sources"] = results.slice(0, 10).map((r) => ({
         slug: r.slug,

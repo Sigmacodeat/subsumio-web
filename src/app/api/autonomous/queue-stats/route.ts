@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  */
 async function queueStatsHandler(ctx: HandlerContext) {
   // Scope to the caller's own brain — see the note in ../tasks/route.ts.
-  const stats = await getQueueStats(ctx.brainId);
+  const stats = await getQueueStats(ctx.brainId, ctx.headers);
   return NextResponse.json(stats);
 }
 

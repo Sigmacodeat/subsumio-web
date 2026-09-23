@@ -18,17 +18,29 @@
  *   evidence_threshold?: number — Min. Evidence pro Akte (Default: 1)
  *   max_cases?: number         — Max. Akten pro Scan (Default: 50)
  *   _source_id?: string        — Tenant-Filter
+ *   _matter_scope / _matter_read_only — Akten-Sichtbarkeit des Aufrufers; nur
+ *                                sichtbare Akten werden gescannt, die
+ *                                Supervisor-Jobs erben den Stempel
  */
 
 import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
 import { MinionQueue } from "../queue.ts";
+import {
+  inheritedJobMatterStamp,
+  jobOwnerStamp,
+  readJobOwner,
+  matterScopeAllows,
+  readJobMatterAccess,
+} from "../../matter-access.ts";
 
 export interface LegalCaseScannerData {
   look_ahead_days?: number;
   evidence_threshold?: number;
   max_cases?: number;
   _source_id?: string;
+  _matter_scope?: string[] | "all";
+  _matter_read_only?: string[];
 }
 
 interface CaseToScan {
@@ -55,6 +67,9 @@ export async function legalCaseScannerHandler(
   const sourceStamp =
     typeof data._source_id === "string" && data._source_id ? data._source_id : undefined;
 
+  const matterScope = readJobMatterAccess(data).scope;
+  const matterStamp = inheritedJobMatterStamp(data);
+
   const queue = new MinionQueue(engine);
   const casesToScan: CaseToScan[] = [];
 
@@ -79,6 +94,8 @@ export async function legalCaseScannerHandler(
   );
 
   for (const row of caseRows) {
+    // A scan started by a web user covers only the matters that user may see.
+    if (!matterScopeAllows(matterScope, row.slug, row.slug)) continue;
     const fm =
       typeof row.frontmatter === "string"
         ? (JSON.parse(row.frontmatter) as Record<string, unknown>)
@@ -197,6 +214,9 @@ export async function legalCaseScannerHandler(
           force_specialists: ["legal-researcher", "legal-analyst"],
           skip_critic: false,
           ...(sourceStamp ? { _source_id: sourceStamp } : {}),
+          ...matterStamp,
+          // Each scan run is about exactly this matter (context + listing).
+          ...jobOwnerStamp(readJobOwner(data), caseItem.slug),
         } as Record<string, unknown>,
         {
           timeout_ms: 600_000, // 10 min
@@ -219,28 +239,34 @@ export async function legalCaseScannerHandler(
   // Alert-Notizen bei neuen Entscheidungen. Non-blocking: RIS-Ausfall
   // bricht den Scan nicht ab.
   let judikatur: Record<string, unknown> = { skipped: true };
-  try {
-    const { runJudikaturWatch } = await import("../../legal/judikatur-watch.ts");
-    const watch = await runJudikaturWatch(engine, {
-      fetchImpl: fetch,
-      sourceId: sourceStamp,
-      maxAkten: maxCases,
-    });
-    judikatur = {
-      akten: watch.akten,
-      normen: watch.normen,
-      neue_entscheidungen: watch.neueEntscheidungen,
-      alert_slugs: watch.alertSlugs,
-      fehler: watch.fehler.length,
-    };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.warn(`[legal-case-scanner] Judikatur-Wächter failed (non-blocking): ${msg}`);
-    judikatur = { error: msg };
+  // The watch walks every matter of the source; a scan limited to one user's
+  // matters leaves it to the unrestricted nightly run.
+  if (matterScope !== undefined && matterScope !== "all") {
+    judikatur = { skipped: "matter_scoped" };
+  } else {
+    try {
+      const { runJudikaturWatch } = await import("../../legal/judikatur-watch.ts");
+      const watch = await runJudikaturWatch(engine, {
+        fetchImpl: fetch,
+        sourceId: sourceStamp,
+        maxAkten: maxCases,
+      });
+      judikatur = {
+        akten: watch.akten,
+        normen: watch.normen,
+        neue_entscheidungen: watch.neueEntscheidungen,
+        alert_slugs: watch.alertSlugs,
+        fehler: watch.fehler.length,
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`[legal-case-scanner] Judikatur-Wächter failed (non-blocking): ${msg}`);
+      judikatur = { error: msg };
+    }
   }
 
   return {
-    scanned: caseRows.length,
+    scanned: caseRows.filter((r) => matterScopeAllows(matterScope, r.slug, r.slug)).length,
     triggered: launchedJobs.length,
     cases: launchedJobs,
     look_ahead_days: lookAhead,

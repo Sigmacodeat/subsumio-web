@@ -66,6 +66,8 @@ const COPY = {
     account_deactivated:
       "Dieses Konto ist gesperrt. Bitte wenden Sie sich an Ihre Kanzlei oder an support@subsum.io.",
     account_locked: "Zu viele Fehlversuche. Bitte versuchen Sie es in 30 Minuten erneut.",
+    two_factor_policy_unavailable:
+      "Die Sicherheitseinstellungen Ihrer Kanzlei sind gerade nicht abrufbar. Bitte versuchen Sie es in einer Minute erneut.",
     generic: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   } as Record<string, string>,
   twoFactor: {

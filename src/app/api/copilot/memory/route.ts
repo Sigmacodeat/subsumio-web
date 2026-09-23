@@ -56,7 +56,9 @@ export const GET = createHandler(
 export const POST = createHandler(
   {
     action: "brain.write",
-    rateTier: "standard",
+    // Not billed (automatic follow-up of a chat turn, see credit-coverage
+    // allowlist), so the model-backed extraction gets the tighter tier.
+    rateTier: "search",
     body: memoryPostSchema,
     audit: (_ctx, body) => {
       const b = body as {

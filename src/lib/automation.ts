@@ -1,16 +1,17 @@
 /**
  * Workflow-Trigger / Automatisierungsregeln (WP-4.17): „Wenn X, dann Y".
  *
- * Regeln werden als Engine-Seiten vom Typ `automation` persistiert
- * (gleiches Muster wie `workflow`-Instanzen). `dispatchAutomations`
- * wird von Ereignis-Quellen (Buchung, Dokument-Upload, Frist-Anlage …)
- * aufgerufen, lädt die aktiven Regeln der Brain und führt die passenden
- * Aktionen aus. Fehler einzelner Regeln werden gesammelt statt geworfen,
- * damit ein fehlerhafter Trigger den fachlichen Ablauf nicht blockiert.
+ * Server-Seite des einen Regelmodells (automation-model.ts): Persistenz als
+ * Engine-Seiten vom Typ `automation` und die Ausführung der Aktionen. Der
+ * Cron (/api/cron/automations) wertet die Regeln aus; `dispatchAutomations`
+ * steht Ereignis-Quellen für die sofortige Auslösung zur Verfügung. Fehler
+ * einzelner Regeln werden gesammelt statt geworfen, damit ein fehlerhafter
+ * Trigger den fachlichen Ablauf nicht blockiert.
  */
 
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { ENGINE_URL, engineHeadersForBrain, engineHeadersForUserId } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { broadcastSseEvent, broadcastSseEventToUser } from "@/lib/realtime-bus";
 import { sendMail } from "@/lib/mail";
 import {
   buildWorkflowFrontmatter,
@@ -19,294 +20,316 @@ import {
   getTemplate,
 } from "@/lib/workflow";
 import { logger } from "@/lib/logger";
+import {
+  DEFAULT_EVENT_MESSAGES,
+  automationStateFrontmatter,
+  automationToFrontmatter,
+  describeRule,
+  fmToAutomation,
+  interpolateTemplate,
+  isCaseStatus,
+  ruleMatches,
+  ruleSendsExternally,
+  type AutomationAction,
+  type AutomationEventPayload,
+  type AutomationPage,
+  type AutomationRule,
+  type AutomationRunState,
+  type TriggerEvent,
+} from "@/lib/automation-model";
+
+export * from "@/lib/automation-model";
 
 const log = logger("automation");
 
-// ── Types ────────────────────────────────────────────────────────────
+/** Höchstzahl gelesener Regeln je Kanzlei (Engine liefert je Abruf 100). */
+const MAX_RULES = 500;
 
-export const TRIGGER_EVENTS = [
-  "document.uploaded",
-  "deadline.created",
-  "deadline.due_soon",
-  "case.created",
-  "case.status_changed",
-  "message.received",
-  "booking.created",
-  "invoice.overdue",
-] as const;
+/**
+ * Who a rule call is made for: a route passes its `ctx` (identity-bearing
+ * headers, so the engine applies the matter access rules to the signed-in
+ * user); the automations cron, which has no user, passes the firm's brainId.
+ */
+export type AutomationCaller = string | { headers: Record<string, string> };
 
-export type TriggerEvent = (typeof TRIGGER_EVENTS)[number];
-
-export const TRIGGER_EVENT_LABELS: Record<TriggerEvent, string> = {
-  "document.uploaded": "Dokument hochgeladen",
-  "deadline.created": "Frist angelegt",
-  "deadline.due_soon": "Frist läuft bald ab",
-  "case.created": "Akte angelegt",
-  "case.status_changed": "Aktenstatus geändert",
-  "message.received": "Nachricht eingegangen",
-  "booking.created": "Termin gebucht",
-  "invoice.overdue": "Rechnung überfällig",
-};
-
-export const TRIGGER_ACTION_TYPES = [
-  "create_task",
-  "notify",
-  "send_mail",
-  "start_workflow",
-] as const;
-
-export type TriggerActionType = (typeof TRIGGER_ACTION_TYPES)[number];
-
-export const TRIGGER_ACTION_LABELS: Record<TriggerActionType, string> = {
-  create_task: "Aufgabe in der Akte anlegen",
-  notify: "In-App-Benachrichtigung",
-  send_mail: "E-Mail senden",
-  start_workflow: "Workflow starten",
-};
-
-export interface AutomationAction {
-  type: TriggerActionType;
-  /** Titel-Template mit {platzhaltern} aus dem Event-Payload. */
-  title?: string;
-  /** Nachricht/Beschreibung-Template. */
-  message?: string;
-  /** create_task: Name des Zuständigen. */
-  assignee?: string;
-  /** create_task: Fälligkeit in Tagen ab Event. */
-  due_in_days?: number;
-  /** start_workflow: ID aus WORKFLOW_TEMPLATES. */
-  workflow_template_id?: string;
-  /** send_mail: Empfänger-Adresse (oder {key} aus dem Payload). */
-  recipient?: string;
+function callerHeaders(caller: AutomationCaller): Record<string, string> {
+  return typeof caller === "string" ? engineHeadersForBrain(caller) : caller.headers;
 }
 
-export interface AutomationRule {
-  slug: string;
-  name: string;
-  enabled: boolean;
-  event: TriggerEvent;
-  /** Gleichheitsfilter auf Payload-Felder (z. B. { channel: "whatsapp" }). */
-  filters?: Record<string, string>;
-  action: AutomationAction;
-  /** Idempotenz-Keys zustandsbasierter Trigger (deadline.due_soon,
-   *  invoice.overdue): der Cron merkt sich hier, für welche Entities die
-   *  Regel bereits gefeuert hat. FIFO-gekappt auf MAX_FIRED_KEYS. */
-  fired_keys?: string[];
-  created_at: string;
-  created_by: string;
-}
-
-/** Cap der Idempotenz-Keys pro Regel (FIFO-Verdrängung, älteste zuerst). */
-export const MAX_FIRED_KEYS = 500;
-
-/** Verdrängt alte Keys bei Überschreitung des Caps (FIFO). */
-export function mergeFiredKeys(existing: string[] | undefined, newKeys: string[]): string[] {
-  const merged = [...(existing ?? [])];
-  for (const k of newKeys) if (!merged.includes(k)) merged.push(k);
-  return merged.slice(-MAX_FIRED_KEYS);
-}
-
-/** Payload, das Ereignis-Quellen an dispatchAutomations übergeben. */
-export interface AutomationEventPayload {
-  case_slug?: string;
-  title?: string;
-  [key: string]: unknown;
-}
-
-// ── Pure helpers ─────────────────────────────────────────────────────
-
-function payloadValue(payload: AutomationEventPayload, path: string): unknown {
-  let cur: unknown = payload;
-  for (const part of path.split(".")) {
-    if (cur === null || typeof cur !== "object") return undefined;
-    cur = (cur as Record<string, unknown>)[part];
-  }
-  return cur;
-}
-
-/** Ersetzt {feld} / {feld.sub} Platzhalter aus dem Event-Payload. */
-export function interpolateTemplate(template: string, payload: AutomationEventPayload): string {
-  return template.replace(/\{([a-zA-Z0-9_.]+)\}/g, (_m, key: string) => {
-    const v = payloadValue(payload, key);
-    return v === undefined || v === null ? "" : String(v);
-  });
-}
-
-/** True, wenn die Regel auf das Event passt (Event-Typ + alle Filter). */
-export function ruleMatches(
-  rule: AutomationRule,
-  event: TriggerEvent,
-  payload: AutomationEventPayload
-): boolean {
-  if (!rule.enabled || rule.event !== event) return false;
-  for (const [key, expected] of Object.entries(rule.filters ?? {})) {
-    const actual = payloadValue(payload, key);
-    if (String(actual ?? "") !== expected) return false;
-  }
-  return true;
-}
-
-export function buildAutomationSlug(name: string): string {
-  const base = name
-    .toLowerCase()
-    .replace(/[äÄ]/g, "ae")
-    .replace(/[öÖ]/g, "oe")
-    .replace(/[üÜ]/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  return `automation-${base || "regel"}-${Date.now().toString(36)}`;
-}
-
-// ── Persistence (Engine-Seiten, type: "automation") ──────────────────
-
-interface EnginePage {
-  slug: string;
-  title: string;
-  frontmatter?: Record<string, unknown>;
-}
-
-export function fmToAutomation(page: EnginePage): AutomationRule | null {
-  const fm = page.frontmatter;
-  if (!fm || fm.type !== "automation") return null;
-  const event = fm.event;
-  const action = fm.action;
-  if (typeof event !== "string" || !TRIGGER_EVENTS.includes(event as TriggerEvent)) {
-    return null;
-  }
-  if (!action || typeof action !== "object") return null;
-  const a = action as Record<string, unknown>;
-  if (typeof a.type !== "string" || !TRIGGER_ACTION_TYPES.includes(a.type as TriggerActionType)) {
-    return null;
-  }
-  return {
-    slug: page.slug,
-    name: page.title,
-    enabled: fm.enabled !== false,
-    event: event as TriggerEvent,
-    filters:
-      fm.filters && typeof fm.filters === "object"
-        ? (fm.filters as Record<string, string>)
-        : undefined,
-    action: {
-      type: a.type as TriggerActionType,
-      title: typeof a.title === "string" ? a.title : undefined,
-      message: typeof a.message === "string" ? a.message : undefined,
-      assignee: typeof a.assignee === "string" ? a.assignee : undefined,
-      due_in_days: typeof a.due_in_days === "number" ? a.due_in_days : undefined,
-      workflow_template_id:
-        typeof a.workflow_template_id === "string" ? a.workflow_template_id : undefined,
-      recipient: typeof a.recipient === "string" ? a.recipient : undefined,
-    },
-    fired_keys: Array.isArray(fm.fired_keys)
-      ? (fm.fired_keys.filter((k) => typeof k === "string") as string[]).slice(-MAX_FIRED_KEYS)
-      : undefined,
-    created_at: typeof fm.created_at === "string" ? fm.created_at : "",
-    created_by: typeof fm.created_by === "string" ? fm.created_by : "",
-  };
-}
-
-export function automationToFrontmatter(rule: AutomationRule): Record<string, unknown> {
-  return {
-    type: "automation",
-    enabled: rule.enabled,
-    event: rule.event,
-    filters: rule.filters ?? {},
-    action: rule.action,
-    fired_keys: rule.fired_keys ?? [],
-    created_at: rule.created_at,
-    created_by: rule.created_by,
-  };
-}
-
-async function engineFetch(brainId: string, path: string, init?: RequestInit): Promise<Response> {
+async function engineFetch(
+  caller: AutomationCaller,
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
   return fetch(`${ENGINE_URL}${path}`, {
     ...init,
-    headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
+    headers: { ...callerHeaders(caller), "Content-Type": "application/json" },
     signal: AbortSignal.timeout(15_000),
   });
 }
 
-export async function listAutomations(brainId: string): Promise<AutomationRule[]> {
-  const res = await engineFetch(brainId, "/api/pages?type=automation&limit=200");
-  if (!res.ok) return [];
-  const raw = await res.json();
-  const pages = Array.isArray(raw)
-    ? raw
-    : Array.isArray((raw as Record<string, unknown>)?.pages)
-      ? ((raw as Record<string, unknown>).pages as EnginePage[])
-      : [];
+// ── Persistenz (Engine-Seiten, type: "automation") ───────────────────
+
+export async function listAutomations(caller: AutomationCaller): Promise<AutomationRule[]> {
+  // Paged: the engine returns at most 100 pages per request.
+  const pages = await listEnginePages(callerHeaders(caller), "automation", MAX_RULES);
   return pages
-    .map((p) => fmToAutomation(p as EnginePage))
+    .map((p) => fmToAutomation({ ...p, type: p.type ?? "automation" } as AutomationPage))
     .filter((r): r is AutomationRule => r !== null);
 }
 
-export async function saveAutomation(brainId: string, rule: AutomationRule): Promise<boolean> {
-  const res = await engineFetch(brainId, "/api/pages", {
+export async function saveAutomation(
+  caller: AutomationCaller,
+  rule: AutomationRule
+): Promise<boolean> {
+  const res = await engineFetch(caller, "/api/pages", {
     method: "POST",
     body: JSON.stringify({
       slug: rule.slug,
       title: rule.name,
       type: "automation",
-      content: `${TRIGGER_EVENT_LABELS[rule.event]} → ${TRIGGER_ACTION_LABELS[rule.action.type]}`,
+      content: describeRule(rule),
       frontmatter: automationToFrontmatter(rule),
     }),
   });
   return res.ok;
 }
 
-export async function updateAutomation(brainId: string, rule: AutomationRule): Promise<boolean> {
+export async function updateAutomation(
+  caller: AutomationCaller,
+  rule: AutomationRule,
+  extraFrontmatter: Record<string, unknown> = {}
+): Promise<boolean> {
   // Die Engine kennt kein PUT auf /api/pages — Merge-Update via POST.
-  const res = await engineFetch(brainId, "/api/pages", {
+  const res = await engineFetch(caller, "/api/pages", {
     method: "POST",
     body: JSON.stringify({
       slug: rule.slug,
       title: rule.name,
       type: "automation",
       merge: true,
-      frontmatter: automationToFrontmatter(rule),
+      content: describeRule(rule),
+      frontmatter: { ...automationToFrontmatter(rule), ...extraFrontmatter },
     }),
   });
   return res.ok;
 }
 
-export async function deleteAutomation(brainId: string, slug: string): Promise<boolean> {
-  const res = await engineFetch(brainId, `/api/pages/${encodeURIComponent(slug)}`, {
+/**
+ * Schreibt nur den Laufzustand (fired_keys, Pause, letzter Lauf/Fehler).
+ * Name, Aktivierung, Auslöser und Aktionen bleiben unberührt — ein Cron-Lauf
+ * überschreibt so keine Änderung, die jemand parallel gespeichert hat.
+ */
+export async function patchAutomationState(
+  caller: AutomationCaller,
+  slug: string,
+  state: AutomationRunState,
+  clear: Array<keyof AutomationRunState> = []
+): Promise<boolean> {
+  const res = await engineFetch(caller, "/api/pages", {
+    method: "POST",
+    body: JSON.stringify({
+      slug,
+      type: "automation",
+      merge: true,
+      frontmatter: automationStateFrontmatter(state, clear),
+    }),
+  });
+  return res.ok;
+}
+
+export async function deleteAutomation(caller: AutomationCaller, slug: string): Promise<boolean> {
+  const res = await engineFetch(caller, `/api/pages/${encodeURIComponent(slug)}`, {
     method: "DELETE",
   });
   return res.ok;
 }
 
-// ── Dispatcher ───────────────────────────────────────────────────────
+// ── Ausführung ───────────────────────────────────────────────────────
 
 export interface DispatchResult {
   matched: number;
   executed: number;
   errors: string[];
+  /** Rules not run: owner gone, owner may not see the matter, no owner for mail. */
+  skipped?: number;
+}
+
+/** Ergebnis eines Regellaufs für ein Ereignis. */
+export type RuleRunOutcome = "skipped" | { executed: number; errors: string[] };
+
+/**
+ * Run all actions of one rule for one event as `caller` (see
+ * resolveRuleRunner). Skips — and logs — when the runner may not see the
+ * event's matter. Actions run in order; a failing action does not stop the
+ * next one. Never throws.
+ */
+export async function runAutomationRule(
+  brainId: string,
+  rule: AutomationRule,
+  payload: AutomationEventPayload,
+  caller: AutomationCaller
+): Promise<RuleRunOutcome> {
+  try {
+    if (!(await runnerSeesMatter(caller, payload))) {
+      log.warn("automation skipped: owner may not see the matter", { rule: rule.slug });
+      return "skipped";
+    }
+  } catch (err) {
+    return { executed: 0, errors: [`${rule.slug}: ${errorText(err)}`] };
+  }
+  let executed = 0;
+  const errors: string[] = [];
+  for (const action of rule.actions) {
+    try {
+      await executeAction(brainId, rule, action, payload, caller);
+      executed++;
+    } catch (err) {
+      const msg = `${rule.slug}: ${errorText(err)}`;
+      log.warn("automation action failed", { rule: rule.slug, action: action.type, error: msg });
+      errors.push(msg);
+    }
+  }
+  return { executed, errors };
+}
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : "unknown";
+}
+
+/**
+ * Who a rule runs as:
+ *   - its owner (identity-bearing headers — the engine applies the owner's
+ *     matter access to every read and write of the rule);
+ *   - the firm, for rules without owner that send nothing out;
+ *   - nobody (skip) when the owner no longer exists or left the firm, or an
+ *     ownerless rule would send content out.
+ */
+export type RuleRunner =
+  | { ok: true; caller: AutomationCaller; ownerId?: string }
+  | { ok: false; reason: "owner_missing" | "owner_inactive" };
+
+export async function resolveRuleRunner(
+  brainId: string,
+  rule: AutomationRule
+): Promise<RuleRunner> {
+  if (!rule.owner_user_id) {
+    return ruleSendsExternally(rule)
+      ? { ok: false, reason: "owner_missing" }
+      : { ok: true, caller: brainId };
+  }
+  const owner = await engineHeadersForUserId(rule.owner_user_id).catch(() => null);
+  // Deleted, deactivated, suspended — or now working in another firm's brain.
+  if (!owner || owner.headers["x-subsumio-source"] !== brainId) {
+    return { ok: false, reason: "owner_inactive" };
+  }
+  return { ok: true, caller: { headers: owner.headers }, ownerId: rule.owner_user_id };
+}
+
+export interface RuleGroup {
+  label: string;
+  caller: AutomationCaller;
+  rules: AutomationRule[];
+}
+
+/**
+ * Splits a firm's active rules by whom they run for. Ownerless rules that
+ * would send content out are paused (visible on the rule) instead of run;
+ * rules whose owner no longer works in this firm are skipped.
+ */
+export async function groupRulesByRunner(
+  brainId: string,
+  rules: AutomationRule[],
+  resolve: typeof resolveRuleRunner = resolveRuleRunner
+): Promise<{ groups: RuleGroup[]; paused: AutomationRule[]; skipped: AutomationRule[] }> {
+  const groups = new Map<string, RuleGroup>();
+  const paused: AutomationRule[] = [];
+  const skipped: AutomationRule[] = [];
+  for (const rule of rules) {
+    const runner = await resolve(brainId, rule);
+    if (!runner.ok) {
+      if (runner.reason === "owner_missing") paused.push(rule);
+      else skipped.push(rule);
+      continue;
+    }
+    const key = runner.ownerId ?? "";
+    const group = groups.get(key) ?? {
+      label: runner.ownerId ? `owner:${runner.ownerId}` : "firm",
+      caller: runner.caller,
+      rules: [],
+    };
+    group.rules.push(rule);
+    groups.set(key, group);
+  }
+  return { groups: [...groups.values()], paused, skipped };
+}
+
+/** True when the rule's runner may see the matter the event is about. */
+async function runnerSeesMatter(
+  caller: AutomationCaller,
+  payload: AutomationEventPayload
+): Promise<boolean> {
+  if (typeof caller === "string" || !payload.case_slug) return true;
+  const res = await engineFetch(caller, `/api/pages/${encodeURIComponent(payload.case_slug)}`);
+  return res.ok;
+}
+
+async function readCase(
+  caller: AutomationCaller,
+  caseSlug: string,
+  what: string
+): Promise<AutomationPage> {
+  const res = await engineFetch(caller, `/api/pages/${encodeURIComponent(caseSlug)}`);
+  if (!res.ok) throw new Error(`${what}: Akte ${caseSlug} nicht lesbar`);
+  return (await res.json()) as AutomationPage;
+}
+
+/** Merge-Update einzelner Frontmatter-Felder einer Akte. */
+async function patchCase(
+  caller: AutomationCaller,
+  caseSlug: string,
+  frontmatter: Record<string, unknown>,
+  what: string
+): Promise<void> {
+  const res = await engineFetch(caller, "/api/pages", {
+    method: "POST",
+    body: JSON.stringify({ slug: caseSlug, merge: true, frontmatter }),
+  });
+  if (!res.ok) throw new Error(`${what}: Schreiben fehlgeschlagen`);
 }
 
 async function executeAction(
   brainId: string,
   rule: AutomationRule,
-  payload: AutomationEventPayload
+  a: AutomationAction,
+  payload: AutomationEventPayload,
+  caller: AutomationCaller = brainId
 ): Promise<void> {
-  const a = rule.action;
   const title = interpolateTemplate(a.title ?? rule.name, payload);
   const message = interpolateTemplate(a.message ?? "", payload);
 
   switch (a.type) {
-    case "notify":
-      broadcastSseEvent(brainId, "automation.fired", {
+    case "notify": {
+      const data = {
         rule: rule.slug,
         event: rule.event,
         title,
-        message,
+        message: message || interpolateTemplate(DEFAULT_EVENT_MESSAGES[rule.event], payload),
         case_slug: payload.case_slug,
-      });
+      };
+      // Matter events go to the rule's owner only: colleagues behind an
+      // ethical wall must not receive them through the firm-wide stream.
+      if (payload.case_slug && rule.owner_user_id) {
+        broadcastSseEventToUser(brainId, rule.owner_user_id, "automation.fired", data);
+      } else {
+        broadcastSseEvent(brainId, "automation.fired", data);
+      }
       return;
+    }
 
     case "send_mail": {
+      // Defence in depth: the cron never runs an ownerless mail rule.
+      if (!rule.owner_user_id) throw new Error("send_mail: Regel hat keinen Besitzer");
       const recipient = interpolateTemplate(a.recipient ?? "", payload);
       if (!recipient || !recipient.includes("@")) {
         throw new Error("send_mail: kein gültiger Empfänger");
@@ -321,10 +344,8 @@ async function executeAction(
 
     case "create_task": {
       const caseSlug = payload.case_slug;
-      if (!caseSlug) throw new Error("create_task: kein case_slug im Event");
-      const pageRes = await engineFetch(brainId, `/api/pages/${encodeURIComponent(caseSlug)}`);
-      if (!pageRes.ok) throw new Error(`create_task: Akte ${caseSlug} nicht lesbar`);
-      const page = (await pageRes.json()) as EnginePage;
+      if (!caseSlug) throw new Error("create_task: Ereignis gehört zu keiner Akte");
+      const page = await readCase(caller, caseSlug, "create_task");
       const tasks = Array.isArray(page.frontmatter?.tasks)
         ? (page.frontmatter!.tasks as Array<Record<string, unknown>>)
         : [];
@@ -332,22 +353,26 @@ async function executeAction(
         typeof a.due_in_days === "number" && a.due_in_days > 0
           ? new Date(Date.now() + a.due_in_days * 86_400_000).toISOString().slice(0, 10)
           : undefined;
-      tasks.push({
-        id: `auto-${Date.now().toString(36)}`,
+      const task = {
+        id: `auto-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
         text: title,
         done: false,
         ...(dueDate ? { dueDate } : {}),
         ...(a.assignee ? { assigneeName: a.assignee } : {}),
         createdAt: new Date().toISOString(),
         source: `automation:${rule.slug}`,
-      });
-      const putRes = await engineFetch(brainId, `/api/pages/${encodeURIComponent(caseSlug)}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          frontmatter: { ...(page.frontmatter ?? {}), tasks },
-        }),
-      });
-      if (!putRes.ok) throw new Error("create_task: Schreiben fehlgeschlagen");
+      };
+      await patchCase(caller, caseSlug, { tasks: [...tasks, task] }, "create_task");
+      return;
+    }
+
+    case "set_status": {
+      const caseSlug = payload.case_slug;
+      if (!caseSlug) throw new Error("set_status: Ereignis gehört zu keiner Akte");
+      if (!isCaseStatus(a.status)) throw new Error(`set_status: unbekannter Status '${a.status}'`);
+      const page = await readCase(caller, caseSlug, "set_status");
+      if (page.frontmatter?.status === a.status) return;
+      await patchCase(caller, caseSlug, { status: a.status }, "set_status");
       return;
     }
 
@@ -361,7 +386,7 @@ async function executeAction(
         started_by: `automation:${rule.slug}`,
         case_slug: payload.case_slug,
       });
-      const res = await engineFetch(brainId, "/api/pages", {
+      const res = await engineFetch(caller, "/api/pages", {
         method: "POST",
         body: JSON.stringify({
           slug: buildWorkflowSlug(tplId),
@@ -378,29 +403,35 @@ async function executeAction(
 }
 
 /**
- * Ereignis-Quellen rufen diese Funktion fire-and-forget auf. Lädt die
- * aktiven Regeln, führt passende Aktionen aus und liefert ein Ergebnis —
- * wirft nie, damit der fachliche Ablauf nicht blockiert wird.
+ * Sofort-Auslösung für Ereignis-Quellen (fire-and-forget). Lädt die aktiven
+ * Regeln, führt passende Aktionen aus und liefert ein Ergebnis — wirft nie.
+ * Der Cron merkt sich nichts davon; Quellen, die dies nutzen, dürfen dasselbe
+ * Ereignis nicht zusätzlich vom Cron beobachten lassen.
  */
 export async function dispatchAutomations(
   brainId: string,
   event: TriggerEvent,
   payload: AutomationEventPayload
 ): Promise<DispatchResult> {
-  const result: DispatchResult = { matched: 0, executed: 0, errors: [] };
+  const result: DispatchResult = { matched: 0, executed: 0, errors: [], skipped: 0 };
   try {
     const rules = await listAutomations(brainId);
-    const matching = rules.filter((r) => ruleMatches(r, event, payload));
+    const matching = rules.filter((r) => !r.paused_reason && ruleMatches(r, event, payload));
     result.matched = matching.length;
     for (const rule of matching) {
-      try {
-        await executeAction(brainId, rule, payload);
-        result.executed += 1;
-      } catch (err) {
-        const msg = `${rule.slug}: ${err instanceof Error ? err.message : "unknown"}`;
-        result.errors.push(msg);
-        log.warn("automation action failed", { rule: rule.slug, error: msg });
+      const runner = await resolveRuleRunner(brainId, rule);
+      if (!runner.ok) {
+        result.skipped = (result.skipped ?? 0) + 1;
+        log.warn("automation skipped", { rule: rule.slug, reason: runner.reason });
+        continue;
       }
+      const outcome = await runAutomationRule(brainId, rule, payload, runner.caller);
+      if (outcome === "skipped") {
+        result.skipped = (result.skipped ?? 0) + 1;
+        continue;
+      }
+      if (outcome.executed > 0) result.executed += 1;
+      result.errors.push(...outcome.errors);
     }
   } catch (err) {
     result.errors.push(err instanceof Error ? err.message : "dispatch failed");

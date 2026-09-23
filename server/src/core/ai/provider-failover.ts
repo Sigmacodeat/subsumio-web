@@ -9,8 +9,12 @@
  * codes): the same request would fail the same way at the second provider.
  *
  * Off switch: GBRAIN_PROVIDER_FAILOVER=off. Active only when OPENROUTER_API_KEY
- * is set.
+ * is set. Under SUBSUMIO_EU_ONLY=1 a failover target that is not EU-resident
+ * (OpenRouter without EU attestation) is never chosen: the original error
+ * surfaces instead of a silent reroute out of the EU.
  */
+
+import { isAllowedUnderEuPolicy } from "./eu-policy.ts";
 
 /** Same model on OpenRouter; null when there is no counterpart. */
 export function openRouterEquivalent(modelStr: string): string | null {
@@ -64,6 +68,9 @@ export function providerFailoverModel(
   env: NodeJS.ProcessEnv = process.env
 ): string | null {
   if (!isFailoverEnabled(env)) return null;
+  if ((err as { name?: string } | null)?.name === "EuResidencyError") return null;
   if (!isProviderFailure(err)) return null;
-  return openRouterEquivalent(modelStr);
+  const alternate = openRouterEquivalent(modelStr);
+  if (alternate && !isAllowedUnderEuPolicy(alternate, env)) return null;
+  return alternate;
 }

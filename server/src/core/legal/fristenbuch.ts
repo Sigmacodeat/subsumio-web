@@ -28,6 +28,8 @@ import {
   vorigerWerktag,
   type FristStatus,
 } from "./frist-engine.ts";
+import { matterScopeAllows, type MatterScope } from "../matter-access.ts";
+import { pageBindingAllowed, resolveRowBindings } from "../matter-binding.ts";
 
 export interface FristenbuchEngine {
   executeRaw<T>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -147,7 +149,17 @@ export function parseDeadlineTable(markdown: string): ParsedDeadlineRow[] {
 
 export async function ladeFristenbuch(
   engine: FristenbuchEngine,
-  opts: { heute: string; sourceId?: string; caseSlug?: string; vorfristTage?: number }
+  opts: {
+    heute: string;
+    sourceId?: string;
+    caseSlug?: string;
+    vorfristTage?: number;
+    /**
+     * The caller's matter scope: calendars of matters outside it (walled,
+     * restricted, not granted) are left out. Undefined = unrestricted.
+     */
+    matterScope?: MatterScope;
+  }
 ): Promise<Fristenbuch> {
   const heute = opts.heute;
   parseISODate(heute); // validate
@@ -180,8 +192,30 @@ export async function ladeFristenbuch(
   const eintraege: FristenbuchEintrag[] = [];
   let unparsebar = 0;
 
-  for (const page of pages) {
+  // The calendar belongs to its matter by path and by every frontmatter
+  // matter binding (case_slug, the pipeline's case_ref, …) — all must be
+  // visible to the caller. Bindings are resolved in bulk.
+  const restricted = opts.matterScope !== undefined && opts.matterScope !== "all";
+  const bindings = restricted
+    ? await resolveRowBindings(
+        engine,
+        pages.map((p) => ({
+          slug: p.slug,
+          frontmatter: p.frontmatter ?? {},
+          ...(opts.sourceId ? { source_id: opts.sourceId } : {}),
+        })),
+        { sourceId: opts.sourceId }
+      )
+    : [];
+
+  for (const [i, page] of pages.entries()) {
     const caseSlug = page.slug.replace(/^deadline-calendars\//, "");
+    if (
+      !matterScopeAllows(opts.matterScope, page.slug, caseSlug) ||
+      (restricted && !pageBindingAllowed(opts.matterScope, page.slug, bindings[i]!))
+    ) {
+      continue;
+    }
     const reviewStatus = page.frontmatter?.review_status === "approved" ? "approved" : "unreviewed";
     const rows = parseDeadlineTable(page.compiled_truth ?? "");
     for (const row of rows) {

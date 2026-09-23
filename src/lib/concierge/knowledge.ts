@@ -41,7 +41,8 @@ function pricingChunks(): KnowledgeChunk[] {
       `Tarife: ${solo.name} ${eur(solo.monthlyEur)} pro Monat für ${solo.seats} Nutzer. ` +
       `${team.name} ${eur(team.monthlyEur)} pro Monat inklusive ${team.seats} Nutzern. ` +
       `Enterprise auf Anfrage. ${professionalPricing().footnote} ` +
-      `Community ist kostenlos und wird selbst betrieben (Self-Hosting). ` +
+      `Nach der Testphase ohne Tarif bleiben die Daten erhalten, Fristenerinnerungen laufen weiter; ` +
+      `KI-Funktionen gibt es dann nur mit Tarif oder zugekauftem KI-Guthaben. ` +
       `Zusätzliche KI-Nutzung kann über KI-Guthaben dazugekauft werden. ` +
       `Testphase: ${TRIAL_DAYS} Tage mit vollem Funktionsumfang, ohne Kreditkarte.`,
   });

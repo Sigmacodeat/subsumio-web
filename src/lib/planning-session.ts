@@ -7,7 +7,13 @@
  * Planning sessions are persisted as brain pages with type "copilot_plan".
  */
 
-import { api } from "@/lib/api";
+import { getEnginePage, writeEnginePage, type EngineHeaders } from "@/lib/engine-page-io";
+import { listEnginePages } from "@/lib/engine-pages";
+import { engineThink } from "@/lib/engine-think";
+
+// Every function takes the calling route's `ctx.headers`: they carry the
+// tenant, the API key and the signed caller identity, so the engine scopes
+// plans and the planning answers to the matters this person may see.
 
 export type PlanStepStatus = "pending" | "in_progress" | "completed" | "skipped" | "blocked";
 
@@ -109,11 +115,14 @@ Regeln:
 - Berücksichtige rechtliche Fristen und Abhängigkeiten
 - Wenn Schritte bereits existieren, behalte sie bei oder aktualisiere sie`;
 
-export async function createPlan(opts: {
-  goal: string;
-  caseSlug?: string;
-  existingSteps?: PlanStep[];
-}): Promise<PlanningSession> {
+export async function createPlan(
+  headers: EngineHeaders,
+  opts: {
+    goal: string;
+    caseSlug?: string;
+    existingSteps?: PlanStep[];
+  }
+): Promise<PlanningSession> {
   const id = generateId();
   const now = new Date().toISOString();
 
@@ -129,9 +138,11 @@ export async function createPlan(opts: {
     existingStepsStr
   );
 
-  const result = await api.query.think(prompt, {
+  const result = await engineThink(headers, {
+    query: prompt,
     mode: "balanced",
     queryMode: "deep_matter",
+    caseSlug: opts.caseSlug,
   });
 
   let steps: PlanStep[] = [];
@@ -184,7 +195,7 @@ export async function createPlan(opts: {
 
   // Persist
   const slug = `${PLAN_SLUG_PREFIX}/${id}`;
-  await api.brain.createPage({
+  await writeEnginePage(headers, {
     slug,
     title: `Plan: ${title}`,
     type: "copilot_plan",
@@ -207,9 +218,12 @@ export async function createPlan(opts: {
   return session;
 }
 
-export async function loadPlan(planId: string): Promise<PlanningSession | null> {
+export async function loadPlan(
+  headers: EngineHeaders,
+  planId: string
+): Promise<PlanningSession | null> {
   const slug = `${PLAN_SLUG_PREFIX}/${planId}`;
-  const page = await api.brain.getPage(slug);
+  const page = await getEnginePage(headers, slug);
   if (!page) return null;
 
   const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
@@ -227,11 +241,14 @@ export async function loadPlan(planId: string): Promise<PlanningSession | null> 
   };
 }
 
-export async function listPlans(opts?: {
-  caseSlug?: string;
-  status?: PlanStatus;
-}): Promise<PlanningSession[]> {
-  const pages = await api.brain.listPages({ type: "copilot_plan", limit: 50 });
+export async function listPlans(
+  headers: EngineHeaders,
+  opts?: {
+    caseSlug?: string;
+    status?: PlanStatus;
+  }
+): Promise<PlanningSession[]> {
+  const pages = await listEnginePages(headers, "copilot_plan", 50);
   let plans = (
     pages as unknown as Array<{
       slug: string;
@@ -262,11 +279,12 @@ export async function listPlans(opts?: {
 }
 
 export async function updatePlanStep(
+  headers: EngineHeaders,
   planId: string,
   stepId: string,
   updates: Partial<Pick<PlanStep, "status" | "notes">>
 ): Promise<void> {
-  const plan = await loadPlan(planId);
+  const plan = await loadPlan(headers, planId);
   if (!plan) throw new Error("Plan not found");
 
   const steps = plan.steps.map((s) =>
@@ -294,28 +312,36 @@ export async function updatePlanStep(
 
   const slug = `${PLAN_SLUG_PREFIX}/${planId}`;
   const now = new Date().toISOString();
-  await api.brain.updatePage({
-    slug,
-    type: "copilot_plan",
-    content: plan.goal,
-    frontmatter: {
+  await writeEnginePage(
+    headers,
+    {
+      slug,
       type: "copilot_plan",
-      plan_id: planId,
-      title: plan.title,
-      goal: plan.goal,
-      case_slug: plan.caseSlug,
-      status,
-      steps,
-      current_step_index: currentStepIndex,
-      conversation_turns: plan.conversationTurns,
-      created_at: plan.createdAt,
-      updated_at: now,
+      content: plan.goal,
+      frontmatter: {
+        type: "copilot_plan",
+        plan_id: planId,
+        title: plan.title,
+        goal: plan.goal,
+        case_slug: plan.caseSlug,
+        status,
+        steps,
+        current_step_index: currentStepIndex,
+        conversation_turns: plan.conversationTurns,
+        created_at: plan.createdAt,
+        updated_at: now,
+      },
     },
-  });
+    { merge: true }
+  );
 }
 
-export async function refinePlan(planId: string, userFeedback: string): Promise<PlanningSession> {
-  const plan = await loadPlan(planId);
+export async function refinePlan(
+  headers: EngineHeaders,
+  planId: string,
+  userFeedback: string
+): Promise<PlanningSession> {
+  const plan = await loadPlan(headers, planId);
   if (!plan) throw new Error("Plan not found");
 
   // Use AI to refine the plan based on user feedback
@@ -340,9 +366,11 @@ Gib den aktualisierten Plan als JSON zurück:
   ]
 }}`;
 
-  const result = await api.query.think(prompt, {
+  const result = await engineThink(headers, {
+    query: prompt,
     mode: "balanced",
     queryMode: "deep_matter",
+    caseSlug: plan.caseSlug,
   });
 
   let updatedSteps = plan.steps;
@@ -388,24 +416,28 @@ Gib den aktualisierten Plan als JSON zurück:
   };
 
   const slug = `${PLAN_SLUG_PREFIX}/${planId}`;
-  await api.brain.updatePage({
-    slug,
-    type: "copilot_plan",
-    content: updated.goal,
-    frontmatter: {
+  await writeEnginePage(
+    headers,
+    {
+      slug,
       type: "copilot_plan",
-      plan_id: planId,
-      title: updated.title,
-      goal: updated.goal,
-      case_slug: updated.caseSlug,
-      status: updated.status,
-      steps: updated.steps,
-      current_step_index: updated.currentStepIndex,
-      conversation_turns: updated.conversationTurns,
-      created_at: updated.createdAt,
-      updated_at: now,
+      content: updated.goal,
+      frontmatter: {
+        type: "copilot_plan",
+        plan_id: planId,
+        title: updated.title,
+        goal: updated.goal,
+        case_slug: updated.caseSlug,
+        status: updated.status,
+        steps: updated.steps,
+        current_step_index: updated.currentStepIndex,
+        conversation_turns: updated.conversationTurns,
+        created_at: updated.createdAt,
+        updated_at: now,
+      },
     },
-  });
+    { merge: true }
+  );
 
   return updated;
 }
@@ -440,10 +472,11 @@ Regeln:
  * confirmation token flow for mutating tools, and credit checks.
  */
 export async function proposeStepAction(
+  headers: EngineHeaders,
   planId: string,
   stepId: string
 ): Promise<StepActionProposal | null> {
-  const plan = await loadPlan(planId);
+  const plan = await loadPlan(headers, planId);
   if (!plan) return null;
   const step = plan.steps.find((s) => s.id === stepId);
   if (!step) return null;
@@ -455,9 +488,11 @@ export async function proposeStepAction(
     .replace("{step_description}", step.description)
     .replace("{tool_list}", toolList);
 
-  const result = await api.query.think(prompt, {
+  const result = await engineThink(headers, {
+    query: prompt,
     mode: "balanced",
     queryMode: "deep_matter",
+    caseSlug: plan.caseSlug,
   });
 
   try {
@@ -479,7 +514,7 @@ export async function proposeStepAction(
     // Persist suggestion on the step so the UI can render it on reload.
     step.suggested_tool = tool ?? undefined;
     step.suggested_params = params;
-    await persistPlan(plan);
+    await persistPlan(headers, plan);
 
     return {
       tool,
@@ -492,26 +527,30 @@ export async function proposeStepAction(
 }
 
 /** Writes the whole plan back (used by proposeStepAction). */
-async function persistPlan(plan: PlanningSession): Promise<void> {
+async function persistPlan(headers: EngineHeaders, plan: PlanningSession): Promise<void> {
   const slug = `${PLAN_SLUG_PREFIX}/${plan.id}`;
-  await api.brain.updatePage({
-    slug,
-    type: "copilot_plan",
-    content: plan.goal,
-    frontmatter: {
+  await writeEnginePage(
+    headers,
+    {
+      slug,
       type: "copilot_plan",
-      plan_id: plan.id,
-      title: plan.title,
-      goal: plan.goal,
-      case_slug: plan.caseSlug,
-      status: plan.status,
-      steps: plan.steps,
-      current_step_index: plan.currentStepIndex,
-      conversation_turns: plan.conversationTurns,
-      created_at: plan.createdAt,
-      updated_at: new Date().toISOString(),
+      content: plan.goal,
+      frontmatter: {
+        type: "copilot_plan",
+        plan_id: plan.id,
+        title: plan.title,
+        goal: plan.goal,
+        case_slug: plan.caseSlug,
+        status: plan.status,
+        steps: plan.steps,
+        current_step_index: plan.currentStepIndex,
+        conversation_turns: plan.conversationTurns,
+        created_at: plan.createdAt,
+        updated_at: new Date().toISOString(),
+      },
     },
-  });
+    { merge: true }
+  );
 }
 
 /**
@@ -519,12 +558,13 @@ async function persistPlan(plan: PlanningSession): Promise<void> {
  * succeeded). Records the tool + result summary in `notes` for audit.
  */
 export async function markStepExecuted(
+  headers: EngineHeaders,
   planId: string,
   stepId: string,
   tool: string,
   resultSummary: string
 ): Promise<void> {
-  const plan = await loadPlan(planId);
+  const plan = await loadPlan(headers, planId);
   if (!plan) throw new Error("Plan not found");
   const step = plan.steps.find((s) => s.id === stepId);
   if (!step) throw new Error("Step not found");
@@ -543,30 +583,34 @@ export async function markStepExecuted(
     ? "completed"
     : plan.status;
   plan.updatedAt = new Date().toISOString();
-  await persistPlan(plan);
+  await persistPlan(headers, plan);
 }
 
-export async function abandonPlan(planId: string): Promise<void> {
-  const plan = await loadPlan(planId);
+export async function abandonPlan(headers: EngineHeaders, planId: string): Promise<void> {
+  const plan = await loadPlan(headers, planId);
   if (!plan) return;
 
   const slug = `${PLAN_SLUG_PREFIX}/${planId}`;
-  await api.brain.updatePage({
-    slug,
-    type: "copilot_plan",
-    content: plan.goal,
-    frontmatter: {
+  await writeEnginePage(
+    headers,
+    {
+      slug,
       type: "copilot_plan",
-      plan_id: planId,
-      title: plan.title,
-      goal: plan.goal,
-      case_slug: plan.caseSlug,
-      status: "abandoned",
-      steps: plan.steps,
-      current_step_index: plan.currentStepIndex,
-      conversation_turns: plan.conversationTurns,
-      created_at: plan.createdAt,
-      updated_at: new Date().toISOString(),
+      content: plan.goal,
+      frontmatter: {
+        type: "copilot_plan",
+        plan_id: planId,
+        title: plan.title,
+        goal: plan.goal,
+        case_slug: plan.caseSlug,
+        status: "abandoned",
+        steps: plan.steps,
+        current_step_index: plan.currentStepIndex,
+        conversation_turns: plan.conversationTurns,
+        created_at: plan.createdAt,
+        updated_at: new Date().toISOString(),
+      },
     },
-  });
+    { merge: true }
+  );
 }

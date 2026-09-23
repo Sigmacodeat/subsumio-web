@@ -8,7 +8,10 @@ const qrcodeSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "settings.write",
+    // Part of every user's own 2FA enrolment (settings/security), so every
+    // role may call it — "settings.write" is admin-only and hid the QR code
+    // from lawyers and assistants, who then could not set up 2FA at all.
+    action: "auth.2fa",
     rateTier: "standard",
     body: qrcodeSchema,
     audit: (_ctx, body) => ({

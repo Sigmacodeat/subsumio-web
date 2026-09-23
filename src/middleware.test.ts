@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { middleware } from "./middleware";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { withEnv } from "../test/helpers/with-env";
+import { signSession } from "@/lib/auth/session-core";
 
 function request(
   pathname: string,
@@ -363,5 +364,78 @@ describe("middleware CSP", () => {
       expect(csp).toContain("unsafe-eval");
       expect(csp).toContain("unsafe-inline");
     });
+  });
+});
+
+describe("middleware firm-wide 2FA on the API (must2fa sessions)", () => {
+  async function sessionCookie(must2fa: boolean): Promise<string> {
+    const token = await signSession({
+      uid: "member",
+      email: "member@firm.at",
+      role: "lawyer",
+      ...(must2fa ? { must2fa: true } : {}),
+    });
+    return `sb_session=${token}`;
+  }
+
+  it("refuses ordinary API routes with 403 two_factor_setup_required", async () => {
+    const headers = new Headers({ cookie: await sessionCookie(true) });
+    const res = await run("/api/pages", { headers });
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({ error: "two_factor_setup_required" });
+  });
+
+  it("refuses state-changing API routes even with a valid CSRF token", async () => {
+    const token = "csrf_test_token";
+    const headers = new Headers({
+      [CSRF_HEADER_NAME]: token,
+      cookie: `${await sessionCookie(true)}; ${CSRF_COOKIE_NAME}=${token}`,
+    });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({ error: "two_factor_setup_required" });
+  });
+
+  it.each([
+    ["/api/auth/me", "GET"],
+    ["/api/auth/2fa/setup", "POST"],
+    ["/api/auth/2fa/verify", "POST"],
+    ["/api/2fa/qrcode", "POST"],
+    ["/api/auth/logout", "POST"],
+    ["/api/auth/login", "POST"],
+  ])("lets the setup flow through: %s %s", async (path, method) => {
+    const token = "csrf_test_token";
+    const headers = new Headers({
+      [CSRF_HEADER_NAME]: token,
+      cookie: `${await sessionCookie(true)}; ${CSRF_COOKIE_NAME}=${token}`,
+    });
+    const res = await run(path, { method, headers });
+
+    expect(res.status).not.toBe(403);
+  });
+
+  it("leaves normal sessions alone", async () => {
+    const headers = new Headers({ cookie: await sessionCookie(false) });
+    const res = await run("/api/pages", { headers });
+
+    expect(res.status).not.toBe(403);
+  });
+
+  it("ignores a forged must2fa claim without a valid signature (the route rejects it)", async () => {
+    const forged = await sessionCookie(true);
+    const headers = new Headers({ cookie: `${forged.slice(0, -4)}AAAA` });
+    const res = await run("/api/pages", { headers });
+
+    expect(res.status).not.toBe(403);
+  });
+
+  it("still redirects must2fa dashboard pages to the security settings", async () => {
+    const headers = new Headers({ cookie: await sessionCookie(true) });
+    const res = await run("/dashboard/cases", { headers });
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/dashboard/settings/security?require2fa=1");
   });
 });

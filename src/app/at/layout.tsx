@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s — Subsumio",
   },
   description:
-    "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Akten, Fristen nach ZPO/ABGB, belegte KI-Antworten. DSGVO-konform, EU-Cloud oder On-Premise.",
+    "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Akten, Fristen nach ZPO/ABGB, belegte KI-Antworten. Nach DSGVO konzipiert, AVV inklusive; Hosting in Wien oder On-Premise.",
   alternates: {
     canonical: "/at",
     languages: { "de-AT": "/at", "de-DE": "/de", "x-default": "/at" },

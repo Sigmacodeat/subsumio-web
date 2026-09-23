@@ -29,7 +29,7 @@ const GROUPS_AT: FoundationGroup[] = [
     icon: ShieldCheck,
     title: "Datenschutz",
     items: [
-      "DSGVO-konform",
+      "Nach DSGVO konzipiert",
       "Auftragsverarbeitung nach Art. 28 DSGVO",
       "Kein Training auf Ihren Daten",
     ],
@@ -64,7 +64,7 @@ const GROUPS_DE: FoundationGroup[] = [
     icon: ShieldCheck,
     title: "Datenschutz",
     items: [
-      "DSGVO-konform",
+      "Nach DSGVO konzipiert",
       "Auftragsverarbeitung nach Art. 28 DSGVO",
       "Kein Training auf Ihren Daten",
     ],

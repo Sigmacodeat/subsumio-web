@@ -62,16 +62,20 @@ describe("TODO 1: Canonical Fristen-Domänenmodell", () => {
 // ── TODO 3: Notfrist-Enforcement ───────────────────────────────
 
 describe("TODO 3: Notfrist-Enforcement server-side guard", () => {
-  it("server-side guard code exists in pages/[...slug] route", () => {
-    const source = readFileSync(
-      join(process.cwd(), "src/app/api/pages/[...slug]/route.ts"),
-      "utf-8"
-    );
-    expect(source).toContain("notfrist_second_check_required");
-    expect(source).toContain("is_notfrist");
-    expect(source).toContain("second_check_required");
-    expect(source).toContain("second_check_at");
-    expect(source).toContain("second_check_by");
+  // The guard lives in src/lib/page-write-guards.ts (behaviour tested in
+  // page-write-guards.test.ts and the route tests); every generic write path
+  // must route through it.
+  it("server-side guard is wired into every generic page write path", () => {
+    for (const route of ["src/app/api/pages/[...slug]/route.ts", "src/app/api/pages/route.ts"]) {
+      const source = readFileSync(join(process.cwd(), route), "utf-8");
+      expect(source, route).toContain("guardSecondCheckWrite(");
+    }
+    const guard = readFileSync(join(process.cwd(), "src/lib/page-write-guards.ts"), "utf-8");
+    expect(guard).toContain("notfrist_second_check_required");
+    expect(guard).toContain("is_notfrist");
+    expect(guard).toContain("second_check_required");
+    expect(guard).toContain("second_check_at");
+    expect(guard).toContain("second_check_by");
   });
 
   it("DeadlineQuickCreateDialog has Notfrist + Vier-Augen dialog", () => {
@@ -95,16 +99,11 @@ describe("TODO 3: Notfrist-Enforcement server-side guard", () => {
   });
 
   it("server-side guard also checks deadlines array within legal_case pages", () => {
-    const source = readFileSync(
-      join(process.cwd(), "src/app/api/pages/[...slug]/route.ts"),
-      "utf-8"
-    );
+    const guard = readFileSync(join(process.cwd(), "src/lib/page-write-guards.ts"), "utf-8");
     // Case 2: guard must inspect fm.deadlines[] for status:done on notfrist items
-    expect(source).toContain("Array.isArray(fm.deadlines)");
-    expect(source).toContain('dl.status === "done"');
-    expect(source).toContain("dl.is_notfrist === true");
-    expect(source).toContain("dl.second_check_by");
-    expect(source).toContain("dl.second_check_at");
+    expect(guard).toContain("Array.isArray(incoming.deadlines)");
+    expect(guard).toContain("isNotfrist(clean)");
+    expect(guard).toContain("hasServerSecondCheck(prev)");
   });
 });
 

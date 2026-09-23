@@ -40,6 +40,7 @@ import type { BrainEngine } from "../../engine.ts";
 import type { GBrainConfig } from "../../config.ts";
 import { loadConfig } from "../../config.ts";
 import { buildBrainTools, filterAllowedTools } from "../tools/brain-allowlist.ts";
+import { agentWriteBinding, readJobMatterAccess } from "../../matter-access.ts";
 import { acquireLease, releaseLease, renewLeaseWithBackoff } from "../rate-leases.ts";
 import { logSubagentSubmission, logSubagentHeartbeat } from "./subagent-audit.ts";
 import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from "../../model-config.ts";
@@ -305,6 +306,9 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // allow-list — flows through buildBrainTools → the put_page schema
     // description AND the OperationContext, so the model's tool schema and
     // the server-side check stay in sync).
+    // The web caller's matter scope travels with the job (`_matter_scope`,
+    // `_matter_read_only`); a malformed stamp denies everything.
+    const matterAccess = readJobMatterAccess(data);
     const registry =
       deps.toolRegistry ??
       buildBrainTools({
@@ -323,6 +327,11 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           Array.isArray(data._source_ids) && data._source_ids.length > 0
             ? data._source_ids
             : undefined,
+        matterScope: matterAccess.scope,
+        matterReadOnly: matterAccess.readOnly,
+        // A web user's run writes only pages bound to its matter or kept
+        // private for its owner; CLI / cron runs are unchanged.
+        writeBinding: agentWriteBinding(data),
       });
     // An explicit list — including an EMPTY list — is authoritative:
     // `allowed_tools: []` means "no tools" (map/reduce extraction agents).

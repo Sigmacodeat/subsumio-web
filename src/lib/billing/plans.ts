@@ -53,16 +53,16 @@ export interface BillingPlanDisplay {
 // and the marketing copy (src/content/site.ts PRICING).
 export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
   {
+    // The state after a trial ends without a plan — not a sold tariff.
     id: "free",
-    name: "Community",
+    name: "Ohne Tarif",
     price: "0 €",
     features: [
-      "Self-hosted — eigener Server, eigene Schlüssel",
-      "KI über Ihre eigenen Schlüssel — Sie zahlen den Anbieter direkt",
-      "5 GB lokaler Speicher",
-      "Akten-Q&A mit seitengenauen Zitaten",
-      "Fristenverwaltung (ZPO/ABGB)",
-      "Community-Support",
+      "Ihre Akten, Fristen und Dokumente bleiben erhalten",
+      "Lesen und Datenexport jederzeit",
+      "Fristenerinnerungen laufen weiter",
+      "KI-Funktionen nur mit zugekauftem KI-Guthaben",
+      "1 Nutzer",
     ],
   },
   {

@@ -1,5 +1,5 @@
 import { createHandler, apiError } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { buildMatterContext } from "@/lib/matter-context";
 import {
   runSuperbrainEval,
@@ -19,7 +19,7 @@ export const GET = createHandler(
     cacheMaxAge: 0,
   },
   async (ctx, _body, _query, _req) => {
-    const headers = engineHeadersForBrain(ctx.brainId);
+    const headers = ctx.headers;
 
     const contextFetcher = async (caseSlug: string): Promise<MatterContextForEval | null> => {
       try {

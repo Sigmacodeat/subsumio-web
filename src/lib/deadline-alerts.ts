@@ -11,6 +11,13 @@
  *  - it had no memory, so every 30-minute run resent the same alert.
  * Each stage therefore fires exactly once per deadline and is recorded in the
  * deadline's own frontmatter.
+ *
+ * An AI-suggested deadline nobody has reviewed yet (review_status not
+ * approved/reviewed) still alerts in the dashboard — a real Frist must not
+ * stay silent — but labelled "ungeprüfter KI-Vorschlag", and it never goes
+ * out as an external webhook. Its stages are remembered separately, so the
+ * full alert (incl. webhook) still fires once a lawyer has confirmed it.
+ * A rejected suggestion does not alert at all.
  */
 
 export type AlertUrgency = "urgent" | "warning" | "normal";
@@ -30,8 +37,15 @@ export interface AlertDeadline {
   date?: string;
   status?: string;
   case_slug?: string;
+  review_status?: string;
+  source?: string;
+  ai_confidence?: string;
+  ai_generated?: boolean;
+  matched_rule?: string;
   /** Stages already signalled — the dedup memory. */
   alert_stages_sent?: AlertUrgency[];
+  /** Stages signalled while the deadline was an unreviewed AI suggestion. */
+  alert_stages_unreviewed?: AlertUrgency[];
   alert_sent_at?: string;
 }
 
@@ -53,12 +67,41 @@ export interface DueAlert {
   urgency: AlertUrgency;
   /** Hours left, negative when overdue. */
   hoursRemaining: number;
+  /** An AI suggestion no lawyer has confirmed: in-app only, labelled, no webhook. */
+  unreviewedAi: boolean;
+  /** Shown with the alert when set (e.g. "ungeprüfter KI-Vorschlag"). */
+  label?: string;
+}
+
+export const UNREVIEWED_AI_LABEL = "ungeprüfter KI-Vorschlag";
+
+/** Sources that mark a deadline as proposed by the AI, not entered by a person. */
+const AI_SOURCE = /^(ai|llm|ki)[_-]|^copilot$/i;
+const REVIEWED = new Set(["approved", "reviewed"]);
+
+/**
+ * An AI-proposed deadline that no lawyer has approved yet. Manually entered
+ * deadlines also start as "unreviewed" in some forms, so the AI origin is
+ * required (source, confidence or generator marks) — never inferred from the
+ * review status alone.
+ */
+export function isUnreviewedAiSuggestion(d: AlertDeadline): boolean {
+  if (REVIEWED.has(String(d.review_status ?? "").toLowerCase())) return false;
+  const fromAi =
+    AI_SOURCE.test(String(d.source ?? "")) ||
+    d.ai_generated === true ||
+    typeof d.ai_confidence === "string" ||
+    d.matched_rule === "llm_fallback";
+  return fromAi;
 }
 
 const CLOSED = new Set(["completed", "done", "erledigt", "cancelled", "tombstoned"]);
 
 export function isClosedAlertDeadline(d: AlertDeadline): boolean {
-  return CLOSED.has(String(d.status ?? "").toLowerCase());
+  return (
+    CLOSED.has(String(d.status ?? "").toLowerCase()) ||
+    String(d.review_status ?? "").toLowerCase() === "rejected"
+  );
 }
 
 export function hoursUntil(dateStr: string, now: Date): number {
@@ -101,7 +144,9 @@ function pending(d: AlertDeadline, ref: AlertRef, title: string, now: Date): Due
   const hoursRemaining = hoursUntil(dueAt, now);
   const urgency = alertStageFor(hoursRemaining);
   if (!urgency) return undefined;
-  if ((d.alert_stages_sent ?? []).includes(urgency)) return undefined;
+  const unreviewedAi = isUnreviewedAiSuggestion(d);
+  const memory = unreviewedAi ? d.alert_stages_unreviewed : d.alert_stages_sent;
+  if ((memory ?? []).includes(urgency)) return undefined;
   return {
     ref,
     caseSlug: str(d.case_slug) ?? (ref.kind === "case" ? ref.caseSlug : undefined),
@@ -109,6 +154,8 @@ function pending(d: AlertDeadline, ref: AlertRef, title: string, now: Date): Due
     dueDate: dueAt.slice(0, 10),
     urgency,
     hoursRemaining,
+    unreviewedAi,
+    ...(unreviewedAi ? { label: UNREVIEWED_AI_LABEL } : {}),
   };
 }
 
@@ -161,16 +208,22 @@ export function collectDueAlerts(
   return out;
 }
 
-/** The frontmatter fields that record a sent alert. */
+/**
+ * The frontmatter fields that record a sent alert. An alert for an unreviewed
+ * AI suggestion is remembered in its own list, so confirming the deadline
+ * later still releases the full alert (and webhook) for the current stage.
+ */
 export function alertSentFields(
   d: AlertDeadline,
   urgency: AlertUrgency,
-  nowIso: string
+  nowIso: string,
+  unreviewedAi = false
 ): Partial<AlertDeadline> {
-  const merged = new Set<AlertUrgency>([...(d.alert_stages_sent ?? []), ...stagesPassed(urgency)]);
+  const key = unreviewedAi ? "alert_stages_unreviewed" : "alert_stages_sent";
+  const merged = new Set<AlertUrgency>([...(d[key] ?? []), ...stagesPassed(urgency)]);
   return {
     alert_sent_at: nowIso,
-    alert_stages_sent: ALERT_STAGES.map((s) => s.urgency).filter((u) => merged.has(u)),
+    [key]: ALERT_STAGES.map((s) => s.urgency).filter((u) => merged.has(u)),
   };
 }
 
@@ -190,7 +243,7 @@ export function markCaseAlerts(
     );
     if (!match) return d;
     changed = true;
-    return { ...d, ...alertSentFields(d, match.urgency, nowIso) };
+    return { ...d, ...alertSentFields(d, match.urgency, nowIso, match.unreviewedAi) };
   });
   return { deadlines: next, changed };
 }

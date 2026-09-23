@@ -22,6 +22,8 @@
 
 import type { BrainEngine } from "./engine.ts";
 import { splitProviderModelId } from "./model-id.ts";
+import { BEDROCK_EU_MODELS } from "./ai/bedrock-config.ts";
+import { assertEuResidency } from "./ai/eu-policy.ts";
 
 export type ModelTier = "utility" | "reasoning" | "deep" | "subagent";
 
@@ -122,9 +124,33 @@ const NATIVE_TIER_DEFAULTS: Record<ModelTier, string> = {
   subagent: "anthropic:claude-haiku-4-5",
 };
 
+/**
+ * Deployment-wide provider mode (SUBSUMIO_AI_PROVIDER):
+ *   - unset / anything else → "native": direct vendor APIs (Anthropic API)
+ *   - "openrouter"          → every chat model through OpenRouter (one bill)
+ *   - "bedrock-eu"          → Claude through Amazon Bedrock EU inference
+ *                             profiles (eu-central-1). Same tiers as native.
+ * The mode picks defaults. Enforcement of EU processing is SUBSUMIO_EU_ONLY
+ * (src/core/ai/eu-policy.ts); bedrock-eu mode is meant to run with it on.
+ */
+export type AiProviderMode = "native" | "openrouter" | "bedrock-eu";
+
+export function aiProviderMode(
+  env: Record<string, string | undefined> = process.env
+): AiProviderMode {
+  const raw = env.SUBSUMIO_AI_PROVIDER?.trim().toLowerCase();
+  if (raw === "openrouter") return "openrouter";
+  if (raw === "bedrock-eu") return "bedrock-eu";
+  return "native";
+}
+
 /** The production SaaS can deliberately use one billed gateway only. */
 export function isOpenRouterOnlyDeployment(): boolean {
-  return process.env.SUBSUMIO_AI_PROVIDER?.trim().toLowerCase() === "openrouter";
+  return aiProviderMode() === "openrouter";
+}
+
+export function isBedrockEuDeployment(): boolean {
+  return aiProviderMode() === "bedrock-eu";
 }
 
 const OPENROUTER_TIER_DEFAULTS: Record<ModelTier, string> = {
@@ -134,9 +160,27 @@ const OPENROUTER_TIER_DEFAULTS: Record<ModelTier, string> = {
   subagent: "openrouter:anthropic/claude-haiku-4.5",
 };
 
-export const TIER_DEFAULTS: Record<ModelTier, string> = isOpenRouterOnlyDeployment()
-  ? OPENROUTER_TIER_DEFAULTS
-  : NATIVE_TIER_DEFAULTS;
+/**
+ * Bedrock EU tiers — same model per tier as native (Haiku 4.5 / Sonnet 5 /
+ * Opus 5), as EU geo inference profiles. The subagent tier runs through the
+ * gateway tool loop (Bedrock is not the Anthropic-direct SDK path): set
+ * `gbrain config set agent.use_gateway_loop true` on bedrock-eu deployments.
+ */
+const BEDROCK_EU_TIER_DEFAULTS: Record<ModelTier, string> = {
+  utility: `bedrock:${BEDROCK_EU_MODELS.haiku45}`,
+  reasoning: `bedrock:${BEDROCK_EU_MODELS.sonnet5}`,
+  deep: `bedrock:${BEDROCK_EU_MODELS.opus5}`,
+  subagent: `bedrock:${BEDROCK_EU_MODELS.haiku45}`,
+};
+
+/** Tier defaults for a given mode (TIER_DEFAULTS is this, evaluated at load). */
+export function tierDefaultsFor(mode: AiProviderMode): Record<ModelTier, string> {
+  if (mode === "openrouter") return OPENROUTER_TIER_DEFAULTS;
+  if (mode === "bedrock-eu") return BEDROCK_EU_TIER_DEFAULTS;
+  return NATIVE_TIER_DEFAULTS;
+}
+
+export const TIER_DEFAULTS: Record<ModelTier, string> = tierDefaultsFor(aiProviderMode());
 
 /**
  * Models a user may pick for an answer in the web app (chat, research,
@@ -144,26 +188,37 @@ export const TIER_DEFAULTS: Record<ModelTier, string> = isOpenRouterOnlyDeployme
  * are the route per deployment mode. Anything not listed — including "auto" —
  * resolves to undefined, and think routes by question complexity.
  */
-const USER_MODEL_CHOICES: Record<string, { native: string; openrouter: string }> = {
+const USER_MODEL_CHOICES: Record<
+  string,
+  { native: string; openrouter: string; bedrockEu: string | undefined }
+> = {
   "claude-haiku-4-5": {
     native: "anthropic:claude-haiku-4-5",
     openrouter: "openrouter:anthropic/claude-haiku-4.5",
+    bedrockEu: `bedrock:${BEDROCK_EU_MODELS.haiku45}`,
   },
   "claude-sonnet-5": {
     native: "anthropic:claude-sonnet-5",
     openrouter: "openrouter:anthropic/claude-sonnet-5",
+    bedrockEu: `bedrock:${BEDROCK_EU_MODELS.sonnet5}`,
   },
   "claude-opus-5": {
     native: "anthropic:claude-opus-5",
     openrouter: "openrouter:anthropic/claude-opus-5",
+    bedrockEu: `bedrock:${BEDROCK_EU_MODELS.opus5}`,
   },
+  // Fable 5.1 has no EU inference profile on Bedrock (only us./global., and it
+  // requires AWS human-review retention). In bedrock-eu mode the pick falls
+  // back to "auto" (think routes Sonnet 5 / Opus 5 by complexity).
   "claude-fable-5-1": {
     native: "anthropic:claude-fable-5-1",
     openrouter: "openrouter:anthropic/claude-fable-5.1",
+    bedrockEu: undefined,
   },
   "mistral-large-3": {
     native: "mistral:mistral-large-3",
     openrouter: "openrouter:mistralai/mistral-large",
+    bedrockEu: "mistral:mistral-large-3",
   },
 };
 
@@ -171,10 +226,20 @@ export function resolveUserModelChoice(choice: unknown): string | undefined {
   if (typeof choice !== "string") return undefined;
   const entry = USER_MODEL_CHOICES[choice];
   if (!entry) return undefined;
-  return isOpenRouterOnlyDeployment() ? entry.openrouter : entry.native;
+  const mode = aiProviderMode();
+  if (mode === "openrouter") return entry.openrouter;
+  if (mode === "bedrock-eu") return entry.bedrockEu;
+  return entry.native;
 }
 
-function enforceProviderMode(model: string): string {
+function enforceProviderMode(model: string, tier?: ModelTier): string {
+  // EU-only: the subagent tier can run on the legacy Anthropic-direct SDK path
+  // (minions/handlers/subagent.ts), which bypasses the gateway's EU check, so
+  // a non-EU subagent model is refused here, where it is resolved. Only this
+  // chat-only tier: `utility` also resolves the embedding model, which has its
+  // own policy (SUBSUMIO_EU_ONLY_EMBEDDINGS). Every other tier is enforced at
+  // the gateway call.
+  if (tier === "subagent") assertEuResidency(model, "chat", process.env);
   if (isOpenRouterOnlyDeployment() && !model.startsWith("openrouter:")) {
     throw new Error(
       `OpenRouter-only deployment resolved direct model "${model}". ` +
@@ -244,7 +309,7 @@ export async function resolveModel(
 
   // 1. CLI flag wins
   if (opts.cliFlag && opts.cliFlag.trim()) {
-    return enforceProviderMode(await resolveAlias(engine, opts.cliFlag.trim()));
+    return enforceProviderMode(await resolveAlias(engine, opts.cliFlag.trim()), opts.tier);
   }
 
   if (engine) {
@@ -259,7 +324,7 @@ export async function resolveModel(
             emitDeprecationWarning(opts.deprecatedConfigKey, opts.configKey, /*ignored=*/ true);
           }
         }
-        return enforceProviderMode(await resolveAlias(engine, v.trim()));
+        return enforceProviderMode(await resolveAlias(engine, v.trim()), opts.tier);
       }
     }
 
@@ -272,7 +337,7 @@ export async function resolveModel(
           opts.configKey ?? "<no replacement>",
           /*ignored=*/ false
         );
-        return enforceProviderMode(await resolveAlias(engine, v.trim()));
+        return enforceProviderMode(await resolveAlias(engine, v.trim()), opts.tier);
       }
     }
 
@@ -280,7 +345,10 @@ export async function resolveModel(
     const def = await engine.getConfig("models.default");
     if (def && def.trim()) {
       const resolved = await resolveAlias(engine, def.trim());
-      return enforceProviderMode(enforceSubagentCapable(resolved, opts.tier, "models.default"));
+      return enforceProviderMode(
+        enforceSubagentCapable(resolved, opts.tier, "models.default"),
+        opts.tier
+      );
     }
 
     // 5. Tier override (v0.31.12)
@@ -289,7 +357,8 @@ export async function resolveModel(
       if (tierVal && tierVal.trim()) {
         const resolved = await resolveAlias(engine, tierVal.trim());
         return enforceProviderMode(
-          enforceSubagentCapable(resolved, opts.tier, `models.tier.${opts.tier}`)
+          enforceSubagentCapable(resolved, opts.tier, `models.tier.${opts.tier}`),
+          opts.tier
         );
       }
     }
@@ -299,17 +368,20 @@ export async function resolveModel(
   const env = process.env[envVar];
   if (env && env.trim()) {
     const resolved = await resolveAlias(engine, env.trim());
-    return enforceProviderMode(enforceSubagentCapable(resolved, opts.tier, `env:${envVar}`));
+    return enforceProviderMode(
+      enforceSubagentCapable(resolved, opts.tier, `env:${envVar}`),
+      opts.tier
+    );
   }
 
   // 7. Tier default (v0.31.12 — when no override beats us, the tier's
   //    canonical model wins over caller-supplied fallback)
   if (opts.tier && TIER_DEFAULTS[opts.tier]) {
-    return enforceProviderMode(await resolveAlias(engine, TIER_DEFAULTS[opts.tier]));
+    return enforceProviderMode(await resolveAlias(engine, TIER_DEFAULTS[opts.tier]), opts.tier);
   }
 
   // 8. Hardcoded fallback (caller-supplied)
-  return enforceProviderMode(await resolveAlias(engine, opts.fallback));
+  return enforceProviderMode(await resolveAlias(engine, opts.fallback), opts.tier);
 }
 
 /**

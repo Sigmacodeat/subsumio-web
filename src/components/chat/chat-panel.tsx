@@ -490,6 +490,7 @@ const TOOL_SPECS: ToolSpec[] = [
         ? {
             name: a.name,
             event: a.event,
+            within_days: a.within_days ? Number(a.within_days) : undefined,
             action: {
               type: a.action_type,
               title: a.action_title || undefined,
@@ -498,6 +499,7 @@ const TOOL_SPECS: ToolSpec[] = [
               due_in_days: a.action_due_in_days ? Number(a.action_due_in_days) : undefined,
               workflow_template_id: a.action_workflow_template_id || undefined,
               recipient: a.action_recipient || undefined,
+              status: a.action_status || undefined,
             },
           }
         : null,

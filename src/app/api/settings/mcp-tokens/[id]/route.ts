@@ -1,5 +1,5 @@
 import { createHandler, apiError } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export const DELETE = createHandler(
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     const res = await fetch(`${ENGINE_URL}/api/mcp-tokens/${encodeURIComponent(id)}`, {
       method: "DELETE",
-      headers: engineHeadersForBrain(ctx.brainId),
+      headers: ctx.headers,
       signal: AbortSignal.timeout(15_000),
     });
     if (res.status === 404) return apiError("not_found", "Token nicht gefunden", 404);

@@ -29,6 +29,8 @@ import { GBrainOAuthProvider, validateTokenEndpointAuthMethod } from "../core/oa
 import type { SqlQuery } from "../core/oauth-provider.ts";
 import { hasScope, ALLOWED_SCOPES_LIST, normalizeScopesInput } from "../core/scope.ts";
 import { summarizeMcpParams, dispatchToolCall } from "../mcp/dispatch.ts";
+import { MATTER_SCOPED_TOOLS } from "../core/minions/tools/brain-allowlist.ts";
+import { makeWebUserStatusFetcher, resolveWebMcpToken } from "../core/web-mcp-token.ts";
 import { paramDefToSchema } from "../mcp/tool-defs.ts";
 import { getBrainHotMemoryMeta } from "../core/facts/meta-hook.ts";
 import { loadConfig } from "../core/config.ts";
@@ -460,10 +462,12 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // constructor option instead of monkey-patching `_clientsStore` after
   // construction. Same outcome (no /register endpoint when --enable-dcr
   // is not passed); cleaner shape for tests and future maintainers.
+  const webUserStatus = makeWebUserStatusFetcher();
   const oauthProvider = new GBrainOAuthProvider({
     sql,
     tokenTtl,
     dcrDisabled: !enableDcr,
+    resolveWebMcp: (binding) => resolveWebMcpToken(engine, binding, webUserStatus),
   });
 
   // Sweep expired tokens on startup (non-blocking)
@@ -2132,6 +2136,20 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       // for legacy tokens or when the JOIN row's client_name is NULL.
       const agentName = authInfo.clientName ?? authInfo.clientId;
 
+      // MCP tokens minted in the firm settings act for one web user: only
+      // tools that can filter by matter are offered, and every call runs
+      // under that user's matter guard (walls, grants, private chats).
+      const webMatterGuard =
+        typeof authInfo.webUserId === "string"
+          ? {
+              scope: Array.isArray(authInfo.matterScope) ? authInfo.matterScope : [],
+              readOnly: authInfo.matterReadOnly ?? [],
+            }
+          : undefined;
+      const callableOperations = webMatterGuard
+        ? mcpOperations.filter((op) => MATTER_SCOPED_TOOLS.has(op.name))
+        : mcpOperations;
+
       // Create a fresh MCP server per request (stateless)
       const server = new Server(
         { name: "gbrain", version: VERSION },
@@ -2164,7 +2182,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           timestamp: new Date().toISOString(),
         });
         return {
-          tools: mcpOperations.map((op) => ({
+          tools: callableOperations.map((op) => ({
             name: op.name,
             description: op.description,
             inputSchema: {
@@ -2182,7 +2200,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
 
       server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { name, arguments: params } = request.params;
-        const op = mcpOperations.find((o) => o.name === name);
+        const op = callableOperations.find((o) => o.name === name);
         if (!op) {
           // v0.28.10: persist unknown-op attempts. Operators investigating
           // misbehaving agents need to see the full attempt log, not just
@@ -2318,7 +2336,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
               remote: true,
               takesHoldersAllowList: tokenAllowList,
               sourceId: tokenSourceId,
-              metaHook: getBrainHotMemoryMeta,
+              // Hot memory is firm-wide; a user-bound token does not get it.
+              ...(webMatterGuard
+                ? { matterGuard: webMatterGuard }
+                : { metaHook: getBrainHotMemoryMeta }),
               // v0.31 follow-up fix: thread auth so the whoami op (and any
               // future scope-aware handlers) can introspect the caller. The
               // original D12/eE1 refactor moved dispatch into dispatchToolCall

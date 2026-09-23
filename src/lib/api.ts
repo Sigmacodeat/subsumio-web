@@ -346,6 +346,14 @@ export const api = {
       slugPrefix?: string;
       /** Also return deleted (tombstoned) pages — needed when paging by offset. */
       includeTombstoned?: boolean;
+      /**
+       * Only pages of one matter (frontmatter case_slug / case_title /
+       * case_number, any match). Requires `type`; the server pages through the
+       * whole type, so the result is complete regardless of `limit`.
+       */
+      caseSlug?: string;
+      caseTitle?: string;
+      caseNumber?: string;
     }): Promise<BrainPage[]> {
       const params = new URLSearchParams();
       if (options?.limit) params.set("limit", String(options.limit));
@@ -357,6 +365,9 @@ export const api = {
       if (options?.cursor) params.set("cursor", options.cursor);
       if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
       if (options?.includeTombstoned) params.set("include_tombstoned", "1");
+      if (options?.caseSlug) params.set("case_slug", options.caseSlug);
+      if (options?.caseTitle) params.set("case_title", options.caseTitle);
+      if (options?.caseNumber) params.set("case_number", options.caseNumber);
       return request(`/api/pages?${params.toString()}`);
     },
 
@@ -705,11 +716,18 @@ export const api = {
      * checker — see api/legal/fristen/second-check/route.ts.
      */
     fristenSecondCheck(
-      slug: string
+      slug: string,
+      /** For a deadline inside a matter's list: its id (or title + due_date for legacy entries). */
+      deadline?: { id?: string; title?: string; due_date?: string }
     ): Promise<{ slug: string; second_check_by: string; second_check_at: string }> {
+      const ref = deadline?.id
+        ? { deadlineId: deadline.id }
+        : deadline
+          ? { title: deadline.title ?? "", due_date: deadline.due_date }
+          : {};
       return request("/api/legal/fristen/second-check", {
         method: "POST",
-        body: JSON.stringify({ slug }),
+        body: JSON.stringify({ slug, ...ref }),
       });
     },
 

@@ -3,6 +3,13 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import {
+  GUARD_READ_FAILED,
+  checkInvoiceWrite,
+  guardSecondCheckWrite,
+  readCurrentPage,
+  rejectionResponse,
+} from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -66,99 +73,65 @@ export const PATCH = createHandler(
     // `path` (URL-encoded) is only for the GET/read side.
     const rawSlug = slugArr.join("/");
 
+    // One read of the stored page drives every guard below (version lock,
+    // four-eyes, invoice immutability, archive). Fail closed: if the page
+    // cannot be read, nothing is written — a guard that is skipped on error
+    // is no guard.
+    const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, rawSlug);
+    if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+    if (currentRead.kind === "missing") return apiNotFound("not_found");
+    const currentPage = currentRead.page;
+    const curFm = (currentPage.frontmatter ?? {}) as Record<string, unknown>;
+
     // Optimistic locking: if client sends If-Match header, verify version
     const ifMatch = req.headers.get("if-match");
     if (ifMatch) {
-      try {
-        const getRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        });
-        if (getRes.ok) {
-          const currentPage = (await getRes.json()) as { frontmatter?: { version?: number } };
-          const currentVersion = currentPage.frontmatter?.version ?? 0;
-          const expectedVersion = parseInt(ifMatch, 10);
-          if (currentVersion !== expectedVersion) {
-            return Response.json(
-              {
-                error: "version_conflict",
-                message: "Die Seite wurde zwischenzeitlich von einem anderen Nutzer bearbeitet.",
-                currentVersion,
-                expectedVersion,
-              },
-              { status: 409 }
-            );
-          }
-        }
-      } catch {
-        // If we can't check the version, proceed without locking (fail-open)
+      const currentVersion = (curFm.version as number | undefined) ?? 0;
+      const expectedVersion = parseInt(ifMatch, 10);
+      if (currentVersion !== expectedVersion) {
+        return Response.json(
+          {
+            error: "version_conflict",
+            message: "Die Seite wurde zwischenzeitlich von einem anderen Nutzer bearbeitet.",
+            currentVersion,
+            expectedVersion,
+          },
+          { status: 409 }
+        );
       }
     }
+
+    // § 132 BAO / UStG: an issued invoice is frozen — only payment and
+    // delivery bookkeeping may change. Corrections go through the Storno-Note.
+    const invoiceRejection = checkInvoiceWrite(currentPage, {
+      mode: "merge",
+      title: body.title,
+      content: body.content,
+      type: body.type,
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (invoiceRejection) return rejectionResponse(invoiceRejection);
 
     // Increment version on update
     const patchBody: Record<string, unknown> = { ...body, slug: rawSlug };
 
-    // Server-side guard: block modifications to archived cases unless it's a restore
     if (patchBody.frontmatter) {
+      // Vier-Augen-Kontrolle: second_check_* is stamped only by
+      // /api/legal/fristen/second-check. Client values are dropped (stored ones
+      // kept), and a Notfrist cannot become done here without that stamp —
+      // neither as a standalone deadline page nor inside a matter's list.
+      const guarded = guardSecondCheckWrite(
+        patchBody.frontmatter as Record<string, unknown>,
+        curFm
+      );
+      if ("reject" in guarded) return rejectionResponse(guarded.reject);
+      patchBody.frontmatter = guarded.frontmatter;
+
       const fm = patchBody.frontmatter as Record<string, unknown>;
       const isRestore = !!fm.restored_at && fm.status !== "archived";
-
-      // E2: Notfrist Vier-Augen-Kontrolle — reject status:done without second_check
-      // Case 1: standalone legal_deadline page with top-level status:done
-      if (fm.status === "done") {
-        try {
-          const checkRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(10_000),
-          });
-          if (checkRes.ok) {
-            const currentPage = (await checkRes.json()) as {
-              frontmatter?: Record<string, unknown>;
-            };
-            const curFm = currentPage.frontmatter ?? {};
-            const isNotfrist = curFm.is_notfrist === true || curFm.second_check_required === true;
-            const hasSecondCheck =
-              !!fm.second_check_by ||
-              !!curFm.second_check_by ||
-              !!fm.second_check_at ||
-              !!curFm.second_check_at;
-            if (isNotfrist && !hasSecondCheck) {
-              return Response.json(
-                {
-                  error: "notfrist_second_check_required",
-                  message:
-                    "Notfrist erfordert Vier-Augen-Kontrolle — zweite Prüfung muss vor Erledigung bestätigt werden.",
-                },
-                { status: 403 }
-              );
-            }
-          }
-        } catch {
-          // If we can't check, proceed (fail-open)
-        }
-      }
-
-      // E2: Notfrist Vier-Augen-Kontrolle — Case 2: deadlines array within a legal_case page
-      // When a deadline's status is set to "done", verify second_check for notfrist items
-      if (Array.isArray(fm.deadlines)) {
-        const incomingDeadlines = fm.deadlines as Array<Record<string, unknown>>;
-        const violatingDeadline = incomingDeadlines.find(
-          (dl) =>
-            dl.status === "done" &&
-            (dl.is_notfrist === true || dl.second_check_required === true) &&
-            !dl.second_check_by &&
-            !dl.second_check_at
-        );
-        if (violatingDeadline) {
-          return Response.json(
-            {
-              error: "notfrist_second_check_required",
-              message: `Notfrist "${violatingDeadline.title ?? "unbenannt"}" erfordert Vier-Augen-Kontrolle — zweite Prüfung muss vor Erledigung bestätigt werden.`,
-            },
-            { status: 403 }
-          );
-        }
-      }
 
       // RBAC: Restore requires admin or lawyer role (brain.delete level)
       if (isRestore && ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
@@ -168,28 +141,15 @@ export const PATCH = createHandler(
         );
       }
 
-      if (!isRestore) {
-        try {
-          const checkRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(10_000),
-          });
-          if (checkRes.ok) {
-            const currentPage = (await checkRes.json()) as { frontmatter?: { status?: string } };
-            if (currentPage.frontmatter?.status === "archived") {
-              return Response.json(
-                {
-                  error: "case_archived",
-                  message:
-                    "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern.",
-                },
-                { status: 403 }
-              );
-            }
-          }
-        } catch {
-          // If we can't check, proceed (fail-open)
-        }
+      // Server-side guard: block modifications to archived cases unless it's a restore
+      if (!isRestore && curFm.status === "archived") {
+        return Response.json(
+          {
+            error: "case_archived",
+            message: "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern.",
+          },
+          { status: 403 }
+        );
       }
     }
 
@@ -476,6 +436,11 @@ export const DELETE = createHandler(
       // `type` is a top-level page field (set on POST), not frontmatter.
       // Fall back to fm.type for engine versions that mirror it into frontmatter.
       const pageType = casePage.type ?? (fm.type as string | undefined);
+
+      // An issued invoice (sent/paid/overdue/cancelled) is never deleted —
+      // § 132 BAO retention; corrections go through the Storno-Note.
+      const invoiceRejection = checkInvoiceWrite(casePage, { mode: "delete" });
+      if (invoiceRejection) return rejectionResponse(invoiceRejection);
 
       // Guard: already archived — return 409 to prevent double-archive
       if (pageType === "legal_case" && fm.status === "archived") {

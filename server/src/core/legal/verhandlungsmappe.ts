@@ -296,6 +296,7 @@ export async function generiereVerhandlungsmappe(
       compiled_truth: markdown,
       frontmatter: {
         case_ref: caseSlug,
+        case_slug: caseSlug,
         termin: opts.termin ?? null,
         erstellt: heute,
         attorney_review_required: true,

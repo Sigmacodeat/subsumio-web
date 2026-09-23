@@ -61,11 +61,14 @@ import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
 import type { Page } from "../../types.ts";
 import { MinionQueue } from "../queue.ts";
+import { StampedMinionQueue } from "../stamped-queue.ts";
+import { inheritedAgentStamps } from "../../matter-access.ts";
 import { createHash } from "node:crypto";
 import { resolveSpecialist } from "../specialist-defs.ts";
 import { getLayerDeclaration } from "../pipeline-registry.ts";
 import { assertProviderCredits } from "../../ai/credits-preflight.ts";
 import { parseMarkdown } from "../../markdown.ts";
+import { withCaseSlugStamp } from "../../matter-binding.ts";
 import { groundQuotes, normalizeForMatch, tryParseJSON } from "../../legal/llm-util.ts";
 import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
 import { inheritBudgetOwner } from "../budget-tracker.ts";
@@ -797,7 +800,7 @@ const billingContextStore = new AsyncLocalStorage<PipelineBillingContext>();
 // ── Handler factory ─────────────────────────────────────────
 
 export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
-  const engine = opts.engine;
+  const baseEngine = opts.engine;
 
   return async function legalPipelineHandler(
     ctx: MinionJobContext
@@ -806,6 +809,10 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
     if (!data.case_slug || typeof data.case_slug !== "string") {
       throw new Error("legal-pipeline: data.case_slug is required (string)");
     }
+    // The pipeline's pages name their matter with `case_ref`; every page it
+    // writes for this matter also gets the canonical `case_slug`, the binding
+    // the matter walls resolve fastest (core/matter-binding.ts).
+    const engine = withCaseSlugStamp(baseEngine, data.case_slug);
     if (!Array.isArray(data.part_slugs) || data.part_slugs.length === 0) {
       throw new Error("legal-pipeline: data.part_slugs is required (non-empty string[])");
     }
@@ -902,7 +909,10 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         // This gives pipeline subagents (Law Matcher, Counter-Arguments, etc.)
         // search access to the correct national law corpus + EU law.
         const lawSourceIds = resolveLawSourceIds(data.jurisdiction ?? "at");
-        const queue = new MinionQueue(engine);
+        // Every child agent searches and writes on the caller's behalf: the
+        // caller's matter access, the owner and the bound matter reach every
+        // job this pipeline submits (see StampedMinionQueue).
+        const queue: MinionQueue = new StampedMinionQueue(engine, inheritedAgentStamps(ctx.data));
         const stateSlug = `pipeline/state-${data.case_slug}`;
         const startTime = Date.now();
 

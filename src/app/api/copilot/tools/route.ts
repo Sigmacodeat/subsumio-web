@@ -39,12 +39,16 @@ import {
 } from "@/lib/legal/register-adapter";
 import type { CaseFrontmatter } from "@/lib/legal-types";
 import {
-  TRIGGER_ACTION_LABELS,
+  MAX_ACTIONS,
+  MAX_DUE_SOON_DAYS,
   TRIGGER_ACTION_TYPES,
-  TRIGGER_EVENT_LABELS,
   TRIGGER_EVENTS,
-  buildAutomationSlug,
+  buildNewAutomationRule,
+  describeRule,
+  normalizeTriggerEvent,
   saveAutomation,
+  validateActions,
+  type AutomationAction,
 } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
@@ -374,20 +378,27 @@ const invoiceDraftSchema = z.object({
   notes: z.string().max(2_000).optional(),
 });
 
+const automationActionSchema = z.object({
+  type: z.enum(TRIGGER_ACTION_TYPES),
+  title: z.string().max(300).optional(),
+  message: z.string().max(2_000).optional(),
+  assignee: z.string().max(200).optional(),
+  due_in_days: z.number().int().min(0).max(365).optional(),
+  workflow_template_id: z.string().max(100).optional(),
+  recipient: z.string().max(300).optional(),
+  status: z.string().max(100).optional(),
+});
+
 const createAutomationRuleSchema = z.object({
   name: z.string().min(1).max(200),
-  event: z.enum(TRIGGER_EVENTS),
+  /** Kanonischer Auslöser; Alt-Schreibweisen (invoice_overdue …) werden übersetzt. */
+  event: z.preprocess((v) => normalizeTriggerEvent(v) ?? v, z.enum(TRIGGER_EVENTS)),
   /** Gleichheitsfilter auf Event-Payload-Felder, z. B. { channel: "whatsapp" }. */
   filters: z.record(z.string().max(100), z.string().max(300)).optional(),
-  action: z.object({
-    type: z.enum(TRIGGER_ACTION_TYPES),
-    title: z.string().max(300).optional(),
-    message: z.string().max(2_000).optional(),
-    assignee: z.string().max(200).optional(),
-    due_in_days: z.number().int().min(0).max(365).optional(),
-    workflow_template_id: z.string().max(100).optional(),
-    recipient: z.string().max(300).optional(),
-  }),
+  /** deadline.due_soon: Vorlauf in Tagen (Standard 7). */
+  within_days: z.number().int().min(0).max(MAX_DUE_SOON_DAYS).optional(),
+  action: automationActionSchema.optional(),
+  actions: z.array(automationActionSchema).min(1).max(MAX_ACTIONS).optional(),
 });
 
 const organizeDocumentsSchema = z.object({
@@ -2742,8 +2753,10 @@ async function executeInvoiceDraft(
 /**
  * WP-7.43 — Magic Builder: der Copilot übersetzt den natürlichsprachlichen
  * Wunsch („wenn eine Rechnung überfällig ist, Mail an die Buchhaltung")
- * in eine Automation-Regel im kanonischen Modell (`automation`-Pages,
- * ausgewertet von cron/automations + dispatchAutomations).
+ * in eine Regel des einen Regelmodells (`automation`-Seiten — dieselben,
+ * die /dashboard/workflows anzeigt und cron/automations ausführt). Wie in
+ * der Oberfläche: der Nutzer wird Besitzer, die Regel reagiert erst auf
+ * Ereignisse ab jetzt.
  */
 async function executeCreateAutomationRule(
   ctx: { headers: Record<string, string>; brainId: string; user: { id: string } },
@@ -2754,37 +2767,35 @@ async function executeCreateAutomationRule(
     error,
     display: { kind: "confirmation", title: "Regel konnte nicht angelegt werden", message },
   });
+  const raw = params.actions ?? (params.action ? [params.action] : []);
+  const actions: AutomationAction[] = raw.map((a) => ({
+    type: a.type,
+    ...(a.title ? { title: sanitizeUserInput(a.title) } : {}),
+    ...(a.message ? { message: sanitizeUserInput(a.message) } : {}),
+    ...(a.assignee ? { assignee: sanitizeUserInput(a.assignee) } : {}),
+    ...(a.due_in_days !== undefined ? { due_in_days: a.due_in_days } : {}),
+    ...(a.workflow_template_id ? { workflow_template_id: a.workflow_template_id } : {}),
+    ...(a.recipient ? { recipient: a.recipient.trim() } : {}),
+    ...(a.status ? { status: a.status.trim() } : {}),
+  }));
   // Semantische Mindestvalidierung — die Aktion braucht ihre Pflichtfelder.
-  const a = params.action;
-  if (a.type === "send_mail" && !(a.recipient?.includes("@") || a.recipient?.startsWith("{"))) {
-    return fail(
-      "recipient_required",
-      "E-Mail-Aktionen brauchen einen Empfänger (Adresse oder {platzhalter} aus dem Event)."
-    );
-  }
-  if (a.type === "start_workflow" && !a.workflow_template_id) {
-    return fail("workflow_template_required", "Workflow-Aktionen brauchen ein Template.");
+  const invalid = validateActions(actions);
+  if (invalid) {
+    return fail(actions.length === 0 ? "action_required" : "invalid_action", invalid);
   }
   try {
-    const rule = {
-      slug: buildAutomationSlug(params.name),
-      name: sanitizeUserInput(params.name),
-      enabled: true,
-      event: params.event,
-      filters: params.filters,
-      action: {
-        type: a.type,
-        title: a.title ? sanitizeUserInput(a.title) : undefined,
-        message: a.message ? sanitizeUserInput(a.message) : undefined,
-        assignee: a.assignee ? sanitizeUserInput(a.assignee) : undefined,
-        due_in_days: a.due_in_days,
-        workflow_template_id: a.workflow_template_id,
-        recipient: a.recipient,
+    const rule = buildNewAutomationRule(
+      {
+        name: sanitizeUserInput(params.name),
+        event: params.event,
+        filters: params.filters,
+        within_days: params.within_days,
+        actions,
       },
-      created_at: new Date().toISOString(),
-      created_by: `copilot:${ctx.user.id}`,
-    };
-    const ok = await saveAutomation(ctx.brainId, rule);
+      // Runs with this user's matter access (see cron/automations).
+      { userId: ctx.user.id, label: `copilot:${ctx.user.id}` }
+    );
+    const ok = await saveAutomation(ctx, rule);
     if (!ok) throw new Error("save failed");
     return {
       success: true,
@@ -2793,7 +2804,7 @@ async function executeCreateAutomationRule(
         kind: "confirmation",
         title: `Automatisierung aktiv: ${rule.name}`,
         href: "/dashboard/workflows",
-        message: `${TRIGGER_EVENT_LABELS[rule.event]} → ${TRIGGER_ACTION_LABELS[rule.action.type]}`,
+        message: `${describeRule(rule)} — reagiert auf Ereignisse ab jetzt.`,
       },
     };
   } catch {

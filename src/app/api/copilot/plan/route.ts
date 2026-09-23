@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
+import { canAffordOptionalLlm } from "@/lib/billing/optional-llm-credits";
 import {
   createPlan,
   loadPlan,
@@ -45,12 +46,12 @@ export const GET = createHandler(
 
     try {
       if (planId) {
-        const plan = await loadPlan(planId);
+        const plan = await loadPlan(ctx.headers, planId);
         if (!plan) return apiError("not_found", "Plan not found", 404);
         return NextResponse.json({ plan });
       }
 
-      const plans = await listPlans({ caseSlug, status });
+      const plans = await listPlans(ctx.headers, { caseSlug, status });
       return NextResponse.json({ plans });
     } catch (err) {
       log.error("[copilot/plan] GET failed:", err instanceof Error ? err.message : String(err));
@@ -96,25 +97,35 @@ export const POST = createHandler(
       resultSummary?: string;
     };
 
+    // Only plan creation and step proposals call the model; bookkeeping
+    // (refine notes, abandon, executed) stays free even at zero balance, so
+    // `credits:` on createHandler would refuse too much.
+    const usesModel = (action === "create" && goal) || (action === "propose" && planId && stepId);
+    if (usesModel && !(await canAffordOptionalLlm(ctx, "think"))) {
+      return apiError("insufficient_credits", "Nicht genügend Credits für die Planung.", 402);
+    }
+
     try {
       if (action === "create" && goal) {
-        const plan = await createPlan({ goal, caseSlug });
+        const plan = await createPlan(ctx.headers, { goal, caseSlug });
+        void recordCreditConsumption(ctx, "think");
         return NextResponse.json({ plan });
       }
 
       if (action === "refine" && planId && feedback) {
-        const plan = await refinePlan(planId, feedback);
+        const plan = await refinePlan(ctx.headers, planId, feedback);
         return NextResponse.json({ plan });
       }
 
       if (action === "propose" && planId && stepId) {
-        const proposal = await proposeStepAction(planId, stepId);
+        const proposal = await proposeStepAction(ctx.headers, planId, stepId);
         if (!proposal) return apiError("not_found", "Plan or step not found", 404);
+        void recordCreditConsumption(ctx, "think");
         return NextResponse.json({ proposal });
       }
 
       if (action === "executed" && planId && stepId && tool) {
-        await markStepExecuted(planId, stepId, tool, resultSummary ?? "");
+        await markStepExecuted(ctx.headers, planId, stepId, tool, resultSummary ?? "");
         return NextResponse.json({ ok: true });
       }
 
@@ -159,7 +170,7 @@ export const PATCH = createHandler(
     }
 
     try {
-      await updatePlanStep(planId, stepId, { status, notes });
+      await updatePlanStep(ctx.headers, planId, stepId, { status, notes });
       return NextResponse.json({ ok: true });
     } catch (err) {
       log.error("[copilot/plan] PATCH failed:", err instanceof Error ? err.message : String(err));
@@ -188,7 +199,7 @@ export const DELETE = createHandler(
     if (!planId) return apiError("bad_request", "planId required", 400);
 
     try {
-      await abandonPlan(planId);
+      await abandonPlan(ctx.headers, planId);
       return NextResponse.json({ ok: true });
     } catch (err) {
       log.error("[copilot/plan] DELETE failed:", err instanceof Error ? err.message : String(err));
