@@ -178,6 +178,75 @@ export function scopeForCaller(scope: MatterScope, access: CallerMatterAccess): 
   return withDeniedMatters(scope, access.denied);
 }
 
+/**
+ * Background agent work (supervisor, subagents, case scanner) runs long after
+ * the web request that started it. The caller's effective matter scope and
+ * read-only matters travel with the job in these data keys, and every job the
+ * work spawns inherits them.
+ */
+export const JOB_MATTER_SCOPE_KEY = "_matter_scope";
+export const JOB_MATTER_READ_ONLY_KEY = "_matter_read_only";
+
+export interface JobMatterAccess {
+  /** undefined = no restriction (CLI, cron, callers without an identity). */
+  scope?: MatterScope;
+  /** Matters the job may read but not write. */
+  readOnly: string[];
+}
+
+/** The job-data stamp for a caller's matter access; `{}` when unrestricted. */
+export function jobMatterStamp(
+  scope: MatterScope | undefined,
+  readOnly: string[] | undefined
+): Record<string, unknown> {
+  const ro = readOnly ?? [];
+  if ((scope === undefined || scope === "all") && ro.length === 0) return {};
+  return {
+    [JOB_MATTER_SCOPE_KEY]: scope === undefined || scope === "all" ? "all" : [...scope],
+    ...(ro.length > 0 ? { [JOB_MATTER_READ_ONLY_KEY]: [...ro] } : {}),
+  };
+}
+
+function isSlugList(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((s) => typeof s === "string" && s.length > 0);
+}
+
+/**
+ * Read a job's matter access. Absent keys mean an unrestricted job; present
+ * but malformed keys deny everything — a damaged stamp must never widen to
+ * "all".
+ */
+export function readJobMatterAccess(data: unknown): JobMatterAccess {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  const rawScope = d[JOB_MATTER_SCOPE_KEY];
+  const rawReadOnly = d[JOB_MATTER_READ_ONLY_KEY];
+  const hasScope = JOB_MATTER_SCOPE_KEY in d;
+  const hasReadOnly = JOB_MATTER_READ_ONLY_KEY in d;
+  if (!hasScope && !hasReadOnly) return { readOnly: [] };
+  const scopeOk = !hasScope || rawScope === "all" || isSlugList(rawScope);
+  const readOnlyOk = !hasReadOnly || isSlugList(rawReadOnly);
+  if (!scopeOk || !readOnlyOk) return { scope: [], readOnly: [] };
+  return {
+    scope: hasScope ? (rawScope as MatterScope) : "all",
+    readOnly: hasReadOnly ? [...(rawReadOnly as string[])] : [],
+  };
+}
+
+/** The stamp a job passes on to the jobs it spawns (same access, re-validated). */
+export function inheritedJobMatterStamp(data: unknown): Record<string, unknown> {
+  const access = readJobMatterAccess(data);
+  if (access.scope === undefined) return {};
+  return {
+    [JOB_MATTER_SCOPE_KEY]: access.scope === "all" ? "all" : [...access.scope],
+    ...(access.readOnly.length > 0 ? { [JOB_MATTER_READ_ONLY_KEY]: [...access.readOnly] } : {}),
+  };
+}
+
+/** True when `slug` (or the matter it belongs to) is one of the read-only matters. */
+export function matterIsReadOnly(readOnly: string[], slug: string, caseSlug?: string): boolean {
+  return readOnly.some((m) => matterScopeAllows([m], slug, caseSlug));
+}
+
 /** Where the web app keeps private Copilot conversations: `chat-sessions/private/<owner>/<id>`. */
 export const PRIVATE_CHAT_PREFIX = "chat-sessions/private/";
 

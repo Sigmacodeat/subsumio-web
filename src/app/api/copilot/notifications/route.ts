@@ -32,8 +32,8 @@ export const GET = createHandler(
 
     try {
       const notifications = refresh
-        ? await generateCopilotNotifications(brainId, userId, isEn)
-        : await getCopilotNotifications(brainId, userId, isEn);
+        ? await generateCopilotNotifications(ctx.headers, brainId, userId, isEn)
+        : await getCopilotNotifications(ctx.headers, brainId, userId, isEn);
 
       return NextResponse.json({ notifications });
     } catch (err) {
@@ -83,7 +83,12 @@ export const POST = createHandler(
 
       if (action === "refresh") {
         const isEn = lang === "en";
-        const notifications = await generateCopilotNotifications(brainId, userId, isEn);
+        const notifications = await generateCopilotNotifications(
+          ctx.headers,
+          brainId,
+          userId,
+          isEn
+        );
         return NextResponse.json({ notifications });
       }
 

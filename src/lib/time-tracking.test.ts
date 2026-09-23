@@ -792,3 +792,44 @@ describe("unbillEntries", () => {
     expect(result.not_found).toContain("t1");
   });
 });
+
+// ── Engine headers: the signed-in caller's identity travels along ──
+
+import { afterEach, vi } from "vitest";
+import { stopCurrentActivity } from "@/lib/time-tracking";
+
+describe("time tracking engine calls", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test("stopCurrentActivity uses the caller's headers for every engine call", async () => {
+    const caller = { "x-subsumio-source": "brain-1", "x-subsumio-identity-token": "signed" };
+    const startedAt = new Date(Date.now() - 5 * 60_000).toISOString();
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (!init?.method) {
+        return new Response(
+          JSON.stringify({
+            frontmatter: {
+              user_id: "u1",
+              brain_id: "brain-1",
+              activity_type: "research",
+              description: "Recherche",
+              case_slug: "legal/cases/c-1",
+              started_at: startedAt,
+              last_activity_at: startedAt,
+            },
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response("{}", { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const entryId = await stopCurrentActivity("brain-1", "u1", caller);
+    expect(entryId).toMatch(/^time-entries\/u1\//);
+    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
+    for (const [, init] of fetchMock.mock.calls) {
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      expect(headers["x-subsumio-identity-token"]).toBe("signed");
+    }
+  });
+});

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Stop current activity and create time entry.
  */
 async function stopActivityHandler(ctx: HandlerContext) {
-  const entryId = await stopCurrentActivity(ctx.brainId, ctx.user.id);
+  const entryId = await stopCurrentActivity(ctx.brainId, ctx.user.id, ctx.headers);
 
   if (entryId) {
     broadcastTimeActivityStopped(ctx.brainId, { userId: ctx.user.id, entryId });

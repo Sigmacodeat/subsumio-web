@@ -24,8 +24,9 @@
 
 import type { BrainEngine } from "../../engine.ts";
 import type { GBrainConfig } from "../../config.ts";
-import { operations } from "../../operations.ts";
+import { operations, OperationError } from "../../operations.ts";
 import type { Operation, OperationContext, AuthInfo } from "../../operations.ts";
+import { matterIsReadOnly, matterScopeAllows, type MatterScope } from "../../matter-access.ts";
 import { paramDefToSchema } from "../../../mcp/tool-defs.ts";
 import type { ToolCtx, ToolDef } from "../types.ts";
 
@@ -89,6 +90,27 @@ export const TENANT_UNSAFE_TOOLS: ReadonlySet<string> = new Set([
   "get_ingest_log",
   "get_recent_salience",
   "find_anomalies",
+]);
+
+/**
+ * Tools a matter-scoped job (a web caller with an ethical wall, restricted
+ * matters or a client-viewer allow-list) may use. Each one either filters by
+ * `ctx.matterScope` inside its op handler (query, search, get_page,
+ * list_pages) or is filtered by the matter guard below (graph reads,
+ * resolve_slugs, find_contradictions, put_page). Everything else is dropped
+ * from such a job's registry — a new allow-listed op stays invisible to
+ * walled jobs until it is added here with its filtering.
+ */
+export const MATTER_SCOPED_TOOLS: ReadonlySet<string> = new Set([
+  "query",
+  "search",
+  "get_page",
+  "list_pages",
+  "get_backlinks",
+  "traverse_graph",
+  "resolve_slugs",
+  "find_contradictions",
+  "put_page",
 ]);
 
 /**
@@ -247,6 +269,15 @@ export interface BuildBrainToolsOpts {
    * Without this, the Law Matcher cannot search the law corpus at all.
    */
   sourceIds?: string[];
+  /**
+   * The web caller's effective matter scope (job data `_matter_scope`).
+   * Undefined = unrestricted (CLI / cron jobs without a user). Threaded into
+   * `ctx.matterScope`; read results outside it are dropped and writes into
+   * out-of-scope matters are refused.
+   */
+  matterScope?: MatterScope;
+  /** Matters the caller may only read (job data `_matter_read_only`). */
+  matterReadOnly?: readonly string[];
 }
 
 interface OpContextDeps {
@@ -259,6 +290,7 @@ interface OpContextDeps {
   allowedSlugPrefixes?: readonly string[];
   sourceId?: string;
   sourceIds?: string[];
+  matterScope?: MatterScope;
 }
 
 function buildOpContext(deps: OpContextDeps): OperationContext {
@@ -288,7 +320,207 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
     viaSubagent: true, // FAIL-CLOSED: put_page etc. enforce namespace
     brainId: deps.brainId,
     allowedSlugPrefixes: deps.allowedSlugPrefixes ? [...deps.allowedSlugPrefixes] : undefined,
+    ...(deps.matterScope !== undefined ? { matterScope: deps.matterScope } : {}),
   };
+}
+
+// ── Matter guard ─────────────────────────────────────────────
+
+function pageNotFound(slug: string): OperationError {
+  return new OperationError("page_not_found", `Page not found: ${slug}`);
+}
+
+function frontmatterCaseSlug(fm: unknown): string | undefined {
+  if (!fm || typeof fm !== "object") return undefined;
+  const raw = (fm as Record<string, unknown>).case_slug;
+  return typeof raw === "string" && raw.length > 0 ? raw : undefined;
+}
+
+/** Sources a tool call reads from (the job's own source plus federated reads). */
+function readSources(ctx: OperationContext): string[] {
+  return [
+    ...new Set(
+      [ctx.sourceId, ...(ctx.auth?.allowedSources ?? [])].filter(
+        (s): s is string => typeof s === "string" && s.length > 0
+      )
+    ),
+  ];
+}
+
+/**
+ * The subset of `slugs` the job may see. A page belongs to a matter by its
+ * slug path or its frontmatter `case_slug`; when a slug exists in several of
+ * the job's sources, every copy must be in scope.
+ */
+async function visibleSlugs(
+  ctx: OperationContext,
+  scope: MatterScope,
+  slugs: readonly string[]
+): Promise<Set<string>> {
+  const unique = [...new Set(slugs.filter((s) => typeof s === "string" && s.length > 0))];
+  const visible = new Set<string>();
+  if (unique.length === 0) return visible;
+  const caseSlugs = new Map<string, Array<string | undefined>>();
+  const sources = readSources(ctx);
+  if (sources.length > 0) {
+    const rows = await ctx.engine.executeRaw<{ slug: string; case_slug: string | null }>(
+      `SELECT slug, frontmatter->>'case_slug' AS case_slug FROM pages
+        WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[]) AND deleted_at IS NULL`,
+      [unique, sources]
+    );
+    for (const r of rows) {
+      const list = caseSlugs.get(r.slug) ?? [];
+      list.push(r.case_slug ?? undefined);
+      caseSlugs.set(r.slug, list);
+    }
+  }
+  for (const slug of unique) {
+    const cases = caseSlugs.get(slug) ?? [undefined];
+    if (cases.every((c) => matterScopeAllows(scope, slug, c))) visible.add(slug);
+  }
+  return visible;
+}
+
+async function assertSlugVisible(
+  ctx: OperationContext,
+  scope: MatterScope,
+  slug: unknown
+): Promise<void> {
+  const s = typeof slug === "string" ? slug : "";
+  if (!s || !(await visibleSlugs(ctx, scope, [s])).has(s)) throw pageNotFound(s);
+}
+
+/**
+ * Refuse a put_page into a matter the job may not see or may only read:
+ * checked against the target slug, the `case_slug` the new content claims and
+ * the `case_slug` of the page it would overwrite.
+ */
+async function assertPutPageAllowed(
+  ctx: OperationContext,
+  scope: MatterScope,
+  readOnly: readonly string[],
+  params: Record<string, unknown>
+): Promise<void> {
+  const slug = typeof params.slug === "string" ? params.slug : "";
+  const cases = new Set<string | undefined>([undefined]);
+  if (typeof params.content === "string") {
+    try {
+      const { parseMarkdown } = await import("../../markdown.ts");
+      const claimed = frontmatterCaseSlug(parseMarkdown(params.content, `${slug}.md`).frontmatter);
+      if (claimed) cases.add(claimed);
+    } catch {
+      // Unparseable content carries no matter claim; the op rejects it itself.
+    }
+  }
+  if (slug) {
+    const existing = await ctx.engine.executeRaw<{ case_slug: string | null }>(
+      `SELECT frontmatter->>'case_slug' AS case_slug FROM pages
+        WHERE slug = $1 AND source_id = $2 AND deleted_at IS NULL`,
+      [slug, ctx.sourceId]
+    );
+    for (const r of existing) if (r.case_slug) cases.add(r.case_slug);
+  }
+  for (const c of cases) {
+    if (!matterScopeAllows(scope, slug, c)) throw pageNotFound(slug);
+    if (matterIsReadOnly([...readOnly], slug, c)) {
+      throw new OperationError(
+        "permission_denied",
+        `Matter of ${slug} is read-only for this job's user.`
+      );
+    }
+  }
+}
+
+/** Drop everything outside the job's matter scope from a tool result. */
+async function filterToolResult(
+  opName: string,
+  ctx: OperationContext,
+  scope: MatterScope,
+  result: unknown
+): Promise<unknown> {
+  switch (opName) {
+    // The op handlers already filter by ctx.matterScope; this second pass
+    // also resolves each slug's frontmatter case_slug in the database, so a
+    // result row that lacks case_slug cannot carry a walled document out.
+    case "search":
+    case "query":
+    case "list_pages": {
+      if (!Array.isArray(result)) return result;
+      const rows = result as Array<{ slug?: unknown }>;
+      const ok = await visibleSlugs(
+        ctx,
+        scope,
+        rows.map((r) => (typeof r?.slug === "string" ? r.slug : ""))
+      );
+      return rows.filter((r) => typeof r?.slug === "string" && ok.has(r.slug));
+    }
+    case "get_page": {
+      // Fuzzy lookups answer with candidate slugs instead of a page.
+      if (!result || typeof result !== "object") return result;
+      const r = result as { candidates?: unknown };
+      if (!Array.isArray(r.candidates)) return result;
+      const slugs = r.candidates.filter((s): s is string => typeof s === "string");
+      const ok = await visibleSlugs(ctx, scope, slugs);
+      return { ...r, candidates: slugs.filter((s) => ok.has(s)) };
+    }
+    case "get_backlinks": {
+      if (!Array.isArray(result)) return result;
+      const links = result as Array<{ from_slug?: string; to_slug?: string }>;
+      const ok = await visibleSlugs(
+        ctx,
+        scope,
+        links.flatMap((l) => [l.from_slug ?? "", l.to_slug ?? ""])
+      );
+      return links.filter((l) => ok.has(l.from_slug ?? "") && ok.has(l.to_slug ?? ""));
+    }
+    case "traverse_graph": {
+      if (!Array.isArray(result)) return result;
+      const items = result as Array<Record<string, unknown>>;
+      const isPath = items.some((i) => typeof i.from_slug === "string");
+      if (isPath) {
+        const ok = await visibleSlugs(
+          ctx,
+          scope,
+          items.flatMap((i) => [String(i.from_slug ?? ""), String(i.to_slug ?? "")])
+        );
+        return items.filter((i) => ok.has(String(i.from_slug)) && ok.has(String(i.to_slug)));
+      }
+      const nodes = items as Array<{ slug?: string; links?: Array<{ to_slug?: string }> }>;
+      const ok = await visibleSlugs(
+        ctx,
+        scope,
+        nodes.flatMap((n) => [n.slug ?? "", ...(n.links ?? []).map((l) => l.to_slug ?? "")])
+      );
+      return nodes
+        .filter((n) => ok.has(n.slug ?? ""))
+        .map((n) => ({ ...n, links: (n.links ?? []).filter((l) => ok.has(l.to_slug ?? "")) }));
+    }
+    case "resolve_slugs": {
+      if (!Array.isArray(result)) return result;
+      const slugs = result.filter((s): s is string => typeof s === "string");
+      const ok = await visibleSlugs(ctx, scope, slugs);
+      return slugs.filter((s) => ok.has(s));
+    }
+    case "find_contradictions": {
+      if (!result || typeof result !== "object") return result;
+      const r = result as {
+        contradictions?: Array<{ a?: { slug?: string }; b?: { slug?: string } }>;
+      };
+      if (!Array.isArray(r.contradictions)) return result;
+      const ok = await visibleSlugs(
+        ctx,
+        scope,
+        r.contradictions.flatMap((c) => [c.a?.slug ?? "", c.b?.slug ?? ""])
+      );
+      const kept = r.contradictions.filter(
+        (c) => ok.has(c.a?.slug ?? "") && ok.has(c.b?.slug ?? "")
+      );
+      // total_in_run would count walled findings — report only what is visible.
+      return { ...r, contradictions: kept, total_in_run: kept.length };
+    }
+    default:
+      return result;
+  }
 }
 
 /**
@@ -303,6 +535,10 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
   // A job carrying a source stamp (web-api `_source_id`, supervisor-propagated)
   // is a tenant job — drop every tool that cannot honour source isolation.
   const tenantJob = typeof opts.sourceId === "string" && opts.sourceId.length > 0;
+  // A job carrying a restricted matter scope only gets tools that honour it.
+  const matterScope = opts.matterScope;
+  const scopedJob = Array.isArray(matterScope);
+  const readOnly = opts.matterReadOnly ?? [];
   const picked: Operation[] = operations.filter(
     (op) =>
       BRAIN_TOOL_ALLOWLIST.has(op.name) &&
@@ -310,7 +546,8 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
       // Subagent calls always run remote=true; a localOnly op would only
       // ever be refused, so never advertise it to the model.
       !op.localOnly &&
-      !(tenantJob && TENANT_UNSAFE_TOOLS.has(op.name))
+      !(tenantJob && TENANT_UNSAFE_TOOLS.has(op.name)) &&
+      !(scopedJob && !MATTER_SCOPED_TOOLS.has(op.name))
   );
 
   return picked.map<ToolDef>((op) => {
@@ -345,6 +582,7 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           allowedSlugPrefixes: opts.allowedSlugPrefixes,
           sourceId: opts.sourceId,
           sourceIds: opts.sourceIds,
+          matterScope,
         });
         // Same trust boundary as HTTP/MCP dispatch: subagent calls are
         // remote, so localOnly ops are refused even if a registry was built
@@ -353,7 +591,27 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           throw new Error(`permission_denied: ${op.name} is local-only`);
         }
         const params = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
-        return op.handler(opCtx, params);
+        if (matterScope === undefined && readOnly.length === 0) {
+          return op.handler(opCtx, params);
+        }
+        // Matter guard. A restricted scope must not reach a tool it cannot
+        // filter, even if the registry above was bypassed.
+        const scope: MatterScope = matterScope ?? "all";
+        if (Array.isArray(scope) && !MATTER_SCOPED_TOOLS.has(op.name)) {
+          throw new OperationError(
+            "permission_denied",
+            `${op.name} is not available to matter-scoped jobs`
+          );
+        }
+        if (op.name === "put_page") {
+          await assertPutPageAllowed(opCtx, scope, readOnly, params);
+          return op.handler(opCtx, params);
+        }
+        if (scope === "all") return op.handler(opCtx, params);
+        if (op.name === "get_backlinks" || op.name === "traverse_graph") {
+          await assertSlugVisible(opCtx, scope, params.slug);
+        }
+        return filterToolResult(op.name, opCtx, scope, await op.handler(opCtx, params));
       },
     };
   });

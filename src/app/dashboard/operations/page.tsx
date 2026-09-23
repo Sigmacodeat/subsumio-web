@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/server";
-import { engineHeadersForBrain } from "@/lib/engine";
+import { engineHeaders } from "@/lib/engine";
 import { fetchOperationsData, type OperationsData } from "@/lib/operations-data";
 import OperationsCockpit from "./operations-cockpit";
 
@@ -18,8 +18,10 @@ export default async function OperationsPage() {
   // then continue polling via the API route.
   let initialData: OperationsData | undefined;
   try {
-    const headers = engineHeadersForBrain(user.brainId);
-    initialData = await fetchOperationsData(headers, 200);
+    // The session's engine headers: the firm's brain (not the member's own
+    // brainId) plus the signed identity, so walled matters stay hidden.
+    const headers = await engineHeaders();
+    if (headers) initialData = await fetchOperationsData(headers, 200);
   } catch {
     // Graceful degradation: client-side query will retry
   }

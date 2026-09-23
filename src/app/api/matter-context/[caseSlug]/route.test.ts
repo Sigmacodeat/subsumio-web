@@ -9,6 +9,13 @@ vi.mock("@/lib/engine", () => ({
   engineHeadersForBrain: () => ({ Authorization: "Bearer test" }),
 }));
 
+// The signed-in caller's headers (tenant + signed identity), as createHandler
+// builds them. The route must use these, never the bare firm headers.
+const CALLER_HEADERS = vi.hoisted(() => ({
+  "x-subsumio-source": "test-brain",
+  "x-subsumio-identity-token": "signed-identity",
+}));
+
 // Mock matter-context with deterministic bundle
 const mockBundle = {
   case_slug: "legal/cases/test-case",
@@ -39,6 +46,7 @@ vi.mock("@/lib/api-handler", () => ({
       const ctx = {
         brainId: "test-brain",
         user: { id: "user-1", email: "test@example.com" },
+        headers: CALLER_HEADERS,
       };
       return handler(ctx, {}, {}, req);
     };
@@ -90,7 +98,7 @@ describe("GET /api/matter-context/[caseSlug]", () => {
     expect(buildMatterContext).toHaveBeenCalledWith(
       "legal/cases/my-case",
       "http://engine-test:3001",
-      { Authorization: "Bearer test" },
+      CALLER_HEADERS,
       "user-1"
     );
   });

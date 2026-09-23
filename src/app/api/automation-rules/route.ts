@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { NextRequest } from "next/server";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { enginePatchPage } from "@/lib/engine";
 import {
   AUTOMATION_ACTION_TYPES,
   AUTOMATION_TRIGGER_TYPES,
@@ -56,7 +56,7 @@ async function listRules(headers: Record<string, string>): Promise<AutomationRul
 }
 
 export const GET = createHandler({ action: "brain.read", rateTier: "standard" }, async (ctx) => {
-  const rules = await listRules(engineHeadersForBrain(ctx.brainId));
+  const rules = await listRules(ctx.headers);
   return apiSuccess({ rules });
 });
 
@@ -94,7 +94,7 @@ export const POST = createHandler(
       createdBy: ctx.user?.email ?? undefined,
     });
     const res = await enginePatchPage(
-      engineHeadersForBrain(ctx.brainId),
+      ctx.headers,
       {
         slug,
         title: body.name,
@@ -138,7 +138,7 @@ export const PATCH = createHandler(
       return apiError("nothing_to_update", "Keine Änderung angegeben", 400);
     }
     const res = await enginePatchPage(
-      engineHeadersForBrain(ctx.brainId),
+      ctx.headers,
       { slug: body.slug, frontmatter },
       { timeoutMs: 15_000 }
     );

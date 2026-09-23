@@ -8,6 +8,13 @@ vi.mock("@/lib/engine", () => ({
   engineHeadersForBrain: () => ({ Authorization: "Bearer test" }),
 }));
 
+// The signed-in caller's headers (tenant + signed identity), as createHandler
+// builds them. The route must use these, never the bare firm headers.
+const CALLER_HEADERS = vi.hoisted(() => ({
+  "x-subsumio-source": "test-brain",
+  "x-subsumio-identity-token": "signed-identity",
+}));
+
 vi.mock("@/lib/api-handler", () => ({
   createHandler: (
     opts: { query?: { safeParse: (d: unknown) => { success: boolean; data?: unknown } } },
@@ -18,6 +25,7 @@ vi.mock("@/lib/api-handler", () => ({
       const ctx = {
         brainId: "test-brain",
         user: { id: "user-1", email: "test@example.com" },
+        headers: CALLER_HEADERS,
       };
       let query: unknown = undefined;
       if (opts.query) {
@@ -104,6 +112,12 @@ describe("GET /api/matter-context/[caseSlug]/understanding", () => {
     expect(body.confidence).toBe(0.7);
   });
 
+  test("reads the matter with the caller's identity-bearing headers", async () => {
+    const { buildMatterContext } = await import("@/lib/matter-context");
+    await getUnderstanding(makeReq("legal/cases/test", "understanding"));
+    expect(vi.mocked(buildMatterContext).mock.calls[0][2]).toBe(CALLER_HEADERS);
+  });
+
   test("returns 400 when caseSlug is missing", async () => {
     const req = new Request("http://localhost/api/matter-context//understanding", {
       method: "GET",
@@ -130,6 +144,12 @@ describe("GET /api/matter-context/[caseSlug]/investigation-suggest", () => {
     expect(body.data.reason).toBe("missing_power_of_attorney");
     expect(body.data.priority).toBe("high");
     expect(body.data.suggested_actions).toContain("request_vollmacht");
+  });
+
+  test("reads the matter with the caller's identity-bearing headers", async () => {
+    const { buildMatterContext } = await import("@/lib/matter-context");
+    await getInvestigationSuggest(makeReq("legal/cases/test", "investigation-suggest"));
+    expect(vi.mocked(buildMatterContext).mock.calls[0][2]).toBe(CALLER_HEADERS);
   });
 
   test("returns 400 when caseSlug is missing", async () => {

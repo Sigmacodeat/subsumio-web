@@ -7,7 +7,7 @@ import { toBundesland, type Bundesland } from "@/lib/legal/frist-engine-de";
 import { mergeSuggestedDeadlines } from "@/lib/email/mail-filing";
 import { caseDocumentsLockKey } from "@/lib/case-documents";
 import { withKeyedLock } from "@/lib/keyed-lock";
-import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { enginePatchPage } from "@/lib/engine";
 import type { SuggestedDeadline } from "@/lib/matter-detail-types";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { logger } from "@/lib/logger";
@@ -272,7 +272,7 @@ export const POST = createHandler(
             const merged = mergeSuggestedDeadlines(existing, incoming);
             const added = merged.length - (existing?.length ?? 0);
             if (added <= 0) return;
-            const res = await enginePatchPage(engineHeadersForBrain(ctx.brainId), {
+            const res = await enginePatchPage(ctx.headers, {
               slug: casePage.slug,
               frontmatter: { suggested_deadlines: merged },
             });

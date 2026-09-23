@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
@@ -27,7 +27,7 @@ export const GET = createHandler(
   async (ctx, _body, _query, _req) => {
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=workflow&limit=200`, {
-        headers: engineHeadersForBrain(ctx.brainId),
+        headers: ctx.headers,
         signal: AbortSignal.timeout(10_000),
       });
 
@@ -107,7 +107,7 @@ export const POST = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: {
-          ...engineHeadersForBrain(ctx.brainId),
+          ...ctx.headers,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -175,7 +175,7 @@ export const PATCH = createHandler(
     try {
       // Load the workflow page
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.slug)}`, {
-        headers: engineHeadersForBrain(ctx.brainId),
+        headers: ctx.headers,
         signal: AbortSignal.timeout(10_000),
       });
 
@@ -224,7 +224,7 @@ export const PATCH = createHandler(
       const updateRes = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: {
-          ...engineHeadersForBrain(ctx.brainId),
+          ...ctx.headers,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

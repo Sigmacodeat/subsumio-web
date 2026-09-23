@@ -327,11 +327,24 @@ function encodeSlug(slug: string): string {
 }
 
 /**
+ * Engine headers for the time-tracking calls below. Routes pass the signed-in
+ * user's `ctx.headers` (identity-bearing, so the engine applies the matter
+ * access rules); only the inactivity cron, which has no user session, falls
+ * back to the bare firm headers.
+ */
+function timeHeaders(brainId: string, callerHeaders?: Record<string, string>) {
+  return callerHeaders ?? engineHeadersForBrain(brainId);
+}
+
+/**
  * Set current activity for a user (starts passive time tracking).
  */
-export async function setCurrentActivity(activity: CurrentActivity): Promise<void> {
+export async function setCurrentActivity(
+  activity: CurrentActivity,
+  callerHeaders?: Record<string, string>
+): Promise<void> {
   const headers = {
-    ...engineHeadersForBrain(activity.brain_id),
+    ...timeHeaders(activity.brain_id, callerHeaders),
     "Content-Type": "application/json",
   };
   const slug = currentActivitySlug(activity.user_id, activity.brain_id);
@@ -375,9 +388,10 @@ export async function setCurrentActivity(activity: CurrentActivity): Promise<voi
  */
 export async function getCurrentActivity(
   brainId: string,
-  userId: string
+  userId: string,
+  callerHeaders?: Record<string, string>
 ): Promise<CurrentActivity | null> {
-  const headers = engineHeadersForBrain(brainId);
+  const headers = timeHeaders(brainId, callerHeaders);
   const slug = currentActivitySlug(userId, brainId);
 
   const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
@@ -396,12 +410,16 @@ export async function getCurrentActivity(
 /**
  * Update last_activity_at for current activity (heartbeat).
  */
-export async function updateActivityHeartbeat(brainId: string, userId: string): Promise<void> {
-  const current = await getCurrentActivity(brainId, userId);
+export async function updateActivityHeartbeat(
+  brainId: string,
+  userId: string,
+  callerHeaders?: Record<string, string>
+): Promise<void> {
+  const current = await getCurrentActivity(brainId, userId, callerHeaders);
   if (!current) return;
 
   const headers = {
-    ...engineHeadersForBrain(brainId),
+    ...timeHeaders(brainId, callerHeaders),
     "Content-Type": "application/json",
   };
   const slug = currentActivitySlug(userId, brainId);
@@ -422,8 +440,12 @@ export async function updateActivityHeartbeat(brainId: string, userId: string): 
 /**
  * Clear current activity for a user.
  */
-export async function clearCurrentActivity(brainId: string, userId: string): Promise<void> {
-  const headers = engineHeadersForBrain(brainId);
+export async function clearCurrentActivity(
+  brainId: string,
+  userId: string,
+  callerHeaders?: Record<string, string>
+): Promise<void> {
+  const headers = timeHeaders(brainId, callerHeaders);
   const slug = currentActivitySlug(userId, brainId);
 
   await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
@@ -436,8 +458,12 @@ export async function clearCurrentActivity(brainId: string, userId: string): Pro
 /**
  * Stop current activity and create time entry.
  */
-export async function stopCurrentActivity(brainId: string, userId: string): Promise<string | null> {
-  const current = await getCurrentActivity(brainId, userId);
+export async function stopCurrentActivity(
+  brainId: string,
+  userId: string,
+  callerHeaders?: Record<string, string>
+): Promise<string | null> {
+  const current = await getCurrentActivity(brainId, userId, callerHeaders);
   if (!current) return null;
 
   const endedAt = new Date().toISOString();
@@ -446,14 +472,14 @@ export async function stopCurrentActivity(brainId: string, userId: string): Prom
 
   // Only create entry if duration > 60 seconds (1 minute minimum)
   if (duration < 60) {
-    await clearCurrentActivity(brainId, userId);
+    await clearCurrentActivity(brainId, userId, callerHeaders);
     return null;
   }
 
   // Create time entry via Brain API
   const entryId = timeEntrySlug(userId, current.started_at);
   const headers = {
-    ...engineHeadersForBrain(brainId),
+    ...timeHeaders(brainId, callerHeaders),
     "Content-Type": "application/json",
   };
 
@@ -491,7 +517,7 @@ export async function stopCurrentActivity(brainId: string, userId: string): Prom
   }
 
   // Clear current activity
-  await clearCurrentActivity(brainId, userId);
+  await clearCurrentActivity(brainId, userId, callerHeaders);
 
   return entryId;
 }
