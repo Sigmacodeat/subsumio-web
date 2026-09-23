@@ -128,7 +128,14 @@ export function DmsBrowserDialog({ open, onOpenChange, onImported }: DmsBrowserD
       const res = await api.dms.import(doc.id);
       if (res.success) {
         setImported((s) => new Set(s).add(doc.id));
-        addToast({ type: "success", description: `„${doc.name}“ wurde importiert.` });
+        addToast({
+          type: "success",
+          description: res.alreadyImported
+            ? `„${doc.name}“ ist bereits importiert (unverändert).`
+            : res.updated
+              ? `„${doc.name}“ wurde auf die neue DMS-Version aktualisiert.`
+              : `„${doc.name}“ wurde importiert.`,
+        });
         onImported?.(res.slug);
       } else {
         addToast({ type: "error", description: `Import von „${doc.name}“ fehlgeschlagen.` });

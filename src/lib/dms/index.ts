@@ -8,7 +8,7 @@
  *   DMS_API_KEY / DMS_CLIENT_ID / DMS_CLIENT_SECRET
  */
 
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/dms/index");
@@ -47,7 +47,7 @@ export interface DMSConnector {
     doc: DMSDocument,
     brainId: string,
     headers: Record<string, string>
-  ): Promise<{ slug: string; success: boolean }>;
+  ): Promise<{ slug: string; success: boolean; alreadyImported?: boolean; updated?: boolean }>;
   pushToDms(
     filename: string,
     contentBase64: string,
@@ -109,7 +109,7 @@ export async function importToBrainCommon(
   headers: Record<string, string>,
   providerName: string,
   contentUrl: string
-): Promise<{ slug: string; success: boolean }> {
+): Promise<{ slug: string; success: boolean; alreadyImported?: boolean; updated?: boolean }> {
   let content = doc.content;
   if (!content) {
     try {
@@ -133,6 +133,42 @@ export async function importToBrainCommon(
   }
 
   const slug = `dms/import/${doc.id}`;
+
+  // Idempotenz: gleiche DMS-Version nicht doppelt importieren, neuere
+  // Version aktualisiert die vorhandene Page statt eines Duplikats.
+  try {
+    const existing = await fetch(
+      `${ENGINE_URL}/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
+      { headers, signal: AbortSignal.timeout(10_000) }
+    );
+    if (existing.ok) {
+      const prev = (await existing.json()) as {
+        frontmatter?: { dms_version?: string };
+      };
+      if ((prev.frontmatter?.dms_version ?? "1") === (doc.version ?? "1")) {
+        return { slug, success: true, alreadyImported: true };
+      }
+      const patch = await enginePatchPage(headers, {
+        slug,
+        title: doc.name,
+        content: `Imported from ${providerName}. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
+        frontmatter: {
+          dms_provider: providerName.toLowerCase().replace(/\s+/g, ""),
+          dms_document_id: doc.id,
+          dms_version: doc.version ?? "1",
+          dms_author: doc.author,
+          dms_modified: doc.modifiedDate,
+          document_base64: content ?? null,
+          imported_at: new Date().toISOString(),
+        },
+      });
+      return { slug, success: patch.ok, updated: true };
+    }
+  } catch {
+    // Lookup fehlgeschlagen → normalen Import-Pfad weitergehen lassen;
+    // der Engine-POST meldet Konflikte selbst.
+  }
+
   const pageRes = await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },

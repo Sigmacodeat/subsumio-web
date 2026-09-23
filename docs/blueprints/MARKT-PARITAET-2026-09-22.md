@@ -392,7 +392,7 @@ datev-export,datev-direct}`. Sidebar-Einträge wiederhergestellt
     Bewusst archiviert bleibt `api/datev-direct` (WP-6.34: ehrlicher
     Platzhalter bis Partner-Entscheidung).
 38. **DE-Corpus fertigstellen.** `DE_LAW_SOURCES_*` (jurisdiction.ts)
-    und source-router-Routing sind im Working Tree in Arbeit.
+    und source-router-Routing sind im Live-Tree verdrahtet.
     ✅ **Vollständigkeits-Audit geliefert:** `corpus-completeness-audit.ts`
     (auditCoverage: deklariert vs. DB-Bestand, Audit-Status
     empty_available/unexpected_data/partially_embedded/gap) +

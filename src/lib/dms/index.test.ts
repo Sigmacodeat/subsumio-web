@@ -6,6 +6,13 @@ const origEnv = { ...process.env };
 
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://localhost:3001",
+  // entspricht der echten enginePatchPage: POST /api/pages mit merge:true
+  enginePatchPage: (headers: Record<string, string>, body: Record<string, unknown>) =>
+    fetch("http://localhost:3001/api/pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ ...body, merge: true }),
+    }),
 }));
 
 import {
@@ -136,6 +143,8 @@ describe("importToBrainCommon", () => {
   test("imports document to brain via engine API", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
+      // Idempotenz-Check: Page existiert noch nicht.
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ slug: "dms/doc-1", success: true }), { status: 200 })
       );
@@ -162,10 +171,10 @@ describe("importToBrainCommon", () => {
   });
 
   test("returns success:false on non-OK page response", async () => {
-    // First fetch: content fetch (returns OK with empty body)
-    // Second fetch: page POST (returns 500)
+    // Fetch-Sequenz: Content-Fetch (OK) → Idempotenz-GET (404) → POST (500)
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response("", { status: 200 }))
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(new Response("Error", { status: 500 }));
 
     const doc: DMSDocument = {
@@ -188,10 +197,11 @@ describe("importToBrainCommon", () => {
   });
 
   test("uses provided headers in request", async () => {
-    // Content fetch + page POST
+    // Content fetch + Idempotenz-GET (404) + page POST
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response("", { status: 200 }))
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ slug: "dms/doc-1", success: true }), { status: 200 })
       );
@@ -212,10 +222,56 @@ describe("importToBrainCommon", () => {
       "https://dms.example.com/docs/doc-1/content"
     );
     // The page POST call should include the custom headers
-    const pageCall = fetchSpy.mock.calls[1];
+    const pageCall = fetchSpy.mock.calls[2];
     const opts = pageCall[1] as RequestInit;
     const headers = opts.headers as Record<string, string>;
     expect(headers.Authorization).toBe("Bearer token");
+  });
+
+  test("skips re-import when the same DMS version already exists", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ frontmatter: { dms_version: "3" } }), { status: 200 })
+      );
+    const doc: DMSDocument = {
+      id: "doc-9",
+      name: "Vertrag.pdf",
+      type: "pdf",
+      author: "Max",
+      modifiedDate: "2024-01-01",
+      content: "x",
+      version: "3",
+    };
+    const result = await importToBrainCommon(doc, "b", {}, "iManage Work", "https://x");
+    expect(result.alreadyImported).toBe(true);
+    expect(result.success).toBe(true);
+    expect(fetchSpy).toHaveBeenCalledTimes(1); // nur der Lookup, kein POST
+  });
+
+  test("updates in place when a newer DMS version arrives", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ frontmatter: { dms_version: "1" } }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const doc: DMSDocument = {
+      id: "doc-9",
+      name: "Vertrag.pdf",
+      type: "pdf",
+      author: "Max",
+      modifiedDate: "2024-02-01",
+      content: "x",
+      version: "2",
+    };
+    const result = await importToBrainCommon(doc, "b", {}, "iManage Work", "https://x");
+    expect(result.updated).toBe(true);
+    expect(result.success).toBe(true);
+    // PATCH/merge-POST enthält die neue Versionsnummer
+    const patchBody = JSON.parse((fetchSpy.mock.calls[1][1] as RequestInit).body as string);
+    expect(patchBody.frontmatter.dms_version).toBe("2");
+    expect(patchBody.merge).toBe(true);
   });
 });
 

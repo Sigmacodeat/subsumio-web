@@ -114,6 +114,25 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       }
     }
 
+    // Vollständig widerrufene Nummer: Inbound wird archiviert + auditiert,
+    // aber NICHT an den Orchestrator — ein STOPP schaltet den Kanal
+    // komplett stumm (strengste Opt-out-Lesart). Neue Absender ohne jede
+    // Consent-Row bleiben unberührt (inbound-initiiert = 24h-Fenster).
+    if (await isFullyOptedOut(message.from)) {
+      await markMessageProcessed(
+        message.id,
+        phoneHash(message.from),
+        message.type,
+        "opted_out_inbound"
+      );
+      await logAudit("whatsapp.inbound_muted", "whatsapp_identity", {
+        brainId: sender.brainId,
+        details: { phoneHash: phoneHash(message.from) },
+      });
+      results.push({ id: message.id, status: "opted_out" });
+      continue;
+    }
+
     try {
       const result = await orchestrateWhatsAppMessage(message, sender, {
         listPendingApprovals,
@@ -322,6 +341,16 @@ function executionDepsForBrain(brainId: string) {
     },
     sendProactiveWhatsApp: sendProactiveMessage,
   };
+}
+
+/**
+ * True, wenn die Nummer Consent-Rows hat, aber KEINE aktive — d. h. der
+ * Nutzer hat einmal eingewilligt und danach widerrufen. Absender ohne
+ * jede Row (Neukontakt) zählen nicht als opted-out.
+ */
+async function isFullyOptedOut(phone: string): Promise<boolean> {
+  const rows = await getWhatsAppConsentStore().getByPhoneHash(phoneHash(phone));
+  return rows.length > 0 && !rows.some(isConsentActive);
 }
 
 // ── Consent-Keywords (WP-8.51) ───────────────────────────────────────────

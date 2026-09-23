@@ -1903,7 +1903,12 @@ export const api = {
       return request(`/api/dms/search?${sp.toString()}`);
     },
 
-    import(documentId: string): Promise<{ slug: string; success: boolean }> {
+    import(documentId: string): Promise<{
+      slug: string;
+      success: boolean;
+      alreadyImported?: boolean;
+      updated?: boolean;
+    }> {
       return request("/api/dms/import", {
         method: "POST",
         body: JSON.stringify({ documentId }),

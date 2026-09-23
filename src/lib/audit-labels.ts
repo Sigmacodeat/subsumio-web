@@ -131,6 +131,7 @@ export type AuditAction =
   | "whatsapp.sender_denied"
   | "whatsapp.consent_granted"
   | "whatsapp.consent_revoked"
+  | "whatsapp.inbound_muted"
   | "whatsapp.outbound_sent"
   | "whatsapp.outbound_blocked"
   | "whatsapp.briefing_feedback"
@@ -140,6 +141,7 @@ export type AuditAction =
   | "sms.consent_revoked"
   | "sms.outbound_sent"
   | "sms.outbound_blocked"
+  | "sms.delivery_status"
   | "feedback.submit"
   | "time.auto_extract"
   | "admin.user_update"
@@ -427,6 +429,7 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.sender_denied": "WhatsApp-Absender abgewiesen",
   "whatsapp.consent_granted": "WhatsApp-Einwilligung erteilt",
   "whatsapp.consent_revoked": "WhatsApp-Einwilligung widerrufen",
+  "whatsapp.inbound_muted": "WhatsApp-Nachricht stumm (opted out)",
   "whatsapp.outbound_sent": "WhatsApp proaktiv gesendet",
   "whatsapp.outbound_blocked": "WhatsApp-Versand geblockt",
   "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
@@ -436,6 +439,7 @@ const ACTION_LABELS: Record<string, string> = {
   "sms.consent_revoked": "SMS-Einwilligung widerrufen",
   "sms.outbound_sent": "SMS gesendet",
   "sms.outbound_blocked": "SMS-Versand geblockt",
+  "sms.delivery_status": "SMS-Zustellstatus",
   "time.auto_extract": "KI-Zeiterfassung generiert",
   "feedback.submit": "Retrieval-Feedback",
   "admin.user_update": "Admin: Benutzer aktualisiert",

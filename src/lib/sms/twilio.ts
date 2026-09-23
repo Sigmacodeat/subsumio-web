@@ -48,6 +48,9 @@ export async function sendSms(params: { to: string; body: string }): Promise<Sms
   const form = new URLSearchParams({ To: params.to, Body: params.body });
   if (messagingServiceSid) form.set("MessagingServiceSid", messagingServiceSid);
   else form.set("From", from!);
+  // Delivery tracking: Twilio ruft /api/sms/status mit Signatur zurück.
+  const appUrl = env("NEXT_PUBLIC_APP_URL");
+  if (appUrl) form.set("StatusCallback", `${appUrl.replace(/\/+$/, "")}/api/sms/status`);
 
   let res: Response;
   try {
