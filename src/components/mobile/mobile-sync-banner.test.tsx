@@ -173,6 +173,16 @@ describe("MobileSyncBanner", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Netzwerkfehler");
   });
 
+  test("Offline-Banner splittet Uploads von Änderungen", () => {
+    mockOnline.value = false;
+    mockQueue.pendingCount = 3;
+    mockQueue.pendingUploads = 2;
+    render(<MobileSyncBanner />);
+    expect(
+      screen.getByText("1 Änderung(en) + 2 Upload(s) offline gespeichert")
+    ).toBeInTheDocument();
+  });
+
   test("+n weitere verlinkt auf /dashboard/sync", () => {
     mockQueue.conflicts = [
       conflict("m1", "cases/a"),

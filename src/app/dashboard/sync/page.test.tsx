@@ -22,6 +22,7 @@ const mockQueue = vi.hoisted(() => ({
   }>,
   syncPending: vi.fn(async () => {}),
   resolveConflict: vi.fn(async () => {}),
+  resolveAllConflicts: vi.fn(async () => {}),
   clearNotice: vi.fn(),
   mutate: vi.fn(),
   refreshPending: vi.fn(async () => {}),
@@ -80,6 +81,7 @@ describe("SyncPage", () => {
     mockQueue.lastError = null;
     mockQueue.lastNotice = null;
     mockQueue.resolveConflict.mockClear();
+    mockQueue.resolveAllConflicts.mockClear();
     mockGetPage.mockReset();
     mockConfirm.mockClear();
     mockConfirm.mockResolvedValue(true);
@@ -208,5 +210,91 @@ describe("SyncPage", () => {
     await waitFor(() =>
       expect(screen.getByText(/Server-Version nicht abrufbar/)).toBeInTheDocument()
     );
+  });
+
+  test("Bulk-Bar erst ab 2 Konflikten, Confirm-Gate", async () => {
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/a" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    const { rerender } = render(<SyncPage />);
+    // Nur 1 Konflikt → keine Bulk-Buttons
+    expect(screen.queryByRole("button", { name: "Alle verwerfen" })).not.toBeInTheDocument();
+
+    mockQueue.conflicts = [
+      ...mockQueue.conflicts,
+      {
+        id: "m2",
+        type: "updatePage",
+        payload: { slug: "cases/b" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    rerender(<SyncPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Alle verwerfen" }));
+    await waitFor(() => expect(mockQueue.resolveAllConflicts).toHaveBeenCalledWith("discard"));
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ variant: "danger" }));
+  });
+
+  test("abgelehnter Bulk-Confirm löst nichts aus", async () => {
+    mockConfirm.mockResolvedValue(false);
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/a" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+      {
+        id: "m2",
+        type: "updatePage",
+        payload: { slug: "cases/b" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Alle meine senden" }));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+    expect(mockQueue.resolveAllConflicts).not.toHaveBeenCalled();
+  });
+
+  test("Konflikte sortiert: älteste zuerst", async () => {
+    const old = new Date(Date.now() - 10 * 86_400_000).toISOString();
+    const recent = new Date(Date.now() - 1 * 86_400_000).toISOString();
+    mockQueue.conflicts = [
+      {
+        id: "m-fresh",
+        type: "updatePage",
+        payload: { slug: "cases/fresh" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+        conflictAt: recent,
+      },
+      {
+        id: "m-old",
+        type: "updatePage",
+        payload: { slug: "cases/old" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+        conflictAt: old,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+    // async getPage-State-Updates abwarten, dann Reihenfolge prüfen
+    await waitFor(() => expect(mockGetPage).toHaveBeenCalledTimes(2));
+    const slugs = screen.getAllByText(/^cases\//).map((el) => el.textContent);
+    // cases/old (10d) muss vor cases/fresh (1d) stehen
+    expect(slugs.indexOf("cases/old")).toBeLessThan(slugs.indexOf("cases/fresh"));
   });
 });
