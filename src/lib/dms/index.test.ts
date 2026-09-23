@@ -229,11 +229,14 @@ describe("importToBrainCommon", () => {
   });
 
   test("skips re-import when the same DMS version already exists", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ frontmatter: { dms_version: "3" } }), { status: 200 })
-      );
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          frontmatter: { dms_version: "3", dms_modified: "2024-01-01" },
+        }),
+        { status: 200 }
+      )
+    );
     const doc: DMSDocument = {
       id: "doc-9",
       name: "Vertrag.pdf",
@@ -272,6 +275,56 @@ describe("importToBrainCommon", () => {
     const patchBody = JSON.parse((fetchSpy.mock.calls[1][1] as RequestInit).body as string);
     expect(patchBody.frontmatter.dms_version).toBe("2");
     expect(patchBody.merge).toBe(true);
+  });
+
+  test("same version but newer modifiedDate updates in place (DMS without versions)", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            frontmatter: { dms_version: "1", dms_modified: "2024-01-01" },
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const doc: DMSDocument = {
+      id: "doc-7",
+      name: "Akte.pdf",
+      type: "pdf",
+      author: "Max",
+      modifiedDate: "2024-03-15", // geändert, aber DMS liefert keine Version
+      content: "x",
+    };
+    const result = await importToBrainCommon(doc, "b", {}, "NetDocuments", "https://x");
+    expect(result.updated).toBe(true);
+    expect(result.alreadyImported).toBeUndefined();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test("übergroße Dokumente werden nicht inline in document_base64 gelegt", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ slug: "dms/big", success: true }), { status: 200 })
+      );
+    // > 25 MB Rohdaten ≈ > 33,5 Mio. Base64-Zeichen.
+    const doc: DMSDocument = {
+      id: "big",
+      name: "Riesig.pdf",
+      type: "pdf",
+      author: "Max",
+      modifiedDate: "2024-01-01",
+      content: "x".repeat(Math.floor((25 * 1024 * 1024 * 4) / 3) + 1),
+    };
+    const result = await importToBrainCommon(doc, "b", {}, "iManage Work", "https://x");
+    expect(result.success).toBe(true);
+    const postBody = JSON.parse((fetchSpy.mock.calls[1][1] as RequestInit).body as string);
+    expect(postBody.frontmatter.document_base64).toBeNull();
+    expect(postBody.frontmatter.document_oversized).toBe(true);
+    expect(postBody.frontmatter.document_size_bytes).toBeGreaterThanOrEqual(25 * 1024 * 1024);
   });
 });
 

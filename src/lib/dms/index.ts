@@ -103,6 +103,26 @@ export async function dmsFetchJson<T>(url: string, init?: RequestInit): Promise<
  * Common importToBrain logic for all DMS connectors.
  * Fetches document content if not already loaded, then POSTs to the engine.
  */
+/** Konsistent mit mail-filing/whatsapp-media: max. 25 MB Rohdaten inline. */
+const MAX_INLINE_BASE64_CHARS = Math.floor((25 * 1024 * 1024 * 4) / 3);
+
+/**
+ * Frontmatter-Felder für den Dokumentinhalt. Übergroße Dateien werden
+ * NICHT inline in `document_base64` gelegt — sie würden jede Page-Read
+ * aufblähen. Stattdessen `document_oversized` + Größe in Bytes.
+ */
+function inlineDocumentFields(content: string | null | undefined): Record<string, unknown> {
+  if (!content) return { document_base64: null };
+  if (content.length > MAX_INLINE_BASE64_CHARS) {
+    const bytes = Math.floor((content.length * 3) / 4);
+    log.warn(
+      `[dms] document too large for inline storage (~${bytes} bytes); storing metadata only`
+    );
+    return { document_base64: null, document_oversized: true, document_size_bytes: bytes };
+  }
+  return { document_base64: content };
+}
+
 export async function importToBrainCommon(
   doc: DMSDocument,
   brainId: string,
@@ -133,6 +153,7 @@ export async function importToBrainCommon(
   }
 
   const slug = `dms/import/${doc.id}`;
+  const docFields = inlineDocumentFields(content);
 
   // Idempotenz: gleiche DMS-Version nicht doppelt importieren, neuere
   // Version aktualisiert die vorhandene Page statt eines Duplikats.
@@ -143,9 +164,14 @@ export async function importToBrainCommon(
     );
     if (existing.ok) {
       const prev = (await existing.json()) as {
-        frontmatter?: { dms_version?: string };
+        frontmatter?: { dms_version?: string; dms_modified?: string };
       };
-      if ((prev.frontmatter?.dms_version ?? "1") === (doc.version ?? "1")) {
+      // Skip nur bei identischer Version UND unverändertem modifiedDate —
+      // DMS ohne Versionsnummern liefern Änderungen sonst nie nach.
+      const sameVersion = (prev.frontmatter?.dms_version ?? "1") === (doc.version ?? "1");
+      const sameModified =
+        !doc.modifiedDate || (prev.frontmatter?.dms_modified ?? null) === doc.modifiedDate;
+      if (sameVersion && sameModified) {
         return { slug, success: true, alreadyImported: true };
       }
       const patch = await enginePatchPage(headers, {
@@ -158,7 +184,7 @@ export async function importToBrainCommon(
           dms_version: doc.version ?? "1",
           dms_author: doc.author,
           dms_modified: doc.modifiedDate,
-          document_base64: content ?? null,
+          ...docFields,
           imported_at: new Date().toISOString(),
         },
       });
@@ -183,7 +209,7 @@ export async function importToBrainCommon(
         dms_version: doc.version ?? "1",
         dms_author: doc.author,
         dms_modified: doc.modifiedDate,
-        document_base64: content ?? null,
+        ...docFields,
         imported_at: new Date().toISOString(),
       },
     }),

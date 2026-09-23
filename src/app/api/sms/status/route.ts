@@ -5,6 +5,7 @@ import { verifyTwilioSignature } from "@/lib/sms/twilio-verify";
 import { phoneHash } from "@/lib/whatsapp/verify";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { listAuditLogs, logAudit } from "@/lib/audit";
+import { filterNewIds } from "@/lib/caselaw-dedup";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,13 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   const status = params.MessageStatus;
   if (!sid || !status) {
     return Response.json({ error: "missing_fields" }, { status: 400 });
+  }
+
+  // Replay-Schutz: identische sid+status-Kombination nur einmal auditieren.
+  // Legitime Status-Progression (queued→sent→delivered) hat je eigenen Key.
+  const fresh = await filterNewIds("system", "sms-status", [`${sid}:${status}`]);
+  if (fresh.size === 0) {
+    return Response.json({ ok: true, deduped: true });
   }
 
   await logAudit("sms.delivery_status", "sms_outbound", {

@@ -1,0 +1,33 @@
+name: STATUS.md Refresh
+
+# Hält docs/STATUS.md aktuell, ohne jeden Commit zu verrauschen:
+# wöchentlich (Montag 06:00 UTC) oder manuell via workflow_dispatch.
+# Ergänzt den docs-freshness-Job in ci.yml, der bei >45 Tagen warnt.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun x tsx scripts/update-status.ts
+      - name: Commit regenerated STATUS.md if changed
+        run: |
+          if git diff --quiet docs/STATUS.md; then
+            echo "STATUS.md already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/STATUS.md
+          git commit -m "docs(status): regenerate STATUS.md [skip ci]"
+          git push

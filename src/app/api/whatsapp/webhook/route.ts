@@ -369,7 +369,8 @@ async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string
   });
   const res = await sendWhatsAppText(
     phone,
-    "Verstanden — Sie erhalten keine weiteren Nachrichten von uns. " +
+    "Verstanden — Sie erhalten keine weiteren Nachrichten von uns und " +
+      "Ihre Nachrichten an diesen Kanal werden nicht mehr bearbeitet. " +
       "Mit START können Sie den Empfang jederzeit wieder aktivieren."
   );
   if (res.messageId && sender.brainId) {
