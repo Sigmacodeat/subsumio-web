@@ -119,11 +119,20 @@ function psqlQuery(query: string): string {
   }
 }
 
+/**
+ * BUG (2026-09-23, go-live corpus audit): this used to run the bare SELECT
+ * as-is. `psql -t -A` prints a plain timestamp for `SELECT last_cycle_at …`,
+ * not JSON, so `JSON.parse` always threw and `getCursor()` always returned
+ * null — every daily run re-fetched the last month from RIS instead of only
+ * what changed since the last successful sync. Same fix as
+ * `corpus-pipeline.ts`: auto-wrap in `json_agg`.
+ */
 function psqlJSON(query: string): Record<string, unknown>[] {
-  const raw = psqlQuery(query);
+  const raw = psqlQuery(`SELECT json_agg(t) FROM (${query}) t`);
   if (!raw) return [];
   try {
-    return JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }

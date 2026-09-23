@@ -6560,6 +6560,26 @@ export const MIGRATIONS: Migration[] = [
         ));
     `,
   },
+  {
+    version: 146,
+    name: "pipeline_state_alerts_stage",
+    // runFreshnessCheck/runHashIntegrityCheck/runFassungsSync write
+    // stage: 'alerts' when they find something to flag (corpus-pipeline.ts).
+    // The v145 CHECK didn't list it, so that UPDATE (including
+    // last_cycle_at) silently failed every time — on top of the
+    // ranWithin()/psqlJSON bug fixed the same day, this independently kept
+    // those three checks re-running every cycle instead of on their 6h/12h/
+    // 24h cadence, and any 'alerts' state they raised never stuck.
+    sql: `
+      ALTER TABLE pipeline_state DROP CONSTRAINT IF EXISTS pipeline_state_stage_check;
+      ALTER TABLE pipeline_state ADD CONSTRAINT pipeline_state_stage_check
+        CHECK (stage IN (
+          'idle', 'empty', 'backfill-pending', 'backfilling', 'import-pending',
+          'importing', 'waiting-for-statutes', 'waiting-for-ris-slot',
+          'done', 'failed', 'exhausted', 'ok', 'running', 'alerts'
+        ));
+    `,
+  },
 ];
 
 export const LATEST_VERSION =
