@@ -470,6 +470,15 @@ export const D = {
     en: "All offline changes are synced or no conflicts exist.",
   },
   "sync.error_since": { de: "seit", en: "since" },
+  "sync.confirm_keep_title": {
+    de: "Server-Version überschreiben?",
+    en: "Overwrite server version?",
+  },
+  "sync.confirm_keep_msg": {
+    de: "Die Änderung auf dem Server wird durch Ihre Offline-Version ersetzt. Dies kann nicht rückgängig gemacht werden.",
+    en: "The server change will be replaced by your offline version. This cannot be undone.",
+  },
+  "sync.confirm_overwrite": { de: "Überschreiben", en: "Overwrite" },
   "sync.unchanged_lines": { de: "unveränderte Zeilen", en: "unchanged lines" },
   "sync.diff_truncated": {
     de: "weitere geänderte Zeilen — vollständig vergleichen via „Ansehen“",

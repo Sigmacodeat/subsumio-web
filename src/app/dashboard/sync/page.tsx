@@ -11,6 +11,7 @@ import type { BrainPage } from "@/lib/types";
 import type { QueuedMutation } from "@/lib/offline-store";
 import { diffConflictFields, diffContentLines } from "@/lib/conflict-diff";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { Button } from "@/components/ui/button";
@@ -55,8 +56,18 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
     };
   }, [slug]);
 
+  const confirm = useConfirm();
   const resolve = useCallback(
     async (mode: "keep-mine" | "discard" | "rename") => {
+      if (mode === "keep-mine") {
+        const ok = await confirm({
+          title: t("sync.confirm_keep_title" as DashboardKey),
+          message: t("sync.confirm_keep_msg" as DashboardKey),
+          confirmLabel: t("sync.confirm_overwrite" as DashboardKey),
+          variant: "danger",
+        });
+        if (!ok) return;
+      }
       setBusy(true);
       try {
         await resolveConflict(mut.id, mode);
@@ -64,7 +75,7 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
         setBusy(false);
       }
     },
-    [mut.id, resolveConflict]
+    [mut.id, resolveConflict, confirm, t]
   );
 
   const diffs = server ? diffConflictFields(mut, server) : [];

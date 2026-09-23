@@ -109,6 +109,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { SubsumioMark, SubsumioWordmark } from "@/components/brand/subsumio-logo";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
@@ -1182,6 +1183,21 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
     clearNotice,
   } = useMutationQueue();
   const { t } = useLang();
+  const confirm = useConfirm();
+  // keep-mine ueberschreibt die Server-Version — explizite Bestaetigung,
+  // sonst geht die fremde Aenderung mit einem Icon-Klick verloren.
+  const confirmKeepMine = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: t("sync.confirm_keep_title" as DashboardKey),
+        message: t("sync.confirm_keep_msg" as DashboardKey),
+        confirmLabel: t("sync.confirm_overwrite" as DashboardKey),
+        variant: "danger",
+      });
+      if (ok) await resolveConflict(id, "keep-mine");
+    },
+    [confirm, resolveConflict, t]
+  );
   if (collapsed || (pendingCount === 0 && conflicts.length === 0 && !lastNotice)) return null;
   return (
     <div className="mx-3 mt-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
@@ -1245,7 +1261,7 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
                 </a>
                 <button
                   type="button"
-                  onClick={() => void resolveConflict(c.id, "keep-mine")}
+                  onClick={() => void confirmKeepMine(c.id)}
                   aria-label={t("mobile.conflict_keep" as DashboardKey)}
                   title={t("mobile.conflict_keep" as DashboardKey)}
                   className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"

@@ -82,6 +82,13 @@ vi.mock("@/lib/use-offline-sync", () => ({
   useNetworkStatus: () => true,
 }));
 
+const mockConfirm = vi.hoisted(() => vi.fn(async () => true));
+
+vi.mock("@/components/ui/confirm-dialog", () => ({
+  useConfirm: () => mockConfirm,
+  ConfirmProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
 vi.mock("@/lib/queries/sidebar-badges", () => ({
   useSidebarBadges: () => ({
     data: { pages: 0, cases: 0, deadlines: 0, messages: 0, tasks: 0 },
@@ -126,9 +133,11 @@ describe("Sidebar accordion", () => {
     mockQueue.lastError = null;
     mockQueue.lastNotice = null;
     mockQueue.resolveConflict.mockClear();
+    mockConfirm.mockClear();
+    mockConfirm.mockResolvedValue(true);
   });
 
-  test("zeigt Sync-Konflikte mit allen vier Aktionen", () => {
+  test("zeigt Sync-Konflikte mit allen vier Aktionen", async () => {
     mockQueue.pendingCount = 1;
     mockQueue.conflicts = [
       {
@@ -147,11 +156,29 @@ describe("Sidebar accordion", () => {
       "/dashboard/brain/cases/neu"
     );
     fireEvent.click(screen.getByRole("button", { name: "Meine Version senden" }));
-    expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine");
+    await waitFor(() => expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine"));
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ variant: "danger" }));
     fireEvent.click(screen.getByRole("button", { name: "Als Kopie speichern" }));
     expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "rename");
     fireEvent.click(screen.getByRole("button", { name: "Verwerfen" }));
     expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "discard");
+  });
+
+  test("keep-mine ohne Bestätigung löst nichts aus", async () => {
+    mockConfirm.mockResolvedValueOnce(false);
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    renderSidebar();
+    fireEvent.click(screen.getByRole("button", { name: "Meine Version senden" }));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+    expect(mockQueue.resolveConflict).not.toHaveBeenCalled();
   });
 
   test("updatePage-Konflikt zeigt keinen Kopie-Button", () => {

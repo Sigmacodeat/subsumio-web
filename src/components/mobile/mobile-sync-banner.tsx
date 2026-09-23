@@ -5,6 +5,7 @@ import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertTriangle, X, GitMerge } 
 import { useMutationQueue } from "@/lib/use-mutation";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { DashboardKey } from "@/content/dashboard";
 
 export function MobileSyncBanner() {
@@ -21,6 +22,7 @@ export function MobileSyncBanner() {
   } = useMutationQueue();
   const isOnline = useNetworkStatus();
   const { t } = useLang();
+  const confirm = useConfirm();
   const [dismissed, setDismissed] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
 
@@ -41,6 +43,21 @@ export function MobileSyncBanner() {
     setJustSynced(true);
     setTimeout(() => setJustSynced(false), 3000);
   }, [syncPending]);
+
+  // keep-mine ueberschreibt die Server-Version — anwaltssicher mit
+  // expliziter Bestaetigung (Verlust der fremden Aenderung).
+  const confirmKeepMine = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: t("sync.confirm_keep_title" as DashboardKey),
+        message: t("sync.confirm_keep_msg" as DashboardKey),
+        confirmLabel: t("sync.confirm_overwrite" as DashboardKey),
+        variant: "danger",
+      });
+      if (ok) await resolveConflict(id, "keep-mine");
+    },
+    [confirm, resolveConflict, t]
+  );
 
   // Don't render anything if online, no pending, no error, no sync confirmation
   if (dismissed && !lastError) return null;
@@ -108,7 +125,7 @@ export function MobileSyncBanner() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => void resolveConflict(c.id, "keep-mine")}
+                  onClick={() => void confirmKeepMine(c.id)}
                   className="shrink-0 rounded px-1.5 py-0.5 font-medium transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
                 >
                   {t("mobile.conflict_keep" as DashboardKey)}

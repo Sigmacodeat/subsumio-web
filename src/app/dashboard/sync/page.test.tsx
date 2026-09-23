@@ -1,0 +1,162 @@
+// @vitest-environment jsdom
+
+import { describe, test, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+
+const mockQueue = vi.hoisted(() => ({
+  pendingCount: 0,
+  conflictCount: 0,
+  syncing: false,
+  lastError: null as string | null,
+  lastErrorAt: null as number | null,
+  lastNotice: null as string | null,
+  conflicts: [] as Array<{
+    id: string;
+    type: "createPage" | "updatePage" | "deletePage";
+    payload: Record<string, unknown>;
+    createdAt: string;
+    conflicted?: boolean;
+    conflictAt?: string;
+  }>,
+  syncPending: vi.fn(async () => {}),
+  resolveConflict: vi.fn(async () => {}),
+  clearNotice: vi.fn(),
+  mutate: vi.fn(),
+  refreshPending: vi.fn(async () => {}),
+}));
+
+vi.mock("@/lib/use-mutation", () => ({
+  useMutationQueue: () => mockQueue,
+}));
+
+const mockGetPage = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/api", () => ({
+  api: { brain: { getPage: (...a: unknown[]) => mockGetPage(...a) } },
+}));
+
+const mockConfirm = vi.hoisted(() => vi.fn(async () => true));
+
+vi.mock("@/components/ui/confirm-dialog", () => ({
+  useConfirm: () => mockConfirm,
+  ConfirmProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
+vi.mock("@/lib/use-lang", async () => {
+  const actual = await vi.importActual<typeof import("@/content/dashboard")>("@/content/dashboard");
+  return { useLang: () => ({ lang: "de", t: actual.createT("de"), setLang: vi.fn() }) };
+});
+
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+import SyncPage from "./page";
+
+const serverPage = {
+  slug: "cases/neu",
+  title: "Server-Titel",
+  content: "server content",
+  created_at: "2026-01-01T00:00:00Z",
+  updated_at: "2026-01-02T00:00:00Z",
+  frontmatter: {},
+};
+
+describe("SyncPage", () => {
+  beforeEach(() => {
+    mockQueue.pendingCount = 0;
+    mockQueue.conflicts = [];
+    mockQueue.lastError = null;
+    mockQueue.lastNotice = null;
+    mockQueue.resolveConflict.mockClear();
+    mockGetPage.mockReset();
+    mockConfirm.mockClear();
+    mockConfirm.mockResolvedValue(true);
+  });
+
+  test("Empty-State ohne Konflikte", () => {
+    render(<SyncPage />);
+    expect(screen.getByText("Keine Sync-Konflikte")).toBeInTheDocument();
+  });
+
+  test("listet Konflikt mit Feld-Diff und Aktionen", async () => {
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/neu", title: "Lokaler Titel" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+
+    expect(screen.getByText("cases/neu")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Lokaler Titel")).toBeInTheDocument());
+    expect(screen.getByText("Server-Titel")).toBeInTheDocument();
+    // updatePage → kein Kopie-Button
+    expect(screen.queryByRole("button", { name: /Als Kopie speichern/ })).not.toBeInTheDocument();
+  });
+
+  test("keep-mine fragt vorher nach", async () => {
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+
+    await waitFor(() => expect(mockGetPage).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: /Meine Version senden/ }));
+    await waitFor(() => expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine"));
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ variant: "danger" }));
+  });
+
+  test("abgelehnte Bestätigung löst kein Überschreiben aus", async () => {
+    mockConfirm.mockResolvedValue(false);
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+
+    await waitFor(() => expect(mockGetPage).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: /Meine Version senden/ }));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+    expect(mockQueue.resolveConflict).not.toHaveBeenCalled();
+  });
+
+  test("Server-Fehler zeigt Hinweis statt Diff", async () => {
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockRejectedValue(new Error("boom"));
+    render(<SyncPage />);
+    await waitFor(() =>
+      expect(screen.getByText(/Server-Version nicht abrufbar/)).toBeInTheDocument()
+    );
+  });
+});
