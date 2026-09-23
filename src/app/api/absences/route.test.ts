@@ -5,12 +5,17 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mockFetch = vi.fn();
 const mockPatch = vi.fn();
+const mockList = vi.fn();
 
 global.fetch = mockFetch as unknown as typeof fetch;
 
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine-test:3001",
   enginePatchPage: (...args: unknown[]) => mockPatch(...args),
+}));
+
+vi.mock("@/lib/engine-pages", () => ({
+  listEnginePages: (...args: unknown[]) => mockList(...args),
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -76,6 +81,7 @@ describe("PATCH /api/absences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPatch.mockResolvedValue({ ok: true });
+    mockList.mockResolvedValue([]);
   });
 
   test("cancel setzt status=cancelled und schreibt zurück", async () => {
@@ -105,6 +111,52 @@ describe("PATCH /api/absences", () => {
     const res = await patch({ id: "absence-1", action: "activate" });
     const body = await res.json();
     expect(body.data.absence.status).toBe("active");
+  });
+
+  test("activate befüllt forwarded_deadlines mit abgedeckten Fristen", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith(ABSENCE));
+    mockList
+      .mockResolvedValueOnce([
+        {
+          slug: "legal/deadlines/d-in",
+          frontmatter: { case_slug: "legal/cases/1", due_date: "2026-10-05" },
+        },
+        {
+          slug: "legal/deadlines/d-out",
+          frontmatter: { case_slug: "legal/cases/1", due_date: "2026-11-01" },
+        },
+        {
+          slug: "legal/deadlines/d-done",
+          frontmatter: {
+            case_slug: "legal/cases/1",
+            due_date: "2026-10-05",
+            status: "erledigt",
+          },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          slug: "legal/wv/w-1",
+          frontmatter: { case_slug: "legal/cases/1", date: "2026-10-10" },
+        },
+      ])
+      .mockResolvedValueOnce([
+        { slug: "legal/cases/1", frontmatter: { own_lawyer_name: "RA Müller" } },
+      ]);
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absence.forwarded_deadlines).toEqual(["legal/deadlines/d-in", "legal/wv/w-1"]);
+  });
+
+  test("activate bleibt erfolgreich wenn Fristen-Scan fehlschlägt", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith(ABSENCE));
+    mockList.mockRejectedValue(new Error("engine down"));
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absence.status).toBe("active");
+    expect(body.data.absence.forwarded_deadlines).toEqual([]);
   });
 
   test("unbekannte Abwesenheit → 404, kein Patch", async () => {

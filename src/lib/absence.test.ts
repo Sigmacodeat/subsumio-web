@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { activeDelegateFor, createAbsence, type AbsenceRecord } from "@/lib/absence";
+import {
+  activeDelegateFor,
+  createAbsence,
+  deadlineSlugsCoveredByAbsence,
+  type AbsenceRecord,
+} from "@/lib/absence";
 
 function absence(over: Partial<AbsenceRecord> = {}): AbsenceRecord {
   return {
@@ -39,9 +44,59 @@ describe("activeDelegateFor", () => {
     expect(activeDelegateFor("Mag. Huber", [absence({ status: "cancelled" })], DURING)).toBeNull();
   });
 
+  it("returns nothing when auto-routing is disabled for the absence", () => {
+    expect(
+      activeDelegateFor("Mag. Huber", [absence({ auto_route_enabled: false })], DURING)
+    ).toBeNull();
+  });
+
   it("returns nothing for another lawyer or an empty name", () => {
     expect(activeDelegateFor("Dr. Berger", [absence()], DURING)).toBeNull();
     expect(activeDelegateFor("", [absence()], DURING)).toBeNull();
     expect(activeDelegateFor(undefined, [absence()], DURING)).toBeNull();
+  });
+});
+
+describe("deadlineSlugsCoveredByAbsence", () => {
+  const responsible = new Map([
+    ["legal/cases/1", "Mag. Huber"],
+    ["legal/cases/2", "Dr. Berger"],
+  ]);
+
+  function dl(slug: string, over: Record<string, unknown> = {}) {
+    return { slug, case_slug: "legal/cases/1", due_date: "2026-09-20", ...over };
+  }
+
+  it("collects open deadlines of the absent lawyer inside the window", () => {
+    expect(
+      deadlineSlugsCoveredByAbsence(
+        absence(),
+        [dl("d/1"), dl("d/2", { due_date: "2026-09-28" })],
+        responsible
+      )
+    ).toEqual(["d/1", "d/2"]);
+  });
+
+  it("skips deadlines outside the window, done, or on other lawyers' cases", () => {
+    expect(
+      deadlineSlugsCoveredByAbsence(
+        absence(),
+        [
+          dl("d/early", { due_date: "2026-09-13" }),
+          dl("d/late", { due_date: "2026-09-29" }),
+          dl("d/done", { status: "erledigt" }),
+          dl("d/rejected", { review_status: "rejected" }),
+          dl("d/completed", { completed: true }),
+          dl("d/other", { case_slug: "legal/cases/2" }),
+          dl("d/nocase", { case_slug: undefined }),
+        ],
+        responsible
+      )
+    ).toEqual([]);
+  });
+
+  it("matches the absent user by e-mail as well", () => {
+    const byEmail = new Map([["legal/cases/1", "huber@kanzlei.at"]]);
+    expect(deadlineSlugsCoveredByAbsence(absence(), [dl("d/1")], byEmail)).toEqual(["d/1"]);
   });
 });

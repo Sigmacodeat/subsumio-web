@@ -4,10 +4,12 @@ import type { DashboardKey } from "@/content/dashboard";
  * Urlaubsvertretung (Vacation Delegation)
  * ========================================
  * Manages attorney absences and their delegates.
- * When a lawyer is absent:
- * - Fristen (deadlines) are forwarded to the delegate
- * - Rundown items are reassigned
- * - New intake items are auto-routed to the delegate
+ * Deadlines carry the matter's responsible lawyer, not an assignee of their
+ * own — so nothing is "moved". Instead:
+ * - `activeDelegateFor` annotates Fristen/reminders with the stand-in
+ * - `deadlineSlugsCoveredByAbsence` records what the delegate covers in
+ *   `forwarded_deadlines` when the absence is activated
+ * - `auto_route_enabled === false` disables the stand-in annotation
  */
 
 export interface AbsenceRecord {
@@ -95,54 +97,46 @@ export function cancelAbsence(absence: AbsenceRecord): AbsenceRecord {
   };
 }
 
-export interface DeadlineForwardResult {
-  deadlineId: string;
-  originalAssignee: string;
-  newAssignee: string;
-  forwardedAt: string;
-  caseSlug?: string;
-  dueDate?: string;
-}
+const ABSENCE_CLOSED_STATUS =
+  /^(done|erledigt|completed|abgeschlossen|cancelled|storniert|tombstoned)$/i;
 
-export function forwardDeadlines(
+/**
+ * Slugs of open reminders whose matter's responsible lawyer is the absent
+ * person and whose due date falls inside the absence window — i.e. the
+ * items the delegate is covering. Filled into `forwarded_deadlines` when an
+ * absence is activated so the record states honestly what is covered.
+ * Accepts both `legal_deadline` (due_date) and `legal_follow_up` (date)
+ * shapes via the shared `due_date` field name.
+ */
+export function deadlineSlugsCoveredByAbsence(
   absence: AbsenceRecord,
-  deadlines: Array<{ id: string; assignee: string; case_slug?: string; due_date?: string }>
-): DeadlineForwardResult[] {
-  const now = new Date().toISOString();
+  deadlines: Array<{
+    slug: string;
+    case_slug?: string;
+    due_date?: string;
+    status?: string;
+    review_status?: string;
+    completed?: boolean;
+  }>,
+  responsibleByCase: Map<string, string>
+): string[] {
+  const emailNeedle = absence.user_email.trim().toLowerCase();
+  const nameNeedle = absence.user_name.trim().toLowerCase();
+  const start = absence.start_date.slice(0, 10);
+  const end = absence.end_date.slice(0, 10);
   return deadlines
-    .filter((d) => d.assignee === absence.user_email)
-    .map((d) => ({
-      deadlineId: d.id,
-      originalAssignee: d.assignee,
-      newAssignee: absence.delegate_email,
-      forwardedAt: now,
-      caseSlug: d.case_slug,
-      dueDate: d.due_date,
-    }));
-}
-
-export interface RundownReassignResult {
-  jobId: string;
-  originalAssignee: string;
-  newAssignee: string;
-  reassignedAt: string;
-  jobTitle?: string;
-}
-
-export function reassignRundownItems(
-  absence: AbsenceRecord,
-  jobs: Array<{ id: string; assignee: string; title?: string }>
-): RundownReassignResult[] {
-  const now = new Date().toISOString();
-  return jobs
-    .filter((j) => j.assignee === absence.user_email)
-    .map((j) => ({
-      jobId: j.id,
-      originalAssignee: j.assignee,
-      newAssignee: absence.delegate_email,
-      reassignedAt: now,
-      jobTitle: j.title,
-    }));
+    .filter((d) => {
+      if (!d.case_slug || !d.due_date) return false;
+      if (d.completed) return false;
+      if (ABSENCE_CLOSED_STATUS.test(d.status ?? "") || d.review_status === "rejected") {
+        return false;
+      }
+      const lawyer = responsibleByCase.get(d.case_slug)?.trim().toLowerCase();
+      if (!lawyer || (lawyer !== emailNeedle && lawyer !== nameNeedle)) return false;
+      const due = d.due_date.slice(0, 10);
+      return due >= start && due <= end;
+    })
+    .map((d) => d.slug);
 }
 
 /**
@@ -165,22 +159,13 @@ export function activeDelegateFor(
     (a) =>
       isAbsenceActive(a, now) &&
       a.status !== "completed" &&
+      // auto_route_enabled === false means: record the absence but do not
+      // annotate/route anything to the delegate.
+      a.auto_route_enabled !== false &&
       (a.user_email.toLowerCase() === needle || a.user_name.trim().toLowerCase() === needle)
   );
   if (!match) return null;
   return { name: match.delegate_name, email: match.delegate_email, until: match.end_date };
-}
-
-export function getActiveDelegate(userEmail: string, absences: AbsenceRecord[]): string | null {
-  const active = absences.find((a) => a.user_email === userEmail && isAbsenceActive(a));
-  return active?.delegate_email ?? null;
-}
-
-export function getUpcomingAbsences(userEmail: string, absences: AbsenceRecord[]): AbsenceRecord[] {
-  const now = new Date();
-  return absences.filter(
-    (a) => a.user_email === userEmail && a.status === "planned" && new Date(a.start_date) > now
-  );
 }
 
 export function getAbsenceStatusBadge(absence: AbsenceRecord): {

@@ -52,6 +52,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { OcrErrorBanner } from "@/components/documents/ocr-error-banner";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
+import { FailedTasksBanner } from "@/components/dashboard/failed-tasks-banner";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { DmsBrowserDialog } from "@/components/legal/DmsBrowserDialog";
 import type { DashboardKey } from "@/content/dashboard";
@@ -537,6 +538,8 @@ export default function VaultPage() {
         onOpenChange={setShowDmsBrowser}
         onImported={() => void loadDocs()}
       />
+
+      <FailedTasksBanner />
 
       {capped && !query.trim() && <CappedResultsNotice limit={DOCS_LIMIT} />}
 

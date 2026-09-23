@@ -1,13 +1,18 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createAbsence,
   activateAbsence,
   completeAbsence,
   cancelAbsence,
+  deadlineSlugsCoveredByAbsence,
   type AbsenceRecord,
 } from "@/lib/absence";
+
+import { logger } from "@/lib/logger";
+const log = logger("api/absences");
 
 const createAbsenceSchema = z.object({
   user_email: z.string().email(),
@@ -128,6 +133,53 @@ export const PATCH = createHandler(
         : body.action === "complete"
           ? completeAbsence(record)
           : cancelAbsence(record);
+
+    // On activation, record which open reminders the delegate is covering —
+    // the absences page already renders forwarded_deadlines.length, it was
+    // simply never populated. Best-effort: a failed listing must not block
+    // the transition itself.
+    if (body.action === "activate") {
+      try {
+        const [deadlinePages, followUpPages, casePages] = await Promise.all([
+          listEnginePages(ctx.headers, "legal_deadline", 5000),
+          listEnginePages(ctx.headers, "legal_follow_up", 5000),
+          listEnginePages(ctx.headers, "legal_case", 2000),
+        ]);
+        const responsibleByCase = new Map<string, string>();
+        for (const c of casePages) {
+          const lawyer = c.frontmatter?.own_lawyer_name;
+          if (typeof lawyer === "string" && lawyer.trim()) {
+            responsibleByCase.set(c.slug, lawyer);
+          }
+        }
+        const items = [...deadlinePages, ...followUpPages].map((p) => {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          return {
+            slug: p.slug,
+            case_slug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
+            due_date:
+              typeof fm.due_date === "string"
+                ? fm.due_date
+                : typeof fm.date === "string"
+                  ? fm.date
+                  : undefined,
+            status: typeof fm.status === "string" ? fm.status : undefined,
+            review_status: typeof fm.review_status === "string" ? fm.review_status : undefined,
+            completed: fm.completed === true,
+          };
+        });
+        updated.forwarded_deadlines = deadlineSlugsCoveredByAbsence(
+          updated,
+          items,
+          responsibleByCase
+        );
+      } catch (err) {
+        log.error(
+          "[absences] forwarded-deadline scan failed:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    }
 
     const patch = await enginePatchPage(ctx.headers, {
       slug,

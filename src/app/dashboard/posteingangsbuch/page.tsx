@@ -108,7 +108,7 @@ export default function PosteingangsbuchPage() {
   async function retryStamp(taskSlug: string) {
     setRetrying(taskSlug);
     try {
-      const res = await csrfFetch("/api/inbound-register/retry", {
+      const res = await csrfFetch("/api/post-upload-tasks/retry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task_slug: taskSlug }),

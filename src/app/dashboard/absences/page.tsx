@@ -83,6 +83,7 @@ const EMPTY_FORM = {
   end_date: "",
   reason: "",
   notes: "",
+  auto_route: true,
 };
 
 export default function AbsencePage() {
@@ -150,6 +151,7 @@ export default function AbsencePage() {
           end_date: form.end_date,
           reason: form.reason.trim() || undefined,
           notes: form.notes.trim() || undefined,
+          auto_route_enabled: form.auto_route,
         }),
       });
       if (!res.ok) {
@@ -377,6 +379,21 @@ export default function AbsencePage() {
               placeholder={t("absence.notes_placeholder")}
             />
           </div>
+          <label htmlFor="absence-auto-route" className="flex cursor-pointer items-start gap-3">
+            <input
+              id="absence-auto-route"
+              type="checkbox"
+              checked={form.auto_route}
+              onChange={(e) => setForm({ ...form, auto_route: e.target.checked })}
+              className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+            />
+            <span className="text-sm text-[color:var(--ds-text)]">
+              {t("absence.auto_route")}
+              <span className="block text-xs text-[color:var(--ds-text-muted)]">
+                {t("absence.auto_route_desc")}
+              </span>
+            </span>
+          </label>
           {formError && (
             <p
               role="alert"

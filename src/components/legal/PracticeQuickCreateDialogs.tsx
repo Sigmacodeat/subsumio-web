@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { useDialogFetch } from "@/lib/use-dialog-fetch";
+import { useTeam } from "@/lib/queries/settings";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import type { BrainPage } from "@/lib/types";
@@ -36,6 +37,8 @@ export function PracticeQuickCreateDialogs() {
   const [notes, setNotes] = useState("");
   const [results, setResults] = useState("");
   const [followUp, setFollowUp] = useState("");
+  const [responsible, setResponsible] = useState("");
+  const { data: team } = useTeam();
   const { data: cases = [] } = useDialogFetch<CaseOption[]>(kind !== null, async () =>
     (await api.brain.listPages({ type: "legal_case", limit: 250 })).map(({ slug, title }) => ({
       slug,
@@ -64,6 +67,7 @@ export function PracticeQuickCreateDialogs() {
     setNotes("");
     setResults("");
     setFollowUp("");
+    setResponsible("");
   }
 
   async function submit(event: React.FormEvent) {
@@ -80,6 +84,7 @@ export function PracticeQuickCreateDialogs() {
           frontmatter: {
             date,
             case_slug: caseSlug || undefined,
+            responsible: responsible || undefined,
             completed: false,
             created_at: now,
           },
@@ -170,6 +175,22 @@ export function PracticeQuickCreateDialogs() {
                     onChange={(e) => setDate(e.target.value)}
                     required
                   />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="followup-responsible">{t("practice.responsible")}</Label>
+                  <select
+                    id="followup-responsible"
+                    value={responsible}
+                    onChange={(e) => setResponsible(e.target.value)}
+                    className="h-10 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm"
+                  >
+                    <option value="">{t("practice.responsible_case")}</option>
+                    {(team?.members ?? []).map((m) => (
+                      <option key={m.id} value={m.name ?? m.email}>
+                        {m.name ?? m.email}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </>
             )}

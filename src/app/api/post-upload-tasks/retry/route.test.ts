@@ -41,11 +41,12 @@ vi.mock("@/lib/api-handler", () => ({
 
 import { POST } from "./route";
 
-const TASK_SLUG = "legal/post-upload-tasks/inbound_stamp/in-x-abcdef1234567890";
+const STAMP_SLUG = "legal/post-upload-tasks/inbound_stamp/in-x-abcdef1234567890";
+const ANALYZE_SLUG = "legal/post-upload-tasks/analyze/doc-1-abcdef1234567890";
 
 function post(body: unknown) {
   return POST(
-    new Request("http://localhost/api/inbound-register/retry", {
+    new Request("http://localhost/api/post-upload-tasks/retry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -59,7 +60,7 @@ function taskPage(fm: Record<string, unknown>) {
   });
 }
 
-const EXHAUSTED = {
+const EXHAUSTED_STAMP = {
   task_type: "inbound_stamp",
   status: "exhausted",
   attempts: 4,
@@ -67,22 +68,30 @@ const EXHAUSTED = {
   inbound: { entry_id: "in-x", input: { channel: "portal", subject: "Vollmacht.pdf" } },
 };
 
-describe("POST /api/inbound-register/retry", () => {
+const EXHAUSTED_ANALYZE = {
+  task_type: "analyze",
+  status: "exhausted",
+  attempts: 4,
+  doc_slug: "legal/documents/d-1",
+  doc_title: "Klage.pdf",
+};
+
+describe("POST /api/post-upload-tasks/retry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPatch.mockResolvedValue({ ok: true });
   });
 
   test("re-queued einen exhausted inbound_stamp-Task", async () => {
-    mockFetch.mockResolvedValueOnce(taskPage(EXHAUSTED));
-    const res = await post({ task_slug: TASK_SLUG });
+    mockFetch.mockResolvedValueOnce(taskPage(EXHAUSTED_STAMP));
+    const res = await post({ task_slug: STAMP_SLUG });
     expect(res.status).toBe(200);
 
     const [headers, patchArg] = mockPatch.mock.calls[0] as [
       Record<string, string>,
       { slug: string; type: string; frontmatter: Record<string, unknown> },
     ];
-    expect(patchArg.slug).toBe(TASK_SLUG);
+    expect(patchArg.slug).toBe(STAMP_SLUG);
     expect(patchArg.type).toBe("post_upload_task");
     expect(patchArg.frontmatter.status).toBe("pending");
     expect(patchArg.frontmatter.attempts).toBe(0);
@@ -90,38 +99,50 @@ describe("POST /api/inbound-register/retry", () => {
     expect(headers["x-subsumio-source"]).toBe("brain-at");
   });
 
+  test("re-queued auch andere Task-Typen (analyze)", async () => {
+    mockFetch.mockResolvedValueOnce(taskPage(EXHAUSTED_ANALYZE));
+    const res = await post({ task_slug: ANALYZE_SLUG });
+    expect(res.status).toBe(200);
+    expect(mockPatch).toHaveBeenCalledTimes(1);
+  });
+
   test("nicht-exhausted Tasks → 409 (pending läuft schon)", async () => {
-    mockFetch.mockResolvedValueOnce(taskPage({ ...EXHAUSTED, status: "pending" }));
-    const res = await post({ task_slug: TASK_SLUG });
+    mockFetch.mockResolvedValueOnce(taskPage({ ...EXHAUSTED_STAMP, status: "pending" }));
+    const res = await post({ task_slug: STAMP_SLUG });
     expect(res.status).toBe(409);
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
-  test("fremde Task-Typen → 409 (kein generischer Retry-Hebel)", async () => {
-    mockFetch.mockResolvedValueOnce(
-      taskPage({ task_type: "analyze", status: "exhausted", doc_slug: "d/1" })
-    );
-    const res = await post({ task_slug: TASK_SLUG });
+  test("blocked Tasks → 409 (terminal, kein Retry)", async () => {
+    mockFetch.mockResolvedValueOnce(taskPage({ ...EXHAUSTED_ANALYZE, status: "blocked" }));
+    const res = await post({ task_slug: ANALYZE_SLUG });
+    expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  test("Seite ohne Task-Frontmatter → 409", async () => {
+    mockFetch.mockResolvedValueOnce(taskPage({ title: "kein Task" }));
+    const res = await post({ task_slug: STAMP_SLUG });
     expect(res.status).toBe(409);
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
   test("unbekannter Task → 404", async () => {
     mockFetch.mockResolvedValueOnce(new Response("nf", { status: 404 }));
-    const res = await post({ task_slug: TASK_SLUG });
+    const res = await post({ task_slug: STAMP_SLUG });
     expect(res.status).toBe(404);
   });
 
-  test("Slug außerhalb des inbound_stamp-Namensraums → 400", async () => {
+  test("Slug außerhalb des post-upload-tasks-Namensraums → 400", async () => {
     const res = await post({ task_slug: "legal/cases/../../etc" });
     expect(res.status).toBe(400);
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("Engine-Patch-Fehler → 502", async () => {
-    mockFetch.mockResolvedValueOnce(taskPage(EXHAUSTED));
+    mockFetch.mockResolvedValueOnce(taskPage(EXHAUSTED_STAMP));
     mockPatch.mockResolvedValueOnce({ ok: false });
-    const res = await post({ task_slug: TASK_SLUG });
+    const res = await post({ task_slug: STAMP_SLUG });
     expect(res.status).toBe(502);
   });
 });

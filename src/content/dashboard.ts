@@ -4842,6 +4842,30 @@ export const D = {
   "vault.status_ready": { de: "Bereit", en: "Ready" },
   "vault.status_processing": { de: "In Verarbeitung", en: "Processing" },
   "vault.status_failed": { de: "Fehlgeschlagen", en: "Failed" },
+  "vault.failed_tasks_title_one": {
+    de: "1 Hintergrund-Aufgabe ist endgültig fehlgeschlagen",
+    en: "1 background task has permanently failed",
+  },
+  "vault.failed_tasks_title_many": {
+    de: "{n} Hintergrund-Aufgaben sind endgültig fehlgeschlagen",
+    en: "{n} background tasks have permanently failed",
+  },
+  "vault.failed_tasks_desc": {
+    de: "Die Dokumente sind gespeichert, aber Analyse oder Akten-Abgleich konnten auch nach mehreren automatischen Versuchen nicht abgeschlossen werden.",
+    en: "The documents are stored, but analysis or case reconciliation failed after several automatic attempts.",
+  },
+  "vault.failed_tasks_retry": { de: "Erneut versuchen", en: "Retry" },
+  "vault.failed_tasks_retried": {
+    de: "Erneut eingereiht — die Aufgabe wird automatisch nachgeholt",
+    en: "Re-queued — the task will be picked up automatically",
+  },
+  "vault.failed_tasks_retry_failed": {
+    de: "Erneutes Einreihen fehlgeschlagen",
+    en: "Could not re-queue the task",
+  },
+  "vault.task_type_reconcile_case": { de: "Akten-Abgleich", en: "Case reconciliation" },
+  "vault.task_type_analyze": { de: "Dokumenten-Analyse", en: "Document analysis" },
+  "vault.task_type_contradiction": { de: "Widerspruchs-Prüfung", en: "Contradiction check" },
   "vault.status_ocr_needed": { de: "Texterkennung nötig", en: "OCR needed" },
   "ocr.error_title": { de: "Text-Extraktion fehlgeschlagen", en: "Text extraction failed" },
   "ocr.warning_title": {
@@ -8901,6 +8925,14 @@ export const D = {
     de: "Abwesenheit wirklich stornieren? Der Vertretungshinweis verschwindet sofort von den Fristen.",
     en: "Really cancel this absence? The delegation hint disappears from deadlines immediately.",
   },
+  "absence.auto_route": {
+    de: "Vertretung in Fristen & Erinnerungen kennzeichnen",
+    en: "Mark delegate on deadlines & reminders",
+  },
+  "absence.auto_route_desc": {
+    de: "Fristen des Abwesenden zeigen während des Zeitraums den Vertreter an und Erinnerungen nennen die Vertretung.",
+    en: "Deadlines of the absent lawyer show the delegate during the period and reminders name the stand-in.",
+  },
   "absence.reactivate": { de: "Wieder aktivieren", en: "Reactivate" },
   "absence.updated": { de: "Abwesenheit aktualisiert", en: "Absence updated" },
   "absence.update_failed": {
@@ -9771,6 +9803,11 @@ export const D = {
   "practice.date": { de: "Datum", en: "Date" },
   "practice.case_optional": { de: "Akte (optional)", en: "Case (optional)" },
   "practice.no_case": { de: "Keine Akte", en: "No case" },
+  "practice.responsible": { de: "Zuständig", en: "Responsible" },
+  "practice.responsible_case": {
+    de: "Akten-Anwalt (Standard)",
+    en: "Matter lawyer (default)",
+  },
   "practice.followup.title": { de: "Wiedervorlagen", en: "Follow-ups" },
   "practice.followup.new": { de: "Neue Wiedervorlage", en: "New follow-up" },
   "practice.followup.description": {
