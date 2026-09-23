@@ -76,7 +76,7 @@ interface MutationState {
 
 /** `cases/neu` → `cases/neu-2`, `cases/neu-2` → `cases/neu-3` —
  *  zählt einen trailing -N-Suffix hoch statt -2-2-Ketten zu bauen. */
-function nextCopySlug(slug: string): string {
+export function nextCopySlug(slug: string): string {
   const m = slug.match(/^(.*)-(\d+)$/);
   return m ? `${m[1]}-${parseInt(m[2], 10) + 1}` : `${slug}-2`;
 }
@@ -248,9 +248,10 @@ export function useMutationQueue() {
 
   /** Konflikt auflösen: "keep-mine" replayed die gequeuete Änderung
    *  erneut (bewusstes Überschreiben), "discard" verwirft sie,
-   *  "rename" (nur createPage) legt sie unter `<slug>-2` als Kopie an. */
+   *  "rename" (nur createPage) legt sie unter einem neuen Slug an —
+   *  `customSlug` überschreibt den Auto-Namen `<slug>-N`. */
   const resolveConflict = useCallback(
-    async (id: string, mode: "keep-mine" | "discard" | "rename") => {
+    async (id: string, mode: "keep-mine" | "discard" | "rename", customSlug?: string) => {
       if (mode === "discard") {
         const pending = await getPendingMutations();
         const slug = pending.find((m) => m.id === id)?.payload.slug;
@@ -273,7 +274,20 @@ export function useMutationQueue() {
         if (mode === "rename") {
           if (mut.type !== "createPage") return;
           if (!slug) return;
-          const copySlug = nextCopySlug(slug);
+          const custom = customSlug?.trim();
+          const copySlug = custom && /^[\w\-/]+$/.test(custom) ? custom : nextCopySlug(slug);
+          // Ziel-Slug darf nicht bereits existieren — sonst waere das
+          // rename ein neuer Silent-Overwrite.
+          let slugTaken = false;
+          try {
+            await api.brain.getPage(copySlug);
+            slugTaken = true;
+          } catch {
+            /* 404/Read-Fehler → Slug frei */
+          }
+          if (slugTaken) {
+            throw new Error(`Slug ${copySlug} existiert bereits`);
+          }
           await api.brain.createPage({
             ...(mut.payload as {
               slug: string;

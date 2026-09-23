@@ -124,7 +124,12 @@ export function MobileSyncBanner() {
         <div className="flex items-center gap-2">
           <GitMerge size={16} className="shrink-0 text-[color:var(--ds-warning-text)]" />
           <span className="flex-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
-            {t("mobile.conflict_title" as DashboardKey)}
+            {conflicts.length}{" "}
+            {t(
+              (conflicts.length === 1
+                ? "mobile.conflict_title"
+                : "mobile.conflict_title_plural") as DashboardKey
+            )}
           </span>
         </div>
         <ul className="mt-1.5 space-y-1.5">

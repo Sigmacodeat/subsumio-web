@@ -440,6 +440,10 @@ export const D = {
     de: "Sync-Konflikt — Server-Version ist neuer",
     en: "Sync conflict — server version is newer",
   },
+  "mobile.conflict_title_plural": {
+    de: "Sync-Konflikte — Server-Version ist neuer",
+    en: "Sync conflicts — server version is newer",
+  },
   "mobile.conflict_keep": {
     de: "Meine Version senden",
     en: "Send my version",
@@ -487,6 +491,10 @@ export const D = {
     de: "Ihre nicht synchronisierte Änderung wird unwiderruflich gelöscht. Die Server-Version bleibt erhalten.",
     en: "Your unsynced change will be permanently deleted. The server version remains.",
   },
+  "sync.reload_server": { de: "Server-Version neu laden", en: "Reload server version" },
+  "sync.rename_label": { de: "Neuer Slug für die Kopie", en: "New slug for the copy" },
+  "sync.rename_submit": { de: "Kopie speichern", en: "Save copy" },
+  "sync.server_fetched": { de: "Server-Stand von", en: "Server state from" },
   "sync.unchanged_lines": { de: "unveränderte Zeilen", en: "unchanged lines" },
   "sync.diff_truncated": {
     de: "weitere geänderte Zeilen — vollständig vergleichen via „Ansehen“",

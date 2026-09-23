@@ -26,9 +26,13 @@ const mockQueue = vi.hoisted(() => ({
   refreshPending: vi.fn(async () => {}),
 }));
 
-vi.mock("@/lib/use-mutation", () => ({
-  useMutationQueue: () => mockQueue,
-}));
+vi.mock("@/lib/use-mutation", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/use-mutation")>("@/lib/use-mutation");
+  return {
+    ...actual,
+    useMutationQueue: () => mockQueue,
+  };
+});
 
 const mockGetPage = vi.hoisted(() => vi.fn());
 
@@ -119,7 +123,9 @@ describe("SyncPage", () => {
 
     await waitFor(() => expect(mockGetPage).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: /Meine Version senden/ }));
-    await waitFor(() => expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine"));
+    await waitFor(() =>
+      expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "keep-mine", undefined)
+    );
     expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ variant: "danger" }));
   });
 
@@ -141,6 +147,48 @@ describe("SyncPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Meine Version senden/ }));
     await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
     expect(mockQueue.resolveConflict).not.toHaveBeenCalled();
+  });
+
+  test("rename öffnet Slug-Input und übergibt customSlug", async () => {
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "createPage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+
+    await waitFor(() => expect(mockGetPage).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: /Als Kopie speichern/ }));
+    const input = await screen.findByRole("textbox");
+    expect(input).toHaveValue("cases/neu-2");
+    fireEvent.change(input, { target: { value: "cases/neu-mandant" } });
+    fireEvent.submit(input.closest("form")!);
+    await waitFor(() =>
+      expect(mockQueue.resolveConflict).toHaveBeenCalledWith("m1", "rename", "cases/neu-mandant")
+    );
+  });
+
+  test("Refetch-Button lädt Server-Version erneut", async () => {
+    mockQueue.conflicts = [
+      {
+        id: "m1",
+        type: "updatePage",
+        payload: { slug: "cases/neu" },
+        createdAt: "2024-01-01T00:00:00Z",
+        conflicted: true,
+      },
+    ];
+    mockGetPage.mockResolvedValue(serverPage);
+    render(<SyncPage />);
+    await waitFor(() => expect(mockGetPage).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "Server-Version neu laden" }));
+    await waitFor(() => expect(mockGetPage).toHaveBeenCalledTimes(2));
   });
 
   test("Server-Fehler zeigt Hinweis statt Diff", async () => {

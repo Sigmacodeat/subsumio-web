@@ -344,6 +344,58 @@ describe("useMutationQueue", () => {
     );
   });
 
+  test("resolveConflict rename nutzt customSlug wenn valide + frei", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "createPage" as const,
+      payload: { slug: "cases/neu", title: "Neue Akte", type: "legal_case" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "rename", "cases/neu-kopie-mandant");
+    });
+
+    expect(api.brain.getPage).toHaveBeenCalledWith("cases/neu-kopie-mandant");
+    expect(api.brain.createPage).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "cases/neu-kopie-mandant" })
+    );
+  });
+
+  test("resolveConflict rename lehnt belegten customSlug ab", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "createPage" as const,
+      payload: { slug: "cases/neu", title: "Neue Akte", type: "legal_case" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "cases/existiert",
+      title: "x",
+      content: "",
+      created_at: "",
+      updated_at: "",
+    });
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "rename", "cases/existiert");
+    });
+
+    expect(api.brain.createPage).not.toHaveBeenCalled();
+    expect(removeMutation).not.toHaveBeenCalled();
+    expect(result.current.lastError).toContain("existiert bereits");
+  });
+
   test("resolveConflict rename ignoriert Nicht-createPage", async () => {
     const conflicted = {
       id: "m1",

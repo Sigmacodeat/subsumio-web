@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { GitMerge, Check, Copy, Trash2, Eye, RefreshCw, Clock } from "lucide-react";
 import { api } from "@/lib/api";
-import { useMutationQueue } from "@/lib/use-mutation";
+import { useMutationQueue, nextCopySlug } from "@/lib/use-mutation";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import type { BrainPage } from "@/lib/types";
@@ -28,37 +28,39 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
   const [server, setServer] = useState<BrainPage | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [loadingServer, setLoadingServer] = useState(true);
+  const [serverFetchedAt, setServerFetchedAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameSlug, setRenameSlug] = useState("");
 
   const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
   const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
   const ageDays = conflictAgeDays(mut.conflictAt);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchServer = useCallback(() => {
     if (!slug) {
       setLoadingServer(false);
       return;
     }
+    setLoadingServer(true);
+    setServerError(null);
     api.brain
       .getPage(slug)
       .then((p) => {
-        if (!cancelled) setServer(p);
+        setServer(p);
+        setServerFetchedAt(Date.now());
       })
-      .catch((e) => {
-        if (!cancelled) setServerError(e instanceof Error ? e.message : String(e));
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingServer(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .catch((e) => setServerError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoadingServer(false));
   }, [slug]);
+
+  useEffect(() => {
+    fetchServer();
+  }, [fetchServer]);
 
   const confirm = useConfirm();
   const resolve = useCallback(
-    async (mode: "keep-mine" | "discard" | "rename") => {
+    async (mode: "keep-mine" | "discard" | "rename", customSlug?: string) => {
       if (mode === "keep-mine" || mode === "discard") {
         const ok = await confirm({
           title: t(
@@ -82,7 +84,7 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
       }
       setBusy(true);
       try {
-        await resolveConflict(mut.id, mode);
+        await resolveConflict(mut.id, mode, customSlug);
       } finally {
         setBusy(false);
       }
@@ -214,7 +216,11 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
             size="sm"
             variant="outline"
             disabled={busy}
-            onClick={() => void resolve("rename")}
+            onClick={() => {
+              setRenameSlug(nextCopySlug(slug));
+              setRenameOpen((o) => !o);
+            }}
+            aria-expanded={renameOpen}
           >
             <Copy size={13} aria-hidden className="mr-1" />
             {t("mobile.conflict_rename" as DashboardKey)}
@@ -230,7 +236,58 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
           <Trash2 size={13} aria-hidden className="mr-1" />
           {t("mobile.conflict_discard" as DashboardKey)}
         </Button>
+        <button
+          type="button"
+          onClick={fetchServer}
+          disabled={loadingServer || busy}
+          aria-label={t("sync.reload_server" as DashboardKey)}
+          title={t("sync.reload_server" as DashboardKey)}
+          className="ml-auto shrink-0 rounded p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
+        >
+          <RefreshCw
+            size={13}
+            aria-hidden
+            className={loadingServer ? "animate-spin motion-reduce:animate-none" : undefined}
+          />
+        </button>
       </div>
+
+      {renameOpen && (
+        <form
+          className="mt-3 flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setRenameOpen(false);
+            void resolve("rename", renameSlug);
+          }}
+        >
+          <label htmlFor={`rename-${mut.id}`} className="sr-only">
+            {t("sync.rename_label" as DashboardKey)}
+          </label>
+          <input
+            id={`rename-${mut.id}`}
+            type="text"
+            value={renameSlug}
+            onChange={(e) => setRenameSlug(e.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 font-mono text-xs text-[color:var(--ds-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+            placeholder={nextCopySlug(slug)}
+            autoFocus
+          />
+          <Button size="sm" type="submit" disabled={busy || !renameSlug.trim()}>
+            {t("sync.rename_submit" as DashboardKey)}
+          </Button>
+        </form>
+      )}
+
+      {serverFetchedAt && !loadingServer && (
+        <p className="mt-2 text-[11px] text-[color:var(--ds-text-subtle)]">
+          {t("sync.server_fetched" as DashboardKey)}{" "}
+          {new Date(serverFetchedAt).toLocaleTimeString("de-AT", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      )}
     </div>
   );
 }
