@@ -25,6 +25,7 @@ import {
   User,
   Building2,
   Landmark,
+  BookOpen,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DemoIngestCard } from "@/components/dashboard/demo-ingest-card";
@@ -422,6 +423,12 @@ export default function IntakePage() {
         ]}
         actions={
           <div className="flex items-center gap-2.5">
+            <Button variant="outline" size="sm" asChild className="gap-2 text-xs">
+              <Link href="/dashboard/posteingangsbuch" title={t("intake.link_register_hint")}>
+                <BookOpen size={14} aria-hidden />
+                {t("intake.link_register")}
+              </Link>
+            </Button>
             <Button
               variant="ghost"
               size="sm"

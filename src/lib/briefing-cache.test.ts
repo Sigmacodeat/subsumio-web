@@ -25,6 +25,7 @@ const sample: BriefingResponse = {
     reviewGaps: 0,
     overdueReconciliations: 0,
     followUpsToday: 1,
+    activeDelegations: [],
     topDeadlines: [],
     topCases: [],
   },

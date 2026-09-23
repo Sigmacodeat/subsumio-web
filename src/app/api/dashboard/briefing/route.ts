@@ -5,6 +5,7 @@ import { engineComplete } from "@/lib/engine-llm";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { DEFAULT_TYPES, fetchPagesByTypes } from "@/lib/cockpit";
 import { overdueReconciliationAccounts } from "@/lib/trust-accounting";
+import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
 import type { BrainPage } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -25,6 +26,7 @@ interface BriefingData {
   reviewGaps: number;
   overdueReconciliations: number;
   followUpsToday: number;
+  activeDelegations: Array<{ name: string; delegate: string; until: string }>;
   topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
   topCases: Array<{ title: string; status: string }>;
 }
@@ -35,6 +37,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       ...DEFAULT_TYPES,
       legal_follow_up: 50,
       trust_account: 50,
+      absence_record: 50,
     });
 
     const cases = pages.legal_case ?? [];
@@ -157,6 +160,27 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       unassignedDocs: unassignedDocs.length,
       reviewGaps: reviewGaps.length,
       overdueReconciliations: overdueReconciliationAccounts(pages.trust_account ?? []).length,
+      activeDelegations: (() => {
+        const absences = (pages.absence_record ?? [])
+          .map((p: BrainPage) => p.frontmatter as AbsenceRecord | undefined)
+          .filter((a): a is AbsenceRecord => Boolean(a?.user_email || a?.user_name));
+        const seen = new Set<string>();
+        const nowReal = new Date();
+        return absences
+          .map((a) => {
+            const key = (a.user_email || a.user_name).trim().toLowerCase();
+            if (seen.has(key)) return null;
+            const delegate = activeDelegateFor(a.user_email || a.user_name, absences, nowReal);
+            if (!delegate) return null;
+            seen.add(key);
+            return {
+              name: a.user_name || a.user_email,
+              delegate: delegate.name,
+              until: delegate.until.slice(0, 10),
+            };
+          })
+          .filter((d): d is { name: string; delegate: string; until: string } => d !== null);
+      })(),
       followUpsToday: followUps.filter((page: BrainPage) => {
         const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
         return String(fm.date ?? "").slice(0, 10) === todayKey && fm.completed !== true;
@@ -195,6 +219,12 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
     parts.push(`Unassigned documents: ${data.unassignedDocs}`);
     parts.push(`Review gaps: ${data.reviewGaps}`);
     parts.push(`Trust reconciliations overdue: ${data.overdueReconciliations}`);
+    if (data.activeDelegations.length > 0) {
+      parts.push("Active delegations (absent colleague → stand-in):");
+      for (const d of data.activeDelegations) {
+        parts.push(`- ${d.name} is absent, covered by ${d.delegate} until ${d.until}`);
+      }
+    }
     if (data.topDeadlines.length > 0) {
       parts.push("");
       parts.push("Top deadlines:");
@@ -235,6 +265,12 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
   parts.push(`Unzugeordnete Dokumente: ${data.unassignedDocs}`);
   parts.push(`Review-Lücken: ${data.reviewGaps}`);
   parts.push(`Überfällige Treuhand-Abgleiche: ${data.overdueReconciliations}`);
+  if (data.activeDelegations.length > 0) {
+    parts.push("Aktive Vertretungen (abwesend → Vertretung):");
+    for (const d of data.activeDelegations) {
+      parts.push(`- ${d.name} ist abwesend, vertreten durch ${d.delegate} bis ${d.until}`);
+    }
+  }
   if (data.topDeadlines.length > 0) {
     parts.push("");
     parts.push("Nächste Fristen:");
@@ -297,6 +333,12 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
     parts.push(
       attention.length > 0 ? attention.join(", ") + " need attention." : "Inbox is clear."
     );
+    if (data.activeDelegations.length > 0) {
+      const names = data.activeDelegations
+        .map((d) => `${d.delegate} covers for ${d.name} until ${d.until}`)
+        .join("; ");
+      parts.push(`Delegations: ${names}.`);
+    }
     parts.push(
       data.activeCases > 0
         ? `Review your ${data.activeCases} active case(s) and prioritize accordingly.`
@@ -325,6 +367,12 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
   parts.push(
     attention.length > 0 ? attention.join(", ") + " benötigen Aufmerksamkeit." : "Eingang ist leer."
   );
+  if (data.activeDelegations.length > 0) {
+    const names = data.activeDelegations
+      .map((d) => `${d.delegate} vertritt ${d.name} bis ${d.until}`)
+      .join("; ");
+    parts.push(`Vertretungen: ${names}.`);
+  }
   parts.push(
     data.activeCases > 0
       ? `Übersicht über ${data.activeCases} aktive Akte(n) und Prioritäten setzen.`

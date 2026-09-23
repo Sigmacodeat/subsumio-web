@@ -186,6 +186,144 @@ describe("POST /api/intake/convert", () => {
     expect(body.case.type).toBe("legal_case");
   });
 
+  test("retry after case-created-but-intake-failed completes idempotently (no duplicate case)", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      title: "Intake: Max Muster",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        legal_area: "Arbeitsrecht",
+        summary: "Kündigung",
+        missing_documents: [],
+        conflict_check_status: "clear",
+        created_at: "2026-06-20T10:00:00.000Z",
+        updated_at: "2026-06-20T10:00:00.000Z",
+        acceptance: {
+          conflict_check: { status: "clear" },
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      // case slug already exists — built from THIS intake
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            slug: "legal/cases/2026-12345-max-muster",
+            frontmatter: { source_intake_slug: "legal/intake/2026-06-20/max" },
+          }),
+          { status: 200 }
+        )
+      )
+      // intake status update
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      }) as unknown as NextRequest
+    );
+
+    expect(res.status).toBe(200);
+    // exactly one POST /api/pages (the intake update) — no second case create
+    const creates = mockFetch.mock.calls.filter(
+      ([url, init]) =>
+        String(url).endsWith("/api/pages") &&
+        (init as RequestInit | undefined)?.method === "POST" &&
+        String((init as RequestInit).body).includes('"legal_case"')
+    );
+    expect(creates).toHaveLength(0);
+  });
+
+  test("409 when the slug belongs to a different case", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: [],
+        acceptance: {
+          conflict_check: { status: "clear" },
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            slug: "legal/cases/2026-12345-max-muster",
+            frontmatter: { source_intake_slug: "legal/intake/other-intake" },
+          }),
+          { status: 200 }
+        )
+      );
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(409);
+  });
+
+  test("missing_documents become a document_request draft (once)", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: ["Vollmacht", "Kündigungsschreiben"],
+        acceptance: {
+          conflict_check: { status: "clear" },
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(new Response("not found", { status: 404 })) // case slug free
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })) // case create
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })) // intake update
+      .mockResolvedValueOnce(new Response("[]", { status: 200 })) // doc-request list
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })); // doc-request create
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.document_request_slug).toMatch(/^legal\/document-requests\//);
+    const docReqCalls = mockFetch.mock.calls.filter(([, init]) =>
+      String((init as RequestInit | undefined)?.body ?? "").includes('"document_request"')
+    );
+    expect(docReqCalls).toHaveLength(1);
+    const reqBody = JSON.parse(String((docReqCalls[0]?.[1] as RequestInit).body));
+    expect(reqBody.frontmatter.items).toHaveLength(2);
+    expect(reqBody.frontmatter.status).toBe("draft");
+    expect(reqBody.frontmatter.case_slug).toBe("legal/cases/2026-12345-max-muster");
+  });
+
   test.each([
     ["no acceptance at all", undefined, [], "acceptance_missing"],
     [

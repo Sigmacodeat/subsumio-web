@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Download, Inbox, Loader2, Plus, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Download, Inbox, Loader2, Plus, RotateCcw, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
@@ -138,6 +139,17 @@ export default function PosteingangsbuchPage() {
         breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Posteingangsbuch" }]}
         actions={
           <>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              title="Neue Mandatsanfragen prüfen & in Akten überführen"
+            >
+              <Link href="/dashboard/intake">
+                <UserPlus size={14} aria-hidden="true" />
+                Mandatsanfragen
+              </Link>
+            </Button>
             <Button
               variant="outline"
               size="sm"

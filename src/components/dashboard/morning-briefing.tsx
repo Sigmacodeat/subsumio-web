@@ -76,7 +76,8 @@ export function MorningBriefing({ compact = false }: { compact?: boolean } = {})
       stats.pendingReviews > 0 ||
       stats.pendingSignatures > 0 ||
       stats.unassignedDocs > 0 ||
-      stats.followUpsToday > 0);
+      stats.followUpsToday > 0 ||
+      (stats.activeDelegations?.length ?? 0) > 0);
 
   if (compact) {
     // No placeholder while loading: the section only appears once a model has
@@ -288,6 +289,26 @@ export function MorningBriefing({ compact = false }: { compact?: boolean } = {})
                   </span>
                 );
               })}
+            </div>
+          )}
+
+          {stats!.activeDelegations && stats!.activeDelegations.length > 0 && (
+            <div className="mt-3 space-y-1">
+              {stats!.activeDelegations.map((d, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 rounded-md bg-[color:var(--ds-surface-2)] px-2.5 py-1.5"
+                >
+                  <span className="truncate text-xs text-[color:var(--ds-text)]">
+                    {lang === "en" ? `${d.name} absent` : `${d.name} abwesend`}
+                  </span>
+                  <span className="shrink-0 text-xs font-medium text-[color:var(--ds-info-text)]">
+                    {lang === "en"
+                      ? `${d.delegate} until ${d.until}`
+                      : `${d.delegate} bis ${d.until}`}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
 

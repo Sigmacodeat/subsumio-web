@@ -20,6 +20,7 @@ export interface BriefingData {
   reviewGaps: number;
   overdueReconciliations: number;
   followUpsToday: number;
+  activeDelegations: Array<{ name: string; delegate: string; until: string }>;
   topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
   topCases: Array<{ title: string; status: string }>;
 }
@@ -43,6 +44,7 @@ export function readBriefingCache(now = Date.now()): BriefingResponse | null {
     const age = now - new Date(parsed.cachedAt ?? 0).getTime();
     if (!Number.isFinite(age) || age > BRIEFING_CACHE_TTL_MS) return null;
     if (!parsed.data || typeof parsed.data !== "object") return null;
+    parsed.data.activeDelegations ??= [];
     return parsed;
   } catch {
     return null;
@@ -72,6 +74,7 @@ export function briefingFromPayload(json: unknown): BriefingResponse | null {
         : null
   ) as BriefingResponse | null;
   if (!candidate || !candidate.data || typeof candidate.data !== "object") return null;
+  candidate.data.activeDelegations ??= [];
   return candidate;
 }
 

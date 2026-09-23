@@ -94,29 +94,41 @@ export const POST = createHandler(
       convertedBy: ctx.user.email,
     });
 
-    // Check for duplicate slug before creating
+    // A retry after "case created, intake update failed" must not produce a
+    // second matter: a case that was already built from this intake is
+    // idempotent — only a foreign slug collision is a 409.
     const checkRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(casePage.slug)}`, {
       headers: ctx.headers,
       signal: AbortSignal.timeout(10_000),
     });
+    let caseAlreadyCreated = false;
     if (checkRes.ok) {
-      return apiError(
-        "case_slug_exists",
-        "Eine Akte mit diesem Slug existiert bereits. Bitte einen anderen Slug oder Aktenzeichen verwenden.",
-        409
-      );
+      const existing = (await checkRes.json().catch(() => ({}))) as {
+        frontmatter?: { source_intake_slug?: string };
+      };
+      if (existing.frontmatter?.source_intake_slug === body.slug) {
+        caseAlreadyCreated = true;
+      } else {
+        return apiError(
+          "case_slug_exists",
+          "Eine Akte mit diesem Slug existiert bereits. Bitte einen anderen Slug oder Aktenzeichen verwenden.",
+          409
+        );
+      }
     }
 
-    const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(casePage),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!createRes.ok) {
-      const message = await createRes.text().catch(() => "");
-      log.error("[intake/convert] case create failed:", createRes.status, message);
-      return apiError("case_create_failed", "Akte konnte nicht erstellt werden", 502);
+    if (!caseAlreadyCreated) {
+      const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ctx.headers },
+        body: JSON.stringify(casePage),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!createRes.ok) {
+        const message = await createRes.text().catch(() => "");
+        log.error("[intake/convert] case create failed:", createRes.status, message);
+        return apiError("case_create_failed", "Akte konnte nicht erstellt werden", 502);
+      }
     }
 
     const now = new Date().toISOString();
@@ -139,6 +151,59 @@ export const POST = createHandler(
     if (!updateRes.ok)
       return apiError("intake_update_failed", "Akte erstellt, Intake aber nicht aktualisiert", 502);
 
+    // Missing documents noted at intake become a real document_request draft
+    // (visible in cockpit and sendable to the client), not just inert case
+    // tasks. Best-effort: the case must never fail because of this.
+    const missingDocs = intakePage.frontmatter.missing_documents ?? [];
+    let documentRequestSlug: string | undefined;
+    if (missingDocs.length > 0) {
+      try {
+        const listRes = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=250`, {
+          headers: ctx.headers,
+          signal: AbortSignal.timeout(10_000),
+        });
+        const data = listRes.ok ? await listRes.json().catch(() => []) : [];
+        const existing: BrainPage[] = Array.isArray(data)
+          ? data
+          : (((data as { pages?: BrainPage[] }).pages ??
+              (data as { items?: BrainPage[] }).items ??
+              []) as BrainPage[]);
+        const hasRequest = existing.some(
+          (p) =>
+            (p.frontmatter as Record<string, unknown> | undefined)?.case_slug === casePage.slug &&
+            (p.frontmatter as Record<string, unknown> | undefined)?.source_event_slug === body.slug
+        );
+        if (!hasRequest) {
+          const { buildDocumentRequest } = await import("@/lib/document-requests");
+          const request = await buildDocumentRequest({
+            brainId: ctx.brainId,
+            caseSlug: casePage.slug,
+            items: missingDocs,
+            channel: "manual",
+            status: "draft",
+            sourceEventSlug: body.slug,
+          });
+          const reqRes = await fetch(`${ENGINE_URL}/api/pages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...ctx.headers },
+            body: JSON.stringify({
+              slug: request.slug,
+              title: request.title,
+              type: "document_request",
+              content: request.content,
+              frontmatter: request.frontmatter,
+            }),
+            signal: AbortSignal.timeout(15_000),
+          });
+          if (reqRes.ok) documentRequestSlug = request.slug;
+        }
+      } catch (err) {
+        log.warn("document_request from intake missing_documents failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
     broadcastSseEvent(ctx.brainId, "case.created", {
       slug: casePage.slug,
       intakeSlug: body.slug,
@@ -150,6 +215,11 @@ export const POST = createHandler(
       by: ctx.user.email,
     });
 
-    return Response.json({ ok: true, case: casePage, intake_slug: body.slug });
+    return Response.json({
+      ok: true,
+      case: casePage,
+      intake_slug: body.slug,
+      document_request_slug: documentRequestSlug,
+    });
   }
 );
