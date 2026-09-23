@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
+import { canAffordOptionalLlm } from "@/lib/billing/optional-llm-credits";
 import {
   listMemories,
   createMemory,
@@ -121,11 +122,16 @@ export const POST = createHandler(
           validTo?: string;
         }> = [];
 
-        if (isLLMExtractionAvailable()) {
+        // The model call is billed ("think"); without balance the free
+        // rule-based inference below still runs instead of failing the turn.
+        const llmMeta: { modelCalled?: boolean } = {};
+        if (isLLMExtractionAvailable() && (await canAffordOptionalLlm(ctx, "think"))) {
           const llmResults = await extractMemoriesWithLLM(message, {
             caseSlug,
             headers: ctx.headers,
+            meta: llmMeta,
           });
+          if (llmMeta.modelCalled) void recordCreditConsumption(ctx, "think", caseSlug);
           extracted = llmResults.map((r) => ({
             type: r.type,
             key: r.key,
@@ -164,7 +170,7 @@ export const POST = createHandler(
         return NextResponse.json({
           inferred: created,
           superseded: allSuperseded,
-          method: isLLMExtractionAvailable() ? "llm" : "regex",
+          method: llmMeta.modelCalled ? "llm" : "regex",
         });
       }
 

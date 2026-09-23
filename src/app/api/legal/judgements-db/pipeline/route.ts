@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { runPipeline } from "@/lib/legal-graph/pipeline";
 
@@ -34,6 +34,9 @@ export const POST = createHandler(
   {
     action: "legal.judgements",
     rateTier: "standard",
+    // Router, LLM reranking, citation validation and a synthesised answer —
+    // a multi-agent run, priced like the research agent.
+    credits: "agent",
     body: pipelineSchema,
     audit: (_ctx, body) => ({
       action: "judgements.search" as const,
@@ -48,7 +51,7 @@ export const POST = createHandler(
       },
     }),
   },
-  async (_ctx, body, _query, _req) => {
+  async (ctx, body, _query, _req) => {
     const pool = getSharedPgPool();
     if (!pool) {
       return Response.json({ error: "Database not configured" }, { status: 503 });
@@ -62,6 +65,11 @@ export const POST = createHandler(
       maxResults: body.maxResults,
       jurisdiction: body.jurisdiction,
     });
+
+    // Charged when the synthesis produced an answer (a failed run is free).
+    if (result.steps.some((s) => s.agent === "synthesis" && s.status === "done")) {
+      void recordCreditConsumption(ctx, "agent");
+    }
 
     return Response.json(result);
   }

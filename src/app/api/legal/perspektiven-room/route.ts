@@ -2,7 +2,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
+import { createHandler, apiError, apiSuccess, recordCreditConsumption } from "@/lib/api-handler";
 import {
   createPerspektivenPrompt,
   parsePerspektivenOutput,
@@ -60,6 +60,9 @@ export const POST = createHandler(
   {
     action: "legal.strategy",
     rateTier: "heavy",
+    // Four to five grounded reasoning calls (one per role) — a multi-step
+    // run, priced like the research agent.
+    credits: "agent",
     body: requestSchema,
     audit: (_ctx, body) => ({
       action: "legal.strategy" as const,
@@ -124,6 +127,9 @@ export const POST = createHandler(
         503
       );
     }
+
+    // Charged once every role delivered (a failed run is free).
+    void recordCreditConsumption(ctx, "agent", body.case_slug);
 
     const session: PerspektivenSession = {
       id: `perspektiven-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

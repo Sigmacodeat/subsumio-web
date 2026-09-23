@@ -121,6 +121,11 @@ export function dropUngroundedDates<
   };
 }
 
+/** Filled in by the extractor so the route can bill a model call that happened. */
+export interface LlmCallMeta {
+  modelCalled?: boolean;
+}
+
 /**
  * Check whether LLM-based deadline extraction is available (API key configured).
  */
@@ -142,6 +147,8 @@ export async function extractDeadlinesWithLLM(
     headers?: Record<string, string>;
     /** Date the text was written or received (ISO). Defaults to today. */
     referenceDate?: string;
+    /** Set to true when the model answered — the caller bills credits for it. */
+    meta?: LlmCallMeta;
   }
 ): Promise<DetectedDeadline[]> {
   if (!opts?.headers || !isEngineLLMAvailable()) return [];
@@ -162,6 +169,7 @@ export async function extractDeadlinesWithLLM(
       maxTokens: 800,
       timeoutMs: 45_000,
     });
+    if (result && opts.meta) opts.meta.modelCalled = true;
     const content = result?.text?.trim();
     if (!content) return [];
     // Parse JSON (handle both array and {deadlines: [...]} formats)
@@ -238,7 +246,7 @@ export async function hybridDeadlineDetection(
   text: string,
   regexDetected: DetectedDeadline[],
   headers?: Record<string, string>,
-  opts?: { ferialsache?: boolean; vorfristTage?: number }
+  opts?: { ferialsache?: boolean; vorfristTage?: number; meta?: LlmCallMeta }
 ): Promise<DetectedDeadline[]> {
   const highConfidenceCount = regexDetected.filter((d) => d.confidence === "high").length;
   const shouldCallLLM = highConfidenceCount === 0 || (text.length > 500 && highConfidenceCount < 3);

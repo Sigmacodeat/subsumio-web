@@ -35,6 +35,14 @@ vi.mock("@/lib/ai-deadline-detect", () => ({
   resolveRelativeDeadline: vi.fn((days: number) => `2026-${String(days).padStart(2, "0")}-01`),
 }));
 
+const billing = vi.hoisted(() => ({
+  affordable: true,
+  charge: vi.fn(),
+}));
+vi.mock("@/lib/billing/optional-llm-credits", () => ({
+  canAffordOptionalLlm: vi.fn(async () => billing.affordable),
+}));
+
 vi.mock("@/lib/llm-deadline-extract", () => ({
   hybridDeadlineDetection: vi.fn(async (_text: string, detected: unknown[]) => detected),
   isLLMDeadlineExtractionAvailable: vi.fn(() => false),
@@ -73,6 +81,7 @@ vi.mock("@/lib/api-handler", () => ({
       return handler(ctx, raw);
     };
   },
+  recordCreditConsumption: (...args: unknown[]) => billing.charge(...args),
 }));
 
 global.fetch = vi.fn() as unknown as typeof fetch;
@@ -81,6 +90,45 @@ import { POST } from "./route";
 import { detectDeadlines } from "@/lib/ai-deadline-detect";
 import { recordQuota } from "@/lib/engine";
 import { groundAnswerCitations } from "@/lib/citation-gate";
+import { hybridDeadlineDetection } from "@/lib/llm-deadline-extract";
+
+describe("POST /api/legal/ai-deadlines — credits for the LLM fallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    billing.affordable = true;
+  });
+
+  const detect = () =>
+    POST(
+      new Request("http://localhost/api/legal/ai-deadlines", {
+        method: "POST",
+        body: JSON.stringify({ text: "binnen vier Wochen ab Zustellung" }),
+      }) as unknown as NextRequest
+    );
+
+  test("charges deadline_detect when the model was called", async () => {
+    vi.mocked(hybridDeadlineDetection).mockImplementationOnce(async (_t, detected, _h, opts) => {
+      if (opts?.meta) opts.meta.modelCalled = true;
+      return detected;
+    });
+    await detect();
+    expect(billing.charge).toHaveBeenCalledWith(expect.anything(), "deadline_detect", undefined);
+  });
+
+  test("charges nothing when only the regex ran", async () => {
+    await detect();
+    expect(billing.charge).not.toHaveBeenCalled();
+  });
+
+  test("skips the model without balance and still answers from the regex", async () => {
+    billing.affordable = false;
+    const res = await detect();
+    expect(res.status).toBe(200);
+    expect(hybridDeadlineDetection).not.toHaveBeenCalled();
+    expect((await res.json()).llm_skipped).toBe("insufficient_credits");
+    expect(billing.charge).not.toHaveBeenCalled();
+  });
+});
 
 describe("POST /api/legal/ai-deadlines", () => {
   beforeEach(() => vi.clearAllMocks());

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
 import { createRedTeamPrompt, parseRedTeamOutput } from "@/lib/red-team-agent";
@@ -20,6 +20,9 @@ export const POST = createHandler(
   {
     action: "legal.risk_analysis",
     rateTier: "heavy",
+    // One balanced reasoning call over the whole draft — priced like the
+    // opponent simulation / contract redline (adversarial analysis).
+    credits: "subsumption",
     body: inputSchema,
     audit: (ctx, body) => ({
       action: "legal.risk_analysis" as const,
@@ -54,6 +57,8 @@ export const POST = createHandler(
     if (!rawOutput.trim()) {
       return apiError("empty_analysis", "Die KI hat keine Analyse geliefert.", 502);
     }
+    // Charged once the model delivered an analysis (a failed call is free).
+    void recordCreditConsumption(ctx, "subsumption", body.case_slug);
 
     const result = parseRedTeamOutput(rawOutput, body.case_slug);
 
