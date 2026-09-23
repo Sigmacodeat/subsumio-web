@@ -214,6 +214,8 @@ function timeLabel(lang: Lang, value: string): string {
 }
 
 /** Triage deadlines arrive as TT.MM.JJJJ or ISO; normalise to TT.MM.JJJJ. */
+const MUTED_DISMISS_KEY = "whatsapp-muted-dismissed-at";
+
 function deadlineLabel(value: string): string {
   if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(value)) return value;
   const out = formatDate(value);
@@ -324,6 +326,26 @@ export default function CommunicationsPage() {
   const mutedLastAt = mutedQuery.data?.lastAt ?? null;
   const mutedSnippets = mutedQuery.data?.snippets;
   const [mutedOpen, setMutedOpen] = useState(false);
+  // „Zur Kenntnis genommen": Banner bleibt weg, bis ein neuer Muted-
+  // Eingang lastAt ändert — kein dauerhaftes Warn-Rauschen.
+  const [mutedDismissedAt, setMutedDismissedAt] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      setMutedDismissedAt(localStorage.getItem(MUTED_DISMISS_KEY));
+    } catch {
+      /* localStorage unavailable (SSR/private mode) */
+    }
+  }, []);
+  const mutedVisible = mutedCount > 0 && String(mutedLastAt ?? "none") !== mutedDismissedAt;
+  const dismissMuted = () => {
+    const stamp = mutedLastAt ?? "none";
+    try {
+      localStorage.setItem(MUTED_DISMISS_KEY, stamp);
+    } catch {
+      /* noop */
+    }
+    setMutedDismissedAt(stamp);
+  };
 
   // Mail from connected firm mailboxes lives in the mailbox table, not in brain pages.
   const mailQuery = useQuery({
@@ -668,7 +690,7 @@ export default function CommunicationsPage() {
 
           {/* Opt-out-Hinweis: eingegangene Nachrichten abgemeldeter Nummern
               werden auditiert, aber nicht zugestellt — diskret sichtbar. */}
-          {mutedCount > 0 && (channel === "all" || channel === "whatsapp") && (
+          {mutedVisible && (channel === "all" || channel === "whatsapp") && (
             <div
               role="status"
               className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
@@ -729,6 +751,14 @@ export default function CommunicationsPage() {
                   </>
                 )}
               </span>
+              <button
+                type="button"
+                onClick={dismissMuted}
+                aria-label={lang === "en" ? "Dismiss notice" : "Hinweis ausblenden"}
+                className="mt-0.5 ml-auto shrink-0 rounded p-0.5 text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-surface-2)] focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
             </div>
           )}
 

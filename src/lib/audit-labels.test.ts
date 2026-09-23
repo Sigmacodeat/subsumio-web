@@ -103,6 +103,16 @@ describe("auditLabel", () => {
     }
   });
 
+  test("labels for workflow/acl/intake/autopilot actions", () => {
+    expect(auditLabel("workflow.update")).toBe("Ablauf aktualisiert");
+    expect(auditLabel("workflow.delete")).toBe("Ablauf gelöscht");
+    expect(auditLabel("acl.remove_member")).toBe("Zugriffsgruppe: Mitglied entfernt");
+    expect(auditLabel("intake.scan_upload")).toBe("Intake: Scan hochgeladen");
+    expect(auditLabel("intake.convert")).toBe("Intake: Dokument konvertiert");
+    expect(auditLabel("autopilot.run")).toBe("Autopilot-Lauf");
+    expect(auditLabel("dms.content_download")).toBe("DMS-Dokument geöffnet");
+  });
+
   test("returns the raw action string for empty string", () => {
     expect(auditLabel("")).toBe("");
   });
