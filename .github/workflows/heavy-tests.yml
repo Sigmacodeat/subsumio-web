@@ -72,6 +72,7 @@ jobs:
       - name: Run heavy tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
+        working-directory: server
         run: bun run test:heavy
 
       - name: Run Akten-Retrieval Benchmark
