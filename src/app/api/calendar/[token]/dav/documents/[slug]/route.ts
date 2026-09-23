@@ -8,13 +8,16 @@ export const dynamic = "force-dynamic";
  * for the read-only WebDAV bridge. Serves the uploaded original when one
  * exists (`/api/files/<slug>` on the engine), otherwise the page content as
  * UTF-8 markdown so every entry in the mounted drive is readable.
+ *
+ * Only the DAV access token (scope "documents") opens this route — never the
+ * calendar subscription link (see src/lib/feed-auth.ts).
  */
 export async function GET(
   _req: Request,
   context: { params: Promise<{ token: string; slug: string }> }
 ) {
   const { token, slug } = await context.params;
-  const auth = await resolveFeedToken(token ?? "");
+  const auth = await resolveFeedToken(token ?? "", "documents");
   if (!auth.ok) {
     return Response.json(
       { error: auth.status === 429 ? "rate_limited" : "not_found" },

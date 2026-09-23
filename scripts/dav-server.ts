@@ -4,11 +4,13 @@
  *
  * Next.js route handlers cannot serve DAV methods (PROPFIND/REPORT), so the
  * mount point lives in this standalone process. It proxies to the web app's
- * token-authenticated feed endpoints — no session cookie, no new credential
- * type: the same `<userId>.<secret>` link that powers the calendar
- * subscription also unlocks the drive.
+ * token-authenticated feed endpoints — no session cookie. The credential is
+ * the separate DAV access token `<userId>.<secret>` (created under
+ * Kalender-Export → "Laufwerk verbinden"); it opens /dokumente/ and
+ * /fristen/. The calendar subscription link is calendar-only and is refused
+ * by the document endpoints (src/lib/feed-auth.ts).
  *
- * Auth (Basic): username = anything, password = the feed token.
+ * Auth (Basic): username = anything, password = the DAV access token.
  * Or no auth at all with the token embedded: clients may put the token in the
  * URL path as `/<token>/…` is NOT supported — use Basic auth (standard for
  * CalDAV clients like iOS/macOS Kalender, Thunderbird, Windows WebDAV).
@@ -252,6 +254,6 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, BIND, () => {
   console.log(`[dav-server] read-only WebDAV/CalDAV bridge on http://${BIND}:${PORT}`);
-  console.log(`[dav-server] proxying ${WEB_URL} — Basic auth password = feed token`);
+  console.log(`[dav-server] proxying ${WEB_URL} — Basic auth password = DAV access token`);
   console.log(`[dav-server] mount: /dokumente/ (WebDAV), /fristen/ (CalDAV)`);
 });

@@ -134,11 +134,71 @@ export default function CalendarExportPage() {
   const [feedCreatedAt, setFeedCreatedAt] = useState<string | null>(null);
   const [feedBusy, setFeedBusy] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
+  // Separate WebDAV/CalDAV access for the read-only drive bridge. Unlike the
+  // calendar link above it opens documents, so it is its own, explicitly
+  // created credential (see src/lib/feed-auth.ts). Shown once, like the link.
+  const [davToken, setDavToken] = useState("");
+  const [davActive, setDavActive] = useState<boolean | null>(null);
+  const [davCreatedAt, setDavCreatedAt] = useState<string | null>(null);
+  const [davBusy, setDavBusy] = useState(false);
+  const [davError, setDavError] = useState<string | null>(null);
+  const [davCopied, setDavCopied] = useState(false);
 
   useEffect(() => {
     void loadEvents();
     void loadFeedStatus();
+    void loadDavStatus();
   }, []);
+
+  async function loadDavStatus() {
+    try {
+      const res = await api.get<{ data: { active: boolean; createdAt: string | null } }>(
+        "/api/settings/dav-access"
+      );
+      setDavActive(res.data.active);
+      setDavCreatedAt(res.data.createdAt);
+    } catch {
+      setDavActive(false);
+    }
+  }
+
+  async function createDavToken() {
+    setDavBusy(true);
+    setDavError(null);
+    try {
+      const res = await api.post<{ data: { token: string } }>("/api/settings/dav-access", {});
+      setDavToken(res.data.token);
+      setDavActive(true);
+      setDavCreatedAt(new Date().toISOString());
+    } catch {
+      setDavError("Der Zugang konnte nicht erstellt werden. Bitte erneut versuchen.");
+    } finally {
+      setDavBusy(false);
+    }
+  }
+
+  async function revokeDavToken() {
+    setDavBusy(true);
+    setDavError(null);
+    try {
+      await api.delete("/api/settings/dav-access");
+      setDavToken("");
+      setDavActive(false);
+      setDavCreatedAt(null);
+    } catch {
+      setDavError("Der Zugang konnte nicht widerrufen werden. Bitte erneut versuchen.");
+    } finally {
+      setDavBusy(false);
+    }
+  }
+
+  function copyDavToken() {
+    if (!davToken || !navigator.clipboard) return;
+    void navigator.clipboard.writeText(davToken).then(() => {
+      setDavCopied(true);
+      setTimeout(() => setDavCopied(false), 3000);
+    });
+  }
 
   async function loadFeedStatus() {
     try {
@@ -307,7 +367,8 @@ export default function CalendarExportPage() {
           </p>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
             Die Adresse enthält einen persönlichen Schlüssel und ist damit wie ein Passwort zu
-            behandeln: Wer sie kennt, sieht Ihre Fristen samt Aktenbezeichnung. Geben Sie sie nicht
+            behandeln: Wer sie kennt, sieht Ihre Fristen samt Aktenbezeichnung — aber keine
+            Dokumente; die Adresse öffnet ausschließlich den Fristenkalender. Geben Sie sie nicht
             weiter und widerrufen Sie sie, wenn ein Gerät abhandenkommt.
           </p>
 
@@ -367,6 +428,81 @@ export default function CalendarExportPage() {
           {feedError && (
             <p className="text-xs text-[color:var(--ds-danger-text)]" role="alert">
               {feedError}
+            </p>
+          )}
+        </section>
+
+        <section className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Laufwerk verbinden (WebDAV)
+          </h2>
+          <p className="text-sm text-[color:var(--ds-text)]">
+            Ein eigener Zugang für Finder, Windows-Explorer oder Thunderbird: Er öffnet Ihre
+            Dokumente schreibgeschützt als Laufwerk und die Fristen als CalDAV-Kalender.
+          </p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            Anders als die Kalender-Adresse gibt dieser Zugang Einsicht in alle Dokumente, die Sie
+            sehen dürfen. Tragen Sie ihn nur in eigene Geräte ein — nie in Google, Outlook oder
+            andere Dienste — und widerrufen Sie ihn, wenn ein Gerät abhandenkommt. Benutzername:
+            beliebig (z. B. „feed“), Passwort: der Zugangsschlüssel. Die Serveradresse nennt Ihnen
+            Ihre Administration.
+          </p>
+
+          {davToken && (
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs text-[color:var(--ds-text)]">
+                {davToken}
+              </code>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={copyDavToken}
+                className="shrink-0 gap-1.5 whitespace-nowrap"
+              >
+                {davCopied ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <Copy size={13} aria-hidden="true" />
+                )}
+                {davCopied ? "Kopiert" : "Schlüssel kopieren"}
+              </Button>
+            </div>
+          )}
+
+          {davToken && (
+            <p className="text-xs text-[color:var(--ds-attention-text)]">
+              Kopieren Sie den Schlüssel jetzt — er wird aus Sicherheitsgründen nicht noch einmal
+              angezeigt.
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={davActive ? "secondary" : "primary"}
+              size="sm"
+              disabled={davBusy}
+              onClick={createDavToken}
+              className="gap-1.5"
+            >
+              {davActive ? "Neuen Zugang erzeugen" : "Zugang erzeugen"}
+            </Button>
+            {davActive && (
+              <Button variant="ghost" size="sm" disabled={davBusy} onClick={revokeDavToken}>
+                Widerrufen
+              </Button>
+            )}
+          </div>
+
+          {davActive && !davToken && (
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              Ein Zugang ist aktiv
+              {davCreatedAt ? ` (erstellt am ${formatDate(davCreatedAt)})` : ""}. Ein neuer Zugang
+              ersetzt den bisherigen; verbundene Laufwerke müssen dann neu angemeldet werden.
+            </p>
+          )}
+          {davError && (
+            <p className="text-xs text-[color:var(--ds-danger-text)]" role="alert">
+              {davError}
             </p>
           )}
         </section>

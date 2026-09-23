@@ -11,20 +11,34 @@ Client (Finder/Calendar/Thunderbird)
   │  PROPFIND/REPORT/GET + Basic Auth
   ▼
 dav-server.ts  (DAV_PORT=4080, bind 127.0.0.1)
-  │  Feed-Token <userId>.<secret> als Basic-Password
+  │  DAV-Zugangsschlüssel <userId>.<secret> als Basic-Password
   ▼
 Next.js API
-  ├─ /api/calendar/[token]/fristen.ics      (ICS-Feed, existierend)
-  └─ /api/calendar/[token]/dav/documents    (read-only Dokumentliste)
+  ├─ /api/calendar/[token]/fristen.ics      (ICS-Feed; Kalender-Link ODER DAV-Schlüssel)
+  └─ /api/calendar/[token]/dav/documents    (read-only Dokumentliste; NUR DAV-Schlüssel)
   ▼
 Engine (brain-scoped, source isolation via engineHeadersForUserId)
 ```
 
 Warum ein separater Prozess: Next.js Route Handlers unterstützen DAV-Methoden
-(PROPFIND, REPORT) nicht. Die Bridge spricht mit den bestehenden Feed-Routen —
-**ein Credential-Pfad**, widerrufbar über dieselbe Stelle wie der ICS-Feed
-(Settings → Kalender-Feed). Fehlschlag ist immer ein generisches 404
-(`src/lib/feed-auth.ts`).
+(PROPFIND, REPORT) nicht. Die Bridge spricht mit den bestehenden Feed-Routen.
+Fehlschlag ist immer ein generisches 404 (`src/lib/feed-auth.ts`).
+
+### Zwei getrennte Zugangsschlüssel (Scopes)
+
+| Schlüssel     | Erzeugt unter                                   | Öffnet                                        |
+| ------------- | ----------------------------------------------- | --------------------------------------------- |
+| Kalender-Link | Kalender-Export → „Kalender abonnieren“         | nur `fristen.ics` (Scope `calendar`)          |
+| DAV-Zugang    | Kalender-Export → „Laufwerk verbinden (WebDAV)“ | Dokumente + Fristen (`documents`, `calendar`) |
+
+Der Kalender-Link wird an Google/Outlook/Apple übergeben — also an Dritte — und
+darf deshalb nie das Dokumentenarchiv öffnen. Die Dokument-Routen vergleichen
+ausschließlich mit dem Hash des DAV-Zugangs (`davTokenHash`). Kalender-Links,
+die vor dieser Trennung erzeugt wurden, sind damit automatisch kalender-only;
+wer die Bridge schon mit einem Kalender-Link als Passwort nutzte, muss einmal
+einen DAV-Zugang erzeugen und im Client eintragen. Beide Schlüssel sind
+getrennt widerrufbar (`/api/settings/calendar-feed` bzw.
+`/api/settings/dav-access`).
 
 ## Betrieb
 
@@ -112,8 +126,9 @@ WantedBy=multi-user.target
 | Windows Explorer | Netzlaufwerk verbinden            | `https://dav.example-kanzlei.at/dokumente/` |
 
 - **Benutzername:** beliebig (wird ignoriert) — empfohlen: `feed`
-- **Passwort:** der vollständige Feed-Token `<userId>.<secret>` aus
-  Settings → Kalender-Feed
+- **Passwort:** der vollständige DAV-Zugangsschlüssel `<userId>.<secret>` aus
+  Kalender-Export → „Laufwerk verbinden (WebDAV)“ (nicht der Kalender-Link —
+  der öffnet nur `/fristen/`)
 - Bei ungültigem/widerrufenem Token: `401` — kein Detail-Leak.
 
 ## Sicherheit
@@ -122,6 +137,8 @@ WantedBy=multi-user.target
 - Token-Rate-Limit gegen Brute-Force (in `feed-auth.ts`).
 - Dokumentliste ist brain-scoped auf den Token-Besitzer; Rechte des
   Benutzers greifen serverseitig (source isolation).
+- Dokumente nur mit dem DAV-Zugang; der an Kalenderdienste weitergegebene
+  Kalender-Link öffnet ausschließlich den Fristen-Feed.
 - TLS-Pflicht in Produktion — Basic Auth ohne TLS sendet den Token
   im Klartext.
 
