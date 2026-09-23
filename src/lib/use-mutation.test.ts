@@ -36,7 +36,7 @@ vi.mock("./api", () => ({
   },
 }));
 
-import { useMutationQueue } from "./use-mutation";
+import { useMutationQueue, __resetMutationQueueForTests } from "./use-mutation";
 import {
   isOnline,
   enqueueMutation,
@@ -54,6 +54,9 @@ describe("useMutationQueue", () => {
     vi.mocked(isOnline).mockReturnValue(true);
     vi.mocked(getPendingMutations).mockResolvedValue([]);
     vi.mocked(getPendingFileUploads).mockResolvedValue([]);
+    // State ist module-level (geteilt zwischen Konsumenten) →
+    // zwischen Tests explizit zurücksetzen.
+    __resetMutationQueueForTests();
   });
 
   afterEach(() => {
@@ -721,5 +724,31 @@ describe("useMutationQueue", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test("zwei Hook-Instanzen teilen denselben State (globaler Store)", async () => {
+    const a = renderHook(() => useMutationQueue());
+    const b = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    vi.mocked(getPendingMutations).mockResolvedValue([
+      { id: "m1", type: "createPage", payload: {}, createdAt: "2024-01-01" },
+    ]);
+    await act(async () => {
+      await a.result.current.refreshPending();
+    });
+
+    // Beide Konsumenten sehen denselben Stand — vorher hatte jede
+    // Komponente ihren eigenen useState.
+    expect(a.result.current.pendingCount).toBe(1);
+    expect(b.result.current.pendingCount).toBe(1);
+
+    // Notice aus Instanz A ist auch in B sichtbar.
+    await act(async () => {
+      await a.result.current.resolveConflict("m1", "discard");
+    });
+    expect(b.result.current.lastNotice).toContain("verworfen");
   });
 });

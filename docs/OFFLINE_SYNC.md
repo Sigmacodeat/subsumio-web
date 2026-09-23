@@ -54,6 +54,26 @@ wird.
 - IndexedDB-Fehler laufen über `setOfflineErrorReporter` → `lastError`.
 - Banner (`src/components/mobile/mobile-sync-banner.tsx`): pendingCount,
   syncing-Spinner, danger-Banner bei `lastError`, Dismiss nur ohne Fehler.
+- `lastErrorAt` pinnt den ersten Fehler einer Strecke (Banner zeigt
+  „· seit HH:MM"); Retry-Failures zählen in `lastError` mit
+  („N fehlgeschlagen (erneuter Versuch ausstehend)").
+- `lastNotice` zeigt ehrlichen Erfolg — nur wenn **nichts** fehlschlug,
+  droppte oder konfliktierte („N Änderung(en) und M Datei(en)
+  synchronisiert"). Auto-Dismiss nach 8 s; Fehler kleben bis dismissed.
+- ARIA: Konflikt- und Error-Blöcke `role="alert"` (assertiv),
+  Notice `role="status"` (polite) — Erfolg braucht keine
+  Unterbrechung, Fehler schon.
+
+## Geteilter Queue-State
+
+`useMutationQueue` ist ein **module-level Store** via
+`useSyncExternalStore` — Banner, Sidebar, `/dashboard/sync` und
+Mobile-Tab-Bar teilen denselben State. Ein `resolveConflict` auf der
+Sync-Page aktualisiert sofort Banner + Nav-Badge. Nebeneffekte: genau
+ein `online`-Listener + ein `syncPending`-Re-Entry-Guard
+(`state.syncing`) — vorher registrierte jede Komponenten-Instanz
+einen eigenen Listener (parallele Sync-Läufe möglich). Tests nutzen
+`__resetMutationQueueForTests()` in `beforeEach`.
 
 ## Queue-Abdeckung
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 const mockQueue = vi.hoisted(() => ({
@@ -154,6 +154,20 @@ describe("MobileSyncBanner", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Kopie gespeichert als cases/neu-2");
     fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
     expect(mockQueue.clearNotice).toHaveBeenCalled();
+  });
+
+  test("dismissed-Reset: neue pending Änderung zeigt Banner wieder", () => {
+    mockQueue.lastError = "Netzwerkfehler";
+    mockQueue.lastErrorAt = Date.now();
+    const { rerender } = render(<MobileSyncBanner />);
+    // Fehler-Banner dismissen
+    const alert = screen.getByRole("alert");
+    fireEvent.click(within(alert).getAllByRole("button")[0]);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // Neue Änderung kommt in die Queue → Banner muss wieder auftauchen
+    mockQueue.pendingCount = 1;
+    rerender(<MobileSyncBanner />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Netzwerkfehler");
   });
 
   test("+n weitere verlinkt auf /dashboard/sync", () => {
