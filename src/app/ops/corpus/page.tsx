@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CorpusCommandCenter } from "@/components/dashboard/corpus-command-center";
 import { CorpusBestand } from "@/components/dashboard/corpus-bestand";
@@ -72,6 +72,39 @@ export default function CorpusPage() {
   const [selectedSource, setSelectedSource] = useState("all");
   const [stewardCorpus, setStewardCorpus] = useState("at-judikatur-vwgh");
   const [viewerPath, setViewerPath] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Hover/Focus-Prefetch auf die schweren Tabs: der Klick rendert dann aus
+  // dem Query-Cache statt mit Skeleton-Wartezeit. Die Keys/Fetcher spiegeln
+  // die Default-Queries der Ziel-Komponenten — driftet ein Default dort,
+  // degradiert der Prefetch lautlos zum normalen Fetch (kein Fehlerpfad).
+  const prefetchTab = useCallback(
+    (id: TabId) => {
+      const json = async (url: string) => {
+        const r = await fetch(url, { credentials: "same-origin" });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return ((await r.json()) as { data: unknown }).data;
+      };
+      if (id === "bestand") {
+        void queryClient.prefetchQuery({
+          queryKey: ["corpus-coverage-audit"],
+          queryFn: () => json("/api/admin/corpus-coverage-audit"),
+          staleTime: 300_000,
+        });
+        void queryClient.prefetchQuery({
+          queryKey: ["corpus-overview"],
+          queryFn: () => json("/api/admin/corpus-overview"),
+          staleTime: 60_000,
+        });
+      } else if (id === "protokoll") {
+        void queryClient.prefetchQuery({
+          queryKey: ["corpus-ingest-log", "limit=50&offset=0"],
+          queryFn: () => json("/api/admin/corpus-ingest-log?limit=50&offset=0"),
+        });
+      }
+    },
+    [queryClient]
+  );
 
   // Unread corpus-alerts count for badge on Übersicht tab
   const { data: alertData } = useQuery<{ unreadCount: number }>({
@@ -126,7 +159,13 @@ export default function CorpusPage() {
               asChild
               className="flex min-h-10 shrink-0 items-center gap-1.5 px-3 py-2"
             >
-              <a href={tabHref(id)} onClick={(e) => e.preventDefault()} className="no-underline">
+              <a
+                href={tabHref(id)}
+                onClick={(e) => e.preventDefault()}
+                onMouseEnter={() => prefetchTab(id)}
+                onFocus={() => prefetchTab(id)}
+                className="no-underline"
+              >
                 <Icon className="h-4 w-4" />
                 {label}
                 {id === "command-center" && unreadAlerts > 0 && (
