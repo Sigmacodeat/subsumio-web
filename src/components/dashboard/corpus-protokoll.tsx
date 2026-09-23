@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import {
   INGEST_ACTION_LABELS,
   SOURCE_LABELS,
@@ -75,6 +75,18 @@ export function CorpusProtokoll() {
     fn();
     setOffset(0);
   };
+
+  // Live-Suche mit 400ms-Debounce — Enter im Formular bleibt als
+  // Sofort-Anwenden bestehen, Tippen filtert aber ohne Extra-Tastendruck.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const trimmed = search.trim();
+      if (trimmed !== appliedSearch) reset(() => setAppliedSearch(trimmed));
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   const data = query.data;
   const pageNo = Math.floor(offset / PAGE_SIZE) + 1;
   const pages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
@@ -140,12 +152,28 @@ export function CorpusProtokoll() {
             <label htmlFor="log-search" className="text-xs text-[color:var(--ds-text-muted)]">
               Titel, Dokumentnummer oder Pfad
             </label>
-            <Input
-              id="log-search"
-              value={search}
-              placeholder="z. B. ABGB oder JWT_2024…"
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="log-search"
+                value={search}
+                placeholder="z. B. ABGB oder JWT_2024…"
+                onChange={(e) => setSearch(e.target.value)}
+                className={search ? "pr-8" : undefined}
+              />
+              {search && (
+                <button
+                  type="button"
+                  aria-label="Suche zurücksetzen"
+                  onClick={() => {
+                    setSearch("");
+                    reset(() => setAppliedSearch(""));
+                  }}
+                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                >
+                  <X size={14} aria-hidden />
+                </button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -167,13 +195,44 @@ export function CorpusProtokoll() {
               ))}
             </div>
           ) : query.isError ? (
-            <p className="p-6 text-sm text-[color:var(--ds-danger-text)]">
-              Protokoll konnte nicht geladen werden.
-            </p>
+            <div className="p-6 text-center">
+              <p className="text-sm text-[color:var(--ds-danger-text)]" role="alert">
+                Protokoll konnte nicht geladen werden.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => query.refetch()}
+                disabled={query.isFetching}
+              >
+                Neu laden
+              </Button>
+            </div>
           ) : data && data.entries.length === 0 ? (
-            <p className="p-6 text-sm text-[color:var(--ds-text-muted)]">
-              Keine Einträge für diese Auswahl.
-            </p>
+            <div className="p-6 text-center">
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                Keine Einträge für diese Auswahl.
+              </p>
+              {(appliedSearch || source !== ALL || action !== ALL || day) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() =>
+                    reset(() => {
+                      setSource(ALL);
+                      setAction(ALL);
+                      setDay("");
+                      setSearch("");
+                      setAppliedSearch("");
+                    })
+                  }
+                >
+                  Filter zurücksetzen
+                </Button>
+              )}
+            </div>
           ) : (
             <Table>
               {/* Sticky against the page's own scroll: a page of 50 rows
@@ -242,18 +301,21 @@ export function CorpusProtokoll() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={offset === 0}
+                disabled={offset === 0 || query.isFetching}
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
               >
                 Zurück
               </Button>
-              <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                Seite {pageNo} von {pages}
+              <span
+                className="text-xs text-[color:var(--ds-text-muted)] tabular-nums"
+                aria-live="polite"
+              >
+                {query.isFetching ? "Lädt…" : `Seite ${pageNo} von ${pages}`}
               </span>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={pageNo >= pages}
+                disabled={pageNo >= pages || query.isFetching}
                 onClick={() => setOffset(offset + PAGE_SIZE)}
               >
                 Weiter

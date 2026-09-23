@@ -150,9 +150,10 @@ export function OpsShell({
         </div>
       </aside>
       <main id="ops-main" tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
+        {/* 44px Touch-Targets, Scrollbar versteckt, aktiver Eintrag als Pill */}
         <nav
           aria-label="Betreiber-Navigation (mobil)"
-          className="flex gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] px-3 py-2 md:hidden"
+          className="flex [scrollbar-width:none] gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] px-3 py-1.5 [-ms-overflow-style:none] md:hidden [&::-webkit-scrollbar]:hidden"
         >
           {OPS_NAV.flatMap((g) => g.items).map(({ href, label }) => (
             <Link
@@ -160,10 +161,10 @@ export function OpsShell({
               href={href}
               aria-current={isActive(pathname, href) ? "page" : undefined}
               className={cn(
-                "shrink-0 rounded-md px-2.5 py-1 text-xs",
+                "flex min-h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium transition-colors active:scale-[0.97] active:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none",
                 isActive(pathname, href)
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
-                  : "text-[color:var(--ds-text-muted)]"
+                  : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               )}
             >
               {label}

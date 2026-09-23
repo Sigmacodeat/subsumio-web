@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CorpusCommandCenter } from "@/components/dashboard/corpus-command-center";
@@ -13,10 +14,61 @@ import { CorpusFileViewer } from "@/components/dashboard/corpus-steward/CorpusFi
 import { PublishBanner } from "@/components/dashboard/corpus-steward/PublishBanner";
 import { CorpusAlertBanner } from "@/components/dashboard/corpus-steward/CorpusAlertBanner";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Database, Search, ShieldCheck, FileText, Library, History } from "lucide-react";
+import {
+  Database,
+  Search,
+  ShieldCheck,
+  FileText,
+  Library,
+  History,
+  type LucideIcon,
+} from "lucide-react";
+
+const TAB_IDS = [
+  "bestand",
+  "protokoll",
+  "command-center",
+  "chunk-inspector",
+  "chunk-quality",
+  "steward",
+] as const;
+type TabId = (typeof TAB_IDS)[number];
+
+const TABS: Array<{ id: TabId; label: string; icon: LucideIcon }> = [
+  { id: "bestand", label: "Bestand", icon: Library },
+  { id: "protokoll", label: "Protokoll", icon: History },
+  { id: "command-center", label: "Übersicht", icon: Database },
+  { id: "chunk-inspector", label: "Chunk-Inspektor", icon: Search },
+  { id: "chunk-quality", label: "Qualität", icon: ShieldCheck },
+  { id: "steward", label: "Steward", icon: FileText },
+];
 
 export default function CorpusPage() {
-  const [activeTab, setActiveTab] = useState("bestand");
+  // Tab in der URL (?tab=) — Refresh und geteilte Links landen auf dem
+  // richtigen Reiter statt immer auf „Bestand".
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const rawTab = searchParams.get("tab") ?? "bestand";
+  const activeTab: TabId = (TAB_IDS as readonly string[]).includes(rawTab)
+    ? (rawTab as TabId)
+    : "bestand";
+  const tabHref = useCallback(
+    (v: TabId) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (v === "bestand") params.delete("tab");
+      else params.set("tab", v);
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [searchParams, pathname]
+  );
+  const setActiveTab = useCallback(
+    (v: string) => {
+      router.replace(tabHref(v as TabId), { scroll: false });
+    },
+    [router, tabHref]
+  );
   const [selectedSource, setSelectedSource] = useState("all");
   const [stewardCorpus, setStewardCorpus] = useState("at-judikatur-vwgh");
   const [viewerPath, setViewerPath] = useState<string | null>(null);
@@ -60,39 +112,34 @@ export default function CorpusPage() {
       <CorpusAlertBanner />
       <PublishBanner />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
-          <TabsTrigger value="bestand" className="flex items-center gap-2">
-            <Library className="h-4 w-4" />
-            <span className="hidden sm:inline">Bestand</span>
-          </TabsTrigger>
-          <TabsTrigger value="protokoll" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Protokoll</span>
-          </TabsTrigger>
-          <TabsTrigger value="command-center" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            <span className="hidden sm:inline">Übersicht</span>
-            {unreadAlerts > 0 && (
-              <span
-                className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--ds-info-bg)] px-1.5 text-xs font-semibold text-[color:var(--ds-info-text)]"
-                aria-label={`${unreadAlerts} ungelesene Corpus-Alerts`}
-              >
-                {unreadAlerts}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="chunk-inspector" className="flex items-center gap-2">
-            <Search className="h-4 w-4" />
-            <span className="hidden sm:inline">Chunk-Inspektor</span>
-          </TabsTrigger>
-          <TabsTrigger value="chunk-quality" className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Qualität</span>
-          </TabsTrigger>
-          <TabsTrigger value="steward" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Steward</span>
-          </TabsTrigger>
+        {/* Sticky unter dem Viewport-Rand: auf langen Listen (Bestand,
+            Protokoll) bleibt der Reiterwechsel erreichbar ohne hochzuscrollen.
+            Labels immer sichtbar — Icon-only-Tabs sind auf Touch unklar. */}
+        <TabsList className="sticky top-0 z-20 flex h-auto w-full [scrollbar-width:none] justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* Trigger sind echte Links (asChild → <a role="tab">): Rechtsklick
+              „Link kopieren" und Middle-Click funktionieren nativ, normaler
+              Klick bleibt SPA-Tabwechsel ohne Reload. */}
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <TabsTrigger
+              key={id}
+              value={id}
+              asChild
+              className="flex min-h-10 shrink-0 items-center gap-1.5 px-3 py-2"
+            >
+              <a href={tabHref(id)} onClick={(e) => e.preventDefault()} className="no-underline">
+                <Icon className="h-4 w-4" />
+                {label}
+                {id === "command-center" && unreadAlerts > 0 && (
+                  <span
+                    className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--ds-info-bg)] px-1.5 text-xs font-semibold text-[color:var(--ds-info-text)]"
+                    aria-label={`${unreadAlerts} ungelesene Corpus-Alerts`}
+                  >
+                    {unreadAlerts}
+                  </span>
+                )}
+              </a>
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="bestand" className="mt-4 space-y-6">

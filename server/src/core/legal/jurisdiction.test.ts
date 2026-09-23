@@ -5,6 +5,7 @@ import {
   AT_LAW_SOURCES_STATUTES,
   AT_LAW_SOURCES_JUDIKATUR,
   AT_PRIMARY_STATUTE_SOURCE,
+  EU_LAW_SOURCES_ALL,
   isLegalJurisdiction,
   statuteJurisdictionFromSlug,
   assertLegalSourceJurisdiction,
@@ -33,12 +34,18 @@ describe("jurisdiction constants", () => {
     expect(AT_LAW_SOURCES_JUDIKATUR).not.toContain("law-at-landesrecht");
   });
 
-  test("AT_LAW_SOURCES_ALL = statutes + judikatur + eu", () => {
+  test("AT_LAW_SOURCES_ALL = statutes + judikatur + all EU sources", () => {
     expect(AT_LAW_SOURCES_ALL).toEqual([
       ...AT_LAW_SOURCES_STATUTES,
       ...AT_LAW_SOURCES_JUDIKATUR,
-      "law-eu",
+      ...EU_LAW_SOURCES_ALL,
     ]);
+  });
+
+  test("EU_LAW_SOURCES_ALL covers regulations, directives and EuGH/EuG judikatur", () => {
+    expect(EU_LAW_SOURCES_ALL).toContain("law-eu");
+    expect(EU_LAW_SOURCES_ALL).toContain("law-eu-directives");
+    expect(EU_LAW_SOURCES_ALL).toContain("law-eu-judikatur");
   });
 
   test("AT_PRIMARY_STATUTE_SOURCE is law-at-normen (not the empty law-at)", () => {

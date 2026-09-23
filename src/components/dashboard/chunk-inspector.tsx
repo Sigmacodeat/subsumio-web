@@ -255,6 +255,19 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
     setPage(1);
   }, [searchInput]);
 
+  // Live-Suche: Enter bleibt Sofort-Anwenden, Tippen filtert nach 400ms.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const trimmed = searchInput.trim();
+      if (trimmed !== search) {
+        setSearch(trimmed);
+        setPage(1);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
   const onSearchClear = useCallback(() => {
     setSearchInput("");
     setSearch("");

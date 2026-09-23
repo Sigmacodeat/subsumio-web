@@ -52,7 +52,29 @@ function CoverageAudit() {
   });
 
   if (query.isLoading) return <Skeleton className="h-32 w-full" />;
-  if (query.isError || !query.data) return null;
+  if (query.isError || !query.data) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <p className="text-xs text-[color:var(--ds-danger-text)]" role="alert">
+            Abdeckungs-Audit konnte nicht geladen werden.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => query.refetch()}
+            disabled={query.isFetching}
+          >
+            <RefreshCw
+              className={`mr-1.5 h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`}
+              aria-hidden
+            />
+            Neu laden
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const a = query.data;
   const deviations = a.rows.filter((r) => r.audit_status !== "ok" && r.audit_status !== "gap");
@@ -388,16 +410,22 @@ export function CorpusBestand() {
               {d.ingestByDay.map((x) => (
                 <div
                   key={x.day}
-                  className="flex flex-1 flex-col justify-end"
+                  className="group flex min-w-0 flex-1 flex-col justify-end"
                   title={`${x.day}: ${fmt(x.added)} neu, ${fmt(x.updated)} geändert`}
                 >
                   <div
-                    className="w-full bg-[color:var(--ds-info-text)] opacity-50"
-                    style={{ height: `${(x.updated / maxDay) * 100}%` }}
+                    className="w-full rounded-t-sm bg-[color:var(--ds-info-text)] opacity-50 transition-opacity duration-150 group-hover:opacity-70 motion-reduce:transition-none"
+                    style={{
+                      height: `${(x.updated / maxDay) * 100}%`,
+                      minHeight: x.updated > 0 ? 2 : 0,
+                    }}
                   />
                   <div
-                    className="w-full bg-[color:var(--ds-success-text)]"
-                    style={{ height: `${(x.added / maxDay) * 100}%` }}
+                    className="w-full rounded-t-sm bg-[color:var(--ds-success-text)] transition-opacity duration-150 group-hover:opacity-80 motion-reduce:transition-none"
+                    style={{
+                      height: `${(x.added / maxDay) * 100}%`,
+                      minHeight: x.added > 0 ? 2 : 0,
+                    }}
                   />
                 </div>
               ))}

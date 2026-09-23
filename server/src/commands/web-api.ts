@@ -38,6 +38,7 @@ import {
   AT_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_ALL,
   CH_LAW_SOURCES_ALL,
+  EU_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_STATUTES,
 } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
@@ -1788,7 +1789,10 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
 /**
  * Shared, public, READ-ONLY reference sources every tenant may query alongside
  * their own (e.g. the statute corpus imported into `law-at`/`law-de`). Set via
- * `SUBSUMIO_SHARED_READ_SOURCES=law-at,law-de,law-ch,law-eu`. Empty by default →
+ * `SUBSUMIO_SHARED_READ_SOURCES=law-at,law-de,law-ch,law-eu`. Note: the
+ * jurisdiction maps below federate the granular sources (law-at-normen,
+ * law-*-judikatur, law-eu-directives, …) — the env list must include them
+ * too, or only the top-level sources are reachable. Empty by default →
  * behaviour is unchanged unless a deployment opts in. Statute text is public,
  * so federating it into reads is not a data-isolation concern; writes are
  * unaffected.
@@ -1818,6 +1822,7 @@ const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
   DE: DE_LAW_SOURCES_ALL,
   AT: AT_LAW_SOURCES_ALL,
   CH: CH_LAW_SOURCES_ALL,
+  EU: EU_LAW_SOURCES_ALL,
 };
 
 /**
@@ -2326,12 +2331,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   const ensuredSources = new Set<string>(["default"]);
   async function ensureSource(sourceId: string): Promise<void> {
     if (ensuredSources.has(sourceId)) return;
-    const legalJurisdiction: Record<string, string> = {
-      "law-at": "at",
-      "law-de": "de",
-      "law-ch": "ch",
-      "law-eu": "eu",
-    };
+    const legalJurisdiction = (sourceId: string): string | null =>
+      sourceId.match(/^law-(at|de|ch|eu)(?:-.+)?$/)?.[1] ?? null;
     await engine.executeRaw(
       `INSERT INTO sources (id, name, jurisdiction, config)
        VALUES (
@@ -2346,7 +2347,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
        ON CONFLICT (id) DO UPDATE SET
          jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction),
          config = sources.config || EXCLUDED.config`,
-      [sourceId, legalJurisdiction[sourceId] ?? null]
+      [sourceId, legalJurisdiction(sourceId)]
     );
     ensuredSources.add(sourceId);
   }
@@ -9413,8 +9414,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   };
 
   async function ensureSharedSource(sourceId: string): Promise<void> {
+    // Exact map first, then law-{jur}-* prefix so granular sources
+    // (law-at-judikatur-vfgh, law-eu-directives, …) resolve too.
     const jurisdiction =
-      Object.entries(LAW_SOURCE_MAP).find(([, id]) => id === sourceId)?.[0] ?? null;
+      Object.entries(LAW_SOURCE_MAP).find(([, id]) => id === sourceId)?.[0] ??
+      sourceId.match(/^law-(at|de|ch|eu)(?:-.+)?$/)?.[1] ??
+      null;
     await engine.executeRaw(
       `INSERT INTO sources (id, name, jurisdiction, config)
        VALUES (

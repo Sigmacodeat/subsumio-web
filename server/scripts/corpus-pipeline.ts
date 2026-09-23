@@ -65,7 +65,7 @@ import {
   unlinkSync,
   renameSync,
 } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, resolve } from "path";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
@@ -392,6 +392,16 @@ export const SIMPLE: SimpleSource[] = [
     dir: "ch-judikatur",
     sourceId: "law-ch-judikatur",
     importCmd: ["scripts/import-judikatur.ts", "--source", "ch", "--bulk", "--no-embed"],
+  },
+  {
+    kind: "dirimport",
+    // EU-Rechtsprechung (EuGH/EuG) — gleicher Importer, Slugs unter
+    // legal/judikatur/eu. Zusätzlich zu den eu-corpus-Steps (directives/
+    // regulations), die EU-Primärrecht abdecken.
+    key: "judikatur-eu",
+    dir: "eu-judikatur",
+    sourceId: "law-eu-judikatur",
+    importCmd: ["scripts/import-judikatur.ts", "--source", "eu", "--bulk", "--no-embed"],
   },
   {
     kind: "dirimport",
@@ -2306,6 +2316,11 @@ async function main() {
   }
 }
 
-if (import.meta.main) {
+// Portable main-guard: import.meta.main is Bun/tsx-only; under plain Node
+// (e.g. tsx without the Bun extension) fall back to the argv[1] comparison.
+const isMain =
+  import.meta.main ??
+  (process.argv[1] ? fileURLToPath(import.meta.url) === resolve(process.argv[1]) : false);
+if (isMain) {
   main();
 }

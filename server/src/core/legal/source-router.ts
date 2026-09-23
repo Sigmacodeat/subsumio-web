@@ -26,6 +26,9 @@ import {
   DE_LAW_SOURCES_JUDIKATUR,
   CH_LAW_SOURCES_STATUTES,
   CH_LAW_SOURCES_JUDIKATUR,
+  EU_LAW_SOURCES_ALL,
+  EU_LAW_SOURCES_STATUTES,
+  EU_LAW_SOURCES_JUDIKATUR,
   type LegalJurisdiction,
 } from "./jurisdiction.ts";
 
@@ -78,6 +81,10 @@ export function sourceTypeToIds(
       if (jur === "ch") {
         return CH_LAW_SOURCES_STATUTES;
       }
+      if (jur === "eu") {
+        // EU-Primärrecht: Verordnungen in law-eu, Richtlinien separat.
+        return EU_LAW_SOURCES_STATUTES;
+      }
       return lawSource ? [lawSource] : [];
 
     case "judgement":
@@ -94,6 +101,11 @@ export function sourceTypeToIds(
       // routing them to law-ch would search the statute-only corpus.
       if (jur === "ch") {
         return CH_LAW_SOURCES_JUDIKATUR;
+      }
+      // EuGH/EuG live in law-eu-judikatur — routing them to law-eu
+      // would search only regulations/directives.
+      if (jur === "eu") {
+        return EU_LAW_SOURCES_JUDIKATUR;
       }
       return lawSource ? [lawSource] : [];
 
@@ -133,8 +145,9 @@ export function sourceTypeToIds(
         for (const sid of CH_LAW_SOURCES_STATUTES) ids.add(sid);
         for (const sid of CH_LAW_SOURCES_JUDIKATUR) ids.add(sid);
       }
-      // EU law always included for DACH
-      ids.add("law-eu");
+      // EU law always included for DACH — and fully: regulations,
+      // directives AND EuGH/EuG judikatur reach every jurisdiction.
+      for (const sid of EU_LAW_SOURCES_ALL) ids.add(sid);
       if (ownSourceId) ids.add(ownSourceId);
       return Array.from(ids);
     }

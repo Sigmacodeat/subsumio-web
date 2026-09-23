@@ -15,6 +15,12 @@ import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SIMPLE, JUDIKATUR } from "../scripts/corpus-pipeline";
+import {
+  AT_LAW_SOURCES_ALL,
+  DE_LAW_SOURCES_ALL,
+  CH_LAW_SOURCES_ALL,
+  EU_LAW_SOURCES_ALL,
+} from "../src/core/legal/jurisdiction";
 
 const SERVER_DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -53,13 +59,37 @@ describe("corpus-pipeline registry integrity", () => {
     }
   });
 
-  test("de- und ch-Judikatur haben Pipeline-Steps (Regression: lagen auf Disk ohne Step)", () => {
+  test("de-, ch- und eu-Judikatur haben Pipeline-Steps (Regression: lagen auf Disk ohne Step)", () => {
     const deJudikatur = SIMPLE.find((s) => s.key === "judikatur-de");
     const chJudikatur = SIMPLE.find((s) => s.key === "judikatur-ch");
+    const euJudikatur = SIMPLE.find((s) => s.key === "judikatur-eu");
     expect(deJudikatur?.sourceId).toBe("law-de-judikatur");
     expect(chJudikatur?.sourceId).toBe("law-ch-judikatur");
+    expect(euJudikatur?.sourceId).toBe("law-eu-judikatur");
     expect(deJudikatur?.importCmd?.[0]).toBe("scripts/import-judikatur.ts");
     expect(chJudikatur?.importCmd).toContain("ch");
+    expect(euJudikatur?.importCmd).toContain("eu");
+  });
+
+  test("jede Registry-sourceId ist im Source-Routing erreichbar", () => {
+    // Gegenrichtung zum Judikatur-Bug: eine importierte Source, die in
+    // keiner Jurisdictions-Liste steht, ist tote Daten — importiert,
+    // aber für Queries unsichtbar (war bei law-eu-directives und
+    // law-ch-literatur der Fall).
+    const routed: Record<string, string[]> = {
+      at: AT_LAW_SOURCES_ALL,
+      de: DE_LAW_SOURCES_ALL,
+      ch: CH_LAW_SOURCES_ALL,
+      eu: EU_LAW_SOURCES_ALL,
+    };
+    for (const s of ALL_SOURCES) {
+      const jur = s.sourceId.match(/^law-([a-z]{2})/)?.[1];
+      expect(jur, `${s.sourceId}: kein law-{jur}-Prefix`).toBeTruthy();
+      expect(
+        routed[jur!],
+        `${s.sourceId} (${s.key}) ist importiert, aber in keiner Routing-Liste — Queries erreichen es nie`
+      ).toContain(s.sourceId);
+    }
   });
 
   test("dirimport-Steps mit Corpus auf Disk haben ein importCmd", () => {

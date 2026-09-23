@@ -75,6 +75,7 @@ import {
   AT_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_ALL,
   CH_LAW_SOURCES_ALL,
+  EU_LAW_SOURCES_ALL,
 } from "../../legal/jurisdiction.ts";
 import {
   runCompletenessCheck,
@@ -223,7 +224,7 @@ const PIPELINE_JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
   at: AT_LAW_SOURCES_ALL,
   de: DE_LAW_SOURCES_ALL,
   ch: CH_LAW_SOURCES_ALL,
-  eu: ["law-eu"],
+  eu: EU_LAW_SOURCES_ALL,
 };
 
 /**

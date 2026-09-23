@@ -59,11 +59,29 @@ export const AT_LAW_SOURCES_JUDIKATUR: string[] = [
   "law-at-judikatur-uvs",
 ];
 
+/**
+ * EU law sources. `law-eu` holds regulations; directives live in the
+ * separate `law-eu-directives` source (import-eu-corpus --type directive);
+ * EuGH/EuG judgements in `law-eu-judikatur` (import-judikatur --source eu).
+ * All apply to every DACH jurisdiction — omitting them would strand
+ * imported directives/judgements unrouted (same failure class as the
+ * de/ch-judikatur gap).
+ */
+export const EU_LAW_SOURCES_STATUTES: string[] = ["law-eu", "law-eu-directives"];
+
+export const EU_LAW_SOURCES_JUDIKATUR: string[] = ["law-eu-judikatur"];
+
+/** All EU law sources (primary law + directives + judikatur). */
+export const EU_LAW_SOURCES_ALL: string[] = [
+  ...EU_LAW_SOURCES_STATUTES,
+  ...EU_LAW_SOURCES_JUDIKATUR,
+];
+
 /** All AT law sources (statutes + judikatur + EU). Use this for "all" queries. */
 export const AT_LAW_SOURCES_ALL: string[] = [
   ...AT_LAW_SOURCES_STATUTES,
   ...AT_LAW_SOURCES_JUDIKATUR,
-  "law-eu",
+  ...EU_LAW_SOURCES_ALL,
 ];
 
 /** Primary AT statute source — use as `sourceId` for single-source queries. */
@@ -89,16 +107,18 @@ export const DE_LAW_SOURCES_JUDIKATUR: string[] = ["law-de-judikatur"];
 export const DE_LAW_SOURCES_ALL: string[] = [
   ...DE_LAW_SOURCES_STATUTES,
   ...DE_LAW_SOURCES_JUDIKATUR,
-  "law-eu",
+  ...EU_LAW_SOURCES_ALL,
 ];
 
 /**
  * CH law sources. Statutes (OR, ZGB, …) live in the main `law-ch` source;
  * judgements in the separate `law-ch-judikatur` source (import-judikatur
- * --source ch, ~4.3k Entscheide). Licensed literature sources
- * (law-ch-literatur-*) stay adapter-gated until contracts are signed.
+ * --source ch, ~4.3k Entscheide). `law-ch-literatur` is routed for parity
+ * with AT/DE (dirimport only lands what exists on disk). Licensed
+ * literature sub-sources (law-ch-literatur-*) stay adapter-gated until
+ * contracts are signed.
  */
-export const CH_LAW_SOURCES_STATUTES: string[] = ["law-ch"];
+export const CH_LAW_SOURCES_STATUTES: string[] = ["law-ch", "law-ch-literatur"];
 
 export const CH_LAW_SOURCES_JUDIKATUR: string[] = ["law-ch-judikatur"];
 
@@ -106,7 +126,7 @@ export const CH_LAW_SOURCES_JUDIKATUR: string[] = ["law-ch-judikatur"];
 export const CH_LAW_SOURCES_ALL: string[] = [
   ...CH_LAW_SOURCES_STATUTES,
   ...CH_LAW_SOURCES_JUDIKATUR,
-  "law-eu",
+  ...EU_LAW_SOURCES_ALL,
 ];
 
 export function isLegalJurisdiction(value: string): value is LegalJurisdiction {

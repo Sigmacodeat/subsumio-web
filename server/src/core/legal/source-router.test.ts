@@ -235,6 +235,13 @@ describe("Source Router v2", () => {
       expect(ids).toEqual(["law-de-judikatur"]);
     });
 
+    it("maps judgement to law-eu-judikatur for EU (EuGH/EuG)", () => {
+      // EuGH/EuG live in law-eu-judikatur — routing to law-eu would search
+      // only regulations/directives.
+      const ids = sourceTypeToIds("judgement", "EU");
+      expect(ids).toEqual(["law-eu-judikatur"]);
+    });
+
     it("maps firm_knowledge to own source", () => {
       const ids = sourceTypeToIds("firm_knowledge", "DE", "brain_abc");
       expect(ids).toEqual(["brain_abc"]);
@@ -246,6 +253,7 @@ describe("Source Router v2", () => {
       expect(ids).toContain("law-de-judikatur");
       expect(ids).toContain("law-de-literatur");
       expect(ids).toContain("law-eu");
+      expect(ids).toContain("law-eu-judikatur");
       expect(ids).toContain("brain_abc");
     });
 

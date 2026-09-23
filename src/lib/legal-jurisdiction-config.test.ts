@@ -412,8 +412,12 @@ describe("EU Law Cross-Jurisdictional", () => {
     expect(isLawAllowed("CH", "DSGVO")).toBe(true);
   });
 
-  it("EU config has law-eu as only source", () => {
-    expect(JURISDICTION_CONFIGS.EU.lawSourceIds).toEqual(["law-eu"]);
+  it("EU config has all granular EU sources", () => {
+    expect(JURISDICTION_CONFIGS.EU.lawSourceIds).toEqual([
+      "law-eu",
+      "law-eu-directives",
+      "law-eu-judikatur",
+    ]);
   });
 
   it("DE config includes law-eu alongside law-de", () => {
@@ -603,15 +607,34 @@ describe("Jurisdiction Config Structure", () => {
   });
 
   it("DE config has correct law source IDs", () => {
-    expect(JURISDICTION_CONFIGS.DE.lawSourceIds).toEqual(["law-de", "law-de-judikatur", "law-eu"]);
+    expect(JURISDICTION_CONFIGS.DE.lawSourceIds).toEqual([
+      "law-de",
+      "law-de-judikatur",
+      "law-eu",
+      "law-eu-directives",
+      "law-eu-judikatur",
+    ]);
   });
 
   it("AT config has correct law source IDs", () => {
-    expect(JURISDICTION_CONFIGS.AT.lawSourceIds).toEqual(["law-at", "law-at-judikatur", "law-eu"]);
+    expect(JURISDICTION_CONFIGS.AT.lawSourceIds).toEqual([
+      "law-at",
+      "law-at-judikatur",
+      "law-eu",
+      "law-eu-directives",
+      "law-eu-judikatur",
+    ]);
   });
 
   it("CH config has correct law source IDs", () => {
-    expect(JURISDICTION_CONFIGS.CH.lawSourceIds).toEqual(["law-ch", "law-ch-judikatur", "law-eu"]);
+    expect(JURISDICTION_CONFIGS.CH.lawSourceIds).toEqual([
+      "law-ch",
+      "law-ch-literatur",
+      "law-ch-judikatur",
+      "law-eu",
+      "law-eu-directives",
+      "law-eu-judikatur",
+    ]);
   });
 
   it("AT config includes collision warnings", () => {
