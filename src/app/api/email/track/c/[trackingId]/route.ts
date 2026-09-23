@@ -3,7 +3,6 @@ import { createPublicHandler } from "@/lib/api-handler";
 import {
   logTrackingEvent,
   extractClientIp,
-  lookupGeoIp,
   getMessageIdByTrackingId,
   getFirstOpenEvent,
   detectForward,
@@ -29,7 +28,7 @@ const clickTrackSchema = z.object({
  * Rewrites links in tracked emails to: /api/email/track/c/{trackingId}?l={linkId}&u={base64url}
  *
  * On visit:
- * 1. Logs a "clicked" tracking event with IP, UA, geo
+ * 1. Logs a "clicked" tracking event with IP and UA (no third-party geo lookup)
  * 2. Decodes the original URL from the `u` query param
  * 3. Redirects (302) to the original URL
  *
@@ -77,16 +76,11 @@ export const GET = createPublicHandler(
         const userAgent = req.headers.get("user-agent") ?? null;
         const messageId = await getMessageIdByTrackingId(trackingId);
 
-        let geo = { country: null as string | null, city: null as string | null };
-        if (ip) {
-          geo = await lookupGeoIp(ip);
-        }
-
         // Forward detection
         let isForward = false;
         const firstOpen = await getFirstOpenEvent(trackingId);
         if (firstOpen) {
-          isForward = detectForward(firstOpen, ip ?? "", geo, userAgent);
+          isForward = detectForward(firstOpen, ip ?? "", userAgent);
         }
 
         await logTrackingEvent({
@@ -97,8 +91,6 @@ export const GET = createPublicHandler(
           targetUrl,
           ipAddress: ip ?? undefined,
           userAgent: userAgent ?? undefined,
-          geoCountry: geo.country ?? undefined,
-          geoCity: geo.city ?? undefined,
           isForward,
           raw: { source: "click_redirect" },
         });

@@ -166,73 +166,58 @@ describe("extractClientIp", () => {
 });
 
 describe("detectForward", () => {
+  const firstOpen: TrackingEvent = {
+    id: "1",
+    messageId: "msg1",
+    trackingId: "trk_1",
+    eventType: "opened",
+    linkId: null,
+    targetUrl: null,
+    ipAddress: "1.2.3.4",
+    userAgent: "Mozilla/5.0",
+    geoCountry: null,
+    geoCity: null,
+    isForward: false,
+    raw: {},
+    createdAt: new Date().toISOString(),
+  };
+
   test("returns false when no first open event", () => {
-    expect(detectForward(null, "1.2.3.4", { country: "DE", city: "Berlin" }, "Mozilla/5.0")).toBe(
-      false
-    );
+    expect(detectForward(null, "1.2.3.4", "Mozilla/5.0")).toBe(false);
   });
 
   test("returns false when same IP", () => {
-    const firstOpen: TrackingEvent = {
-      id: "1",
-      messageId: "msg1",
-      trackingId: "trk_1",
-      eventType: "opened",
-      linkId: null,
-      targetUrl: null,
-      ipAddress: "1.2.3.4",
-      userAgent: "Mozilla/5.0",
-      geoCountry: "DE",
-      geoCity: "Berlin",
-      isForward: false,
-      raw: {},
-      createdAt: new Date().toISOString(),
-    };
-    expect(
-      detectForward(firstOpen, "1.2.3.4", { country: "DE", city: "Berlin" }, "Mozilla/5.0")
-    ).toBe(false);
+    expect(detectForward(firstOpen, "1.2.3.4", "Mozilla/5.0")).toBe(false);
   });
 
-  test("returns true when different IP and different country", () => {
-    const firstOpen: TrackingEvent = {
-      id: "1",
-      messageId: "msg1",
-      trackingId: "trk_1",
-      eventType: "opened",
-      linkId: null,
-      targetUrl: null,
-      ipAddress: "1.2.3.4",
-      userAgent: "Mozilla/5.0",
-      geoCountry: "DE",
-      geoCity: "Berlin",
-      isForward: false,
-      raw: {},
-      createdAt: new Date().toISOString(),
-    };
-    expect(
-      detectForward(firstOpen, "5.6.7.8", { country: "FR", city: "Paris" }, "Outlook/2.0")
-    ).toBe(true);
+  test("returns false when only the IP differs (mobile network, VPN)", () => {
+    expect(detectForward(firstOpen, "5.6.7.8", "Mozilla/5.0")).toBe(false);
   });
 
-  test("returns true when different IP and different city", () => {
-    const firstOpen: TrackingEvent = {
-      id: "1",
-      messageId: "msg1",
-      trackingId: "trk_1",
-      eventType: "opened",
-      linkId: null,
-      targetUrl: null,
-      ipAddress: "1.2.3.4",
-      userAgent: "Mozilla/5.0",
-      geoCountry: "DE",
-      geoCity: "Berlin",
-      isForward: false,
-      raw: {},
-      createdAt: new Date().toISOString(),
-    };
-    expect(
-      detectForward(firstOpen, "5.6.7.8", { country: "DE", city: "Munich" }, "Mozilla/5.0")
-    ).toBe(true);
+  test("returns true when IP and mail client differ", () => {
+    expect(detectForward(firstOpen, "5.6.7.8", "Outlook/2.0")).toBe(true);
+  });
+});
+
+describe("no third-party geo lookup", () => {
+  test("module no longer exports a geo lookup", async () => {
+    const mod = await import("./tracking");
+    expect("lookupGeoIp" in mod).toBe(false);
+  });
+
+  test("tracking code never calls an external geo-IP service", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const root = process.cwd();
+    const files = [
+      "src/lib/email/tracking.ts",
+      "src/app/api/email/track/o/[trackingId]/route.ts",
+      "src/app/api/email/track/c/[trackingId]/route.ts",
+    ];
+    for (const f of files) {
+      const src = readFileSync(join(root, f), "utf8");
+      expect(src).not.toMatch(/ipapi|ip-api|ipinfo|geoip|lookupGeoIp/i);
+    }
   });
 });
 

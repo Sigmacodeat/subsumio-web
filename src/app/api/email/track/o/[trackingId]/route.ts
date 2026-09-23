@@ -3,7 +3,6 @@ import {
   logTrackingEvent,
   getTrackingPixel,
   extractClientIp,
-  lookupGeoIp,
   getMessageIdByTrackingId,
   getFirstOpenEvent,
   detectForward,
@@ -19,9 +18,9 @@ export const dynamic = "force-dynamic";
  * Open-tracking pixel endpoint.
  *
  * Returns a 1x1 transparent PNG. As a side effect, logs an "opened" tracking event
- * with the recipient's IP, User-Agent, and geo data.
+ * with the recipient's IP and User-Agent (no third-party geo lookup).
  *
- * Forward detection: compares IP/geo/UA against the first open event.
+ * Forward detection: compares IP/UA against the first open event.
  * If they differ significantly, the event is flagged as is_forward.
  *
  * Always returns 200 + PNG, even on errors — the email client must not see a broken image.
@@ -47,17 +46,11 @@ export const GET = createPublicHandler(
         const userAgent = req.headers.get("user-agent") ?? null;
         const messageId = await getMessageIdByTrackingId(cleanTrackingId);
 
-        // Geo lookup (best effort)
-        let geo = { country: null as string | null, city: null as string | null };
-        if (ip) {
-          geo = await lookupGeoIp(ip);
-        }
-
         // Forward detection
         let isForward = false;
         const firstOpen = await getFirstOpenEvent(cleanTrackingId);
         if (firstOpen) {
-          isForward = detectForward(firstOpen, ip ?? "", geo, userAgent);
+          isForward = detectForward(firstOpen, ip ?? "", userAgent);
         }
 
         await logTrackingEvent({
@@ -66,8 +59,6 @@ export const GET = createPublicHandler(
           eventType: "opened",
           ipAddress: ip ?? undefined,
           userAgent: userAgent ?? undefined,
-          geoCountry: geo.country ?? undefined,
-          geoCity: geo.city ?? undefined,
           isForward,
           raw: { source: "pixel" },
         });
@@ -80,10 +71,8 @@ export const GET = createPublicHandler(
             eventType: "forwarded",
             ipAddress: ip ?? undefined,
             userAgent: userAgent ?? undefined,
-            geoCountry: geo.country ?? undefined,
-            geoCity: geo.city ?? undefined,
             isForward: true,
-            raw: { source: "pixel", detected_via: "ip_geo_mismatch" },
+            raw: { source: "pixel", detected_via: "ip_ua_mismatch" },
           });
         }
       } catch (err) {
