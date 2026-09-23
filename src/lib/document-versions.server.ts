@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { ENGINE_URL } from "@/lib/engine";
 import {
   isLockedFor,
@@ -128,6 +129,10 @@ export async function checkinDocument(
       doc_frontmatter: docFrontmatter,
       doc_content: content,
       doc_title: page.title ?? "",
+      // Hash + Größe für den Binär-Vergleich im Versions-Panel —
+      // Wort-Diff auf PDF/DOCX-Payloads ist sinnlos.
+      doc_content_hash: createHash("sha256").update(content, "utf-8").digest("hex"),
+      doc_content_size: Buffer.byteLength(content, "utf-8"),
     } satisfies DocumentVersionFrontmatter,
   });
 

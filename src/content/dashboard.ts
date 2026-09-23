@@ -8342,6 +8342,14 @@ export const D = {
     de: "{{count}} Dokument(e) konnten nicht verschoben werden — bitte erneut versuchen.",
     en: "{{count}} document(s) could not be moved — please retry.",
   },
+  "casesdetail.folder_rename_failed": {
+    de: "Ordner konnte nicht umbenannt werden.",
+    en: "Folder could not be renamed.",
+  },
+  "casesdetail.folder_dnd_hint": {
+    de: "Tipp: Dokumente lassen sich per Drag & Drop direkt auf einen Ordner im Baum ziehen.",
+    en: "Tip: drag documents directly onto a folder in the tree.",
+  },
   "casesdetail.folder_rename_affects": {
     de: "Unterordner werden mitverschoben. Betroffen: {{count}} Dokument(e).",
     en: "Subfolders are moved along. Affected: {{count}} document(s).",

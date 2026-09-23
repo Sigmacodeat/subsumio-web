@@ -121,6 +121,9 @@ export function DocumentsTab() {
   // Doc-Frontmatter) — neu angelegte Unterordner werden daher pro Akte
   // in localStorage „gepinnt", bis ein Dokument sie befüllt.
   const [pinnedFolders, setPinnedFolders] = useState<string[]>([]);
+  // Einmaliger Inline-Hint für Drag&Drop — der title-Tooltip ist auf
+  // Touch-Geräten unsichtbar; nach Wegklicken nicht mehr zeigen.
+  const [dndHintDismissed, setDndHintDismissed] = useState(true);
   const [folderRename, setFolderRename] = useState<{ path: string; value: string } | null>(null);
   const [folderCreate, setFolderCreate] = useState<{ parent: string; value: string } | null>(null);
   const [folderBulkBusy, setFolderBulkBusy] = useState(false);
@@ -135,6 +138,7 @@ export function DocumentsTab() {
       if (localStorage.getItem(treeOpenKey) === "1") setFolderTreeOpen(true);
       const rawPinned = pinnedKey ? localStorage.getItem(pinnedKey) : null;
       setPinnedFolders(rawPinned ? (JSON.parse(rawPinned) as string[]) : []);
+      setDndHintDismissed(localStorage.getItem("subsumio:folder-dnd-hint-seen") === "1");
     } catch {
       /* localStorage verweigert — Defaults bleiben */
     }
@@ -287,28 +291,11 @@ export function DocumentsTab() {
       );
       return;
     }
-    setFolderBulkBusy(true);
-    let moved = 0;
-    let failed = 0;
-    try {
-      for (const [slug, f] of Object.entries(docFolders)) {
-        if (f !== oldPath && !f.startsWith(`${oldPath}/`)) continue;
-        const next = `${newPath}${f.slice(oldPath.length)}`;
-        const res = await csrfFetch(
-          `/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ frontmatter: { folder: next }, merge: true }),
-          }
-        );
-        if (res.ok) {
-          moved++;
-          setDocFolders((prev) => ({ ...prev, [slug]: next }));
-        } else {
-          failed++;
-        }
-      }
+    const affected = Object.entries(docFolders).filter(
+      ([, f]) => f === oldPath || f.startsWith(`${oldPath}/`)
+    );
+    // Gepinnter Leerordner ohne Dokumente — nur lokales Remap, kein Call.
+    if (affected.length === 0) {
       updatePinnedFolders((prev) =>
         prev.map((p) =>
           p === oldPath || p.startsWith(`${oldPath}/`) ? `${newPath}${p.slice(oldPath.length)}` : p
@@ -318,6 +305,56 @@ export function DocumentsTab() {
         setFolderFilter(`${newPath}${folderFilter.slice(oldPath.length)}`);
       }
       setFolderRename(null);
+      addToast({
+        type: "success",
+        title: t("casesdetail.folder_renamed").replace("{{count}}", "0"),
+      });
+      return;
+    }
+    setFolderBulkBusy(true);
+    try {
+      // Bulk-Endpoint: der Server verifiziert pro Seite den Prefix und
+      // schreibt gelockt — ein Request statt N sequentieller PATCHes.
+      const res = await csrfFetch("/api/legal/folders/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slugs: affected.map(([slug]) => slug),
+          from: oldPath,
+          to: newPath,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        moved?: number;
+        failed?: number;
+        moved_slugs?: string[];
+      };
+      if (!res.ok) {
+        ctx.setUploadError(t("casesdetail.folder_rename_failed"));
+        return;
+      }
+      const movedSet = new Set(data.moved_slugs ?? affected.map(([slug]) => slug));
+      setDocFolders((prev) => {
+        const next = { ...prev };
+        for (const [slug, f] of Object.entries(prev)) {
+          if (!movedSet.has(slug)) continue;
+          if (f === oldPath || f.startsWith(`${oldPath}/`)) {
+            next[slug] = `${newPath}${f.slice(oldPath.length)}`;
+          }
+        }
+        return next;
+      });
+      updatePinnedFolders((prev) =>
+        prev.map((p) =>
+          p === oldPath || p.startsWith(`${oldPath}/`) ? `${newPath}${p.slice(oldPath.length)}` : p
+        )
+      );
+      if (folderFilter === oldPath || folderFilter.startsWith(`${oldPath}/`)) {
+        setFolderFilter(`${newPath}${folderFilter.slice(oldPath.length)}`);
+      }
+      setFolderRename(null);
+      const moved = data.moved ?? movedSet.size;
+      const failed = data.failed ?? 0;
       if (failed > 0) {
         ctx.setUploadError(
           t("casesdetail.folder_rename_partial").replace("{{count}}", String(failed))
@@ -328,6 +365,8 @@ export function DocumentsTab() {
           title: t("casesdetail.folder_renamed").replace("{{count}}", String(moved)),
         });
       }
+    } catch {
+      ctx.setUploadError(t("casesdetail.folder_rename_failed"));
     } finally {
       setFolderBulkBusy(false);
     }
@@ -728,6 +767,30 @@ export function DocumentsTab() {
           <Network size={13} /> {t("casesdetail.link_existing")}
         </Button>
       </div>
+
+      {/* Drag&Drop-Hint: der title-Tooltip an Doc-Rows ist auf Touch
+          unsichtbar — einmalig inline zeigen, wegklickbar. */}
+      {folderTreeOpen && allFolders.length > 0 && !dndHintDismissed && (
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2 text-xs text-[color:var(--ds-info-text)]">
+          <FolderOpen size={13} className="shrink-0" aria-hidden="true" />
+          <span className="flex-1">{t("casesdetail.folder_dnd_hint")}</span>
+          <button
+            type="button"
+            aria-label={t("common.close")}
+            onClick={() => {
+              setDndHintDismissed(true);
+              try {
+                localStorage.setItem("subsumio:folder-dnd-hint-seen", "1");
+              } catch {
+                /* ignore */
+              }
+            }}
+            className="shrink-0 rounded-md p-1 transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+          >
+            <XCircle size={14} aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {/* Link existing document dialog */}
       {ctx.showLinkDialog && (

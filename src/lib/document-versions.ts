@@ -25,6 +25,28 @@ export interface DocumentVersionFrontmatter {
   /** Snapshot des Inhalts zum Check-in. */
   doc_content: string;
   doc_title: string;
+  /** SHA-256 über `doc_content` — Grundlage des Binär-Vergleichs. */
+  doc_content_hash?: string;
+  /** Byte-Größe von `doc_content` (UTF-8). */
+  doc_content_size?: number;
+}
+
+/** Text-ähnliche MIME-Typen, für die ein Wort-Diff sinnvoll ist. */
+const TEXT_MIME_RE =
+  /^(text\/|application\/(json|xml|javascript|x-yaml|rtf|xhtml\+xml|atom\+xml))/i;
+
+/**
+ * Ist die Version ein Binärdokument (PDF, DOCX, Bild, …)? Dann ist ein
+ * Wort-Diff des gespeicherten Inhalts sinnlos — die UI zeigt stattdessen
+ * den Hash-/Größen-Vergleich.
+ */
+export function isBinaryVersion(v: DocumentVersionFrontmatter): boolean {
+  const mime = String(v.doc_frontmatter?.mime_type ?? v.doc_frontmatter?.content_type ?? "").trim();
+  if (mime) return !TEXT_MIME_RE.test(mime);
+  // Kein MIME-Typ: Heuristik auf dem Inhalt — NUL-Bytes oder
+  // Base64-Daten-URLs verraten Binärdaten.
+  const head = v.doc_content.slice(0, 512);
+  return head.includes("\u0000") || head.startsWith("data:");
 }
 
 export function readLock(frontmatter: Record<string, unknown> | undefined): DocumentLock | null {

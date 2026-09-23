@@ -7,7 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { diffWords, diffStats, type DiffToken } from "@/lib/word-diff";
-import type { DocumentLock, DocumentVersionFrontmatter } from "@/lib/document-versions";
+import {
+  isBinaryVersion,
+  type DocumentLock,
+  type DocumentVersionFrontmatter,
+} from "@/lib/document-versions";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" });
@@ -26,6 +30,50 @@ function DiffSideBySide({ left, right }: { left: string; right: string }) {
       <pre className="font-[family-name:var(--font-inter)] text-xs leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ds-text)] sm:border-l sm:border-[color:var(--ds-border)] sm:pl-3">
         <DiffTokens tokens={diff.right} side="right" />
       </pre>
+    </div>
+  );
+}
+
+/** Binär-Vergleich: kein Wort-Diff auf PDF/DOCX-Payloads — stattdessen
+ *  Hash-/Größenvergleich mit ehrlichem „geändert/identisch". */
+function BinaryDiffInfo({
+  prev,
+  cur,
+}: {
+  prev: DocumentVersionFrontmatter | undefined;
+  cur: DocumentVersionFrontmatter;
+}) {
+  const mime = String(
+    cur.doc_frontmatter?.mime_type ?? cur.doc_frontmatter?.content_type ?? "Binärdatei"
+  );
+  const sizeOf = (v: DocumentVersionFrontmatter | undefined) =>
+    v?.doc_content_size ?? (v ? new Blob([v.doc_content]).size : 0);
+  const identical =
+    prev === undefined
+      ? cur.doc_content.length === 0
+      : prev.doc_content_hash && cur.doc_content_hash
+        ? prev.doc_content_hash === cur.doc_content_hash
+        : prev.doc_content === cur.doc_content;
+  const fmtSize = (n: number) =>
+    n >= 1_048_576 ? `${(n / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+  return (
+    <div className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
+      <p>
+        {mime} — kein Textvergleich möglich.
+        {prev ? ` v${prev.version}: ${fmtSize(sizeOf(prev))}` : " keine Vorversion"} → v
+        {cur.version}: {fmtSize(sizeOf(cur))}
+      </p>
+      <p
+        className={
+          identical
+            ? "text-[color:var(--ds-text-muted)]"
+            : "font-medium text-[color:var(--ds-warning-text)]"
+        }
+      >
+        {identical
+          ? "Inhalt identisch zur Vorversion."
+          : "Binärer Inhalt geändert — bitte Version herunterladen und extern prüfen."}
+      </p>
     </div>
   );
 }
@@ -187,13 +235,17 @@ export function DocumentCheckoutPanel({
         <ul className="divide-y divide-[color:var(--ds-border)] text-sm">
           {[...versions].reverse().map((v) => {
             const prev = versions.find((x) => x.version === v.version - 1);
+            const binary = isBinaryVersion(v);
             const prevContent = prev?.doc_content ?? "";
             const tooLarge =
+              !binary &&
               prevContent.length > 0 &&
               prevContent.split(/\s+/).length * v.doc_content.split(/\s+/).length >
                 MAX_DIFF_TOKEN_PRODUCT;
             const stats =
-              diffFor === v.version && !tooLarge ? diffStats(prevContent, v.doc_content) : null;
+              diffFor === v.version && !binary && !tooLarge
+                ? diffStats(prevContent, v.doc_content)
+                : null;
             return (
               <li key={v.version} className="py-2">
                 <div className="flex items-center justify-between gap-3">
@@ -235,7 +287,9 @@ export function DocumentCheckoutPanel({
                 </div>
                 {diffFor === v.version && (
                   <div className="mt-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
-                    {tooLarge ? (
+                    {binary ? (
+                      <BinaryDiffInfo prev={prev} cur={v} />
+                    ) : tooLarge ? (
                       <p className="text-xs text-[color:var(--ds-text-muted)]">
                         Dokument zu groß für Inline-Vergleich — bitte Version wiederherstellen und
                         extern vergleichen.
