@@ -29,8 +29,10 @@ interface CorpusFile {
   content: string;
 }
 
+const CORPUS_ROOT = join(REPO_ROOT, "law-corpus");
+
 function loadLawCorpus(jurisdiction: string): CorpusFile[] {
-  const corpusDir = join(REPO_ROOT, "law-corpus", jurisdiction);
+  const corpusDir = join(CORPUS_ROOT, jurisdiction);
   if (!existsSync(corpusDir)) {
     process.stderr.write(`[seed] no corpus directory for ${jurisdiction} at ${corpusDir}\n`);
     return [];
@@ -131,7 +133,20 @@ async function main() {
   process.stderr.write(`[seed] verification: ${legalCount} legal/statutes/ pages in DB\n`);
 
   if (legalCount === 0) {
-    process.stderr.write(`[seed] WARNING: 0 legal pages after seed — benchmark will abort\n`);
+    if (!existsSync(CORPUS_ROOT)) {
+      // law-corpus/ is not part of the repo checkout (~18 GB, gitignored).
+      // Same convention as check-legal-corpus-manifest.ts and the
+      // CORPUS_AVAILABLE skipIf guards: absent corpus is a skip, not a
+      // failure — corpus-dependent gate checks skip themselves.
+      process.stderr.write(
+        `[seed] law-corpus/ absent at ${CORPUS_ROOT} — nothing to seed, skipping (corpus-gated checks will skip)\n`
+      );
+      await engine.disconnect();
+      process.exit(0);
+    }
+    process.stderr.write(
+      `[seed] ERROR: corpus present at ${CORPUS_ROOT} but 0 legal pages after import — real failure\n`
+    );
     process.exit(1);
   }
 
