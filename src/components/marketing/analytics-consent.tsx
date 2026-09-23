@@ -128,7 +128,10 @@ export default function AnalyticsConsentBanner() {
         Dabei werden Cookies gesetzt und Nutzungsdaten wie aufgerufene Seiten, Geräteangaben und
         IP-Adresse an PostHog übermittelt. Sie können die Einwilligung jederzeit über
         &bdquo;Cookie-Einstellungen&ldquo; am Seitenende widerrufen. Details in der{" "}
-        <Link href={p("/privacy")} className="brand-text underline underline-offset-2">
+        <Link
+          href={p("/privacy")}
+          className="[color:var(--mk-text)] underline [text-decoration-color:var(--brand-300)] underline-offset-2 transition-colors hover:[text-decoration-color:var(--brand-200)] motion-reduce:transition-none"
+        >
           Datenschutzerklärung
         </Link>
         .
