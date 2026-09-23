@@ -856,4 +856,63 @@ describe("useMutationQueue", () => {
     expect(removeMutation).toHaveBeenCalledWith("m2");
     expect(api.brain.updatePage).not.toHaveBeenCalled();
   });
+
+  test("syncPending: Server-Edit innerhalb Skew-Toleranz ist KEIN Konflikt", async () => {
+    // updated_at nur 30s nach lokalem createdAt — innerhalb der
+    // 60s-Uhren-Toleranz, kein echter externer Edit.
+    const createdAt = new Date("2024-01-01T12:00:00Z");
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "test",
+      updated_at: new Date(createdAt.getTime() + 30_000).toISOString(),
+    } as never);
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Lokal" },
+          createdAt: createdAt.toISOString(),
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.brain.updatePage).toHaveBeenCalledWith({ slug: "test", title: "Lokal" });
+    expect(setMutationConflicted).not.toHaveBeenCalled();
+    expect(result.current.lastNotice).toContain("synchronisiert");
+  });
+
+  test("syncPending: Server-Edit nach Toleranz ist Konflikt", async () => {
+    const createdAt = new Date("2024-01-01T12:00:00Z");
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "test",
+      updated_at: new Date(createdAt.getTime() + 90_000).toISOString(),
+    } as never);
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValue([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Lokal" },
+          createdAt: createdAt.toISOString(),
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.brain.updatePage).not.toHaveBeenCalled();
+    expect(setMutationConflicted).toHaveBeenCalledWith("m1", true);
+  });
 });

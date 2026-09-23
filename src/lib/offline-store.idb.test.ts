@@ -63,6 +63,24 @@ describe("offline-store mutation queue (fake-indexeddb)", () => {
     expect(cleared.conflictAt).toBeUndefined();
   });
 
+  test("setMutationConflicted(true) zweimal erneuert conflictAt", async () => {
+    await clearMutations();
+    await enqueueMutation({ type: "updatePage", payload: { slug: "cases/y" } });
+    const [mut] = await getPendingMutations();
+    await setMutationConflicted(mut.id, true);
+    const [first] = await getPendingMutations();
+
+    await new Promise((r) => setTimeout(r, 5));
+    await setMutationConflicted(mut.id, true);
+    const [second] = await getPendingMutations();
+
+    // Re-Markierung setzt einen frischen Timestamp — ein
+    // wiederaufgetretener Konflikt darf nicht das alte Alter
+    // mitschleppen.
+    expect(Date.parse(second.conflictAt!)).toBeGreaterThanOrEqual(Date.parse(first.conflictAt!));
+    expect(second.conflicted).toBe(true);
+  });
+
   test("incrementMutationRetries erhoeht retries persistent", async () => {
     await clearMutations();
     await enqueueMutation({ type: "createPage", payload: { slug: "c" } });

@@ -518,6 +518,10 @@ export const D = {
   },
   "sync.keep_all": { de: "Alle meine senden", en: "Keep all mine" },
   "sync.discard_all": { de: "Alle verwerfen", en: "Discard all" },
+  "sync.copy_all": {
+    de: "Alle als Kopie speichern",
+    en: "Save all as copies",
+  },
   "sync.confirm_all_keep_title": {
     de: "Alle Server-Versionen überschreiben?",
     en: "Overwrite all server versions?",

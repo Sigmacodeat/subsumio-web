@@ -376,10 +376,12 @@ async function resolveConflict(
 }
 
 /** Alle offenen Konflikte mit demselben Modus auflösen — bei >3
- *  Konflikten ist Einzelklick mühsam. Beide Modi sind destruktiv
- *  (keep-mine überschreibt Server-Stände, discard löscht lokale
- *  Arbeit) → Aufrufer MUSS vorher bestätigen. */
-async function resolveAllConflicts(mode: "keep-mine" | "discard") {
+ *  Konflikten ist Einzelklick mühsam. keep-mine/discard sind
+ *  destruktiv → Aufrufer MUSS vorher bestätigen. "rename" ist
+ *  nicht-destruktiv und greift nur für createPage-Konflikte —
+ *  der Aufrufer sollte den Button nur bei reiner createPage-
+ *  Liste anbieten. */
+async function resolveAllConflicts(mode: "keep-mine" | "discard" | "rename") {
   for (const c of state.conflicts) {
     await resolveConflict(c.id, mode);
   }

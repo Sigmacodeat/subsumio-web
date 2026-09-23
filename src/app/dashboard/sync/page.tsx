@@ -324,7 +324,17 @@ export default function SyncPage() {
   );
 
   const resolveAll = useCallback(
-    async (mode: "keep-mine" | "discard") => {
+    async (mode: "keep-mine" | "discard" | "rename") => {
+      // rename ist nicht-destruktiv — kein Confirm nötig.
+      if (mode === "rename") {
+        setBulkBusy(true);
+        try {
+          await resolveAllConflicts("rename");
+        } finally {
+          setBulkBusy(false);
+        }
+        return;
+      }
       const n = conflicts.length;
       const ok = await confirm({
         title: t(
@@ -427,6 +437,17 @@ export default function SyncPage() {
 
       {sortedConflicts.length > 1 && (
         <div className="mt-6 flex flex-wrap items-center gap-2">
+          {sortedConflicts.every((c) => c.type === "createPage") && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={bulkBusy}
+              onClick={() => void resolveAll("rename")}
+            >
+              <Copy size={13} aria-hidden className="mr-1" />
+              {t("sync.copy_all" as DashboardKey)}
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
