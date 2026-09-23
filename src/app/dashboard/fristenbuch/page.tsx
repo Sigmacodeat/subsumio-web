@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BookOpen,
@@ -195,7 +196,14 @@ export default function FristenbuchPage() {
       <div className="text-xs">
         <span className="text-[color:var(--ds-text)]">{e.responsible ?? "—"}</span>
         {e.deputy ? (
-          <span className="block text-[color:var(--ds-text-muted)]">Vertretung: {e.deputy}</span>
+          <Link
+            href="/dashboard/absences"
+            onClick={(ev) => ev.stopPropagation()}
+            title={t("deadlines.fristenbuch_deputy_link_title")}
+            className="block text-[color:var(--ds-text-muted)] underline-offset-2 transition-colors hover:text-[color:var(--brand-primary)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+          >
+            Vertretung: {e.deputy}
+          </Link>
         ) : null}
       </div>
     ),

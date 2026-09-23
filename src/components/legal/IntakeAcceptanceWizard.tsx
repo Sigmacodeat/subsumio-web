@@ -104,6 +104,7 @@ export function IntakeAcceptanceWizard({
   const [dirty, setDirty] = useState(false);
   const [kycRecords, setKycRecords] = useState<KYCVerification[] | null>(null);
   const [sendDocRequest, setSendDocRequest] = useState(false);
+  const [portalEnabled, setPortalEnabled] = useState(false);
 
   useEffect(() => {
     setWorkflow(
@@ -119,6 +120,7 @@ export function IntakeAcceptanceWizard({
     setWaiverReason("");
     setDirty(false);
     setSendDocRequest(false);
+    setPortalEnabled(false);
   }, [item, open]);
 
   // Identification checks recorded for this intake (the KYC page stores them
@@ -291,6 +293,7 @@ export function IntakeAcceptanceWizard({
           ? `${item.frontmatter.client_name}${item.frontmatter.legal_area ? ` - ${item.frontmatter.legal_area}` : ""}`
           : undefined,
         priority: "medium",
+        portal_enabled: portalEnabled,
         send_document_request: sendDocRequest,
       });
       addToast({
@@ -782,6 +785,29 @@ export function IntakeAcceptanceWizard({
                     </div>
                   </div>
                 )}
+                <div className="flex items-start gap-2.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                  <Checkbox
+                    id="portal-enabled"
+                    checked={portalEnabled}
+                    onCheckedChange={(v) => setPortalEnabled(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0">
+                    <Label
+                      htmlFor="portal-enabled"
+                      className="text-sm font-medium text-[color:var(--ds-text)]"
+                    >
+                      Mandanten-Portal aktivieren
+                    </Label>
+                    <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                      Der Mandant erhält Zugang zum Portal
+                      {(item.frontmatter.missing_documents?.length ?? 0) > 0
+                        ? " — die Unterlagen-Anfrage enthält dann einen Upload-Link"
+                        : ""}
+                      .
+                    </p>
+                  </div>
+                </div>
                 <Button
                   type="button"
                   onClick={() => void handleConvert()}

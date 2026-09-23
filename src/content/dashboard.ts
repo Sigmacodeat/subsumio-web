@@ -1424,6 +1424,10 @@ export const D = {
   "deadlines.fristenbuch_search": { de: "Fristen durchsuchen …", en: "Search deadlines …" },
   "deadlines.fristenbuch_all_cases": { de: "Alle Akten", en: "All cases" },
   "deadlines.fristenbuch_responsible": { de: "Zuständig", en: "Responsible" },
+  "deadlines.fristenbuch_deputy_link_title": {
+    de: "Abwesenheiten & Vertretungen anzeigen",
+    en: "Show absences & delegations",
+  },
   "deadlines.fristenbuch_window_all": { de: "Alle Zeiträume", en: "All dates" },
   "deadlines.fristenbuch_window_today": {
     de: "Kontrollliste heute (inkl. überfällig)",
@@ -5739,6 +5743,11 @@ export const D = {
   "intake.link_register_hint": {
     de: "Eingehende Dokumente & Post",
     en: "Incoming documents & post",
+  },
+  "intake.age_badge": { de: "{n} offen", en: "{n} open" },
+  "intake.age_badge_title": {
+    de: "Erstanfrage wartet länger als 24 Stunden auf Bearbeitung",
+    en: "Inquiry has been waiting more than 24 hours for processing",
   },
   "intake.stats_new": { de: "Neu", en: "New" },
   "intake.stats_needs_info": { de: "Rückfrage", en: "Needs info" },

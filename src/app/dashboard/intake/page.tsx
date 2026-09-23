@@ -148,6 +148,17 @@ function createdLabel(lang: Lang, value: string): string {
   return formatDateTime(value);
 }
 
+/** Age label for open intakes older than 24h — null when fresh/closed/invalid. */
+function staleAgeLabel(item: { status: string; created_at: string }): string | null {
+  if (item.status === "converted" || item.status === "rejected") return null;
+  const created = new Date(item.created_at).getTime();
+  if (!Number.isFinite(created)) return null;
+  const ageMs = Date.now() - created;
+  if (ageMs < 24 * 3_600_000) return null;
+  const hours = Math.floor(ageMs / 3_600_000);
+  return hours >= 48 ? `${Math.floor(hours / 24)}d` : `${hours}h`;
+}
+
 const SOURCE_LABEL: Record<IntakeSource, string> = {
   whatsapp: "WhatsApp",
   portal: "Portal",
@@ -610,6 +621,7 @@ export default function IntakePage() {
           <div className="space-y-3">
             {filtered.map((item) => {
               const SourceIcon = SOURCE_ICON[item.frontmatter.source] || FileText;
+              const ageBadge = staleAgeLabel(item.frontmatter);
               return (
                 <div
                   key={item.slug}
@@ -641,6 +653,15 @@ export default function IntakePage() {
                             >
                               {CONFLICT_STATUS_LABEL[item.frontmatter.conflict_check_status] ??
                                 item.frontmatter.conflict_check_status}
+                            </Badge>
+                          )}
+                          {ageBadge && (
+                            <Badge
+                              variant="default"
+                              className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
+                              title={t("intake.age_badge_title")}
+                            >
+                              {t("intake.age_badge").replace("{n}", ageBadge)}
                             </Badge>
                           )}
                           <span className="text-xs text-[color:var(--ds-text-subtle)]">

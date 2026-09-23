@@ -200,6 +200,7 @@ export const POST = createHandler(
             channel: "manual",
             status: body.send_document_request ? "sent" : "draft",
             sourceEventSlug: body.slug,
+            includePortalLink: body.portal_enabled,
           });
           const reqRes = await fetch(`${ENGINE_URL}/api/pages`, {
             method: "POST",
