@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useCallback, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,11 +72,33 @@ type TimeEntryWithMeta = {
   is_auto_generated?: boolean;
 };
 
-export default function TimeEntriesPage() {
+const TIME_TAB_IDS = ["all", "billable", "unbilled", "auto", "manual"] as const;
+
+function TimeEntriesInner() {
   const { t, lang } = useLang();
   const { addToast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("all");
+  // Tab in der URL (?tab=) — teilbar, Refresh-sicher, Copy-Link per
+  // Rechtsklick auf den Reiter.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const rawTab = searchParams.get("tab") ?? "all";
+  const activeTab = (TIME_TAB_IDS as readonly string[]).includes(rawTab) ? rawTab : "all";
+  const tabHref = useCallback(
+    (v: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (v === "all") params.delete("tab");
+      else params.set("tab", v);
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [searchParams, pathname]
+  );
+  const setActiveTab = useCallback(
+    (v: string) => router.replace(tabHref(v), { scroll: false }),
+    [router, tabHref]
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCase, setSelectedCase] = useState<string>(ALL_CASES);
   const [editEntry, setEditEntry] = useState<TimeEntryWithMeta | null>(null);
@@ -435,15 +458,26 @@ export default function TimeEntriesPage() {
         </Select>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — echte Links (asChild → <a role="tab">): Copy-Link und
+          Middle-Click nativ, Klick bleibt SPA-Tabwechsel ohne Reload. */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="max-w-full [scrollbar-width:none] overflow-x-auto">
           <TabsList>
-            <TabsTrigger value="all">Alle</TabsTrigger>
-            <TabsTrigger value="billable">Abrechenbar</TabsTrigger>
-            <TabsTrigger value="unbilled">Nicht abgerechnet</TabsTrigger>
-            <TabsTrigger value="auto">Automatisch</TabsTrigger>
-            <TabsTrigger value="manual">Manuell</TabsTrigger>
+            {(
+              [
+                ["all", "Alle"],
+                ["billable", "Abrechenbar"],
+                ["unbilled", "Nicht abgerechnet"],
+                ["auto", "Automatisch"],
+                ["manual", "Manuell"],
+              ] as const
+            ).map(([id, label]) => (
+              <TabsTrigger key={id} value={id} asChild>
+                <a href={tabHref(id)} onClick={(e) => e.preventDefault()} className="no-underline">
+                  {label}
+                </a>
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
 
@@ -740,5 +774,13 @@ function TimeStat({ label, value, sub }: { label: string; value: string; sub: st
       </div>
       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{sub}</div>
     </div>
+  );
+}
+
+export default function TimeEntriesPage() {
+  return (
+    <Suspense fallback={<div className="p-6" />}>
+      <TimeEntriesInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Radar,
   Plus,
@@ -714,7 +715,7 @@ function AlertItem({
 
 // ─── Main Page ─────────────────────────────────────────────────────
 
-export default function MonitoringPage() {
+function MonitoringPageInner() {
   const { t } = useLang();
   const { addToast } = useToast();
   const confirmDialog = useConfirm();
@@ -732,7 +733,28 @@ export default function MonitoringPage() {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<RegulatoryMonitor | null>(null);
-  const [activeTab, setActiveTab] = useState("monitors");
+  // Tab in der URL (?tab=) — teilbar, Refresh-sicher, Copy-Link nativ.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const rawTab = searchParams.get("tab") ?? "monitors";
+  const activeTab = (["monitors", "alerts", "settings"] as readonly string[]).includes(rawTab)
+    ? rawTab
+    : "monitors";
+  const tabHref = useCallback(
+    (v: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (v === "monitors") params.delete("tab");
+      else params.set("tab", v);
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [searchParams, pathname]
+  );
+  const setActiveTab = useCallback(
+    (v: string) => router.replace(tabHref(v), { scroll: false }),
+    [router, tabHref]
+  );
 
   // Alert filters
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
@@ -982,28 +1004,48 @@ export default function MonitoringPage() {
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* Trigger als echte Links (asChild → <a role="tab">): Copy-Link
+              und Middle-Click nativ, Klick bleibt SPA-Tabwechsel. */}
           <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="monitors" className="gap-1.5 whitespace-nowrap">
-              <Radar size={14} aria-hidden="true" /> {t("monitoring.tab_monitors")}
-              {monitors.length > 0 && (
-                <span className="text-[color:var(--ds-text-muted)] tabular-nums">
-                  {monitors.length}
-                </span>
-              )}
+            <TabsTrigger value="monitors" asChild className="gap-1.5 whitespace-nowrap">
+              <a
+                href={tabHref("monitors")}
+                onClick={(e) => e.preventDefault()}
+                className="no-underline"
+              >
+                <Radar size={14} aria-hidden="true" /> {t("monitoring.tab_monitors")}
+                {monitors.length > 0 && (
+                  <span className="text-[color:var(--ds-text-muted)] tabular-nums">
+                    {monitors.length}
+                  </span>
+                )}
+              </a>
             </TabsTrigger>
-            <TabsTrigger value="alerts" className="gap-1.5 whitespace-nowrap">
-              <Bell size={14} aria-hidden="true" /> {t("monitoring.tab_alerts")}
-              {unreadCount > 0 && (
-                <span
-                  className="brand-text font-semibold tabular-nums"
-                  aria-label={`${unreadCount} ${t("monitoring.unread")}`}
-                >
-                  {unreadCount}
-                </span>
-              )}
+            <TabsTrigger value="alerts" asChild className="gap-1.5 whitespace-nowrap">
+              <a
+                href={tabHref("alerts")}
+                onClick={(e) => e.preventDefault()}
+                className="no-underline"
+              >
+                <Bell size={14} aria-hidden="true" /> {t("monitoring.tab_alerts")}
+                {unreadCount > 0 && (
+                  <span
+                    className="brand-text font-semibold tabular-nums"
+                    aria-label={`${unreadCount} ${t("monitoring.unread")}`}
+                  >
+                    {unreadCount}
+                  </span>
+                )}
+              </a>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-1.5 whitespace-nowrap">
-              <Settings size={14} aria-hidden="true" /> {t("monitoring.tab_settings")}
+            <TabsTrigger value="settings" asChild className="gap-1.5 whitespace-nowrap">
+              <a
+                href={tabHref("settings")}
+                onClick={(e) => e.preventDefault()}
+                className="no-underline"
+              >
+                <Settings size={14} aria-hidden="true" /> {t("monitoring.tab_settings")}
+              </a>
             </TabsTrigger>
           </TabsList>
 
@@ -1358,5 +1400,13 @@ function StatTile({
         {value}
       </p>
     </div>
+  );
+}
+
+export default function MonitoringPage() {
+  return (
+    <Suspense fallback={<div className="p-6" />}>
+      <MonitoringPageInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,12 +158,33 @@ function getNotificationMessage(n: NotificationItem): {
   }
 }
 
-export default function NotificationCenterPage() {
+function NotificationCenterInner() {
   const { addToast } = useToast();
   const { t } = useLang();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("all");
+  // Tab in der URL (?tab=) — teilbar, Refresh-sicher, Copy-Link nativ.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const rawTab = searchParams.get("tab") ?? "all";
+  const activeTab = (["all", "unread", "read"] as readonly string[]).includes(rawTab)
+    ? rawTab
+    : "all";
+  const tabHref = useCallback(
+    (v: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (v === "all") params.delete("tab");
+      else params.set("tab", v);
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [searchParams, pathname]
+  );
+  const setActiveTab = useCallback(
+    (v: string) => router.replace(tabHref(v), { scroll: false }),
+    [router, tabHref]
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
 
@@ -314,17 +336,37 @@ export default function NotificationCenterPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {/* Trigger als echte Links (asChild → <a role="tab">): Copy-Link
+              und Middle-Click nativ, Klick bleibt SPA-Tabwechsel. */}
           <TabsList>
-            <TabsTrigger value="all">{t("notifications.tab_all")}</TabsTrigger>
-            <TabsTrigger value="unread">
-              {t("notifications.tab_unread")}
-              {unreadCount > 0 && (
-                <span className="ml-1.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                  {unreadCount}
-                </span>
-              )}
+            <TabsTrigger value="all" asChild>
+              <a href={tabHref("all")} onClick={(e) => e.preventDefault()} className="no-underline">
+                {t("notifications.tab_all")}
+              </a>
             </TabsTrigger>
-            <TabsTrigger value="read">{t("notifications.tab_read")}</TabsTrigger>
+            <TabsTrigger value="unread" asChild>
+              <a
+                href={tabHref("unread")}
+                onClick={(e) => e.preventDefault()}
+                className="no-underline"
+              >
+                {t("notifications.tab_unread")}
+                {unreadCount > 0 && (
+                  <span className="ml-1.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                    {unreadCount}
+                  </span>
+                )}
+              </a>
+            </TabsTrigger>
+            <TabsTrigger value="read" asChild>
+              <a
+                href={tabHref("read")}
+                onClick={(e) => e.preventDefault()}
+                className="no-underline"
+              >
+                {t("notifications.tab_read")}
+              </a>
+            </TabsTrigger>
           </TabsList>
           <div className="flex flex-wrap gap-2">
             <Input
@@ -469,5 +511,13 @@ export default function NotificationCenterPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function NotificationCenterPage() {
+  return (
+    <Suspense fallback={<div className="p-6" />}>
+      <NotificationCenterInner />
+    </Suspense>
   );
 }
