@@ -1,0 +1,196 @@
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mockPatch = vi.fn();
+
+vi.mock("@/lib/engine", () => ({
+  ENGINE_URL: "http://engine.test",
+  enginePatchPage: (...args: unknown[]) => mockPatch(...args),
+}));
+vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
+vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
+vi.mock("@/lib/logger", () => ({
+  logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
+}));
+vi.mock("@/lib/api-handler", () => ({
+  createHandler: (
+    _opts: unknown,
+    handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
+  ) => {
+    const ctx = {
+      headers: { "x-subsumio-source": "brain-at" },
+      brainId: "brain-at",
+      user: { id: "u1", email: "anwalt@example.com", name: "Anwalt", role: "lawyer" },
+    };
+    return async (req: Request) => {
+      const body = req.method === "DELETE" ? {} : await req.json().catch(() => ({}));
+      return handler(ctx, body, {}, req);
+    };
+  },
+  apiError: (code: string, message: string, status: number) =>
+    Response.json({ error: code, message }, { status }),
+  apiNotFound: (code: string) => Response.json({ error: code }, { status: 404 }),
+}));
+
+import { DELETE, PATCH } from "./route";
+
+let stored: Record<string, unknown> | null;
+let readStatus = 200;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  readStatus = 200;
+  stored = null;
+  mockPatch.mockResolvedValue(Response.json({ success: true }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      readStatus === 200
+        ? Response.json(stored)
+        : new Response(JSON.stringify({ error: "x" }), { status: readStatus })
+    )
+  );
+});
+
+function call(method: "PATCH" | "DELETE", slug: string, body?: unknown) {
+  const req = new Request(`http://localhost/api/pages/${slug}`, {
+    method,
+    headers: { "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  (req as unknown as { params: Promise<{ slug: string[] }> }).params = Promise.resolve({
+    slug: slug.split("/"),
+  });
+  return method === "PATCH"
+    ? (PATCH as unknown as (r: Request) => Promise<Response>)(req)
+    : (DELETE as unknown as (r: Request) => Promise<Response>)(req);
+}
+
+const written = () =>
+  (mockPatch.mock.calls[0]?.[1] ?? null) as { frontmatter?: Record<string, unknown> } | null;
+
+describe("PATCH /api/pages/[...slug] — Vier-Augen-Kontrolle", () => {
+  it("rejects done on a Notfrist although the client sends its own second_check_by", async () => {
+    stored = {
+      slug: "legal/deadlines/f1",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", is_notfrist: true },
+    };
+    const res = await call("PATCH", "legal/deadlines/f1", {
+      frontmatter: {
+        status: "done",
+        second_check_by: "Anwalt",
+        second_check_at: "2026-09-23T00:00:00Z",
+      },
+    });
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("notfrist_second_check_required");
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("rejects a Notfrist marked done inside a matter's deadline list", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: {
+        status: "active",
+        deadlines: [{ id: "d1", title: "Berufung", status: "pending", is_notfrist: true }],
+      },
+    };
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Berufung",
+            status: "done",
+            is_notfrist: true,
+            second_check_by: "Anwalt",
+            second_check_at: "2026-09-23T00:00:00Z",
+          },
+        ],
+      },
+    });
+    expect(res.status).toBe(403);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("strips client second_check fields from ordinary edits and keeps the stored stamp", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Berufung",
+            status: "done",
+            is_notfrist: true,
+            second_check_by: "Kollegin",
+            second_check_at: "2026-09-20T10:00:00Z",
+          },
+        ],
+      },
+    };
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: {
+        deadlines: [{ id: "d1", title: "Berufung", status: "done", is_notfrist: true }],
+        second_check_by: "Anwalt",
+      },
+    });
+    expect(res.status).toBe(200);
+    const fm = written()?.frontmatter ?? {};
+    expect(fm.second_check_by).toBeUndefined();
+    expect((fm.deadlines as Array<Record<string, unknown>>)[0]).toMatchObject({
+      second_check_by: "Kollegin",
+      second_check_at: "2026-09-20T10:00:00Z",
+    });
+  });
+
+  it("refuses to write when the stored page cannot be read (fail closed)", async () => {
+    readStatus = 500;
+    const res = await call("PATCH", "legal/deadlines/f1", { frontmatter: { status: "done" } });
+    expect(res.status).toBe(503);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+});
+
+describe("PATCH/DELETE /api/pages/[...slug] — ausgestellte Rechnungen", () => {
+  const sentInvoice = {
+    slug: "legal/invoices/r-1",
+    type: "invoice",
+    title: "Rechnung R-1",
+    frontmatter: { status: "sent", total: 780, invoice_number: "R-1" },
+  };
+
+  it("rejects a content change on a sent invoice", async () => {
+    stored = sentInvoice;
+    const res = await call("PATCH", "legal/invoices/r-1", { frontmatter: { total: 10 } });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("invoice_finalized");
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("lets a sent invoice be marked paid", async () => {
+    stored = sentInvoice;
+    const res = await call("PATCH", "legal/invoices/r-1", {
+      frontmatter: { status: "paid", paid_at: "2026-09-23", paid_amount: 780 },
+    });
+    expect(res.status).toBe(200);
+    expect(written()?.frontmatter).toMatchObject({ status: "paid" });
+  });
+
+  it("refuses to delete a paid invoice", async () => {
+    stored = { ...sentInvoice, frontmatter: { ...sentInvoice.frontmatter, status: "paid" } };
+    const res = await call("DELETE", "legal/invoices/r-1");
+    expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("still deletes a draft invoice", async () => {
+    stored = { ...sentInvoice, frontmatter: { ...sentInvoice.frontmatter, status: "draft" } };
+    const res = await call("DELETE", "legal/invoices/r-1");
+    expect(res.status).toBe(200);
+    expect(written()?.frontmatter).toMatchObject({ status: "tombstoned" });
+  });
+});

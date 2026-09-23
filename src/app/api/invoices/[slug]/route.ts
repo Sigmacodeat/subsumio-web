@@ -2,6 +2,13 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createHandler, apiError } from "@/lib/api-handler";
+import {
+  GUARD_READ_FAILED,
+  checkInvoiceWrite,
+  isInvoicePage,
+  readCurrentPage,
+  rejectionResponse,
+} from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/[slug]");
@@ -65,42 +72,23 @@ export const PATCH = createHandler(
       return apiError("nothing_to_update", "Keine Felder zum Aktualisieren", 400);
     }
 
-    // A sent/paid invoice is a finalized document (GoBD/Rechnungsstellung —
-    // BAO/UStG). No caller in this codebase ever set _allow_status_override
-    // (grep confirms: /api/invoices/send and /remind write status themselves
-    // via enginePatchPage, bypassing this route entirely), so it was a pure
-    // client-controllable bypass of the guard below — removed. The guard
-    // itself used to check only `body.status`, which blocked *setting*
-    // status to sent/paid via PATCH but did nothing to stop a client from
-    // PATCHing other fields (amount, line items, dates) on an invoice that
-    // was ALREADY sent or paid. Fetch the current status first and reject
-    // any PATCH once the invoice has left draft/pending, full stop — there
-    // is no dedicated storno/Korrekturbeleg endpoint yet (see audit Welle B:
-    // unveränderbare Rechnung + Stornonote), so the only safe behavior today
-    // is to refuse the edit rather than silently allow it.
-    const PROTECTED_STATUS = new Set(["sent", "paid", "overdue"]);
-    try {
-      const currentRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (currentRes.ok) {
-        const currentPage = await currentRes.json();
-        const currentStatus = String(currentPage?.frontmatter?.status ?? "");
-        if (PROTECTED_STATUS.has(currentStatus)) {
-          return apiError(
-            "invoice_finalized",
-            `Rechnung ist bereits ${currentStatus === "paid" ? "bezahlt" : "versendet"} und kann nicht mehr geändert werden. Für Korrekturen: Stornonote verwenden.`,
-            409
-          );
-        }
-      }
-    } catch {
-      // If the read fails, fall through to the engine PATCH below — the
-      // engine's own state is the source of truth and this is a best-effort
-      // pre-check, not the only enforcement point (the DELETE handler above
-      // has the same fetch-then-check shape and the same fallback).
+    // An issued invoice (sent/paid/overdue/cancelled) is a finalized document
+    // (§ 132 BAO / UStG). The shared guard lets only payment and delivery
+    // bookkeeping through (mark paid/overdue, e-invoice status) and refuses
+    // every content change — corrections go through the Storno-Note route.
+    // Fail closed: when the current invoice cannot be read, nothing is written.
+    const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, slug);
+    if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+    if (currentRead.kind === "missing")
+      return apiError("not_found", "Rechnung nicht gefunden", 404);
+    if (currentRead.page.type && !isInvoicePage(currentRead.page)) {
+      return apiError("not_an_invoice", "Seite ist keine Rechnung", 400);
     }
+    const rejection = checkInvoiceWrite(currentRead.page, {
+      mode: "merge",
+      frontmatter: body as Record<string, unknown>,
+    });
+    if (rejection) return rejectionResponse(rejection);
 
     try {
       const frontmatter = body as Record<string, unknown>;
@@ -140,22 +128,16 @@ export const DELETE = createHandler(
     const slug = validSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
-    try {
-      const checkRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (checkRes.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
-      if (checkRes.ok) {
-        const page = await checkRes.json();
-        const fm = page?.frontmatter ?? {};
-        const protectedStatuses = new Set(["sent", "paid", "overdue"]);
-        if (protectedStatuses.has(String(fm.status ?? ""))) {
-          return apiError("cannot_delete_non_draft", "Nur Entwürfe können gelöscht werden", 409);
-        }
-      }
-    } catch {
-      // If check fails, let the DELETE through — engine will enforce.
+    // Only drafts may be deleted. Fail closed on read errors.
+    const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, slug);
+    if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+    if (currentRead.kind === "missing")
+      return apiError("not_found", "Rechnung nicht gefunden", 404);
+    if (currentRead.page.type && !isInvoicePage(currentRead.page)) {
+      return apiError("not_an_invoice", "Seite ist keine Rechnung", 400);
+    }
+    if (checkInvoiceWrite(currentRead.page, { mode: "delete" })) {
+      return apiError("cannot_delete_non_draft", "Nur Entwürfe können gelöscht werden", 409);
     }
 
     try {

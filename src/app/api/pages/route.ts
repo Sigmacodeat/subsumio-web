@@ -7,6 +7,13 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
+import {
+  GUARD_READ_FAILED,
+  checkInvoiceWrite,
+  guardSecondCheckWrite,
+  readCurrentPage,
+  rejectionResponse,
+} from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
@@ -190,40 +197,27 @@ async function refreshAktenblattForDeadline(
  * user is rejected with 409. Lock management itself goes through
  * /api/legal/documents/* which writes via the engine directly — no loop.
  */
-async function enforceDocumentLock(
-  headers: Record<string, string>,
-  slug: string,
+function enforceDocumentLock(
+  page: { frontmatter?: Record<string, unknown> } | null,
   userId: string
-): Promise<Response | null> {
-  try {
-    const path = slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-      headers,
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) return null;
-    const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
-    const lock = page.frontmatter?.checked_out_by;
-    if (
-      lock &&
-      typeof lock === "object" &&
-      typeof (lock as { userId?: unknown }).userId === "string" &&
-      (lock as { userId: string }).userId !== userId
-    ) {
-      return Response.json(
-        {
-          error: "document_locked",
-          message: `Dokument ist bei ${(lock as { userEmail?: string }).userEmail ?? "einem Kollegen"} ausgecheckt.`,
-          lockedBy: lock,
-        },
-        { status: 409 }
-      );
-    }
-    return null;
-  } catch {
-    // Engine nicht erreichbar → nicht blockieren (fail-open wie übrige Policy-Reads).
-    return null;
+): Response | null {
+  const lock = page?.frontmatter?.checked_out_by;
+  if (
+    lock &&
+    typeof lock === "object" &&
+    typeof (lock as { userId?: unknown }).userId === "string" &&
+    (lock as { userId: string }).userId !== userId
+  ) {
+    return Response.json(
+      {
+        error: "document_locked",
+        message: `Dokument ist bei ${(lock as { userEmail?: string }).userEmail ?? "einem Kollegen"} ausgecheckt.`,
+        lockedBy: lock,
+      },
+      { status: 409 }
+    );
   }
+  return null;
 }
 
 export const POST = createHandler(
@@ -251,6 +245,31 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
+      // Every write — merge or create — is judged against the stored page, so
+      // a create over an existing slug cannot slip past the guards. Fail
+      // closed: an unreadable page is not written.
+      const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
+      if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+      const current = currentRead.kind === "found" ? currentRead.page : null;
+
+      // § 132 BAO / UStG: an issued invoice is frozen — only payment and
+      // delivery bookkeeping may change; never overwritten by a create.
+      const invoiceRejection = checkInvoiceWrite(current, {
+        mode: body.merge === true ? "merge" : "replace",
+        title: body.title,
+        content: body.content,
+        type: body.type,
+        frontmatter: body.frontmatter,
+      });
+      if (invoiceRejection) return rejectionResponse(invoiceRejection);
+
+      // Vier-Augen-Kontrolle: second_check_* only via the second-check route.
+      if (body.frontmatter) {
+        const guarded = guardSecondCheckWrite(body.frontmatter, current?.frontmatter ?? null);
+        if ("reject" in guarded) return rejectionResponse(guarded.reject);
+        body.frontmatter = guarded.frontmatter;
+      }
+
       let conflictWarning:
         | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
         | undefined;
@@ -331,7 +350,7 @@ export const POST = createHandler(
       }
 
       if (body.merge === true) {
-        const locked = await enforceDocumentLock(ctx.headers, body.slug, ctx.user.id);
+        const locked = enforceDocumentLock(current, ctx.user.id);
         if (locked) return locked;
       }
 
