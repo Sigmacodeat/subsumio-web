@@ -3379,6 +3379,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "missing_audio");
           return;
         }
+        // EU-only: OpenRouter Whisper is not an EU route (eu-policy.ts).
+        const { euRefusal } = await import("../core/ai/eu-policy.ts");
+        const euBlock = euRefusal("openrouter:whisper-1", "transcription", process.env);
+        if (euBlock) return void res.status(403).json(euBlock);
         const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_FALLBACK;
         if (!apiKey) {
           res

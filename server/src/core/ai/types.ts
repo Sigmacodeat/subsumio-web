@@ -22,6 +22,7 @@ export type Implementation =
   | "native-openai"
   | "native-google"
   | "native-anthropic"
+  | "native-bedrock"
   | "openai-compatible";
 
 export interface EmbeddingTouchpoint {
@@ -334,6 +335,13 @@ export interface Recipe {
    * URL overrides (codex finding #5).
    */
   probe?(baseURL?: string): Promise<{ ready: boolean; hint?: string }>;
+  /**
+   * Synchronous credential readiness for recipes whose auth is not a single
+   * required env var (Bedrock: SigV4 key pair OR a Bedrock API key). When
+   * set, `isAvailable()` consults it instead of `auth_env.required`.
+   * Reads the gateway env snapshot, never `process.env`.
+   */
+  hasCredentials?(env: Record<string, string | undefined>): boolean;
 }
 
 export interface AIGatewayConfig {
