@@ -441,6 +441,7 @@ export const D = {
   },
   "mobile.conflict_discard": { de: "Verwerfen", en: "Discard" },
   "mobile.conflict_view": { de: "Ansehen", en: "View" },
+  "mobile.conflict_rename": { de: "Als Kopie speichern", en: "Save as copy" },
   "mobile.zoom_in": { de: "Vergrößern", en: "Zoom in" },
   "mobile.zoom_out": { de: "Verkleinern", en: "Zoom out" },
   "mobile.download": { de: "Herunterladen", en: "Download" },

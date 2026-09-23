@@ -21,8 +21,10 @@ Queud Mutations werden **in `createdAt`-Reihenfolge** replayed:
   stattgefunden → die Mutation wird als **`conflicted` markiert und
   bleibt in der Queue**. Das Sync-Banner zeigt den Konflikt mit Slug und
   bietet „Meine Version senden" (bewusstes Überschreiben) / „Verwerfen" /
-  „Ansehen" (Server-Stand). Kein stilles Überschreiben, kein stiller
-  Datenverlust.
+  „Ansehen" (Server-Stand). Bei `createPage`-Kollisionen zusätzlich
+  „Als Kopie speichern" (legt unter `<slug>-2` an). Kein stilles
+  Überschreiben, kein stiller Datenverlust. Die Konfliktliste ist in
+  Mobile-Banner und Desktop-Sidebar (`SyncStatus`) sichtbar.
   Writes aus dem eigenen Replay (`updated_at > syncStart`) zählen nicht
   als Konflikt — sonst würde ein zweites eigenes Queued-Update auf
   derselben Seite fälschlich verwarfen.

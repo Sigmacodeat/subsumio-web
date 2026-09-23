@@ -215,9 +215,10 @@ export function useMutationQueue() {
   }, [refreshPending, syncPending]);
 
   /** Konflikt auflösen: "keep-mine" replayed die gequeuete Änderung
-   *  erneut (bewusstes Überschreiben), "discard" verwirft sie. */
+   *  erneut (bewusstes Überschreiben), "discard" verwirft sie,
+   *  "rename" (nur createPage) legt sie unter `<slug>-2` als Kopie an. */
   const resolveConflict = useCallback(
-    async (id: string, mode: "keep-mine" | "discard") => {
+    async (id: string, mode: "keep-mine" | "discard" | "rename") => {
       if (mode === "discard") {
         await removeMutation(id);
         await refreshPending();
@@ -230,7 +231,23 @@ export function useMutationQueue() {
         return;
       }
       try {
-        await replayMutation(mut);
+        if (mode === "rename") {
+          if (mut.type !== "createPage") return;
+          const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
+          if (!slug) return;
+          await api.brain.createPage({
+            ...(mut.payload as {
+              slug: string;
+              title: string;
+              type: string;
+              content?: string;
+              frontmatter?: Record<string, unknown>;
+            }),
+            slug: `${slug}-2`,
+          });
+        } else {
+          await replayMutation(mut);
+        }
         await removeMutation(mut.id);
       } catch (err) {
         setState((s) => ({

@@ -102,6 +102,10 @@ import {
   ChevronsDownUp,
   BrainCog,
   Trash2,
+  GitMerge,
+  Eye,
+  Check,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -1160,7 +1164,7 @@ function splitAdminSection(section: NavSection): NavSection[] {
 }
 
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
-  const { pendingCount, syncing, syncPending } = useMutationQueue();
+  const { pendingCount, syncing, conflicts, syncPending, resolveConflict } = useMutationQueue();
   const { t } = useLang();
   if (collapsed || pendingCount === 0) return null;
   return (
@@ -1177,6 +1181,70 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
           {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
         </button>
       </div>
+      {conflicts.length > 0 && (
+        <ul className="mt-2 space-y-1 border-t border-[color:var(--ds-warning-border)] pt-2">
+          {conflicts.slice(0, 3).map((c) => {
+            const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
+            const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+            return (
+              <li key={c.id} className="flex items-center gap-1">
+                <GitMerge
+                  size={12}
+                  aria-hidden
+                  className="shrink-0 text-[color:var(--ds-warning-text)]"
+                />
+                <span
+                  className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
+                  title={slug}
+                >
+                  {slug || c.type}
+                </span>
+                <a
+                  href={href}
+                  aria-label={t("mobile.conflict_view" as DashboardKey)}
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                >
+                  <Eye size={12} aria-hidden />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => void resolveConflict(c.id, "keep-mine")}
+                  aria-label={t("mobile.conflict_keep" as DashboardKey)}
+                  title={t("mobile.conflict_keep" as DashboardKey)}
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                >
+                  <Check size={12} aria-hidden />
+                </button>
+                {c.type === "createPage" && (
+                  <button
+                    type="button"
+                    onClick={() => void resolveConflict(c.id, "rename")}
+                    aria-label={t("mobile.conflict_rename" as DashboardKey)}
+                    title={t("mobile.conflict_rename" as DashboardKey)}
+                    className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  >
+                    <Copy size={12} aria-hidden />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void resolveConflict(c.id, "discard")}
+                  aria-label={t("mobile.conflict_discard" as DashboardKey)}
+                  title={t("mobile.conflict_discard" as DashboardKey)}
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                >
+                  <X size={12} aria-hidden />
+                </button>
+              </li>
+            );
+          })}
+          {conflicts.length > 3 && (
+            <li className="text-[11px] text-[color:var(--ds-warning-text)] opacity-70">
+              +{conflicts.length - 3} weitere
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }

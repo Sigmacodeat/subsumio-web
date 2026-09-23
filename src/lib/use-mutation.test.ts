@@ -297,6 +297,52 @@ describe("useMutationQueue", () => {
     expect(removeMutation).toHaveBeenCalledWith("m1");
   });
 
+  test("resolveConflict rename legt createPage unter slug-2 an", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "createPage" as const,
+      payload: { slug: "cases/neu", title: "Neue Akte", type: "legal_case" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "rename");
+    });
+
+    expect(api.brain.createPage).toHaveBeenCalledWith({
+      slug: "cases/neu-2",
+      title: "Neue Akte",
+      type: "legal_case",
+    });
+    expect(removeMutation).toHaveBeenCalledWith("m1");
+  });
+
+  test("resolveConflict rename ignoriert Nicht-createPage", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "updatePage" as const,
+      payload: { slug: "test" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "rename");
+    });
+
+    expect(api.brain.createPage).not.toHaveBeenCalled();
+    expect(removeMutation).not.toHaveBeenCalled();
+  });
+
   test("resolveConflict discard entfernt ohne Replay", async () => {
     const { result } = renderHook(() => useMutationQueue());
     await act(async () => {

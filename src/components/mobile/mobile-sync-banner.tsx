@@ -70,6 +70,15 @@ export function MobileSyncBanner() {
                 >
                   {t("mobile.conflict_keep" as DashboardKey)}
                 </button>
+                {c.type === "createPage" && (
+                  <button
+                    type="button"
+                    onClick={() => void resolveConflict(c.id, "rename")}
+                    className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  >
+                    {t("mobile.conflict_rename" as DashboardKey)}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => void resolveConflict(c.id, "discard")}
