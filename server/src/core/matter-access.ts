@@ -382,3 +382,63 @@ export function privateChatDenies(owners: string[], userId: string): string[] {
   const me = chatOwnerSegment(userId);
   return owners.filter((o) => o && o !== me).map((o) => `${PRIVATE_CHAT_PREFIX}${o}`);
 }
+
+/**
+ * One user's private area, `chat-sessions/private/<owner>/`: their Copilot
+ * conversations and the pages their agent runs keep for them alone. Everyone
+ * else's matter scope denies it (privateChatDenies), and search never shows
+ * `chat-sessions/`.
+ */
+export function privateAreaPrefix(userId: string): string {
+  return `${PRIVATE_CHAT_PREFIX}${chatOwnerSegment(userId)}/`;
+}
+
+/**
+ * Where the pages an agent run writes may go.
+ *
+ *   free     no stamp at all (CLI, operator cron): unchanged behaviour.
+ *   matter   the run is about one matter: every page it writes is bound to it
+ *            (frontmatter case_slug), and it may only update pages of that
+ *            matter.
+ *   private  a web user's run without a matter: every page it writes goes to
+ *            the user's private area, never firm-wide.
+ *   refuse   the run carries a matter-access stamp but neither a matter nor an
+ *            owner to keep the page for: it may not write pages at all.
+ *
+ * Any web-started run counts — an owner or a matter stamp alone is enough —
+ * because even a caller without walls may read matters colleagues are walled
+ * from, or private conversations of their own.
+ */
+export type AgentWriteBinding =
+  | { kind: "free" }
+  | { kind: "matter"; caseSlug: string; ownerUserId?: string }
+  | { kind: "private"; ownerUserId: string; prefix: string }
+  | { kind: "refuse" };
+
+export function agentWriteBinding(data: unknown): AgentWriteBinding {
+  const caseSlug = readJobCase(data);
+  const owner = readJobOwner(data);
+  if (caseSlug) return { kind: "matter", caseSlug, ...(owner ? { ownerUserId: owner } : {}) };
+  if (owner) return { kind: "private", ownerUserId: owner, prefix: privateAreaPrefix(owner) };
+  if (readJobMatterAccess(data).scope !== undefined) return { kind: "refuse" };
+  return { kind: "free" };
+}
+
+/** The private area of the run's owner, when known. */
+export function bindingPrivatePrefix(binding: AgentWriteBinding): string | undefined {
+  if (binding.kind === "private") return binding.prefix;
+  if (binding.kind === "matter" && binding.ownerUserId) {
+    return privateAreaPrefix(binding.ownerUserId);
+  }
+  return undefined;
+}
+
+/**
+ * True for a slug in somebody's private area other than `ownPrefix`. A run's
+ * stamp is frozen when it starts; a colleague's private area created later is
+ * not in its deny list, so bound runs check the prefix structurally.
+ */
+export function isForeignPrivateSlug(slug: string | undefined, ownPrefix?: string): boolean {
+  if (!slug || !slug.startsWith(PRIVATE_CHAT_PREFIX)) return false;
+  return !(ownPrefix && slug.startsWith(ownPrefix));
+}

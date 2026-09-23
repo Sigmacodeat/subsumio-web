@@ -53,7 +53,11 @@ import {
   matterScopeAllows,
   type MatterAccessRow,
 } from "../core/matter-access.ts";
-import { callerMatterScope, loadSourceMatterAccess } from "../core/matter-access-db.ts";
+import {
+  callerMatterScope,
+  loadSourceMatterAccess,
+  onMatterAccessChanged,
+} from "../core/matter-access-db.ts";
 import { readWebMcpBinding, webMcpPermissions } from "../core/web-mcp-token.ts";
 import {
   isEngineError,
@@ -1222,8 +1226,11 @@ export async function runExtractionAndImport(
           ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
           trigger: "post_upload",
           workflow_id: "aktencheck",
-          // The uploader's matter access reaches every child agent.
+          // The uploader's matter access reaches every child agent, and the
+          // pages those agents write are bound to the assigned matter (or kept
+          // private for the uploader when the upload has none).
           ...jobMatterStamp(matterScope, undefined),
+          ...jobOwnerStamp(userId, caseSlug?.trim() || undefined),
           owner_id: ownerId,
           owner_type: ownerType,
           ...(userId ? { user_id: userId } : {}),
@@ -1665,6 +1672,9 @@ const matterAccessCache = new Map<string, SourceAccess>();
 export function invalidateMatterAccess(sourceId: string): void {
   matterAccessCache.delete(sourceId);
 }
+// Agent runs in this process (serve --with-worker) that create a private
+// area clear the cache right away.
+onMatterAccessChanged(invalidateMatterAccess);
 
 async function sourceAccess(engine: BrainEngine, sourceId: string): Promise<SourceAccess> {
   const cached = matterAccessCache.get(sourceId);

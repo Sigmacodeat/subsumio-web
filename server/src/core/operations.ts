@@ -456,6 +456,14 @@ export interface OperationContext {
    */
   allowedSlugPrefixes?: string[];
   /**
+   * The private area (`chat-sessions/private/<owner>/`) a web user's agent
+   * run writes into when it has no matter (see matter-access
+   * agentWriteBinding). Set only by the subagent tool guard, which moves the
+   * page there; put_page checks the agent namespace on the slug below it, so
+   * the namespace rule still holds and only the owner's own area is accepted.
+   */
+  agentPrivatePrefix?: string;
+  /**
    * Resolved global CLI options (--quiet / --progress-json / --progress-interval).
    * CLI callers populate this from `getCliOptions()`. MCP / library callers
    * may leave it undefined — consumers default to quiet/no-progress for
@@ -1129,11 +1137,21 @@ const put_page: Operation = {
         );
       }
       const allowList = ctx.allowedSlugPrefixes;
+      // A private page of a web user's run: the namespace rules apply to the
+      // slug below the owner's area. Only a well-formed private-area prefix
+      // counts; anything else is checked as-is (and fails).
+      const privatePrefix = ctx.agentPrivatePrefix;
+      const nsSlug =
+        typeof privatePrefix === "string" &&
+        /^chat-sessions\/private\/[A-Za-z0-9_-]+\/$/.test(privatePrefix) &&
+        slug.startsWith(privatePrefix)
+          ? slug.slice(privatePrefix.length)
+          : slug;
       if (allowList && allowList.length > 0) {
         // Trusted-workspace path: explicit allow-list bounds writes.
         // Set only by cycle.ts (synthesize/patterns) which submits subagent
         // jobs under PROTECTED_JOB_NAMES — MCP cannot reach this branch.
-        if (!matchesSlugAllowList(slug, allowList)) {
+        if (!matchesSlugAllowList(nsSlug, allowList)) {
           throw new OperationError(
             "permission_denied",
             `put_page slug '${slug}' is not within the trusted-workspace allow-list (${allowList.join(", ")})`
@@ -1142,7 +1160,7 @@ const put_page: Operation = {
       } else {
         // Legacy default: agent-namespace confinement.
         const prefix = `wiki/agents/${ctx.subagentId}/`;
-        if (!slug.startsWith(prefix) || slug.length === prefix.length) {
+        if (!nsSlug.startsWith(prefix) || nsSlug.length === prefix.length) {
           throw new OperationError(
             "permission_denied",
             `put_page via subagent must write under '${prefix}...'`

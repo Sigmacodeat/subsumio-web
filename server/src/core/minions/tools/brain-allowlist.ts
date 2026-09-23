@@ -22,11 +22,19 @@
  * level; repeats re-derive the same embedding over identical content.
  */
 
+import matter from "../../yaml-matter.ts";
 import type { BrainEngine } from "../../engine.ts";
 import type { GBrainConfig } from "../../config.ts";
 import { operations, OperationError } from "../../operations.ts";
 import type { Operation, OperationContext, AuthInfo } from "../../operations.ts";
-import { matterIsReadOnly, matterScopeAllows, type MatterScope } from "../../matter-access.ts";
+import {
+  bindingPrivatePrefix,
+  isForeignPrivateSlug,
+  matterIsReadOnly,
+  matterScopeAllows,
+  type AgentWriteBinding,
+  type MatterScope,
+} from "../../matter-access.ts";
 import { paramDefToSchema } from "../../../mcp/tool-defs.ts";
 import type { ToolCtx, ToolDef } from "../types.ts";
 
@@ -199,22 +207,34 @@ function paramsToInputSchema(op: Operation): Record<string, unknown> {
 function namespacedPutPageSchema(
   op: Operation,
   subagentId: number,
-  allowedSlugPrefixes?: readonly string[]
+  allowedSlugPrefixes?: readonly string[],
+  writeBinding?: AgentWriteBinding
 ): Record<string, unknown> {
   const base = paramsToInputSchema(op);
   const props = (base.properties as Record<string, Record<string, unknown>>) ?? {};
+  const bindingNote =
+    writeBinding?.kind === "matter"
+      ? ` Every page you write is bound to matter "${writeBinding.caseSlug}" (case_slug is set automatically; another case_slug is refused), and only pages of that matter can be updated.`
+      : writeBinding?.kind === "private"
+        ? ` Pages you write are kept privately for the user who started this run (stored under "${writeBinding.prefix}" followed by your slug). Keep using your own slug with put_page and get_page; it is mapped automatically.`
+        : writeBinding?.kind === "refuse"
+          ? " This run may not write pages (no matter and no owner to keep them for)."
+          : "";
   if (props.slug) {
     if (allowedSlugPrefixes && allowedSlugPrefixes.length > 0) {
       props.slug = {
         ...props.slug,
         description:
           `Page slug. MUST match one of these prefix globs: ${allowedSlugPrefixes.join(", ")}. ` +
-          `Slugs use lowercase alphanumeric segments separated by '/'. No leading slash, no '.md' extension, no underscores.`,
+          `Slugs use lowercase alphanumeric segments separated by '/'. No leading slash, no '.md' extension, no underscores.` +
+          bindingNote,
       };
     } else {
       props.slug = {
         ...props.slug,
-        description: `Page slug. MUST start with "wiki/agents/${subagentId}/" (agents can only write under their own namespace).`,
+        description:
+          `Page slug. MUST start with "wiki/agents/${subagentId}/" (agents can only write under their own namespace).` +
+          bindingNote,
         pattern: `^wiki/agents/${subagentId}/.+`,
       };
     }
@@ -278,6 +298,11 @@ export interface BuildBrainToolsOpts {
   matterScope?: MatterScope;
   /** Matters the caller may only read (job data `_matter_read_only`). */
   matterReadOnly?: readonly string[];
+  /**
+   * Where the pages this run writes may go (matter-access agentWriteBinding
+   * of the job data). Undefined = free, today's behaviour (CLI, cron).
+   */
+  writeBinding?: AgentWriteBinding;
 }
 
 interface OpContextDeps {
@@ -348,15 +373,32 @@ function readSources(ctx: OperationContext): string[] {
 }
 
 /**
+ * What a guarded tool call may see: the job's matter scope and, for runs a
+ * web user started (a write binding other than free), no private area but
+ * the owner's own — the stamp is frozen at submission, a colleague's private
+ * area created later would not be in its deny list.
+ */
+interface Visibility {
+  scope: MatterScope;
+  /** undefined: private areas are not checked; "": every private area is hidden. */
+  ownPrivate?: string;
+}
+
+function hiddenPrivate(vis: Visibility, slug: string | undefined): boolean {
+  return vis.ownPrivate !== undefined && isForeignPrivateSlug(slug, vis.ownPrivate || undefined);
+}
+
+/**
  * The subset of `slugs` the job may see. A page belongs to a matter by its
  * slug path or its frontmatter `case_slug`; when a slug exists in several of
  * the job's sources, every copy must be in scope.
  */
 async function visibleSlugs(
   ctx: OperationContext,
-  scope: MatterScope,
+  vis: Visibility,
   slugs: readonly string[]
 ): Promise<Set<string>> {
+  const scope = vis.scope;
   const unique = [...new Set(slugs.filter((s) => typeof s === "string" && s.length > 0))];
   const visible = new Set<string>();
   if (unique.length === 0) return visible;
@@ -376,18 +418,21 @@ async function visibleSlugs(
   }
   for (const slug of unique) {
     const cases = caseSlugs.get(slug) ?? [undefined];
-    if (cases.every((c) => matterScopeAllows(scope, slug, c))) visible.add(slug);
+    if (hiddenPrivate(vis, slug)) continue;
+    if (cases.every((c) => matterScopeAllows(scope, slug, c) && !hiddenPrivate(vis, c))) {
+      visible.add(slug);
+    }
   }
   return visible;
 }
 
 async function assertSlugVisible(
   ctx: OperationContext,
-  scope: MatterScope,
+  vis: Visibility,
   slug: unknown
 ): Promise<void> {
   const s = typeof slug === "string" ? slug : "";
-  if (!s || !(await visibleSlugs(ctx, scope, [s])).has(s)) throw pageNotFound(s);
+  if (!s || !(await visibleSlugs(ctx, vis, [s])).has(s)) throw pageNotFound(s);
 }
 
 /**
@@ -435,7 +480,7 @@ async function assertPutPageAllowed(
 async function filterToolResult(
   opName: string,
   ctx: OperationContext,
-  scope: MatterScope,
+  vis: Visibility,
   result: unknown
 ): Promise<unknown> {
   switch (opName) {
@@ -449,7 +494,7 @@ async function filterToolResult(
       const rows = result as Array<{ slug?: unknown }>;
       const ok = await visibleSlugs(
         ctx,
-        scope,
+        vis,
         rows.map((r) => (typeof r?.slug === "string" ? r.slug : ""))
       );
       return rows.filter((r) => typeof r?.slug === "string" && ok.has(r.slug));
@@ -457,10 +502,17 @@ async function filterToolResult(
     case "get_page": {
       // Fuzzy lookups answer with candidate slugs instead of a page.
       if (!result || typeof result !== "object") return result;
+      const page = result as { slug?: unknown; frontmatter?: unknown };
+      if (
+        typeof page.slug === "string" &&
+        (hiddenPrivate(vis, page.slug) || hiddenPrivate(vis, frontmatterCaseSlug(page.frontmatter)))
+      ) {
+        throw pageNotFound(page.slug);
+      }
       const r = result as { candidates?: unknown };
       if (!Array.isArray(r.candidates)) return result;
       const slugs = r.candidates.filter((s): s is string => typeof s === "string");
-      const ok = await visibleSlugs(ctx, scope, slugs);
+      const ok = await visibleSlugs(ctx, vis, slugs);
       return { ...r, candidates: slugs.filter((s) => ok.has(s)) };
     }
     case "get_backlinks": {
@@ -468,7 +520,7 @@ async function filterToolResult(
       const links = result as Array<{ from_slug?: string; to_slug?: string }>;
       const ok = await visibleSlugs(
         ctx,
-        scope,
+        vis,
         links.flatMap((l) => [l.from_slug ?? "", l.to_slug ?? ""])
       );
       return links.filter((l) => ok.has(l.from_slug ?? "") && ok.has(l.to_slug ?? ""));
@@ -480,7 +532,7 @@ async function filterToolResult(
       if (isPath) {
         const ok = await visibleSlugs(
           ctx,
-          scope,
+          vis,
           items.flatMap((i) => [String(i.from_slug ?? ""), String(i.to_slug ?? "")])
         );
         return items.filter((i) => ok.has(String(i.from_slug)) && ok.has(String(i.to_slug)));
@@ -488,7 +540,7 @@ async function filterToolResult(
       const nodes = items as Array<{ slug?: string; links?: Array<{ to_slug?: string }> }>;
       const ok = await visibleSlugs(
         ctx,
-        scope,
+        vis,
         nodes.flatMap((n) => [n.slug ?? "", ...(n.links ?? []).map((l) => l.to_slug ?? "")])
       );
       return nodes
@@ -498,7 +550,7 @@ async function filterToolResult(
     case "resolve_slugs": {
       if (!Array.isArray(result)) return result;
       const slugs = result.filter((s): s is string => typeof s === "string");
-      const ok = await visibleSlugs(ctx, scope, slugs);
+      const ok = await visibleSlugs(ctx, vis, slugs);
       return slugs.filter((s) => ok.has(s));
     }
     case "find_contradictions": {
@@ -509,7 +561,7 @@ async function filterToolResult(
       if (!Array.isArray(r.contradictions)) return result;
       const ok = await visibleSlugs(
         ctx,
-        scope,
+        vis,
         r.contradictions.flatMap((c) => [c.a?.slug ?? "", c.b?.slug ?? ""])
       );
       const kept = r.contradictions.filter(
@@ -550,10 +602,11 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
       !(scopedJob && !MATTER_SCOPED_TOOLS.has(op.name))
   );
 
+  const writeBinding = opts.writeBinding;
   return picked.map<ToolDef>((op) => {
     const schema =
       op.name === "put_page"
-        ? namespacedPutPageSchema(op, opts.subagentId, opts.allowedSlugPrefixes)
+        ? namespacedPutPageSchema(op, opts.subagentId, opts.allowedSlugPrefixes, writeBinding)
         : paramsToInputSchema(op);
 
     const toolName = sanitizeToolName(op.name);
@@ -591,27 +644,116 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           throw new Error(`permission_denied: ${op.name} is local-only`);
         }
         const params = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
-        return runMatterGuarded(op, opCtx, params, matterScope, readOnly);
+        return runMatterGuarded(op, opCtx, params, matterScope, readOnly, writeBinding);
       },
     };
   });
 }
 
 /**
+ * Bind a put_page of a web user's run (see matter-access agentWriteBinding):
+ *
+ *   matter   the page gets the run's matter as case_slug; content claiming
+ *            another matter is refused, and so is overwriting a page that is
+ *            not already part of the run's matter (firm-wide pages included).
+ *   private  the page moves into the owner's private area
+ *            (`chat-sessions/private/<owner>/<slug>`); a matter the content
+ *            claims stays as an additional restriction.
+ *   refuse   no page may be written.
+ *
+ * Returns the context and params to run the op with.
+ */
+async function bindAgentWrite(
+  opCtx: OperationContext,
+  binding: AgentWriteBinding,
+  params: Record<string, unknown>
+): Promise<{ ctx: OperationContext; params: Record<string, unknown> }> {
+  if (binding.kind === "free") return { ctx: opCtx, params };
+  if (binding.kind === "refuse") {
+    throw new OperationError(
+      "permission_denied",
+      "This agent run has no matter and no owner to keep pages for; a page it wrote would be visible firm-wide, so it may not write pages."
+    );
+  }
+  const slug = typeof params.slug === "string" ? params.slug : "";
+  const content = typeof params.content === "string" ? params.content : "";
+  // Missing slug/content: nothing to bind, the op rejects the call itself.
+  if (!slug || typeof params.content !== "string") return { ctx: opCtx, params };
+
+  let data: Record<string, unknown>;
+  let body: string;
+  try {
+    const parsed = matter(content);
+    // gray-matter caches parse results by input: never mutate its object.
+    data = { ...(parsed.data as Record<string, unknown>) };
+    body = parsed.content;
+  } catch {
+    throw new OperationError(
+      "invalid_params",
+      "put_page content has unreadable frontmatter; the page could not be bound to its matter or owner."
+    );
+  }
+  const claimed = frontmatterCaseSlug(data);
+  if (typeof opCtx.jobId === "number") data.agent_job_id = opCtx.jobId;
+
+  if (binding.kind === "matter") {
+    if (claimed && claimed !== binding.caseSlug) {
+      throw new OperationError(
+        "permission_denied",
+        `This agent run is bound to matter ${binding.caseSlug}; it may not write pages of ${claimed}.`
+      );
+    }
+    const existing = await opCtx.engine.executeRaw<{ case_slug: string | null }>(
+      `SELECT frontmatter->>'case_slug' AS case_slug FROM pages
+        WHERE slug = $1 AND source_id = $2 AND deleted_at IS NULL`,
+      [slug, opCtx.sourceId ?? "default"]
+    );
+    const inMatter = (c: string | null | undefined) =>
+      c === binding.caseSlug ||
+      slug === binding.caseSlug ||
+      slug.startsWith(`${binding.caseSlug}/`);
+    if (existing.some((r) => !inMatter(r.case_slug))) {
+      throw new OperationError(
+        "permission_denied",
+        `Page ${slug} exists outside matter ${binding.caseSlug}; this agent run may only update pages of its matter.`
+      );
+    }
+    data.case_slug = binding.caseSlug;
+    return { ctx: opCtx, params: { ...params, content: matter.stringify(body, data) } };
+  }
+
+  // private
+  const target = slug.startsWith(binding.prefix) ? slug : `${binding.prefix}${slug}`;
+  data.agent_owner_id = binding.ownerUserId;
+  data.visibility = "private";
+  return {
+    ctx: { ...opCtx, agentPrivatePrefix: binding.prefix },
+    params: { ...params, slug: target, content: matter.stringify(body, data) },
+  };
+}
+
+/**
  * Run an operation under a matter scope: tools that cannot filter by matter
  * are refused for a restricted scope, reads are filtered, writes into walled
- * or read-only matters are refused. Without scope and read-only matters the
- * op runs unchanged. Shared by subagent brain tools and MCP tokens bound to
- * a web user.
+ * or read-only matters are refused. Without scope, read-only matters and a
+ * write binding the op runs unchanged. Shared by subagent brain tools and MCP
+ * tokens bound to a web user.
+ *
+ * `writeBinding` (agent runs a web user started): put_page is bound to the
+ * run's matter or the owner's private area, every other writing op is refused
+ * — a page, link, timeline entry or fact that is not bound would be visible
+ * firm-wide — and reads never reach a colleague's private area.
  */
 export async function runMatterGuarded(
   op: Operation,
   opCtx: OperationContext,
   params: Record<string, unknown>,
   matterScope: MatterScope | undefined,
-  readOnly: readonly string[] = []
+  readOnly: readonly string[] = [],
+  writeBinding: AgentWriteBinding = { kind: "free" }
 ): Promise<unknown> {
-  if (matterScope === undefined && readOnly.length === 0) {
+  const bound = writeBinding.kind !== "free";
+  if (matterScope === undefined && readOnly.length === 0 && !bound) {
     return op.handler(opCtx, params);
   }
   // A restricted scope must not reach a tool it cannot filter, even if the
@@ -623,15 +765,44 @@ export async function runMatterGuarded(
       `${op.name} is not available to matter-scoped callers`
     );
   }
+  const vis: Visibility = {
+    scope,
+    ...(bound ? { ownPrivate: bindingPrivatePrefix(writeBinding) ?? "" } : {}),
+  };
   if (op.name === "put_page") {
-    await assertPutPageAllowed(opCtx, scope, readOnly, params);
-    return op.handler(opCtx, params);
+    const b = await bindAgentWrite(opCtx, writeBinding, params);
+    await assertPutPageAllowed(b.ctx, scope, readOnly, b.params);
+    const result = await op.handler(b.ctx, b.params);
+    if (writeBinding.kind === "private") {
+      // A first page may create the owner's private area: cached deny lists
+      // must learn about it.
+      const { notifyMatterAccessChanged } = await import("../../matter-access-db.ts");
+      notifyMatterAccessChanged(b.ctx.sourceId ?? "default");
+    }
+    return result;
   }
-  if (scope === "all") return op.handler(opCtx, params);
+  if (bound && (op.mutating === true || (op.scope !== undefined && op.scope !== "read"))) {
+    throw new OperationError(
+      "permission_denied",
+      `${op.name} writes outside a matter; agent runs started by a user may only write bound pages (put_page).`
+    );
+  }
+  if (bound && op.name === "get_page" && writeBinding.kind === "private") {
+    // The run's own pages live in the owner's private area; the model keeps
+    // addressing them by its agent-namespace slug.
+    const own = typeof opCtx.subagentId === "number" ? `wiki/agents/${opCtx.subagentId}/` : "";
+    if (own && typeof params.slug === "string" && params.slug.startsWith(own)) {
+      params = { ...params, slug: `${writeBinding.prefix}${params.slug}` };
+    }
+  }
+  if (scope === "all" && !bound) return op.handler(opCtx, params);
+  if (typeof params.slug === "string" && hiddenPrivate(vis, params.slug)) {
+    throw pageNotFound(params.slug);
+  }
   if (op.name === "get_backlinks" || op.name === "traverse_graph") {
-    await assertSlugVisible(opCtx, scope, params.slug);
+    await assertSlugVisible(opCtx, vis, params.slug);
   }
-  return filterToolResult(op.name, opCtx, scope, await op.handler(opCtx, params));
+  return filterToolResult(op.name, opCtx, vis, await op.handler(opCtx, params));
 }
 
 /**

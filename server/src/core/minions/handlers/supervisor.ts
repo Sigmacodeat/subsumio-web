@@ -43,11 +43,11 @@ import { parseMarkdown } from "../../markdown.ts";
 import { sanitizePromptInput } from "../../think/sanitize.ts";
 import { inheritBudgetOwner } from "../budget-tracker.ts";
 import {
+  agentWriteBinding,
   inheritedAgentStamps,
   matterScopeAllows,
   readJobCase,
   readJobMatterAccess,
-  readJobOwner,
   type MatterScope,
 } from "../../matter-access.ts";
 
@@ -369,9 +369,11 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     // A run a web user started without choosing a matter may have read
     // matters colleagues are walled from; as an unbound page its result would
     // be searchable by all of them. It stays with the job (listed only to its
-    // owner) instead of becoming a shared brain page.
+    // owner) instead of becoming a shared brain page. The same holds for any
+    // stamped run without a matter (agentWriteBinding): only CLI / cron runs
+    // keep writing unbound result pages.
     const resultCase = caseContext?.slug ?? boundCase;
-    if (!resultCase && readJobOwner(data)) {
+    if (!resultCase && agentWriteBinding(data).kind !== "free") {
       return {
         plan,
         children,
