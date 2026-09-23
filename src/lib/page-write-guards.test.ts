@@ -39,6 +39,22 @@ describe("guardSecondCheckWrite — standalone deadline", () => {
     expect("frontmatter" in r && r.frontmatter).toMatchObject({ status: "done", ...stamped });
   });
 
+  it("keeps a stored Notfrist a Notfrist — dropping the flag cannot open a two-step bypass", () => {
+    const step1 = guardSecondCheckWrite(
+      { is_notfrist: false, second_check_required: false },
+      { status: "pending", is_notfrist: true, second_check_required: true }
+    );
+    expect("frontmatter" in step1 && step1.frontmatter).toMatchObject({
+      is_notfrist: true,
+      second_check_required: true,
+    });
+    const step2 = guardSecondCheckWrite(
+      { status: "done", is_notfrist: false },
+      { status: "pending", is_notfrist: true }
+    );
+    expect("reject" in step2).toBe(true);
+  });
+
   it("does not block ordinary deadlines or re-saves of an already done Notfrist", () => {
     expect("frontmatter" in guardSecondCheckWrite({ status: "done" }, { status: "pending" })).toBe(
       true
@@ -86,6 +102,19 @@ describe("guardSecondCheckWrite — deadlines inside a matter", () => {
       .deadlines;
     expect(list[1]).toMatchObject(stamped);
     expect(list[0].second_check_by).toBeUndefined();
+  });
+
+  it("keeps the Notfrist flag on a matter deadline when the client drops it", () => {
+    const r = guardSecondCheckWrite(
+      {
+        deadlines: [
+          { id: "a", title: "Berufung", status: "done", is_notfrist: false },
+          stored.deadlines[1],
+        ],
+      },
+      stored
+    );
+    expect("reject" in r && r.reject.message).toContain("Berufung");
   });
 
   it("rejects a new Notfrist entry that arrives already done", () => {

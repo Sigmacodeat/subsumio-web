@@ -154,6 +154,7 @@ services:
         NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
         NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: "${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-524288000}"
         NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
+        NEXT_PUBLIC_SENTRY_DSN: "${NEXT_PUBLIC_SENTRY_DSN:-}"
     restart: unless-stopped
     env_file: .env
     environment:

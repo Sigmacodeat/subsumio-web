@@ -60,7 +60,13 @@ function isDone(fm: Record<string, unknown> | undefined | null): boolean {
   return String(fm?.status ?? "") === "done";
 }
 
-/** Remove client-supplied second-check fields and put back the stored ones. */
+/** Flags that make a deadline a Notfrist. Once stored as true they are
+ *  sticky for generic page writes — otherwise one write could drop the flag
+ *  and the next could complete the deadline without a second check. */
+const NOTFRIST_FLAGS = ["is_notfrist", "second_check_required"] as const;
+
+/** Remove client-supplied second-check fields and put back the stored ones;
+ *  keep a stored Notfrist a Notfrist. */
 function withStoredSecondCheck(
   incoming: Record<string, unknown>,
   stored: Record<string, unknown> | undefined | null
@@ -69,6 +75,9 @@ function withStoredSecondCheck(
   for (const key of SECOND_CHECK_FIELDS) {
     delete next[key];
     if (stored && stored[key] !== undefined && stored[key] !== null) next[key] = stored[key];
+  }
+  for (const flag of NOTFRIST_FLAGS) {
+    if (stored?.[flag] === true) next[flag] = true;
   }
   return next;
 }

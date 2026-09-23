@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
+import { canAffordOptionalLlm } from "@/lib/billing/optional-llm-credits";
 import {
   createPlan,
   loadPlan,
@@ -96,9 +97,18 @@ export const POST = createHandler(
       resultSummary?: string;
     };
 
+    // Only plan creation and step proposals call the model; bookkeeping
+    // (refine notes, abandon, executed) stays free even at zero balance, so
+    // `credits:` on createHandler would refuse too much.
+    const usesModel = (action === "create" && goal) || (action === "propose" && planId && stepId);
+    if (usesModel && !(await canAffordOptionalLlm(ctx, "think"))) {
+      return apiError("insufficient_credits", "Nicht genügend Credits für die Planung.", 402);
+    }
+
     try {
       if (action === "create" && goal) {
         const plan = await createPlan(ctx.headers, { goal, caseSlug });
+        void recordCreditConsumption(ctx, "think");
         return NextResponse.json({ plan });
       }
 
@@ -110,6 +120,7 @@ export const POST = createHandler(
       if (action === "propose" && planId && stepId) {
         const proposal = await proposeStepAction(ctx.headers, planId, stepId);
         if (!proposal) return apiError("not_found", "Plan or step not found", 404);
+        void recordCreditConsumption(ctx, "think");
         return NextResponse.json({ proposal });
       }
 
