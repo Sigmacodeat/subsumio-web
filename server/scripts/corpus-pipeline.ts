@@ -61,6 +61,7 @@ import {
   writeFileSync,
   mkdirSync,
   existsSync,
+  statSync,
   openSync,
   unlinkSync,
   renameSync,
@@ -1391,7 +1392,15 @@ function runInforceIndexRefresh(state: CycleState): void {
   ];
   for (const job of jobs) {
     ensureSourceRow(job.key);
-    if (ranWithin(job.key, INFORCE_REFRESH_INTERVAL_S)) continue;
+    // ranWithin misst "Job gestartet", nicht "Index existiert" — ein
+    // gecrashter Lauf wuerde die Wochenkadenz verbrauchen ohne je einen
+    // Index zu schreiben (2026-09-23: lr-Index fehlte, letzter Lauf vor
+    // 30min → Skip fuer eine Woche). Skip nur bei frischer Datei.
+    const indexPath = `${INFORCE_INDEX_DIR}/${job.out}`;
+    const indexFresh =
+      existsSync(indexPath) &&
+      Date.now() - statSync(indexPath).mtimeMs < INFORCE_REFRESH_INTERVAL_S * 1000;
+    if (indexFresh && ranWithin(job.key, INFORCE_REFRESH_INTERVAL_S)) continue;
     if (checkSourceProcess(job.key, state).running) continue;
     startProcess(
       job.key,
