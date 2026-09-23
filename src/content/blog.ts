@@ -48,7 +48,7 @@ const posts: BlogPost[] = [
         heading: "DSGVO: AVV, Verschlüsselung, getrennte Verarbeitung",
         paragraphs: [
           "Die DSGVO fordert technische und organisatorische Maßnahmen (TOMs). Für KI-Kanzleisoftware sind die kritischen Punkte: Verschlüsselung der gespeicherten Daten und der Übertragung, getrennte Verarbeitung je Kanzlei, kein Training von KI-Modellen mit Mandantendaten, ein AVV mit dem Anbieter und ein Löschkonzept für die Zeit nach Vertragsende.",
-          "Subsumio setzt dafür an: AES-256-Verschlüsselung der gespeicherten Daten, TLS bei der Übertragung, getrennte Verarbeitung je Kanzlei, kein Training von KI-Modellen mit Mandantendaten — und ein AVV liegt vor.",
+          "Subsumio setzt dafür an: TLS bei der Übertragung, verschlüsselte Ablage der hochgeladenen Originaldateien, getrennte Verarbeitung je Kanzlei, kein Training von KI-Modellen mit Mandantendaten — und ein AVV, in dem alle Auftragsverarbeiter benannt sind.",
         ],
       },
       {

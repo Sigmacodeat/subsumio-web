@@ -91,3 +91,46 @@ describe("generateDocx — inline formatting stays valid OOXML", () => {
     );
   });
 });
+
+describe("generateDocx — KI-Kennzeichnung nach Art. 50 Abs. 2 KI-VO", () => {
+  test("AI content is marked machine-readably in core and custom document properties", async () => {
+    const files = await extractDocxFiles(await generateDocx("Entwurf", { title: "Klage" }));
+    const core = files["docProps/core.xml"];
+    expect(core).toContain("<dc:title>Klage</dc:title>");
+    expect(core).toContain("KI-generiert (Subsumio), anwaltlich zu prüfen");
+    expect(core).toMatch(/<cp:keywords>[^<]*KI-generiert/);
+    const custom = files["docProps/custom.xml"];
+    expect(custom).toMatch(/name="AIGenerated"><vt:bool>true<\/vt:bool>/);
+    expect(custom).toContain('name="AIGenerator"><vt:lpwstr>Subsumio</vt:lpwstr>');
+    expect(custom).toContain("anwaltlich zu prüfen");
+  });
+
+  test("property parts are registered in content types and package relationships", async () => {
+    const files = await extractDocxFiles(await generateDocx("Entwurf", { title: "T" }));
+    expect(files["[Content_Types].xml"]).toContain('PartName="/docProps/core.xml"');
+    expect(files["[Content_Types].xml"]).toContain('PartName="/docProps/custom.xml"');
+    expect(files["_rels/.rels"]).toContain('Target="docProps/core.xml"');
+    expect(files["_rels/.rels"]).toContain('Target="docProps/custom.xml"');
+  });
+
+  test("visible footer carries the notice", async () => {
+    const files = await extractDocxFiles(await generateDocx("Entwurf", { title: "T" }));
+    expect(files["word/footer1.xml"]).toContain("KI-generiert (Subsumio), anwaltlich zu prüfen");
+  });
+
+  test("aiGenerated: false omits the AI marking", async () => {
+    const files = await extractDocxFiles(
+      await generateDocx("Handschrift", { title: "T", aiGenerated: false })
+    );
+    expect(files["docProps/custom.xml"]).toBeUndefined();
+    expect(files["docProps/core.xml"]).not.toContain("KI-generiert");
+    expect(files["[Content_Types].xml"]).not.toContain("custom.xml");
+    expect(files["word/footer1.xml"]).not.toContain("KI-generiert");
+  });
+
+  test("title with XML special characters stays well-formed", async () => {
+    const files = await extractDocxFiles(await generateDocx("x", { title: "A & B <C>" }));
+    expect(files["docProps/core.xml"]).toContain("<dc:title>A &amp; B &lt;C&gt;</dc:title>");
+    expect(files["word/header1.xml"]).toContain("A &amp; B &lt;C&gt;");
+  });
+});

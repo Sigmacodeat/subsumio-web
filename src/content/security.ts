@@ -34,7 +34,7 @@ export interface SecurityContent {
 export const SECURITY: SecurityContent = {
   metaTitle: "Subsumio Sicherheit — Datenschutz für Kanzleien in Österreich",
   metaDesc:
-    "EU-Cloud mit AVV oder On-Premise im Enterprise-Tarif. Kein Training mit Mandantendaten, Zugriffsrechte pro Nutzer und Akte, automatisiert getestet.",
+    "Hosting in Wien mit AVV oder On-Premise im Enterprise-Tarif. Kein Training mit Mandantendaten, Zugriffsrechte pro Nutzer und Akte, automatisiert getestet.",
   badge: "Sicherheit & Datenschutz",
   h1a: "Mandantendaten gehören der Kanzlei.",
   h1b: "Deshalb bleiben sie unter Ihrer Kontrolle.",
@@ -74,11 +74,11 @@ export const SECURITY: SecurityContent = {
       ],
     },
     {
-      title: "Verwaltete EU-Cloud (Solo, Kanzlei, Enterprise)",
+      title: "Gehostet in Wien (Solo, Kanzlei, Enterprise)",
       points: [
-        "EU-Hosting mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
-        "Auftragsverarbeiter sind im AVV benannt",
-        "Verschlüsselung bei Übertragung und Speicherung",
+        "Hosting in einem Rechenzentrum in Wien, mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
+        "KI-Funktionen nutzen benannte Auftragsverarbeiter, teils mit Sitz in den USA (siehe Datenschutzerklärung)",
+        "Verschlüsselte Übertragung, verschlüsselte Ablage hochgeladener Originaldateien",
         "Löschanfragen an einer Stelle erledigt",
       ],
     },
@@ -87,7 +87,7 @@ export const SECURITY: SecurityContent = {
   complianceItems: [
     {
       title: "Verarbeitung nach DSGVO",
-      desc: "AVV für die gehosteten Tarife, Datenstandort EU, benannte Auftragsverarbeiter, Löschung auf Anfrage. On-Premise verarbeiten wir auf unserer Seite keine Mandantendaten.",
+      desc: "AVV für die gehosteten Tarife, Hosting in Wien, Löschung auf Anfrage. Für KI-Antworten und einzelne Zusatzfunktionen setzen wir Auftragsverarbeiter ein, teils mit Sitz in den USA; alle sind in der Datenschutzerklärung benannt. On-Premise verarbeiten wir auf unserer Seite keine Mandantendaten.",
     },
     {
       title: "Verschwiegenheit (§ 9 Abs. 2 RAO)",
@@ -106,8 +106,8 @@ export const SECURITY: SecurityContent = {
     },
     {
       icon: "Server",
-      label: "EU-Hosting",
-      sub: "Rechenzentren in der EU",
+      label: "Hosting in Wien",
+      sub: "Rechenzentrum in Österreich",
     },
     {
       icon: "FileCheck",
@@ -154,7 +154,7 @@ export const SECURITY: SecurityContent = {
   faq: [
     {
       q: "Wo genau liegen meine Daten?",
-      a: "In der EU-Cloud: in Rechenzentren in der EU; der Standort ist im AVV benannt, ebenso der Anbieter des Sprachmodells, an den Anfragen für KI-Antworten gehen. On-Premise (Enterprise): auf Ihren eigenen Servern.",
+      a: "Gehostet: in einem Rechenzentrum in Wien. Für KI-Antworten gehen die nötigen Textausschnitte an den Anbieter des Sprachmodells, der seinen Sitz in den USA hat; er ist wie alle Auftragsverarbeiter in Datenschutzerklärung und AVV benannt. On-Premise (Enterprise): auf Ihren eigenen Servern.",
     },
     {
       q: "Können Subsumio-Mitarbeiter meine Akten lesen?",
@@ -162,7 +162,7 @@ export const SECURITY: SecurityContent = {
     },
     {
       q: "Was passiert mit meinen Daten, wenn ich kündige?",
-      a: "Sie können jederzeit alles exportieren. Nach Vertragsende 30 Tage Exportfrist, danach Löschung. On-Premise liegen die Daten ohnehin bei Ihnen.",
+      a: "Sie können bis zum Vertragsende jederzeit alles exportieren. Die Löschung Ihrer Daten beantragen Sie bei uns; verschlüsselte Sicherungskopien werden nach spätestens sechs Monaten überschrieben. On-Premise liegen die Daten ohnehin bei Ihnen.",
     },
     {
       q: "Ist On-Premise unsicherer als Ihre Cloud?",

@@ -239,7 +239,7 @@ export const FEATURES_PAGE: FeaturesContent = {
     },
     {
       q: "Sind meine Daten sicher?",
-      a: "Ihre Daten werden verschlüsselt übertragen und gespeichert und liegen in der EU-Cloud; On-Premise gibt es im Enterprise-Tarif. Auftragsverarbeiter sind im AVV benannt. Ihre Inhalte werden nicht zum Training von Modellen verwendet.",
+      a: "Ihre Daten werden verschlüsselt übertragen und liegen in einem Rechenzentrum in Wien; hochgeladene Originaldateien werden verschlüsselt abgelegt. On-Premise gibt es im Enterprise-Tarif. Für KI-Antworten gehen die nötigen Textausschnitte an Auftragsverarbeiter, teils mit Sitz in den USA — alle sind in AVV und Datenschutzerklärung benannt. Ihre Inhalte werden nicht zum Training von Modellen verwendet.",
     },
   ],
 };

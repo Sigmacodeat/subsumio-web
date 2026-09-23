@@ -26,7 +26,7 @@ const CONTENT = {
       icon: "FileText",
       title: "Datenschutz",
       value: "dsb@subsum.io",
-      desc: "Für Ihren Datenschutzbeauftragten — AVV, technische und organisatorische Maßnahmen.",
+      desc: "Datenschutzanfragen, AVV sowie technische und organisatorische Maßnahmen.",
       href: "mailto:dsb@subsum.io",
     },
   ],

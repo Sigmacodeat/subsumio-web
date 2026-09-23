@@ -48,7 +48,7 @@ export const CITIES_DE: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Berlin",
     metaTitle: "KI-Kanzleisoftware Berlin — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Berlin: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit Berliner Feiertagen, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Berlin: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit Berliner Feiertagen, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Berliner Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Berlin, die mit deutschem Recht arbeitet — BGB, ZPO, HGB und dem übrigen Bundesrecht von gesetze-im-internet.de. Jede Antwort nennt ihre Fundstelle; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
@@ -65,7 +65,7 @@ export const CITIES_DE: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in München",
     metaTitle: "KI-Kanzleisoftware München — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in München: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit bayerischen Feiertagen, belegte KI-Antworten. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in München: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit bayerischen Feiertagen, belegte KI-Antworten. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Münchner Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in München und Bayern — von der Einzelkanzlei bis zur Wirtschaftskanzlei. Deutsches Recht (BGB, ZPO, HGB) mit belegten Antworten und Fundstellen.",
@@ -82,7 +82,7 @@ export const CITIES_DE: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Hamburg",
     metaTitle: "KI-Kanzleisoftware Hamburg — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Hamburg: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit Hamburger Feiertagen, belegte KI-Antworten. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Hamburg: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit Hamburger Feiertagen, belegte KI-Antworten. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Hamburger Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Hamburg — stark auch im Handels- und Seerecht. Deutsches Recht (BGB, ZPO, HGB) mit belegten Antworten und Fundstellen.",
@@ -103,7 +103,7 @@ export const CITIES_DE: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Köln",
     metaTitle: "KI-Kanzleisoftware Köln — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Köln: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit NRW-Feiertagen, belegte KI-Antworten. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Köln: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit NRW-Feiertagen, belegte KI-Antworten. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Kölner Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Köln und Nordrhein-Westfalen — von der Medienrechtskanzlei bis zur Sozietät. Deutsches Recht (BGB, ZPO, HGB) mit belegten Antworten und Fundstellen.",
@@ -120,7 +120,7 @@ export const CITIES_DE: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Frankfurt am Main",
     metaTitle: "KI-Kanzleisoftware Frankfurt — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Frankfurt am Main: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit hessischen Feiertagen, belegte KI-Antworten. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Frankfurt am Main: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit hessischen Feiertagen, belegte KI-Antworten. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Frankfurter Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Frankfurt am Main und Hessen — vom Bank- und Finanzrecht bis zur Sozietät. Deutsches Recht (BGB, ZPO, HGB) mit belegten Antworten und Fundstellen.",

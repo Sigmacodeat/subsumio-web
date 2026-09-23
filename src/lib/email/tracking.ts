@@ -10,6 +10,11 @@
  *
  * Schema is lazily initialized via createSchemaInit, matching the
  * existing pattern used by audit, quota, and mailbox modules.
+ *
+ * Datenschutz: Es findet keine Standortermittlung über Dritte statt — die IP
+ * des Empfängers wird an keinen externen Geo-Dienst übermittelt. Die Spalten
+ * geo_country/geo_city bleiben nur für Altbestände im Schema und werden nicht
+ * mehr befüllt.
  */
 
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
@@ -55,8 +60,6 @@ export interface TrackingEventInput {
   targetUrl?: string;
   ipAddress?: string;
   userAgent?: string;
-  geoCountry?: string;
-  geoCity?: string;
   isForward?: boolean;
   raw?: Record<string, unknown>;
 }
@@ -215,8 +218,8 @@ export async function logTrackingEvent(input: TrackingEventInput): Promise<Track
         input.targetUrl ?? null,
         input.ipAddress ?? null,
         input.userAgent ?? null,
-        input.geoCountry ?? null,
-        input.geoCity ?? null,
+        null, // geo_country — no third-party geo lookup
+        null, // geo_city
         input.isForward ?? false,
         JSON.stringify(input.raw ?? {}),
         now,
@@ -365,15 +368,15 @@ export async function getFirstOpenEvent(trackingId: string): Promise<TrackingEve
 // ── Forward detection ─────────────────────────────────────────────────
 
 /**
- * Detect whether an open event is likely a forward by comparing
- * IP hash and geo against the first open event.
+ * Detect whether an open event is likely a forward by comparing IP hash and
+ * mail client (User-Agent) against the first open event. A different IP alone
+ * is not enough (mobile networks, VPNs) — the mail client must differ too.
  *
  * @returns true if this open appears to be from a different recipient
  */
 export function detectForward(
   firstOpen: TrackingEvent | null,
   currentIp: string,
-  currentGeo: { country: string | null; city: string | null },
   currentUserAgent: string | null
 ): boolean {
   if (!firstOpen) return false;
@@ -387,15 +390,7 @@ export function detectForward(
     : null;
 
   if (firstIpHash && currentIpHash && firstIpHash !== currentIpHash) {
-    // Different IP — check if geo is also different
-    if (firstOpen.geoCountry && currentGeo.country && firstOpen.geoCountry !== currentGeo.country) {
-      return true;
-    }
-    // Different IP in same country but different city
-    if (firstOpen.geoCity && currentGeo.city && firstOpen.geoCity !== currentGeo.city) {
-      return true;
-    }
-    // Different IP, no geo data — still suspicious if UA is also different
+    // Different IP — suspicious only if the User-Agent differs as well
     if (firstOpen.userAgent && currentUserAgent && firstOpen.userAgent !== currentUserAgent) {
       return true;
     }
@@ -408,7 +403,7 @@ export function detectForward(
     firstIpHash !== currentIpHash &&
     firstOpen.userAgent &&
     currentUserAgent &&
-    !firstOpen.userAgent.includes(extractUaCore(currentUserAgent))
+    !firstOpen.userAgent.toLowerCase().includes(extractUaCore(currentUserAgent))
   ) {
     return true;
   }
@@ -430,50 +425,6 @@ function extractUaCore(ua: string): string {
   if (lower.includes("android")) return "android";
   if (lower.includes("iphone") || lower.includes("ipad")) return "ios";
   return lower.slice(0, 20);
-}
-
-// ── Geo IP lookup ─────────────────────────────────────────────────────
-
-/**
- * Resolve an IP address to country/city using a lightweight external API.
- * Falls back gracefully to null values on any error.
- *
- * Uses ipapi.co (free tier, no API key required).
- */
-export async function lookupGeoIp(ip: string): Promise<{
-  country: string | null;
-  city: string | null;
-}> {
-  // Skip private/local IPs
-  if (
-    ip.startsWith("10.") ||
-    ip.startsWith("192.168.") ||
-    ip.startsWith("172.") ||
-    ip === "::1" ||
-    ip === "127.0.0.1"
-  ) {
-    return { country: null, city: null };
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-
-    const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!res.ok) return { country: null, city: null };
-
-    const data = (await res.json()) as { country_name?: string; city?: string };
-    return {
-      country: data.country_name ?? null,
-      city: data.city ?? null,
-    };
-  } catch {
-    return { country: null, city: null };
-  }
 }
 
 /**

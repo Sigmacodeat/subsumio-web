@@ -13,7 +13,7 @@ export const SALES_KNOWLEDGE: KnowledgeChunk[] = [
     url: "/at/contact",
     text:
       "Kontakt zu Subsumio: allgemeine Anfragen und Vertrieb unter hello@subsum.io, " +
-      "Datenschutzanfragen an den Datenschutzbeauftragten unter dsb@subsum.io. " +
+      "Datenschutzanfragen (auch zu AVV und technischen und organisatorischen Maßnahmen) unter dsb@subsum.io. " +
       "Im Chat können Sie auch einen Rückruf oder einen Termin anfragen; ein Mensch meldet sich.",
   },
   {
