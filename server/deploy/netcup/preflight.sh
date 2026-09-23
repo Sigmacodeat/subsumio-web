@@ -73,16 +73,51 @@ case "$ai_provider" in
     echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=${ai_provider:-leer} (direkt, Anthropic)"
     require_value ANTHROPIC_API_KEY
     warn_value OPENROUTER_API_KEY "kein OpenRouter-Fallback, falls Anthropic ausfällt."
+    echo "[preflight] WARN     Anthropic direkt verarbeitet nicht in der EU — für Mandantendaten (ÖRAK § 40 Abs 3 RL-BA) SUBSUMIO_AI_PROVIDER=bedrock-eu verwenden." >&2
     ;;
   openrouter)
     echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=openrouter"
     require_value OPENROUTER_API_KEY
     ;;
+  bedrock-eu)
+    echo "[preflight] OK       SUBSUMIO_AI_PROVIDER=bedrock-eu (Claude über AWS Bedrock, EU-Profile)"
+    if [ -z "$(value AWS_BEARER_TOKEN_BEDROCK)" ]; then
+      require_value AWS_ACCESS_KEY_ID
+      require_value AWS_SECRET_ACCESS_KEY
+    fi
+    case "$(value AWS_REGION)" in
+      "" | eu-central-1 | eu-west-1 | eu-west-3 | eu-north-1 | eu-south-1 | eu-south-2) ;;
+      *)
+        echo "[preflight] INVALID  AWS_REGION muss eine Region in einem EU-Mitgliedsstaat sein (ist '$(value AWS_REGION)')." >&2
+        failed=1
+        ;;
+    esac
+    ;;
   *)
-    echo "[preflight] INVALID  SUBSUMIO_AI_PROVIDER muss leer, 'anthropic' oder 'openrouter' sein (ist '$ai_provider')." >&2
+    echo "[preflight] INVALID  SUBSUMIO_AI_PROVIDER muss leer, 'anthropic', 'openrouter' oder 'bedrock-eu' sein (ist '$ai_provider')." >&2
     failed=1
     ;;
 esac
+
+# EU-only: the engine refuses every non-EU provider at runtime; these checks
+# catch the configurations that would make it refuse everything, or leave a
+# bypass open, before the deploy switches over.
+if [ "$(value SUBSUMIO_EU_ONLY)" = "1" ]; then
+  if [ "$ai_provider" != "bedrock-eu" ]; then
+    echo "[preflight] INVALID  SUBSUMIO_EU_ONLY=1 verlangt SUBSUMIO_AI_PROVIDER=bedrock-eu." >&2
+    failed=1
+  fi
+  if [ -n "$(value ANTHROPIC_API_KEY)" ]; then
+    echo "[preflight] INVALID  ANTHROPIC_API_KEY unter SUBSUMIO_EU_ONLY=1 entfernen (Direktweg alter Subagent-Jobs)." >&2
+    failed=1
+  fi
+  require_value SUBSUMIO_ENSEMBLE_CRITIC_MODELS
+  if [ "$(value SUBSUMIO_EU_ONLY_EMBEDDINGS)" != "1" ]; then
+    echo "[preflight] WARN     Embeddings laufen weiter über einen Nicht-EU-Anbieter (SUBSUMIO_EU_ONLY_EMBEDDINGS nicht gesetzt)." >&2
+  fi
+elif [ "$ai_provider" = "bedrock-eu" ]; then
+  echo "[preflight] WARN     bedrock-eu ohne SUBSUMIO_EU_ONLY=1: EU-Verarbeitung wird nicht erzwungen." >&2
+fi
 
 # Embeddings: the model must be set explicitly (it defines the vector space of
 # content_chunks.embedding, together with the dimensions) and its provider

@@ -151,3 +151,62 @@ describe("preflight: AI provider keys", () => {
     expect(noModel.code).toBe(1);
   });
 });
+
+describe("preflight: EU processing (bedrock-eu, SUBSUMIO_EU_ONLY)", () => {
+  const bedrock = {
+    SUBSUMIO_AI_PROVIDER: "bedrock-eu",
+    AWS_ACCESS_KEY_ID: "AKIA",
+    AWS_SECRET_ACCESS_KEY: "secret",
+    AWS_REGION: "eu-central-1",
+    OPENROUTER_API_KEY: "sk-or",
+  };
+
+  test("direct Anthropic passes but warns that it is not EU processing", () => {
+    const r = run({ ANTHROPIC_API_KEY: "sk-ant", OPENROUTER_API_KEY: "sk-or" });
+    expect(r.out).toContain("nicht in der EU");
+    expect(r.code).toBe(0);
+  });
+
+  test("bedrock-eu needs AWS credentials (or a Bedrock API key) and an EU member-state region", () => {
+    expect(run(bedrock).code).toBe(0);
+    const noKeys = run({ ...bedrock, AWS_ACCESS_KEY_ID: undefined });
+    expect(noKeys.out).toContain("MISSING  AWS_ACCESS_KEY_ID");
+    expect(noKeys.code).toBe(1);
+    const bearer = run({
+      ...bedrock,
+      AWS_ACCESS_KEY_ID: undefined,
+      AWS_SECRET_ACCESS_KEY: undefined,
+      AWS_BEARER_TOKEN_BEDROCK: "tok",
+    });
+    expect(bearer.code).toBe(0);
+    // London/Zürich profiles route outside the EU member states.
+    const london = run({ ...bedrock, AWS_REGION: "eu-west-2" });
+    expect(london.out).toContain("INVALID  AWS_REGION");
+    expect(london.code).toBe(1);
+  });
+
+  test("EU_ONLY demands bedrock-eu, no Anthropic direct key and EU critic models", () => {
+    const direct = run({
+      ANTHROPIC_API_KEY: "sk-ant",
+      OPENROUTER_API_KEY: "sk-or",
+      SUBSUMIO_EU_ONLY: "1",
+    });
+    expect(direct.out).toContain("verlangt SUBSUMIO_AI_PROVIDER=bedrock-eu");
+    expect(direct.code).toBe(1);
+    const leftoverKey = run({
+      ...bedrock,
+      SUBSUMIO_EU_ONLY: "1",
+      ANTHROPIC_API_KEY: "sk-ant",
+      SUBSUMIO_ENSEMBLE_CRITIC_MODELS: "bedrock:eu.anthropic.claude-sonnet-5",
+    });
+    expect(leftoverKey.out).toContain("ANTHROPIC_API_KEY unter SUBSUMIO_EU_ONLY=1 entfernen");
+    expect(leftoverKey.code).toBe(1);
+    const ok = run({
+      ...bedrock,
+      SUBSUMIO_EU_ONLY: "1",
+      SUBSUMIO_ENSEMBLE_CRITIC_MODELS: "bedrock:eu.anthropic.claude-sonnet-5",
+    });
+    expect(ok.out).toContain("Embeddings laufen weiter");
+    expect(ok.code).toBe(0);
+  });
+});
