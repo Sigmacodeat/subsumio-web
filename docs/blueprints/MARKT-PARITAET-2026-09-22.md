@@ -510,7 +510,15 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
     - ✅ SMS: `src/lib/sms/` (Twilio-Adapter env-gated, eigener
       Consent-Kanal `subsumio_sms_consent`, Consent+Quiet-Hours-Gate
       ohne 24h-Fenster), `api/sms/send` + `api/sms/consent`
-      (Opt-in/Opt-out mit DSGVO-Proof), Audit `sms.*`
+      (Opt-in/Opt-out mit DSGVO-Proof), Audit `sms.*`.
+      Ergänzt (23.09.): Twilio-StatusCallback `POST api/sms/status`
+      (X-Twilio-Signature HMAC-SHA1 via `twilio-verify.ts`, fail-closed
+      ohne Auth-Token, Public-URL-Basis hinter TLS-Proxy) → Audit
+      `sms.delivery_status` mit `toHash`-Korrelation; `GET
+api/sms/status?phone=` liefert die letzten Zustellstände pro
+      Nummer (nur Hash-Abgleich, nie Rohtelefonnummer) — der
+      `SmsSendDialog` zeigt „Letzte Zustellungen" mit
+      Status-Icon/Datum. Tests: twilio-verify 8, status-Route 2.
     - ✅ Video-Termin: `video_link`-Frontmatter via
       `api/legal/appointments/video-link` (JITSI_DOMAIN, Raum =
       HMAC des Slugs — keine Mandantendaten), Checkbox +
