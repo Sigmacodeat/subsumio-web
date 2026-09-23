@@ -705,11 +705,18 @@ export const api = {
      * checker — see api/legal/fristen/second-check/route.ts.
      */
     fristenSecondCheck(
-      slug: string
+      slug: string,
+      /** For a deadline inside a matter's list: its id (or title + due_date for legacy entries). */
+      deadline?: { id?: string; title?: string; due_date?: string }
     ): Promise<{ slug: string; second_check_by: string; second_check_at: string }> {
+      const ref = deadline?.id
+        ? { deadlineId: deadline.id }
+        : deadline
+          ? { title: deadline.title ?? "", due_date: deadline.due_date }
+          : {};
       return request("/api/legal/fristen/second-check", {
         method: "POST",
-        body: JSON.stringify({ slug }),
+        body: JSON.stringify({ slug, ...ref }),
       });
     },
 

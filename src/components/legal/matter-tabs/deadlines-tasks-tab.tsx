@@ -33,6 +33,8 @@ import { DEADLINE_RULES, calculateDeadline, withDeadlineAudit } from "@/lib/lega
 import type { DeadlineEntry } from "@/lib/legal-types";
 import type { DeadlineFormData } from "@/lib/schemas/case-detail";
 import { csrfFetch } from "@/lib/csrf";
+import { api, ApiRequestError } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 import CommentThread from "@/components/legal/CommentThread";
 import { useTeam } from "@/lib/queries/settings";
 
@@ -42,6 +44,7 @@ const AGENT_ASSIGNEE = "__agent__";
 export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const { addToast } = useToast();
   const [showDeadlineForm, setShowDeadlineForm] = useState(false);
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -458,6 +461,9 @@ export function DeadlinesTasksTab() {
                           type: d.type as DeadlineEntry["type"],
                           status: "pending",
                           review_status: "unreviewed",
+                          // Marks it as a KI suggestion: alerts label it and
+                          // send no external notification until reviewed.
+                          source: "ai_detected",
                         };
                         const updated = [...ctx.deadlinesList, entry];
                         ctx.setDeadlinesList(updated);
@@ -1034,25 +1040,30 @@ export function DeadlinesTasksTab() {
                     return;
                   }
                   setSecondCheckBusy(true);
-                  const now = new Date().toISOString();
-                  const updated = ctx.deadlinesList.map((d, i) =>
-                    i === secondCheckIndex
-                      ? withDeadlineAudit(
-                          {
-                            ...d,
-                            status: "done",
-                            second_check_required: true,
-                            second_check_by: ctx.currentUserName,
-                            second_check_at: now,
-                          },
-                          "second_check"
-                        )
-                      : d
-                  );
-                  ctx.setDeadlinesList(updated);
-                  await ctx.saveCaseUpdate({ deadlines: updated });
-                  setSecondCheckBusy(false);
-                  setSecondCheckIndex(null);
+                  try {
+                    // Server-enforced four-eyes check: the route stamps the
+                    // signed-in user and refuses the creator/first checker.
+                    // The generic page write strips client-set second_check_*.
+                    await api.legal.fristenSecondCheck(caseData.slug, {
+                      id: dl.id,
+                      title: dl.title,
+                      due_date: dl.due_date,
+                    });
+                    addToast({ type: "success", title: t("deadlines.second_check_done") });
+                    ctx.setEditingDeadlineIndex(null);
+                    await ctx.refreshCaseData();
+                  } catch (err) {
+                    addToast({
+                      type: "error",
+                      title:
+                        err instanceof ApiRequestError && err.code === "second_check_self_blocked"
+                          ? t("deadlines.second_check_self_blocked")
+                          : t("deadlines.update_failed"),
+                    });
+                  } finally {
+                    setSecondCheckBusy(false);
+                    setSecondCheckIndex(null);
+                  }
                 }}
                 className="gap-1.5 bg-[color:var(--ds-warning-solid)] text-xs text-white hover:bg-[color:var(--ds-warning-solid)]"
               >
