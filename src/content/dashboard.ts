@@ -4863,6 +4863,14 @@ export const D = {
     de: "Erneutes Einreihen fehlgeschlagen",
     en: "Could not re-queue the task",
   },
+  "vault.pending_tasks_one": {
+    de: "1 Aufgabe wird gerade wiederholt — sie wird automatisch nachgeholt:",
+    en: "1 task is being retried — it will be picked up automatically:",
+  },
+  "vault.pending_tasks_many": {
+    de: "{n} Aufgaben werden gerade wiederholt — sie werden automatisch nachgeholt:",
+    en: "{n} tasks are being retried — they will be picked up automatically:",
+  },
   "vault.task_type_reconcile_case": { de: "Akten-Abgleich", en: "Case reconciliation" },
   "vault.task_type_analyze": { de: "Dokumenten-Analyse", en: "Document analysis" },
   "vault.task_type_contradiction": { de: "Widerspruchs-Prüfung", en: "Contradiction check" },

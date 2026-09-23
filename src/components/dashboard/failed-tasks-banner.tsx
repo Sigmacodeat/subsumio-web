@@ -34,16 +34,32 @@ export function FailedTasksBanner() {
   const { t } = useLang();
   const { addToast } = useToast();
   const [tasks, setTasks] = useState<FailedTask[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<FailedTask[]>([]);
   const [retrying, setRetrying] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/post-upload-tasks?status=exhausted")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        const list = (data.tasks ?? data.data?.tasks ?? []) as FailedTask[];
-        setTasks(list.filter((task) => task.task_type !== "inbound_stamp"));
+    const nonStamps = (data: unknown, minAttempts: number): FailedTask[] => {
+      if (!data || typeof data !== "object") return [];
+      const list = ((data as { tasks?: FailedTask[]; data?: { tasks?: FailedTask[] } }).tasks ??
+        (data as { data?: { tasks?: FailedTask[] } }).data?.tasks ??
+        []) as FailedTask[];
+      return list.filter(
+        (task) => task.task_type !== "inbound_stamp" && (task.attempts ?? 0) >= minAttempts
+      );
+    };
+    Promise.all([
+      fetch("/api/post-upload-tasks?status=exhausted")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => nonStamps(d, 0)),
+      fetch("/api/post-upload-tasks?status=pending")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => nonStamps(d, 2)),
+    ])
+      .then(([exhausted, pending]) => {
+        if (cancelled) return;
+        setTasks(exhausted);
+        setPendingTasks(pending);
       })
       .catch(() => {});
     return () => {
@@ -72,61 +88,83 @@ export function FailedTasksBanner() {
     [addToast, t]
   );
 
-  if (tasks.length === 0) return null;
+  if (tasks.length === 0 && pendingTasks.length === 0) return null;
 
   return (
-    <div
-      role="alert"
-      className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
-    >
-      <div className="flex items-start gap-3">
-        <AlertTriangle
-          size={16}
-          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
-          aria-hidden="true"
-        />
-        <div className="min-w-0 flex-1 space-y-2">
-          <p className="text-sm font-medium">
-            {tasks.length === 1
-              ? t("vault.failed_tasks_title_one")
-              : t("vault.failed_tasks_title_many").replace("{n}", String(tasks.length))}
-          </p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("vault.failed_tasks_desc")}
-          </p>
-          <ul className="space-y-1.5">
-            {tasks.map((task) => (
-              <li key={task.task_slug} className="flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate">
-                  {task.task_type && task.task_type in TASK_TYPE_KEY
-                    ? `${t(TASK_TYPE_KEY[task.task_type]!)} — `
-                    : ""}
-                  {task.doc_title || task.doc_slug}
-                  {task.last_error ? (
-                    <span className="text-[color:var(--ds-text-subtle)]">
-                      {" "}
-                      ({task.last_error.slice(0, 80)})
+    <>
+      {tasks.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle
+              size={16}
+              className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="text-sm font-medium">
+                {tasks.length === 1
+                  ? t("vault.failed_tasks_title_one")
+                  : t("vault.failed_tasks_title_many").replace("{n}", String(tasks.length))}
+              </p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("vault.failed_tasks_desc")}
+              </p>
+              <ul className="space-y-1.5">
+                {tasks.map((task) => (
+                  <li
+                    key={task.task_slug}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="min-w-0 truncate">
+                      {task.task_type && task.task_type in TASK_TYPE_KEY
+                        ? `${t(TASK_TYPE_KEY[task.task_type]!)} — `
+                        : ""}
+                      {task.doc_title || task.doc_slug}
+                      {task.last_error ? (
+                        <span className="text-[color:var(--ds-text-subtle)]">
+                          {" "}
+                          ({task.last_error.slice(0, 80)})
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={retrying === task.task_slug}
-                  onClick={() => void retryTask(task.task_slug)}
-                >
-                  {retrying === task.task_slug ? (
-                    <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <RotateCcw size={13} aria-hidden="true" />
-                  )}
-                  {t("vault.failed_tasks_retry")}
-                </Button>
-              </li>
-            ))}
-          </ul>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={retrying === task.task_slug}
+                      onClick={() => void retryTask(task.task_slug)}
+                    >
+                      {retrying === task.task_slug ? (
+                        <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <RotateCcw size={13} aria-hidden="true" />
+                      )}
+                      {t("vault.failed_tasks_retry")}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+      {pendingTasks.length > 0 && (
+        <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
+          <p className="text-xs text-[color:var(--ds-info-text)]">
+            {pendingTasks.length === 1
+              ? t("vault.pending_tasks_one")
+              : t("vault.pending_tasks_many").replace("{n}", String(pendingTasks.length))}{" "}
+            {pendingTasks
+              .map(
+                (task) =>
+                  `${task.task_type && task.task_type in TASK_TYPE_KEY ? `${t(TASK_TYPE_KEY[task.task_type]!)} ` : ""}${task.doc_title || task.doc_slug}`
+              )
+              .join(" · ")}
+          </p>
+        </div>
+      )}
+    </>
   );
 }
