@@ -2,7 +2,8 @@ import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
 import { readFileSync, existsSync, readdirSync } from "fs";
-import { readdir } from "fs/promises";
+import { readdir, stat } from "fs/promises";
+import type { Dirent } from "fs";
 import { join } from "path";
 import { lawCorpusDir, lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 import { deriveLiveRows, PIPELINE_KEY_TO_DIR } from "@/lib/corpus-pipeline-live";
@@ -37,22 +38,43 @@ const diskCountCache = new Map<string, { n: number; t: number }>();
 // Async-Walk statt readdirSync(recursive): ein synchroner Scan über ~700k
 // Dateien blockiert den Event Loop für Sekunden — hier yieldet jede
 // Verzeichnis-Ebene, damit das 5s-Polling andere Requests nicht ausbremst.
-async function countMdFiles(dir: string): Promise<number> {
-  if (!existsSync(dir)) return 0;
-  try {
-    let n = 0;
-    const stack = [dir];
-    while (stack.length > 0) {
-      const current = stack.pop()!;
-      for (const e of await readdir(current, { withFileTypes: true })) {
-        if (e.isDirectory()) stack.push(join(current, e.name));
-        else if (e.name.endsWith(".md")) n++;
-      }
+// Zusätzlich mtime-memoisiert pro Verzeichnis: ein Dir ohne mtime-Änderung
+// kann seinen Subtree-Count wiederverwenden, ohne nochmal readdir'd zu
+// werden — der Re-Scan kostet dann nur noch O(changed dirs) statt O(files).
+// fs.watch wäre die Alternative, skaliert aber nicht (inotify-Limits bei
+// 700k Dateien).
+const dirScanCache = new Map<string, Map<string, { mtimeMs: number; n: number }>>();
+
+async function countMdFiles(root: string): Promise<number> {
+  const prev = dirScanCache.get(root) ?? new Map();
+  const next = new Map<string, { mtimeMs: number; n: number }>();
+
+  const walk = async (dir: string): Promise<number> => {
+    const st1 = await stat(dir).catch(() => null);
+    if (!st1?.isDirectory()) return 0;
+    const hit = prev.get(dir);
+    if (hit && hit.mtimeMs === st1.mtimeMs) {
+      next.set(dir, hit);
+      return hit.n;
     }
+    const entries = await readdir(dir, { withFileTypes: true }).catch(() => [] as Dirent[]);
+    let n = 0;
+    for (const e of entries) {
+      if (e.isDirectory()) n += await walk(join(dir, e.name));
+      else if (e.name.endsWith(".md")) n++;
+    }
+    // Double-stat: änderte sich das Dir während des Reads, ist der Count
+    // racy — dann nicht cachen (nächster Scan sieht die neuere mtime).
+    const st2 = await stat(dir).catch(() => null);
+    if (st2 && st2.mtimeMs === st1.mtimeMs) next.set(dir, { mtimeMs: st1.mtimeMs, n });
     return n;
-  } catch {
-    return 0;
-  }
+  };
+
+  const n = await walk(root);
+  // `next` enthält nur besuchte Dirs — gelöschte Verzeichnisse werden
+  // damit automatisch aus dem Cache ausgemustert.
+  dirScanCache.set(root, next);
+  return n;
 }
 
 async function corpusDiskCount(corpus: string): Promise<number> {
