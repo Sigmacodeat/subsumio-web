@@ -106,9 +106,13 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
    `checkout`/`checkin`/`release`/`versions` (mit nicht-destruktivem
    Restore = Sicherheits-Snapshot vorher), Lock-Badge im Akten-
    Dokumenten-Tab + Panel auf der Brain-Dokumentseite.
-   Ergänzt (22.09.): Zeilen-/Wort-Diff-UI im Versions-Panel —
+   Ergänzt (22./23.09.): Zeilen-/Wort-Diff-UI im Versions-Panel —
    „Vergleichen" pro Version rendert `diffWords` Side-by-Side
-   (Token-Limit-Guard gegen große Docs). **Rest offen:** Binär-Diff.
+   (Token-Limit-Guard gegen große Docs). **Binär-Diff geliefert:**
+   Check-in speichert `doc_content_hash` (SHA-256) + `doc_content_size`;
+   `isBinaryVersion` (MIME-basiert, Heuristik-Fallback) schaltet auf
+   Hash-/Größenvergleich um — „identisch/geändert" statt sinnlosem
+   Wort-Diff auf PDF/DOCX-Payloads.
 8. ~~**Unterordner/Subakten**~~ ✅ **GELÖST** — `folder`-Feld im
    Dokument-Frontmatter (Unterordner via „/" im Namen), Ordner-Filter
    - Ordner-Badge im Akten-Dokumenten-Tab, „In Ordner ablegen"-Dialog
@@ -120,6 +124,11 @@ Tokens, Links, Nested-Interactive); 70 Tests grün.
      `role="treeitem"`, Count-Badges, „Alle"/„Ohne Ordner"), verdrahtet
      im Dokumenten-Tab als Toggle-Panel neben dem Filter-Button.
      18 Tests (Lib + Komponente).
+     Ergänzt (23.09.): DnD auf Baum-Knoten, persistenter Collapse-State
+     pro Akte, Kontextmenü (Umbenennen/Unterordner) mit Touch-Fallback,
+     einmaliger Inline-DnD-Hint. **Bulk-Rename:** `POST
+/api/legal/folders/rename` — serverseitiger Prefix-Move mit
+     pro-Seiten-Verifikation + Keyed-Lock statt N Client-PATCHes.
 9. ~~**Papierkorb-UI**~~ ✅ **GELÖST** — `api/trash` (Liste + Restore via
    Engine `restore_page`) + `dashboard/papierkorb` mit Tests.
 10. ~~**Scan-Eingang & Posteingangsbuch.**~~ ✅ **GELÖST** —
@@ -340,6 +349,13 @@ bea-deadlines.ts` — `eebZustellungsdatum` wendet die Zustellfiktion
     Nachrichten-Page und merged Vorschläge gelockt auf
     `suggested_deadlines` der zugeordneten Akte — Anwalt bestätigt im
     bestehenden Review-Inbox. 11 Tests grün.
+    Ergänzt (23.09.): **Richtungserkennung** — `direction`
+    (inbound/outbound) aus dem Export bzw. via `BEA_OWN_SAFE_ID`;
+    Ausgangskopien erzeugen keine Fristvorschläge mehr.
+    **Bundesland** aus `legal/settings/kanzlei` (`rechtsraumState`,
+    im Kanzlei-Profil für DE-Mandate wählbar) steuert die §-193-BGB-
+    Landesfeiertage. Offene beA-Vorschläge werden auf der beA-Seite mit
+    Link zur Eingangsprüfung angezeigt.
     **Offen bleibt:** nativer beA-Versand (eigene Zertifizierung vs.
     Middleware-Partner — Entscheidung Welle C).
 34. **DATEV-Strategie klären.** `src/lib/datev-direct.ts` ist ein
@@ -393,6 +409,12 @@ de-statute-coverage.ts` — `fetchGiiToc` lädt das amtliche
     `de_statutes` an (best-effort: Upstream-Ausfall →
     `unavailable`-Flag, Matrix-Antwort bleibt), `corpus-bestand.tsx`
     zeigt Coverage-Badge + einklappbare Fehlliste. 9 Tests grün.
+    Ergänzt (23.09.): **Ziel-Set vs. Gesamtkatalog** — `src/lib/
+    de-law-targets.ts` ist Single Source für die 49 konfigurierten
+    Kern-Gesetze (Ingest + Audit); der Report trennt „Pflicht-Set
+    vollständig?" (Fehlende als Defekt, roter Badge) vom amtlichen
+    Gesamtkatalog. `fetchGiiTocCached` cached das TOC 24 h
+    (Memory + tmpdir-Datei) — kein Upstream-Hit pro Request.
 
 ### WP-7 Harvey-/Legora-Parität+ (P1/P2 — NEU, 22.09. Revision 2)
 
