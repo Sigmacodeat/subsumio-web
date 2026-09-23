@@ -91,6 +91,19 @@ function pageUrl(seite: number): string {
   return `${API}?Applikation=LrKons&DokumenteProSeite=OneHundred&Seitennummer=${seite}&Fassung.FassungVom=${FASSUNG}`;
 }
 
+/**
+ * Gesamtzahl der geltenden Dokumente aus der Hits-Angabe der ersten
+ * Seite. RIS antwortet jenseits des Ergebnis-Endes mit HTTP 500 statt
+ * einer leeren Seite (beobachtet 2026-09-23, LrKons ab Seite 1106 bei
+ * 110.457 Hits) — ohne bekanntes Ende wuerde der Crawl genau dort sterben.
+ */
+async function fetchTotalHits(): Promise<number> {
+  const res = await fetch(pageUrl(1), { headers: UA, signal: AbortSignal.timeout(30_000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as any;
+  return parseInt(data?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"] ?? "0", 10);
+}
+
 async function fetchPage(seite: number, attempt = 0): Promise<Norm[] | null> {
   try {
     const res = await fetch(pageUrl(seite), { headers: UA, signal: AbortSignal.timeout(30_000) });
@@ -129,10 +142,9 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[] | null> {
       await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
       return fetchPage(seite, attempt + 1);
     }
-    // Einzelne kaputte Seiten (RIS liefert persistent HTTP 500, beobachtet
-    // 2026-09-23 auf LrKons Seite 1106) duerfen den Lauf nicht toeten —
-    // caller ueberspringt sie, sammelt sie in skippedPages und schreibt
-    // sie in ein Sidecar-File zum gezielten Nachladen.
+    // Fehlgeschlagene Seiten duerfen den Lauf nicht toeten — der Caller
+    // ueberspringt sie, sammelt sie in skippedPages und schreibt sie in
+    // ein Sidecar-File zum gezielten Nachladen (--pages).
     console.warn(
       `  ⚠️  Seite ${seite} nach ${attempt + 1} Versuchen fehlgeschlagen — wird uebersprungen`
     );
@@ -239,6 +251,16 @@ async function main() {
       return;
     }
 
+    const totalHits = await fetchTotalHits();
+    if (totalHits <= 0) {
+      console.error("Hits-Total 0 — Fassungsfilter oder Applikation prüfen.");
+      process.exit(1);
+    }
+    const totalPages = Math.ceil(totalHits / PAGE_SIZE);
+    console.log(
+      `RIS LrKons, Fassung vom ${FASSUNG}: ${totalHits} geltende Normen auf ${totalPages} Seiten`
+    );
+
     const first = await fetchPage(1);
     if (first === null || first.length === 0) {
       console.error("Erste Seite lieferte 0 Dokumente — Fassungsfilter oder Applikation prüfen.");
@@ -249,11 +271,13 @@ async function main() {
     const all: Norm[] = [...first];
     const skippedPages: number[] = [];
     let consecutiveFailures = 0;
-    let page = 2;
     let lastLog = Date.now();
-    while (true) {
+    for (let page = 2; page <= totalPages; page++) {
       const batch = await fetchPage(page);
-      if (batch === null) {
+      // Fehlgeschlagene UND unerwartet leere Seiten innerhalb des
+      // gemeldeten Bereichs werden uebersprungen + dokumentiert; erst ein
+      // langer Fehler-Schub deutet auf einen echten RIS-Ausfall.
+      if (batch === null || batch.length === 0) {
         skippedPages.push(page);
         consecutiveFailures++;
         if (consecutiveFailures >= 10) {
@@ -262,18 +286,15 @@ async function main() {
               `sieht nach RIS-Ausfall aus, nicht nach Einzelseiten. Abbruch zum Schutz vor Muell-Index.`
           );
         }
-        page++;
         await risMassPause("Landesrecht-Inventar");
         continue;
       }
       consecutiveFailures = 0;
-      if (batch.length === 0) break;
       all.push(...batch);
       if (Date.now() - lastLog > 5000) {
-        console.log(`  Seite ${page} · ${all.length} Dokumente bisher`);
+        console.log(`  Seite ${page}/${totalPages} · ${all.length} Dokumente bisher`);
         lastLog = Date.now();
       }
-      page++;
       await risMassPause("Landesrecht-Inventar");
     }
 

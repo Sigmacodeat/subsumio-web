@@ -2191,19 +2191,39 @@ async function cycle(): Promise<void> {
         ],
       };
       const cmd = fetchCmd[key];
-      if (cmd) {
+      if (!cmd) {
+        console.warn(`  ⚠️ fetch_triggered: unbekannte source_key '${key}' — verworfen`);
+        psqlQuery("DELETE FROM pipeline_config WHERE key = 'fetch_triggered'");
+      } else {
         const isAllAtJudikatur = cmd[0] === "scripts/fetch-all-at-judikatur.ts";
         const fetchRunning = isAllAtJudikatur
           ? processRunningGrep("fetch-all-at-judikatur")
           : processRunningGrep(cmd[0].replace(/.*[/]/, "").replace(/\.ts$/, ""));
         if (!fetchRunning) {
-          startProcess("fetch-missing", cmd, "fetch-missing", 14400);
-          console.log(`  📥 Fetch ausgelöst für: ${key} → ${cmd.join(" ")}`);
-          appendHistory(key, "fetch", "triggered");
+          // Der Trigger wird erst geloescht, wenn der letzte Lauf FUER
+          // DIESE Quelle mit exit 0 endete — sonst respawn (Timeout-Kill,
+          // Crash, Redeploy). pid_cmd verraet, welche Quelle zuletzt lief;
+          // der Trigger bleibt zudem erhalten, solange ein Fetch laeuft,
+          // damit ein zweites Target nicht still verloren geht.
+          const lastRow = psqlJSON<{ pid_cmd: string | null }>(
+            `SELECT pid_cmd FROM pipeline_state WHERE source_key = 'fetch-missing'`
+          );
+          const lastCmd = lastRow[0]?.pid_cmd ?? "";
+          const lastExit = readExitCode("fetch-missing");
+          if (lastExit === 0 && cmd.every((part) => lastCmd.includes(part))) {
+            psqlQuery("DELETE FROM pipeline_config WHERE key = 'fetch_triggered'");
+          } else {
+            // Mehrtaegige Fetcher (bvwg ~190k Docs bei 0.5 req/s) brauchen
+            // einen Timeout, der ihre echte Laufzeit abbildet; der Trigger-
+            // Respawn fängt trotzdem jeden Kill ab.
+            startProcess("fetch-missing", cmd, "fetch-missing", 3 * 86400);
+            console.log(
+              `  📥 Fetch ${lastExit === null ? "(re)start" : `retry (exit ${lastExit})`} für: ${key} → ${cmd.join(" ")}`
+            );
+            appendHistory(key, "fetch", "triggered");
+          }
         }
       }
-      // Clear the trigger
-      psqlQuery("DELETE FROM pipeline_config WHERE key = 'fetch_triggered'");
     }
 
     // ── Embed stage ──
