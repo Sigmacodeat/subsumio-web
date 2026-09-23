@@ -9,6 +9,7 @@ import type { CorpusOverview } from "@/lib/corpus-labels";
 import type { CoverageAuditResult } from "@/lib/corpus-completeness-audit";
 import type { DeStatuteCoverage } from "@/lib/de-statute-coverage";
 import type { IngestLogPage } from "@/lib/corpus-labels";
+import type { LawCoverageResponse } from "@/lib/law-coverage";
 
 export type CoverageAuditResponse = CoverageAuditResult & {
   de_statutes: (DeStatuteCoverage & { unavailable?: boolean }) | null;
@@ -32,6 +33,17 @@ export function corpusOverviewQuery() {
   return {
     queryKey: ["corpus-overview"] as const,
     queryFn: () => fetchData<CorpusOverview>("/api/admin/corpus-overview"),
+    staleTime: 60_000,
+  };
+}
+
+export function corpusLawCoverageQuery(source: string) {
+  return {
+    queryKey: ["corpus-law-coverage", source] as const,
+    queryFn: () =>
+      fetchData<LawCoverageResponse>(
+        `/api/admin/corpus-law-coverage?source=${encodeURIComponent(source)}`
+      ),
     staleTime: 60_000,
   };
 }

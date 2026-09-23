@@ -13,10 +13,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CorpusSourceStats } from "@/lib/corpus-labels";
 import type { SourceAuditRow } from "@/lib/corpus-completeness-audit";
-import { corpusCoverageAuditQuery, corpusOverviewQuery } from "./corpus-ops-queries";
+import type { LawCoverageRow } from "@/lib/law-coverage";
+import {
+  corpusCoverageAuditQuery,
+  corpusLawCoverageQuery,
+  corpusOverviewQuery,
+} from "./corpus-ops-queries";
 
 const AUDIT_STATUS_LABELS: Record<SourceAuditRow["audit_status"], string> = {
   ok: "OK",
@@ -233,6 +247,251 @@ function ReconChip({ s }: { s: CorpusSourceStats }) {
   );
 }
 
+const LAW_SOURCES = [
+  { id: "law-at-normen", label: "AT Bundesrecht" },
+  { id: "law-at-landesrecht", label: "AT Landesrecht" },
+  { id: "law-de", label: "DE Bundesrecht" },
+] as const;
+
+const LAW_STATUS: Record<LawCoverageRow["status"], { label: string; cls: string }> = {
+  missing: {
+    label: "fehlt ganz",
+    cls: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  },
+  partial: {
+    label: "teilweise",
+    cls: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  },
+  complete: {
+    label: "vollständig",
+    cls: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  },
+  "db-only": {
+    label: "nur in DB",
+    cls: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  },
+};
+
+const LAW_ROW_LIMIT = 500;
+
+/** §-genauer Drilldown: pro Gesetz RIS-Soll vs. DB-Ist vs. Embedding. */
+function LawCoverage() {
+  const [source, setSource] = useState<string>("law-at-normen");
+  const [search, setSearch] = useState("");
+  const query = useQuery(corpusLawCoverageQuery(source));
+
+  const body = (() => {
+    if (query.isLoading) return <Skeleton className="mt-3 h-40 w-full" />;
+    if (query.isError || !query.data) {
+      return (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-[color:var(--ds-danger-text)]" role="alert">
+            Gesetzes-Abgleich konnte nicht geladen werden.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => query.refetch()}
+            disabled={query.isFetching}
+          >
+            <RefreshCw
+              className={`mr-1.5 h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`}
+              aria-hidden
+            />
+            Neu laden
+          </Button>
+        </div>
+      );
+    }
+
+    const d = query.data;
+    const t = d.totals;
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? d.laws.filter(
+          (l) =>
+            l.key.includes(q) ||
+            (l.abbr ?? "").toLowerCase().includes(q) ||
+            (l.title ?? "").toLowerCase().includes(q)
+        )
+      : d.laws;
+    const shown = filtered.slice(0, LAW_ROW_LIMIT);
+
+    return (
+      <>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
+            {fmt(t.complete)} vollständig
+          </Badge>
+          <Badge className="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
+            {fmt(t.partial)} teilweise
+          </Badge>
+          <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
+            {fmt(t.missing)} fehlen ganz
+          </Badge>
+          {t.extra > 0 && (
+            <Badge className="bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]">
+              {fmt(t.extra)} nur in DB
+            </Badge>
+          )}
+          {d.index.available !== null && (
+            <span className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+              {fmt(t.docsHave)} von {fmt(t.docsWanted)} Norm-Dokumenten · {fmt(t.docsMissing)}{" "}
+              fehlen
+            </span>
+          )}
+        </div>
+
+        <p className="mt-2 text-xs text-[color:var(--ds-text-subtle)]">
+          {d.index.available === true && (
+            <>
+              RIS-In-force-Index vom {date(d.index.measured_at)} ({fmt(d.index.laws)} Gesetze,{" "}
+              {fmt(d.index.docs)} Dokumente) · DB-Zahlen live vom {date(d.generated_at)}
+            </>
+          )}
+          {d.index.available === false && (
+            <span className="text-[color:var(--ds-warning-text)]" role="alert">
+              RIS-Index-Datei „{d.index.file}“ fehlt — es wird nur der DB-Stand angezeigt, kein
+              Upstream-Soll.
+            </span>
+          )}
+          {d.index.available === null &&
+            "Für diese Quelle gibt es kein Upstream-Inhaltsverzeichnis — Anzeige des DB-Stands je Gesetz."}
+        </p>
+
+        <div className="relative mt-3">
+          <Search
+            className="absolute top-2.5 left-3 h-4 w-4 text-[color:var(--ds-text-subtle)]"
+            aria-hidden
+          />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Gesetz suchen — Abkürzung, Titel oder Nummer (z. B. ABGB, 10001700)"
+            className="pl-9"
+            aria-label="Gesetz suchen"
+          />
+        </div>
+
+        {shown.length === 0 ? (
+          <p className="mt-3 text-xs text-[color:var(--ds-text-subtle)]">
+            {q ? `Kein Gesetz passt auf „${search.trim()}".` : "Keine Gesetze in dieser Quelle."}
+          </p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Gesetz</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">RIS-Soll</TableHead>
+                  <TableHead className="text-right">in DB</TableHead>
+                  <TableHead className="text-right">fehlen</TableHead>
+                  <TableHead className="text-right">Abschnitte</TableHead>
+                  <TableHead className="text-right">eingebettet</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shown.map((l) => (
+                  <TableRow key={l.key}>
+                    <TableCell>
+                      <div className="font-medium">{l.abbr ?? l.title ?? l.key}</div>
+                      <div className="text-xs text-[color:var(--ds-text-subtle)]">
+                        {l.abbr && l.title ? `${l.title} · ` : ""}
+                        <span className="font-mono">{l.key}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={LAW_STATUS[l.status].cls}>
+                        {LAW_STATUS[l.status].label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {l.wanted > 0 ? fmt(l.wanted) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{fmt(l.have)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {l.missingCount > 0 ? (
+                        <details className="inline-block text-left">
+                          <summary className="cursor-pointer text-[color:var(--ds-danger-text)] hover:underline">
+                            {fmt(l.missingCount)}
+                          </summary>
+                          <ul className="absolute z-10 mt-1 max-h-48 max-w-xs space-y-0.5 overflow-y-auto rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2 text-left text-xs shadow-md">
+                            {l.missingDocs.map((m) => (
+                              <li key={m.nor}>
+                                <span className="font-mono">{m.nor}</span>
+                                {m.apa ? ` — ${m.apa}` : ""}
+                              </li>
+                            ))}
+                            {l.missingTruncated && (
+                              <li className="text-[color:var(--ds-text-subtle)]">
+                                … Liste gekürzt (max. 50)
+                              </li>
+                            )}
+                          </ul>
+                        </details>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{fmt(l.chunks)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {l.embedPct !== null ? `${l.embedPct} %` : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {filtered.length > shown.length && (
+              <p className="mt-2 text-xs text-[color:var(--ds-text-subtle)]">
+                {fmt(shown.length)} von {fmt(filtered.length)} Gesetzen angezeigt — Suche
+                eingrenzen.
+              </p>
+            )}
+          </div>
+        )}
+      </>
+    );
+  })();
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">Gesetze im Detail (§-Ebene)</h3>
+          <div className="flex items-center gap-2">
+            <Select value={source} onValueChange={setSource}>
+              <SelectTrigger className="h-8 w-[180px] text-xs" aria-label="Quelle wählen">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LAW_SOURCES.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => query.refetch()}
+              disabled={query.isFetching}
+              aria-label="Gesetzes-Abgleich neu laden"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`}
+                aria-hidden
+              />
+            </Button>
+          </div>
+        </div>
+        {body}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function CorpusBestand() {
   const query = useQuery(corpusOverviewQuery());
 
@@ -418,6 +677,7 @@ export function CorpusBestand() {
       {section("Gesetze und Verordnungen", statutes, false)}
       {section("Rechtsprechung", decisions, true)}
 
+      <LawCoverage />
       <CoverageAudit />
     </div>
   );
