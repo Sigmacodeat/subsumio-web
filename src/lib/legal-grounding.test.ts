@@ -249,7 +249,7 @@ describe("lookupCorpusParagraph — RIS raw hardening", () => {
 
 describe("CORPUS_META — full AT coverage", () => {
   it("includes the flagship codes that were previously unverifiable", () => {
-    for (const key of ["ugb", "io", "aktg_at", "gmbhg_at", "eheg", "bewg", "wrg", "bvergg"]) {
+    for (const key of ["ugb", "io", "aktg_at", "gmbhg_at", "eheg", "bewg_at", "wrg", "bvergg"]) {
       expect(CORPUS_META[key], `missing CORPUS_META entry: ${key}`).toBeTruthy();
       expect(CORPUS_META[key].jurisdiction).toBe("at");
     }

@@ -427,14 +427,12 @@ export function CalendarEditDialog({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    void navigator.clipboard
-                      .writeText(appointment.videoLink!)
-                      .then(() =>
-                        addToast({
-                          type: "success",
-                          title: t("calendar.video_copied" as DashboardKey),
-                        })
-                      );
+                    void navigator.clipboard.writeText(appointment.videoLink!).then(() =>
+                      addToast({
+                        type: "success",
+                        title: t("calendar.video_copied" as DashboardKey),
+                      })
+                    );
                   }}
                 >
                   {t("calendar.video_copy" as DashboardKey)}

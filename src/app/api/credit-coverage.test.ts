@@ -24,6 +24,7 @@ const NOT_BILLED: Record<string, string> = {
   "cron/rundown": "daily agent run, restricted to firms that pay or are on trial",
   "cron/autonomous-engine": "runs tasks a firm queued itself",
   "cron/autopilot": "runs policies a firm configured itself",
+  "cron/agent-tasks": "runs tasks a firm queued itself (assigneeType=agent)",
   "legal/anonymize": "engine proxy; name detection on the utility tier",
   "legal/judgements-sync": "engine proxy without a model call",
   "legal/translate": "engine proxy without a model call",

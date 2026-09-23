@@ -28,6 +28,9 @@ export const maxDuration = 120;
 
 const DETRACTOR_MAX = 6;
 const LOOKBACK_MS = 48 * 3600 * 1000;
+/** Wiederholte Kritik an derselben Akte innerhalb von 30 Tagen → Eskalation. */
+const ESCALATION_WINDOW_MS = 30 * 24 * 3600 * 1000;
+const ESCALATION_THRESHOLD = 2;
 
 interface FeedbackPage {
   slug: string;
@@ -75,6 +78,26 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       });
       if (detractors.length === 0) continue;
 
+      // Eskalation: ≥2 Detraktoren derselben Akte innerhalb von 30 Tagen.
+      const escalationCutoff = Date.now() - ESCALATION_WINDOW_MS;
+      const perCase30d = new Map<string, number>();
+      for (const p of pages) {
+        const fm = p.frontmatter ?? {};
+        const ts = Date.parse(fm.submitted_at ?? "");
+        if (
+          typeof fm.nps_score === "number" &&
+          fm.nps_score <= DETRACTOR_MAX &&
+          Number.isFinite(ts) &&
+          ts >= escalationCutoff &&
+          fm.case_slug
+        ) {
+          perCase30d.set(fm.case_slug, (perCase30d.get(fm.case_slug) ?? 0) + 1);
+        }
+      }
+      const escalated = new Set(
+        [...perCase30d.entries()].filter(([, n]) => n >= ESCALATION_THRESHOLD).map(([c]) => c)
+      );
+
       // Dedup: jede Feedback-Page wird nur einmal gemeldet.
       const fresh = await filterNewHitIds(
         brainId,
@@ -84,20 +107,33 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       if (freshDetractors.length === 0) continue;
       detractorsFound += freshDetractors.length;
 
+      const hasEscalation = freshDetractors.some((p) =>
+        escalated.has(p.frontmatter?.case_slug ?? "")
+      );
+
       const lines = freshDetractors.map((p) => {
         const fm = p.frontmatter ?? {};
         const caseUrl = `${appUrl}/dashboard/cases/${encodeURIComponent(fm.case_slug ?? "")}`;
         const comment = fm.comment?.trim() ? ` — „${fm.comment.trim().slice(0, 300)}"` : "";
-        return `• Score ${fm.nps_score}/10 (${fm.submitted_at?.slice(0, 10) ?? "?"})${comment}\n  Akte: ${caseUrl}`;
+        const flag = escalated.has(fm.case_slug ?? "") ? " [WIEDERHOLTE KRITIK]" : "";
+        return `• Score ${fm.nps_score}/10 (${fm.submitted_at?.slice(0, 10) ?? "?"})${comment}${flag}\n  Akte: ${caseUrl}`;
       });
 
-      const subject = `[Subsumio] ${freshDetractors.length} kritische(s) Mandanten-Feedback(s)`;
+      const subject = hasEscalation
+        ? `[Subsumio] ESKALATION: wiederholte kritische Feedbacks (${freshDetractors.length} neu)`
+        : `[Subsumio] ${freshDetractors.length} kritische(s) Mandanten-Feedback(s)`;
       const text =
         `Neue Bewertung(en) mit Score ≤ ${DETRACTOR_MAX} im Mandantenportal:\n\n` +
         lines.join("\n") +
+        (hasEscalation
+          ? `\n\nACHTUNG: Mindestens eine Akte hat ≥${ESCALATION_THRESHOLD} kritische Feedbacks in 30 Tagen — bitte kurzfristig klären.`
+          : "") +
         `\n\nAuswertung: ${appUrl}/dashboard/client-portal`;
 
-      for (const user of recipients) {
+      // Kritisches Mandanten-Feedback geht nur an Anwälte/Admins —
+      // nicht an client_viewer-Rollen.
+      const staff = recipients.filter((u) => u.role === "admin" || u.role === "lawyer");
+      for (const user of staff) {
         const r = await sendMail({ to: user.email, subject, text });
         if (r.sent) mailsSent++;
       }

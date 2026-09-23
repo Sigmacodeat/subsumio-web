@@ -6,10 +6,11 @@ import { LEGAL_SOURCE_COVERAGE_MATRIX } from "@/lib/legal-source-coverage";
 import { auditCoverage, type SourceDbStats } from "@/lib/corpus-completeness-audit";
 import {
   auditDeStatutes,
-  fetchGiiToc,
+  fetchGiiTocCached,
   pageSlugToGiiSlug,
   type DeStatuteCoverage,
 } from "@/lib/de-statute-coverage";
+import { DE_LAW_TARGETS } from "@/lib/de-law-targets";
 
 const log = logger("api/admin/corpus-coverage-audit");
 
@@ -73,7 +74,7 @@ export const GET = createHandler(
       if (query?.jurisdiction === "all" || query?.jurisdiction === "DE") {
         try {
           const [upstream, pages] = await Promise.all([
-            fetchGiiToc(),
+            fetchGiiTocCached(),
             pool.query(
               `SELECT slug, frontmatter->>'source_url' AS source_url
                FROM pages
@@ -88,7 +89,11 @@ export const GET = createHandler(
             });
             if (slug) present.add(slug);
           }
-          deStatutes = auditDeStatutes(upstream, present);
+          deStatutes = auditDeStatutes(
+            upstream,
+            present,
+            DE_LAW_TARGETS.map((l) => l.slug)
+          );
         } catch (err) {
           log.warn("[corpus-coverage-audit] gii-toc unavailable:", (err as Error).message);
           deStatutes = { unavailable: true } as DeStatuteCoverage & { unavailable: boolean };

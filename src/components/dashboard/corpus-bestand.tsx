@@ -136,7 +136,24 @@ function CoverageAudit() {
                   {fmt(a.de_statutes.in_corpus)} von {fmt(a.de_statutes.upstream_total)} im Corpus (
                   {a.de_statutes.coverage_pct} %)
                 </Badge>
+                {a.de_statutes.target && (
+                  <Badge
+                    className={
+                      a.de_statutes.target.missing.length === 0
+                        ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                        : "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                    }
+                  >
+                    Ziel-Set: {a.de_statutes.target.in_corpus} von {a.de_statutes.target.total}
+                  </Badge>
+                )}
               </div>
+              {a.de_statutes.target?.missing.length ? (
+                <p className="mt-1.5 text-xs text-[color:var(--ds-danger-text)]" role="alert">
+                  Fehlende Pflicht-Gesetze:{" "}
+                  {a.de_statutes.target.missing.map((m) => m.slug).join(", ")}
+                </p>
+              ) : null}
               {a.de_statutes.missing.length > 0 && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]">

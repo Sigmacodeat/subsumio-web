@@ -3,6 +3,7 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { buildBeaImportBundle, parseBeaXmlBatch } from "@/lib/bea-import";
 import { beaDeadlineSuggestions, eebZustellungsdatum } from "@/lib/bea-deadlines";
+import { BUNDESLAENDER, type Bundesland } from "@/lib/legal/frist-engine-de";
 import { mergeSuggestedDeadlines } from "@/lib/email/mail-filing";
 import { caseDocumentsLockKey } from "@/lib/case-documents";
 import { withKeyedLock } from "@/lib/keyed-lock";
@@ -101,6 +102,25 @@ const beaFileSchema = z.object({
   content: z.string().min(1, "content_required").max(10_000_000, "content_too_large"),
 });
 
+const BUNDESLAND_CODES = new Set(BUNDESLAENDER.map((b) => b.code));
+
+/**
+ * Kanzlei-Bundesland aus `legal/settings/kanzlei` — bestimmt die
+ * landesspezifischen Feiertage (§ 193 BGB) für eEB-Fristen. Fehlt der
+ * Wert, bleibt es bei bundesweiten Feiertagen (konservativ).
+ */
+async function loadKanzleiBundesland(
+  brain: ReturnType<typeof createServerBrainClient>
+): Promise<Bundesland | undefined> {
+  try {
+    const page = await brain.getPage("legal/settings/kanzlei");
+    const state = String(page?.frontmatter?.rechtsraumState ?? "").toUpperCase();
+    return BUNDESLAND_CODES.has(state as Bundesland) ? (state as Bundesland) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 const beaImportSchema = z.object({
   filename: z.string().max(240).optional(),
   files: z.array(beaFileSchema).min(1, "files_required").max(50),
@@ -162,13 +182,15 @@ export const POST = createHandler(
       }> = [];
       // WP-6.33: eEB-Frist-Auslösung — Vorschläge je Akte sammeln.
       const suggestionsByCase = new Map<string, SuggestedDeadline[]>();
+      const bundesland = await loadKanzleiBundesland(brain);
       for (const page of bundle.messagePages) {
         const fm = page.frontmatter as Record<string, unknown>;
+        const direction = fm.direction as "inbound" | "outbound" | undefined;
         // eEB: das Bereitstellungsdatum ist der rechtliche Zustelltag
         // (§ 174 ZPO i.V.m. § 4 ERVG) — als Provenienz auf die Nachricht
         // stempeln, auch wenn keine Akte zugeordnet wurde.
         const received = String(fm.received_date || fm.sent_date || "");
-        const eeb = eebZustellungsdatum(received);
+        const eeb = eebZustellungsdatum(received, bundesland);
         if (eeb) {
           page.frontmatter = { ...page.frontmatter, eeb_zustellungsdatum: eeb };
         }
@@ -193,12 +215,18 @@ export const POST = createHandler(
             confidence: match.confidence,
           });
           // Fristen im Nachrichtentext erkennen und auf den eEB-
-          // Zustelltag verankern (DE-Engine, §§ 187–193 BGB).
-          const suggestions = beaDeadlineSuggestions({
-            text: page.content,
-            receivedDate: received || undefined,
-            sourceLabel: `beA: ${String(fm.subject || page.title)}`,
-          });
+          // Zustelltag verankern (DE-Engine, §§ 187–193 BGB). Nur bei
+          // Eingängen/unbekannter Richtung — Ausgangskopien enthalten
+          // unsere eigenen Fristen, keine fristauslösenden Eingänge.
+          const suggestions =
+            direction === "outbound"
+              ? []
+              : beaDeadlineSuggestions({
+                  text: page.content,
+                  receivedDate: received || undefined,
+                  bundesland,
+                  sourceLabel: `beA: ${String(fm.subject || page.title)}`,
+                });
           if (suggestions.length > 0) {
             const list = suggestionsByCase.get(match.case_slug) ?? [];
             suggestionsByCase.set(match.case_slug, [...list, ...suggestions]);

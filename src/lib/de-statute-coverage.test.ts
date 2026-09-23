@@ -84,8 +84,23 @@ describe("auditDeStatutes", () => {
       slug: `law-${i}`,
       title: `Gesetz ${i}`,
     }));
-    const r = auditDeStatutes(many, new Set(), 3);
+    const r = auditDeStatutes(many, new Set(), [], 3);
     expect(r.missing).toHaveLength(3);
     expect(r.missing_truncated).toBe(true);
+  });
+
+  test("Ziel-Set: fehlende Pflicht-Gesetze separat gemeldet", () => {
+    const r = auditDeStatutes(upstream, new Set(["bgb"]), ["bgb", "zpo"]);
+    expect(r.target.total).toBe(2);
+    expect(r.target.in_corpus).toBe(1);
+    expect(r.target.missing.map((m) => m.slug)).toEqual(["zpo"]);
+    // Titel kommt aus dem amtlichen TOC, nicht aus dem Slug
+    expect(r.target.missing[0].title).toBe("Zivilprozessordnung");
+  });
+
+  test("Ziel-Set: unbekannter Slug (nicht im TOC) fällt auf Slug als Titel zurück", () => {
+    const r = auditDeStatutes(upstream, new Set(), ["bgb", "nicht-im-toc"]);
+    expect(r.target.missing).toHaveLength(2);
+    expect(r.target.missing.find((m) => m.slug === "nicht-im-toc")?.title).toBe("nicht-im-toc");
   });
 });

@@ -57,6 +57,81 @@ export async function fetchGiiToc(
   return parseGiiToc(await res.text());
 }
 
+// ── Persistenter TOC-Cache ────────────────────────────────────────────
+// Das TOC ändert sich selten (Novellen/Konsolidierungen); ohne Cache würde
+// jeder Audit-Request und jeder Prozess-Neustart ~1 MB von gii ziehen.
+// Zweistufig: In-Memory für die Prozesslaufzeit, tmpdir-Datei über
+// Neustarts hinweg (24 h TTL). Fail-open: Cache-Fehler → direkter Fetch.
+
+const GII_TOC_TTL_MS = 24 * 60 * 60 * 1000;
+let memCache: { laws: GiiLaw[]; fetchedAt: number } | null = null;
+
+async function cacheFilePath(): Promise<string | null> {
+  try {
+    // node:os/tmpdir existiert nur serverseitig — die Lib wird auch
+    // clientseitig für Typen importiert, daher dynamisch + guarded.
+    if (typeof process === "undefined" || !process.versions?.node) return null;
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    return join(tmpdir(), "subsumio-gii-toc.json");
+  } catch {
+    return null;
+  }
+}
+
+async function readTocFileCache(): Promise<GiiLaw[] | null> {
+  const file = await cacheFilePath();
+  if (!file) return null;
+  try {
+    const { readFileSync } = await import("node:fs");
+    const raw = JSON.parse(readFileSync(file, "utf-8")) as {
+      fetchedAt?: number;
+      laws?: GiiLaw[];
+    };
+    if (
+      typeof raw.fetchedAt !== "number" ||
+      Date.now() - raw.fetchedAt > GII_TOC_TTL_MS ||
+      !Array.isArray(raw.laws)
+    ) {
+      return null;
+    }
+    return raw.laws;
+  } catch {
+    return null;
+  }
+}
+
+async function writeTocFileCache(laws: GiiLaw[]): Promise<void> {
+  const file = await cacheFilePath();
+  if (!file) return;
+  try {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(file, JSON.stringify({ fetchedAt: Date.now(), laws }));
+  } catch {
+    /* Cache-Schreibfehler sind unkritisch */
+  }
+}
+
+/**
+ * Lädt das gii-TOC mit 24-h-Cache (Memory + tmpdir-Datei). Nur für
+ * Server-Routen gedacht — der Audit darf nicht bei jedem Dashboard-
+ * Aufruf das Bundesamt für Justiz belasten.
+ */
+export async function fetchGiiTocCached(): Promise<GiiLaw[]> {
+  if (memCache && Date.now() - memCache.fetchedAt < GII_TOC_TTL_MS) {
+    return memCache.laws;
+  }
+  const fromFile = await readTocFileCache();
+  if (fromFile) {
+    memCache = { laws: fromFile, fetchedAt: Date.now() };
+    return fromFile;
+  }
+  const laws = await fetchGiiToc();
+  memCache = { laws, fetchedAt: Date.now() };
+  await writeTocFileCache(laws);
+  return laws;
+}
+
 /**
  * Extrahiert den gii-Slug aus einer law-de-Page: bevorzugt aus
  * `frontmatter.source_url`, sonst aus dem letzten Slug-Segment.
@@ -74,6 +149,14 @@ export function pageSlugToGiiSlug(page: {
   return last || null;
 }
 
+export interface DeStatuteTargetCoverage {
+  /** Anzahl konfigurierter Ziel-Gesetze (de-law-targets.ts). */
+  total: number;
+  in_corpus: number;
+  /** Ziel-Gesetze, die im Corpus fehlen (unkappt — Liste ist klein). */
+  missing: GiiLaw[];
+}
+
 export interface DeStatuteCoverage {
   upstream_total: number;
   in_corpus: number;
@@ -82,29 +165,53 @@ export interface DeStatuteCoverage {
   missing: GiiLaw[];
   /** Wurde `missing` gekappt? */
   missing_truncated: boolean;
+  /**
+   * Konfiguriertes Ziel-Set (`DE_LAW_TARGETS`) gegen den Ist-Bestand —
+   * das ist die Zusage „diese Kerngesetze sind vollständig", getrennt
+   * vom Gesamtkatalog (~6.100 Einträge, den wir bewusst nicht komplett
+   * spiegeln).
+   */
+  target: DeStatuteTargetCoverage;
   fetched_at: string;
 }
 
 /**
  * Vergleicht das gii-TOC mit den im Corpus vorhandenen gii-Slugs.
  * `missing` wird alphabetisch sortiert und gekappt (Default 300), damit
- * die Admin-Response klein bleibt.
+ * die Admin-Response klein bleibt. `targetSlugs` markiert das
+ * konfigurierte Pflicht-Set — fehlt eines davon, ist das ein echter
+ * Corpus-Defekt, nicht nur fehlende Gesamt-Abdeckung.
  */
 export function auditDeStatutes(
   upstream: GiiLaw[],
   presentSlugs: Set<string>,
+  targetSlugs: readonly string[] = [],
   missingCap = 300
 ): DeStatuteCoverage {
   const missing = upstream
     .filter((law) => !presentSlugs.has(law.slug))
     .sort((a, b) => a.title.localeCompare(b.title, "de"));
   const inCorpus = upstream.length - missing.length;
+
+  // Ziel-Gesetze, die es im amtlichen TOC gar nicht gibt (Tippfehler im
+  // Slug, umbenanntes Gesetz), zählen ebenfalls als fehlend — der Titel
+  // fällt dann auf den Slug zurück.
+  const upstreamBySlug = new Map(upstream.map((l) => [l.slug, l]));
+  const targetMissing: GiiLaw[] = targetSlugs
+    .filter((s) => !presentSlugs.has(s))
+    .map((s) => upstreamBySlug.get(s) ?? { slug: s, title: s });
+
   return {
     upstream_total: upstream.length,
     in_corpus: inCorpus,
     coverage_pct: upstream.length > 0 ? Math.round((inCorpus / upstream.length) * 1000) / 10 : 100,
     missing: missing.slice(0, missingCap),
     missing_truncated: missing.length > missingCap,
+    target: {
+      total: targetSlugs.length,
+      in_corpus: targetSlugs.length - targetMissing.length,
+      missing: targetMissing,
+    },
     fetched_at: new Date().toISOString(),
   };
 }

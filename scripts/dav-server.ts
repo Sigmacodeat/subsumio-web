@@ -114,6 +114,14 @@ function docMemberName(doc: DavDoc): string {
 const server = createServer(async (req, res) => {
   const method = (req.method ?? "GET").toUpperCase();
   const path = decodeURIComponent(new URL(req.url ?? "/", "http://dav").pathname);
+  const startedAt = Date.now();
+  // Structured request log — method/path/status/ms. The feed token lives
+  // only in the Authorization header and is never logged.
+  const origEnd = res.end.bind(res);
+  res.end = ((chunk?: unknown, ...rest: unknown[]) => {
+    console.log(`[dav] ${method} ${path} → ${res.statusCode} (${Date.now() - startedAt}ms)`);
+    return origEnd(chunk as never, ...(rest as never[]));
+  }) as typeof res.end;
 
   // Unauthenticated liveness probe for Docker/Caddy healthchecks — exposes
   // nothing beyond process aliveness.

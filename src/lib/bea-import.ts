@@ -22,6 +22,13 @@ export interface BeaImportedMessage {
   received_date?: string;
   case_ref?: string;
   bea_id?: string;
+  /**
+   * Nachrichtenrichtung: „inbound" = Eingang in unser Postfach
+   * (fristauslösend für uns), „outbound" = eigener Versand (z. B.
+   * mit-exportierte Ausgangskopie — die darin genannten Fristen sind
+   * unsere eigenen, keine Gegner-Fristen). undefined = unbekannt.
+   */
+  direction?: "inbound" | "outbound";
   delivery_status?: "sent" | "delivered" | "read" | "failed";
   body_text?: string;
   attachments?: Array<{
@@ -145,6 +152,12 @@ export function parseBeaXml(xmlContent: string, _filename?: string): BeaImported
     const deliveryStatusRaw =
       extractText(xmlContent, "deliveryStatus") ||
       extractAttribute(xmlContent, "message", "status");
+    const directionRaw =
+      extractText(xmlContent, "direction") ||
+      extractText(xmlContent, "messageDirection") ||
+      extractText(xmlContent, "richtung") ||
+      extractAttribute(xmlContent, "message", "direction") ||
+      extractAttribute(xmlContent, "message", "type");
     const bodyHtml =
       extractText(xmlContent, "body") ||
       extractText(xmlContent, "content") ||
@@ -165,6 +178,17 @@ export function parseBeaXml(xmlContent: string, _filename?: string): BeaImported
 
     const deliveryStatus = deliveryStatusRaw as BeaImportedMessage["delivery_status"] | undefined;
 
+    // Richtung: explizites Feld gewinnt; sonst Heuristik über die eigene
+    // beA-Safe-ID (BEA_OWN_SAFE_ID) — ist der Absender unser eigenes
+    // Postfach, ist es eine Ausgangskopie.
+    const dirNorm = (directionRaw ?? "").trim().toLowerCase();
+    let direction: BeaImportedMessage["direction"];
+    if (["inbound", "eingang", "incoming", "empfangen"].includes(dirNorm)) direction = "inbound";
+    else if (["outbound", "ausgang", "outgoing", "gesendet", "sent"].includes(dirNorm))
+      direction = "outbound";
+    const ownSafeId = process.env.BEA_OWN_SAFE_ID?.trim();
+    if (!direction && ownSafeId && senderId && senderId === ownSafeId) direction = "outbound";
+
     const dateSlug = sentDate.split("T")[0] || new Date().toISOString().split("T")[0];
     const slug = `legal/bea-messages/${dateSlug}-${safeSlug(subject, "bea-message")}`;
 
@@ -179,6 +203,7 @@ export function parseBeaXml(xmlContent: string, _filename?: string): BeaImported
       received_date: receivedDate,
       case_ref: caseRef,
       bea_id: beaId,
+      direction,
       delivery_status: deliveryStatus,
       body_text: bodyText,
       attachments,
@@ -269,6 +294,7 @@ export function buildBeaImportBundle(
         received_date: message.received_date,
         case_ref: message.case_ref,
         bea_id: message.bea_id,
+        direction: message.direction,
         delivery_status: message.delivery_status,
         attachments: message.attachments || [],
       },

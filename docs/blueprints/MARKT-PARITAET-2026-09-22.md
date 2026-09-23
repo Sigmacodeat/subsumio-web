@@ -557,8 +557,8 @@ legora.com. Alles darunter ist **nicht** im bisherigen Blueprint.
 
 ## Reihenfolge-Empfehlung
 
-WP-1 ✅ geliefert → WP-2.6 Engine ✅ (UI-Anbindung offen) →
-**als Nächstes:** WP-2.7–11 (DMS-Tiefe) + WP-2.6-UI → WP-5.23/25/26
+WP-1 ✅ geliefert → WP-2.6 ✅ (Engine + UI: `TemplateUseDialog`,
+`SerienbriefDialog`) → WP-2.7–11 (DMS-Tiefe) → WP-5.23/25/26
 (sichtbare KI-Parität für Vertrieb) → WP-3 → WP-4 → Rest.
 
 **Parallel-Track DE (WP-6):** WP-6.31 (DE-Fristen) + WP-6.32 (GKG/JVEG)

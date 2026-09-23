@@ -50,6 +50,7 @@ interface BeaImported {
   subject: string;
   sender: string;
   sentDate: string;
+  direction?: "inbound" | "outbound";
 }
 
 export default function BeaPage() {
@@ -87,6 +88,7 @@ function BeaPageInner() {
     configured: boolean;
     reachable: boolean;
   } | null>(null);
+  const [pendingBeaSuggestions, setPendingBeaSuggestions] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +96,19 @@ function BeaPageInner() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!cancelled && d?.data) setTransportStatus(d.data);
+      })
+      .catch(() => {});
+    // Unbestätigte beA-Fristvorschläge zählen (Quelle "beA: …") — Link
+    // in die Eingangsprüfung, damit Import-Funde nicht untergehen.
+    fetch("/api/review-inbox", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        const items = (d?.data?.items ?? []) as Array<{ type?: string; source?: string }>;
+        setPendingBeaSuggestions(
+          items.filter((i) => i.type === "suggested_deadline" && i.source?.startsWith("beA:"))
+            .length
+        );
       })
       .catch(() => {});
     (async () => {
@@ -152,6 +167,10 @@ function BeaPageInner() {
               subject: String(fm.subject ?? p.title),
               sender: String(fm.sender ?? "—"),
               sentDate: String(fm.sent_date ?? "").split("T")[0],
+              direction:
+                fm.direction === "inbound" || fm.direction === "outbound"
+                  ? fm.direction
+                  : undefined,
             };
           })
         );
@@ -912,6 +931,15 @@ function BeaPageInner() {
             >
               {t("bea.imported_messages")} ({imported.length})
             </h2>
+            {pendingBeaSuggestions > 0 && (
+              <a
+                href="/dashboard/communications?view=review"
+                className="mb-2 flex items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2.5 text-sm text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              >
+                <AlertTriangle size={14} aria-hidden="true" />
+                {t("bea.pending_suggestions").replace("{{count}}", String(pendingBeaSuggestions))}
+              </a>
+            )}
             <div className="space-y-2">
               {imported.length === 0 ? (
                 <div className="space-y-1 py-4 text-sm text-[color:var(--ds-text-muted)]">
@@ -943,6 +971,19 @@ function BeaPageInner() {
                         {t("bea.from")} {msg.sender} · {msg.sentDate}
                       </div>
                     </div>
+                    {msg.direction && (
+                      <Badge
+                        className={
+                          msg.direction === "inbound"
+                            ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                            : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
+                        }
+                      >
+                        {msg.direction === "inbound"
+                          ? t("bea.direction_inbound")
+                          : t("bea.direction_outbound")}
+                      </Badge>
+                    )}
                   </div>
                 ))
               )}
