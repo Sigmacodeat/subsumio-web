@@ -7,6 +7,13 @@ import { lstatSync, realpathSync } from "fs";
 import { resolve, relative, sep } from "path";
 import type { BrainEngine } from "./engine.ts";
 import { matterScopeAllows } from "./matter-access.ts";
+import {
+  filterRowsByMatterBinding,
+  invalidateMatterIndex,
+  pageBindingAllowed,
+  pageMatterBinding,
+  type BindingRow,
+} from "./matter-binding.ts";
 import { clampSearchLimit } from "./engine.ts";
 import type { GBrainConfig } from "./config.ts";
 import type { PageType } from "./types.ts";
@@ -652,12 +659,6 @@ export function hardSourceFilter<T extends { source_id?: string }>(
  * caller. This is the engine-side enforcement that closes the gap between
  * the web-app's resolveAuthorizedCase() and the engine's retrieval layer.
  */
-function frontmatterCaseSlug(frontmatter: unknown): string | undefined {
-  if (!frontmatter || typeof frontmatter !== "object") return undefined;
-  const raw = (frontmatter as Record<string, unknown>).case_slug;
-  return typeof raw === "string" && raw.length > 0 ? raw : undefined;
-}
-
 function isMatterScopeMatch(
   scope: string[] | "all" | undefined,
   slug: string,
@@ -666,17 +667,52 @@ function isMatterScopeMatch(
   return matterScopeAllows(scope, slug, caseSlug);
 }
 
+/**
+ * Pure, database-free variant: decides on what each row carries (its
+ * frontmatter, or the projected case_slug). A matter reference other than
+ * case_slug cannot be resolved without the database and therefore fails
+ * closed. Read paths use matterScopeFilterResolved.
+ */
 export function matterScopeFilter<
-  T extends { slug?: string; case_slug?: string; frontmatter?: Record<string, unknown> },
+  T extends {
+    slug?: string;
+    type?: string | null;
+    case_slug?: string;
+    frontmatter?: Record<string, unknown>;
+  },
 >(results: T[], ctx: OperationContext): T[] {
   const scope = ctx.matterScope;
   if (!scope) return results;
   if (scope === "all") return results;
   if (scope.length === 0) return [];
-  return results.filter((r) => {
-    const slug = r.slug ?? "";
-    const caseSlug = r.case_slug ?? frontmatterCaseSlug(r.frontmatter);
-    return isMatterScopeMatch(scope, slug, caseSlug);
+  return results.filter((r) =>
+    pageBindingAllowed(
+      scope,
+      r.slug ?? "",
+      pageMatterBinding({
+        slug: r.slug,
+        type: r.type,
+        frontmatter: r.frontmatter,
+        case_slug: r.case_slug,
+      })
+    )
+  );
+}
+
+/**
+ * The canonical matter-scope filter for read paths: every frontmatter field
+ * that binds a page to a matter (case_slug, case_ref, …) is resolved to the
+ * matter it names (core/matter-binding.ts). Rows without frontmatter (search
+ * hits) get their current binding from the database in one query; matter
+ * indexes are loaded once per source.
+ */
+export async function matterScopeFilterResolved<T extends BindingRow>(
+  results: T[],
+  ctx: OperationContext
+): Promise<T[]> {
+  return filterRowsByMatterBinding(ctx.engine, results, ctx.matterScope, {
+    sourceId: ctx.sourceId,
+    sources: ctx.auth?.allowedSources,
   });
 }
 
@@ -950,8 +986,19 @@ const get_page: Operation = {
       );
     }
     if (
-      matterScopeFilter([{ slug: page.slug, frontmatter: page.frontmatter ?? {} }], ctx).length ===
-      0
+      (
+        await matterScopeFilterResolved(
+          [
+            {
+              slug: page.slug,
+              type: page.type,
+              frontmatter: page.frontmatter ?? {},
+              source_id: (page as { source_id?: string }).source_id,
+            },
+          ],
+          ctx
+        )
+      ).length === 0
     ) {
       throw new OperationError(
         "page_not_found",
@@ -1244,6 +1291,10 @@ const put_page: Operation = {
       source_uri: provenanceUri,
       ingested_via: provenanceVia,
     });
+    // A new or changed matter changes what matter references resolve to.
+    if (existingPage?.type === "legal_case" || result.parsedPage?.type === "legal_case") {
+      invalidateMatterIndex(ctx.sourceId ?? "default");
+    }
 
     // v0.39 T13 — auto-prompt on first unknown-type write.
     //
@@ -1870,12 +1921,21 @@ const list_pages: Operation = {
       ...scope,
     });
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
-    // Matter scope is checked on the full page (slug AND frontmatter.case_slug)
-    // before the projection below drops the frontmatter — otherwise a
-    // document bound to a walled matter by case_slug alone would slip through.
-    const inScope = matterScopeFilter(
-      pages.map((pg) => ({ slug: pg.slug, frontmatter: pg.frontmatter ?? {}, page: pg })),
-      ctx
+    // Matter scope is checked on the full page (slug AND every frontmatter
+    // matter binding) before the projection below drops the frontmatter —
+    // otherwise a document bound to a walled matter by case_slug or case_ref
+    // alone would slip through.
+    const inScope = (
+      await matterScopeFilterResolved(
+        pages.map((pg) => ({
+          slug: pg.slug,
+          type: pg.type,
+          frontmatter: pg.frontmatter ?? {},
+          source_id: (pg as { source_id?: string }).source_id,
+          page: pg,
+        })),
+        ctx
+      )
     ).map((x) => x.page);
     let result = inScope.map((pg) => ({
       slug: pg.slug,
@@ -1992,7 +2052,7 @@ const search: Operation = {
       // Subsumio WP4: Defense-in-depth hard source filter
       const sourceFiltered = hardSourceFilter(results, ctx);
       // Subsumio P0-SECR-002: Filter by verified matter scope
-      const scoped = matterScopeFilter(sourceFiltered, ctx);
+      const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
       // Subsumio R3: Filter by document-level ACLs
       const finalResults = await aclFilter(scoped, ctx);
       if (wantRefine) {
@@ -2035,7 +2095,7 @@ const search: Operation = {
     // Subsumio WP4: Defense-in-depth hard source filter
     const sourceFiltered = hardSourceFilter(results, ctx);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    const scoped = matterScopeFilter(sourceFiltered, ctx);
+    const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
     // Subsumio R3: Filter by document-level ACLs
     const finalResults = await aclFilter(scoped, ctx);
     if (wantRefine) {
@@ -2393,7 +2453,7 @@ const query: Operation = {
     // differ from ctx.sourceId when the caller passed a per-call source_id.
     const sourceFiltered = hardSourceFilter(results, ctx, querySourceScope);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    return matterScopeFilter(sourceFiltered, ctx);
+    return matterScopeFilterResolved(sourceFiltered, ctx);
   },
   scope: "read",
   cliHints: { name: "query", positional: ["query"] },

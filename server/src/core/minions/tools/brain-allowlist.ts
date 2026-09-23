@@ -31,10 +31,17 @@ import {
   bindingPrivatePrefix,
   isForeignPrivateSlug,
   matterIsReadOnly,
-  matterScopeAllows,
   type AgentWriteBinding,
   type MatterScope,
 } from "../../matter-access.ts";
+import {
+  hasMatterBindingFields,
+  loadMatterIndex,
+  pageBindingAllowed,
+  pageMatterBinding,
+  resolveRowBindings,
+  type MatterBinding,
+} from "../../matter-binding.ts";
 import { paramDefToSchema } from "../../../mcp/tool-defs.ts";
 import type { ToolCtx, ToolDef } from "../types.ts";
 
@@ -390,8 +397,9 @@ function hiddenPrivate(vis: Visibility, slug: string | undefined): boolean {
 
 /**
  * The subset of `slugs` the job may see. A page belongs to a matter by its
- * slug path or its frontmatter `case_slug`; when a slug exists in several of
- * the job's sources, every copy must be in scope.
+ * slug path and by every frontmatter matter binding (case_slug, case_ref, …;
+ * see core/matter-binding.ts); when a slug exists in several of the job's
+ * sources, every copy must be in scope.
  */
 async function visibleSlugs(
   ctx: OperationContext,
@@ -402,27 +410,18 @@ async function visibleSlugs(
   const unique = [...new Set(slugs.filter((s) => typeof s === "string" && s.length > 0))];
   const visible = new Set<string>();
   if (unique.length === 0) return visible;
-  const caseSlugs = new Map<string, Array<string | undefined>>();
   const sources = readSources(ctx);
-  if (sources.length > 0) {
-    const rows = await ctx.engine.executeRaw<{ slug: string; case_slug: string | null }>(
-      `SELECT slug, frontmatter->>'case_slug' AS case_slug FROM pages
-        WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[]) AND deleted_at IS NULL`,
-      [unique, sources]
-    );
-    for (const r of rows) {
-      const list = caseSlugs.get(r.slug) ?? [];
-      list.push(r.case_slug ?? undefined);
-      caseSlugs.set(r.slug, list);
-    }
-  }
-  for (const slug of unique) {
-    const cases = caseSlugs.get(slug) ?? [undefined];
-    if (hiddenPrivate(vis, slug)) continue;
-    if (cases.every((c) => matterScopeAllows(scope, slug, c) && !hiddenPrivate(vis, c))) {
-      visible.add(slug);
-    }
-  }
+  const bindings = await resolveRowBindings(
+    ctx.engine,
+    unique.map((slug) => ({ slug })),
+    { sourceId: sources[0] ?? ctx.sourceId, sources }
+  );
+  unique.forEach((slug, i) => {
+    const binding = bindings[i]!;
+    if (hiddenPrivate(vis, slug)) return;
+    if (binding.matters.some((m) => hiddenPrivate(vis, m))) return;
+    if (pageBindingAllowed(scope, slug, binding)) visible.add(slug);
+  });
   return visible;
 }
 
@@ -437,8 +436,8 @@ async function assertSlugVisible(
 
 /**
  * Refuse a put_page into a matter the job may not see or may only read:
- * checked against the target slug, the `case_slug` the new content claims and
- * the `case_slug` of the page it would overwrite.
+ * checked against the target slug, the matters the new content binds (every
+ * binding field, resolved) and the matters of the page it would overwrite.
  */
 async function assertPutPageAllowed(
   ctx: OperationContext,
@@ -447,27 +446,31 @@ async function assertPutPageAllowed(
   params: Record<string, unknown>
 ): Promise<void> {
   const slug = typeof params.slug === "string" ? params.slug : "";
-  const cases = new Set<string | undefined>([undefined]);
+  const sourceId = ctx.sourceId ?? "default";
+  const bindings: MatterBinding[] = [{ matters: [], unresolved: [] }];
   if (typeof params.content === "string") {
+    let claimed: Record<string, unknown> | undefined;
     try {
       const { parseMarkdown } = await import("../../markdown.ts");
-      const claimed = frontmatterCaseSlug(parseMarkdown(params.content, `${slug}.md`).frontmatter);
-      if (claimed) cases.add(claimed);
+      const parsed = parseMarkdown(params.content, `${slug}.md`);
+      claimed = { ...(parsed.frontmatter ?? {}), ...(parsed.type ? { type: parsed.type } : {}) };
     } catch {
       // Unparseable content carries no matter claim; the op rejects it itself.
     }
+    if (claimed && hasMatterBindingFields(claimed)) {
+      const index = await loadMatterIndex(ctx.engine, sourceId);
+      bindings.push(pageMatterBinding({ slug, frontmatter: claimed }, index));
+    }
   }
   if (slug) {
-    const existing = await ctx.engine.executeRaw<{ case_slug: string | null }>(
-      `SELECT frontmatter->>'case_slug' AS case_slug FROM pages
-        WHERE slug = $1 AND source_id = $2 AND deleted_at IS NULL`,
-      [slug, ctx.sourceId]
+    bindings.push(
+      ...(await resolveRowBindings(ctx.engine, [{ slug, source_id: sourceId }], { sourceId }))
     );
-    for (const r of existing) if (r.case_slug) cases.add(r.case_slug);
   }
-  for (const c of cases) {
-    if (!matterScopeAllows(scope, slug, c)) throw pageNotFound(slug);
-    if (matterIsReadOnly([...readOnly], slug, c)) {
+  for (const b of bindings) {
+    if (!pageBindingAllowed(scope, slug, b)) throw pageNotFound(slug);
+    const matters = b.matters.length > 0 ? b.matters : [undefined];
+    if (matters.some((m) => matterIsReadOnly([...readOnly], slug, m))) {
       throw new OperationError(
         "permission_denied",
         `Matter of ${slug} is read-only for this job's user.`

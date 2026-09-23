@@ -19,7 +19,12 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type { BrainEngine, SynthesisEvidenceInput } from "../engine.ts";
-import { runGather, renderPagesBlock, takesHitToTakeForPrompt } from "./gather.ts";
+import {
+  runGather,
+  renderPagesBlock,
+  takesHitToTakeForPrompt,
+  type ThinkGatherResult,
+} from "./gather.ts";
 import { renderTakesBlock } from "./sanitize.ts";
 import {
   buildThinkSystemPrompt,
@@ -75,7 +80,7 @@ import {
 import { AIConfigError } from "../ai/errors.ts";
 import { normalizeModelId } from "../model-id.ts";
 import { hasAnthropicKey } from "../ai/anthropic-key.ts";
-import { matterScopeAllows } from "../matter-access.ts";
+import { pageBindingAllowed, resolveRowBindings } from "../matter-binding.ts";
 
 /** Anthropic Messages client interface — same shape used by subagent.ts so test stubs can be shared. */
 export interface ThinkLLMClient {
@@ -515,53 +520,13 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     warnings.push("RETRIEVAL_FAILED: page search unavailable — answer is not source-backed");
   }
 
-  // P0-SECR-002: Filter gathered evidence by verified matter scope. Uploaded
-  // documents are commonly stored below `documents/...` and linked to a case
-  // through `case_slug`, so slug-prefix filtering alone is insufficient.
-  // Canonical law sources remain available: they are shared authority, not
-  // confidential matter evidence.
-  const scope = opts.matterScope;
-  if (scope && scope !== "all") {
-    const matchesScope = (slug: string, caseSlug?: string) =>
-      matterScopeAllows(scope, slug, caseSlug);
-    const evidencePageIds = [
-      ...new Set(
-        [...gather.pages.map((p) => p.page_id), ...gather.takes.map((t) => t.page_id)].filter(
-          (id): id is number => Number.isFinite(id)
-        )
-      ),
-    ];
-    const evidenceRows = evidencePageIds.length
-      ? await engine.executeRaw<{
-          id: number;
-          source_id: string;
-          slug: string;
-          case_slug?: string;
-        }>(
-          `SELECT id, source_id, slug, frontmatter->>'case_slug' AS case_slug
-             FROM pages
-            WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL`,
-          [evidencePageIds]
-        )
-      : [];
-    const metadata = new Map(evidenceRows.map((row) => [row.id, row]));
-    const pageAllowed = (pageId: number, slug: string, projectedCaseSlug?: string) => {
-      const row = metadata.get(pageId);
-      const sourceId = row?.source_id;
-      if (sourceId?.startsWith("law-")) return true;
-      return matchesScope(slug, projectedCaseSlug ?? row?.case_slug);
-    };
-    gather = {
-      ...gather,
-      pages: gather.pages.filter((p) => pageAllowed(p.page_id, p.slug, p.case_slug)),
-      takes: gather.takes.filter((t) => pageAllowed(t.page_id, t.page_slug)),
-      graphSlugs: gather.graphSlugs.filter(
-        (slug) =>
-          slug.startsWith("legal/statutes/") ||
-          slug.startsWith("legal/judikatur/") ||
-          matchesScope(slug)
-      ),
-    };
+  // P0-SECR-002: Filter gathered evidence by verified matter scope.
+  if (opts.matterScope && opts.matterScope !== "all") {
+    gather = await filterGatherByMatterScope(engine, gather, {
+      matterScope: opts.matterScope,
+      sourceId: opts.sourceId,
+      allowedSources: opts.allowedSources,
+    });
   }
 
   // Subsumio R3: Filter gathered pages by document-level ACLs.
@@ -1615,3 +1580,58 @@ export const __thinkAdapter = {
   buildGracefulMessage,
   hasAnthropicKey,
 };
+
+/**
+ * P0-SECR-002: keep only the gathered evidence the caller's matter scope
+ * allows. Uploaded documents live below `documents/...` and pipeline results
+ * below `burden-of-proof/...`, `people/...` etc., bound to their matter by
+ * frontmatter (case_slug, case_ref, …) — so every binding is read fresh from
+ * the database and resolved in bulk (core/matter-binding.ts); slug prefixes
+ * alone are insufficient. Canonical law sources remain available: they are
+ * shared authority, not confidential matter evidence.
+ */
+export async function filterGatherByMatterScope(
+  engine: BrainEngine,
+  gather: ThinkGatherResult,
+  opts: { matterScope: string[] | "all"; sourceId?: string; allowedSources?: string[] }
+): Promise<ThinkGatherResult> {
+  const scope = opts.matterScope;
+  if (scope === "all") return gather;
+  const evidencePageIds = [
+    ...new Set(
+      [...gather.pages.map((p) => p.page_id), ...gather.takes.map((t) => t.page_id)].filter(
+        (id): id is number => Number.isFinite(id)
+      )
+    ),
+  ];
+  const evidenceRows = evidencePageIds.length
+    ? await engine.executeRaw<{ id: number; source_id: string }>(
+        `SELECT id, source_id FROM pages WHERE id = ANY($1::bigint[])`,
+        [evidencePageIds]
+      )
+    : [];
+  const sourceOf = new Map(evidenceRows.map((row) => [Number(row.id), row.source_id]));
+  const isLaw = (pageId: number) => sourceOf.get(pageId)?.startsWith("law-") === true;
+  const isStatuteSlug = (slug: string) =>
+    slug.startsWith("legal/statutes/") || slug.startsWith("legal/judikatur/");
+  const graphSlugs = gather.graphSlugs.filter((slug) => !isStatuteSlug(slug));
+  const rows = [
+    ...gather.pages.map((p) => ({ slug: p.slug, page_id: p.page_id, case_slug: p.case_slug })),
+    ...gather.takes.map((t) => ({ slug: t.page_slug, page_id: t.page_id })),
+    ...graphSlugs.map((slug) => ({ slug })),
+  ];
+  const bindings = await resolveRowBindings(engine, rows, {
+    sourceId: opts.sourceId,
+    sources: opts.allowedSources,
+  });
+  const allowed = rows.map((r, i) => pageBindingAllowed(scope, r.slug, bindings[i]!));
+  const nPages = gather.pages.length;
+  const nTakes = gather.takes.length;
+  const graphAllowed = new Set(graphSlugs.filter((_, i) => allowed[nPages + nTakes + i]));
+  return {
+    ...gather,
+    pages: gather.pages.filter((p, i) => isLaw(p.page_id) || allowed[i]),
+    takes: gather.takes.filter((t, i) => isLaw(t.page_id) || allowed[nPages + i]),
+    graphSlugs: gather.graphSlugs.filter((slug) => isStatuteSlug(slug) || graphAllowed.has(slug)),
+  };
+}

@@ -64,10 +64,10 @@ describe("G18: assertMatterScope before persistence", () => {
     // The G18 fix comment should exist and be near an assertMatterScope call
     const g18Idx = src.indexOf("G18 fix: validate matter scope");
     expect(g18Idx).toBeGreaterThan(-1);
-    // Check that assertMatterScope(req.matterScope, slug) appears in the
-    // 200 chars after the G18 fix comment
-    const afterFix = src.slice(g18Idx, g18Idx + 300);
-    expect(afterFix).toContain("assertMatterScope(req.matterScope, slug)");
+    // The slug guard (slug path plus the stored page's matter bindings)
+    // follows the G18 fix comment.
+    const afterFix = src.slice(g18Idx, g18Idx + 400);
+    expect(afterFix).toContain("await assertSlugMatterScope(engine, req, slug)");
   });
 
   it("does NOT have assertMatterScope after runExtractionAndImport", () => {

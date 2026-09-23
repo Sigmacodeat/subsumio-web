@@ -50,6 +50,7 @@ import {
   readJobMatterAccess,
   type MatterScope,
 } from "../../matter-access.ts";
+import { pageBindingAllowed, resolveRowBindings } from "../../matter-binding.ts";
 
 export interface SupervisorHandlerData {
   prompt: string;
@@ -690,12 +691,25 @@ export async function loadCaseContext(
      LIMIT 200`,
     params
   );
-  const related = relatedRows
-    .map((r) => ({ ...r, fm: fmObject(r.frontmatter) }))
-    .filter((r) => {
-      const bound = typeof r.fm.case_slug === "string" ? r.fm.case_slug : undefined;
-      return matterScopeAllows(matterScope, r.slug, bound);
-    });
+  // A related page may be bound to further matters (case_ref, case_slugs, …):
+  // every one of them must be visible to the job.
+  const relatedWithFm = relatedRows.map((r) => ({ ...r, fm: fmObject(r.frontmatter) }));
+  const bindings =
+    matterScope !== undefined && matterScope !== "all"
+      ? await resolveRowBindings(
+          engine,
+          relatedWithFm.map((r) => ({
+            slug: r.slug,
+            type: r.type,
+            frontmatter: r.fm,
+            ...(sourceId ? { source_id: sourceId } : {}),
+          })),
+          { sourceId }
+        )
+      : [];
+  const related = relatedWithFm.filter(
+    (r, i) => bindings.length === 0 || pageBindingAllowed(matterScope, r.slug, bindings[i]!)
+  );
 
   const deadlines = related
     .filter((r) => r.type === "legal_deadline")
