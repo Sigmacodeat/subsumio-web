@@ -178,7 +178,7 @@ export const NAV: NavContent = {
         {
           label: "Übersicht",
           href: "/",
-          description: "KI-Kanzleisoftware — belegte Antworten, keine Halluzination",
+          description: "KI-Kanzleisoftware — Antworten mit geprüften Fundstellen",
           icon: "Layers",
           featured: true,
         },
@@ -456,7 +456,7 @@ export const FOOTER: {
       ],
     },
   ],
-  note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, verschlüsselt übertragen, kein Training mit Ihren Daten.",
+  note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder gehostet in Wien mit Auftragsverarbeitungsvertrag — nach DSGVO konzipiert, verschlüsselt übertragen, kein Training mit Ihren Daten.",
 };
 
 // ---------------------------------------------------------------------------
@@ -494,7 +494,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
     },
     {
       q: "Was passiert mit meinen Daten bei Kündigung?",
-      a: "Sie können jederzeit alles exportieren. Nach Kündigung werden Ihre Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder Sie können sofortige Löschung beantragen.",
+      a: "Sie können jederzeit alles exportieren, bis zum Vertragsende auch selbst in den Einstellungen. Die Löschung Ihrer Daten beantragen Sie bei uns; als Einzelnutzer können Sie Ihr Konto samt Inhalten auch selbst in den Einstellungen löschen.",
     },
     {
       q: "Gibt es versteckte Gebühren?",
@@ -729,7 +729,7 @@ export const LANDING = {
     },
     {
       q: "Trainiert Subsumio auf meinen Daten?",
-      a: "Nein. Mit Ihren Daten wird kein KI-Modell trainiert. Was Subsumio aus Ihren Akten lernt, bleibt in Ihrem Kanzlei-Gehirn: Es hilft beim nächsten Mandat, fließt aber nicht in das Wissen anderer Kanzleien ein — und Sie können das Mitlernen in den Einstellungen abschalten. On-Premise bleibt alles auf Ihrer Infrastruktur; in der EU-Cloud wird es verschlüsselt und getrennt je Kanzlei verarbeitet.",
+      a: "Nein. Mit Ihren Daten wird kein KI-Modell trainiert. Was Subsumio aus Ihren Akten lernt, bleibt in Ihrem Kanzlei-Gehirn: Es hilft beim nächsten Mandat, fließt aber nicht in das Wissen anderer Kanzleien ein — und Sie können das Mitlernen in den Einstellungen abschalten. On-Premise bleibt alles auf Ihrer Infrastruktur; gehostet wird es getrennt je Kanzlei verarbeitet und verschlüsselt übertragen.",
     },
     {
       q: "Funktioniert das mit unserer bestehenden Software?",
@@ -769,9 +769,9 @@ export const UI_STRINGS: Record<string, string> = {
   noCreditCard: "Keine Kreditkarte",
   trialDaysFree: "30 Tage gratis · Keine Kreditkarte",
   threeMinAnswer: "3 Min. zur ersten belegten Antwort",
-  euHosted: "EU-gehostet oder On-Premise",
+  euHosted: "Hosting in Wien oder On-Premise",
   seeFullPricing: "Alle Preisdetails ansehen",
-  gdprReady: "DSGVO-konform",
+  gdprReady: "Nach DSGVO konzipiert, AVV inklusive",
   professionalSecrecy: "Berufsgeheimnis per Architektur",
   transparentFair: "Preise",
   noGamesTitle: "Keine Spielchen bei den Preisen",

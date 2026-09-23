@@ -3,17 +3,17 @@ import PartnersPage from "@/components/marketing/partners-page";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
+  title: "Subsumio Partnerprogramm — bis zu 30 % wiederkehrende Provision",
   description:
-    "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner. KI-Kanzleisoftware für deutsche Kanzleien.",
+    "Kanzleien zu Subsumio empfehlen und bis zu 30 % wiederkehrende Provision erhalten, solange der vermittelte Kunde zahlt. Drei Wege: Empfehlungspartner, Kunden-Empfehlungen und Einführungspartner. KI-Kanzleisoftware für deutsche Kanzleien.",
   alternates: {
     canonical: "/de/partners",
     languages: { "de-DE": "/de/partners", "de-AT": "/at/partners", "x-default": "/at/partners" },
   },
   openGraph: {
-    title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
+    title: "Subsumio Partnerprogramm — bis zu 30 % wiederkehrende Provision",
     description:
-      "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner.",
+      "Kanzleien zu Subsumio empfehlen und bis zu 30 % wiederkehrende Provision erhalten, solange der vermittelte Kunde zahlt. Drei Wege: Empfehlungspartner, Kunden-Empfehlungen und Einführungspartner.",
     url: "/de/partners",
     type: "website",
   },

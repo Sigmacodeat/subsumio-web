@@ -26,7 +26,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Wien",
     metaTitle: "KI-Kanzleisoftware Wien — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Wien: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Wien: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Wiener Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Wien, die mit österreichischem Recht arbeitet — ABGB, ZPO, EO und dem übrigen Bundesrecht aus dem RIS. Jede Antwort nennt ihre Fundstelle; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
@@ -48,7 +48,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         title: "DSGVO und § 9 Abs. 2 RAO",
-        desc: "Hosting in der EU mit Auftragsverarbeitungsvertrag (AVV), On-Premise im Enterprise-Tarif. Zur Verschwiegenheit nach § 9 Abs. 2 RAO unterzeichnen wir auf Wunsch eine gesonderte Verpflichtung.",
+        desc: "Hosting in Wien mit Auftragsverarbeitungsvertrag (AVV), On-Premise im Enterprise-Tarif. Für KI-Funktionen eingesetzte Auftragsverarbeiter sind in der Datenschutzerklärung benannt. Zur Verschwiegenheit nach § 9 Abs. 2 RAO unterzeichnen wir auf Wunsch eine gesonderte Verpflichtung.",
       },
     ],
     faq: [
@@ -75,7 +75,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Graz",
     metaTitle: "KI-Kanzleisoftware Graz — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Graz: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Graz: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Grazer Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Graz und der Steiermark — von der Einzelkanzlei bis zur Wirtschaftskanzlei. Österreichisches Recht (ABGB, ZPO, EO) mit belegten Antworten und Fundstellen.",
@@ -97,7 +97,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         title: "Verschwiegenheit nach § 9 Abs. 2 RAO",
-        desc: "Hosting in der EU mit AVV, On-Premise im Enterprise-Tarif. Kein Training von KI-Modellen mit Mandantendaten.",
+        desc: "Hosting in Wien mit AVV, On-Premise im Enterprise-Tarif. Für KI-Funktionen eingesetzte Auftragsverarbeiter sind in der Datenschutzerklärung benannt. Kein Training von KI-Modellen mit Mandantendaten.",
       },
     ],
     faq: [
@@ -124,7 +124,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Linz",
     metaTitle: "KI-Kanzleisoftware Linz — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Linz: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Linz: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Linzer Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Linz und ganz Oberösterreich — durchgehend mit österreichischem Recht, belegten Antworten und Fundstellen.",
@@ -142,7 +142,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         title: "DSGVO und § 9 Abs. 2 RAO",
-        desc: "Hosting in der EU mit AVV, On-Premise im Enterprise-Tarif. Alle Auftragsverarbeiter sind im AVV benannt.",
+        desc: "Hosting in Wien mit AVV, On-Premise im Enterprise-Tarif. Für KI-Funktionen eingesetzte Auftragsverarbeiter sind in AVV und Datenschutzerklärung benannt.",
       },
     ],
     faq: [
@@ -169,7 +169,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Salzburg",
     metaTitle: "KI-Kanzleisoftware Salzburg — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Salzburg: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Salzburg: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Salzburger Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Salzburg — mit österreichischem Recht statt angepasster deutscher Software: belegte Antworten mit Fundstellen und Fristen nach der ZPO.",
@@ -191,7 +191,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         title: "Verschwiegenheit nach § 9 Abs. 2 RAO",
-        desc: "Hosting in der EU mit AVV, On-Premise im Enterprise-Tarif. Kein Training von KI-Modellen mit Mandantendaten, getrennte Verarbeitung je Kanzlei.",
+        desc: "Hosting in Wien mit AVV, On-Premise im Enterprise-Tarif. Für KI-Funktionen eingesetzte Auftragsverarbeiter sind in der Datenschutzerklärung benannt. Kein Training von KI-Modellen mit Mandantendaten, getrennte Verarbeitung je Kanzlei.",
       },
     ],
     faq: [
@@ -218,7 +218,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Innsbruck",
     metaTitle: "KI-Kanzleisoftware Innsbruck — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Anwälte in Innsbruck: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
+      "KI-Kanzleisoftware für Anwälte in Innsbruck: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Innsbrucker Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Innsbruck und Tirol — von der Allgemeinkanzlei bis zur Spezialkanzlei für Bau- und Tourismusrecht. Österreichisches Recht, belegte Antworten, Fristen nach der ZPO.",
@@ -250,7 +250,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Bleiben Mandantendaten in Österreich?",
-        a: "Die EU-Cloud läuft in Rechenzentren in der EU, nicht ausschließlich in Österreich. Grundlage ist ein AVV, in dem alle Auftragsverarbeiter benannt sind. On-Premise auf Ihrer eigenen Infrastruktur gibt es im Enterprise-Tarif.",
+        a: "Anwendung und Daten liegen in einem Rechenzentrum in Wien. Für KI-Antworten und einzelne Zusatzfunktionen setzen wir Auftragsverarbeiter ein, teils mit Sitz in den USA; Grundlage ist ein AVV, in dem alle Auftragsverarbeiter benannt sind. On-Premise auf Ihrer eigenen Infrastruktur gibt es im Enterprise-Tarif.",
       },
     ],
   },

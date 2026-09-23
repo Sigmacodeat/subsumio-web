@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   robots: { index: false },
   title: "Datenschutz",
   description:
-    "Wie Subsumio mit Daten umgeht: DSGVO-Konformität, Verschlüsselung, EU-Datenhoheit und Ihre Rechte.",
+    "Wie Subsumio mit Daten umgeht: Verarbeitung nach DSGVO, Auftragsverarbeiter, Speicherdauer und Ihre Rechte.",
   alternates: {
     canonical: "/de/privacy",
     languages: { "de-DE": "/de/privacy", "de-AT": "/at/privacy", "x-default": "/at/privacy" },
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Datenschutz — Subsumio",
     description:
-      "Wie Subsumio mit Daten umgeht: DSGVO-Konformität, Verschlüsselung, EU-Datenhoheit und Ihre Rechte.",
+      "Wie Subsumio mit Daten umgeht: Verarbeitung nach DSGVO, Auftragsverarbeiter, Speicherdauer und Ihre Rechte.",
     url: "/de/privacy",
     type: "website",
   },
