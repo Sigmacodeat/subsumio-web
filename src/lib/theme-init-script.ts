@@ -13,4 +13,4 @@ export const THEME_STORAGE_KEY = "subsumio-theme";
 
 export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(
   THEME_STORAGE_KEY
-)})||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");var r=document.querySelector("[data-app='dashboard']");if(r)r.setAttribute("data-theme",t);}catch(_e){}})();`;
+)})||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");var d=document.documentElement;d.setAttribute("data-app","dashboard");d.setAttribute("data-theme",t);var rs=d.querySelectorAll("[data-app='dashboard']");for(var i=0;i<rs.length;i++)rs[i].setAttribute("data-theme",t);}catch(_e){}})();`;

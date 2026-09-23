@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import {
   Activity,
   Building2,
@@ -80,6 +81,18 @@ export function OpsShell({
 }) {
   const pathname = usePathname() ?? "/ops";
   const logout = useLogout();
+
+  // Ops-Shell ist fix dark — data-app/data-theme auf <html> hoisten, damit
+  // portalierte Overlays (Dialoge, Selects, Toasts) die Palette erben.
+  useEffect(() => {
+    const el = document.documentElement;
+    el.dataset.app = "dashboard";
+    el.dataset.theme = "dark";
+    return () => {
+      delete el.dataset.app;
+      delete el.dataset.theme;
+    };
+  }, []);
 
   return (
     <div

@@ -109,10 +109,10 @@ function exportHtmlDocument(title: string, markdown: string): string {
 <html lang="de"><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title>
 <style>
   body { font-family: Calibri, Arial, sans-serif; margin: 40px; color: hsl(222, 8%, 15%); font-size: 12pt; line-height: 1.5; }
-  h1 { font-size: 20pt; color: hsl(222, 68%, 36%); border-bottom: 2px solid hsl(222, 60%, 52%); padding-bottom: 8px; }
-  h2 { font-size: 15pt; color: hsl(222, 68%, 36%); margin-top: 24px; }
+  h1 { font-size: 20pt; color: hsl(213, 46%, 32%); border-bottom: 2px solid hsl(213, 46%, 42%); padding-bottom: 8px; }
+  h2 { font-size: 15pt; color: hsl(213, 46%, 32%); margin-top: 24px; }
   h3 { font-size: 12.5pt; color: hsl(222, 10%, 20%); margin-top: 16px; }
-  blockquote { background: hsl(222, 80%, 97%); border-left: 4px solid hsl(222, 60%, 52%); margin: 16px 0; padding: 10px 16px; color: hsl(222, 8%, 30%); font-size: 10.5pt; }
+  blockquote { background: hsl(213, 72%, 97%); border-left: 4px solid hsl(213, 46%, 42%); margin: 16px 0; padding: 10px 16px; color: hsl(222, 8%, 30%); font-size: 10.5pt; }
   table { border-collapse: collapse; width: 100%; margin: 12px 0; }
   th, td { border: 1px solid hsl(222, 8%, 80%); padding: 6px 10px; text-align: left; font-size: 11pt; }
   th { background: hsl(222, 8%, 94%); }
