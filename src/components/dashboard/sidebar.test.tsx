@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
-import { NAV_SECTIONS, Sidebar } from "./sidebar";
+import { NAV_SECTIONS, ALL_NAV_ITEMS, Sidebar } from "./sidebar";
 
 // jsdom doesn't implement matchMedia — mock it for use-media-query hook
 if (typeof window !== "undefined" && !window.matchMedia) {
@@ -346,6 +346,17 @@ describe("Sidebar restructured nav", () => {
       "href",
       "/dashboard/compliance"
     );
+  });
+
+  test("sync page is reachable via nav for non-admin users", () => {
+    // Must live in a regular module section — ADMIN_SECTION items are
+    // filtered out for non-admin users.
+    const inSections = NAV_SECTIONS.flatMap((s) => s.items).find(
+      (i) => i.href === "/dashboard/sync"
+    );
+    expect(inSections).toBeDefined();
+    expect(inSections!.labelKey).toBe("nav.sync");
+    expect(ALL_NAV_ITEMS.some((i) => i.href === "/dashboard/sync")).toBe(true);
   });
 
   test("communication channels (beA, WhatsApp) are not in sidebar sections", async () => {

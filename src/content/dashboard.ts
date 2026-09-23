@@ -198,6 +198,7 @@ export const D = {
   "nav.communications": { de: "Kommunikation", en: "Communications" },
   "nav.email_import": { de: "E-Mail-Import", en: "Email Import" },
   "nav.calendar_export": { de: "Kalender-Export", en: "Calendar Export" },
+  "nav.sync": { de: "Synchronisation", en: "Synchronization" },
   "nav.compliance": { de: "Compliance", en: "Compliance" },
   "nav.retention": { de: "Aufbewahrung und Löschung", en: "Retention Rules" },
   "nav.anonymize": { de: "Anonymisierung", en: "Anonymization" },
@@ -368,6 +369,10 @@ export const D = {
     de: "Kalender als ICS exportieren für Outlook/Google Sync — nur relevant bei externem Kalender",
     en: "Export calendar as ICS for Outlook/Google sync — only relevant with external calendar",
   },
+  "nav.tooltip.sync": {
+    de: "Offline-Änderungen und Sync-Konflikte prüfen und auflösen",
+    en: "Review and resolve offline changes and sync conflicts",
+  },
   "nav.tooltip.judgements_sync": {
     de: "Entscheidungsdatenbank mit externen Quellen synchronisieren",
     en: "Sync the decision database with external sources",
@@ -465,6 +470,11 @@ export const D = {
     en: "All offline changes are synced or no conflicts exist.",
   },
   "sync.error_since": { de: "seit", en: "since" },
+  "sync.unchanged_lines": { de: "unveränderte Zeilen", en: "unchanged lines" },
+  "sync.diff_truncated": {
+    de: "weitere geänderte Zeilen — vollständig vergleichen via „Ansehen“",
+    en: "more changed lines — compare fully via “View”",
+  },
   "mobile.zoom_in": { de: "Vergrößern", en: "Zoom in" },
   "mobile.zoom_out": { de: "Verkleinern", en: "Zoom out" },
   "mobile.download": { de: "Herunterladen", en: "Download" },

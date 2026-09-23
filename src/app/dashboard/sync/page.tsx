@@ -9,7 +9,7 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import type { BrainPage } from "@/lib/types";
 import type { QueuedMutation } from "@/lib/offline-store";
-import { diffConflictFields } from "@/lib/conflict-diff";
+import { diffConflictFields, diffContentLines } from "@/lib/conflict-diff";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
@@ -68,6 +68,10 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
   );
 
   const diffs = server ? diffConflictFields(mut, server) : [];
+  const contentDiff =
+    server && typeof mut.payload.content === "string"
+      ? diffContentLines(mut.payload.content, server.content)
+      : null;
 
   return (
     <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-surface)] p-4">
@@ -126,6 +130,41 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {contentDiff && (
+          <div className="mt-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2 font-mono text-[11px] leading-relaxed">
+            {contentDiff.unchangedBefore > 0 && (
+              <p className="text-[color:var(--ds-text-subtle)]">
+                ⋯ {contentDiff.unchangedBefore} {t("sync.unchanged_lines" as DashboardKey)}
+              </p>
+            )}
+            {contentDiff.localLines.map((line, i) => (
+              <p
+                key={`l${i}`}
+                className="truncate text-[color:var(--ds-warning-text)]"
+                title={line}
+              >
+                <span className="opacity-60 select-none">+ </span>
+                {line || " "}
+              </p>
+            ))}
+            {contentDiff.serverLines.map((line, i) => (
+              <p key={`s${i}`} className="truncate text-[color:var(--ds-text-muted)]" title={line}>
+                <span className="opacity-60 select-none">− </span>
+                {line || " "}
+              </p>
+            ))}
+            {contentDiff.truncated && (
+              <p className="text-[color:var(--ds-text-subtle)]">
+                ⋯ {t("sync.diff_truncated" as DashboardKey)}
+              </p>
+            )}
+            {contentDiff.unchangedAfter > 0 && (
+              <p className="text-[color:var(--ds-text-subtle)]">
+                ⋯ {contentDiff.unchangedAfter} {t("sync.unchanged_lines" as DashboardKey)}
+              </p>
+            )}
           </div>
         )}
       </div>

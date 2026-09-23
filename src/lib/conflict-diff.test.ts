@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { diffConflictFields } from "./conflict-diff";
+import { diffConflictFields, diffContentLines } from "./conflict-diff";
 import type { QueuedMutation } from "./offline-store";
 import type { BrainPage } from "./types";
 
@@ -49,5 +49,46 @@ describe("diffConflictFields", () => {
     const d = diffConflictFields(mut({ slug: "cases/neu" }), server);
     expect(d).toHaveLength(2);
     expect(d.every((x) => x.field.startsWith("frontmatter."))).toBe(true);
+  });
+});
+
+describe("diffContentLines", () => {
+  test("identisch → null", () => {
+    expect(diffContentLines("a\nb\nc", "a\nb\nc")).toBeNull();
+  });
+
+  test("Mittel-Block geändert → Prefix/Suffix gezählt", () => {
+    const d = diffContentLines("a\nb\nc\nd", "a\nX\nc\nd")!;
+    expect(d.localLines).toEqual(["b"]);
+    expect(d.serverLines).toEqual(["X"]);
+    expect(d.unchangedBefore).toBe(1);
+    expect(d.unchangedAfter).toBe(2);
+    expect(d.truncated).toBe(false);
+  });
+
+  test("Zeile am Ende angehängt", () => {
+    const d = diffContentLines("a\nb", "a\nb\nc")!;
+    expect(d.localLines).toEqual([]);
+    expect(d.serverLines).toEqual(["c"]);
+    expect(d.unchangedBefore).toBe(2);
+  });
+
+  test("komplett verschieden → alles geändert", () => {
+    const d = diffContentLines("x\ny", "p\nq")!;
+    expect(d.unchangedBefore).toBe(0);
+    expect(d.unchangedAfter).toBe(0);
+  });
+
+  test("große Region wird gekappt + truncated", () => {
+    const local = Array.from({ length: 20 }, (_, i) => `l${i}`).join("\n");
+    const d = diffContentLines(local, "s0")!;
+    expect(d.truncated).toBe(true);
+    expect(d.localLines.length).toBeLessThanOrEqual(8);
+  });
+
+  test("Mehrfach-Edits in einer Region bleiben Block", () => {
+    const d = diffContentLines("a\nb\nc\nd", "a\nB\nC\nd")!;
+    expect(d.localLines).toEqual(["b", "c"]);
+    expect(d.serverLines).toEqual(["B", "C"]);
   });
 });

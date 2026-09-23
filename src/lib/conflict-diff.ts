@@ -39,3 +39,45 @@ export function diffConflictFields(mut: QueuedMutation, server: BrainPage): Fiel
   }
   return diffs;
 }
+
+export interface ContentDiff {
+  /** Zeilen die sich geändert haben — lokale vs. Server-Variante der
+   *  geänderten Region (Prefix/Suffix-gleiche Zeilen sind entfernt). */
+  localLines: string[];
+  serverLines: string[];
+  /** Unveränderte Zeilen vor/hinter der geänderten Region. */
+  unchangedBefore: number;
+  unchangedAfter: number;
+  /** true wenn die geänderte Region gekappt wurde (> maxChanged Zeilen). */
+  truncated: boolean;
+}
+
+const MAX_CHANGED_LINES = 8;
+
+/** Zeilen-Diff via Prefix/Suffix-Trim: entfernt identische Anfangs- und
+ *  Endzeilen und zeigt die geänderte Region beider Versionen. Für
+ *  anwaltliche Edits (einfügen/streichen/umschreiben eines Blocks) ist
+ *  das die relevante Region — voller LCS wäre hier Overkill. */
+export function diffContentLines(local: string, server: string): ContentDiff | null {
+  if (local === server) return null;
+  const a = local.split("\n");
+  const b = server.split("\n");
+  let start = 0;
+  while (start < a.length && start < b.length && a[start] === b[start]) start++;
+  let endA = a.length;
+  let endB = b.length;
+  while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
+    endA--;
+    endB--;
+  }
+  const localMid = a.slice(start, endA);
+  const serverMid = b.slice(start, endB);
+  const truncated = localMid.length > MAX_CHANGED_LINES || serverMid.length > MAX_CHANGED_LINES;
+  return {
+    localLines: localMid.slice(0, MAX_CHANGED_LINES),
+    serverLines: serverMid.slice(0, MAX_CHANGED_LINES),
+    unchangedBefore: start,
+    unchangedAfter: a.length - endA,
+    truncated,
+  };
+}

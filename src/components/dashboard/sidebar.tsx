@@ -616,6 +616,14 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         keywords: "massenakten bulk import csv portfolien migration",
         audienceTier: "erweitert",
       },
+      {
+        href: "/dashboard/sync",
+        icon: GitMerge,
+        labelKey: "nav.sync",
+        keywords: "sync offline konflikte queue änderungen",
+        audienceTier: "quick-start",
+        tooltipKey: "nav.tooltip.sync",
+      },
     ],
   },
   {
