@@ -179,6 +179,7 @@ export type AuditAction =
   | "acl.set_permission"
   | "acl.remove_permission"
   | "dms.push"
+  | "dms.content_download"
   | "space.update"
   | "email.send"
   | "docusign.send"
@@ -469,6 +470,7 @@ const ACTION_LABELS: Record<string, string> = {
   "support.session_start": "Subsumio-Support: Zugriff gestartet",
   "support.session_end": "Subsumio-Support: Zugriff beendet",
   "dms.push": "Dokument an DMS gepusht",
+  "dms.content_download": "DMS-Dokument geöffnet",
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",
   "whatsapp.document_to_space": "WhatsApp-Dokument zugeordnet",
@@ -488,6 +490,8 @@ const ACTION_LABELS: Record<string, string> = {
   "litigation.step_update": "Schritt aktualisiert",
   "legal.commentary_synthesize": "Kommentierung synthetisiert",
   "share.receive": "Geteilte Inhalte empfangen",
+  "intake.scan_upload": "Intake: Scan hochgeladen",
+  "intake.convert": "Intake: Dokument konvertiert",
   "inbox.mark_read": "Nachricht als gelesen markiert",
   "triage.action": "Triage-Aktion ausgeführt",
   "submission.review": "Mandanteneingang geprüft",
@@ -567,6 +571,7 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.chronology_build": "Chronologie erstellt",
   "pages.batch_read": "Wissensseiten gesammelt gelesen",
   "pages.batch_list": "Wissensseiten gesammelt aufgelistet",
+  "autopilot.run": "Autopilot-Lauf",
   "autopilot.policy_create": "Autopilot-Policy erstellt",
   "autopilot.policy_list": "Autopilot-Policies abgefragt",
   "autopilot.policy_update": "Autopilot-Policy aktualisiert",
@@ -611,6 +616,7 @@ const ACTION_LABELS: Record<string, string> = {
   "human_review.summary": "Menschliche Prüfung: Zusammenfassung abgerufen",
   // ── Berechtigungs-/Sammel-IDs aus createHandler (src/app/api) ──
   "acl.add_member": "Zugriffsgruppe: Mitglied hinzugefügt",
+  "acl.remove_member": "Zugriffsgruppe: Mitglied entfernt",
   "acl.delete_group": "Zugriffsgruppe gelöscht",
   "acl.remove_permission": "Zugriffsrecht entfernt",
   "acl.set_permission": "Zugriffsrecht gesetzt",
@@ -648,6 +654,8 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.memo": "Memo erstellt",
   "legal.redline": "Änderungsvergleich erstellt",
   "legal.risk_analysis": "Risikoanalyse durchgeführt",
+  "legal.due_diligence": "Due-Diligence-Prüfung",
+  "legal.rvg": "RVG-Berechnung",
   "platform.operator": "Betreiber-Zugriff",
   "platform.support_session": "Support-Sitzung",
   "presence.list": "Anwesenheit abgerufen",
@@ -661,6 +669,8 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.outbound": "WhatsApp-Nachricht gesendet",
   "workflow.approve": "Ablauf: Schritt freigegeben",
   "workflow.start": "Ablauf gestartet",
+  "workflow.update": "Ablauf aktualisiert",
+  "workflow.delete": "Ablauf gelöscht",
   "automation.create": "Automatisierung angelegt",
   "automation.update": "Automatisierung geändert",
   "automation.delete": "Automatisierung gelöscht",
