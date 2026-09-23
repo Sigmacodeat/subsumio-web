@@ -79,12 +79,18 @@ export function MobileSyncBanner() {
           {conflicts.slice(0, 3).map((c) => {
             const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
             const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+            const ageDays = c.conflictAt
+              ? Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
+              : 0;
             return (
               <li
                 key={c.id}
                 className="flex items-center gap-2 text-xs text-[color:var(--ds-warning-text)]"
               >
-                <span className="min-w-0 flex-1 truncate font-mono">{slug || c.type}</span>
+                <span className="min-w-0 flex-1 truncate font-mono">
+                  {slug || c.type}
+                  {ageDays > 0 && <span className="opacity-70"> · seit {ageDays}d</span>}
+                </span>
                 <a
                   href={href}
                   className="shrink-0 underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"

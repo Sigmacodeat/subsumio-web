@@ -1164,9 +1164,17 @@ function splitAdminSection(section: NavSection): NavSection[] {
 }
 
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
-  const { pendingCount, syncing, conflicts, syncPending, resolveConflict } = useMutationQueue();
+  const {
+    pendingCount,
+    syncing,
+    conflicts,
+    lastNotice,
+    syncPending,
+    resolveConflict,
+    clearNotice,
+  } = useMutationQueue();
   const { t } = useLang();
-  if (collapsed || pendingCount === 0) return null;
+  if (collapsed || (pendingCount === 0 && !lastNotice)) return null;
   return (
     <div className="mx-3 mt-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
       <div className="flex items-center justify-between">
@@ -1181,6 +1189,19 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
           {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
         </button>
       </div>
+      {lastNotice && (
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-[color:var(--ds-success-text)]">{lastNotice}</span>
+          <button
+            type="button"
+            onClick={clearNotice}
+            aria-label={t("mobile.close" as DashboardKey)}
+            className="shrink-0 rounded p-0.5 text-[color:var(--ds-success-text)] transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+          >
+            <X size={11} aria-hidden />
+          </button>
+        </div>
+      )}
       {conflicts.length > 0 && (
         <ul className="mt-2 space-y-1 border-t border-[color:var(--ds-warning-border)] pt-2">
           {conflicts.slice(0, 3).map((c) => {
@@ -1195,7 +1216,11 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
                 />
                 <span
                   className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
-                  title={slug}
+                  title={
+                    c.conflictAt
+                      ? `${slug} — seit ${Math.max(1, Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000))} Tagen ungelöst`
+                      : slug
+                  }
                 >
                   {slug || c.type}
                 </span>
