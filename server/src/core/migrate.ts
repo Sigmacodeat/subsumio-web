@@ -6542,6 +6542,24 @@ export const MIGRATIONS: Migration[] = [
     },
     transaction: false,
   },
+  {
+    version: 145,
+    name: "pipeline_state_running_stage",
+    // corpus-pipeline.ts markiert gespawnte Jobs mit stage='running'
+    // (ris-delta, inforce-refresh, law-fetch). Der CHECK enthielt den Wert
+    // nicht — das gesamte UPDATE inkl. last_cycle_at fiel still weg, die
+    // woechentliche Kadenz (ranWithin) griff nie. 'empty' bleibt erhalten,
+    // Prod hat es bereits in der Constraint.
+    sql: `
+      ALTER TABLE pipeline_state DROP CONSTRAINT IF EXISTS pipeline_state_stage_check;
+      ALTER TABLE pipeline_state ADD CONSTRAINT pipeline_state_stage_check
+        CHECK (stage IN (
+          'idle', 'empty', 'backfill-pending', 'backfilling', 'import-pending',
+          'importing', 'waiting-for-statutes', 'waiting-for-ris-slot',
+          'done', 'failed', 'exhausted', 'ok', 'running'
+        ));
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

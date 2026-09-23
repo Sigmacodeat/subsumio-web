@@ -25,7 +25,7 @@
  *
  *   bun run server/scripts/ris-inforce-crawl-landesrecht.ts [--out /tmp/ris-inforce-landesrecht.jsonl]
  */
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
@@ -37,6 +37,16 @@ const PAGE_SIZE = 100;
 
 const outArg = process.argv.indexOf("--out");
 const OUT = outArg > -1 ? process.argv[outArg + 1] : "/tmp/ris-inforce-landesrecht.jsonl";
+// --pages=1106,1107: Nachlade-Modus — laedt nur die genannten Seiten und
+// mergt sie in den bestehenden Index (dedup via nor). Fuellt die Luecken,
+// die der Voll-Crawl in OUT.skipped.json dokumentiert hat.
+const PAGES_ARG = process.argv.find((a) => a.startsWith("--pages="));
+const ONLY_PAGES = PAGES_ARG
+  ? PAGES_ARG.slice("--pages=".length)
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isInteger(n) && n > 0)
+  : null;
 const FASSUNG = new Date().toISOString().slice(0, 10);
 // Below this share of non-empty values across the sample, a field is
 // treated as mismapped rather than legitimately sparse. Kurztitel and Eli
@@ -158,11 +168,76 @@ function selfCheck(sample: Norm[]): void {
   }
 }
 
+/**
+ * Nachlade-Modus fuer vergiftete Seiten: merged die Dokumente der
+ * angegebenen Seiten in den bestehenden Index (nor-Dedup, neue Zeile
+ * gewinnt) und kuerzt OUT.skipped.json um die gelungenen Seiten.
+ * Seiteninhalte verschieben sich upstream — das ist egal, der Index ist
+ * eine nor-Menge, kein Seiten-Snapshot.
+ */
+async function refillSkippedPages(pages: number[]): Promise<void> {
+  if (!existsSync(OUT)) {
+    console.error(`Index fehlt: ${OUT} — erst Voll-Crawl, dann --pages.`);
+    process.exit(1);
+  }
+  const rows = new Map<string, string>();
+  for (const line of readFileSync(OUT, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const n = JSON.parse(line) as Norm;
+      if (n.nor) rows.set(n.nor, line);
+    } catch {
+      // kaputte Zeile — Voll-Crawl schreibt sie neu
+    }
+  }
+  console.log(`Nachlade-Modus: ${pages.length} Seiten → ${OUT} (${rows.size} Zeilen)`);
+
+  const remaining: number[] = [];
+  for (const page of pages) {
+    const batch = await fetchPage(page);
+    if (batch === null) {
+      remaining.push(page);
+    } else {
+      let added = 0;
+      for (const n of batch) {
+        if (!n.nor) continue;
+        if (!rows.has(n.nor)) added++;
+        rows.set(n.nor, JSON.stringify(n));
+      }
+      console.log(`  Seite ${page}: +${added} neue Normen (${batch.length} gelesen)`);
+    }
+    await risMassPause("Landesrecht-Inventar-Nachladen");
+  }
+
+  writeFileSync(OUT, [...rows.values()].join("\n") + "\n");
+  const skippedFile = `${OUT}.skipped.json`;
+  if (remaining.length > 0) {
+    writeFileSync(
+      skippedFile,
+      JSON.stringify({ pages: remaining, at: new Date().toISOString() }) + "\n"
+    );
+    console.warn(`⚠️  weiterhin offen: ${remaining.join(", ")} → ${skippedFile}`);
+  } else {
+    rmSync(skippedFile, { force: true });
+    console.log(`✓ alle Nachlade-Seiten geholt — ${skippedFile} entfernt`);
+  }
+  console.log(`✓ geschrieben: ${OUT} (${rows.size} Zeilen)`);
+}
+
 async function main() {
   console.log("RIS Landesrecht in-force Crawl — Applikation=LrKons");
   await acquireRisLock();
   try {
     mkdirSync(dirname(OUT), { recursive: true });
+
+    if (ONLY_PAGES) {
+      if (ONLY_PAGES.length === 0) {
+        console.error("--pages angegeben, aber keine gueltige Seitenzahl darin.");
+        process.exit(1);
+      }
+      await refillSkippedPages(ONLY_PAGES);
+      return;
+    }
 
     const first = await fetchPage(1);
     if (first === null || first.length === 0) {

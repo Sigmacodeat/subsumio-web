@@ -1386,6 +1386,45 @@ function runInforceIndexRefresh(state: CycleState): void {
     updateSourceState(job.key, { stage: "running", last_cycle_at: new Date().toISOString() });
     appendHistory(job.key, "index-refresh", "scheduled weekly recrawl");
   }
+
+  // Nachladen vergifteter Seiten: der Landesrecht-Crawler schreibt
+  // uebersprungene Seiten nach <index>.skipped.json. Solange das Sidecar
+  // existiert, wird gezielt nachgeladen (--pages) statt den Voll-Crawl
+  // zu wiederholen. Eigenes state-Key, damit die Wochenkadenz des
+  // Voll-Crawls unberuehrt bleibt.
+  const lrIndex = `${INFORCE_INDEX_DIR}/ris-inforce-landesrecht.jsonl`;
+  const skippedFile = `${lrIndex}.skipped.json`;
+  if (existsSync(skippedFile) && !checkSourceProcess("ris-inforce-lr", state).running) {
+    const key = "ris-inforce-lr-skipped";
+    ensureSourceRow(key);
+    if (!checkSourceProcess(key, state).running) {
+      try {
+        const { pages } = JSON.parse(readFileSync(skippedFile, "utf8")) as {
+          pages?: number[];
+        };
+        if (Array.isArray(pages) && pages.length > 0) {
+          startProcess(
+            key,
+            [
+              "scripts/ris-inforce-crawl-landesrecht.ts",
+              "--out",
+              lrIndex,
+              `--pages=${pages.join(",")}`,
+            ],
+            key,
+            3600
+          );
+          updateSourceState(key, {
+            stage: "running",
+            last_cycle_at: new Date().toISOString(),
+          });
+          appendHistory(key, "index-skip-retry", `Seiten ${pages.join(",")}`);
+        }
+      } catch {
+        // Kaputtes Sidecar — der naechste Voll-Crawl schreibt es neu.
+      }
+    }
+  }
 }
 
 // ── Law-Fetch-Queue ────────────────────────────────────────────────────
