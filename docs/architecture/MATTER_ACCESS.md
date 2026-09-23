@@ -35,6 +35,31 @@ Die Regel steht zweimal im Code und ist per Test gleichgeschaltet:
 3. Die Regeln selbst ändern sich nur über `PUT /api/cases/access`. Jeder andere
    Seiten-Schreibvorgang behält die gespeicherten Regeln bei.
 
+## Woran eine Seite ihre Akte erkennt
+
+Nicht nur am Pfad (`legal/cases/a/…`) und an `case_slug`. Die Engine
+(`server/src/core/matter-binding.ts`) löst jedes Feld auf, mit dem ein
+Schreiber eine Seite an eine Akte bindet:
+
+- **Feste Verweise** — `case_ref` (Legal-Pipeline, Wiedervorlage,
+  Verhandlungsmappe, Judikatur-Wächter, beA-Import), `matter_slug`, `case`,
+  `legal_case`, `assigned_case_slug`, `converted_case_slug`, `case_slugs`,
+  `linked_cases`, `related_case_slugs`. Ein Verweis darf Slug, Aktenzahl
+  („26-0001“, „2026/101“, Gerichts-GZ) oder Aktentitel sein. Findet sich keine
+  Akte dazu, sieht die Seite nur, wer kanzleiweit alles sehen darf — nie jemand
+  hinter einer Chinese Wall.
+- **Freitext-Hinweise** — `matter`, `case_number`, `case_title`,
+  `case_reference`, `matter_reference`, `assigned_case_number`, `aktenzeichen`
+  binden nur, wenn die Seite keinen festen Verweis hat und der Text genau eine
+  Akte (Zahl, Titel, Slug) der Kanzlei trifft.
+- Aktenseiten selbst gehören nur zu sich; ihre Verweise auf verwandte Akten
+  binden sie nicht.
+
+Die Pipeline und `POST /api/pages` setzen zusätzlich `case_slug`, wenn der
+Verweis genau eine Akte trifft. Altbestand: `gbrain pages backfill-case-slug`
+(Probelauf, mit `--apply` schreiben; meldet unauflösbare und mehrdeutige
+Seiten).
+
 ## Wer was ändern darf
 
 - **Administratoren**: Sichtbarkeit, Aktenteam, Chinese Walls und alle
