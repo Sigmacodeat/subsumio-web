@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -276,14 +277,19 @@ export function ContractQuickCreateDialog({
           </div>
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
-            <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="contract-create-another"
                 checked={createAnother}
-                onChange={(event) => setCreateAnother(event.target.checked)}
+                onCheckedChange={(v) => setCreateAnother(v === true)}
               />
-              {t("common.create_another")}
-            </label>
+              <Label
+                htmlFor="contract-create-another"
+                className="text-xs font-normal text-[color:var(--ds-text-muted)]"
+              >
+                {t("common.create_another")}
+              </Label>
+            </div>
             <div className="flex gap-2">
               <Button
                 type="button"

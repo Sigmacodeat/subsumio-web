@@ -602,7 +602,7 @@ export function InvoiceQuickCreateDialog({
 
             {/* Billable summary */}
             {selectedCaseSlug && (
-              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
+              <div className="rounded-xl border border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] p-4">
                 {hasBillable ? (
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
@@ -729,11 +729,11 @@ export function InvoiceQuickCreateDialog({
 
             <aside
               aria-label={t("inv.preview_title")}
-              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-5"
+              className="rounded-xl border border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] p-5"
             >
               <div className="mb-4 flex items-center justify-between border-b border-[color:var(--ds-border)] pb-3">
                 <div>
-                  <p className="text-xs font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                  <p className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
                     {t("inv.preview_title")}
                   </p>
                   <p className="mt-1 text-base font-semibold text-[color:var(--ds-text)]">

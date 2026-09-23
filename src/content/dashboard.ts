@@ -6745,6 +6745,7 @@ export const D = {
 
   // ── Quick case creation ──
   "casesnew.quick_title": { de: "Neue Akte", en: "New case" },
+  "casesnew.quick_templates": { de: "Vorlage wählen", en: "Choose template" },
   "casesnew.quick_desc": {
     de: "Schnell eine Akte anlegen. Details ergänzen Sie später auf der Aktenseite.",
     en: "Create a case quickly. Add details later on the case page.",

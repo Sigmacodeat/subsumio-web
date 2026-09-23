@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -362,7 +363,7 @@ export function DeadlineQuickCreateDialog({
 
             {/* Advanced: Rule + Law */}
             {showAdvanced && (
-              <div className="space-y-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
+              <div className="space-y-4 rounded-xl border border-[color:var(--ds-border-strong)] p-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="quick-deadline-rule" className="text-xs">
@@ -458,41 +459,47 @@ export function DeadlineQuickCreateDialog({
                 {/* Notfrist + Vorfrist + ERV */}
                 <div className="space-y-3 border-t border-[color:var(--ds-border)] pt-3">
                   {/* ERV-Zustelldatum toggle */}
-                  <label className="flex cursor-pointer items-start gap-2.5">
-                    <input
-                      type="checkbox"
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="deadline-erv-date"
                       checked={isErvDate}
-                      onChange={(e) => setIsErvDate(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-blue-600"
+                      onCheckedChange={(v) => setIsErvDate(v === true)}
+                      className="mt-0.5"
                     />
                     <div>
-                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                      <Label
+                        htmlFor="deadline-erv-date"
+                        className="cursor-pointer text-xs font-medium text-[color:var(--ds-text)]"
+                      >
                         {t("deadlines.erv_date")}
-                      </span>
+                      </Label>
                       <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         {t("deadlines.erv_date_hint")}
                       </p>
                     </div>
-                  </label>
-                  <label className="flex cursor-pointer items-start gap-2.5">
-                    <input
-                      type="checkbox"
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="deadline-notfrist"
                       checked={isNotfrist}
-                      onChange={(e) => setIsNotfrist(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-amber-600"
+                      onCheckedChange={(v) => setIsNotfrist(v === true)}
+                      className="mt-0.5"
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
                         <ShieldCheck size={13} className="text-[color:var(--ds-warning-text)]" />
-                        <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                        <Label
+                          htmlFor="deadline-notfrist"
+                          className="cursor-pointer text-xs font-medium text-[color:var(--ds-text)]"
+                        >
                           {t("deadlines.notfrist_label")}
-                        </span>
+                        </Label>
                       </div>
                       <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         {t("deadlines.notfrist_desc")}
                       </p>
                     </div>
-                  </label>
+                  </div>
 
                   {vorfristPreview && (
                     <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2">
@@ -515,15 +522,17 @@ export function DeadlineQuickCreateDialog({
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                <input
-                  type="checkbox"
-                  checked={createAnother}
-                  onChange={(e) => setCreateAnother(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-[color:var(--ds-border)]"
-                />
+              <Checkbox
+                id="deadline-create-another"
+                checked={createAnother}
+                onCheckedChange={(v) => setCreateAnother(v === true)}
+              />
+              <Label
+                htmlFor="deadline-create-another"
+                className="text-xs font-normal text-[color:var(--ds-text-muted)]"
+              >
                 {t("deadlines.create_another" as DashboardKey)}
-              </label>
+              </Label>
             </div>
             <div className="flex gap-2">
               <Button
