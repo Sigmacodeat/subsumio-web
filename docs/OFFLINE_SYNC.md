@@ -11,20 +11,25 @@ Status: implementiert · Quelle: `src/lib/offline-store.ts`, `src/lib/use-mutati
 | **Replay**        | `syncPending` beim `online`-Event + manuell aus dem Sync-Banner                               |
 | **Datei-Uploads** | eigene Queue (`getPendingFileUploads`), gleiches Retry-Regime                                 |
 
-## Konflikt-Policy: Last-Write-Wins
+## Konflikt-Policy: Detect-and-Reject bei `updatePage`
 
-Queud Mutations werden **in `createdAt`-Reihenfolge** replayed und
-überschreiben den Server-Stand ohne Versionsprüfung:
+Queud Mutations werden **in `createdAt`-Reihenfolge** replayed:
 
-- `updatePage` → `api.brain.updatePage` — kein `If-Match`/ETag, kein Merge.
-  Gewinnt die zuletzt replayed Mutation (spätestes `createdAt`).
+- `updatePage` → vor dem Replay `getPage`: ist `updated_at` **nach**
+  `mut.createdAt` **und vor Sync-Start** geändert worden, hat ein externer
+  Edit stattgefunden → die Offline-Änderung wird **verworfen und gemeldet**
+  (`lastError` im Sync-Banner, mit Slug). Kein stilles Überschreiben.
+  Writes aus dem eigenen Replay (`updated_at > syncStart`) zählen nicht
+  als Konflikt — sonst würde ein zweites eigenes Queued-Update auf
+  derselben Seite fälschlich verwarfen.
 - `deletePage` → 404 wird als **Tombstone** behandelt (Erfolg, kein Retry).
 - `createPage` → bei Slug-Kollision entscheidet der Server (bestehendes
   Dedup/Conflict-Verhalten der Brain-API).
 
-**Bewusste Entscheidung:** juristische Kurz-Edits sind idempotent genug
-für LWW; echte Kollisionserkennung (ETag, 3-way-merge) wäre der nächste
-Schritt, wenn Multi-Gerät-Edit auf derselben Akte häufig wird.
+**Grenzen:** die Prüfung ist heuristisch (Zeitvergleich, kein ETag) —
+eine externe Änderung _während_ des Replays (nach Sync-Start) wird nicht
+erkannt. Echte Optimistic Concurrency (Version/If-Match auf `updatePage`)
+bleibt der nächste Schritt, wenn Multi-Gerät-Edit häufig wird.
 
 ## Retry & Drop
 

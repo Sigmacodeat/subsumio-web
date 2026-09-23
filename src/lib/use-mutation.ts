@@ -50,7 +50,10 @@ export function useMutationQueue() {
   const syncPending = useCallback(async () => {
     if (!isOnline()) return;
     setState((s) => ({ ...s, syncing: true, lastError: null }));
-    let dropped = 0;
+    const syncStart = Date.now();
+    let droppedMutations = 0;
+    let droppedUploads = 0;
+    const conflicts: string[] = [];
     try {
       const pending = await getPendingMutations();
       for (const mut of pending) {
@@ -58,7 +61,7 @@ export function useMutationQueue() {
         if (retryCount >= MAX_RETRIES) {
           console.warn(`[mutation-sync] dropping ${mut.id} after ${MAX_RETRIES} retries`);
           await removeMutation(mut.id);
-          dropped++;
+          droppedMutations++;
           continue;
         }
         try {
@@ -73,6 +76,25 @@ export function useMutationQueue() {
               }
             );
           } else if (mut.type === "updatePage") {
+            const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
+            if (slug) {
+              try {
+                const current = await api.brain.getPage(slug);
+                const updatedAt = new Date(current.updated_at).getTime();
+                if (updatedAt > new Date(mut.createdAt).getTime() && updatedAt <= syncStart) {
+                  // Externe Änderung zwischen Offline-Edit und Sync —
+                  // still überschreiben würde parallele Edits verlieren
+                  // lassen. Writes aus diesem Replay (updated_at >
+                  // syncStart) zählen nicht als Konflikt, sonst würde ein
+                  // zweites eigenes Queued-Update falsch verwarfen.
+                  await removeMutation(mut.id);
+                  conflicts.push(slug);
+                  continue;
+                }
+              } catch {
+                /* Read fehlgeschlagen — Replay versuchen */
+              }
+            }
             await api.brain.updatePage(
               mut.payload as {
                 slug: string;
@@ -113,7 +135,7 @@ export function useMutationQueue() {
         if (retryCount >= MAX_RETRIES) {
           console.warn(`[file-upload-sync] dropping ${fu.id} after ${MAX_RETRIES} retries`);
           await removeFileUpload(fu.id);
-          dropped++;
+          droppedUploads++;
           continue;
         }
         try {
@@ -133,13 +155,20 @@ export function useMutationQueue() {
     } catch (err) {
       setState((s) => ({ ...s, lastError: err instanceof Error ? err.message : String(err) }));
     } finally {
+      const parts: string[] = [];
+      if (conflicts.length > 0) {
+        const shown = conflicts.slice(0, 3).join(", ");
+        parts.push(
+          `${conflicts.length} Änderung(en) verworfen — Seite wurde am Server geändert (${shown}${conflicts.length > 3 ? " …" : ""})`
+        );
+      }
+      if (droppedMutations > 0) parts.push(`${droppedMutations} Änderung(en)`);
+      if (droppedUploads > 0) parts.push(`${droppedUploads} Datei-Upload(s)`);
+      const dropMsg = parts.length > 0 ? `${parts.join("; ")} — nicht synchronisiert` : null;
       setState((s) => ({
         ...s,
         syncing: false,
-        lastError:
-          dropped > 0
-            ? `${dropped} Offline-Änderung(en) konnten nicht synchronisiert werden`
-            : s.lastError,
+        lastError: [s.lastError, dropMsg].filter(Boolean).join(" — ") || null,
       }));
     }
   }, [refreshPending]);

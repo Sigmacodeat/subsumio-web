@@ -23,6 +23,7 @@ vi.mock("./api", () => ({
       createPage: vi.fn(async () => ({ slug: "test" })),
       updatePage: vi.fn(async () => ({ slug: "test", success: true })),
       deletePage: vi.fn(async () => ({ success: true })),
+      getPage: vi.fn(async () => ({ slug: "test", updated_at: "2024-01-01" })),
     },
     upload: {
       file: vi.fn(async () => ({ slug: "test-doc", title: "test" })),
@@ -186,6 +187,85 @@ describe("useMutationQueue", () => {
     });
 
     expect(api.brain.updatePage).toHaveBeenCalledWith({ slug: "test", title: "Updated" });
+  });
+
+  test("syncPending verwirft updatePage bei Server-Konflikt (updated_at nach Enqueue)", async () => {
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "test",
+      updated_at: "2024-06-01T00:00:00Z",
+    } as never);
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValueOnce([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Offline-Edit" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.brain.updatePage).not.toHaveBeenCalled();
+    expect(removeMutation).toHaveBeenCalledWith("m1");
+    expect(result.current.lastError).toContain("test");
+  });
+
+  test("syncPending replayt updatePage wenn updated_at aus diesem Sync stammt", async () => {
+    // updated_at > syncStart (z. B. eigener frueherer Replay) → kein Konflikt
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "test",
+      updated_at: "2999-01-01T00:00:00Z",
+    } as never);
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValueOnce([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Zweiter Edit" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.brain.updatePage).toHaveBeenCalledWith({ slug: "test", title: "Zweiter Edit" });
+    expect(result.current.lastError).toBeNull();
+  });
+
+  test("syncPending replayt updatePage wenn getPage fehlschlaegt", async () => {
+    vi.mocked(api.brain.getPage).mockRejectedValueOnce(new Error("offline geworden"));
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValueOnce([
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Edit" },
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ]);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(api.brain.updatePage).toHaveBeenCalledWith({ slug: "test", title: "Edit" });
   });
 
   test("syncPending processes deletePage mutations", async () => {
