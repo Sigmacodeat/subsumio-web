@@ -591,30 +591,47 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           throw new Error(`permission_denied: ${op.name} is local-only`);
         }
         const params = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
-        if (matterScope === undefined && readOnly.length === 0) {
-          return op.handler(opCtx, params);
-        }
-        // Matter guard. A restricted scope must not reach a tool it cannot
-        // filter, even if the registry above was bypassed.
-        const scope: MatterScope = matterScope ?? "all";
-        if (Array.isArray(scope) && !MATTER_SCOPED_TOOLS.has(op.name)) {
-          throw new OperationError(
-            "permission_denied",
-            `${op.name} is not available to matter-scoped jobs`
-          );
-        }
-        if (op.name === "put_page") {
-          await assertPutPageAllowed(opCtx, scope, readOnly, params);
-          return op.handler(opCtx, params);
-        }
-        if (scope === "all") return op.handler(opCtx, params);
-        if (op.name === "get_backlinks" || op.name === "traverse_graph") {
-          await assertSlugVisible(opCtx, scope, params.slug);
-        }
-        return filterToolResult(op.name, opCtx, scope, await op.handler(opCtx, params));
+        return runMatterGuarded(op, opCtx, params, matterScope, readOnly);
       },
     };
   });
+}
+
+/**
+ * Run an operation under a matter scope: tools that cannot filter by matter
+ * are refused for a restricted scope, reads are filtered, writes into walled
+ * or read-only matters are refused. Without scope and read-only matters the
+ * op runs unchanged. Shared by subagent brain tools and MCP tokens bound to
+ * a web user.
+ */
+export async function runMatterGuarded(
+  op: Operation,
+  opCtx: OperationContext,
+  params: Record<string, unknown>,
+  matterScope: MatterScope | undefined,
+  readOnly: readonly string[] = []
+): Promise<unknown> {
+  if (matterScope === undefined && readOnly.length === 0) {
+    return op.handler(opCtx, params);
+  }
+  // A restricted scope must not reach a tool it cannot filter, even if the
+  // registry offering it was bypassed.
+  const scope: MatterScope = matterScope ?? "all";
+  if (Array.isArray(scope) && !MATTER_SCOPED_TOOLS.has(op.name)) {
+    throw new OperationError(
+      "permission_denied",
+      `${op.name} is not available to matter-scoped callers`
+    );
+  }
+  if (op.name === "put_page") {
+    await assertPutPageAllowed(opCtx, scope, readOnly, params);
+    return op.handler(opCtx, params);
+  }
+  if (scope === "all") return op.handler(opCtx, params);
+  if (op.name === "get_backlinks" || op.name === "traverse_graph") {
+    await assertSlugVisible(opCtx, scope, params.slug);
+  }
+  return filterToolResult(op.name, opCtx, scope, await op.handler(opCtx, params));
 }
 
 /**

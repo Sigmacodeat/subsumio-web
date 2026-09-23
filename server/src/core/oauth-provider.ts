@@ -29,6 +29,13 @@ import { InvalidTokenError } from "@modelcontextprotocol/sdk/server/auth/errors.
 import { hashToken, generateToken, isUndefinedColumnError } from "./utils.ts";
 import { hasScope, assertAllowedScopes, parseScopeString, InvalidScopeError } from "./scope.ts";
 import type { SqlQuery, SqlValue } from "./sql-query.ts";
+import {
+  readWebMcpBinding,
+  webMcpAuthFields,
+  type WebMcpAccess,
+  type WebMcpBinding,
+  type WebMcpRejection,
+} from "./web-mcp-token.ts";
 export type { SqlQuery, SqlValue };
 
 // ---------------------------------------------------------------------------
@@ -183,6 +190,12 @@ interface GBrainOAuthProviderOptions {
    * before mcpAuthRouter ran).
    */
   dcrDisabled?: boolean;
+  /**
+   * Resolves MCP tokens minted in the firm settings (`web-mcp:` access
+   * tokens) to the current access of the web user they belong to. Without
+   * it such tokens are refused — never granted firm-wide access.
+   */
+  resolveWebMcp?: (binding: WebMcpBinding) => Promise<WebMcpAccess | WebMcpRejection>;
 }
 
 // ---------------------------------------------------------------------------
@@ -348,8 +361,11 @@ export class GBrainOAuthProvider implements OAuthServerProvider {
   private tokenTtl: number;
   private refreshTtl: number;
 
+  private readonly resolveWebMcp?: GBrainOAuthProviderOptions["resolveWebMcp"];
+
   constructor(options: GBrainOAuthProviderOptions) {
     this.sql = options.sql;
+    this.resolveWebMcp = options.resolveWebMcp;
     this._clientsStore = new GBrainClientsStore(this.sql);
     this.dcrDisabled = options.dcrDisabled === true;
     this.tokenTtl = options.tokenTtl || 3600;
@@ -637,10 +653,51 @@ export class GBrainOAuthProvider implements OAuthServerProvider {
     }
 
     // Fallback: legacy access_tokens table (backward compat)
-    const legacyRows = await this.sql`
-      SELECT name FROM access_tokens
-      WHERE token_hash = ${tokenHash} AND revoked_at IS NULL
-    `;
+    let legacyRows: Record<string, unknown>[];
+    try {
+      legacyRows = await this.sql`
+        SELECT name, permissions FROM access_tokens
+        WHERE token_hash = ${tokenHash} AND revoked_at IS NULL
+      `;
+    } catch (err) {
+      if (!isUndefinedColumnError(err, "permissions")) throw err;
+      legacyRows = await this.sql`
+        SELECT name FROM access_tokens
+        WHERE token_hash = ${tokenHash} AND revoked_at IS NULL
+      `;
+    }
+
+    // Firm MCP tokens act for the web user who created them — resolved now,
+    // so a deactivated user or a revoked matter grant takes effect at once.
+    const webBinding =
+      legacyRows.length > 0
+        ? readWebMcpBinding(String(legacyRows[0].name), legacyRows[0].permissions)
+        : null;
+    if (webBinding) {
+      if (!this.resolveWebMcp) {
+        throw new InvalidTokenError("Firm MCP tokens are not available on this server");
+      }
+      const access = await this.resolveWebMcp(webBinding);
+      if (access === "owner_missing") {
+        throw new InvalidTokenError(
+          "This MCP token has no owner. Create a new token in the firm settings."
+        );
+      }
+      if (access === "owner_inactive") {
+        throw new InvalidTokenError("The owner of this MCP token can no longer access this firm.");
+      }
+      await this.sql`
+        UPDATE access_tokens SET last_used_at = now() WHERE token_hash = ${tokenHash}
+      `;
+      const name = String(legacyRows[0].name);
+      return {
+        token,
+        clientId: name,
+        clientName: name,
+        expiresAt: Math.floor(Date.now() / 1000) + 365 * 24 * 3600,
+        ...webMcpAuthFields(access),
+      } as AuthInfo;
+    }
 
     if (legacyRows.length > 0) {
       // Legacy tokens get full admin access (grandfather in).

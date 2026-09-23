@@ -48,15 +48,13 @@ import { publicErrorMessage } from "../core/public-error-message.ts";
 import {
   PRIVATE_CHAT_PREFIX,
   agentRunVisibility,
-  callerMatterAccess,
   jobMatterStamp,
   jobOwnerStamp,
   matterScopeAllows,
-  privateChatDenies,
-  scopeForCaller,
-  withDeniedMatters,
   type MatterAccessRow,
 } from "../core/matter-access.ts";
+import { callerMatterScope, loadSourceMatterAccess } from "../core/matter-access-db.ts";
+import { readWebMcpBinding, webMcpPermissions } from "../core/web-mcp-token.ts";
 import {
   isEngineError,
   NotFoundError as EngineNotFoundError,
@@ -1671,32 +1669,9 @@ export function invalidateMatterAccess(sourceId: string): void {
 async function sourceAccess(engine: BrainEngine, sourceId: string): Promise<SourceAccess> {
   const cached = matterAccessCache.get(sourceId);
   if (cached && Date.now() - cached.at < MATTER_ACCESS_TTL_MS) return cached;
-  const raw = await engine.executeRaw<{ slug: string; permissions: unknown }>(
-    `SELECT slug, frontmatter->'permissions' AS permissions
-       FROM pages
-      WHERE source_id = $1
-        AND type = 'legal_case'
-        AND deleted_at IS NULL
-        AND frontmatter->'permissions' IS NOT NULL`,
-    [sourceId]
-  );
-  const owners = await engine.executeRaw<{ owner: string }>(
-    `SELECT DISTINCT split_part(slug, '/', 3) AS owner
-       FROM pages
-      WHERE source_id = $1
-        AND slug LIKE $2
-        AND deleted_at IS NULL`,
-    [sourceId, `${PRIVATE_CHAT_PREFIX}%`]
-  );
   const entry: SourceAccess = {
     at: Date.now(),
-    rows: raw.map((r) => ({
-      slug: r.slug,
-      permissions: (typeof r.permissions === "string"
-        ? JSON.parse(r.permissions)
-        : r.permissions) as MatterAccessRow["permissions"],
-    })),
-    chatOwners: owners.map((o) => o.owner),
+    ...(await loadSourceMatterAccess(engine, sourceId)),
   };
   matterAccessCache.set(sourceId, entry);
   return entry;
@@ -1768,14 +1743,15 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       req.userRole = typeof payload.role === "string" ? payload.role : undefined;
       // Matter access (walls, restricted matters, grants) applies to every
       // role, admins included — see core/matter-access.ts.
-      const known = await sourceAccess(engine, sourceId);
-      const access = callerMatterAccess({ userId: payload.userId, role: payload.role }, known.rows);
       // Other people's private Copilot conversations are hidden from everyone.
-      req.matterScope = withDeniedMatters(
-        scopeForCaller(req.matterScope ?? "all", access),
-        privateChatDenies(known.chatOwners, payload.userId)
+      const known = await sourceAccess(engine, sourceId);
+      const effective = callerMatterScope(
+        req.matterScope ?? "all",
+        { userId: payload.userId, role: payload.role },
+        known
       );
-      req.matterReadOnly = access.readOnly;
+      req.matterScope = effective.scope;
+      req.matterReadOnly = effective.readOnly;
       // Admin users get unrestricted document-level ACL access
       if (payload.role === "admin") {
         req.aclGroups = "all";
@@ -10417,22 +10393,29 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const rows = await engine.executeRaw<{
         id: string;
         name: string;
+        permissions: unknown;
         created_at: string;
         last_used_at: string | null;
         revoked_at: string | null;
       }>(
-        `SELECT id, name, created_at, last_used_at, revoked_at FROM access_tokens
+        `SELECT id, name, permissions, created_at, last_used_at, revoked_at FROM access_tokens
           WHERE name LIKE $1 ORDER BY created_at DESC LIMIT 100`,
         [`web-mcp:${src}:%`]
       );
       res.json({
-        tokens: rows.map((r) => ({
-          id: r.id,
-          name: r.name.slice(`web-mcp:${src}:`.length),
-          createdAt: r.created_at,
-          lastUsedAt: r.last_used_at,
-          revoked: r.revoked_at !== null,
-        })),
+        tokens: rows.map((r) => {
+          const binding = readWebMcpBinding(r.name, r.permissions);
+          return {
+            id: r.id,
+            name: r.name.slice(`web-mcp:${src}:`.length),
+            createdAt: r.created_at,
+            lastUsedAt: r.last_used_at,
+            revoked: r.revoked_at !== null,
+            // Tokens from before the owner binding are refused at /mcp.
+            ownerMissing: !binding?.userId || binding.sourceId !== src,
+            ownedByCaller: !!req.userId && binding?.userId === req.userId,
+          };
+        }),
       });
     } catch (e) {
       apiError(res, 500, "mcp_tokens_list_failed", e instanceof Error ? e.message : String(e));
@@ -10449,6 +10432,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         apiError(res, 400, "missing_source");
         return;
       }
+      // A token acts for the person who creates it (their matter access,
+      // resolved at every use) — without a signed identity there is nobody
+      // to bind it to.
+      if (!req.userId) {
+        apiError(res, 403, "identity_required");
+        return;
+      }
       const body = (req.body ?? {}) as { name?: unknown };
       const label = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
       if (!label || !/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u.test(label)) {
@@ -10463,7 +10453,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           `INSERT INTO access_tokens (name, token_hash, permissions)
             VALUES ($1, $2, $3::jsonb)`,
           [`web-mcp:${src}:${label}`, hash],
-          [{ takes_holders: ["world"] }]
+          [webMcpPermissions(src, req.userId)]
         );
         res.status(201).json({ name: label, token });
       } catch (e) {

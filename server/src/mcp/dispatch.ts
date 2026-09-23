@@ -11,6 +11,8 @@ import { operations, OperationError } from "../core/operations.ts";
 import type { Operation, OperationContext, AuthInfo } from "../core/operations.ts";
 import { isEngineError } from "../core/engine-errors.ts";
 import { loadConfig } from "../core/config.ts";
+import type { MatterScope } from "../core/matter-access.ts";
+import { runMatterGuarded } from "../core/minions/tools/brain-allowlist.ts";
 
 export interface ToolResult {
   content: { type: "text"; text: string }[];
@@ -102,6 +104,14 @@ export interface DispatchOpts {
    * ethical wall enforcement.
    */
   userId?: string;
+  /**
+   * Matter guard for callers bound to a web user (MCP tokens minted in the
+   * firm settings): only tools that can filter by matter run, reads are
+   * filtered and writes into walled or read-only matters are refused — the
+   * same guard subagent brain tools use (brain-allowlist runMatterGuarded).
+   * `matterScope` above only threads the scope into ops; this enforces it.
+   */
+  matterGuard?: { scope: MatterScope; readOnly: string[] };
 }
 
 /**
@@ -319,7 +329,15 @@ export async function dispatchToolCall(
   const ctx = buildOperationContext(engine, safeParams, opts);
 
   try {
-    const result = await op.handler(ctx, safeParams);
+    const result = opts.matterGuard
+      ? await runMatterGuarded(
+          op,
+          ctx,
+          safeParams,
+          opts.matterGuard.scope,
+          opts.matterGuard.readOnly
+        )
+      : await op.handler(ctx, safeParams);
     const out: ToolResult = { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     // v0.31 (eD3 + eE4): best-effort _meta.brain_hot_memory injection.
     // The hook is wrapped in its own try/catch — any DB blip / cache miss /

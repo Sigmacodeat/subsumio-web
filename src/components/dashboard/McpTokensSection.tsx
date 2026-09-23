@@ -22,6 +22,8 @@ interface McpToken {
   createdAt: string;
   lastUsedAt: string | null;
   revoked: boolean;
+  /** Created before tokens were bound to their creator — refused by the engine. */
+  ownerMissing?: boolean;
 }
 
 export function McpTokensSection() {
@@ -116,6 +118,11 @@ export function McpTokensSection() {
           <code className="font-mono text-[color:var(--ds-text)]">Authorization: Bearer …</code> an
           den MCP-Endpunkt Ihrer Engine.
         </p>
+        <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+          Ein Token handelt für die Person, die es erstellt: Er sieht nur die Akten, die diese
+          Person sehen darf (Ethical Walls, Freigaben), und hört auf zu funktionieren, sobald ihr
+          Konto gesperrt wird oder die Kanzlei verlässt.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -186,7 +193,11 @@ export function McpTokensSection() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm text-[color:var(--ds-text)]">{t.name}</span>
-                  <Badge variant="success">Aktiv</Badge>
+                  {t.ownerMissing ? (
+                    <Badge variant="warning">Besitzer fehlt — gesperrt, bitte neu erstellen</Badge>
+                  ) : (
+                    <Badge variant="success">Aktiv</Badge>
+                  )}
                 </div>
                 <div className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                   erstellt {formatDate(t.createdAt)} · zuletzt genutzt{" "}

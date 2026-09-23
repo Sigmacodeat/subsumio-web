@@ -391,6 +391,14 @@ export interface AuthInfo {
    * with no matter_scope set).
    */
   matterScope?: string[] | "all";
+  /**
+   * Set for MCP tokens minted in the firm settings (`web-mcp:` access
+   * tokens): the web user the token acts for, resolved at every request
+   * (see core/web-mcp-token.ts). Such callers run under the matter guard.
+   */
+  webUserId?: string;
+  /** Matters the bound web user may read but not change. */
+  matterReadOnly?: string[];
 }
 
 export interface OperationContext {
