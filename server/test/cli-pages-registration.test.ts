@@ -26,5 +26,4 @@ describe("gbrain pages — CLI registration", () => {
     const { stderr } = await runCli(["--help"]);
     expect(stderr).not.toContain("Unknown command");
   }, 30000);
-
 });
