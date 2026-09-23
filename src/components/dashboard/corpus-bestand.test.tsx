@@ -10,6 +10,22 @@ import { CorpusBestand } from "./corpus-bestand";
 import { CorpusProtokoll } from "./corpus-protokoll";
 import type { CorpusOverview, IngestLogPage } from "@/lib/corpus-labels";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/ops/corpus",
+}));
+
+/** fetch-Mock je URL — jeder Aufruf bekommt eine frische Response. */
+function routeFetch(routes: Record<string, () => Response>) {
+  return vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+    const url = String(input);
+    for (const [prefix, make] of Object.entries(routes)) if (url.includes(prefix)) return make();
+    return new Response("{}", { status: 404 });
+  });
+}
+const json = (data: unknown) => () => new Response(JSON.stringify({ data }));
+
 function withQueryClient(ui: React.ReactElement) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } },
@@ -112,9 +128,12 @@ const text = (expected: string) => (_: string, el: Element | null) =>
 
 describe("CorpusBestand", () => {
   it("shows totals, per-source rows and the reconciliation status", async () => {
-    vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({ data: OVERVIEW })));
+    routeFetch({ "/api/admin/corpus-overview": json(OVERVIEW) });
     withQueryClient(<CorpusBestand />);
-    await waitFor(() => expect(screen.getByText("Bundesrecht")).toBeDefined());
+    // "Bundesrecht" steht auch im Quellen-Umschalter der Gesetzesliste —
+    // erst auf die Zählung warten, dann prüfen.
+    await waitFor(() => expect(screen.getByText(/stündlich neu/)).toBeDefined());
+    expect(screen.getAllByText("Bundesrecht").length).toBeGreaterThan(1);
     expect(screen.getAllByText(text("10665")).length).toBeGreaterThan(0); // statutes
     expect(screen.getByText("vollständig")).toBeDefined(); // federal norms reconciled
     expect(screen.getByText(text("82813 fehlen"))).toBeDefined(); // OGH gap
@@ -124,13 +143,13 @@ describe("CorpusBestand", () => {
 
   it("says when no snapshot exists yet", async () => {
     const empty = { ...OVERVIEW, sources: [], generatedAt: null };
-    vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({ data: empty })));
+    routeFetch({ "/api/admin/corpus-overview": json(empty) });
     withQueryClient(<CorpusBestand />);
     await waitFor(() => expect(screen.getByText(/Noch keine Zählung vorhanden/)).toBeDefined());
   });
 
   it("offers a retry when the API fails", async () => {
-    vi.spyOn(global, "fetch").mockResolvedValue(new Response("x", { status: 500 }));
+    routeFetch({ "/api/admin/corpus-overview": () => new Response("x", { status: 500 }) });
     withQueryClient(<CorpusBestand />);
     await waitFor(() =>
       expect(screen.getByText("Bestand konnte nicht geladen werden.")).toBeDefined()
