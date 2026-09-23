@@ -12,7 +12,7 @@
  * (POST /api/sms/consent), danach ist der Versand freigeschaltet.
  */
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
-import { Loader2, MessageSquare, AlertTriangle, ShieldCheck } from "lucide-react";
+import {
+  Loader2,
+  MessageSquare,
+  AlertTriangle,
+  ShieldCheck,
+  CheckCheck,
+  XCircle,
+} from "lucide-react";
 
 const SMS_MAX_BODY = 1600;
 
@@ -46,6 +53,22 @@ interface ApiErrorBody {
   details?: { reason?: string };
 }
 
+interface SmsDeliveryRow {
+  status: string;
+  errorCode: string | null;
+  timestamp: string;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  queued: "in Warteschlange",
+  sending: "wird gesendet",
+  sent: "gesendet",
+  delivered: "zugestellt",
+  undelivered: "nicht zustellbar",
+  failed: "fehlgeschlagen",
+  read: "gelesen",
+};
+
 export function SmsSendDialog({
   open,
   onOpenChange,
@@ -60,8 +83,24 @@ export function SmsSendDialog({
   const [needsConsent, setNeedsConsent] = useState(false);
   const [consentProof, setConsentProof] = useState("");
   const [consenting, setConsenting] = useState(false);
+  const [deliveries, setDeliveries] = useState<SmsDeliveryRow[] | null>(null);
 
   const remaining = SMS_MAX_BODY - message.length;
+
+  const loadDeliveries = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/sms/status?phone=${encodeURIComponent(phone)}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as { deliveries?: SmsDeliveryRow[] };
+      setDeliveries(data.deliveries ?? []);
+    } catch {
+      // Status optional — Versand funktioniert auch ohne Delivery-Anzeige.
+    }
+  }, [phone]);
+
+  useEffect(() => {
+    if (open) void loadDeliveries();
+  }, [open, loadDeliveries]);
 
   async function send() {
     if (!message.trim() || sending) return;
@@ -81,6 +120,9 @@ export function SmsSendDialog({
       }
       addToast({ type: "success", description: `SMS an ${contactName} wurde gesendet.` });
       setMessage("");
+      // Zustellstatus kommt per Twilio-Webhook verzögert — einmal
+      // verzögert nachladen, damit „delivered" direkt sichtbar ist.
+      setTimeout(() => void loadDeliveries(), 4000);
       onOpenChange(false);
     } catch {
       setError("Die SMS konnte nicht gesendet werden. Bitte erneut versuchen.");
@@ -167,6 +209,51 @@ export function SmsSendDialog({
             >
               <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
               {error}
+            </div>
+          )}
+
+          {deliveries && deliveries.length > 0 && (
+            <div className="space-y-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">
+              <p className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Letzte Zustellungen
+              </p>
+              <ul className="space-y-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                {deliveries.map((d, i) => {
+                  const failed = d.status === "failed" || d.status === "undelivered";
+                  const done = d.status === "delivered" || d.status === "read";
+                  return (
+                    <li key={i} className="flex items-center gap-1.5">
+                      {failed ? (
+                        <XCircle
+                          size={12}
+                          className="shrink-0 text-[color:var(--ds-danger-text)]"
+                          aria-hidden="true"
+                        />
+                      ) : done ? (
+                        <CheckCheck
+                          size={12}
+                          className="shrink-0 text-[color:var(--ds-success-text)]"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Loader2
+                          size={12}
+                          className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span>
+                        {STATUS_LABEL[d.status] ?? d.status}
+                        {d.errorCode ? ` (Fehler ${d.errorCode})` : ""} —{" "}
+                        {new Date(d.timestamp).toLocaleString("de-AT", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
 

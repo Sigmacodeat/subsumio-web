@@ -46,9 +46,9 @@ bereits gebaut und geht live, sobald der Vertrag steht.
 
 ## Verifikation
 
-Generiert von `bun run status` am 2026-09-23 (Commit `82b4e648a6`).
+Generiert von `bun run status` am 2026-09-23 (Commit `87c751796c`).
 
-- **API-Routen:** 513 (gezählt aus `src/app/api/**/route.ts`)
+- **API-Routen:** 515 (gezählt aus `src/app/api/**/route.ts`)
 - **Verify:** `bun run verify` — TypeScript, Route-Actions, Grounding-
   Invariant, Design-Tokens, Canonical-Links, Nested-Interactive
 - **Tests:** `bun run test:unit` (vitest, inkl. DAV-Bridge-Smoke-Test)
