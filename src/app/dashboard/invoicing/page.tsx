@@ -331,8 +331,8 @@ export default function InvoicingPage() {
 <title>Rechnung ${inv.number}</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 40px; color: hsl(222, 8%, 20%); font-size: 14px; }
-  .header { border-bottom: 2px solid hsl(222, 60%, 52%); padding-bottom: 20px; margin-bottom: 30px; }
-  .header h1 { margin: 0; font-size: 28px; color: hsl(222, 60%, 52%); }
+  .header { border-bottom: 2px solid hsl(213, 46%, 42%); padding-bottom: 20px; margin-bottom: 30px; }
+  .header h1 { margin: 0; font-size: 28px; color: hsl(213, 46%, 42%); }
   .header p { margin: 4px 0; color: hsl(222, 8%, 40%); }
   .meta { display: flex; justify-content: space-between; margin-bottom: 30px; }
   .meta-box { background: hsl(222, 8%, 97%); padding: 15px; border-radius: 8px; }
@@ -343,7 +343,7 @@ export default function InvoicingPage() {
   .right { text-align: right; }
   .totals { margin-top: 20px; border-top: 2px solid hsl(222, 8%, 90%); padding-top: 20px; }
   .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-  .total-row.grand { font-size: 18px; font-weight: bold; color: hsl(222, 60%, 52%); border-top: 2px solid hsl(222, 60%, 52%); margin-top: 10px; padding-top: 15px; }
+  .total-row.grand { font-size: 18px; font-weight: bold; color: hsl(213, 46%, 42%); border-top: 2px solid hsl(213, 46%, 42%); margin-top: 10px; padding-top: 15px; }
   .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid hsl(222, 8%, 90%); font-size: 12px; color: hsl(222, 8%, 40%); }
   .muted { color: hsl(222, 8%, 40%); }
   @media print { body { margin: 20px; } }

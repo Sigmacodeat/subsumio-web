@@ -71,22 +71,22 @@
 @property --brand-primary {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(222, 60%, 52%);
+  initial-value: hsl(213, 46%, 42%);
 }
 @property --brand-primary-hover {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(222, 60%, 64%);
+  initial-value: hsl(213, 48%, 56%);
 }
 @property --brand-secondary {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(222, 60%, 64%);
+  initial-value: hsl(213, 48%, 56%);
 }
 @property --brand-text {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(222, 60%, 52%);
+  initial-value: hsl(213, 46%, 42%);
 }
 @property --accent-premium {
   syntax: "<color>";
@@ -121,23 +121,22 @@
   --shadow-xl: var(--ds-shadow-3);
   --shadow-2xl: var(--ds-shadow-3);
 
-  /* ── Brand scale (Legal) — perceptually tuned, HSL output from OKLCH refs ──
-     Reference OKLCH: hue 260°, chroma 0.13-0.15. Light primary ~ oklch(0.55 0.15 260).
-     Action tones (400–900) are deliberately less saturated than the tints:
-     a law-firm navy, not a neon SaaS blue. White on brand-500 ≈ 6.2:1,
-     on brand-600 ≈ 8.0:1 (AAA), on brand-700 ≈ 10.4:1. */
-  --brand-50: hsl(222, 80%, 97%); /* Sapphire — #f1f5fd */
-  --brand-100: hsl(222, 78%, 94%); /* #e4ebfc */
-  --brand-200: hsl(222, 76%, 88%); /* #c9d7f8 */
-  --brand-300: hsl(222, 74%, 78%); /* #9db6f0 */
-  --brand-350: hsl(222, 68%, 70%);
-  --brand-400: hsl(222, 64%, 62%); /* #6085dc */
-  --brand-500: hsl(222, 60%, 47%); /* #305bc0 */
-  --brand-600: hsl(222, 58%, 39%); /* #2a4c9d — Hauptaktion hell */
-  --brand-700: hsl(222, 56%, 31%); /* #233d7b */
-  --brand-800: hsl(222, 52%, 24%); /* #1d305d — Navy */
-  --brand-900: hsl(222, 48%, 16%); /* #15213c */
-  --brand-950: hsl(222, 50%, 11%);
+  /* ── Brand scale (Legal) — Steel Blue, HSL —─────────────────────────────
+     Hue 213° (azure-steel, not violet-indigo), chroma deliberately muted in
+     the action tones (400–900): a law-firm steel blue, not a neon SaaS blue.
+     White on brand-500 ≈ 5.8:1, on brand-600 ≈ 7.6:1, on brand-700 ≈ 10:1. */
+  --brand-50: hsl(213, 72%, 97%); /* Steel — #f2f6fc */
+  --brand-100: hsl(213, 68%, 93%); /* #e2ebf8 */
+  --brand-200: hsl(213, 62%, 85%); /* #c6d8f0 */
+  --brand-300: hsl(213, 55%, 72%); /* #9bbde4 */
+  --brand-350: hsl(213, 51%, 65%);
+  --brand-400: hsl(213, 48%, 56%); /* #5b92cf */
+  --brand-500: hsl(213, 46%, 42%); /* #3a669c */
+  --brand-600: hsl(213, 44%, 35%); /* #2e5380 — Hauptaktion hell */
+  --brand-700: hsl(213, 42%, 28%); /* #29466a */
+  --brand-800: hsl(214, 38%, 21%); /* #21405e — Navy */
+  --brand-900: hsl(214, 34%, 14%); /* #172b40 */
+  --brand-950: hsl(215, 36%, 9%);
 
   /* Signet-Gold — Komplementär (Hue 42), nur Marke/Premium/Hervorhebung, kein Text < 700 */
   --accent-50: hsl(42, 70%, 96%);
@@ -937,8 +936,8 @@
   --mk-text-muted: hsl(220, 8%, 78%);
   --mk-text-subtle: hsl(220, 8%, 74%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.025) inset;
-  --brand-primary: hsl(222, 45%, 48%);
-  --brand-primary-hover: hsl(222, 45%, 55%);
+  --brand-primary: hsl(213, 45%, 48%);
+  --brand-primary-hover: hsl(213, 45%, 55%);
   --brand-secondary: var(--brand-300);
   --brand-tertiary: var(--brand-300);
   --brand-glow: color-mix(in srgb, var(--brand-primary) 12%, transparent);
@@ -1197,7 +1196,7 @@
   --brand-primary-hover: var(--brand-300);
   /* Fills stay deep enough for white text (≥ 4.5:1); links use brand-400. */
   --brand-solid: var(--brand-500);
-  --brand-solid-hover: hsl(222, 58%, 52%);
+  --brand-solid-hover: hsl(213, 48%, 50%);
   --brand-secondary: var(--brand-300);
   --brand-tertiary: var(--brand-200);
   --brand-glow: color-mix(in srgb, var(--brand-primary) 18%, transparent);
@@ -2427,16 +2426,16 @@ body {
 
 /* Selection — tone-aware: dark text on light, light text on dark */
 ::selection {
-  background: hsla(222, 60%, 52%, 0.18);
+  background: hsla(213, 46%, 42%, 0.18);
   color: inherit;
 }
 [data-tone="light"] ::selection {
-  background: hsla(222, 60%, 52%, 0.15);
+  background: hsla(213, 46%, 42%, 0.15);
   color: var(--neutral-900);
 }
 [data-tone="dark"] ::selection,
 [data-tone="slate"] ::selection {
-  background: hsla(222, 60%, 52%, 0.15);
+  background: hsla(213, 46%, 42%, 0.15);
   color: inherit;
 }
 

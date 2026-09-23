@@ -46,14 +46,14 @@ export function SubsumioMark({
       viewBox="0 0 72 72"
       role="img"
       aria-label="Subsumio"
-      className={`shrink-0 ${tile ? "" : "text-[color:var(--brand-800,#1a3470)]"} ${className}`}
+      className={`shrink-0 ${tile ? "" : "text-[color:var(--brand-800,#21405e)]"} ${className}`}
       style={
         tile
           ? {
               // Tight contact shadow + soft ambient one: the tile sits on the
               // page instead of floating in a haze.
               filter:
-                "drop-shadow(0 1px 1px color-mix(in srgb, var(--brand-800, #1a3470) 32%, transparent)) drop-shadow(0 3px 7px color-mix(in srgb, var(--brand-800, #1a3470) 16%, transparent))",
+                "drop-shadow(0 1px 1px color-mix(in srgb, var(--brand-800, #21405e) 32%, transparent)) drop-shadow(0 3px 7px color-mix(in srgb, var(--brand-800, #21405e) 16%, transparent))",
             }
           : undefined
       }
@@ -62,8 +62,8 @@ export function SubsumioMark({
         <>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="var(--brand-500, #2a60df)" />
-              <stop offset="1" stopColor="var(--brand-800, #1a3470)" />
+              <stop offset="0" stopColor="var(--brand-500, #3a669c)" />
+              <stop offset="1" stopColor="var(--brand-800, #21405e)" />
             </linearGradient>
             <linearGradient id={sheenId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="#ffffff" stopOpacity="0.16" />
@@ -122,7 +122,7 @@ export function SubsumioLogo({
     <span className={`group inline-flex items-center gap-2.5 ${className}`}>
       <SubsumioMark
         size={size}
-        className="transition-[filter] duration-[var(--ds-duration-normal)] group-hover:[filter:drop-shadow(0_1px_1px_color-mix(in_srgb,var(--brand-800,#1a3470)_32%,transparent))_drop-shadow(0_4px_10px_color-mix(in_srgb,var(--brand-primary)_28%,transparent))]"
+        className="transition-[filter] duration-[var(--ds-duration-normal)] group-hover:[filter:drop-shadow(0_1px_1px_color-mix(in_srgb,var(--brand-800,#21405e)_32%,transparent))_drop-shadow(0_4px_10px_color-mix(in_srgb,var(--brand-primary)_28%,transparent))]"
       />
       <motion.span
         className="flex flex-col leading-none"
