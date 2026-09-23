@@ -1,7 +1,7 @@
 # RIS OGD API v2.6 — Complete Reference
 
 Base URL: `https://data.bka.gv.at/ris/api/v2.6`
-User-Agent: `subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)`
+User-Agent: `subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)`
 
 ## 6 Endpoints
 

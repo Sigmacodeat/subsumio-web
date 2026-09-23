@@ -44,7 +44,7 @@ const DRY = args.includes("--dry-run");
 const LIMIT = parseInt(arg("--limit", "0")!, 10);
 const NO_LOCK = args.includes("--no-lock");
 
-const UA = "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)";
+const UA = "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)";
 const API = "https://data.bka.gv.at/ris/api/v2.6";
 const CORPUS_ROOT =
   process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");

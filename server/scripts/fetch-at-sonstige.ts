@@ -18,11 +18,8 @@ import { risMassPause } from "./ris-pace";
 import { atomicWrite } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-// hello@subsum.io has no MX record (found 2026-09-21) — RIS-IT contact is
-// the working address.
-const UA = {
-  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: mesic.sigmacode@gmail.com)",
-};
+const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
+
 const MAX_RETRIES = 3;
 
 const args = process.argv.slice(2);
