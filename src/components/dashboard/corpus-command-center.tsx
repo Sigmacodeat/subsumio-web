@@ -42,9 +42,14 @@ import { ShowMoreButton, useShowMore } from "./corpus-show-more";
 
 const API_BASE = "/api/admin/corpus-command-center";
 
-interface CorpusSyncRow {
+export interface CorpusSyncRow {
   corpus: string;
   sourceId: string;
+  /** Anzeigename (SOURCE_LABELS) — Operatoren lesen „Bundesrecht",
+   *  nicht „at-normen". */
+  label: string;
+  /** Historisches Archiv: DB-Bestand ist bewusst über dem RIS-Soll. */
+  historical: boolean;
   diskFiles: number;
   dbPages: number;
   /** Distincte Dokumente in der DB (COUNT DISTINCT import_filename).
@@ -57,7 +62,7 @@ interface CorpusSyncRow {
   coveragePct: number;
   notImported: number;
   orphanDb: number;
-  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db";
+  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db" | "historical";
   fullyComplete: boolean;
   risTotal: number | null;
   missingFromDb: number;
@@ -128,7 +133,7 @@ interface RisDeltaRow {
   running: boolean;
 }
 
-interface CommandCenterData {
+export interface CommandCenterData {
   dbAvailable: boolean;
   sync: {
     rows: CorpusSyncRow[];
@@ -191,24 +196,97 @@ const pct = (n: number) => `${n.toFixed(1)}%`;
 
 const SYNC_STATUS_CONFIG: Record<
   CorpusSyncRow["syncStatus"],
-  { variant: "success" | "warning" | "danger" | "default"; label: string }
+  { variant: "success" | "warning" | "danger" | "default" | "info"; label: string }
 > = {
   synced: { variant: "success", label: "Synchron" },
   import_pending: { variant: "warning", label: "Lücke" },
   orphan_in_db: { variant: "danger", label: "DB-Orphane" },
   no_db: { variant: "default", label: "Keine DB" },
+  historical: { variant: "info", label: "Historisch" },
 };
+
+/**
+ * Geteilter Fetch für /api/admin/corpus-command-center — die Ops-Seite
+ * verteilt die Sections auf drei Tabs; derselbe Query-Key bedeutet:
+ * ein Fetch, alle Tabs aus dem Cache. Adaptives Polling: 5s solange
+ * Pipeline-Stages oder RIS-Fetcher laufen, sonst 30s.
+ */
+export function useCorpusCommandCenterData() {
+  return useQuery<CommandCenterData>({
+    queryKey: ["corpus-command-center"],
+    queryFn: async () => {
+      // no-store: die Route setzt Cache-Control max-age=30 — ohne das liefert
+      // der Browser beim 5s-Polling bis zu 30s alte Daten.
+      const res = await fetch(API_BASE, { cache: "no-store" });
+      if (!res.ok) throw new Error("Command Center Daten nicht ladbar");
+      return res.json().then((d) => d.data);
+    },
+    refetchInterval: (query) => {
+      const d = query.state.data;
+      const running =
+        (d?.pipeline?.states?.some((s) => s.pid !== null) ?? false) ||
+        (d?.pipeline?.risFetchers?.some((f) => !f.stale) ?? false);
+      return running ? 5_000 : 30_000;
+    },
+  });
+}
+
+/** Einheitliche Lade-/Fehler-Hülle für Sections, die Command-Center-Daten
+ *  außerhalb des klassischen CorpusCommandCenter-Layouts rendern. */
+export function CommandCenterGate({
+  query,
+  children,
+}: {
+  query: ReturnType<typeof useCorpusCommandCenterData>;
+  children: (data: CommandCenterData) => React.ReactNode;
+}) {
+  if (query.isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+  if (query.isError || !query.data) {
+    return (
+      <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
+            <XCircle className="h-5 w-5" />
+            <span className="text-sm font-medium">Bestandsdaten nicht ladbar</span>
+          </div>
+          <p className="mt-1 ml-7 text-xs text-[color:var(--ds-danger-text)]">
+            {(query.error as Error)?.message}
+          </p>
+          <Button size="sm" variant="outline" className="mt-3 ml-7" onClick={() => query.refetch()}>
+            <RefreshCw className="mr-1 h-3 w-3" /> Erneut versuchen
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+  return <>{children(query.data)}</>;
+}
 
 // ── Section 1: Sync-Status ───────────────────────────────────────────────
 
-function SyncStatusSection({
+export function SyncStatusSection({
   rows,
   totals,
+  dbAvailable = true,
   onSelectCorpus,
   onRefresh,
 }: {
   rows: CorpusSyncRow[];
   totals: CommandCenterData["sync"]["totals"];
+  /** false = DB nicht erreichbar — die DB-Spalte zeigt dann 0,
+   *  was sonst fälschlich „Nicht importiert" suggerieren würde. */
+  dbAvailable?: boolean;
   onSelectCorpus?: (sourceId: string) => void;
   onRefresh?: () => void;
 }) {
@@ -217,8 +295,9 @@ function SyncStatusSection({
   const router = useRouter();
 
   // 3-state filter: "incomplete" (default, war hideComplete=true), "all", "complete"
-  const filterMode =
-    (searchParams.get("filter") as "all" | "incomplete" | "complete" | null) ?? "incomplete";
+  const rawFilter = searchParams.get("filter");
+  const filterMode: "all" | "incomplete" | "complete" =
+    rawFilter === "all" || rawFilter === "complete" ? rawFilter : "incomplete";
   const setFilterMode = (mode: "all" | "incomplete" | "complete") => {
     const params = new URLSearchParams(searchParams.toString());
     if (mode === "incomplete")
@@ -249,16 +328,21 @@ function SyncStatusSection({
     },
   });
 
-  const completeCount = rows.filter((r) => r.fullyComplete).length;
-  const incompleteCount = rows.length - completeCount;
+  // Historische Archive (law-at) sind weder vollständig noch lückenhaft —
+  // sie liegen bewusst über dem RIS-Soll und zählen in keinen Bucket.
+  const countable = rows.filter((r) => !r.historical);
+  const completeCount = countable.filter((r) => r.fullyComplete).length;
+  const incompleteCount = countable.length - completeCount;
 
   const displayRows = useMemo(() => {
     const filtered = rows.filter((r) => {
+      if (r.historical) return filterMode === "all";
       if (filterMode === "complete") return r.fullyComplete;
       if (filterMode === "incomplete") return !r.fullyComplete;
       return true; // "all"
     });
     return filtered.sort((a, b) => {
+      if (a.historical !== b.historical) return a.historical ? 1 : -1;
       if (a.fullyComplete === b.fullyComplete) return 0;
       return a.fullyComplete ? 1 : -1;
     });
@@ -269,6 +353,15 @@ function SyncStatusSection({
 
   return (
     <div className="space-y-4">
+      {!dbAvailable && (
+        <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
+          <CardContent className="flex items-center gap-2 p-3 text-sm text-[color:var(--ds-warning-text)]">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            Datenbank nicht erreichbar — DB- und Embedding-Spalten zeigen 0. Der RIS↔Disk-Abgleich
+            ist trotzdem gültig.
+          </CardContent>
+        </Card>
+      )}
       {/* Summary Cards — neutral numbers, icon-only color accent */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         <Card>
@@ -405,50 +498,63 @@ function SyncStatusSection({
           </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-1.5">
-            {/* Header */}
-            <div className="grid grid-cols-12 gap-2 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
-              <div className="col-span-3">Korpus</div>
+          <div className="min-w-0 space-y-1.5 overflow-x-auto">
+            {/* Header — die klare Linie: RIS-Soll → lokale Disk → Datenbank. */}
+            <div className="grid min-w-[760px] grid-cols-12 gap-2 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
+              <div className="col-span-3">Quelle</div>
               <div
                 className="col-span-1 text-right"
-                title="RIS-Dokumente, die noch nicht in der DB sind (— = Volltext nicht verfügbar)"
+                title="Soll: Dokumente, die das RIS laut In-force-Index hat (— = kein Upstream-Soll)"
               >
-                RIS
+                RIS-Soll
               </div>
               <div
                 className="col-span-1 text-right"
-                title="Dateien auf Disk, die noch nicht in der DB sind"
+                title="Ist: Dateien auf dem Server (raw + normalisiert)"
               >
                 Disk
               </div>
               <div
                 className="col-span-1 text-right"
-                title="Dokumente in der DB (DISTINCT import_filename). Bei Gesetzen 1 Datei → viele §-Pages; hier wird die Dokument-Anzahl gezeigt, die mit RIS Total vergleichbar ist."
+                title="Ist: Dokumente in der DB (DISTINCT import_filename). Bei Gesetzen 1 Datei → viele §-Pages; die Dokument-Anzahl ist mit dem RIS-Soll vergleichbar."
               >
                 DB
               </div>
-              <div className="col-span-2 text-right" title="Anteil der DB-Chunks mit Embeddings">
-                Embedded
+              <div
+                className="col-span-3"
+                title="Wo die Kette bricht: RIS→Disk = noch nicht geladen, Disk→DB = Import ausstehend, DB>Soll = historische/ersetzte Fassungen"
+              >
+                Abgleich
+              </div>
+              <div className="col-span-1 text-right" title="Anteil der DB-Chunks mit Embeddings">
+                Embed.
               </div>
               <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-2 text-center">Aktion</div>
+              <div className="col-span-1 text-center">Aktion</div>
             </div>
             {displayRows.map((r) => {
-              const config = r.fullyComplete
-                ? { variant: "success" as const, label: "Vollständig" }
-                : {
-                    variant:
-                      SYNC_STATUS_CONFIG[r.syncStatus].variant === "success"
-                        ? "warning"
-                        : SYNC_STATUS_CONFIG[r.syncStatus].variant,
-                    label: "Lücke",
-                  };
+              const config = !dbAvailable
+                ? { variant: "warning" as const, label: "DB offline" }
+                : r.historical
+                  ? { variant: "info" as const, label: "Historisch" }
+                  : r.fullyComplete
+                    ? { variant: "success" as const, label: "Vollständig" }
+                    : {
+                        variant:
+                          SYNC_STATUS_CONFIG[r.syncStatus].variant === "success"
+                            ? ("warning" as const)
+                            : SYNC_STATUS_CONFIG[r.syncStatus].variant,
+                        label:
+                          r.syncStatus === "no_db"
+                            ? "Nicht importiert"
+                            : SYNC_STATUS_CONFIG[r.syncStatus].label,
+                      };
               return (
                 <div
                   key={r.corpus}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${r.corpus} im Chunk-Inspector öffnen`}
+                  aria-label={`${r.label} im Chunk-Inspector öffnen`}
                   onClick={() => onSelectCorpus?.(r.sourceId)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -457,20 +563,23 @@ function SyncStatusSection({
                     }
                   }}
                   className={cn(
-                    "grid cursor-pointer grid-cols-12 items-center gap-2 rounded px-1 py-1.5 text-xs focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
-                    r.fullyComplete
-                      ? "text-[color:var(--ds-text-subtle)] opacity-70 hover:bg-[color:var(--ds-surface-2)]"
+                    "grid min-w-[760px] cursor-pointer grid-cols-12 items-center gap-2 rounded px-1 py-1.5 text-xs focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+                    r.fullyComplete || r.historical
+                      ? "text-[color:var(--ds-text-subtle)] opacity-80 hover:bg-[color:var(--ds-surface-2)]"
                       : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
                   )}
                 >
                   <div
                     className={cn(
-                      "col-span-3 flex items-center gap-1.5 truncate font-mono",
+                      "col-span-3 flex items-center gap-1.5 truncate",
                       r.fullyComplete && "text-[color:var(--ds-success-text)]"
                     )}
-                    title={r.corpus}
+                    title={`${r.label} (${r.corpus})`}
                   >
-                    <span className="truncate">{r.corpus}</span>
+                    <span className="truncate">{r.label}</span>
+                    <span className="hidden shrink-0 font-mono text-[10px] text-[color:var(--ds-text-subtle)] md:inline">
+                      {r.corpus}
+                    </span>
                     {r.newOnRis > 0 && (
                       <span
                         className="inline-flex shrink-0 items-center justify-center rounded-full bg-[color:var(--ds-info-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--ds-info-text)]"
@@ -485,39 +594,23 @@ function SyncStatusSection({
                     className="col-span-1 text-right tabular-nums"
                     title={
                       r.fetchFruitless
-                        ? `RIS hat ${fmt(r.risTotal ?? 0)} Dokumente, aber deren Volltexte sind nicht verfügbar`
+                        ? `RIS listet ${fmt(r.risTotal ?? 0)} Dokumente, deren Volltexte sind nicht abrufbar`
                         : r.risTotal
-                          ? `${fmt(r.missingFromDb)} RIS-Dokumente fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbDocuments)})`
-                          : "RIS-Source nicht aktiv"
+                          ? `RIS-Soll: ${fmt(r.risTotal)} Dokumente`
+                          : "Kein Upstream-Soll für diese Quelle"
                     }
                   >
-                    {r.risTotal && !r.fetchFruitless ? (
-                      <span
-                        className={
-                          r.missingFromDb === 0
-                            ? "text-[color:var(--ds-success-text)]"
-                            : "text-[color:var(--ds-warning-text)]"
-                        }
-                      >
-                        {r.missingFromDb === 0 ? "✓" : fmt(r.missingFromDb)}
-                      </span>
+                    {r.risTotal ? (
+                      fmt(r.risTotal)
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
                   </div>
                   <div
                     className="col-span-1 text-right tabular-nums"
-                    title={`${fmt(r.diskPending)} Dateien auf Disk, noch nicht in DB (Disk ${fmt(r.diskFiles)} − DB ${fmt(r.dbDocuments)})`}
+                    title={`${fmt(r.diskFiles)} Dateien auf dem Server`}
                   >
-                    <span
-                      className={
-                        r.diskPending === 0
-                          ? "text-[color:var(--ds-success-text)]"
-                          : "text-[color:var(--ds-warning-text)]"
-                      }
-                    >
-                      {r.diskPending === 0 ? "✓" : fmt(r.diskPending)}
-                    </span>
+                    {fmt(r.diskFiles)}
                   </div>
                   <div
                     className="col-span-1 text-right tabular-nums"
@@ -525,7 +618,65 @@ function SyncStatusSection({
                   >
                     {fmt(r.dbDocuments)}
                   </div>
-                  <div className="col-span-2 text-right tabular-nums">
+                  <div className="col-span-3 text-xs">
+                    {r.historical ? (
+                      <span
+                        className="text-[color:var(--ds-info-text)]"
+                        title="Alte, aufgehobene Gesetzesfassungen — bewusst über dem RIS-Soll aufbewahrt"
+                      >
+                        Archiv — über RIS-Soll hinaus gewollt
+                      </span>
+                    ) : r.fetchFruitless ? (
+                      <span
+                        className="text-[color:var(--ds-text-subtle)]"
+                        title="Das RIS listet diese Dokumente, liefert aber keine Volltexte — die Lücke ist nicht schließbar"
+                      >
+                        RIS-Volltexte nicht abrufbar
+                      </span>
+                    ) : (
+                      <span className="flex flex-wrap gap-x-2 gap-y-0.5">
+                        {r.missingFromDisk > 0 && (
+                          <span
+                            className="text-[color:var(--ds-danger-text)]"
+                            title="Im RIS-Soll, aber noch nicht auf dem Server — Fetch nötig"
+                          >
+                            −{fmt(r.missingFromDisk)} RIS→Disk
+                          </span>
+                        )}
+                        {r.diskPending > 0 && (
+                          <span
+                            className="text-[color:var(--ds-warning-text)]"
+                            title="Auf dem Server, aber noch nicht in der Datenbank — Import nötig"
+                          >
+                            −{fmt(r.diskPending)} Disk→DB
+                          </span>
+                        )}
+                        {r.orphanDb > 0 && (
+                          <span
+                            className="text-[color:var(--ds-info-text)]"
+                            title="Mehr in der DB als das RIS-Soll — ersetzte/historische Fassungen oder Alt-Importe"
+                          >
+                            +{fmt(r.orphanDb)} über Soll
+                          </span>
+                        )}
+                        {r.missingFromDisk === 0 &&
+                          r.diskPending === 0 &&
+                          r.orphanDb === 0 &&
+                          r.dbDocuments === 0 &&
+                          r.diskFiles === 0 &&
+                          r.risTotal === null && (
+                            <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                          )}
+                        {r.missingFromDisk === 0 &&
+                          r.diskPending === 0 &&
+                          r.orphanDb === 0 &&
+                          (r.dbDocuments > 0 || r.diskFiles > 0 || r.risTotal !== null) && (
+                            <span className="text-[color:var(--ds-success-text)]">✓ gleich</span>
+                          )}
+                      </span>
+                    )}
+                  </div>
+                  <div className="col-span-1 text-right tabular-nums">
                     <span
                       className={
                         r.fullyComplete
@@ -558,7 +709,7 @@ function SyncStatusSection({
                       </div>
                     )}
                   </div>
-                  <div className="col-span-2 flex justify-center">
+                  <div className="col-span-1 flex justify-center">
                     {r.canUpdate ? (
                       <Button
                         size="sm"
@@ -573,7 +724,7 @@ function SyncStatusSection({
                             });
                         }}
                         className="h-6 px-1.5 text-[10px]"
-                        title={`Fehlende ${fmt(r.missingFromDb)} für ${r.corpus} nachholen`}
+                        title={`Fehlende ${fmt(r.missingFromDb)} für ${r.label} nachholen`}
                       >
                         {fetchMissing.isPending ? (
                           <RefreshCw className="h-3 w-3 animate-spin" />
@@ -624,7 +775,7 @@ function SyncStatusSection({
 
 // ── Section 2: Work Queue ────────────────────────────────────────────────
 
-function WorkQueueSection({
+export function WorkQueueSection({
   items,
   total,
   defective,
@@ -825,7 +976,7 @@ function fmtEta(min: number): string {
   return `≈ ${Math.max(1, Math.round(min))}min`;
 }
 
-function PipelineSection({
+export function PipelineSection({
   paused,
   states,
   live,
@@ -883,7 +1034,7 @@ function PipelineSection({
     "literatur-ch": "law-ch-literatur",
     "eu-directives": "law-eu-directives",
     "eu-regulations": "law-eu",
-    "jud-ogh": "law-at-judikatur-ogh",
+    "jud-ogh": "law-at-judikatur",
     "jud-vfgh": "law-at-judikatur-vfgh",
     "jud-vwgh": "law-at-judikatur-vwgh",
     "jud-bvwg": "law-at-judikatur-bvwg",
@@ -1248,7 +1399,7 @@ function PipelineSection({
 
 // ── Section 4: Trust Status ──────────────────────────────────────────────
 
-function TrustSection({
+export function TrustSection({
   rows,
   totals,
 }: {
@@ -1420,7 +1571,7 @@ function TrustSection({
 
 // ── Section 5: RIS Delta-Watcher ─────────────────────────────────────────
 
-function RisDeltaSection({
+export function RisDeltaSection({
   rows,
   triggerPending,
   onActionComplete,
@@ -1693,25 +1844,7 @@ export function CorpusCommandCenter({
 }: { onSelectCorpus?: (sourceId: string) => void } = {}) {
   const [section, setSection] = useState<"sync" | "work" | "pipeline" | "trust" | "delta">("sync");
 
-  const { data, isLoading, isError, error, refetch } = useQuery<CommandCenterData>({
-    queryKey: ["corpus-command-center"],
-    queryFn: async () => {
-      // no-store: die Route setzt Cache-Control max-age=30 — ohne das liefert
-      // der Browser beim 5s-Polling bis zu 30s alte Daten.
-      const res = await fetch(API_BASE, { cache: "no-store" });
-      if (!res.ok) throw new Error("Command Center Daten nicht ladbar");
-      return res.json().then((d) => d.data);
-    },
-    // Adaptives Polling: 5s solange Pipeline-Stages laufen (Echtzeit-Fortschritt),
-    // 30s im Leerlauf. Funktionsform = TanStack-Best-Practice für Job-Polling.
-    refetchInterval: (query) => {
-      const d = query.state.data;
-      const running =
-        (d?.pipeline?.states?.some((s) => s.pid !== null) ?? false) ||
-        (d?.pipeline?.risFetchers?.some((f) => !f.stale) ?? false);
-      return running ? 5_000 : 30_000;
-    },
-  });
+  const { data, isLoading, isError, error, refetch } = useCorpusCommandCenterData();
 
   if (isLoading) {
     return (
@@ -1818,6 +1951,7 @@ export function CorpusCommandCenter({
           <SyncStatusSection
             rows={data.sync.rows}
             totals={data.sync.totals}
+            dbAvailable={data.dbAvailable}
             onSelectCorpus={onSelectCorpus}
             onRefresh={refetch}
           />

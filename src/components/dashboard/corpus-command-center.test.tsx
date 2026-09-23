@@ -29,10 +29,13 @@ const MOCK_DATA = {
   sync: {
     rows: [
       {
-        corpus: "law-at",
-        sourceId: "law-at",
+        corpus: "at-normen",
+        sourceId: "law-at-normen",
+        label: "Bundesrecht (Normen)",
+        historical: false,
         diskFiles: 100,
         dbPages: 95,
+        dbDocuments: 90,
         dbChunks: 200,
         embeddedChunks: 190,
         staleChunks: 5,
@@ -44,15 +47,21 @@ const MOCK_DATA = {
         risTotal: 110,
         missingFromDb: 15,
         missingFromDisk: 10,
+        diskPending: 10,
         newOnRis: 10,
         canUpdate: true,
         pipelineKey: "statutes-at",
+        fetchFruitless: false,
+        diskProgress: 90,
       },
       {
-        corpus: "law-at-judikatur",
+        corpus: "at-judikatur-ogh",
         sourceId: "law-at-judikatur",
+        label: "OGH-Judikatur",
+        historical: false,
         diskFiles: 500,
         dbPages: 500,
+        dbDocuments: 500,
         dbChunks: 1000,
         embeddedChunks: 1000,
         staleChunks: 0,
@@ -64,14 +73,19 @@ const MOCK_DATA = {
         risTotal: 500,
         missingFromDb: 0,
         missingFromDisk: 0,
+        diskPending: 0,
         newOnRis: 0,
         canUpdate: false,
         pipelineKey: "jud-ogh",
+        fetchFruitless: false,
+        diskProgress: 100,
       },
     ],
     totals: {
       totalDisk: 600,
       totalDbPages: 595,
+      totalDbChunks: 1200,
+      totalDbDocuments: 590,
       totalEmbedded: 1190,
       totalNotImported: 5,
       totalStale: 5,
@@ -177,19 +191,29 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
   it("rendert Sync-Status Section mit Korpus-Zeilen", async () => {
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
   });
 
-  it("zeigt Fehlt-Spalte mit Differenz (RIS - DB)", async () => {
+  it("zeigt die RIS→Disk→DB-Kette mit Soll/Ist-Spalten", async () => {
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
-    // law-at hat 15 fehlende in DB — fmt() gibt "15" zurück
-    // "Fehlt" erscheint mehrfach (Summary Card + Tabellen-Header) → getAllByText
+    expect(screen.getByText("RIS-Soll")).toBeInTheDocument();
+    expect(screen.getByText("Disk")).toBeInTheDocument();
+    // Gap-Badges: 10 fehlen RIS→Disk, 10 fehlen Disk→DB
+    expect(screen.getByText(/RIS→Disk/)).toBeInTheDocument();
+    expect(screen.getByText(/Disk→DB/)).toBeInTheDocument();
+  });
+
+  it("zeigt Fehlt-Summary mit Gesamtzahl fehlender DB-Dokumente", async () => {
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
+    });
+    // "Fehlt" erscheint in der Summary Card
     expect(screen.getAllByText(/Fehlt/i).length).toBeGreaterThan(0);
-    // Die Zahl 15 sollte in der Fehlt-Spalte gerendert werden
     const cells = screen.getAllByText(/15/);
     expect(cells.length).toBeGreaterThan(0);
   });
@@ -205,16 +229,15 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
   it("zeigt Aktualisieren-Button nur für Corpora mit Lücken (canUpdate=true)", async () => {
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
     // law-at hat canUpdate=true → Button sichtbar
     const updateButtons = screen.getAllByRole("button", { name: /Aktualisieren/i });
     expect(updateButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("zeigt ✓ für Corpora mit missingFromDb=0 (nicht-fullyComplete)", async () => {
-    // law-at ist nicht fullyComplete aber hat missingFromDb=15 → zeigt "15"
-    // Wir brauchen eine nicht-fullyComplete Row mit missingFromDb=0
+  it("zeigt '✓ gleich' wenn die Kette RIS→Disk→DB ohne Bruch ist", async () => {
+    // Row ohne jede Lücke: nichts fehlt RIS→Disk, nichts Disk→DB, nichts über Soll
     const data = {
       ...MOCK_DATA,
       sync: {
@@ -223,6 +246,10 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
           {
             ...MOCK_DATA.sync.rows[0],
             missingFromDb: 0,
+            missingFromDisk: 0,
+            diskPending: 0,
+            orphanDb: 0,
+            newOnRis: 0,
             canUpdate: false,
           },
         ],
@@ -234,10 +261,9 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
     });
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
-    // missingFromDb=0 → ✓ Symbol
-    expect(screen.getByText("✓")).toBeInTheDocument();
+    expect(screen.getByText("✓ gleich")).toBeInTheDocument();
   });
 
   it("zeigt Summary-Card 'Fehlt' mit Gesamtzahl", async () => {
@@ -262,12 +288,114 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
     });
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
     // Suche das Status-Badge — ein span/exact "Lücke" neben der law-at Zeile
     const badges = screen.getAllByText(/^Lücke$/i);
     expect(badges.length).toBeGreaterThan(0);
     expect(screen.queryByText(/Import offen/i)).not.toBeInTheDocument();
+  });
+
+  it("blendet historische Archive im Default-Filter aus, zeigt sie unter 'Alle'", async () => {
+    const data = {
+      ...MOCK_DATA,
+      sync: {
+        ...MOCK_DATA.sync,
+        rows: [
+          ...MOCK_DATA.sync.rows,
+          {
+            corpus: "at",
+            sourceId: "law-at",
+            label: "Bundesrecht — historische Fassungen",
+            historical: true,
+            diskFiles: 83,
+            dbPages: 1377,
+            dbDocuments: 83,
+            dbChunks: 1200,
+            embeddedChunks: 1156,
+            staleChunks: 0,
+            coveragePct: 96,
+            notImported: 0,
+            orphanDb: 0,
+            syncStatus: "historical",
+            fullyComplete: false,
+            risTotal: null,
+            missingFromDb: 0,
+            missingFromDisk: 0,
+            diskPending: 0,
+            newOnRis: 0,
+            canUpdate: false,
+            pipelineKey: null,
+            fetchFruitless: false,
+            diskProgress: 0,
+          },
+        ],
+      },
+    };
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data }),
+    });
+    mockSearchParams.delete("filter");
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
+    });
+    // Default "Unvollständig" → historische Row nicht sichtbar
+    expect(screen.queryByText(/historische Fassungen/i)).not.toBeInTheDocument();
+  });
+
+  it("zeigt historische Archive mit 'Historisch'-Badge unter Filter 'Alle'", async () => {
+    const data = {
+      ...MOCK_DATA,
+      sync: {
+        ...MOCK_DATA.sync,
+        rows: [
+          ...MOCK_DATA.sync.rows,
+          {
+            corpus: "at",
+            sourceId: "law-at",
+            label: "Bundesrecht — historische Fassungen",
+            historical: true,
+            diskFiles: 83,
+            dbPages: 1377,
+            dbDocuments: 83,
+            dbChunks: 1200,
+            embeddedChunks: 1156,
+            staleChunks: 0,
+            coveragePct: 96,
+            notImported: 0,
+            orphanDb: 0,
+            syncStatus: "historical",
+            fullyComplete: false,
+            risTotal: null,
+            missingFromDb: 0,
+            missingFromDisk: 0,
+            diskPending: 0,
+            newOnRis: 0,
+            canUpdate: false,
+            pipelineKey: null,
+            fetchFruitless: false,
+            diskProgress: 0,
+          },
+        ],
+      },
+    };
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data }),
+    });
+    mockSearchParams.set("filter", "all");
+    try {
+      withQueryClient(<CorpusCommandCenter />);
+      await waitFor(() => {
+        expect(screen.getByText(/historische Fassungen/i)).toBeInTheDocument();
+      });
+      expect(screen.getByText(/^Historisch$/)).toBeInTheDocument();
+      expect(screen.getByText(/Archiv — über RIS-Soll hinaus gewollt/i)).toBeInTheDocument();
+    } finally {
+      mockSearchParams.delete("filter");
+    }
   });
 });
 
@@ -311,7 +439,7 @@ describe("CorpusCommandCenter: Filter-Dropdown (alle/unvollständig/vollständig
   it("zeigt Select-Dropdown mit 3 Optionen und Counts", async () => {
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
     // Select-Trigger ist vorhanden
     expect(
@@ -323,16 +451,16 @@ describe("CorpusCommandCenter: Filter-Dropdown (alle/unvollständig/vollständig
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
       // law-at (unvollständig) sichtbar
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
     // law-at-judikatur (fullyComplete=true) sollte ausgeblendet sein
-    expect(screen.queryByText("law-at-judikatur")).not.toBeInTheDocument();
+    expect(screen.queryByText("at-judikatur-ogh")).not.toBeInTheDocument();
   });
 
   it("zeigt aktiven Filter als Badge mit Count", async () => {
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
     // Badge "Unvollständig · 1" (nur law-at ist unvollständig in MOCK_DATA)
     // Das Badge hat aria-label mit dem aktiven Filter
@@ -377,7 +505,7 @@ describe("CorpusCommandCenter: Backfill Mutation", () => {
   it("Aktualisieren-Button ist klickbar und nicht disabled", async () => {
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
-      expect(screen.getByText("law-at")).toBeInTheDocument();
+      expect(screen.getByText("at-normen")).toBeInTheDocument();
     });
     const updateButton = screen.getAllByRole("button", { name: /Aktualisieren/i })[0];
     expect(updateButton).not.toBeDisabled();

@@ -1,6 +1,7 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
+import { SOURCE_LABELS } from "@/lib/corpus-labels";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { readdir, stat } from "fs/promises";
 import type { Dirent } from "fs";
@@ -100,6 +101,11 @@ async function corpusDiskCount(corpus: string): Promise<number> {
 interface CorpusSyncRow {
   corpus: string;
   sourceId: string;
+  /** Anzeigename für Operatoren (SOURCE_LABELS-Fallback: corpus). */
+  label: string;
+  /** Historisches Archiv (law-at): DB-Bestand ist bewusst über RIS hinaus,
+   *  kein Fehler — wird nicht als Orphan/Lücke geführt. */
+  historical: boolean;
   diskFiles: number;
   dbPages: number;
   /** Distincte Dokumente in der DB (COUNT DISTINCT import_filename).
@@ -116,7 +122,7 @@ interface CorpusSyncRow {
   fullyComplete: boolean;
   /** In DB aber nicht auf Disk — verwaiste DB-Einträge. */
   orphanDb: number;
-  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db";
+  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db" | "historical";
   /** Live RIS OGD Total für diesen Korpus (null wenn unbekannt). */
   risTotal: number | null;
   /** Fehlende Dokumente: RIS OGD Total minus DB-Dokumente (DISTINCT import_filename). */
@@ -250,6 +256,7 @@ export const GET = createHandler(
             MAX(p.updated_at) FILTER (WHERE p.deleted_at IS NULL) AS last_write
           FROM pages p
           LEFT JOIN content_chunks cc ON cc.page_id = p.id
+          WHERE p.source_id LIKE 'law-%'
           GROUP BY p.source_id
           ORDER BY p.source_id
         `);
@@ -523,8 +530,15 @@ export const GET = createHandler(
       const pipelineKey = CORPUS_TO_PIPELINE_KEY[corpus];
       const pipelineInfo = pipelineKey ? pipelineBySource[pipelineKey] : undefined;
       const disk = pipelineInfo ? pipelineInfo.diskCount : (diskCounts[corpus] ?? 0);
-      // RIS Total: aus pipeline_state, wenn verfügbar
-      const risTotal = pipelineInfo && pipelineInfo.risTotal ? pipelineInfo.risTotal : null;
+      // Historisches Archiv (law-at): alte Gesetzesfassungen, bewusst über
+      // dem RIS-In-force-Soll — weder Lücke noch Orphan, eigener Status.
+      // Der In-force-Index ist für das Archiv kein gültiges Soll: es würde
+      // tausende "fehlende" Dokumente melden, die bewusst nicht Teil des
+      // Archivs sind (geltende Normen leben in law-at-normen).
+      const historical = corpus === "at";
+      // RIS Total: aus pipeline_state, wenn verfügbar — null für Archive.
+      const risTotal =
+        !historical && pipelineInfo && pipelineInfo.risTotal ? pipelineInfo.risTotal : null;
 
       const stale = dbChunks - embedded;
       const coverage = dbChunks > 0 ? Math.round((embedded / dbChunks) * 1000) / 10 : 0;
@@ -572,6 +586,7 @@ export const GET = createHandler(
       } else if (disk === 0 && dbPages > 0) {
         syncStatus = "orphan_in_db";
       }
+      if (historical) syncStatus = "historical";
 
       // notImported: Dateien auf Disk die noch nicht in der DB sind.
       // BUG 47: Für RIS-Sources ist missingFromDb die echte Lücke (risTotal - dbDocuments).
@@ -582,6 +597,8 @@ export const GET = createHandler(
       syncRows.push({
         corpus,
         sourceId,
+        label: SOURCE_LABELS[sourceId] ?? corpus,
+        historical,
         diskFiles: disk,
         dbPages,
         dbDocuments,

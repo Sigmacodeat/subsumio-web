@@ -35,6 +35,8 @@ export interface SourceAuditRow {
   legal_areas: LegalArea[];
   declared_status: LegalSourceCoverageEntry["status"];
   declared_items: number;
+  /** Echte DB-source_ids, deren Bestand dieser Eintrag aggregiert. */
+  db_source_ids: string[];
   actual_pages: number;
   actual_chunks: number;
   actual_embedded: number;
@@ -49,6 +51,9 @@ export interface CoverageAuditResult {
   jurisdiction: Jurisdiction | "all";
   generated_at: string;
   rows: SourceAuditRow[];
+  /** DB-Quellen mit Bestand, die kein Matrix-Eintrag abdeckt
+   *  (z.B. law-at-gemeinden — echte Daten ohne Deklaration). */
+  undeclared: SourceDbStats[];
   summary: {
     total_sources: number;
     ok: number;
@@ -71,11 +76,20 @@ export function auditCoverage(
   const filtered =
     jurisdiction === "all" ? entries : entries.filter((e) => e.jurisdiction === jurisdiction);
 
+  const declaredIds = new Set<string>();
   const rows: SourceAuditRow[] = filtered.map((e) => {
-    const db = dbStats.get(e.source_id);
-    const pages = db?.pages ?? 0;
-    const chunks = db?.chunks ?? 0;
-    const embedded = db?.embedded ?? 0;
+    const ids = e.db_source_ids ?? [e.source_id];
+    for (const id of ids) declaredIds.add(id);
+    const stats = ids.map((id) => dbStats.get(id)).filter((s): s is SourceDbStats => !!s);
+    const pages = stats.reduce((n, s) => n + s.pages, 0);
+    const chunks = stats.reduce((n, s) => n + s.chunks, 0);
+    const embedded = stats.reduce((n, s) => n + s.embedded, 0);
+    const lastUpdated =
+      stats
+        .map((s) => s.last_updated)
+        .filter((d): d is string => !!d)
+        .sort()
+        .at(-1) ?? null;
     const embedPct = chunks > 0 ? Math.round((embedded / chunks) * 1000) / 10 : null;
 
     const expectsData = e.status === "available" || e.status === "early_access";
@@ -95,15 +109,22 @@ export function auditCoverage(
       legal_areas: e.legal_areas,
       declared_status: e.status,
       declared_items: e.item_count,
+      db_source_ids: ids,
       actual_pages: pages,
       actual_chunks: chunks,
       actual_embedded: embedded,
       embed_pct: embedPct,
-      last_updated: db?.last_updated ?? null,
+      last_updated: lastUpdated,
       audit_status: auditStatus,
       notes: e.notes,
     };
   });
+
+  // DB-Quellen mit Bestand, die kein Matrix-Eintrag deklariert — werden als
+  // eigene Liste ausgewiesen statt still unterzugehen.
+  const undeclared = [...dbStats.values()]
+    .filter((s) => s.pages > 0 && !declaredIds.has(s.source_id))
+    .sort((a, b) => b.pages - a.pages);
 
   const count = (s: AuditStatus) => rows.filter((r) => r.audit_status === s).length;
   const deviations =
@@ -118,6 +139,7 @@ export function auditCoverage(
         r.audit_status === "ok" ? 2 : r.audit_status === "gap" ? 1 : 0;
       return rank(a) - rank(b) || b.actual_pages - a.actual_pages;
     }),
+    undeclared,
     summary: {
       total_sources: rows.length,
       ok: count("ok"),

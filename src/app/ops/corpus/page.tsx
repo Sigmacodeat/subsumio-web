@@ -4,7 +4,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CorpusCommandCenter } from "@/components/dashboard/corpus-command-center";
+import {
+  CommandCenterGate,
+  PipelineSection,
+  RisDeltaSection,
+  SyncStatusSection,
+  TrustSection,
+  WorkQueueSection,
+  useCorpusCommandCenterData,
+} from "@/components/dashboard/corpus-command-center";
 import { CorpusBestand } from "@/components/dashboard/corpus-bestand";
 import { CorpusProtokoll } from "@/components/dashboard/corpus-protokoll";
 import { ChunkInspector } from "@/components/dashboard/chunk-inspector";
@@ -26,33 +34,25 @@ import {
   corpusOverviewQuery,
 } from "@/components/dashboard/corpus-ops-queries";
 import { PageHeader } from "@/components/dashboard/page-header";
-import {
-  Database,
-  Search,
-  ShieldCheck,
-  FileText,
-  Library,
-  History,
-  type LucideIcon,
-} from "lucide-react";
+import { ShieldCheck, Library, Activity, type LucideIcon } from "lucide-react";
 
-const TAB_IDS = [
-  "bestand",
-  "protokoll",
-  "command-center",
-  "chunk-inspector",
-  "chunk-quality",
-  "steward",
-] as const;
+const TAB_IDS = ["bestand", "pipeline", "qualitaet"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
+// Alte ?tab=-Links landen auf dem passenden neuen Reiter — geteilte Links
+// und Browser-Verläufe bleiben gültig.
+const LEGACY_TABS: Record<string, TabId> = {
+  "command-center": "bestand",
+  protokoll: "pipeline",
+  "chunk-inspector": "qualitaet",
+  "chunk-quality": "qualitaet",
+  steward: "qualitaet",
+};
+
 const TABS: Array<{ id: TabId; label: string; icon: LucideIcon }> = [
-  { id: "bestand", label: "Bestand", icon: Library },
-  { id: "protokoll", label: "Protokoll", icon: History },
-  { id: "command-center", label: "Übersicht", icon: Database },
-  { id: "chunk-inspector", label: "Chunk-Inspektor", icon: Search },
-  { id: "chunk-quality", label: "Qualität", icon: ShieldCheck },
-  { id: "steward", label: "Steward", icon: FileText },
+  { id: "bestand", label: "Bestand & Abgleich", icon: Library },
+  { id: "pipeline", label: "Pipeline & Protokoll", icon: Activity },
+  { id: "qualitaet", label: "Qualität & Inspektor", icon: ShieldCheck },
 ];
 
 export default function CorpusPage() {
@@ -64,7 +64,7 @@ export default function CorpusPage() {
   const rawTab = searchParams.get("tab") ?? "bestand";
   const activeTab: TabId = (TAB_IDS as readonly string[]).includes(rawTab)
     ? (rawTab as TabId)
-    : "bestand";
+    : (LEGACY_TABS[rawTab] ?? "bestand");
   const tabHref = useCallback(
     (v: TabId) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -95,13 +95,13 @@ export default function CorpusPage() {
       if (id === "bestand") {
         void queryClient.prefetchQuery(corpusCoverageAuditQuery());
         void queryClient.prefetchQuery(corpusOverviewQuery());
-      } else if (id === "protokoll") {
+      } else if (id === "pipeline") {
         // Default-Ansicht des Protokolls: PAGE_SIZE=50, offset 0,
         // kein Filter — CorpusProtokoll baut dieselbe Param-Menge.
         void queryClient.prefetchQuery(
           corpusIngestLogQuery(new URLSearchParams({ limit: "50", offset: "0" }))
         );
-      } else if (id === "steward") {
+      } else if (id === "qualitaet") {
         // Dieselbe Param-Ableitung wie CorpusFileBrowser (corpusSearchMode /
         // corpusListParams) — die URL-Params überleben den Tabwechsel, der
         // Prefetch muss daher exakt den Query treffen, den die Komponente
@@ -203,7 +203,7 @@ export default function CorpusPage() {
               >
                 <Icon className="h-4 w-4" />
                 {label}
-                {id === "command-center" && unreadAlerts > 0 && (
+                {id === "pipeline" && unreadAlerts > 0 && (
                   <span
                     className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--ds-info-bg)] px-1.5 text-xs font-semibold text-[color:var(--ds-info-text)]"
                     aria-label={`${unreadAlerts} ungelesene Corpus-Alerts`}
@@ -217,36 +217,47 @@ export default function CorpusPage() {
         </TabsList>
 
         <TabsContent value="bestand" className="mt-4 space-y-6">
+          <SyncChainSection
+            onSelectCorpus={(source) => {
+              setSelectedSource(source);
+              setActiveTab("qualitaet");
+              // Der Qualitäts-Tab mountet erst nach dem Wechsel — Scroll
+              // verzögert, damit der Inspektor bereits existiert.
+              const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+              setTimeout(
+                () =>
+                  document
+                    .getElementById("chunk-inspector")
+                    ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" }),
+                50
+              );
+            }}
+          />
           <CorpusBestand />
         </TabsContent>
 
-        <TabsContent value="protokoll" className="mt-4 space-y-6">
+        <TabsContent value="pipeline" className="mt-4 space-y-6">
+          <PipelineSections />
           <CorpusProtokoll />
         </TabsContent>
 
-        <TabsContent value="command-center" className="mt-4 space-y-6">
-          <CorpusCommandCenter
-            onSelectCorpus={(source) => {
-              setSelectedSource(source);
-              setActiveTab("chunk-inspector");
-            }}
-          />
-        </TabsContent>
-
-        <TabsContent value="chunk-inspector" className="mt-4 space-y-6">
-          <ChunkInspector initialSource={selectedSource} />
-        </TabsContent>
-
-        <TabsContent value="chunk-quality" className="mt-4 space-y-6">
+        <TabsContent value="qualitaet" className="mt-4 space-y-6">
           <ChunkQuality
             onSelectSource={(sourceId) => {
               setSelectedSource(sourceId);
-              setActiveTab("chunk-inspector");
+              setActiveTab("qualitaet");
+              // Die Quality-Tabelle steht ÜBER dem Inspektor — ohne Scroll
+              // bliebe die Auswahl unsichtbar.
+              const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+              document
+                .getElementById("chunk-inspector")
+                ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
             }}
           />
-        </TabsContent>
-
-        <TabsContent value="steward" className="mt-4 space-y-6">
+          <div id="chunk-inspector" className="scroll-mt-24">
+            <ChunkInspector initialSource={selectedSource} />
+          </div>
+          <TrustSections />
           <CorpusFileBrowser
             onSelectFile={setViewerPath}
             selectedCorpus={stewardCorpus}
@@ -258,5 +269,72 @@ export default function CorpusPage() {
       {/* File Viewer Dialog (über allen Tabs) */}
       <CorpusFileViewer path={viewerPath} onClose={() => setViewerPath(null)} />
     </div>
+  );
+}
+
+/** Die klare Linie RIS-Soll → Disk → DB pro Quelle — aus den geteilten
+ *  Command-Center-Daten (ein Fetch für alle Tabs). */
+function SyncChainSection({ onSelectCorpus }: { onSelectCorpus: (sourceId: string) => void }) {
+  const query = useCorpusCommandCenterData();
+  return (
+    <CommandCenterGate query={query}>
+      {(d) => (
+        <SyncStatusSection
+          rows={d.sync.rows}
+          totals={d.sync.totals}
+          dbAvailable={d.dbAvailable}
+          onSelectCorpus={onSelectCorpus}
+          onRefresh={() => query.refetch()}
+        />
+      )}
+    </CommandCenterGate>
+  );
+}
+
+/** Pipeline-Live + RIS-Delta-Watcher — der operative Teil des Protokoll-Tabs. */
+function PipelineSections() {
+  const query = useCorpusCommandCenterData();
+  return (
+    <CommandCenterGate query={query}>
+      {(d) => (
+        <>
+          <PipelineSection
+            paused={d.pipeline.paused}
+            states={d.pipeline.states}
+            live={d.pipeline.live ?? []}
+            risFetchers={d.pipeline.risFetchers ?? []}
+            onActionComplete={() => query.refetch()}
+          />
+          {d.risDelta && (
+            <RisDeltaSection
+              rows={d.risDelta.rows}
+              triggerPending={d.risDelta.triggerPending}
+              onActionComplete={() => query.refetch()}
+            />
+          )}
+        </>
+      )}
+    </CommandCenterGate>
+  );
+}
+
+/** Work Queue + Trust — die Steward-Seite des Qualitäts-Tabs. */
+function TrustSections() {
+  const query = useCorpusCommandCenterData();
+  return (
+    <CommandCenterGate query={query}>
+      {(d) => (
+        <>
+          <WorkQueueSection
+            items={d.workQueue.items}
+            total={d.workQueue.total}
+            defective={d.workQueue.defective}
+            needsReview={d.workQueue.needsReview}
+            verified={d.workQueue.verified}
+          />
+          <TrustSection rows={d.trust.rows} totals={d.trust.totals} />
+        </>
+      )}
+    </CommandCenterGate>
   );
 }

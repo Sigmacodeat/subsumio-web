@@ -105,7 +105,8 @@ function CoverageAudit() {
                     <TableCell>
                       <div className="font-medium">{r.source_name}</div>
                       <div className="text-xs text-[color:var(--ds-text-subtle)]">
-                        {r.source_id} · {r.jurisdiction}
+                        {r.db_source_ids.length > 0 ? r.db_source_ids.join(", ") : r.source_id} ·{" "}
+                        {r.jurisdiction}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -124,6 +125,27 @@ function CoverageAudit() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        )}
+
+        {/* Echte DB-Quellen ohne Matrix-Eintrag — sonst wären sie im Audit
+            unsichtbar (z.B. law-at-gemeinden). */}
+        {a.undeclared.length > 0 && (
+          <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
+            <p className="text-xs font-medium">Quellen mit Bestand, aber ohne Deklaration</p>
+            <ul className="mt-1.5 space-y-1 text-xs text-[color:var(--ds-text-muted)]">
+              {a.undeclared.map((s) => (
+                <li key={s.source_id} className="flex items-baseline gap-2">
+                  <span className="font-mono">{s.source_id}</span>
+                  <span className="tabular-nums">
+                    {fmt(s.pages)} Seiten ·{" "}
+                    {s.chunks > 0
+                      ? `${Math.round((s.embedded / s.chunks) * 100)} % eingebettet`
+                      : "0 Chunks"}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

@@ -16,7 +16,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   "law-at-spg": "Sicherheitspolizei (SPG)",
   "law-at-kmger": "Kammergerichte",
   "law-at-literatur": "Literatur",
-  "law-at": "Bundesgesetze (ganze Gesetze, alt)",
+  "law-at": "Bundesrecht — historische Fassungen",
   "law-at-judikatur": "OGH und Justiz",
   "law-at-judikatur-vwgh": "VwGH",
   "law-at-judikatur-vfgh": "VfGH",
@@ -30,6 +30,15 @@ export const SOURCE_LABELS: Record<string, string> = {
   "law-at-judikatur-dok": "Disziplinarbehörden",
   "law-at-judikatur-ubas": "Umweltsenat (UBAS)",
   "law-at-judikatur-umse": "Umweltsenat (UMSE)",
+  "law-de": "Deutsches Bundesrecht",
+  "law-de-literatur": "Literatur DE (Open Access)",
+  "law-de-materialien": "Gesetzesmaterialien DE",
+  "law-de-judikatur": "Rechtsprechung DE",
+  "law-ch": "Schweizer Bundesrecht",
+  "law-ch-judikatur": "Bundesgerichtsentscheide CH",
+  "law-ch-literatur": "Literatur CH",
+  "law-eu": "EU-Verordnungen",
+  "law-eu-directives": "EU-Richtlinien",
 };
 
 export interface CorpusSourceStats {

@@ -53,6 +53,14 @@ export interface LegalSourceCoverageEntry {
   official_url: string;
   api_url: string | null;
   notes: string;
+  /**
+   * Echte DB-source_ids, die dieser Matrix-Eintrag abdeckt. Die Matrix
+   * modelliert Quellen konzeptionell (z.B. „Instanzrechtsprechung AT"),
+   * die DB führt sie als eigene source_ids (law-at-judikatur-bvwg, …).
+   * Ohne Mapping bleibt deren Bestand für das Audit unsichtbar.
+   * Fallback: [source_id].
+   */
+  db_source_ids?: string[];
 }
 
 export interface CoverageMatrix {
@@ -171,13 +179,14 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     jurisdiction: "DE",
     source_type: "case_law_supreme",
     legal_areas: ["civil_law", "criminal_law", "commercial_law", "tax_law", "procedural_law"],
-    status: "planned",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "delta",
     official_url: "https://www.bundesgerichtshof.de/",
     api_url: null,
     notes: "BGH-Entscheidungen über RSS-Feeds. Kommerzielle Volltexte bei juris.",
+    db_source_ids: ["law-de-judikatur"],
   },
   {
     source_id: "law-de-instance",
@@ -227,13 +236,15 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     jurisdiction: "DE",
     source_type: "literature_open",
     legal_areas: ["civil_law", "criminal_law", "constitutional_law"],
-    status: "gap",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "manual",
     official_url: "",
     api_url: null,
-    notes: "Open-Access-Zeitschriften (z.B. ZIS, HFR). Noch nicht angebunden.",
+    notes:
+      "OpenRewi, Verfassungsblog u.a. via Fetch-Skripten. Weitere Zeitschriften (ZIS, HFR) geplant.",
+    db_source_ids: ["law-de-literatur"],
   },
   {
     source_id: "law-de-literature-licensed",
@@ -275,7 +286,9 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     sync_mode: "full",
     official_url: "https://www.ris.bka.gv.at/",
     api_url: "https://data.ris.bka.gv.at/ogd/v2.6/",
-    notes: "RIS-OGD API v2.6. CC-BY 4.0. Bundesgesetze komplett.",
+    notes:
+      "RIS-OGD API v2.6. CC-BY 4.0. Bundesrecht: geltende Normen (law-at-normen) + historische Fassungen (law-at).",
+    db_source_ids: ["law-at-normen", "law-at"],
   },
   {
     source_id: "law-at-regulations",
@@ -283,13 +296,14 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     jurisdiction: "AT",
     source_type: "regulation",
     legal_areas: ["civil_law", "tax_law", "administrative_law", "data_protection", "labor_law"],
-    status: "planned",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "full",
     official_url: "https://www.ris.bka.gv.at/",
     api_url: "https://data.ris.bka.gv.at/ogd/v2.6/",
-    notes: "Verordnungen über gleiche RIS-OGD API. Noch nicht importiert.",
+    notes: "Landesrecht über RIS-OGD API (Bundesländer-Unterordner im Korpus).",
+    db_source_ids: ["law-at-landesrecht"],
   },
   {
     source_id: "law-at-judikatur",
@@ -304,13 +318,14 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
       "procedural_law",
       "labor_law",
     ],
-    status: "planned",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "delta",
     official_url: "https://www.ris.bka.gv.at/Judikatur/",
     api_url: "https://data.ris.bka.gv.at/ogd/v2.6/",
-    notes: "OGH-Entscheidungen über RIS-OGD API. CC-BY 4.0.",
+    notes: "OGH-Entscheidungen plus Höchstgerichte (VfGH, VwGH) über RIS-OGD API. CC-BY 4.0.",
+    db_source_ids: ["law-at-judikatur", "law-at-judikatur-vfgh", "law-at-judikatur-vwgh"],
   },
   {
     source_id: "law-at-instance",
@@ -318,13 +333,25 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     jurisdiction: "AT",
     source_type: "case_law_instance",
     legal_areas: ["civil_law", "criminal_law", "administrative_law"],
-    status: "planned",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "delta",
     official_url: "https://www.ris.bka.gv.at/Judikatur/",
     api_url: "https://data.ris.bka.gv.at/ogd/v2.6/",
-    notes: "OLG/LG-Entscheidungen über RIS-OGD API. Noch nicht importiert.",
+    notes: "Instanz- und Fachgerichte über RIS-OGD API (BVwG, LVwG, AsylGH, UVS u.a.).",
+    db_source_ids: [
+      "law-at-judikatur-bvwg",
+      "law-at-judikatur-lvwg",
+      "law-at-judikatur-asylgh",
+      "law-at-judikatur-uvs",
+      "law-at-judikatur-dsk",
+      "law-at-judikatur-gbk",
+      "law-at-judikatur-pvak",
+      "law-at-judikatur-dok",
+      "law-at-judikatur-ubas",
+      "law-at-judikatur-umse",
+    ],
   },
   {
     source_id: "law-at-materials",
@@ -360,13 +387,14 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     jurisdiction: "AT",
     source_type: "literature_open",
     legal_areas: ["civil_law", "criminal_law", "constitutional_law"],
-    status: "gap",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "manual",
     official_url: "",
     api_url: null,
-    notes: "z.B. Jusline Open Access. Noch nicht angebunden.",
+    notes: "Austrian Law Journal u.a. via OAI-PMH. Weitere (z.B. Jusline) geplant.",
+    db_source_ids: ["law-at-literatur"],
   },
   {
     source_id: "law-at-literature-licensed",
@@ -438,13 +466,14 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
       "procedural_law",
       "administrative_law",
     ],
-    status: "planned",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "delta",
     official_url: "https://www.bger.ch/",
     api_url: null,
     notes: "BGer-Entscheidungen über RSS-Feeds. Öffentliche Entscheide.",
+    db_source_ids: ["law-ch-judikatur"],
   },
   {
     source_id: "law-ch-instance",
@@ -494,13 +523,14 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     jurisdiction: "CH",
     source_type: "literature_open",
     legal_areas: ["civil_law", "criminal_law"],
-    status: "gap",
+    status: "available",
     item_count: 0,
     last_sync: null,
     sync_mode: "manual",
     official_url: "",
     api_url: null,
-    notes: "z.B. Jusletter Open Access. Noch nicht angebunden.",
+    notes: "Onlinekommentar, sui generis u.a. Weitere (z.B. Jusletter) geplant.",
+    db_source_ids: ["law-ch-literatur"],
   },
   {
     source_id: "law-ch-literature-licensed",
@@ -538,6 +568,7 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     official_url: "https://eur-lex.europa.eu/",
     api_url: "https://eur-lex.europa.eu/EURLexWebService",
     notes: "EUR-Lex Web Services. CC-BY 4.0. EU-Verordnungen und Richtlinien.",
+    db_source_ids: ["law-eu", "law-eu-directives"],
   },
   {
     source_id: "law-eu-regulations",
@@ -551,7 +582,9 @@ export const LEGAL_SOURCE_COVERAGE_MATRIX: LegalSourceCoverageEntry[] = [
     sync_mode: "full",
     official_url: "https://eur-lex.europa.eu/",
     api_url: "https://eur-lex.europa.eu/EURLexWebService",
-    notes: "EU-Verordnungen über EUR-Lex API. Noch nicht vollständig importiert.",
+    notes:
+      "EU-Verordnungen über EUR-Lex API. Bestand läuft unter dem Eintrag „EUR-Lex“ mit (law-eu + law-eu-directives).",
+    db_source_ids: [],
   },
   {
     source_id: "law-eu-judikatur",

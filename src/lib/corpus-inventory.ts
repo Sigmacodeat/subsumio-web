@@ -33,11 +33,11 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
              count(*) FILTER (WHERE frontmatter->>'doc_id' ~ '^J[A-Z]R_')::int AS rs,
              count(*) FILTER (WHERE frontmatter->>'doc_id' ~ '^J[A-Z]T_')::int AS texte,
              count(*) FILTER (WHERE (frontmatter->>'in_force_to') < to_char(now() AT TIME ZONE 'Europe/Vienna', 'YYYY-MM-DD'))::int AS repealed,
-             bool_or(frontmatter->>'doc_class' = 'decision' OR source_id LIKE 'law-at-judikatur%') AS is_decision,
+             bool_or(frontmatter->>'doc_class' = 'decision' OR source_id LIKE 'law-%-judikatur%') AS is_decision,
              bool_or(frontmatter->>'doc_class' = 'statute') AS is_statute,
              max(updated_at) AS last_updated
       FROM pages
-      WHERE deleted_at IS NULL AND source_id LIKE 'law-at%'
+      WHERE deleted_at IS NULL AND source_id LIKE 'law-%'
       GROUP BY source_id`),
     pool.query(`
       SELECT c.source_id,
@@ -45,7 +45,7 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
              count(*) FILTER (WHERE c.embedding IS NOT NULL)::int AS embedded
       FROM content_chunks c
       JOIN pages p ON p.id = c.page_id AND p.deleted_at IS NULL
-      WHERE c.source_id LIKE 'law-at%'
+      WHERE c.source_id LIKE 'law-%'
       GROUP BY c.source_id`),
   ]);
   const chunkBySource = new Map(chunks.rows.map((r) => [r.source_id as string, r]));

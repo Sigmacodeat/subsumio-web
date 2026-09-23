@@ -97,7 +97,8 @@ function renderList() {
   );
 }
 
-let fetchSpy: ReturnType<typeof vi.spyOn>;
+const spyFetch = () => vi.spyOn(global, "fetch");
+let fetchSpy: ReturnType<typeof spyFetch>;
 beforeEach(() => {
   vi.restoreAllMocks();
   nav.params = new URLSearchParams();

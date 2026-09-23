@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { SOURCE_LABELS } from "@/lib/corpus-labels";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -121,33 +122,11 @@ const ROLE_LABELS: Record<string, string> = {
   remainder: "Rest",
 };
 
+// Quellen-Optionen aus SOURCE_LABELS — dieselben Namen wie die
+// Bestandstabelle, und neue Jurisdiktionen (DE/CH/EU) kommen automatisch mit.
 const SOURCE_OPTIONS = [
-  { value: "all", label: "Alle Sources" },
-  { value: "law-at-normen", label: "AT Normen" },
-  { value: "law-at-landesrecht", label: "AT Landesrecht" },
-  { value: "law-at-judikatur", label: "AT Judikatur (OGH)" },
-  { value: "law-at-judikatur-vwgh", label: "VwGH" },
-  { value: "law-at-judikatur-vfgh", label: "VfGH" },
-  { value: "law-at-judikatur-lvwg", label: "LVwG" },
-  { value: "law-at-judikatur-bvwg", label: "BVwG" },
-  { value: "law-at-judikatur-asylgh", label: "AsylGH" },
-  { value: "law-at-judikatur-uvs", label: "UVS" },
-  { value: "law-at-judikatur-ubas", label: "UBAS" },
-  { value: "law-at-judikatur-dsk", label: "DSK" },
-  { value: "law-at-judikatur-dok", label: "DOK" },
-  { value: "law-at-judikatur-gbk", label: "GBK" },
-  { value: "law-at-judikatur-pvak", label: "PVAK" },
-  { value: "law-at-judikatur-umse", label: "UMSE" },
-  { value: "law-at-gemeinden", label: "Gemeinden" },
-  { value: "law-at-bezirke", label: "Bezirke" },
-  { value: "law-at-bmerl", label: "Erlasse" },
-  { value: "law-at-avn", label: "AVN" },
-  { value: "law-at-avsv", label: "AVSV" },
-  { value: "law-at-staatsvertraege", label: "Staatsverträge" },
-  { value: "law-at-spg", label: "SPG" },
-  { value: "law-at-kmger", label: "KmGer" },
-  { value: "law-at-literatur", label: "Literatur" },
-  { value: "law-at", label: "AT Spezialgesetze" },
+  { value: "all", label: "Alle Quellen" },
+  ...Object.entries(SOURCE_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
 const SORT_OPTIONS = [
