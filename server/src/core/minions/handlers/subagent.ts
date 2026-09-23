@@ -40,7 +40,7 @@ import type { BrainEngine } from "../../engine.ts";
 import type { GBrainConfig } from "../../config.ts";
 import { loadConfig } from "../../config.ts";
 import { buildBrainTools, filterAllowedTools } from "../tools/brain-allowlist.ts";
-import { readJobMatterAccess } from "../../matter-access.ts";
+import { agentWriteBinding, readJobMatterAccess } from "../../matter-access.ts";
 import { acquireLease, releaseLease, renewLeaseWithBackoff } from "../rate-leases.ts";
 import { logSubagentSubmission, logSubagentHeartbeat } from "./subagent-audit.ts";
 import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from "../../model-config.ts";
@@ -329,6 +329,9 @@ export function makeSubagentHandler(deps: SubagentDeps) {
             : undefined,
         matterScope: matterAccess.scope,
         matterReadOnly: matterAccess.readOnly,
+        // A web user's run writes only pages bound to its matter or kept
+        // private for its owner; CLI / cron runs are unchanged.
+        writeBinding: agentWriteBinding(data),
       });
     // An explicit list — including an EMPTY list — is authoritative:
     // `allowed_tools: []` means "no tools" (map/reduce extraction agents).

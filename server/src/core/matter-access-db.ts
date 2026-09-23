@@ -16,6 +16,30 @@ import {
   type MatterScope,
 } from "./matter-access.ts";
 
+/**
+ * Callers that cache a source's matter access (the web API middleware) hear
+ * about writes that change it — a new private area, a changed case page — so
+ * the cache does not serve stale deny lists. In-process only: a separate
+ * worker process cannot reach the web API's cache, which then refreshes
+ * within its short TTL.
+ */
+const accessListeners = new Set<(sourceId: string) => void>();
+
+export function onMatterAccessChanged(listener: (sourceId: string) => void): () => void {
+  accessListeners.add(listener);
+  return () => accessListeners.delete(listener);
+}
+
+export function notifyMatterAccessChanged(sourceId: string): void {
+  for (const listener of accessListeners) {
+    try {
+      listener(sourceId);
+    } catch {
+      // A listener failure must not fail the write that triggered it.
+    }
+  }
+}
+
 export interface SourceMatterAccess {
   rows: MatterAccessRow[];
   /** Owner segments of private Copilot conversations (chat-sessions/private/<owner>/…). */
