@@ -182,7 +182,6 @@ async function main() {
                  OR c.embedded_at IS NULL
                  OR c.embedded_at < now() - ($3::int * interval '1 minute')
                )
-             ORDER BY c.id
              FOR UPDATE OF c SKIP LOCKED
              LIMIT $1
            )
@@ -208,7 +207,6 @@ async function main() {
                  OR c.embedded_at IS NULL
                  OR c.embedded_at < now() - ($3::int * interval '1 minute')
                )
-             ORDER BY c.id
              FOR UPDATE OF c SKIP LOCKED
              LIMIT $1
            )
