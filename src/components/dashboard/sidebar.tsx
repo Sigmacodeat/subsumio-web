@@ -1174,20 +1174,24 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
     clearNotice,
   } = useMutationQueue();
   const { t } = useLang();
-  if (collapsed || (pendingCount === 0 && !lastNotice)) return null;
+  if (collapsed || (pendingCount === 0 && conflicts.length === 0 && !lastNotice)) return null;
   return (
     <div className="mx-3 mt-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
-          {pendingCount} {t("sidebar.changes_pending")}
+          {pendingCount > 0
+            ? `${pendingCount} ${t("sidebar.changes_pending")}`
+            : `${conflicts.length} ${t("mobile.conflict_count" as DashboardKey)}`}
         </span>
-        <button
-          onClick={() => void syncPending()}
-          disabled={syncing}
-          className="brand-text text-xs transition-[opacity,color] duration-[var(--ds-duration-normal)] disabled:opacity-50 motion-reduce:transition-none"
-        >
-          {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
-        </button>
+        {pendingCount > 0 && (
+          <button
+            onClick={() => void syncPending()}
+            disabled={syncing}
+            className="brand-text text-xs transition-[opacity,color] duration-[var(--ds-duration-normal)] disabled:opacity-50 motion-reduce:transition-none"
+          >
+            {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
+          </button>
+        )}
       </div>
       {lastNotice && (
         <div className="mt-1.5 flex items-center justify-between gap-2">

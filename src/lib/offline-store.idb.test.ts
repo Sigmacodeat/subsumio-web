@@ -24,6 +24,10 @@ import {
   incrementMutationRetries,
   removeMutation,
   clearMutations,
+  enqueueFileUpload,
+  getPendingFileUploads,
+  incrementFileUploadRetries,
+  removeFileUpload,
 } from "./offline-store";
 
 describe("offline-store mutation queue (fake-indexeddb)", () => {
@@ -75,5 +79,39 @@ describe("offline-store mutation queue (fake-indexeddb)", () => {
     const [mut] = await getPendingMutations();
     await removeMutation(mut.id);
     expect(await getPendingMutations()).toHaveLength(0);
+  });
+});
+
+describe("offline-store file-upload queue (fake-indexeddb)", () => {
+  const entry = () => ({
+    fileName: "schriftsatz.pdf",
+    fileSize: 4,
+    fileType: "application/pdf",
+    bytes: new Uint8Array([1, 2, 3, 4]).buffer,
+    metadata: { title: "Test", case_slug: "cases/x" },
+  });
+
+  test("enqueueFileUpload → getPendingFileUploads mit id + createdAt", async () => {
+    const id = await enqueueFileUpload(entry());
+    expect(id).toBeTruthy();
+    const pending = await getPendingFileUploads();
+    const found = pending.find((f) => f.id === id);
+    expect(found).toBeTruthy();
+    expect(found!.fileName).toBe("schriftsatz.pdf");
+    expect(found!.metadata.case_slug).toBe("cases/x");
+    // bytes ueberleben den IDB-Roundtrip als ArrayBuffer
+    expect(found!.bytes.byteLength).toBe(4);
+    await removeFileUpload(id);
+  });
+
+  test("incrementFileUploadRetries + removeFileUpload", async () => {
+    const id = await enqueueFileUpload(entry());
+    await incrementFileUploadRetries(id);
+    let pending = await getPendingFileUploads();
+    expect(pending.find((f) => f.id === id)!.retries).toBe(1);
+
+    await removeFileUpload(id);
+    pending = await getPendingFileUploads();
+    expect(pending.find((f) => f.id === id)).toBeUndefined();
   });
 });

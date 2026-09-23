@@ -57,7 +57,12 @@ async function replayMutation(mut: QueuedMutation): Promise<void> {
 }
 
 interface MutationState {
+  /** Synctbare Eintraege — Konflikte warten auf User-Entscheidung und
+   *  zaehlen hier nicht mit (sonst steht "3 ausstehend" obwohl nur 1
+   *  wirklich gesynct wird). */
   pendingCount: number;
+  /** Auf Entscheidung wartende Sync-Konflikte. */
+  conflictCount: number;
   syncing: boolean;
   lastError: string | null;
   /** Kurzer Erfolgs-Hinweis (z. B. „Kopie gespeichert als cases/neu-2") —
@@ -76,6 +81,7 @@ function nextCopySlug(slug: string): string {
 export function useMutationQueue() {
   const [state, setState] = useState<MutationState>({
     pendingCount: 0,
+    conflictCount: 0,
     syncing: false,
     lastError: null,
     lastNotice: null,
@@ -97,10 +103,12 @@ export function useMutationQueue() {
       getPendingMutations(),
       getPendingFileUploads(),
     ]);
+    const conflicts = pending.filter((m) => m.conflicted);
     setState((s) => ({
       ...s,
-      pendingCount: pending.length + pendingFiles.length,
-      conflicts: pending.filter((m) => m.conflicted),
+      pendingCount: pending.length - conflicts.length + pendingFiles.length,
+      conflictCount: conflicts.length,
+      conflicts,
     }));
   }, []);
 
@@ -231,7 +239,13 @@ export function useMutationQueue() {
   const resolveConflict = useCallback(
     async (id: string, mode: "keep-mine" | "discard" | "rename") => {
       if (mode === "discard") {
+        const pending = await getPendingMutations();
+        const slug = pending.find((m) => m.id === id)?.payload.slug;
         await removeMutation(id);
+        setState((s) => ({
+          ...s,
+          lastNotice: `Änderung${typeof slug === "string" && slug ? ` an ${slug}` : ""} verworfen`,
+        }));
         await refreshPending();
         return;
       }
@@ -241,10 +255,10 @@ export function useMutationQueue() {
         await refreshPending();
         return;
       }
+      const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
       try {
         if (mode === "rename") {
           if (mut.type !== "createPage") return;
-          const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
           if (!slug) return;
           const copySlug = nextCopySlug(slug);
           await api.brain.createPage({
@@ -263,6 +277,10 @@ export function useMutationQueue() {
           }));
         } else {
           await replayMutation(mut);
+          setState((s) => ({
+            ...s,
+            lastNotice: `Änderung${slug ? ` an ${slug}` : ""} gesendet`,
+          }));
         }
         await removeMutation(mut.id);
       } catch (err) {

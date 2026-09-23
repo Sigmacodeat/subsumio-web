@@ -43,7 +43,15 @@ export function MobileSyncBanner() {
 
   // Don't render anything if online, no pending, no error, no sync confirmation
   if (dismissed && !lastError) return null;
-  if (isOnline && pendingCount === 0 && !lastError && !justSynced && !lastNotice) return null;
+  if (
+    isOnline &&
+    pendingCount === 0 &&
+    conflicts.length === 0 &&
+    !lastError &&
+    !justSynced &&
+    !lastNotice
+  )
+    return null;
 
   // Erfolgs-Hinweis (z. B. „Kopie gespeichert als …") — quittierbar
   if (lastNotice) {
