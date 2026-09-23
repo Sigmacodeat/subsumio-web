@@ -64,7 +64,11 @@ describe("GET /api/whatsapp/muted", () => {
       {
         action: "whatsapp.inbound_muted",
         timestamp: "2026-09-23T10:00:00Z",
-        details: { messageType: "text", bodySnippet: "Kündigung zum …" },
+        details: {
+          messageType: "text",
+          bodySnippet: "Kündigung zum …",
+          phoneHash: "a1b2c3d4e5f6a1b2c3d4e5f6",
+        },
       },
     ];
 
@@ -78,7 +82,12 @@ describe("GET /api/whatsapp/muted", () => {
     res = (await GET(req("http://localhost/api/whatsapp/muted"))) as Response;
     body = await res.json();
     expect(body.snippets).toEqual([
-      { at: "2026-09-23T10:00:00Z", type: "text", snippet: "Kündigung zum …" },
+      {
+        at: "2026-09-23T10:00:00Z",
+        type: "text",
+        snippet: "Kündigung zum …",
+        sender: "a1b2c3d4",
+      },
     ]);
   });
 
@@ -96,6 +105,7 @@ describe("GET /api/whatsapp/muted", () => {
       at: "2026-09-23T10:00:00Z",
       type: null,
       snippet: null,
+      sender: null,
     });
   });
 });

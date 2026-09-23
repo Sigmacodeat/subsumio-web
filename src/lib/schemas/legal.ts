@@ -1,26 +1,12 @@
 import { z } from "zod";
+import { BUNDESLAENDER, type Bundesland } from "@/lib/legal/frist-engine-de";
 
 // ── Deadline Calculation ────────────────────────────────────────────────────
 
-export const bundeslandSchema = z.enum([
-  "BB",
-  "BE",
-  "BW",
-  "BY",
-  "HB",
-  "HE",
-  "HH",
-  "MV",
-  "NI",
-  "NW",
-  "RP",
-  "SH",
-  "SL",
-  "SN",
-  "ST",
-  "TH",
-  "AT",
-]);
+// Single source: BUNDESLAENDER aus der Frist-Engine (die 16 DE-Länder),
+// plus "AT" — das Schema erlaubt Österreich als Rechtsraum-Angabe.
+const DE_CODES = BUNDESLAENDER.map((b) => b.code) as [Bundesland, ...Bundesland[]];
+export const bundeslandSchema = z.enum([...DE_CODES, "AT"]);
 
 export const deadlineRuleSchema = z
   .object({

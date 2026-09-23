@@ -38,6 +38,9 @@ export const GET = createHandler(
           at: e.timestamp,
           type: typeof e.details?.messageType === "string" ? e.details.messageType : null,
           snippet: typeof e.details?.bodySnippet === "string" ? e.details.bodySnippet : null,
+          // Hash-Präfix als Pseudonym-Label: macht Wiederholer erkennbar,
+          // ohne die Rohnummer zu exponieren (Rückrechnung unmöglich).
+          sender: typeof e.details?.phoneHash === "string" ? e.details.phoneHash.slice(0, 8) : null,
         })),
       }),
     });

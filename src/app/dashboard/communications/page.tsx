@@ -705,6 +705,21 @@ export default function CommunicationsPage() {
                             <span className="text-[color:var(--ds-text-subtle)]">
                               {timeLabel(lang, s.at)}
                               {s.type ? ` · ${s.type}` : ""}
+                              {s.sender && (
+                                <>
+                                  {" · "}
+                                  <code
+                                    className="rounded bg-[color:var(--ds-surface-2)] px-1 font-mono text-[10px]"
+                                    title={
+                                      lang === "en"
+                                        ? "pseudonymous sender tag (repeat messages from the same number share it)"
+                                        : "pseudonymes Absender-Kürzel (Wiederholer erkennbar)"
+                                    }
+                                  >
+                                    …{s.sender}
+                                  </code>
+                                </>
+                              )}
                             </span>
                             {s.snippet && <span className="block italic">„{s.snippet}“</span>}
                           </li>

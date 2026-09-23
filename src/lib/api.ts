@@ -1733,7 +1733,12 @@ export const api = {
     muted(): Promise<{
       count: number;
       lastAt: string | null;
-      snippets?: Array<{ at: string; type: string | null; snippet: string | null }>;
+      snippets?: Array<{
+        at: string;
+        type: string | null;
+        snippet: string | null;
+        sender: string | null;
+      }>;
     }> {
       return request("/api/whatsapp/muted");
     },
