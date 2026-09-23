@@ -20,6 +20,11 @@ import {
   corpusListParams,
   corpusSearchMode,
 } from "@/components/dashboard/corpus-steward/corpus-files-queries";
+import {
+  corpusCoverageAuditQuery,
+  corpusIngestLogQuery,
+  corpusOverviewQuery,
+} from "@/components/dashboard/corpus-ops-queries";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   Database,
@@ -87,27 +92,15 @@ export default function CorpusPage() {
   // degradiert der Prefetch lautlos zum normalen Fetch (kein Fehlerpfad).
   const prefetchTab = useCallback(
     (id: TabId) => {
-      const json = async (url: string) => {
-        const r = await fetch(url, { credentials: "same-origin" });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return ((await r.json()) as { data: unknown }).data;
-      };
       if (id === "bestand") {
-        void queryClient.prefetchQuery({
-          queryKey: ["corpus-coverage-audit"],
-          queryFn: () => json("/api/admin/corpus-coverage-audit"),
-          staleTime: 300_000,
-        });
-        void queryClient.prefetchQuery({
-          queryKey: ["corpus-overview"],
-          queryFn: () => json("/api/admin/corpus-overview"),
-          staleTime: 60_000,
-        });
+        void queryClient.prefetchQuery(corpusCoverageAuditQuery());
+        void queryClient.prefetchQuery(corpusOverviewQuery());
       } else if (id === "protokoll") {
-        void queryClient.prefetchQuery({
-          queryKey: ["corpus-ingest-log", "limit=50&offset=0"],
-          queryFn: () => json("/api/admin/corpus-ingest-log?limit=50&offset=0"),
-        });
+        // Default-Ansicht des Protokolls: PAGE_SIZE=50, offset 0,
+        // kein Filter — CorpusProtokoll baut dieselbe Param-Menge.
+        void queryClient.prefetchQuery(
+          corpusIngestLogQuery(new URLSearchParams({ limit: "50", offset: "0" }))
+        );
       } else if (id === "steward") {
         // Dieselbe Param-Ableitung wie CorpusFileBrowser (corpusSearchMode /
         // corpusListParams) — die URL-Params überleben den Tabwechsel, der

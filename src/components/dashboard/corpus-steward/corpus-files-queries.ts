@@ -61,8 +61,10 @@ export function corpusListParams(params: Params): {
   sort: CorpusFileSort;
   flag: string;
 } {
+  const rawPage = parseInt(params.get("page") ?? "1", 10);
   return {
-    page: parseInt(params.get("page") ?? "1", 10),
+    // ?page=abc → NaN würde sonst in Query-Key und Request landen.
+    page: Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1,
     sort: (params.get("sort") as CorpusFileSort) ?? "name",
     flag: params.get("flag") ?? "all",
   };

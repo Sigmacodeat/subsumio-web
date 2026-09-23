@@ -23,12 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ExternalLink, X } from "lucide-react";
-import {
-  INGEST_ACTION_LABELS,
-  SOURCE_LABELS,
-  type IngestLogEntry,
-  type IngestLogPage,
-} from "@/lib/corpus-labels";
+import { INGEST_ACTION_LABELS, SOURCE_LABELS, type IngestLogEntry } from "@/lib/corpus-labels";
+import { corpusIngestLogQuery } from "./corpus-ops-queries";
 
 const PAGE_SIZE = 50;
 const ALL = "__all";
@@ -60,16 +56,7 @@ export function CorpusProtokoll() {
   if (day) params.set("day", day);
   if (appliedSearch) params.set("q", appliedSearch);
 
-  const query = useQuery({
-    queryKey: ["corpus-ingest-log", params.toString()],
-    queryFn: async () => {
-      const r = await fetch(`/api/admin/corpus-ingest-log?${params}`, {
-        credentials: "same-origin",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return ((await r.json()) as { data: IngestLogPage }).data;
-    },
-  });
+  const query = useQuery(corpusIngestLogQuery(params));
 
   const reset = (fn: () => void) => {
     fn();

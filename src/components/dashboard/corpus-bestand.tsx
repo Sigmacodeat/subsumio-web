@@ -14,9 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshCw } from "lucide-react";
-import type { CorpusOverview, CorpusSourceStats } from "@/lib/corpus-labels";
-import type { CoverageAuditResult, SourceAuditRow } from "@/lib/corpus-completeness-audit";
-import type { DeStatuteCoverage } from "@/lib/de-statute-coverage";
+import type { CorpusSourceStats } from "@/lib/corpus-labels";
+import type { SourceAuditRow } from "@/lib/corpus-completeness-audit";
+import { corpusCoverageAuditQuery, corpusOverviewQuery } from "./corpus-ops-queries";
 
 const AUDIT_STATUS_LABELS: Record<SourceAuditRow["audit_status"], string> = {
   ok: "OK",
@@ -34,22 +34,8 @@ const AUDIT_STATUS_CLASSES: Record<SourceAuditRow["audit_status"], string> = {
   partially_embedded: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
-type CoverageAuditResponse = CoverageAuditResult & {
-  de_statutes: (DeStatuteCoverage & { unavailable?: boolean }) | null;
-};
-
 function CoverageAudit() {
-  const query = useQuery({
-    queryKey: ["corpus-coverage-audit"],
-    queryFn: async () => {
-      const r = await fetch("/api/admin/corpus-coverage-audit", {
-        credentials: "same-origin",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return ((await r.json()) as { data: CoverageAuditResponse }).data;
-    },
-    staleTime: 300_000,
-  });
+  const query = useQuery(corpusCoverageAuditQuery());
 
   if (query.isLoading) return <Skeleton className="h-32 w-full" />;
   if (query.isError || !query.data) {
@@ -248,15 +234,7 @@ function ReconChip({ s }: { s: CorpusSourceStats }) {
 }
 
 export function CorpusBestand() {
-  const query = useQuery({
-    queryKey: ["corpus-overview"],
-    queryFn: async () => {
-      const r = await fetch("/api/admin/corpus-overview", { credentials: "same-origin" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return ((await r.json()) as { data: CorpusOverview }).data;
-    },
-    staleTime: 60_000,
-  });
+  const query = useQuery(corpusOverviewQuery());
 
   if (query.isLoading) {
     return (
