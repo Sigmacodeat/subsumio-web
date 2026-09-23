@@ -267,3 +267,57 @@ describe("POST /api/pages — server-side write guards", () => {
     expect(writes()).toHaveLength(1);
   });
 });
+
+describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
+  const deadlines = Array.from({ length: 250 }, (_, i) => ({
+    slug: `legal/deadlines/d-${i}`,
+    title: `Frist ${i}`,
+    frontmatter:
+      i === 7
+        ? { case_title: "Muster gegen Beispiel" }
+        : i % 50 === 0 || i === 249
+          ? { case_slug: "legal/cases/akte-1" }
+          : { case_slug: "legal/cases/andere" },
+  }));
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        const limit = Number(u.searchParams.get("limit"));
+        const offset = Number(u.searchParams.get("offset") ?? 0);
+        return Response.json(deadlines.slice(offset, offset + Math.min(limit, 100)));
+      })
+    );
+  });
+
+  it("pages past the engine cap and returns only the matter's deadlines", async () => {
+    const res = await GET(
+      new NextRequest(
+        "http://localhost:3000/api/pages?type=legal_deadline&case_slug=legal/cases/akte-1&case_title=Muster%20gegen%20Beispiel"
+      )
+    );
+    const slugs = ((await res.json()) as Array<{ slug: string }>).map((p) => p.slug);
+    expect(slugs.sort()).toEqual(
+      [
+        "legal/deadlines/d-0",
+        "legal/deadlines/d-100",
+        "legal/deadlines/d-150",
+        "legal/deadlines/d-200",
+        "legal/deadlines/d-249",
+        "legal/deadlines/d-50",
+        "legal/deadlines/d-7",
+      ].sort()
+    );
+  });
+
+  it("requires a type for a matter filter", async () => {
+    const res = await GET(
+      new NextRequest("http://localhost:3000/api/pages?case_slug=legal/cases/akte-1")
+    );
+    expect(res.status).toBe(400);
+  });
+});

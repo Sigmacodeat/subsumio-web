@@ -28,7 +28,32 @@ const pagesQuerySchema = z.object({
   cursor: z.string().optional(),
   /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
   include_tombstoned: z.string().optional(),
+  /**
+   * Pages of `type` that belong to one matter — linked by frontmatter
+   * case_slug, case_title or case_number (any of them). The engine cannot
+   * filter by frontmatter and caps a list at 100 rows, so the server pages
+   * through the whole type and filters; the result is complete, not the
+   * newest N of the firm.
+   */
+  case_slug: z.string().max(500).optional(),
+  case_title: z.string().max(500).optional(),
+  case_number: z.string().max(200).optional(),
 });
+
+/** Upper bound for a matter-scoped scan (pages of one type, firm-wide). */
+const MATTER_SCAN_MAX = 50_000;
+
+function belongsToMatter(
+  fm: Record<string, unknown> | undefined,
+  q: { case_slug?: string; case_title?: string; case_number?: string }
+): boolean {
+  if (!fm) return false;
+  return (
+    (!!q.case_slug && fm.case_slug === q.case_slug) ||
+    (!!q.case_title && fm.case_title === q.case_title) ||
+    (!!q.case_number && fm.case_number === q.case_number)
+  );
+}
 
 // One route, two intents: `merge: true` is a partial update (the engine keeps
 // title/body/type when omitted — see enginePatchPage in src/lib/engine.ts),
@@ -95,6 +120,21 @@ export const GET = createHandler(
     query: pagesQuerySchema,
   },
   async (ctx, _body, query, _req) => {
+    if (query.case_slug || query.case_title || query.case_number) {
+      if (!query.type) {
+        return apiError("type_required", "Für eine Aktenfilterung ist type erforderlich", 400);
+      }
+      try {
+        const all = await listEnginePages(ctx.headers, query.type, MATTER_SCAN_MAX, {
+          includeTombstoned: query.include_tombstoned === "1",
+          timeoutMs: 15_000,
+        });
+        return Response.json(all.filter((p) => belongsToMatter(p.frontmatter, query)));
+      } catch (err) {
+        log.error("[pages] matter list failed:", err instanceof Error ? err.message : String(err));
+        return apiError("service_unavailable", "Seiten derzeit nicht verfügbar", 503);
+      }
+    }
     const params = new URLSearchParams();
     for (const key of ["limit", "offset", "source", "type", "tag", "q", "cursor"] as const) {
       const val = query[key];
