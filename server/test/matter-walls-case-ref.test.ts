@@ -406,8 +406,10 @@ describe("Fristenbuch", () => {
 describe("writers", () => {
   test("stampCaseSlugFrom stamps only pages naming the writer's matter", () => {
     expect(
-      stampCaseSlugFrom({ type: "note", frontmatter: { case_ref: WALLED_CASE } }, WALLED_CASE)
-        .frontmatter
+      stampCaseSlugFrom(
+        { type: "note", frontmatter: { case_ref: WALLED_CASE } as Record<string, unknown> },
+        WALLED_CASE
+      ).frontmatter
     ).toEqual({ case_ref: WALLED_CASE, case_slug: WALLED_CASE });
     const other = { type: "note", frontmatter: { case_ref: OPEN_CASE } };
     expect(stampCaseSlugFrom(other, WALLED_CASE)).toBe(other);
