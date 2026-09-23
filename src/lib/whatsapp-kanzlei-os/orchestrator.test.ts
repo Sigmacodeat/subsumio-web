@@ -183,7 +183,9 @@ describe("orchestrateWhatsAppMessage", () => {
     expect(result.status).toBe("routed");
     expect(result.reply).toContain("sicher zur Akte genommen");
     expect(handleText).not.toHaveBeenCalled();
-    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    // 5 fetches: case read, submission write, …, case update, inbound-register
+    // stamp (durable outbox task since the intake-hardening commit).
+    expect(fetchImpl).toHaveBeenCalledTimes(5);
     const submissionBody = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(submissionBody.type).toBe("client_submission");
     expect(submissionBody.frontmatter).toMatchObject({
