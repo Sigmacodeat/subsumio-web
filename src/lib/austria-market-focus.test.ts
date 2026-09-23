@@ -90,15 +90,26 @@ describe("public market focus (AT + DE live, CH/EN retired)", () => {
     expect(sidebar).toContain("!DE_ONLY_HREFS.has(item.href)");
     expect(copilotTools).not.toContain('"rvg_calculate",');
 
+    // WP-6.37: DE surfaces reactivated, gated behind jurisdiction === "DE".
+    // They must exist AND stay in DE_ONLY_HREFS so AT/CH firms never see them.
     for (const path of [
       "src/app/dashboard/bea",
       "src/app/dashboard/datev-export",
       "src/app/dashboard/datev-direct",
-      "src/app/api/bea",
-      "src/app/api/datev",
-      "src/app/api/datev-direct",
-      "src/app/dashboard/cost-calculator",
+      "src/app/dashboard/fao-tracking",
     ]) {
+      expect(existsSync(join(process.cwd(), path)), path).toBe(true);
+    }
+    for (const href of [
+      "/dashboard/bea",
+      "/dashboard/datev-export",
+      "/dashboard/datev-direct",
+      "/dashboard/fao-tracking",
+    ]) {
+      expect(sidebar, href).toContain(`"${href}"`);
+    }
+    expect(sidebar).toContain('_jurisdiction === "DE"');
+    for (const path of ["src/app/api/datev-direct", "src/app/dashboard/cost-calculator"]) {
       expect(existsSync(join(process.cwd(), path)), path).toBe(false);
     }
     expect(existsSync(join(process.cwd(), "src/app/_archive/de/api/bea"))).toBe(true);
