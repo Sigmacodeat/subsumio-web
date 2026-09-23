@@ -2,11 +2,19 @@
 
 import { describe, test, expect } from "vitest";
 import {
+  compareParagraphLabels,
   computeLawCoverage,
+  computeLawDetail,
+  lawOfficialUrl,
+  lawSourceByParam,
+  lawStatusFromParam,
+  normOfficialUrl,
   parseRisInforceIndex,
   type DbLawAgg,
   type DbLawDoc,
+  type DbLawPage,
 } from "./law-coverage";
+import { corpusFileCandidatesForSlug, corpusFileForSlug } from "./law-coverage-server";
 
 const INDEX_SAMPLE = [
   { nor: "NOR1", gnr: "10001", kurztitel: "Testgesetz", abk: "TG", apa: "§ 1" },
@@ -129,5 +137,124 @@ describe("computeLawCoverage", () => {
     expect(big.missingCount).toBe(60);
     expect(big.missingDocs).toHaveLength(50);
     expect(big.missingTruncated).toBe(true);
+  });
+});
+
+describe("compareParagraphLabels", () => {
+  test("natürliche Reihenfolge: § 2 < § 2a < § 10 < Art. 1 < Anl. 1", () => {
+    const labels = ["Anl. 1", "§ 10", "Art. 1", "§ 2a", "§ 2", "§§ 3"];
+    expect([...labels].sort(compareParagraphLabels)).toEqual([
+      "§ 2",
+      "§ 2a",
+      "§§ 3",
+      "§ 10",
+      "Art. 1",
+      "Anl. 1",
+    ]);
+  });
+});
+
+describe("computeLawDetail", () => {
+  const index = parseRisInforceIndex(INDEX_SAMPLE);
+  const pg = (doc: string | null, label: string | null = null): DbLawPage => ({
+    doc,
+    label,
+    slug: `legal/statutes/at/tg/${doc ?? "x"}`,
+    title: null,
+    chunks: 1,
+    embedded: 1,
+    updated_at: null,
+  });
+
+  test("ungekürzte Fehlliste, gespeicherte §§ mit Index-Label, Rest als extra", () => {
+    const d = computeLawDetail(index.get("10001")!, [pg("NOR2"), pg("NOR99", "§ 99"), pg("NOR2")])!;
+    expect(d.status).toBe("partial");
+    expect(d.wanted).toBe(3);
+    expect(d.present.map((p) => p.label)).toEqual(["§ 2"]); // Dublette zählt einmal
+    expect(d.missing.map((m) => m.apa)).toEqual(["§ 1", "§ 3"]);
+    expect(d.extra.map((p) => p.doc)).toEqual(["NOR99"]);
+  });
+
+  test("ohne Index: alles Gespeicherte, Status db-only; weder Soll noch Ist → null", () => {
+    expect(
+      computeLawDetail(null, [pg("p-2", "§ 2"), pg("p-1", "§ 1")])!.present.map((p) => p.label)
+    ).toEqual(["§ 1", "§ 2"]);
+    expect(computeLawDetail(null, [])).toBeNull();
+  });
+});
+
+describe("amtliche Adressen und URL-Parameter", () => {
+  test("Bundesrecht: Gesetz und einzelne Norm", () => {
+    expect(lawOfficialUrl("law-at-normen", "10001622")?.url).toBe(
+      "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001622"
+    );
+    expect(normOfficialUrl("law-at-normen", "NOR12345678")).toBe(
+      "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR12345678/NOR12345678.html"
+    );
+  });
+
+  test("Landesrecht: Bundesland aus dem Präfix der Dokumentnummer", () => {
+    expect(lawOfficialUrl("law-at-landesrecht", "20000123", "LWI40001234")?.url).toBe(
+      "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=LrW&Gesetzesnummer=20000123"
+    );
+    expect(normOfficialUrl("law-at-landesrecht", "LNO40001234")).toBe(
+      "https://www.ris.bka.gv.at/Dokumente/LrNO/LNO40001234/LNO40001234.html"
+    );
+    expect(lawOfficialUrl("law-at-landesrecht", "20000123", null)).toBeNull();
+  });
+
+  test("Deutschland: gesetze-im-internet.de; unbekannte Formen → null", () => {
+    expect(lawOfficialUrl("law-de", "bgb")?.url).toBe("https://www.gesetze-im-internet.de/bgb/");
+    expect(normOfficialUrl("law-de", "p-1")).toBeNull();
+    expect(normOfficialUrl("law-at-normen", "javascript:alert(1)")).toBeNull();
+  });
+
+  test("Quellen- und Status-Parameter", () => {
+    expect(lawSourceByParam("landesrecht")?.id).toBe("law-at-landesrecht");
+    expect(lawSourceByParam("x")).toBeNull();
+    expect(lawStatusFromParam("unvollstaendig")).toBe("partial");
+    expect(lawStatusFromParam("quatsch")).toBeNull();
+  });
+});
+
+describe("corpusFileForSlug", () => {
+  test("Slug → normalisierte Datei je Quelle", () => {
+    expect(corpusFileForSlug("law-at-normen", "legal/statutes/at/abgb/p-1044")).toBe(
+      "at-normen/abgb/p-1044.md"
+    );
+    expect(
+      corpusFileForSlug("law-at-landesrecht", "legal/statutes/at/landesrecht/gnr-20000476/art-1")
+    ).toBe("at-landesrecht/gnr-20000476/art-1.md");
+  });
+
+  test("keine Datei für fremde Namensräume, Pfadausbrüche oder Quellen ohne Ablage", () => {
+    expect(corpusFileForSlug("law-at-normen", "legal/statutes/at/landesrecht/x/art-1")).toBeNull();
+    expect(corpusFileForSlug("law-at-normen", "legal/statutes/at/../../etc/passwd")).toBeNull();
+    expect(corpusFileForSlug("law-de", "legal/statutes/de/bgb/p-1")).toBeNull();
+  });
+});
+
+describe("corpusFileCandidatesForSlug", () => {
+  it("Bundesrecht has exactly one place", () => {
+    expect(corpusFileCandidatesForSlug("law-at-normen", "legal/statutes/at/abgb/p-1044")).toEqual([
+      "at-normen/abgb/p-1044.md",
+    ]);
+  });
+
+  it("Landesrecht is also looked up in every Bundesland folder (the slug has no state)", () => {
+    const c = corpusFileCandidatesForSlug(
+      "law-at-landesrecht",
+      "legal/statutes/at/landesrecht/gnr-20000248/p-34a"
+    );
+    expect(c[0]).toBe("at-landesrecht/gnr-20000248/p-34a.md");
+    expect(c).toContain("at-landesrecht/ktn/gnr-20000248/p-34a.md");
+    expect(c).toHaveLength(10);
+  });
+
+  it("rejects what corpusFileForSlug rejects", () => {
+    expect(corpusFileCandidatesForSlug("law-de", "legal/statutes/de/bgb/p-1")).toEqual([]);
+    expect(
+      corpusFileCandidatesForSlug("law-at-landesrecht", "legal/statutes/at/landesrecht/../x")
+    ).toEqual([]);
   });
 });

@@ -155,7 +155,7 @@ export function computeLawCoverage(
       const agg = aggByLaw.get(gnr);
       const status: LawCoverageStatus =
         haveCount === entry.docs.size ? "complete" : haveCount > 0 ? "partial" : "missing";
-      missing.sort((a, b) => (a.apa ?? a.nor).localeCompare(b.apa ?? b.nor, "de"));
+      missing.sort((a, b) => compareParagraphLabels(a.apa ?? a.nor, b.apa ?? b.nor));
       rows.push({
         key: gnr,
         abbr: entry.abk ?? agg?.abbr ?? null,
@@ -229,6 +229,17 @@ export function computeLawCoverage(
   return { rows, totals };
 }
 
+/** Nachlade-Stand aus der Pipeline (law_fetch_queue + laufender law-fetch). */
+export interface LawFetchState {
+  /** Vorgemerkte Gesetzesnummern in Warteschlangen-Reihenfolge. */
+  queued: string[];
+  /** Gesetzesnummer, die gerade vom RIS geladen wird — null = keine. */
+  running: string | null;
+  running_since: string | null;
+  /** true = Stand konnte nicht gelesen werden (Anzeige dann ohne Aussage). */
+  unavailable: boolean;
+}
+
 /** Response-Shape von GET /api/admin/corpus-law-coverage. */
 export interface LawCoverageResponse {
   source: string;
@@ -244,4 +255,257 @@ export interface LawCoverageResponse {
   };
   totals: LawCoverageTotals;
   laws: LawCoverageRow[];
+  /** Nachlade-Stand (nur law-at-normen hat eine Nachlade-Warteschlange). */
+  fetch?: LawFetchState | null;
+}
+
+// ── Quellen, Adressen, Sortierung ─────────────────────────────────────────
+
+export type LawSourceId = "law-at-normen" | "law-at-landesrecht" | "law-de";
+
+/**
+ * Die drei Gesetzes-Quellen mit sprechendem URL-Kürzel. Das Kürzel steht in
+ * den teilbaren Adressen (/ops/corpus/gesetz/bundesrecht/10001622 und
+ * ?quelle=landesrecht) — die interne Quellen-ID bleibt aus der Adresszeile.
+ */
+export const LAW_SOURCES: ReadonlyArray<{
+  id: LawSourceId;
+  param: string;
+  label: string;
+  /** Nur Bundesrecht hat eine Nachlade-Warteschlange (ris-xml-fetch-normen --gnr). */
+  refetch: boolean;
+}> = [
+  { id: "law-at-normen", param: "bundesrecht", label: "Bundesrecht", refetch: true },
+  { id: "law-at-landesrecht", param: "landesrecht", label: "Landesrecht", refetch: false },
+  { id: "law-de", param: "deutschland", label: "Deutschland", refetch: false },
+];
+
+export function lawSourceByParam(param: string | null | undefined) {
+  return LAW_SOURCES.find((s) => s.param === param) ?? null;
+}
+
+export function lawSourceById(id: string | null | undefined) {
+  return LAW_SOURCES.find((s) => s.id === id) ?? null;
+}
+
+/** Gesetzes-Kennung in der URL: Gesetzesnummer (AT) oder Kürzel (DE). */
+export const LAW_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
+
+/** Status ↔ URL-Wert (?status=…) — deutsch, ohne Umlaute. */
+export const LAW_STATUS_PARAMS: Record<LawCoverageStatus, string> = {
+  partial: "unvollstaendig",
+  missing: "fehlt",
+  complete: "vollstaendig",
+  "db-only": "nicht-im-ris",
+};
+
+export function lawStatusFromParam(param: string | null | undefined): LawCoverageStatus | null {
+  const hit = (Object.entries(LAW_STATUS_PARAMS) as [LawCoverageStatus, string][]).find(
+    ([, v]) => v === param
+  );
+  return hit ? hit[0] : null;
+}
+
+/** RIS-Abfragekürzel je Bundesland, abgeleitet aus dem Präfix der Dokumentnummer. */
+const LANDESRECHT_ABFRAGE: Record<string, string> = {
+  LBG: "LrBgld",
+  LKT: "LrK",
+  LNO: "LrNO",
+  LOO: "LrOO",
+  LSB: "LrSbg",
+  LST: "LrStmk",
+  LTI: "LrT",
+  LVB: "LrVbg",
+  LWI: "LrW",
+};
+
+function landesrechtAbfrage(docId: string | null | undefined): string | null {
+  if (!docId) return null;
+  return LANDESRECHT_ABFRAGE[docId.slice(0, 3).toUpperCase()] ?? null;
+}
+
+/**
+ * Amtliche Fundstelle des ganzen Gesetzes (geltende Fassung). Für Landesrecht
+ * braucht das RIS das Bundesland — es steckt im Präfix einer beliebigen
+ * Dokumentnummer des Gesetzes (`sampleDocId`).
+ */
+export function lawOfficialUrl(
+  source: string,
+  key: string,
+  sampleDocId?: string | null
+): { url: string; label: string } | null {
+  if (source === "law-at-normen" && /^\d+$/.test(key)) {
+    return {
+      url: `https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=${key}`,
+      label: "Im RIS öffnen",
+    };
+  }
+  if (source === "law-at-landesrecht" && /^\d+$/.test(key)) {
+    const abfrage = landesrechtAbfrage(sampleDocId);
+    return abfrage
+      ? {
+          url: `https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=${abfrage}&Gesetzesnummer=${key}`,
+          label: "Im RIS öffnen",
+        }
+      : null;
+  }
+  if (source === "law-de" && LAW_KEY_PATTERN.test(key)) {
+    return {
+      url: `https://www.gesetze-im-internet.de/${encodeURIComponent(key)}/`,
+      label: "Auf gesetze-im-internet.de öffnen",
+    };
+  }
+  return null;
+}
+
+/** Amtliche Fundstelle eines einzelnen Paragraphen/Artikels (RIS-Dokument). */
+export function normOfficialUrl(source: string, docId: string | null | undefined): string | null {
+  if (!docId) return null;
+  if (source === "law-at-normen" && /^NOR\d+$/.test(docId)) {
+    return `https://www.ris.bka.gv.at/Dokumente/Bundesnormen/${docId}/${docId}.html`;
+  }
+  if (source === "law-at-landesrecht" && /^[A-Z]{3}\d+$/.test(docId)) {
+    const abfrage = landesrechtAbfrage(docId);
+    return abfrage ? `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${docId}/${docId}.html` : null;
+  }
+  return null;
+}
+
+const PARA_KIND_RANK = (kind: string): number => {
+  const k = kind.toLowerCase();
+  if (k.startsWith("§")) return 0;
+  if (k.startsWith("art")) return 1;
+  if (k.startsWith("anl")) return 2;
+  return 3;
+};
+
+/**
+ * Natürliche Reihenfolge für §-/Artikel-Bezeichnungen: § 2 vor § 10, § 2a
+ * nach § 2, Paragraphen vor Artikeln vor Anlagen. Unbekannte Formen fallen
+ * auf den deutschen Textvergleich zurück.
+ */
+export function compareParagraphLabels(a: string, b: string): number {
+  const rx = /(§+|Art(?:ikel)?\.?|Anl(?:age)?\.?)\s*(\d+)\s*([a-z]*)/i;
+  const ma = rx.exec(a);
+  const mb = rx.exec(b);
+  if (ma && mb) {
+    return (
+      PARA_KIND_RANK(ma[1]) - PARA_KIND_RANK(mb[1]) ||
+      Number(ma[2]) - Number(mb[2]) ||
+      ma[3].localeCompare(mb[3], "de") ||
+      a.localeCompare(b, "de")
+    );
+  }
+  if (ma) return -1;
+  if (mb) return 1;
+  return a.localeCompare(b, "de", { numeric: true });
+}
+
+// ── Einzelnes Gesetz ─────────────────────────────────────────────────────
+
+/** Eine gespeicherte Seite (§/Artikel) eines Gesetzes, wie die DB sie liefert. */
+export interface DbLawPage {
+  /** Dokument-ID (nor) bzw. §-Segment — null, wenn die Seite keine trägt. */
+  doc: string | null;
+  /** §-Bezeichnung aus dem Frontmatter (paragraph_ref), falls vorhanden. */
+  label: string | null;
+  slug: string;
+  title: string | null;
+  chunks: number;
+  embedded: number;
+  updated_at: string | null;
+}
+
+/** Ein § in der Detailantwort — gespeichert (mit Datei) oder nur in der DB. */
+export interface LawDetailNorm {
+  doc: string | null;
+  label: string | null;
+  title: string | null;
+  /** Pfad der gespeicherten Textdatei (für den Datei-Betrachter), null = keine Datei gefunden. */
+  file: string | null;
+  /** Prüfvermerk aus dem Korpus-Steward: verified | needs_review | defective | null. */
+  flag: string | null;
+  chunks: number;
+  embedded: number;
+  updated_at: string | null;
+}
+
+export interface LawDetailResponse {
+  source: LawSourceId;
+  key: string;
+  abbr: string | null;
+  title: string | null;
+  status: LawCoverageStatus;
+  wanted: number;
+  have: number;
+  missing: MissingDoc[];
+  present: LawDetailNorm[];
+  /** In der DB, aber nicht (mehr) im RIS-Verzeichnis der geltenden Normen. */
+  extra: LawDetailNorm[];
+  chunks: number;
+  embedded: number;
+  embed_pct: number | null;
+  quality: { verified: number; needs_review: number; defective: number; unchecked: number };
+  index: { available: boolean | null; measured_at: string | null };
+  generated_at: string;
+  fetch: { supported: boolean; queued: boolean; running: boolean; unavailable: boolean };
+}
+
+/**
+ * Soll-Ist für EIN Gesetz, ohne Kappung der Fehlliste. `entry` = RIS-Soll
+ * (null bei Quellen ohne Index oder Gesetzen, die das RIS nicht mehr listet).
+ * Gibt null zurück, wenn es das Gesetz weder im Soll noch in der DB gibt.
+ */
+export function computeLawDetail(
+  entry: RisIndexEntry | null,
+  pages: DbLawPage[]
+): {
+  status: LawCoverageStatus;
+  wanted: number;
+  missing: MissingDoc[];
+  present: DbLawPage[];
+  extra: DbLawPage[];
+} | null {
+  if (!entry && pages.length === 0) return null;
+
+  // Eine Dokument-ID zählt einmal, auch wenn die DB sie doppelt führt.
+  const byDoc = new Map<string, DbLawPage>();
+  const withoutDoc: DbLawPage[] = [];
+  for (const p of pages) {
+    if (!p.doc) withoutDoc.push(p);
+    else if (!byDoc.has(p.doc)) byDoc.set(p.doc, p);
+  }
+
+  const labelOf = (p: DbLawPage) => p.label ?? p.doc ?? p.slug;
+  const byLabel = (a: DbLawPage, b: DbLawPage) => compareParagraphLabels(labelOf(a), labelOf(b));
+
+  if (!entry) {
+    return {
+      status: "db-only",
+      wanted: 0,
+      missing: [],
+      present: [...byDoc.values(), ...withoutDoc].sort(byLabel),
+      extra: [],
+    };
+  }
+
+  const present: DbLawPage[] = [];
+  const missing: MissingDoc[] = [];
+  for (const [nor, apa] of entry.docs) {
+    const hit = byDoc.get(nor);
+    if (hit) present.push({ ...hit, label: hit.label ?? apa });
+    else missing.push({ nor, apa });
+  }
+  const extra = [...byDoc.values()].filter((p) => !entry.docs.has(p.doc!)).concat(withoutDoc);
+  missing.sort((a, b) => compareParagraphLabels(a.apa ?? a.nor, b.apa ?? b.nor));
+
+  const status: LawCoverageStatus =
+    present.length === entry.docs.size ? "complete" : present.length > 0 ? "partial" : "missing";
+  return {
+    status,
+    wanted: entry.docs.size,
+    missing,
+    present: present.sort(byLabel),
+    extra: extra.sort(byLabel),
+  };
 }

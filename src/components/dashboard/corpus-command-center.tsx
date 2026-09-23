@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { ShowMoreButton, useShowMore } from "./corpus-show-more";
 
 const API_BASE = "/api/admin/corpus-command-center";
 
@@ -645,6 +646,7 @@ function WorkQueueSection({
     return true;
   });
 
+  const queueMore = useShowMore(filtered, `${filter}|${corpusFilter}`);
   const corpora = [...new Set(items.map((i) => i.corpus))].sort();
   const progress = total > 0 ? (verified / (total + verified)) * 100 : 0;
 
@@ -750,11 +752,10 @@ function WorkQueueSection({
               Keine Auffälligkeiten in diesem Filter
             </div>
           ) : (
-            // overscroll-contain: a fixed-height list next to a page that keeps
-            // scrolling below it — without it, reaching the bottom edge here
-            // chains straight into the page and it jumps.
-            <div className="max-h-[500px] space-y-1 overflow-y-auto overscroll-contain">
-              {filtered.map((item) => (
+            // Kein Scroll-Kasten: die Seite scrollt, die Liste wächst über
+            // „Weitere anzeigen" — ein fester Kasten fängt sonst das Mausrad ab.
+            <div className="space-y-1">
+              {queueMore.visible.map((item) => (
                 <div
                   key={item.path}
                   className="flex items-start gap-3 rounded border border-[color:var(--ds-border)] p-2.5 hover:bg-[color:var(--ds-surface-hover)]"
@@ -788,6 +789,11 @@ function WorkQueueSection({
                   </div>
                 </div>
               ))}
+              <ShowMoreButton
+                shown={queueMore.visible.length}
+                total={queueMore.total}
+                onMore={queueMore.more}
+              />
               {total > items.length && (
                 <div className="mt-2 border-t py-3 text-center text-xs text-[color:var(--ds-text-subtle)]">
                   Erste {items.length} von {fmt(total)} angezeigt — weitere via Pagination
@@ -884,6 +890,7 @@ function PipelineSection({
     "jud-lvwg": "law-at-judikatur-lvwg",
   };
 
+  const statesMore = useShowMore(states);
   const running = states.filter((s) => s.pid !== null);
   const liveBySource = new Map(live.map((l) => [l.source, l]));
   const alertStates = states.filter((s) => s.alertFlags.length > 0);
@@ -1040,8 +1047,8 @@ function PipelineSection({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="max-h-[500px] space-y-2 overflow-y-auto overscroll-contain">
-              {states.map((s, i) => {
+            <div className="space-y-2">
+              {statesMore.visible.map((s, i) => {
                 const isRunning = s.pid !== null;
                 const hasAlerts = s.alertFlags.length > 0;
                 const sourceId = sourceKeyToSourceId[s.source] || s.source;
@@ -1220,6 +1227,11 @@ function PipelineSection({
                 );
               })}
             </div>
+            <ShowMoreButton
+              shown={statesMore.visible.length}
+              total={statesMore.total}
+              onMore={statesMore.more}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -1247,6 +1259,7 @@ function TrustSection({
     totals.verified + totals.needsReview + totals.defective + totals.archived + totals.unreviewed;
   const verifiedPct = total > 0 ? (totals.verified / total) * 100 : 0;
   const archivedPct = total > 0 ? (totals.archived / total) * 100 : 0;
+  const trustMore = useShowMore(rows);
 
   return (
     <div className="space-y-4">
@@ -1320,8 +1333,8 @@ function TrustSection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="max-h-[400px] space-y-1.5 overflow-y-auto overscroll-contain">
-            {rows.map((r) => {
+          <div className="space-y-1.5">
+            {trustMore.visible.map((r) => {
               const total = r.total + r.unreviewed;
               const verifiedPct = total > 0 ? (r.verified / total) * 100 : 0;
               const reviewPct = total > 0 ? (r.needsReview / total) * 100 : 0;
@@ -1394,6 +1407,11 @@ function TrustSection({
               );
             })}
           </div>
+          <ShowMoreButton
+            shown={trustMore.visible.length}
+            total={trustMore.total}
+            onMore={trustMore.more}
+          />
         </CardContent>
       </Card>
     </div>

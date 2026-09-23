@@ -9,7 +9,7 @@ import type { CorpusOverview } from "@/lib/corpus-labels";
 import type { CoverageAuditResult } from "@/lib/corpus-completeness-audit";
 import type { DeStatuteCoverage } from "@/lib/de-statute-coverage";
 import type { IngestLogPage } from "@/lib/corpus-labels";
-import type { LawCoverageResponse } from "@/lib/law-coverage";
+import type { LawCoverageResponse, LawDetailResponse } from "@/lib/law-coverage";
 
 export type CoverageAuditResponse = CoverageAuditResult & {
   de_statutes: (DeStatuteCoverage & { unavailable?: boolean }) | null;
@@ -45,6 +45,18 @@ export function corpusLawCoverageQuery(source: string) {
         `/api/admin/corpus-law-coverage?source=${encodeURIComponent(source)}`
       ),
     staleTime: 60_000,
+  };
+}
+
+/** Ein Gesetz für /ops/corpus/gesetz/… — ungekürzte Fehlliste + gespeicherte §§. */
+export function corpusLawDetailQuery(source: string, key: string) {
+  return {
+    queryKey: ["corpus-law-detail", source, key] as const,
+    queryFn: () =>
+      fetchData<LawDetailResponse>(
+        `/api/admin/corpus-law-coverage/law?source=${encodeURIComponent(source)}&key=${encodeURIComponent(key)}`
+      ),
+    staleTime: 30_000,
   };
 }
 
