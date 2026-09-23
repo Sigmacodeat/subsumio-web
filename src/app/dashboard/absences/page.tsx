@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { CalendarDays, UserCheck, Plus, Loader2, Plane, AlertCircle, X } from "lucide-react";
+import {
+  CalendarDays,
+  UserCheck,
+  Plus,
+  Loader2,
+  Plane,
+  AlertCircle,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -83,6 +92,7 @@ export default function AbsencePage() {
   const [loadError, setLoadError] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -159,6 +169,28 @@ export default function AbsencePage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleTransition(id: string, action: "complete" | "cancel") {
+    if (action === "cancel" && !window.confirm(t("absence.cancel_confirm"))) return;
+    setBusyId(id);
+    try {
+      const res = await csrfFetch("/api/absences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action }),
+      });
+      if (!res.ok) {
+        addToast({ type: "error", title: t("absence.update_failed") });
+        return;
+      }
+      addToast({ type: "success", title: t("absence.updated") });
+      void loadAbsences();
+    } catch {
+      addToast({ type: "error", title: t("absence.update_failed") });
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -448,6 +480,39 @@ export default function AbsencePage() {
                 <div className="w-full pl-11 text-sm text-[color:var(--ds-text)] tabular-nums sm:w-auto sm:shrink-0 sm:pl-0 sm:text-right">
                   {formatDate(absence.start_date)} – {formatDate(absence.end_date)}
                 </div>
+                {(status === "planned" || status === "active") && (
+                  <div className="flex w-full shrink-0 items-center gap-2 pl-11 sm:w-auto sm:pl-0">
+                    {status === "active" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busyId === absence.id}
+                        onClick={() => void handleTransition(absence.id, "complete")}
+                      >
+                        {busyId === absence.id ? (
+                          <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                        ) : (
+                          <CheckCircle2 size={13} aria-hidden="true" />
+                        )}
+                        {t("absence.complete")}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busyId === absence.id}
+                      onClick={() => void handleTransition(absence.id, "cancel")}
+                      className="text-[color:var(--ds-danger-text)]"
+                    >
+                      {busyId === absence.id ? (
+                        <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <X size={13} aria-hidden="true" />
+                      )}
+                      {t("absence.cancel")}
+                    </Button>
+                  </div>
+                )}
               </li>
             );
           })}

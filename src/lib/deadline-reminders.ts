@@ -56,6 +56,8 @@ export interface DueReminder {
   vorfristReached: boolean;
   isNotfrist: boolean;
   ervZustelldatum?: string;
+  /** legal_follow_up instead of a real deadline — the reminder says "Wiedervorlage". */
+  isFollowUp?: boolean;
   /**
    * An AI-proposed deadline nobody confirmed yet. It still reminds on every
    * channel — a missed real Frist weighs more than a false alarm — but the
@@ -141,7 +143,8 @@ function str(v: unknown): string | undefined {
 export function collectDueReminders(
   cases: ReminderPage[],
   deadlinePages: ReminderPage[],
-  now: Date
+  now: Date,
+  followUpPages: ReminderPage[] = []
 ): ReminderGroup[] {
   const groups = new Map<string, ReminderGroup>();
   const caseBySlug = new Map(cases.map((c) => [c.slug, c]));
@@ -173,6 +176,25 @@ export function collectDueReminders(
     const title = page.title ?? str(fm.title) ?? str(fm.description) ?? "Frist";
     const item = dueReminder(fm, { kind: "page", slug: page.slug }, title, now);
     if (item) groupFor(caseSlug).items.push(item);
+  }
+
+  // Wiedervorlagen remind like deadlines — a follow-up nobody is reminded
+  // of is forgotten. `completed` maps to a closed status so done items never
+  // fire. The same reminder_stages_sent write-back marks the page, so a WV
+  // escalates 7 → 3 → 1 → 0 like a Frist.
+  for (const page of followUpPages) {
+    const fm = (page.frontmatter ?? {}) as Record<string, unknown> & {
+      date?: string;
+      completed?: boolean;
+      case_slug?: string;
+      reminder_stages_sent?: number[];
+    };
+    if (fm.completed) continue;
+    const caseSlug = str(fm.case_slug);
+    if (caseSlug && archived(caseBySlug.get(caseSlug))) continue;
+    const title = page.title ?? "Wiedervorlage";
+    const item = dueReminder(fm as ReminderDeadline, { kind: "page", slug: page.slug }, title, now);
+    if (item) groupFor(caseSlug).items.push({ ...item, isFollowUp: true });
   }
 
   for (const c of cases) {

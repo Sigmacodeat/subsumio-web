@@ -8,6 +8,7 @@ import { mergeSuggestedDeadlines } from "@/lib/email/mail-filing";
 import { caseDocumentsLockKey } from "@/lib/case-documents";
 import { withKeyedLock } from "@/lib/keyed-lock";
 import { enginePatchPage } from "@/lib/engine";
+import { stampInboundEntry } from "@/lib/inbound-register-stamp";
 import type { SuggestedDeadline } from "@/lib/matter-detail-types";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { logger } from "@/lib/logger";
@@ -256,6 +257,25 @@ export const POST = createHandler(
           }
         }
         await brain.createPage(page);
+
+        // Posteingangsbuch: jede eingehende beA-Nachricht ist ein Eingang.
+        // Best-effort — der Import selbst ist schon persistiert.
+        if (direction === "inbound") {
+          await stampInboundEntry(ctx.headers, {
+            channel: "erv",
+            subject: String(fm.subject || page.title),
+            senderName: String(fm.sender || "") || undefined,
+            caseSlug: match?.case_slug,
+            documentSlug: page.slug,
+            receivedBy: ctx.user.name || ctx.user.email,
+            notes: eeb ? `eEB-Zustelltag: ${eeb}` : undefined,
+          }).catch((err) =>
+            log.warn(
+              "[bea-import] inbound-register stamp failed:",
+              err instanceof Error ? err.message : String(err)
+            )
+          );
+        }
       }
 
       // Vorschläge gelockt auf die `suggested_deadlines` der Akte mergen —

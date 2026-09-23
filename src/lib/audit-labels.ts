@@ -236,6 +236,7 @@ export type AuditAction =
   | "org.join"
   | "gdpr.data_deletion"
   | "absence.create"
+  | "absence.update"
   | "booking.create"
   | "corpus.file_create"
   | "corpus.file_delete"
@@ -524,6 +525,7 @@ const ACTION_LABELS: Record<string, string> = {
   "org.join": "Organisation beigetreten",
   "gdpr.data_deletion": "DSGVO-Accountlöschung",
   "absence.create": "Abwesenheit angelegt",
+  "absence.update": "Abwesenheit geändert",
   "booking.create": "Terminbuchung erstellt",
   "corpus.file_create": "Corpus-Datei erstellt",
   "corpus.file_delete": "Corpus-Datei gelöscht",

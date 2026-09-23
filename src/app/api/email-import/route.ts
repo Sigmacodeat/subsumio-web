@@ -3,6 +3,7 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
+import { stampInboundEntry } from "@/lib/inbound-register-stamp";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/email-import");
@@ -47,7 +48,7 @@ export const POST = createHandler(
       if (body.force_case_slug) {
         const forcedCase = cases.find((c) => c.slug === body.force_case_slug);
         if (forcedCase) {
-          return await importEmailIntoCase(brain, forcedCase, body);
+          return await importEmailIntoCase(brain, forcedCase, body, undefined, ctx);
         }
       }
 
@@ -90,7 +91,7 @@ export const POST = createHandler(
         return apiError("case_not_found", "Zugeordnete Akte nicht gefunden", 404);
       }
 
-      return await importEmailIntoCase(brain, matchedCase, body, result.threadId);
+      return await importEmailIntoCase(brain, matchedCase, body, result.threadId, ctx);
     } catch (err) {
       log.error("[email-import] failed:", err instanceof Error ? err.message : String(err));
       return apiError("import_failed", "E-Mail-Import fehlgeschlagen", 500);
@@ -102,7 +103,8 @@ async function importEmailIntoCase(
   brain: ReturnType<typeof createServerBrainClient>,
   matchedCase: { slug: string; title: string; case_number?: string; documents?: unknown[] },
   body: z.infer<typeof emailImportSchema>,
-  threadId?: string
+  threadId: string | undefined,
+  ctx: { headers: Record<string, string>; user: { name?: string; email?: string } }
 ) {
   const existingDocs = (matchedCase.documents || []) as Array<{
     id?: string;
@@ -146,6 +148,22 @@ async function importEmailIntoCase(
       documents: [...existingDocs, documentEntry],
     },
   });
+
+  // Posteingangsbuch: importierte E-Mails sind Eingänge — ohne Stempel fehlen
+  // sie in der revisionssicheren Übersicht. Best-effort wie beim Upload.
+  await stampInboundEntry(ctx.headers, {
+    channel: "email",
+    subject: body.subject,
+    senderAddress: body.from,
+    caseSlug: matchedCase.slug,
+    receivedBy: ctx.user.name || ctx.user.email,
+    notes: threadId ? `Thread: ${threadId}` : undefined,
+  }).catch((err) =>
+    log.error(
+      "[email-import] inbound-register stamp failed:",
+      err instanceof Error ? err.message : String(err)
+    )
+  );
 
   return Response.json({
     success: true,

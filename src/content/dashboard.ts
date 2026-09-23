@@ -8895,6 +8895,17 @@ export const D = {
   "absence.status_active": { de: "Aktiv", en: "Active" },
   "absence.status_completed": { de: "Abgeschlossen", en: "Completed" },
   "absence.status_cancelled": { de: "Storniert", en: "Cancelled" },
+  "absence.complete": { de: "Abschließen", en: "Complete" },
+  "absence.cancel": { de: "Stornieren", en: "Cancel" },
+  "absence.cancel_confirm": {
+    de: "Abwesenheit wirklich stornieren? Der Vertretungshinweis verschwindet sofort von den Fristen.",
+    en: "Really cancel this absence? The delegation hint disappears from deadlines immediately.",
+  },
+  "absence.updated": { de: "Abwesenheit aktualisiert", en: "Absence updated" },
+  "absence.update_failed": {
+    de: "Abwesenheit konnte nicht aktualisiert werden",
+    en: "Could not update absence",
+  },
   "nav.tooltip.absences": {
     de: "Abwesenheiten und Urlaubsvertretung verwalten — Fristen und Rundown werden automatisch an Vertreter weitergeleitet",
     en: "Manage absences and vacation delegation — deadlines and rundown are automatically forwarded to delegates",

@@ -7,7 +7,7 @@ import { MAX_FILE_SIZE } from "@/lib/upload-validation";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { acquireUploadSlot } from "@/lib/upload-concurrency";
-import { createInboundEntry } from "@/lib/inbound-register";
+import { stampInboundEntry } from "@/lib/inbound-register-stamp";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/upload");
@@ -339,23 +339,12 @@ export const POST = createHandler(
             // already does for outgoing mail. Best-effort: a failed stamp
             // must never fail the upload itself.
             if (uploadResult.slug) {
-              const entry = createInboundEntry({
+              await stampInboundEntry(ctx.headers, {
                 channel: "upload",
                 subject: uploadResult.title ?? result.cleanName,
                 caseSlug: caseSlugStr || undefined,
                 documentSlug: uploadResult.slug,
                 receivedBy: ctx.user.name || ctx.user.email,
-              });
-              fetch(`${ENGINE_URL}/api/pages`, {
-                method: "POST",
-                headers: { ...ctx.headers, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  slug: `legal/inbound-register/${entry.id}`,
-                  title: `Posteingang: ${entry.subject}`,
-                  type: "inbound_entry",
-                  frontmatter: entry,
-                }),
-                signal: AbortSignal.timeout(10_000),
               }).catch((err) =>
                 log.error(
                   "[upload] inbound-register stamp failed:",

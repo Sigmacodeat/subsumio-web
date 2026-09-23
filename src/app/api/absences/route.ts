@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
-import { createAbsence, type AbsenceRecord } from "@/lib/absence";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import {
+  createAbsence,
+  activateAbsence,
+  completeAbsence,
+  cancelAbsence,
+  type AbsenceRecord,
+} from "@/lib/absence";
 
 const createAbsenceSchema = z.object({
   user_email: z.string().email(),
@@ -60,6 +66,71 @@ export const POST = createHandler(
     }
 
     return apiSuccess({ absence });
+  }
+);
+
+const patchAbsenceSchema = z.object({
+  // IDs are generated as `absence-<ts>-<rand>` — a strict charset keeps the
+  // id safe to embed in the engine page slug.
+  id: z.string().regex(/^[a-zA-Z0-9_-]{1,200}$/),
+  action: z.enum(["activate", "complete", "cancel"]),
+});
+
+/**
+ * PATCH: Status-Übergang einer Abwesenheit (aktivieren / abschließen /
+ * stornieren). Stornieren ist der Alltagsfall — ein falsch eingetragener
+ * Urlaub darf nicht für immer „Vertretung"-Hinweise auf Fristen zeigen.
+ * isAbsenceActive respektiert `status === "cancelled"` sofort.
+ */
+export const PATCH = createHandler(
+  {
+    action: "brain.write",
+    rateTier: "standard",
+    body: patchAbsenceSchema,
+    audit: (_ctx, body) => ({
+      action: "absence.update" as const,
+      entityType: "absence_record",
+      entityId: body.id,
+      details: { transition: body.action },
+    }),
+  },
+  async (ctx, body) => {
+    const slug = `legal/absences/${body.id}`;
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
+      { headers: ctx.headers, signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) {
+      return apiError("absence_not_found", "Abwesenheit nicht gefunden", 404);
+    }
+    const page = (await res.json()) as { frontmatter?: AbsenceRecord };
+    const record = page.frontmatter;
+    if (!record || record.id !== body.id) {
+      return apiError("absence_not_found", "Abwesenheit nicht gefunden", 404);
+    }
+    if (record.status === "cancelled" || record.status === "completed") {
+      return apiError(
+        "absence_closed",
+        "Diese Abwesenheit ist bereits abgeschlossen oder storniert.",
+        409
+      );
+    }
+
+    const updated =
+      body.action === "activate"
+        ? activateAbsence(record)
+        : body.action === "complete"
+          ? completeAbsence(record)
+          : cancelAbsence(record);
+
+    const patch = await enginePatchPage(ctx.headers, {
+      slug,
+      frontmatter: { ...updated },
+    });
+    if (!patch.ok) {
+      return apiError("engine_write_failed", "Abwesenheit konnte nicht aktualisiert werden", 502);
+    }
+    return apiSuccess({ absence: updated });
   }
 );
 

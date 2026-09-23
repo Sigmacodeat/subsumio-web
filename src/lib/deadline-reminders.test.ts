@@ -264,3 +264,87 @@ describe("unconfirmed AI deadlines", () => {
     expect(byTitle.Rekurs.unreviewedAi).toBe(false);
   });
 });
+
+describe("wiedervorlagen (legal_follow_up)", () => {
+  const followUp = (slug: string, fm: Record<string, unknown>): ReminderPage => ({
+    slug,
+    title: String(fm.title ?? "WV"),
+    frontmatter: { type: "legal_follow_up", ...fm },
+  });
+
+  it("reminds for open follow-ups on their date, staged like deadlines", () => {
+    const groups = collectDueReminders([matter({ slug: "legal/cases/1" })], [], now, [
+      followUp("legal/wiedervorlagen/a", {
+        title: "Schriftsatz nachreichen",
+        date: inDays(3),
+        case_slug: "legal/cases/1",
+        completed: false,
+      }),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].caseLabel).toBe("2026/101");
+    expect(groups[0].items).toHaveLength(1);
+    expect(groups[0].items[0].isFollowUp).toBe(true);
+    expect(groups[0].items[0].stage).toBe(3);
+    expect(groups[0].items[0].ref).toEqual({ kind: "page", slug: "legal/wiedervorlagen/a" });
+  });
+
+  it("skips completed follow-ups and those on archived matters", () => {
+    const groups = collectDueReminders(
+      [
+        matter({ slug: "legal/cases/1" }),
+        matter({ slug: "legal/cases/old", frontmatter: { status: "archived" } }),
+      ],
+      [],
+      now,
+      [
+        followUp("legal/wiedervorlagen/done", {
+          title: "Erledigt",
+          date: inDays(0),
+          case_slug: "legal/cases/1",
+          completed: true,
+        }),
+        followUp("legal/wiedervorlagen/archived", {
+          title: "Archiviert",
+          date: inDays(0),
+          case_slug: "legal/cases/old",
+          completed: false,
+        }),
+        followUp("legal/wiedervorlagen/open", {
+          title: "Offen",
+          date: inDays(0),
+          case_slug: "legal/cases/1",
+          completed: false,
+        }),
+      ]
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0].items.map((i) => i.title)).toEqual(["Offen"]);
+  });
+
+  it("overdue follow-ups do not remind (daily digest reports them)", () => {
+    const groups = collectDueReminders([], [], now, [
+      followUp("legal/wiedervorlagen/late", { title: "Überfällig", date: inDays(-2) }),
+    ]);
+    expect(groups).toHaveLength(0);
+  });
+
+  it("a follow-up without a case groups under 'Ohne Akte'", () => {
+    const groups = collectDueReminders([], [], now, [
+      followUp("legal/wiedervorlagen/free", { title: "Freie WV", date: inDays(1) }),
+    ]);
+    expect(groups[0].caseLabel).toBe("Ohne Akte");
+    expect(groups[0].items[0].isFollowUp).toBe(true);
+  });
+
+  it("sent stages on the follow-up frontmatter are respected", () => {
+    const groups = collectDueReminders([], [], now, [
+      followUp("legal/wiedervorlagen/sent", {
+        title: "Schon erinnert",
+        date: inDays(3),
+        reminder_stages_sent: [7, 3],
+      }),
+    ]);
+    expect(groups).toHaveLength(0);
+  });
+});
