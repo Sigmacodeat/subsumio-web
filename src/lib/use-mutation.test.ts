@@ -751,4 +751,44 @@ describe("useMutationQueue", () => {
     });
     expect(b.result.current.lastNotice).toContain("verworfen");
   });
+
+  test("konkurrierende refreshPending-Calls: letzter Stand gewinnt, kein Tearing", async () => {
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    // Erster Call langsam (3 Items), zweiter schnell (1 Item) —
+    // Reihenfolge der Auflösung darf das finale Bild nicht
+    // vermischen.
+    let resolveSlow: ((v: Awaited<ReturnType<typeof getPendingMutations>>) => void) | undefined;
+    vi.mocked(getPendingMutations)
+      .mockImplementationOnce(
+        () =>
+          new Promise((res) => {
+            resolveSlow = res;
+          })
+      )
+      .mockResolvedValue([{ id: "m1", type: "createPage", payload: {}, createdAt: "2024-01-01" }]);
+
+    let first: Promise<void> | undefined;
+    await act(async () => {
+      first = result.current.refreshPending();
+      await result.current.refreshPending();
+    });
+    // Zwischenstand: schneller Call schon durch → 1 Item.
+    expect(result.current.pendingCount).toBe(1);
+
+    await act(async () => {
+      resolveSlow?.([
+        { id: "a", type: "createPage", payload: {}, createdAt: "2024-01-01" },
+        { id: "b", type: "createPage", payload: {}, createdAt: "2024-01-01" },
+        { id: "c", type: "createPage", payload: {}, createdAt: "2024-01-01" },
+      ]);
+      await first;
+    });
+    // Letzter aufgelöster Stand gewinnt — State ist atomar
+    // (kein halb-gemergter Zwischenwert sichtbar).
+    expect(result.current.pendingCount).toBe(3);
+  });
 });

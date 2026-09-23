@@ -1175,6 +1175,7 @@ function splitAdminSection(section: NavSection): NavSection[] {
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const {
     pendingCount,
+    pendingUploads,
     syncing,
     conflicts,
     lastNotice,
@@ -1229,7 +1230,15 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
           {pendingCount > 0
-            ? `${pendingCount} ${t("sidebar.changes_pending")}`
+            ? (() => {
+                const mutations = pendingCount - pendingUploads;
+                const parts: string[] = [];
+                if (mutations > 0)
+                  parts.push(`${mutations} ${t("mobile.changes_short" as DashboardKey)}`);
+                if (pendingUploads > 0)
+                  parts.push(`${pendingUploads} ${t("mobile.uploads_short" as DashboardKey)}`);
+                return `${parts.join(" + ")} ${t("mobile.pending_suffix" as DashboardKey)}`;
+              })()
             : `${conflicts.length} ${t("mobile.conflict_count" as DashboardKey)}`}
         </span>
         {pendingCount > 0 && (
@@ -1390,6 +1399,7 @@ function NavBadge({
         "ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] leading-none font-bold",
         badgeVariantClasses[variant]
       )}
+      title={label}
     >
       {count > 99 ? "99+" : count}
     </span>
@@ -1455,17 +1465,29 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   });
   const sidebarWidth = collapsed && isDesktop ? 64 : isDesktop ? expandedWidth : 240;
   const badgesQuery = useSidebarBadges();
-  const { conflictCount } = useMutationQueue();
+  const { conflictCount, conflicts } = useMutationQueue();
   // Lokale Sync-Konflikte als Badge auf dem /dashboard/sync-Nav-Item —
   // client-seitig, der Server kennt IndexedDB-Konflikte nicht.
   const badges: SidebarBadges = useMemo(() => {
     const base = badgesQuery.data ?? {};
     if (conflictCount <= 0) return base;
+    // Tooltip mit dem Alter des ältesten Konflikts — Zahl allein
+    // transportiert keine Dringlichkeit.
+    let oldestDays = 0;
+    for (const c of conflicts) {
+      if (!c.conflictAt) continue;
+      const days = Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000);
+      if (days > oldestDays) oldestDays = days;
+    }
     return {
       ...base,
-      "/dashboard/sync": { count: conflictCount, variant: "warning" },
+      "/dashboard/sync": {
+        count: conflictCount,
+        variant: "warning",
+        label: oldestDays > 0 ? `Ältester Konflikt: ${oldestDays}d` : undefined,
+      },
     };
-  }, [badgesQuery.data, conflictCount]);
+  }, [badgesQuery.data, conflictCount, conflicts]);
   useReviewInboxRealtime();
   const logoutMutation = useLogout();
 
@@ -2015,6 +2037,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         count={badges[item.href].count}
                         variant={badges[item.href].variant}
                         collapsed={false}
+                        label={badges[item.href].label}
                       />
                     )}
                     {collapsed && badges[item.href] && (
@@ -2287,6 +2310,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                         count={badges[item.href].count}
                                         variant={badges[item.href].variant}
                                         collapsed={false}
+                                        label={badges[item.href].label}
                                       />
                                     )}
                                   </Link>

@@ -62,6 +62,10 @@ interface MutationState {
    *  zaehlen hier nicht mit (sonst steht "3 ausstehend" obwohl nur 1
    *  wirklich gesynct wird). */
   pendingCount: number;
+  /** Anteil der pendingCount aus der File-Upload-Queue — damit UI
+   *  ehrlich „N Änderungen + M Uploads" statt nur „N Änderungen"
+   *  sagen kann. */
+  pendingUploads: number;
   /** Auf Entscheidung wartende Sync-Konflikte. */
   conflictCount: number;
   syncing: boolean;
@@ -92,6 +96,7 @@ export function nextCopySlug(slug: string): string {
 
 const initialState: MutationState = {
   pendingCount: 0,
+  pendingUploads: 0,
   conflictCount: 0,
   syncing: false,
   lastError: null,
@@ -133,6 +138,7 @@ async function refreshPending() {
   setState((s) => ({
     ...s,
     pendingCount: pending.length - conflicts.length + pendingFiles.length,
+    pendingUploads: pendingFiles.length,
     conflictCount: conflicts.length,
     conflicts,
   }));

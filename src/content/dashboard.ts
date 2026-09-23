@@ -434,6 +434,22 @@ export const D = {
     de: "Änderung(en) ausstehend",
     en: "change(s) pending",
   },
+  "mobile.changes_short": {
+    de: "Änderung(en)",
+    en: "change(s)",
+  },
+  "mobile.uploads_short": {
+    de: "Upload(s)",
+    en: "upload(s)",
+  },
+  "mobile.pending_suffix": {
+    de: "ausstehend",
+    en: "pending",
+  },
+  "mobile.offline_suffix": {
+    de: "offline gespeichert",
+    en: "saved offline",
+  },
   "mobile.syncing": { de: "Synchronisiere…", en: "Syncing…" },
   "mobile.sync_now": { de: "Jetzt syncen", en: "Sync now" },
   "mobile.conflict_title": {

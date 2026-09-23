@@ -11,6 +11,7 @@ import type { DashboardKey } from "@/content/dashboard";
 export function MobileSyncBanner() {
   const {
     pendingCount,
+    pendingUploads,
     syncing,
     lastError,
     lastErrorAt,
@@ -53,6 +54,21 @@ export function MobileSyncBanner() {
   }, [syncPending]);
 
   const [resolvingIds, setResolvingIds] = useState<Set<string>>(new Set());
+
+  // „N Änderungen + M Uploads ausstehend" — pendingCount enthält beide
+  // Queues; nur eine Summe würde Uploads als Seiten-Änderungen
+  // verkaufen.
+  const pendingLabel = useCallback(
+    (suffixKey: DashboardKey) => {
+      const mutations = pendingCount - pendingUploads;
+      const parts: string[] = [];
+      if (mutations > 0) parts.push(`${mutations} ${t("mobile.changes_short" as DashboardKey)}`);
+      if (pendingUploads > 0)
+        parts.push(`${pendingUploads} ${t("mobile.uploads_short" as DashboardKey)}`);
+      return `${parts.join(" + ")} ${t(suffixKey)}`;
+    },
+    [pendingCount, pendingUploads, t]
+  );
 
   // keep-mine ueberschreibt die Server-Version, discard loescht die
   // lokale Aenderung — beides destruktiv, beides mit Bestaetigung.
@@ -262,7 +278,7 @@ export function MobileSyncBanner() {
       <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2 backdrop-blur-sm">
         <CloudOff size={16} className="shrink-0 text-[color:var(--ds-warning-text)]" />
         <span className="flex-1 text-xs text-[color:var(--ds-warning-text)]">
-          {pendingCount} {t("mobile.changes_offline" as DashboardKey)}
+          {pendingLabel("mobile.offline_suffix" as DashboardKey)}
         </span>
       </div>
     );
@@ -276,7 +292,7 @@ export function MobileSyncBanner() {
         <span className="flex-1 text-xs text-[color:var(--ds-info-text)]">
           {syncing
             ? t("mobile.syncing" as DashboardKey)
-            : `${pendingCount} ${t("mobile.changes_pending" as DashboardKey)}`}
+            : pendingLabel("mobile.pending_suffix" as DashboardKey)}
         </span>
         {!syncing && (
           <button
