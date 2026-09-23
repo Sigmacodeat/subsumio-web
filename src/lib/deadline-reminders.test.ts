@@ -412,4 +412,46 @@ describe("annotateDelegations", () => {
     annotateDelegations(groups, new Map(), [absence()], now);
     expect(groups[0].delegation).toBeUndefined();
   });
+
+  it("a deadline's own responsible field wins over the matter's lawyer", () => {
+    const groups = collectDueReminders(
+      [matter({ slug: "legal/cases/1" })],
+      [
+        deadlinePage("d/own", {
+          title: "Berufung",
+          due_date: inDays(1),
+          case_slug: "legal/cases/1",
+          responsible: "vertreter@kanzlei.at",
+        }),
+      ],
+      now
+    );
+    // The matter's lawyer is present — no group delegation. The item's own
+    // responsible person is absent → item-level delegation.
+    const itemAbsent = absence({
+      user_email: "vertreter@kanzlei.at",
+      user_name: "RA Vertreter",
+      delegate_name: "RA Dritte",
+      delegate_email: "dritte@kanzlei.at",
+    });
+    annotateDelegations(groups, new Map([["legal/cases/1", "RA Müller"]]), [itemAbsent], now);
+    expect(groups[0].delegation).toBeUndefined();
+    expect(groups[0].items[0].delegation).toEqual({
+      responsible: "vertreter@kanzlei.at",
+      delegateName: "RA Dritte",
+      delegateEmail: "dritte@kanzlei.at",
+      until: "2026-09-25",
+    });
+  });
+
+  it("item-level delegation coexists with case-level delegation", () => {
+    const groups = collectDueReminders(
+      [matter({ slug: "legal/cases/1" })],
+      [deadlinePage("d/1", { title: "Berufung", due_date: inDays(1), case_slug: "legal/cases/1" })],
+      now
+    );
+    annotateDelegations(groups, new Map([["legal/cases/1", "RA Müller"]]), [absence()], now);
+    expect(groups[0].delegation?.delegateName).toBe("RA Vertreter");
+    expect(groups[0].items[0].delegation).toBeUndefined(); // no own responsible → case-level only
+  });
 });

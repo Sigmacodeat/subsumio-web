@@ -193,7 +193,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const rawHtml = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
 <p>folgende Fristen stehen an:</p>
 <ul>
-${due.map((i) => `<li>${i.isFollowUp ? "<em>[Wiedervorlage]</em> " : ""}<strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${i.unreviewedAi ? ` <strong>[${UNCONFIRMED_AI_NOTICE}]</strong>` : ""}${i.ervZustelldatum ? ` <em>[ERV-Zustellung: ${esc(i.ervZustelldatum)}]</em>` : ""}</li>`).join("\n")}
+${due.map((i) => `<li>${i.isFollowUp ? "<em>[Wiedervorlage]</em> " : ""}<strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${i.unreviewedAi ? ` <strong>[${UNCONFIRMED_AI_NOTICE}]</strong>` : ""}${i.ervZustelldatum ? ` <em>[ERV-Zustellung: ${esc(i.ervZustelldatum)}]</em>` : ""}${i.delegation ? ` <em>[Vertretung: ${esc(i.delegation.delegateName)} für ${esc(i.delegation.responsible)}]</em>` : ""}</li>`).join("\n")}
 </ul>
 ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.delegateName)} vertritt ${esc(group.delegation.responsible)} (abwesend bis ${esc(group.delegation.until)}).</p>` : ""}
 <p>${group.caseSlug ? `Akte: ${esc(group.caseLabel)} — ${esc(group.caseTitle ?? "")}` : "Diese Fristen sind keiner Akte zugeordnet."}</p>
@@ -259,7 +259,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
           "⚖️ Fristen-Erinnerung:",
           ...due.map(
             (i) =>
-              `• ${i.isFollowUp ? "WV: " : ""}${i.title} — ${i.dueDate} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " [Notfrist]" : ""}${i.unreviewedAi ? ` [${UNCONFIRMED_AI_NOTICE}]` : ""}${i.ervZustelldatum ? ` [ERV: ${i.ervZustelldatum}]` : ""}`
+              `• ${i.isFollowUp ? "WV: " : ""}${i.title} — ${i.dueDate} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " [Notfrist]" : ""}${i.unreviewedAi ? ` [${UNCONFIRMED_AI_NOTICE}]` : ""}${i.ervZustelldatum ? ` [ERV: ${i.ervZustelldatum}]` : ""}${i.delegation ? ` [Vertretung: ${i.delegation.delegateName}]` : ""}`
           ),
           `Akte: ${group.caseLabel}`,
           ...(group.delegation
@@ -313,6 +313,9 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
         }
 
         // B2: Always create in-app notifications (dual-channel when SMTP is on, fallback when off)
+        const delegationNote = group.delegation
+          ? `Vertretung: ${group.delegation.delegateName} vertritt ${group.delegation.responsible} (bis ${group.delegation.until})`
+          : undefined;
         for (const recipient of recipients) {
           for (const item of due) {
             await createDeadlineNotification({
@@ -324,6 +327,9 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
               daysRemaining: item.daysRemaining,
               isOverdue: false,
               isVorfrist: item.vorfristReached,
+              delegation: item.delegation
+                ? `Vertretung: ${item.delegation.delegateName} vertritt ${item.delegation.responsible} (bis ${item.delegation.until})`
+                : delegationNote,
             });
           }
           notificationSent = true;
@@ -335,7 +341,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
           ? `📌 Wiedervorlage: ${due[0].title} ${stageLabel(due[0].stage, due[0].vorfristReached)}`
           : `⚖️ Frist: ${due[0].title} ${stageLabel(due[0].stage, due[0].vorfristReached)}`;
         const unconfirmed = due.filter((i) => i.unreviewedAi).length;
-        const pushBody = `${group.caseSlug ? `Akte ${group.caseLabel}` : "Ohne Akte"} — ${due.length} Frist(en) anstehend${unconfirmed ? `, davon ${unconfirmed} unbestätigte KI-Vorschläge – bitte prüfen` : ""}`;
+        const pushBody = `${group.caseSlug ? `Akte ${group.caseLabel}` : "Ohne Akte"} — ${due.length} Frist(en) anstehend${unconfirmed ? `, davon ${unconfirmed} unbestätigte KI-Vorschläge – bitte prüfen` : ""}${delegationNote ? ` · ${delegationNote}` : ""}`;
         let pushSentAny = false;
         for (const recipient of recipients) {
           try {

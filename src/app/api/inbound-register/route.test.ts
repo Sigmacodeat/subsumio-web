@@ -298,4 +298,45 @@ describe("GET /api/inbound-register", () => {
     expect(body.data.items).toHaveLength(1);
     expect(body.data.failed_stamps).toEqual([]);
   });
+
+  test("stamps retrying beyond the first attempt surface as pending_stamps", async () => {
+    mockListEnginePages
+      .mockResolvedValueOnce([]) // inbound_entry
+      .mockResolvedValueOnce([]) // post_upload_task_exhausted
+      .mockResolvedValueOnce([
+        {
+          slug: "legal/post-upload-tasks/inbound_stamp/in-y-abc",
+          frontmatter: {
+            task_type: "inbound_stamp",
+            status: "pending",
+            doc_slug: "in-y",
+            attempts: 3,
+            inbound: { entry_id: "in-y", input: { channel: "email", subject: "Schriftsatz" } },
+          },
+        },
+        {
+          // first attempt pending — still within normal retry, not shown
+          slug: "legal/post-upload-tasks/inbound_stamp/in-z-abc",
+          frontmatter: {
+            task_type: "inbound_stamp",
+            status: "pending",
+            doc_slug: "in-z",
+            attempts: 0,
+            inbound: { entry_id: "in-z", input: { channel: "email", subject: "Neu" } },
+          },
+        },
+      ]);
+
+    const res = await GET(
+      new Request("http://localhost/api/inbound-register") as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.pending_stamps).toHaveLength(1);
+    expect(body.data.pending_stamps[0]).toMatchObject({
+      subject: "Schriftsatz",
+      channel: "email",
+      attempts: 3,
+    });
+  });
 });

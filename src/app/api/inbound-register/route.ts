@@ -139,12 +139,20 @@ export const GET = createHandler(
       last_error?: string;
       attempts?: number;
     }> = [];
+    let pendingStamps: Array<{
+      task_slug: string;
+      subject: string;
+      channel?: string;
+      attempts?: number;
+    }> = [];
     try {
       // The drain flips the page type to post_upload_task_exhausted when it
-      // gives up — pending tasks stay post_upload_task, so only the
-      // exhausted type needs scanning here.
-      const taskPages = await listEnginePages(ctx.headers, "post_upload_task_exhausted", 5000);
-      failedStamps = taskPages
+      // gives up — pending tasks stay post_upload_task.
+      const [exhaustedPages, pendingPages] = await Promise.all([
+        listEnginePages(ctx.headers, "post_upload_task_exhausted", 5000),
+        listEnginePages(ctx.headers, "post_upload_task", 5000),
+      ]);
+      failedStamps = exhaustedPages
         .map((p) => ({ slug: p.slug, ...(p.frontmatter as Partial<PostUploadTask>) }))
         .filter((t) => t.task_type === "inbound_stamp" && t.status === "exhausted")
         .map((t) => ({
@@ -152,6 +160,19 @@ export const GET = createHandler(
           subject: String(t.inbound?.input.subject ?? t.doc_slug),
           channel: t.inbound?.input.channel,
           last_error: t.last_error,
+          attempts: t.attempts,
+        }));
+      // A stamp still retrying after ≥2 attempts is delayed, not lost — shown
+      // as informational so the register does not look incomplete by surprise.
+      pendingStamps = pendingPages
+        .map((p) => ({ slug: p.slug, ...(p.frontmatter as Partial<PostUploadTask>) }))
+        .filter(
+          (t) => t.task_type === "inbound_stamp" && t.status === "pending" && (t.attempts ?? 0) >= 2
+        )
+        .map((t) => ({
+          task_slug: t.slug,
+          subject: String(t.inbound?.input.subject ?? t.doc_slug),
+          channel: t.inbound?.input.channel,
           attempts: t.attempts,
         }));
     } catch {
@@ -173,6 +194,6 @@ export const GET = createHandler(
         },
       });
     }
-    return apiSuccess({ items, failed_stamps: failedStamps });
+    return apiSuccess({ items, failed_stamps: failedStamps, pending_stamps: pendingStamps });
   }
 );

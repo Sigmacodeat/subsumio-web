@@ -185,11 +185,12 @@ export function Topbar({
               const days = n.data?.daysRemaining as number | undefined;
               const isOverdue = (n.data?.isOverdue as boolean) ?? false;
               const caseSlug = n.data?.caseSlug as string | undefined;
+              const delegation = n.data?.delegation as string | undefined;
               return {
                 id: n.id,
                 title: isOverdue ? "Frist abgelaufen" : "Fristenwarnung",
                 // Written out: "in 0T" / "3T überfällig" read like a log line.
-                message: `${title}${days !== undefined ? ` — ${dueLabel(days, isOverdue)}` : ""}`,
+                message: `${title}${days !== undefined ? ` — ${dueLabel(days, isOverdue)}` : ""}${delegation ? ` · ${delegation}` : ""}`,
                 type: "deadline" as const,
                 read: false,
                 caseSlug,

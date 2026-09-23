@@ -541,6 +541,8 @@ export async function createDeadlineNotification(opts: {
   daysRemaining: number;
   isOverdue: boolean;
   isVorfrist?: boolean;
+  /** Urlaubsvertretung-Hinweis, wenn die verantwortliche Person abwesend ist. */
+  delegation?: string;
 }): Promise<void> {
   // Deterministic ID based on caseSlug + deadlineDate to prevent duplicates
   const slugPart = opts.caseSlug ?? opts.caseTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
@@ -561,6 +563,7 @@ export async function createDeadlineNotification(opts: {
       daysRemaining: opts.daysRemaining,
       isOverdue: opts.isOverdue,
       isVorfrist: opts.isVorfrist,
+      ...(opts.delegation ? { delegation: opts.delegation } : {}),
     },
     readAt: null,
     createdAt: new Date().toISOString(),

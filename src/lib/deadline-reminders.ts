@@ -35,6 +35,14 @@ export interface ReminderDeadline {
   ai_confidence?: string;
   ai_generated?: boolean;
   matched_rule?: string;
+  /**
+   * Optional per-item owner — deadlines normally inherit the matter's
+   * own_lawyer_name, but a page may carry its own `responsible`/`assignee`
+   * (e.g. a task-derived follow-up). Wins over the case-level person in
+   * annotateDelegations.
+   */
+  responsible?: string;
+  assignee?: string;
 }
 
 export interface ReminderPage {
@@ -67,6 +75,10 @@ export interface DueReminder {
   ervZustelldatum?: string;
   /** legal_follow_up instead of a real deadline — the reminder says "Wiedervorlage". */
   isFollowUp?: boolean;
+  /** Per-item owner from the deadline frontmatter, if any. */
+  responsible?: string;
+  /** Set when this item's owner is absent — names the stand-in. */
+  delegation?: ReminderDelegation;
   /**
    * An AI-proposed deadline nobody confirmed yet. It still reminds on every
    * channel — a missed real Frist weighs more than a false alarm — but the
@@ -131,6 +143,7 @@ function dueReminder(
     vorfristReached,
     isNotfrist: d.is_notfrist === true,
     ervZustelldatum: d.erv_zustelldatum,
+    responsible: str(d.responsible) ?? str(d.assignee),
     unreviewedAi: isUnreviewedAiSuggestion(d),
   };
 }
@@ -269,15 +282,30 @@ export function annotateDelegations(
   now: Date
 ): void {
   for (const group of groups) {
-    const responsible = group.caseSlug ? responsibleByCase.get(group.caseSlug) : undefined;
-    const delegate = activeDelegateFor(responsible, absences, now);
-    if (responsible && delegate) {
+    const caseResponsible = group.caseSlug ? responsibleByCase.get(group.caseSlug) : undefined;
+    const caseDelegate = activeDelegateFor(caseResponsible, absences, now);
+    if (caseResponsible && caseDelegate) {
       group.delegation = {
-        responsible,
-        delegateName: delegate.name,
-        delegateEmail: delegate.email,
-        until: delegate.until,
+        responsible: caseResponsible,
+        delegateName: caseDelegate.name,
+        delegateEmail: caseDelegate.email,
+        until: caseDelegate.until,
       };
+    }
+    // Per-item override: a deadline page carrying its own `responsible` /
+    // `assignee` is annotated against that person, not the matter's lawyer —
+    // in a multi-lawyer file the stand-in may differ per item.
+    for (const item of group.items) {
+      if (!item.responsible || item.responsible === caseResponsible) continue;
+      const delegate = activeDelegateFor(item.responsible, absences, now);
+      if (delegate) {
+        item.delegation = {
+          responsible: item.responsible,
+          delegateName: delegate.name,
+          delegateEmail: delegate.email,
+          until: delegate.until,
+        };
+      }
     }
   }
 }

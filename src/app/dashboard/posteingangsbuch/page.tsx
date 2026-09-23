@@ -45,6 +45,7 @@ export default function PosteingangsbuchPage() {
   const { addToast } = useToast();
   const [entries, setEntries] = useState<InboundEntry[]>([]);
   const [failedStamps, setFailedStamps] = useState<FailedStamp[]>([]);
+  const [pendingStamps, setPendingStamps] = useState<FailedStamp[]>([]);
   const [retrying, setRetrying] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -65,6 +66,7 @@ export default function PosteingangsbuchPage() {
       const data = await res.json();
       setEntries((data.items ?? data.data?.items ?? []) as InboundEntry[]);
       setFailedStamps((data.failed_stamps ?? data.data?.failed_stamps ?? []) as FailedStamp[]);
+      setPendingStamps((data.pending_stamps ?? data.data?.pending_stamps ?? []) as FailedStamp[]);
     } catch {
       addToast({ type: "error", title: "Posteingangsbuch konnte nicht geladen werden" });
     } finally {
@@ -260,6 +262,23 @@ export default function PosteingangsbuchPage() {
               </ul>
             </div>
           </div>
+        </div>
+      )}
+
+      {pendingStamps.length > 0 && (
+        <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
+          <p className="text-xs text-[color:var(--ds-info-text)]">
+            {pendingStamps.length === 1
+              ? "1 Registrierung wird gerade wiederholt"
+              : `${pendingStamps.length} Registrierungen werden gerade wiederholt`}{" "}
+            — die Einträge erscheinen automatisch, sobald die Engine wieder erreichbar ist:{" "}
+            {pendingStamps
+              .map(
+                (s) =>
+                  `${s.channel && s.channel in INBOUND_CHANNEL_LABEL ? `${INBOUND_CHANNEL_LABEL[s.channel as InboundChannel]} ` : ""}${s.subject}`
+              )
+              .join(" · ")}
+          </p>
         </div>
       )}
 
