@@ -13,7 +13,7 @@ import {
   ACCOUNT_BLOCKED_MESSAGE,
   isAccountBlocked,
 } from "@/lib/auth/account-status";
-import { orgRequires2FA } from "@/lib/kanzlei-settings-server";
+import { twoFactorPolicyFor } from "@/lib/kanzlei-settings-server";
 import { z } from "zod";
 
 // Extended schema with trimmed email for internal validation
@@ -89,13 +89,35 @@ export const POST = createPublicHandler(
       return NextResponse.json({ error: "2fa_required", challengeToken });
     }
 
-    // Kanzlei-wide 2FA requirement (settings/kanzlei "require2FA" checkbox):
-    // previously stored and displayed but never enforced. A user who hasn't
-    // enabled their own 2FA still logs in normally here — blocking login
+    // Kanzlei-wide 2FA requirement (settings/kanzlei "require2FA" checkbox).
+    // A user who hasn't enabled their own 2FA still logs in — blocking login
     // outright would lock them out with no path to set it up — but the
-    // session carries must2fa so middleware.ts confines them to the security
-    // settings page until they complete setup.
-    const must2fa = !user.twoFactorEnabled && (await orgRequires2FA(user.brainId));
+    // session carries must2fa, which confines them to the 2FA setup flow:
+    // middleware.ts for pages and /api/*, requireEngineContext() for every
+    // API route (see src/lib/auth/two-factor-gate.ts).
+    //
+    // The requirement is read from the FIRM's brain (org.brainId), not from
+    // user.brainId — for an invited member that is their unused personal
+    // workspace, which never carries the firm's setting.
+    //
+    // Fail-closed: when the setting cannot be read (engine down, timeout,
+    // store error) no session is issued — a 503 asks to retry. Nothing is
+    // stored, so the next attempt re-evaluates; a transient outage cannot
+    // lock anyone out beyond the outage, and it can never silently drop the
+    // requirement either. Users who already have 2FA never reach this point.
+    let must2fa = false;
+    if (!user.twoFactorEnabled) {
+      const policy = await twoFactorPolicyFor(user);
+      if (policy === "unknown") {
+        return apiError(
+          "two_factor_policy_unavailable",
+          "Die Sicherheitseinstellungen Ihrer Kanzlei sind gerade nicht abrufbar. Bitte versuchen Sie es in einer Minute erneut.",
+          503,
+          { retryAfterSeconds: 30 }
+        );
+      }
+      must2fa = policy === "required";
+    }
     const session = await createSession(user.id, user.email, user.role, { must2fa });
     void logAudit("user.login", "user", { entityId: user.id, details: { ip } });
     const res = NextResponse.json({ user: toPublic(user), must2fa });

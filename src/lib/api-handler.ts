@@ -38,6 +38,7 @@ import type { NextRequest } from "next/server";
 import type { z } from "zod";
 import {
   requireEngineContext,
+  applyUsageGuards,
   engineConfigurationResponse,
   ENGINE_URL,
   recordQuota,
@@ -61,6 +62,7 @@ import { timingSafeCompare } from "@/lib/crypto-utils";
 import { env } from "@/lib/env";
 import { resolveRequestId, withRequestId } from "@/lib/request-context";
 import { verifyApiKey } from "@/lib/auth/api-key-auth";
+import { requiredApiKeyScope, apiKeyHasScope } from "@/lib/auth/api-key-scopes";
 import { isOpsHost, isPlatformOperator } from "@/lib/auth/platform-operator";
 import { hit } from "@/lib/auth/rate-limit";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
@@ -400,11 +402,26 @@ export function createHandler<
         options.credits
       );
       if (authCtx instanceof Response) {
-        // Session auth failed — try API key auth (Bearer token)
-        const apiKeyResult = await verifyApiKey(req.headers.get("authorization"));
+        // No session at all (401) — try API key auth (Bearer token). A
+        // session that exists but was refused (403 RBAC/2FA, 429, 402) is
+        // never swapped for a key's context.
+        const apiKeyResult =
+          authCtx.status === 401 ? await verifyApiKey(req.headers.get("authorization")) : null;
         if (apiKeyResult) {
-          // API keys act as their owner and get exactly the owner's role rights —
-          // the session path's RBAC must not be skippable by presenting a key.
+          // 1. The key's scope must cover this route (read/write/admin).
+          const needed = requiredApiKeyScope(options.action, req.method, options.admin === true);
+          if (!apiKeyHasScope(apiKeyResult.key.scopes, needed)) {
+            return withCorsHeaders(
+              apiError("insufficient_scope", `API key lacks the '${needed}' scope`, 403, {
+                requiredScope: needed,
+              }),
+              options.cors ?? false,
+              req
+            );
+          }
+          // 2. API keys act as their owner and get exactly the owner's role
+          //    rights — the session path's RBAC must not be skippable by
+          //    presenting a key.
           if (!can(apiKeyResult.ctx.user, options.action)) {
             return withCorsHeaders(
               apiError("forbidden", "Insufficient role for this action", 403),
@@ -412,6 +429,14 @@ export function createHandler<
               req
             );
           }
+          // 3. Same rate limit, credit and quota checks as a browser session.
+          const guard = await applyUsageGuards(
+            apiKeyResult.ctx,
+            options.rateTier ?? "standard",
+            options.quota,
+            options.credits
+          );
+          if (guard) return withCorsHeaders(guard, options.cors ?? false, req);
           ctx = apiKeyResult.ctx;
           isApiKeyAuth = true;
         } else {
