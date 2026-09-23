@@ -382,8 +382,17 @@ datev-export,datev-direct}`. Sidebar-Einträge wiederhergestellt
     empty_available/unexpected_data/partially_embedded/gap) +
     `GET /api/admin/corpus-coverage-audit?jurisdiction=` (live-Query
     über alle law-\*-Sources) + „Abdeckungs-Audit"-Sektion in
-    `corpus-bestand.tsx`. RIS-Dokumenten-Abgleich (Soll-Ist je
-    Gesetz) bleibt offen — braucht DE-Fetcher.
+    `corpus-bestand.tsx`.
+    ✅ **Soll-Ist je Gesetz geliefert (22.09.):** `src/lib/
+de-statute-coverage.ts` — `fetchGiiToc` lädt das amtliche
+    Inhaltsverzeichnis `gesetze-im-internet.de/gii-toc.xml`
+    (~6.100 Bundesgesetze), `pageSlugToGiiSlug` mappt law-de-Pages
+    via `frontmatter.source_url`/`slug` auf den gii-Slug,
+    `auditDeStatutes` liefert Abdeckung + alphabetisch sortierte
+    Missing-Liste (Cap 300). Die Coverage-Route hängt
+    `de_statutes` an (best-effort: Upstream-Ausfall →
+    `unavailable`-Flag, Matrix-Antwort bleibt), `corpus-bestand.tsx`
+    zeigt Coverage-Badge + einklappbare Fehlliste. 9 Tests grün.
 
 ### WP-7 Harvey-/Legora-Parität+ (P1/P2 — NEU, 22.09. Revision 2)
 

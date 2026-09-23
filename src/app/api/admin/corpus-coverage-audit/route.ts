@@ -4,6 +4,12 @@ import { getSharedPgPool } from "@/lib/auth/store";
 import { logger } from "@/lib/logger";
 import { LEGAL_SOURCE_COVERAGE_MATRIX } from "@/lib/legal-source-coverage";
 import { auditCoverage, type SourceDbStats } from "@/lib/corpus-completeness-audit";
+import {
+  auditDeStatutes,
+  fetchGiiToc,
+  pageSlugToGiiSlug,
+  type DeStatuteCoverage,
+} from "@/lib/de-statute-coverage";
 
 const log = logger("api/admin/corpus-coverage-audit");
 
@@ -58,7 +64,38 @@ export const GET = createHandler(
         dbStats,
         query?.jurisdiction === "all" ? "all" : query?.jurisdiction
       );
-      return apiSuccess(audit);
+
+      // WP-6.38: Soll-Ist je Gesetz — das amtliche gii-TOC (Soll) gegen die
+      // in law-de importierten Gesetzes-Pages (Ist). Best-effort: ist
+      // gesetze-im-internet.de nicht erreichbar, bleibt das Feld null und
+      // die Quellen-Matrix-Antwort kommt trotzdem.
+      let deStatutes: (DeStatuteCoverage & { unavailable?: boolean }) | null = null;
+      if (query?.jurisdiction === "all" || query?.jurisdiction === "DE") {
+        try {
+          const [upstream, pages] = await Promise.all([
+            fetchGiiToc(),
+            pool.query(
+              `SELECT slug, frontmatter->>'source_url' AS source_url
+               FROM pages
+               WHERE deleted_at IS NULL AND source_id = 'law-de'`
+            ),
+          ]);
+          const present = new Set<string>();
+          for (const p of pages.rows as Array<{ slug: string; source_url: string | null }>) {
+            const slug = pageSlugToGiiSlug({
+              slug: p.slug,
+              frontmatter: { source_url: p.source_url },
+            });
+            if (slug) present.add(slug);
+          }
+          deStatutes = auditDeStatutes(upstream, present);
+        } catch (err) {
+          log.warn("[corpus-coverage-audit] gii-toc unavailable:", (err as Error).message);
+          deStatutes = { unavailable: true } as DeStatuteCoverage & { unavailable: boolean };
+        }
+      }
+
+      return apiSuccess({ ...audit, de_statutes: deStatutes });
     } catch (err) {
       log.error("[corpus-coverage-audit] query failed:", (err as Error).message);
       return apiError("coverage_audit_failed", "Audit konnte nicht durchgeführt werden", 500);

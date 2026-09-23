@@ -16,6 +16,7 @@ import {
 import { RefreshCw } from "lucide-react";
 import type { CorpusOverview, CorpusSourceStats } from "@/lib/corpus-labels";
 import type { CoverageAuditResult, SourceAuditRow } from "@/lib/corpus-completeness-audit";
+import type { DeStatuteCoverage } from "@/lib/de-statute-coverage";
 
 const AUDIT_STATUS_LABELS: Record<SourceAuditRow["audit_status"], string> = {
   ok: "OK",
@@ -33,6 +34,10 @@ const AUDIT_STATUS_CLASSES: Record<SourceAuditRow["audit_status"], string> = {
   partially_embedded: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
+type CoverageAuditResponse = CoverageAuditResult & {
+  de_statutes: (DeStatuteCoverage & { unavailable?: boolean }) | null;
+};
+
 function CoverageAudit() {
   const query = useQuery({
     queryKey: ["corpus-coverage-audit"],
@@ -41,7 +46,7 @@ function CoverageAudit() {
         credentials: "same-origin",
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return ((await r.json()) as { data: CoverageAuditResult }).data;
+      return ((await r.json()) as { data: CoverageAuditResponse }).data;
     },
     staleTime: 300_000,
   });
@@ -110,6 +115,45 @@ function CoverageAudit() {
             </Table>
           </div>
         )}
+
+        {/* WP-6.38: DE-Gesetze Soll-Ist gegen das amtliche gii-TOC */}
+        {a.de_statutes &&
+          (a.de_statutes.unavailable ? (
+            <p className="mt-3 text-xs text-[color:var(--ds-text-subtle)]">
+              DE-Gesetzesabgleich: gesetze-im-internet.de derzeit nicht erreichbar.
+            </p>
+          ) : (
+            <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium">DE-Gesetze (gesetze-im-internet.de)</span>
+                <Badge
+                  className={
+                    a.de_statutes.missing.length === 0
+                      ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                      : "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                  }
+                >
+                  {fmt(a.de_statutes.in_corpus)} von {fmt(a.de_statutes.upstream_total)} im Corpus (
+                  {a.de_statutes.coverage_pct} %)
+                </Badge>
+              </div>
+              {a.de_statutes.missing.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]">
+                    {fmt(a.de_statutes.missing.length)} fehlende Gesetze anzeigen
+                    {a.de_statutes.missing_truncated ? " (Liste gekürzt)" : ""}
+                  </summary>
+                  <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto text-xs text-[color:var(--ds-text-muted)]">
+                    {a.de_statutes.missing.map((m) => (
+                      <li key={m.slug}>
+                        <span className="font-mono">{m.slug}</span> — {m.title}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          ))}
       </CardContent>
     </Card>
   );
