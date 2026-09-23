@@ -443,6 +443,28 @@ export const D = {
   "mobile.conflict_view": { de: "Ansehen", en: "View" },
   "mobile.conflict_rename": { de: "Als Kopie speichern", en: "Save as copy" },
   "mobile.conflict_count": { de: "Sync-Konflikt(e) offen", en: "sync conflict(s) open" },
+  "sync.title": { de: "Synchronisation", en: "Synchronization" },
+  "sync.description": {
+    de: "Offline-Änderungen und Sync-Konflikte verwalten",
+    en: "Manage offline changes and sync conflicts",
+  },
+  "sync.field": { de: "Feld", en: "Field" },
+  "sync.local": { de: "Ihre Version", en: "Your version" },
+  "sync.server": { de: "Server", en: "Server" },
+  "sync.server_unavailable": {
+    de: "Server-Version nicht abrufbar",
+    en: "Server version unavailable",
+  },
+  "sync.no_field_diff": {
+    de: "Keine Feld-Unterschiede erkennbar — Konflikt entstand durch gleichzeitige Änderung.",
+    en: "No field differences detected — conflict caused by concurrent edit.",
+  },
+  "sync.no_conflicts": { de: "Keine Sync-Konflikte", en: "No sync conflicts" },
+  "sync.no_conflicts_desc": {
+    de: "Alle Offline-Änderungen sind synchronisiert oder es liegen keine Konflikte vor.",
+    en: "All offline changes are synced or no conflicts exist.",
+  },
+  "sync.error_since": { de: "seit", en: "since" },
   "mobile.zoom_in": { de: "Vergrößern", en: "Zoom in" },
   "mobile.zoom_out": { de: "Verkleinern", en: "Zoom out" },
   "mobile.download": { de: "Herunterladen", en: "Download" },

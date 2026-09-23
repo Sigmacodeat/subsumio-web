@@ -1269,7 +1269,12 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
           })}
           {conflicts.length > 3 && (
             <li className="text-[11px] text-[color:var(--ds-warning-text)] opacity-70">
-              +{conflicts.length - 3} weitere
+              <Link
+                href="/dashboard/sync"
+                className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
+              >
+                +{conflicts.length - 3} weitere
+              </Link>
             </li>
           )}
         </ul>

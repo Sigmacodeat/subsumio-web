@@ -134,7 +134,12 @@ export function MobileSyncBanner() {
           })}
           {conflicts.length > 3 && (
             <li className="text-xs text-[color:var(--ds-warning-text)] opacity-70">
-              +{conflicts.length - 3} weitere
+              <a
+                href="/dashboard/sync"
+                className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
+              >
+                +{conflicts.length - 3} weitere — alle anzeigen
+              </a>
             </li>
           )}
           {pendingCount > 0 && (

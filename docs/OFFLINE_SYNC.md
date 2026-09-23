@@ -54,3 +54,27 @@ wird.
 - IndexedDB-Fehler laufen über `setOfflineErrorReporter` → `lastError`.
 - Banner (`src/components/mobile/mobile-sync-banner.tsx`): pendingCount,
   syncing-Spinner, danger-Banner bei `lastError`, Dismiss nur ohne Fehler.
+
+## Queue-Abdeckung
+
+Alle Domain-Objekte (Akten, Fristen, Aufgaben, Kontakte, Notizen) sind
+Brain-Pages — `createPage`/`updatePage`/`deletePage` decken die gesamte
+Offline-Queue ab. **Bewusst NICHT queuebar:** Mutations-Routen mit
+serverseitiger Live-Validierung (z. B. `PATCH /api/invoices/[slug]` mit
+GoBD/§ 132 BAO-Immutability-Check) — ein offline gequeueter Statuswechsel
+würde ein falsches „gebucht"-Versprechen erzeugen, die Prüfung braucht
+Live-Server-State.
+
+## Dedizierte Konflikt-Ansicht
+
+`/dashboard/sync` listet ALLE Konflikte (Banner/Sidebar kappen bei 3)
+mit Feld-Diff pro Konflikt: lokaler Payload vs. Server-Version
+(`diffConflictFields` in `src/lib/conflict-diff.ts`) — title, content
+(Zeichenzahl) und pro-Key Frontmatter-Vergleich. Auflösung wie im
+Banner: Meine senden / Kopie (createPage) / Verwerfen.
+
+## SWR in useOfflineSync
+
+`useOfflineSync` zeigt den Cache sofort (`isStale: true`), lädt dann
+fresh nach — schneller erster Paint auch online. Fetch-Fehler behält
+Cache + `isStale`; ohne Cache wie bisher `error`.

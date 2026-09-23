@@ -14,6 +14,9 @@ export function useOfflineSync<T>({ key, fetcher, enabled = true }: UseOfflineSy
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isOffline, setIsOffline] = useState(() => !isOnline());
+  /** true solange angezeigte Daten aus dem Cache stammen und der
+   *  frische Fetch noch läuft/fehlgeschlagen ist (SWR-Pattern). */
+  const [isStale, setIsStale] = useState(false);
   const hasFetched = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -23,15 +26,21 @@ export function useOfflineSync<T>({ key, fetcher, enabled = true }: UseOfflineSy
     }
     setLoading(true);
     setError(null);
+    // SWR: Cache sofort zeigen (bei Online ebenso — schneller erster
+    // Paint), dann fresh nachladen. Fetch-Fehler behält den Cache.
+    const cached = await getCache<T>(key);
+    if (cached != null) {
+      setData(cached);
+      setIsStale(true);
+    }
     try {
       const fresh = await fetcher();
       await setCache(key, fresh);
       setData(fresh);
+      setIsStale(false);
       setIsOffline(false);
     } catch (err) {
-      const cached = await getCache<T>(key);
-      if (cached) {
-        setData(cached);
+      if (cached != null) {
         setIsOffline(true);
       } else {
         setError(err instanceof Error ? err : new Error(String(err)));
@@ -59,7 +68,7 @@ export function useOfflineSync<T>({ key, fetcher, enabled = true }: UseOfflineSy
     };
   }, [refresh]);
 
-  return { data, loading, error, isOffline, refresh };
+  return { data, loading, error, isOffline, isStale, refresh };
 }
 
 /** Hook that tracks network status */
