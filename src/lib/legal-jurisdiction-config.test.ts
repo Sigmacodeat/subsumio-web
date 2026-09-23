@@ -603,7 +603,7 @@ describe("Jurisdiction Config Structure", () => {
   });
 
   it("DE config has correct law source IDs", () => {
-    expect(JURISDICTION_CONFIGS.DE.lawSourceIds).toEqual(["law-de", "law-eu"]);
+    expect(JURISDICTION_CONFIGS.DE.lawSourceIds).toEqual(["law-de", "law-de-judikatur", "law-eu"]);
   });
 
   it("AT config has correct law source IDs", () => {
@@ -611,7 +611,7 @@ describe("Jurisdiction Config Structure", () => {
   });
 
   it("CH config has correct law source IDs", () => {
-    expect(JURISDICTION_CONFIGS.CH.lawSourceIds).toEqual(["law-ch", "law-eu"]);
+    expect(JURISDICTION_CONFIGS.CH.lawSourceIds).toEqual(["law-ch", "law-ch-judikatur", "law-eu"]);
   });
 
   it("AT config includes collision warnings", () => {

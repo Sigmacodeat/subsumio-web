@@ -253,7 +253,8 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
   // Thread the user's jurisdiction to the engine so readSourcesFor() can
   // scope the shared statute corpus to the attorney's country only.
-  // DE → law-de + law-eu, AT → law-at + law-eu, CH → law-ch + law-eu.
+  // DE → DE_LAW_SOURCES_ALL, AT → AT_LAW_SOURCES_ALL, CH → CH_LAW_SOURCES_ALL
+  // (jeweils Statutes + eigene Judikatur-Source + law-eu).
   // Without this header the engine falls back to all shared sources (backward compat).
   if (user.jurisdiction) {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;

@@ -24,6 +24,8 @@ import {
   AT_LAW_SOURCES_JUDIKATUR,
   DE_LAW_SOURCES_STATUTES,
   DE_LAW_SOURCES_JUDIKATUR,
+  CH_LAW_SOURCES_STATUTES,
+  CH_LAW_SOURCES_JUDIKATUR,
   type LegalJurisdiction,
 } from "./jurisdiction.ts";
 
@@ -73,6 +75,9 @@ export function sourceTypeToIds(
       if (jur === "de") {
         return DE_LAW_SOURCES_STATUTES;
       }
+      if (jur === "ch") {
+        return CH_LAW_SOURCES_STATUTES;
+      }
       return lawSource ? [lawSource] : [];
 
     case "judgement":
@@ -85,7 +90,11 @@ export function sourceTypeToIds(
       if (jur === "de") {
         return DE_LAW_SOURCES_JUDIKATUR;
       }
-      // CH judgements are in the main law source for now
+      // CH judgements live in law-ch-judikatur (~4.3k Entscheide) —
+      // routing them to law-ch would search the statute-only corpus.
+      if (jur === "ch") {
+        return CH_LAW_SOURCES_JUDIKATUR;
+      }
       return lawSource ? [lawSource] : [];
 
     case "materials":
@@ -117,6 +126,12 @@ export function sourceTypeToIds(
         // Same for DE: judikatur + literatur live in their own sources.
         for (const sid of DE_LAW_SOURCES_STATUTES) ids.add(sid);
         for (const sid of DE_LAW_SOURCES_JUDIKATUR) ids.add(sid);
+      }
+      if (jur === "ch") {
+        // CH judikatur lives in its own source — without it, "all" queries
+        // would never reach the 4.3k imported Entscheide.
+        for (const sid of CH_LAW_SOURCES_STATUTES) ids.add(sid);
+        for (const sid of CH_LAW_SOURCES_JUDIKATUR) ids.add(sid);
       }
       // EU law always included for DACH
       ids.add("law-eu");

@@ -92,6 +92,23 @@ export const DE_LAW_SOURCES_ALL: string[] = [
   "law-eu",
 ];
 
+/**
+ * CH law sources. Statutes (OR, ZGB, …) live in the main `law-ch` source;
+ * judgements in the separate `law-ch-judikatur` source (import-judikatur
+ * --source ch, ~4.3k Entscheide). Licensed literature sources
+ * (law-ch-literatur-*) stay adapter-gated until contracts are signed.
+ */
+export const CH_LAW_SOURCES_STATUTES: string[] = ["law-ch"];
+
+export const CH_LAW_SOURCES_JUDIKATUR: string[] = ["law-ch-judikatur"];
+
+/** All CH law sources (statutes + judikatur + EU). Use this for "all" queries. */
+export const CH_LAW_SOURCES_ALL: string[] = [
+  ...CH_LAW_SOURCES_STATUTES,
+  ...CH_LAW_SOURCES_JUDIKATUR,
+  "law-eu",
+];
+
 export function isLegalJurisdiction(value: string): value is LegalJurisdiction {
   return (LEGAL_JURISDICTIONS as readonly string[]).includes(value.toLowerCase());
 }

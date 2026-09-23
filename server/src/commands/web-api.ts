@@ -37,6 +37,7 @@ import { splitStatute } from "../core/legal/split-statute.ts";
 import {
   AT_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_ALL,
+  CH_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_STATUTES,
 } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
@@ -1809,13 +1810,14 @@ const SHARED_READ_SOURCES: string[] = (
 /**
  * Map a jurisdiction code to the law sources that jurisdiction's attorneys need.
  * DE → DE_LAW_SOURCES_ALL (law-de + judikatur + literatur + law-eu),
- * AT → AT_LAW_SOURCES_ALL, CH → law-ch + law-eu.
+ * AT → AT_LAW_SOURCES_ALL, CH → CH_LAW_SOURCES_ALL (law-ch +
+ * law-ch-judikatur + law-eu).
  * EU law applies to all DACH jurisdictions, so it's always included.
  */
 const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
   DE: DE_LAW_SOURCES_ALL,
   AT: AT_LAW_SOURCES_ALL,
-  CH: ["law-ch", "law-eu"],
+  CH: CH_LAW_SOURCES_ALL,
 };
 
 /**

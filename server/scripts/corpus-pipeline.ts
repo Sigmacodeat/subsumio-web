@@ -163,7 +163,7 @@ function importAllowed(sourceId: string): boolean {
   );
 }
 
-const JUDIKATUR: JudikaturSource[] = [
+export const JUDIKATUR: JudikaturSource[] = [
   {
     kind: "judikatur",
     key: "ogh",
@@ -257,7 +257,7 @@ const JUDIKATUR: JudikaturSource[] = [
   },
 ];
 
-const SIMPLE: SimpleSource[] = [
+export const SIMPLE: SimpleSource[] = [
   {
     kind: "statutes",
     key: "statutes-at",
@@ -2306,4 +2306,6 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.main) {
+  main();
+}

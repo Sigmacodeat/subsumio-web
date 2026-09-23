@@ -36,7 +36,8 @@ export interface User {
   /** Industry chosen at signup — drives dashboard personalization (verticals). */
   industry?: string | null;
   /** Jurisdiction chosen at onboarding — scopes law corpus search to the attorney's country.
-   *  "DE" → law-de + law-eu, "AT" → law-at + law-eu, "CH" → law-ch + law-eu.
+   *  "DE" → DE_LAW_SOURCES_ALL, "AT" → AT_LAW_SOURCES_ALL,
+   *  "CH" → CH_LAW_SOURCES_ALL (Statutes + eigene Judikatur-Source + law-eu).
    *  Prevents cross-jurisdiction contamination (e.g. AT attorney getting DE StPO results). */
   jurisdiction?: "DE" | "AT" | "CH" | null;
   /** TOTP secret (Base32), encrypted at rest in production. */
