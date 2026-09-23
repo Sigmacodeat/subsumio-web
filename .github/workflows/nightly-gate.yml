@@ -28,7 +28,9 @@ jobs:
   nightly-gate:
     name: Nightly Dev-Set Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 15 checks incl. full frontend/server unit suites + prettier --check .
+    # (~90s alone) exceeded the 30min cap — the gate was killed mid-run.
+    timeout-minutes: 60
     services:
       postgres:
         image: pgvector/pgvector:pg16
