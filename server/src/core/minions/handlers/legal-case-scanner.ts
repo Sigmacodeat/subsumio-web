@@ -28,6 +28,8 @@ import type { BrainEngine } from "../../engine.ts";
 import { MinionQueue } from "../queue.ts";
 import {
   inheritedJobMatterStamp,
+  jobOwnerStamp,
+  readJobOwner,
   matterScopeAllows,
   readJobMatterAccess,
 } from "../../matter-access.ts";
@@ -213,6 +215,8 @@ export async function legalCaseScannerHandler(
           skip_critic: false,
           ...(sourceStamp ? { _source_id: sourceStamp } : {}),
           ...matterStamp,
+          // Each scan run is about exactly this matter (context + listing).
+          ...jobOwnerStamp(readJobOwner(data), caseItem.slug),
         } as Record<string, unknown>,
         {
           timeout_ms: 600_000, // 10 min

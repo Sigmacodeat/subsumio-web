@@ -47,8 +47,10 @@ import { executeRawJsonb } from "../core/sql-query.ts";
 import { publicErrorMessage } from "../core/public-error-message.ts";
 import {
   PRIVATE_CHAT_PREFIX,
+  agentRunVisibility,
   callerMatterAccess,
   jobMatterStamp,
+  jobOwnerStamp,
   matterScopeAllows,
   privateChatDenies,
   scopeForCaller,
@@ -199,6 +201,8 @@ declare global {
        * ethical wall enforcement.
        */
       userId?: string;
+      /** Role from the verified identity token (admin, lawyer, …). */
+      userRole?: string;
       /** Matters the caller may read but not change (core/matter-access.ts). */
       matterReadOnly?: string[];
       uploadTokenPayload?: UploadTokenPayload;
@@ -1759,6 +1763,7 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       }
       // Thread userId for ethical wall engine-layer enforcement
       req.userId = payload.userId;
+      req.userRole = typeof payload.role === "string" ? payload.role : undefined;
       // Matter access (walls, restricted matters, grants) applies to every
       // role, admins included — see core/matter-access.ts.
       const known = await sourceAccess(engine, sourceId);
@@ -7274,15 +7279,39 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     return { clause: ` AND data->>'_source_id' = $${paramOffset}`, params: [sourceId] };
   }
 
-  /** Returns true when the job exists AND belongs to the caller's tenant. */
-  async function agentJobInScope(jobId: number, sourceId: string): Promise<boolean> {
-    const scope = agentScopeClause(sourceId, 2);
-    const rows = await engine.executeRaw<{ id: number }>(
-      `SELECT id FROM minion_jobs
+  /**
+   * How much of an agent job of the caller's tenant the caller may see
+   * (core/matter-access.ts agentRunVisibility): "none" when the job does not
+   * exist, belongs to another tenant or is hidden by the matter rules.
+   */
+  async function agentJobVisibility(
+    jobId: number,
+    req: Request
+  ): Promise<"full" | "metadata" | "none"> {
+    const scope = agentScopeClause(requestSourceId(req), 2);
+    const rows = await engine.executeRaw<{ id: number; data: unknown }>(
+      `SELECT id, data FROM minion_jobs
        WHERE id = $1 AND name IN ('subagent', 'subagent_aggregator', 'supervisor')${scope.clause}`,
       [jobId, ...scope.params]
     );
-    return rows.length > 0;
+    if (rows.length === 0) return "none";
+    return agentRunVisibility(agentViewer(req), parseJobData(rows[0]!.data));
+  }
+
+  function agentViewer(req: Request) {
+    return { userId: req.userId, role: req.userRole, scope: req.matterScope };
+  }
+
+  function parseJobData(raw: unknown): Record<string, unknown> {
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+      } catch {
+        return {};
+      }
+    }
+    return raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   }
 
   // Legal-pipeline runs of the caller's tenant (web: /api/pipeline/list).
@@ -7310,7 +7339,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           LIMIT 100`,
         scoped ? [sourceId] : []
       );
-      res.json({ pipelines: rows });
+      // Runs of matters the caller may not see do not exist for them.
+      res.json({
+        pipelines: rows.filter(
+          (r) => !r.case_slug || isMatterScoped(req.matterScope, r.case_slug, r.case_slug)
+        ),
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "pipeline_list_failed", message: msg });
@@ -7343,12 +7377,21 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
          FROM minion_jobs
          WHERE name IN ('subagent', 'subagent_aggregator', 'supervisor')${scope.clause}
          ORDER BY created_at DESC
-         LIMIT 200`,
+         LIMIT ${req.userId || (req.matterScope !== undefined && req.matterScope !== "all") ? 1000 : 200}`,
         scope.params
       );
 
-      const jobs = rows.map((row) => {
-        const data = (row.data ?? {}) as Record<string, unknown>;
+      // Matter walls: each run is shown in full, as metadata only (admins,
+      // for runs whose content they may not see) or not at all.
+      const viewer = agentViewer(req);
+      const visible = rows
+        .map((row) => ({ row, data: parseJobData(row.data) }))
+        .map((x) => ({ ...x, visibility: agentRunVisibility(viewer, x.data) }))
+        .filter((x) => x.visibility !== "none")
+        .slice(0, 200);
+
+      const jobs = visible.map(({ row, data, visibility }) => {
+        if (visibility === "metadata") return agentRunMetadata(row, data);
         return {
           id: row.id,
           name: row.name,
@@ -7378,6 +7421,41 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.status(500).json({ error: "agents_list_failed", message: msg });
     }
   });
+
+  /** A run without its content: no prompt, progress, result or error text. */
+  function agentRunMetadata(
+    row: {
+      id: number;
+      name: string;
+      status: string;
+      queue: string;
+      tokens_input: number;
+      tokens_output: number;
+      tokens_cache_read: number;
+      parent_job_id: number | null;
+      created_at: string;
+      started_at: string | null;
+      finished_at: string | null;
+    },
+    data: Record<string, unknown>
+  ) {
+    return {
+      id: row.id,
+      name: row.name,
+      status: row.status,
+      queue: row.queue,
+      prompt: "",
+      restricted: true,
+      subagent_def: data.subagent_def ? String(data.subagent_def) : undefined,
+      supervisor_model: data.supervisor_model ? String(data.supervisor_model) : undefined,
+      model: data.model ? String(data.model) : undefined,
+      tokens: { input: row.tokens_input, output: row.tokens_output, cache: row.tokens_cache_read },
+      parentId: row.parent_job_id ?? undefined,
+      createdAt: row.created_at,
+      startedAt: row.started_at ?? undefined,
+      finishedAt: row.finished_at ?? undefined,
+    };
+  }
 
   app.get("/api/agents/:id", async (req: Request, res: Response) => {
     try {
@@ -7421,7 +7499,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
 
-      const data = (row.data ?? {}) as Record<string, unknown>;
+      const data = parseJobData(row.data);
+      const visibility = agentRunVisibility(agentViewer(req), data);
+      if (visibility === "none") {
+        apiError(res, 404, "not_found");
+        return;
+      }
+      if (visibility === "metadata") {
+        res.json(agentRunMetadata(row, data));
+        return;
+      }
       res.json({
         id: row.id,
         name: row.name,
@@ -7458,7 +7545,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         apiError(res, 400, "invalid_id");
         return;
       }
-      if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
+      if ((await agentJobVisibility(jobId, req)) === "none") {
         apiError(res, 404, "not_found");
         return;
       }
@@ -7478,7 +7565,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         apiError(res, 400, "invalid_id");
         return;
       }
-      if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
+      if ((await agentJobVisibility(jobId, req)) === "none") {
         apiError(res, 404, "not_found");
         return;
       }
@@ -7498,7 +7585,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         apiError(res, 400, "invalid_id");
         return;
       }
-      if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
+      if ((await agentJobVisibility(jobId, req)) === "none") {
         apiError(res, 404, "not_found");
         return;
       }
@@ -7518,7 +7605,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         apiError(res, 400, "invalid_id");
         return;
       }
-      if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
+      // Replaying re-runs the prompt: only for callers who may see it.
+      if ((await agentJobVisibility(jobId, req)) !== "full") {
         apiError(res, 404, "not_found");
         return;
       }
@@ -7526,10 +7614,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // The replay keeps the original job's matter stamp; a restricted
       // caller's own access replaces it, so replaying a colleague's run never
       // reaches matters the caller may not see.
+      // The replay belongs to whoever started it.
       const stamp = agentMatterStamp(req);
+      const overrides: Record<string, unknown> = {
+        ...(Object.keys(stamp).length > 0 ? { _matter_read_only: [], ...stamp } : {}),
+        ...jobOwnerStamp(req.userId),
+      };
       const job = await queue.replayJob(
         jobId,
-        Object.keys(stamp).length > 0 ? { _matter_read_only: [], ...stamp } : undefined
+        Object.keys(overrides).length > 0 ? overrides : undefined
       );
       res.json({ success: true, newJobId: job?.id ?? null });
     } catch (e) {
@@ -7563,12 +7656,34 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // Tenant agents write into their source via brain tools — make sure
         // the source row exists before the first child put_page fires.
         await ensureSource(sourceId);
+        // An explicitly selected matter binds the run: the supervisor loads
+        // its context and the run is listed for colleagues who may see it.
+        // A matter the caller may not see reads as not found.
+        let caseSlug: string | undefined;
+        if (body.case_slug !== undefined && body.case_slug !== null && body.case_slug !== "") {
+          if (typeof body.case_slug !== "string" || body.case_slug.length > 300) {
+            apiError(res, 400, "invalid_case_slug");
+            return;
+          }
+          caseSlug = body.case_slug;
+          assertMatterScope(req.matterScope, caseSlug, caseSlug);
+          const casePage = await engine.getPage(
+            caseSlug,
+            sourceId !== "default" ? { sourceId } : undefined
+          );
+          if (!casePage || casePage.type !== "legal_case") {
+            apiError(res, 404, "case_not_found");
+            return;
+          }
+        }
         const data: Record<string, unknown> = {
           prompt: sanitizedPrompt,
           _source_id: sourceId,
           // The agents search and write on the caller's behalf: they see
           // only the matters the caller may see (children inherit this).
           ...agentMatterStamp(req),
+          // Who started the run and which matter it is about (inherited too).
+          ...jobOwnerStamp(req.userId, caseSlug),
         };
         // Caller-controlled knobs are validated, never passed through raw:
         // the model must be a catalogue choice (no arbitrary / non-EU vendor
@@ -7616,6 +7731,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.json({ success: true, jobId: job.id });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
+        if (e instanceof EngineNotFoundError) {
+          apiError(res, 404, "case_not_found");
+          return;
+        }
         res.status(500).json({ error: "supervisor_submit_failed", message: msg });
       }
     }
@@ -7635,8 +7754,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         apiError(res, 400, "invalid_id");
         return;
       }
-      const sourceId = requestSourceId(req);
-      if (!(await agentJobInScope(jobId, sourceId))) {
+      // Messages carry run content: only for callers who may see it.
+      if ((await agentJobVisibility(jobId, req)) !== "full") {
         apiError(res, 404, "not_found");
         return;
       }
@@ -7684,8 +7803,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "invalid_id");
           return;
         }
-        const sourceId = requestSourceId(req);
-        if (!(await agentJobInScope(jobId, sourceId))) {
+        if ((await agentJobVisibility(jobId, req)) !== "full") {
           apiError(res, 404, "not_found");
           return;
         }
@@ -9206,6 +9324,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             max_cases: maxCases,
             ...(sourceId ? { _source_id: sourceId } : {}),
             ...agentMatterStamp(req),
+            ...jobOwnerStamp(req.userId),
           } as Record<string, unknown>,
           { timeout_ms: 300_000, max_attempts: 1 }
         );

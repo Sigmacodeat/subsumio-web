@@ -70,6 +70,9 @@ export const POST = createHandler(
         body: JSON.stringify({
           prompt: NEXT_STEPS_PROMPT.replaceAll("{case_slug}", body.case_slug),
           name: `next-steps:${body.case_slug}`,
+          // Binds the run to this matter: the engine checks the caller may
+          // see it and loads its context (never guessed from the prompt).
+          case_slug: body.case_slug,
           role: "planning",
           budget_remaining_cents: 20,
         }),

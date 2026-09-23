@@ -103,6 +103,9 @@ export const POST = createHandler(
       body: JSON.stringify({
         prompt,
         name: "legal-research",
+        // One selected matter binds the run (context + listing for
+        // colleagues who may see it); several stay unbound.
+        ...(case_slugs?.length === 1 ? { case_slug: case_slugs[0] } : {}),
         force_specialists: ["legal-researcher"],
         budget_remaining_cents: budget_cents,
       }),

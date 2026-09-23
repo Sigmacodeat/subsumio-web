@@ -242,6 +242,128 @@ export function inheritedJobMatterStamp(data: unknown): Record<string, unknown> 
   };
 }
 
+/**
+ * Who started a piece of agent work, and the one matter it is explicitly
+ * about. Both are set by the engine route that accepted the request (never
+ * taken from caller-supplied job data) and inherited by every spawned job.
+ */
+export const JOB_OWNER_KEY = "_owner_user_id";
+export const JOB_CASE_KEY = "_case_slug";
+
+function nonEmptyString(v: unknown): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+/** The web user who started the job, if recorded. */
+export function readJobOwner(data: unknown): string | undefined {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  return nonEmptyString(d[JOB_OWNER_KEY]);
+}
+
+/** The matter the job is explicitly bound to, if any. */
+export function readJobCase(data: unknown): string | undefined {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  return nonEmptyString(d[JOB_CASE_KEY]);
+}
+
+/** Owner + matter stamp for a new job (`{}` for what is unknown). */
+export function jobOwnerStamp(ownerUserId?: string, caseSlug?: string): Record<string, unknown> {
+  return {
+    ...(nonEmptyString(ownerUserId) ? { [JOB_OWNER_KEY]: ownerUserId } : {}),
+    ...(nonEmptyString(caseSlug) ? { [JOB_CASE_KEY]: caseSlug } : {}),
+  };
+}
+
+/**
+ * Everything a spawned agent job inherits from its parent: the matter access
+ * stamp, the owner and the bound matter.
+ */
+export function inheritedAgentStamps(data: unknown): Record<string, unknown> {
+  return {
+    ...inheritedJobMatterStamp(data),
+    ...jobOwnerStamp(readJobOwner(data), readJobCase(data)),
+  };
+}
+
+function parseScope(scope: MatterScope | undefined): {
+  allowAll: boolean;
+  allow: string[];
+  deny: string[];
+} {
+  if (scope === undefined || scope === "all") return { allowAll: true, allow: [], deny: [] };
+  const out = { allowAll: false, allow: [] as string[], deny: [] as string[] };
+  for (const e of scope) {
+    if (e === SCOPE_ALL_EXCEPT) out.allowAll = true;
+    else if (e.startsWith("!")) out.deny.push(e.slice(1));
+    else out.allow.push(e);
+  }
+  return out;
+}
+
+/**
+ * True when everything `inner` may reach, `outer` may reach too — i.e. work
+ * done under `inner` cannot carry content `outer` may not see. Conservative:
+ * an unprovable case answers false. Deny entries of `outer` under
+ * `ignoreDenyPrefix` are not checked (see agentRunVisibility).
+ */
+export function scopeCovers(
+  outer: MatterScope | undefined,
+  inner: MatterScope | undefined,
+  ignoreDenyPrefix?: string
+): boolean {
+  if (outer === undefined || outer === "all") return true;
+  const o = parseScope(outer);
+  const i = parseScope(inner);
+  for (const d of o.deny) {
+    if (ignoreDenyPrefix && d.startsWith(ignoreDenyPrefix)) continue;
+    if (matterScopeAllows(inner, d)) return false;
+  }
+  if (!o.allowAll) {
+    if (i.allowAll) return false;
+    if (!i.allow.every((a) => matterScopeAllows(outer, a))) return false;
+  }
+  return true;
+}
+
+/**
+ * How much of an agent run a web caller may see:
+ *
+ *   full      prompt, progress, result, messages
+ *   metadata  status, timing, tokens, model — no content (admins only)
+ *   none      the run does not exist for the caller
+ *
+ * A caller sees their own runs, and colleagues' runs that are bound to a
+ * matter the caller may see and could not have reached any matter (or
+ * private conversation) hidden from the caller. Walls bind admins too: they
+ * get the metadata of every other run, never its content. A walled or
+ * revoked matter also hides the content of one's own runs about it.
+ * Callers without an identity (CLI, cron, trusted server calls) see all.
+ */
+export type AgentRunVisibility = "full" | "metadata" | "none";
+
+export interface AgentRunViewer {
+  userId?: string;
+  role?: string;
+  scope?: MatterScope;
+}
+
+export function agentRunVisibility(viewer: AgentRunViewer, jobData: unknown): AgentRunVisibility {
+  const scope = viewer.scope;
+  if (!viewer.userId && (scope === undefined || scope === "all")) return "full";
+  const owner = readJobOwner(jobData);
+  const caseSlug = readJobCase(jobData);
+  const runScope = readJobMatterAccess(jobData).scope;
+  const caseVisible = caseSlug === undefined || matterScopeAllows(scope, caseSlug, caseSlug);
+  const fallback: AgentRunVisibility = viewer.role === "admin" ? "metadata" : "none";
+  if (owner !== undefined && owner === viewer.userId) {
+    // Colleagues' private conversations that appeared after the run started
+    // were never reachable by it; only matter walls are re-checked.
+    return caseVisible && scopeCovers(scope, runScope, PRIVATE_CHAT_PREFIX) ? "full" : "metadata";
+  }
+  if (caseSlug !== undefined && caseVisible && scopeCovers(scope, runScope)) return "full";
+  return fallback;
+}
+
 /** True when `slug` (or the matter it belongs to) is one of the read-only matters. */
 export function matterIsReadOnly(readOnly: string[], slug: string, caseSlug?: string): boolean {
   return readOnly.some((m) => matterScopeAllows([m], slug, caseSlug));

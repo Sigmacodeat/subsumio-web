@@ -63,6 +63,8 @@ describe("POST /api/agents/next-steps", () => {
     expect(state.lastBody?.name).toBe("next-steps:fall-2026-001");
     expect(String(state.lastBody?.prompt)).toContain("fall-2026-001");
     expect(state.lastBody?.role).toBe("planning");
+    // The matter binds the run (the engine authorizes it and loads its context).
+    expect(state.lastBody?.case_slug).toBe("fall-2026-001");
     const data = await res.json();
     expect(data.jobId).toBe(42);
   });
