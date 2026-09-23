@@ -65,6 +65,9 @@ interface MutationState {
   conflictCount: number;
   syncing: boolean;
   lastError: string | null;
+  /** Zeitpunkt des ERSTEN Fehlers der aktuellen Fehlerstrecke — bleibt
+   *  stehen solange lastError non-null ist ("klebt seit …" sichtbar). */
+  lastErrorAt: number | null;
   /** Kurzer Erfolgs-Hinweis (z. B. „Kopie gespeichert als cases/neu-2") —
    *  wird im Sync-Banner gezeigt und via clearNotice quittiert. */
   lastNotice: string | null;
@@ -84,6 +87,7 @@ export function useMutationQueue() {
     conflictCount: 0,
     syncing: false,
     lastError: null,
+    lastErrorAt: null,
     lastNotice: null,
     conflicts: [],
   });
@@ -114,7 +118,7 @@ export function useMutationQueue() {
 
   const syncPending = useCallback(async () => {
     if (!isOnline()) return;
-    setState((s) => ({ ...s, syncing: true, lastError: null }));
+    setState((s) => ({ ...s, syncing: true, lastError: null, lastErrorAt: null }));
     const syncStart = Date.now();
     let droppedMutations = 0;
     let droppedUploads = 0;
@@ -203,7 +207,12 @@ export function useMutationQueue() {
       }
       await refreshPending();
     } catch (err) {
-      setState((s) => ({ ...s, lastError: err instanceof Error ? err.message : String(err) }));
+      const msg = err instanceof Error ? err.message : String(err);
+      setState((s) => ({
+        ...s,
+        lastError: msg,
+        lastErrorAt: s.lastError ? s.lastErrorAt : Date.now(),
+      }));
     } finally {
       const parts: string[] = [];
       if (conflicts.length > 0) {
@@ -215,11 +224,15 @@ export function useMutationQueue() {
       if (droppedMutations > 0) parts.push(`${droppedMutations} Änderung(en)`);
       if (droppedUploads > 0) parts.push(`${droppedUploads} Datei-Upload(s)`);
       const dropMsg = parts.length > 0 ? `${parts.join("; ")} — nicht synchronisiert` : null;
-      setState((s) => ({
-        ...s,
-        syncing: false,
-        lastError: [s.lastError, dropMsg].filter(Boolean).join(" — ") || null,
-      }));
+      setState((s) => {
+        const merged = [s.lastError, dropMsg].filter(Boolean).join(" — ") || null;
+        return {
+          ...s,
+          syncing: false,
+          lastError: merged,
+          lastErrorAt: merged ? (s.lastErrorAt ?? Date.now()) : null,
+        };
+      });
     }
   }, [refreshPending]);
 
@@ -287,6 +300,7 @@ export function useMutationQueue() {
         setState((s) => ({
           ...s,
           lastError: err instanceof Error ? err.message : String(err),
+          lastErrorAt: s.lastError ? s.lastErrorAt : Date.now(),
         }));
       }
       await refreshPending();

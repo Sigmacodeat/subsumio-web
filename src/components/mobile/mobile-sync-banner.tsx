@@ -12,6 +12,7 @@ export function MobileSyncBanner() {
     pendingCount,
     syncing,
     lastError,
+    lastErrorAt,
     lastNotice,
     conflicts,
     syncPending,
@@ -136,6 +137,11 @@ export function MobileSyncBanner() {
               +{conflicts.length - 3} weitere
             </li>
           )}
+          {pendingCount > 0 && (
+            <li className="text-xs text-[color:var(--ds-warning-text)] opacity-70">
+              {pendingCount} weitere Änderung(en) ausstehend
+            </li>
+          )}
         </ul>
       </div>
     );
@@ -148,6 +154,12 @@ export function MobileSyncBanner() {
         <AlertTriangle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
         <span className="flex-1 truncate text-xs text-[color:var(--ds-danger-text)]">
           {t("mobile.sync_error" as DashboardKey)}: {lastError}
+          {lastErrorAt && (
+            <span className="opacity-70">
+              {" "}
+              · seit {new Date(lastErrorAt).toLocaleTimeString("de-AT")}
+            </span>
+          )}
         </span>
         <button
           onClick={() => setDismissed(true)}
