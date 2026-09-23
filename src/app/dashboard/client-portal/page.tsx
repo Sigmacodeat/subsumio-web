@@ -329,6 +329,14 @@ export default function ClientPortalPage() {
                       <span className="min-w-0 flex-1 text-[color:var(--ds-text-muted)]">
                         „{e.comment}“
                       </span>
+                      {e.caseSlug && (
+                        <Link
+                          href={`/dashboard/cases/${encodeSlugPath(e.caseSlug)}`}
+                          className="shrink-0 text-[color:var(--brand-primary)] hover:underline"
+                        >
+                          Akte
+                        </Link>
+                      )}
                       <span className="shrink-0 font-mono text-[color:var(--ds-text-subtle)]">
                         {formatDate(e.submittedAt)}
                       </span>
