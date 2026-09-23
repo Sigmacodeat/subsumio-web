@@ -496,6 +496,13 @@ export interface SubagentHandlerData {
    */
   _source_ids?: string[];
   /**
+   * The web caller's effective matter scope (see core/matter-access.ts
+   * `jobMatterStamp`). Absent = unrestricted; malformed = deny all.
+   */
+  _matter_scope?: string[] | "all";
+  /** Matters the web caller may only read; writes into them are refused. */
+  _matter_read_only?: string[];
+  /**
    * v0.41 Approach C: opt out of the auto-generated tool-usage preamble
    * that `buildSystemPrompt()` splices into `system`. Default behavior
    * (omitted or false) prepends a deterministic preamble listing each

@@ -26,6 +26,9 @@
  *   _source_id?: string          — Tenant-Stempel (web-api); wird an alle
  *                                  Children propagiert, damit die Agent-API
  *                                  source-scoped bleibt
+ *   _matter_scope / _matter_read_only — Akten-Sichtbarkeit des Aufrufers
+ *                                  (Ethical Wall, Freigaben); wird ebenfalls an
+ *                                  alle Children propagiert
  */
 
 import type { MinionJobContext } from "../types.ts";
@@ -34,6 +37,12 @@ import { MinionQueue } from "../queue.ts";
 import { resolveSpecialist } from "../specialist-defs.ts";
 import { parseMarkdown } from "../../markdown.ts";
 import { inheritBudgetOwner } from "../budget-tracker.ts";
+import {
+  inheritedJobMatterStamp,
+  matterScopeAllows,
+  readJobMatterAccess,
+  type MatterScope,
+} from "../../matter-access.ts";
 
 export interface SupervisorHandlerData {
   prompt: string;
@@ -42,6 +51,19 @@ export interface SupervisorHandlerData {
   skip_critic?: boolean;
   aggregate_with_llm?: boolean;
   _source_id?: string;
+  _matter_scope?: string[] | "all";
+  _matter_read_only?: string[];
+}
+
+/**
+ * The stamps every child job inherits from its supervisor: the tenant source
+ * and the caller's matter access. Without them a child agent would read
+ * walled matters through its brain tools.
+ */
+export function supervisorChildStamps(data: unknown): Record<string, unknown> {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  const source = typeof d._source_id === "string" && d._source_id ? d._source_id : undefined;
+  return { ...(source ? { _source_id: source } : {}), ...inheritedJobMatterStamp(d) };
 }
 
 export interface SupervisorPlan {
@@ -122,11 +144,13 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     const queue = new MinionQueue(engine);
     const sourceStamp =
       typeof data._source_id === "string" && data._source_id ? data._source_id : undefined;
+    const childStamps = supervisorChildStamps(data);
+    const matterAccess = readJobMatterAccess(data);
 
     // ── v0.43: Case Context Auto-Load ───────────────────────
     let caseContext: CaseContext | null = null;
     try {
-      caseContext = await loadCaseContext(engine, data.prompt, sourceStamp);
+      caseContext = await loadCaseContext(engine, data.prompt, sourceStamp, matterAccess.scope);
     } catch {
       // Non-fatal: proceed with plain prompt if context loading fails
     }
@@ -189,7 +213,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
           max_turns: def.maxTurns ?? 20,
         };
         if (def.model) childData.model = def.model;
-        if (sourceStamp) childData._source_id = sourceStamp;
+        Object.assign(childData, childStamps);
 
         const child = await queue.add(
           "subagent",
@@ -272,7 +296,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
         prompt: `Review the following legal analysis for accuracy, completeness, and citation quality.\n\n${synthesis}`,
         subagent_def: "legal-critic",
         max_turns: 20,
-        ...(sourceStamp ? { _source_id: sourceStamp } : {}),
+        ...childStamps,
       });
 
       if (criticMsg && criticMsg.outcome === "complete") {
@@ -299,7 +323,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
             ].join("\n"),
             subagent_def: reviser,
             max_turns: 20,
-            ...(sourceStamp ? { _source_id: sourceStamp } : {}),
+            ...childStamps,
           });
           if (reviseMsg && reviseMsg.outcome === "complete" && reviseMsg.result != null) {
             revisedSynthesis =
@@ -349,6 +373,8 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
             ...(parsed.frontmatter ?? {}),
             agent_job_id: ctx.id,
             agent_type: "supervisor",
+            // Bound to the matter even when the caller may only read it:
+            // an unbound result page would be visible to walled colleagues.
             ...(caseContext ? { case_slug: caseContext.slug } : {}),
             ...(data.supervisor_model ? { model: data.supervisor_model } : {}),
           },
@@ -562,10 +588,15 @@ interface CaseContext {
   evidence: Array<{ title: string; type?: string }>;
 }
 
-async function loadCaseContext(
+/**
+ * Find the matter the prompt is about and load its context. With a matter
+ * scope, only matters (and related pages) the caller may see are considered.
+ */
+export async function loadCaseContext(
   engine: BrainEngine,
   prompt: string,
-  sourceId?: string
+  sourceId?: string,
+  matterScope?: MatterScope
 ): Promise<CaseContext | null> {
   // Extract meaningful search terms from the prompt
   const stopWords = new Set([
@@ -642,7 +673,7 @@ async function loadCaseContext(
   const sourceClause = sourceId ? `AND source_id = $2` : "";
   const params: unknown[] = sourceId ? [pattern, sourceId] : [pattern];
 
-  const [caseRow] = await engine.executeRaw<{
+  const caseRows = await engine.executeRaw<{
     slug: string;
     title: string;
     content: string;
@@ -655,9 +686,10 @@ async function loadCaseContext(
        AND (title ILIKE $1 OR slug ILIKE $1 OR frontmatter->>'client_name' ILIKE $1)
        ${sourceClause}
      ORDER BY updated_at DESC
-     LIMIT 1`,
+     LIMIT ${matterScope === undefined || matterScope === "all" ? 1 : 25}`,
     params
   );
+  const caseRow = caseRows.find((r) => matterScopeAllows(matterScope, r.slug, r.slug));
 
   if (!caseRow) return null;
 
@@ -671,12 +703,13 @@ async function loadCaseContext(
   const params2: unknown[] = [caseRow.slug];
   if (sourceId) params2.push(sourceId);
 
-  const related = await engine.executeRaw<{
+  const relatedRows = await engine.executeRaw<{
+    slug: string;
     title: string;
     type: string;
     frontmatter: unknown;
   }>(
-    `SELECT title, type, frontmatter
+    `SELECT slug, title, type, frontmatter
      FROM pages
      WHERE deleted_at IS NULL
        AND (
@@ -689,6 +722,15 @@ async function loadCaseContext(
      ORDER BY type, updated_at DESC`,
     params2
   );
+  // The title match can pull in pages of other matters — keep only visible ones.
+  const related = relatedRows.filter((r) => {
+    const rFm =
+      typeof r.frontmatter === "string"
+        ? (JSON.parse(r.frontmatter) as Record<string, unknown>)
+        : ((r.frontmatter ?? {}) as Record<string, unknown>);
+    const bound = typeof rFm.case_slug === "string" ? rFm.case_slug : undefined;
+    return matterScopeAllows(matterScope, r.slug, bound);
+  });
 
   const deadlines = related
     .filter((r) => r.type === "legal_deadline")

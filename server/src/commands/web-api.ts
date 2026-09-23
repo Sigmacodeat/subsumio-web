@@ -48,6 +48,7 @@ import { publicErrorMessage } from "../core/public-error-message.ts";
 import {
   PRIVATE_CHAT_PREFIX,
   callerMatterAccess,
+  jobMatterStamp,
   matterScopeAllows,
   privateChatDenies,
   scopeForCaller,
@@ -1710,6 +1711,15 @@ function assertMatterWritable(req: Request, slug: string, caseSlug?: string): vo
       "The caller was granted read access to this matter, not write access."
     );
   }
+}
+
+/**
+ * The caller's matter access as a job-data stamp (`_matter_scope`,
+ * `_matter_read_only`) for background agent work started by this request.
+ * `{}` for unrestricted callers, whose jobs keep today's behaviour.
+ */
+function agentMatterStamp(req: Request): Record<string, unknown> {
+  return jobMatterStamp(req.matterScope, req.matterReadOnly);
 }
 
 export function aclGroupsMiddleware(engine: BrainEngine) {
@@ -3725,6 +3735,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   };
   const legalErr = (res: Response, name: string, e: unknown) => {
     const msg = e instanceof Error ? e.message : "unknown";
+    if (e instanceof OperationError && e.code === "matter_read_only") {
+      res.status(403).json({ error: e.code, message: msg });
+      return;
+    }
     const status = e instanceof EngineNotFoundError ? 404 : /not found/i.test(msg) ? 404 : 500;
     res.status(status).json({ error: `${name}_failed`, message: msg });
   };
@@ -7063,6 +7077,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_case_slug", message: "case_slug is required" });
           return;
         }
+        // The pipeline reads the matter and writes its results into it.
+        assertMatterScope(req.matterScope, caseSlug);
+        assertMatterWritable(req, caseSlug, caseSlug);
+        if (Array.isArray(body.part_slugs)) {
+          for (const s of body.part_slugs) {
+            if (typeof s === "string" && s) assertMatterScope(req.matterScope, s, caseSlug);
+          }
+        }
 
         // Every legal pipeline consumes paid AI capacity. This endpoint is
         // called only by trusted web-server routes, but it still must fail
@@ -7219,6 +7241,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.json({ success: true, job_id: job.id, status: "queued" });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
+        if (err instanceof EngineNotFoundError) {
+          res.status(404).json({ error: "not_found", message: msg });
+          return;
+        }
+        if (err instanceof OperationError && err.code === "matter_read_only") {
+          res.status(403).json({ error: err.code, message: msg });
+          return;
+        }
         console.error("[legal-pipeline/trigger] error:", msg);
         res.status(500).json({ error: "trigger_failed", message: msg });
       }
@@ -7493,7 +7523,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const queue = new MinionQueue(engine);
-      const job = await queue.replayJob(jobId);
+      // The replay keeps the original job's matter stamp; a restricted
+      // caller's own access replaces it, so replaying a colleague's run never
+      // reaches matters the caller may not see.
+      const stamp = agentMatterStamp(req);
+      const job = await queue.replayJob(
+        jobId,
+        Object.keys(stamp).length > 0 ? { _matter_read_only: [], ...stamp } : undefined
+      );
       res.json({ success: true, newJobId: job?.id ?? null });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
@@ -7526,7 +7563,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // Tenant agents write into their source via brain tools — make sure
         // the source row exists before the first child put_page fires.
         await ensureSource(sourceId);
-        const data: Record<string, unknown> = { prompt: sanitizedPrompt, _source_id: sourceId };
+        const data: Record<string, unknown> = {
+          prompt: sanitizedPrompt,
+          _source_id: sourceId,
+          // The agents search and write on the caller's behalf: they see
+          // only the matters the caller may see (children inherit this).
+          ...agentMatterStamp(req),
+        };
         // Caller-controlled knobs are validated, never passed through raw:
         // the model must be a catalogue choice (no arbitrary / non-EU vendor
         // ids), and specialists must exist (max 4, like the planner's cap).
@@ -8515,6 +8558,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         heute,
         sourceId: requestSourceId(req),
         caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
+        matterScope: req.matterScope ?? "all",
       });
       res.json(buch);
     } catch (e) {
@@ -8534,6 +8578,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         heute,
         sourceId: requestSourceId(req),
         caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
+        matterScope: req.matterScope ?? "all",
       });
       const ics = baueIcs(buch);
       res.setHeader("Content-Type", "text/calendar; charset=utf-8");
@@ -9160,6 +9205,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             evidence_threshold: evidenceThreshold,
             max_cases: maxCases,
             ...(sourceId ? { _source_id: sourceId } : {}),
+            ...agentMatterStamp(req),
           } as Record<string, unknown>,
           { timeout_ms: 300_000, max_attempts: 1 }
         );
@@ -10144,6 +10190,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_case_slug", message: "case_slug is required." });
           return;
         }
+        // Same authorization as /api/think's case_slug: out of scope reads as not found.
+        assertMatterScope(req.matterScope, caseSlug);
         const pruefauftrag = typeof body.pruefauftrag === "string" ? body.pruefauftrag : undefined;
         const jurisdiction = typeof body.jurisdiction === "string" ? body.jurisdiction : "at";
         const incremental = typeof body.incremental === "boolean" ? body.incremental : false;
@@ -10171,7 +10219,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const { getRun } = await import("../core/legal/case-investigation.ts");
-      const result = getRun(runId);
+      const found = getRun(runId);
+      // A run of a matter the caller may not see does not exist for them.
+      const result = found && isMatterScoped(req.matterScope, found.case_slug) ? found : null;
       if (!result) {
         res.status(404).json({
           error: "run_not_found",
@@ -10205,7 +10255,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const reviewReason =
           typeof body.review_reason === "string" ? body.review_reason : undefined;
 
-        const { reviewContradiction } = await import("../core/legal/case-investigation.ts");
+        const { reviewContradiction, getRun } = await import("../core/legal/case-investigation.ts");
+        const run = getRun(runId);
+        if (run) {
+          assertMatterScope(req.matterScope, run.case_slug);
+          assertMatterWritable(req, run.case_slug, run.case_slug);
+        }
         const result = await reviewContradiction(engine, runId, id, {
           review_status: reviewStatus as "accepted" | "dismissed" | "no_contradiction",
           ...(reviewReason ? { review_reason: reviewReason } : {}),

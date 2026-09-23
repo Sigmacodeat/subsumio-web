@@ -1844,7 +1844,14 @@ const list_pages: Operation = {
       ...scope,
     });
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
-    let result = pages.map((pg) => ({
+    // Matter scope is checked on the full page (slug AND frontmatter.case_slug)
+    // before the projection below drops the frontmatter — otherwise a
+    // document bound to a walled matter by case_slug alone would slip through.
+    const inScope = matterScopeFilter(
+      pages.map((pg) => ({ slug: pg.slug, frontmatter: pg.frontmatter ?? {}, page: pg })),
+      ctx
+    ).map((x) => x.page);
+    let result = inScope.map((pg) => ({
       slug: pg.slug,
       type: pg.type,
       title: pg.title,
@@ -1852,8 +1859,6 @@ const list_pages: Operation = {
       ...(pg.deleted_at ? { deleted_at: pg.deleted_at } : {}),
       ...(includeFrontmatter ? { frontmatter: pg.frontmatter ?? {} } : {}),
     }));
-
-    result = matterScopeFilter(result, ctx);
 
     // Subsumio R3: Filter by document-level ACLs.
     if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
