@@ -390,8 +390,14 @@ volumes:
     external: true
     name: hetzner_caddy-config
   # Local encrypted backups + the timestamp of the last successful run.
+  # external: the volumes predate Compose adoption — declaring them avoids
+  # the "already exists but was not created by Docker Compose" warnings.
   backup-local:
+    external: true
+    name: subsumio-engine_backup-local
   backup-status:
+    external: true
+    name: subsumio-engine_backup-status
   # Corpus data — pre-populated with law-corpus before first deploy.
   # Not external: created fresh by Compose on first `up`.
   corpus-data:
