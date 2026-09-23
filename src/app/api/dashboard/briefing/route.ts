@@ -4,6 +4,7 @@ import { uiLanguageSchema } from "@/lib/api-validation";
 import { engineComplete } from "@/lib/engine-llm";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { DEFAULT_TYPES, fetchPagesByTypes } from "@/lib/cockpit";
+import { overdueReconciliationAccounts } from "@/lib/trust-accounting";
 import type { BrainPage } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -33,6 +34,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     const pages = await fetchPagesByTypes(headers, {
       ...DEFAULT_TYPES,
       legal_follow_up: 50,
+      trust_account: 50,
     });
 
     const cases = pages.legal_case ?? [];
@@ -154,7 +156,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       activeCases: activeCases.length,
       unassignedDocs: unassignedDocs.length,
       reviewGaps: reviewGaps.length,
-      overdueReconciliations: 0,
+      overdueReconciliations: overdueReconciliationAccounts(pages.trust_account ?? []).length,
       followUpsToday: followUps.filter((page: BrainPage) => {
         const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
         return String(fm.date ?? "").slice(0, 10) === todayKey && fm.completed !== true;
@@ -192,6 +194,7 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
     parts.push(`Open invoices: ${data.openInvoices}`);
     parts.push(`Unassigned documents: ${data.unassignedDocs}`);
     parts.push(`Review gaps: ${data.reviewGaps}`);
+    parts.push(`Trust reconciliations overdue: ${data.overdueReconciliations}`);
     if (data.topDeadlines.length > 0) {
       parts.push("");
       parts.push("Top deadlines:");
@@ -231,6 +234,7 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
   parts.push(`Offene Rechnungen: ${data.openInvoices}`);
   parts.push(`Unzugeordnete Dokumente: ${data.unassignedDocs}`);
   parts.push(`Review-Lücken: ${data.reviewGaps}`);
+  parts.push(`Überfällige Treuhand-Abgleiche: ${data.overdueReconciliations}`);
   if (data.topDeadlines.length > 0) {
     parts.push("");
     parts.push("Nächste Fristen:");
@@ -288,6 +292,8 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
     if (data.pendingReviews > 0) attention.push(`${data.pendingReviews} pending reviews`);
     if (data.pendingSignatures > 0) attention.push(`${data.pendingSignatures} signatures`);
     if (data.unassignedDocs > 0) attention.push(`${data.unassignedDocs} unassigned documents`);
+    if (data.overdueReconciliations > 0)
+      attention.push(`${data.overdueReconciliations} trust reconciliation(s) overdue`);
     parts.push(
       attention.length > 0 ? attention.join(", ") + " need attention." : "Inbox is clear."
     );
@@ -314,6 +320,8 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
   if (data.pendingReviews > 0) attention.push(`${data.pendingReviews} offene Freigaben`);
   if (data.pendingSignatures > 0) attention.push(`${data.pendingSignatures} Signaturen`);
   if (data.unassignedDocs > 0) attention.push(`${data.unassignedDocs} unzugeordnete Dokumente`);
+  if (data.overdueReconciliations > 0)
+    attention.push(`${data.overdueReconciliations} überfällige Treuhand-Abgleiche`);
   parts.push(
     attention.length > 0 ? attention.join(", ") + " benötigen Aufmerksamkeit." : "Eingang ist leer."
   );

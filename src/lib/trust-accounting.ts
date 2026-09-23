@@ -322,6 +322,31 @@ export function isOverdrawn(account: TrustAccount): boolean {
 }
 
 /**
+ * Quartalsabgleich nach RAO: an account is "reconciliation overdue" once the
+ * first month of a quarter has passed without a reconciliation entry dated
+ * inside that quarter. Shared by the cockpit attention list and the morning
+ * briefing so both report the same accounts.
+ */
+export function overdueReconciliationAccounts<
+  T extends { frontmatter?: Record<string, unknown> | null },
+>(accounts: T[], now: Date = new Date()): T[] {
+  const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+  const currentYear = now.getFullYear();
+  const quarterStartMonth = (currentQuarter - 1) * 3;
+  if (now.getMonth() <= quarterStartMonth) return [];
+  return accounts.filter((acc) => {
+    const recs = (acc.frontmatter?.reconciliations as Array<{ date: string }> | undefined) ?? [];
+    return !recs.some((r) => {
+      const rDate = new Date(r.date);
+      return (
+        Math.floor(rDate.getMonth() / 3) + 1 === currentQuarter &&
+        rDate.getFullYear() === currentYear
+      );
+    });
+  });
+}
+
+/**
  * § 10a Abs. 2 und 3 RAO: Meldeentwurf an die Treuhandeinrichtung der
  * Rechtsanwaltskammer, wenn der Treuhanderlag einer Akte 40.000 € übersteigt.
  * Reiner Textentwurf — der Anwalt prüft, ergänzt und versendet ihn.

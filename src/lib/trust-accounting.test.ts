@@ -17,6 +17,7 @@ import {
   validateTrustBooking,
   type TrustBookingInput,
   type TrustTransaction as LedgerTx,
+  overdueReconciliationAccounts,
 } from "./trust-accounting";
 
 const baseAccount = (overrides?: Partial<TrustAccount>): TrustAccount => ({
@@ -465,5 +466,32 @@ describe("buildAnderkontoMitteilung (§ 43a Abs. 5 BRAO)", () => {
     expect(text).toContain("DE89370400440532013000");
     expect(text).toContain("15.000");
     expect(text).toContain("anwaltlich zu prüfen");
+  });
+});
+
+describe("overdueReconciliationAccounts (Quartalsabgleich RAO)", () => {
+  function acc(recs: Array<{ date: string }>) {
+    return { slug: "trust/1", frontmatter: { reconciliations: recs } };
+  }
+
+  it("zählt Konten ohne Abgleich im laufenden Quartal (nach Kulanzmonat)", () => {
+    const now = new Date("2026-05-15"); // Mai = Monat 4, Q2 startet April (Monat 3)
+    expect(overdueReconciliationAccounts([acc([])], now)).toHaveLength(1);
+    expect(overdueReconciliationAccounts([acc([{ date: "2026-04-10" }])], now)).toHaveLength(0);
+  });
+
+  it("Kulanzmonat: im ersten Quartalsmonat ist noch nichts überfällig", () => {
+    const now = new Date("2026-04-20"); // erster Monat von Q2
+    expect(overdueReconciliationAccounts([acc([])], now)).toHaveLength(0);
+  });
+
+  it("Abgleich aus Vorquartal zählt nicht", () => {
+    const now = new Date("2026-05-15");
+    expect(overdueReconciliationAccounts([acc([{ date: "2026-01-15" }])], now)).toHaveLength(1);
+  });
+
+  it("leere/fehlende reconciliations-Liste → überfällig", () => {
+    const now = new Date("2026-08-10"); // Q3, Kulanzmonat Juli vorbei
+    expect(overdueReconciliationAccounts([{ slug: "t/x", frontmatter: {} }], now)).toHaveLength(1);
   });
 });

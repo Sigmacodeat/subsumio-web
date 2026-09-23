@@ -29,6 +29,7 @@ import { useLang } from "@/lib/use-lang";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { overdueReconciliationAccounts } from "@/lib/trust-accounting";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
@@ -149,23 +150,7 @@ export function useKanzleiCockpitData() {
     slug: string;
     frontmatter?: Record<string, unknown>;
   }>;
-  const overdueReconciliations = trustAccounts.filter((acc) => {
-    const fm = acc.frontmatter ?? {};
-    const recs = (fm.reconciliations as Array<{ date: string }> | undefined) ?? [];
-    const now = new Date();
-    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
-    const currentYear = now.getFullYear();
-    const hasCurrentQuarter = recs.some((r) => {
-      const rDate = new Date(r.date);
-      return (
-        Math.floor(rDate.getMonth() / 3) + 1 === currentQuarter &&
-        rDate.getFullYear() === currentYear
-      );
-    });
-    const quarterStartMonth = (currentQuarter - 1) * 3;
-    const isPastGracePeriod = now.getMonth() > quarterStartMonth;
-    return isPastGracePeriod && !hasCurrentQuarter;
-  });
+  const overdueReconciliations = overdueReconciliationAccounts(trustAccounts);
   const docs = [
     ...((pages.document ?? []) as DashboardPageLike[]),
     ...((pages.legal_document ?? []) as DashboardPageLike[]),
