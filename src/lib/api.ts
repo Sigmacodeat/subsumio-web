@@ -2118,6 +2118,7 @@ export const api = {
       title?: string;
       priority?: "low" | "medium" | "high" | "critical";
       portal_enabled?: boolean;
+      send_document_request?: boolean;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake/convert", { method: "POST", body: JSON.stringify(input) });
     },

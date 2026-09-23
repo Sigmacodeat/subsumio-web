@@ -5,7 +5,11 @@ import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
 import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
-import { createDeadlineNotification, createNotificationFailureNotification } from "@/lib/comments";
+import {
+  createDeadlineNotification,
+  createIntakeStaleNotification,
+  createNotificationFailureNotification,
+} from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
@@ -110,6 +114,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let whatsapped = 0;
   let pushSent = 0;
   let inAppSent = 0;
+  let staleIntakes = 0;
   const errors: string[] = [];
   const failed: Array<{
     deadline_id: string;
@@ -120,12 +125,42 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
-    const [casePages, deadlinePages, followUpPages, absencePages] = await Promise.all([
+    const [casePages, deadlinePages, followUpPages, absencePages, intakePages] = await Promise.all([
       fetchPages(brainId, "legal_case", 10_000),
       fetchPages(brainId, "legal_deadline", 10_000),
       fetchPages(brainId, "legal_follow_up", 10_000),
       fetchPages(brainId, "absence_record", 10_000),
+      fetchPages(brainId, "intake_request", 10_000),
     ]);
+
+    // Erstanfragen verlieren Mandate, wenn sie liegen — offene Intakes
+    // älter als 24h eskalieren einmalig (deterministische ID) an alle.
+    const STALE_INTAKE_MS = 24 * 60 * 60 * 1000;
+    const OPEN_INTAKE_STATUS = new Set(["new", "needs_info", "conflict_check", "accepted"]);
+    for (const page of intakePages) {
+      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      if (!OPEN_INTAKE_STATUS.has(String(fm.status ?? "new"))) continue;
+      const created = new Date(String(fm.created_at ?? page.created_at ?? "")).getTime();
+      if (!Number.isFinite(created) || now.getTime() - created < STALE_INTAKE_MS) continue;
+      staleIntakes++;
+      const hoursOpen = Math.floor((now.getTime() - created) / 3_600_000);
+      for (const recipient of recipients) {
+        try {
+          await createIntakeStaleNotification({
+            userId: recipient.id,
+            brainId,
+            intakeSlug: page.slug,
+            clientName: typeof fm.client_name === "string" ? fm.client_name : undefined,
+            hoursOpen,
+          });
+        } catch (err) {
+          errors.push(
+            `Stale-intake notification failed for ${recipient.id}: ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
+      }
+    }
+
     const groups = collectDueReminders(casePages, deadlinePages, now, followUpPages);
     if (groups.length === 0) continue;
 
@@ -381,6 +416,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
     whatsapped,
     push_sent: pushSent,
     in_app: inAppSent,
+    stale_intakes: staleIntakes,
     smtp_configured: smtpConfigured,
     failed: failed.length > 0 ? failed : undefined,
     errors: errors.length > 0 ? errors : undefined,

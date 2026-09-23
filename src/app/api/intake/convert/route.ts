@@ -19,6 +19,7 @@ const convertSchema = z.object({
   title: z.string().max(300).optional(),
   priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   portal_enabled: z.boolean().default(false),
+  send_document_request: z.boolean().default(false),
 });
 
 function encodeSlug(slug: string): string {
@@ -168,19 +169,36 @@ export const POST = createHandler(
           : (((data as { pages?: BrainPage[] }).pages ??
               (data as { items?: BrainPage[] }).items ??
               []) as BrainPage[]);
-        const hasRequest = existing.some(
+        const existingRequest = existing.find(
           (p) =>
             (p.frontmatter as Record<string, unknown> | undefined)?.case_slug === casePage.slug &&
             (p.frontmatter as Record<string, unknown> | undefined)?.source_event_slug === body.slug
         );
-        if (!hasRequest) {
+        if (existingRequest) {
+          documentRequestSlug = existingRequest.slug;
+          // Retry mit Senden-Wunsch: vorhandenen Entwurf als gesendet markieren.
+          if (body.send_document_request) {
+            await fetch(`${ENGINE_URL}/api/pages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...ctx.headers },
+              body: JSON.stringify({
+                slug: existingRequest.slug,
+                title: "Dokumentenanfrage Update",
+                type: "document_request",
+                merge: true,
+                frontmatter: { status: "sent", sent_at: now, updated_at: now },
+              }),
+              signal: AbortSignal.timeout(15_000),
+            });
+          }
+        } else {
           const { buildDocumentRequest } = await import("@/lib/document-requests");
           const request = await buildDocumentRequest({
             brainId: ctx.brainId,
             caseSlug: casePage.slug,
             items: missingDocs,
             channel: "manual",
-            status: "draft",
+            status: body.send_document_request ? "sent" : "draft",
             sourceEventSlug: body.slug,
           });
           const reqRes = await fetch(`${ENGINE_URL}/api/pages`, {
@@ -191,11 +209,31 @@ export const POST = createHandler(
               title: request.title,
               type: "document_request",
               content: request.content,
-              frontmatter: request.frontmatter,
+              frontmatter: {
+                ...request.frontmatter,
+                ...(body.send_document_request ? { sent_at: now } : {}),
+              },
             }),
             signal: AbortSignal.timeout(15_000),
           });
           if (reqRes.ok) documentRequestSlug = request.slug;
+        }
+        // Same notification the PATCH route emits on status → sent.
+        if (body.send_document_request && documentRequestSlug) {
+          try {
+            const { createDocumentRequestNotification } = await import("@/lib/comments");
+            await createDocumentRequestNotification({
+              userId: ctx.user.id,
+              brainId: ctx.brainId,
+              caseSlug: casePage.slug,
+              caseTitle: casePage.title,
+              requestSlug: documentRequestSlug,
+              itemCount: missingDocs.length,
+              isReminder: false,
+            });
+          } catch {
+            // notification is best-effort
+          }
         }
       } catch (err) {
         log.warn("document_request from intake missing_documents failed", {

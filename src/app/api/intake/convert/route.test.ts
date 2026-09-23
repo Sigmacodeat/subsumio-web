@@ -81,6 +81,7 @@ vi.mock("@/lib/intake-conversion", () => ({
 }));
 
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
+vi.mock("@/lib/comments", () => ({ createDocumentRequestNotification: vi.fn() }));
 
 import { POST } from "./route";
 
@@ -322,6 +323,49 @@ describe("POST /api/intake/convert", () => {
     expect(reqBody.frontmatter.items).toHaveLength(2);
     expect(reqBody.frontmatter.status).toBe("draft");
     expect(reqBody.frontmatter.case_slug).toBe("legal/cases/2026-12345-max-muster");
+  });
+
+  test("send_document_request: true markiert die Anfrage als gesendet", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: ["Vollmacht"],
+        acceptance: {
+          conflict_check: { status: "clear" },
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("[]", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({
+          slug: "legal/intake/2026-06-20/max",
+          send_document_request: true,
+        }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const docReqCalls = mockFetch.mock.calls.filter(([, init]) =>
+      String((init as RequestInit | undefined)?.body ?? "").includes('"document_request"')
+    );
+    const reqBody = JSON.parse(String((docReqCalls[0]?.[1] as RequestInit).body));
+    expect(reqBody.frontmatter.status).toBe("sent");
+    expect(reqBody.frontmatter.sent_at).toBeTruthy();
   });
 
   test.each([

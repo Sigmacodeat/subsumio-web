@@ -27,7 +27,7 @@ interface BriefingData {
   overdueReconciliations: number;
   followUpsToday: number;
   activeDelegations: Array<{ name: string; delegate: string; until: string }>;
-  topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
+  topDeadlines: Array<{ title: string; due: string; daysLeft: number; delegate?: string }>;
   topCases: Array<{ title: string; status: string }>;
 }
 
@@ -75,6 +75,17 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     now.setHours(0, 0, 0, 0);
     const todayKey = now.toLocaleDateString("en-CA");
 
+    const absences = (pages.absence_record ?? [])
+      .map((p: BrainPage) => p.frontmatter as AbsenceRecord | undefined)
+      .filter((a): a is AbsenceRecord => Boolean(a?.user_email || a?.user_name));
+    const responsibleByCase = new Map<string, string>();
+    for (const c of cases) {
+      const lawyer = (c.frontmatter as Record<string, unknown> | undefined)?.own_lawyer_name;
+      if (typeof lawyer === "string" && lawyer.trim()) {
+        responsibleByCase.set(c.slug, lawyer.trim());
+      }
+    }
+
     const deadlineItems = deadlines
       .map((p: BrainPage) => {
         const fm = p.frontmatter ?? {};
@@ -88,10 +99,21 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
         const target = new Date(due);
         target.setHours(0, 0, 0, 0);
         const daysLeft = Math.ceil((target.getTime() - now.getTime()) / 86_400_000);
+        const caseSlug = (fm as Record<string, unknown>).case_slug;
+        const responsible =
+          (fm as Record<string, unknown>).responsible ??
+          (fm as Record<string, unknown>).assignee ??
+          (typeof caseSlug === "string" ? responsibleByCase.get(caseSlug) : undefined);
+        const delegate = activeDelegateFor(
+          typeof responsible === "string" ? responsible : undefined,
+          absences,
+          new Date()
+        );
         return {
           title: String(p.title ?? "Unbenannte Frist"),
           due: due.toISOString(),
           daysLeft,
+          delegate: delegate?.name,
           overdue: daysLeft < 0 && isOpen((fm as Record<string, unknown>).status),
           critical:
             daysLeft >= 0 && daysLeft <= 3 && isOpen((fm as Record<string, unknown>).status),
@@ -104,6 +126,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
           title: string;
           due: string;
           daysLeft: number;
+          delegate: string | undefined;
           overdue: boolean;
           critical: boolean;
         } => item !== null
@@ -161,9 +184,6 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       reviewGaps: reviewGaps.length,
       overdueReconciliations: overdueReconciliationAccounts(pages.trust_account ?? []).length,
       activeDelegations: (() => {
-        const absences = (pages.absence_record ?? [])
-          .map((p: BrainPage) => p.frontmatter as AbsenceRecord | undefined)
-          .filter((a): a is AbsenceRecord => Boolean(a?.user_email || a?.user_name));
         const seen = new Set<string>();
         const nowReal = new Date();
         return absences
@@ -189,6 +209,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
         title: d.title,
         due: d.due,
         daysLeft: d.daysLeft,
+        ...(d.delegate ? { delegate: d.delegate } : {}),
       })),
       topCases: activeCases.slice(0, 3).map((p: BrainPage) => ({
         title: String(p.title ?? "Unbenannte Akte"),

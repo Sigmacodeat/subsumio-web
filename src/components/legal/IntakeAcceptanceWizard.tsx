@@ -24,6 +24,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
@@ -51,6 +52,7 @@ export interface IntakeAcceptanceItem {
     summary: string;
     acceptance?: IntakeAcceptanceWorkflow;
     source?: string;
+    missing_documents?: string[];
   };
 }
 
@@ -101,6 +103,7 @@ export function IntakeAcceptanceWizard({
   const [generatingLetter, setGeneratingLetter] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [kycRecords, setKycRecords] = useState<KYCVerification[] | null>(null);
+  const [sendDocRequest, setSendDocRequest] = useState(false);
 
   useEffect(() => {
     setWorkflow(
@@ -115,6 +118,7 @@ export function IntakeAcceptanceWizard({
     setCheckResult(null);
     setWaiverReason("");
     setDirty(false);
+    setSendDocRequest(false);
   }, [item, open]);
 
   // Identification checks recorded for this intake (the KYC page stores them
@@ -287,8 +291,19 @@ export function IntakeAcceptanceWizard({
           ? `${item.frontmatter.client_name}${item.frontmatter.legal_area ? ` - ${item.frontmatter.legal_area}` : ""}`
           : undefined,
         priority: "medium",
+        send_document_request: sendDocRequest,
       });
-      addToast({ type: "success", title: "Akte angelegt" });
+      addToast({
+        type: "success",
+        title: "Akte angelegt",
+        ...(res.document_request_slug
+          ? {
+              description: sendDocRequest
+                ? "Unterlagen-Anfrage wurde als gesendet markiert."
+                : "Unterlagen-Anfrage als Entwurf angelegt.",
+            }
+          : {}),
+      });
       onConverted?.(res as { case?: { slug?: string } });
       onOpenChange(false);
       const createdCaseSlug = (res.case as { slug?: string } | undefined)?.slug;
@@ -741,6 +756,31 @@ export function IntakeAcceptanceWizard({
                   <p className="text-xs text-[color:var(--ds-danger-text)]">
                     Es fehlen noch Pflichtschritte. Bitte alle Schritte abschließen.
                   </p>
+                )}
+                {(item.frontmatter.missing_documents?.length ?? 0) > 0 && (
+                  <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                    <div className="flex items-start gap-2.5">
+                      <Checkbox
+                        id="send-doc-request"
+                        checked={sendDocRequest}
+                        onCheckedChange={(v) => setSendDocRequest(v === true)}
+                        className="mt-0.5"
+                      />
+                      <div className="min-w-0">
+                        <Label
+                          htmlFor="send-doc-request"
+                          className="text-sm font-medium text-[color:var(--ds-text)]"
+                        >
+                          Unterlagen-Anfrage als gesendet markieren
+                        </Label>
+                        <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                          Fehlende Unterlagen ({item.frontmatter.missing_documents!.join(", ")})
+                          werden als Dokumentenanfrage in der Akte angelegt — als Entwurf oder
+                          direkt gesendet.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <Button
                   type="button"

@@ -21,7 +21,7 @@ export interface BriefingData {
   overdueReconciliations: number;
   followUpsToday: number;
   activeDelegations: Array<{ name: string; delegate: string; until: string }>;
-  topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
+  topDeadlines: Array<{ title: string; due: string; daysLeft: number; delegate?: string }>;
   topCases: Array<{ title: string; status: string }>;
 }
 

@@ -199,7 +199,14 @@ export function Topbar({
             }
             return {
               id: n.id,
-              title: n.type === "mention" ? "Erwähnung" : n.type === "reply" ? "Antwort" : "System",
+              title:
+                n.type === "mention"
+                  ? "Erwähnung"
+                  : n.type === "reply"
+                    ? "Antwort"
+                    : n.data?.intakeSlug
+                      ? "Mandatsanfrage"
+                      : "System",
               message: String(n.data?.message ?? ""),
               type: (n.type === "mention" || n.type === "reply" ? n.type : "system") as
                 | "mention"

@@ -73,7 +73,10 @@ interface BriefingBody {
   data: {
     narrative: string;
     usedFallback: boolean;
-    data: { activeDelegations: Array<{ name: string; delegate: string; until: string }> };
+    data: {
+      activeDelegations: Array<{ name: string; delegate: string; until: string }>;
+      topDeadlines: Array<{ title: string; daysLeft: number; delegate?: string }>;
+    };
   };
 }
 
@@ -134,6 +137,39 @@ describe("POST /api/dashboard/briefing — Delegationen", () => {
     const body = (await res.json()) as BriefingBody;
     expect(body.data.data.activeDelegations).toEqual([]);
     expect(body.data.narrative).not.toContain("vertritt");
+  });
+
+  test("Frist des Abwesenden trägt den Vertreter in topDeadlines", async () => {
+    mockFetchPages.mockResolvedValueOnce({
+      absence_record: [absence(ACTIVE)],
+      legal_case: [
+        {
+          slug: "legal/cases/1",
+          title: "Akte Muster",
+          frontmatter: { status: "open", own_lawyer_name: "RA Müller" },
+        },
+      ],
+      legal_deadline: [
+        {
+          slug: "legal/deadlines/1",
+          title: "Klagsantwort",
+          frontmatter: {
+            case_slug: "legal/cases/1",
+            due_date: "2099-01-10",
+            status: "open",
+          },
+        },
+        {
+          slug: "legal/deadlines/2",
+          title: "Frist ohne Akte",
+          frontmatter: { due_date: "2099-01-11", status: "open" },
+        },
+      ],
+    });
+    const res = await post();
+    const body = (await res.json()) as BriefingBody;
+    expect(body.data.data.topDeadlines[0]?.delegate).toBe("Dr. Berger");
+    expect(body.data.data.topDeadlines[1]?.delegate).toBeUndefined();
   });
 
   test("englischer Fallback nennt die Vertretung", async () => {

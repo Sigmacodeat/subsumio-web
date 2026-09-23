@@ -319,7 +319,14 @@ export function MorningBriefing({ compact = false }: { compact?: boolean } = {})
                   key={i}
                   className="flex items-center justify-between rounded-md bg-[color:var(--ds-surface-2)] px-2.5 py-1.5"
                 >
-                  <span className="truncate text-xs text-[color:var(--ds-text)]">{d.title}</span>
+                  <span className="min-w-0 truncate text-xs text-[color:var(--ds-text)]">
+                    {d.title}
+                    {d.delegate && (
+                      <span className="ml-1.5 text-[color:var(--ds-info-text)]">
+                        · {lang === "en" ? "repr." : "Vertr."} {d.delegate}
+                      </span>
+                    )}
+                  </span>
                   <span
                     className={`shrink-0 text-xs font-medium ${
                       d.daysLeft < 0

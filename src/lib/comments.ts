@@ -605,6 +605,36 @@ export async function createDocumentRequestNotification(opts: {
   await persistNotificationUpsert(notif);
 }
 
+/**
+ * Stale-intake escalation — fires once per intake request (deterministic
+ * ID) when a Mandatsanfrage sits open longer than the firm tolerates.
+ * Renders as a system notification; `intakeSlug` lets the UI link/title it.
+ */
+export async function createIntakeStaleNotification(opts: {
+  userId: string;
+  brainId: string;
+  intakeSlug: string;
+  clientName?: string;
+  hoursOpen: number;
+}): Promise<void> {
+  const slugPart = opts.intakeSlug.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 60);
+  const notif: Notification = {
+    id: `notif_intake_stale_${slugPart}`,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "system",
+    data: {
+      intakeSlug: opts.intakeSlug,
+      clientName: opts.clientName,
+      hoursOpen: opts.hoursOpen,
+      message: `Erstanfrage von ${opts.clientName || "Mandant"} ist seit ${opts.hoursOpen} Std. unbearbeitet — bitte in der Mandatsaufnahme prüfen.`,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
 export async function createRetentionNotification(opts: {
   userId: string;
   brainId: string;
