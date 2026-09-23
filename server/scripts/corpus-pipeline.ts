@@ -1467,6 +1467,58 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
   }
 }
 
+// ── Known-bad generation repair (2026-09-23) ────────────────────────────
+// repair-known-bad-generation.ts re-verifies the 58,599 Landesrecht pages
+// blanket-flagged generation:known_bad (audit-plausibility-full.ts, based
+// only on retrieved_at, not a per-page check — see the script's own header
+// and memory korpus-pipeline-audit-2026-09-23). It self-bounds to
+// --batch-minutes per invocation and checkpoints, so the pipeline just
+// restarts it every cycle until its checkpoint reports done. Single RIS
+// connection, its own internal 2s pacing (ris-pace.ts) — no faster than any
+// other fetcher here.
+
+const KNOWN_BAD_REPAIR_JOBS = [{ sourceId: "law-at-landesrecht", generation: "2026-08-03" }];
+
+function knownBadRepairDone(sourceId: string, generation: string): boolean {
+  const checkpointPath = join(CORPUS, "_state", `repair-${sourceId}-${generation}.json`);
+  if (!existsSync(checkpointPath)) return false;
+  try {
+    const cp = JSON.parse(readFileSync(checkpointPath, "utf-8")) as { done?: boolean };
+    return cp.done === true;
+  } catch {
+    return false;
+  }
+}
+
+function runKnownBadGenerationRepair(state: CycleState): void {
+  for (const job of KNOWN_BAD_REPAIR_JOBS) {
+    const key = `repair-${job.sourceId}-${job.generation}`;
+    ensureSourceRow(key);
+    if (checkSourceProcess(key, state).running) continue;
+    if (knownBadRepairDone(job.sourceId, job.generation)) {
+      updateSourceState(key, { stage: "done", last_cycle_at: new Date().toISOString() });
+      continue;
+    }
+    startProcess(
+      key,
+      [
+        "scripts/repair-known-bad-generation.ts",
+        "--source",
+        job.sourceId,
+        "--generation",
+        job.generation,
+        "--yes",
+        "--batch-minutes",
+        "8",
+      ],
+      key,
+      1200 // 20min timeout — script self-bounds to 8min and exits, this is headroom
+    );
+    updateSourceState(key, { stage: "importing", last_cycle_at: new Date().toISOString() });
+    appendHistory(key, "repair", "batch started");
+  }
+}
+
 // ── RIS In-force-Index Refresh ─────────────────────────────────────────
 // Der §-genaue Gesetzes-Abgleich im Ops-Dashboard (/api/admin/corpus-law-
 // coverage) liest _state/ris-inforce{,-landesrecht}.jsonl als Upstream-Soll.
@@ -2409,6 +2461,9 @@ async function cycle(): Promise<void> {
 
     // ── RIS In-force-Indizes wöchentlich auffrischen (Dashboard-Soll) ──
     runInforceIndexRefresh(state as CycleState);
+
+    // ── Known-bad-generation reparieren (2026-08-03 Landesrecht) ──
+    runKnownBadGenerationRepair(state as CycleState);
 
     // ── Law-Fetch-Queue: vom Dashboard vorgemerkte Gesetze nachladen ──
     runLawFetchQueue(state as CycleState);
