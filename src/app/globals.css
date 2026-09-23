@@ -825,6 +825,7 @@
   --ds-text-muted: var(--neutral-600);
   --ds-text-subtle: var(--neutral-600);
   --ds-surface-2: var(--neutral-100);
+  --ds-surface-elevated: var(--neutral-50);
   /* Without these the light tone inherited the dark root values: secondary
      buttons hovered to a mid-grey slab (neutral-600) under dark ink and wore a
      near-black border. */
@@ -905,6 +906,7 @@
      opaque neutral-700 → neutral-600 pair turned into a light-grey block under
      the pointer. */
   --ds-surface-2: hsla(220, 30%, 96%, 0.08);
+  --ds-surface-elevated: hsla(220, 30%, 96%, 0.16);
   --ds-hover: hsla(220, 30%, 96%, 0.13);
   --ds-surface-hover: var(--ds-hover);
   --ds-border: hsla(220, 30%, 96%, 0.16);
@@ -1021,6 +1023,9 @@
   --ds-bg: hsl(40, 8%, 98%);
   --ds-surface: #ffffff;
   --ds-surface-2: hsl(40, 7%, 96%);
+  /* Top-tier overlays (Dialog, Select, Dropdown) — lightest step, clearly
+     lifted over surface-2 without a heavy shadow. */
+  --ds-surface-elevated: #ffffff;
   --ds-hover: hsl(40, 7%, 92%);
   --ds-surface-hover: var(--ds-hover);
   --ds-border: hsl(40, 6%, 88%);
@@ -1171,6 +1176,9 @@
   --ds-bg: hsl(222, 16%, 7%);
   --ds-surface: hsl(222, 14%, 10.5%);
   --ds-surface-2: hsl(222, 12%, 14%);
+  /* Top-tier overlays (Dialog, Select, Dropdown) — luminance stacking:
+     7% → 10.5% → 14% → 19%. Linear-style, kept under hover×border. */
+  --ds-surface-elevated: hsl(222, 11%, 19%);
   --ds-hover: hsl(222, 11%, 18%);
   --ds-surface-hover: var(--ds-hover);
   --ds-border: hsla(222, 30%, 62%, 0.14);

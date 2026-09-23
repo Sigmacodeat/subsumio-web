@@ -256,6 +256,38 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [cmdOpen, guideOpen, shortcutsOpen]);
 
   const [theme, toggleTheme] = useTheme();
+  // Portale (Dialoge, Selects, Toasts) rendern auf document.body — ausserhalb
+  // der data-app-Schelle. data-app/data-theme auf <html> hoisten, damit
+  // Overlays die Dashboard-Palette erben; beim Verlassen wieder entfernen.
+  // SubsumioTheme setzt Brand-Tokens als Inline-Style auf <html> — die wuerden
+  // die Dark-Theme-Regeln schlagen, also suspendieren + restoren.
+  useEffect(() => {
+    const el = document.documentElement;
+    const brandProps = [
+      "--brand-primary",
+      "--brand-primary-hover",
+      "--brand-secondary",
+      "--brand-tertiary",
+      "--brand-glow",
+      "--brand-gradient-from",
+      "--brand-gradient-via",
+      "--brand-gradient-to",
+    ];
+    const prev: Record<string, string> = {};
+    el.dataset.app = "dashboard";
+    el.dataset.theme = theme;
+    for (const p of brandProps) {
+      prev[p] = el.style.getPropertyValue(p);
+      el.style.removeProperty(p);
+    }
+    return () => {
+      delete el.dataset.app;
+      delete el.dataset.theme;
+      for (const p of brandProps) {
+        if (prev[p]) el.style.setProperty(p, prev[p]);
+      }
+    };
+  }, [theme]);
   const cspNonce = useCspNonce();
   const statsQuery = useBrainStats();
   const meQuery = useMe();

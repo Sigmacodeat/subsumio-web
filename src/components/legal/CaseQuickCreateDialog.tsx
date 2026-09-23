@@ -478,7 +478,7 @@ export function CaseQuickCreateDialog({
                     onKeyDown={(e) => handleTemplateKeyDown(e, index)}
                     onClick={() => applyTemplate(tpl.id)}
                     className={cn(
-                      "group relative flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2.5 py-3 text-center transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--ds-surface-2)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+                      "group relative flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2.5 py-3 text-center transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--ds-surface-elevated)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                       active
                         ? "border-[color:var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
                         : "border-[color:var(--ds-border-strong)] hover:border-[color:var(--ds-text-subtle)] hover:bg-[color:var(--ds-hover)]"
