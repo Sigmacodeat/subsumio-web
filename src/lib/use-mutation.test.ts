@@ -36,7 +36,7 @@ vi.mock("./api", () => ({
   },
 }));
 
-import { useMutationQueue, __resetMutationQueueForTests } from "./use-mutation";
+import { useMutationQueue, __resetMutationQueueForTests, formatPendingLabel } from "./use-mutation";
 import {
   isOnline,
   enqueueMutation,
@@ -790,5 +790,70 @@ describe("useMutationQueue", () => {
     // Letzter aufgelöster Stand gewinnt — State ist atomar
     // (kein halb-gemergter Zwischenwert sichtbar).
     expect(result.current.pendingCount).toBe(3);
+  });
+
+  describe("formatPendingLabel", () => {
+    const t = (k: string) =>
+      ({
+        "mobile.changes_short": "Änderung(en)",
+        "mobile.uploads_short": "Upload(s)",
+        "mobile.pending_suffix": "ausstehend",
+        "mobile.offline_suffix": "offline gespeichert",
+      })[k] ?? k;
+
+    test("nur Mutations", () => {
+      expect(formatPendingLabel(t, 3, 0, "mobile.pending_suffix")).toBe(
+        "3 Änderung(en) ausstehend"
+      );
+    });
+
+    test("nur Uploads", () => {
+      expect(formatPendingLabel(t, 2, 2, "mobile.pending_suffix")).toBe("2 Upload(s) ausstehend");
+    });
+
+    test("gemischt", () => {
+      expect(formatPendingLabel(t, 4, 1, "mobile.pending_suffix")).toBe(
+        "3 Änderung(en) + 1 Upload(s) ausstehend"
+      );
+    });
+
+    test("offline-Suffix, nur Uploads", () => {
+      expect(formatPendingLabel(t, 1, 1, "mobile.offline_suffix")).toBe(
+        "1 Upload(s) offline gespeichert"
+      );
+    });
+  });
+
+  test("resolveAllConflicts löst jeden Konflikt mit demselben Modus", async () => {
+    const conflicts = [
+      {
+        id: "m1",
+        type: "updatePage" as const,
+        payload: { slug: "cases/a" },
+        createdAt: "2024-01-01",
+        conflicted: true,
+      },
+      {
+        id: "m2",
+        type: "updatePage" as const,
+        payload: { slug: "cases/b" },
+        createdAt: "2024-01-01",
+        conflicted: true,
+      },
+    ];
+    vi.mocked(getPendingMutations).mockResolvedValue(conflicts);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    expect(result.current.conflictCount).toBe(2);
+
+    await act(async () => {
+      await result.current.resolveAllConflicts("discard");
+    });
+
+    expect(removeMutation).toHaveBeenCalledWith("m1");
+    expect(removeMutation).toHaveBeenCalledWith("m2");
+    expect(api.brain.updatePage).not.toHaveBeenCalled();
   });
 });

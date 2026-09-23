@@ -516,6 +516,24 @@ export const D = {
     de: "Ältester Konflikt: {n}d",
     en: "Oldest conflict: {n}d",
   },
+  "sync.keep_all": { de: "Alle meine senden", en: "Keep all mine" },
+  "sync.discard_all": { de: "Alle verwerfen", en: "Discard all" },
+  "sync.confirm_all_keep_title": {
+    de: "Alle Server-Versionen überschreiben?",
+    en: "Overwrite all server versions?",
+  },
+  "sync.confirm_all_keep_msg": {
+    de: "{n} Konflikte — Ihre lokalen Versionen überschreiben die Server-Stände. Kann nicht rückgängig gemacht werden.",
+    en: "{n} conflicts — your local versions will overwrite the server state. This cannot be undone.",
+  },
+  "sync.confirm_all_discard_title": {
+    de: "Alle Offline-Änderungen verwerfen?",
+    en: "Discard all offline changes?",
+  },
+  "sync.confirm_all_discard_msg": {
+    de: "{n} lokale Änderungen werden unwiderruflich gelöscht.",
+    en: "{n} local changes will be permanently deleted.",
+  },
   "sync.retries_hint": {
     de: "So oft wurde versucht, diese Änderung zu synchronisieren, bevor der Konflikt erkannt wurde.",
     en: "How often this change was attempted before the conflict was detected.",

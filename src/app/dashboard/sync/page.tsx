@@ -312,7 +312,46 @@ export default function SyncPage() {
     lastNotice,
     clearNotice,
     syncPending,
+    resolveAllConflicts,
   } = useMutationQueue();
+  const confirm = useConfirm();
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  // Älteste Konflikte zuerst — ein 14-Tage-Konflikt verdient mehr
+  // Aufmerksamkeit als der frische von heute.
+  const sortedConflicts = [...conflicts].sort(
+    (a, b) => conflictAgeDays(b.conflictAt) - conflictAgeDays(a.conflictAt)
+  );
+
+  const resolveAll = useCallback(
+    async (mode: "keep-mine" | "discard") => {
+      const n = conflicts.length;
+      const ok = await confirm({
+        title: t(
+          (mode === "keep-mine"
+            ? "sync.confirm_all_keep_title"
+            : "sync.confirm_all_discard_title") as DashboardKey
+        ),
+        message: t(
+          (mode === "keep-mine"
+            ? "sync.confirm_all_keep_msg"
+            : "sync.confirm_all_discard_msg") as DashboardKey
+        ).replace("{n}", String(n)),
+        confirmLabel: t(
+          (mode === "keep-mine" ? "sync.keep_all" : "sync.discard_all") as DashboardKey
+        ),
+        variant: "danger",
+      });
+      if (!ok) return;
+      setBulkBusy(true);
+      try {
+        await resolveAllConflicts(mode);
+      } finally {
+        setBulkBusy(false);
+      }
+    },
+    [confirm, conflicts.length, resolveAllConflicts, t]
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
@@ -386,15 +425,40 @@ export default function SyncPage() {
         </div>
       )}
 
+      {sortedConflicts.length > 1 && (
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulkBusy}
+            onClick={() => void resolveAll("keep-mine")}
+            className="text-[color:var(--ds-danger-text)]"
+          >
+            <Check size={13} aria-hidden className="mr-1" />
+            {t("sync.keep_all" as DashboardKey)}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulkBusy}
+            onClick={() => void resolveAll("discard")}
+            className="text-[color:var(--ds-danger-text)]"
+          >
+            <Trash2 size={13} aria-hidden className="mr-1" />
+            {t("sync.discard_all" as DashboardKey)}
+          </Button>
+        </div>
+      )}
+
       <div className="mt-6 space-y-3">
-        {conflicts.length === 0 ? (
+        {sortedConflicts.length === 0 ? (
           <EmptyState
             icon={GitMerge}
             title={t("sync.no_conflicts" as DashboardKey)}
             description={t("sync.no_conflicts_desc" as DashboardKey)}
           />
         ) : (
-          conflicts.map((c) => <ConflictCard key={c.id} mut={c} />)
+          sortedConflicts.map((c) => <ConflictCard key={c.id} mut={c} />)
         )}
       </div>
     </div>

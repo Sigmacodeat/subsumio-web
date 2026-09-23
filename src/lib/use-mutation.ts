@@ -375,6 +375,16 @@ async function resolveConflict(
   await refreshPending();
 }
 
+/** Alle offenen Konflikte mit demselben Modus auflösen — bei >3
+ *  Konflikten ist Einzelklick mühsam. Beide Modi sind destruktiv
+ *  (keep-mine überschreibt Server-Stände, discard löscht lokale
+ *  Arbeit) → Aufrufer MUSS vorher bestätigen. */
+async function resolveAllConflicts(mode: "keep-mine" | "discard") {
+  for (const c of state.conflicts) {
+    await resolveConflict(c.id, mode);
+  }
+}
+
 async function mutate<T>(
   type: "createPage" | "updatePage" | "deletePage",
   payload: Record<string, unknown>,
@@ -431,6 +441,7 @@ export function useMutationQueue() {
     mutate,
     refreshPending,
     resolveConflict,
+    resolveAllConflicts,
     clearNotice,
   };
 }
