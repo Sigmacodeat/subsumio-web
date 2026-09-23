@@ -322,6 +322,8 @@ export default function CommunicationsPage() {
   });
   const mutedCount = mutedQuery.data?.count ?? 0;
   const mutedLastAt = mutedQuery.data?.lastAt ?? null;
+  const mutedSnippets = mutedQuery.data?.snippets;
+  const [mutedOpen, setMutedOpen] = useState(false);
 
   // Mail from connected firm mailboxes lives in the mailbox table, not in brain pages.
   const mailQuery = useQuery({
@@ -672,7 +674,7 @@ export default function CommunicationsPage() {
               className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
             >
               <MessageSquareText size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span>
+              <span className="flex-1">
                 {lang === "en"
                   ? `${mutedCount} inbound WhatsApp ${mutedCount === 1 ? "message" : "messages"} from opted-out numbers were not delivered (logged only).`
                   : `${mutedCount} eingegangene WhatsApp-${mutedCount === 1 ? "Nachricht" : "Nachrichten"} von abgemeldeten Nummern ${mutedCount === 1 ? "wurde" : "wurden"} nicht zugestellt (nur protokolliert).`}
@@ -682,6 +684,34 @@ export default function CommunicationsPage() {
                       ? `Last: ${timeLabel(lang, mutedLastAt)}`
                       : `Zuletzt: ${timeLabel(lang, mutedLastAt)}`}
                   </span>
+                )}
+                {/* Snippet-Drilldown nur für Admins (Server filtert) —
+                    Kurzausschnitte zur rechtserheblichen Einordnung. */}
+                {mutedSnippets && mutedSnippets.length > 0 && (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      onClick={() => setMutedOpen((v) => !v)}
+                      aria-expanded={mutedOpen}
+                      className="ml-1 inline-flex items-center gap-0.5 underline decoration-dotted underline-offset-2 hover:text-[color:var(--ds-text)] focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                    >
+                      {lang === "en" ? "details" : "Details"}
+                    </button>
+                    {mutedOpen && (
+                      <ul className="mt-1.5 space-y-1 border-l-2 border-[color:var(--ds-warning-border)] pl-2">
+                        {mutedSnippets.map((s, i) => (
+                          <li key={`${s.at}-${i}`} className="text-[color:var(--ds-text-muted)]">
+                            <span className="text-[color:var(--ds-text-subtle)]">
+                              {timeLabel(lang, s.at)}
+                              {s.type ? ` · ${s.type}` : ""}
+                            </span>
+                            {s.snippet && <span className="block italic">„{s.snippet}“</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 )}
               </span>
             </div>

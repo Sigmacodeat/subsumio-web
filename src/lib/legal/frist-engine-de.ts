@@ -70,6 +70,18 @@ export const BUNDESLAENDER: readonly { code: Bundesland; name: string }[] = [
   { code: "TH", name: "Thüringen" },
 ];
 
+const BUNDESLAND_CODES = new Set<string>(BUNDESLAENDER.map((b) => b.code));
+
+/** Validiert einen Rohwert (Frontmatter/Settings) als Bundesland-Code.
+ *  Case-insensitiv; unbekannte/leere Werte → undefined (fail-closed auf
+ *  bundesweite Feiertage statt falscher Landesfeiertage). */
+export function toBundesland(raw: unknown): Bundesland | undefined {
+  const code = String(raw ?? "")
+    .trim()
+    .toUpperCase();
+  return BUNDESLAND_CODES.has(code) ? (code as Bundesland) : undefined;
+}
+
 /** Buß- und Bettag (SN): Mittwoch vor dem 23. November. */
 function bussUndBettag(jahr: number): string {
   let d = `${jahr}-11-22`;

@@ -1728,8 +1728,13 @@ export const api = {
     },
 
     /** Eingegangene Nachrichten von vollständig abgemeldeten Nummern
-     *  (Opt-out) — archiviert/auditiert, aber nicht zugestellt. */
-    muted(): Promise<{ count: number; lastAt: string | null }> {
+     *  (Opt-out) — archiviert/auditiert, aber nicht zugestellt.
+     *  `snippets` ist nur für Admin-Rollen gesetzt. */
+    muted(): Promise<{
+      count: number;
+      lastAt: string | null;
+      snippets?: Array<{ at: string; type: string | null; snippet: string | null }>;
+    }> {
       return request("/api/whatsapp/muted");
     },
 
@@ -1923,9 +1928,10 @@ export const api = {
     },
 
     /** Download-URL für Binär-Content — on-demand aus dem DMS, auch für
-     *  `document_oversized`-Dokumente ohne Inline-Content. */
-    contentUrl(documentId: string): string {
-      return `/api/dms/content?id=${encodeURIComponent(documentId)}`;
+     *  `document_oversized`-Dokumente ohne Inline-Content. `download: true`
+     *  erzwingt Content-Disposition: attachment (statt Inline-Vorschau). */
+    contentUrl(documentId: string, opts?: { download?: boolean }): string {
+      return `/api/dms/content?id=${encodeURIComponent(documentId)}${opts?.download ? "&download=1" : ""}`;
     },
   },
 

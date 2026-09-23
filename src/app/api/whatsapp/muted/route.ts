@@ -26,9 +26,20 @@ export const GET = createHandler(
       from: new Date(Date.now() - MUTED_WINDOW_MS).toISOString(),
       limit: 200,
     });
+    // Snippets nur für Admins: der 200-Zeichen-Ausschnitt kann
+    // rechtserhebliche Inhalte enthalten — die Einordnung ist
+    // Kanzlei-Admin-Sache, nicht jede Rolle.
+    const admin = ctx.user?.role === "admin";
     return Response.json({
       count: entries.length,
       lastAt: entries[0]?.timestamp ?? null,
+      ...(admin && {
+        snippets: entries.slice(0, 5).map((e) => ({
+          at: e.timestamp,
+          type: typeof e.details?.messageType === "string" ? e.details.messageType : null,
+          snippet: typeof e.details?.bodySnippet === "string" ? e.details.bodySnippet : null,
+        })),
+      }),
     });
   }
 );

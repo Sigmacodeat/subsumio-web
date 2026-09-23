@@ -3,7 +3,7 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { buildBeaImportBundle, parseBeaXmlBatch } from "@/lib/bea-import";
 import { beaDeadlineSuggestions, eebZustellungsdatum } from "@/lib/bea-deadlines";
-import { BUNDESLAENDER, type Bundesland } from "@/lib/legal/frist-engine-de";
+import { toBundesland, type Bundesland } from "@/lib/legal/frist-engine-de";
 import { mergeSuggestedDeadlines } from "@/lib/email/mail-filing";
 import { caseDocumentsLockKey } from "@/lib/case-documents";
 import { withKeyedLock } from "@/lib/keyed-lock";
@@ -102,8 +102,6 @@ const beaFileSchema = z.object({
   content: z.string().min(1, "content_required").max(10_000_000, "content_too_large"),
 });
 
-const BUNDESLAND_CODES = new Set(BUNDESLAENDER.map((b) => b.code));
-
 /**
  * Kanzlei-Bundesland aus `legal/settings/kanzlei` — bestimmt die
  * landesspezifischen Feiertage (§ 193 BGB) für eEB-Fristen. Fehlt der
@@ -114,8 +112,21 @@ async function loadKanzleiBundesland(
 ): Promise<Bundesland | undefined> {
   try {
     const page = await brain.getPage("legal/settings/kanzlei");
-    const state = String(page?.frontmatter?.rechtsraumState ?? "").toUpperCase();
-    return BUNDESLAND_CODES.has(state as Bundesland) ? (state as Bundesland) : undefined;
+    return toBundesland(page?.frontmatter?.rechtsraumState);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Akte kann ein eigenes `bundesland`-Frontmatter tragen (Kanzleien mit
+ *  Standorten in mehreren Bundesländern) — Akte > Kanzlei. */
+async function loadCaseBundesland(
+  brain: ReturnType<typeof createServerBrainClient>,
+  caseSlug: string
+): Promise<Bundesland | undefined> {
+  try {
+    const page = await brain.getPage(caseSlug);
+    return toBundesland(page?.frontmatter?.bundesland);
   } catch {
     return undefined;
   }
@@ -183,22 +194,34 @@ export const POST = createHandler(
       // WP-6.33: eEB-Frist-Auslösung — Vorschläge je Akte sammeln.
       const suggestionsByCase = new Map<string, SuggestedDeadline[]>();
       const bundesland = await loadKanzleiBundesland(brain);
+      const caseBundeslandCache = new Map<string, Bundesland | undefined>();
       for (const page of bundle.messagePages) {
         const fm = page.frontmatter as Record<string, unknown>;
         const direction = fm.direction as "inbound" | "outbound" | undefined;
-        // eEB: das Bereitstellungsdatum ist der rechtliche Zustelltag
-        // (§ 174 ZPO i.V.m. § 4 ERVG) — als Provenienz auf die Nachricht
-        // stempeln, auch wenn keine Akte zugeordnet wurde.
         const received = String(fm.received_date || fm.sent_date || "");
-        const eeb = eebZustellungsdatum(received, bundesland);
-        if (eeb) {
-          page.frontmatter = { ...page.frontmatter, eeb_zustellungsdatum: eeb };
-        }
         const match = await autoAssignCase(ctx.headers, {
           case_ref: String(fm.case_ref || ""),
           sender: String(fm.sender || ""),
           recipient: String(fm.recipient || ""),
         });
+        // Bundesland-Präzedenz: Akte > Kanzlei (pro Akte gecacht).
+        let effectiveBundesland = bundesland;
+        if (match) {
+          if (!caseBundeslandCache.has(match.case_slug)) {
+            caseBundeslandCache.set(
+              match.case_slug,
+              await loadCaseBundesland(brain, match.case_slug)
+            );
+          }
+          effectiveBundesland = caseBundeslandCache.get(match.case_slug) ?? bundesland;
+        }
+        // eEB: das Bereitstellungsdatum ist der rechtliche Zustelltag
+        // (§ 174 ZPO i.V.m. § 4 ERVG) — als Provenienz auf die Nachricht
+        // stempeln, auch wenn keine Akte zugeordnet wurde.
+        const eeb = eebZustellungsdatum(received, effectiveBundesland);
+        if (eeb) {
+          page.frontmatter = { ...page.frontmatter, eeb_zustellungsdatum: eeb };
+        }
         if (match) {
           // Stamp the case assignment onto the message page frontmatter
           page.frontmatter = {
@@ -224,7 +247,7 @@ export const POST = createHandler(
               : beaDeadlineSuggestions({
                   text: page.content,
                   receivedDate: received || undefined,
-                  bundesland,
+                  bundesland: effectiveBundesland,
                   sourceLabel: `beA: ${String(fm.subject || page.title)}`,
                 });
           if (suggestions.length > 0) {

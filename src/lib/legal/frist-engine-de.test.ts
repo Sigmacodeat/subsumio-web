@@ -2,7 +2,13 @@
 
 import { describe, expect, test } from "vitest";
 
-import { berechneFristDE, feiertageDE, istFeiertagDE, zustellungBea } from "./frist-engine-de";
+import {
+  berechneFristDE,
+  feiertageDE,
+  istFeiertagDE,
+  toBundesland,
+  zustellungBea,
+} from "./frist-engine-de";
 import { computeFrist, fristOptionsFor } from "./frist-options";
 
 describe("feiertageDE — 16 Bundesländer", () => {
@@ -192,5 +198,24 @@ describe("frist-options Integration DE", () => {
         computeFrist(generic, "2026-01-10", { country: "DE", state: "BE" })
       ).not.toThrow();
     }
+  });
+});
+
+describe("toBundesland — Frontmatter/Settings-Validierung", () => {
+  test("gültige Codes (auch lowercase) werden akzeptiert", () => {
+    expect(toBundesland("BY")).toBe("BY");
+    expect(toBundesland("nw")).toBe("NW");
+    expect(toBundesland(" Wien ")).toBeUndefined(); // AT-Code ist kein Bundesland DE
+    expect(toBundesland("be")).toBe("BE");
+  });
+
+  test("ungültige/leere/fehlende Werte → undefined (fail-closed bundesweit)", () => {
+    expect(toBundesland(undefined)).toBeUndefined();
+    expect(toBundesland(null)).toBeUndefined();
+    expect(toBundesland("")).toBeUndefined();
+    expect(toBundesland("XX")).toBeUndefined();
+    expect(toBundesland("Bayern")).toBeUndefined(); // Name statt Code
+    expect(toBundesland(123)).toBeUndefined();
+    expect(toBundesland({ code: "BY" })).toBeUndefined();
   });
 });

@@ -31,6 +31,7 @@ import {
   CloudOff,
   ChevronRight,
   ArrowLeft,
+  ExternalLink,
 } from "lucide-react";
 
 type DmsDoc = {
@@ -315,8 +316,20 @@ export function DmsBrowserDialog({ open, onOpenChange, onImported }: DmsBrowserD
                             aria-label={`${d.name} aus dem DMS öffnen`}
                             onClick={() => window.open(api.dms.contentUrl(d.id), "_blank")}
                           >
-                            <Download size={12} aria-hidden="true" />
+                            <ExternalLink size={12} aria-hidden="true" />
                             Öffnen
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-xs"
+                            aria-label={`${d.name} aus dem DMS herunterladen`}
+                            onClick={() =>
+                              window.open(api.dms.contentUrl(d.id, { download: true }), "_blank")
+                            }
+                          >
+                            <Download size={12} aria-hidden="true" />
+                            Laden
                           </Button>
                         </div>
                       ) : (
