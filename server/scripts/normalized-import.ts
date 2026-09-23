@@ -49,7 +49,7 @@ if (import.meta.main) {
     console.error("usage: normalized-import.ts --corpus <dir> -- <import script> [args…]");
     process.exit(2);
   }
-  const root = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+  const root = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
   const rawDir = join(root, corpus);
   const normDir = join(root, "_normalized", corpus);
 
@@ -61,7 +61,7 @@ if (import.meta.main) {
     const n = spawnSync(
       "bun",
       [
-        join(import.meta.dir, "normalize", "normalize-corpus.ts"),
+        join(import.meta.dirname, "normalize", "normalize-corpus.ts"),
         "--corpus",
         corpus,
         "--file-list",

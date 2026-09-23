@@ -178,7 +178,7 @@ const KNOWN_ABBRS_BASE: Record<string, string> = {
   VKgG: "vkgg",
 };
 
-const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS = join(import.meta.dirname, "..", "..", "law-corpus");
 
 interface StatuteFile {
   file: string;

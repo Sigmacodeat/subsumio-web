@@ -113,7 +113,7 @@ async function main() {
   const apply = args.includes("--apply");
   const inv = INVENTORIES[source];
   if (!inv) throw new Error(`--source ${Object.keys(INVENTORIES).join(" | ")}`);
-  const root = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+  const root = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
   const file = join(root, "_state", inv.file);
   if (!existsSync(file)) throw new Error(`Inventar fehlt: ${file}`);
   const inForce = new Set<string>();

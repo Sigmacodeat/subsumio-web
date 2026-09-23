@@ -19,7 +19,7 @@ import { createHash } from "crypto";
 
 const APPLY = process.argv.includes("--apply");
 const dirArg = process.argv.indexOf("--dir");
-const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const DIR = dirArg > -1 ? process.argv[dirArg + 1] : join(ROOT, "at-normen");
 
 function walk(dir: string): string[] {

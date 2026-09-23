@@ -57,7 +57,7 @@ const arg = (n: string) => (args.includes(n) ? args[args.indexOf(n) + 1] : undef
 const DRY = args.includes("--dry-run");
 const FROM = parseInt(arg("--from") ?? "1900", 10);
 const courtArg = arg("--court") ?? "all";
-const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const STATE = join(ROOT, "_normalized", "_state", "backfill-judikatur-normen.json");
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

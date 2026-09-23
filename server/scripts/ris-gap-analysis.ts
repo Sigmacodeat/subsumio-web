@@ -164,7 +164,7 @@ const SOURCE_MAP: Record<string, string> = {
 import { readdirSync, statSync, existsSync } from "fs";
 import { join } from "path";
 
-const CORPUS_ROOT = join(import.meta.dir, "..", "Users", "msc", "subsumio-web", "law-corpus");
+const CORPUS_ROOT = join(import.meta.dirname, "..", "Users", "msc", "subsumio-web", "law-corpus");
 const CORPUS_ROOT2 = "/Users/msc/subsumio-web/law-corpus";
 
 function countDisk(dir: string): number {

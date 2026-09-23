@@ -23,7 +23,7 @@ import {
 } from "../src/eval/retrieval-quality/harness.ts";
 import type { ChunkInput } from "../src/core/types.ts";
 
-const REPO = join(import.meta.dir, "..", "..");
+const REPO = join(import.meta.dirname, "..", "..");
 const JUDIKATUR_DIR = join(REPO, "server", "law-corpus", "at-judikatur");
 const METRICS_FILE = join(
   REPO,

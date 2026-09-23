@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
-const ROOT = join(import.meta.dir, "..", "..", "law-corpus", "at-normen");
+const ROOT = join(import.meta.dirname, "..", "..", "law-corpus", "at-normen");
 
 function walk(dir: string, files: string[] = []): string[] {
   const { readdirSync, statSync } = require("fs");

@@ -38,7 +38,7 @@ const DEFECT_TYPES = arg(
 )!;
 const OUT = "/tmp/refetch-defective-normen.jsonl";
 
-const CORPUS_ROOT = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT = join(import.meta.dirname, "..", "..", "law-corpus");
 const RAW_DIR = join(CORPUS_ROOT, "at-normen");
 
 // ── DB-Verbindung ──────────────────────────────────────────────────────

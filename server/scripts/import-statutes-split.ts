@@ -67,7 +67,7 @@ const SOURCE_ID = srcIdx !== -1 ? args[srcIdx + 1] : null;
 const CORPUS =
   process.env.SUBSUMIO_LAW_CORPUS_DIR ??
   process.env.LAW_CORPUS_ROOT ??
-  join(import.meta.dir, "..", "..", "law-corpus");
+  join(import.meta.dirname, "..", "..", "law-corpus");
 
 interface StatuteFile {
   file: string; // relative to law-corpus/

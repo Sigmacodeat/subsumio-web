@@ -34,7 +34,7 @@ import { ALL_PAGE_TYPES } from "../src/core/types.ts";
 import { loadPackFromFile } from "../src/core/schema-pack/loader.ts";
 import { parseSchemaPackManifest } from "../src/core/schema-pack/manifest-v1.ts";
 
-const REPO_ROOT = join(import.meta.dir, "..");
+const REPO_ROOT = join(import.meta.dirname, "..");
 const BASE_PATH = join(REPO_ROOT, "src/core/schema-pack/base/gbrain-base.yaml");
 
 const args = process.argv.slice(2);

@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
-const REPO = join(import.meta.dir, "..", "..");
+const REPO = join(import.meta.dirname, "..", "..");
 const JUDIKATUR_DIR = join(REPO, "server", "law-corpus", "at-judikatur");
 const OUT_FILE = join(
   REPO,

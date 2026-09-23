@@ -34,7 +34,7 @@ function arg(name: string, fb?: string) {
 
 const FIXTURE = arg(
   "fixture",
-  join(import.meta.dir, "..", "test", "fixtures", "at-legal-retrieval.jsonl")
+  join(import.meta.dirname, "..", "test", "fixtures", "at-legal-retrieval.jsonl")
 )!;
 const DB_URL = arg(
   "db",
@@ -43,7 +43,7 @@ const DB_URL = arg(
 const LABEL = arg("label", "baseline")!;
 const OUT = arg(
   "out",
-  join(import.meta.dir, "..", "..", ".windsurf", "plans", `at-retrieval-vektor-${LABEL}.json`)
+  join(import.meta.dirname, "..", "..", ".windsurf", "plans", `at-retrieval-vektor-${LABEL}.json`)
 )!;
 const TOPK = Number(arg("topk", "8"));
 const MODEL = arg("model", "openai/text-embedding-3-small")!;
@@ -62,8 +62,8 @@ type Q = {
 function loadKey(): string {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
   for (const p of [
-    join(import.meta.dir, "..", ".env"),
-    join(import.meta.dir, "..", ".env.local"),
+    join(import.meta.dirname, "..", ".env"),
+    join(import.meta.dirname, "..", ".env.local"),
   ]) {
     if (!existsSync(p)) continue;
     const m = readFileSync(p, "utf-8").match(/^OPENROUTER_API_KEY=(.+)$/m);

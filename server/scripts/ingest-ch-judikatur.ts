@@ -17,7 +17,7 @@ import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { dump as yamlDump } from "js-yaml";
 
-const DEFAULT_OUT = join(import.meta.dir, "..", "law-corpus", "ch-judikatur");
+const DEFAULT_OUT = join(import.meta.dirname, "..", "law-corpus", "ch-judikatur");
 const DEFAULT_LIMIT = 100;
 
 /** Strip HTML tags and decode entities */

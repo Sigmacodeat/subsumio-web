@@ -32,7 +32,7 @@ const JUDIKATUR_CODE_MAP: Record<string, string> = {
   GOG: "gog",
 };
 
-const DIR = join(import.meta.dir, "..", "law-corpus", "at-judikatur");
+const DIR = join(import.meta.dirname, "..", "law-corpus", "at-judikatur");
 
 async function main() {
   const cfg = loadConfig();

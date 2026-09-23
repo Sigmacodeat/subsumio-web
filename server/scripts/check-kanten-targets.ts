@@ -115,7 +115,7 @@ let totalRefs = 0;
 let mappable = 0;
 
 for (const src of sourcesToRun) {
-  const dir = join(import.meta.dir, "..", "..", "law-corpus", SOURCE_DIRS[src]);
+  const dir = join(import.meta.dirname, "..", "..", "law-corpus", SOURCE_DIRS[src]);
   let files: string[];
   try {
     files = readdirSync(dir).filter((f) => f.endsWith(".md"));

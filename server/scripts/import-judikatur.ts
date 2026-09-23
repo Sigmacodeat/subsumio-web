@@ -280,7 +280,7 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
   // The old server/law-corpus/ fallback was removed — it was a stale duplicate
   // that caused ~30k orphaned DB pages with non-standard slugs.
   const corpusRoot = process.env.LAW_CORPUS_ROOT;
-  const root = corpusRoot ?? join(import.meta.dir, "..", "..", "law-corpus");
+  const root = corpusRoot ?? join(import.meta.dirname, "..", "..", "law-corpus");
   const dir = FROM_NORMALIZED ? join(root, "_normalized", srcCfg.dir) : join(root, srcCfg.dir);
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))

@@ -11,7 +11,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isQuarantinedLegalSource } from "../src/core/legal/corpus-policy.ts";
 
-const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const JURISDICTIONS = new Set(["at", "de", "ch", "eu"]);
 const reportOnly = Bun.argv.includes("--report-only");
 

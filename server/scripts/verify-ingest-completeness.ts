@@ -28,7 +28,7 @@ function arg(name: string, fb?: string) {
 
 const RIS_FILE = arg("ris", "/tmp/ris-inforce.jsonl")!;
 const SOURCE_ID = arg("source", "law-at")!;
-const DISK_DIR = arg("disk-dir", join(import.meta.dir, "..", "..", "law-corpus", "at-normen"))!;
+const DISK_DIR = arg("disk-dir", join(import.meta.dirname, "..", "..", "law-corpus", "at-normen"))!;
 const DB_URL = arg(
   "db",
   process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"

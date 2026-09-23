@@ -15,7 +15,7 @@ import { join } from "path";
 
 import { describeRubric } from "../src/core/skillpack/rubric.ts";
 
-const REPO_ROOT = join(import.meta.dir, "..");
+const REPO_ROOT = join(import.meta.dirname, "..");
 const DOC_PATH = join(REPO_ROOT, "docs", "skillpack-anatomy.md");
 
 const BEGIN = "<!-- BEGIN auto-generated:rubric -->";

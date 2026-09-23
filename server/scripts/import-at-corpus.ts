@@ -31,7 +31,7 @@ const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
 const phaseIdx = args.indexOf("--phase");
 const PHASE = phaseIdx >= 0 ? args[phaseIdx + 1] : "all";
 
-const CORPUS_ROOT = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT = join(import.meta.dirname, "..", "..", "law-corpus");
 const STAATSVERTRAEGE_DIR = join(CORPUS_ROOT, "at-staatsvertraege");
 const LANDESRECHT_DIR = join(CORPUS_ROOT, "at-landesrecht");
 

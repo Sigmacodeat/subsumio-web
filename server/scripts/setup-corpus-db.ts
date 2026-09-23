@@ -37,7 +37,7 @@ const SCHEMA_ONLY = args.includes("--schema-only");
 const VERIFY_ONLY = args.includes("--verify-only");
 const BATCH = arg("--batch-size", "200")!;
 
-const ROOT = join(import.meta.dir, "..", "..");
+const ROOT = join(import.meta.dirname, "..", "..");
 const NORMALIZED = join(ROOT, "law-corpus", "_normalized");
 
 /**

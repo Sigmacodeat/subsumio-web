@@ -31,7 +31,8 @@ function arg(name: string, fb?: string) {
 const APPLY = process.argv.includes("--apply");
 const UNDO = process.argv.includes("--undo");
 const COURT = arg("court");
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 
 /** Gerichtsbezeichnung je Verzeichnis, abgeglichen mit den Neu-Format-Dateien. */
 const COURTS: Record<string, { court: string; courtType: string }> = {

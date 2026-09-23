@@ -69,9 +69,8 @@ const RESUME = args.includes("--resume");
  */
 const FILE_LIST = arg("--file-list");
 
-// import.meta.dir ist Bun-only; unter vitest (node) fällt es auf dirname aus.
-const MODULE_DIR = import.meta.dir ?? dirname(fileURLToPath(import.meta.url));
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(MODULE_DIR, "..", "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "..", "law-corpus");
 const OUT_ROOT = process.env.NORMALIZED_ROOT ?? join(CORPUS_ROOT, "_normalized");
 const STATE_DIR = join(OUT_ROOT, "_state");
 

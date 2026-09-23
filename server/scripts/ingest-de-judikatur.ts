@@ -19,7 +19,7 @@ import { join } from "path";
 import { dump as yamlDump } from "js-yaml";
 
 const DEFAULT_OUT = join(
-  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "law-corpus"),
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "law-corpus"),
   "de-judikatur"
 );
 const DEFAULT_LIMIT = 100;

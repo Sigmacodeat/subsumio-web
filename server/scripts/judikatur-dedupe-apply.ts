@@ -40,7 +40,8 @@ const DB_URL = arg(
   "db",
   process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
 )!;
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const QUARANTINE = join(CORPUS_ROOT, "_quarantine");
 
 /** dir → slugPrefix, gespiegelt aus import-judikatur.ts SOURCE_CONFIGS. */

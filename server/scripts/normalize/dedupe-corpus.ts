@@ -38,7 +38,7 @@ const CORPUS = arg("--corpus");
 const APPLY = args.includes("--apply");
 
 const CORPUS_ROOT =
-  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "..", "law-corpus");
 const MANIFEST_DIR = join(CORPUS_ROOT, "_dedupe-manifests");
 
 if (!CORPUS) {

@@ -28,7 +28,7 @@ const BATCH = parseInt(arg("--batch", "50")!, 10);
 const LIMIT = parseInt(arg("--limit", "0")!, 10);
 const OUT = "/tmp/refetch-defective-landesrecht.jsonl";
 
-const CORPUS_ROOT = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT = join(import.meta.dirname, "..", "..", "law-corpus");
 const RAW_DIR = join(CORPUS_ROOT, "at-landesrecht");
 
 const DB_URL = (

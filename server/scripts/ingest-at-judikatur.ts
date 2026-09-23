@@ -363,7 +363,9 @@ async function main() {
 
   const outDirIdx = args.indexOf("--out");
   const outDir =
-    outDirIdx >= 0 ? args[outDirIdx + 1] : join(import.meta.dir, "..", "law-corpus", court.outDir);
+    outDirIdx >= 0
+      ? args[outDirIdx + 1]
+      : join(import.meta.dirname, "..", "law-corpus", court.outDir);
   const targetIdx = args.indexOf("--target");
   const target =
     targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : courtKey === "ogh" ? DEFAULT_TARGET : 200;

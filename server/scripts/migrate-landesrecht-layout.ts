@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync
 import { join } from "path";
 import { landOfDocId } from "./normalize/normalize-corpus";
 
-const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const APPLY = process.argv.includes("--apply");
 
 export function docIdOf(content: string): string | null {

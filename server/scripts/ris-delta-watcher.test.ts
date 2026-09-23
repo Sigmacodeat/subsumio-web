@@ -98,7 +98,9 @@ describe("ris-delta-watcher: docFilePath Judikatur (KEIN Datum-Prefix)", () => {
       kurztitel: null,
     };
     const path = docFilePath(JUD_APP, doc);
-    expect(path).toMatch(/1-ob-123-24\.md$/);
+    // Benannt nach der RIS-Dokumentnummer — mehrere Rechtssätze teilen eine
+    // Geschäftszahl, ein GZ-basierter Name würde sie überschreiben lassen.
+    expect(path).toMatch(/jor_2026_03_0016\.md$/);
     expect(path).not.toMatch(/\d{4}-\d{2}-\d{2}-/);
   });
 
@@ -175,7 +177,8 @@ describe("ris-delta-watcher: buildJudikaturMarkdown", () => {
     };
     const md = buildJudikaturMarkdown(doc, "<xml>Entscheidungstext</xml>");
     expect(md).toContain("case_number: 1 Ob 123/24");
-    expect(md).toContain("court_type: justiz");
+    // RIS-Applikation "Justiz" = OGH-Judikatur → COURT_KEY mappt auf "ogh".
+    expect(md).toContain("court_type: ogh");
   });
 });
 

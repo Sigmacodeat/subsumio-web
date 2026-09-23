@@ -31,7 +31,7 @@ function arg(name: string, fb?: string) {
 
 const FIXTURE = arg(
   "fixture",
-  join(import.meta.dir, "..", "test", "fixtures", "at-legal-retrieval.jsonl")
+  join(import.meta.dirname, "..", "test", "fixtures", "at-legal-retrieval.jsonl")
 )!;
 const DB_URL = arg(
   "db",
@@ -40,7 +40,7 @@ const DB_URL = arg(
 const LABEL = arg("label", "baseline")!;
 const OUT = arg(
   "out",
-  join(import.meta.dir, "..", "..", ".windsurf", "plans", `at-retrieval-${LABEL}.json`)
+  join(import.meta.dirname, "..", "..", ".windsurf", "plans", `at-retrieval-${LABEL}.json`)
 )!;
 const TOPK = Number(arg("topk", "8"));
 

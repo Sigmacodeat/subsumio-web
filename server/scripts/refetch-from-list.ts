@@ -22,7 +22,7 @@ const RESUME = args.includes("--resume");
 const INPUT = arg("--input", "/tmp/still-to-refetch.txt");
 const OUT = "/tmp/refetch-wave2.jsonl";
 
-const CORPUS_ROOT = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT = join(import.meta.dirname, "..", "..", "law-corpus");
 
 // extractText mit listelem+schluss Fix
 function extractText(xml: string): { text: string; meta: Record<string, string> } {

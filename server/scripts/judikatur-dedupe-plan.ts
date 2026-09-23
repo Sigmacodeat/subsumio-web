@@ -24,7 +24,8 @@
 import { readdirSync, readFileSync, existsSync, writeFileSync } from "fs";
 import { join } from "path";
 
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const jsonIdx = process.argv.indexOf("--json");
 const JSON_OUT = jsonIdx > -1 ? process.argv[jsonIdx + 1] : null;
 

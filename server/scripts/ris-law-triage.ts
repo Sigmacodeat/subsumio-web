@@ -38,7 +38,7 @@ const DB_URL = arg(
 const LIMIT = Number(arg("limit", "0"));
 const ONLY_NAMED = !process.argv.includes("--all-laws");
 const JSON_OUT = arg("json");
-const CORPUS = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 
 function slugify(s: string): string {
   return s

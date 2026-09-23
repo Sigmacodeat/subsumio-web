@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
 
-const REPO = join(import.meta.dir, "..", "..");
+const REPO = join(import.meta.dirname, "..", "..");
 const CORPUS = join(REPO, "law-corpus");
 const PENDING_FILE = join(
   REPO,

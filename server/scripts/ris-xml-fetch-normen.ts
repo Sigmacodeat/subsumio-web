@@ -29,7 +29,7 @@ function arg(name: string, fb?: string) {
 }
 
 const RIS_FILE = arg("ris", "/tmp/ris-inforce.jsonl")!;
-const OUT_ROOT = arg("out", join(import.meta.dir, "..", "..", "law-corpus", "at-normen"))!;
+const OUT_ROOT = arg("out", join(import.meta.dirname, "..", "..", "law-corpus", "at-normen"))!;
 const LIMIT = Number(arg("limit", "0"));
 const ONLY_GNR = arg("gnr");
 const ONLY_NAMED = process.argv.includes("--only-named");

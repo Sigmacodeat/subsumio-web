@@ -28,7 +28,7 @@
 import { readdirSync, statSync, writeFileSync, existsSync, readFileSync } from "fs";
 import { join, relative, posix } from "path";
 
-const REPO = join(import.meta.dir, "..");
+const REPO = join(import.meta.dirname, "..");
 const DIST = join(REPO, "admin", "dist");
 const OUT = join(REPO, "src", "admin-embedded.ts");
 

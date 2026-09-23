@@ -22,7 +22,7 @@
 import { readdirSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 
 /**
  * Je Verzeichnis die Hosts, die als amtliche Quelle gelten. Eine source_url,

@@ -43,7 +43,7 @@ Options:
   process.exit(0);
 }
 
-const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
+const CORPUS = join(import.meta.dirname, "..", "..", "law-corpus");
 const ONLY_JUR = values.jurisdiction as string;
 
 interface StatuteCheck {

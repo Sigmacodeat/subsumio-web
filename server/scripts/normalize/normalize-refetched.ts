@@ -20,7 +20,7 @@ const LOGS =
   "/tmp/refetch-defective-normen.jsonl,/tmp/refetch-defective-landesrecht.jsonl";
 
 const CORPUS_ROOT =
-  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "..", "law-corpus");
 const OUT_ROOT = process.env.NORMALIZED_ROOT ?? join(CORPUS_ROOT, "_normalized");
 
 const hash16 = (s: string) => createHash("sha256").update(s, "utf8").digest("hex").slice(0, 16);

@@ -24,7 +24,7 @@ import { splitStatute } from "../src/core/legal/split-statute.ts";
 import type { BrainEngine } from "../src/core/engine.ts";
 import type { ChunkInput } from "../src/core/types.ts";
 
-const REPO = join(import.meta.dir, "..", "..");
+const REPO = join(import.meta.dirname, "..", "..");
 const CORPUS = process.env.LAW_CORPUS_ROOT ?? join(REPO, "law-corpus");
 const METRICS_FILE = join(
   REPO,

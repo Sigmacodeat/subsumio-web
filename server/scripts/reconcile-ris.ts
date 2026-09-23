@@ -32,7 +32,7 @@ import { getUserAgent, proxyFetchOptions } from "./ris-proxy";
 import { risPause } from "./ris-pace.ts";
 
 const DRY = process.argv.includes("--dry-run");
-const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dirname, "..", "..", "law-corpus");
 const INVENTORY = join(ROOT, "_state", "ris-inforce.jsonl");
 const LR_INVENTORY = join(ROOT, "_state", "ris-landesrecht-inforce.jsonl");
 const API = "https://data.bka.gv.at/ris/api/v2.6";

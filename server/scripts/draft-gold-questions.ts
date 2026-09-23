@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { splitStatute, type StatuteSection } from "../src/core/legal/split-statute.ts";
 
-const REPO = join(import.meta.dir, "..", "..");
+const REPO = join(import.meta.dirname, "..", "..");
 const CORPUS = join(REPO, "law-corpus");
 const SPLIT_CORPUS_AT = join(REPO, "law-corpus-split", "at");
 const SPLIT_CORPUS_DE = join(REPO, "law-corpus-split", "de");
