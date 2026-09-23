@@ -77,6 +77,30 @@ export function embeddableSql(chunkAlias = "c", pageAlias = "p"): string {
   );
 }
 
+/**
+ * The spending gate: only a page the full plausibility audit has explicitly
+ * confirmed may receive a vector. Fail-closed on purpose — a page nobody
+ * has checked is not "probably fine", it is unverified. Bound to the page's
+ * content_hash, so any later change to its text silently revokes the
+ * confirmation until the audit has seen the new text.
+ *
+ * Separate from embeddableSql() deliberately: that rule also drives
+ * guard-scaffold-embedding.ts, which STRIPS vectors from whatever it calls
+ * non-embeddable. With this gate folded in, an empty or stale
+ * corpus_page_verified table would have made it strip every vector in the
+ * corpus. The gate belongs in the write path only.
+ *
+ * 2026-09-21: 56,070 pages carried vectors built on text the audit then
+ * proved defective; restarting the run without this would have re-embedded
+ * all of them on the same text.
+ */
+export function verifiedSql(pageAlias = "p"): string {
+  return (
+    `EXISTS (SELECT 1 FROM corpus_page_verified v` +
+    ` WHERE v.page_id = ${pageAlias}.id AND v.content_hash = ${pageAlias}.content_hash)`
+  );
+}
+
 /** pgvector wants "[1,2,3]", not JSON. */
 export function toVectorStr(arr: Float32Array): string {
   return "[" + Array.from(arr).join(",") + "]";

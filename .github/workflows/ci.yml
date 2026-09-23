@@ -359,3 +359,19 @@ jobs:
             exit 1
           fi
           echo "✅ All required jobs passed — production gate open"
+
+  # Branch protection requires a check literally named "ci". This thin job is
+  # that check: it runs after the production gate and fails whenever the gate
+  # did not succeed, so the required check reflects the real CI outcome.
+  ci:
+    runs-on: ubuntu-latest
+    needs: [production-gate]
+    if: always()
+    steps:
+      - name: Aggregate result
+        run: |
+          if [[ "${{ needs.production-gate.result }}" != "success" ]]; then
+            echo "❌ production-gate result: ${{ needs.production-gate.result }}"
+            exit 1
+          fi
+          echo "✅ ci gate passed"

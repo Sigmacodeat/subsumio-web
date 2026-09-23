@@ -3,7 +3,9 @@
  * Search RIS by title to find correct Gesetzesnummern for key Austrian laws.
  */
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
-const RIS_UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
+const RIS_UA = {
+  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)",
+};
 
 const searches = [
   "Allgemeines bürgerliches Gesetzbuch",

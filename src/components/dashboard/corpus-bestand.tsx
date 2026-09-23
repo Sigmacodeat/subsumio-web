@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshCw } from "lucide-react";
-import type { CorpusSourceStats } from "@/lib/corpus-labels";
+import { QUALITY_ISSUE_LABELS, type CorpusSourceStats } from "@/lib/corpus-labels";
 import type { SourceAuditRow } from "@/lib/corpus-completeness-audit";
 import { formatDateTime } from "@/lib/utils";
 import { corpusCoverageAuditQuery, corpusOverviewQuery } from "./corpus-ops-queries";
@@ -252,6 +252,44 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
   );
 }
 
+/**
+ * Folder → database → checked: the plausibility audit's verdict for one
+ * source (corpus_status, refreshed every 6h by the pipeline's
+ * runPlausibilityAudit — see corpus-pipeline.ts). Also what gates
+ * embedding: only a page on the audit's positive list (corpus_page_verified)
+ * may receive a vector (verifiedSql() in core/embedding-run.ts), so "noch
+ * nicht geprüft" here means those pages are not embeddable yet either.
+ */
+function QualityChip({ s }: { s: CorpusSourceStats }) {
+  const q = s.quality;
+  if (!q)
+    return <span className="text-xs text-[color:var(--ds-text-subtle)]">noch nicht geprüft</span>;
+  const ok = q.implausible === 0;
+  const top = Object.entries(q.issues).sort((a, b) => b[1] - a[1])[0];
+  return (
+    <div className="flex flex-col gap-0.5">
+      <Badge
+        className={
+          ok
+            ? "w-fit bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+            : "w-fit bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+        }
+      >
+        {ok ? "alle Seiten geprüft" : `${fmt(q.implausible)} fehlerhaft`}
+      </Badge>
+      {top && (
+        <span className="text-xs text-[color:var(--ds-text-muted)]">
+          {QUALITY_ISSUE_LABELS[top[0]] ?? top[0]}
+        </span>
+      )}
+      <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+        Ordner {q.normalizedFiles === null ? "?" : fmt(q.normalizedFiles)} · DB {fmt(s.pages)}
+      </span>
+      <span className="text-xs text-[color:var(--ds-text-subtle)]">{date(q.checkedAt)}</span>
+    </div>
+  );
+}
+
 /** "RIS hat / wir haben" of the latest reconciliation, as a status chip. */
 function ReconChip({ s }: { s: CorpusSourceStats }) {
   const r = s.reconciliation;
@@ -354,6 +392,7 @@ function OverviewSection() {
               {!isDecision && <TableHead className="text-right">außer Kraft</TableHead>}
               <TableHead className="text-right">Abschnitte</TableHead>
               <TableHead className="text-right">eingebettet</TableHead>
+              <TableHead>Geprüft</TableHead>
               <TableHead>Abgleich mit RIS</TableHead>
               <TableHead>zuletzt geändert</TableHead>
             </TableRow>
@@ -381,6 +420,9 @@ function OverviewSection() {
                 <TableCell className="text-right tabular-nums">{fmt(s.chunks)}</TableCell>
                 <TableCell className="text-right tabular-nums">
                   {pct(s.embedded, s.chunks)} %
+                </TableCell>
+                <TableCell>
+                  <QualityChip s={s} />
                 </TableCell>
                 <TableCell>
                   <ReconChip s={s} />

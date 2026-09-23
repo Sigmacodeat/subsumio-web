@@ -258,6 +258,34 @@ export const JUDIKATUR: JudikaturSource[] = [
   },
 ];
 
+/**
+ * The court import command for one JUDIKATUR source, run through
+ * `viaNormalized()`.
+ *
+ * BUG (2026-09-23, go-live corpus audit): `--bulk` was missing here while
+ * the DE/CH/EU judikatur imports (see SIMPLE below) already pass it.
+ * Without it, every file on disk — 179k for VwGH, 264k for BVwG, etc. —
+ * re-runs the full per-decision dedup lookup, version-history write,
+ * code-ref extraction and alias/sanity checks on every cycle (a re-import
+ * re-scans the whole `_normalized` dir, not just new files — see
+ * `needsImport()`). jud-vwgh was dying on a Postgres `statement_timeout` a
+ * few hundred decisions in and being restarted from scratch every cycle.
+ * `--bulk` skips the same work import-judikatur.ts already skips for
+ * DE/CH/EU; the content-hash skip in `importFromContent` still prevents
+ * redundant writes for unchanged decisions.
+ */
+export function judikaturImportArgv(src: JudikaturSource): string[] {
+  return [
+    "scripts/import-judikatur.ts",
+    "--source",
+    src.key,
+    "--no-embed",
+    "--skip-placeholders",
+    "--from-normalized",
+    "--bulk",
+  ];
+}
+
 export const SIMPLE: SimpleSource[] = [
   {
     kind: "statutes",
@@ -465,7 +493,7 @@ function markSourceSynced(key: string): void {
 // This replaces the old JSON file with a durable, multi-instance-safe store.
 // Each source has one row; the supervisor reads + updates it each cycle.
 
-interface DBPipelineState {
+export interface DBPipelineState {
   source_key: string;
   stage: string;
   last_import_success: string | null;
@@ -532,8 +560,25 @@ function releaseCycleLock(): void {
   );
 }
 
+/**
+ * Runs `query` (a plain SELECT, no trailing semicolon) and returns its rows
+ * as JSON. Auto-wraps in `json_agg` — callers pass the bare SELECT, not a
+ * pre-wrapped one.
+ *
+ * BUG (2026-09-23, found in the go-live corpus audit): every call site here
+ * passed a bare `SELECT …` and psql -t -A prints that as plain text (e.g.
+ * `2026-09-22 02:40:00+00`), not JSON. `JSON.parse` threw on every single
+ * call except `loadDBState()` (which manually wrapped its own query in
+ * `json_agg`) — so `ranWithin()` always returned false, the hash-integrity
+ * and Fassungs-sync checks always saw 0 rows, the RIS-delta cursor was
+ * always read as null (full re-fetch every run instead of an incremental
+ * one), and the `fetch_triggered` cleanup check never fired. All silent:
+ * the catch swallowed the parse error and returned `[]`, which every caller
+ * treats as "no rows found", not "the query failed".
+ */
 function psqlJSON<T = Record<string, unknown>>(query: string): T[] {
-  const raw = psqlQuery(query);
+  const wrapped = `SELECT json_agg(t) FROM (${query}) t`;
+  const raw = psqlQuery(wrapped);
   if (!raw) return [];
   try {
     // json_agg liefert NULL bei 0 Zeilen — kein Array.
@@ -556,9 +601,7 @@ function ranWithin(key: string, intervalS: number): boolean {
 
 /** Load all pipeline_state rows as a Map keyed by source_key. */
 function loadDBState(): Map<string, DBPipelineState> {
-  const rows = psqlJSON<DBPipelineState>(
-    `SELECT json_agg(t) FROM (SELECT * FROM pipeline_state ORDER BY source_key) t`
-  );
+  const rows = psqlJSON<DBPipelineState>(`SELECT * FROM pipeline_state ORDER BY source_key`);
   const map = new Map<string, DBPipelineState>();
   if (Array.isArray(rows)) {
     for (const r of rows) {
@@ -657,7 +700,7 @@ interface CycleState {
   pendingBackfillPh: Record<string, number | null>;
   backfillExhausted: Record<string, boolean>;
   pidMap: Record<string, { pid: number; cmd: string; startedAt: string; timeoutS: number }>;
-  /** Consecutive failed import attempts, derived from import_failed alert flags. */
+  /** Consecutive failed import attempts, derived from the stage_history tail. */
   importFailCount: Record<string, number>;
   /** True when the ris-delta process was running in the previous cycle and is now gone. */
   deltaJustFinished?: boolean;
@@ -667,6 +710,36 @@ interface CycleState {
 
 /** Give up restarting a source's import after this many consecutive failures. */
 const MAX_IMPORT_ATTEMPTS = 5;
+
+/**
+ * Consecutive `import`-stage failures for one source, read from the tail of
+ * its `stage_history` (newest last, capped at 20 by `append_stage_history`).
+ *
+ * BUG (2026-09-23, go-live corpus audit): this used to be
+ * `alert_flags.filter(a => a.type === "import_failed").length`. `raiseAlert`
+ * dedups by type — it removes any existing alert of the same type before
+ * appending the new one (one row per type, always) — so that count could
+ * never exceed 1. `MAX_IMPORT_ATTEMPTS = 5` therefore never engaged: a
+ * source that fails to import every cycle (jud-vwgh hit a Postgres
+ * `statement_timeout` roughly every 300/179000 documents) was restarted
+ * forever instead of being marked `failed` after 5 tries. `stage_history`
+ * is a real append-only log per source, so counting its trailing
+ * "import"/"failed …" entries — stopping at the most recent "finished" —
+ * gives the true streak.
+ */
+export function consecutiveImportFailures(
+  history: DBPipelineState["stage_history"] | null | undefined
+): number {
+  if (!Array.isArray(history)) return 0;
+  let count = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const h = history[i];
+    if (!h || h.stage !== "import") continue;
+    if (h.action === "finished") break;
+    if (typeof h.action === "string" && h.action.startsWith("failed")) count++;
+  }
+  return count;
+}
 
 function stateFromDB(dbState: Map<string, DBPipelineState>): CycleState {
   const cs: CycleState = {
@@ -684,9 +757,7 @@ function stateFromDB(dbState: Map<string, DBPipelineState>): CycleState {
     cs.lastPlaceholderCount[key] = row.last_placeholder_count;
     cs.pendingBackfillPh[key] = row.pending_backfill_ph;
     cs.backfillExhausted[key] = row.backfill_exhausted;
-    cs.importFailCount[key] = Array.isArray(row.alert_flags)
-      ? row.alert_flags.filter((a) => a.type === "import_failed").length
-      : 0;
+    cs.importFailCount[key] = consecutiveImportFailures(row.stage_history);
     if (row.pid) {
       cs.pidMap[key] = {
         pid: row.pid,
@@ -1059,6 +1130,30 @@ function runFreshnessCheck(): void {
 /** Check that content_hash in DB matches a re-computed hash from the source
  *  file. Alerts on mismatch — indicates corruption between download and
  *  import, or silent file modification after import. */
+/**
+ * Full plausibility audit, at most once per 6h. It is what makes the path
+ * one path: it refreshes corpus_status (what /ops/corpus shows) and the
+ * positive list corpus_page_verified — and only pages on that list may be
+ * embedded (verifiedSql() in core/embedding-run.ts). Without this step a
+ * freshly imported page would stay un-embeddable until someone remembered
+ * to run the audit by hand. Runs detached; ~5 minutes for the whole corpus.
+ */
+function runPlausibilityAudit(): void {
+  const key = "plausibility-audit";
+  ensureSourceRow(key);
+  const row = psqlJSON<{ last_cycle_at: string | null }>(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`
+  );
+  if (Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
+    const hoursSince = (Date.now() - new Date(row[0].last_cycle_at).getTime()) / 3_600_000;
+    if (hoursSince < 6) return;
+  }
+  if (processRunningGrep("audit-plausibility-full.ts")) return;
+  startProcess(key, ["scripts/audit-plausibility-full.ts"], key, 3600);
+  updateSourceState(key, { last_cycle_at: new Date().toISOString(), stage: "importing" });
+  appendHistory(key, "audit", "started");
+}
+
 function runHashIntegrityCheck(): void {
   const key = "hash-integrity";
   ensureSourceRow(key);
@@ -1369,6 +1464,58 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
       // Non-fatal — trigger will be re-read next cycle but delta-watcher
       // won't re-run due to the 24h interval guard.
     }
+  }
+}
+
+// ── Known-bad generation repair (2026-09-23) ────────────────────────────
+// repair-known-bad-generation.ts re-verifies the 58,599 Landesrecht pages
+// blanket-flagged generation:known_bad (audit-plausibility-full.ts, based
+// only on retrieved_at, not a per-page check — see the script's own header
+// and memory korpus-pipeline-audit-2026-09-23). It self-bounds to
+// --batch-minutes per invocation and checkpoints, so the pipeline just
+// restarts it every cycle until its checkpoint reports done. Single RIS
+// connection, its own internal 2s pacing (ris-pace.ts) — no faster than any
+// other fetcher here.
+
+const KNOWN_BAD_REPAIR_JOBS = [{ sourceId: "law-at-landesrecht", generation: "2026-08-03" }];
+
+function knownBadRepairDone(sourceId: string, generation: string): boolean {
+  const checkpointPath = join(CORPUS, "_state", `repair-${sourceId}-${generation}.json`);
+  if (!existsSync(checkpointPath)) return false;
+  try {
+    const cp = JSON.parse(readFileSync(checkpointPath, "utf-8")) as { done?: boolean };
+    return cp.done === true;
+  } catch {
+    return false;
+  }
+}
+
+function runKnownBadGenerationRepair(state: CycleState): void {
+  for (const job of KNOWN_BAD_REPAIR_JOBS) {
+    const key = `repair-${job.sourceId}-${job.generation}`;
+    ensureSourceRow(key);
+    if (checkSourceProcess(key, state).running) continue;
+    if (knownBadRepairDone(job.sourceId, job.generation)) {
+      updateSourceState(key, { stage: "done", last_cycle_at: new Date().toISOString() });
+      continue;
+    }
+    startProcess(
+      key,
+      [
+        "scripts/repair-known-bad-generation.ts",
+        "--source",
+        job.sourceId,
+        "--generation",
+        job.generation,
+        "--yes",
+        "--batch-minutes",
+        "8",
+      ],
+      key,
+      1200 // 20min timeout — script self-bounds to 8min and exits, this is headroom
+    );
+    updateSourceState(key, { stage: "importing", last_cycle_at: new Date().toISOString() });
+    appendHistory(key, "repair", "batch started");
   }
 }
 
@@ -2138,14 +2285,7 @@ async function cycle(): Promise<void> {
         const r = importStage(
           judKey,
           src.dir,
-          viaNormalized(src.dir, [
-            "scripts/import-judikatur.ts",
-            "--source",
-            src.key,
-            "--no-embed",
-            "--skip-placeholders",
-            "--from-normalized",
-          ]),
+          viaNormalized(src.dir, judikaturImportArgv(src)),
           7200
         );
         stage = r.stage;
@@ -2310,6 +2450,9 @@ async function cycle(): Promise<void> {
     // ── Layer 5: Hash File→DB integrity check (at most once per 6h) ──
     runHashIntegrityCheck();
 
+    // ── Layer 5b: full plausibility audit → corpus_status + embedding clearance (6h) ──
+    if (!REPORT_ONLY) runPlausibilityAudit();
+
     // ── Layer 6: Fassungs-Sync / version_date delta (at most once per 12h) ──
     runFassungsSync();
 
@@ -2318,6 +2461,9 @@ async function cycle(): Promise<void> {
 
     // ── RIS In-force-Indizes wöchentlich auffrischen (Dashboard-Soll) ──
     runInforceIndexRefresh(state as CycleState);
+
+    // ── Known-bad-generation reparieren (2026-08-03 Landesrecht) ──
+    runKnownBadGenerationRepair(state as CycleState);
 
     // ── Law-Fetch-Queue: vom Dashboard vorgemerkte Gesetze nachladen ──
     runLawFetchQueue(state as CycleState);

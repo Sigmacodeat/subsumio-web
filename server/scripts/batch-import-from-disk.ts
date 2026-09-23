@@ -35,6 +35,7 @@
  */
 
 import { docIdFromContent, loadActiveDocSlugs, resolveSlug } from "./doc-identity.ts";
+import { needsImport } from "./import-cursor.ts";
 import { titleOf, writeIngestLog, type IngestEvent } from "./ingest-log.ts";
 import { parseArgs } from "util";
 import { readdirSync, readFileSync, existsSync, statSync } from "fs";
@@ -120,6 +121,24 @@ if (!SOURCE_ID || !DISK_DIR) {
 
 interface CursorState {
   importedSlugs: string[];
+  /**
+   * slug -> source file mtime (ms) at last successful import.
+   *
+   * `importedSlugs` alone made a slug's cursor entry permanent: once a file
+   * was imported once (even with an incomplete/legacy frontmatter shape),
+   * every later pipeline run skipped it forever, even after the normalizer
+   * or the RIS metadata sync rewrote the normalized file with a corrected
+   * frontmatter (e.g. a missing `doc_id`). Found 2026-09-21 via 960
+   * law-at-landesrecht pages stuck on a pre-canonical-schema frontmatter
+   * (`nor_id` instead of `doc_id`) for days despite the correct file
+   * sitting right next to them on disk. Gating on mtime instead means a
+   * rewritten normalized file is picked up again automatically; an
+   * untouched file still costs nothing (same mtime, still skipped).
+   * `importFromContent`'s own content_hash check still guards against
+   * wasted re-chunk/re-embed work when the rewrite didn't actually change
+   * anything meaningful.
+   */
+  mtimeAt: Record<string, number>;
   lastFile: string;
   totalImported: number;
   totalErrors: number;
@@ -134,13 +153,18 @@ async function loadCursor(): Promise<CursorState> {
   try {
     if (existsSync(CURSOR_FILE)) {
       const raw = readFileSync(CURSOR_FILE, "utf-8");
-      return JSON.parse(raw) as CursorState;
+      const parsed = JSON.parse(raw) as CursorState;
+      // Older cursor files predate mtimeAt — treat every slug in them as
+      // "mtime unknown", which the filter below treats as "reprocess once".
+      if (!parsed.mtimeAt) parsed.mtimeAt = {};
+      return parsed;
     }
   } catch {
     /* ignore */
   }
   return {
     importedSlugs: [],
+    mtimeAt: {},
     lastFile: "",
     totalImported: 0,
     totalErrors: 0,
@@ -341,6 +365,7 @@ async function main() {
     console.log("⚠️  force-rechunk: ignoring cursor and reprocessing all files.");
     alreadyImported = new Set();
     cursor.importedSlugs = [];
+    cursor.mtimeAt = {};
     cursor.totalImported = 0;
     cursor.totalErrors = 0;
     cursor.totalSkipped = 0;
@@ -354,11 +379,19 @@ async function main() {
   console.log(`Cursor: ${alreadyImported.size} already imported, resuming from last file.`);
   console.log("");
 
-  // Filter out already-imported files unless force-rechunk is active
-  const toImport = allFiles.filter((f) => {
-    const slug = deriveSlug(f, SOURCE_ID, SLUG_PREFIX, diskPath);
-    return !alreadyImported.has(slug);
-  });
+  // Filter out already-imported files unless force-rechunk is active. A
+  // slug only stays skipped if the source file's mtime matches what the
+  // cursor recorded last time it actually imported that slug — a file
+  // rewritten since (normalizer upgrade, corrected RIS metadata, …) always
+  // gets reprocessed, even though its slug was "already imported" once.
+  const toImport = allFiles.filter((f) =>
+    needsImport(
+      deriveSlug(f, SOURCE_ID, SLUG_PREFIX, diskPath),
+      statSync(f).mtimeMs,
+      alreadyImported,
+      cursor.mtimeAt
+    )
+  );
   console.log(
     `To import: ${toImport.length} files (skipping ${alreadyImported.size} already done).`
   );
@@ -563,8 +596,14 @@ async function main() {
         skipContentDuplicates: true,
         forceRechunk: FORCE_RECHUNK,
       });
+      // alreadyImported (a Set) is the O(1) membership check; importedSlugs
+      // stays an array only for the cursor file's on-disk shape, so pushing
+      // here must not re-scan it with .includes() — that's O(n) per file
+      // and turns a 140k-file reprocess into an O(n^2) crawl.
+      const slugIsNew = !alreadyImported.has(slug);
       alreadyImported.add(slug);
-      cursor.importedSlugs.push(slug);
+      if (slugIsNew) cursor.importedSlugs.push(slug);
+      cursor.mtimeAt[slug] = stats.mtimeMs;
       if (result.status === "skipped") {
         // importFromContent detected a content duplicate (same content_hash,
         // no frontmatter.id). Count it as skipped, not imported, so the
