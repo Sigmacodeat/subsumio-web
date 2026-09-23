@@ -274,6 +274,8 @@ export function CorpusFileViewer({ path, onClose }: Props) {
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ["corpus-file-read", path] });
       queryClient.invalidateQueries({ queryKey: ["corpus-files-list"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-search"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-sample"] });
       queryClient.invalidateQueries({ queryKey: ["corpus-publish-status"] });
     },
     onError: (err: Error) => {
@@ -300,6 +302,8 @@ export function CorpusFileViewer({ path, onClose }: Props) {
       });
       queryClient.invalidateQueries({ queryKey: ["corpus-file-read", path] });
       queryClient.invalidateQueries({ queryKey: ["corpus-files-list"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-search"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-sample"] });
     },
     onError: (err: Error) => {
       addToast({ title: "Flag fehlgeschlagen", description: err.message, type: "error" });
@@ -324,6 +328,8 @@ export function CorpusFileViewer({ path, onClose }: Props) {
         type: "success",
       });
       queryClient.invalidateQueries({ queryKey: ["corpus-files-list"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-search"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-sample"] });
       queryClient.invalidateQueries({ queryKey: ["corpus-publish-status"] });
       onClose();
     },
@@ -352,6 +358,8 @@ export function CorpusFileViewer({ path, onClose }: Props) {
       queryClient.invalidateQueries({ queryKey: ["corpus-file-read", path] });
       queryClient.invalidateQueries({ queryKey: ["corpus-file-versions", path] });
       queryClient.invalidateQueries({ queryKey: ["corpus-files-list"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-search"] });
+      queryClient.invalidateQueries({ queryKey: ["corpus-files-sample"] });
       queryClient.invalidateQueries({ queryKey: ["corpus-publish-status"] });
       setDiffVersions(null);
     },

@@ -19,7 +19,6 @@ vi.mock("@/lib/auth/store", () => ({
 }));
 
 import { logAudit, listAuditLogs, auditLabel, verifyAuditChain } from "./audit";
-import type { AuditAction } from "@/lib/audit-labels";
 import { api } from "@/lib/api";
 
 const mockCreatePage = vi.mocked(api.brain.createPage);
@@ -50,13 +49,13 @@ describe("logAudit (dev fallback — brain pages)", () => {
   });
 
   test("uses 'system' as brainId when not provided", async () => {
-    await logAudit("system.cleanup" as AuditAction, "system");
+    await logAudit("settings.update", "system");
     const call = mockCreatePage.mock.calls[0][0];
-    expect(call.frontmatter).toHaveProperty("action", "system.cleanup");
+    expect(call.frontmatter).toHaveProperty("action", "settings.update");
   });
 
   test("includes details in frontmatter", async () => {
-    await logAudit("case.created" as AuditAction, "case", {
+    await logAudit("case.create", "case", {
       details: { caseSlug: "case-2024-001" },
     });
     const call = mockCreatePage.mock.calls[0][0];
@@ -64,7 +63,7 @@ describe("logAudit (dev fallback — brain pages)", () => {
   });
 
   test("includes timestamp in frontmatter", async () => {
-    await logAudit("doc.uploaded" as AuditAction, "document");
+    await logAudit("document.upload", "document");
     const call = mockCreatePage.mock.calls[0][0];
     expect(call.frontmatter).toHaveProperty("timestamp");
     expect(call.frontmatter).toHaveProperty("date");
@@ -78,7 +77,7 @@ describe("logAudit (dev fallback — brain pages)", () => {
 
   test("does not throw when api.brain.createPage fails", async () => {
     mockCreatePage.mockRejectedValueOnce(new Error("network error"));
-    await expect(logAudit("test.action" as AuditAction, "test")).resolves.not.toThrow();
+    await expect(logAudit("data.export", "test")).resolves.not.toThrow();
   });
 });
 

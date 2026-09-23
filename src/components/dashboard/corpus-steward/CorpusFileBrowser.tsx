@@ -72,6 +72,7 @@ import {
   corpusFileSearchQuery,
   corpusListParams,
   corpusSearchMode,
+  invalidateCorpusFileQueries,
   type FileEntry,
 } from "./corpus-files-queries";
 
@@ -294,7 +295,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
         description: `${result.totalFiles?.toLocaleString("de-AT") ?? 0} Dateien indiziert`,
         type: "success",
       });
-      queryClient.invalidateQueries({ queryKey: ["corpus-files-list", selectedCorpus] });
+      invalidateCorpusFileQueries(queryClient, selectedCorpus);
     },
     onError: (err: Error) => {
       addToast({ title: "Index-Build fehlgeschlagen", description: err.message, type: "error" });
@@ -322,7 +323,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
         type: "success",
       });
       setSelectedPaths(new Set());
-      queryClient.invalidateQueries({ queryKey: ["corpus-files-list", selectedCorpus] });
+      invalidateCorpusFileQueries(queryClient, selectedCorpus);
     },
     onError: (err: Error) => {
       addToast({ title: "Flag fehlgeschlagen", description: err.message, type: "error" });
@@ -351,7 +352,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
         type: result.failed > 0 ? "warning" : "success",
       });
       setSelectedPaths(new Set());
-      queryClient.invalidateQueries({ queryKey: ["corpus-files-list", selectedCorpus] });
+      invalidateCorpusFileQueries(queryClient, selectedCorpus);
       queryClient.invalidateQueries({ queryKey: ["corpus-publish-status"] });
     },
     onError: (err: Error) => {
@@ -396,7 +397,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
       setCreateTitle("");
       setCreateDocId("");
       setCreateBody("");
-      queryClient.invalidateQueries({ queryKey: ["corpus-files-list", selectedCorpus] });
+      invalidateCorpusFileQueries(queryClient, selectedCorpus);
       queryClient.invalidateQueries({ queryKey: ["corpus-publish-status"] });
       // Neue Datei direkt im Viewer öffnen
       onSelectFile(result.path);
@@ -474,7 +475,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
       setBulkEditValue("");
       setBulkEditText("");
       setSelectedPaths(new Set());
-      queryClient.invalidateQueries({ queryKey: ["corpus-files-list", selectedCorpus] });
+      invalidateCorpusFileQueries(queryClient, selectedCorpus);
       queryClient.invalidateQueries({ queryKey: ["corpus-publish-status"] });
     },
     onError: (err: Error) => {

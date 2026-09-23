@@ -128,3 +128,16 @@ export function corpusFileSampleQuery(corpus: string) {
       )) as SampleResponse,
   };
 }
+
+/** Nach jeder Mutation (flag/delete/create/bulk-edit): Liste, aktive
+ *  Suche und Stichprobe desselben Corpus sind stale — ohne die beiden
+ *  letzteren blieben gelöschte/geflaggte Dateien in Trefferliste und
+ *  Sample sichtbar bis zum manuellen Refresh. */
+export function invalidateCorpusFileQueries(
+  queryClient: { invalidateQueries(opts: { queryKey: readonly unknown[] }): unknown },
+  corpus: string
+) {
+  void queryClient.invalidateQueries({ queryKey: ["corpus-files-list", corpus] });
+  void queryClient.invalidateQueries({ queryKey: ["corpus-files-search", corpus] });
+  void queryClient.invalidateQueries({ queryKey: ["corpus-files-sample", corpus] });
+}
