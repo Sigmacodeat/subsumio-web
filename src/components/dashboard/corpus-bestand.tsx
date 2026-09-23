@@ -412,11 +412,11 @@ function LawCoverage() {
                     <TableCell className="text-right tabular-nums">{fmt(l.have)}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {l.missingCount > 0 ? (
-                        <details className="inline-block text-left">
+                        <details className="text-left">
                           <summary className="cursor-pointer text-[color:var(--ds-danger-text)] hover:underline">
                             {fmt(l.missingCount)}
                           </summary>
-                          <ul className="absolute z-10 mt-1 max-h-48 max-w-xs space-y-0.5 overflow-y-auto rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2 text-left text-xs shadow-md">
+                          <ul className="mt-1 max-h-40 max-w-[220px] space-y-0.5 overflow-y-auto text-left text-xs">
                             {l.missingDocs.map((m) => (
                               <li key={m.nor}>
                                 <span className="font-mono">{m.nor}</span>
