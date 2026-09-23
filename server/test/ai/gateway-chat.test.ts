@@ -44,10 +44,10 @@ describe("chat touchpoint — recipe registry", () => {
     }
   });
 
-  test("prompt-cache providers are exactly Anthropic + OpenRouter", () => {
+  test("prompt-cache providers are exactly Anthropic + OpenRouter + Bedrock (Anthropic Messages API)", () => {
     for (const r of listRecipes()) {
       if (!r.touchpoints.chat) continue;
-      if (r.id === "anthropic" || r.id === "openrouter") {
+      if (r.id === "anthropic" || r.id === "openrouter" || r.id === "bedrock") {
         expect(r.touchpoints.chat.supports_prompt_cache).toBe(true);
       } else {
         expect(r.touchpoints.chat.supports_prompt_cache ?? false).toBe(false);

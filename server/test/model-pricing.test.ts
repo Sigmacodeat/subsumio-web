@@ -97,6 +97,27 @@ describe("CANONICAL_PRICING — table integrity", () => {
   });
 });
 
+describe("CANONICAL_PRICING — Amazon Bedrock EU profiles", () => {
+  test("EU regional price = Anthropic list price × 1.1", () => {
+    expect(CANONICAL_PRICING["bedrock:eu.anthropic.claude-haiku-4-5-20251001-v1:0"]).toEqual({
+      input: 1.1,
+      output: 5.5,
+    });
+    expect(CANONICAL_PRICING["bedrock:eu.anthropic.claude-sonnet-5"]).toEqual({
+      input: 2.2,
+      output: 11.0,
+    });
+    expect(CANONICAL_PRICING["bedrock:eu.anthropic.claude-opus-5"]).toEqual({
+      input: 5.5,
+      output: 27.5,
+    });
+  });
+
+  test("Bedrock ids (with ':' inside) resolve via canonicalLookup", () => {
+    expect(canonicalLookup("bedrock:eu.anthropic.claude-haiku-4-5-20251001-v1:0")).toBeDefined();
+  });
+});
+
 describe("canonicalLookup — id normalization", () => {
   test("bare anthropic id → hit (defaults to anthropic provider)", () => {
     expect(canonicalLookup("claude-opus-4-8")).toEqual({ input: 5.0, output: 25.0 });

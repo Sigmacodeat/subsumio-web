@@ -16,6 +16,12 @@
 import { createHash } from "node:crypto";
 import { CANONICAL_PRICING, type ModelPricing } from "./model-pricing.ts";
 import { splitProviderModelId } from "./model-id.ts";
+import {
+  BEDROCK_EU_MODELS,
+  BEDROCK_EU_SOURCE_REGIONS,
+  bedrockRoutingScope,
+  resolveBedrockRegion,
+} from "./ai/bedrock-config.ts";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -102,6 +108,161 @@ export interface ResolvedModel {
   fallbackAssessment?: FallbackAssessment;
 }
 
+// ── Data residency (single source of truth) ────────────────────────────
+//
+// Where a provider processes a request. This table is the ONE place residency
+// is decided: registry entries derive `data_residency` from it, and the
+// gateway's EU-only switch (src/core/ai/eu-policy.ts) enforces it on every
+// chat / completion / stream / expansion / embedding / rerank / transcription
+// call. "eu" means EU/EEA processing that is documented for the configured
+// route — not "EU company" and not "legal-domain focus".
+//
+//   fixed     — the provider's own API has one answer.
+//   attested  — the provider CAN run in the EU (Azure EU region, OpenRouter
+//               EU enterprise routing, a self-hosted server in Vienna), but the
+//               code cannot see it. The operator attests with <envVar>=eu;
+//               default non_eu.
+//   bedrock   — derived from AWS_REGION and the model id (`eu.` inference
+//               profile, or an in-region id called in an EU region).
+//
+// Unknown providers are non_eu (fail-closed). A new recipe without an entry
+// here fails test/ai/eu-policy.test.ts.
+
+export type ResidencyRule =
+  | { kind: "fixed"; residency: DataResidency; basis: string }
+  | { kind: "attested"; envVar: string; basis: string }
+  | { kind: "bedrock"; basis: string };
+
+export const PROVIDER_RESIDENCY: Readonly<Record<string, ResidencyRule>> = {
+  bedrock: {
+    kind: "bedrock",
+    basis:
+      "Amazon Bedrock: EU only for eu.* inference profiles or in-region ids in an EU member-state region",
+  },
+  mistral: {
+    kind: "fixed",
+    residency: "eu",
+    basis: "Mistral La Plateforme (api.mistral.ai) is hosted in the EU",
+  },
+  "azure-openai": {
+    kind: "attested",
+    envVar: "SUBSUMIO_AZURE_OPENAI_RESIDENCY",
+    basis: "Azure OpenAI: EU only when the resource/deployment is in an EU region (Data Zone EU)",
+  },
+  openrouter: {
+    kind: "attested",
+    envVar: "SUBSUMIO_OPENROUTER_RESIDENCY",
+    basis: "OpenRouter: EU in-region routing exists only for enterprise accounts",
+  },
+  litellm: {
+    kind: "attested",
+    envVar: "SUBSUMIO_LITELLM_RESIDENCY",
+    basis: "LiteLLM proxy: residency is whatever backend the proxy forwards to",
+  },
+  ollama: {
+    kind: "attested",
+    envVar: "SUBSUMIO_SELF_HOSTED_RESIDENCY",
+    basis: "Self-hosted Ollama: EU only if the server runs in the EU",
+  },
+  "llama-server": {
+    kind: "attested",
+    envVar: "SUBSUMIO_SELF_HOSTED_RESIDENCY",
+    basis: "Self-hosted llama.cpp server: EU only if the server runs in the EU",
+  },
+  "llama-server-reranker": {
+    kind: "attested",
+    envVar: "SUBSUMIO_SELF_HOSTED_RESIDENCY",
+    basis: "Self-hosted llama.cpp reranker: EU only if the server runs in the EU",
+  },
+  anthropic: {
+    kind: "fixed",
+    residency: "non_eu",
+    basis: "Anthropic API: inference_geo offers only us/global, no EU processing",
+  },
+  openai: { kind: "fixed", residency: "non_eu", basis: "OpenAI API (api.openai.com)" },
+  google: { kind: "fixed", residency: "non_eu", basis: "Google Gemini API (global)" },
+  deepseek: { kind: "fixed", residency: "non_eu", basis: "DeepSeek API (China)" },
+  groq: { kind: "fixed", residency: "non_eu", basis: "Groq API (US)" },
+  together: { kind: "fixed", residency: "non_eu", basis: "Together AI (US)" },
+  voyage: { kind: "fixed", residency: "non_eu", basis: "Voyage AI (US)" },
+  zeroentropyai: { kind: "fixed", residency: "non_eu", basis: "ZeroEntropy API (US)" },
+  "zero-entropy": { kind: "fixed", residency: "non_eu", basis: "ZeroEntropy API (US)" },
+  dashscope: { kind: "fixed", residency: "non_eu", basis: "Alibaba DashScope" },
+  zhipu: { kind: "fixed", residency: "non_eu", basis: "Zhipu AI (China)" },
+  minimax: { kind: "fixed", residency: "non_eu", basis: "MiniMax" },
+  xai: { kind: "fixed", residency: "non_eu", basis: "xAI API (US)" },
+  cohere: { kind: "fixed", residency: "non_eu", basis: "Cohere API" },
+  moonshot: { kind: "fixed", residency: "non_eu", basis: "Moonshot AI (China)" },
+  deepgram: { kind: "fixed", residency: "non_eu", basis: "Deepgram API (US)" },
+};
+
+export interface ResidencyVerdict {
+  provider: string;
+  residency: DataResidency;
+  /** Human-readable reason, used verbatim in refusal messages. */
+  basis: string;
+}
+
+/**
+ * Classify one call target. `modelId` is the part after `provider:` (only
+ * Bedrock looks at it). `env` is the gateway env snapshot.
+ */
+export function resolveProviderResidency(
+  providerId: string,
+  modelId: string,
+  env: Record<string, string | undefined>
+): ResidencyVerdict {
+  const provider = providerId.trim().toLowerCase();
+  const rule = PROVIDER_RESIDENCY[provider];
+  if (!rule) {
+    return {
+      provider,
+      residency: "non_eu",
+      basis: `unknown provider "${provider}" — not classified, treated as non-EU`,
+    };
+  }
+  if (rule.kind === "fixed") return { provider, residency: rule.residency, basis: rule.basis };
+  if (rule.kind === "attested") {
+    const attested = (env[rule.envVar] ?? "").trim().toLowerCase() === "eu";
+    return {
+      provider,
+      residency: attested ? "eu" : "non_eu",
+      basis: attested
+        ? `${rule.basis} — attested via ${rule.envVar}=eu`
+        : `${rule.basis} — not attested (${rule.envVar} is not "eu")`,
+    };
+  }
+  // Bedrock
+  const region = resolveBedrockRegion(env);
+  const scope = bedrockRoutingScope(modelId);
+  const regionIsEu = BEDROCK_EU_SOURCE_REGIONS.has(region);
+  if (!regionIsEu) {
+    return {
+      provider,
+      residency: "non_eu",
+      basis: `Amazon Bedrock region ${region} is not an EU member-state region`,
+    };
+  }
+  if (scope.kind === "in_region") {
+    return { provider, residency: "eu", basis: `Amazon Bedrock in-region call in ${region}` };
+  }
+  if (scope.kind === "geo" && scope.geo === "eu") {
+    return {
+      provider,
+      residency: "eu",
+      basis: `Amazon Bedrock EU inference profile called from ${region}`,
+    };
+  }
+  return {
+    provider,
+    residency: "non_eu",
+    basis:
+      scope.kind === "geo"
+        ? `Amazon Bedrock "${scope.geo}." inference profile routes outside the EU`
+        : `Amazon Bedrock model id "${modelId}" is not an eu.* inference profile`,
+  };
+}
+
 // ── Registry ───────────────────────────────────────────────────────────
 
 /**
@@ -118,8 +279,18 @@ export interface ResolvedModel {
  */
 const REGISTRY: Map<string, ModelCapabilityEntry> = new Map();
 
-function register(entry: Omit<ModelCapabilityEntry, "registered_at">): void {
-  REGISTRY.set(entry.id, { ...entry, registered_at: "2026-07-13T00:00:00Z" });
+/**
+ * `data_residency` is never written per model: it is derived from the
+ * provider classification below (PROVIDER_RESIDENCY) with an empty env, i.e.
+ * the conservative default. Runtime enforcement (SUBSUMIO_EU_ONLY, see
+ * src/core/ai/eu-policy.ts) re-evaluates the same rule against the live env,
+ * so an operator attestation (Azure EU endpoint, OpenRouter EU enterprise) or a
+ * non-EU AWS_REGION is honoured there.
+ */
+function register(entry: Omit<ModelCapabilityEntry, "registered_at" | "data_residency">): void {
+  const { model } = splitProviderModelId(entry.id);
+  const data_residency = resolveProviderResidency(entry.provider, model ?? entry.id, {}).residency;
+  REGISTRY.set(entry.id, { ...entry, data_residency, registered_at: "2026-07-13T00:00:00Z" });
 }
 
 // ── Anthropic ──────────────────────────────────────────────────────────
@@ -135,7 +306,6 @@ register({
   supports_thinking: true,
   supports_vision: true,
   supports_prompt_caching: true,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["anthropic:claude-opus-4-8"] ?? { input: 5, output: 25 },
   tier: "deep",
@@ -153,7 +323,6 @@ register({
   supports_thinking: true,
   supports_vision: true,
   supports_prompt_caching: true,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["anthropic:claude-opus-4-7"] ?? { input: 5, output: 25 },
   tier: "deep",
@@ -172,7 +341,6 @@ register({
   supports_thinking: true,
   supports_vision: true,
   supports_prompt_caching: true,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["anthropic:claude-sonnet-4-6"] ?? { input: 3, output: 15 },
   tier: "reasoning",
@@ -190,7 +358,6 @@ register({
   supports_thinking: true,
   supports_vision: true,
   supports_prompt_caching: true,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["anthropic:claude-sonnet-5"] ?? { input: 2, output: 10 },
   tier: "reasoning",
@@ -208,7 +375,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: true,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["anthropic:claude-haiku-4-5"] ?? { input: 1, output: 5 },
   tier: "subagent",
@@ -226,10 +392,62 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: true,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["anthropic:claude-haiku-4-5-20251001"] ?? { input: 1, output: 5 },
   tier: "subagent",
+  status: "active",
+});
+
+// ── Amazon Bedrock (Claude, EU inference profiles) ─────────────────────
+
+register({
+  id: `bedrock:${BEDROCK_EU_MODELS.haiku45}`,
+  display_name: "Claude Haiku 4.5 (Bedrock EU)",
+  provider: "bedrock",
+  snapshot: "2025-10-01",
+  context_window: 200_000,
+  supports_tools: true,
+  supports_json: true,
+  supports_thinking: false,
+  supports_vision: true,
+  supports_prompt_caching: true,
+  zdr: false,
+  pricing: CANONICAL_PRICING[`bedrock:${BEDROCK_EU_MODELS.haiku45}`] ?? { input: 1.1, output: 5.5 },
+  tier: "utility",
+  status: "active",
+});
+
+register({
+  id: `bedrock:${BEDROCK_EU_MODELS.sonnet5}`,
+  display_name: "Claude Sonnet 5 (Bedrock EU)",
+  provider: "bedrock",
+  snapshot: "2026-06-30",
+  context_window: 1_000_000,
+  supports_tools: true,
+  supports_json: true,
+  supports_thinking: true,
+  supports_vision: true,
+  supports_prompt_caching: true,
+  zdr: false,
+  pricing: CANONICAL_PRICING[`bedrock:${BEDROCK_EU_MODELS.sonnet5}`] ?? { input: 2.2, output: 11 },
+  tier: "reasoning",
+  status: "active",
+});
+
+register({
+  id: `bedrock:${BEDROCK_EU_MODELS.opus5}`,
+  display_name: "Claude Opus 5 (Bedrock EU)",
+  provider: "bedrock",
+  snapshot: "2026-07-24",
+  context_window: 1_000_000,
+  supports_tools: true,
+  supports_json: true,
+  supports_thinking: true,
+  supports_vision: true,
+  supports_prompt_caching: true,
+  zdr: false,
+  pricing: CANONICAL_PRICING[`bedrock:${BEDROCK_EU_MODELS.opus5}`] ?? { input: 5.5, output: 27.5 },
+  tier: "deep",
   status: "active",
 });
 
@@ -246,7 +464,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openai:gpt-5"] ?? { input: 5, output: 15 },
   tier: "reasoning",
@@ -264,7 +481,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openai:gpt-5.5"] ?? { input: 4, output: 16 },
   tier: "reasoning",
@@ -282,7 +498,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openai:gpt-4o"] ?? { input: 2.5, output: 10 },
   tier: "reasoning",
@@ -300,7 +515,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openai:gpt-4o-mini"] ?? { input: 0.15, output: 0.6 },
   tier: "utility",
@@ -320,7 +534,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["google:gemini-3-pro"] ?? { input: 2, output: 12 },
   tier: "reasoning",
@@ -338,7 +551,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["google:gemini-2.0-flash"] ?? { input: 0.1, output: 0.4 },
   tier: "utility",
@@ -361,7 +573,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openrouter:deepseek/deepseek-chat"] ?? { input: 0.14, output: 0.28 },
   tier: "utility",
@@ -379,7 +590,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["deepseek:deepseek-chat"] ?? { input: 0.14, output: 0.28 },
   tier: "utility",
@@ -397,7 +607,6 @@ register({
   supports_thinking: true,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openrouter:deepseek/deepseek-reasoner"] ?? {
     input: 0.14,
@@ -420,7 +629,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["openrouter:xai/grok-4.3"] ?? { input: 1.25, output: 2.5 },
   tier: "deep",
@@ -438,7 +646,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["xai:grok-4.3"] ?? { input: 1.25, output: 2.5 },
   tier: "deep",
@@ -458,7 +665,6 @@ register({
   supports_thinking: false,
   supports_vision: true,
   supports_prompt_caching: false,
-  data_residency: "eu",
   zdr: false,
   pricing: CANONICAL_PRICING["mistral:mistral-large-3"] ?? { input: 0.5, output: 1.5 },
   tier: "reasoning",
@@ -476,7 +682,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "eu",
   zdr: false,
   pricing: CANONICAL_PRICING["mistral:mistral-small-3.2"] ?? { input: 0.1, output: 0.3 },
   tier: "utility",
@@ -496,7 +701,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["cohere:command-r-plus-08-2024"] ?? { input: 2.5, output: 10 },
   tier: "reasoning",
@@ -516,7 +720,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["moonshot:kimi-k2.6"] ?? { input: 0.6, output: 2.5 },
   tier: "reasoning",
@@ -536,7 +739,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["groq:llama-4-scout-17b-16e"] ?? { input: 0.11, output: 0.34 },
   tier: "utility",
@@ -554,7 +756,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["groq:qwen3-32b"] ?? { input: 0.11, output: 0.34 },
   tier: "utility",
@@ -574,7 +775,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["zhipu:glm-4.7"] ?? { input: 0.5, output: 1.5 },
   tier: "reasoning",
@@ -594,7 +794,6 @@ register({
   supports_thinking: false,
   supports_vision: false,
   supports_prompt_caching: false,
-  data_residency: "non_eu",
   zdr: false,
   pricing: CANONICAL_PRICING["zero-entropy:legal-v1"] ?? { input: 0.5, output: 1.5 },
   tier: "utility",

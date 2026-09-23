@@ -70,23 +70,27 @@ export const openrouter: Recipe = {
     const baseURL = env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
     const primary = env.OPENROUTER_API_KEY;
     const fallback = env.OPENROUTER_API_KEY_FALLBACK;
-    if (!primary || !fallback || primary === fallback) {
-      return { baseURL };
-    }
-    const retryFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const response = await fetch(input, init);
-      if (response.status === 402 || response.status === 429) {
-        const headers = new Headers(init?.headers);
+    const keyFailover = Boolean(primary && fallback && primary !== fallback);
+    // Every OpenRouter request (chat, expansion, embeddings) carries the
+    // privacy provider preferences — see applyOpenRouterPrivacyPreferences.
+    const privacyFetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit
+    ): Promise<Response> => {
+      const prepared = withOpenRouterPrivacyPreferences(init, env);
+      const response = await fetch(input, prepared);
+      if (keyFailover && (response.status === 402 || response.status === 429)) {
+        const headers = new Headers(prepared?.headers);
         const currentAuth = headers.get("Authorization") ?? "";
         const currentKey = currentAuth.replace(/^Bearer\s+/, "");
         const otherKey = currentKey === primary ? fallback : primary;
         headers.set("Authorization", `Bearer ${otherKey}`);
-        const retryInit: RequestInit = { ...init, headers };
+        const retryInit: RequestInit = { ...prepared, headers };
         return fetch(input, retryInit);
       }
       return response;
     };
-    return { baseURL, fetch: retryFetch as unknown as typeof fetch };
+    return { baseURL, fetch: privacyFetch as unknown as typeof fetch };
   },
   resolveDefaultHeaders(env) {
     const referer = env.OPENROUTER_REFERER ?? "https://gbrain.ai";
@@ -152,3 +156,51 @@ export const openrouter: Recipe = {
   setup_hint:
     "Get an API key at https://openrouter.ai/settings/keys, then `export OPENROUTER_API_KEY=...` and use `openrouter:<provider>/<model>`. Optional overrides: OPENROUTER_BASE_URL (proxy), OPENROUTER_REFERER (attribution URL), OPENROUTER_TITLE (attribution name).",
 };
+
+/**
+ * OpenRouter provider preferences that keep requests off providers which store
+ * or train on prompts (https://openrouter.ai/docs/guides/routing/provider-selection,
+ * https://openrouter.ai/docs/guides/features/zdr):
+ *   - `data_collection: "deny"` — only providers that do not collect user data
+ *   - `zdr: true`               — only endpoints with a Zero Data Retention policy
+ * Always applied, independent of SUBSUMIO_EU_ONLY (OpenRouter is not an EU route
+ * unless SUBSUMIO_OPENROUTER_RESIDENCY=eu is attested). A caller-supplied
+ * `provider` object is kept; these two fields are forced. Escape hatch for a
+ * model without any ZDR endpoint (e.g. Fable 5.1, which requires 30-day
+ * retention): SUBSUMIO_OPENROUTER_ZDR=off drops `zdr` — `data_collection` stays.
+ */
+export function applyOpenRouterPrivacyPreferences(
+  body: Record<string, unknown>,
+  env: Record<string, string | undefined>
+): Record<string, unknown> {
+  const existing =
+    body.provider && typeof body.provider === "object" && !Array.isArray(body.provider)
+      ? (body.provider as Record<string, unknown>)
+      : {};
+  const zdrOff = /^(0|off|false|no)$/i.test((env.SUBSUMIO_OPENROUTER_ZDR ?? "").trim());
+  const provider: Record<string, unknown> = { ...existing, data_collection: "deny" };
+  if (zdrOff) delete provider.zdr;
+  else provider.zdr = true;
+  return { ...body, provider };
+}
+
+/** Apply the privacy preferences to a JSON request body; other bodies pass unchanged. */
+function withOpenRouterPrivacyPreferences(
+  init: RequestInit | undefined,
+  env: Record<string, string | undefined>
+): RequestInit | undefined {
+  if (!init || typeof init.body !== "string") return init;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(init.body);
+  } catch {
+    return init;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return init;
+  const body = JSON.stringify(
+    applyOpenRouterPrivacyPreferences(parsed as Record<string, unknown>, env)
+  );
+  const headers = new Headers(init.headers);
+  headers.delete("content-length");
+  return { ...init, body, headers };
+}
