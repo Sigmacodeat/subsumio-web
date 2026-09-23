@@ -4533,6 +4533,12 @@ export const D = {
   "bea.no_imported": { de: "Keine importierten beA-Nachrichten.", en: "No imported beA messages." },
   "bea.import_hint": { de: "Import einrichten:", en: "Set up import:" },
   "bea.from": { de: "Von:", en: "From:" },
+  "bea.direction_inbound": { de: "Eingang", en: "Inbound" },
+  "bea.direction_outbound": { de: "Ausgang", en: "Outbound" },
+  "bea.pending_suggestions": {
+    de: "{{count}} unbestätigte Fristvorschläge aus beA-Eingängen — in der Eingangsprüfung ansehen",
+    en: "{{count}} unconfirmed deadline suggestions from beA messages — open in the review inbox",
+  },
 
   // ── Sources page ──
   "sources.title": { de: "Rechtsquellen", en: "Legal Sources" },

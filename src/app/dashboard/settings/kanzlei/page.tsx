@@ -11,12 +11,16 @@ import {
 } from "@/lib/kanzlei-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 import { csrfFetch } from "@/lib/csrf";
 import { BrainLearningCard } from "@/components/dashboard/brain-learning-card";
+import { BUNDESLAENDER } from "@/lib/legal/frist-engine-de";
 
 export default function KanzleiSettingsPage() {
   const { t, lang } = useLang();
   const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const meQuery = useMe();
+  const jurisdiction = meQuery.data?.user?.jurisdiction ?? "AT";
   const [settings, setSettings] = useState<KanzleiSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -27,13 +31,18 @@ export default function KanzleiSettingsPage() {
   useEffect(() => {
     loadKanzleiSettings()
       .then((s) => {
-        setSettings({ ...s, rechtsraumCountry: "AT", rechtsraumState: "AT" });
+        setSettings({
+          ...s,
+          rechtsraumCountry: s.rechtsraumCountry ?? jurisdiction,
+        });
         setLoading(false);
       })
       .catch(() => {
         setLoadFailed(true);
         setLoading(false);
       });
+    // jurisdiction ist pro User fix — kein Grund zum Refetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const update = (field: keyof KanzleiSettings, value: string | boolean | number) => {
@@ -47,8 +56,10 @@ export default function KanzleiSettingsPage() {
     setSaveFailed(false);
     try {
       await saveKanzleiSettings(settings);
-      // Sync jurisdiction to the user record so jurisdiction-scoped law search works.
-      if (settings.rechtsraumCountry) {
+      // Sync jurisdiction to the user record so jurisdiction-scoped law
+      // search works. Die Route akzeptiert derzeit nur "AT" — für andere
+      // Jurisdictions wird der Tenant beim Onboarding gesetzt.
+      if (settings.rechtsraumCountry === "AT" && jurisdiction === "AT") {
         await csrfFetch("/api/settings/jurisdiction", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -368,8 +379,8 @@ export default function KanzleiSettingsPage() {
       <Section
         title={L("Rechtsraum", "Jurisdiction")}
         description={L(
-          "Bestimmt, welche Rechtsquellen durchsucht und welche Feiertage bei Fristen berücksichtigt werden. Derzeit ist Österreich (bundesweit) fest eingestellt.",
-          "Determines which legal sources are searched and which public holidays count for deadlines. Currently fixed to Austria (federal)."
+          "Bestimmt, welche Rechtsquellen durchsucht und welche Feiertage bei Fristen berücksichtigt werden.",
+          "Determines which legal sources are searched and which public holidays count for deadlines."
         )}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -382,27 +393,65 @@ export default function KanzleiSettingsPage() {
             </label>
             <select
               id="rechtsraum-country"
-              value="AT"
+              value={settings.rechtsraumCountry ?? jurisdiction}
               disabled
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
             >
-              <option value="AT">Österreich</option>
+              {settings.rechtsraumCountry === "DE" || jurisdiction === "DE" ? (
+                <option value="DE">Deutschland</option>
+              ) : settings.rechtsraumCountry === "CH" || jurisdiction === "CH" ? (
+                <option value="CH">Schweiz</option>
+              ) : (
+                <option value="AT">Österreich</option>
+              )}
             </select>
           </div>
           <div className="space-y-1">
             <label htmlFor="rechtsraum-state" className="text-xs text-[color:var(--ds-text-muted)]">
-              {L("Geltungsbereich", "Scope")}
+              {settings.rechtsraumCountry === "DE" || jurisdiction === "DE"
+                ? L("Bundesland", "Federal state")
+                : L("Geltungsbereich", "Scope")}
             </label>
-            <select
-              id="rechtsraum-state"
-              value="AT"
-              disabled
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-            >
-              <option value="AT">Österreich (bundesweit)</option>
-            </select>
+            {settings.rechtsraumCountry === "DE" || jurisdiction === "DE" ? (
+              <select
+                id="rechtsraum-state"
+                value={settings.rechtsraumState ?? ""}
+                onChange={(e) => update("rechtsraumState", e.target.value)}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+              >
+                <option value="">
+                  {L("Bundesweit (nur Bundesfeiertage)", "Federal (nationwide holidays only)")}
+                </option>
+                {BUNDESLAENDER.map((b) => (
+                  <option key={b.code} value={b.code}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                id="rechtsraum-state"
+                value="AT"
+                disabled
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              >
+                <option value="AT">
+                  {settings.rechtsraumCountry === "CH" || jurisdiction === "CH"
+                    ? L("Schweiz (bundesweit)", "Switzerland (federal)")
+                    : L("Österreich (bundesweit)", "Austria (federal)")}
+                </option>
+              </select>
+            )}
           </div>
         </div>
+        {(settings.rechtsraumCountry === "DE" || jurisdiction === "DE") && (
+          <p className="text-xs text-[color:var(--ds-text-subtle)]">
+            {L(
+              "Das Bundesland steuert die landesspezifischen Feiertage in der Fristenberechnung (§ 193 BGB), z. B. bei eEB-Zustellfiktionen aus beA-Eingängen.",
+              "The federal state controls state-specific holidays in deadline calculation (§ 193 BGB), e.g. for eEB delivery fictions from beA messages."
+            )}
+          </p>
+        )}
       </Section>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--ds-border)] pt-4">
