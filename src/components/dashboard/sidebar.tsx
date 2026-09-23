@@ -102,6 +102,10 @@ import {
   ChevronsDownUp,
   BrainCog,
   Trash2,
+  GitMerge,
+  Eye,
+  Check,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -611,6 +615,14 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         labelKey: "nav.bulk_cases",
         keywords: "massenakten bulk import csv portfolien migration",
         audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/sync",
+        icon: GitMerge,
+        labelKey: "nav.sync",
+        keywords: "sync offline konflikte queue änderungen",
+        audienceTier: "quick-start",
+        tooltipKey: "nav.tooltip.sync",
       },
     ],
   },
@@ -1160,23 +1172,121 @@ function splitAdminSection(section: NavSection): NavSection[] {
 }
 
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
-  const { pendingCount, syncing, syncPending } = useMutationQueue();
+  const {
+    pendingCount,
+    syncing,
+    conflicts,
+    lastNotice,
+    syncPending,
+    resolveConflict,
+    clearNotice,
+  } = useMutationQueue();
   const { t } = useLang();
-  if (collapsed || pendingCount === 0) return null;
+  if (collapsed || (pendingCount === 0 && conflicts.length === 0 && !lastNotice)) return null;
   return (
     <div className="mx-3 mt-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
-          {pendingCount} {t("sidebar.changes_pending")}
+          {pendingCount > 0
+            ? `${pendingCount} ${t("sidebar.changes_pending")}`
+            : `${conflicts.length} ${t("mobile.conflict_count" as DashboardKey)}`}
         </span>
-        <button
-          onClick={() => void syncPending()}
-          disabled={syncing}
-          className="brand-text text-xs transition-[opacity,color] duration-[var(--ds-duration-normal)] disabled:opacity-50 motion-reduce:transition-none"
-        >
-          {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
-        </button>
+        {pendingCount > 0 && (
+          <button
+            onClick={() => void syncPending()}
+            disabled={syncing}
+            className="brand-text text-xs transition-[opacity,color] duration-[var(--ds-duration-normal)] disabled:opacity-50 motion-reduce:transition-none"
+          >
+            {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
+          </button>
+        )}
       </div>
+      {lastNotice && (
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-[color:var(--ds-success-text)]">{lastNotice}</span>
+          <button
+            type="button"
+            onClick={clearNotice}
+            aria-label={t("mobile.close" as DashboardKey)}
+            className="shrink-0 rounded p-0.5 text-[color:var(--ds-success-text)] transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+          >
+            <X size={11} aria-hidden />
+          </button>
+        </div>
+      )}
+      {conflicts.length > 0 && (
+        <ul className="mt-2 space-y-1 border-t border-[color:var(--ds-warning-border)] pt-2">
+          {conflicts.slice(0, 3).map((c) => {
+            const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
+            const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+            return (
+              <li key={c.id} className="flex items-center gap-1">
+                <GitMerge
+                  size={12}
+                  aria-hidden
+                  className="shrink-0 text-[color:var(--ds-warning-text)]"
+                />
+                <span
+                  className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
+                  title={
+                    c.conflictAt
+                      ? `${slug} — seit ${Math.max(1, Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000))} Tagen ungelöst`
+                      : slug
+                  }
+                >
+                  {slug || c.type}
+                </span>
+                <a
+                  href={href}
+                  aria-label={t("mobile.conflict_view" as DashboardKey)}
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                >
+                  <Eye size={12} aria-hidden />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => void resolveConflict(c.id, "keep-mine")}
+                  aria-label={t("mobile.conflict_keep" as DashboardKey)}
+                  title={t("mobile.conflict_keep" as DashboardKey)}
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                >
+                  <Check size={12} aria-hidden />
+                </button>
+                {c.type === "createPage" && (
+                  <button
+                    type="button"
+                    onClick={() => void resolveConflict(c.id, "rename")}
+                    aria-label={t("mobile.conflict_rename" as DashboardKey)}
+                    title={t("mobile.conflict_rename" as DashboardKey)}
+                    className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  >
+                    <Copy size={12} aria-hidden />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void resolveConflict(c.id, "discard")}
+                  aria-label={t("mobile.conflict_discard" as DashboardKey)}
+                  title={t("mobile.conflict_discard" as DashboardKey)}
+                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                >
+                  <X size={12} aria-hidden />
+                </button>
+              </li>
+            );
+          })}
+          {conflicts.length > 3 && (
+            <li className="text-[11px] text-[color:var(--ds-warning-text)] opacity-70">
+              <Link
+                href="/dashboard/sync"
+                className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
+              >
+                +{conflicts.length - 3} weitere
+              </Link>
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }

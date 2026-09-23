@@ -21,8 +21,10 @@ Queud Mutations werden **in `createdAt`-Reihenfolge** replayed:
   stattgefunden → die Mutation wird als **`conflicted` markiert und
   bleibt in der Queue**. Das Sync-Banner zeigt den Konflikt mit Slug und
   bietet „Meine Version senden" (bewusstes Überschreiben) / „Verwerfen" /
-  „Ansehen" (Server-Stand). Kein stilles Überschreiben, kein stiller
-  Datenverlust.
+  „Ansehen" (Server-Stand). Bei `createPage`-Kollisionen zusätzlich
+  „Als Kopie speichern" (legt unter `<slug>-2` an). Kein stilles
+  Überschreiben, kein stiller Datenverlust. Die Konfliktliste ist in
+  Mobile-Banner und Desktop-Sidebar (`SyncStatus`) sichtbar.
   Writes aus dem eigenen Replay (`updated_at > syncStart`) zählen nicht
   als Konflikt — sonst würde ein zweites eigenes Queued-Update auf
   derselben Seite fälschlich verwarfen.
@@ -52,3 +54,27 @@ wird.
 - IndexedDB-Fehler laufen über `setOfflineErrorReporter` → `lastError`.
 - Banner (`src/components/mobile/mobile-sync-banner.tsx`): pendingCount,
   syncing-Spinner, danger-Banner bei `lastError`, Dismiss nur ohne Fehler.
+
+## Queue-Abdeckung
+
+Alle Domain-Objekte (Akten, Fristen, Aufgaben, Kontakte, Notizen) sind
+Brain-Pages — `createPage`/`updatePage`/`deletePage` decken die gesamte
+Offline-Queue ab. **Bewusst NICHT queuebar:** Mutations-Routen mit
+serverseitiger Live-Validierung (z. B. `PATCH /api/invoices/[slug]` mit
+GoBD/§ 132 BAO-Immutability-Check) — ein offline gequeueter Statuswechsel
+würde ein falsches „gebucht"-Versprechen erzeugen, die Prüfung braucht
+Live-Server-State.
+
+## Dedizierte Konflikt-Ansicht
+
+`/dashboard/sync` listet ALLE Konflikte (Banner/Sidebar kappen bei 3)
+mit Feld-Diff pro Konflikt: lokaler Payload vs. Server-Version
+(`diffConflictFields` in `src/lib/conflict-diff.ts`) — title, content
+(Zeichenzahl) und pro-Key Frontmatter-Vergleich. Auflösung wie im
+Banner: Meine senden / Kopie (createPage) / Verwerfen.
+
+## SWR in useOfflineSync
+
+`useOfflineSync` zeigt den Cache sofort (`isStale: true`), lädt dann
+fresh nach — schneller erster Paint auch online. Fetch-Fehler behält
+Cache + `isStale`; ohne Cache wie bisher `error`.

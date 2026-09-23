@@ -56,6 +56,42 @@ describe("useOfflineSync", () => {
     expect(setCache).toHaveBeenCalledWith("test-key", "fresh");
   });
 
+  test("SWR: zeigt Cache sofort (isStale), dann fresh", async () => {
+    vi.mocked(getCache).mockResolvedValue("cached");
+    let resolveFetch!: (v: string) => void;
+    const fetcher = vi.fn(() => new Promise<string>((r) => (resolveFetch = r)));
+    const { result } = renderHook(() => useOfflineSync({ key: "k", fetcher }));
+
+    await waitFor(() => {
+      expect(result.current.data).toBe("cached");
+    });
+    expect(result.current.isStale).toBe(true);
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => resolveFetch("fresh"));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+    expect(result.current.data).toBe("fresh");
+    expect(result.current.isStale).toBe(false);
+  });
+
+  test("SWR: Cache bleibt bei Fetch-Fehler, isStale bleibt true", async () => {
+    vi.mocked(getCache).mockResolvedValue("cached");
+    const fetcher = vi.fn(async () => {
+      throw new Error("network");
+    });
+    const { result } = renderHook(() => useOfflineSync({ key: "k", fetcher }));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+    expect(result.current.data).toBe("cached");
+    expect(result.current.isStale).toBe(true);
+    expect(result.current.isOffline).toBe(true);
+    expect(result.current.error).toBeNull();
+  });
+
   test("falls back to cache on fetch error", async () => {
     const fetcher = vi.fn(async () => {
       throw new Error("network");

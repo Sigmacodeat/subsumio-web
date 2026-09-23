@@ -158,29 +158,12 @@ async function currentHolderDescription(): Promise<string> {
  * takes.
  */
 export async function acquireRisLock(): Promise<void> {
-  await ensureTable();
-  const command = process.argv.slice(1).join(" ");
-  let lastLog = 0;
-
-  for (;;) {
-    if (await tryClaim(command)) break;
-    const now = Date.now();
-    if (now - lastLog > LOG_EVERY_MS) {
-      console.log(await currentHolderDescription());
-      lastLog = now;
-    }
-    await new Promise((r) => setTimeout(r, POLL_MS));
-  }
-
-  heldByThisProcess = true;
-  heartbeatTimer = setInterval(() => {
-    db()`UPDATE ris_lock SET heartbeat_at = now() WHERE holder = ${HOLDER_TOKEN}`.catch(() => {
-      /* transient DB hiccup — the next tick retries; a real outage means the
-         heartbeat goes stale and another process reclaims the lock, which is
-         the correct outcome (we can't reach RIS through a dead DB anyway) */
-    });
-  }, HEARTBEAT_MS);
-  heartbeatTimer.unref?.();
+  // Semaphore deaktiviert (Operator-Entscheid 2026-09-23): Downloads laufen
+  // ohne Slot-Koordination parallel. Die RIS-IT-Zusage vom 22.9. (max. 2
+  // Prozesse à ≤0,5 req/s, nur im Massen-Fenster) wird damit bewusst
+  // überschritten — Pacing und Fenster (ris-pace.ts) bleiben aktiv.
+  // Reaktivieren: diesen early return entfernen.
+  return;
 }
 
 /**
@@ -188,6 +171,9 @@ export async function acquireRisLock(): Promise<void> {
  * lock was never acquired (no-op).
  */
 export function releaseRisLock(): void {
+  // Pendant zum deaktivierten acquireRisLock — ohne Claim gibt es nichts
+  // freizugeben.
+  if (!heldByThisProcess && !heartbeatTimer) return;
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer);
     heartbeatTimer = null;

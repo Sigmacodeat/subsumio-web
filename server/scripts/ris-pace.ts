@@ -102,16 +102,10 @@ export function massDownloadAllowed(now: Date = new Date()): boolean {
  * so a queue started during the day simply waits for the evening instead of
  * hammering RIS or dying.
  */
-export async function waitForRisWindow(label = "Massendownload"): Promise<void> {
-  let announced = false;
-  while (!massDownloadAllowed()) {
-    if (!announced) {
-      console.log(
-        `  ${label}: außerhalb des erlaubten Fensters (20–5 Uhr, Wochenende, Feiertage) — warte.`
-      );
-      announced = true;
-    }
-    await sleep(5 * 60_000);
-  }
-  if (announced) console.log(`  ${label}: Fenster offen, weiter.`);
+export async function waitForRisWindow(_label = "Massendownload"): Promise<void> {
+  // Fenster-Warte deaktiviert (Operator-Entscheid 2026-09-23): Downloads
+  // laufen rund um die Uhr, nicht nur 20–5 Uhr/Wochenende/Feiertage.
+  // Das war Teil der RIS-IT-Zusage — Reaktivierung: diesen early return
+  // entfernen.
+  return;
 }

@@ -26,6 +26,9 @@ export interface QueuedMutation {
   /** Server-seitig geaenderte Seite erkannt — wartet auf User-Entscheidung
    *  (erneut senden / verwerfen), wird vom Replay uebersprungen. */
   conflicted?: boolean;
+  /** Wann der Konflikt erkannt wurde — macht lang liegende Konflikte
+   *  im Sync-Banner sichtbar ("seit n Tagen"). */
+  conflictAt?: string;
 }
 
 type OfflineErrorReporter = (error: Error, context: string) => void;
@@ -238,6 +241,7 @@ export async function setMutationConflicted(id: string, conflicted: boolean): Pr
         const mut = req.result as QueuedMutation | undefined;
         if (mut) {
           mut.conflicted = conflicted;
+          mut.conflictAt = conflicted ? new Date().toISOString() : undefined;
           store.put(mut);
         }
         resolve();

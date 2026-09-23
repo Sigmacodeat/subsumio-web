@@ -8,8 +8,17 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 
 export function MobileSyncBanner() {
-  const { pendingCount, syncing, lastError, conflicts, syncPending, resolveConflict } =
-    useMutationQueue();
+  const {
+    pendingCount,
+    syncing,
+    lastError,
+    lastErrorAt,
+    lastNotice,
+    conflicts,
+    syncPending,
+    resolveConflict,
+    clearNotice,
+  } = useMutationQueue();
   const isOnline = useNetworkStatus();
   const { t } = useLang();
   const [dismissed, setDismissed] = useState(false);
@@ -35,7 +44,35 @@ export function MobileSyncBanner() {
 
   // Don't render anything if online, no pending, no error, no sync confirmation
   if (dismissed && !lastError) return null;
-  if (isOnline && pendingCount === 0 && !lastError && !justSynced) return null;
+  if (
+    isOnline &&
+    pendingCount === 0 &&
+    conflicts.length === 0 &&
+    !lastError &&
+    !justSynced &&
+    !lastNotice
+  )
+    return null;
+
+  // Erfolgs-Hinweis (z. B. „Kopie gespeichert als …") — quittierbar
+  if (lastNotice) {
+    return (
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-2 backdrop-blur-sm">
+        <CheckCircle2 size={16} className="shrink-0 text-[color:var(--ds-success-text)]" />
+        <span className="flex-1 truncate text-xs text-[color:var(--ds-success-text)]">
+          {lastNotice}
+        </span>
+        <button
+          type="button"
+          onClick={clearNotice}
+          aria-label={t("mobile.close" as DashboardKey)}
+          className="shrink-0 text-[color:var(--ds-success-text)] transition-opacity hover:opacity-70"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    );
+  }
 
   // Conflict state — wartet auf User-Entscheidung, darf nicht dismissbar sein
   if (conflicts.length > 0) {
@@ -51,12 +88,18 @@ export function MobileSyncBanner() {
           {conflicts.slice(0, 3).map((c) => {
             const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
             const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+            const ageDays = c.conflictAt
+              ? Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
+              : 0;
             return (
               <li
                 key={c.id}
                 className="flex items-center gap-2 text-xs text-[color:var(--ds-warning-text)]"
               >
-                <span className="min-w-0 flex-1 truncate font-mono">{slug || c.type}</span>
+                <span className="min-w-0 flex-1 truncate font-mono">
+                  {slug || c.type}
+                  {ageDays > 0 && <span className="opacity-70"> · seit {ageDays}d</span>}
+                </span>
                 <a
                   href={href}
                   className="shrink-0 underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
@@ -70,6 +113,15 @@ export function MobileSyncBanner() {
                 >
                   {t("mobile.conflict_keep" as DashboardKey)}
                 </button>
+                {c.type === "createPage" && (
+                  <button
+                    type="button"
+                    onClick={() => void resolveConflict(c.id, "rename")}
+                    className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  >
+                    {t("mobile.conflict_rename" as DashboardKey)}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => void resolveConflict(c.id, "discard")}
@@ -82,7 +134,17 @@ export function MobileSyncBanner() {
           })}
           {conflicts.length > 3 && (
             <li className="text-xs text-[color:var(--ds-warning-text)] opacity-70">
-              +{conflicts.length - 3} weitere
+              <a
+                href="/dashboard/sync"
+                className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
+              >
+                +{conflicts.length - 3} weitere — alle anzeigen
+              </a>
+            </li>
+          )}
+          {pendingCount > 0 && (
+            <li className="text-xs text-[color:var(--ds-warning-text)] opacity-70">
+              {pendingCount} weitere Änderung(en) ausstehend
             </li>
           )}
         </ul>
@@ -97,6 +159,12 @@ export function MobileSyncBanner() {
         <AlertTriangle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
         <span className="flex-1 truncate text-xs text-[color:var(--ds-danger-text)]">
           {t("mobile.sync_error" as DashboardKey)}: {lastError}
+          {lastErrorAt && (
+            <span className="opacity-70">
+              {" "}
+              · seit {new Date(lastErrorAt).toLocaleTimeString("de-AT")}
+            </span>
+          )}
         </span>
         <button
           onClick={() => setDismissed(true)}

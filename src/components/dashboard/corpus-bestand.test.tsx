@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastProvider } from "@/components/ui/toast";
 import { CorpusBestand } from "./corpus-bestand";
 import { CorpusProtokoll } from "./corpus-protokoll";
 import type { CorpusOverview, IngestLogPage } from "@/lib/corpus-labels";
@@ -13,7 +14,11 @@ function withQueryClient(ui: React.ReactElement) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } },
   });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={qc}>
+      <ToastProvider>{ui}</ToastProvider>
+    </QueryClientProvider>
+  );
 }
 
 const OVERVIEW: CorpusOverview = {
