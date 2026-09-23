@@ -112,6 +112,7 @@ import {
   useMutationQueue,
   formatPendingLabel,
   oldestConflictDays,
+  sortConflictsOldestFirst,
   STALE_CONFLICT_DAYS,
 } from "@/lib/use-mutation";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -1268,78 +1269,80 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
       )}
       {conflicts.length > 0 && (
         <ul className="mt-2 space-y-1 border-t border-[color:var(--ds-warning-border)] pt-2">
-          {conflicts.slice(0, 3).map((c) => {
-            const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
-            const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
-            const ageDays = c.conflictAt
-              ? Math.max(
-                  1,
-                  Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
-                )
-              : null;
-            return (
-              <li key={c.id} className="flex items-center gap-1">
-                <GitMerge
-                  size={12}
-                  aria-hidden
-                  className="shrink-0 text-[color:var(--ds-warning-text)]"
-                />
-                <span
-                  className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
-                  title={ageDays !== null ? `${slug} — seit ${ageDays} Tagen ungelöst` : slug}
-                >
-                  {slug || c.type}
-                </span>
-                {ageDays !== null && (
-                  <span
-                    className="shrink-0 text-[10px] text-[color:var(--ds-warning-text)] tabular-nums opacity-70"
+          {sortConflictsOldestFirst(conflicts)
+            .slice(0, 3)
+            .map((c) => {
+              const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
+              const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+              const ageDays = c.conflictAt
+                ? Math.max(
+                    1,
+                    Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
+                  )
+                : null;
+              return (
+                <li key={c.id} className="flex items-center gap-1">
+                  <GitMerge
+                    size={12}
                     aria-hidden
+                    className="shrink-0 text-[color:var(--ds-warning-text)]"
+                  />
+                  <span
+                    className="min-w-0 flex-1 truncate font-mono text-[11px] text-[color:var(--ds-warning-text)]"
+                    title={ageDays !== null ? `${slug} — seit ${ageDays} Tagen ungelöst` : slug}
                   >
-                    {ageDays}d
+                    {slug || c.type}
                   </span>
-                )}
-                <a
-                  href={href}
-                  aria-label={t("mobile.conflict_view" as DashboardKey)}
-                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
-                >
-                  <Eye size={12} aria-hidden />
-                </a>
-                <button
-                  type="button"
-                  disabled={resolvingIds.has(c.id)}
-                  onClick={() => void handleResolve(c.id, "keep-mine")}
-                  aria-label={t("mobile.conflict_keep" as DashboardKey)}
-                  title={t("mobile.conflict_keep" as DashboardKey)}
-                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
-                >
-                  <Check size={12} aria-hidden />
-                </button>
-                {c.type === "createPage" && (
+                  {ageDays !== null && (
+                    <span
+                      className="shrink-0 text-[10px] text-[color:var(--ds-warning-text)] tabular-nums opacity-70"
+                      aria-hidden
+                    >
+                      {ageDays}d
+                    </span>
+                  )}
+                  <a
+                    href={href}
+                    aria-label={t("mobile.conflict_view" as DashboardKey)}
+                    className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  >
+                    <Eye size={12} aria-hidden />
+                  </a>
                   <button
                     type="button"
                     disabled={resolvingIds.has(c.id)}
-                    onClick={() => void handleResolve(c.id, "rename")}
-                    aria-label={t("mobile.conflict_rename" as DashboardKey)}
-                    title={t("mobile.conflict_rename" as DashboardKey)}
+                    onClick={() => void handleResolve(c.id, "keep-mine")}
+                    aria-label={t("mobile.conflict_keep" as DashboardKey)}
+                    title={t("mobile.conflict_keep" as DashboardKey)}
                     className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                   >
-                    <Copy size={12} aria-hidden />
+                    <Check size={12} aria-hidden />
                   </button>
-                )}
-                <button
-                  type="button"
-                  disabled={resolvingIds.has(c.id)}
-                  onClick={() => void handleResolve(c.id, "discard")}
-                  aria-label={t("mobile.conflict_discard" as DashboardKey)}
-                  title={t("mobile.conflict_discard" as DashboardKey)}
-                  className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
-                >
-                  <X size={12} aria-hidden />
-                </button>
-              </li>
-            );
-          })}
+                  {c.type === "createPage" && (
+                    <button
+                      type="button"
+                      disabled={resolvingIds.has(c.id)}
+                      onClick={() => void handleResolve(c.id, "rename")}
+                      aria-label={t("mobile.conflict_rename" as DashboardKey)}
+                      title={t("mobile.conflict_rename" as DashboardKey)}
+                      className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
+                    >
+                      <Copy size={12} aria-hidden />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={resolvingIds.has(c.id)}
+                    onClick={() => void handleResolve(c.id, "discard")}
+                    aria-label={t("mobile.conflict_discard" as DashboardKey)}
+                    title={t("mobile.conflict_discard" as DashboardKey)}
+                    className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
+                  >
+                    <X size={12} aria-hidden />
+                  </button>
+                </li>
+              );
+            })}
           {conflicts.length > 3 && (
             <li className="text-[11px] text-[color:var(--ds-warning-text)] opacity-70">
               <Link

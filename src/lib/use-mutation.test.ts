@@ -36,7 +36,14 @@ vi.mock("./api", () => ({
   },
 }));
 
-import { useMutationQueue, __resetMutationQueueForTests, formatPendingLabel } from "./use-mutation";
+import {
+  useMutationQueue,
+  __resetMutationQueueForTests,
+  formatPendingLabel,
+  conflictAgeDays,
+  oldestConflictDays,
+  sortConflictsOldestFirst,
+} from "./use-mutation";
 import {
   isOnline,
   enqueueMutation,
@@ -860,6 +867,46 @@ describe("useMutationQueue", () => {
       expect(formatPendingLabel(t, 1, 1, "mobile.offline_suffix")).toBe(
         "1 Upload(s) offline gespeichert"
       );
+    });
+  });
+
+  describe("conflictAgeDays / oldestConflictDays / sortConflictsOldestFirst", () => {
+    const conflict = (id: string, conflictAt?: string) => ({
+      id,
+      type: "updatePage" as const,
+      payload: { slug: id },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+      conflictAt,
+    });
+
+    test("fehlendes conflictAt zaehlt als 0 Tage", () => {
+      expect(conflictAgeDays(undefined)).toBe(0);
+      expect(oldestConflictDays([conflict("m1")])).toBe(0);
+    });
+
+    test("oldestConflictDays gibt das Maximum zurueck", () => {
+      const old = new Date(Date.now() - 9 * 86_400_000).toISOString();
+      const fresh = new Date(Date.now() - 2 * 86_400_000).toISOString();
+      expect(
+        oldestConflictDays([conflict("fresh", fresh), conflict("old", old), conflict("none")])
+      ).toBe(9);
+    });
+
+    test("leere Liste → 0", () => {
+      expect(oldestConflictDays([])).toBe(0);
+    });
+
+    test("sortConflictsOldestFirst: aelteste zuerst, ohne conflictAt ans Ende, Input unberuehrt", () => {
+      const old = conflict("old", new Date(Date.now() - 9 * 86_400_000).toISOString());
+      const fresh = conflict("fresh", new Date(Date.now() - 2 * 86_400_000).toISOString());
+      const none = conflict("none");
+      const input = [fresh, none, old];
+      const sorted = sortConflictsOldestFirst(input);
+      expect(sorted.map((c) => c.id)).toEqual(["old", "fresh", "none"]);
+      // Store-Snapshots sind immutable — in-place sortieren wuerde
+      // den geteilten State mutieren.
+      expect(input.map((c) => c.id)).toEqual(["fresh", "none", "old"]);
     });
   });
 

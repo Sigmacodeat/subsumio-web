@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertTriangle, X, GitMerge } from "lucide-react";
-import { useMutationQueue, formatPendingLabel } from "@/lib/use-mutation";
+import { useMutationQueue, formatPendingLabel, sortConflictsOldestFirst } from "@/lib/use-mutation";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -157,56 +157,58 @@ export function MobileSyncBanner() {
           </span>
         </div>
         <ul className="mt-1.5 space-y-1.5">
-          {conflicts.slice(0, 3).map((c) => {
-            const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
-            const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
-            const ageDays = c.conflictAt
-              ? Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
-              : 0;
-            return (
-              <li
-                key={c.id}
-                className="flex items-center gap-2 text-xs text-[color:var(--ds-warning-text)]"
-              >
-                <span className="min-w-0 flex-1 truncate font-mono">
-                  {slug || c.type}
-                  {ageDays > 0 && <span className="opacity-70"> · seit {ageDays}d</span>}
-                </span>
-                <a
-                  href={href}
-                  className="shrink-0 underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
+          {sortConflictsOldestFirst(conflicts)
+            .slice(0, 3)
+            .map((c) => {
+              const slug = typeof c.payload.slug === "string" ? c.payload.slug : "";
+              const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+              const ageDays = c.conflictAt
+                ? Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000)
+                : 0;
+              return (
+                <li
+                  key={c.id}
+                  className="flex items-center gap-2 text-xs text-[color:var(--ds-warning-text)]"
                 >
-                  {t("mobile.conflict_view" as DashboardKey)}
-                </a>
-                <button
-                  type="button"
-                  disabled={resolvingIds.has(c.id)}
-                  onClick={() => void handleResolve(c.id, "keep-mine")}
-                  className="shrink-0 rounded px-1.5 py-0.5 font-medium transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
-                >
-                  {t("mobile.conflict_keep" as DashboardKey)}
-                </button>
-                {c.type === "createPage" && (
+                  <span className="min-w-0 flex-1 truncate font-mono">
+                    {slug || c.type}
+                    {ageDays > 0 && <span className="opacity-70"> · seit {ageDays}d</span>}
+                  </span>
+                  <a
+                    href={href}
+                    className="shrink-0 underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-70"
+                  >
+                    {t("mobile.conflict_view" as DashboardKey)}
+                  </a>
                   <button
                     type="button"
                     disabled={resolvingIds.has(c.id)}
-                    onClick={() => void handleResolve(c.id, "rename")}
-                    className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
+                    onClick={() => void handleResolve(c.id, "keep-mine")}
+                    className="shrink-0 rounded px-1.5 py-0.5 font-medium transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
                   >
-                    {t("mobile.conflict_rename" as DashboardKey)}
+                    {t("mobile.conflict_keep" as DashboardKey)}
                   </button>
-                )}
-                <button
-                  type="button"
-                  disabled={resolvingIds.has(c.id)}
-                  onClick={() => void handleResolve(c.id, "discard")}
-                  className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
-                >
-                  {t("mobile.conflict_discard" as DashboardKey)}
-                </button>
-              </li>
-            );
-          })}
+                  {c.type === "createPage" && (
+                    <button
+                      type="button"
+                      disabled={resolvingIds.has(c.id)}
+                      onClick={() => void handleResolve(c.id, "rename")}
+                      className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)] disabled:opacity-50"
+                    >
+                      {t("mobile.conflict_rename" as DashboardKey)}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={resolvingIds.has(c.id)}
+                    onClick={() => void handleResolve(c.id, "discard")}
+                    className="shrink-0 rounded px-1.5 py-0.5 transition-colors hover:bg-[color:var(--ds-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ds-ring)]"
+                  >
+                    {t("mobile.conflict_discard" as DashboardKey)}
+                  </button>
+                </li>
+              );
+            })}
           {conflicts.length > 3 && (
             <li className="text-xs text-[color:var(--ds-warning-text)] opacity-70">
               <a
@@ -219,7 +221,12 @@ export function MobileSyncBanner() {
           )}
           {pendingCount > 0 && (
             <li className="text-xs text-[color:var(--ds-warning-text)] opacity-70">
-              {pendingCount} weitere Änderung(en) ausstehend
+              {formatPendingLabel(
+                t as (k: string) => string,
+                pendingCount,
+                pendingUploads,
+                "mobile.pending_suffix"
+              )}
             </li>
           )}
         </ul>

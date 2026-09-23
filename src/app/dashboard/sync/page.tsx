@@ -4,7 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { GitMerge, Check, Copy, Trash2, Eye, RefreshCw, Clock } from "lucide-react";
 import { api } from "@/lib/api";
-import { useMutationQueue, nextCopySlug, formatPendingLabel } from "@/lib/use-mutation";
+import {
+  useMutationQueue,
+  nextCopySlug,
+  formatPendingLabel,
+  conflictAgeDays,
+  sortConflictsOldestFirst,
+} from "@/lib/use-mutation";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import type { BrainPage } from "@/lib/types";
@@ -16,11 +22,6 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-function conflictAgeDays(conflictAt?: string): number {
-  if (!conflictAt) return 0;
-  return Math.floor((Date.now() - new Date(conflictAt).getTime()) / 86_400_000);
-}
 
 function ConflictCard({ mut }: { mut: QueuedMutation }) {
   const { t } = useLang();
@@ -319,9 +320,7 @@ export default function SyncPage() {
 
   // Älteste Konflikte zuerst — ein 14-Tage-Konflikt verdient mehr
   // Aufmerksamkeit als der frische von heute.
-  const sortedConflicts = [...conflicts].sort(
-    (a, b) => conflictAgeDays(b.conflictAt) - conflictAgeDays(a.conflictAt)
-  );
+  const sortedConflicts = sortConflictsOldestFirst(conflicts);
 
   const resolveAll = useCallback(
     async (mode: "keep-mine" | "discard" | "rename") => {

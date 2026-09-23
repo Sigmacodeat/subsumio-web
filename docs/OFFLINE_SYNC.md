@@ -97,11 +97,15 @@ mit Feld-Diff pro Konflikt: lokaler Payload vs. Server-Version
 (Zeichenzahl) und pro-Key Frontmatter-Vergleich. Auflösung wie im
 Banner: Meine senden / Kopie (createPage) / Verwerfen.
 
-Konflikte sind **älteste zuerst sortiert** (`conflictAt`, fehlendes
-Datum zählt als ältestes). Jede Karte zeigt das Alter sichtbar
-(„seit Nd"), die Sidebar-Liste zeigt es als `Nd`-Suffix neben dem
-Slug, der Nav-Badge-Tooltip meldet das älteste Alter
-(`sync.oldest_conflict`, `{n}`-Platzhalter).
+Konflikte sind **älteste zuerst sortiert**
+(`sortConflictsOldestFirst` in `use-mutation.ts`; fehlendes
+`conflictAt` zählt als 0 Tage und sortiert ans Ende — unbekanntes
+Alter ist kein Alarm-Grund). Die Sortierung gilt auch für die
+gekappten 3er-Listen in Banner und Sidebar — ein alter Konflikt
+bleibt nicht hinter drei frischen unsichtbar. Jede Karte zeigt das
+Alter sichtbar („seit Nd"), die Sidebar-Liste zeigt es als
+`Nd`-Suffix neben dem Slug, der Nav-Badge-Tooltip meldet das älteste
+Alter (`sync.oldest_conflict`, `{n}`-Platzhalter).
 
 ### Bulk-Auflösung
 

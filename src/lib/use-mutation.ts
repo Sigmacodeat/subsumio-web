@@ -91,14 +91,30 @@ export function nextCopySlug(slug: string): string {
  *  ist ein Datenverlust-Risiko, keine Unbequemlichkeit mehr. */
 export const STALE_CONFLICT_DAYS = 7;
 
+/** Alter eines Konflikts in Tagen — fehlendes `conflictAt` zählt als
+ *  0 (unbekanntes Alter ist kein Alarm-Grund, sortiert ans Ende). */
+export function conflictAgeDays(conflictAt?: string): number {
+  if (!conflictAt) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(conflictAt).getTime()) / 86_400_000));
+}
+
+/** Älteste Konflikte zuerst — die gekappten 3er-Listen in Banner und
+ *  Sidebar sollen die dringendsten zeigen, nicht die zuerst
+ *  gequeueten. Gibt eine neue Array-Instanz zurück (Store-Snapshots
+ *  sind immutable — nie in-place sortieren). */
+export function sortConflictsOldestFirst(conflicts: QueuedMutation[]): QueuedMutation[] {
+  return [...conflicts].sort(
+    (a, b) => conflictAgeDays(b.conflictAt) - conflictAgeDays(a.conflictAt)
+  );
+}
+
 /** Alter des ältesten Konflikts in Tagen (0 wenn kein `conflictAt`
  *  gesetzt ist). Geteilt zwischen Sidebar- und Tab-Bar-Badge, damit
  *  die Eskalations-Schwelle nicht doppelt gepflegt wird. */
 export function oldestConflictDays(conflicts: QueuedMutation[]): number {
   let oldest = 0;
   for (const c of conflicts) {
-    if (!c.conflictAt) continue;
-    const days = Math.floor((Date.now() - new Date(c.conflictAt).getTime()) / 86_400_000);
+    const days = conflictAgeDays(c.conflictAt);
     if (days > oldest) oldest = days;
   }
   return oldest;
