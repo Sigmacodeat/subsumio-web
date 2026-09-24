@@ -1366,6 +1366,7 @@ export const D = {
   "deadlines.mark_done": { de: "Erledigt", en: "Done" },
   "deadlines.edit": { de: "Bearbeiten", en: "Edit" },
   "deadlines.edit_saved": { de: "Frist aktualisiert", en: "Deadline updated" },
+  "deadlines.cancel": { de: "Stornieren", en: "Cancel" },
   "deadlines.case_embedded": { de: "In Akte", en: "In case" },
   "deadlines.source_case": { de: "Aus Akten", en: "From cases" },
   "deadlines.source_direct": { de: "Direkt", en: "Direct" },

@@ -45,7 +45,13 @@ function classify(
   doneFlag: unknown,
   vorfristDate?: string
 ): DeadlineItem["status"] | null {
-  if (doneFlag === "done") return null;
+  // Closed statuses never enter the digest — a cancelled deadline is not
+  // "overdue" (computeDeadlineStatus only knows "done" as terminal).
+  if (
+    typeof doneFlag === "string" &&
+    /^(done|erledigt|completed|abgeschlossen|cancelled|storniert|tombstoned)$/i.test(doneFlag)
+  )
+    return null;
   const status = computeDeadlineStatus(
     dueDate,
     typeof doneFlag === "string" ? doneFlag : undefined,

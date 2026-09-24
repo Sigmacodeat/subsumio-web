@@ -938,6 +938,26 @@ export default function DeadlinesPage() {
                     <ShieldCheck size={13} /> {t("deadlines.second_check")}
                   </DropdownMenuItem>
                 )}
+                {/* Stornieren bleibt Notfristen verwehrt: eine echte Notfrist
+                    darf nicht per Klick aus allen Alarmen fallen — sie wird in
+                    der Akte verworfen, mit Kontext. */}
+                {isOpen(d) && !d.isNotfrist && deadlineWriteTarget(d).kind !== "none" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        void updateDeadlinePage(d, {
+                          status: "cancelled",
+                          cancelled_at: new Date().toISOString(),
+                          cancelled_by: currentUserNameForCheck,
+                        })
+                      }
+                      className="gap-2 text-xs text-[color:var(--ds-danger-text)]"
+                    >
+                      <XCircle size={13} /> {t("deadlines.cancel")}
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {!isOpen(d) && !d.isNotfrist && (
                   <>
                     <DropdownMenuSeparator />
@@ -947,6 +967,8 @@ export default function DeadlinesPage() {
                           status: "pending",
                           completed_at: null,
                           completed_by: null,
+                          cancelled_at: null,
+                          cancelled_by: null,
                         })
                       }
                       className="gap-2 text-xs"

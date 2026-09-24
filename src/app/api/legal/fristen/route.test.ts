@@ -175,6 +175,39 @@ describe("GET /api/legal/fristen", () => {
     expect(body.failed_sources).toEqual(["absence_record"]);
   });
 
+  it("excludes cancelled deadlines — they must not resurface as overdue", async () => {
+    engine({
+      "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
+      "/api/pages?type=legal_case&limit=100&offset=0": [
+        {
+          slug: "cases/c",
+          title: "C",
+          frontmatter: {
+            deadlines: [
+              { id: "d1", title: "Stornierte Frist", due_date: "2020-01-01", status: "cancelled" },
+              { id: "d2", title: "Offene Frist", due_date: "2020-01-02" },
+            ],
+          },
+        },
+      ],
+      "/api/pages?type=legal_deadline&limit=100&offset=0": [
+        {
+          slug: "legal/deadlines/storno",
+          title: "Stornierte Seite",
+          frontmatter: { due_date: "2020-01-01", status: "cancelled" },
+        },
+      ],
+      "/api/pages?type=absence_record&limit=100&offset=0": [],
+    });
+    const res = await GET(new NextRequest("http://localhost:3000/api/legal/fristen"));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    // Only the open deadline survives — both cancelled shapes are gone.
+    expect(body.fristen).toHaveLength(1);
+    expect(body.fristen[0].title).toBe("Offene Frist");
+    expect(body.zusammenfassung.overdue).toBe(1);
+  });
+
   it("gives legacy embedded deadlines (no id) a title + due_date reference", async () => {
     engine({
       "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
