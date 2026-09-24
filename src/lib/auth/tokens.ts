@@ -9,7 +9,7 @@
 
 import { getAuthSecret, b64url, b64urlDecode, hmacKey } from "./session";
 
-export type TokenPurpose = "reset" | "verify" | "invite" | "2fa_challenge";
+export type TokenPurpose = "reset" | "verify" | "invite" | "2fa_challenge" | "email_change";
 
 export interface ActionTokenPayload {
   uid: string;
@@ -18,12 +18,16 @@ export interface ActionTokenPayload {
   exp: number; // unix seconds
   /** Issued-at (unix seconds). Tokens minted before this field existed lack it. */
   iat?: number;
+  /** email_change only: the proposed new address, carried inside the signed
+   *  payload so it cannot be swapped without invalidating the signature. */
+  email?: string;
 }
 
 export const RESET_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
 export const VERIFY_TOKEN_TTL_SECONDS = 48 * 3600; // 48 hours
 export const INVITE_TOKEN_TTL_SECONDS = 7 * 24 * 3600; // 7 days
 export const CHALLENGE_TOKEN_TTL_SECONDS = 5 * 60; // 5 minutes
+export const EMAIL_CHANGE_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
 
 const encoder = new TextEncoder();
 

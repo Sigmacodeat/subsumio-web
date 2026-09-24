@@ -104,9 +104,12 @@ describe("POST /api/auth/login — firm-wide 2FA", () => {
     const res = await login();
     expect(res.status).toBe(200);
     expect((await res.json()).must2fa).toBe(true);
-    expect(createSession).toHaveBeenCalledWith("member", "member@firm.at", "lawyer", {
-      must2fa: true,
-    });
+    expect(createSession).toHaveBeenCalledWith(
+      "member",
+      "member@firm.at",
+      "lawyer",
+      expect.objectContaining({ must2fa: true })
+    );
     expect(res.headers.get("set-cookie")).toContain("sb_session=session-token");
   });
 
@@ -114,9 +117,12 @@ describe("POST /api/auth/login — firm-wide 2FA", () => {
     const res = await login();
     expect(res.status).toBe(200);
     expect((await res.json()).must2fa).toBe(false);
-    expect(createSession).toHaveBeenCalledWith("member", "member@firm.at", "lawyer", {
-      must2fa: false,
-    });
+    expect(createSession).toHaveBeenCalledWith(
+      "member",
+      "member@firm.at",
+      "lawyer",
+      expect.objectContaining({ must2fa: false })
+    );
   });
 
   it("an unreadable policy issues no session: 503, retryable", async () => {

@@ -89,7 +89,10 @@ export const POST = createPublicHandler(
     }
 
     // Create session
-    const session = await createSession(user.id, user.email, user.role);
+    const session = await createSession(user.id, user.email, user.role, {
+      userAgent: req.headers.get("user-agent"),
+      ip,
+    });
     void logAudit("user.login", "user", {
       entityId: user.id,
       details: { ip, method: usedBackupCode ? "2fa_backup" : "2fa" },

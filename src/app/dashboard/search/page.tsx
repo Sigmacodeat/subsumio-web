@@ -21,6 +21,7 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { SearchResultFeedback } from "@/components/dashboard/search-result-feedback";
 import { api } from "@/lib/api";
 import type { SearchResult as EngineSearchResult } from "@/lib/types";
 
@@ -335,35 +336,46 @@ export default function GlobalSearchPage() {
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {filteredResults.length} {t("search.results_count" as DashboardKey)}
           </div>
-          {filteredResults.map((result) => {
+          {filteredResults.map((result, idx) => {
             const Icon = getScopeIcon(result.type);
             const snippet = result.snippet || "";
 
             return (
-              <Link
-                key={result.slug}
-                href={getHref(result)}
-                className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,transform] duration-[var(--ds-duration-fast)] ease-out hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.995] motion-reduce:transition-none"
+              <div
+                key={`${query}:${result.slug}`}
+                className="relative flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,transform] duration-[var(--ds-duration-fast)] ease-out hover:bg-[color:var(--ds-surface-2)] active:scale-[0.995] motion-reduce:transition-none"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
-                  <Icon size={14} className="text-[color:var(--ds-text-muted)]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                      {result.title}
-                    </span>
+                <Link
+                  href={getHref(result)}
+                  className="flex min-w-0 flex-1 items-start gap-3 rounded-md focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
+                    <Icon size={14} className="text-[color:var(--ds-text-muted)]" />
                   </div>
-                  {snippet && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
-                      {snippet}
-                    </p>
-                  )}
-                  <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                    {typeLabel(result.type)}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                        {result.title}
+                      </span>
+                    </div>
+                    {snippet && (
+                      <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+                        {snippet}
+                      </p>
+                    )}
+                    <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                      {typeLabel(result.type)}
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+                <SearchResultFeedback
+                  query={query}
+                  slug={result.slug}
+                  title={result.title}
+                  rank={idx + 1}
+                  score={result.score}
+                />
+              </div>
             );
           })}
         </div>

@@ -119,7 +119,12 @@ describe("GET /api/auth/sso/callback", () => {
       "u1",
       expect.objectContaining({ workosUserId: "wu_1" })
     );
-    expect(createSession).toHaveBeenCalledWith("u1", existing.email, "user", { must2fa: true });
+    expect(createSession).toHaveBeenCalledWith(
+      "u1",
+      existing.email,
+      "user",
+      expect.objectContaining({ must2fa: true })
+    );
   });
 
   it("fails closed when the firm 2FA policy cannot be read", async () => {
@@ -153,8 +158,11 @@ describe("GET /api/auth/sso/callback", () => {
     users.create.mockImplementation(async (u: object) => u);
     const res = await call();
     expect(res.headers.get("location")).toBe("https://app.test/dashboard");
-    expect(createSession).toHaveBeenCalledWith("new", "lawyer@firm.example", "user", {
-      must2fa: false,
-    });
+    expect(createSession).toHaveBeenCalledWith(
+      "new",
+      "lawyer@firm.example",
+      "user",
+      expect.objectContaining({ must2fa: false })
+    );
   });
 });

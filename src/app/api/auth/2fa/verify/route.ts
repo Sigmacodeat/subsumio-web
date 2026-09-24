@@ -70,7 +70,11 @@ export const POST = createHandler(
     // middleware.ts). Without re-issuing here, that flag would otherwise
     // stick around for the rest of the session's 30-day lifetime even
     // though 2FA is now set up.
-    const session = await createSession(ctx.user.id, ctx.user.email, ctx.user.role);
+    // Reuse the same registry sid — the 2FA upgrade is still the same device,
+    // not a new login that should appear twice in "Aktive Sitzungen".
+    const session = await createSession(ctx.user.id, ctx.user.email, ctx.user.role, {
+      sid: ctx.sessionId,
+    });
     const res = NextResponse.json({ ok: true, enabled: true, backupCodes });
     res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     return res;

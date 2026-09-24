@@ -122,7 +122,10 @@ export const POST = createPublicHandler(
       });
     }
 
-    const session = await createSession(user.id, user.email, user.role);
+    const session = await createSession(user.id, user.email, user.role, {
+      userAgent: req.headers.get("user-agent"),
+      ip: clientIp(req.headers),
+    });
     const res = NextResponse.json({ user: toPublic(user) }, { status: 201 });
     res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     res.cookies.delete(REF_COOKIE);

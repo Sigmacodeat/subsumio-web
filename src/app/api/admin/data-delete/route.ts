@@ -186,6 +186,11 @@ export const POST = createHandler(
     // 8. Soft-delete or hard-delete user profile
     if (body.immediate) {
       try {
+        // Registry rows carry IP + user-agent — delete before the user row
+        // so no session metadata survives the account.
+        await pool
+          .query(`DELETE FROM subsumio_user_sessions WHERE user_id = $1`, [userId])
+          .catch(() => {});
         await pool.query(`DELETE FROM subsumio_users WHERE id = $1`, [userId]);
         actionsTaken.push("user_profile_deleted");
       } catch (err) {

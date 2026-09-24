@@ -122,6 +122,9 @@ export interface EngineContext {
   user: User;
   /** Whose credits this request uses — see src/lib/billing/billing-account.ts. */
   billing: BillingAccount;
+  /** Registry sid of the current session — lets routes mark it as "Diese
+   *  Sitzung" in the active-sessions list and revoke it on logout. */
+  sessionId?: string;
   /** Set only while a platform operator is inside a time-boxed support
    *  session (see src/lib/support-session.ts) — never for firm users. */
   supportSession?: SupportSession;
@@ -275,6 +278,7 @@ export async function engineContext(): Promise<EngineContext | null> {
     user: effectiveUser,
     billing,
     supportSession,
+    ...(session.sid ? { sessionId: session.sid } : {}),
     ...(session.must2fa ? { must2fa: true } : {}),
   };
 }

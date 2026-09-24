@@ -30,16 +30,28 @@ export async function createSession(
   userId: string,
   email: string,
   role: SessionPayload["role"],
-  opts?: { must2fa?: boolean }
+  opts?: {
+    must2fa?: boolean;
+    /** Re-issue under an existing registry row (e.g. the must2fa → full
+     *  session upgrade) instead of registering a new device entry. */
+    sid?: string;
+    userAgent?: string | null;
+    ip?: string | null;
+  }
 ): Promise<SessionResult> {
   const minVersion = await getMinRevocationVersion(userId);
   const version = minVersion + 1;
+  const sid = opts?.sid ?? crypto.randomUUID();
   const token = await signSession(
-    { uid: userId, email, role, ...(opts?.must2fa ? { must2fa: true } : {}) },
+    { uid: userId, email, role, sid, ...(opts?.must2fa ? { must2fa: true } : {}) },
     getAuthSecret(),
     SESSION_TTL_SECONDS,
     version
   );
+  // Register the device row (best-effort — a lost insert must not break login).
+  if (!opts?.sid) {
+    void registerSession(sid, userId, { userAgent: opts?.userAgent, ip: opts?.ip });
+  }
   return {
     token,
     cookieOptions: {
@@ -58,6 +70,7 @@ import {
   isSessionVersionValid,
   getMinRevocationVersion,
 } from "./revocation-store";
+import { registerSession, isSidRevoked, touchSession } from "./session-registry";
 
 export { revokeAllSessions, isSessionVersionValid };
 
@@ -72,5 +85,9 @@ export async function verifySession(
   // the revocation store has nothing to say about them.
   if (payload.demo) return payload;
   if (!(await isSessionVersionValid(payload.uid, payload.v))) return null;
+  if (payload.sid) {
+    if (await isSidRevoked(payload.uid, payload.sid)) return null;
+    void touchSession(payload.uid, payload.sid);
+  }
   return payload;
 }
