@@ -11,7 +11,7 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 4   | Geld                       | #43 | ce2c9c3c     | ✅ live  | e-Invoice serverseitig, OPOS-Lebenszyklus (war komplett tot), OPOS-Read-Fixes             |
 | 5   | Mandantenportal & Zugriff  | #44 | 0a139469cc   | ✅ live  | Kill-Switch-Parität, Link-Registry+Einzelwiderruf, Reset-Cutoff, Share-Persistenz         |
 | 6   | Auth / Org / RBAC          | #45 | 9dc5f4169f   | ✅ live  | Invite-Cutoff (iat+inviteRevokedAt), Register→Signup-Alias, echte Lifecycle-Tests         |
-| 7   | Suche & KI (Grounding)     | —   | —            | ⬜ offen | Grounding-Invariante, Retrieval, CitationPanel                                            |
+| 7   | Suche & KI (Grounding)     | #46 | 55d5f3c14b   | ✅ live  | Guard-Coverage (+6 Flächen), final_answer-Duplikat, Search-Clamp                          |
 | 8   | Zeit & Honorar             | —   | —            | ⬜ offen | Zeiterfassung→Rechnung, RVG/FAO (teils retired)                                           |
 | 9   | DSGVO & Daten-Lebenszyklus | —   | —            | ⬜ offen | Retention, Löschkonzept, Export, Auftragsverarbeitung                                     |
 | 10  | Settings & Onboarding      | —   | —            | ⬜ offen | Kanzlei-Settings, Wizard, Feature-Flags                                                   |
@@ -23,4 +23,5 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 - [ ] Geld: OPOS-Backfill für Altrechnungen; Mahnformeln vereinheitlichen (20/40/60 vs. 5/10/15 €); restliche `as unknown as AuditAction`-Casts
 - [ ] Kommunikation: Delivery-Status-Reconciliation (Bounce-Webhook); Tracking-Retention (DSGVO); beA-Dead-UI-Check
 - [ ] Portal: optionale zweite Faktor-Ebene für sensible Akten; Link-Registry ggf. als DB-Tabelle; Portal-Aktivitäts-Feed
+- [ ] KI: Retrieval-Feedback-UI verdrahten (Endpunkt existiert, kein Konsument; In-Memory-Store verliert bei Restart)
 - [ ] Auth: E-Mail-Änderungs-Flow (me-PATCH nur name/locale); „Aktive Sessions"-Liste mit Einzel-Revocation; Join in suspendierte Org via altem Link technisch möglich (folgenlos — nächster Request fail-closed, aber UX-wart)
