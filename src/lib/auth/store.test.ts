@@ -576,3 +576,30 @@ describe("Type exports", () => {
     expect(plans).toHaveLength(4);
   });
 });
+
+describe("withInviteRevoked", () => {
+  test("adds a cutoff for the email, normalized lowercase", async () => {
+    const { withInviteRevoked } = await import("./store");
+    const now = new Date("2026-09-24T12:00:00.000Z");
+    const map = withInviteRevoked(undefined, "Kollegin@Kanzlei.AT", now);
+    expect(map["kollegin@kanzlei.at"]).toBe("2026-09-24T12:00:00.000Z");
+  });
+
+  test("keeps fresh cutoffs, prunes entries older than the 7-day invite TTL", async () => {
+    const { withInviteRevoked } = await import("./store");
+    const now = new Date("2026-09-24T12:00:00.000Z");
+    const map = withInviteRevoked(
+      {
+        "fresh@x.at": "2026-09-20T00:00:00.000Z",
+        "stale@x.at": "2026-09-01T00:00:00.000Z", // >7d: token expired anyway
+        "broken@x.at": "not-a-date",
+      },
+      "neu@x.at",
+      now
+    );
+    expect(map["fresh@x.at"]).toBe("2026-09-20T00:00:00.000Z");
+    expect(map["neu@x.at"]).toBe("2026-09-24T12:00:00.000Z");
+    expect(map["stale@x.at"]).toBeUndefined();
+    expect(map["broken@x.at"]).toBeUndefined();
+  });
+});

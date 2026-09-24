@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getStore, getOrgStore, buildNewOrg, toPublic } from "@/lib/auth/store";
+import { getStore, getOrgStore, buildNewOrg, toPublic, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 const orgPostSchema = z.object({
@@ -121,6 +121,11 @@ export const DELETE = createHandler(
       return Response.json({ ok: true });
     }
 
+    // Leaving revokes this member's outstanding invite links (stateless,
+    // 7-day TTL — same cutoff as owner-initiated removal). Cutoff first: a
+    // failed leave then leaves a dead invite (recoverable), not a live one.
+    const inviteRevokedAt = withInviteRevoked(org.inviteRevokedAt, ctx.user.email);
+    await orgs.update(org.id, { inviteRevokedAt });
     await getStore().update(ctx.user.id, { orgId: null });
     return Response.json({ ok: true });
   }
