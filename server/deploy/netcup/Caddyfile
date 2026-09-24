@@ -9,6 +9,13 @@
 	}
 }
 
+# The web app's IP allowlist and audit rows read X-Real-IP first. Overwrite
+# it with the TCP peer so a client-supplied value is never passed through.
+# (Caddy already rewrites X-Forwarded-For for untrusted peers.)
+(client-ip) {
+	header_up X-Real-IP {remote_host}
+}
+
 # Long timeouts for legal-document uploads + server-side extraction.
 (proxy-transport) {
 	transport http {
@@ -23,6 +30,7 @@
 	import common
 	reverse_proxy web:3000 {
 		flush_interval -1
+		import client-ip
 		import proxy-transport
 	}
 }
@@ -34,6 +42,7 @@
 	encode gzip
 	import common
 	reverse_proxy web:3000 {
+		import client-ip
 		import proxy-transport
 	}
 }

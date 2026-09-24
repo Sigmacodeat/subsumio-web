@@ -139,7 +139,9 @@ function getTrustedProxyHops(): number {
 }
 
 function getClientIp(req: NextRequest): string | undefined {
-  // x-real-ip is set by the outermost trusted load balancer. Prefer it when present.
+  // x-real-ip is set by the outermost trusted reverse proxy, which must
+  // OVERWRITE any client-supplied value (Caddy: `header_up X-Real-IP
+  // {remote_host}`). Prefer it when present.
   const realIp = req.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp;
 
@@ -421,8 +423,12 @@ export async function middleware(req: NextRequest) {
   // Block non-whitelisted IPs from all paths except health endpoints.
   const allowlist = getIpAllowlist();
   if (allowlist.length > 0 && !HEALTH_PATHS.has(pathname)) {
+    // Fail closed: with an allowlist configured, a request whose client IP
+    // cannot be determined is denied. X-Real-IP is authoritative only because
+    // the reverse proxy overwrites it with the TCP peer address
+    // (server/deploy/netcup/Caddyfile: header_up X-Real-IP {remote_host}).
     const clientIp = getClientIp(req) ?? "";
-    if (clientIp && !ipInAllowlist(clientIp, allowlist)) {
+    if (!clientIp || !ipInAllowlist(clientIp, allowlist)) {
       return applyCsp(
         NextResponse.json(
           { error: "ip_not_allowed", message: "Access denied: IP not in allowlist." },
