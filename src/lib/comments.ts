@@ -935,6 +935,27 @@ export async function listCorpusDeltaNotifications(opts: {
 }
 
 /**
+ * The true count of unread corpus-delta notifications, independent of any
+ * list `limit`. The ops badge used to call listCorpusDeltaNotifications with
+ * `limit=1` and read the length of that capped array as "the count" — which
+ * can only ever be 0 or 1, no matter how many alerts are actually unread.
+ * This runs a real COUNT(*), so the badge can show the true number.
+ */
+export async function countUnreadCorpusDeltaNotifications(): Promise<number> {
+  const pool = getSharedPgPool();
+  if (!pool) return 0;
+  try {
+    await ensureNotifSchema();
+    const result = await pool.query(
+      `SELECT count(*)::int AS n FROM subsumio_notifications WHERE type = 'corpus_delta' AND read_at IS NULL`
+    );
+    return (result.rows[0]?.n as number) ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Markiert alle Corpus-Delta-Notifications als gelesen.
  */
 export async function markAllCorpusDeltaNotificationsRead(): Promise<number> {

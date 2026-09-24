@@ -239,7 +239,6 @@ export const GET = createHandler(
     }> = [];
 
     if (pool) {
-      dbAvailable = true;
       try {
         // Per-source DB-Stats — mappt source_id auf corpus-Namen.
         // BUG 47: dbPages ist die Anzahl Pages (1 Datei → viele §-Pages bei Gesetzen).
@@ -269,6 +268,13 @@ export const GET = createHandler(
             lastWrite: r.last_write ? new Date(r.last_write).toISOString() : null,
           };
         }
+        // Only a query that actually returned stats counts as "DB available" —
+        // `pool` being truthy just means a pool object was constructed, not
+        // that the DB answered. Before this fix dbAvailable was set to true
+        // as soon as `pool` existed, so a timed-out or failed stats query
+        // silently rendered every source as 0 / "Nicht importiert" with no
+        // "DB nicht erreichbar" warning anywhere on the page.
+        dbAvailable = true;
       } catch (err) {
         log.error("[corpus-command-center] DB stats query failed:", err);
       }

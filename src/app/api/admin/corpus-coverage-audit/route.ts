@@ -38,7 +38,7 @@ export const GET = createHandler(
     try {
       const result = await pool.query(`
         SELECT p.source_id,
-               count(*)::int AS pages,
+               count(DISTINCT p.id)::int AS pages,
                count(cc.id)::int AS chunks,
                count(cc.id) FILTER (WHERE cc.embedding IS NOT NULL)::int AS embedded,
                max(p.updated_at) AS last_updated

@@ -111,11 +111,17 @@ describe("isOverdrawn", () => {
 
 describe("getRecentTransactions", () => {
   test("filters transactions within last 90 days by default", () => {
+    // getRecentTransactions takes an injectable `now` for exactly this
+    // reason — a hardcoded absolute date ("recent") compared against the
+    // real wall clock drifts out of the 90-day window as time passes
+    // (found 2026-09-24: this test had already gone stale and started
+    // failing in CI). Anchor `now` explicitly instead.
+    const now = new Date("2026-09-18");
     const transactions: TrustTransaction[] = [
       tx({ id: "old", date: "2026-01-01", type: "deposit", amount: 100 }),
       tx({ id: "recent", date: "2026-06-25", type: "deposit", amount: 200 }),
     ];
-    const recent = getRecentTransactions(transactions, 90);
+    const recent = getRecentTransactions(transactions, 90, now);
     expect(recent.map((t) => t.id)).toEqual(["recent"]);
   });
 

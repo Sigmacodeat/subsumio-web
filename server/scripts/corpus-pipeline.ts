@@ -114,6 +114,21 @@ function refreshPausedFlag(): void {
   // sh() returns "" on any error (e.g. table missing on older DBs) → not paused.
   const raw = psqlQuery("SELECT value->>'paused' FROM pipeline_config WHERE key = 'paused'");
   pipelinePausedDb = raw.trim() === "true";
+  // BUG (2026-09-24, go-live corpus audit): the dashboard's "Pipeline aktiv"
+  // label reads only this DB row, never the PIPELINE_PAUSED_ENV container
+  // override — an operator setting PIPELINE_PAUSED=true without also
+  // toggling the dashboard would see the pipeline correctly stop working
+  // while the UI kept claiming it was active. Reflect the env override into
+  // the row every cycle so the dashboard's reading matches reality; never
+  // write `false` here, so an operator's own dashboard pause/resume stays
+  // authoritative whenever the env override isn't set.
+  if (PIPELINE_PAUSED_ENV && !pipelinePausedDb) {
+    psqlQuery(
+      `INSERT INTO pipeline_config (key, value) VALUES ('paused', '{"paused": true}'::jsonb)
+       ON CONFLICT (key) DO UPDATE SET value = '{"paused": true}'::jsonb, updated_at = now()`
+    );
+    pipelinePausedDb = true;
+  }
 }
 function isPipelinePaused(): boolean {
   return PIPELINE_PAUSED_ENV || pipelinePausedDb;
