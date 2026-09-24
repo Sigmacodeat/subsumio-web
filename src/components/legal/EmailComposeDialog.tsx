@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Mail, Send, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Mail, Send, Loader2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,12 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
+import { api } from "@/lib/api";
+
+interface EmailDocument {
+  name: string;
+  slug: string;
+}
 
 interface EmailComposeDialogProps {
   open: boolean;
@@ -24,6 +30,9 @@ interface EmailComposeDialogProps {
   caseNumber?: string;
   recipientEmail?: string;
   recipientName?: string;
+  /** Documents of the case that can be attached. When omitted and caseSlug is
+   *  set, the dialog lists the case's legal_document pages itself. */
+  documents?: EmailDocument[];
 }
 
 export function EmailComposeDialog({
@@ -33,6 +42,7 @@ export function EmailComposeDialog({
   caseNumber,
   recipientEmail,
   recipientName,
+  documents,
 }: EmailComposeDialogProps) {
   const { t } = useLang();
   const { addToast } = useToast();
@@ -41,6 +51,44 @@ export function EmailComposeDialog({
   const [subject, setSubject] = useState(caseNumber ? `Akte ${caseNumber}` : "");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [availableDocs, setAvailableDocs] = useState<EmailDocument[]>(documents ?? []);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
+
+  // No documents prop → list the case's documents ourselves.
+  useEffect(() => {
+    if (!open || documents !== undefined || !caseSlug) return;
+    let cancelled = false;
+    api.brain
+      .listPages({ type: "legal_document", limit: 200 })
+      .then((pages) => {
+        if (cancelled) return;
+        setAvailableDocs(
+          pages
+            .filter((p) => {
+              const fm = (p.frontmatter ?? {}) as { case_slug?: string };
+              return fm.case_slug === caseSlug || p.slug.startsWith(`${caseSlug}/`);
+            })
+            .map((p) => ({ name: p.title || p.slug.split("/").pop() || p.slug, slug: p.slug }))
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, caseSlug, documents]);
+
+  useEffect(() => {
+    if (documents) setAvailableDocs(documents);
+  }, [documents]);
+
+  function toggleDoc(slug: string) {
+    setSelectedDocs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else if (next.size < 5) next.add(slug);
+      return next;
+    });
+  }
 
   async function handleSend() {
     if (!to || !subject || !body) return;
@@ -49,7 +97,14 @@ export function EmailComposeDialog({
       const res = await csrfFetch("/api/cases/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, cc: cc || undefined, subject, body, caseSlug }),
+        body: JSON.stringify({
+          to,
+          cc: cc || undefined,
+          subject,
+          body,
+          caseSlug,
+          attachment_slugs: selectedDocs.size > 0 ? [...selectedDocs] : undefined,
+        }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -59,6 +114,7 @@ export function EmailComposeDialog({
         setCc("");
         setSubject("");
         setBody("");
+        setSelectedDocs(new Set());
       } else {
         addToast({
           title: t("email.sent_error"),
@@ -131,6 +187,37 @@ export function EmailComposeDialog({
               placeholder={t("email.body_placeholder")}
             />
           </div>
+
+          {caseSlug && availableDocs.length > 0 && (
+            <fieldset className="space-y-2">
+              <legend className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--ds-text)]">
+                <Paperclip size={14} aria-hidden="true" />
+                {t("email.attachments")}
+                {selectedDocs.size > 0 && (
+                  <span className="text-xs text-[color:var(--ds-text-muted)]">
+                    ({selectedDocs.size}/5)
+                  </span>
+                )}
+              </legend>
+              <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border border-[color:var(--ds-border)] p-2">
+                {availableDocs.map((doc) => (
+                  <label
+                    key={doc.slug}
+                    className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-[color:var(--ds-surface-hover)]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedDocs.has(doc.slug)}
+                      onChange={() => toggleDoc(doc.slug)}
+                      disabled={!selectedDocs.has(doc.slug) && selectedDocs.size >= 5}
+                      className="h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+                    />
+                    <span className="truncate">{doc.name}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
         </div>
 
         <DialogFooter>

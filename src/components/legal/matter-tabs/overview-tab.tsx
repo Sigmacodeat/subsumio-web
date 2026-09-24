@@ -1232,6 +1232,12 @@ export function OverviewTab() {
           onOpenChange={ctx.setShowEmailDialog}
           caseSlug={caseData?.slug}
           caseNumber={caseData?.caseNumber}
+          documents={
+            caseData?.documents?.map((d) => ({
+              name: d.name || "Dokument",
+              slug: d.slug || "",
+            })) ?? []
+          }
         />
       )}
 

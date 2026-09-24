@@ -3,9 +3,14 @@ import type { NextRequest } from "next/server";
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/mail", () => ({
-  sendMail: vi.fn(async () => ({ sent: true, trackingId: "track-123" })),
+vi.mock("@/lib/firm-mail", () => ({
+  sendFirmMail: vi.fn(async () => ({ sent: true, via: "resend", trackingId: "track-123" })),
 }));
+
+vi.mock("@/lib/mail", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("@/lib/mail")>();
+  return { ...orig, sendMail: vi.fn(async () => ({ sent: true, trackingId: "track-123" })) };
+});
 
 vi.mock("@/lib/kanzlei-settings-server", () => ({
   loadKanzleiSettingsForBrain: vi.fn(async () => ({
@@ -62,9 +67,11 @@ vi.mock("@/lib/api-handler", () => ({
 }));
 
 import { POST } from "./route";
-import { sendMail } from "@/lib/mail";
+import { sendFirmMail } from "@/lib/firm-mail";
 import { logTrackingEvent } from "@/lib/email/tracking";
 import { assertOutputActionAllowed } from "@/lib/verification-policy";
+
+const sendMail = sendFirmMail;
 
 describe("POST /api/cases/send-email", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -87,6 +94,7 @@ describe("POST /api/cases/send-email", () => {
     expect(body.trackingId).toBe("track-123");
 
     expect(sendMail).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
         to: "client@example.com",
         subject: "Ihre Akte",
@@ -116,6 +124,7 @@ describe("POST /api/cases/send-email", () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
     expect(sendMail).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
         to: "client@example.com",
         cc: "partner@example.com",
@@ -219,6 +228,7 @@ describe("POST /api/cases/send-email", () => {
   test("handles sendMail failure gracefully", async () => {
     vi.mocked(sendMail).mockResolvedValueOnce({
       sent: false,
+      via: "none",
       error: "SMTP connection refused",
       trackingId: "track-123",
     });
@@ -239,5 +249,82 @@ describe("POST /api/cases/send-email", () => {
     expect(body.sent).toBe(false);
     expect(body.error).toBe("SMTP connection refused");
     expect(logTrackingEvent).not.toHaveBeenCalled();
+  });
+
+  test("escapes HTML in the plain-text body (no injection, no swallowed text)", async () => {
+    const req = new Request("http://localhost/api/cases/send-email", {
+      method: "POST",
+      body: JSON.stringify({
+        to: "client@example.com",
+        subject: "Kosten",
+        body: "Die Kosten liegen < 500 € & es gilt § 1002 ABGB.\n<b>nicht fett</b>",
+      }),
+    }) as unknown as NextRequest;
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const html = vi.mocked(sendMail).mock.calls[0][1].html as string;
+    expect(html).toContain("&lt; 500 € &amp;");
+    expect(html).toContain("&lt;b&gt;nicht fett&lt;/b&gt;");
+    expect(html).not.toContain("<b>nicht fett</b>");
+    expect(html).toContain("<br>");
+  });
+
+  test("attaches case documents fetched server-side by slug", async () => {
+    const pdfBytes = Buffer.from("%PDF-1.4 fake");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/files/")) {
+        return new Response(pdfBytes, {
+          status: 200,
+          headers: {
+            "content-type": "application/pdf",
+            "content-disposition": 'attachment; filename="Schriftsatz.pdf"',
+          },
+        });
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    const req = new Request("http://localhost/api/cases/send-email", {
+      method: "POST",
+      body: JSON.stringify({
+        to: "client@example.com",
+        subject: "Anbei",
+        body: "Anbei der Schriftsatz.",
+        attachment_slugs: ["legal/cases/test/documents/schriftsatz"],
+      }),
+    }) as unknown as NextRequest;
+
+    const res = await POST(req);
+    fetchSpy.mockRestore();
+    expect(res.status).toBe(200);
+    const call = vi.mocked(sendMail).mock.calls[0][1];
+    expect(call.attachments).toHaveLength(1);
+    expect(call.attachments![0].filename).toBe("Schriftsatz.pdf");
+    expect(call.attachments![0].contentType).toBe("application/pdf");
+  });
+
+  test("fails the send when a selected attachment is unavailable", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () => new Response("nope", { status: 404 }));
+
+    const req = new Request("http://localhost/api/cases/send-email", {
+      method: "POST",
+      body: JSON.stringify({
+        to: "client@example.com",
+        subject: "Anbei",
+        body: "Anbei.",
+        attachment_slugs: ["legal/cases/test/documents/gone"],
+      }),
+    }) as unknown as NextRequest;
+
+    const res = await POST(req);
+    fetchSpy.mockRestore();
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("attachment_unavailable");
+    expect(sendMail).not.toHaveBeenCalled();
   });
 });

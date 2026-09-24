@@ -31,7 +31,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: createSchema,
     audit: (ctx, body) => ({
-      action: "case.update" as const,
+      action: "inbound_register.create" as const,
       entityType: "inbound_entry",
       details: { channel: body.channel, subject: body.subject, caseSlug: body.case_slug },
     }),

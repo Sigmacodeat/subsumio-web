@@ -239,6 +239,7 @@ export type AuditAction =
   | "absence.create"
   | "absence.update"
   | "inbound_register.retry"
+  | "inbound_register.create"
   | "post_upload_task.retry"
   | "booking.create"
   | "corpus.file_create"
@@ -531,6 +532,7 @@ const ACTION_LABELS: Record<string, string> = {
   "absence.create": "Abwesenheit angelegt",
   "absence.update": "Abwesenheit geändert",
   "inbound_register.retry": "Posteingangs-Registrierung erneut eingereiht",
+  "inbound_register.create": "Posteingang registriert",
   "post_upload_task.retry": "Hintergrund-Aufgabe erneut eingereiht",
   "booking.create": "Terminbuchung erstellt",
   "corpus.file_create": "Corpus-Datei erstellt",
