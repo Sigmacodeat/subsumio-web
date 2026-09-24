@@ -221,6 +221,15 @@
           transform: rotate(360deg);
         }
       }
+      .ai-notice {
+        margin-top: 8px;
+        padding: 8px 10px;
+        border: 1px solid #4a4a6a;
+        border-radius: 6px;
+        background: #2a2a40;
+        font-size: 11px;
+        line-height: 1.4;
+      }
       .query-result {
         padding: 10px;
         border: 1px solid #1e1e3a;
@@ -384,6 +393,7 @@
           </button>
           <div id="draftSummary" style="display: none"></div>
           <div id="draftResult" class="query-result" style="display: none"></div>
+          <div id="draftNotice" class="ai-notice" style="display: none"></div>
           <button id="insertReplyBtn" class="secondary" style="display: none; margin-top: 8px">
             Als Antwort öffnen
           </button>
@@ -415,6 +425,7 @@
             <span id="queryBtnText">Abfragen</span>
           </button>
           <div id="queryResult" class="query-result" style="display: none"></div>
+          <div id="queryNotice" class="ai-notice" style="display: none"></div>
         </div>
       </div>
     </div>

@@ -1,9 +1,8 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
-import { checkSource } from "../../scripts/check-grounding-invariant";
+import { checkSource, scanRepository } from "../../scripts/check-grounding-invariant";
+import { AI_BADGE_LABEL, AI_NOTICE } from "./ai-act";
 
 describe("check-grounding-invariant — rule", () => {
   test("an AI call without hook/panel is a violation", () => {
@@ -40,19 +39,42 @@ describe("check-grounding-invariant — rule", () => {
   });
 });
 
+describe("check-grounding-invariant — Office add-ins", () => {
+  const grounded = `fetch(\`\${API_BASE}/api/legal/ground\`); "${AI_BADGE_LABEL}"; "${AI_NOTICE}"`;
+
+  test("an add-in /api/think call needs the ground route and the AI Act texts", () => {
+    const call = "await fetch(`${API_BASE}/api/think`, { method: 'POST' });";
+    expect(checkSource(call, "addin")).toBe("violation");
+    expect(checkSource(`${call}\n${grounded}`, "addin")).toBe("ok");
+  });
+
+  test("a drifted AI notice text is a violation", () => {
+    const call = "await apiPost('/api/legal/analyze', {});";
+    expect(
+      checkSource(`${call} fetch('/api/legal/ground'); "${AI_BADGE_LABEL}"; "KI-Entwurf"`, "addin")
+    ).toBe("violation");
+  });
+
+  test("widened web patterns: research, portal chat, review-table ask, memo generate", () => {
+    for (const call of [
+      'fetch("/api/legal/research", {})',
+      "csrfFetch(`/api/portal/chat`)",
+      'fetch("/api/review-table/ask")',
+      'fetch("/api/work-products/memo/generate")',
+      'fetch("/api/legal/submission-review")',
+    ]) {
+      expect(checkSource(`${call}; return <p>{text}</p>;`), call).toBe("violation");
+    }
+  });
+});
+
 describe("check-grounding-invariant — this repository", () => {
-  test("every UI surface that requests AI legal text is grounded", () => {
-    const walk = (dir: string): string[] =>
-      readdirSync(dir).flatMap((e) => {
-        if (["node_modules", "_archive", "api"].includes(e)) return [];
-        const full = join(dir, e);
-        if (statSync(full).isDirectory()) return walk(full);
-        return /\.tsx$/.test(e) && !/\.(test|stories)\.tsx$/.test(e) ? [full] : [];
-      });
-    const files = ["src/app", "src/components"].flatMap((r) => walk(join(process.cwd(), r)));
-    const violations = files
-      .filter((f) => checkSource(readFileSync(f, "utf8")) === "violation")
-      .map((f) => relative(process.cwd(), f));
+  test("every UI surface (web + Office add-ins) that requests AI legal text is grounded", () => {
+    const { aiSurfaces, violations } = scanRepository();
     expect(violations).toEqual([]);
+    // The add-ins are scanned, not silently skipped.
+    expect(aiSurfaces).toEqual(
+      expect.arrayContaining(["word-addin/src/taskpane.ts", "outlook-addin/src/taskpane.ts"])
+    );
   });
 });
