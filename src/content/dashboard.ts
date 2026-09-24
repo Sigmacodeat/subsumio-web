@@ -8890,6 +8890,7 @@ export const D = {
   "email.send": { de: "Senden", en: "Send" },
   "email.sent_ok": { de: "E-Mail gesendet", en: "Email sent" },
   "email.sent_error": { de: "Senden fehlgeschlagen", en: "Send failed" },
+  "email.attachments": { de: "Anhänge aus der Akte", en: "Attachments from the case" },
   "common.cancel": { de: "Abbrechen", en: "Cancel" },
   "common.close": { de: "Schließen", en: "Close" },
   "common.refresh": { de: "Aktualisieren", en: "Refresh" },

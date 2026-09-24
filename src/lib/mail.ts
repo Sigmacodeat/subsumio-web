@@ -12,6 +12,12 @@ import { env } from "@/lib/env";
 
 const log = logger("mail");
 
+export interface MailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export interface MailInput {
   to: string | string[];
   cc?: string | string[];
@@ -23,6 +29,17 @@ export interface MailInput {
   headers?: Record<string, string>;
   /** Tracking ID for open/click tracking. When set, tracking pixel and link rewriting are injected into HTML. */
   trackingId?: string;
+  attachments?: MailAttachment[];
+}
+
+/** Escapes user text before it lands in an HTML mail body — without this,
+ *  "Kosten < 500 €" is swallowed by the recipient's mail client as a tag,
+ *  and deliberate markup becomes an HTML injection towards the recipient. */
+export function escapeHtml(s: string): string {
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string
+  );
 }
 
 export interface MailResult {
@@ -46,6 +63,7 @@ export async function sendMail({
   replyTo,
   headers,
   trackingId,
+  attachments,
 }: MailInput): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM || "Subsumio <hello@subsum.io>";
@@ -96,6 +114,15 @@ export async function sendMail({
         ...(!text && !trackedHtml ? { text: bodyText } : {}),
         ...(replyTo ? { reply_to: replyTo } : {}),
         ...(headers ? { headers } : {}),
+        ...(attachments?.length
+          ? {
+              attachments: attachments.map((a) => ({
+                filename: a.filename,
+                content: a.content.toString("base64"),
+                ...(a.contentType ? { content_type: a.contentType } : {}),
+              })),
+            }
+          : {}),
       }),
       signal: externalFetchTimeout(),
     });
