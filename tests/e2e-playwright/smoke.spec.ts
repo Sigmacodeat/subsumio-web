@@ -211,7 +211,9 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     // HeutePanel and widget sections should be visible
     await expect(page.getByText(/Heute|Today/i).first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Inbox|Eingang/i).first()).toBeVisible();
-    await expect(page.getByText(/Review approvals|Freigaben prüfen/i).first()).toBeVisible({
+    // Attention list: the Freigaben entry when something awaits a decision,
+    // otherwise the "Nichts offen — Eingänge, Freigaben …" empty state.
+    await expect(page.getByText(/Freigaben/).first()).toBeVisible({
       timeout: 30_000,
     });
 
