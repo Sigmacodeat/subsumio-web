@@ -38,6 +38,8 @@ export interface OpenItem {
   dunning_date?: string;
   dunning_fee: number;
   status: "open" | "reminded" | "overdue" | "paid" | "written_off";
+  /** Grund der Ausbuchung (z.B. Storno-Noten-Nummer) — nur informativ. */
+  notes?: string;
   created_at: string;
   updated_at: string;
 }

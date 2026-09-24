@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listOpenItems } from "@/lib/open-items";
 import {
   createBankTransaction,
   autoMatchTransaction,
@@ -9,7 +10,6 @@ import {
   type BankTransaction,
   type OpenItem,
 } from "@/lib/fibu";
-import type { AuditAction } from "@/lib/audit";
 
 // ── Import Bank Transactions ──────────────────────────────────────────
 
@@ -38,24 +38,21 @@ export const POST = createHandler(
     rateTier: "standard",
     body: importBankSchema,
     audit: (_ctx, body) => ({
-      action: "fibu.opos_import" as unknown as AuditAction,
+      action: "fibu.opos_import" as const,
       entityType: "bank_transaction",
       details: { count: body.transactions.length },
     }),
   },
   async (ctx, body) => {
-    // 1. Load existing open items for matching
-    const params = new URLSearchParams({ type: "open_item", limit: "500" });
-    const listRes = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!listRes.ok) return apiError("engine_error", "Engine request failed", 502);
-    const listData = await listRes.json();
-    const pages = (Array.isArray(listData) ? listData : (listData.pages ?? [])) as Array<{
-      frontmatter: Record<string, unknown>;
-    }>;
-    let openItems: OpenItem[] = pages.map((p) => p.frontmatter as unknown as OpenItem);
+    // 1. Load existing open items for matching — paginiert (die Engine kappt
+    //    Einzelrequests auf 100; ein größerer `limit` würde OPs still
+    //    überspringen und Fehl-Matchings erzeugen).
+    let openItems: OpenItem[];
+    try {
+      openItems = await listOpenItems(ctx.headers);
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
 
     const results: Array<{
       transaction: BankTransaction;
@@ -143,20 +140,20 @@ export const GET = createHandler(
     rateTier: "standard",
     query: listQuerySchema,
     audit: (_ctx, _body, query) => ({
-      action: "fibu.opos_list" as unknown as AuditAction,
+      action: "fibu.opos_list" as const,
       entityType: "open_item",
       details: { status: query?.status },
     }),
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "open_item", limit: "200" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: OpenItem[] = (Array.isArray(data) ? data : (data.pages ?? [])) as OpenItem[];
+    // listEnginePages liefert Page-Objekte — die OpenItem-Felder liegen im
+    // frontmatter, nicht auf der Page selbst.
+    let items: OpenItem[];
+    try {
+      items = await listOpenItems(ctx.headers);
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
 
     if (query?.status) {
       items = items.filter((i) => i.status === query.status);

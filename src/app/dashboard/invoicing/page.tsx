@@ -625,7 +625,6 @@ export default function InvoicingPage() {
   }
 
   async function sendEInvoiceAction(inv: Invoice, channel: "peppol" | "erechnung_gv_at") {
-    const settings = kanzlei ?? (await loadKanzleiSettings());
     setStatusMessage(
       channel === "peppol"
         ? "PEPPOL-Übertragung läuft …"
@@ -635,32 +634,14 @@ export default function InvoicingPage() {
       const res = await csrfFetch("/api/e-invoice/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Nur den Slug senden — Belegdaten und Kanzlei-Settings (inkl. IBAN)
+        // lädt die Route serverseitig, damit kein manipulierter Client
+        // Rechnungs-XML mit fremden Daten unter Kanzlei-Identität erzeugt.
         body: JSON.stringify({
           channel,
           format: channel === "erechnung_gv_at" ? "ebinterface" : "xrechnung",
           receiver_id: inv.leitwegId,
-          invoice: {
-            invoice_number: inv.number,
-            client: inv.client,
-            client_address: inv.clientAddress,
-            case_number: inv.caseNumber,
-            date: inv.date,
-            due_date: inv.dueDate,
-            items: inv.items,
-            expenses: inv.expenses,
-            subtotal: inv.subtotal,
-            expense_total: inv.expenseTotal,
-            advance_payment: inv.advancePayment,
-            vat_rate: inv.vatRate,
-            tax: inv.tax,
-            total: inv.total,
-            payment_terms: inv.paymentTerms,
-            bank: inv.bank,
-            notes: inv.notes,
-            invoice_type: inv.invoiceType,
-            leitweg_id: inv.leitwegId,
-          },
-          settings,
+          invoiceSlug: inv.id,
         }),
       });
       const data = await res.json();

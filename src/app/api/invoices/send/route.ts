@@ -4,6 +4,7 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
+import { createOpenItemForInvoice } from "@/lib/open-items";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/send");
@@ -14,7 +15,7 @@ const MAX_PDF_BYTES = 8 * 1024 * 1024;
 
 const sendSchema = z.object({
   invoiceSlug: z.string().min(1, "invoiceSlug_required"),
-  toEmail: z.string().optional(),
+  toEmail: z.string().email("toEmail_invalid").optional(),
   /** The invoice PDF as rendered in the browser (same generator as the download). */
   pdfBase64: z
     .string()
@@ -123,6 +124,19 @@ export const POST = createHandler(
           email_attachment: attachments.length > 0,
         },
       });
+
+      // OPOS: versendete Rechnung erzeugt einen offenen Posten (Industrie-
+      // Standard: OP entsteht mit dem Buchen/Versand). Best-effort — die
+      // Rechnung ist versendet, ein fehlender OP darf den Versand nicht
+      // rückabwickeln, wird aber geloggt statt still verschluckt.
+      try {
+        await createOpenItemForInvoice(ctx.headers, body.invoiceSlug, fm);
+      } catch (err) {
+        log.error(
+          "[invoice-send] open item failed:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
 
       return Response.json({ ok: true, sentTo: recipient });
     } catch (err) {

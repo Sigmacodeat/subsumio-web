@@ -2,7 +2,6 @@ import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { parseCamt053, CamtParseError } from "@/lib/camt053";
 import { importAndMatchTransactions } from "@/lib/fibu-import.server";
-import type { AuditAction } from "@/lib/audit";
 
 const schema = z.object({
   xml: z
@@ -17,7 +16,7 @@ export const POST = createHandler(
     rateTier: "heavy",
     body: schema,
     audit: (_ctx, body) => ({
-      action: "fibu.camt_import" as unknown as AuditAction,
+      action: "fibu.camt_import" as const,
       entityType: "bank_transaction",
       details: { bytes: body.xml.length },
     }),

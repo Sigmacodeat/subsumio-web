@@ -3,6 +3,7 @@ import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { createServerBrainClient } from "@/lib/server-brain";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { applyOpenItemFee } from "@/lib/open-items";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/remind");
@@ -114,6 +115,17 @@ export const POST = createHandler(
           reminder_fee: fee,
         },
       });
+
+      // OPOS: Mahngebühr auf den offenen Posten aufschlagen, sonst matched
+      // eine Zahlung über (Rechnung + Gebühr) nicht mehr exakt.
+      try {
+        await applyOpenItemFee(ctx.headers, body.invoiceSlug, fee);
+      } catch (err) {
+        log.error(
+          "[invoice-remind] opos fee failed:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
 
       return Response.json({
         ok: true,

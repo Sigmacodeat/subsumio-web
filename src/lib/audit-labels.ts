@@ -49,6 +49,11 @@ export type AuditAction =
   | "invoice.e_invoice_validate"
   | "invoice.rksv_sign"
   | "invoice.rksv_dep_export"
+  | "fibu.bank_feed"
+  | "fibu.camt_import"
+  | "fibu.opos_import"
+  | "fibu.opos_list"
+  | "fibu.payment_link_create"
   | "document.upload"
   | "document.download"
   | "document.delete"
@@ -652,6 +657,8 @@ const ACTION_LABELS: Record<string, string> = {
   "fibu.bank_feed": "Buchhaltung: Bankumsätze verarbeitet",
   "fibu.opos_import": "Buchhaltung: offene Posten importiert",
   "fibu.opos_list": "Buchhaltung: offene Posten abgerufen",
+  "fibu.camt_import": "Buchhaltung: camt.053-Import",
+  "fibu.payment_link_create": "Buchhaltung: Zahlungslink erstellt",
   "invoice.read": "Rechnungen abgerufen",
   "invoice.write": "Rechnung geändert",
   "invoice.e_invoice": "E-Rechnung verarbeitet",
