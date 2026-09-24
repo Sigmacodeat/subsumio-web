@@ -206,8 +206,11 @@
 # Fassung. Jede Identitätsprüfung vermerkt, gegen welchen Stand geprüft wurde.
 20 4 * * 1     curl -fsS --max-time 280 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/sanctions-sync || true
 
-# Law corpus inventory for the operator dashboard (/ops/corpus → Bestand).
-17 * * * *     curl -fsS --max-time 890 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/corpus-inventory || true
+# Law corpus inventory for the operator dashboard (/ops/corpus). Every 10 min,
+# not hourly: since 2026-09-24 every DB number on that page comes from this
+# snapshot (the live pages×chunks join took 38 s and was polled every 5 s).
+# One run costs ~25 s of DB time.
+*/10 * * * *   curl -fsS --max-time 590 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/corpus-inventory || true
 
 # ── 08:20 UTC (10:20 CEST) — NPS-Detraktor-Triage ──
 # Meldet neue Mandanten-Feedbacks mit Score ≤ 6 per Mail an die Kanzlei.

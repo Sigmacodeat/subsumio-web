@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // @vitest-environment node
-// GET /api/admin/corpus-command-center — `dbAvailable` must reflect whether
-// the DB stats query actually succeeded, not just whether a pool object
-// exists. Regression test for the 2026-09-24 dashboard audit: dbAvailable
-// was set to `true` as soon as `pool` was truthy, before the query ran —
-// so a failed or timed-out stats query still reported dbAvailable: true,
-// and the frontend's "DB nicht erreichbar" warning never showed even
-// though every source's numbers were silently 0.
+// GET /api/admin/corpus-command-center — the DB numbers come from the
+// 10-minute inventory snapshot, not a live pages×chunks join, and
+// `dbAvailable` reflects whether that snapshot was actually read.
+//
+// Regression tests for the 2026-09-24 dashboard audit: (1) the live join
+// took 38 s on prod and this route is polled every few seconds while
+// anything runs, which made the whole page unusable; (2) dbAvailable was
+// set to true as soon as a pool object existed, before any query ran, so a
+// failed query still reported the DB as available and every source
+// silently showed 0 instead of the already-built "nicht erreichbar" banner.
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rmSync } from "node:fs";
 import { NextRequest } from "next/server";
@@ -64,6 +67,24 @@ function get() {
   );
 }
 
+function snapshotRow(source_id: string, measured_at: string, extra: Record<string, unknown> = {}) {
+  return {
+    source_id,
+    kind: "statute",
+    pages: 100,
+    documents: 10,
+    statutes: 1,
+    rechtssaetze: 0,
+    texte: 0,
+    repealed: 0,
+    chunks: 300,
+    embedded: 150,
+    last_updated: "2026-09-24T05:00:00.000Z",
+    measured_at,
+    ...extra,
+  };
+}
+
 /** Every query the route makes when a pool exists, keyed by a distinguishing
  *  substring, so a test only has to override the one it cares about. */
 function baseQueryRouter(overrides: Record<string, () => any> = {}) {
@@ -71,7 +92,17 @@ function baseQueryRouter(overrides: Record<string, () => any> = {}) {
     for (const [needle, fn] of Object.entries(overrides)) {
       if (sql.includes(needle)) return fn();
     }
-    if (sql.includes("FROM pages p")) return { rows: [] };
+    if (sql.includes("corpus_inventory_snapshot")) {
+      return {
+        rows: [
+          snapshotRow("law-at", "2026-09-24T05:00:00.000Z"),
+          snapshotRow("law-at-normen", "2026-09-24T05:10:00.000Z"),
+        ],
+      };
+    }
+    // The live heartbeat: last write per source within 15 minutes.
+    if (sql.includes("interval '15 minutes'"))
+      return { rows: [{ source_id: "law-at-normen", last_write: "2026-09-24T05:14:00.000Z" }] };
     if (sql.includes("FROM pipeline_state")) return { rows: [] };
     if (sql.includes("FROM ris_lock")) return { rows: [] };
     if (sql.includes("FROM pipeline_config WHERE key = 'paused'")) return { rows: [] };
@@ -90,18 +121,36 @@ afterEach(() => vi.unstubAllEnvs());
 afterAll(() => rmSync(ROOT, { recursive: true, force: true }));
 
 describe("GET /api/admin/corpus-command-center", () => {
-  it("dbAvailable is true when the stats query actually succeeds", async () => {
-    pool.query.mockImplementation(baseQueryRouter());
+  it("reads the DB numbers from the inventory snapshot, never from a live pages×chunks join", async () => {
+    const seen: string[] = [];
+    pool.query.mockImplementation(async (sql: string) => {
+      seen.push(sql);
+      return baseQueryRouter()(sql);
+    });
     const res = await get();
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.data.dbAvailable).toBe(true);
+    // The snapshot time is the newest across sources, not the first row's.
+    expect(body.data.snapshotAt).toBe("2026-09-24T05:10:00.000Z");
+    // The 38-second query must be gone for good.
+    expect(seen.some((s) => s.includes("LEFT JOIN content_chunks"))).toBe(false);
+    expect(seen.some((s) => s.includes("corpus_inventory_snapshot"))).toBe(true);
   });
 
-  it("dbAvailable is false when the stats query throws, and the response still succeeds", async () => {
+  it("uses the snapshot's document count as the DB figure compared against RIS", async () => {
+    pool.query.mockImplementation(baseQueryRouter());
+    const body = await (await get()).json();
+    const normen = body.data.sync.rows.find((r: any) => r.sourceId === "law-at-normen");
+    expect(normen).toBeDefined();
+    expect(normen.dbDocuments).toBe(10);
+    expect(normen.dbPages).toBe(100);
+  });
+
+  it("dbAvailable is false when the snapshot read throws, and the response still succeeds", async () => {
     pool.query.mockImplementation(
       baseQueryRouter({
-        "FROM pages p": () => {
+        corpus_inventory_snapshot: () => {
           throw new Error("connection terminated unexpectedly");
         },
       })
@@ -110,9 +159,19 @@ describe("GET /api/admin/corpus-command-center", () => {
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.data.dbAvailable).toBe(false);
+    expect(body.data.snapshotAt).toBeNull();
     // No source ever got real numbers, but the route must not crash — it
     // degrades to an empty sync table, which the frontend renders behind
-    // the "DB nicht erreichbar" banner (see corpus-command-center.tsx).
+    // the "noch keine DB-Zählung" banner (see corpus-command-center.tsx).
     expect(body.data.sync.rows).toEqual([]);
+  });
+
+  it("dbAvailable is false when no snapshot exists yet (fresh install)", async () => {
+    pool.query.mockImplementation(
+      baseQueryRouter({ corpus_inventory_snapshot: () => ({ rows: [] }) })
+    );
+    const body = await (await get()).json();
+    expect(body.data.dbAvailable).toBe(false);
+    expect(body.data.snapshotAt).toBeNull();
   });
 });

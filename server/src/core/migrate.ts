@@ -6580,6 +6580,20 @@ export const MIGRATIONS: Migration[] = [
         ));
     `,
   },
+  {
+    version: 147,
+    name: "corpus_inventory_snapshot_documents",
+    // The ops sync table compares the DB against RIS in DOCUMENTS (distinct
+    // import_filename — one file per RIS document; a statute file becomes
+    // many §-pages). Until now it computed that live with a pages×chunks
+    // join that took 38 s and was polled every 5 s (measured 2026-09-24).
+    // The 10-minute snapshot carries the number instead.
+    idempotent: true,
+    sql: `
+      ALTER TABLE corpus_inventory_snapshot
+        ADD COLUMN IF NOT EXISTS documents INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

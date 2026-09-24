@@ -283,6 +283,7 @@ function SyncChainSection({ onSelectCorpus }: { onSelectCorpus: (sourceId: strin
           rows={d.sync.rows}
           totals={d.sync.totals}
           dbAvailable={d.dbAvailable}
+          snapshotAt={d.snapshotAt ?? null}
           onSelectCorpus={onSelectCorpus}
           onRefresh={() => query.refetch()}
         />

@@ -8,6 +8,11 @@ import type { Dirent } from "fs";
 import { join } from "path";
 import { lawCorpusDir, lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 import { deriveLiveRows, PIPELINE_KEY_TO_DIR } from "@/lib/corpus-pipeline-live";
+import {
+  latestSnapshotAt,
+  readLatestInventory,
+  recentWritesBySource,
+} from "@/lib/corpus-inventory";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/admin/corpus-command-center");
@@ -229,6 +234,7 @@ export const GET = createHandler(
     let pipelineState: PipelineStateRow[] = [];
     let pipelinePaused = false;
     let dbAvailable = false;
+    let snapshotAt: string | null = null;
     let risFetchers: Array<{
       slot: number;
       holder: string;
@@ -240,43 +246,39 @@ export const GET = createHandler(
 
     if (pool) {
       try {
-        // Per-source DB-Stats — mappt source_id auf corpus-Namen.
-        // BUG 47: dbPages ist die Anzahl Pages (1 Datei → viele §-Pages bei Gesetzen).
-        // RIS Total ist aber in Dokumenten. Daher zusätzlich dbDocuments
-        // (COUNT DISTINCT import_filename) abfragen — das ist die korrekte
-        // Vergleichsgröße mit RIS Total. Bei Judikatur 1:1 mit dbPages.
-        const dbResult = await pool.query(`
-          SELECT
-            COALESCE(p.source_id, 'unknown') AS source_id,
-            COUNT(DISTINCT p.id) FILTER (WHERE p.deleted_at IS NULL) AS pages,
-            COUNT(DISTINCT p.import_filename) FILTER (WHERE p.deleted_at IS NULL AND p.import_filename IS NOT NULL) AS documents,
-            COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL) AS chunks,
-            COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL AND cc.embedding IS NOT NULL) AS embedded,
-            MAX(p.updated_at) FILTER (WHERE p.deleted_at IS NULL) AS last_write
-          FROM pages p
-          LEFT JOIN content_chunks cc ON cc.page_id = p.id
-          WHERE p.source_id LIKE 'law-%'
-          GROUP BY p.source_id
-          ORDER BY p.source_id
-        `);
-        for (const r of dbResult.rows) {
+        // Per-source DB numbers from the 10-minute snapshot (3 ms). Until
+        // 2026-09-24 this was a live pages×chunks join — 38 s on prod, and
+        // this route is polled every 5 s while anything runs, so several of
+        // those overlapped on the DB at all times: the page was unusable
+        // and the pipeline itself was slowed. dbDocuments (distinct
+        // import_filename — one file per RIS document, the unit RIS totals
+        // use; a statute file becomes many §-pages) is in the snapshot
+        // since migration 147.
+        const inventory = await readLatestInventory(pool);
+        snapshotAt = latestSnapshotAt(inventory);
+        // The one thing that must stay real-time: the last write per
+        // source, for the "läuft / hängt" signal on the pipeline tab.
+        // Index-backed, ~2 ms; only sources written in the last 15 min are
+        // returned, everything else keeps the snapshot's value.
+        const recent = await recentWritesBySource(pool).catch(() => new Map<string, string>());
+        for (const r of inventory) {
           dbStats[r.source_id] = {
-            pages: parseInt(r.pages ?? "0", 10),
-            documents: parseInt(r.documents ?? "0", 10),
-            chunks: parseInt(r.chunks ?? "0", 10),
-            embedded: parseInt(r.embedded ?? "0", 10),
-            lastWrite: r.last_write ? new Date(r.last_write).toISOString() : null,
+            pages: r.pages,
+            documents: r.documents,
+            chunks: r.chunks,
+            embedded: r.embedded,
+            lastWrite: recent.get(r.source_id) ?? r.last_updated,
           };
         }
-        // Only a query that actually returned stats counts as "DB available" —
+        // Only a snapshot that actually exists counts as "DB available" —
         // `pool` being truthy just means a pool object was constructed, not
         // that the DB answered. Before this fix dbAvailable was set to true
-        // as soon as `pool` existed, so a timed-out or failed stats query
-        // silently rendered every source as 0 / "Nicht importiert" with no
-        // "DB nicht erreichbar" warning anywhere on the page.
-        dbAvailable = true;
+        // as soon as `pool` existed, so a failed query silently rendered
+        // every source as 0 / "Nicht importiert" with no "DB nicht
+        // erreichbar" warning anywhere on the page.
+        dbAvailable = inventory.length > 0;
       } catch (err) {
-        log.error("[corpus-command-center] DB stats query failed:", err);
+        log.error("[corpus-command-center] inventory snapshot read failed:", err);
       }
 
       // Pipeline State
@@ -772,6 +774,9 @@ export const GET = createHandler(
 
     return apiSuccess({
       dbAvailable,
+      // When the DB numbers were counted (10-minute snapshot); null = no
+      // snapshot yet. Disk counts and pipeline state are still live.
+      snapshotAt,
       sync: {
         rows: syncRows,
         totals: {

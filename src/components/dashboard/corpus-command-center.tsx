@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -135,6 +135,8 @@ interface RisDeltaRow {
 
 export interface CommandCenterData {
   dbAvailable: boolean;
+  /** Zeitpunkt der Zählung (10-Minuten-Snapshot); null = noch keine. */
+  snapshotAt?: string | null;
   sync: {
     rows: CorpusSyncRow[];
     totals: {
@@ -226,7 +228,10 @@ export function useCorpusCommandCenterData() {
       const running =
         (d?.pipeline?.states?.some((s) => s.pid !== null) ?? false) ||
         (d?.pipeline?.risFetchers?.some((f) => !f.stale) ?? false);
-      return running ? 5_000 : 30_000;
+      // Die Route ist seit 2026-09-24 billig (Snapshot statt Live-Join);
+      // 10s reichen, weil sich die DB-Zahlen ohnehin nur alle 10 Min ändern
+      // und nur Pipeline-Zustand und Herzschlag live sind.
+      return running ? 10_000 : 30_000;
     },
   });
 }
@@ -279,6 +284,7 @@ export function SyncStatusSection({
   rows,
   totals,
   dbAvailable = true,
+  snapshotAt = null,
   onSelectCorpus,
   onRefresh,
 }: {
@@ -287,6 +293,8 @@ export function SyncStatusSection({
   /** false = DB nicht erreichbar — die DB-Spalte zeigt dann 0,
    *  was sonst fälschlich „Nicht importiert" suggerieren würde. */
   dbAvailable?: boolean;
+  /** Zeitpunkt der DB-Zählung (Snapshot); Disk und Pipeline sind live. */
+  snapshotAt?: string | null;
   onSelectCorpus?: (sourceId: string) => void;
   onRefresh?: () => void;
 }) {
@@ -357,10 +365,16 @@ export function SyncStatusSection({
         <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
           <CardContent className="flex items-center gap-2 p-3 text-sm text-[color:var(--ds-warning-text)]">
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            Datenbank nicht erreichbar — DB- und Embedding-Spalten zeigen 0. Der RIS↔Disk-Abgleich
-            ist trotzdem gültig.
+            Noch keine DB-Zählung vorhanden — DB- und Embedding-Spalten zeigen 0. Der
+            RIS↔Disk-Abgleich ist trotzdem gültig. Die Zählung läuft alle 10 Minuten.
           </CardContent>
         </Card>
+      )}
+      {dbAvailable && snapshotAt && (
+        <p className="text-xs text-[color:var(--ds-text-subtle)]">
+          DB-Zahlen: Stand {formatDateTime(snapshotAt)} (Zählung alle 10 Minuten) · Disk, Pipeline
+          und Schreibaktivität: live
+        </p>
       )}
       {/* Summary Cards — neutral numbers, icon-only color accent */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
@@ -1952,6 +1966,7 @@ export function CorpusCommandCenter({
             rows={data.sync.rows}
             totals={data.sync.totals}
             dbAvailable={data.dbAvailable}
+            snapshotAt={data.snapshotAt ?? null}
             onSelectCorpus={onSelectCorpus}
             onRefresh={refetch}
           />

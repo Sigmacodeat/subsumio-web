@@ -1,10 +1,13 @@
 /**
- * Inventory of the Austrian law corpus per source, stored as an hourly
- * snapshot (table corpus_inventory_snapshot, migration 143).
+ * Inventory of the Austrian law corpus per source, stored as a snapshot
+ * every 10 minutes (table corpus_inventory_snapshot, migrations 143 + 147).
  *
- * Counting pages and 4 M chunks takes minutes while imports run, so the
- * operator dashboard never counts live: the cron job /api/cron/corpus-inventory
- * computes and stores a snapshot; the dashboard reads the latest one.
+ * Counting 1 M pages and 6.8 M chunks takes 20–40 s while imports run, so
+ * the operator dashboard never counts live: the cron job
+ * /api/cron/corpus-inventory computes and stores a snapshot; every panel on
+ * /ops/corpus reads the latest one (3 ms) and shows its time. Before
+ * 2026-09-24 two panels still ran the live join on every request — polled
+ * every 5 s — which is what made the page unusably slow.
  */
 
 import type { Pool } from "pg";
@@ -13,6 +16,8 @@ export interface InventoryRow {
   source_id: string;
   kind: "statute" | "decision" | "other";
   pages: number;
+  /** Distinct import files — one per RIS document. The unit RIS totals use. */
+  documents: number;
   statutes: number;
   rechtssaetze: number;
   texte: number;
@@ -29,6 +34,7 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
     pool.query(`
       SELECT source_id,
              count(*)::int AS pages,
+             count(DISTINCT import_filename) FILTER (WHERE import_filename IS NOT NULL)::int AS documents,
              count(DISTINCT frontmatter->>'statute_id')::int AS statutes,
              count(*) FILTER (WHERE frontmatter->>'doc_id' ~ '^J[A-Z]R_')::int AS rs,
              count(*) FILTER (WHERE frontmatter->>'doc_id' ~ '^J[A-Z]T_')::int AS texte,
@@ -60,6 +66,7 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
       source_id: r.source_id,
       kind,
       pages: r.pages,
+      documents: r.documents ?? 0,
       statutes: kind === "statute" ? r.statutes : 0,
       rechtssaetze: r.rs,
       texte: r.texte,
@@ -72,12 +79,13 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
   if (rows.length > 0) {
     await pool.query(
       `INSERT INTO corpus_inventory_snapshot
-         (source_id, kind, pages, statutes, rechtssaetze, texte, repealed, chunks, embedded, last_updated)
-       SELECT * FROM unnest($1::text[], $2::text[], $3::int[], $4::int[], $5::int[], $6::int[], $7::int[], $8::int[], $9::int[], $10::timestamptz[])`,
+         (source_id, kind, pages, documents, statutes, rechtssaetze, texte, repealed, chunks, embedded, last_updated)
+       SELECT * FROM unnest($1::text[], $2::text[], $3::int[], $4::int[], $5::int[], $6::int[], $7::int[], $8::int[], $9::int[], $10::int[], $11::timestamptz[])`,
       [
         rows.map((r) => r.source_id),
         rows.map((r) => r.kind),
         rows.map((r) => r.pages),
+        rows.map((r) => r.documents),
         rows.map((r) => r.statutes),
         rows.map((r) => r.rechtssaetze),
         rows.map((r) => r.texte),
@@ -94,13 +102,44 @@ export async function computeAndStoreInventory(pool: Pool): Promise<InventoryRow
 /** The latest stored row per source. Empty before the first snapshot. */
 export async function readLatestInventory(pool: Pool): Promise<InventoryRow[]> {
   const res = await pool.query(`
-    SELECT DISTINCT ON (source_id) source_id, kind, pages, statutes, rechtssaetze, texte, repealed,
+    SELECT DISTINCT ON (source_id) source_id, kind, pages, documents, statutes, rechtssaetze, texte, repealed,
            chunks, embedded, last_updated, measured_at
     FROM corpus_inventory_snapshot
     ORDER BY source_id, measured_at DESC`);
   return res.rows.map((r) => ({
     ...r,
+    documents: r.documents ?? 0,
     last_updated: r.last_updated ? new Date(r.last_updated).toISOString() : null,
     measured_at: new Date(r.measured_at).toISOString(),
   }));
+}
+
+/**
+ * When the numbers were counted: the newest snapshot across all sources.
+ * (Not rows[0] — the rows are ordered by source_id, so that would be the
+ * alphabetically-first source's time.)
+ */
+export function latestSnapshotAt(rows: Pick<InventoryRow, "measured_at">[]): string | null {
+  let latest: string | null = null;
+  for (const r of rows) {
+    if (r.measured_at && (!latest || r.measured_at > latest)) latest = r.measured_at;
+  }
+  return latest;
+}
+
+/**
+ * Live heartbeat to lay over the snapshot: the last write per source within
+ * the past 15 minutes. Served by idx_pages_updated_at_desc in ~2 ms
+ * (measured 2026-09-24), so the "läuft / hängt" signal on the pipeline tab
+ * stays real-time even though the counts are up to 10 minutes old.
+ */
+export async function recentWritesBySource(pool: Pool): Promise<Map<string, string>> {
+  const res = await pool.query(`
+    SELECT source_id, max(updated_at) AS last_write
+    FROM pages
+    WHERE updated_at > now() - interval '15 minutes' AND source_id LIKE 'law-%'
+    GROUP BY source_id`);
+  return new Map(
+    res.rows.map((r) => [r.source_id as string, new Date(r.last_write).toISOString()])
+  );
 }

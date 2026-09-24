@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // @vitest-environment node
-// GET /api/admin/corpus-coverage-audit — the "pages" count must be a
-// distinct page count, not the row count of a pages×content_chunks join.
-// Regression test for the 2026-09-24 dashboard audit: the query used
-// `count(*)` under a `LEFT JOIN content_chunks`, so a source's "pages"
-// number was really its chunk count (roughly correct only for pages with
-// exactly one chunk each).
+// GET /api/admin/corpus-coverage-audit — reads the per-source numbers from
+// the 10-minute inventory snapshot, not a live pages×chunks join.
+//
+// History (2026-09-24 dashboard audit): the live query first counted
+// `count(*)` under a LEFT JOIN content_chunks, so "Seiten" was really the
+// chunk count; then, even corrected, it took 17 s per open of the Bestand
+// tab. The snapshot answers in milliseconds and is the same source every
+// other panel uses.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
@@ -42,7 +44,7 @@ function ctx(email: string) {
   };
 }
 
-function get(qs = "") {
+function get(qs = "jurisdiction=AT") {
   return GET(
     new NextRequest(`http://localhost:3000/api/admin/corpus-coverage-audit?${qs}`, {
       headers: { host: "ops.subsum.io" },
@@ -59,22 +61,27 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("GET /api/admin/corpus-coverage-audit", () => {
-  it("counts distinct pages, not chunk rows, under the pages×content_chunks join", async () => {
-    // The SQL asserts on DISTINCT p.id — a change back to a bare count(*)
-    // would slip past a mock that only checks the returned row shape, so
-    // this test pins the query text itself as well as the response. The
-    // route also runs an unrelated query for the DE gii-toc cross-check;
-    // let that fall through untouched.
-    let sawDbStatsQuery = false;
+  it("takes pages/chunks/embedded from the snapshot and reports its time", async () => {
+    const seen: string[] = [];
     pool.query.mockImplementation(async (sql: string) => {
-      if (sql.includes("FROM pages p")) {
-        sawDbStatsQuery = true;
-        expect(sql).toContain("count(DISTINCT p.id)");
+      seen.push(sql);
+      if (sql.includes("corpus_inventory_snapshot")) {
         return {
           rows: [
-            // A source with 2 pages, 5 chunks total — count(*) on the join
-            // would have reported "pages: 5" here before the fix.
-            { source_id: "law-at-normen", pages: 2, chunks: 5, embedded: 3, last_updated: null },
+            {
+              source_id: "law-at-normen",
+              kind: "statute",
+              pages: 2,
+              documents: 1,
+              statutes: 1,
+              rechtssaetze: 0,
+              texte: 0,
+              repealed: 0,
+              chunks: 5,
+              embedded: 3,
+              last_updated: "2026-09-24T05:00:00.000Z",
+              measured_at: "2026-09-24T05:10:00.000Z",
+            },
           ],
         };
       }
@@ -82,9 +89,16 @@ describe("GET /api/admin/corpus-coverage-audit", () => {
     });
 
     const res = await get();
-    await res.json();
+    const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(sawDbStatsQuery).toBe(true);
+    expect(body.data.snapshot_at).toBe("2026-09-24T05:10:00.000Z");
+    // A page with 5 chunks is one page, not five — whether the source is
+    // declared in the coverage matrix (rows, summed over db_source_ids) or
+    // shows up as undeclared.
+    const declared = body.data.rows.find((r: any) => r.db_source_ids?.includes("law-at-normen"));
+    const undeclared = body.data.undeclared.find((s: any) => s.source_id === "law-at-normen");
+    expect(declared?.actual_pages ?? undeclared?.pages).toBe(2);
+    expect(seen.some((s) => s.includes("LEFT JOIN content_chunks"))).toBe(false);
   });
 });
