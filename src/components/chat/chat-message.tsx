@@ -28,6 +28,7 @@ import { CitationPanel, type CitationPanelData } from "@/components/legal/Citati
 import { type AnswerDownReason, type ChatMessage } from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import { modelDisplayName } from "@/lib/model-display";
 import { SaveToMatterButton } from "@/components/legal/save-to-matter-button";
 
 interface ChatMessageBubbleProps {
@@ -303,7 +304,7 @@ function ChatMessageBubbleInner({
             {message.model && (
               <span className="inline-flex items-center gap-0.5" title={t("chat.ai_model")}>
                 <Cpu size={9} />
-                {message.model}
+                {modelDisplayName(message.model)}
               </span>
             )}
           </div>

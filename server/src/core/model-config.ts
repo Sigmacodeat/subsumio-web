@@ -190,22 +190,25 @@ export const TIER_DEFAULTS: Record<ModelTier, string> = tierDefaultsFor(aiProvid
  */
 const USER_MODEL_CHOICES: Record<
   string,
-  { native: string; openrouter: string; bedrockEu: string | undefined }
+  { native: string; openrouter: string; bedrockEu: string | undefined; tier: ModelTier }
 > = {
   "claude-haiku-4-5": {
     native: "anthropic:claude-haiku-4-5",
     openrouter: "openrouter:anthropic/claude-haiku-4.5",
     bedrockEu: `bedrock:${BEDROCK_EU_MODELS.haiku45}`,
+    tier: "utility",
   },
   "claude-sonnet-5": {
     native: "anthropic:claude-sonnet-5",
     openrouter: "openrouter:anthropic/claude-sonnet-5",
     bedrockEu: `bedrock:${BEDROCK_EU_MODELS.sonnet5}`,
+    tier: "reasoning",
   },
   "claude-opus-5": {
     native: "anthropic:claude-opus-5",
     openrouter: "openrouter:anthropic/claude-opus-5",
     bedrockEu: `bedrock:${BEDROCK_EU_MODELS.opus5}`,
+    tier: "deep",
   },
   // Fable 5.1 has no EU inference profile on Bedrock (only us./global., and it
   // requires AWS human-review retention). In bedrock-eu mode the pick falls
@@ -214,13 +217,36 @@ const USER_MODEL_CHOICES: Record<
     native: "anthropic:claude-fable-5-1",
     openrouter: "openrouter:anthropic/claude-fable-5.1",
     bedrockEu: undefined,
+    tier: "deep",
   },
   "mistral-large-3": {
     native: "mistral:mistral-large-3",
     openrouter: "openrouter:mistralai/mistral-large",
     bedrockEu: "mistral:mistral-large-3",
+    tier: "reasoning",
   },
 };
+
+/** The picker catalogue: web model id → the tier it routes to. */
+export function pickableModelTiers(): Array<{ id: string; tier: ModelTier }> {
+  return Object.entries(USER_MODEL_CHOICES).map(([id, entry]) => ({ id, tier: entry.tier }));
+}
+
+/**
+ * The tier a pickable model belongs to, by its routed model string. Used to
+ * check a user's per-question pick against the firm's model profile floor
+ * (src/core/model-profile.ts) — a pick may go stronger, never weaker.
+ * Returns undefined for anything outside the picker catalogue (CLI/--model).
+ */
+export function tierForPickableModel(model: string | undefined): ModelTier | undefined {
+  if (!model) return undefined;
+  const wanted = model.trim();
+  for (const entry of Object.values(USER_MODEL_CHOICES)) {
+    if (entry.native === wanted || entry.openrouter === wanted || entry.bedrockEu === wanted)
+      return entry.tier;
+  }
+  return undefined;
+}
 
 export function resolveUserModelChoice(choice: unknown): string | undefined {
   if (typeof choice !== "string") return undefined;

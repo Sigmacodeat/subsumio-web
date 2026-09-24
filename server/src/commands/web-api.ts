@@ -3437,7 +3437,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         try {
           const result = await runUtilityCompletion(
             engine,
-            (req.body ?? {}) as Record<string, unknown>
+            (req.body ?? {}) as Record<string, unknown>,
+            requestSourceId(req)
           );
           res.json(result);
         } catch (e) {
@@ -3454,6 +3455,52 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
+  // ── Firm model profile (dashboard → KI-Modelle) ──────────────────────
+  // Per-tenant choice of the model tier per work area; see
+  // src/core/model-profile.ts. Admin-only enforcement happens in the web
+  // app (settings.write); the engine validates the profile itself.
+  app.get("/api/settings/model-profile", async (req: Request, res: Response) => {
+    try {
+      const { loadModelProfile, buildModelProfileView } = await import("../core/model-profile.ts");
+      const profile = await loadModelProfile(engine, requestSourceId(req));
+      res.json(await buildModelProfileView(engine, profile));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "model_profile_failed", message: msg });
+    }
+  });
+
+  app.put(
+    "/api/settings/model-profile",
+    express.json({ limit: "16kb" }),
+    async (req: Request, res: Response) => {
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const updatedBy =
+        typeof body.updated_by === "string" && body.updated_by.trim()
+          ? body.updated_by.trim().slice(0, 200)
+          : null;
+      try {
+        const { saveModelProfile, buildModelProfileView, ModelProfileValidationError } =
+          await import("../core/model-profile.ts");
+        const sourceId = requestSourceId(req);
+        await ensureSource(sourceId);
+        try {
+          const profile = await saveModelProfile(engine, sourceId, body.areas, updatedBy);
+          res.json(await buildModelProfileView(engine, profile));
+        } catch (e) {
+          if (e instanceof ModelProfileValidationError) {
+            res.status(400).json({ error: e.code, message: e.message });
+            return;
+          }
+          throw e;
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "model_profile_failed", message: msg });
+      }
+    }
+  );
+
   // Same completion, streamed. The website concierge shows each sentence as
   // soon as it has passed its claim check, so the visitor is not left staring
   // at a spinner for several seconds.
@@ -3464,7 +3511,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const { streamUtilityCompletion, UtilityCompletionError } =
         await import("../core/ai/utility-complete.ts");
       try {
-        const events = streamUtilityCompletion(engine, (req.body ?? {}) as Record<string, unknown>);
+        const events = streamUtilityCompletion(
+          engine,
+          (req.body ?? {}) as Record<string, unknown>,
+          requestSourceId(req)
+        );
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
         res.setHeader("Cache-Control", "no-cache, no-transform");
         res.setHeader("Connection", "keep-alive");
@@ -3769,6 +3820,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           documentConfidence,
           warnings,
           trace_id: traceId,
+          model: result.modelUsed,
           ...finalAnswerEvent(streamedAnswer, result.answer, warnings),
         })}\n\n`
       );

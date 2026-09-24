@@ -25,21 +25,23 @@ import {
   groundJsonResponse,
 } from "@/lib/citation-gate";
 
-// Mock fs.promises.readFile for grounding verification — the module imports
-// `{ promises as fs } from "node:fs"`, so the mock must live on node:fs, not
-// node:fs/promises (otherwise CI without law-corpus/ reads the real fs).
-vi.mock("node:fs", async () => {
-  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
-  const fn = vi.fn();
+// Mock fs.readFile for grounding verification
+// legal-grounding.ts reads the corpus through `import { promises as fs } from
+// "node:fs"` — mocking only "node:fs/promises" left it on the real file system,
+// where the law corpus does not exist, so nothing ever verified.
+const mockReadFile = vi.fn();
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
   return {
     ...actual,
-    default: { ...actual, promises: { ...actual.promises, readFile: fn } },
-    promises: { ...actual.promises, readFile: fn },
+    default: actual,
+    promises: { ...actual.promises, readFile: (...a: unknown[]) => mockReadFile(...a) },
   };
 });
-
-import { promises as fs } from "node:fs";
-const mockReadFile = vi.mocked(fs.readFile);
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, default: actual, readFile: (...a: unknown[]) => mockReadFile(...a) };
+});
 
 // ── Fixtures ───────────────────────────────────────────────────────────
 
@@ -130,6 +132,11 @@ describe("Pipeline D: Chat → Intent → Routing → Citation → Grounding", (
     );
 
     const grounding = await groundAnswerCitations(LEGAL_ANSWER);
+
+    // Without this the test can pass by reading the real corpus off the
+    // developer's disk (SUBSUMIO_LAW_CORPUS_DIR in .env.local) while the mock
+    // silently misses — which is exactly how a broken mock stayed unnoticed.
+    expect(mockReadFile).toHaveBeenCalled();
 
     expect(grounding.corpus_checked).toBe(true);
     expect(grounding.grounded_citations.length).toBeGreaterThanOrEqual(3);

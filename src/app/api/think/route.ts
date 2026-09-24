@@ -29,7 +29,8 @@ const thinkSchema = z.object({
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
   query_mode: z.enum(["conservative", "balanced", "deep_matter"]).default("balanced"),
   case_slug: z.string().optional(),
-  model: z.string().optional(),
+  /** The user's model pick from the chat (catalogue id); clamped by the firm's chat floor. */
+  model: z.string().max(100).optional(),
 });
 
 /**
