@@ -30,4 +30,11 @@ if [ -d "${rdir}/data" ]; then
   echo "[restore]   docker cp ${rdir}/data/. <engine-container>:/data/"
 fi
 
+webdir=$(find "${rdir}" -maxdepth 4 -type d -name web-data 2>/dev/null | head -1)
+if [ -n "${webdir}" ]; then
+  echo "[restore] web app state restored to ${webdir}"
+  echo "[restore] → copy it onto the web-data volume (/app/.data) of the web container:"
+  echo "[restore]   docker cp ${webdir}/. <web-container>:/app/.data/"
+fi
+
 echo "[restore] DONE. Now: start the stack, log in, open a client document, measure RTO."

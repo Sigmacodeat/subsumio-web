@@ -77,3 +77,6 @@ tests/e2e-playwright/marketing-visual.spec.ts-snapshots/
 # Office add-ins, built by scripts/build-office-addins.ts during `bun run build`
 /public/word-addin/
 /public/outlook-addin/
+
+# Runtime state written by src/lib/source-registry.ts
+.source-registry-diff/

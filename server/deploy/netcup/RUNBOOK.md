@@ -60,6 +60,15 @@ ausstehende Datenbank-Migrationen beim Start ein. Schwere Migrationen (große Ta
 vorher gestückelt von Hand einspielen, wie bei v124 (`content_chunks.source_id`, 4 Mio. Zeilen in
 Stapeln zu 100 000, danach `CREATE INDEX CONCURRENTLY`).
 
+## Dauerhafter Speicher der Web-App
+
+Die Web-App schreibt Laufzeitdaten (Feature-Flags, SCIM-Status, WhatsApp-Medien, Admin-Backups, Dashboard-Widgets, Rate-Limit-Fenster ohne Upstash, Quellen-Hashes) nach `SUBSUMIO_DATA_DIR=/app/.data`. Das ist das Docker-Volume `subsumio-engine_web-data` auf der Platte dieses Servers. Es übersteht jedes Deploy (`--force-recreate`).
+
+- Das Volume legt Compose beim ersten `up` nach der Umstellung selbst an. Es ist nichts manuell zu tun.
+- Gesichert wird es vom `backup`-Dienst: Er hängt das Volume read-only unter `/web-data` ein und legt es als `web-data/` in jeden Snapshot (offsite restic und lokale verschlüsselte Kopie).
+- Wiederherstellen: `restore.sh` nennt den Pfad. Danach `docker cp <pfad>/. <web-container>:/app/.data/`.
+- Platz prüfen: `docker system df -v | grep web-data`.
+
 ## Cron-Überwachung
 
 Die Jobs stehen in `crontab` und laufen per supercronic im `cron`-Container (jeder Deploy erzeugt

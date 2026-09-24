@@ -180,6 +180,9 @@ services:
       - ${LAW_CORPUS_HOST_DIR:-/opt/subsumio-data/law-corpus}:/app/law-corpus:ro
       # Timestamp of the last successful backup, checked by /api/cron/health.
       - backup-status:/backup-status:ro
+      # Persistent web state (SUBSUMIO_DATA_DIR, see Dockerfile.web). Without it
+      # every file-backed store is lost on each --force-recreate.
+      - web-data:/app/.data
     depends_on:
       db:
         condition: service_healthy
@@ -281,6 +284,8 @@ services:
     volumes:
       # Original files — only needed when STORAGE_BACKEND=local. Harmless if s3.
       - engine-data:/data:ro
+      # Web app state (file-backed stores, WhatsApp media) — backed up too.
+      - web-data:/web-data:ro
       - ./backup:/backup:ro
       - backup-local:/backups
       - backup-status:/backup-status
@@ -410,6 +415,9 @@ volumes:
   # Not external: created fresh by Compose on first `up`.
   corpus-data:
   corpus-logs:
+  # Web app state mounted at /app/.data. Not external: created by Compose on
+  # the first `up` after this change (as subsumio-engine_web-data).
+  web-data:
 
 networks:
   hetzner_default:
