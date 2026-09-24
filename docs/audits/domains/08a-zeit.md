@@ -179,7 +179,7 @@ PR #47 hat B2, B3, B4, B7 und B14 gefixt. Dieser Branch schließt den Rest:
   (`standaloneEntryFromPage`), Timer-Stops tragen das Flag → der
   Manuelle/Automatisch-Filter der Liste funktioniert.
 - **B10** — Buchung: deterministischer Page-Slug `legal/bookings/
-  <yyyymmdd>-<yyyymmddhhmm>` → zwei parallele POSTs desselben Slots
+<yyyymmdd>-<yyyymmddhhmm>` → zwei parallele POSTs desselben Slots
   kollidieren in der Engine (409), kein check-then-write-Fenster mehr.
   Slot-Generierung und Belegungs-Abgleich rechnen in Europe/Vienna statt
   Server-TZ (`zonedWallTimeToUtc`, `zonedDateString` in
@@ -209,6 +209,7 @@ route.test.ts` (POST-Validierung, Engine-Fehler, Frontmatter-Filter),
 Slug), `online-booking.test.ts` (Wien-Wall-Time CET/CEST, deterministische
 IDs). 142 Tests grün; `tsc --noEmit` (app + test), eslint, alle
 verify-Scripte sauber.
+
 - **B8+** — Standalone-Einträge sind auch abrechenbar: `updateStandaloneBilling`
   billed/unbilled pro Page, idempotent (gleiche Rechnungsnr. → Retry ok,
   fremde Rechnung → `already_billed` statt stiller Umattribuierung);

@@ -272,9 +272,7 @@ describe("GET /api/absences", () => {
   beforeEach(() => vi.clearAllMocks());
 
   function get(qs = "") {
-    return GET(
-      new Request(`http://localhost/api/absences${qs}`) as unknown as NextRequest
-    );
+    return GET(new Request(`http://localhost/api/absences${qs}`) as unknown as NextRequest);
   }
 
   test("filtert auf dem Frontmatter, nicht auf dem Page-Wrapper", async () => {
