@@ -11,6 +11,7 @@
 
 import type { TimeEntry } from "@/lib/legal-types";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { zonedDateString } from "@/lib/datetime";
 import { createHash } from "node:crypto";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -37,6 +38,91 @@ export interface CurrentActivity {
 
 export interface TimeEntryWithCase extends TimeEntry {
   case_slug?: string;
+  /** Set on entries the timer/passive capture created (stopCurrentActivity). */
+  is_auto_generated?: boolean;
+}
+
+/**
+ * Map a standalone `time_entry` page (timer stops, imports — id IS the page
+ * slug under `time-entries/…`) to the shared entry shape. Used by the firm
+ * list and by the PATCH/DELETE fallback in /api/time.
+ */
+export function standaloneEntryFromPage(
+  slug: string,
+  fm: Record<string, unknown>
+): TimeEntryWithCase {
+  return {
+    id: slug,
+    description: String(fm.description ?? ""),
+    minutes: Number(fm.minutes ?? 0),
+    date: String(fm.date ?? ""),
+    // `!= null`, not truthiness — an explicit rate of 0 (pro bono) must
+    // survive as 0, not fall back to the default rate.
+    rate: fm.rate != null ? Number(fm.rate) : undefined,
+    billable: Boolean(fm.billable),
+    billed: Boolean(fm.billed),
+    invoice_number: fm.invoice_number ? String(fm.invoice_number) : undefined,
+    lawyer: fm.lawyer ? String(fm.lawyer) : undefined,
+    activity_type: fm.activity_type ? String(fm.activity_type) : undefined,
+    case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
+    is_auto_generated: fm.is_auto_generated === true,
+  };
+}
+
+/** Standalone `time_entry` pages carry their id as the page slug. */
+export const STANDALONE_ENTRY_PREFIX = "time-entries/";
+
+export interface StandaloneBillingResult {
+  updated: number;
+  not_found: string[];
+  /** Entries already covered by a different invoice — never overwritten. */
+  already_billed: string[];
+}
+
+/**
+ * Mark or unmark standalone `time_entry` pages (timer stops, imports).
+ * Unlike the matter-embedded array, each entry is its own page — a PATCH
+ * on one page can't clobber a sibling, so no read-modify-write retry is
+ * needed. Billing a page already billed under a DIFFERENT invoice is
+ * refused (already_billed) rather than silently re-attributed.
+ */
+export async function updateStandaloneBilling(
+  brain: {
+    getPage: (slug: string) => Promise<{ frontmatter?: unknown } | null>;
+    updatePage: (input: { slug: string; frontmatter: Record<string, unknown> }) => Promise<unknown>;
+  },
+  ids: string[],
+  mode: { billed: true; invoiceNumber: string } | { billed: false }
+): Promise<StandaloneBillingResult> {
+  const result: StandaloneBillingResult = { updated: 0, not_found: [], already_billed: [] };
+  for (const id of ids) {
+    if (!id.startsWith(STANDALONE_ENTRY_PREFIX)) {
+      result.not_found.push(id);
+      continue;
+    }
+    const page = await brain.getPage(id).catch(() => null);
+    const fm = (page?.frontmatter ?? null) as Record<string, unknown> | null;
+    if (!fm || fm.status === "tombstoned") {
+      result.not_found.push(id);
+      continue;
+    }
+    if (mode.billed) {
+      if (fm.billed === true && fm.invoice_number !== mode.invoiceNumber) {
+        result.already_billed.push(id);
+        continue;
+      }
+      await brain.updatePage({
+        slug: id,
+        frontmatter: { ...fm, billed: true, invoice_number: mode.invoiceNumber },
+      });
+    } else {
+      const nextFm: Record<string, unknown> = { ...fm, billed: false };
+      delete nextFm.invoice_number;
+      await brain.updatePage({ slug: id, frontmatter: nextFm });
+    }
+    result.updated += 1;
+  }
+  return result;
 }
 
 export interface TimeQueryFilters {
@@ -74,6 +160,8 @@ export interface BillingSummary {
 export interface MarkBilledResult {
   updated: number;
   not_found: string[];
+  /** Entries already billed under a DIFFERENT invoice — never re-attributed. */
+  already_billed: string[];
   entries: TimeEntryWithCase[];
 }
 
@@ -207,21 +295,10 @@ export async function listAllTimeEntries(brain: {
     listAllPagesOfType(brain, "time_entry"),
     listAllPagesOfType(brain, "legal_case"),
   ]);
-  const fromPages: TimeEntryWithCase[] = pages.map((p) => {
+  const fromPages: TimeEntryWithCase[] = pages.flatMap((p) => {
     const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-    return {
-      id: p.slug,
-      description: String(fm.description ?? ""),
-      minutes: Number(fm.minutes ?? 0),
-      date: String(fm.date ?? ""),
-      rate: fm.rate ? Number(fm.rate) : undefined,
-      billable: Boolean(fm.billable),
-      billed: Boolean(fm.billed),
-      invoice_number: fm.invoice_number ? String(fm.invoice_number) : undefined,
-      lawyer: fm.lawyer ? String(fm.lawyer) : undefined,
-      activity_type: fm.activity_type ? String(fm.activity_type) : undefined,
-      case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
-    };
+    if (String(fm.status ?? "") === "tombstoned") return [];
+    return [standaloneEntryFromPage(p.slug, fm)];
   });
   const fromCases: TimeEntryWithCase[] = cases.flatMap((c) => {
     const fm = (c.frontmatter ?? {}) as Record<string, unknown>;
@@ -316,7 +393,9 @@ export function computeBillingSummary(
     const summary = computeSummary(caseEntries);
     const amount = caseEntries.reduce((sum, e) => {
       const hours = (e.minutes || 0) / 60;
-      const rate = e.rate || defaultRate || 0;
+      // `??`, not `||` — an explicit rate of 0 (pro bono) must not fall back
+      // to the default rate and get billed.
+      const rate = e.rate ?? defaultRate ?? 0;
       return sum + hours * rate;
     }, 0);
 
@@ -357,6 +436,7 @@ export function markEntriesBilled(
 ): MarkBilledResult {
   const idSet = new Set(ids);
   const notFound: string[] = [];
+  const alreadyBilled: string[] = [];
   const updated: TimeEntryWithCase[] = [];
 
   for (const id of ids) {
@@ -367,6 +447,14 @@ export function markEntriesBilled(
 
   const result = entries.map((e) => {
     if (idSet.has(e.id)) {
+      // An entry already billed under a different invoice keeps its
+      // attribution — silently moving it to the new invoice would falsify
+      // the GoBD trail of the old one. Same-invoice retries stay
+      // idempotent. Reversal goes through unbill.
+      if (e.billed && e.invoice_number && e.invoice_number !== invoiceNumber) {
+        alreadyBilled.push(e.id);
+        return e;
+      }
       const updatedEntry = {
         ...e,
         billed: true,
@@ -381,6 +469,7 @@ export function markEntriesBilled(
   return {
     updated: updated.length,
     not_found: notFound,
+    already_billed: alreadyBilled,
     entries: result,
   };
 }
@@ -429,6 +518,7 @@ export function unbillEntries(entries: TimeEntryWithCase[], ids: string[]): Mark
   return {
     updated: updated.length,
     not_found: notFound,
+    already_billed: [],
     entries: result,
   };
 }
@@ -547,7 +637,7 @@ export async function updateActivityHeartbeat(
   };
   const slug = currentActivitySlug(userId, brainId);
 
-  await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({
@@ -558,6 +648,11 @@ export async function updateActivityHeartbeat(
     }),
     signal: AbortSignal.timeout(10_000),
   });
+  if (!res.ok) {
+    // Swallowing this failure makes the timer look alive while the
+    // inactivity cron is about to stop it — fail loudly instead.
+    throw new Error(`activity heartbeat failed: HTTP ${res.status}`);
+  }
 }
 
 /**
@@ -615,7 +710,9 @@ export async function stopCurrentActivity(
     id: entryId,
     description: current.description,
     minutes: Math.floor(duration / 60),
-    date: current.started_at.split("T")[0],
+    // Firm calendar day, not UTC — a timer stopped at 00:30 Vienna time
+    // belongs to the new day, not the UTC previous day.
+    date: zonedDateString(startedAt),
     rate: undefined,
     billable: true,
     billed: false,

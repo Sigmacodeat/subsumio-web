@@ -1,4 +1,5 @@
 import type { DashboardKey } from "@/content/dashboard";
+import { zonedDateString } from "@/lib/datetime";
 
 /**
  * Urlaubsvertretung (Vacation Delegation)
@@ -67,10 +68,15 @@ export function createAbsence(input: AbsenceCreateInput): AbsenceRecord {
 }
 
 export function isAbsenceActive(absence: AbsenceRecord, date?: Date): boolean {
-  const now = date ?? new Date();
-  const start = new Date(absence.start_date);
-  const end = new Date(absence.end_date);
-  return now >= start && now <= end && absence.status !== "cancelled";
+  // Inclusive day comparison on the firm calendar: `end_date` is a calendar
+  // day, and the last day counts (the UI states this explicitly). The old
+  // `new Date(end_date)` comparison resolved to midnight UTC, so the whole
+  // final day read as inactive — delegates stopped seeing the Vertretung on
+  // the absence's last day.
+  const day = zonedDateString(date ?? new Date());
+  const start = absence.start_date.slice(0, 10);
+  const end = absence.end_date.slice(0, 10);
+  return day >= start && day <= end && absence.status !== "cancelled";
 }
 
 export function activateAbsence(absence: AbsenceRecord): AbsenceRecord {

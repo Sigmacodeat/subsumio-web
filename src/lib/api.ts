@@ -31,6 +31,7 @@ import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
 import { csrfFetch, getCsrfToken } from "./csrf";
+import { unwrapApiBody } from "./api-body";
 import { consumeSSEStream } from "./sse-stream";
 
 /** Areas that require a firm session; a 401 there means "log in again". */
@@ -3207,7 +3208,10 @@ export const api = {
       if (params?.unbilled) searchParams.set("unbilled", "true");
       if (params?.limit) searchParams.set("limit", String(params.limit));
       const qs = searchParams.toString();
-      return request(`/api/time${qs ? `?${qs}` : ""}`);
+      // All /api/time* routes answer with the apiSuccess envelope
+      // ({ data: … }) — unwrap it, otherwise callers read `entries`/`id`
+      // off the wrapper and get undefined (the dashboard rendered empty).
+      return request(`/api/time${qs ? `?${qs}` : ""}`).then((r) => unwrapApiBody(r));
     },
 
     create(input: {
@@ -3220,10 +3224,12 @@ export const api = {
       activity_type?: string;
       lawyer?: string;
     }): Promise<{ id: string }> {
+      // POST answers { entry, case_slug } — callers want the created entry,
+      // so resolve to it (its `id` is what time-suggestions persists).
       return request("/api/time", {
         method: "POST",
         body: JSON.stringify(input),
-      });
+      }).then((r) => unwrapApiBody<{ entry: { id: string } }>(r).entry);
     },
 
     unbill(input: {
@@ -3233,7 +3239,7 @@ export const api = {
       return request("/api/time/unbill", {
         method: "POST",
         body: JSON.stringify(input),
-      });
+      }).then((r) => unwrapApiBody(r));
     },
 
     markBilled(input: {
@@ -3244,11 +3250,13 @@ export const api = {
       return request("/api/time/mark-billed", {
         method: "POST",
         body: JSON.stringify(input),
-      });
+      }).then((r) => unwrapApiBody(r));
     },
 
     update(input: {
-      case_slug: string;
+      // Optional for standalone `time_entry` pages (id = `time-entries/…`),
+      // which are not bound to a matter.
+      case_slug?: string;
       id: string;
       description?: string;
       minutes?: number;
@@ -3273,14 +3281,14 @@ export const api = {
       return request("/api/time", {
         method: "PATCH",
         body: JSON.stringify(input),
-      });
+      }).then((r) => unwrapApiBody(r));
     },
 
-    delete(input: { case_slug: string; id: string }): Promise<{ ok: boolean }> {
+    delete(input: { case_slug?: string; id: string }): Promise<{ ok: boolean }> {
       return request("/api/time", {
         method: "DELETE",
         body: JSON.stringify(input),
-      });
+      }).then((r) => unwrapApiBody(r));
     },
   },
 

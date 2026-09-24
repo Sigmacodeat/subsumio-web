@@ -14,13 +14,17 @@ import {
 import { logger } from "@/lib/logger";
 const log = logger("api/absences");
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 const createAbsenceSchema = z.object({
   user_email: z.string().email(),
   user_name: z.string().min(1).max(200),
   delegate_email: z.string().email(),
   delegate_name: z.string().min(1).max(200),
-  start_date: z.string().min(1),
-  end_date: z.string().min(1),
+  // ISO calendar dates — free-text previously passed through and produced
+  // absence records that never activate.
+  start_date: z.string().regex(DATE_RE, "invalid_date"),
+  end_date: z.string().regex(DATE_RE, "invalid_date"),
   reason: z.string().max(500).optional(),
   auto_route_enabled: z.boolean().default(true),
   notes: z.string().max(2000).optional(),
@@ -44,6 +48,13 @@ export const POST = createHandler(
   async (ctx, body) => {
     if (new Date(body.end_date) < new Date(body.start_date)) {
       return apiError("invalid_dates", "Enddatum muss nach Startdatum liegen", 422);
+    }
+    if (body.user_email.toLowerCase() === body.delegate_email.toLowerCase()) {
+      return apiError(
+        "self_delegation",
+        "Die Vertretung muss eine andere Person sein als die abwesende Person.",
+        422
+      );
     }
 
     const absence = createAbsence(body);
@@ -211,9 +222,14 @@ export const GET = createHandler(
     });
     if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
     const data = await res.json();
-    let absences: AbsenceRecord[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as AbsenceRecord[];
+    // Pages wrap the record in `frontmatter` — filtering on the wrapper
+    // fields made every user_email/status query return [].
+    let absences: AbsenceRecord[] = (Array.isArray(data) ? data : (data.pages ?? [])).map(
+      (p: unknown) => {
+        const page = p as { frontmatter?: AbsenceRecord };
+        return (page.frontmatter ?? (p as AbsenceRecord)) as AbsenceRecord;
+      }
+    );
 
     if (query?.user_email) {
       absences = absences.filter((a) => a.user_email === query.user_email);

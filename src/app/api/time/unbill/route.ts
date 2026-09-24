@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
-import type { TimeEntry } from "@/lib/legal-types";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   unbillEntries,
+  updateStandaloneBilling,
   writeTimeEntriesWithRetry,
+  STANDALONE_ENTRY_PREFIX,
   TimeEntriesWriteConflictError,
   type TimeEntryWithCase,
 } from "@/lib/time-tracking";
@@ -35,25 +36,42 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     try {
       const brain = createServerBrainClient(ctx.headers);
-      const casePage = await brain.getPage(body.case_slug).catch(() => null);
-      if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+      const standaloneIds = body.entry_ids.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
+      const caseIds = body.entry_ids.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
 
-      const { meta: result } = await writeTimeEntriesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => {
-          const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-            ...e,
-            case_slug: body.case_slug,
-          }));
-          const r = unbillEntries(entriesWithCase, body.entry_ids);
-          return {
-            nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
-            meta: r,
-          };
-        },
-        log
-      );
+      let result: { updated: number; not_found: string[] } = { updated: 0, not_found: [] };
+      if (caseIds.length > 0) {
+        const casePage = await brain.getPage(body.case_slug).catch(() => null);
+        if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+
+        const { meta } = await writeTimeEntriesWithRetry(
+          brain,
+          body.case_slug,
+          (freshEntries) => {
+            const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
+              ...e,
+              case_slug: body.case_slug,
+            }));
+            const r = unbillEntries(entriesWithCase, caseIds);
+            return {
+              nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
+              meta: r,
+            };
+          },
+          log
+        );
+        result = meta;
+      }
+
+      if (standaloneIds.length > 0) {
+        const standalone = await updateStandaloneBilling(brain, standaloneIds, {
+          billed: false,
+        });
+        result = {
+          updated: result.updated + standalone.updated,
+          not_found: [...result.not_found, ...standalone.not_found],
+        };
+      }
 
       if (result.updated === 0) {
         return apiError("time_entry_not_found", "Keine der angegebenen Zeiteinträge gefunden", 404);

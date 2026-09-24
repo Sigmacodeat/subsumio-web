@@ -13,6 +13,9 @@ import {
   deleteEntry,
   writeTimeEntriesWithRetry,
   listAllTimeEntries,
+  standaloneEntryFromPage,
+  updateStandaloneBilling,
+  STANDALONE_ENTRY_PREFIX,
   TimeEntriesNotFoundError,
   TimeEntriesWriteConflictError,
   TimeEntryBilledError,
@@ -65,35 +68,70 @@ const timeQuerySchema = z
   })
   .passthrough();
 
+// A time entry is booked against ONE calendar day — 1440 minutes is the
+// physical maximum, anything beyond is a client bug or abuse.
+const MINUTES_MAX = 24 * 60;
+
+const minutesField = z
+  .union([z.number(), z.string()])
+  .transform((v) => (typeof v === "number" ? Math.round(v) : parseInt(String(v), 10)))
+  .pipe(z.number().int().positive("minutes_required_positive").max(MINUTES_MAX, "minutes_max"));
+
+const activityTypeField = z.enum([
+  "research",
+  "drafting",
+  "court",
+  "meeting",
+  "correspondence",
+  "other",
+]);
+
 const timePostSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
   description: z.string().min(1, "description_required").max(500),
-  minutes: z
-    .union([z.number(), z.string()])
-    .transform((v) => (typeof v === "number" ? Math.round(v) : parseInt(String(v), 10)))
-    .pipe(z.number().positive("minutes_required_positive")),
+  minutes: minutesField,
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_required_iso"),
   rate: z.number().min(0).optional(),
   billable: z.boolean().default(true),
-  activity_type: z
-    .enum(["research", "drafting", "court", "meeting", "correspondence", "other"])
-    .default("other"),
+  activity_type: activityTypeField.default("other"),
   lawyer: z.string().max(100).optional(),
 });
 
-const timePatchSchema = z
-  .object({
-    case_slug: z.string().min(1, "case_slug_and_id_required"),
-    id: z.string().min(1, "case_slug_and_id_required"),
-    mark_billed: z.boolean().optional(),
-    entry_ids: z.array(z.string().min(1)).optional(),
-    invoice_number: z.string().min(1).optional(),
-    approval_status: z.enum(["pending", "approved", "rejected"]).optional(),
-  })
-  .passthrough();
+// The UI sends `case_slug: entry.case_slug || ""` — standalone entries
+// carry no case_slug, so normalize empty/blank to absent instead of
+// rejecting the edit of a timer entry.
+const optionalCaseSlug = z
+  .string()
+  .max(300)
+  .optional()
+  .transform((v) => v?.trim() || undefined);
+
+const timePatchSchema = z.object({
+  // Optional because standalone entries (id `time-entries/…`) are not bound
+  // to a matter — the handler requires it for the matter-array paths.
+  case_slug: optionalCaseSlug,
+  id: z.string().min(1, "case_slug_and_id_required"),
+  mark_billed: z.boolean().optional(),
+  entry_ids: z.array(z.string().min(1)).optional(),
+  invoice_number: z.string().min(1).optional(),
+  approval_status: z.enum(["pending", "approved", "rejected"]).optional(),
+  // Editable fields — previously passed through .passthrough() unvalidated,
+  // so `minutes: "abc"` or `rate: -1` landed raw in the matter's
+  // time_entries and corrupted the billing summary.
+  description: z.string().min(1).max(500).optional(),
+  minutes: minutesField.optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "date_required_iso")
+    .optional(),
+  rate: z.number().min(0).optional(),
+  billable: z.boolean().optional(),
+  lawyer: z.string().max(100).optional(),
+  activity_type: activityTypeField.optional(),
+});
 
 const timeDeleteSchema = z.object({
-  case_slug: z.string().min(1, "case_slug_and_id_required"),
+  case_slug: optionalCaseSlug,
   id: z.string().min(1, "case_slug_and_id_required"),
 });
 
@@ -227,38 +265,81 @@ export const PATCH = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const brain = createServerBrainClient(ctx.headers);
-    const exists = await brain.getPage(body.case_slug).catch(() => null);
-    if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
+    // Standalone `time_entry` pages (timer stops, imports): the id IS the
+    // page slug and the entry is not bound to a matter's array.
+    const standalone = body.id.startsWith(STANDALONE_ENTRY_PREFIX);
+    if (!standalone) {
+      if (!body.case_slug) {
+        return apiError("case_slug_and_id_required", "case_slug und id erforderlich", 400);
+      }
+      const exists = await brain.getPage(body.case_slug).catch(() => null);
+      if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
+    }
 
     // ── Bulk mark-billed mode ──
     if (body.mark_billed && body.entry_ids && body.invoice_number) {
-      let billedResult: { updated: number; not_found: string[] };
-      try {
-        const { meta } = await writeTimeEntriesWithRetry(
-          brain,
-          body.case_slug,
-          (freshEntries) => {
-            const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-              ...e,
-              case_slug: body.case_slug,
-            }));
-            const result = markEntriesBilled(
-              entriesWithCase,
-              body.entry_ids!,
-              body.invoice_number!
-            );
-            return {
-              nextEntries: result.entries.map(({ case_slug: _cs, ...e }) => e),
-              meta: { updated: result.updated, not_found: result.not_found },
-            };
-          },
-          timeEntryWriteLog
-        );
-        billedResult = meta;
-      } catch (err) {
-        const mapped = timeEntryWriteError(err);
-        if (mapped) return mapped;
-        throw err;
+      // Standalone `time_entry` pages bill on their own page — the matter
+      // array doesn't contain them.
+      const standaloneIds = body.entry_ids.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
+      const caseIds = body.entry_ids.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
+
+      let billedResult: { updated: number; not_found: string[]; already_billed: string[] } = {
+        updated: 0,
+        not_found: [],
+        already_billed: [],
+      };
+      if (caseIds.length > 0) {
+        if (!body.case_slug) {
+          return apiError(
+            "case_slug_and_id_required",
+            "case_slug erforderlich für Akten-Einträge",
+            400
+          );
+        }
+        const caseSlug = body.case_slug;
+        try {
+          const { meta } = await writeTimeEntriesWithRetry<{
+            updated: number;
+            not_found: string[];
+            already_billed: string[];
+          }>(
+            brain,
+            caseSlug,
+            (freshEntries) => {
+              const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
+                ...e,
+                case_slug: body.case_slug,
+              }));
+              const result = markEntriesBilled(entriesWithCase, caseIds, body.invoice_number!);
+              return {
+                nextEntries: result.entries.map(({ case_slug: _cs, ...e }) => e),
+                meta: {
+                  updated: result.updated,
+                  not_found: result.not_found,
+                  already_billed: result.already_billed,
+                },
+              };
+            },
+            timeEntryWriteLog
+          );
+          billedResult = meta;
+        } catch (err) {
+          const mapped = timeEntryWriteError(err);
+          if (mapped) return mapped;
+          throw err;
+        }
+      }
+
+      if (standaloneIds.length > 0) {
+        const standalone = await updateStandaloneBilling(brain, standaloneIds, {
+          billed: true,
+          invoiceNumber: body.invoice_number,
+        });
+        billedResult = {
+          updated: billedResult.updated + standalone.updated,
+          not_found: [...billedResult.not_found, ...standalone.not_found],
+          already_billed: [...billedResult.already_billed, ...standalone.already_billed],
+        };
       }
 
       if (billedResult.updated === 0) {
@@ -274,6 +355,7 @@ export const PATCH = createHandler(
       return apiSuccess({
         updated: billedResult.updated,
         not_found: billedResult.not_found,
+        already_billed: billedResult.already_billed,
         invoice_number: body.invoice_number,
       });
     }
@@ -283,7 +365,7 @@ export const PATCH = createHandler(
     // only through mark-billed/unbill so the audit details keep the invoice
     // number and the billed guard can't be bypassed field-wise.
     const allowedUpdates: Partial<TimeEntry> = {};
-    const allowed: (keyof TimeEntry)[] = [
+    const allowed = [
       "description",
       "minutes",
       "date",
@@ -292,18 +374,40 @@ export const PATCH = createHandler(
       "lawyer",
       "activity_type",
       "approval_status",
-    ];
+    ] as const;
     for (const key of allowed) {
-      if (body[key] !== undefined) {
-        (allowedUpdates as Record<string, unknown>)[key] = body[key];
+      const value = body[key];
+      if (value !== undefined) {
+        (allowedUpdates as Record<string, unknown>)[key] = value;
       }
+    }
+
+    if (standalone) {
+      // Timer/import entries live as standalone pages — without this
+      // fallback the UI's edit hit a 404 on an entry it had just listed.
+      const page = await brain.getPage(body.id).catch(() => null);
+      const fm = (page?.frontmatter ?? null) as Record<string, unknown> | null;
+      if (!fm || fm.status === "tombstoned") {
+        return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
+      }
+      if (fm.billed === true) {
+        return apiError(
+          "time_entry_billed",
+          "Der Eintrag ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
+          409
+        );
+      }
+      const nextFm = { ...fm, ...allowedUpdates };
+      await brain.updatePage({ slug: body.id, frontmatter: nextFm });
+      broadcastSseEvent(ctx.brainId, "time.entry.updated", { entry_id: body.id });
+      return apiSuccess({ entry: standaloneEntryFromPage(body.id, nextFm) });
     }
 
     let updated: TimeEntry;
     try {
       const { meta } = await writeTimeEntriesWithRetry<TimeEntry>(
         brain,
-        body.case_slug,
+        body.case_slug!,
         (freshEntries) => {
           const result = updateEntry(freshEntries, body.id, allowedUpdates);
           if (result.billed) return { billed: true };
@@ -342,6 +446,30 @@ export const DELETE = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const brain = createServerBrainClient(ctx.headers);
+
+    if (body.id.startsWith(STANDALONE_ENTRY_PREFIX)) {
+      // Standalone `time_entry` page — tombstone, not removal: keeps the
+      // audit trail and the id stable; listAllTimeEntries filters it out.
+      const page = await brain.getPage(body.id).catch(() => null);
+      const fm = (page?.frontmatter ?? null) as Record<string, unknown> | null;
+      if (!fm || fm.status === "tombstoned") {
+        return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
+      }
+      if (fm.billed === true) {
+        return apiError(
+          "time_entry_billed",
+          "Der Eintrag ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
+          409
+        );
+      }
+      await brain.updatePage({ slug: body.id, frontmatter: { ...fm, status: "tombstoned" } });
+      broadcastSseEvent(ctx.brainId, "time.entry.deleted", { entry_id: body.id });
+      return apiSuccess({ ok: true });
+    }
+
+    if (!body.case_slug) {
+      return apiError("case_slug_and_id_required", "case_slug und id erforderlich", 400);
+    }
     const exists = await brain.getPage(body.case_slug).catch(() => null);
     if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 

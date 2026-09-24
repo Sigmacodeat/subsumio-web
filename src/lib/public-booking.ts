@@ -1,6 +1,7 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { KANZLEI_SETTINGS_SLUG } from "@/lib/kanzlei-settings";
 import { generateSlots, type BookingSlot } from "@/lib/online-booking";
+import { FIRM_TIMEZONE, zonedDateString, zonedWallTimeToUtc } from "@/lib/datetime";
 
 /**
  * Öffentliche Terminbuchung (WP-3.15) — Server-Seite.
@@ -77,7 +78,8 @@ async function listTypedPages(
 /** Belegte Zeitfenster eines Tages aus booking- und appointment-Seiten. */
 export async function bookedRangesForDate(
   headers: Record<string, string>,
-  dateIso: string
+  dateIso: string,
+  timeZone: string = FIRM_TIMEZONE
 ): Promise<Array<{ start: string; end: string }>> {
   const [bookings, appointments] = await Promise.all([
     listTypedPages(headers, "booking"),
@@ -90,7 +92,10 @@ export async function bookedRangesForDate(
     if (
       typeof fm.slot_start === "string" &&
       typeof fm.slot_end === "string" &&
-      fm.slot_start.startsWith(dateIso) &&
+      // `slot_start` is a UTC instant; the day boundary is the firm's, not
+      // UTC's — a 00:30 Vienna booking used to land on the UTC previous day
+      // and was missed by the startsWith(dateIso) match.
+      zonedDateString(new Date(fm.slot_start), timeZone) === dateIso &&
       fm.status !== "cancelled"
     ) {
       ranges.push({ start: fm.slot_start, end: fm.slot_end });
@@ -102,7 +107,9 @@ export async function bookedRangesForDate(
     if (fm.status === "cancelled") continue;
     const time = typeof fm.time === "string" ? fm.time : null;
     if (!time || !/^\d{2}:\d{2}$/.test(time)) continue;
-    const start = new Date(`${fm.date}T${time}:00`);
+    // `fm.date`/`fm.time` are firm-local wall time — resolve them in the
+    // firm zone, not the server's.
+    const start = zonedWallTimeToUtc(fm.date, time, timeZone);
     if (Number.isNaN(start.getTime())) continue;
     const duration =
       typeof fm.duration_minutes === "number" && fm.duration_minutes > 0 ? fm.duration_minutes : 30;
@@ -128,7 +135,8 @@ export async function availableSlots(
     date,
     { start: config.start, end: config.end },
     config.slotMinutes,
-    booked
+    booked,
+    { dateIso, timeZone: FIRM_TIMEZONE }
   );
   return { config, slots };
 }

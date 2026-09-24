@@ -3,13 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import TimeSuggestionsPage from "./page";
 
-const listPages = vi.fn();
 const createPage = vi.fn();
 const timeCreate = vi.fn();
+const mockFetch = vi.fn();
 vi.mock("@/lib/api", () => ({
   api: {
     brain: {
-      listPages: (...a: unknown[]) => listPages(...a),
       createPage: (...a: unknown[]) => createPage(...a),
       listAllPages: vi
         .fn()
@@ -26,23 +25,19 @@ vi.mock("@/lib/queries/auth", () => ({
 vi.mock("@/lib/csrf", () => ({ csrfFetch: vi.fn() }));
 
 const suggestion = (id: string, extra: Record<string, unknown>) => ({
-  slug: `legal/time-suggestions/${id}`,
-  title: id,
-  frontmatter: {
-    id,
-    user_email: "me@example.com",
-    date: "2026-09-19",
-    start_time: "09:00",
-    end_time: "09:45",
-    duration_minutes: 45,
-    description: "Schriftsatz",
-    activity_type: "drafting",
-    activity_ids: [],
-    status: "suggested",
-    confidence: "high",
-    created_at: "2026-09-19T20:00:00Z",
-    ...extra,
-  },
+  id,
+  user_email: "me@example.com",
+  date: "2026-09-19",
+  start_time: "09:00",
+  end_time: "09:45",
+  duration_minutes: 45,
+  description: "Schriftsatz",
+  activity_type: "drafting",
+  activity_ids: [],
+  status: "suggested",
+  confidence: "high",
+  created_at: "2026-09-19T20:00:00Z",
+  ...extra,
 });
 
 function renderPage() {
@@ -53,16 +48,25 @@ function renderPage() {
   );
 }
 
+function stubSuggestions(items: unknown[]) {
+  mockFetch.mockImplementation((url: string) => {
+    if (String(url).includes("/api/time-suggestions")) {
+      return Promise.resolve(Response.json({ data: { suggestions: items } }));
+    }
+    return Promise.resolve(Response.json({ data: { enabled: true } }));
+  });
+  vi.stubGlobal("fetch", mockFetch);
+}
+
 describe("time suggestions", () => {
   beforeEach(() => {
-    listPages.mockReset();
+    mockFetch.mockReset();
     createPage.mockReset().mockResolvedValue({});
     timeCreate.mockReset().mockResolvedValue({ id: "t1" });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ data: { enabled: true } })));
   });
 
   it("hides colleagues' suggestions", async () => {
-    listPages.mockResolvedValue([
+    stubSuggestions([
       suggestion("mine", { case_slug: "legal/cases/a" }),
       suggestion("theirs", { user_email: "colleague@example.com", description: "Fremd" }),
     ]);
@@ -72,7 +76,7 @@ describe("time suggestions", () => {
   });
 
   it("books the corrected values and records the change", async () => {
-    listPages.mockResolvedValue([suggestion("s1", { case_slug: "legal/cases/a" })]);
+    stubSuggestions([suggestion("s1", { case_slug: "legal/cases/a" })]);
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: /vor dem Übernehmen ändern/ }));
     fireEvent.change(screen.getByLabelText("Minuten"), { target: { value: "30" } });
@@ -94,7 +98,7 @@ describe("time suggestions", () => {
   });
 
   it("requires a matter before booking a suggestion without one", async () => {
-    listPages.mockResolvedValue([suggestion("s2", {})]);
+    stubSuggestions([suggestion("s2", {})]);
     renderPage();
     const book = await screen.findByRole("button", { name: /Übernehmen/ });
     expect(book).toBeDisabled();

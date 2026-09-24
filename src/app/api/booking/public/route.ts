@@ -116,6 +116,10 @@ export const POST = createPublicHandler(
     }
 
     const bookingId = crypto.randomUUID();
+    // Deterministic page slug per (date, slot start): the engine rejects a
+    // second create on the same slug with 409 — two parallel POSTs for the
+    // same slot can no longer both pass the check-then-write window.
+    const slotKey = `${body!.date.replace(/\D/g, "")}-${slot.start.replace(/\D/g, "").slice(0, 12)}`;
     const frontmatter = createBookingFrontmatter(
       {
         kanzlei_slug: "public",
@@ -133,7 +137,7 @@ export const POST = createPublicHandler(
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
       body: JSON.stringify({
-        slug: `legal/bookings/${bookingId}`,
+        slug: `legal/bookings/${slotKey}`,
         title: `Termin: ${body!.date} — ${body!.name}`,
         type: "booking",
         content: `## Online-Terminbuchung\n\n**Slot:** ${slot.start} – ${slot.end}\n**Name:** ${body!.name}\n**Anliegen:** ${body!.matter}`,
@@ -141,6 +145,47 @@ export const POST = createPublicHandler(
       }),
       signal: AbortSignal.timeout(15_000),
     });
+    if (createRes.status === 409) {
+      // Same-slug page exists. Either we lost the race to a parallel
+      // request, or the page is a stale cancelled booking — a cancelled
+      // slot must be re-bookable, not permanently blocked by its tombstone.
+      const slug = `legal/bookings/${slotKey}`;
+      const existing = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        headers: engineHeadersForBrain(brainId),
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => null);
+      const existingFm = (await existing?.json().catch(() => null)) as {
+        frontmatter?: { status?: string };
+      } | null;
+      if (existingFm?.frontmatter?.status === "cancelled") {
+        const reactivate = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+          method: "PATCH",
+          headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
+          body: JSON.stringify({
+            frontmatter: {
+              ...frontmatter,
+              booking_id: bookingId,
+              source: "web",
+              status: "confirmed",
+            },
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (reactivate.ok) {
+          return apiSuccess({
+            confirmed: true,
+            booking_id: bookingId,
+            start: slot.start,
+            end: slot.end,
+          });
+        }
+      }
+      return apiError(
+        "slot_already_booked",
+        "Dieser Termin ist nicht mehr verfügbar. Bitte wählen Sie einen anderen.",
+        409
+      );
+    }
     if (!createRes.ok) {
       log.error("booking page write failed", { status: createRes.status });
       return apiError(

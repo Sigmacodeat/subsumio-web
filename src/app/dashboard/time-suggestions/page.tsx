@@ -39,10 +39,13 @@ export default function TimeSuggestionsPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "time_suggestion", limit: 100 });
-      const items = pages
-        .map((p) => p.frontmatter as unknown as TimeSuggestion)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Serverseitig auf den eigenen User gefiltert — die firmenweite
+      // Liste würde fremde Tätigkeitsbeschreibungen im Payload liefern.
+      const res = await fetch("/api/time-suggestions");
+      const data = res.ok ? await res.json() : null;
+      const items = ((data?.data?.suggestions ?? []) as TimeSuggestion[]).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
       setSuggestions(items);
     } catch {
       addToast({ type: "error", title: t("time_sugg.err_load") });

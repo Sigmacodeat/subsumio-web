@@ -20,6 +20,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { TimeEntry } from "@/lib/legal-types";
+import { toZonedDateString } from "@/lib/datetime";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -456,7 +457,10 @@ export function extractTimeFromConversation(
     source,
     case_slug: context.case_slug,
     lawyer: context.lawyer_name,
-    date: context.ended_at ?? new Date().toISOString().split("T")[0],
+    // `ended_at` is a full ISO timestamp — normalize to the firm's calendar
+    // day. A raw timestamp breaks the lexicographic from/to filters in
+    // filterEntries; invalid input falls back to today.
+    date: toZonedDateString(context.ended_at),
     draft: true,
     needs_approval: true,
   };

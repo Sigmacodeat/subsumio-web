@@ -232,6 +232,89 @@ describe("POST /api/booking/public", () => {
     expect(res.status).toBe(409);
   });
 
+  test("Race: Engine-409 auf den deterministischen Slot-Slug → 409 statt Doppelbuchung", async () => {
+    const date = futureDate();
+    // Freie Slots, aber der Page-Write meldet Konflikt — ein paralleler
+    // Request hat denselben Slot inzwischen gebucht.
+    mockFetch.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === "POST" && String(url).endsWith("/api/pages")) {
+        return Promise.resolve(new Response("conflict", { status: 409 }));
+      }
+      return Promise.resolve(enginePagesFor(String(url)));
+    });
+
+    const getRes = await GET(
+      new Request(`http://localhost/api/booking/public?date=${date}`) as unknown as NextRequest
+    );
+    const slot = (await getRes.json()).data.slots[0];
+    if (!slot) return; // 2h-Puffer — kein Slot heute, nichts zu testen
+
+    const res = await POST(
+      new Request("http://localhost/api/booking/public", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(baseBody(slot.start, date)),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(409);
+
+    // Deterministischer Slug: zwei Buchungen desselben Slots treffen denselben
+    // Page-Slug — genau das macht den Race zum Engine-Konflikt statt zur
+    // Doppelbuchung.
+    const writes = mockFetch.mock.calls.filter(
+      (c) =>
+        (c[1] as RequestInit | undefined)?.method === "POST" && String(c[0]).endsWith("/api/pages")
+    );
+    expect(writes).toHaveLength(1);
+    const slug = JSON.parse(String((writes[0][1] as RequestInit).body)).slug as string;
+    expect(slug).toBe(
+      `legal/bookings/${date.replace(/\D/g, "")}-${slot.start.replace(/\D/g, "").slice(0, 12)}`
+    );
+  });
+
+  test("Re-Buchung eines stornierten Slots reaktiviert die Page statt 409", async () => {
+    const date = futureDate();
+    // Der deterministische Slug bleibt nach einer Stornierung belegt — die
+    // Route muss die alte Page reaktivieren statt den Slot für immer zu
+    // sperren.
+    mockFetch.mockImplementation((url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (init?.method === "POST" && u.endsWith("/api/pages")) {
+        return Promise.resolve(new Response("conflict", { status: 409 }));
+      }
+      if (u.includes("/api/pages/legal%2Fbookings%2F")) {
+        if (init?.method === "PATCH") {
+          return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ frontmatter: { status: "cancelled" } }), { status: 200 })
+        );
+      }
+      return Promise.resolve(enginePagesFor(u));
+    });
+
+    const getRes = await GET(
+      new Request(`http://localhost/api/booking/public?date=${date}`) as unknown as NextRequest
+    );
+    const slot = (await getRes.json()).data.slots[0];
+    if (!slot) return;
+
+    const res = await POST(
+      new Request("http://localhost/api/booking/public", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(baseBody(slot.start, date)),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.confirmed).toBe(true);
+
+    const patches = mockFetch.mock.calls.filter(
+      (c) => (c[1] as RequestInit | undefined)?.method === "PATCH"
+    );
+    expect(patches).toHaveLength(1);
+  });
+
   test("lehnt den Honeypot ab", async () => {
     const res = await POST(
       new Request("http://localhost/api/booking/public", {
