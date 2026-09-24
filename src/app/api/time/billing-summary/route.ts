@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { filterEntries, computeBillingSummary, type TimeEntryWithCase } from "@/lib/time-tracking";
+import {
+  filterEntries,
+  computeBillingSummary,
+  listAllTimeEntries,
+} from "@/lib/time-tracking";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/time/billing-summary");
@@ -24,23 +28,10 @@ export const GET = createHandler(
   async (ctx, _body, query, _req) => {
     try {
       const brain = createServerBrainClient(ctx.headers);
-      const pages = await brain.listPages({ type: "time_entry", limit: 500 });
-      const entries: TimeEntryWithCase[] = pages.map((p) => {
-        const fm = p.frontmatter as Record<string, unknown>;
-        return {
-          id: p.slug,
-          description: String(fm.description ?? ""),
-          minutes: Number(fm.minutes ?? 0),
-          date: String(fm.date ?? ""),
-          rate: fm.rate ? Number(fm.rate) : undefined,
-          billable: Boolean(fm.billable),
-          billed: Boolean(fm.billed),
-          invoice_number: fm.invoice_number ? String(fm.invoice_number) : undefined,
-          lawyer: fm.lawyer ? String(fm.lawyer) : undefined,
-          activity_type: fm.activity_type ? String(fm.activity_type) : undefined,
-          case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
-        };
-      });
+      // Same merged source as /api/time: standalone time_entry pages AND the
+      // per-matter time_entries arrays — otherwise the summary undercounts
+      // everything booked inside a matter (and used to cap at 500 pages).
+      const entries = await listAllTimeEntries(brain);
 
       const filtered = filterEntries(entries, {
         from: query.from || undefined,

@@ -34,8 +34,14 @@ export async function POST(req: NextRequest) {
       const inactiveMs = now.getTime() - lastActivity.getTime();
 
       if (inactiveMs > INACTIVITY_THRESHOLD_MS) {
-        // Stop the activity
-        const entryId = await stopCurrentActivity(brainId, userId);
+        // Stop at the last real heartbeat — ending at `now` would bill the
+        // whole idle tail (30+ min plus cron delay) to the client.
+        const entryId = await stopCurrentActivity(
+          brainId,
+          userId,
+          undefined,
+          current.last_activity_at
+        );
         if (entryId) {
           stoppedCount++;
           broadcastTimeActivityStopped(brainId, { userId, entryId });

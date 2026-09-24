@@ -17,7 +17,12 @@ import {
   extractedToTimeEntry,
   type ConversationMessage,
 } from "@/lib/ai-time-extract";
-import { createTimeEntry } from "@/lib/time-tracking";
+import {
+  createTimeEntry,
+  writeTimeEntriesWithRetry,
+} from "@/lib/time-tracking";
+import { createServerBrainClient } from "@/lib/server-brain";
+import type { TimeEntry } from "@/lib/legal-types";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 import { logger } from "@/lib/logger";
@@ -96,46 +101,54 @@ export const POST = createHandler(
       });
     }
 
-    // If auto_approve, persist entries to the case
-    const persistedEntries: Array<{ id: string; case_slug: string }> = [];
+    // If auto_approve, persist the entries to the matter's time_entries —
+    // atomically in one retry-guarded write (previously this only built
+    // objects and reported them as persisted without ever writing).
+    let persistedCount = 0;
     if (body.auto_approve && body.case_slug && result.entries.length > 0) {
-      for (const extracted of result.entries) {
-        const timeEntry = extractedToTimeEntry(extracted);
-        try {
-          const created = createTimeEntry({
-            description: timeEntry.description,
-            minutes: timeEntry.minutes,
-            date: timeEntry.date,
-            rate: timeEntry.rate,
-            billable: timeEntry.billable,
-            lawyer: timeEntry.lawyer,
-            activity_type: timeEntry.activity_type,
-          });
-          persistedEntries.push({ id: created.id, case_slug: body.case_slug });
-        } catch (err) {
-          log.error("[auto-extract] Failed to create entry:", err);
-        }
+      const brain = createServerBrainClient(ctx.headers);
+      const created: TimeEntry[] = result.entries.map((extracted) => {
+        const t = extractedToTimeEntry(extracted);
+        return createTimeEntry({
+          description: t.description,
+          minutes: t.minutes,
+          date: t.date,
+          rate: t.rate,
+          billable: t.billable,
+          lawyer: t.lawyer,
+          activity_type: t.activity_type,
+        });
+      });
+      try {
+        await writeTimeEntriesWithRetry(
+          brain,
+          body.case_slug,
+          (freshEntries) => ({
+            nextEntries: [...freshEntries, ...created],
+            meta: null,
+          }),
+          log
+        );
+        persistedCount = created.length;
+      } catch (err) {
+        log.error("[auto-extract] persist failed:", err instanceof Error ? err.message : String(err));
       }
 
-      // Broadcast via SSE for real-time dashboard update
-      if (ctx.brainId) {
+      if (persistedCount > 0 && ctx.brainId) {
         broadcastSseEvent(ctx.brainId, "time_entry_created", {
           case_slug: body.case_slug,
-          count: persistedEntries.length,
+          count: persistedCount,
           source: "auto_extract",
         });
       }
     }
 
     return apiSuccess({
-      entries: result.entries.map((e) => ({
-        ...e,
-        persisted: persistedEntries.some((p) => p.id === e.id),
-      })),
+      entries: result.entries.map((e) => ({ ...e, persisted: persistedCount > 0 })),
       total_minutes: result.total_minutes,
       billable_minutes: result.billable_minutes,
       conversation_summary: result.conversation_summary,
-      persisted_count: persistedEntries.length,
+      persisted_count: persistedCount,
     });
   }
 );

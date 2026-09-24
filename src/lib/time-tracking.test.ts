@@ -833,3 +833,97 @@ describe("time tracking engine calls", () => {
     }
   });
 });
+
+// ── Billed-entry guard (GoBD: invoice basis must not mutate underneath) ──
+
+describe("billed-entry guard", () => {
+  const billed: TimeEntry[] = [
+    { id: "b1", description: "Recherche", minutes: 60, date: "2026-01-10", billed: true, invoice_number: "R-1" },
+    { id: "u1", description: "Entwurf", minutes: 30, date: "2026-01-11", billed: false },
+  ];
+
+  test("updateEntry refuses to modify a billed entry", () => {
+    const r = updateEntry(billed, "b1", { minutes: 999 });
+    expect(r.billed).toBe(true);
+    expect(r.entries.find((e) => e.id === "b1")?.minutes).toBe(60);
+  });
+
+  test("updateEntry still modifies unbilled entries", () => {
+    const r = updateEntry(billed, "u1", { minutes: 45 });
+    expect(r.billed).toBeUndefined();
+    expect(r.updated?.minutes).toBe(45);
+  });
+
+  test("deleteEntry refuses to remove a billed entry", () => {
+    const r = deleteEntry(billed, "b1");
+    expect(r.billed).toBe(true);
+    expect(r.entries).toHaveLength(2);
+  });
+
+  test("deleteEntry removes unbilled entries", () => {
+    const r = deleteEntry(billed, "u1");
+    expect(r.entries).toHaveLength(1);
+  });
+});
+
+describe("stopCurrentActivity edge cases", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const activity = (over: Record<string, unknown> = {}) => ({
+    frontmatter: {
+      user_id: "u1",
+      brain_id: "b1",
+      activity_type: "research",
+      description: "Recherche",
+      started_at: new Date(Date.now() - 3 * 3600_000).toISOString(),
+      last_activity_at: new Date(Date.now() - 40 * 60_000).toISOString(),
+      ...over,
+    },
+  });
+
+  test("endedAt override bills only up to the last heartbeat, not the idle tail", async () => {
+    const startedAt = new Date(Date.now() - 3 * 3600_000).toISOString();
+    const lastBeat = new Date(Date.now() - 40 * 60_000).toISOString();
+    let captured: Record<string, unknown> | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (!init?.method) {
+          return new Response(
+            JSON.stringify(activity({ started_at: startedAt, last_activity_at: lastBeat })),
+            { status: 200 }
+          );
+        }
+        if (init.method === "POST") {
+          captured = JSON.parse(String(init.body)) as Record<string, unknown>;
+        }
+        return new Response("{}", { status: 200 });
+      })
+    );
+    const entryId = await stopCurrentActivity("b1", "u1", undefined, lastBeat);
+    expect(entryId).toMatch(/^time-entries\/u1\//);
+    const fm = (captured as Record<string, unknown>).frontmatter as Record<string, unknown>;
+    expect(fm.ended_at).toBe(lastBeat);
+    // ~2h20m billed, not 3h
+    expect(Number(fm.minutes)).toBeLessThan(150);
+    expect(Number(fm.minutes)).toBeGreaterThan(130);
+  });
+
+  test("409 on the deterministic entry slug is treated as already-stopped", async () => {
+    let deleteCalled = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (!init?.method) {
+          return new Response(JSON.stringify(activity()), { status: 200 });
+        }
+        if (init.method === "POST") return new Response("conflict", { status: 409 });
+        if (init.method === "DELETE") deleteCalled = true;
+        return new Response("{}", { status: 200 });
+      })
+    );
+    const entryId = await stopCurrentActivity("b1", "u1");
+    expect(entryId).toMatch(/^time-entries\/u1\//);
+    expect(deleteCalled).toBe(true);
+  });
+});
