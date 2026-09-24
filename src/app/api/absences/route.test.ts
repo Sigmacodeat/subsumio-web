@@ -22,6 +22,7 @@ vi.mock("@/lib/api-handler", () => ({
   createHandler: (
     opts: {
       body?: { safeParse: (d: unknown) => { success: boolean; data?: unknown } };
+      query?: { safeParse: (d: unknown) => { success: boolean; data?: unknown } };
       audit?: (ctx: unknown, body: unknown) => unknown;
     },
     handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
@@ -37,7 +38,12 @@ vi.mock("@/lib/api-handler", () => ({
       if (parsed && !parsed.success) {
         return Response.json({ error: "validation_failed" }, { status: 400 });
       }
-      return handler(ctx, parsed?.data ?? raw, undefined, req);
+      const queryRaw = Object.fromEntries(new URL(req.url).searchParams.entries());
+      const queryParsed = opts.query?.safeParse(queryRaw);
+      if (queryParsed && !queryParsed.success) {
+        return Response.json({ error: "validation_failed" }, { status: 400 });
+      }
+      return handler(ctx, parsed?.data ?? raw, queryParsed?.data ?? queryRaw, req);
     };
   },
   apiError: (code: string, message: string, status: number) =>
@@ -45,7 +51,7 @@ vi.mock("@/lib/api-handler", () => ({
   apiSuccess: (data: unknown, _meta?: unknown, status = 200) => Response.json({ data }, { status }),
 }));
 
-import { PATCH } from "./route";
+import { GET, PATCH, POST } from "./route";
 
 function patch(body: unknown) {
   return PATCH(
@@ -202,5 +208,115 @@ describe("PATCH /api/absences", () => {
   test("Validierung: unbekannte action → 400", async () => {
     const res = await patch({ id: "absence-1", action: "delete" });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/absences", () => {
+  const baseBody = {
+    user_email: "ra@example.com",
+    user_name: "RA Müller",
+    delegate_email: "vertreter@example.com",
+    delegate_name: "RA Vertreter",
+    start_date: "2026-10-01",
+    end_date: "2026-10-14",
+  };
+
+  function post(body: unknown) {
+    return POST(
+      new Request("http://localhost/api/absences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }) as unknown as NextRequest
+    );
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  test("legt die Abwesenheit an und liefert den Record", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post(baseBody);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absence.user_email).toBe("ra@example.com");
+    expect(body.data.absence.status).toBe("planned");
+  });
+
+  test("Freitext-Datum wird abgelehnt (400) — solche Records aktivierten nie", async () => {
+    const res = await post({ ...baseBody, start_date: "Anfang Oktober" });
+    expect(res.status).toBe(400);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("Selbstvertretung wird abgelehnt (422)", async () => {
+    const res = await post({ ...baseBody, delegate_email: "RA@example.com" });
+    expect(res.status).toBe(422);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("end_date vor start_date → 422", async () => {
+    const res = await post({ ...baseBody, end_date: "2026-09-01" });
+    expect(res.status).toBe(422);
+  });
+
+  test("fehlgeschlagener Engine-Write → Fehler statt Phantom-Abwesenheit", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("db down", { status: 500 }));
+    const res = await post(baseBody);
+    expect(res.status).toBe(502);
+    const body = await res.json();
+    expect(body.error).toBe("engine_write_failed");
+  });
+});
+
+describe("GET /api/absences", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function get(qs = "") {
+    return GET(
+      new Request(`http://localhost/api/absences${qs}`) as unknown as NextRequest
+    );
+  }
+
+  test("filtert auf dem Frontmatter, nicht auf dem Page-Wrapper", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          pages: [
+            { slug: "legal/absences/a1", frontmatter: ABSENCE },
+            {
+              slug: "legal/absences/a2",
+              frontmatter: { ...ABSENCE, id: "a2", user_email: "andere@example.com" },
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    );
+    const res = await get("?user_email=ra@example.com");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absences).toHaveLength(1);
+    expect(body.data.absences[0].id).toBe("absence-1");
+  });
+
+  test("status-Filter trifft das Frontmatter-Feld", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          pages: [
+            { slug: "legal/absences/a1", frontmatter: ABSENCE },
+            {
+              slug: "legal/absences/a2",
+              frontmatter: { ...ABSENCE, id: "a2", status: "cancelled" },
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    );
+    const res = await get("?status=cancelled");
+    const body = await res.json();
+    expect(body.data.absences).toHaveLength(1);
+    expect(body.data.absences[0].id).toBe("a2");
   });
 });

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
-import type { TimeEntry } from "@/lib/legal-types";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   markEntriesBilled,
+  updateStandaloneBilling,
   writeTimeEntriesWithRetry,
+  STANDALONE_ENTRY_PREFIX,
   TimeEntriesWriteConflictError,
   type TimeEntryWithCase,
 } from "@/lib/time-tracking";
@@ -36,25 +37,50 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     try {
       const brain = createServerBrainClient(ctx.headers);
-      const casePage = await brain.getPage(body.case_slug).catch(() => null);
-      if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+      // Standalone `time_entry` pages (timer stops, imports) live outside
+      // the matter's time_entries array — bill them on their own pages.
+      const standaloneIds = body.entry_ids.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
+      const caseIds = body.entry_ids.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
 
-      const { meta: result } = await writeTimeEntriesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => {
-          const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-            ...e,
-            case_slug: body.case_slug,
-          }));
-          const r = markEntriesBilled(entriesWithCase, body.entry_ids, body.invoice_number);
-          return {
-            nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
-            meta: r,
-          };
-        },
-        log
-      );
+      let result: { updated: number; not_found: string[]; already_billed?: string[] } = {
+        updated: 0,
+        not_found: [],
+      };
+      if (caseIds.length > 0) {
+        const casePage = await brain.getPage(body.case_slug).catch(() => null);
+        if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+
+        const { meta } = await writeTimeEntriesWithRetry(
+          brain,
+          body.case_slug,
+          (freshEntries) => {
+            const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
+              ...e,
+              case_slug: body.case_slug,
+            }));
+            const r = markEntriesBilled(entriesWithCase, caseIds, body.invoice_number);
+            return {
+              nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
+              meta: r,
+            };
+          },
+          log
+        );
+        result = meta;
+      }
+
+      let alreadyBilled: string[] = result.already_billed ?? [];
+      if (standaloneIds.length > 0) {
+        const standalone = await updateStandaloneBilling(brain, standaloneIds, {
+          billed: true,
+          invoiceNumber: body.invoice_number,
+        });
+        result = {
+          updated: result.updated + standalone.updated,
+          not_found: [...result.not_found, ...standalone.not_found],
+        };
+        alreadyBilled = [...alreadyBilled, ...standalone.already_billed];
+      }
 
       if (result.updated === 0) {
         return apiError("time_entry_not_found", "Keine der angegebenen Zeiteinträge gefunden", 404);
@@ -69,6 +95,7 @@ export const POST = createHandler(
       return apiSuccess({
         updated: result.updated,
         not_found: result.not_found,
+        already_billed: alreadyBilled,
         invoice_number: body.invoice_number,
       });
     } catch (err) {

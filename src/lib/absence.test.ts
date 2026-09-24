@@ -3,6 +3,7 @@ import {
   activeDelegateFor,
   createAbsence,
   deadlineSlugsCoveredByAbsence,
+  isAbsenceActive,
   type AbsenceRecord,
 } from "@/lib/absence";
 
@@ -54,6 +55,32 @@ describe("activeDelegateFor", () => {
     expect(activeDelegateFor("Dr. Berger", [absence()], DURING)).toBeNull();
     expect(activeDelegateFor("", [absence()], DURING)).toBeNull();
     expect(activeDelegateFor(undefined, [absence()], DURING)).toBeNull();
+  });
+});
+
+describe("isAbsenceActive", () => {
+  const a = absence(); // 2026-09-14 → 2026-09-28
+
+  it("is active inside the range", () => {
+    expect(isAbsenceActive(a, DURING)).toBe(true);
+  });
+
+  it("counts the last day — the end date is a calendar day, not midnight", () => {
+    // 10:00 UTC on the end date = 12:00 Vienna: the old midnight-UTC
+    // comparison already read this as inactive.
+    expect(isAbsenceActive(a, new Date("2026-09-28T10:00:00Z"))).toBe(true);
+    // 22:30 UTC = 00:30 Vienna on the 29th — genuinely past the end.
+    expect(isAbsenceActive(a, new Date("2026-09-28T22:30:00Z"))).toBe(false);
+  });
+
+  it("counts the first day", () => {
+    expect(isAbsenceActive(a, new Date("2026-09-14T10:00:00Z"))).toBe(true);
+  });
+
+  it("is inactive before start, after end, and when cancelled", () => {
+    expect(isAbsenceActive(a, new Date("2026-09-13T12:00:00Z"))).toBe(false);
+    expect(isAbsenceActive(a, AFTER)).toBe(false);
+    expect(isAbsenceActive(absence({ status: "cancelled" }), DURING)).toBe(false);
   });
 });
 

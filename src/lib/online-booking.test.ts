@@ -33,6 +33,53 @@ describe("online-booking", () => {
       );
       expect(allInPast).toBe(true);
     });
+
+    test("firm-zone mode: working hours are Vienna wall time, not server-local", () => {
+      // Winter (CET, UTC+1): 09:00 Vienna = 08:00 UTC.
+      const winter = generateSlots(
+        new Date("2099-01-15T00:00:00Z"),
+        { start: "09:00", end: "10:00" },
+        30,
+        [],
+        { dateIso: "2099-01-15", timeZone: "Europe/Vienna" }
+      );
+      expect(winter.map((s) => s.start)).toEqual([
+        "2099-01-15T08:00:00.000Z",
+        "2099-01-15T08:30:00.000Z",
+      ]);
+
+      // Summer (CEST, UTC+2): 09:00 Vienna = 07:00 UTC.
+      const summer = generateSlots(
+        new Date("2099-07-15T00:00:00Z"),
+        { start: "09:00", end: "10:00" },
+        30,
+        [],
+        { dateIso: "2099-07-15", timeZone: "Europe/Vienna" }
+      );
+      expect(summer.map((s) => s.start)).toEqual([
+        "2099-07-15T07:00:00.000Z",
+        "2099-07-15T07:30:00.000Z",
+      ]);
+    });
+
+    test("slot ids are deterministic across generations", () => {
+      const opts = { dateIso: "2099-01-15", timeZone: "Europe/Vienna" };
+      const a = generateSlots(
+        new Date("2099-01-15T00:00:00Z"),
+        { start: "09:00", end: "10:00" },
+        30,
+        [],
+        opts
+      );
+      const b = generateSlots(
+        new Date("2099-01-15T00:00:00Z"),
+        { start: "09:00", end: "10:00" },
+        30,
+        [],
+        opts
+      );
+      expect(a.map((s) => s.id)).toEqual(b.map((s) => s.id));
+    });
   });
 
   describe("checkBookingConflict", () => {

@@ -620,12 +620,22 @@ describe("markEntriesBilled", () => {
     expect(t1?.lawyer).toBe("Dr. Schmidt");
   });
 
-  test("already billed entry can be re-marked", () => {
-    const result = markEntriesBilled(FIXTURE_ENTRIES, ["t3"], "INV-2026-002");
+  test("entry billed under a different invoice is refused, not re-attributed", () => {
+    // t3 is billed under a different invoice in the fixture — silently
+    // moving it would falsify the old invoice's GoBD trail.
+    const result = markEntriesBilled(FIXTURE_ENTRIES, ["t3"], "INV-2026-999");
     const t3 = result.entries.find((e: TimeEntryWithCase) => e.id === "t3");
     expect(t3?.billed).toBe(true);
-    expect(t3?.invoice_number).toBe("INV-2026-002");
-    expect(result.updated).toBe(1);
+    expect(t3?.invoice_number).not.toBe("INV-2026-999");
+    expect(result.already_billed).toEqual(["t3"]);
+    expect(result.updated).toBe(0);
+  });
+
+  test("re-marking with the SAME invoice is idempotent", () => {
+    const billed = markEntriesBilled(FIXTURE_ENTRIES, ["t1"], "INV-2026-001");
+    const again = markEntriesBilled(billed.entries, ["t1"], "INV-2026-001");
+    expect(again.updated).toBe(1);
+    expect(again.already_billed).toHaveLength(0);
   });
 
   test("empty entries array → updated=0", () => {
@@ -935,5 +945,228 @@ describe("stopCurrentActivity edge cases", () => {
     const entryId = await stopCurrentActivity("b1", "u1");
     expect(entryId).toMatch(/^time-entries\/u1\//);
     expect(deleteCalled).toBe(true);
+  });
+});
+
+// ── Audit-Fixes (Domäne 8a Rest) ──────────────────────────────────────
+
+describe("computeBillingSummary — rate 0", () => {
+  test("an explicit rate of 0 (pro bono) is not replaced by the default rate", () => {
+    const proBono: TimeEntryWithCase = {
+      id: "pb1",
+      description: "Pro bono",
+      minutes: 60,
+      date: "2026-01-15",
+      rate: 0,
+      billable: true,
+      billed: false,
+      case_slug: "case-1",
+    };
+    const summary = computeBillingSummary([proBono], 300);
+    expect(summary.by_case[0]!.billable_amount).toBe(0);
+  });
+});
+
+describe("standaloneEntryFromPage", () => {
+  test("maps frontmatter fields and preserves rate 0 + is_auto_generated", async () => {
+    const { standaloneEntryFromPage } = await import("@/lib/time-tracking");
+    const e = standaloneEntryFromPage("time-entries/u1/1-abc", {
+      description: "Timer",
+      minutes: 45,
+      date: "2026-01-15",
+      rate: 0,
+      billable: true,
+      billed: false,
+      is_auto_generated: true,
+      case_slug: "case-1",
+    });
+    expect(e.id).toBe("time-entries/u1/1-abc");
+    expect(e.rate).toBe(0);
+    expect(e.is_auto_generated).toBe(true);
+    expect(e.case_slug).toBe("case-1");
+  });
+});
+
+describe("listAllTimeEntries", () => {
+  test("merges case-array and standalone entries, filters tombstoned pages", async () => {
+    const { listAllTimeEntries } = await import("@/lib/time-tracking");
+    const brain = {
+      listPages: async (opts: { type: string }) =>
+        opts.type === "time_entry"
+          ? [
+              {
+                slug: "time-entries/u1/a",
+                frontmatter: { description: "Timer", minutes: 30, date: "2026-01-15" },
+              },
+              {
+                slug: "time-entries/u1/deleted",
+                frontmatter: { description: "Weg", minutes: 30, status: "tombstoned" },
+              },
+            ]
+          : [
+              {
+                slug: "case-1",
+                frontmatter: {
+                  time_entries: [
+                    { id: "e1", description: "Akte", minutes: 60, date: "2026-01-16" },
+                  ],
+                },
+              },
+            ],
+    };
+    const entries = await listAllTimeEntries(brain);
+    expect(entries.map((e) => e.id).sort()).toEqual(["e1", "time-entries/u1/a"]);
+  });
+});
+
+describe("updateActivityHeartbeat", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test("throws when the PATCH fails — a silent failure leaves a zombie timer", async () => {
+    const { updateActivityHeartbeat } = await import("@/lib/time-tracking");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (!init?.method) {
+          return new Response(
+            JSON.stringify({
+              frontmatter: {
+                user_id: "u1",
+                brain_id: "b1",
+                activity_type: "research",
+                description: "x",
+                started_at: new Date().toISOString(),
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        return new Response("boom", { status: 500 });
+      })
+    );
+    await expect(updateActivityHeartbeat("b1", "u1")).rejects.toThrow("heartbeat");
+  });
+});
+
+describe("stopCurrentActivity — entry date", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test("books on the Vienna calendar day of the start, not the UTC day", async () => {
+    let captured: Record<string, unknown> | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (!init?.method) {
+          return new Response(
+            JSON.stringify({
+              frontmatter: {
+                user_id: "u1",
+                brain_id: "b1",
+                activity_type: "research",
+                description: "Spätschicht",
+                // 23:30 UTC on 15 March = 00:30 CEST on 16 March.
+                started_at: "2026-03-15T23:30:00Z",
+                last_activity_at: "2026-03-16T00:10:00Z",
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (init.method === "POST") {
+          captured = JSON.parse(String(init.body));
+          return new Response("{}", { status: 200 });
+        }
+        return new Response("{}", { status: 200 });
+      })
+    );
+    const entryId = await stopCurrentActivity("b1", "u1", undefined, "2026-03-16T00:40:00Z");
+    expect(entryId).toMatch(/^time-entries\/u1\//);
+    const fm = (captured as unknown as Record<string, unknown>).frontmatter as Record<
+      string,
+      unknown
+    >;
+    expect(fm.date).toBe("2026-03-16");
+  });
+});
+
+describe("updateStandaloneBilling", () => {
+  const makeBrain = (pages: Record<string, Record<string, unknown> | null>) => {
+    const writes: Array<{ slug: string; frontmatter: Record<string, unknown> }> = [];
+    return {
+      writes,
+      getPage: async (slug: string) =>
+        pages[slug] === null || pages[slug] === undefined
+          ? Promise.reject(new Error("not found"))
+          : { frontmatter: pages[slug] },
+      updatePage: async (input: { slug: string; frontmatter: Record<string, unknown> }) => {
+        writes.push(input);
+        pages[input.slug] = input.frontmatter;
+      },
+    };
+  };
+
+  test("marks standalone timer pages billed with the invoice number", async () => {
+    const { updateStandaloneBilling } = await import("@/lib/time-tracking");
+    const brain = makeBrain({
+      "time-entries/u1/a": { description: "Timer", billed: false },
+      "time-entries/u1/b": { description: "Timer 2", billed: false },
+    });
+    const r = await updateStandaloneBilling(brain, ["time-entries/u1/a", "time-entries/u1/b"], {
+      billed: true,
+      invoiceNumber: "RE-2026-001",
+    });
+    expect(r.updated).toBe(2);
+    expect(brain.writes[0]?.frontmatter.billed).toBe(true);
+    expect(brain.writes[0]?.frontmatter.invoice_number).toBe("RE-2026-001");
+  });
+
+  test("refuses to re-attribute an entry billed under a different invoice", async () => {
+    const { updateStandaloneBilling } = await import("@/lib/time-tracking");
+    const brain = makeBrain({
+      "time-entries/u1/a": { billed: true, invoice_number: "RE-OLD" },
+    });
+    const r = await updateStandaloneBilling(brain, ["time-entries/u1/a"], {
+      billed: true,
+      invoiceNumber: "RE-NEW",
+    });
+    expect(r.already_billed).toEqual(["time-entries/u1/a"]);
+    expect(r.updated).toBe(0);
+    expect(brain.writes).toHaveLength(0);
+    // Retry with the SAME invoice number is idempotent.
+    const retry = await updateStandaloneBilling(brain, ["time-entries/u1/a"], {
+      billed: true,
+      invoiceNumber: "RE-OLD",
+    });
+    expect(retry.updated).toBe(1);
+  });
+
+  test("unbill clears billed and removes invoice_number", async () => {
+    const { updateStandaloneBilling } = await import("@/lib/time-tracking");
+    const brain = makeBrain({
+      "time-entries/u1/a": { billed: true, invoice_number: "RE-1" },
+    });
+    const r = await updateStandaloneBilling(brain, ["time-entries/u1/a"], { billed: false });
+    expect(r.updated).toBe(1);
+    expect(brain.writes[0]?.frontmatter.billed).toBe(false);
+    expect("invoice_number" in (brain.writes[0]?.frontmatter ?? {})).toBe(false);
+  });
+
+  test("tombstoned, missing and non-standalone ids land in not_found", async () => {
+    const { updateStandaloneBilling } = await import("@/lib/time-tracking");
+    const brain = makeBrain({
+      "time-entries/u1/gone": { status: "tombstoned" },
+      "time-entries/u1/missing": null,
+    });
+    const r = await updateStandaloneBilling(
+      brain,
+      ["time-entries/u1/gone", "time-entries/u1/missing", "case-entry-id"],
+      { billed: true, invoiceNumber: "RE-1" }
+    );
+    expect(r.not_found).toEqual([
+      "time-entries/u1/gone",
+      "time-entries/u1/missing",
+      "case-entry-id",
+    ]);
+    expect(r.updated).toBe(0);
   });
 });

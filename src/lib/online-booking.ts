@@ -8,6 +8,8 @@
  * Automatic intake item creation (W2.1).
  */
 
+import { zonedWallTimeToUtc } from "@/lib/datetime";
+
 export interface BookingSlot {
   id: string;
   start: string;
@@ -43,17 +45,32 @@ export function generateSlots(
   date: Date,
   workingHours: { start: string; end: string },
   slotDurationMinutes: number,
-  existingBookings: Array<{ start: string; end: string }>
+  existingBookings: Array<{ start: string; end: string }>,
+  opts?: { dateIso?: string; timeZone?: string }
 ): BookingSlot[] {
   const slots: BookingSlot[] = [];
   const [startH, startM] = workingHours.start.split(":").map(Number);
   const [endH, endM] = workingHours.end.split(":").map(Number);
 
-  const dayStart = new Date(date);
-  dayStart.setHours(startH!, startM, 0, 0);
-
-  const dayEnd = new Date(date);
-  dayEnd.setHours(endH!, endM, 0, 0);
+  // With a zone + calendar date, working hours are firm-local wall times
+  // (Europe/Vienna): "09:00" must stay 09:00 for the lawyer regardless of
+  // the server's TZ. Without opts the legacy server-local behaviour is kept
+  // (existing callers/tests pass only a Date).
+  const useZone = Boolean(opts?.dateIso && opts?.timeZone);
+  const dayStart = useZone
+    ? zonedWallTimeToUtc(opts!.dateIso!, workingHours.start, opts!.timeZone!)
+    : (() => {
+        const d = new Date(date);
+        d.setHours(startH!, startM, 0, 0);
+        return d;
+      })();
+  const dayEnd = useZone
+    ? zonedWallTimeToUtc(opts!.dateIso!, workingHours.end, opts!.timeZone!)
+    : (() => {
+        const d = new Date(date);
+        d.setHours(endH!, endM, 0, 0);
+        return d;
+      })();
 
   const now = new Date();
   const bufferMs = 2 * 60 * 60 * 1000;
@@ -76,7 +93,9 @@ export function generateSlots(
     });
 
     slots.push({
-      id: `slot-${current.toISOString()}-${Math.random().toString(36).slice(2, 6)}`,
+      // Deterministic id — same slot regenerates identically, which is what
+      // the booking write's dedupe key is built from.
+      id: `slot-${current.toISOString()}`,
       start: current.toISOString(),
       end: slotEnd.toISOString(),
       duration_minutes: slotDurationMinutes,

@@ -11,6 +11,15 @@ import { ENGINE_URL, recordCreditConsumption, enginePatchPage } from "@/lib/engi
 import { buildNdaTemplate } from "@/lib/nda-template";
 import { contactSlugFor } from "@/lib/case-contacts";
 import { listEnginePages } from "@/lib/engine-pages";
+import { createServerBrainClient } from "@/lib/server-brain";
+import {
+  listAllTimeEntries,
+  markEntriesBilled,
+  updateStandaloneBilling,
+  writeTimeEntriesWithRetry,
+  STANDALONE_ENTRY_PREFIX,
+  type TimeEntryWithCase,
+} from "@/lib/time-tracking";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
@@ -2598,6 +2607,24 @@ async function executeInvoiceDraft(
 
     const stundensatz = Number.parseFloat(kanzlei?.stundensatz ?? "") || 0;
     const billedEntryIds: string[] = [];
+    // `include_unbilled_time` must see BOTH stores: the matter's
+    // time_entries array AND standalone `time_entry` pages the timer
+    // created for this case — otherwise timer time is invisible to the
+    // copilot invoice draft.
+    let unbilledEntries: TimeEntryWithCase[] = [];
+    if (!params.items?.length && params.include_unbilled_time) {
+      const brain = createServerBrainClient(ctx.headers);
+      const all = await listAllTimeEntries(brain).catch(() => null);
+      // Matter-embedded entries carry no case_slug of their own — they are
+      // this matter's array by definition, so tag them on the way in.
+      const embedded: TimeEntryWithCase[] = (fm.time_entries ?? []).map((e) => ({
+        ...e,
+        case_slug: params.case_slug,
+      }));
+      unbilledEntries = (all ?? embedded).filter(
+        (e) => e.case_slug === params.case_slug && e.billable !== false && !e.billed
+      );
+    }
     const items = params.items?.length
       ? params.items.map((i) => {
           const amount =
@@ -2611,20 +2638,18 @@ async function executeInvoiceDraft(
           };
         })
       : params.include_unbilled_time
-        ? (fm.time_entries ?? [])
-            .filter((e) => e.billable && !e.billed)
-            .map((e) => {
-              billedEntryIds.push(e.id);
-              const hours = e.minutes / 60;
-              const rate = e.rate ?? stundensatz;
-              return {
-                description: sanitizeUserInput(e.description),
-                date: (e.date ?? "").split("T")[0],
-                hours: Math.round(hours * 100) / 100,
-                rate,
-                amount: Math.round(hours * rate * 100) / 100,
-              };
-            })
+        ? unbilledEntries.map((e) => {
+            billedEntryIds.push(e.id);
+            const hours = e.minutes / 60;
+            const rate = e.rate ?? stundensatz;
+            return {
+              description: sanitizeUserInput(e.description),
+              date: (e.date ?? "").split("T")[0],
+              hours: Math.round(hours * 100) / 100,
+              rate,
+              amount: Math.round(hours * rate * 100) / 100,
+            };
+          })
         : [];
 
     if (items.length === 0) {
@@ -2713,18 +2738,46 @@ async function executeInvoiceDraft(
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    // Verrechnete Zeiteinträge in der Akte als billed markieren — gleiche
-    // Semantik wie der Rechnungsdialog, damit keine Position doppelt
-    // abgerechnet wird.
+    // Verrechnete Zeiteinträge als billed markieren — gleiche Semantik wie
+    // der Rechnungsdialog (retry-gesichert statt stale-Snapshot-Patch;
+    // Standalone-Timer-Pages auf ihrer eigenen Page). Die Rechnung existiert
+    // bereits — ein Fehler hier darf sie nicht zurückrollen, wird aber laut
+    // geloggt statt verschluckt.
     if (billedEntryIds.length > 0) {
-      const billed = new Set(billedEntryIds);
-      const updated = (fm.time_entries ?? []).map((e) =>
-        billed.has(e.id) ? { ...e, billed: true, invoice_number: invoice.number } : e
-      );
-      await enginePatchPage(ctx.headers, {
-        slug: page.slug,
-        frontmatter: { time_entries: updated },
-      }).catch(() => {});
+      try {
+        const brain = createServerBrainClient(ctx.headers);
+        const standaloneIds = billedEntryIds.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
+        const caseIds = billedEntryIds.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
+        if (caseIds.length > 0) {
+          await writeTimeEntriesWithRetry(
+            brain,
+            page.slug,
+            (freshEntries) => {
+              const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
+                ...e,
+                case_slug: page.slug,
+              }));
+              const r = markEntriesBilled(entriesWithCase, caseIds, invoice.number);
+              return {
+                nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
+                meta: r,
+              };
+            },
+            log
+          );
+        }
+        if (standaloneIds.length > 0) {
+          await updateStandaloneBilling(brain, standaloneIds, {
+            billed: true,
+            invoiceNumber: invoice.number,
+          });
+        }
+      } catch (err) {
+        log.error(
+          "[copilot/tools] invoice_draft: billed-Markierung fehlgeschlagen:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
     }
 
     return {
