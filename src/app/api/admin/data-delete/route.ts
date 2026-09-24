@@ -10,7 +10,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
-import { ENGINE_URL } from "@/lib/engine";
+import { checkFirmLegalHolds } from "@/lib/legal-hold-check";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/admin/data-delete");
@@ -65,37 +65,21 @@ export const POST = createHandler(
     // the operator must pass legal_hold_override knowingly. The check runs
     // with the operator's signed identity (ctx.headers) — the
     // engine-identity-guard forbids identity-less firm headers here, so the
-    // scan covers exactly the matters the operator may see.
-    const heldCases: string[] = [];
-    try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=500`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (res.ok) {
-        const pages = (await res.json()) as Array<{
-          slug: string;
-          frontmatter?: Record<string, unknown>;
-        }>;
-        for (const p of pages) {
-          if (p.frontmatter?.legal_hold === true) heldCases.push(p.slug);
-        }
-      } else {
-        // Engine unreachable → fail closed: cannot prove no hold exists.
-        return apiError(
-          "legal_hold_unknown",
-          "Legal-Hold-Status der Akten nicht prüfbar — Löschung abgebrochen.",
-          503
-        );
-      }
-    } catch (err) {
-      log.error(`[data-delete] legal hold check failed: ${err}`);
+    // scan covers exactly the matters the operator may see. Shared with the
+    // 30-day hard-delete purge (cron/trash-purge) via checkFirmLegalHolds so
+    // a hold placed during the grace window is caught by the SAME check,
+    // not a second, divergent copy of it.
+    const holdCheck = await checkFirmLegalHolds(ctx.headers);
+    if (holdCheck.status === "unknown") {
+      // Engine unreachable → fail closed: cannot prove no hold exists.
+      log.error("[data-delete] legal hold check failed: engine unreachable");
       return apiError(
         "legal_hold_unknown",
         "Legal-Hold-Status der Akten nicht prüfbar — Löschung abgebrochen.",
         503
       );
     }
+    const heldCases = holdCheck.status === "held" ? holdCheck.cases : [];
     if (heldCases.length > 0 && !body.legal_hold_override) {
       return apiError(
         "legal_hold_active",
