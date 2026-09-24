@@ -36,6 +36,7 @@ export type AuditAction =
   | "kyc.mandate_end"
   | "case.delete"
   | "case.restore"
+  | "trash.purge"
   | "case.view"
   | "case.export"
   | "invoice.create"
@@ -355,6 +356,7 @@ const ACTION_LABELS: Record<string, string> = {
   "kyc.mandate_end": "Mandatsende für Aufbewahrung erfasst",
   "case.delete": "Akte archiviert",
   "case.restore": "Akte wiederhergestellt",
+  "trash.purge": "Papierkorb endgültig gelöscht",
   "case.view": "Akte geöffnet",
   "case.export": "Akte exportiert (ZIP)",
   "invoice.create": "Rechnung erstellt",

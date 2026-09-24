@@ -431,6 +431,51 @@ export default function KanzleiSettingsPage() {
       </Section>
 
       <Section
+        title={L("Papierkorb & Löschfrist", "Trash & retention")}
+        description={L(
+          "DSGVO-Löschkonzept: gelöschte Elemente werden nach Ablauf der Frist automatisch endgültig entfernt. Elemente unter Aufbewahrungssperre werden nie gelöscht.",
+          "GDPR deletion concept: deleted items are permanently removed after the retention period. Items under legal hold are never deleted."
+        )}
+      >
+        <label htmlFor="trash-autopurge" className="flex cursor-pointer items-start gap-3">
+          <input
+            id="trash-autopurge"
+            type="checkbox"
+            checked={settings.trashAutoPurge ?? true}
+            onChange={(e) => update("trashAutoPurge", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {L("Papierkorb automatisch endgültig löschen", "Automatically purge trash")}
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              {L(
+                "Täglicher Lauf: Einträge, deren Frist abgelaufen ist, werden endgültig gelöscht und im Protokoll dokumentiert.",
+                "Daily run: entries past their retention are permanently deleted and recorded in the audit log."
+              )}
+            </p>
+          </div>
+        </label>
+        {(settings.trashAutoPurge ?? true) && (
+          <Field
+            id="k-trash-retention"
+            label={L("Aufbewahrungsfrist (Tage)", "Retention period (days)")}
+            hint={L(
+              "Standard: 30 Tage. Minimum 7, Maximum 3650. Gilt ab dem Lösch-/Archivierungsdatum.",
+              "Default: 30 days. Minimum 7, maximum 3650. Counts from the deletion/archival date."
+            )}
+            value={String(settings.trashRetentionDays ?? "")}
+            onChange={(v) => {
+              const n = Number(v);
+              // Empty stays unset (server clamps to 30); only finite numbers persist.
+              if (Number.isFinite(n) && v.trim() !== "") update("trashRetentionDays", n);
+            }}
+          />
+        )}
+      </Section>
+
+      <Section
         title={L("Rechtsraum", "Jurisdiction")}
         description={L(
           "Bestimmt, welche Rechtsquellen durchsucht und welche Feiertage bei Fristen berücksichtigt werden.",

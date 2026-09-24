@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
-import { isTombstoned } from "@/lib/tombstone";
+import { listEnginePages } from "@/lib/engine-pages";
+import { TRASH_TYPES, toTrashItem, type TrashItem } from "@/lib/trash";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
@@ -25,56 +25,16 @@ export const dynamic = "force-dynamic";
  * The engine's own `deleted_at` soft-delete + 72h purge is a separate ops
  * surface (CLI/MCP only — `purge_deleted_pages` is `localOnly` and not
  * reachable over HTTP). Nothing in the web trash auto-expires; restoring a
- * frontmatter tombstone is always possible, so this route offers list +
- * restore only. Permanent purge stays an operator action by design.
+ * frontmatter tombstone expires after the firm's configured retention
+ * (kanzlei settings → trashRetentionDays, default 30): /api/cron/trash-purge
+ * then hands the page to the engine's own 72h soft-delete → autopilot purge.
+ * Legal-hold items never expire.
  */
-const TRASH_TYPES = [
-  "legal_case",
-  "document",
-  "intake_request",
-  "legal_contact",
-  "legal_deadline",
-  "deadline",
-  "invoice",
-  "note",
-  "time_entry",
-  "task",
-] as const;
-
 const querySchema = z.object({
   type: z.string().trim().max(80).optional(),
 });
 
-export interface TrashItem {
-  slug: string;
-  title: string;
-  type: string;
-  /** "case" = archived matter (restores its documents), "item" = tombstoned page. */
-  kind: "case" | "item";
-  deleted_at?: string;
-  deleted_by?: string;
-  case_slug?: string;
-  /** "manual_delete" | "case_archived" | "archived" */
-  reason?: string;
-  legal_hold?: boolean;
-}
-
-function toTrashItem(page: ListedPage): TrashItem | null {
-  const fm = page.frontmatter ?? {};
-  const isArchivedCase = page.type === "legal_case" && fm.status === "archived";
-  if (!isArchivedCase && !isTombstoned(page)) return null;
-  return {
-    slug: page.slug,
-    title: page.title || page.slug,
-    type: page.type ?? String(fm.type ?? "document"),
-    kind: isArchivedCase ? "case" : "item",
-    deleted_at: (isArchivedCase ? fm.archived_at : fm.tombstoned_at) as string | undefined,
-    deleted_by: (isArchivedCase ? fm.archived_by : fm.tombstoned_by) as string | undefined,
-    case_slug: fm.case_slug as string | undefined,
-    reason: (isArchivedCase ? "archived" : fm.tombstone_reason) as string | undefined,
-    legal_hold: fm.legal_hold === true,
-  };
-}
+export type { TrashItem };
 
 export const GET = createHandler(
   {

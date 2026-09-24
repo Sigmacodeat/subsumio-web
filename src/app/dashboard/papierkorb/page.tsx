@@ -32,7 +32,9 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { csrfFetch } from "@/lib/csrf";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { loadKanzleiSettings, normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
+import { trashPurgeAt } from "@/lib/trash";
 
 interface TrashItem {
   slug: string;
@@ -88,6 +90,9 @@ function PapierkorbInner() {
   const [error, setError] = useState(false);
   const [restoring, setRestoring] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Auto-purge display: days until the cron removes an item permanently.
+  // null = settings not loaded yet; enabled=false = firm opted out.
+  const [purge, setPurge] = useState<{ enabled: boolean; days: number } | null>(null);
 
   const typeFilter = searchParams.get("type") ?? "all";
   const search = searchParams.get("q") ?? "";
@@ -124,6 +129,22 @@ function PapierkorbInner() {
 
   useEffect(() => {
     void load();
+    let cancelled = false;
+    loadKanzleiSettings()
+      .then((s) => {
+        if (cancelled) return;
+        setPurge({
+          enabled: s.trashAutoPurge !== false,
+          days: normalizeTrashRetentionDays(s.trashRetentionDays),
+        });
+      })
+      .catch(() => {
+        // Settings unreadable → banner stays neutral, no purge dates shown.
+        if (!cancelled) setPurge(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   const filtered = useMemo(() => {
@@ -296,11 +317,14 @@ function PapierkorbInner() {
           aria-hidden="true"
         />
         <p>
-          Gelöschte Elemente bleiben erhalten, bis sie wiederhergestellt oder nach kanzleiinterner
-          Prüfung endgültig entfernt werden. Archivierte Akten werden aufbewahrungsrechtlich nicht
-          automatisch gelöscht. Elemente unter{" "}
-          <span className="font-medium text-[color:var(--ds-text)]">Aufbewahrungssperre</span> sind
-          gekennzeichnet.
+          {purge === null
+            ? "Gelöschte Elemente können wiederhergestellt werden. Ob sie automatisch endgültig gelöscht werden, regeln die Kanzlei-Einstellungen."
+            : purge.enabled
+              ? `Gelöschte Elemente bleiben ${purge.days} Tage erhalten und werden danach automatisch endgültig gelöscht (einstellbar unter Einstellungen → Kanzlei).`
+              : "Gelöschte Elemente bleiben erhalten, bis sie wiederhergestellt werden — die automatische endgültige Löschung ist deaktiviert."}{" "}
+          Elemente unter{" "}
+          <span className="font-medium text-[color:var(--ds-text)]">Aufbewahrungssperre</span>{" "}
+          werden niemals automatisch gelöscht.
         </p>
       </div>
 
@@ -445,6 +469,17 @@ function PapierkorbInner() {
                             <Clock size={11} aria-hidden="true" />
                             {formatDateTime(item.deleted_at)}
                             {item.deleted_by ? ` · ${item.deleted_by}` : ""}
+                          </span>
+                        )}
+                        {purge?.enabled && !item.legal_hold && item.deleted_at && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-muted)]">
+                            <Trash2 size={11} aria-hidden="true" />
+                            {(() => {
+                              const purgeAt = trashPurgeAt(item, purge.days);
+                              return purgeAt
+                                ? `endgültige Löschung am ${formatDate(purgeAt.toISOString())}`
+                                : "";
+                            })()}
                           </span>
                         )}
                       </div>

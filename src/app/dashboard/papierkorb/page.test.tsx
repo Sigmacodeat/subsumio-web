@@ -48,6 +48,21 @@ function okJson(body: unknown) {
   return new Response(JSON.stringify(body), { status: 200 });
 }
 
+/** Route-aware csrfFetch mock: settings reads get 404, restores get the given body. */
+function mockCsrfByUrl(restoreBody: unknown, restoreStatus = 200) {
+  mockCsrfFetch.mockImplementation((url: unknown) => {
+    if (String(url).includes("/api/trash")) {
+      return Promise.resolve(
+        restoreStatus === 200
+          ? okJson(restoreBody)
+          : new Response(JSON.stringify(restoreBody), { status: restoreStatus })
+      );
+    }
+    // Kanzlei settings page read — not configured in tests.
+    return Promise.resolve(new Response("{}", { status: 404 }));
+  });
+}
+
 describe("Papierkorb page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -82,7 +97,7 @@ describe("Papierkorb page", () => {
 
   it("restores an item optimistically and removes it from the list", async () => {
     mockFetch.mockResolvedValueOnce(okJson(items));
-    mockCsrfFetch.mockResolvedValueOnce(okJson({ data: { slug: "x", cascaded: 0 } }));
+    mockCsrfByUrl({ data: { slug: "x", cascaded: 0 } });
     render(<PapierkorbPage />);
 
     const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });
@@ -99,7 +114,7 @@ describe("Papierkorb page", () => {
 
   it("asks for confirmation before restoring an archived case", async () => {
     mockFetch.mockResolvedValueOnce(okJson(items));
-    mockCsrfFetch.mockResolvedValueOnce(okJson({ data: { cascaded: 3 } }));
+    mockCsrfByUrl({ data: { cascaded: 3 } });
     render(<PapierkorbPage />);
 
     const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });
@@ -134,7 +149,7 @@ describe("Papierkorb page", () => {
 
   it("restores a multi-selection with a single confirmation", async () => {
     mockFetch.mockResolvedValueOnce(okJson(items));
-    mockCsrfFetch.mockResolvedValue(okJson({ data: { cascaded: 0 } }));
+    mockCsrfByUrl({ data: { cascaded: 0 } });
     render(<PapierkorbPage />);
     await screen.findByText("Schriftsatz");
 
@@ -149,7 +164,9 @@ describe("Papierkorb page", () => {
       expect(screen.queryByText("Schriftsatz")).not.toBeInTheDocument();
       expect(screen.queryByText("Muster gegen Beispiel")).not.toBeInTheDocument();
     });
-    expect(mockCsrfFetch).toHaveBeenCalledTimes(2);
+    expect(
+      mockCsrfFetch.mock.calls.filter(([url]) => String(url).includes("/api/trash"))
+    ).toHaveLength(2);
     expect(addToast).toHaveBeenCalledWith(
       expect.objectContaining({ type: "success", title: "2 Elemente wiederhergestellt" })
     );
@@ -157,9 +174,7 @@ describe("Papierkorb page", () => {
 
   it("rolls the item back when restore fails", async () => {
     mockFetch.mockResolvedValueOnce(okJson(items));
-    mockCsrfFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ error: "parent_archived" }), { status: 409 })
-    );
+    mockCsrfByUrl({ error: "parent_archived" }, 409);
     render(<PapierkorbPage />);
 
     const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });

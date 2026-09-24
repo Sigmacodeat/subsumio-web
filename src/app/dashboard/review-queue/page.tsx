@@ -88,6 +88,9 @@ export default function ReviewQueuePage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   const [updating, setUpdating] = useState<string | null>(null);
+  // Who is reviewing — written as reviewed_by so the decision is attributable
+  // in the document's frontmatter, not only in the audit log.
+  const [meEmail, setMeEmail] = useState<string | null>(null);
 
   const loadPages = useCallback(async () => {
     setLoading(true);
@@ -109,6 +112,21 @@ export default function ReviewQueuePage() {
 
   useEffect(() => {
     void loadPages();
+    let cancelled = false;
+    api.auth
+      .me()
+      .then((me) => {
+        if (cancelled) return;
+        const email =
+          (me as { user?: { email?: string } } | null)?.user?.email ??
+          (me as { email?: string } | null)?.email ??
+          null;
+        setMeEmail(email);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [loadPages]);
 
   const reviewItems = useMemo(() => {
@@ -194,6 +212,7 @@ export default function ReviewQueuePage() {
         frontmatter: {
           review_status: status,
           reviewed_at: new Date().toISOString(),
+          ...(meEmail ? { reviewed_by: meEmail } : {}),
         },
       });
       await loadPages();
