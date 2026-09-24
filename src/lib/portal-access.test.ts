@@ -2,10 +2,11 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const mockVerify = vi.hoisted(() => vi.fn());
 const mockHeaders = vi.hoisted(() => vi.fn(() => ({ "x-brain": "firm-1" })));
+const mockSuperseded = vi.hoisted(() => vi.fn(() => false));
 
 vi.mock("@/lib/portal-token", () => ({
   verifyPortalToken: mockVerify,
-  isPortalTokenSuperseded: vi.fn(() => false),
+  isPortalTokenSuperseded: mockSuperseded,
 }));
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "https://engine.test",
@@ -43,6 +44,7 @@ async function expectApiError(res: unknown, status: number, code: string) {
 describe("resolvePortalAccess", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSuperseded.mockReturnValue(false);
     mockVerify.mockResolvedValue(PAYLOAD);
     mockEngineFetch(true, { frontmatter: { status: "open", portal_enabled: true } });
   });
@@ -75,6 +77,20 @@ describe("resolvePortalAccess", () => {
   test("nicht freigegebene Akte → 403 portal_disabled", async () => {
     mockEngineFetch(true, { frontmatter: { status: "open", portal_enabled: false } });
     await expectApiError(await resolvePortalAccess("tok"), 403, "portal_disabled");
+  });
+
+  test("Token vor dem Link-Reset-Cutoff → 403 link_revoked", async () => {
+    mockEngineFetch(true, {
+      frontmatter: {
+        status: "open",
+        portal_enabled: true,
+        portal_links_reset_at: "2026-06-01T00:00:00.000Z",
+      },
+    });
+    mockSuperseded.mockReturnValueOnce(true);
+    await expectApiError(await resolvePortalAccess("tok"), 403, "link_revoked");
+    // Cutoff muss mit dem Case-Frontmatter geprüft werden.
+    expect(mockSuperseded).toHaveBeenCalledWith(PAYLOAD, "2026-06-01T00:00:00.000Z");
   });
 
   test("gueltig → Brain-Headers, caseSlug, Payload", async () => {
