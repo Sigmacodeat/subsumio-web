@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler, apiSuccess } from "@/lib/api-handler";
+import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
@@ -52,8 +52,8 @@ export const POST = createHandler(
     action: "invoice.write",
     rateTier: "standard",
     body: createLinkSchema,
-    audit: (ctx, body) => ({
-      action: "case.update" as const,
+    audit: (_ctx, body) => ({
+      action: "fibu.payment_link_create" as const,
       entityType: "payment_link",
       entityId: body.invoice_id,
       details: {
@@ -96,7 +96,9 @@ export const POST = createHandler(
         : undefined,
     };
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
+    // Fehlschlag der Persistenz darf nicht als Erfolg gemeldet werden — der
+    // Link existiert sonst in keiner Liste (Fehlbuchung im Zahlungsverkehr).
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -107,6 +109,9 @@ export const POST = createHandler(
       }),
       signal: AbortSignal.timeout(10_000),
     });
+    if (!res.ok) {
+      return apiError("persist_failed", "Zahlungslink konnte nicht gespeichert werden", 502);
+    }
 
     return apiSuccess({
       ok: true,

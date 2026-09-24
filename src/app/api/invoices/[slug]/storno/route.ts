@@ -17,6 +17,7 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { closeOpenItemForInvoice } from "@/lib/open-items";
 import { logAudit } from "@/lib/audit";
 
 import { logger } from "@/lib/logger";
@@ -183,6 +184,18 @@ export const POST = createHandler(
       entityId: stornoSlug,
       details: { action: "storno_created", forInvoice: slug, invoiceNumber: number },
     });
+
+    // OPOS: der offene Posten der stornierten Rechnung wird ausgebucht —
+    // sonst mahnt der Mahnlauf eine Rechnung, die nicht mehr gilt.
+    // Best-effort: Storno-Note ist bereits angelegt; Fehler wird geloggt.
+    try {
+      await closeOpenItemForInvoice(ctx.headers, slug, "written_off", `Storniert durch ${number}`);
+    } catch (err) {
+      log.error(
+        "[storno] opos write-off failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+    }
 
     return apiSuccess({ slug: stornoSlug, invoice_number: number }, undefined, 201);
   }

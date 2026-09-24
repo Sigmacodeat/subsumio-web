@@ -7,7 +7,8 @@ import {
 } from "@/lib/e-invoice";
 import { sendEInvoice, pollEInvoiceStatus, transportAvailability } from "@/lib/e-invoice/transport";
 import type { InvoiceFrontmatter } from "@/lib/legal-types";
-import type { KanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
+import { createServerBrainClient } from "@/lib/server-brain";
 
 export const dynamic = "force-dynamic";
 
@@ -41,14 +42,16 @@ const sendSchema = z.object({
   channel: z.enum(["peppol", "erechnung_gv_at"]),
   format: z.enum(["ebinterface", "xrechnung"]),
   receiver_id: z.string().max(200).optional(),
-  invoice: z.custom<InvoiceFrontmatter>((v) => typeof v === "object" && v !== null),
-  settings: z.custom<KanzleiSettings>((v) => typeof v === "object" && v !== null),
+  invoiceSlug: z.string().min(1).max(300),
 });
 
 /**
- * WP-8.47: e-Rechnung-Versand. Erzeugt die XML serverseitig und reicht sie
- * an den konfigurierten Transport (PEPPOL-AP / e-Rechnung.gv.at). Ohne
- * ENV-Konfiguration ehrlich `not_configured` — nie simuliert.
+ * WP-8.47: e-Rechnung-Versand. Erzeugt die XML serverseitig aus der
+ * GESPEICHERTEN Rechnung und den GESPEICHERTEN Kanzlei-Settings — der Client
+ * liefert nur den Slug. Belegdaten (insb. IBAN des Empfängerkontos) dürfen
+ * nicht aus dem Request-Body kommen: ein manipulierter Client könnte sonst
+ * eine Rechnung mit fremdem Konto unter der Kanzlei-Identität versenden
+ * (Zahlungsumleitung / Integrität der Herkunft, EN 16931).
  */
 export const POST = createHandler(
   {
@@ -58,23 +61,32 @@ export const POST = createHandler(
     audit: (_ctx, body) => ({
       action: "invoice.send" as const,
       entityType: "invoice",
+      entityId: body.invoiceSlug,
       details: {
         channel: body.channel,
         format: body.format,
-        invoiceNumber: body.invoice.invoice_number,
       },
     }),
   },
-  async (_ctx, body) => {
+  async (ctx, body) => {
     try {
-      const data = invoiceToEInvoiceData(body.invoice, body.settings, {
+      const brain = createServerBrainClient(ctx.headers);
+      const page = await brain.getPage(body.invoiceSlug).catch(() => null);
+      if (!page) return apiError("not_found", "Rechnung nicht gefunden", 404);
+      const invoice = page.frontmatter as InvoiceFrontmatter;
+      if (!invoice.invoice_number) {
+        return apiError("not_an_invoice", "Seite ist keine Rechnung", 400);
+      }
+      const settings = await loadKanzleiSettingsForBrain(ctx.brainId);
+
+      const data = invoiceToEInvoiceData(invoice, settings, {
         leitwegId: body.receiver_id,
       });
       const xml =
         body.format === "ebinterface" ? generateEbInterfaceXml(data) : generateXRechnungXml(data);
 
       const result = await sendEInvoice(body.channel, xml.xml, {
-        invoiceNumber: body.invoice.invoice_number ?? "",
+        invoiceNumber: invoice.invoice_number ?? "",
         format: body.format,
         receiverId: body.receiver_id,
       });

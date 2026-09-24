@@ -1,4 +1,5 @@
 import { ENGINE_URL } from "@/lib/engine";
+import { listOpenItems } from "@/lib/open-items";
 import { applyMatch, autoMatchTransaction, type BankTransaction, type OpenItem } from "@/lib/fibu";
 
 export interface ImportResult {
@@ -16,17 +17,10 @@ export async function importAndMatchTransactions(
   headers: Record<string, string>,
   transactions: BankTransaction[]
 ): Promise<ImportResult> {
-  const params = new URLSearchParams({ type: "open_item", limit: "500" });
-  const response = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
+  // Paginiert laden — die Engine kappt Einzelrequests auf 100 Einträge.
+  let openItems: OpenItem[] = await listOpenItems(headers).catch(() => {
+    throw new Error("engine_error");
   });
-  if (!response.ok) throw new Error("engine_error");
-  const data = await response.json();
-  const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<{
-    frontmatter: OpenItem;
-  }>;
-  let openItems = pages.map((page) => page.frontmatter);
 
   let matched = 0;
   let errors = 0;

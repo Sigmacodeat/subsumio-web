@@ -9,6 +9,7 @@ import {
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import { closeOpenItemForInvoice, createOpenItemForInvoice } from "@/lib/open-items";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/[slug]");
@@ -104,6 +105,28 @@ export const PATCH = createHandler(
         entityId: slug,
         details: { fields: Object.keys(body) },
       });
+
+      // OPOS-Lebenszyklus an Statusübergänge koppeln: "sent" legt den offenen
+      // Posten an (idempotent), "paid" schließt ihn. Best-effort — der Patch
+      // ist schon geschrieben; ein OP-Fehler wird geloggt, nicht verschluckt.
+      const nextStatus = (body as Record<string, unknown>).status;
+      const prevStatus = String(currentRead.page.frontmatter?.status ?? "");
+      try {
+        if (nextStatus === "sent" && prevStatus === "draft") {
+          await createOpenItemForInvoice(
+            ctx.headers,
+            slug,
+            (currentRead.page.frontmatter ?? {}) as Record<string, unknown>
+          );
+        } else if (nextStatus === "paid" && prevStatus !== "paid") {
+          await closeOpenItemForInvoice(ctx.headers, slug, "paid");
+        }
+      } catch (err) {
+        log.error(
+          "[invoices/slug] opos sync failed:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
       return Response.json(await res.json());
     } catch (err) {
       log.error("[invoices/slug] patch failed:", err instanceof Error ? err.message : String(err));

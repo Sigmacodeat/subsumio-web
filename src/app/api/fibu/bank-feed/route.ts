@@ -2,7 +2,6 @@ import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { bankFeedFromEnv } from "@/lib/fibu-bank-feed.server";
 import { importAndMatchTransactions } from "@/lib/fibu-import.server";
-import type { AuditAction } from "@/lib/audit";
 
 const schema = z.object({
   from: z.string().date().optional(),
@@ -15,7 +14,7 @@ export const POST = createHandler(
     rateTier: "heavy",
     body: schema,
     audit: (_ctx, body) => ({
-      action: "fibu.bank_feed" as unknown as AuditAction,
+      action: "fibu.bank_feed" as const,
       entityType: "bank_transaction",
       details: { from: body.from, to: body.to },
     }),
