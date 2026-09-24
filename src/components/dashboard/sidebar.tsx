@@ -129,6 +129,7 @@ import { useSidebarBadges, type SidebarBadges } from "@/lib/queries/sidebar-badg
 import { useReviewInboxRealtime } from "@/lib/queries/review-inbox-realtime";
 import { useResizable } from "@/lib/use-resizable";
 import { useLogout } from "@/lib/queries/auth";
+import { isRetiredDashboardPath } from "@/lib/retired-routes";
 
 export type NavTier = "free" | "pro" | "enterprise" | "admin";
 export type AudienceTier = "quick-start" | "erweitert" | "dach-integration" | "system";
@@ -158,8 +159,9 @@ type NavSection = {
   colorVar?: string;
 };
 
-// Germany-only surfaces (beA, DATEV, FAO-Fachanwalt) — reactivated in WP-6.37.
-// Hidden for AT/CH firms; shown when the signed-in user's jurisdiction is "DE".
+// Germany-only surfaces (beA, DATEV, FAO-Fachanwalt). Hidden for AT/CH firms;
+// shown for jurisdiction "DE" — unless the feature is retired for the pilot
+// (src/lib/retired-routes.ts), which hides it for everyone.
 export const DE_ONLY_HREFS = new Set([
   "/dashboard/bea",
   "/dashboard/datev-export",
@@ -780,7 +782,11 @@ export const NAV_SECTIONS: NavSection[] = KANZLEI_WORKSPACE_GROUPS.map((workspac
   return {
     ...lead,
     titleKey: workspace.titleKey,
-    items: modules.flatMap((section) => section.items),
+    // Retired pilot features (beA, DATEV, FAO, …) stay out of every menu: the
+    // middleware redirects their pages away, so an entry would lead nowhere.
+    items: modules
+      .flatMap((section) => section.items)
+      .filter((item) => !isRetiredDashboardPath(item.href)),
   };
 });
 
