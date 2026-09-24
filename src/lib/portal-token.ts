@@ -118,7 +118,14 @@ export async function verifyPortalToken(
 }
 
 export async function revokePortalToken(token: string): Promise<void> {
-  const hash = tokenHash(token);
+  await revokePortalTokenHash(tokenHash(token));
+}
+
+/**
+ * Revoke by the stored hash — the firm only keeps hashes in its link
+ * registry (src/lib/portal-links.ts), never the raw token.
+ */
+export async function revokePortalTokenHash(hash: string): Promise<void> {
   REVOKED.add(hash);
 
   const pool = getSharedPgPool();
@@ -135,6 +142,8 @@ export async function revokePortalToken(token: string): Promise<void> {
     );
   }
 }
+
+export { tokenHash as portalTokenHash };
 
 export async function isPortalTokenRevoked(token: string): Promise<boolean> {
   const hash = tokenHash(token);

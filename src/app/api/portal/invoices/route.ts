@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { engineHeadersForBrain } from "@/lib/engine";
-import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { listEnginePages } from "@/lib/engine-pages";
+import { resolvePortalAccess } from "@/lib/portal-access";
 import { generateEpcQrCode } from "@/lib/e-invoice/qr-bill";
 
 export const dynamic = "force-dynamic";
@@ -35,19 +34,18 @@ export const GET = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
-    const payload = await verifyPortalToken(portalToken(req, query.token));
-    if (!payload?.brain_id) {
-      return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
-    }
+    // resolvePortalAccess, not a bare token check: disabling the portal or
+    // archiving the matter must cut invoice access on the next request.
+    const access = await resolvePortalAccess(portalToken(req, query.token));
+    if (access instanceof Response) return access;
 
-    const headers = engineHeadersForBrain(payload.brain_id);
-    const pages = await listEnginePages(headers, "invoice", 1000).catch(() => null);
+    const pages = await listEnginePages(access.headers, "invoice", 1000).catch(() => null);
     if (!pages) return apiError("engine_error", "Rechnungen konnten nicht geladen werden", 502);
 
     const invoices = [];
     for (const p of pages) {
       const fm = (p.frontmatter ?? {}) as InvoiceFm;
-      if (!Array.isArray(fm.case_slugs) || !fm.case_slugs.includes(payload.case_slug)) continue;
+      if (!Array.isArray(fm.case_slugs) || !fm.case_slugs.includes(access.caseSlug)) continue;
       if (!fm.status || !["sent", "overdue", "paid"].includes(fm.status)) continue;
       const open = fm.status !== "paid" && fm.total && fm.total > 0;
 

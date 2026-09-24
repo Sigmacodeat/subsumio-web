@@ -2,7 +2,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://mock-engine:3001" }));
-vi.mock("@/lib/portal-token", () => ({ signPortalToken: vi.fn(async () => "signed-token") }));
+vi.mock("@/lib/portal-token", () => ({
+  signPortalToken: vi.fn(async () => "signed-token"),
+  verifyPortalToken: vi.fn(async () => ({ case_slug: "cases/a", exp: 2_000_000_000 })),
+}));
+vi.mock("@/lib/portal-links", () => ({ registerPortalLink: vi.fn(async () => {}) }));
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (
@@ -24,6 +28,7 @@ vi.mock("@/lib/api-handler", () => ({
 
 import { POST } from "./route";
 import { signPortalToken } from "@/lib/portal-token";
+import { registerPortalLink } from "@/lib/portal-links";
 
 function stubCase(status: number, body?: unknown) {
   const fetchMock = vi.fn(
@@ -79,5 +84,16 @@ describe("POST /api/portal/generate", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ token: "signed-token", url: "/portal/signed-token" });
     expect(signPortalToken).toHaveBeenCalledWith("cases/a", undefined, "firm-a");
+  });
+
+  it("registers the issued link (hash only) on the matter for later revocation", async () => {
+    stubCase(200, { frontmatter: { portal_enabled: true, status: "open" } });
+    const res = await POST(req("cases/a") as never);
+    expect(res.status).toBe(200);
+    expect(registerPortalLink).toHaveBeenCalledWith(
+      { "x-subsumio-source": "firm-a", "x-matter-scope": "caller-scope" },
+      "cases/a",
+      expect.objectContaining({ token: "signed-token", created_by: "assistant@firm.example" })
+    );
   });
 });

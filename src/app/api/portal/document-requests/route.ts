@@ -1,9 +1,8 @@
 import { listEnginePages } from "@/lib/engine-pages";
 import { portalToken } from "@/lib/portal-session";
 import { z } from "zod";
-import { engineHeadersForBrain } from "@/lib/engine";
-import { apiError, createPublicHandler } from "@/lib/api-handler";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { createPublicHandler } from "@/lib/api-handler";
+import { resolvePortalAccess } from "@/lib/portal-access";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { documentRequestFromPage } from "@/lib/document-requests";
 import type { BrainPage } from "@/lib/types";
@@ -37,24 +36,13 @@ export const GET = createPublicHandler(
     }),
   },
   async (req, _body, query) => {
-    const payload = await verifyPortalToken(portalToken(req, query.token));
-    if (!payload) {
-      return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
-    }
-    if (!payload.brain_id) {
-      return apiError(
-        "new_portal_link_required",
-        "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.",
-        403
-      );
-    }
+    // resolvePortalAccess, not a bare token check: disabling the portal or
+    // archiving the matter must cut access on the next request.
+    const access = await resolvePortalAccess(portalToken(req, query.token));
+    if (access instanceof Response) return access;
 
     // Every request of the firm, in batches: the engine returns 200 per call.
-    const listed = await listEnginePages(
-      engineHeadersForBrain(payload.brain_id),
-      "document_request",
-      50_000
-    );
+    const listed = await listEnginePages(access.headers, "document_request", 50_000);
 
     const requests = pagesFrom(listed)
       .map(documentRequestFromPage)
@@ -62,7 +50,7 @@ export const GET = createPublicHandler(
         (request): request is NonNullable<ReturnType<typeof documentRequestFromPage>> =>
           request !== null
       )
-      .filter((request) => request.frontmatter.case_slug === payload.case_slug)
+      .filter((request) => request.frontmatter.case_slug === access.caseSlug)
       .filter((request) => request.frontmatter.status !== "expired")
       .sort(
         (a, b) =>

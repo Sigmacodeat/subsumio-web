@@ -38,6 +38,7 @@ import {
   ContactCreateDialog,
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
+import { PortalLinksPanel } from "@/components/legal/PortalLinksPanel";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
 import { EmailComposeDialog } from "@/components/legal/EmailComposeDialog";
@@ -451,6 +452,11 @@ export function OverviewTab() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Issued portal links — listable and revocable even after the URL left the screen. */}
+      {caseData.portalEnabled && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
+        <PortalLinksPanel caseSlug={caseData.slug} />
       )}
 
       {/* WP-7.40: Self-Service-Workflows fürs Mandantenportal freigeben */}

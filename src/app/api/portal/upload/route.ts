@@ -157,6 +157,13 @@ export const POST = createPublicHandler(
     if (!casePage) return apiError("case_not_found", "Akte konnte nicht geladen werden", 404);
 
     const caseFm = caseFrontmatter(casePage);
+    if (caseFm.status === "archived") {
+      return apiError(
+        "case_archived",
+        "Diese Akte wurde archiviert und ist nicht mehr verfügbar.",
+        403
+      );
+    }
     if (!caseFm.portal_enabled) {
       return apiError(
         "portal_disabled",

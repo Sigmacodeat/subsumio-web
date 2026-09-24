@@ -19,7 +19,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: inviteSchema,
     audit: (ctx, body) => ({
-      action: "case.update",
+      action: "whatsapp.client_invite",
       entityType: "whatsapp_client_invite",
       entityId: body.caseSlug,
       details: {
