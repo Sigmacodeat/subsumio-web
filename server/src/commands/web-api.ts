@@ -394,6 +394,35 @@ interface ParsedMultipart {
   file?: { filename: string; data: Buffer; mimeType: string };
 }
 
+/**
+ * Refuse to serve the web API without a key in production. Without
+ * SUBSUMIO_WEB_API_KEY the API-key gate below is open (every tenant's data
+ * reachable by anyone who can reach the engine port) and identity-token HMAC
+ * verification cannot work. Development and tests keep running keyless; an
+ * operator who deliberately runs an open engine in production (e.g. behind a
+ * private network with its own auth) must say so with
+ * SUBSUMIO_ALLOW_OPEN_WEB_API=1.
+ */
+export function assertWebApiKeyConfigured(
+  apiKey: string | undefined,
+  env: Record<string, string | undefined> = process.env
+): void {
+  if (apiKey) return;
+  if (env.NODE_ENV !== "production") return;
+  if (env.SUBSUMIO_ALLOW_OPEN_WEB_API === "1" || env.SUBSUMIO_ALLOW_OPEN_WEB_API === "true") {
+    console.warn(
+      "[web-api] WARNING: SUBSUMIO_WEB_API_KEY is not set and SUBSUMIO_ALLOW_OPEN_WEB_API is on — " +
+        "the web API accepts unauthenticated requests."
+    );
+    return;
+  }
+  throw new Error(
+    "[web-api] Refusing to start: NODE_ENV=production but SUBSUMIO_WEB_API_KEY is not set, " +
+      "so the web API would accept unauthenticated requests. Set SUBSUMIO_WEB_API_KEY " +
+      "(the same value as in the web app), or set SUBSUMIO_ALLOW_OPEN_WEB_API=1 to run open on purpose."
+  );
+}
+
 function requireWebApiKey(apiKey: string | undefined) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!apiKey) return next();
@@ -2452,6 +2481,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     process.env.SUBSUMIO_WEB_API_KEY ??
     process.env.GBRAIN_WEB_API_KEY ??
     process.env.SIGMABRAIN_WEB_API_KEY;
+  // Fail closed in production: no key → the engine does not start (throws
+  // out of serve-http's startup, the process exits with the message).
+  assertWebApiKeyConfigured(apiKey);
   const guard = requireWebApiKey(apiKey);
   const requireTenant = tenantModeRequired(options);
   const config = loadConfig() || { engine: "pglite" as const };
