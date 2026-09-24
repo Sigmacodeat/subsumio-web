@@ -1,5 +1,9 @@
 "use client";
 
+// grounding-exempt: hosts briefing/memory/plan tabs (non-legal AI output, each
+// panel carries its own exemption); chat answers are grounded in chat-panel
+// and rendered with CitationPanel in chat-message.
+
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {

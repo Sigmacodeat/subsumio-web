@@ -221,3 +221,45 @@ describe("response envelope contract", () => {
     expect(enveloped).toEqual({ data: { count: 3, lastAt: null } });
   });
 });
+
+describe("api.query.think (SSE)", () => {
+  function sseResponse(events: string[]): Response {
+    const body = events.map((e) => `data: ${e}`).join("\n\n") + "\n\ndata: [DONE]\n\n";
+    return new Response(body, {
+      status: 200,
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  }
+
+  test("a degraded final_answer is mapped to the lawyer-facing message, onRevised fires once", async () => {
+    const degraded =
+      "(no LLM available — anthropic: credit balance too low, see console.anthropic.com)";
+    vi.mocked(csrfFetch).mockResolvedValueOnce(
+      sseResponse([
+        JSON.stringify({ chunk: "Entwurf " }),
+        JSON.stringify({ final_answer: degraded }),
+        JSON.stringify({ citations: [], gaps: [] }),
+      ])
+    );
+    const onRevised = vi.fn();
+    const result = await api.query.think("frage", { onRevised });
+    expect(result.answer).toContain("Assistent kann gerade keine Antwort");
+    expect(result.answer).not.toContain("anthropic");
+    expect(result.answer_revised).toBe(true);
+    expect(onRevised).toHaveBeenCalledTimes(1);
+  });
+
+  test("a normal final_answer replaces the streamed draft once", async () => {
+    vi.mocked(csrfFetch).mockResolvedValueOnce(
+      sseResponse([
+        JSON.stringify({ chunk: "Teil " }),
+        JSON.stringify({ final_answer: "Endfassung" }),
+        JSON.stringify({ citations: [{ slug: "x" }], gaps: [] }),
+      ])
+    );
+    const onRevised = vi.fn();
+    const result = await api.query.think("frage", { onRevised });
+    expect(result.answer).toBe("Endfassung");
+    expect(onRevised).toHaveBeenCalledTimes(1);
+  });
+});

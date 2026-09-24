@@ -8,12 +8,12 @@ import { logger } from "@/lib/logger";
 const log = logger("api/search");
 
 const searchQuerySchema = z.object({
-  q: z.string().default(""),
+  q: z.string().max(2_000).default(""),
   limit: z
     .string()
-    .transform((v) => Math.min(parseInt(v, 10) || 10, 100))
+    .transform((v) => Math.max(1, Math.min(parseInt(v, 10) || 10, 100)))
     .default("10"),
-  type: z.string().optional(),
+  type: z.string().max(200).optional(),
 });
 
 export const GET = createHandler(

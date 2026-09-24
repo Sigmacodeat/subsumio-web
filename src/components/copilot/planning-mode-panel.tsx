@@ -1,5 +1,8 @@
 "use client";
 
+// grounding-exempt: renders copilot plan steps and tool proposals (operational
+// metadata: tool id, params, rationale) — no legal analysis or citations.
+
 import { useState, useEffect, useCallback } from "react";
 import {
   ListChecks,

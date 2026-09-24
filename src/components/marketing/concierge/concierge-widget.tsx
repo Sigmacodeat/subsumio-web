@@ -5,6 +5,11 @@
 // source of every statement, and hands over to a person through a contact
 // form the visitor fills in and submits themselves. It never books, buys or
 // signs anything on its own.
+//
+// grounding-exempt: public marketing assistant on a dedicated concierge brain —
+// it quotes website sources inline and carries its own "KI-Assistent" label;
+// it has no access to firm data or the law corpus, so corpus grounding and the
+// CitationPanel do not apply.
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";

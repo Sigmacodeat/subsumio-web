@@ -62,9 +62,22 @@ describe("check-grounding-invariant — Office add-ins", () => {
       'fetch("/api/review-table/ask")',
       'fetch("/api/work-products/memo/generate")',
       'fetch("/api/legal/submission-review")',
+      // AI surfaces discovered during the domain-7 audit — these must be seen
+      // by the guard (grounded or explicitly exempt), never invisible.
+      'fetch("/api/copilot/explain")',
+      'fetch("/api/copilot/plan")',
+      'fetch("/api/copilot/memory")',
+      'fetch("/api/concierge")',
+      "loadBriefing(lang)",
     ]) {
       expect(checkSource(`${call}; return <p>{text}</p>;`), call).toBe("violation");
     }
+  });
+
+  it("accepts a documented grounding-exempt on the newly covered surfaces", () => {
+    expect(
+      checkSource('// grounding-exempt: retrieval metadata only\nfetch("/api/copilot/explain")')
+    ).toBe("exempt");
   });
 });
 
