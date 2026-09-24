@@ -242,23 +242,70 @@ export interface FristErgebnisDE {
   hinweise: string[];
 }
 
-/** § 188 Abs. 2/3 BGB — Endeterminierung für Wochen-/Monatsfristen:
- *  der Tag der letzten Woche/des letzten Monats, der dem Anfangstag
- *  durch Benennung oder Zahl entspricht; fehlt er → letzter Monatstag. */
-function fristendeRohDE(fristbeginn: string, dauer: FristDauer): string {
-  let d = fristbeginn;
-  const tage = (dauer.tage ?? 0) + (dauer.wochen ?? 0) * 7;
-  if (tage > 0) d = addDays(d, tage - 1); // Anfangstag zählt mit
+/** Addiert `monate` Kalendermonate auf `iso`. Fehlt der entsprechende Tag im
+ *  Zielmonat (z. B. 31.), wird auf den letzten Tag des Monats geklemmt
+ *  (§ 188 Abs. 3 BGB). `clamped` meldet, ob geklemmt wurde. */
+function addMonateDE(iso: string, monate: number): { iso: string; clamped: boolean } {
+  const base = parseISODate(iso);
+  const targetMonth = base.getUTCMonth() + monate;
+  const targetYear = base.getUTCFullYear() + Math.floor(targetMonth / 12);
+  const normMonth = ((targetMonth % 12) + 12) % 12;
+  const lastDayOfTarget = new Date(Date.UTC(targetYear, normMonth + 1, 0)).getUTCDate();
+  const day = Math.min(base.getUTCDate(), lastDayOfTarget);
+  return {
+    iso: toISODate(new Date(Date.UTC(targetYear, normMonth, day))),
+    clamped: day !== base.getUTCDate(),
+  };
+}
+
+/** §§ 187, 188 BGB (i.V.m. § 222 Abs. 1 ZPO, § 43 StPO, § 57 VwGO, § 31 VwVfG)
+ *  — rechnerisches Fristende VOR der § 193-Verschiebung.
+ *
+ *  - Tagesfristen: der Anfangstag (`fristbeginn`) zählt mit, Ende = Beginn
+ *    + (Tage − 1) (§ 188 Abs. 1 BGB).
+ *  - Wochen-/Monats-/Jahresfristen mit Ereignisbeginn (§ 187 Abs. 1 BGB):
+ *    Ende ist der Tag der letzten Woche/des letzten Monats, der durch
+ *    Benennung oder Zahl dem EREIGNISTAG (idR Zustellung) entspricht
+ *    (§ 188 Abs. 2 Alt. 1 BGB). Zustellung Di 10.03. + 1 Monat → 10.04.;
+ *    + 2 Wochen → Dienstag. Maßgeblich ist der Ereignistag, nicht der
+ *    Folgetag (`fristbeginn`).
+ *  - Mit Tagesbeginn (§ 187 Abs. 2 BGB): Ende ist der Tag VOR dem Tag, der
+ *    dem Anfangstag entspricht (§ 188 Abs. 2 Alt. 2 BGB).
+ *  - Fehlt der entsprechende Tag im letzten Monat, endet die Frist mit dem
+ *    letzten Tag dieses Monats (§ 188 Abs. 3 BGB): 31.01. + 1 Monat → 28./29.02.
+ */
+function fristendeRohDE(
+  ausloeser: string,
+  fristbeginn: string,
+  dauer: FristDauer,
+  tagesbeginn: boolean
+): string {
+  const tageFrist = dauer.tage ?? 0;
+  const wochen = dauer.wochen ?? 0;
   const monate = (dauer.monate ?? 0) + (dauer.jahre ?? 0) * 12;
-  if (monate > 0) {
-    const base = parseISODate(d);
-    const targetMonth = base.getUTCMonth() + monate;
-    const targetYear = base.getUTCFullYear() + Math.floor(targetMonth / 12);
-    const normMonth = ((targetMonth % 12) + 12) % 12;
-    const lastDayOfTarget = new Date(Date.UTC(targetYear, normMonth + 1, 0)).getUTCDate();
-    const day = Math.min(base.getUTCDate(), lastDayOfTarget);
-    d = toISODate(new Date(Date.UTC(targetYear, normMonth, day)));
+
+  if (monate === 0 && wochen === 0) {
+    // Reine Tagesfrist (oder leere Dauer → fristbeginn, Aufrufer wirft).
+    return tageFrist > 0 ? addDays(fristbeginn, tageFrist - 1) : fristbeginn;
   }
+
+  // Wochen-/Monats-/Jahresfrist: vom Anfangstag (Abs. 2) bzw. Ereignistag
+  // (Abs. 1) aus den entsprechenden Tag bestimmen.
+  const anker = tagesbeginn ? fristbeginn : ausloeser;
+  let d = anker;
+  let clamped = false;
+  if (monate > 0) {
+    const r = addMonateDE(d, monate);
+    d = r.iso;
+    clamped = r.clamped;
+  }
+  if (wochen > 0) d = addDays(d, wochen * 7);
+  // § 188 Abs. 2 Alt. 2: Tag vor dem entsprechenden Tag — außer der
+  // entsprechende Tag fehlt (Abs. 3: dann letzter Tag des Monats).
+  if (tagesbeginn && !clamped) d = addDays(d, -1);
+  // Zusätzliche Tage (gemischte Dauer, z. B. „1 Monat und 3 Tage") laufen
+  // im Anschluss an den Monats-/Wochenteil.
+  if (tageFrist > 0) d = addDays(d, tageFrist);
   return d;
 }
 
@@ -293,10 +340,12 @@ export function berechneFristDE(opts: BerechneFristDEOpts): FristErgebnisDE {
       : "Ereignistag zählt nicht mit (§ 187 Abs. 1 BGB)"
   );
 
-  let roh = fristendeRohDE(fristbeginn, opts.dauer);
-  if (roh === fristbeginn && !opts.jahresendverjaehrung) {
+  const d = opts.dauer;
+  const hatDauer = (d.tage ?? 0) + (d.wochen ?? 0) + (d.monate ?? 0) + (d.jahre ?? 0) > 0;
+  if (!hatDauer && !opts.jahresendverjaehrung) {
     throw new Error("frist-engine-de: dauer must specify at least one of tage/wochen/monate/jahre");
   }
+  let roh = fristendeRohDE(opts.ausloeser, fristbeginn, d, opts.tagesbeginn === true);
 
   // § 199 Abs. 1 BGB — Jahresendverjährung
   if (opts.jahresendverjaehrung) {

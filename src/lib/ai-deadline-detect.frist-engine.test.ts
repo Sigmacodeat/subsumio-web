@@ -180,10 +180,12 @@ describe("frist-engine integration in ai-deadline-detect", () => {
       const berufung = detected.find((d) => d.suggestedTemplate === "berufung")!;
       const enriched = enrichDetectedDeadline(berufung, text);
 
-      // 4 weeks from 2024-03-01 = 2024-03-29
-      // Vorfrist = 2024-03-22 (7 days before) = Friday
-      expect(enriched.fristResult!.fristende).toBe("2024-03-29");
-      expect(enriched.fristResult!.vorfrist).toBe("2024-03-22");
+      // 4 weeks from 2024-03-01 = 2024-03-29 = Karfreitag → § 1 FrHemmG:
+      // Sa 30.3., So 31.3., Ostermontag 1.4. → Fristende Di 2024-04-02
+      // Vorfrist = 2024-03-26 (7 days before) = Tuesday
+      expect(enriched.fristResult!.fristendeRoh).toBe("2024-03-29");
+      expect(enriched.fristResult!.fristende).toBe("2024-04-02");
+      expect(enriched.fristResult!.vorfrist).toBe("2024-03-26");
     });
   });
 

@@ -46,6 +46,8 @@ describe("beaDeadlineSuggestions", () => {
     expect(berufung!.due_date).toBe(
       berechneFristArtDE("berufung_de", zustellungBea("2026-09-17")).fristende
     );
+    // 18.09.2026 + 1 Monat → So 18.10. → Mo 19.10.2026 (§ 188 Abs. 2, § 193 BGB)
+    expect(berufung!.due_date).toBe("2026-10-19");
     expect(berufung!.confirmed).toBe(false);
     expect(berufung!.urgency).toBe("high");
     expect(berufung!.source).toBe("beA: Urteil AG Hamburg");

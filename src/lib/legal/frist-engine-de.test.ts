@@ -80,8 +80,9 @@ describe("§§ 187 ff. BGB", () => {
     expect(r.fristende).toBe("2026-03-16");
   });
 
-  test("§ 188 Abs. 2: Monatsfrist endet am entsprechenden Tag", () => {
-    // Berufung: Zustellung 10.1., Fristbeginn 11.1. → Ende 11.2.
+  test("§ 188 Abs. 2: Monatsfrist endet am Tag, der dem Zustelltag entspricht", () => {
+    // Berufung: Zustellung Sa 10.1.2026 → Ende Di 10.2. (nicht 11.2. — der
+    // Ereignistag, nicht der Folgetag, bestimmt das Fristende).
     const r = berechneFristDE({
       ausloeser: "2026-01-10",
       dauer: { monate: 1 },
@@ -89,7 +90,136 @@ describe("§§ 187 ff. BGB", () => {
       bundesland: "BE",
     });
     expect(r.fristbeginn).toBe("2026-01-11");
-    expect(r.fristende).toBe("2026-02-11");
+    expect(r.fristendeRoh).toBe("2026-02-10");
+    expect(r.fristende).toBe("2026-02-10");
+  });
+
+  test("§ 188 Abs. 2: Zustellung Di 10.03.2026 + 1 Monat → Fr 10.04.2026", () => {
+    const r = berechneFristDE({
+      ausloeser: "2026-03-10",
+      dauer: { monate: 1 },
+      regime: "zpo",
+      bundesland: "NW",
+    });
+    expect(r.fristendeRoh).toBe("2026-04-10");
+    expect(r.fristende).toBe("2026-04-10");
+  });
+
+  test("§ 188 Abs. 3 + § 193: Zustellung 31.01.2026 + 1 Monat → Sa 28.02. → Mo 02.03.", () => {
+    const r = berechneFristDE({
+      ausloeser: "2026-01-31",
+      dauer: { monate: 1 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2026-02-28");
+    expect(r.fristende).toBe("2026-03-02");
+    expect(r.hinweise.some((h) => h.includes("§ 193 BGB"))).toBe(true);
+  });
+
+  test("§ 188 Abs. 3 im Schaltjahr: Zustellung 31.01.2028 + 1 Monat → Di 29.02.2028", () => {
+    const r = berechneFristDE({
+      ausloeser: "2028-01-31",
+      dauer: { monate: 1 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2028-02-29");
+    expect(r.fristende).toBe("2028-02-29");
+  });
+
+  test("§ 188 Abs. 2: Zustellung 29.02.2028 + 1 Jahr → 28.02.2029 (Abs. 3)", () => {
+    const r = berechneFristDE({
+      ausloeser: "2028-02-29",
+      dauer: { jahre: 1 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2029-02-28");
+    expect(r.fristende).toBe("2029-02-28"); // Mittwoch
+  });
+
+  test("§ 188 Abs. 2: Zustellung 30.11.2026 + 2 Monate → 30.01.2027 (Sa) → Mo 01.02.", () => {
+    const r = berechneFristDE({
+      ausloeser: "2026-11-30",
+      dauer: { monate: 2 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2027-01-30");
+    expect(r.fristende).toBe("2027-02-01");
+  });
+
+  test("§ 188 Abs. 2: Wochenfrist endet am gleichen Wochentag (Di + 2 Wochen → Di)", () => {
+    const r = berechneFristDE({
+      ausloeser: "2026-03-10", // Dienstag
+      dauer: { wochen: 2 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2026-03-24");
+    expect(new Date(`${r.fristende}T00:00:00Z`).getUTCDay()).toBe(2);
+    expect(r.fristende).toBe("2026-03-24");
+  });
+
+  test("§ 193: Monatsfrist endet auf Feiertag → nächster Werktag", () => {
+    // Zustellung 03.09.2026 + 1 Monat → Sa 03.10.2026 (Tag der Deutschen
+    // Einheit + Samstag) → Mo 05.10.
+    const r = berechneFristDE({
+      ausloeser: "2026-09-03",
+      dauer: { monate: 1 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2026-10-03");
+    expect(r.fristende).toBe("2026-10-05");
+  });
+
+  test("§ 193: Wochenfrist auf Karfreitag + Ostermontag → Dienstag", () => {
+    // Zustellung Fr 20.03.2026 + 2 Wochen → Karfreitag 03.04. → Di 07.04.
+    const r = berechneFristDE({
+      ausloeser: "2026-03-20",
+      dauer: { wochen: 2 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristendeRoh).toBe("2026-04-03");
+    expect(r.fristende).toBe("2026-04-07");
+  });
+
+  test("§ 193: Landesfeiertag verschiebt Monatsfrist nur im betroffenen Land", () => {
+    // Zustellung 06.12.2026 + 1 Monat → Mi 06.01.2027 (Hl. Drei Könige in BY)
+    const base = { ausloeser: "2026-12-06", dauer: { monate: 1 }, regime: "zpo" as const };
+    expect(berechneFristDE({ ...base, bundesland: "BY" }).fristende).toBe("2027-01-07");
+    expect(berechneFristDE({ ...base, bundesland: "BE" }).fristende).toBe("2027-01-06");
+  });
+
+  test("§ 188 Abs. 2 Alt. 2: tagesbeginn — Monatsfrist endet am Vortag des entsprechenden Tags", () => {
+    const r = berechneFristDE({
+      ausloeser: "2026-03-10",
+      dauer: { monate: 1 },
+      regime: "materiell",
+      bundesland: "BE",
+      tagesbeginn: true,
+    });
+    expect(r.fristbeginn).toBe("2026-03-10");
+    expect(r.fristendeRoh).toBe("2026-04-09");
+  });
+
+  test("Tagesfrist von 1 Tag ist gültig (Folgetag des Ereignisses)", () => {
+    const r = berechneFristDE({
+      ausloeser: "2026-03-10",
+      dauer: { tage: 1 },
+      regime: "zpo",
+      bundesland: "BE",
+    });
+    expect(r.fristende).toBe("2026-03-11");
+  });
+
+  test("leere Dauer wirft", () => {
+    expect(() =>
+      berechneFristDE({ ausloeser: "2026-03-10", dauer: {}, regime: "zpo", bundesland: "BE" })
+    ).toThrow();
   });
 
   test("§ 188 Abs. 3: fehlender Tag → letzter Tag des Monats", () => {
@@ -166,7 +296,7 @@ describe("frist-options Integration DE", () => {
 
   test("computeFrist DE nutzt die DE-Engine mit Bundesland", () => {
     const r = computeFrist("berufung_de", "2026-01-10", { country: "DE", state: "BE" });
-    expect(r.dueDate).toBe("2026-02-11");
+    expect(r.dueDate).toBe("2026-02-10");
     expect(r.vorfrist).toBeDefined();
     expect(r.notfrist).toBe(true);
   });
@@ -187,6 +317,8 @@ describe("frist-options Integration DE", () => {
       ervEinlangen: true,
     });
     expect(r.fristbeginn).toBe("2026-04-14"); // beA-Zustellung 13.4. + 1 Tag
+    // Monatsfrist ab Zustellungstag 13.4. → Mi 13.5.2026
+    expect(r.dueDate).toBe("2026-05-13");
     expect(r.hinweise.some((h) => h.includes("beA"))).toBe(true);
   });
 
