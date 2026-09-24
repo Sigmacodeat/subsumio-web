@@ -902,7 +902,10 @@ describe("stopCurrentActivity edge cases", () => {
     );
     const entryId = await stopCurrentActivity("b1", "u1", undefined, lastBeat);
     expect(entryId).toMatch(/^time-entries\/u1\//);
-    const fm = (captured as Record<string, unknown>).frontmatter as Record<string, unknown>;
+    const fm = (captured as unknown as Record<string, unknown>).frontmatter as Record<
+      string,
+      unknown
+    >;
     expect(fm.ended_at).toBe(lastBeat);
     // ~2h20m billed, not 3h
     expect(Number(fm.minutes)).toBeLessThan(150);
