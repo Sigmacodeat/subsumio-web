@@ -42,6 +42,9 @@ export async function getMinRevocationVersion(userId: string): Promise<number> {
 
 /** Invalidate all sessions for a user (e.g. after password change). */
 export async function revokeAllSessions(userId: string): Promise<void> {
+  // Mirror the version-floor bump into the registry so the "Aktive Sitzungen"
+  // list and the per-sid revocation check agree with it.
+  void import("./session-registry").then((m) => m.revokeSessionRows(userId).catch(() => {}));
   const pool = getSharedPgPool();
   if (!pool) {
     const current = revokedVersions.get(userId) ?? 0;

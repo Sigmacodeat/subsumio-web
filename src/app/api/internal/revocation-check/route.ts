@@ -1,5 +1,6 @@
 import { createPublicHandler } from "@/lib/api-handler";
 import { getMinRevocationVersion } from "@/lib/auth/revocation-store";
+import { listRevokedSids } from "@/lib/auth/session-registry";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { z } from "zod";
 
@@ -17,7 +18,8 @@ const revocationCheckSchema = z.object({
  *
  * Internal endpoint used by the edge-safe session verifier
  * (session-core.ts → fetchRevocationVersion) to check if a user's
- * sessions have been revoked. Returns the minimum accepted session version.
+ * sessions have been revoked. Returns the minimum accepted session version
+ * plus the list of individually revoked registry sids ("Aktive Sitzungen").
  *
  * This endpoint is intentionally unauthenticated — it only reveals a
  * numeric version counter, not any user data. The edge middleware
@@ -36,12 +38,15 @@ export const GET = createPublicHandler(
     const { uid } = query;
 
     try {
-      const minVersion = await getMinRevocationVersion(uid);
-      return Response.json({ minVersion });
+      const [minVersion, revokedSids] = await Promise.all([
+        getMinRevocationVersion(uid),
+        listRevokedSids(uid),
+      ]);
+      return Response.json({ minVersion, revokedSids });
     } catch (err) {
       log.error("[revocation-check] error:", err instanceof Error ? err.message : String(err));
       // Fail-open: return 0 so sessions remain valid if the store is unreachable
-      return Response.json({ minVersion: 0 });
+      return Response.json({ minVersion: 0, revokedSids: [] });
     }
   }
 );

@@ -118,7 +118,11 @@ export const POST = createPublicHandler(
       }
       must2fa = policy === "required";
     }
-    const session = await createSession(user.id, user.email, user.role, { must2fa });
+    const session = await createSession(user.id, user.email, user.role, {
+      must2fa,
+      userAgent: req.headers.get("user-agent"),
+      ip,
+    });
     void logAudit("user.login", "user", { entityId: user.id, details: { ip } });
     const res = NextResponse.json({ user: toPublic(user), must2fa });
     res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);

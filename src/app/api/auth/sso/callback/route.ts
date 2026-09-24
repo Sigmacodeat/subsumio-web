@@ -155,7 +155,11 @@ export const GET = createPublicHandler(
       }
 
       // Create Subsumio session
-      const session = await createSession(user.id, user.email, user.role, { must2fa });
+      const session = await createSession(user.id, user.email, user.role, {
+        must2fa,
+        userAgent: req.headers.get("user-agent"),
+        ip: clientIp(req.headers),
+      });
       (await cookies()).set(SESSION_COOKIE, session.token, session.cookieOptions);
       void logAudit("user.login", "user", {
         entityId: user.id,

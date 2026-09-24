@@ -84,6 +84,11 @@ export async function purgeExpiredSoftDeletedUsers(
         .query(`DELETE FROM subsumio_settings WHERE user_id = $1`, [row.id])
         .catch(() => {});
       await pool.query(`DELETE FROM subsumio_usage WHERE user_id = $1`, [row.id]).catch(() => {});
+      // Session registry rows carry IP + user-agent — personal data that must
+      // not outlive the account.
+      await pool
+        .query(`DELETE FROM subsumio_user_sessions WHERE user_id = $1`, [row.id])
+        .catch(() => {});
       await pool.query(`DELETE FROM subsumio_users WHERE id = $1`, [row.id]);
       purged++;
       void logAudit("admin.data_delete", "user", {

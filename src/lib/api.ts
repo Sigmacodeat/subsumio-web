@@ -840,6 +840,23 @@ export const api = {
       });
     },
 
+    retrievalFeedback(input: {
+      query: string;
+      result_slug: string;
+      result_title?: string;
+      feedback_type: "relevant" | "irrelevant" | "outdated" | "wrong";
+      severity?: "low" | "medium" | "high";
+      comment?: string;
+      search_mode?: string;
+      rank_position?: number;
+      result_score?: number;
+    }): Promise<{ id: string; created_at: string }> {
+      return request("/api/legal/retrieval-feedback", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
     /** Second grounding stage: does each verified source carry its statement? */
     support(
       text: string,

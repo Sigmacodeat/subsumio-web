@@ -49,6 +49,8 @@ export type RouteAction =
   | "auth.verify" // GET /api/auth/verify
   | "auth.2fa" // POST /api/auth/2fa/*
   | "auth.sso" // GET /api/auth/sso/*
+  | "auth.sessions" // GET+POST /api/auth/sessions/*
+  | "auth.email_change" // POST /api/auth/email/*
   | "brain.read" // GET /api/stats, /api/pages, /api/search, /api/graph
   | "brain.write" // POST /api/pages, /api/upload
   | "brain.delete" // DELETE /api/pages/:slug
@@ -135,6 +137,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "auth.verify": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.2fa": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.sso": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.sessions": ["admin", "lawyer", "assistant"],
+  "auth.email_change": ["admin", "lawyer", "assistant"],
   "brain.read": ["admin", "lawyer", "assistant", "client_viewer"],
   "brain.write": ["admin", "lawyer", "assistant"],
   "brain.delete": ["admin", "lawyer"],
@@ -246,6 +250,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "auth.verify": "settings.update",
     "auth.2fa": "settings.update",
     "auth.sso": "settings.update",
+    "auth.sessions": "user.session_revoked",
+    "auth.email_change": "user.email_change_requested",
     "brain.read": "case.view",
     "brain.write": "case.create",
     "brain.delete": "document.delete",

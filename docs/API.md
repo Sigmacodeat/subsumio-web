@@ -97,10 +97,14 @@
 | `/api/auth/2fa/login-verify`                                | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/2fa/setup`                                       | POST                     | Session                   | `auth.2fa`                        | standard |
 | `/api/auth/2fa/verify`                                      | POST                     | Session                   | `auth.2fa`                        | standard |
+| `/api/auth/email/confirm-change`                            | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
+| `/api/auth/email/request-change`                            | POST                     | Session                   | `auth.email_change`               | standard |
 | `/api/auth/forgot`                                          | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/login`                                           | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/logout`                                          | POST                     | Session                   | `auth.logout`                     | standard |
 | `/api/auth/me`                                              | GET, PATCH               | Session                   | `settings.read`                   | standard |
+| `/api/auth/sessions`                                        | GET                      | Session                   | `settings.read`                   | standard |
+| `/api/auth/sessions/revoke`                                 | POST                     | Session                   | `auth.sessions`                   | standard |
 | `/api/auth/register`                                        | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/reset`                                           | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/signup`                                          | POST                     | Öffentlich (rate-limited) | `—`                               | standard |

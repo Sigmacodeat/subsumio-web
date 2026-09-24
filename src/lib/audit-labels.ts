@@ -16,6 +16,10 @@ export type AuditAction =
   | "user.login"
   | "user.logout"
   | "user.signup"
+  | "user.session_revoked"
+  | "user.sessions_revoked_others"
+  | "user.email_change_requested"
+  | "user.email_changed"
   | "case.create"
   | "case.update"
   | "matter.access_update"
@@ -346,6 +350,10 @@ const ACTION_LABELS: Record<string, string> = {
   "user.login": "Anmeldung",
   "user.logout": "Abmeldung",
   "user.signup": "Registrierung",
+  "user.session_revoked": "Sitzung abgemeldet",
+  "user.sessions_revoked_others": "Alle anderen Sitzungen abgemeldet",
+  "user.email_change_requested": "E-Mail-Änderung angefordert",
+  "user.email_changed": "E-Mail-Adresse geändert",
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
   "matter.access_update": "Aktenzugriff geändert",

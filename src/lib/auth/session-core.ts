@@ -11,6 +11,10 @@ export interface SessionPayload {
   exp: number; // unix seconds
   /** Session version for revocation. Incremented on password change / logout-all. */
   v?: number;
+  /** Registry id (subsumio_user_sessions row) — makes the session enumerable
+   *  and individually revocable in "Aktive Sitzungen". Sessions issued before
+   *  the registry existed lack it; they stay governed by the version floor. */
+  sid?: string;
   /**
    * Set when the Kanzlei has require2FA on (kanzlei-settings.ts) and this
    * user logged in without having 2FA enabled themselves. Baked into the
@@ -56,17 +60,25 @@ export interface SessionResult {
 
 const encoder = new TextEncoder();
 
-// Edge-safe revocation cache: maps userId → { minVersion, fetchedAt }.
-// Populated by fetchRevocationVersion (HTTP call to /api/internal/revocation-check).
+// Edge-safe revocation cache: maps userId → { minVersion, revokedSids, fetchedAt }.
+// Populated by fetchRevocationState (HTTP call to /api/internal/revocation-check).
 // Cache TTL: 60 seconds. This limits the revocation window to 60s at the edge.
-const revocationCache = new Map<string, { minVersion: number; fetchedAt: number }>();
+const revocationCache = new Map<
+  string,
+  { minVersion: number; revokedSids: Set<string>; fetchedAt: number }
+>();
 const REVOCATION_CACHE_TTL_MS = 60_000;
 
-async function fetchRevocationVersion(userId: string): Promise<number> {
+interface RevocationState {
+  minVersion: number;
+  revokedSids: Set<string>;
+}
+
+async function fetchRevocationState(userId: string): Promise<RevocationState> {
   const cached = revocationCache.get(userId);
   const now = Date.now();
   if (cached && now - cached.fetchedAt < REVOCATION_CACHE_TTL_MS) {
-    return cached.minVersion;
+    return { minVersion: cached.minVersion, revokedSids: cached.revokedSids };
   }
   // Fire-and-forget background refresh to avoid deadlocking the edge runtime.
   // The middleware runs in the edge runtime within the same Node.js process
@@ -81,10 +93,11 @@ async function fetchRevocationVersion(userId: string): Promise<number> {
       signal: AbortSignal.timeout(2_000),
     })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { minVersion: number } | null) => {
+      .then((data: { minVersion: number; revokedSids?: string[] } | null) => {
         if (data) {
           revocationCache.set(userId, {
             minVersion: data.minVersion ?? 0,
+            revokedSids: new Set(data.revokedSids ?? []),
             fetchedAt: Date.now(),
           });
         }
@@ -93,12 +106,12 @@ async function fetchRevocationVersion(userId: string): Promise<number> {
         // Network error or timeout — cache stays stale, next request retries.
       });
   }
-  // Return the stale cached value if available, otherwise fail open (0).
+  // Return the stale cached value if available, otherwise fail open.
   // A stale cache entry still correctly rejects a session that was revoked
   // before the outage started. Only truly unknown users (never cached) fail
   // open, which is an acceptable availability tradeoff for first-ever lookups.
-  if (cached) return cached.minVersion;
-  return 0;
+  if (cached) return { minVersion: cached.minVersion, revokedSids: cached.revokedSids };
+  return { minVersion: 0, revokedSids: new Set() };
 }
 
 export function getAuthSecret(): string {
@@ -213,8 +226,9 @@ export async function verifySessionCore(
     if (!isSessionShaped(payload)) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     // Edge-safe revocation check (cached, best-effort)
-    const minVersion = await fetchRevocationVersion(payload.uid);
+    const { minVersion, revokedSids } = await fetchRevocationState(payload.uid);
     if (minVersion > 0 && (payload.v ?? 0) <= minVersion) return null;
+    if (payload.sid && revokedSids.has(payload.sid)) return null;
     return payload;
   } catch {
     return null;
