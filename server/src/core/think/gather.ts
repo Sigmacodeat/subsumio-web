@@ -24,6 +24,7 @@ import { expandLegalQuery } from "./legal-query-expand.ts";
 import { expandConceptQuery } from "../legal/concept-map.ts";
 import { agenticRetrieval } from "./agentic-retrieval.ts";
 import { planAndExecute } from "./query-planner.ts";
+import { neutralizeToolMarkers } from "./sanitize.ts";
 
 export interface ThinkGatherOpts {
   question: string;
@@ -344,9 +345,9 @@ export function renderPagesBlock(pages: SearchResult[], excerptLen = 600): strin
           : "";
       // A document must not be able to close its own data block and inject
       // text that reads as prompt structure (`</page>`, `<takes>`, …).
-      const safeExcerpt = excerpt.replace(
-        /<(\/?)(pages?|takes?|graph|untrusted-user-input)\b/gi,
-        "&lt;$1$2"
+      // Nor may it carry a copilot `[TOOL:…]` marker the model could echo.
+      const safeExcerpt = neutralizeToolMarkers(
+        excerpt.replace(/<(\/?)(pages?|takes?|graph|untrusted-user-input)\b/gi, "&lt;$1$2")
       );
       return `<page slug="${slug}" rank="${idx + 1}"${offsetAttrs}>\n${safeExcerpt}\n</page>`;
     })

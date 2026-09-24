@@ -88,6 +88,19 @@ export const INJECTION_PATTERNS: Array<{ name: string; rx: RegExp; replacement: 
 ];
 
 /**
+ * Neutralise copilot tool markers (`[TOOL:name …]`) in retrieved or pasted
+ * text before it reaches the model. The web copilot turns such markers in the
+ * model's answer into tool calls, so a document or e-mail that carries one could
+ * otherwise steer the model into echoing it. A zero-width space between `TOOL`
+ * and `:` keeps the text readable but no longer matches the marker grammar.
+ * Deliberately NOT part of INJECTION_PATTERNS: the copilot's own instructions
+ * (which document the markers) go through `sanitizePromptInput` too.
+ */
+export function neutralizeToolMarkers(text: string): string {
+  return text.replace(/\[(\s*)TOOL(\s*):/gi, (_m, a: string, b: string) => `[${a}TOOL\u200B${b}:`);
+}
+
+/**
  * Sanitize caller-supplied prompt text (a question, a persona, a drafting
  * brief) before it enters the think pipeline: strip injection patterns but
  * keep the text intact. Unlike `sanitizeTakeForPrompt` (500-char cap for one
@@ -119,7 +132,7 @@ export function sanitizePromptInput(
  * Returns the cleaned text + a list of patterns that matched (for telemetry).
  */
 export function sanitizeTakeForPrompt(claim: string): { text: string; matched: string[] } {
-  let text = claim;
+  let text = neutralizeToolMarkers(claim);
   const matched: string[] = [];
   for (const p of INJECTION_PATTERNS) {
     if (p.rx.test(text)) {

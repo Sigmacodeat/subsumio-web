@@ -3665,8 +3665,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     // P0-SEC-001: Engine-side prompt sanitization — strip injection patterns
     // before the query enters the think pipeline. Direct callers (CLI, MCP)
     // bypass the web-app's sanitizeObjectStrings layer.
-    const { sanitizePromptInput } = await import("../core/think/sanitize.ts");
-    const { text: query } = sanitizePromptInput(rawQuery, 20_000);
+    const { sanitizePromptInput, neutralizeToolMarkers } =
+      await import("../core/think/sanitize.ts");
+    // The question carries pasted/attached document text and chat history:
+    // copilot `[TOOL:…]` markers in it are neutralised so they can't be echoed.
+    const query = neutralizeToolMarkers(sanitizePromptInput(rawQuery, 20_000).text);
     // Optional caller instructions (persona / tool docs) → system prompt, not
     // the retrieval query. Same sanitization as the question.
     const rawInstructions = typeof body?.instructions === "string" ? body.instructions : "";
