@@ -373,7 +373,10 @@ async function main() {
   // 2. Sammle alle Dokumente
   const searchDirs = [
     "/Users/msc/.windsurf/worktrees/rciid-clean/rciid-clean-ff1440c3/public/docs/legal",
-    "/Users/msc/Toni Gericht/ARCHIV_Analysen",
+    // Local-only analyses dir for the fictionalized forensic regression case.
+    ...(process.env.FORENSIC_CASE_A_DIR
+      ? [`${process.env.FORENSIC_CASE_A_DIR}/ARCHIV_Analysen`]
+      : []),
   ];
 
   const files: string[] = [];

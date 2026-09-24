@@ -20,7 +20,7 @@ describe("parseGZ", () => {
   });
 
   it("parses StA-Aktenzeichen", () => {
-    const p = parseGZ("39 St 116/22v");
+    const p = parseGZ("99 St 901/22v");
     expect(p!.gattungszeichen).toBe("St");
     expect(p!.jahr).toBe("22");
     expect(p!.on).toBeNull();
@@ -32,7 +32,7 @@ describe("parseGZ", () => {
   });
 
   it("tolerates missing Prüfzeichen", () => {
-    const p = parseGZ("39 St 116/22");
+    const p = parseGZ("99 St 901/22");
     expect(p!.pruefzeichen).toBeNull();
   });
 
@@ -92,12 +92,12 @@ describe("validiereGZ", () => {
   });
 
   it("verfahrenstyp mismatch is flagged", () => {
-    const v = validiereGZ("39 St 116/22v", { erwarteterVerfahrenstyp: "zivil" });
+    const v = validiereGZ("99 St 901/22v", { erwarteterVerfahrenstyp: "zivil" });
     expect(v.befunde.some((b) => b.code === "verfahrenstyp_abweichung")).toBe(true);
   });
 
   it("missing Prüfzeichen is only a hinweis", () => {
-    const v = validiereGZ("39 St 116/22");
+    const v = validiereGZ("99 St 901/22");
     expect(v.gueltig).toBe(true);
     expect(v.befunde.some((b) => b.code === "pruefzeichen_fehlt")).toBe(true);
   });

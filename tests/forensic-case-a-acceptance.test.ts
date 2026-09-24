@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { groundTruth } from "./toni-gericht-ground-truth";
+import { groundTruth } from "./forensic-case-a-ground-truth";
 
 /**
- * Toni Gericht OCR Ground-Truth Regression Test
+ * Forensic Case A OCR Ground-Truth Regression Test
  *
  * IMPORTANT: This suite starts from previously generated OCR/analysis files.
  * It is not a raw-document ingestion E2E test. Use `bun run akte:e2e` to prove
@@ -19,10 +19,13 @@ import { groundTruth } from "./toni-gericht-ground-truth";
  * 2. PIPELINE: Testet gegen Pipeline-Output (wenn PIPELINE_OUTPUT_PATH gesetzt)
  */
 
-const OCR_BASE_DIR = "/Users/msc/Toni Gericht/GESAMTAKTEN ORDNER/_VASIC_DOSKAR_OCR";
+// Local-only case data (never checked in). All names in the ground truth are
+// fictional placeholders; point the env vars at a matching local corpus.
+const CASE_DIR = process.env.FORENSIC_CASE_A_DIR ?? "/nonexistent/forensic-case-a";
+const OCR_BASE_DIR = process.env.FORENSIC_CASE_A_OCR_DIR ?? `${CASE_DIR}/ocr-base`;
 const OCR_DIR = `${OCR_BASE_DIR}/ocr`;
-const ANALYSES_DIR = "/Users/msc/Toni Gericht/ARCHIV_Analysen";
-const FMA_DIR = "/Users/msc/Toni Gericht/FMA Forderungsunterlagen/Martin-Fall";
+const ANALYSES_DIR = process.env.FORENSIC_CASE_A_ANALYSES_DIR ?? `${CASE_DIR}/ARCHIV_Analysen`;
+const FMA_DIR = process.env.FORENSIC_CASE_A_CLAIMS_DIR ?? `${CASE_DIR}/claims`;
 const PIPELINE_OUTPUT_PATH = process.env.PIPELINE_OUTPUT_PATH ?? "";
 
 // ── Hilfsfunktionen ──
@@ -69,16 +72,16 @@ function extractOnNumbers(text: string): string[] {
 function extractPersonNames(text: string): string[] {
   const names = new Set<string>();
   const patterns = [
-    /(?:Mag\.?\s+(?:pharm\.\s+)?(?:Rudolf\s+)?Mather)/gi,
-    /(?:Martin\s+Eckerstorfer)/gi,
-    /(?:Adis\s+Hrustemovic)/gi,
-    /(?:Toni\s+Remik|Tony\s+Remik)/gi,
-    /(?:Mag\.?\s+pharm\.\s+Michael\s+Kuhn)/gi,
-    /(?:Gabriela\s+Maria\s+Bumbac)/gi,
-    /(?:Mag\.?\s+Ralph\s+Kilches)/gi,
-    /(?:Mag\.?\s+Katharina\s+Schmid-Siegel)/gi,
-    /(?:Dr\.?\s+Michael\s+Schietz)/gi,
-    /(?:Simon\s+Dolinsek)/gi,
+    /(?:Mag\.?\s+(?:pharm\.\s+)?(?:Erik\s+)?Muster)/gi,
+    /(?:Emil\s+Exempel)/gi,
+    /(?:Anton\s+Platzhalter)/gi,
+    /(?:Rudi\s+Tarnname|Rudy\s+Tarnname)/gi,
+    /(?:Mag\.?\s+pharm\.\s+Konrad\s+Probe)/gi,
+    /(?:Greta\s+Maria\s+Fiktiva)/gi,
+    /(?:Mag\.?\s+Lukas\s+Advokat)/gi,
+    /(?:Mag\.?\s+Sabine\s+Staatsmann)/gi,
+    /(?:Dr\.?\s+Paul\s+Pruefer)/gi,
+    /(?:Samo\s+Primer)/gi,
   ];
   for (const p of patterns) {
     const m = text.match(p);
@@ -113,7 +116,7 @@ function extractDamageAmounts(text: string): number[] {
 
 // ── Tests ──
 
-describe("Toni Gericht Ground-Truth Acceptance", () => {
+describe("Forensic Case A Ground-Truth Acceptance", () => {
   const ocrFiles = loadOcrFiles();
   const analysisFiles = loadAnalysisFiles();
   const pipelineOutput = loadPipelineOutput();
@@ -177,25 +180,25 @@ describe("Toni Gericht Ground-Truth Acceptance", () => {
       );
     });
 
-    it("sollte Hrustemovic und Alias 'Toni Remik' erkennen", () => {
+    it("sollte Platzhalter und Alias 'Rudi Tarnname' erkennen", () => {
       const entities = extractPersonNames(allCaseText).map((e) => e.toLowerCase());
-      expect(entities.some((e) => e.includes("hrustemovic"))).toBe(true);
-      expect(entities.some((e) => e.includes("remik"))).toBe(true);
+      expect(entities.some((e) => e.includes("platzhalter"))).toBe(true);
+      expect(entities.some((e) => e.includes("tarnname"))).toBe(true);
     });
 
-    it("sollte Eckerstorfer als Beschuldigter UND Anzeiger erkennen (Rollenwechsel)", () => {
+    it("sollte Exempel als Beschuldigter UND Anzeiger erkennen (Rollenwechsel)", () => {
       const text = allCaseText.toLowerCase();
-      expect(text).toMatch(/eckerstorfer/i);
+      expect(text).toMatch(/exempel/i);
       expect(text).toMatch(/beschuldigt|beschuldigte/i);
     });
 
-    it("sollte Kilches-Interessenkonflikt erkennen (vertritt Eckerstorfer + Kuhn)", () => {
+    it("sollte Advokat-Interessenkonflikt erkennen (vertritt Exempel + Probe)", () => {
       const text = allCaseText;
-      expect(text).toMatch(/kilches/i);
+      expect(text).toMatch(/advokat/i);
       // In den HTML-Dokumenten oder OCR
-      const hasKuhn = /kuhn/i.test(text);
-      const hasEckerstorfer = /eckerstorfer/i.test(text);
-      expect(hasKuhn && hasEckerstorfer).toBe(true);
+      const hasProbe = /probe/i.test(text);
+      const hasExempel = /exempel/i.test(text);
+      expect(hasProbe && hasExempel).toBe(true);
     });
   });
 
@@ -250,13 +253,13 @@ describe("Toni Gericht Ground-Truth Acceptance", () => {
   });
 
   describe("Layer 5: Damage Table", () => {
-    it("sollte Mather-Gesamtschaden im erwarteten Bereich finden", () => {
+    it("sollte Muster-Gesamtschaden im erwarteten Bereich finden", () => {
       const amounts = extractDamageAmounts(allCaseText);
       const hasLargeAmount = amounts.some((a) => a >= 9000000 && a <= 11000000);
       expect(hasLargeAmount).toBe(true);
     });
 
-    it("sollte Eckerstorfer Privatbeteiligtenanschluss 11.744.200 erkennen", () => {
+    it("sollte Exempel Privatbeteiligtenanschluss 11.744.200 erkennen", () => {
       const amounts = extractDamageAmounts(allCaseText);
       const hasPaAmount = amounts.some((a) => a >= 11000000 && a <= 12000000);
       expect(hasPaAmount).toBe(true);
@@ -267,7 +270,7 @@ describe("Toni Gericht Ground-Truth Acceptance", () => {
       expect(text).toMatch(/900\.200|900200/i);
     });
 
-    it("sollte Doppelzählungs-Warnungen für Eckerstorfer generieren", () => {
+    it("sollte Doppelzählungs-Warnungen für Exempel generieren", () => {
       const text = allCaseText.toLowerCase();
       const hasGfHonorar =
         text.includes("gf-honorar") || text.includes("geschäftsführungstätigkeit");
@@ -334,7 +337,7 @@ describe("Toni Gericht Ground-Truth Acceptance", () => {
       expect(widersprueche.length).toBeGreaterThanOrEqual(3);
     });
 
-    it("sollte Doppelzählungen in Eckerstorfer-Positionen flaggen", () => {
+    it("sollte Doppelzählungen in Exempel-Positionen flaggen", () => {
       const doppelzaehlungen = groundTruth.doppelzaehlungen;
       expect(doppelzaehlungen.length).toBeGreaterThanOrEqual(
         groundTruth.pipeline_erwartungswerte.layer_5.overlap_warnings_min
@@ -348,10 +351,10 @@ describe("Toni Gericht Ground-Truth Acceptance", () => {
       expect(azs.length).toBeGreaterThanOrEqual(3);
     });
 
-    it("sollte Verfahrensübertragung 39 St 116/22v -> 410 St 131/22 erkennen", () => {
+    it("sollte Verfahrensübertragung 99 St 901/22v -> 999 St 904/22 erkennen", () => {
       const text = allCaseText;
-      expect(text).toMatch(/410\s*St\s*131/i);
-      expect(text).toMatch(/39\s*St\s*116/i);
+      expect(text).toMatch(/999\s*St\s*904/i);
+      expect(text).toMatch(/99\s*St\s*901/i);
     });
   });
 
@@ -397,9 +400,9 @@ describe("Toni Gericht Ground-Truth Acceptance", () => {
 
       // Layer 5: Damage Table
       if (p.layer5?.damage_table) {
-        const matherTotal = p.layer5.damage_table.mather_total ?? 0;
-        expect(matherTotal).toBeGreaterThanOrEqual(9000000);
-        expect(matherTotal).toBeLessThanOrEqual(11000000);
+        const musterTotal = p.layer5.damage_table.muster_total ?? 0;
+        expect(musterTotal).toBeGreaterThanOrEqual(9000000);
+        expect(musterTotal).toBeLessThanOrEqual(11000000);
       }
 
       // Layer 5b: Deadlines

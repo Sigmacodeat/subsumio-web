@@ -314,7 +314,7 @@ export interface LegalPipelineData {
    *   - Load entity pages from linked cases for cross-case entity matching
    *   - Run cross-case contradiction probe after post-pipeline
    *   - Flag entities that appear in multiple procedures with different roles
-   * Example: ["39-st-116-22v", "63-st-85-25s", "23-st-4-22f"]
+   * Example: ["99-st-901-22v", "99-st-902-25s", "99-st-903-22f"]
    */
   linked_cases?: string[];
   /**
@@ -6221,7 +6221,7 @@ function sanitizeSlug(slug: string): string | null {
   const trimmed = slug.trim();
   if (!trimmed) return null;
   if (trimmed.length > 200) return null;
-  // v0.42.38.0+ — allow slashes in caseSlugs (e.g. "legal/cases/vasic-doskar-covid-betrug").
+  // v0.42.38.0+ — allow slashes in caseSlugs (e.g. "legal/cases/beispiel-alpha-covid-betrug").
   // The previous regex [a-zA-Z0-9._-]+ rejected slashes, causing valid case slugs
   // to be silently dropped in precedent-match, mediation/ADR, limitation-scan,
   // and cost-award layers.

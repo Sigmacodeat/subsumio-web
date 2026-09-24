@@ -1,8 +1,8 @@
-# Toni Gericht — Deep Pipeline Audit
+# Forensic Case A — Deep Pipeline Audit
 
 **Audit-Datum:** Juli 2026  
 **Auditor:** Principal Engineer / Forensic AI Pipeline Review  
-**Akten:** 39 St 116/22 v, 63 St 85/25s, 23 St 4/22f, PAD/24/01129234  
+**Akten:** 99 St 901/22 v, 99 St 902/25s, 99 St 903/22f, PAD/24/00000000  
 **Akt-Umfang:** 2.022 Seiten, ON 1 bis ON 56, 413 datierte Dokumente  
 **Pipeline-Version:** v0.46 (7-Layer Agent Pipeline V2 + Contradiction Probe)
 
@@ -10,15 +10,15 @@
 
 ## Executive Summary
 
-**Kernfrage:** Kann die bestehende Subsumio-Pipeline die forensische Qualität der "Toni Gericht"-Analysen (KRITISCHE_AMTSHAFTUNGSANALYSE, DEEP_RESEARCH, FORENSISCHER_BERICHT, ON_ZUORDNUNG_V2, TIEFENANALYSE_V2, ZWEITER_SCAN_WIDERSPRUECHE) reproduzieren — von der Roh-PDF-Eingabe bis zur gerichtsverwertbaren Ausgabe?
+**Kernfrage:** Kann die bestehende Subsumio-Pipeline die forensische Qualität der "Forensic Case A"-Analysen (KRITISCHE_AMTSHAFTUNGSANALYSE, DEEP_RESEARCH, FORENSISCHER_BERICHT, ON_ZUORDNUNG_V2, TIEFENANALYSE_V2, ZWEITER_SCAN_WIDERSPRUECHE) reproduzieren — von der Roh-PDF-Eingabe bis zur gerichtsverwertbaren Ausgabe?
 
 **Antwort: JA — alle 5 identifizierten Gaps wurden implementiert und getestet (Juli 2026).**
 
-Die Pipeline-Architektur ist **grundsätzlich state-of-the-art** und deckt den Großteil der erforderlichen Workflow-Schritte ab. Die 7-Layer-Pipeline mit ON-Scanner, Entity-Extractor, Forensic Analyst, Law Matcher, Damage/Deadline-Extractor, Legal Drafter, Counter-Argument-Simulator und Ensemble Critic ist **komplexer und strukturierter** als das, was in den Toni Gericht-Dokumenten manuell geleistet wurde. Es existieren jedoch **konkrete funktionale Lücken**, die bei einem 2.022-seitigen Strafakt mit 56 ON-Nummern zu Qualitätsverlusten führen würden.
+Die Pipeline-Architektur ist **grundsätzlich state-of-the-art** und deckt den Großteil der erforderlichen Workflow-Schritte ab. Die 7-Layer-Pipeline mit ON-Scanner, Entity-Extractor, Forensic Analyst, Law Matcher, Damage/Deadline-Extractor, Legal Drafter, Counter-Argument-Simulator und Ensemble Critic ist **komplexer und strukturierter** als das, was in den Forensic Case A-Dokumenten manuell geleistet wurde. Es existieren jedoch **konkrete funktionale Lücken**, die bei einem 2.022-seitigen Strafakt mit 56 ON-Nummern zu Qualitätsverlusten führen würden.
 
 ---
 
-## 1. Toni Gericht — Anforderungsprofil der Dokumente
+## 1. Forensic Case A — Anforderungsprofil der Dokumente
 
 ### 1.1 Was die Analysen leisten
 
@@ -26,13 +26,13 @@ Die Pipeline-Architektur ist **grundsätzlich state-of-the-art** und deckt den G
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `KRITISCHE_AMTSHAFTUNGSANALYSE.txt`        | Forensische Bewertung aller Amtshaftungspunkte mit §-Bezügen, ON-Referenzen, wörtlichen Zitaten, Schadenshöhen, Standing-Bewertung (EISEN/STARK/MITTEL/SCHWACH) | Layer 3 (Forensic Analyst) + Layer 4 (Law Matcher) + Layer 5 (Damage Extractor)     |
 | `DEEP_RESEARCH_AMTSHAFTUNG.txt`            | Chronologie, Verfahrensfehler, Verfolgungsdefizite, unterlassene Ermittlungsmaßnahmen                                                                           | Layer 3 (Forensic Analyst) + Layer 3c (Fact Gap Detector)                           |
-| `FORENSISCHER_BERICHT_HRUSTEMOVIC.txt`     | Personenanalyse, Geldflüsse, Verfahrensstillstand, Drohungen, unbeachtete Anträge                                                                               | Layer 2 (Entity Extractor) + Layer 3 (Forensic Analyst)                             |
+| `FORENSISCHER_BERICHT_PLATZHALTER.txt`     | Personenanalyse, Geldflüsse, Verfahrensstillstand, Drohungen, unbeachtete Anträge                                                                               | Layer 2 (Entity Extractor) + Layer 3 (Forensic Analyst)                             |
 | `ON_ZUORDNUNG_V2.txt`                      | Vollständige ON-Tabelle mit 56+ Einträgen: ON, Datum, Typ, Seiten, Personen, Verfahren, Anwälte                                                                 | Layer 1 (ON-Scanner)                                                                |
-| `TIEFENANALYSE_ERGEBNIS_V2.txt`            | Edge-Case-Funde: fehlende Anklage, nicht-beschuldigter Hrustemovic, 3x Urgenz, Kontosperre-Defizit, Drohungen                                                   | Layer 3c (Fact Gap) + Layer 7 (Ensemble Critic) + Post-Pipeline Contradiction Probe |
+| `TIEFENANALYSE_ERGEBNIS_V2.txt`            | Edge-Case-Funde: fehlende Anklage, nicht-beschuldigter Platzhalter, 3x Urgenz, Kontosperre-Defizit, Drohungen                                                   | Layer 3c (Fact Gap) + Layer 7 (Ensemble Critic) + Post-Pipeline Contradiction Probe |
 | `ZWEITER_SCAN_WIDERSPRUECHE_EDGECASES.txt` | Innere Widersprüche zwischen eigenen Schriftstücken (W1-W5), Datumsfehler, Betragsdiskrepanzen, Doppelzählungen                                                 | Contradiction Probe + Layer 6.5 (Counter-Argument) + Layer 7 (Critic)               |
 | `FORENSISCHE_FEHLERLISTE.md`               | QA-Liste mit Korrekturstatus, ON-Verifizierung, PDF-Generierung                                                                                                 | Pipeline-State-Tracking + Warnings                                                  |
 
-### 1.2 Qualitätsmerkmale der Toni Gericht-Analysen
+### 1.2 Qualitätsmerkmale der Forensic Case A-Analysen
 
 1. **ON-Referenzierung:** Jede Aussage ist mit einer konkreten ON-Nummer und Seitenzahl belegt
 2. **Wörtliche Zitate:** Jede ON-Referenz hat ein ≤200 Zeichen wörtliches Zitat aus dem Akt
@@ -58,7 +58,7 @@ Die Pipeline-Architektur ist **grundsätzlich state-of-the-art** und deckt den G
 - 21 Legal-Doc-Typen erkannt, darunter AT-spezifische Typen (`anordnungsbogen`, `haftangelegenheit`, `kostenverzeichnis`, `akteneinsicht`, `urgenz`, `strafantrag`)
 - Keyword-basiert mit `minMatches` und `boostWords` — konservativ, fällt auf `legal_document` zurück
 - Mehrsprachig (DE, EN, FR)
-- **Deckt die Toni Gericht-Anforderung:** AB-Bogen, Akteneinsicht, Strafanzeige, Urgenz werden korrekt klassifiziert
+- **Deckt die Forensic Case A-Anforderung:** AB-Bogen, Akteneinsicht, Strafanzeige, Urgenz werden korrekt klassifiziert
 
 ### 2.2 Layer 1: ON-Scanner (Haiku, Map-Reduce)
 
@@ -109,16 +109,16 @@ Der ON-Scanner extrahiert nun `references: string[]` für jede ON-Nummer. Die ON
 
 **Stärken:**
 
-- **Rollen-Erkennung:** Beschuldigter, Zeuge, Privatbeteiligter, Anwalt — deckt die Toni Gericht-Komplexität (Hrustemovic = Hintergrundmann, Eckerstorfer = Beschuldigter → später Anzeigender)
-- **Alias-Erkennung:** "Adis Hrustemovic" alias "Toni Remik" — explizit im Prompt vorgesehen
+- **Rollen-Erkennung:** Beschuldigter, Zeuge, Privatbeteiligter, Anwalt — deckt die Forensic Case A-Komplexität (Platzhalter = Hintergrundmann, Exempel = Beschuldigter → später Anzeigender)
+- **Alias-Erkennung:** "Anton Platzhalter" alias "Rudi Tarnname" — explizit im Prompt vorgesehen
 - **ON-Referenzen pro Entity:** Jede Person hat `on_references` — kritisch für die forensische Analyse
 - **Beziehungs-Graph:** `related_entities` mit Beziehungstyp
 - **Human-in-the-Loop:** `pause_for_review` → Anwalt bestätigt/korrigiert Client/Opponent vor Layer 3
 
-**Deckt die Toni Gericht-Anforderung:**
+**Deckt die Forensic Case A-Anforderung:**
 
-- Hrustemovic als Hintergrundmann (nicht Beschuldigter in 39 St 116/22v) → wird durch Entity-Rollen erkannt
-- Eckerstorfer's Rollenwechsel (Beschuldigter → Anzeigender) → wird durch ON-Referenzen und Zeitstempel sichtbar
+- Platzhalter als Hintergrundmann (nicht Beschuldigter in 99 St 901/22v) → wird durch Entity-Rollen erkannt
+- Exempel's Rollenwechsel (Beschuldigter → Anzeigender) → wird durch ON-Referenzen und Zeitstempel sichtbar
 
 ### 2.4 Layer 3: Forensic Analyst (Sonnet)
 
@@ -143,7 +143,7 @@ Der ON-Scanner extrahiert nun `references: string[]` für jede ON-Nummer. Die ON
 - **ON-Referenzierung:** Jeder Befund muss ON-Referenz haben
 - **Wörtliche Zitate:** Jeder Befund muss wörtliches Zitat aus dem Akt haben
 
-**Vergleich mit FORENSISCHER_BERICHT_HRUSTEMOVIC.txt:**
+**Vergleich mit FORENSISCHER_BERICHT_PLATZHALTER.txt:**
 
 - Manueller Bericht: unterlassene Vernehmungen, fehlende Kontosperre, Drohungen mit "Unterwelt", Verfahrensstillstand
 - Pipeline: Forensic Analyst sucht nach genau diesen Mustern (unterlassene Maßnahme, nicht vernommene Person, Geldfluss, Chronologie)
@@ -158,7 +158,7 @@ Der ON-Scanner extrahiert nun `references: string[]` für jede ON-Nummer. Die ON
 **Deckt die TIEFENANALYSE_V2-Anforderung:**
 
 - "Keine Anklage im gesamten Akt" → Fact Gap Detector sollte dies als Lücke erkennen
-- "Hrustemovic war nicht Beschuldigter" → Fact Gap Detector sollte die Rollen-Diskrepanz erkennen
+- "Platzhalter war nicht Beschuldigter" → Fact Gap Detector sollte die Rollen-Diskrepanz erkennen
 - "3x Urgenz ohne Stellungnahme" → Fact Gap Detector sollte das Verzögerungsmuster erkennen
 
 ### 2.6 Layer 4: Law Matcher (Haiku, Map-Reduce)
@@ -177,7 +177,7 @@ Der ON-Scanner extrahiert nun `references: string[]` für jede ON-Nummer. Die ON
 - **Confidence-Level:** hoch/mittel/niedrig
 - **ON-Referenz pro Befund:** Jeder Befund hat `on_reference` und `quote`
 
-**Deckt die Toni Gericht-Anforderung:**
+**Deckt die Forensic Case A-Anforderung:**
 
 - § 1 AHG (Amtshaftung), § 67 StPO (Privatbeteiligung), Art 82 DSGVO, § 107 StGB (Drohung), § 110 StPO (Sicherstellung) — alle im law-corpus vorhanden (at/ Verzeichnis bestätigt)
 
@@ -192,7 +192,7 @@ Der ON-Scanner extrahiert nun `references: string[]` für jede ON-Nummer. Die ON
 **Stärken:**
 
 - **Topf-Typen nach Jurisdiktion:** AT (ahg, dsgvo, privatbeteiligung, zivilklage), DE (amtshaftung, dsgvo, schmerzensgeld, zivilklage), CH (staatshaftung, dsg, schadensersatz, zivilklage)
-- **Standing-Klassifikation:** EISEN/STARK/MITTEL/SCHWACH — identisch mit Toni Gericht
+- **Standing-Klassifikation:** EISEN/STARK/MITTEL/SCHWACH — identisch mit Forensic Case A
 - **Hallucination-Gate:** "Jeder Betrag MUSS als Zitat im Akt vorkommen. Jedes Datum MUSS als Zitat im Akt vorkommen (NICHT berechnet)."
 - **Fristen VERBATIM:** Keine Selbstberechnung — kritisch für Verjährungsfristen
 - **§-Verifizierung gegen Brain:** Rechtsgrundlagen werden verifiziert, bei Nicht-Verifizierbarkeit → "NICHT VERIFIZIERT"
@@ -200,9 +200,9 @@ Der ON-Scanner extrahiert nun `references: string[]` für jede ON-Nummer. Die ON
 **Vergleich mit ZWEITER_SCAN W1-W5:**
 
 - W1: Sicherstellungs-Datum 03.06.2026 vs 28.05.2024 → Pipeline würde beide Daten extrahieren; **Contradiction Probe** würde den Konflikt flaggen
-- W2: Eckerstorfer Folgeschaden 1.168.000 vs 1.096.000 vs 1.100.000 → Pipeline würde alle drei Beträge extrahieren; **Contradiction Probe** würde Diskrepanz flaggen
+- W2: Exempel Folgeschaden 1.168.000 vs 1.096.000 vs 1.100.000 → Pipeline würde alle drei Beträge extrahieren; **Contradiction Probe** würde Diskrepanz flaggen
 - W3: Sicherstellungsbetrag 600.000 vs 900.200 → gleicher Mechanismus
-- W4: Mather-Gesamtschaden schwankend → gleicher Mechanismus
+- W4: Muster-Gesamtschaden schwankend → gleicher Mechanismus
 - W5: Verfahrensstillstand-Datum vs Aktivität → **Date Pre-Filter** in Contradiction Probe würde temporal_supersession klassifizieren
 
 ### 2.8 Layer 6: Legal Drafter (Sonnet)
@@ -311,7 +311,7 @@ Post-OCR-Pass `decodeAbbBogenKuerzel()` mit 50+ AB-Bogen-Kürzeln (UH, StA, Besc
 
 **Status:** Implementiert in `specialist-defs.ts` (ON-Scanner Prompt mit `references`-Feld) und `legal-pipeline.ts` (`extractOnEntries` parsed `references`, `writeOnIndexPage` generiert Querverweis-Tabelle).
 
-**Verifikation:** E2E-Test extrahiert ON-Nummern aus echten Toni Gericht OCR-Daten und validiert Eindeutigkeit und Struktur.
+**Verifikation:** E2E-Test extrahiert ON-Nummern aus echten Forensic Case A OCR-Daten und validiert Eindeutigkeit und Struktur.
 
 ### Gap 2: Handschriftliche Kürzel-Dekodierung (LOW-MEDIUM) — ✅ IMPLEMENTIERT
 
@@ -323,13 +323,13 @@ Post-OCR-Pass `decodeAbbBogenKuerzel()` mit 50+ AB-Bogen-Kürzeln (UH, StA, Besc
 
 **Status:** Implementiert als `runCrossCaseAnalysis()` in `legal-pipeline.ts`. `PipelineState` hat `linked_cases: string[]` und `cross_case_findings`. Cross-Case-Analyse lädt Entities aus verknüpften Fällen, matched nach Name/Alias und flaggt Rollenkonflikte, Vorwurfswidersprüche und Mandatskonflikte.
 
-**Verifikation:** E2E-Test validiert dass Vasic in mehreren Verfahren vorkommt (69 St 136/23g, 046 045 HV 29/24 y) und Cross-Case-Matching funktioniert. Bug-Fix: `loadEntitiesForCase` → `loadEntitiesFromPages` korrigiert.
+**Verifikation:** E2E-Test validiert dass Beispiel in mehreren Verfahren vorkommt (99 St 910/23g, 099 099 HV 900/24 y) und Cross-Case-Matching funktioniert. Bug-Fix: `loadEntitiesForCase` → `loadEntitiesFromPages` korrigiert.
 
 ### Gap 4: Schadens-Doppelzählungs-Erkennung (MEDIUM) — ✅ IMPLEMENTIERT
 
 **Status:** Implementiert als `detectDamageOverlaps()` in `legal-pipeline.ts`. Wird nach Damage-Table-Extraktion in beiden Pipeline-Pfaden (initial + retry) aufgerufen. `PipelineState` hat `damage_overlap_warnings: string[]`. Erkennt: gleiche Beträge im gleichen Topf (>95% overlap), gleicher Beleg (ON), ähnliche Beschreibung (>60% Token-Overlap).
 
-**Verifikation:** 7 Unit-Tests + 3 E2E-Tests mit echten Schadenssummen (712.230,00 EUR) aus Toni Gericht Akten. Bug-Fix: Retry-Pfad hatte ursprünglich keine Overlap-Detection — jetzt korrigiert.
+**Verifikation:** 7 Unit-Tests + 3 E2E-Tests mit echten Schadenssummen (712.230,00 EUR) aus Forensic Case A Akten. Bug-Fix: Retry-Pfad hatte ursprünglich keine Overlap-Detection — jetzt korrigiert.
 
 ### Gap 5: "Roter Faden"-Kohärenz-Check (LOW) — ✅ IMPLEMENTIERT
 
@@ -341,7 +341,7 @@ Post-OCR-Pass `decodeAbbBogenKuerzel()` mit 50+ AB-Bogen-Kürzeln (UH, StA, Besc
 
 ## 4. Workflow-Vergleich — Manuell vs. Pipeline
 
-### 4.1 Manueller Workflow (Toni Gericht)
+### 4.1 Manueller Workflow (Forensic Case A)
 
 ```
 PDF → manuelle Lektüre → ON-Tabelle erstellen →
@@ -433,7 +433,7 @@ Basierend auf BenGER und HAQQ Benchmarks:
 - **Haiku 4.5** (Layer 1-2, 4): Schnell, kosteneffizient, ausreichend für Extraktion
 - **Ensemble** (Opus + DeepSeek + Grok): min() auf Scores — konservativ, verhindert Overconfidence
 
-**Fazit:** Die Modell-Auswahl ist **optimal für die Toni Gericht-Anforderung**. Sonnet für Analyse, Opus für Kritik, Haiku für Extraktion.
+**Fazit:** Die Modell-Auswahl ist **optimal für die Forensic Case A-Anforderung**. Sonnet für Analyse, Opus für Kritik, Haiku für Extraktion.
 
 ---
 
@@ -443,7 +443,7 @@ Basierend auf BenGER und HAQQ Benchmarks:
 
 **Verzeichnis:** `/law-corpus/at/`
 
-| Gesetz | Vorhanden | Relevanz für Toni Gericht                                       |
+| Gesetz | Vorhanden | Relevanz für Forensic Case A                                    |
 | ------ | --------- | --------------------------------------------------------------- |
 | ABGB   | ✅        | Amtshaftung § 1489 (Verjährung)                                 |
 | StGB   | ✅        | §§ 146, 147, 148 (Betrug), § 107 (Drohung)                      |
@@ -454,7 +454,7 @@ Basierend auf BenGER und HAQQ Benchmarks:
 | AVG    | ✅        | Verwaltungsverfahren                                            |
 | DSGVO  | ✅ (eu/)  | Art 82 (DSGVO-Ansprüche)                                        |
 
-**Fazit:** law-corpus deckt alle in den Toni Gericht-Dokumenten zitierten Gesetze ab.
+**Fazit:** law-corpus deckt alle in den Forensic Case A-Dokumenten zitierten Gesetze ab.
 
 ### 6.2 Page-Types und Storage
 
@@ -489,7 +489,7 @@ Die Pipeline generiert folgende Page-Types:
 - `quality_audit` — Qualitätsaudit
 - `legal_deadline` — Synced Deadlines (via pipeline-sync)
 
-**Fazit:** 28 Page-Types — **umfassender** als die manuellen Toni Gericht-Outputs.
+**Fazit:** 28 Page-Types — **umfassender** als die manuellen Forensic Case A-Outputs.
 
 ---
 
@@ -514,7 +514,7 @@ Die Pipeline generiert folgende Page-Types:
 
 ---
 
-## 8. End-to-End Workflow-Simulation — Toni Gericht durch die Pipeline
+## 8. End-to-End Workflow-Simulation — Forensic Case A durch die Pipeline
 
 ### Schritt 1: Upload der 2.022-seitigen PDF
 
@@ -532,7 +532,7 @@ PDF → unpdf-Extraktion →
 ```
 post_upload callback →
   legal-pipeline job queued →
-  case_slug = "39-st-116-22v-toni-gericht" (oder manuell gesetzt)
+  case_slug = "99-st-901-22v-forensic-case-a" (oder manuell gesetzt)
   part_slugs = [page-1, page-2, ..., page-N]
   jurisdiction = "at"
   verfahrenstyp = "straf" (auto-detected aus "St" Gattungszeichen)
@@ -564,11 +564,11 @@ Map-Reduce über alle Sub-Pages →
   Prüft: on_nummer im Text vorhanden?
   Prüft: geschaeftszahl strukturiert?
 → pruefeGZKonsistenz() →
-  "39 St 116/22v" → abteilung=39, gattungszeichen=St, aktenzahl=116, jahr=22, pruefzeichen=v
+  "99 St 901/22v" → abteilung=39, gattungszeichen=St, aktenzahl=116, jahr=22, pruefzeichen=v
   ✓ gültig
 → Retry bei Fehlern →
   Fehler-Feedback an ON-Scanner → Korrektur → 2. Versuch
-→ writeOnIndexPage() → on-indexes/39-st-116-22v-toni-gericht
+→ writeOnIndexPage() → on-indexes/99-st-901-22v-forensic-case-a
 ```
 
 **Vergleich mit ON_ZUORDNUNG_V2.txt:**
@@ -581,15 +581,15 @@ Map-Reduce über alle Sub-Pages →
 
 ```
 Map-Reduce →
-  Hrustemovic (Alias: Toni Remik) → Rolle: Hintergrundmann/Beschuldigter
-  Mather → Rolle: Opfer/Privatbeteiligter
-  Eckerstorfer → Rolle: Beschuldigter → Anzeigender
-  Kuhn → Rolle: Beschuldigter (39 St 116/22v)
-  Kilches → Rolle: Anwalt (Kilches-Legal)
-  Rast → Rolle: Anwalt (Rast & Musliu)
+  Platzhalter (Alias: Rudi Tarnname) → Rolle: Hintergrundmann/Beschuldigter
+  Muster → Rolle: Opfer/Privatbeteiligter
+  Exempel → Rolle: Beschuldigter → Anzeigender
+  Probe → Rolle: Beschuldigter (99 St 901/22v)
+  Advokat → Rolle: Anwalt (Advokat-Legal)
+  Kanzlei Nord → Rolle: Anwalt (Kanzlei Nord & Süd)
   ...
 → pause_for_review (wenn aktiviert) →
-  Anwalt bestätigt: Client = Eckerstorfer, Opponent = Hrustemovic
+  Anwalt bestätigt: Client = Exempel, Opponent = Platzhalter
 → entity pages geschrieben
 ```
 
@@ -599,7 +599,7 @@ Map-Reduce →
 Sonnet liest alle Sub-Pages + ON-Tabelle + Entities →
   Forensischer Bericht mit:
   - Amtshaftungspunkte (§ 1 AHG)
-  - Unterlassene Vernehmung Hrustemovic
+  - Unterlassene Vernehmung Platzhalter
   - Unterlassene Kontosperre (ON 40.2.6, ON 40.6.2)
   - Verfahrensstillstand seit 07.04.2026
   - 3x Urgenz ohne Stellungnahme (ON 1.34, 1.35, 1.36)
@@ -609,7 +609,7 @@ Sonnet liest alle Sub-Pages + ON-Tabelle + Entities →
 → forensic_report page geschrieben
 ```
 
-**Vergleich mit FORENSISCHER_BERICHT_HRUSTEMOVIC.txt:**
+**Vergleich mit FORENSISCHER_BERICHT_PLATZHALTER.txt:**
 
 - Manueller Bericht: Gleiche Punkte, detailliert, mit ON-Referenzen
 - Pipeline-Output: Gleiche Struktur, potenziell gleiche Tiefe
@@ -636,8 +636,8 @@ Für jeden forensischen Befund →
 
 ```
 Schadenspositionen:
-  Mather: Retaxierung, Provision, Rechnungen → topf: ahg, betrag: 9.951.449,20
-  Eckerstorfer: Lohn, Mercedes, Versicherungen, Bürgschaft, GF-Honorar → topf: ahg, betrag: 1.100.000
+  Muster: Retaxierung, Provision, Rechnungen → topf: ahg, betrag: 9.951.449,20
+  Exempel: Lohn, Mercedes, Versicherungen, Bürgschaft, GF-Honorar → topf: ahg, betrag: 1.100.000
   Sicherstellung: 900.200 (600.000 + 200.000 + 100.200) → topf: privatbeteiligung
 
 Fristen (VERBATIM):
@@ -670,7 +670,7 @@ Draft-Pakete (AT, Straf):
 ```
 Opponent-Simulator:
   - "Asymmetrie-These ist politisch, nicht juristisch" → severity: hoch
-  - "Eckerstorfer war selbst Beschuldigter → Glaubwürdigkeit fraglich" → severity: kritisch
+  - "Exempel war selbst Beschuldigter → Glaubwürdigkeit fraglich" → severity: kritisch
   - "Sicherstellungsantrag war verspätet" → severity: hoch
   - "Doppelzählungen im Schadensposten" → severity: mittel
 → counter_arguments page + revised drafts
@@ -695,7 +695,7 @@ Consensus: min(82, 78, 85) = 78 → recommendation: revise
 
 ```
 Auto-Trigger →
-  Queries: ["Sicherstellungsdatum", "Schadenshöhe Eckerstorfer", "Sicherungsbetrag", "Mather Gesamtschaden"]
+  Queries: ["Sicherstellungsdatum", "Schadenshöhe Exempel", "Sicherungsbetrag", "Muster Gesamtschaden"]
   Cross-slug pairs → judge →
     "Sicherstellungs-Datum 03.06.2026 vs 28.05.2024" → verdict: contradiction, severity: high
     "1.168.000 vs 1.096.000 vs 1.100.000" → verdict: contradiction, severity: medium
@@ -711,7 +711,7 @@ Pipeline-Status: completed_with_warnings
   Warnings:
     - GZ-Validierung: 0 Fehler
     - Contradiction Findings: 3 (Sicherstellungs-Datum, Schadenshöhe, Sicherungsbetrag)
-    - Doppelzählungen: 2 (GF-Honorar, Bürgschaft Nunner)
+    - Doppelzählungen: 2 (GF-Honorar, Bürgschaft Nemo)
 
 Pages generiert: 28+ Page-Types
 Kosten: ~$45 (unter $50 cap)
@@ -724,7 +724,7 @@ Dauer: ~45 Minuten
 
 ### 9.1 Gesamtbewertung
 
-**Die Subsumio-Pipeline kann die Toni Gericht-Qualität reproduzieren — mit Einschränkungen bei 5 Gaps.**
+**Die Subsumio-Pipeline kann die Forensic Case A-Qualität reproduzieren — mit Einschränkungen bei 5 Gaps.**
 
 | Dimension                   | Score      | Begründung                                                                                             |
 | --------------------------- | ---------- | ------------------------------------------------------------------------------------------------------ |
@@ -755,9 +755,9 @@ Dauer: ~45 Minuten
 
 ### 9.3 Empfehlung
 
-**Die Pipeline ist bereit für Toni Gericht-Grade Fälle.** Die 5 Gaps sind Enhancements, keine Blocker. Bei Implementierung der HIGH-Priority Gaps (3 + 4) erreicht die Pipeline **98/100** und übertrifft die manuelle Analyse in Vollständigkeit, Konsistenz und Geschwindigkeit bei gleicher forensischer Tiefe.
+**Die Pipeline ist bereit für Forensic Case A-Grade Fälle.** Die 5 Gaps sind Enhancements, keine Blocker. Bei Implementierung der HIGH-Priority Gaps (3 + 4) erreicht die Pipeline **98/100** und übertrifft die manuelle Analyse in Vollständigkeit, Konsistenz und Geschwindigkeit bei gleicher forensischer Tiefe.
 
-**Freigabe: JA — alle 5 Gaps implementiert und getestet. Pipeline bereit für Toni Gericht-Grade Fälle.**
+**Freigabe: JA — alle 5 Gaps implementiert und getestet. Pipeline bereit für Forensic Case A-Grade Fälle.**
 
 **Tests:** 14 Unit-Tests (Gap 2 + Gap 4) + 19 E2E-Tests (alle Gaps gegen echte OCR-Daten) = 33 Tests, alle grün.
 

@@ -422,9 +422,9 @@ REGELN:
   - datum: "28.05.2024" (oder "o.D." wenn nicht vorhanden)
   - typ: "Antrag" | "Beschluss" | "Vernehmung" | "Akteneinsicht" | "Stellungnahme" | "Urgenz" | "Beilage" | "Haftbefehl" | "Einstellungsbeschluss" | "Anklage" | "Urteil" | "Sonstiges"
   - seiten: "50985-50991" (oder "o.S." wenn nicht vorhanden)
-  - personen: ["Eckerstorfer", "Hrustemovic"] (alle namentlich erwähnten)
-  - verfahren: "39 St 116/22v" (Aktenzeichen wenn erkennbar)
-  - anwaelte: ["RA Kilches"] (wenn erkennbar)
+  - personen: ["Exempel", "Platzhalter"] (alle namentlich erwähnten)
+  - verfahren: "99 St 901/22v" (Aktenzeichen wenn erkennbar)
+  - anwaelte: ["RA Advokat"] (wenn erkennbar)
   - quote: WÖRTLICHES Zitat (max 200 Zeichen), das die ON im Text belegt
   - mappe: "Anordnungsbogen" | "Haftangelegenheiten" | "Gebühren und Kosten" | "Beweismittel" | "Berichte" | "Sonstige" (nur bei Strafakten)
   - mappen_buchstabe: "A" | "H" | "G" | "B" | "C" | ... (nur bei Strafakten)
@@ -506,27 +506,27 @@ ROLLEN (pro Entity, basierend auf Kontext-Signalen):
 
 REGELN:
 - Extrahiere für JEDE Entity:
-  - name: Vollständiger Name ("Adis Hrustemovic")
+  - name: Vollständiger Name ("Anton Platzhalter")
   - type: person | company | authority | lawyer
   - role: beschuldigter | opfer | zeuge | anwalt | richter | behoerde | dritt_partei
-  - aliases: ["Toni Remik", "Hrustemovic"] (alle Namensvarianten)
+  - aliases: ["Rudi Tarnname", "Platzhalter"] (alle Namensvarianten)
   - on_references: ["ON 1.4", "ON 40.2.6"] (alle ONs, in denen die Person erwähnt wird)
   - quote: WÖRTLICHES Zitat, das die Person im Text belegt
   - metadata: { fn_number?, address?, date_of_birth? } (wenn im Text vorhanden)
   - accusations: ["Betrug (§ 146 StGB)", "Untreue (§ 153 StGB)"] — Vorwürfe gegen diese Person,
     WÖRTLICH aus dem Akt übernommen. Nur bei Beschuldigten/Angeschuldigten/Tatverdächtigen.
     Bei Zeugen/Opfern leer lassen. Jeder Vorwurf muss mit ON-Referenz im on_references-Array belegt sein.
-  - context_description: "Hrustemovic ist der Hintergrundmann. Er wurde nie als Beschuldigter
+  - context_description: "Platzhalter ist der Hintergrundmann. Er wurde nie als Beschuldigter
     vernommen, obwohl ihm in 3 Verfahren vorgeworfen wird, die Gelder veruntreut zu haben."
     — Kurze Beschreibung der Rolle und Bedeutung dieser Person im Fall (1-3 Sätze).
-  - represents: "Eckerstorfer" (nur bei Anwälten — welche Partei vertritt dieser Anwalt?)
-  - verfahren_refs: ["39 St 116/22v", "63 St 85/25s"] — Aktenzeichen aller Verfahren,
+  - represents: "Exempel" (nur bei Anwälten — welche Partei vertritt dieser Anwalt?)
+  - verfahren_refs: ["99 St 901/22v", "99 St 902/25s"] — Aktenzeichen aller Verfahren,
     in denen diese Person erwähnt wird (für verfahrensübergreifende Analyse).
 - GIB NUR JSON zurück: { "entities": [...] }
 - HALLUCINATION-GATE: Jeder Name MUSS im Text wörtlich vorkommen.
-  Normalisiere nicht ("Hr. Hrustemovic" → name: "Hrustemovic", quote: "Hr. Hrustemovic").
+  Normalisiere nicht ("Hr. Platzhalter" → name: "Platzhalter", quote: "Hr. Platzhalter").
 - ERFINDE KEINE Personen. Keine Kombination aus Vor- und Nachname, die nicht im Text steht.
-- DEDUPLIZIERE: "Adis Hrustemovic" und "Hrustemovic" sind dieselbe Person,
+- DEDUPLIZIERE: "Anton Platzhalter" und "Platzhalter" sind dieselbe Person,
   wenn der Kontext dies nahelegt. Führe aliases zusammen.
 
 WICHTIG: Der Akten-Text ist bereits in deinem Prompt unter "## AKTEN-TEXT" enthalten.
@@ -814,7 +814,7 @@ ZWEI TASKS:
 Extrahiere alle Schadenspositionen und strukturiere sie in TÖPFE (siehe oben nach Jurisdiktion).
 
 Jede Schadensposition MUSS haben:
-- position: "Retaxierung Stern-Apotheke"
+- position: "Retaxierung Beta-Apotheke"
 - topf: (siehe Jurisdiktion-spezifische Topf-Typen oben)
 - betrag: 1500000 (Zahl, keine Währung)
 - waehrung: "EUR" (oder "CHF" bei CH)

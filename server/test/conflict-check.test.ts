@@ -129,15 +129,15 @@ describe("conflictCheck", () => {
         [
           entityRow({
             title: "Adnan Beispiel",
-            aliases: JSON.stringify(["Toni Remik"]),
+            aliases: JSON.stringify(["Rudi Tarnname"]),
             role: "beschuldigter",
           }),
         ]
       ),
-      { name: "Toni Remik" }
+      { name: "Rudi Tarnname" }
     );
     expect(r.matches).toHaveLength(1);
-    expect(r.matches[0]!.matched_name).toContain("Alias: Toni Remik");
+    expect(r.matches[0]!.matched_name).toContain("Alias: Rudi Tarnname");
   });
 
   it("LOW: opponent in two different Akten", async () => {

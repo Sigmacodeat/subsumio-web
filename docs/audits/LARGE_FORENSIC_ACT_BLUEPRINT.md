@@ -177,24 +177,24 @@ Quick Actions für:
 
 Im Repo vorhanden:
 
-- `tests/toni-gericht-ground-truth.ts`
-- `tests/toni-gericht-acceptance.test.ts`
-- `docs/audits/TONI_GERICHT_PIPELINE_AUDIT_2026-07.md`
+- `tests/forensic-case-a-ground-truth.ts`
+- `tests/forensic-case-a-acceptance.test.ts`
+- `docs/audits/FORENSIC_CASE_A_PIPELINE_AUDIT_2026-07.md`
 - kleine generische PDFs unter `tests/fixtures/`
 
-Der Ground Truth nennt:
+Der Ground Truth nennt (alle Personen, Firmen und Aktenzeichen sind fiktive Platzhalter):
 
-- **Martin Eckerstorfer**, Rollenwechsel Beschuldigter -> Anzeiger
-- **Adis Hrustemovic**, Rolle/Tatkomplex
-- Aliasse **Toni Remik** und **Tony Remik**
-- Marjan Vasic, Rudolf Mather und weitere verbundene Personen
+- **Emil Exempel**, Rollenwechsel Beschuldigter -> Anzeiger
+- **Anton Platzhalter**, Rolle/Tatkomplex
+- Aliasse **Rudi Tarnname** und **Rudy Tarnname**
+- Max Beispiel, Erik Muster und weitere verbundene Personen
 
-Die Bezeichnungen „Marta Eckersdorfer“ und „Toni Remig“ sind nicht die
+Die Bezeichnungen „Emma Exempl“ und „Rudi Tarnnahme“ sind nicht die
 kanonischen Ground-Truth-Namen. Sie werden als mögliche OCR-/Eingabevarianten in
 Alias- und Fuzzy-Matching-Tests aufgenommen, aber nicht ungeprüft zusammengeführt.
 
 Die echten Rohunterlagen liegen nicht im Git-Repo. Die vorhandenen Tests
-referenzieren lokale Daten unter `/Users/msc/Toni Gericht/...`. Vor einem Lauf
+referenzieren lokale Daten unter `$FORENSIC_CASE_A_DIR/...` (lokales Verzeichnis, per Env-Variable). Vor einem Lauf
 wird daraus ein Manifest erstellt; Originale werden nicht ins Git aufgenommen.
 
 Lokale Inventur am 2026-07-05:
@@ -202,7 +202,7 @@ Lokale Inventur am 2026-07-05:
 - `GESAMTAKTEN ORDNER`: 349 Dateien, ca. 0,94 GiB; darunter 11 PDF, 84 HEIC,
   84 JPG, 30 PNG sowie bereits erzeugte Text-/OCR-Artefakte
 - `ARCHIV_Analysen`: 18 Dateien, überwiegend manuelle Referenzanalysen
-- `FMA Forderungsunterlagen/Martin-Fall`: über 11.000 Dateien, aber überwiegend
+- `FMA Forderungsunterlagen/Fall-B`: über 11.000 Dateien, aber überwiegend
   Entwicklungsabhängigkeiten; nur eine fachlich kuratierte Allowlist darf als
   Aktenquelle verwendet werden
 
@@ -219,15 +219,15 @@ Rohoriginale in denselben E2E-Lauf gemischt.
 - kleine PDF-/Scan-Fixtures
 - keine externen Modelle nötig
 
-### Stufe B — Toni OCR Ground Truth
+### Stufe B — Forensic Case A OCR Ground Truth
 
 - bestehende OCR-/Analyseunterlagen gegen Ground Truth
 - ONs, Entitäten/Aliasse, Rollenwechsel, Schäden, Fristen und Widersprüche
 - bleibt ein Output-Regressionslauf, kein Rohakten-E2E
 
-### Stufe C — Toni Rohakten-E2E
+### Stufe C — Forensic Case A Rohakten-E2E
 
-- Originaldateien aus `/Users/msc/Toni Gericht/...`
+- Originaldateien aus `$FORENSIC_CASE_A_DIR/...` (lokales Verzeichnis, per Env-Variable)
 - ausschließlich über den kanonischen Uploadpfad
 - danach DB-, Retrieval-, Pipeline- und Dashboard-Abgleich
 - Ergebnisbericht wird mit dem Ground Truth verglichen
@@ -247,22 +247,22 @@ Rohoriginale in denselben E2E-Lauf gemischt.
 
 ## 8. Messbare Go/No-Go-Kriterien
 
-| Bereich           | Go-Kriterium                                                                       |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| Originale         | 100 % gespeichert; 100 % Hash-Abgleich                                             |
-| Zuordnung         | 100 % genau einer Import-Session und korrekten Akte zugeordnet                     |
-| Verluste          | 0 still verlorene oder dauerhaft `processing` gebliebene Dateien                   |
-| Wiederaufnahme    | Neustart verarbeitet nur offene/fehlgeschlagene Dateien                            |
-| Pipeline          | genau 1 Voll-Pipeline-Job je Snapshot                                              |
-| ON-Halluzination  | 0 erfundene ONs; jede ON mit Quellenfundstelle                                     |
-| Ground Truth      | alle kritischen ONs und bekannten Hauptentitäten erkannt                           |
-| Aliasse           | Hrustemovic <-> Toni/ Tony Remik korrekt belegt; Varianten nur als Reviewvorschlag |
-| Rollen            | Eckerstorfer-Rollenwechsel zeitlich und quellengebunden dargestellt                |
-| Copilot-Isolation | 0 Quellen aus fremden Akten in Negativtests                                        |
-| Copilot-Belege    | 100 % forensische Tatsachenbehauptungen mit zitierbarer Quelle                     |
-| UI-Skalierung     | 2.000 Dokumente ohne vollständiges DOM-Rendering; Filter/Paging stabil             |
-| Audit             | jede manuelle Korrektur versioniert und zurechenbar                                |
-| Kosten            | Schätzung vor Start; hartes Limit; tatsächliche Kosten im Run-Bericht              |
+| Bereich           | Go-Kriterium                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| Originale         | 100 % gespeichert; 100 % Hash-Abgleich                                                |
+| Zuordnung         | 100 % genau einer Import-Session und korrekten Akte zugeordnet                        |
+| Verluste          | 0 still verlorene oder dauerhaft `processing` gebliebene Dateien                      |
+| Wiederaufnahme    | Neustart verarbeitet nur offene/fehlgeschlagene Dateien                               |
+| Pipeline          | genau 1 Voll-Pipeline-Job je Snapshot                                                 |
+| ON-Halluzination  | 0 erfundene ONs; jede ON mit Quellenfundstelle                                        |
+| Ground Truth      | alle kritischen ONs und bekannten Hauptentitäten erkannt                              |
+| Aliasse           | Platzhalter <-> Rudi/ Rudy Tarnname korrekt belegt; Varianten nur als Reviewvorschlag |
+| Rollen            | Exempel-Rollenwechsel zeitlich und quellengebunden dargestellt                        |
+| Copilot-Isolation | 0 Quellen aus fremden Akten in Negativtests                                           |
+| Copilot-Belege    | 100 % forensische Tatsachenbehauptungen mit zitierbarer Quelle                        |
+| UI-Skalierung     | 2.000 Dokumente ohne vollständiges DOM-Rendering; Filter/Paging stabil                |
+| Audit             | jede manuelle Korrektur versioniert und zurechenbar                                   |
+| Kosten            | Schätzung vor Start; hartes Limit; tatsächliche Kosten im Run-Bericht                 |
 
 Ein No-Go in Originalpersistenz, Aktenisolation, ON-Halluzination oder Audit
 blockiert den Voll-Lauf unabhängig von allen anderen Scores.
@@ -274,7 +274,7 @@ blockiert den Voll-Lauf unabhängig von allen anderen Scores.
 3. **P0 Copilot:** Slug-Korrektur, Snapshotbindung, Aktenisolation und Quellenpflicht.
 4. **Stufe A + B:** automatisierte Regression vollständig grün.
 5. **P1 Review:** strukturierte, versionierte Forensikeditoren.
-6. **Stufe C:** Toni-Rohaktenlauf und Ground-Truth-Differenzbericht.
+6. **Stufe C:** Forensic-Case-A-Rohaktenlauf und Ground-Truth-Differenzbericht.
 7. **Stufe D:** neuer 800-PDF-Akt als kontrollierter Shadow-Import.
 8. **Stufe E:** erst danach Produktionsfreigabe.
 
