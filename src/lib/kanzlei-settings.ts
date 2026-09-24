@@ -73,6 +73,28 @@ export interface KanzleiSettings {
   // Zusätzlicher Eskalations-Empfänger (z. B. Kanzleiinhaber/in), der bei
   // überfälligen Notfristen immer mitinformiert wird.
   deadlineEscalationEmail?: string;
+  // Papierkorb-Retention (DSGVO-Löschkonzept): tombstoned/archivierte Einträge
+  // werden nach Ablauf endgültig gelöscht (Engine-Soft-Delete → Autopilot-Purge).
+  // false = nie automatisch löschen. Default: an.
+  trashAutoPurge?: boolean;
+  // Tage im Papierkorb bis zur endgültigen Löschung. Default 30,
+  // geclampt auf 7–3650 — nie "sofort", nie unendlich.
+  trashRetentionDays?: number;
+}
+
+export const TRASH_RETENTION_DEFAULT_DAYS = 30;
+export const TRASH_RETENTION_MIN_DAYS = 7;
+export const TRASH_RETENTION_MAX_DAYS = 3650;
+
+/**
+ * Sanitizes the configured trash retention. Unreadable or out-of-range values
+ * fall back to the 30-day default — never to "purge immediately" and never to
+ * "keep forever" unless trashAutoPurge is explicitly false.
+ */
+export function normalizeTrashRetentionDays(value: unknown): number {
+  const n = typeof value === "number" ? value : parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(n)) return TRASH_RETENTION_DEFAULT_DAYS;
+  return Math.min(Math.max(Math.round(n), TRASH_RETENTION_MIN_DAYS), TRASH_RETENTION_MAX_DAYS);
 }
 
 export const KANZLEI_SETTINGS_SLUG = "legal/settings/kanzlei";
@@ -118,7 +140,16 @@ export function normalizeKanzleiSettings(input?: Partial<KanzleiSettings> | null
       ...(input?.rechtsgebietSaetze ?? {}),
     },
   };
-  return { ...merged, stundensatz: clampHourlyRate(merged.stundensatz) };
+  return {
+    ...merged,
+    stundensatz: clampHourlyRate(merged.stundensatz),
+    // Stored values are clamped too — a "2" saved in the UI must not read as
+    // 2 days anywhere; the effective floor is 7.
+    trashRetentionDays:
+      merged.trashRetentionDays === undefined
+        ? undefined
+        : normalizeTrashRetentionDays(merged.trashRetentionDays),
+  };
 }
 
 export function readLocalKanzleiSettings(): KanzleiSettings {
