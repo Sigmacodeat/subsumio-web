@@ -15,17 +15,13 @@ async function heartbeatHandler(ctx: HandlerContext) {
   return NextResponse.json({ ok: true, heartbeat: true });
 }
 
+// No `audit` here on purpose: the widget heartbeats every 60 s while a timer
+// runs, which would flood the audit log with ~1.4k meaningless rows per
+// user-day. Start/stop are audited; a keep-alive is not an auditable act.
 export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
-    audit: (_ctx, _body) => ({
-      action: "time_tracking.heartbeat" as const,
-      entityType: "time_activity",
-      details: {
-        heartbeat: true,
-      },
-    }),
   },
   heartbeatHandler
 );

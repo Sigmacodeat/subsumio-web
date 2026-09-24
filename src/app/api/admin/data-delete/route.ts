@@ -10,6 +10,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
+import { ENGINE_URL } from "@/lib/engine";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/admin/data-delete");
@@ -58,6 +59,50 @@ export const POST = createHandler(
 
     const userId = body.user_id;
     const actionsTaken: string[] = [];
+
+    // 0. Legal hold gate — actually checked, not just reported. A matter
+    // under legal hold keeps its personal data until the hold is released;
+    // the operator must pass legal_hold_override knowingly. The check runs
+    // with the operator's signed identity (ctx.headers) — the
+    // engine-identity-guard forbids identity-less firm headers here, so the
+    // scan covers exactly the matters the operator may see.
+    const heldCases: string[] = [];
+    try {
+      const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=500`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) {
+        const pages = (await res.json()) as Array<{
+          slug: string;
+          frontmatter?: Record<string, unknown>;
+        }>;
+        for (const p of pages) {
+          if (p.frontmatter?.legal_hold === true) heldCases.push(p.slug);
+        }
+      } else {
+        // Engine unreachable → fail closed: cannot prove no hold exists.
+        return apiError(
+          "legal_hold_unknown",
+          "Legal-Hold-Status der Akten nicht prüfbar — Löschung abgebrochen.",
+          503
+        );
+      }
+    } catch (err) {
+      log.error(`[data-delete] legal hold check failed: ${err}`);
+      return apiError(
+        "legal_hold_unknown",
+        "Legal-Hold-Status der Akten nicht prüfbar — Löschung abgebrochen.",
+        503
+      );
+    }
+    if (heldCases.length > 0 && !body.legal_hold_override) {
+      return apiError(
+        "legal_hold_active",
+        `Löschung blockiert: ${heldCases.length} Akte(n) unter Legal Hold (${heldCases.slice(0, 5).join(", ")}).`,
+        409
+      );
+    }
 
     // 1. Revoke all sessions
     try {
@@ -190,7 +235,8 @@ export const POST = createHandler(
       status: body.immediate ? "deleted" : "scheduled",
       actions_taken: actionsTaken,
       legal_hold_checked: true,
-      legal_hold_override_applied: body.legal_hold_override,
+      legal_hold_held_cases: heldCases.length,
+      legal_hold_override_applied: body.legal_hold_override && heldCases.length > 0,
     };
 
     await logAudit("admin.data_delete", "user", {

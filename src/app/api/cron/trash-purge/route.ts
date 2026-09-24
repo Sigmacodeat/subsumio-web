@@ -7,9 +7,50 @@ import { getRecipientsByBrain } from "@/lib/cron-utils";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
 import { logAudit } from "@/lib/audit";
+import { getSharedPgPool } from "@/lib/auth/store";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/trash-purge");
+
+const USER_SOFT_DELETE_GRACE_DAYS = 30;
+
+/**
+ * Enforces the 30-day grace period that admin/data-delete promises:
+ * users soft-deleted longer ago are hard-deleted together with the
+ * remaining rows keyed by user_id.
+ */
+async function purgeExpiredSoftDeletedUsers(report: { failed: number; errors: string[] }) {
+  const pool = getSharedPgPool();
+  if (!pool) return 0;
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id FROM subsumio_users
+     WHERE data->>'deletedAt' IS NOT NULL
+       AND (data->>'deletedAt')::timestamptz < now() - interval '${USER_SOFT_DELETE_GRACE_DAYS} days'`
+  );
+  let purged = 0;
+  for (const { id } of rows) {
+    try {
+      await pool.query(`DELETE FROM subsumio_comments WHERE user_id = $1`, [id]).catch(() => {});
+      await pool
+        .query(`DELETE FROM subsumio_notifications WHERE user_id = $1`, [id])
+        .catch(() => {});
+      await pool.query(`DELETE FROM subsumio_settings WHERE user_id = $1`, [id]).catch(() => {});
+      await pool.query(`DELETE FROM subsumio_usage WHERE user_id = $1`, [id]).catch(() => {});
+      await pool.query(`DELETE FROM subsumio_users WHERE id = $1`, [id]);
+      purged++;
+      void logAudit("admin.data_delete", "user", {
+        entityId: id,
+        details: { reason: "grace_period_expired", days: USER_SOFT_DELETE_GRACE_DAYS },
+      });
+    } catch (err) {
+      report.failed++;
+      report.errors.push(
+        `user ${id}: purge failed — ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+  return purged;
+}
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -176,8 +217,21 @@ export const GET = createCronHandler(async () => {
     }
   }
 
+  // Soft-deleted users past their 30-day grace period are hard-deleted —
+  // admin/data-delete only marks them; without this the promise never lands.
+  let usersPurged = 0;
+  try {
+    usersPurged = await purgeExpiredSoftDeletedUsers(report);
+  } catch (err) {
+    report.failed++;
+    report.errors.push(`user purge: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   // A run with errors answers 500 so supercronic marks the job FAILED.
   const ok = report.errors.length === 0;
   if (!ok) log.error("[trash-purge] completed with errors", { errors: report.errors });
-  return NextResponse.json({ ok, ...report }, { status: ok ? 200 : 500 });
+  return NextResponse.json(
+    { ok, ...report, users_purged: usersPurged },
+    { status: ok ? 200 : 500 }
+  );
 });

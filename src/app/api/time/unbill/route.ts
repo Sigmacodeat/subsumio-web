@@ -3,7 +3,12 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import type { TimeEntry } from "@/lib/legal-types";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import { unbillEntries, type TimeEntryWithCase } from "@/lib/time-tracking";
+import {
+  unbillEntries,
+  writeTimeEntriesWithRetry,
+  TimeEntriesWriteConflictError,
+  type TimeEntryWithCase,
+} from "@/lib/time-tracking";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/time/unbill");
@@ -33,24 +38,26 @@ export const POST = createHandler(
       const casePage = await brain.getPage(body.case_slug).catch(() => null);
       if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-      const fm = casePage.frontmatter as Record<string, unknown>;
-      const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
-
-      const entriesWithCase: TimeEntryWithCase[] = entries.map((e) => ({
-        ...e,
-        case_slug: body.case_slug,
-      }));
-      const result = unbillEntries(entriesWithCase, body.entry_ids);
+      const { meta: result } = await writeTimeEntriesWithRetry(
+        brain,
+        body.case_slug,
+        (freshEntries) => {
+          const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
+            ...e,
+            case_slug: body.case_slug,
+          }));
+          const r = unbillEntries(entriesWithCase, body.entry_ids);
+          return {
+            nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
+            meta: r,
+          };
+        },
+        log
+      );
 
       if (result.updated === 0) {
         return apiError("time_entry_not_found", "Keine der angegebenen Zeiteinträge gefunden", 404);
       }
-
-      const updatedEntries = result.entries.map(({ case_slug: _cs, ...e }) => e);
-      await brain.updatePage({
-        slug: body.case_slug,
-        frontmatter: { ...fm, time_entries: updatedEntries },
-      });
 
       broadcastSseEvent(ctx.brainId, "time.entry.unbilled", {
         case_slug: body.case_slug,
@@ -62,6 +69,13 @@ export const POST = createHandler(
         not_found: result.not_found,
       });
     } catch (err) {
+      if (err instanceof TimeEntriesWriteConflictError) {
+        return apiError(
+          "write_conflict",
+          "Abrechnung konnte nicht zurückgenommen werden — bitte erneut versuchen.",
+          409
+        );
+      }
       log.error("[time] unbill failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Abrechnung konnte nicht zurückgenommen werden", 500);
     }
