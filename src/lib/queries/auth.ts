@@ -17,14 +17,6 @@ export interface TwoFAVerifyInput {
   token: string;
 }
 
-export interface RegisterInput {
-  email: string;
-  password: string;
-  name: string;
-  referredBy?: string;
-  industry?: string;
-}
-
 export function useMe() {
   // Public surfaces (client portal, marketing, join) have no firm session; the
   // language hook mounts useMe everywhere, so skip the request there instead
@@ -82,19 +74,6 @@ export function useVerify2FA() {
       if (data?.user) {
         qc.setQueryData(["auth", "me"], { user: data.user });
         qc.invalidateQueries({ queryKey: ["auth", "me"] });
-        window.location.href = "/dashboard";
-      }
-    },
-  });
-}
-
-export function useRegister() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: RegisterInput) => api.auth.register(input),
-    onSuccess: (data) => {
-      if (data?.user) {
-        qc.setQueryData(["auth", "me"], { user: data.user });
         window.location.href = "/dashboard";
       }
     },

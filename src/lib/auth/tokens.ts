@@ -16,6 +16,8 @@ export interface ActionTokenPayload {
   purpose: TokenPurpose;
   bind: string;
   exp: number; // unix seconds
+  /** Issued-at (unix seconds). Tokens minted before this field existed lack it. */
+  iat?: number;
 }
 
 export const RESET_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
@@ -36,9 +38,11 @@ export async function signActionToken(
   ttlSeconds: number,
   secret: string = getAuthSecret()
 ): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
   const full: ActionTokenPayload = {
     ...payload,
-    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+    iat: now,
+    exp: now + ttlSeconds,
   };
   const body = b64url(JSON.stringify(full));
   const key = await hmacKey(secret);

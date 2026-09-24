@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getStore, getOrgStore } from "@/lib/auth/store";
+import { getStore, getOrgStore, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 const memberSchema = z.object({
@@ -40,6 +40,13 @@ export const DELETE = createHandler(
       return apiError("not_a_member", "Nutzer ist kein Mitglied", 404);
     }
 
+    // Outstanding invite links for this email die with the removal — invite
+    // tokens are stateless, so without this a removed member could rejoin
+    // with the old link for up to 7 days. The cutoff is written FIRST: if the
+    // member removal fails afterwards, the failure mode is a dead invite
+    // (recoverable via re-invite), not a live invite for a non-member.
+    const inviteRevokedAt = withInviteRevoked(org.inviteRevokedAt, target.email);
+    await getOrgStore().update(org.id, { inviteRevokedAt });
     await store.update(target.id, { orgId: null });
     return Response.json({ ok: true });
   }

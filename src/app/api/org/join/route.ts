@@ -38,9 +38,30 @@ export const POST = createHandler(
     const org = await getOrgStore().getById(orgId);
     if (!org) return apiError("invalid_or_expired_invite", "Invite ungültig oder abgelaufen", 400);
 
+    // Already a member? The invite link is irrelevant — answer ok regardless
+    // of whether it has been revoked since (stale-link click after re-join).
     if (ctx.user.orgId === org.id) {
       return Response.json({ ok: true, org: { name: org.name } });
     }
+
+    // Removing a member revokes their outstanding invites: a stateless 7-day
+    // link would otherwise let a removed person straight back in. The cutoff
+    // is per email — a fresh invite minted after the removal still works.
+    const revokedAt = org.inviteRevokedAt?.[email];
+    if (revokedAt) {
+      const cutoff = Date.parse(revokedAt);
+      // Tokens minted before `iat` existed count as ancient when a cutoff
+      // is set — fail closed, the owner can simply re-invite.
+      const issuedAt = typeof payload.iat === "number" ? payload.iat * 1000 : 0;
+      if (!Number.isFinite(cutoff) || issuedAt <= cutoff) {
+        return apiError(
+          "invite_revoked",
+          "Diese Einladung wurde zurückgezogen. Bitte fragen Sie die Kanzlei um eine neue.",
+          403
+        );
+      }
+    }
+
     if (ctx.user.orgId) {
       return apiError(
         "leave_current_org_first",

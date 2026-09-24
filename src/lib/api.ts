@@ -2349,16 +2349,6 @@ export const api = {
       return request("/api/auth/2fa/login-verify", { method: "POST", body: JSON.stringify(input) });
     },
 
-    register(input: {
-      email: string;
-      password: string;
-      name: string;
-      referredBy?: string;
-      industry?: string;
-    }): Promise<LooseAuthResponse> {
-      return request("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
-    },
-
     logout(): Promise<{ ok?: boolean }> {
       return request("/api/auth/logout", { method: "POST" });
     },

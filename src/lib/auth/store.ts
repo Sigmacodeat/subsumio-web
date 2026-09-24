@@ -148,6 +148,36 @@ export interface Org {
    * through, and are already bound to, that exact WorkOS identity.
    */
   workosOrganizationId?: string | null;
+  /**
+   * Per-email cutoff for org invites: when a member is removed (or leaves),
+   * invites minted before this timestamp must not be usable to (re-)join —
+   * invite tokens are stateless, so removal alone would not stop a still-
+   * valid link from re-entering the firm. A fresh invite always works: its
+   * iat is after the cutoff. Key: lowercase email, value: ISO timestamp.
+   */
+  inviteRevokedAt?: Record<string, string>;
+}
+
+/**
+ * Returns the inviteRevokedAt map with `email` cut off at `now`, pruning
+ * entries older than the invite token TTL (7 days): once every outstanding
+ * token has expired anyway, the cutoff is dead weight and would grow the
+ * org record unboundedly over the firm's lifetime.
+ */
+export function withInviteRevoked(
+  existing: Record<string, string> | undefined,
+  email: string,
+  now: Date = new Date()
+): Record<string, string> {
+  const ttlMs = 7 * 24 * 3600 * 1000; // INVITE_TOKEN_TTL_SECONDS — kept local to keep store.ts dependency-free
+  const floor = now.getTime() - ttlMs;
+  const next: Record<string, string> = {};
+  for (const [key, ts] of Object.entries(existing ?? {})) {
+    const t = Date.parse(ts);
+    if (Number.isFinite(t) && t > floor) next[key] = ts;
+  }
+  next[email.trim().toLowerCase()] = now.toISOString();
+  return next;
 }
 
 export interface OrgStore {
