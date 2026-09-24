@@ -377,6 +377,60 @@ export default function KanzleiSettingsPage() {
       </Section>
 
       <Section
+        title={L("Fristen-Erinnerungen & Eskalation", "Deadline reminders & escalation")}
+        description={L(
+          "Steuert die automatischen Fristen-Erinnerungen (E-Mail, WhatsApp, Push) und die Eskalation überfälliger Notfristen.",
+          "Controls automatic deadline reminders (email, WhatsApp, push) and the escalation of overdue statutory deadlines."
+        )}
+      >
+        <Field
+          id="k-reminder-stages"
+          label={L("Erinnerungs-Stufen (Tage vor Frist)", "Reminder stages (days before due)")}
+          hint={L(
+            "Kommagetrennt, z. B. „14,7,3,1,0“. Leer = Standard 7,3,1,0. 0 = am Fristtag.",
+            "Comma-separated, e.g. “14,7,3,1,0”. Empty = default 7,3,1,0. 0 = on the due date."
+          )}
+          value={settings.deadlineReminderStages ?? ""}
+          onChange={(v) => update("deadlineReminderStages", v)}
+        />
+        <label htmlFor="notfrist-escalation" className="flex cursor-pointer items-start gap-3">
+          <input
+            id="notfrist-escalation"
+            type="checkbox"
+            checked={settings.deadlineNotfristEscalation ?? true}
+            onChange={(e) => update("deadlineNotfristEscalation", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {L(
+                "Überfällige Notfristen separat eskalieren",
+                "Escalate overdue statutory deadlines separately"
+              )}
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              {L(
+                "Zusätzliche Alarm-E-Mail im Tages-Digest, sobald eine Notfrist überfällig ist — sie darf nicht zwischen normalen Fristen untergehen.",
+                "Extra alert email in the daily digest as soon as a statutory deadline is overdue — it must not get lost among normal deadlines."
+              )}
+            </p>
+          </div>
+        </label>
+        {(settings.deadlineNotfristEscalation ?? true) && (
+          <Field
+            id="k-escalation-email"
+            label={L("Eskalations-E-Mail (optional)", "Escalation email (optional)")}
+            hint={L(
+              "Zusätzlicher Empfänger für die Notfrist-Eskalation, z. B. Kanzleiinhaber/in — erhält die Alarm-Mail auch ohne Benutzerkonto.",
+              "Additional recipient for the statutory-deadline escalation, e.g. the firm's owner — gets the alert even without a user account."
+            )}
+            value={settings.deadlineEscalationEmail ?? ""}
+            onChange={(v) => update("deadlineEscalationEmail", v)}
+          />
+        )}
+      </Section>
+
+      <Section
         title={L("Rechtsraum", "Jurisdiction")}
         description={L(
           "Bestimmt, welche Rechtsquellen durchsucht und welche Feiertage bei Fristen berücksichtigt werden.",

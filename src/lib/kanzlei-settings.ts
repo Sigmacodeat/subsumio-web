@@ -64,6 +64,15 @@ export interface KanzleiSettings {
   bookingStart?: string;
   bookingEnd?: string;
   bookingSlotMinutes?: number;
+  // Fristen-Erinnerungen & Eskalation (cron/deadline-reminders +
+  // cron/deadlines). Stages als CSV "7,3,1,0" — Tage vor der Frist.
+  // Leer/unleserlich fällt auf den Standard zurück, nie auf "keine Mail".
+  deadlineReminderStages?: string;
+  // Überfällige Notfristen bekommen eine eigene Eskalations-Mail (default an).
+  deadlineNotfristEscalation?: boolean;
+  // Zusätzlicher Eskalations-Empfänger (z. B. Kanzleiinhaber/in), der bei
+  // überfälligen Notfristen immer mitinformiert wird.
+  deadlineEscalationEmail?: string;
 }
 
 export const KANZLEI_SETTINGS_SLUG = "legal/settings/kanzlei";

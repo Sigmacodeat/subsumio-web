@@ -10,6 +10,27 @@ import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
 export const REMINDER_STAGES_DAYS = [7, 3, 1, 0] as const;
 
 /**
+ * Parses a firm-configured reminder-stage list ("7,3,1,0" or number[]) into a
+ * sane descending list of day offsets. Anything unreadable falls back to the
+ * statutory-safe default — a typo in settings must never silence reminders.
+ */
+export function parseReminderStages(input: unknown): readonly number[] {
+  const raw: unknown[] = Array.isArray(input)
+    ? input
+    : typeof input === "string"
+      ? input.split(/[,\s;]+/)
+      : [];
+  const stages = [
+    ...new Set(
+      raw
+        .map((v) => (typeof v === "number" ? v : parseInt(String(v), 10)))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n <= 365)
+    ),
+  ].sort((a, b) => b - a);
+  return stages.length > 0 ? stages : REMINDER_STAGES_DAYS;
+}
+
+/**
  * Shown next to an AI-proposed deadline nobody confirmed yet, on every channel.
  * Every AI result needs human verification (ÖRAK KI-Leitfaden 2025); changed
  * deadlines must stay recognisable (BGH XII ZB 338/24).
@@ -109,11 +130,16 @@ export function daysUntil(dateStr: string, now: Date): number {
 }
 
 /** Lowest escalation stage reached and not yet sent. */
-export function nextDueStage(d: ReminderDeadline, dueDate: string, now: Date): number | undefined {
+export function nextDueStage(
+  d: ReminderDeadline,
+  dueDate: string,
+  now: Date,
+  stages: readonly number[] = REMINDER_STAGES_DAYS
+): number | undefined {
   const remaining = daysUntil(dueDate, now);
   if (remaining < 0) return undefined;
   const sent = new Set(d.reminder_stages_sent ?? []);
-  const due = REMINDER_STAGES_DAYS.filter((stage) => remaining <= stage && !sent.has(stage));
+  const due = stages.filter((stage) => remaining <= stage && !sent.has(stage));
   return due.length > 0 ? Math.min(...due) : undefined;
 }
 
@@ -121,13 +147,14 @@ function dueReminder(
   d: ReminderDeadline,
   ref: ReminderRef,
   title: string,
-  now: Date
+  now: Date,
+  stages: readonly number[] = REMINDER_STAGES_DAYS
 ): DueReminder | null {
   const dueDate = String(d.due_date ?? d.date ?? "").slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || isClosedDeadline(d)) return null;
   const daysRemaining = daysUntil(dueDate, now);
   if (daysRemaining < 0) return null; // overdue: the daily digest reports it
-  const stage = nextDueStage(d, dueDate, now);
+  const stage = nextDueStage(d, dueDate, now, stages);
   const vorfristReached = Boolean(
     d.vorfrist_date &&
     !d.vorfrist_reminder_sent_at &&
@@ -168,7 +195,8 @@ export function collectDueReminders(
   cases: ReminderPage[],
   deadlinePages: ReminderPage[],
   now: Date,
-  followUpPages: ReminderPage[] = []
+  followUpPages: ReminderPage[] = [],
+  stages: readonly number[] = REMINDER_STAGES_DAYS
 ): ReminderGroup[] {
   const groups = new Map<string, ReminderGroup>();
   const caseBySlug = new Map(cases.map((c) => [c.slug, c]));
@@ -198,7 +226,7 @@ export function collectDueReminders(
     pageKeys.add(`${caseSlug ?? ""}|${due}|${norm(page.title ?? fm.title)}`);
     if (caseSlug && archived(caseBySlug.get(caseSlug))) continue;
     const title = page.title ?? str(fm.title) ?? str(fm.description) ?? "Frist";
-    const item = dueReminder(fm, { kind: "page", slug: page.slug }, title, now);
+    const item = dueReminder(fm, { kind: "page", slug: page.slug }, title, now, stages);
     if (item) groupFor(caseSlug).items.push(item);
   }
 
@@ -217,7 +245,13 @@ export function collectDueReminders(
     const caseSlug = str(fm.case_slug);
     if (caseSlug && archived(caseBySlug.get(caseSlug))) continue;
     const title = page.title ?? "Wiedervorlage";
-    const item = dueReminder(fm as ReminderDeadline, { kind: "page", slug: page.slug }, title, now);
+    const item = dueReminder(
+      fm as ReminderDeadline,
+      { kind: "page", slug: page.slug },
+      title,
+      now,
+      stages
+    );
     if (item) groupFor(caseSlug).items.push({ ...item, isFollowUp: true });
   }
 
@@ -234,7 +268,8 @@ export function collectDueReminders(
         d,
         { kind: "case", caseSlug: c.slug, id: d.id, title: d.title, dueDate: due },
         d.title ?? "Frist",
-        now
+        now,
+        stages
       );
       if (item) groupFor(c.slug).items.push(item);
     }
@@ -251,11 +286,12 @@ export function collectDueReminders(
 export function sentFields(
   d: ReminderDeadline,
   item: Pick<DueReminder, "stage" | "vorfristReached" | "daysRemaining">,
-  nowIso: string
+  nowIso: string,
+  stages: readonly number[] = REMINDER_STAGES_DAYS
 ): Partial<ReminderDeadline> {
   const out: Partial<ReminderDeadline> = {};
   if (item.stage !== undefined) {
-    const passed = REMINDER_STAGES_DAYS.filter((stage) => stage >= item.daysRemaining);
+    const passed = stages.filter((stage) => stage >= item.daysRemaining);
     out.reminder_sent_at = nowIso;
     out.reminder_stages_sent = [...new Set([...(d.reminder_stages_sent ?? []), ...passed])].sort(
       (a, b) => b - a
@@ -313,7 +349,8 @@ export function annotateDelegations(
 export function markCaseDeadlines(
   current: ReminderDeadline[],
   items: DueReminder[],
-  nowIso: string
+  nowIso: string,
+  stages: readonly number[] = REMINDER_STAGES_DAYS
 ): { deadlines: ReminderDeadline[]; changed: boolean } {
   let changed = false;
   const deadlines = current.map((d) => {
@@ -325,7 +362,7 @@ export function markCaseDeadlines(
     });
     if (!item) return d;
     changed = true;
-    return { ...d, ...sentFields(d, item, nowIso) };
+    return { ...d, ...sentFields(d, item, nowIso, stages) };
   });
   return { deadlines, changed };
 }

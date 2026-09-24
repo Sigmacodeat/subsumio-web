@@ -24,6 +24,8 @@ import {
   annotateDelegations,
   collectDueReminders,
   markCaseDeadlines,
+  parseReminderStages,
+  REMINDER_STAGES_DAYS,
   sentFields,
   UNCONFIRMED_AI_NOTICE,
   type DueReminder,
@@ -43,7 +45,8 @@ function reminderId(item: DueReminder): string {
 async function updateDeadlineRecords(
   brainId: string,
   groupItems: DueReminder[],
-  nowIso: string
+  nowIso: string,
+  stages: readonly number[] = REMINDER_STAGES_DAYS
 ): Promise<void> {
   const headers = engineHeadersForBrain(brainId);
   // Standalone deadline records: only the reminder fields change.
@@ -58,7 +61,10 @@ async function updateDeadlineRecords(
       const page = (await res.json()) as { frontmatter?: ReminderDeadline };
       await enginePatchPage(
         headers,
-        { slug: item.ref.slug, frontmatter: sentFields(page.frontmatter ?? {}, item, nowIso) },
+        {
+          slug: item.ref.slug,
+          frontmatter: sentFields(page.frontmatter ?? {}, item, nowIso, stages),
+        },
         { timeoutMs: 30_000 }
       );
     } catch {
@@ -80,7 +86,7 @@ async function updateDeadlineRecords(
     const current = Array.isArray(page.frontmatter?.deadlines)
       ? (page.frontmatter.deadlines as ReminderDeadline[])
       : [];
-    const { deadlines, changed } = markCaseDeadlines(current, caseItems, nowIso);
+    const { deadlines, changed } = markCaseDeadlines(current, caseItems, nowIso, stages);
     if (changed) {
       await enginePatchPage(
         headers,
@@ -181,9 +187,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     }
 
-    const groups = collectDueReminders(casePages, deadlinePages, now, followUpPages);
-    if (groups.length === 0) continue;
-
     // This firm's own SMTP settings. Unreadable settings are an error, but the
     // reminders still go out in-app (and via WhatsApp/push) below.
     let settings: KanzleiSettings = DEFAULT_KANZLEI_SETTINGS;
@@ -196,6 +199,19 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         `Kanzlei settings unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
       );
     }
+
+    // Firm-configured reminder stages ("7,3,1,0"); unreadable → safe default.
+    const reminderStages = parseReminderStages(settings.deadlineReminderStages);
+
+    const groups = collectDueReminders(
+      casePages,
+      deadlinePages,
+      now,
+      followUpPages,
+      reminderStages
+    );
+    if (groups.length === 0) continue;
+
     const smtpConfigured = isSmtpConfigured(settings);
     if (smtpConfigured) smtpBrains++;
 
@@ -447,7 +463,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
         // was actually delivered. Otherwise the reminder is silently lost.
         if (!notificationSent) continue;
 
-        await updateDeadlineRecords(brainId, due, now.toISOString());
+        await updateDeadlineRecords(brainId, due, now.toISOString(), reminderStages);
       } catch (err) {
         errors.push(String(err instanceof Error ? err.message : err));
       }
