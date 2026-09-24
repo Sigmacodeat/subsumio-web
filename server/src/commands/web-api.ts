@@ -4610,6 +4610,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         "Content-Disposition",
         `attachment; filename="${stored.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`
       );
+      // The stored Content-Type is client-declared at upload time: never let
+      // a browser sniff or render it as an active document on this origin.
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
       res.end(stored.data);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
@@ -10573,7 +10577,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const { getRun } = await import("../core/legal/case-investigation.ts");
-      const found = getRun(runId);
+      // Tenant-bound: a run of another source does not exist for this caller.
+      const found = getRun(runId, requestSourceId(req));
       // A run of a matter the caller may not see does not exist for them.
       const result = found && isMatterScoped(req.matterScope, found.case_slug) ? found : null;
       if (!result) {
@@ -10610,15 +10615,28 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           typeof body.review_reason === "string" ? body.review_reason : undefined;
 
         const { reviewContradiction, getRun } = await import("../core/legal/case-investigation.ts");
-        const run = getRun(runId);
-        if (run) {
-          await assertSlugMatterScope(engine, req, run.case_slug);
-          assertMatterWritable(req, run.case_slug, run.case_slug);
+        const sourceId = requestSourceId(req);
+        // Tenant-bound: another source's run is not found (and not modified).
+        const run = getRun(runId, sourceId);
+        if (!run) {
+          res.status(404).json({
+            error: "run_not_found",
+            message: `Run ${runId} not found or expired.`,
+          });
+          return;
         }
-        const result = await reviewContradiction(engine, runId, id, {
-          review_status: reviewStatus as "accepted" | "dismissed" | "no_contradiction",
-          ...(reviewReason ? { review_reason: reviewReason } : {}),
-        });
+        await assertSlugMatterScope(engine, req, run.case_slug);
+        assertMatterWritable(req, run.case_slug, run.case_slug);
+        const result = await reviewContradiction(
+          engine,
+          runId,
+          id,
+          {
+            review_status: reviewStatus as "accepted" | "dismissed" | "no_contradiction",
+            ...(reviewReason ? { review_reason: reviewReason } : {}),
+          },
+          sourceId
+        );
         res.json(result);
       } catch (e) {
         legalErr(res, "case_investigation_review", e);

@@ -19,6 +19,7 @@
  * Rechtlicher Rahmen: § 226 ZPO (behauptungspflichtige Tatsachen),
  * § 272 ZPO (Verhandlungsmaxime), § 274 ZPO (Beweislast).
  */
+import { randomUUID } from "node:crypto";
 import type { BrainEngine } from "../engine.ts";
 import {
   type LegalLLM,
@@ -423,11 +424,20 @@ Antworte AUSSCHLIESSLICH als JSON:
 // Architektur reicht der In-Memory-Store — Runs sind ephemeral und werden
 // nach Review nicht mehr benötigt.
 
-const RUN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
-const runStore = new Map<string, { result: CaseInvestigationResult; expiresAt: number }>();
+//
+// Tenant binding: every run records the source (tenant) it was created for.
+// Reads and review writes must present the same source; a run created without
+// a scalar source can never be read back over HTTP (fail-closed). Run ids are
+// random UUIDs, but they are NOT the access control — the source check is.
 
-function saveRun(result: CaseInvestigationResult): void {
-  runStore.set(result.run_id, { result, expiresAt: Date.now() + RUN_TTL_MS });
+const RUN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const runStore = new Map<
+  string,
+  { result: CaseInvestigationResult; expiresAt: number; sourceId: string | null }
+>();
+
+function saveRun(result: CaseInvestigationResult, sourceId: string | null): void {
+  runStore.set(result.run_id, { result, expiresAt: Date.now() + RUN_TTL_MS, sourceId });
   // Lazy GC: remove expired runs
   const now = Date.now();
   for (const [key, entry] of runStore) {
@@ -435,22 +445,25 @@ function saveRun(result: CaseInvestigationResult): void {
   }
 }
 
-export function getRun(runId: string): CaseInvestigationResult | null {
+/** The run, if it exists, has not expired and belongs to `sourceId`. */
+export function getRun(runId: string, sourceId: string): CaseInvestigationResult | null {
   const entry = runStore.get(runId);
   if (!entry) return null;
   if (entry.expiresAt < Date.now()) {
     runStore.delete(runId);
     return null;
   }
+  if (!sourceId || entry.sourceId === null || entry.sourceId !== sourceId) return null;
   return entry.result;
 }
 
 export function updateContradictionInRun(
   runId: string,
   contradictionId: string,
-  patch: Partial<CaseInvestigationContradiction>
+  patch: Partial<CaseInvestigationContradiction>,
+  sourceId: string
 ): CaseInvestigationContradiction | null {
-  const result = getRun(runId);
+  const result = getRun(runId, sourceId);
   if (!result) return null;
   const idx = result.contradictions.findIndex((c) => c.id === contradictionId);
   if (idx === -1) return null;
@@ -459,7 +472,7 @@ export function updateContradictionInRun(
     ...patch,
     reviewed_at: new Date().toISOString(),
   };
-  saveRun(result);
+  saveRun(result, sourceId);
   return result.contradictions[idx];
 }
 
@@ -472,7 +485,8 @@ export async function caseInvestigation(
   const jurisdiction = opts.jurisdiction ?? "at";
   const maxDocs = opts.maxDocuments ?? 50;
   const maxChars = opts.maxCharsPerDoc ?? 16000;
-  const runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const runId = `run-${randomUUID()}`;
+  const runSource = opts.sourceId ?? null;
   const generatedAt = new Date().toISOString();
 
   // Load documents for the case
@@ -484,14 +498,29 @@ export async function caseInvestigation(
   });
 
   if (docs.length === 0) {
-    return emptyResult(runId, opts.case_slug, jurisdiction, opts.pruefauftrag, generatedAt, 0);
+    return emptyResult(
+      runId,
+      opts.case_slug,
+      jurisdiction,
+      opts.pruefauftrag,
+      generatedAt,
+      0,
+      runSource
+    );
   }
 
   const llm = opts.llm ?? (await defaultLegalLLM());
   if (!llm) {
-    return emptyResult(runId, opts.case_slug, jurisdiction, opts.pruefauftrag, generatedAt, 0, [
-      "NO_LLM_AVAILABLE",
-    ]);
+    return emptyResult(
+      runId,
+      opts.case_slug,
+      jurisdiction,
+      opts.pruefauftrag,
+      generatedAt,
+      0,
+      runSource,
+      ["NO_LLM_AVAILABLE"]
+    );
   }
 
   // ── Phase 1: Extract facts from each document ──────────────────────
@@ -510,9 +539,16 @@ export async function caseInvestigation(
 
   const allFacts = extractedDocs.flatMap((d) => d.facts);
   if (allFacts.length === 0) {
-    return emptyResult(runId, opts.case_slug, jurisdiction, opts.pruefauftrag, generatedAt, 0, [
-      "NO_FACTS_EXTRACTED",
-    ]);
+    return emptyResult(
+      runId,
+      opts.case_slug,
+      jurisdiction,
+      opts.pruefauftrag,
+      generatedAt,
+      0,
+      runSource,
+      ["NO_FACTS_EXTRACTED"]
+    );
   }
 
   // ── Phase 2: 3-Agent Pipeline ──────────────────────────────────────
@@ -543,6 +579,7 @@ export async function caseInvestigation(
       opts.pruefauftrag,
       generatedAt,
       allFacts.length,
+      runSource,
       ["RESEARCHER_LLM_FAILED"]
     );
   }
@@ -556,6 +593,7 @@ export async function caseInvestigation(
       opts.pruefauftrag,
       generatedAt,
       allFacts.length,
+      runSource,
       ["RESEARCHER_PARSE_FAILED"]
     );
   }
@@ -596,7 +634,7 @@ export async function caseInvestigation(
       generated_at: generatedAt,
       engine_reachable: true,
     };
-    saveRun(noContraResult);
+    saveRun(noContraResult, runSource);
     return noContraResult;
   }
 
@@ -759,7 +797,7 @@ export async function caseInvestigation(
     generated_at: generatedAt,
     engine_reachable: true,
   };
-  saveRun(finalResult);
+  saveRun(finalResult, runSource);
   return finalResult;
 }
 
@@ -770,6 +808,7 @@ function emptyResult(
   pruefauftrag: string | undefined,
   generatedAt: string,
   claimsCount: number,
+  sourceId: string | null,
   warnings?: string[]
 ): CaseInvestigationResult {
   const result: CaseInvestigationResult = {
@@ -790,7 +829,7 @@ function emptyResult(
     generated_at: generatedAt,
     engine_reachable: true,
   };
-  saveRun(result);
+  saveRun(result, sourceId);
   return result;
 }
 
@@ -805,12 +844,15 @@ export async function reviewContradiction(
   _engine: BrainEngine,
   runId: string,
   contradictionId: string,
-  input: CaseInvestigationReviewInput
+  input: CaseInvestigationReviewInput,
+  sourceId: string
 ): Promise<CaseInvestigationContradiction> {
-  const updated = updateContradictionInRun(runId, contradictionId, {
-    review_status: input.review_status,
-    review_reason: input.review_reason,
-  });
+  const updated = updateContradictionInRun(
+    runId,
+    contradictionId,
+    { review_status: input.review_status, review_reason: input.review_reason },
+    sourceId
+  );
   if (updated) return updated;
   // Fallback: run not found in store — return skeleton with review fields
   return {
