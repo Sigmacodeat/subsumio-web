@@ -62,7 +62,7 @@ function request(message: string) {
 const casePage = (fm: Record<string, unknown>) => ({
   slug: "cases/mueller",
   title: "Müller gegen Maier",
-  content: "Sachverhalt",
+  content: "INTERNE STRATEGIE",
   frontmatter: {
     portal_enabled: true,
     status: "open",
@@ -104,6 +104,7 @@ describe("POST /api/portal/chat", () => {
     const sent = JSON.parse(String(llm.init?.body));
     expect(sent.prompt).toContain("KLAGETEXT");
     expect(sent.prompt).not.toContain("GEHEIM");
+    expect(sent.prompt).not.toContain("INTERNE STRATEGIE");
     expect(sent.prompt).toContain("<daten>");
     expect(sent.system).toContain("keine Anweisung");
     expect(calls.some((c) => c.url.includes("docs%2Fintern"))).toBe(false);

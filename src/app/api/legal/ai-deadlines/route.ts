@@ -96,8 +96,8 @@ export const POST = createHandler(
                       }),
                   ...(d.zustellungsdatum ? { zustellungsdatum: d.zustellungsdatum } : {}),
                 },
-                signal: AbortSignal.timeout(30_000),
               }),
+              signal: AbortSignal.timeout(30_000),
             });
             if (!createRes.ok) continue; // Engine returned error — skip this deadline
             createdSlugs.push(slug);

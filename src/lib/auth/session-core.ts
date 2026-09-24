@@ -173,6 +173,20 @@ export async function signSession(
 }
 
 /**
+ * Action tokens (reset, verify, invite, 2fa_challenge — see tokens.ts) are
+ * signed with the same secret in the same format and also carry `uid` + `exp`.
+ * Without this check an invite link or a password-only 2FA challenge token
+ * would work as a session cookie. Sessions always carry `email`, `role` and a
+ * numeric version `v` (signSession sets it); action tokens carry `purpose` and
+ * `bind` and none of the session claims.
+ */
+function isSessionShaped(payload: SessionPayload): boolean {
+  const raw = payload as unknown as Record<string, unknown>;
+  if ("purpose" in raw || "bind" in raw) return false;
+  return typeof raw.email === "string" && typeof raw.role === "string" && typeof raw.v === "number";
+}
+
+/**
  * Verify session signature and expiry — Edge-safe.
  * Includes a cached revocation check (60s TTL) via internal HTTP endpoint.
  * For full verification without cache, use verifySession from session.ts (Node only).
@@ -196,6 +210,7 @@ export async function verifySessionCore(
     if (!ok) return null;
     const payload = JSON.parse(b64urlDecodeUtf8(body)) as SessionPayload;
     if (!payload.uid || !payload.exp) return null;
+    if (!isSessionShaped(payload)) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     // Edge-safe revocation check (cached, best-effort)
     const minVersion = await fetchRevocationVersion(payload.uid);
