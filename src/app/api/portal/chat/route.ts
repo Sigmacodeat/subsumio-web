@@ -2,9 +2,9 @@ import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { portalVisibleDocumentSlugs } from "@/lib/portal-view";
 import type { DocumentEntry } from "@/lib/legal-types";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { engineComplete } from "@/lib/engine-llm";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { resolvePortalAccess } from "@/lib/portal-access";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { groundAnswerCitations } from "@/lib/citation-gate";
@@ -113,13 +113,12 @@ export const POST = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, body, _query) => {
-    const payload = await verifyPortalToken(portalToken(req, body.token));
-    if (!payload) {
-      return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
-    }
-    if (!payload.brain_id) {
-      return apiError("new_portal_link_required", "Neuer Portal-Link erforderlich", 403);
-    }
+    // Full gate: token validity + portal_enabled + archived + link-reset
+    // cutoff, in one place.
+    const access = await resolvePortalAccess(portalToken(req, body.token));
+    if (access instanceof Response) return access;
+    const headers = access.headers;
+    const fm = access.frontmatter as unknown as Record<string, unknown>;
 
     if (isAdversarialQuery(body.message)) {
       const refusal = REFUSAL_RESPONSES[Math.floor(Math.random() * REFUSAL_RESPONSES.length)]!;
@@ -135,7 +134,7 @@ export const POST = createPublicHandler(
     // cost is bounded here instead: a daily cap per matter, on top of the
     // per-IP minute limit (a client can change IPs, not matters).
     const daily = await hit(
-      `portal-chat-day:${payload.brain_id}:${payload.case_slug}`,
+      `portal-chat-day:${access.payload.brain_id}:${access.caseSlug}`,
       PORTAL_CHAT_DAILY_LIMIT,
       24 * 60 * 60_000
     );
@@ -144,23 +143,6 @@ export const POST = createPublicHandler(
         "daily_limit_reached",
         "Für heute sind keine weiteren Fragen möglich. Bitte wenden Sie sich direkt an Ihre Kanzlei.",
         429
-      );
-    }
-
-    const headers = engineHeadersForBrain(payload.brain_id);
-
-    const caseRes = await fetch(
-      `${ENGINE_URL}/api/pages/${encodeURIComponent(payload.case_slug)}`,
-      { headers, signal: AbortSignal.timeout(10_000) }
-    );
-    if (!caseRes.ok) return apiError("case_not_found", "Akte nicht gefunden", 404);
-    const casePage = (await caseRes.json()) as BrainPage;
-    const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-    if (fm.status === "archived" || !fm.portal_enabled) {
-      return apiError(
-        "portal_disabled",
-        "Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.",
-        403
       );
     }
 
@@ -198,7 +180,7 @@ export const POST = createPublicHandler(
     const prompt = buildGroundedPrompt(
       body.message,
       {
-        title: casePage.title,
+        title: access.title,
         caseNumber: String(fm.case_number ?? ""),
         // Only a summary the firm explicitly released to the client. The case
         // page body holds internal notes and strategy — never send it here.
@@ -246,7 +228,7 @@ export const POST = createPublicHandler(
     }
     const grounded = grounding.corpus_checked && !grounding.has_unverified;
 
-    const slug = `portal-chat/${payload.case_slug}/${Date.now()}`;
+    const slug = `portal-chat/${access.caseSlug}/${Date.now()}`;
     await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
@@ -257,7 +239,7 @@ export const POST = createPublicHandler(
         content: answer,
         frontmatter: {
           type: "portal_chat",
-          case_slug: payload.case_slug,
+          case_slug: access.caseSlug,
           question: body.message,
           sender: "bot",
           grounded,

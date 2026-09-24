@@ -19,7 +19,12 @@ export interface PortalTokenPayload {
   case_slug: string;
   brain_id?: string;
   exp: number; // unix seconds
+  /** Issued-at (unix seconds). Older tokens lack it — they predate the field. */
+  iat?: number;
 }
+
+/** Default TTL — also the expiry↔issue proxy for pre-`iat` tokens. */
+const DEFAULT_TTL_SECONDS = 30 * 24 * 3600;
 
 export function getPortalSecret(): string {
   const secret = process.env.PORTAL_TOKEN_SECRET;
@@ -35,13 +40,15 @@ export function getPortalSecret(): string {
 
 export async function signPortalToken(
   caseSlug: string,
-  ttlSeconds: number = 30 * 24 * 3600, // 30 Tage
+  ttlSeconds: number = DEFAULT_TTL_SECONDS,
   brainId?: string
 ): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
   const payload: PortalTokenPayload = {
     case_slug: caseSlug,
     ...(brainId ? { brain_id: brainId } : {}),
-    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+    iat: now,
+    exp: now + ttlSeconds,
   };
   const body = b64url(JSON.stringify(payload));
   const key = await hmacKey(getPortalSecret());
@@ -144,6 +151,26 @@ export async function revokePortalTokenHash(hash: string): Promise<void> {
 }
 
 export { tokenHash as portalTokenHash };
+
+/**
+ * Was this token issued before the matter's link reset
+ * (`portal_links_reset_at` on the case frontmatter)? "Revoke all links" sets
+ * that cutoff so even links missing from the registry — issued before the
+ * registry existed — die. Tokens without `iat` are treated as ancient.
+ */
+export function isPortalTokenSuperseded(
+  payload: PortalTokenPayload,
+  resetAt: string | undefined | null
+): boolean {
+  if (!resetAt) return false;
+  const reset = Date.parse(resetAt);
+  if (!Number.isFinite(reset)) return false;
+  const issuedAt =
+    typeof payload.iat === "number" && Number.isFinite(payload.iat)
+      ? payload.iat * 1000
+      : (payload.exp - DEFAULT_TTL_SECONDS) * 1000;
+  return issuedAt < reset;
+}
 
 export async function isPortalTokenRevoked(token: string): Promise<boolean> {
   const hash = tokenHash(token);

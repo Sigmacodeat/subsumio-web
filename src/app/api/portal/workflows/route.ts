@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { ENGINE_URL } from "@/lib/engine";
+import { resolvePortalAccess } from "@/lib/portal-access";
 import { createPublicHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
-import { caseFrontmatter } from "@/lib/legal-types";
 import {
   getTemplate,
   buildWorkflowFrontmatter,
@@ -23,15 +22,6 @@ export const maxDuration = 30;
  * interne Prompts bleiben serverseitig verborgen.
  */
 
-async function fetchCasePage(caseSlug: string, brainId: string) {
-  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
-    headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) return null;
-  return (await res.json()) as { frontmatter?: Record<string, unknown> };
-}
-
 // ── GET: freigegebene Templates + laufende Instanzen dieser Akte ────────
 
 const getSchema = z.object({ token: z.string().min(1) });
@@ -45,17 +35,9 @@ export const GET = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
-    const payload = await verifyPortalToken(portalToken(req, query.token));
-    if (!payload?.brain_id) {
-      return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
-    }
-
-    const page = await fetchCasePage(payload.case_slug, payload.brain_id);
-    if (!page) return apiError("case_not_found", "Akte konnte nicht geladen werden", 404);
-    const fm = caseFrontmatter(page);
-    if (!fm.portal_enabled || fm.status === "archived") {
-      return apiError("portal_disabled", "Portal nicht freigegeben", 403);
-    }
+    const access = await resolvePortalAccess(portalToken(req, query.token));
+    if (access instanceof Response) return access;
+    const fm = access.frontmatter;
 
     const enabled = Array.isArray(fm.portal_workflows) ? fm.portal_workflows : [];
     const templates = enabled
@@ -75,7 +57,7 @@ export const GET = createPublicHandler(
     }> = [];
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=workflow&limit=200`, {
-        headers: engineHeadersForBrain(payload.brain_id),
+        headers: access.headers,
         signal: AbortSignal.timeout(10_000),
       });
       if (res.ok) {
@@ -88,7 +70,7 @@ export const GET = createPublicHandler(
           .filter((w): w is NonNullable<typeof w> => w !== null)
           .filter(
             (w) =>
-              w.frontmatter.case_slug === payload.case_slug &&
+              w.frontmatter.case_slug === access.caseSlug &&
               w.frontmatter.started_by.startsWith("portal:")
           )
           .map((w) => ({
@@ -128,17 +110,9 @@ export const POST = createPublicHandler(
   },
   async (req, body) => {
     // Token kann der Session-Slug sein → Cookie-Fallback via portalToken().
-    const payload = await verifyPortalToken(portalToken(req, body.token));
-    if (!payload?.brain_id) {
-      return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
-    }
-
-    const page = await fetchCasePage(payload.case_slug, payload.brain_id);
-    if (!page) return apiError("case_not_found", "Akte konnte nicht geladen werden", 404);
-    const fm = caseFrontmatter(page);
-    if (!fm.portal_enabled || fm.status === "archived") {
-      return apiError("portal_disabled", "Portal nicht freigegeben", 403);
-    }
+    const access = await resolvePortalAccess(portalToken(req, body.token));
+    if (access instanceof Response) return access;
+    const fm = access.frontmatter;
 
     const enabled = Array.isArray(fm.portal_workflows) ? fm.portal_workflows : [];
     if (!enabled.includes(body.template_id)) {
@@ -157,14 +131,14 @@ export const POST = createPublicHandler(
       template_id: template.id,
       prompt: template.prompt,
       started_by: "portal:mandant",
-      case_slug: payload.case_slug,
+      case_slug: access.caseSlug,
     });
     const slug = buildWorkflowSlug(template.id);
     const title = buildWorkflowTitle(template);
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
-      headers: { ...engineHeadersForBrain(payload.brain_id), "Content-Type": "application/json" },
+      headers: { ...access.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
         slug,
         title,

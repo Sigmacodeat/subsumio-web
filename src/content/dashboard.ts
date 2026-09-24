@@ -3203,8 +3203,8 @@ export const D = {
     en: "Issued portal links",
   },
   "cases.detail_portal_links_hint": {
-    de: "Jeder Link gilt 30 Tage für genau diese Akte. Ein geleakter Link kann hier einzeln widerrufen werden — ohne das ganze Portal zu sperren.",
-    en: "Each link is valid 30 days for exactly this matter. A leaked link can be revoked here individually — without disabling the whole portal.",
+    de: "Jeder Link gilt 30 Tage für genau diese Akte. Einzelne Links lassen sich hier widerrufen; „Alle widerrufen“ sperrt sofort auch ältere Links, die vor dieser Übersicht ausgestellt wurden.",
+    en: "Each link is valid 30 days for exactly this matter. Links can be revoked individually; \u201cRevoke all\u201d also immediately kills older links issued before this overview existed.",
   },
   "cases.detail_portal_links_loading": { de: "Links werden geladen…", en: "Loading links…" },
   "cases.detail_portal_links_error": {

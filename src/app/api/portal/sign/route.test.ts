@@ -8,7 +8,10 @@ vi.mock("@/lib/auth/rate-limit", () => ({
   clientIp: () => "203.0.113.7",
 }));
 vi.mock("@/lib/realtime-bus", () => ({ broadcastPortalVisit: vi.fn() }));
-vi.mock("@/lib/portal-token", () => ({ verifyPortalToken: vi.fn() }));
+vi.mock("@/lib/portal-token", () => ({
+  verifyPortalToken: vi.fn(),
+  isPortalTokenSuperseded: vi.fn(() => false),
+}));
 
 import { POST } from "./route";
 import { verifyPortalToken } from "@/lib/portal-token";

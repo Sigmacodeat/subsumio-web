@@ -43,12 +43,20 @@ async function loadCaseFrontmatter(ctx: {
 async function persistLinks(
   headers: Record<string, string>,
   caseSlug: string,
-  links: unknown[]
+  links: unknown[],
+  resetAt?: string
 ): Promise<boolean> {
   const res = await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify({ slug: caseSlug, merge: true, frontmatter: { portal_links: links } }),
+    body: JSON.stringify({
+      slug: caseSlug,
+      merge: true,
+      frontmatter: {
+        portal_links: links,
+        ...(resetAt ? { portal_links_reset_at: resetAt } : {}),
+      },
+    }),
     signal: AbortSignal.timeout(10_000),
   }).catch(() => null);
   return Boolean(res?.ok);
@@ -101,9 +109,16 @@ export const POST = createHandler(
       await revokePortalTokenHash(target.token_hash);
       next = markPortalLinkRevoked({ portal_links: next }, target.token_hash) ?? next;
     }
-    // Registry sync is best-effort: the token is already dead in the
-    // revocation table even if the case page write fails.
-    await persistLinks(ctx.headers, caseSlug, next);
+    // "Revoke all" also sets the reset cutoff: tokens issued before this
+    // moment die even if they never made it into the registry (links issued
+    // before the registry existed). The cutoff is enforced in
+    // resolvePortalAccess on every portal request.
+    await persistLinks(
+      ctx.headers,
+      caseSlug,
+      next,
+      body.all ? new Date().toISOString() : undefined
+    );
 
     return apiSuccess({ revoked: targets.length });
   }

@@ -3,7 +3,10 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 const mockVerify = vi.hoisted(() => vi.fn());
 const mockHeaders = vi.hoisted(() => vi.fn(() => ({ "x-brain": "firm-1" })));
 
-vi.mock("@/lib/portal-token", () => ({ verifyPortalToken: mockVerify }));
+vi.mock("@/lib/portal-token", () => ({
+  verifyPortalToken: mockVerify,
+  isPortalTokenSuperseded: vi.fn(() => false),
+}));
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "https://engine.test",
   engineHeadersForBrain: mockHeaders,

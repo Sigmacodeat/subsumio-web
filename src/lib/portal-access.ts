@@ -7,13 +7,24 @@
 
 import { apiError } from "@/lib/api-response";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { caseFrontmatter } from "@/lib/legal-types";
-import { verifyPortalToken, type PortalTokenPayload } from "@/lib/portal-token";
+import { caseFrontmatter, type CaseFrontmatter } from "@/lib/legal-types";
+import type { BrainPage } from "@/lib/types";
+import {
+  isPortalTokenSuperseded,
+  verifyPortalToken,
+  type PortalTokenPayload,
+} from "@/lib/portal-token";
 
 export interface PortalAccess {
   payload: PortalTokenPayload & { brain_id: string };
   caseSlug: string;
   headers: Record<string, string>;
+  /** The matter's frontmatter — already fetched for the gate checks. */
+  frontmatter: CaseFrontmatter;
+  /** The matter's display title. */
+  title: string;
+  /** The raw matter page — already fetched; pass to whitelisting views. */
+  page: BrainPage;
 }
 
 export async function resolvePortalAccess(token: string): Promise<PortalAccess | Response> {
@@ -41,7 +52,8 @@ export async function resolvePortalAccess(token: string): Promise<PortalAccess |
       res.status === 404 ? 404 : 502
     );
   }
-  const fm = caseFrontmatter(await res.json());
+  const page = (await res.json()) as BrainPage;
+  const fm = caseFrontmatter(page);
   if (fm.status === "archived") {
     return apiError(
       "case_archived",
@@ -56,10 +68,22 @@ export async function resolvePortalAccess(token: string): Promise<PortalAccess |
       403
     );
   }
+  // "Alle Links widerrufen" sets this cutoff — links issued before it are
+  // dead even if their hash never reached the revocation registry.
+  if (isPortalTokenSuperseded(payload, fm.portal_links_reset_at as string | undefined)) {
+    return apiError(
+      "link_revoked",
+      "Dieser Link wurde widerrufen. Bitte fordern Sie einen neuen bei Ihrer Kanzlei an.",
+      403
+    );
+  }
 
   return {
     payload: { ...payload, brain_id: payload.brain_id },
     caseSlug: payload.case_slug,
     headers,
+    frontmatter: fm,
+    title: String(page.title ?? payload.case_slug),
+    page,
   };
 }

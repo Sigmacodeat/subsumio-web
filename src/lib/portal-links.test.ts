@@ -7,7 +7,7 @@ import {
   portalLinkStatus,
   readPortalLinks,
 } from "./portal-links";
-import { portalTokenHash, signPortalToken } from "./portal-token";
+import { isPortalTokenSuperseded, portalTokenHash, signPortalToken } from "./portal-token";
 
 const fm = (links: unknown) => ({ portal_links: links }) as Record<string, unknown>;
 
@@ -73,5 +73,29 @@ describe("portal-links registry", () => {
     expect(next![0]!.revoked_at).toBeUndefined();
     expect(next![1]!.revoked_at).toBe("2026-06-01T00:00:00.000Z");
     expect(markPortalLinkRevoked(fm(links), "unknown")).toBeNull();
+  });
+});
+
+describe("isPortalTokenSuperseded — link reset cutoff", () => {
+  const resetAt = "2026-06-01T00:00:00.000Z";
+
+  it("kills tokens issued before the reset, keeps newer ones", () => {
+    expect(
+      isPortalTokenSuperseded({ case_slug: "c", exp: 4_000_000_000, iat: 1_700_000_000 }, resetAt)
+    ).toBe(true);
+    expect(
+      isPortalTokenSuperseded(
+        { case_slug: "c", exp: 4_000_000_000, iat: Date.parse(resetAt) / 1000 + 60 },
+        resetAt
+      )
+    ).toBe(false);
+  });
+
+  it("treats pre-iat tokens via their expiry and kills them on reset", () => {
+    // Legacy token without iat: issued-at ≈ exp − 30d default TTL.
+    const legacy = { case_slug: "c", exp: 1_800_000_000 }; // ~Jan 2027 expiry → issued ~Dec 2026
+    expect(isPortalTokenSuperseded(legacy, "2099-01-01T00:00:00.000Z")).toBe(true);
+    expect(isPortalTokenSuperseded(legacy, undefined)).toBe(false);
+    expect(isPortalTokenSuperseded(legacy, "garbage")).toBe(false);
   });
 });

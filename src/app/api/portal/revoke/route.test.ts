@@ -90,13 +90,20 @@ describe("POST /api/portal/revoke", () => {
     expect(revokePortalTokenHash).toHaveBeenCalledTimes(1);
   });
 
-  it("revokes all active links of a matter", async () => {
-    stubCase(registryFm);
+  it("revokes all active links of a matter and sets the reset cutoff", async () => {
+    const fetchMock = stubCase(registryFm);
     const res = await POST(req({ case_slug: "cases/a", all: true }) as never);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ revoked: 2 });
     expect(revokePortalTokenHash).toHaveBeenCalledWith(HASH_A);
     expect(revokePortalTokenHash).toHaveBeenCalledWith(HASH_B);
+    // "Revoke all" writes portal_links_reset_at so unregistered legacy
+    // tokens (issued before the registry existed) die too.
+    const write = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    const body = JSON.parse((write?.[1] as RequestInit).body as string) as {
+      frontmatter: { portal_links_reset_at?: string };
+    };
+    expect(body.frontmatter.portal_links_reset_at).toBeDefined();
   });
 
   it("404s for a matter the caller cannot read (ethical wall)", async () => {

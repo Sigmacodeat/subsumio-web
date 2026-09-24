@@ -43,7 +43,10 @@ describe("GET /api/portal/invoices — kill switch", () => {
       payload: { case_slug: "cases/a", brain_id: "b", exp: 1 },
       caseSlug: "cases/a",
       headers: { "x-test": "1" },
-    });
+      frontmatter: {},
+      title: "Akte A",
+      page: { slug: "cases/a", frontmatter: {} },
+    } as never);
     vi.mocked(listEnginePages).mockResolvedValue([
       { slug: "i1", frontmatter: { case_slugs: ["cases/a"], status: "sent", total: 100 } },
       { slug: "i2", frontmatter: { case_slugs: ["cases/a"], status: "draft", total: 50 } },

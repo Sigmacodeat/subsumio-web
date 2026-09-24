@@ -5,7 +5,7 @@ import { apiError, createPublicHandler } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { scanUploadWithDuplicateCheck } from "@/lib/upload-pipeline";
 import { brainDuplicateStore } from "@/lib/duplicate-store";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { isPortalTokenSuperseded, verifyPortalToken } from "@/lib/portal-token";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   caseFrontmatter,
@@ -168,6 +168,13 @@ export const POST = createPublicHandler(
       return apiError(
         "portal_disabled",
         "Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.",
+        403
+      );
+    }
+    if (isPortalTokenSuperseded(payload, caseFm.portal_links_reset_at as string | undefined)) {
+      return apiError(
+        "link_revoked",
+        "Dieser Link wurde widerrufen. Bitte fordern Sie einen neuen bei Ihrer Kanzlei an.",
         403
       );
     }
