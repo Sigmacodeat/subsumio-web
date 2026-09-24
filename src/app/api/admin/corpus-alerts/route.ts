@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { listCorpusDeltaNotifications, markAllCorpusDeltaNotificationsRead } from "@/lib/comments";
+import {
+  countUnreadCorpusDeltaNotifications,
+  listCorpusDeltaNotifications,
+  markAllCorpusDeltaNotificationsRead,
+} from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -23,14 +27,20 @@ export const GET = createHandler(
   },
   async (_ctx, _body, query) => {
     const limit = query.limit ? Math.min(parseInt(query.limit, 10) || 50, 200) : 50;
-    const notifications = await listCorpusDeltaNotifications({
-      unreadOnly: query.unread === "true",
-      limit,
-    });
+    const [notifications, unreadCount] = await Promise.all([
+      listCorpusDeltaNotifications({
+        unreadOnly: query.unread === "true",
+        limit,
+      }),
+      // A real COUNT(*), not the length of the limit-capped list above — the
+      // ops badge calls this route with limit=1, so deriving unreadCount
+      // from the returned array could never show more than 1.
+      countUnreadCorpusDeltaNotifications(),
+    ]);
     return apiSuccess({
       notifications,
       count: notifications.length,
-      unreadCount: notifications.filter((n) => !n.readAt).length,
+      unreadCount,
     });
   }
 );

@@ -128,7 +128,19 @@ export const GET = createHandler({ action: "platform.operator" }, async () => {
       },
       ingestByDay: byDay.rows,
       // Time of the inventory snapshot the numbers come from (hourly cron).
-      generatedAt: inventory[0]?.measured_at ?? null,
+      // `inventory` is DISTINCT ON (source_id) ordered by source_id, so
+      // inventory[0] was always the alphabetically-first source's snapshot
+      // time, not the freshest one — a source that failed its last cron run
+      // while others succeeded showed a falsely-recent generatedAt (or vice
+      // versa). Take the actual newest snapshot across all sources.
+      generatedAt:
+        inventory.length > 0
+          ? inventory.reduce(
+              (latest, r) =>
+                !latest || (r.measured_at ?? "") > latest ? (r.measured_at ?? latest) : latest,
+              null as string | null
+            )
+          : null,
     };
     return apiSuccess(overview);
   } catch (err) {
