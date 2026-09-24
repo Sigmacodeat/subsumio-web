@@ -16,11 +16,19 @@ export const DEFAULT_TYPES: Record<string, number> = {
   legal_document: 100,
 };
 
-export async function fetchPagesByType(
+/** A page-list read that says whether it succeeded — an empty list and a
+ *  failed read must never look the same (a hidden Frist is a malpractice
+ *  risk). */
+export interface PageListResult {
+  pages: BrainPage[];
+  ok: boolean;
+}
+
+export async function fetchPagesByTypeResult(
   headers: Record<string, string>,
   type: string,
   limit: number
-): Promise<BrainPage[]> {
+): Promise<PageListResult> {
   try {
     const params = new URLSearchParams();
     params.set("type", type);
@@ -29,12 +37,24 @@ export async function fetchPagesByType(
       headers,
       signal: AbortSignal.timeout(10_000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { pages: [], ok: false };
     const data = await res.json();
-    return Array.isArray(data) ? (data as BrainPage[]) : [];
+    return Array.isArray(data)
+      ? { pages: data as BrainPage[], ok: true }
+      : { pages: [], ok: false };
   } catch {
-    return [];
+    return { pages: [], ok: false };
   }
+}
+
+/** Lenient variant: `[]` on failure. Prefer `fetchPagesByTypeResult` wherever
+ *  the caller can surface a failed read. */
+export async function fetchPagesByType(
+  headers: Record<string, string>,
+  type: string,
+  limit: number
+): Promise<BrainPage[]> {
+  return (await fetchPagesByTypeResult(headers, type, limit)).pages;
 }
 
 export async function fetchPagesByTypes(

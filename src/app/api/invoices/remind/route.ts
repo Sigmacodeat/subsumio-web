@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { createServerBrainClient } from "@/lib/server-brain";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -38,7 +38,7 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     try {
       const brain = createServerBrainClient(ctx.headers);
-      const settings = await loadKanzleiSettings();
+      const settings = await loadKanzleiSettingsForBrain(ctx.brainId);
       if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
         return apiError("smtp_not_configured", "SMTP nicht konfiguriert", 400);
       }

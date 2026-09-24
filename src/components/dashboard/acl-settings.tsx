@@ -18,6 +18,7 @@ import {
 } from "@/lib/queries/settings";
 import { useTeam } from "@/lib/queries/settings";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { useToast } from "@/components/ui/toast";
 
 export function AclSettings() {
   const [newGroupName, setNewGroupName] = useState("");
@@ -31,6 +32,13 @@ export function AclSettings() {
   const addMemberMutation = useAddAclGroupMember();
   const removeMemberMutation = useRemoveAclGroupMember();
   const teamQuery = useTeam();
+  const { addToast } = useToast();
+  const reportError = (title: string, err: unknown) =>
+    addToast({
+      type: "error",
+      title,
+      description: err instanceof Error ? err.message : undefined,
+    });
 
   const groups = groupsQuery.data ?? [];
   const members = membersQuery.data ?? [];
@@ -62,7 +70,7 @@ export function AclSettings() {
       await addMemberMutation.mutateAsync({ groupId: selectedGroupId, userId: selectedUserId });
       setSelectedUserId("");
     } catch (err) {
-      console.error("[acl] add member failed:", err);
+      reportError("Mitglied konnte nicht hinzugefügt werden", err);
     }
   };
 
@@ -71,7 +79,7 @@ export function AclSettings() {
     try {
       await removeMemberMutation.mutateAsync({ groupId: selectedGroupId, userId });
     } catch (err) {
-      console.error("[acl] remove member failed:", err);
+      reportError("Mitglied konnte nicht entfernt werden", err);
     }
   };
 

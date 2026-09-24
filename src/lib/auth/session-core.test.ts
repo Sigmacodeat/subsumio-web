@@ -114,6 +114,17 @@ describe("session-core", () => {
       expect(payload?.v).toBe(1);
     });
 
+    test.each(["invite", "2fa_challenge", "reset", "verify"] as const)(
+      "rejects a %s action token used as a session cookie",
+      async (purpose) => {
+        process.env.AUTH_SECRET = "test-secret";
+        const { verifySessionCore } = await import("./session-core");
+        const { signActionToken } = await import("./tokens");
+        const token = await signActionToken({ uid: "admin-1", purpose, bind: "x" }, 3600);
+        expect(await verifySessionCore(token)).toBeNull();
+      }
+    );
+
     test("returns null for null/undefined token", async () => {
       const { verifySessionCore } = await import("./session-core");
       expect(await verifySessionCore(null)).toBeNull();

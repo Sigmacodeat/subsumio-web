@@ -62,11 +62,11 @@ kann.
    Übertragung nachvollziehbar und unveränderbar protokolliert werden
    (Audit-Trail, wer wann was mit welchem DATEV-Ergebnis übertragen hat) —
    relevant für die GoBD-Konformität, die an anderer Stelle im Produkt schon
-   Thema ist (`docs/audits/STEUERBERATER_UMBAU_ANALYSE_2026.md`).
+   Thema ist (`docs/archive/STEUERBERATER_UMBAU_ANALYSE_2026.md`).
 
 ## Geschätzter Aufwand
 
-Frühere interne Schätzung (`docs/audits/STEUERBERATER_UMBAU_ANALYSE_2026.md`,
+Frühere interne Schätzung (`docs/archive/STEUERBERATER_UMBAU_ANALYSE_2026.md`,
 Abschnitt 2.9): **2-4 Wochen**, vorausgesetzt DATEV-Partnerzugang und
 API-Zugangsdaten liegen bereits vor. Der Partnerschaftsprozess selbst
 (Bewerbung, Zertifizierung, Freigabe durch DATEV) liegt außerhalb der

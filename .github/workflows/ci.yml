@@ -66,8 +66,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - run: bun run typecheck || npx tsc --noEmit
-      - run: bun run typecheck:tests
+      # `verify` = tsc (app + tests) plus the web invariant guards: route
+      # actions, grounding invariant (useGroundedAnswer + CitationPanel),
+      # design tokens, canonical links, nested interactives, audit labels.
+      - name: Web verify (typecheck + invariant guards)
+        run: bun run verify
 
   test:
     runs-on: ubuntu-latest
@@ -279,17 +282,53 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, format-check, typecheck, test]
     if: always()
+    # The smoke tier needs no law corpus (typecheck, lint, format, key unit
+    # tests incl. server `bun test`, Playwright smoke against the MOCK engine).
+    # It used to fail only for missing infrastructure — no Postgres for the
+    # Playwright web server's auth DB (scripts/e2e-pg-setup.sh), no server
+    # deps for the server unit tests, and a production build inside the
+    # runner's 180s Playwright budget — and was masked with `|| true`. The
+    # job now provides all three (same setup as playwright-a11y) and fails
+    # on a failing gate.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.13
       - run: bun install
+      - run: bun install
+        working-directory: server # server unit tests + e2e-pg-setup.sh
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
+      - name: Pre-build web app for Playwright smoke
+        # Same NEXT_PUBLIC_* values playwright.config.ts builds with; the
+        # webServer then finds .next/BUILD_ID and only starts the server.
+        if: needs.lint.result == 'success' && needs.format-check.result == 'success' && needs.typecheck.result == 'success' && needs.test.result == 'success'
+        run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
       - name: Run Smoke Gate
         env:
           CI: "true"
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          SUBSUMIO_E2E_DB_URL: postgres://postgres:postgres@127.0.0.1:5432/subsumio_e2e?sslmode=disable
         run: |
           # Only run if the prerequisite jobs passed
           if [[ "${{ needs.lint.result }}" != "success" || \
@@ -299,7 +338,7 @@ jobs:
             echo "⚠️ Prerequisites not met — skipping smoke gate runner"
             exit 0
           fi
-          bun run server/src/eval/test-gate/runner.ts --tier=smoke || true
+          bun run server/src/eval/test-gate/runner.ts --tier=smoke
       - name: Stage smoke gate artifacts
         if: always()
         run: |

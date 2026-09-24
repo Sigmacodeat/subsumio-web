@@ -303,6 +303,7 @@ async function extractObligations() {
         )
         .join("") + aiNoticeHtml(sourcesOf(result));
     el.style.display = "block";
+    void groundResult(el, obligations.map((o) => `${o.type}: ${o.text}`).join("\n"));
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Extraktion fehlgeschlagen.", false);
   } finally {
@@ -348,6 +349,10 @@ async function checkRisks() {
       ${aiNoticeHtml(sourcesOf(result))}
     `;
     el.style.display = "block";
+    void groundResult(
+      el,
+      findings.map((f) => `${f.category}: ${f.description} ${f.recommendation}`).join("\n")
+    );
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Risikoanalyse fehlgeschlagen.", false);
   } finally {
@@ -470,6 +475,12 @@ async function redlineContract() {
       ${aiNoticeHtml(sourcesOf(result))}
     `;
     el.style.display = "block";
+    void groundResult(
+      el,
+      [result.summary ?? "", ...redlines.map((r) => `${r.suggested_text} ${r.legal_basis ?? ""}`)]
+        .join("\n")
+        .trim()
+    );
     document.getElementById("insertRedlineBtn")!.style.display = "block";
     document.getElementById("insertTrackedBtn")!.style.display = "block";
   } catch (e) {
@@ -760,7 +771,58 @@ async function saveAsBrainPage() {
  * bare model output before, which is exactly what the rest of the product is
  * built to prevent. Sources are listed when the API returns them.
  */
-const AI_NOTICE = "KI-generierter Entwurf — anwaltlich zu prüfen und freizugeben.";
+// Mirrors src/lib/ai-act.ts (the add-in build cannot import from the web app;
+// scripts/check-grounding-invariant.ts fails when the texts drift apart).
+const AI_NOTICE =
+  "KI-generierter Entwurf — anwaltlich zu prüfen und freizugeben (EU AI Act Art. 50). Erstellt mit Subsumio.";
+const AI_BADGE_LABEL = "KI-generiert · Anwaltlich zu prüfen";
+
+/** Response of POST /api/legal/ground (src/lib/citation-gate-client.ts GroundingMetadata). */
+interface GroundingResult {
+  citations_verified: number;
+  citations_unverified: number;
+  corpus_checked?: boolean;
+  has_unverified?: boolean;
+  warning?: string;
+  grounded_citations?: Array<{ code: string; paragraph: string; verified: boolean }>;
+}
+
+/** Verified/unverified counts plus the badge, the add-in's CitationPanel. */
+function groundingHtml(g: GroundingResult): string {
+  const unverified = (g.grounded_citations ?? [])
+    .filter((c) => !c.verified)
+    .slice(0, 6)
+    .map((c) => escapeHtml(`${c.paragraph} ${c.code}`.trim()));
+  const counts =
+    g.citations_verified + g.citations_unverified === 0
+      ? "Keine Normzitate erkannt."
+      : `${g.citations_verified} Zitat(e) im Korpus bestätigt · ${g.citations_unverified} nicht bestätigt`;
+  return `<div style="margin-top:6px;font-size:11px;color:${g.citations_unverified > 0 ? "#ef9a9a" : "#9ad0a0"}">${counts}</div>${
+    unverified.length > 0
+      ? `<div style="font-size:11px;color:#ef9a9a">Nicht bestätigt: ${unverified.join(" · ")}</div>`
+      : ""
+  }${g.warning ? `<div style="font-size:11px;color:#e0b341">${escapeHtml(g.warning)}</div>` : ""}`;
+}
+
+/**
+ * Grounding invariant (CLAUDE.md): after an AI answer is on screen, check its
+ * citations against the corpus via /api/legal/ground and show the result.
+ * Non-blocking; a failure leaves an explicit "please check manually" line.
+ */
+async function groundResult(el: HTMLElement, answer: string): Promise<void> {
+  const text = answer.trim();
+  if (text.length < 10) return;
+  const slot = document.createElement("div");
+  slot.style.cssText = "margin-top:6px;font-size:11px;color:#9a9ab8";
+  slot.textContent = "Fundstellen werden geprüft…";
+  (el.querySelector(".ai-notice") ?? el).appendChild(slot);
+  try {
+    const g = await apiPost<GroundingResult>("/api/legal/ground", { text: text.slice(0, 50_000) });
+    slot.innerHTML = groundingHtml(g);
+  } catch {
+    slot.textContent = "Fundstellenprüfung nicht verfügbar — Zitate bitte manuell prüfen.";
+  }
+}
 
 function aiNoticeHtml(sources?: string[]): string {
   const list =
@@ -770,8 +832,9 @@ function aiNoticeHtml(sources?: string[]): string {
           .map((s) => escapeHtml(s))
           .join(" · ")}</div>`
       : `<div style="margin-top:6px;font-size:11px;color:#9a9ab8">Ohne Fundstellen — bitte gegen die Akte prüfen.</div>`;
-  return `<div style="margin-top:10px;padding:8px 10px;border:1px solid #4a4a6a;border-radius:6px;background:#2a2a40">
-    <div style="font-size:11px;font-weight:600;color:#e0b341">${AI_NOTICE}</div>
+  return `<div class="ai-notice" style="margin-top:10px;padding:8px 10px;border:1px solid #4a4a6a;border-radius:6px;background:#2a2a40">
+    <div style="font-size:11px;font-weight:700;color:#e0b341">${AI_BADGE_LABEL}</div>
+    <div style="font-size:11px;color:#e0b341">${AI_NOTICE}</div>
     ${list}
   </div>`;
 }
@@ -788,6 +851,7 @@ function renderTextResult(
   const notice = options.ai === false ? "" : aiNoticeHtml(options.sources);
   el.innerHTML = `<div style="font-size:12px;line-height:1.6;color:#c0c0d8">${escapeHtml(text).replace(/\n/g, "<br>")}</div>${notice}`;
   el.style.display = "block";
+  if (options.ai !== false) void groundResult(el, text);
 }
 
 function clearResult(containerId: string) {

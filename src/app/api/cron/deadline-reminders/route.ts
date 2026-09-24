@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { DEFAULT_KANZLEI_SETTINGS, type KanzleiSettings } from "@/lib/kanzlei-settings";
+import { isSmtpConfigured, loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
-import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  fetchAllPagesStrict,
+  fetchPages,
+  getRecipientsByBrain,
+  type EnginePage,
+} from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import {
   createDeadlineNotification,
@@ -87,21 +93,21 @@ async function updateDeadlineRecords(
   }
 }
 
+/**
+ * Staged Fristen reminders (email / WhatsApp / push / in-app) for every firm.
+ *
+ * SMTP comes from EACH firm's own Kanzlei settings, read server-side from its
+ * brain (loadKanzleiSettingsForBrain). The browser settings loader used here
+ * before reached the engine without API key or tenant header, got a 401 and
+ * fell back to defaults — no reminder email was ever sent.
+ *
+ * Deadline data is read completely and strictly: a failed read is an error,
+ * never "no deadlines". Any hard error (unreadable firm data, settings or a
+ * failed email/notification) turns the response into HTTP 500 so the cron
+ * log shows the failure; the JSON body keeps the full report. WhatsApp/push
+ * problems are reported as warnings — in-app is the guaranteed channel.
+ */
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const settings = await loadKanzleiSettings();
-  const smtpConfigured = !!(settings.smtpHost && settings.smtpUser && settings.smtpPassword);
-
-  // B2: Don't fail hard when SMTP isn't configured — fall back to in-app notifications only
-  const transporter = smtpConfigured
-    ? nodemailer.createTransport({
-        host: settings.smtpHost!,
-        port: parseInt(settings.smtpPort ?? "587", 10),
-        secure: settings.smtpSecure ?? false,
-        auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
-      })
-    : null;
-
-  const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
   const now = new Date();
 
   // Brain → Empfänger
@@ -115,7 +121,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let pushSent = 0;
   let inAppSent = 0;
   let staleIntakes = 0;
+  let smtpBrains = 0;
   const errors: string[] = [];
+  const warnings: string[] = [];
   const failed: Array<{
     deadline_id: string;
     case_slug: string;
@@ -125,13 +133,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
-    const [casePages, deadlinePages, followUpPages, absencePages, intakePages] = await Promise.all([
-      fetchPages(brainId, "legal_case", 10_000),
-      fetchPages(brainId, "legal_deadline", 10_000),
-      fetchPages(brainId, "legal_follow_up", 10_000),
-      fetchPages(brainId, "absence_record", 10_000),
-      fetchPages(brainId, "intake_request", 10_000),
-    ]);
+    let casePages: EnginePage[];
+    let deadlinePages: EnginePage[];
+    let followUpPages: EnginePage[];
+    let absencePages: EnginePage[];
+    let intakePages: EnginePage[];
+    try {
+      [casePages, deadlinePages, followUpPages, absencePages, intakePages] = await Promise.all([
+        fetchAllPagesStrict(brainId, "legal_case"),
+        fetchAllPagesStrict(brainId, "legal_deadline"),
+        fetchAllPagesStrict(brainId, "legal_follow_up"),
+        fetchPages(brainId, "absence_record", 10_000),
+        fetchPages(brainId, "intake_request", 10_000),
+      ]);
+    } catch (err) {
+      errors.push(
+        `Deadline data unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+      continue;
+    }
 
     // Erstanfragen verlieren Mandate, wenn sie liegen — offene Intakes
     // älter als 24h eskalieren einmalig (deterministische ID) an alle.
@@ -163,6 +183,32 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     const groups = collectDueReminders(casePages, deadlinePages, now, followUpPages);
     if (groups.length === 0) continue;
+
+    // This firm's own SMTP settings. Unreadable settings are an error, but the
+    // reminders still go out in-app (and via WhatsApp/push) below.
+    let settings: KanzleiSettings = DEFAULT_KANZLEI_SETTINGS;
+    let settingsReadable = true;
+    try {
+      settings = await loadKanzleiSettingsForBrain(brainId);
+    } catch (err) {
+      settingsReadable = false;
+      errors.push(
+        `Kanzlei settings unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+    const smtpConfigured = isSmtpConfigured(settings);
+    if (smtpConfigured) smtpBrains++;
+
+    // B2: Don't fail hard when SMTP isn't configured — fall back to in-app notifications only
+    const transporter = smtpConfigured
+      ? nodemailer.createTransport({
+          host: settings.smtpHost!,
+          port: parseInt(settings.smtpPort ?? "587", 10),
+          secure: settings.smtpSecure ?? false,
+          auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
+        })
+      : null;
+    const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
 
     // Vertretungsregelung: die Erinnerung geht an alle Kanzlei-Mitglieder —
     // was fehlte, ist die Zurechnung. Ist die verantwortliche Person der
@@ -284,7 +330,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
               deadline_id: reminderId(item),
               case_slug: caseSlugForNotif,
               channels: ["email"],
-              reason: "smtp_not_configured",
+              reason: settingsReadable ? "smtp_not_configured" : "settings_unavailable",
             });
           }
         }
@@ -324,13 +370,13 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
               waSentAny = true;
             } else {
               waFailedAny = true;
-              errors.push(
+              warnings.push(
                 `WhatsApp deadline reminder blocked for ${recipient.id}: ${waResult.decision.reason}`
               );
             }
           } catch (err) {
             waFailedAny = true;
-            errors.push(
+            warnings.push(
               `WhatsApp deadline reminder failed for ${recipient.id}: ${err instanceof Error ? err.message : String(err)}`
             );
           }
@@ -390,7 +436,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
               pushSentAny = true;
             }
           } catch (err) {
-            errors.push(
+            warnings.push(
               `Push notification failed for ${recipient.id}: ${err instanceof Error ? err.message : String(err)}`
             );
           }
@@ -408,17 +454,24 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
     }
   }
 
-  return NextResponse.json({
-    ok: true,
-    brains_checked: brainsChecked,
-    total,
-    emailed,
-    whatsapped,
-    push_sent: pushSent,
-    in_app: inAppSent,
-    stale_intakes: staleIntakes,
-    smtp_configured: smtpConfigured,
-    failed: failed.length > 0 ? failed : undefined,
-    errors: errors.length > 0 ? errors : undefined,
-  });
+  const ok = errors.length === 0;
+  return NextResponse.json(
+    {
+      ok,
+      brains_checked: brainsChecked,
+      total,
+      emailed,
+      whatsapped,
+      push_sent: pushSent,
+      in_app: inAppSent,
+      stale_intakes: staleIntakes,
+      // Per firm now: true when at least one firm with due reminders has SMTP.
+      smtp_configured: smtpBrains > 0,
+      smtp_configured_brains: smtpBrains,
+      failed: failed.length > 0 ? failed : undefined,
+      errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    },
+    { status: ok ? 200 : 500 }
+  );
 });

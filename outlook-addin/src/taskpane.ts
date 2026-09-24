@@ -44,6 +44,81 @@ function hideStatus() {
   document.getElementById("status")!.style.display = "none";
 }
 
+// ── KI-Kennzeichnung + Fundstellenprüfung ───────────────────────────
+// Mirrors src/lib/ai-act.ts (the add-in build cannot import from the web app;
+// scripts/check-grounding-invariant.ts fails when the texts drift apart).
+const AI_NOTICE =
+  "KI-generierter Entwurf — anwaltlich zu prüfen und freizugeben (EU AI Act Art. 50). Erstellt mit Subsumio.";
+const AI_BADGE_LABEL = "KI-generiert · Anwaltlich zu prüfen";
+
+/** Response of POST /api/legal/ground (src/lib/citation-gate-client.ts GroundingMetadata). */
+interface GroundingResult {
+  citations_verified: number;
+  citations_unverified: number;
+  corpus_checked?: boolean;
+  has_unverified?: boolean;
+  warning?: string;
+  grounded_citations?: Array<{ code: string; paragraph: string; verified: boolean }>;
+}
+
+function groundingHtml(g: GroundingResult): string {
+  const unverified = (g.grounded_citations ?? [])
+    .filter((c) => !c.verified)
+    .slice(0, 6)
+    .map((c) => escapeHtml(`${c.paragraph} ${c.code}`.trim()));
+  const counts =
+    g.citations_verified + g.citations_unverified === 0
+      ? "Keine Normzitate erkannt."
+      : `${g.citations_verified} Zitat(e) im Korpus bestätigt · ${g.citations_unverified} nicht bestätigt`;
+  return `<div style="margin-top:4px;color:${g.citations_unverified > 0 ? "#ef9a9a" : "#9ad0a0"}">${counts}</div>${
+    unverified.length > 0
+      ? `<div style="color:#ef9a9a">Nicht bestätigt: ${unverified.join(" · ")}</div>`
+      : ""
+  }${g.warning ? `<div style="color:#e0b341">${escapeHtml(g.warning)}</div>` : ""}`;
+}
+
+function hideAiNotice(noticeId: string) {
+  const el = document.getElementById(noticeId);
+  if (!el) return;
+  el.innerHTML = "";
+  el.style.display = "none";
+}
+
+/**
+ * Grounding invariant (CLAUDE.md): an AI answer is shown with the AI label and,
+ * once visible, its citations are checked against the corpus via
+ * /api/legal/ground (non-blocking). A failed check says so instead of passing
+ * the answer off as verified.
+ */
+async function showAiNoticeAndGround(noticeId: string, answer: string): Promise<void> {
+  const el = document.getElementById(noticeId);
+  if (!el) return;
+  el.innerHTML = `<div style="font-weight:700;color:#e0b341">${AI_BADGE_LABEL}</div><div style="color:#e0b341">${AI_NOTICE}</div>`;
+  el.style.display = "block";
+  const text = answer.trim();
+  if (text.length < 10) return;
+  const slot = document.createElement("div");
+  slot.style.cssText = "margin-top:4px;color:#9a9ab8";
+  slot.textContent = "Fundstellen werden geprüft…";
+  el.appendChild(slot);
+  try {
+    const res = await fetch(`${API_BASE}/api/legal/ground`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text: text.slice(0, 50_000) }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    slot.innerHTML = groundingHtml((await res.json()) as GroundingResult);
+  } catch {
+    slot.textContent = "Fundstellenprüfung nicht verfügbar — Zitate bitte manuell prüfen.";
+  }
+}
+
+/** Plain-text AI notice that travels with a draft into the reply window. */
+function withAiNotice(draft: string): string {
+  return `${draft.trim()}\n\n— ${AI_BADGE_LABEL}: ${AI_NOTICE}`;
+}
+
 async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
   token = input.value.trim();
@@ -263,6 +338,7 @@ async function runQuery() {
   const resultEl = document.getElementById("queryResult")!;
   resultEl.style.display = "block";
   resultEl.textContent = "Abfrage läuft…";
+  hideAiNotice("queryNotice");
 
   try {
     const res = await fetch(`${API_BASE}/api/think`, {
@@ -300,15 +376,18 @@ async function runQuery() {
         }
       }
       if (!result) resultEl.textContent = "(Leere Antwort)";
+      else void showAiNoticeAndGround("queryNotice", result);
     } else {
       const text = await res.text();
       resultEl.textContent = text;
+      if (text.trim()) void showAiNoticeAndGround("queryNotice", text);
     }
 
     hideStatus();
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Abfrage fehlgeschlagen.", "err");
     resultEl.style.display = "none";
+    hideAiNotice("queryNotice");
   } finally {
     btn.disabled = false;
     btnText.textContent = "Abfragen";
@@ -338,6 +417,7 @@ async function draftReply() {
   summaryEl.style.display = "none";
   summaryEl.textContent = "";
   currentDraft = "";
+  hideAiNotice("draftNotice");
   btnText.innerHTML = '<div class="spinner"></div> Entwurf wird erstellt…';
   resultEl.style.display = "block";
   resultEl.textContent = "Der Assistent liest die E-Mail und entwirft eine Antwort…";
@@ -369,6 +449,7 @@ async function draftReply() {
     }
     currentDraft = draft;
     resultEl.textContent = draft;
+    void showAiNoticeAndGround("draftNotice", draft);
     insertBtn.style.display = "flex";
     showStatus("Entwurf bereit — bitte anwaltlich prüfen, bevor Sie antworten.", "info");
   } catch (e) {
@@ -384,7 +465,9 @@ async function draftReply() {
 function insertDraftAsReply() {
   if (!currentDraft) return;
   try {
-    const htmlBody = `<p>${escapeHtml(currentDraft)
+    // The AI notice travels into the reply: the lawyer removes it only after
+    // reviewing the text (EU AI Act Art. 50 transparency).
+    const htmlBody = `<p>${escapeHtml(withAiNotice(currentDraft))
       .split("\n")
       .filter((l) => l.trim())
       .join("<br/>")}</p>`;

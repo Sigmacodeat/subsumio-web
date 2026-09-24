@@ -33,17 +33,11 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 const log = logger("lib/auth/rate-limit");
 
-// KNOWN LIMITATION (production on netcup, 2026-09-23): the web container in
-// server/deploy/netcup/docker-compose.yml mounts only the law corpus — there
-// is no volume for /app/.data and SUBSUMIO_DATA_DIR is unset by default. So
-// without UPSTASH_REDIS_REST_* this file lives in the container's writable
-// layer and every deploy (container recreate) resets all windows: brute-force
-// counters (login, 2FA, feed tokens, API tiers) start from zero after a
-// release. Fix options: set UPSTASH_*, mount a volume and point
-// SUBSUMIO_DATA_DIR at it, or move the windows into the auth Postgres like
-// lockout.ts. (Account lockouts are NOT affected in production: lockout.ts
-// persists to Postgres whenever an auth DB is configured, which production
-// requires.)
+// Without UPSTASH_REDIS_REST_* the windows persist to this file. On netcup it
+// lives on the web-data volume (SUBSUMIO_DATA_DIR=/app/.data, see Dockerfile.web
+// and server/deploy/netcup/docker-compose.yml), so brute-force counters survive
+// deploys. The file is per instance: running more than one web replica needs
+// UPSTASH_* (or Postgres-backed windows like lockout.ts).
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const RATE_LIMIT_FILE = path.join(DATA_DIR, "rate-limits.json");
 

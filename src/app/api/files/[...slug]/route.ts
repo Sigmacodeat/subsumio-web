@@ -1,6 +1,7 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 
+import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
 import { logger } from "@/lib/logger";
 const log = logger("api/files/[...slug]");
 
@@ -52,16 +53,18 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const headers = new Headers();
-      const ct = res.headers.get("content-type");
-      const cd = res.headers.get("content-disposition");
       const cl = res.headers.get("content-length");
-      headers.set("Content-Type", ct || "application/octet-stream");
       // `?inline=1` renders the original in the browser (PDF preview on the
-      // document page); the engine always answers `attachment`.
-      const inline = new URL(req.url).searchParams.get("inline") === "1";
-      if (cd)
-        headers.set("Content-Disposition", inline ? cd.replace(/^attachment/i, "inline") : cd);
+      // document page); the engine always answers `attachment`. Inline is
+      // honoured only for passive types (PDF, raster images) — see
+      // file-response-headers.ts.
+      applyUploadedFileHeaders(headers, {
+        contentType: res.headers.get("content-type"),
+        contentDisposition: res.headers.get("content-disposition"),
+        wantInline: new URL(req.url).searchParams.get("inline") === "1",
+      });
       if (cl) headers.set("Content-Length", cl);
+      headers.set("Cache-Control", "private, no-store");
 
       return new Response(res.body, { status: 200, headers });
     } catch (err) {

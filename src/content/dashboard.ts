@@ -1346,6 +1346,10 @@ export const D = {
     de: "Fristen konnten nicht geladen werden.",
     en: "Failed to load deadlines.",
   },
+  "deadlines.error_partial": {
+    de: "Fristen konnten nicht vollständig geladen werden. Die Liste kann unvollständig sein — bitte erneut laden, bevor Sie sich darauf verlassen.",
+    en: "Deadlines could not be loaded completely. The list may be incomplete — reload before relying on it.",
+  },
   "deadlines.retry": { de: "Erneut versuchen", en: "Retry" },
   "deadlines.empty_title": { de: "Keine Fristen gefunden", en: "No deadlines found" },
   "deadlines.empty_no_data": {
@@ -1555,6 +1559,10 @@ export const D = {
   },
   "inv.quick_cancel": { de: "Abbrechen", en: "Cancel" },
   "inv.quick_created": { de: "Rechnung erstellt", en: "Invoice created" },
+  "inv.quick_mark_billed_failed": {
+    de: "Rechnung erstellt, aber die Leistungen konnten nicht als abgerechnet markiert werden. Bitte in der Akte prüfen — Rechnung nicht erneut erstellen.",
+    en: "Invoice created, but the entries could not be marked as billed. Please check the matter — do not create the invoice again.",
+  },
   "inv.quick_create_failed": {
     de: "Rechnung konnte nicht erstellt werden",
     en: "Invoice could not be created",

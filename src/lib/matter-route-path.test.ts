@@ -3,12 +3,14 @@ import { caseSlugFromDashboardPath } from "./matter-route-path";
 
 describe("caseSlugFromDashboardPath", () => {
   it("preserves nested legal case slugs", () => {
-    expect(caseSlugFromDashboardPath("/dashboard/cases/legal/cases/toni/documents")).toBe(
-      "legal/cases/toni"
+    expect(caseSlugFromDashboardPath("/dashboard/cases/legal/cases/case-a/documents")).toBe(
+      "legal/cases/case-a"
     );
   });
   it("preserves an overview slug without a tab", () => {
-    expect(caseSlugFromDashboardPath("/dashboard/cases/legal/cases/toni")).toBe("legal/cases/toni");
+    expect(caseSlugFromDashboardPath("/dashboard/cases/legal/cases/case-a")).toBe(
+      "legal/cases/case-a"
+    );
   });
   it("does not claim unrelated routes", () => {
     expect(caseSlugFromDashboardPath("/dashboard/deadlines")).toBeUndefined();

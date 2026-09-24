@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
-import { DEFAULT_TYPES, fetchPagesByType, fetchRecentQueries, fetchStats } from "@/lib/cockpit";
+import {
+  DEFAULT_TYPES,
+  fetchPagesByTypeResult,
+  fetchRecentQueries,
+  fetchStats,
+} from "@/lib/cockpit";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 
 const cockpitQuerySchema = z.object({
@@ -12,6 +17,10 @@ interface CockpitResponse {
   stats: BrainStats | null;
   recent: RecentQuery[];
   pages: Record<string, BrainPage[]>;
+  /** true when any page list failed to load — the UI must show that its
+   *  counts (Fristen, Akten, …) may be incomplete instead of reading "0". */
+  degraded: boolean;
+  failed_types: string[];
 }
 
 export const GET = createHandler(
@@ -38,17 +47,26 @@ export const GET = createHandler(
       fetchStats(ctx.headers),
       fetchRecentQueries(ctx.headers, recentLimit),
       ...Object.entries(typesMap).map(([type, limit]) =>
-        fetchPagesByType(ctx.headers, type, limit)
+        fetchPagesByTypeResult(ctx.headers, type, limit)
       ),
     ]);
 
     const pages: Record<string, BrainPage[]> = {};
+    const failedTypes: string[] = [];
     const typeKeys = Object.keys(typesMap);
     for (let i = 0; i < typeKeys.length; i++) {
-      pages[typeKeys[i]] = pageResults[i] ?? [];
+      const result = pageResults[i];
+      pages[typeKeys[i]] = result?.pages ?? [];
+      if (!result?.ok) failedTypes.push(typeKeys[i]);
     }
 
-    const response: CockpitResponse = { stats, recent, pages };
+    const response: CockpitResponse = {
+      stats,
+      recent,
+      pages,
+      degraded: failedTypes.length > 0,
+      failed_types: failedTypes,
+    };
     return Response.json(response);
   }
 );

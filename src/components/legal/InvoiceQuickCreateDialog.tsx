@@ -33,6 +33,7 @@ import {
   type TimeEntry,
 } from "@/lib/legal-types";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
+import { markInvoicedEntriesBilled } from "@/lib/invoice-mark-billed";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { RatgTariffForm, type TariffInvoiceLine } from "@/components/legal/RatgTariffForm";
 import { AhkTariffForm } from "@/components/legal/AhkTariffForm";
@@ -432,40 +433,24 @@ export function InvoiceQuickCreateDialog({
         await enqueueMutation({ type: "createPage", payload: invoicePayload });
       }
 
-      // Mark time entries as billed via dedicated API endpoint (SSE + audit trail)
-      if (isOnline() && billableTimeIds.length > 0) {
-        try {
-          await api.time.markBilled({
-            entry_ids: billableTimeIds,
-            invoice_number: invoice.number,
-            case_slug: c.slug,
-          });
-        } catch {
-          // non-fatal — frontmatter update below is the fallback
-        }
-      }
-
+      // The invoice exists from here on. Anything that fails below is a
+      // warning, never an error: an error invites a retry, and a retry would
+      // create a second invoice for the same entries.
       const billedTimeIds = new Set(billableTimeIds);
       const billedExpenseIds = new Set(billableExpenseIds);
-      const updatedTimeEntries = (c.timeEntries ?? []).map((entry) =>
-        billedTimeIds.has(entry.id)
-          ? { ...entry, billed: true, invoice_number: invoice.number }
-          : entry
-      );
-      const updatedExpenses = (c.expenses ?? []).map((entry) =>
-        billedExpenseIds.has(entry.id)
-          ? { ...entry, billed: true, invoice_number: invoice.number }
-          : entry
-      );
-      const caseUpdatePayload = {
-        slug: c.slug,
-        frontmatter: { time_entries: updatedTimeEntries, expenses: updatedExpenses },
-      };
-      if (isOnline()) {
-        await api.brain.updatePage(caseUpdatePayload);
-      } else {
-        await enqueueMutation({ type: "updatePage", payload: caseUpdatePayload });
-      }
+      const markBilled = <T extends { id: string }>(list: T[] | undefined, ids: Set<string>) =>
+        (list ?? []).map((entry) =>
+          ids.has(entry.id) ? { ...entry, billed: true, invoice_number: invoice.number } : entry
+        );
+      const updatedTimeEntries = markBilled(c.timeEntries, billedTimeIds);
+      const updatedExpenses = markBilled(c.expenses, billedExpenseIds);
+      const bookkeepingFailed = await markInvoicedEntriesBilled({
+        caseSlug: c.slug,
+        invoiceNumber: invoice.number,
+        timeEntryIds: billableTimeIds,
+        expenseIds: billableExpenseIds,
+        snapshot: { time_entries: updatedTimeEntries, expenses: updatedExpenses },
+      });
 
       const nextInvoices = [invoice, ...invoices];
       const nextCases = cases.map((ca) =>
@@ -478,9 +463,15 @@ export function InvoiceQuickCreateDialog({
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
         invoices: nextInvoices,
         cases: nextCases,
-      });
+      }).catch(() => {});
 
       addToast({ type: "success", title: t("inv.quick_created" as DashboardKey) });
+      if (bookkeepingFailed) {
+        addToast({
+          type: "warning",
+          title: t("inv.quick_mark_billed_failed" as DashboardKey),
+        });
+      }
 
       // Auto-generate e-invoice if format selected
       if (eInvoiceFormat !== "none") {

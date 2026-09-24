@@ -33,6 +33,11 @@ fi
 
 work="/tmp/firm-${ts}"
 OUT_DIR="$work" sh "$(dirname "$0")/dump-firm-data.sh"
+# Web app state (file-backed stores, WhatsApp media) goes into the same
+# snapshot, so both the offsite repo and the local archive carry it.
+if [ -d /web-data ]; then
+  cp -a /web-data "$work/web-data"
+fi
 
 if [ -n "${RESTIC_REPOSITORY:-}" ]; then
   restic cat config >/dev/null 2>&1 || restic init

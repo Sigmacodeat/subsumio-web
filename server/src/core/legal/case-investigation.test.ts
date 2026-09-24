@@ -297,7 +297,9 @@ describe("caseInvestigation", () => {
       jurisdiction: "at",
       llm: makeMockLLM([]),
     });
-    expect(result.run_id).toMatch(/^run-\d+/);
+    expect(result.run_id).toMatch(
+      /^run-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    );
     expect(result.generated_at).toBeTruthy();
   });
 });
@@ -305,28 +307,46 @@ describe("caseInvestigation", () => {
 describe("reviewContradiction", () => {
   test("accepted mit reason", async () => {
     const engine = makeMockEngine([]);
-    const result = await reviewContradiction(engine, "run-1", "W-001", {
-      review_status: "accepted",
-      review_reason: "Bestätigter Widerspruch",
-    });
+    const result = await reviewContradiction(
+      engine,
+      "run-1",
+      "W-001",
+      {
+        review_status: "accepted",
+        review_reason: "Bestätigter Widerspruch",
+      },
+      "firm-a"
+    );
     expect(result.review_status).toBe("accepted");
     expect(result.review_reason).toBe("Bestätigter Widerspruch");
   });
 
   test("dismissed ohne reason", async () => {
     const engine = makeMockEngine([]);
-    const result = await reviewContradiction(engine, "run-1", "W-001", {
-      review_status: "dismissed",
-    });
+    const result = await reviewContradiction(
+      engine,
+      "run-1",
+      "W-001",
+      {
+        review_status: "dismissed",
+      },
+      "firm-a"
+    );
     expect(result.review_status).toBe("dismissed");
     expect(result.review_reason).toBeUndefined();
   });
 
   test("no_contradiction", async () => {
     const engine = makeMockEngine([]);
-    const result = await reviewContradiction(engine, "run-1", "W-001", {
-      review_status: "no_contradiction",
-    });
+    const result = await reviewContradiction(
+      engine,
+      "run-1",
+      "W-001",
+      {
+        review_status: "no_contradiction",
+      },
+      "firm-a"
+    );
     expect(result.review_status).toBe("no_contradiction");
   });
 });
@@ -345,6 +365,7 @@ describe("Run Store (BUG #1 + #4)", () => {
     const postResult = await caseInvestigation(engine, {
       case_slug: "mueller-vs-huber",
       jurisdiction: "at",
+      sourceId: "firm-a",
       llm: makeMockLLM([
         EXTRACTION_RESPONSE,
         RESEARCHER_RESPONSE,
@@ -357,26 +378,67 @@ describe("Run Store (BUG #1 + #4)", () => {
 
     // 2. GET — retrieves persisted run
     const { getRun } = await import("./case-investigation.ts");
-    const getResult = getRun(runId);
+    const getResult = getRun(runId, "firm-a");
     expect(getResult).not.toBeNull();
     expect(getResult!.run_id).toBe(runId);
     expect(getResult!.contradictions).toHaveLength(1);
     expect(getResult!.contradictions[0].review_status).toBe("pending");
 
     // 3. PATCH — updates contradiction in store
-    const patched = await reviewContradiction(engine, runId, getResult!.contradictions[0].id, {
-      review_status: "accepted",
-      review_reason: "Bestätigt",
-    });
+    const patched = await reviewContradiction(
+      engine,
+      runId,
+      getResult!.contradictions[0].id,
+      { review_status: "accepted", review_reason: "Bestätigt" },
+      "firm-a"
+    );
     expect(patched.review_status).toBe("accepted");
     expect(patched.review_reason).toBe("Bestätigt");
     // Verify store was updated
-    const afterPatch = getRun(runId);
+    const afterPatch = getRun(runId, "firm-a");
     expect(afterPatch!.contradictions[0].review_status).toBe("accepted");
   });
 
   test("GET für unbekannte runId → null", async () => {
     const { getRun } = await import("./case-investigation.ts");
-    expect(getRun("nonexistent-run")).toBeNull();
+    expect(getRun("nonexistent-run", "firm-a")).toBeNull();
+  });
+
+  test("runs are tenant-bound: another source can neither read nor review them", async () => {
+    const engine = makeMockEngine([
+      {
+        slug: "doc-1",
+        title: "Zeugenaussage",
+        content: "Am 14.05. war ich in Linz. Am 14.05. war ich in Wien.",
+        caseSlug: "mueller-vs-huber",
+      },
+    ]);
+    const run = await caseInvestigation(engine, {
+      case_slug: "mueller-vs-huber",
+      jurisdiction: "at",
+      sourceId: "firm-a",
+      llm: makeMockLLM([
+        EXTRACTION_RESPONSE,
+        RESEARCHER_RESPONSE,
+        AUDITOR_RESPONSE,
+        ADVERSARIAL_RESPONSE,
+      ]),
+    });
+    const { getRun } = await import("./case-investigation.ts");
+    expect(getRun(run.run_id, "firm-b")).toBeNull();
+    expect(getRun(run.run_id, "")).toBeNull();
+    const cid = run.contradictions[0].id;
+    await reviewContradiction(engine, run.run_id, cid, { review_status: "dismissed" }, "firm-b");
+    expect(getRun(run.run_id, "firm-a")!.contradictions[0].review_status).toBe("pending");
+  });
+
+  test("a run created without a scalar source is never readable", async () => {
+    const run = await caseInvestigation(makeMockEngine([]), {
+      case_slug: "x",
+      jurisdiction: "at",
+      llm: makeMockLLM([]),
+    });
+    const { getRun } = await import("./case-investigation.ts");
+    expect(getRun(run.run_id, "default")).toBeNull();
   });
 });

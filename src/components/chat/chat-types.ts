@@ -93,6 +93,25 @@ export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "organize_documents",
 ]);
 
+/**
+ * Tools the copilot may run straight from a `[TOOL:…]` marker in the model's
+ * answer, without a click. Only free, read-only lookups belong here: the answer
+ * text can be steered by retrieved documents or e-mails (prompt injection), so
+ * anything that costs credits, starts a model run, sends something or changes
+ * data waits for the person to confirm it. Everything not listed here stays
+ * pending with the confirm UI.
+ */
+export const AUTO_EXECUTE_TOOLS: ReadonlySet<ToolType> = new Set([
+  "navigate",
+  "search_cases",
+  "search_deadlines",
+  "search_knowledge",
+  "search_tasks",
+  "search_calendar",
+  "client_lookup",
+  "case_summary",
+]);
+
 export interface ToolCall {
   id: string;
   type: ToolType;

@@ -35,7 +35,7 @@ const UNDO = process.argv.includes("--undo");
  */
 const REPAIR = process.argv.includes("--repair");
 const COURT = arg("court");
-const PLAN = arg("plan", ".windsurf/plans/judikatur-dedupe-plan.json")!;
+const PLAN = arg("plan", ".data/judikatur-dedupe-plan.json")!;
 const DB_URL = arg(
   "db",
   process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"

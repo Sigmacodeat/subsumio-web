@@ -138,6 +138,16 @@ export interface Org {
   suspendedBy?: string | null;
   /** Members the suspension deactivated — reactivation restores exactly these. */
   suspendedMemberIds?: string[] | null;
+  /**
+   * The WorkOS organization (org_…) that is this firm's SSO tenant. When set,
+   * a WorkOS login only signs into an existing member account if WorkOS
+   * authenticated the user within THIS organization (see
+   * src/lib/auth/sso-account-link.ts). Set by the platform operator when the
+   * firm's SSO connection is configured in WorkOS. null/undefined = the firm
+   * has no SSO tenant: WorkOS can only sign into accounts that were created
+   * through, and are already bound to, that exact WorkOS identity.
+   */
+  workosOrganizationId?: string | null;
 }
 
 export interface OrgStore {

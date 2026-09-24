@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { sendMail } from "@/lib/mail";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { createCronHandler } from "@/lib/api-handler";
-import { batchFetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
+import { fetchAllPagesStrict, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { env } from "@/lib/env";
@@ -61,9 +61,12 @@ function classify(
 async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
   const items: DeadlineItem[] = [];
 
-  const batch = await batchFetchPages(brainId, ["legal_case", "legal_deadline"], 10_000);
-  const cases = batch["legal_case"] ?? [];
-  const deadlinePages = batch["legal_deadline"] ?? [];
+  // Complete and strict: a failed read throws (the run reports an error)
+  // instead of a truncated list that silently leaves deadlines out.
+  const [cases, deadlinePages] = await Promise.all([
+    fetchAllPagesStrict(brainId, "legal_case"),
+    fetchAllPagesStrict(brainId, "legal_deadline"),
+  ]);
 
   // 1. Fristen aus Akten-Frontmattern (legal_case → frontmatter.deadlines[])
   for (const page of cases) {
@@ -167,6 +170,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let whatsappBlocked = 0;
   let pipelineSynced = 0;
   let pipelineCreated = 0;
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   const allowedSenders = loadAllowedSenders();
   const whatsappSendersByBrain = new Map<string, string[]>();
@@ -185,11 +190,22 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const syncResult = await syncPipelineDeadlines(brainId);
       pipelineSynced += syncResult.scanned;
       pipelineCreated += syncResult.created;
-    } catch {
+    } catch (err) {
       // Non-blocking — sync failures must not prevent the digest
+      warnings.push(
+        `Pipeline deadline sync failed for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
 
-    const items = await collectDeadlines(brainId);
+    let items: DeadlineItem[];
+    try {
+      items = await collectDeadlines(brainId);
+    } catch (err) {
+      errors.push(
+        `Deadline data unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+      continue;
+    }
     if (items.length === 0) continue;
     brainsWithDeadlines++;
 
@@ -199,6 +215,13 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     for (const user of recipients) {
       const result = await sendMail({ to: user.email, subject, text });
       if (result.sent) mailsSent++;
+      // Not configured is a deployment choice (logged, not sent); a real
+      // delivery failure is an error.
+      else if (result.error !== "mail_not_configured") {
+        errors.push(
+          `Digest mail to user ${user.id} failed for brain ${brainId}: ${result.error ?? "unknown"}`
+        );
+      }
     }
 
     // WhatsApp Fristen-Reminder an aktive WhatsApp-Anwälte
@@ -240,14 +263,22 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
   }
 
-  return Response.json({
-    ok: true,
-    brains_checked: brainsChecked,
-    brains_with_deadlines: brainsWithDeadlines,
-    mails_sent: mailsSent,
-    whatsapp_sent: whatsappSent,
-    whatsapp_blocked: whatsappBlocked,
-    pipeline_synced: pipelineSynced,
-    pipeline_created: pipelineCreated,
-  });
+  // A run with errors answers 500 so the cron log shows the failure; the
+  // body keeps the full report.
+  const ok = errors.length === 0;
+  return Response.json(
+    {
+      ok,
+      brains_checked: brainsChecked,
+      brains_with_deadlines: brainsWithDeadlines,
+      mails_sent: mailsSent,
+      whatsapp_sent: whatsappSent,
+      whatsapp_blocked: whatsappBlocked,
+      pipeline_synced: pipelineSynced,
+      pipeline_created: pipelineCreated,
+      errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    },
+    { status: ok ? 200 : 500 }
+  );
 });

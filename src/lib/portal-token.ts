@@ -86,8 +86,13 @@ export async function verifyPortalToken(
         REVOKED.add(hash);
         return null;
       }
-    } catch {
-      // Fall through to signature verification
+    } catch (err) {
+      // Fail closed: if the revocation list cannot be read, a revoked link
+      // must not open the portal. The client retries once the DB is back.
+      log.error(
+        `[portal-token] revocation check failed, refusing token: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return null;
     }
   }
 
@@ -147,8 +152,12 @@ export async function isPortalTokenRevoked(token: string): Promise<boolean> {
         REVOKED.add(hash);
         return true;
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      // Fail closed: an unreadable revocation list counts as revoked.
+      log.error(
+        `[portal-token] revocation check failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return true;
     }
   }
   return false;

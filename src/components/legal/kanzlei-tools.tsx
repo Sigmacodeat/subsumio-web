@@ -15,6 +15,7 @@ import { useMe } from "@/lib/queries/auth";
 import { interpretCreditScore } from "@/lib/credit-check";
 import { generateRubrum, type RubrumParty } from "@/lib/letterhead-rubrum";
 import { validateFaxNumber, formatFaxNumber } from "@/lib/fax-gateway";
+import { isRetiredApiPath } from "@/lib/retired-routes";
 
 const CAPABILITIES = [
   {
@@ -607,7 +608,9 @@ export function KanzleiTools() {
   // Austrian firms price court fees and fees in the invoice dialog
   // (RATG/AHK/GGG); for them the card would only answer 410.
   const { data: me } = useMe();
-  const showGermanCalculators = me?.user?.jurisdiction === "DE";
+  // Retired for the pilot, the API answers 410 for everyone — no card then.
+  const showGermanCalculators =
+    me?.user?.jurisdiction === "DE" && !isRetiredApiPath("/api/fachrechner");
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
       <PageHeader

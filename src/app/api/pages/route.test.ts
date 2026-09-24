@@ -321,3 +321,50 @@ describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("POST /api/pages — conflict check covers additional opponents", () => {
+  let checkedNames: string[];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    checkedNames = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (String(url).endsWith("/api/legal/conflict-check")) {
+          const { name } = JSON.parse(String(init?.body ?? "{}")) as { name: string };
+          checkedNames.push(name);
+          const matches =
+            name === "Dritte Beklagte GmbH"
+              ? [{ name: "Dritte Beklagte GmbH", slug: "legal/cases/alt", type: "client" }]
+              : [];
+          return new Response(JSON.stringify({ matches }), { status: 200 });
+        }
+        return new Response(JSON.stringify({ slug: "legal/cases/neu", success: true }), {
+          status: 200,
+        });
+      })
+    );
+  });
+
+  it("checks every additional opponent and blocks on a hit only there", async () => {
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Muster gegen Beispiel",
+      type: "legal_case",
+      frontmatter: {
+        client_name: "Muster AG",
+        opponent_name: "Beispiel GmbH",
+        additional_opponents: [
+          { name: "Dritte Beklagte GmbH", rolle: "nebenbeklagter" },
+          { name: "Beispiel GmbH", rolle: "nebenbeklagter" },
+        ],
+      },
+    });
+    expect(checkedNames).toEqual(["Muster AG", "Beispiel GmbH", "Dritte Beklagte GmbH"]);
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as { conflictWarning: { matches: Array<{ name: string }> } };
+    expect(body.conflictWarning.matches.map((m) => m.name)).toEqual(["Dritte Beklagte GmbH"]);
+  });
+});

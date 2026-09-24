@@ -288,6 +288,21 @@ describe("middleware IP allow-listing (G8)", () => {
     });
   });
 
+  it("denies requests without a determinable client IP when allowlist is set", async () => {
+    await withEnv({ SUBSUMIO_IP_ALLOWLIST: "10.0.0.1" }, async () => {
+      const res = await run("/dashboard");
+      expect(res.status).toBe(403);
+      await expect(res.json()).resolves.toMatchObject({ error: "ip_not_allowed" });
+    });
+  });
+
+  it("does not require a client IP when no allowlist is set", async () => {
+    await withEnv({ SUBSUMIO_IP_ALLOWLIST: undefined }, async () => {
+      const res = await run("/dashboard");
+      expect(res.status).not.toBe(403);
+    });
+  });
+
   it("prioritizes x-real-ip over x-forwarded-for", async () => {
     await withEnv({ SUBSUMIO_IP_ALLOWLIST: "10.0.0.1" }, async () => {
       const res = await run("/dashboard", {

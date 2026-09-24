@@ -379,7 +379,7 @@ async function main() {
 
   // Detail-Report für kritische Normen
   const critical = results.filter((r) => r.norm === "§ 6 AHG" || r.norm === "§ 1489 ABGB");
-  console.log("\n── KRITISCHE NORMEN (Toni Gericht) ──");
+  console.log("\n── KRITISCHE NORMEN (Forensic Case A) ──");
   for (const c of critical) {
     const icon = c.status === "OK" ? "✅" : "⚠️";
     console.log(`  ${icon} ${c.norm}: word_count=${c.word_count}, fulltext=${c.has_fulltext}`);

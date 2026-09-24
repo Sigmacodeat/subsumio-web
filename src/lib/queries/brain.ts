@@ -74,6 +74,9 @@ export interface CockpitData {
   stats: BrainStats | null;
   recent: RecentQuery[];
   pages: Record<string, BrainPage[]>;
+  /** A page list failed to load — counts may be incomplete. */
+  degraded?: boolean;
+  failed_types?: string[];
 }
 
 export function useCockpitData(opts?: { types?: string; recentLimit?: number; enabled?: boolean }) {

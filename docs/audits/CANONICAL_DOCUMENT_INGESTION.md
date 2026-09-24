@@ -38,7 +38,7 @@ Old case-specific scripts which inserted preprocessed OCR text directly as
 pages were removed. Such scripts bypass extraction and cannot prove ingestion
 quality.
 
-The Toni ground-truth suite under `tests/` remains useful as an OCR/output
+The Forensic Case A ground-truth suite under `tests/` remains useful as an OCR/output
 regression benchmark, but is explicitly not an ingestion E2E test. The former
-`legal-pipeline-e2e-toni-gericht` simulation and duplicate server-side copies
+`legal-pipeline-e2e-forensic-case-a` simulation and duplicate server-side copies
 were removed to prevent that distinction from being lost again.

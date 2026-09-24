@@ -19,6 +19,44 @@ export interface ContactRef {
   company?: string;
 }
 
+/**
+ * Every party of a matter the conflict check (§ 43a BRAO / § 10 RL-BA) must
+ * cover: the client, the main opponent and each additional opponent. Checking
+ * only `client_name` / `opponent_name` let a conflict with a second defendant
+ * slip through. Names are trimmed and de-duplicated (case-insensitive) per role.
+ */
+export function matterConflictParties(
+  fm: Record<string, unknown> | undefined | null
+): ContactRef[] {
+  const refs: ContactRef[] = [];
+  const seen = new Set<string>();
+  const push = (name: unknown, role: "client" | "opponent", slug?: unknown) => {
+    if (typeof name !== "string" || !name.trim()) return;
+    const key = `${role}:${name.trim().toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    refs.push({
+      name: name.trim(),
+      role,
+      ...(typeof slug === "string" && slug ? { slug } : {}),
+    });
+  };
+  push(fm?.client_name, "client", fm?.client_slug);
+  push(fm?.opponent_name, "opponent");
+  const extra = fm?.additional_opponents;
+  if (Array.isArray(extra)) {
+    for (const o of extra) {
+      if (o && typeof o === "object") {
+        const rec = o as Record<string, unknown>;
+        push(rec.name, "opponent", rec.slug);
+      } else {
+        push(o, "opponent");
+      }
+    }
+  }
+  return refs;
+}
+
 export interface ConflictHit {
   contact: ContactRef;
   reason: string;

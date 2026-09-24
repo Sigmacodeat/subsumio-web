@@ -90,7 +90,9 @@ function buildGroundedPrompt(
     "<daten>",
     `Akte: ${caseData.title} (${caseData.caseNumber})`,
     `Rechtsgebiet: ${caseData.legalArea}`,
-    `Sachverhalt: ${caseData.facts.slice(0, 3000)}`,
+    ...(caseData.facts
+      ? [`Sachverhalt (für den Mandanten freigegeben): ${caseData.facts.slice(0, 3000)}`]
+      : []),
     "",
     "Freigegebene Dokumente:",
     docContext || "(keine Dokumente freigegeben)",
@@ -198,7 +200,9 @@ export const POST = createPublicHandler(
       {
         title: casePage.title,
         caseNumber: String(fm.case_number ?? ""),
-        facts: casePage.content ?? "",
+        // Only a summary the firm explicitly released to the client. The case
+        // page body holds internal notes and strategy — never send it here.
+        facts: typeof fm.portal_summary === "string" ? fm.portal_summary : "",
         legalArea: String(fm.legal_area ?? ""),
       },
       documents

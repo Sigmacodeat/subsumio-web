@@ -42,14 +42,16 @@ describe("KanzleiTools", () => {
     );
   });
 
-  it("keeps the German Fachrechner for German firms", () => {
+  it("hides the retired German Fachrechner for German firms too", () => {
     me.jurisdiction = "DE";
     render(
       <QueryClientProvider client={new QueryClient()}>
         <KanzleiTools />
       </QueryClientProvider>
     );
-    expect(screen.getByText("Fachrechner (DE)")).toBeInTheDocument();
+    // /api/fachrechner answers 410 while the DE surface is retired, so the
+    // card would only ever show "nicht verfügbar".
+    expect(screen.queryByText("Fachrechner (DE)")).not.toBeInTheDocument();
     me.jurisdiction = "AT";
   });
 });

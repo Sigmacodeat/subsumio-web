@@ -4,17 +4,29 @@
  * Shared by the signed-in download (`/api/legal/deadlines.ics`) and the
  * personal subscription link (`/api/calendar/<token>/fristen.ics`), so a
  * subscribed calendar and a downloaded file always contain the same entries.
- * The engine's own feed is preferred; if it has nothing, the events are built
- * from the matters in the brain.
+ *
+ * Built from the unified Fristen read model (src/lib/fristen-read-model.ts) —
+ * the same list the Fristen view shows: the engine Fristenbuch, `legal_deadline`
+ * pages and the deadlines embedded in matters, deduplicated. Only OPEN
+ * deadlines are exported. If any deadline source fails to load the feed
+ * throws (callers answer 502), so a subscribed calendar keeps the entries it
+ * already has instead of silently dropping deadlines.
  */
 
-import { ENGINE_URL } from "@/lib/engine";
+import { DEADLINE_SOURCES, loadFristenReadModel, type Frist } from "@/lib/fristen-read-model";
 
 export interface FristEntry {
+  /** Stable, unique event id (source + slug + deadline id). */
+  uid: string;
   title?: string;
   due_date?: string;
+  vorfrist_date?: string;
   case_title?: string;
   case_slug?: string;
+  law?: string;
+  is_notfrist?: boolean;
+  /** Anything but "approved" marks the entry as not yet reviewed. */
+  review_status?: string;
 }
 
 function escapeIcs(value: string): string {
@@ -28,24 +40,111 @@ function stamp(): string {
     .replace(/\.\d+Z$/, "Z");
 }
 
+function nextDay(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** FNV-1a, base 36 — short and deterministic. */
+function shortHash(value: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
+function uidPart(value: string): string {
+  return value.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Event UID from where the deadline lives, never from its date + title: two
+ * matters with a "Berufung" on the same day are two events. A matter-embedded
+ * deadline without a stored id falls back to a hash of its title and date.
+ */
+export function fristUid(f: Frist): string {
+  const container = f.source_slug ?? f.case_slug ?? "";
+  let id: string;
+  if (f.source === "legal_deadline") id = "";
+  else if (f.source === "legal_case" && f.deadline_ref?.id) id = f.deadline_ref.id;
+  else if (f.source === "fristenbuch") id = shortHash(`${f.due_date}|${f.title}`);
+  else id = shortHash(`${f.id}|${f.due_date}|${f.title}`);
+  return [f.source, uidPart(container), uidPart(id)].filter(Boolean).join("-");
+}
+
+/** Open deadlines of the read model as calendar entries. */
+export function fristenToIcsEntries(fristen: Frist[]): FristEntry[] {
+  const out: FristEntry[] = [];
+  const seen = new Set<string>();
+  for (const f of fristen) {
+    if (f.status === "done" || !f.due_date) continue;
+    if (f.review_status === "rejected") continue;
+    let uid = fristUid(f);
+    // Belt and braces: a UID collision would make a calendar drop one event.
+    if (seen.has(uid)) uid = `${uid}-${shortHash(`${f.id}|${f.title}|${f.due_date}`)}`;
+    seen.add(uid);
+    out.push({
+      uid,
+      title: f.title,
+      due_date: f.due_date.slice(0, 10),
+      vorfrist_date: f.vorfrist_date?.slice(0, 10),
+      case_title: f.case_title,
+      case_slug: f.case_slug,
+      law: f.law,
+      is_notfrist: f.is_notfrist === true,
+      review_status: f.review_status,
+    });
+  }
+  return out;
+}
+
 export function buildIcs(fristen: FristEntry[], calendarName = "Subsumio Fristen"): string {
+  const dtstamp = stamp();
   const vevents = fristen
     .filter((f) => f.due_date)
-    .map((f) => {
-      const dtstart = f.due_date!.replace(/-/g, "");
-      const summary = escapeIcs(f.title || "Frist");
-      const description = escapeIcs(f.case_title || f.case_slug || "");
-      return [
-        "BEGIN:VEVENT",
-        `UID:${dtstart}-${summary.slice(0, 20)}@subsumio`,
-        `DTSTAMP:${stamp()}`,
-        `DTSTART;VALUE=DATE:${dtstart}`,
-        `SUMMARY:${summary}`,
-        description ? `DESCRIPTION:${description}` : "",
-        "END:VEVENT",
-      ]
-        .filter(Boolean)
-        .join("\n");
+    .flatMap((f) => {
+      const due = f.due_date!.slice(0, 10);
+      const unreviewed = !!f.review_status && f.review_status !== "approved";
+      const prefix = `${unreviewed ? "[UNGEPRÜFT] " : ""}${f.is_notfrist ? "NOTFRIST: " : ""}`;
+      const title = f.title || "Frist";
+      const summary = escapeIcs(`${prefix}${title}`);
+      const description = escapeIcs(
+        [f.case_title || f.case_slug || "", f.law || ""].filter(Boolean).join(" · ")
+      );
+      const events = [
+        [
+          "BEGIN:VEVENT",
+          `UID:${f.uid}@subsumio`,
+          `DTSTAMP:${dtstamp}`,
+          `DTSTART;VALUE=DATE:${due.replace(/-/g, "")}`,
+          `DTEND;VALUE=DATE:${nextDay(due).replace(/-/g, "")}`,
+          `SUMMARY:${summary}`,
+          description ? `DESCRIPTION:${description}` : "",
+          "BEGIN:VALARM",
+          "ACTION:DISPLAY",
+          `DESCRIPTION:${escapeIcs(`Frist in 2 Tagen: ${title}`)}`,
+          "TRIGGER:-P2D",
+          "END:VALARM",
+          "END:VEVENT",
+        ],
+      ];
+      const vorfrist = f.vorfrist_date?.slice(0, 10);
+      if (vorfrist && vorfrist < due) {
+        events.push([
+          "BEGIN:VEVENT",
+          `UID:vorfrist-${f.uid}@subsumio`,
+          `DTSTAMP:${dtstamp}`,
+          `DTSTART;VALUE=DATE:${vorfrist.replace(/-/g, "")}`,
+          `DTEND;VALUE=DATE:${nextDay(vorfrist).replace(/-/g, "")}`,
+          `SUMMARY:${escapeIcs(`VORFRIST: ${title} — Fristende ${due}`)}`,
+          description ? `DESCRIPTION:${description}` : "",
+          "END:VEVENT",
+        ]);
+      }
+      return events.map((lines) => lines.filter(Boolean).join("\n"));
     })
     .join("\n");
 
@@ -67,79 +166,19 @@ export function buildIcs(fristen: FristEntry[], calendarName = "Subsumio Fristen
     .join("\n");
 }
 
-/** Deadlines from the matters in the brain (fallback when the engine feed is empty). */
-export async function collectFristenFromBrain(
-  headers: HeadersInit,
-  caseFilter?: string
-): Promise<FristEntry[]> {
-  const fristen: FristEntry[] = [];
-
-  const fetchPagesByType = async (type: string) => {
-    const url = new URL(`${ENGINE_URL}/api/pages`);
-    url.searchParams.set("type", type);
-    url.searchParams.set("limit", "300");
-    const res = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(15_000) });
-    // An unreachable brain must not look like "no deadlines": a subscribed
-    // calendar would quietly empty itself. The caller answers 502 instead, and
-    // the calendar keeps the entries it already has.
-    if (!res.ok) throw new Error(`engine pages ${res.status}`);
-    const raw = await res.json();
-    return Array.isArray(raw) ? raw : [];
-  };
-
-  const [deadlinePages, casePages] = await Promise.all([
-    fetchPagesByType("legal_deadline"),
-    fetchPagesByType("legal_case"),
-  ]);
-
-  for (const page of deadlinePages) {
-    const fm = (page as { frontmatter?: Record<string, unknown> }).frontmatter ?? {};
-    const dueDate = String(fm.due_date ?? fm.date ?? "");
-    if (!dueDate) continue;
-    if (caseFilter && fm.case_slug !== caseFilter) continue;
-    fristen.push({
-      title: String(fm.description ?? fm.title ?? "Frist"),
-      due_date: dueDate.slice(0, 10),
-      case_slug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
-      case_title: typeof fm.case_title === "string" ? fm.case_title : undefined,
-    });
-  }
-
-  for (const page of casePages) {
-    if (caseFilter && (page as { slug?: string }).slug !== caseFilter) continue;
-    const fm = ((page as { frontmatter?: Record<string, unknown> }).frontmatter ?? {}) as {
-      deadlines?: Array<{ title?: string; due_date?: string }>;
-    };
-    for (const d of fm.deadlines ?? []) {
-      if (!d.due_date) continue;
-      fristen.push({
-        title: d.title || "Frist",
-        due_date: d.due_date.slice(0, 10),
-        case_slug: (page as { slug?: string }).slug,
-        case_title: (page as { title?: string }).title,
-      });
-    }
-  }
-
-  return fristen;
-}
-
 /**
  * The calendar for one caller, as text. `headers` must already carry that
- * person's identity, so the engine applies the matter access rules.
+ * person's identity, so the engine applies the matter access rules. Throws
+ * when a deadline source is unavailable.
  */
-export async function deadlinesIcsFor(headers: HeadersInit, caseSlug?: string): Promise<string> {
-  const url = `${ENGINE_URL}/api/legal/deadlines.ics${
-    caseSlug ? `?case=${encodeURIComponent(caseSlug)}` : ""
-  }`;
-  try {
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(15_000) });
-    if (res.ok) {
-      const ics = await res.text();
-      if (ics.includes("BEGIN:VEVENT")) return ics;
-    }
-  } catch {
-    // Engine feed unavailable — fall through to the brain pages.
+export async function deadlinesIcsFor(
+  headers: Record<string, string>,
+  caseSlug?: string
+): Promise<string> {
+  const { fristen, failedSources } = await loadFristenReadModel(headers, { caseFilter: caseSlug });
+  const failed = failedSources.filter((src) => DEADLINE_SOURCES.includes(src));
+  if (failed.length > 0) {
+    throw new Error(`deadline sources unavailable: ${failed.join(", ")}`);
   }
-  return buildIcs(await collectFristenFromBrain(headers, caseSlug));
+  return buildIcs(fristenToIcsEntries(fristen));
 }

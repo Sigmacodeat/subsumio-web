@@ -7,8 +7,8 @@ vi.mock("@/lib/mail", () => ({
   sendMail: vi.fn(async () => ({ sent: true, trackingId: "track-123" })),
 }));
 
-vi.mock("@/lib/kanzlei-settings", () => ({
-  loadKanzleiSettings: vi.fn(async () => ({
+vi.mock("@/lib/kanzlei-settings-server", () => ({
+  loadKanzleiSettingsForBrain: vi.fn(async () => ({
     kanzleiName: "Test Kanzlei",
     anwaltName: "Dr. Test",
     emailFrom: "noreply@test.at",

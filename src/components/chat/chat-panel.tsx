@@ -75,6 +75,7 @@ import {
   type ToolType,
   type ToolResultDisplay,
   DESTRUCTIVE_TOOLS,
+  AUTO_EXECUTE_TOOLS,
 } from "@/components/chat/chat-types";
 import {
   generateSessionId,
@@ -563,14 +564,16 @@ export function detectToolCalls(
       params.case_slug = matterSlug;
     }
 
-    const isDestructive = DESTRUCTIVE_TOOLS.has(spec.tool);
+    // Only free, read-only lookups run without a click; paid runs, drafts and
+    // anything that changes data wait for confirmation (prompt-injection guard).
+    const needsClick = DESTRUCTIVE_TOOLS.has(spec.tool) || !AUTO_EXECUTE_TOOLS.has(spec.tool);
     calls.push({
       id: `${spec.tool}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type: spec.tool,
       label: spec.label,
       params,
-      status: isDestructive ? "pending" : "executing",
-      requiresConfirmation: isDestructive,
+      status: needsClick ? "pending" : "executing",
+      requiresConfirmation: needsClick,
     });
   }
 
@@ -627,14 +630,14 @@ async function executeToolCall(
   }
 }
 
-// Detect tools and execute non-destructive ones immediately; destructive ones stay pending
+// Detect tools and run the auto-execute allowlist immediately; everything else stays pending
 async function detectAndExecuteTools(
   answer: string,
   context: { type: ChatContextType; caseSlug?: string; pageSlug?: string }
 ): Promise<ToolCall[]> {
   const allCalls = detectToolCalls(answer, context);
 
-  // Execute non-destructive tools immediately, leave destructive ones pending
+  // Execute allowlisted read-only tools immediately, leave the rest pending
   const results = await Promise.all(
     allCalls.map((tc) =>
       tc.requiresConfirmation

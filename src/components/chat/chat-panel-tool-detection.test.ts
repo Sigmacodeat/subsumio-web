@@ -105,4 +105,43 @@ describe("detectToolCalls", () => {
     expect(calls[0].status).toBe("executing");
     expect(calls[0].requiresConfirmation).toBeFalsy();
   });
+
+  it("paid or run-starting tools from a marker wait for a click (prompt-injection guard)", () => {
+    const markers = [
+      '[TOOL:email_draft to="x@example.com" subject="Hallo"]',
+      '[TOOL:document_summary document_slug="docs/a"]',
+      '[TOOL:precedent_search query="Mietrecht"]',
+      '[TOOL:tabular_review document_slugs="docs/a" questions="Partei?"]',
+      '[TOOL:translate_text text="Hallo" target_language="en"]',
+      '[TOOL:client_update case_slug="cases/1"]',
+    ];
+    for (const marker of markers) {
+      const calls = detectToolCalls(marker, GLOBAL_CTX);
+      expect(calls, marker).toHaveLength(1);
+      for (const call of calls) {
+        expect(call.status, marker).toBe("pending");
+        expect(call.requiresConfirmation, marker).toBe(true);
+      }
+    }
+  });
+
+  it("only the free read-only allowlist auto-executes", async () => {
+    const { AUTO_EXECUTE_TOOLS, DESTRUCTIVE_TOOLS } = await import("./chat-types");
+    for (const tool of AUTO_EXECUTE_TOOLS) expect(DESTRUCTIVE_TOOLS.has(tool)).toBe(false);
+    for (const paid of [
+      "email_draft",
+      "document_summary",
+      "tabular_review",
+      "precedent_search",
+      "deadline_extract",
+      "obligation_extract",
+      "meeting_tasks",
+      "translate_text",
+      "client_update",
+      "deep_analysis",
+      "case_investigation",
+    ]) {
+      expect((AUTO_EXECUTE_TOOLS as ReadonlySet<string>).has(paid)).toBe(false);
+    }
+  });
 });

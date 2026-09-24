@@ -3,7 +3,7 @@
  *
  * The ON-Scanner extracts structured Geschäftszahlen (§ 372 GVgo):
  *   [Abteilung] [Gattungszeichen] [Aktenzahl]/[Jahr][Prüfzeichen] [- ON]
- *   e.g. "10 C 125/95t - 2", "39 St 116/22v", "4 Ob 12/24x"
+ *   e.g. "10 C 125/95t - 2", "99 St 901/22v", "4 Ob 12/24x"
  *
  * This module validates them deterministically AFTER extraction — catching
  * OCR errors (O↔0, l↔1, I↔1) and inconsistencies across ON entries before

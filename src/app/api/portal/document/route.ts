@@ -8,6 +8,7 @@ import { resolvePortalAccess } from "@/lib/portal-access";
 import { isPortalVisibleDocument } from "@/lib/portal-view";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
 
+import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
 import { logger } from "@/lib/logger";
 const log = logger("api/portal/document");
 
@@ -23,7 +24,8 @@ const querySchema = z.object({
 /**
  * A document the firm released to the client (`portal_visible`, not
  * privileged), streamed for the portal link's matter only. The original file
- * opens in the browser unless `download=1`; every access is audited.
+ * opens in the browser unless `download=1` (passive types only — anything
+ * else is always an attachment); every access is audited.
  */
 export const GET = createPublicHandler(
   {
@@ -54,14 +56,11 @@ export const GET = createPublicHandler(
       });
       if (!res.ok) return apiError("not_found", "Datei nicht gefunden", 404);
       const headers = new Headers();
-      headers.set("Content-Type", res.headers.get("content-type") || "application/octet-stream");
-      const cd = res.headers.get("content-disposition");
-      if (cd) {
-        headers.set(
-          "Content-Disposition",
-          query.download === "1" ? cd : cd.replace(/^attachment/i, "inline")
-        );
-      }
+      applyUploadedFileHeaders(headers, {
+        contentType: res.headers.get("content-type"),
+        contentDisposition: res.headers.get("content-disposition"),
+        wantInline: query.download !== "1",
+      });
       const cl = res.headers.get("content-length");
       if (cl) headers.set("Content-Length", cl);
       headers.set("Cache-Control", "private, no-store");

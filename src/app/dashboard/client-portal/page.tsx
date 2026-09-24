@@ -22,6 +22,7 @@ import { encodeSlugPath, formatDate } from "@/lib/utils";
 import { caseFrontmatter, type DeadlineEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { hostedRoomsToSpaces, type SharedSpaceCard } from "@/lib/data-room-spaces";
 
 interface ClientCase {
   slug: string;
@@ -34,15 +35,7 @@ interface ClientCase {
   messages: number;
 }
 
-interface SharedSpace {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string;
-  status: string;
-  document_count: number;
-  expires_at?: string;
-}
+type SharedSpace = SharedSpaceCard;
 
 interface FeedbackSummary {
   total: number;
@@ -110,11 +103,10 @@ export default function ClientPortalPage() {
         });
       setCases(loaded);
 
-      // Load shared spaces
-      const spacesRes = await fetch("/api/shared-spaces", { signal: AbortSignal.timeout(15_000) });
+      // Data rooms the firm hosts for its matters.
+      const spacesRes = await fetch("/api/data-rooms", { signal: AbortSignal.timeout(15_000) });
       if (spacesRes.ok) {
-        const spacesData = await spacesRes.json();
-        setSharedSpaces(spacesData.data || []);
+        setSharedSpaces(hostedRoomsToSpaces(await spacesRes.json()));
       }
 
       // Mandanten-Feedback (NPS) — bewusst fehlertolerant: ohne Bewertungen

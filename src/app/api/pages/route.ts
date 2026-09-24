@@ -6,6 +6,7 @@ import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
+import { matterConflictParties } from "@/lib/contact-conflict";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 import {
   GUARD_READ_FAILED,
@@ -86,9 +87,8 @@ async function checkLegalCaseConflicts(
   headers: Record<string, string>,
   frontmatter: Record<string, unknown> | undefined
 ): Promise<{ checked: boolean; matches?: ConflictMatch[] }> {
-  const namesToCheck = [frontmatter?.client_name, frontmatter?.opponent_name].filter(
-    (n): n is string => typeof n === "string" && n.trim().length > 0
-  );
+  // Client, main opponent and every additional opponent (same name once).
+  const namesToCheck = [...new Set(matterConflictParties(frontmatter).map((party) => party.name))];
   if (namesToCheck.length === 0) return { checked: true };
 
   const conflicts: ConflictMatch[] = [];

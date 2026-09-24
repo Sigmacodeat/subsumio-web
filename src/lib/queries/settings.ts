@@ -16,6 +16,26 @@ export class ApiGetError extends Error {
   }
 }
 
+/**
+ * JSON body of a mutation response, or an Error carrying the server's message.
+ * `.then((r) => r.json())` alone resolved on 4xx/5xx, so a failed change looked
+ * like a success in the UI.
+ */
+export async function jsonOrThrow<T = unknown>(res: Response): Promise<T> {
+  const body = (await res.json().catch(() => null)) as
+    | (T & { message?: string; error?: string | { message?: string } })
+    | null;
+  if (!res.ok) {
+    const err = body?.error;
+    const message =
+      body?.message ??
+      (typeof err === "string" ? err : err?.message) ??
+      `Anfrage fehlgeschlagen (HTTP ${res.status})`;
+    throw new Error(message);
+  }
+  return body as T;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, { signal: AbortSignal.timeout(30_000) });
 
@@ -515,7 +535,7 @@ export function useAddAclGroupMember() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: input.userId }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
   });
 }
@@ -529,7 +549,7 @@ export function useRemoveAclGroupMember() {
         {
           method: "DELETE",
         }
-      ).then((r) => r.json()),
+      ).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
   });
 }
@@ -571,7 +591,7 @@ export function useRemovePagePermission() {
         {
           method: "DELETE",
         }
-      ).then((r) => r.json()),
+      ).then((r) => jsonOrThrow(r)),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["acls", "permissions", variables.slug] });
     },

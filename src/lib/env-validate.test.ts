@@ -15,7 +15,7 @@ const REQUIRED = [
 
 describe("validateEnv", () => {
   const snapshot: Record<string, string | undefined> = {};
-  const keys = [...REQUIRED, "NODE_ENV"];
+  const keys = [...REQUIRED, "NODE_ENV", "NEXT_PUBLIC_SENTRY_DSN"];
 
   beforeEach(() => {
     for (const k of keys) snapshot[k] = process.env[k];
@@ -54,5 +54,13 @@ describe("validateEnv", () => {
     const result = validateEnv();
     expect(result.ok).toBe(true);
     expect(result.warnings.length).toBeGreaterThan(0);
+  });
+
+  it("checks the Sentry DSN name the code actually reads", () => {
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "development";
+    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+    const result = validateEnv();
+    expect(result.warnings).toContain("NEXT_PUBLIC_SENTRY_DSN not set (ok for dev)");
   });
 });

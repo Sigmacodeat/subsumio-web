@@ -37,6 +37,13 @@ import { env } from "@/lib/env";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
 import { LEGACY_TAXUMIO_HOSTS, SUBSUMIO_SITE_URL } from "@/lib/brand";
 import { isOpsHost } from "@/lib/auth/platform-operator";
+// Retired pilot features live in one list shared with the navigation, so no
+// menu entry points at a route the middleware redirects away.
+import {
+  RETIRED_PILOT_API_PREFIXES,
+  RETIRED_PILOT_DASHBOARD_PREFIXES,
+  matchesRoutePrefix,
+} from "@/lib/retired-routes";
 
 // --- CSP nonce generation ---
 function generateCspNonce(): string {
@@ -139,7 +146,9 @@ function getTrustedProxyHops(): number {
 }
 
 function getClientIp(req: NextRequest): string | undefined {
-  // x-real-ip is set by the outermost trusted load balancer. Prefer it when present.
+  // x-real-ip is set by the outermost trusted reverse proxy, which must
+  // OVERWRITE any client-supplied value (Caddy: `header_up X-Real-IP
+  // {remote_host}`). Prefer it when present.
   const realIp = req.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp;
 
@@ -303,13 +312,6 @@ const AUSTRIA_PUBLIC_ALIASES = new Set([
   "/whatsapp",
 ]);
 
-const RETIRED_PILOT_DASHBOARD_PREFIXES = [
-  "/dashboard/bea",
-  "/dashboard/datev-export",
-  "/dashboard/datev-direct",
-  "/dashboard/fao-tracking",
-  "/dashboard/cost-calculator",
-] as const;
 // Parked on 2026-09-17: areas that are not part of a lawyer's daily work and
 // were never verified in practice. Source lives in src/app/_archive/parked,
 // manifest in docs/archive/PARKED_AREAS_2026-09-17.md.
@@ -332,21 +334,6 @@ const PARKED_DASHBOARD_REDIRECTS: ReadonlyArray<readonly [string, string]> = [
   // was scaffolded for lives on the canonical /dashboard/time page instead.
   ["/dashboard/time-tracking", "/dashboard/time"],
 ];
-const RETIRED_PILOT_API_PREFIXES = [
-  "/api/bea",
-  "/api/datev",
-  "/api/datev-direct",
-  "/api/legal/rvg",
-  "/api/pkh-beratungshilfe",
-  "/api/fachrechner",
-  "/api/fao-tracking",
-  "/api/court-directory",
-  "/api/court-analytics",
-] as const;
-
-function matchesRoutePrefix(pathname: string, prefix: string): boolean {
-  return pathname === prefix || pathname.startsWith(`${prefix}/`);
-}
 
 export function austriaCanonicalPath(pathname: string): string | null {
   for (const prefix of RETIRED_PUBLIC_LOCALE_PREFIXES) {
@@ -421,8 +408,12 @@ export async function middleware(req: NextRequest) {
   // Block non-whitelisted IPs from all paths except health endpoints.
   const allowlist = getIpAllowlist();
   if (allowlist.length > 0 && !HEALTH_PATHS.has(pathname)) {
+    // Fail closed: with an allowlist configured, a request whose client IP
+    // cannot be determined is denied. X-Real-IP is authoritative only because
+    // the reverse proxy overwrites it with the TCP peer address
+    // (server/deploy/netcup/Caddyfile: header_up X-Real-IP {remote_host}).
     const clientIp = getClientIp(req) ?? "";
-    if (clientIp && !ipInAllowlist(clientIp, allowlist)) {
+    if (!clientIp || !ipInAllowlist(clientIp, allowlist)) {
       return applyCsp(
         NextResponse.json(
           { error: "ip_not_allowed", message: "Access denied: IP not in allowlist." },

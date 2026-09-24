@@ -1,6 +1,15 @@
 # Subsumio cron jobs — triggered by supercronic inside the Docker stack.
 # Each job calls the Next.js /api/cron/* endpoint with CRON_SECRET auth.
 # Times are in UTC (server default). Adjust for CET/CEST if needed.
+#
+# Fristen-critical jobs (deadlines digest, deadline-reminders, deadline-alerts)
+# and the health monitor run WITHOUT `|| true`: `-f` makes curl exit non-zero
+# on an HTTP error (the routes answer 5xx when a run had errors), `--max-time`
+# bounds a hung request, and supercronic then logs the job as FAILED with the
+# exit code instead of a silent success. On success each can ping an optional
+# dead-man's-switch URL (CRON_HEARTBEAT_URL_<JOB>, e.g. a Healthchecks.io or
+# Uptime Kuma push URL) — unset = no ping. A failed ping is logged, never
+# turns a successful job into a failure. See RUNBOOK.md "Cron-Überwachung".
 
 # ── 02:45 UTC (04:45 CEST) — Statute currency check ──
 # Checks DB statute version_date against live sources (RIS-OGD, buzer.de, OpenCaseLaw).
@@ -32,7 +41,7 @@
 # pages (A1), then collects all deadlines (legal_case + legal_deadline) and sends
 # a digest email per brain. Includes Vorfrist section (B3) and pipeline_synced
 # count in the response JSON.
-0 6 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadlines || true
+0 6 * * *      curl -fsS --max-time 300 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadlines && { [ -z "${CRON_HEARTBEAT_URL_DEADLINES}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_DEADLINES}" || echo "heartbeat ping failed: deadlines" >&2; }
 
 # ── 06:30 UTC (08:30 CEST) — Daily briefing ──
 30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/daily-briefing || true
@@ -41,7 +50,7 @@
 # Sends staged email/WhatsApp/push reminders for approaching deadlines.
 # Tracks reminder_sent_at + reminder_stages_sent per deadline in frontmatter.
 # Also sends Vorfrist-specific reminders (B3) when vorfrist_date is reached.
-0 7 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-reminders || true
+0 7 * * *      curl -fsS --max-time 600 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-reminders && { [ -z "${CRON_HEARTBEAT_URL_DEADLINE_REMINDERS}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_DEADLINE_REMINDERS}" || echo "heartbeat ping failed: deadline-reminders" >&2; }
 
 # Trial ending in 3 days — one mail per account, for trials with no plan chosen
 15 7 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/trial-reminder || true
@@ -117,7 +126,7 @@
 # Checks CRON_SECRET, database connectivity, deadline dedup table, and engine
 # reachability. External monitoring (Uptime Kuma / Better Stack) should also
 # poll /api/cron/health directly for HTTP 200 (all ok) vs 503 (degraded).
-*/10 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/health || true
+*/10 * * * *   curl -fsS --max-time 120 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/health && { [ -z "${CRON_HEARTBEAT_URL_HEALTH}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_HEALTH}" || echo "heartbeat ping failed: health" >&2; }
 
 # ── 04:00 UTC (06:00 CEST) — Autopilot (autonomous case processing) ──
 # Runs BEFORE the rundown. Processes unmatched intake items per AutoPilotPolicy:
@@ -156,7 +165,7 @@
 
 # ── Every 30 minutes — Deadline alerts (realtime escalation) ──
 # Broadcasts realtime alerts for deadlines crossing urgency thresholds.
-*/30 * * * *   curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-alerts || true
+*/30 * * * *   curl -fsS --max-time 300 -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-alerts && { [ -z "${CRON_HEARTBEAT_URL_DEADLINE_ALERTS}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_DEADLINE_ALERTS}" || echo "heartbeat ping failed: deadline-alerts" >&2; }
 
 # ── Every hour — Time tracking inactivity check ──
 0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-tracking/inactivity-check || true

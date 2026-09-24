@@ -394,6 +394,35 @@ interface ParsedMultipart {
   file?: { filename: string; data: Buffer; mimeType: string };
 }
 
+/**
+ * Refuse to serve the web API without a key in production. Without
+ * SUBSUMIO_WEB_API_KEY the API-key gate below is open (every tenant's data
+ * reachable by anyone who can reach the engine port) and identity-token HMAC
+ * verification cannot work. Development and tests keep running keyless; an
+ * operator who deliberately runs an open engine in production (e.g. behind a
+ * private network with its own auth) must say so with
+ * SUBSUMIO_ALLOW_OPEN_WEB_API=1.
+ */
+export function assertWebApiKeyConfigured(
+  apiKey: string | undefined,
+  env: Record<string, string | undefined> = process.env
+): void {
+  if (apiKey) return;
+  if (env.NODE_ENV !== "production") return;
+  if (env.SUBSUMIO_ALLOW_OPEN_WEB_API === "1" || env.SUBSUMIO_ALLOW_OPEN_WEB_API === "true") {
+    console.warn(
+      "[web-api] WARNING: SUBSUMIO_WEB_API_KEY is not set and SUBSUMIO_ALLOW_OPEN_WEB_API is on — " +
+        "the web API accepts unauthenticated requests."
+    );
+    return;
+  }
+  throw new Error(
+    "[web-api] Refusing to start: NODE_ENV=production but SUBSUMIO_WEB_API_KEY is not set, " +
+      "so the web API would accept unauthenticated requests. Set SUBSUMIO_WEB_API_KEY " +
+      "(the same value as in the web app), or set SUBSUMIO_ALLOW_OPEN_WEB_API=1 to run open on purpose."
+  );
+}
+
 function requireWebApiKey(apiKey: string | undefined) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!apiKey) return next();
@@ -2452,6 +2481,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     process.env.SUBSUMIO_WEB_API_KEY ??
     process.env.GBRAIN_WEB_API_KEY ??
     process.env.SIGMABRAIN_WEB_API_KEY;
+  // Fail closed in production: no key → the engine does not start (throws
+  // out of serve-http's startup, the process exits with the message).
+  assertWebApiKeyConfigured(apiKey);
   const guard = requireWebApiKey(apiKey);
   const requireTenant = tenantModeRequired(options);
   const config = loadConfig() || { engine: "pglite" as const };
@@ -3633,8 +3665,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     // P0-SEC-001: Engine-side prompt sanitization — strip injection patterns
     // before the query enters the think pipeline. Direct callers (CLI, MCP)
     // bypass the web-app's sanitizeObjectStrings layer.
-    const { sanitizePromptInput } = await import("../core/think/sanitize.ts");
-    const { text: query } = sanitizePromptInput(rawQuery, 20_000);
+    const { sanitizePromptInput, neutralizeToolMarkers } =
+      await import("../core/think/sanitize.ts");
+    // The question carries pasted/attached document text and chat history:
+    // copilot `[TOOL:…]` markers in it are neutralised so they can't be echoed.
+    const query = neutralizeToolMarkers(sanitizePromptInput(rawQuery, 20_000).text);
     // Optional caller instructions (persona / tool docs) → system prompt, not
     // the retrieval query. Same sanitization as the question.
     const rawInstructions = typeof body?.instructions === "string" ? body.instructions : "";
@@ -4610,6 +4645,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         "Content-Disposition",
         `attachment; filename="${stored.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`
       );
+      // The stored Content-Type is client-declared at upload time: never let
+      // a browser sniff or render it as an active document on this origin.
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
       res.end(stored.data);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
@@ -4652,11 +4691,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const sourceId = requestSourceId(req);
       const { purgeStoredFilesForSource } = await import("../core/file-store.ts");
       const originalsDeleted = await purgeStoredFilesForSource(sourceId, ctx(req).config.storage);
-      const result = await engine.executeRaw<{ id: number }>(
-        "DELETE FROM pages WHERE source_id = $1 RETURNING id",
-        [sourceId]
-      );
-      res.json({ ok: true, originals_deleted: originalsDeleted, pages_deleted: result.length });
+      // Pages plus derived data (search cache, background runs with their
+      // subagent transcripts, ingest log) — Art. 17 DSGVO covers all of it.
+      const { purgeSourceData } = await import("../core/source-data-purge.ts");
+      const purged = await purgeSourceData(engine, sourceId);
+      res.json({
+        ok: true,
+        originals_deleted: originalsDeleted,
+        pages_deleted: purged.pages,
+        query_cache_deleted: purged.query_cache,
+        jobs_deleted: purged.minion_jobs,
+        ingest_log_deleted: purged.ingest_log,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "source_data_purge_failed", message: msg });
@@ -10573,7 +10619,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const { getRun } = await import("../core/legal/case-investigation.ts");
-      const found = getRun(runId);
+      // Tenant-bound: a run of another source does not exist for this caller.
+      const found = getRun(runId, requestSourceId(req));
       // A run of a matter the caller may not see does not exist for them.
       const result = found && isMatterScoped(req.matterScope, found.case_slug) ? found : null;
       if (!result) {
@@ -10610,15 +10657,28 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           typeof body.review_reason === "string" ? body.review_reason : undefined;
 
         const { reviewContradiction, getRun } = await import("../core/legal/case-investigation.ts");
-        const run = getRun(runId);
-        if (run) {
-          await assertSlugMatterScope(engine, req, run.case_slug);
-          assertMatterWritable(req, run.case_slug, run.case_slug);
+        const sourceId = requestSourceId(req);
+        // Tenant-bound: another source's run is not found (and not modified).
+        const run = getRun(runId, sourceId);
+        if (!run) {
+          res.status(404).json({
+            error: "run_not_found",
+            message: `Run ${runId} not found or expired.`,
+          });
+          return;
         }
-        const result = await reviewContradiction(engine, runId, id, {
-          review_status: reviewStatus as "accepted" | "dismissed" | "no_contradiction",
-          ...(reviewReason ? { review_reason: reviewReason } : {}),
-        });
+        await assertSlugMatterScope(engine, req, run.case_slug);
+        assertMatterWritable(req, run.case_slug, run.case_slug);
+        const result = await reviewContradiction(
+          engine,
+          runId,
+          id,
+          {
+            review_status: reviewStatus as "accepted" | "dismissed" | "no_contradiction",
+            ...(reviewReason ? { review_reason: reviewReason } : {}),
+          },
+          sourceId
+        );
         res.json(result);
       } catch (e) {
         legalErr(res, "case_investigation_review", e);

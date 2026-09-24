@@ -11,7 +11,8 @@
  * Covered rules:
  *   - Austrian public holidays (fixed + Easter-derived via Gauss/Butcher)
  *   - Fristbeginn und -ende nach §§ 124–126 ZPO (Tages-/Wochen-/Monatsfristen,
- *     Ende an Samstag/Sonntag/Feiertag → nächster Werktag)
+ *     Ende an Samstag/Sonntag/Feiertag/Karfreitag → nächster Werktag;
+ *     Karfreitag nach § 1 FrHemmG in allen Verfahrensregimen)
  *   - § 32 f. AVG für Verwaltungsverfahren (inkl. Karfreitag + 24.12. als
  *     fristhemmende End-Tage nach § 33 Abs 2 AVG)
  *   - Verhandlungsfreie Zeit § 222 ZPO (15.7.–17.8., 24.12.–6.1.) mit
@@ -135,7 +136,8 @@ export function istFeiertag(iso: string): boolean {
   return feiertagSet(parseISODate(iso).getUTCFullYear()).has(iso);
 }
 
-/** Karfreitag (seit 2019 kein gesetzlicher Feiertag; § 33 Abs 2 AVG zählt ihn dennoch). */
+/** Karfreitag (seit 2019 kein gesetzlicher Feiertag; § 1 FrHemmG und § 33 Abs 2 AVG
+ *  schieben ein darauf fallendes Fristende dennoch auf den nächsten Werktag). */
 export function istKarfreitag(iso: string): boolean {
   return iso === addDays(osterSonntag(parseISODate(iso).getUTCFullYear()), -2);
 }
@@ -286,24 +288,31 @@ function fristendeRoh(ausloeser: string, dauer: FristDauer): string {
 }
 
 /** End-Tag-Verschiebung: Fällt das Fristende auf Sa/So/Feiertag (§ 126 Abs 2
- *  ZPO) — im AVG-Regime zusätzlich Karfreitag und 24.12. (§ 33 Abs 2 AVG) —
- *  endet die Frist erst mit dem nächsten Werktag. */
+ *  ZPO) oder den Karfreitag (§ 1 FrHemmG — gilt für alle verfahrensrechtlichen
+ *  Fristen, also ZPO, StPO, AVG und Verwaltungsgerichtsbarkeit) — im
+ *  AVG-Regime zusätzlich der 24.12. (§ 33 Abs 2 AVG) — endet die Frist erst
+ *  mit dem nächsten Werktag. Materiellrechtliche Fristen verschieben nicht. */
 function schiebeEndTag(iso: string, regime: FristRegime, hinweise: string[]): string {
   if (regime === "materiell") return iso; // §§ 902 f. ABGB: keine Verschiebung
   let d = iso;
   const istDiesNon = (x: string): boolean => {
     if (!istWerktag(x)) return true;
-    if (regime === "avg" && (istKarfreitag(x) || x.endsWith("-12-24"))) return true;
+    // § 1 FrHemmG: Karfreitag hemmt das Fristende in jedem Verfahrensregime.
+    if (istKarfreitag(x)) return true;
+    if (regime === "avg" && x.endsWith("-12-24")) return true;
     return false;
   };
+  let karfreitagImLauf = false;
   while (istDiesNon(d)) {
+    if (istKarfreitag(d)) karfreitagImLauf = true;
     d = addDays(d, 1);
   }
   if (d !== iso) {
+    const frHemmG = karfreitagImLauf ? ", § 1 FrHemmG" : "";
     hinweise.push(
       regime === "avg"
-        ? `Fristende ${iso} fällt auf Sa/So/Feiertag/Karfreitag/24.12. — verschoben auf ${d} (§ 33 Abs 2 AVG)`
-        : `Fristende ${iso} fällt auf Sa/So/Feiertag — verschoben auf ${d} (§ 126 Abs 2 ZPO)`
+        ? `Fristende ${iso} fällt auf Sa/So/Feiertag/Karfreitag/24.12. — verschoben auf ${d} (§ 33 Abs 2 AVG${frHemmG})`
+        : `Fristende ${iso} fällt auf Sa/So/Feiertag${karfreitagImLauf ? "/Karfreitag" : ""} — verschoben auf ${d} (§ 126 Abs 2 ZPO${frHemmG})`
     );
   }
   return d;

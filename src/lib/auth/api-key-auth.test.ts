@@ -30,11 +30,34 @@ vi.mock("@/lib/auth/store", () => ({
           role: "user",
         };
       }
+      if (id === "user-deactivated") {
+        return {
+          id,
+          email: "d@example.com",
+          brainId: "brain-d",
+          orgId: null,
+          role: "user",
+          deactivatedAt: "2026-01-01T00:00:00Z",
+        };
+      }
+      if (id === "user-suspended-firm") {
+        return {
+          id,
+          email: "s@example.com",
+          brainId: "brain-s",
+          orgId: "org-suspended",
+          role: "user",
+        };
+      }
       return null;
     }),
   }),
   getOrgStore: () => ({
-    getById: vi.fn(async () => null),
+    getById: vi.fn(async (id: string) =>
+      id === "org-suspended"
+        ? { id, brainId: "firm-s", ownerId: "x", suspendedAt: "2026-01-01T00:00:00Z" }
+        : null
+    ),
   }),
 }));
 
@@ -154,4 +177,26 @@ describe("verifyApiKey", () => {
 
     expect(await verifyApiKey("Bearer sk_live_def456")).toBeNull();
   });
+
+  test.each(["user-deactivated", "user-suspended-firm"])(
+    "returns null for a blocked account (%s), same rule as sessions",
+    async (ownerId) => {
+      const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
+        mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+      };
+      mockStore.findByHash.mockResolvedValue({
+        id: "key-3",
+        ownerId,
+        name: "Zapier",
+        prefix: "sk_live_ghi78",
+        secretHash: "hash_sk_live_ghi789",
+        scopes: ["read"],
+        active: true,
+        createdAt: "2024-01-01T00:00:00Z",
+        createdBy: "test@example.com",
+      });
+      expect(await verifyApiKey("Bearer sk_live_ghi789")).toBeNull();
+      expect(mockStore.update).not.toHaveBeenCalled();
+    }
+  );
 });

@@ -226,7 +226,11 @@ export async function scanCorpusFile(
 
 // ── Corpus diff ───────────────────────────────────────────────────────
 
-const DIFF_STORE = path.join(process.cwd(), ".source-registry-diff");
+// Runtime state, not source: lives in the persistent data dir (web-data
+// volume in production) and is git-ignored in a checkout.
+const DIFF_STORE = process.env.SUBSUMIO_DATA_DIR
+  ? path.join(process.env.SUBSUMIO_DATA_DIR, "source-registry-diff")
+  : path.join(process.cwd(), ".source-registry-diff");
 
 export async function loadPreviousHashes(): Promise<Record<string, string>> {
   try {

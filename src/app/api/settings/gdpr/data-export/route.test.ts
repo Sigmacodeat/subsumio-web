@@ -15,7 +15,11 @@ vi.mock("@/lib/encryption", () => ({ decrypt: async () => null }));
 vi.mock("@/lib/api-key-store", () => ({
   getApiKeyStore: () => ({ listByOwner: async () => [] }),
 }));
-const listPages = vi.fn(async () => [{ slug: "cases/other-client", title: "Fremde Akte" }]);
+const listPages = vi.fn(
+  async (_opts?: { limit?: number; offset?: number }): Promise<unknown[]> => [
+    { slug: "cases/other-client", title: "Fremde Akte" },
+  ]
+);
 vi.mock("@/lib/server-brain", () => ({ createServerBrainClient: () => ({ listPages }) }));
 let storedUser: Record<string, unknown> = {};
 vi.mock("@/lib/auth/store", () => ({
@@ -67,5 +71,28 @@ describe("GET /api/settings/gdpr/data-export", () => {
     const res = await GET(new NextRequest("http://localhost:3000/api/settings/gdpr/data-export"));
     const body = await res.json();
     expect(body.brainPages).toHaveLength(1);
+  });
+
+  it("pages through the whole personal brain instead of stopping at one batch", async () => {
+    storedUser = {
+      id: "u_solo",
+      email: "solo@example.com",
+      role: "admin",
+      createdAt: "2026-01-01",
+    };
+    vi.mocked(requireEngineContext).mockResolvedValue(ctxFor(storedUser) as any);
+    const total = 450;
+    listPages.mockImplementation(async (opts) => {
+      const offset = opts?.offset ?? 0;
+      const limit = opts?.limit ?? 50;
+      return Array.from({ length: Math.max(0, Math.min(limit, total - offset)) }, (_, i) => ({
+        slug: `notes/n-${offset + i}`,
+      }));
+    });
+    const res = await GET(new NextRequest("http://localhost:3000/api/settings/gdpr/data-export"));
+    const body = await res.json();
+    expect(body.brainPages).toHaveLength(total);
+    expect(new Set(body.brainPages.map((p: { slug: string }) => p.slug)).size).toBe(total);
+    expect(listPages).toHaveBeenCalledTimes(3);
   });
 });

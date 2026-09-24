@@ -205,13 +205,46 @@ describe("berechneFrist — AVG-Regime", () => {
     expect(r.fristende).toBe("2026-12-28");
   });
 
-  it("ZPO-Regime verschiebt Karfreitag NICHT", () => {
+  it("ZPO-Regime verschiebt Karfreitag ebenfalls (§ 1 FrHemmG)", () => {
+    // 2 Wochen ab Fr 2026-03-20 → Karfreitag 3.4. → Sa/So → Ostermontag 6.4. → Di 7.4.
     const r = berechneFrist({
       ausloeser: "2026-03-20",
       dauer: { wochen: 2 },
       regime: "zpo",
     });
-    expect(r.fristende).toBe("2026-04-03"); // Karfreitag ist im ZPO-Regime Werktag
+    expect(r.fristendeRoh).toBe("2026-04-03");
+    expect(r.fristende).toBe("2026-04-07");
+    expect(r.hinweise.some((h) => h.includes("FrHemmG"))).toBe(true);
+  });
+
+  it("StPO-Regime verschiebt Karfreitag (§ 1 FrHemmG)", () => {
+    // 2 Wochen ab Fr 2027-03-12 → Karfreitag 2027-03-26 → Ostermontag 29.3. → Di 30.3.
+    const r = berechneFrist({
+      ausloeser: "2027-03-12",
+      dauer: { wochen: 2 },
+      regime: "stpo",
+    });
+    expect(r.fristendeRoh).toBe("2027-03-26");
+    expect(r.fristende).toBe("2027-03-30");
+  });
+
+  it("ZPO-Regime verschiebt 24.12. NICHT (nur § 33 Abs 2 AVG)", () => {
+    const r = berechneFrist({
+      ausloeser: "2026-12-10",
+      dauer: { wochen: 2 },
+      regime: "zpo",
+    });
+    // 24.12. Do → bleibt (Christtag erst am 25.)
+    expect(r.fristende).toBe("2026-12-24");
+  });
+
+  it("materiellrechtliche Frist auf Karfreitag bleibt (§§ 902 f. ABGB)", () => {
+    const r = berechneFrist({
+      ausloeser: "2025-04-03",
+      dauer: { jahre: 1 },
+      regime: "materiell",
+    });
+    expect(r.fristende).toBe("2026-04-03");
   });
 });
 

@@ -57,8 +57,13 @@ import type { DashboardKey } from "@/content/dashboard";
 import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
 import { AiDeadlineSuggestions } from "@/components/legal/AiDeadlineSuggestions";
 import { useMe } from "@/lib/queries/auth";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
+import {
+  deadlineWriteTarget,
+  patchEmbeddedDeadline,
+  type EmbeddedDeadlineRef,
+} from "@/lib/deadline-row-actions";
 
 interface DeadlineItem {
   id: string;
@@ -83,6 +88,11 @@ interface DeadlineItem {
   ervZustelldatum?: string;
   /** Stand-in while the responsible lawyer is away (Urlaubsvertretung). */
   deputy?: string;
+  /**
+   * Set for a deadline inside a matter's `deadlines[]` (source `legal_case`):
+   * `slug` is then the MATTER, and every write must target this entry.
+   */
+  embedded?: EmbeddedDeadlineRef;
 }
 
 const TYPE_CONFIG: Record<string, DashboardKey> = {
@@ -222,6 +232,8 @@ function DeadlineBadges({
   return <div className="flex flex-col items-start gap-1">{badges}</div>;
 }
 
+const RECHTSRAUM_UNAVAILABLE = "rechtsraum_unavailable";
+
 function calculateDeadline(
   key: string,
   startDate: string,
@@ -247,6 +259,8 @@ export default function DeadlinesPage() {
   const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // A deadline source failed server-side: the list may be incomplete.
+  const [partialWarning, setPartialWarning] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<DeadlineFilter>("open");
   const [caseFilter, setCaseFilter] = useState<string | null>(null);
@@ -312,6 +326,8 @@ export default function DeadlinesPage() {
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [calcKey, setCalcKey] = useState("");
   const [calcError, setCalcError] = useState<string | null>(null);
+  // The Rechtsraum could not be read: the calculator must not guess one.
+  const [rechtsraumFailed, setRechtsraumFailed] = useState(false);
   const calcOption = calcOptions.find((o) => o.key === calcKey) ?? calcOptions[0];
   const [calcDate, setCalcDate] = useState(() => toLocalIsoDate(new Date()));
   const [calcResult, setCalcResult] = useState<{
@@ -336,6 +352,7 @@ export default function DeadlinesPage() {
   const loadDeadlines = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
+    setPartialWarning(false);
     try {
       // Unified fristen API merges fristenbuch + legal_deadline + legal_case
       const fristenData = await api.legal.fristen();
@@ -362,7 +379,9 @@ export default function DeadlinesPage() {
         secondCheckAt: f.second_check_at,
         ervZustelldatum: f.erv_zustelldatum,
         deputy: f.deputy,
+        embedded: f.source === "legal_case" ? f.deadline_ref : undefined,
       }));
+      if (fristenData.partial) setPartialWarning(true);
 
       // Appointments are not part of the fristen read-model — load separately
       const batch = await api.brain.batchListPages(["appointment"], 300);
@@ -406,12 +425,12 @@ export default function DeadlinesPage() {
 
   // C1: Load rechtsraum settings for correct holiday-aware calculation
   useEffect(() => {
-    loadKanzleiSettings()
+    loadKanzleiSettingsStrict()
       .then((settings) => {
         const rr = getRechtsraumParams(settings);
         if (rr.country) setRechtsraum({ state: rr.state, country: rr.country });
       })
-      .catch(() => {});
+      .catch(() => setRechtsraumFailed(true));
   }, []);
 
   // The approver may not also perform the second check (four-eyes). Shown
@@ -423,7 +442,8 @@ export default function DeadlinesPage() {
 
   // P0: Vier-Augen second-check confirmation handler
   async function confirmSecondCheck(item: DeadlineItem) {
-    if (!item.slug) return;
+    const target = deadlineWriteTarget(item);
+    if (target.kind === "none") return;
     const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "Unknown";
     if (item.reviewedBy && item.reviewedBy === userName) {
       addToast({
@@ -439,7 +459,13 @@ export default function DeadlinesPage() {
       // route re-derives the caller's identity from the session and rejects
       // if it matches the first checker, so this can't be bypassed by
       // calling api.brain.updatePage directly.
-      await api.legal.fristenSecondCheck(item.slug);
+      // A matter-embedded deadline is addressed by the matter slug plus the
+      // entry's id (or title + due_date); a deadline page by its own slug.
+      if (target.kind === "embedded") {
+        await api.legal.fristenSecondCheck(target.caseSlug, target.ref);
+      } else {
+        await api.legal.fristenSecondCheck(target.slug);
+      }
       addToast({ type: "success", title: t("deadlines.second_check_done") });
       await loadDeadlines();
     } catch (err) {
@@ -457,13 +483,21 @@ export default function DeadlinesPage() {
   }
 
   async function updateDeadlinePage(item: DeadlineItem, frontmatter: Record<string, unknown>) {
-    if (!item.slug) return;
-    setActionBusy(item.slug);
+    const target = deadlineWriteTarget(item);
+    if (target.kind === "none") return;
+    setActionBusy(item.id);
     try {
-      await api.brain.updatePage({
-        slug: item.slug,
-        frontmatter,
-      });
+      if (target.kind === "embedded") {
+        // Patch only this entry of the matter's deadlines[] — writing the
+        // fields to the matter page itself would close or re-review the Akte.
+        const casePage = await api.brain.getPage(target.caseSlug);
+        const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+        const deadlines = patchEmbeddedDeadline(caseFm.deadlines, target.ref, frontmatter);
+        if (!deadlines) throw new Error("embedded deadline not found");
+        await api.brain.updatePage({ slug: target.caseSlug, frontmatter: { deadlines } });
+      } else {
+        await api.brain.updatePage({ slug: target.slug, frontmatter });
+      }
       await loadDeadlines();
     } catch {
       addToast({
@@ -618,7 +652,7 @@ export default function DeadlinesPage() {
 
   /** Die eine naheliegende Aktion je Zeile; alles Weitere liegt im Menü. */
   function primaryAction(d: DeadlineItem): "approve" | "second_check" | "done" | null {
-    if (!d.slug || !isOpen(d)) return null;
+    if (deadlineWriteTarget(d).kind === "none" || !isOpen(d)) return null;
     if (d.reviewStatus && d.reviewStatus !== "approved") return "approve";
     if (d.isNotfrist && !d.secondCheckAt) return "second_check";
     return "done";
@@ -773,8 +807,10 @@ export default function DeadlinesPage() {
             </div>
           );
         }
-        if (!d.slug) return null;
-        const busy = actionBusy === d.slug;
+        // Timeline events and rows without a writable target open the Akte
+        // via the row click; they get no write actions here.
+        if (deadlineWriteTarget(d).kind === "none") return null;
+        const busy = actionBusy === d.id;
         const action = primaryAction(d);
         return (
           // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops the row click; the controls inside are real buttons.
@@ -1045,6 +1081,11 @@ export default function DeadlinesPage() {
             <div className="flex items-end">
               <button
                 onClick={() => {
+                  if (rechtsraumFailed) {
+                    setCalcResult(null);
+                    setCalcError(RECHTSRAUM_UNAVAILABLE);
+                    return;
+                  }
                   try {
                     setCalcResult(
                       calculateDeadline(
@@ -1072,7 +1113,9 @@ export default function DeadlinesPage() {
               role="alert"
               className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
             >
-              {t("deadlines.at_engine_error")}
+              {calcError === RECHTSRAUM_UNAVAILABLE
+                ? "Die Kanzlei-Einstellungen (Rechtsraum) konnten nicht geladen werden — die Frist wird nicht berechnet, damit kein fremdes Fristenrecht angewendet wird. Bitte Seite neu laden."
+                : t("deadlines.at_engine_error")}
             </div>
           )}
           {calcResult && (
@@ -1336,6 +1379,27 @@ export default function DeadlinesPage() {
             size="sm"
             onClick={() => void loadDeadlines()}
             className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
+          >
+            <RotateCcw size={13} />
+            {t("deadlines.retry")}
+          </Button>
+        </div>
+      )}
+
+      {partialWarning && !loadError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+        >
+          <span className="flex items-center gap-2">
+            <AlertTriangle size={14} className="shrink-0" />
+            {t("deadlines.error_partial")}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void loadDeadlines()}
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg)] hover:text-[color:var(--ds-warning-text)]"
           >
             <RotateCcw size={13} />
             {t("deadlines.retry")}

@@ -10,6 +10,29 @@ import { createHandler, apiError } from "@/lib/api-handler";
 
 export const maxDuration = 120;
 
+/** The engine serves at most this many pages per request (`/api/pages` clamps `limit`). */
+const EXPORT_PAGE_SIZE = 200;
+/** Hard stop against a misbehaving engine that never returns a short page. */
+const EXPORT_MAX_BATCHES = 5_000;
+
+/**
+ * Art. 15/20 DSGVO: the export must contain every page, not the first batch.
+ * The engine caps `limit`, so walk the whole source by offset until a short
+ * page comes back.
+ */
+async function listAllPages(brain: ReturnType<typeof createServerBrainClient>) {
+  const pages: unknown[] = [];
+  for (let batch = 0; batch < EXPORT_MAX_BATCHES; batch++) {
+    const chunk = await brain.listPages({
+      limit: EXPORT_PAGE_SIZE,
+      offset: batch * EXPORT_PAGE_SIZE,
+    });
+    pages.push(...chunk);
+    if (chunk.length < EXPORT_PAGE_SIZE) break;
+  }
+  return pages;
+}
+
 export const GET = createHandler(
   {
     action: "settings.read",
@@ -37,8 +60,7 @@ export const GET = createHandler(
     const firmBrain = Boolean(user.orgId);
     if (!firmBrain) {
       try {
-        const brain = createServerBrainClient(ctx.headers);
-        brainPages = await brain.listPages({ limit: 10000 });
+        brainPages = await listAllPages(createServerBrainClient(ctx.headers));
       } catch {
         // Brain may not be available
       }

@@ -366,7 +366,7 @@ export const ON_SCANNER_EVAL: EvalDataset = {
   cases: [
     {
       id: "on-basic-1",
-      input: `ON 1.4\nEingang: 15.03.2023\nSeiten: 50001-50005\nPersonen: Mustermann, Eckerstorfer\n\nAnzeige gegen unbekannt.`,
+      input: `ON 1.4\nEingang: 15.03.2023\nSeiten: 50001-50005\nPersonen: Mustermann, Exempel\n\nAnzeige gegen unbekannt.`,
       expected: {
         on_entries: [
           {
@@ -374,7 +374,7 @@ export const ON_SCANNER_EVAL: EvalDataset = {
             datum: "15.03.2023",
             typ: "Eingang",
             seiten: "50001-50005",
-            personen: ["Mustermann", "Eckerstorfer"],
+            personen: ["Mustermann", "Exempel"],
             quote: "Anzeige gegen unbekannt.",
           },
         ],
@@ -384,14 +384,14 @@ export const ON_SCANNER_EVAL: EvalDataset = {
     },
     {
       id: "on-cross-ref",
-      input: `ON 40.2.6\nVernehmung Protokoll\nSeiten: 50985-50991\nPersonen: Hrustemovic\n\n(siehe auch ON 40.1 für Antrag)`,
+      input: `ON 40.2.6\nVernehmung Protokoll\nSeiten: 50985-50991\nPersonen: Platzhalter\n\n(siehe auch ON 40.1 für Antrag)`,
       expected: {
         on_entries: [
           {
             on_nummer: "ON 40.2.6",
             typ: "Vernehmung Protokoll",
             seiten: "50985-50991",
-            personen: ["Hrustemovic"],
+            personen: ["Platzhalter"],
           },
         ],
       },
@@ -474,20 +474,20 @@ export const ENTITY_EXTRACTOR_EVAL: EvalDataset = {
   cases: [
     {
       id: "entity-basic-1",
-      input: `Zeuge Adis Hrustemovic, geb. 1985, wohnhaft in Linz, sagte aus, dass er den Beschuldigten Toni Remik kannte.`,
+      input: `Zeuge Anton Platzhalter, geb. 1985, wohnhaft in Linz, sagte aus, dass er den Beschuldigten Rudi Tarnname kannte.`,
       expected: {
         entities: [
           {
-            name: "Adis Hrustemovic",
+            name: "Anton Platzhalter",
             type: "person",
             role: "zeuge",
-            aliases: ["Hrustemovic"],
+            aliases: ["Platzhalter"],
           },
           {
-            name: "Toni Remik",
+            name: "Rudi Tarnname",
             type: "person",
             role: "beschuldigter",
-            aliases: ["Remik"],
+            aliases: ["Tarnname"],
           },
         ],
       },

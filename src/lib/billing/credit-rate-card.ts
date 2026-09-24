@@ -294,21 +294,28 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
 };
 
 /**
- * Default-Rate für Modelle die nicht in der Rate Card stehen.
- * Verwendet Haiku-Preise als sicheres Minimum (günstigstes DACH-taugliches Modell).
+ * Rate für Modelle, die weder in der Rate Card noch in CANONICAL_PRICING
+ * stehen: fail-closed auf die teuerste kuratierte Rate. Früher war das ein
+ * Haiku-naher Fixwert — ein unbekanntes (teures) Modell wurde damit weit unter
+ * Kosten abgerechnet.
  */
-export const DEFAULT_CREDIT_RATE: ModelCreditRate = {
-  input: 2,
-  cachedInput: 0.2,
-  cacheCreate: 2.5,
-  output: 10,
-};
+export const DEFAULT_CREDIT_RATE: ModelCreditRate = Object.values(CREDIT_RATE_CARD).reduce(
+  (max, r) => ({
+    input: Math.max(max.input, r.input),
+    cachedInput: Math.max(max.cachedInput, r.cachedInput),
+    cacheCreate: Math.max(max.cacheCreate, r.cacheCreate),
+    output: Math.max(max.output, r.output),
+  }),
+  { input: 0, cachedInput: 0, cacheCreate: 0, output: 0 }
+);
 
 /**
- * Credit-Rate für ein Modell abrufen. Fallback auf DEFAULT_CREDIT_RATE.
+ * Credit-Rate für ein Modell abrufen: kuratierte Rate Card, sonst direkt aus
+ * CANONICAL_PRICING abgeleitet (z. B. Bedrock-EU- und Fable-IDs), sonst
+ * DEFAULT_CREDIT_RATE (fail-closed).
  */
 export function getCreditRate(modelId: string): ModelCreditRate {
-  return CREDIT_RATE_CARD[modelId] ?? DEFAULT_CREDIT_RATE;
+  return CREDIT_RATE_CARD[modelId] ?? rateFromCanonical(modelId, DEFAULT_CREDIT_RATE);
 }
 
 /**

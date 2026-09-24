@@ -66,6 +66,13 @@ COPY --from=build --chown=bun:bun /app/bun.lock ./bun.lock
 # ship it — without this line every citation check fails with ENOENT.
 COPY --from=build --chown=bun:bun /app/src/lib/corpus-meta.json ./src/lib/corpus-meta.json
 
+# Persistent runtime state (file-backed stores: feature flags, SCIM status,
+# WhatsApp media, admin backups, dashboard widgets, …). The netcup compose
+# mounts the named volume web-data here; a fresh named volume inherits this
+# directory's bun ownership, so the unprivileged runner can write to it.
+RUN mkdir -p /app/.data && chown bun:bun /app/.data
+ENV SUBSUMIO_DATA_DIR=/app/.data
+
 USER bun
 
 EXPOSE 3000

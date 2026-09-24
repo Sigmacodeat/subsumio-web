@@ -5,6 +5,7 @@ import { logAudit } from "@/lib/audit";
 import { getDataRoomStore } from "@/lib/data-rooms";
 import { roomRole } from "@/lib/data-room-access";
 
+import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
 import { logger } from "@/lib/logger";
 const log = logger("api/data-rooms/document");
 
@@ -55,13 +56,11 @@ export const GET = createHandler(
       });
       if (!res.ok) return apiError("not_found", "Datei nicht gefunden", 404);
       const headers = new Headers();
-      headers.set("Content-Type", res.headers.get("content-type") || "application/octet-stream");
-      const cd = res.headers.get("content-disposition");
-      if (cd)
-        headers.set(
-          "Content-Disposition",
-          query.inline === "1" ? cd.replace(/^attachment/i, "inline") : cd
-        );
+      applyUploadedFileHeaders(headers, {
+        contentType: res.headers.get("content-type"),
+        contentDisposition: res.headers.get("content-disposition"),
+        wantInline: query.inline === "1",
+      });
       const cl = res.headers.get("content-length");
       if (cl) headers.set("Content-Length", cl);
       headers.set("Cache-Control", "private, no-store");

@@ -20,7 +20,7 @@ export function register() {
     }
 
     Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      dsn: serverSentryDsn(),
       environment: process.env.NODE_ENV,
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
     });
@@ -52,21 +52,22 @@ export function register() {
 
   if (process.env.NEXT_RUNTIME === "edge") {
     Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      dsn: serverSentryDsn(),
       environment: process.env.NODE_ENV,
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
     });
   }
 
-  if (process.env.NEXT_RUNTIME === "browser") {
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      environment: process.env.NODE_ENV,
-      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-      replaysSessionSampleRate: 0,
-      replaysOnErrorSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
-    });
-  }
+  // The browser SDK is initialised in src/instrumentation-client.ts —
+  // register() never runs in the browser.
+}
+
+/**
+ * Server-side DSN: SENTRY_DSN (a separate server project, see .env.example)
+ * wins; otherwise the public DSN the browser uses. env-validate checks both.
+ */
+function serverSentryDsn(): string | undefined {
+  return process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || undefined;
 }
 
 export const onRequestError = Sentry.captureRequestError;

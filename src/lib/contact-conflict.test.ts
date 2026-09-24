@@ -4,6 +4,7 @@ import { describe, test, expect } from "vitest";
 import {
   checkContactConflict,
   checkInternalConflict,
+  matterConflictParties,
   normalizeName,
   tokenize,
   similarity,
@@ -334,5 +335,37 @@ describe("checkContactConflict — edge cases", () => {
       EXISTING_CONTACTS
     );
     expect(result.severity).not.toBe("critical");
+  });
+});
+
+describe("matterConflictParties", () => {
+  test("covers client, opponent and every additional opponent once", () => {
+    const refs = matterConflictParties({
+      client_name: " Muster AG ",
+      opponent_name: "Beispiel GmbH",
+      additional_opponents: [
+        { name: "Dritte GmbH", slug: "contacts/dritte" },
+        { name: "beispiel gmbh" },
+        { name: "" },
+        "Vierte KG",
+      ],
+    });
+    expect(refs).toEqual([
+      { name: "Muster AG", role: "client" },
+      { name: "Beispiel GmbH", role: "opponent" },
+      { name: "Dritte GmbH", role: "opponent", slug: "contacts/dritte" },
+      { name: "Vierte KG", role: "opponent" },
+    ]);
+  });
+
+  test("flags a client that reappears as an additional opponent", () => {
+    const result = checkInternalConflict(
+      matterConflictParties({
+        client_name: "Muster AG",
+        opponent_name: "Beispiel GmbH",
+        additional_opponents: [{ name: "Muster AG" }],
+      })
+    );
+    expect(result.hasConflict).toBe(true);
   });
 });

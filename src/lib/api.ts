@@ -450,6 +450,9 @@ export const api = {
       stats: BrainStats | null;
       recent: RecentQuery[];
       pages: Record<string, BrainPage[]>;
+      /** A page list failed to load — counts may be incomplete. */
+      degraded?: boolean;
+      failed_types?: string[];
     }> {
       const params = new URLSearchParams();
       if (opts?.types) params.set("types", opts.types);
@@ -679,6 +682,8 @@ export const api = {
         court?: string;
         source: string;
         source_slug?: string;
+        /** legal_case rows: the entry inside the matter's deadlines[]. */
+        deadline_ref?: { id?: string; title?: string; due_date?: string };
         vorfrist_date?: string;
         is_notfrist?: boolean;
         second_check_required?: boolean;
@@ -705,6 +710,10 @@ export const api = {
         pending: number;
         done: number;
       };
+      /** true when a deadline source failed to load — the list is incomplete
+       *  and the UI must say so (a missed Frist is a malpractice event). */
+      partial?: boolean;
+      failed_sources?: string[];
     }> {
       const qs = new URLSearchParams();
       if (params?.case) qs.set("case", params.case);

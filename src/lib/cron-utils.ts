@@ -64,6 +64,25 @@ export async function fetchPages(
 }
 
 /**
+ * Upper bound for a "read every page of a type" listing — a safety stop, not
+ * a working limit (one firm with this many deadlines is far beyond any real
+ * workload; the engine would page through it in 100-row batches).
+ */
+export const CRON_FULL_READ_CAP = 100_000;
+
+/**
+ * EVERY page of a type for a tenant (up to CRON_FULL_READ_CAP), read in
+ * batches of 100. STRICT: a failed batch throws instead of returning a
+ * partial list — for the Fristen crons, where a silently truncated read means
+ * a deadline that is never reminded about.
+ */
+export async function fetchAllPagesStrict(brainId: string, type: string): Promise<EnginePage[]> {
+  return listEnginePages(engineHeadersForBrain(brainId), type, CRON_FULL_READ_CAP, {
+    strict: true,
+  });
+}
+
+/**
  * Fetch pages of multiple types in parallel. Returns a map keyed by type.
  * Each type fetch is independent — a failure for one type returns [] for that key.
  */

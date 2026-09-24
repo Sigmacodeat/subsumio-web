@@ -44,7 +44,18 @@ const ENV_SPECS: EnvVarSpec[] = [
     required: false,
     description: "Resend API key for transactional email",
   },
-  { name: "SENTRY_DSN", required: false, description: "Sentry DSN for error tracking" },
+  {
+    // The name the code reads: browser (src/instrumentation-client.ts, baked
+    // in at build time) and, unless SENTRY_DSN overrides it, the server.
+    name: "NEXT_PUBLIC_SENTRY_DSN",
+    required: false,
+    description: "Sentry DSN for error tracking (browser + server fallback)",
+  },
+  {
+    name: "SENTRY_DSN",
+    required: false,
+    description: "Optional server-only Sentry DSN (overrides NEXT_PUBLIC_SENTRY_DSN on the server)",
+  },
 ];
 
 export interface EnvValidationResult {
