@@ -49,6 +49,10 @@ interface QualityData {
   lengthHistogram: LengthBucket[];
   perSource: SourceRow[];
   generatedAt: string;
+  /** Zeitpunkt der 10-Minuten-Zählung; null, solange noch keine vorliegt. */
+  snapshotAt?: string | null;
+  /** false = kein Snapshot lesbar → Leerzustand statt Nullen. */
+  dbAvailable?: boolean;
 }
 
 const API_BASE = "/api/admin/chunk-quality";
@@ -94,13 +98,15 @@ export function ChunkQuality({
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<{ data: QualityData }>;
       }),
-    staleTime: 10_000,
-    // Live-Embedding-Progress: refetch alle 5s wenn Embeddings laufen
+    staleTime: 60_000,
+    // Die Zahlen kommen aus dem 10-Minuten-Snapshot; öfter als jede Minute
+    // nachzufragen bringt nichts Neues und hat die Seite früher (5-s-Polling
+    // auf eine Live-Aggregation) unbenutzbar gemacht.
     refetchInterval: () => {
       if (!liveEmbedding) return false;
       const data = qualityQuery.data?.data;
       if (!data || data.embeddingCoveragePct >= 100) return false;
-      return 5_000;
+      return 60_000;
     },
   });
 
@@ -160,7 +166,30 @@ export function ChunkQuality({
   const data = qualityQuery.data?.data;
   if (!data) return null;
 
+  if (data.dbAvailable === false) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center" role="status">
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Noch keine Qualitätszählung vorhanden. Die Zählung läuft alle 10 Minuten zusammen mit
+            der Bestandsaufnahme.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => qualityQuery.refetch()}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Neu laden
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const isLive = liveEmbedding && data.embeddingCoveragePct < 100;
+  const snapshotAt = data.snapshotAt ?? data.generatedAt;
 
   return (
     <div className="space-y-4">
@@ -174,7 +203,8 @@ export function ChunkQuality({
             </Badge>
           )}
           <span className="text-xs text-[color:var(--ds-text-subtle)]">
-            Aktualisiert: {new Date(data.generatedAt).toLocaleTimeString("de-AT")}
+            Stand {new Date(snapshotAt).toLocaleTimeString("de-AT")} (Zählung alle 10 Minuten,
+            Textwerte aus 1-%-Stichprobe)
           </span>
         </div>
         <Button variant="outline" size="sm" onClick={() => qualityQuery.refetch()}>
