@@ -61,6 +61,8 @@ const COPY = {
     invalid_email: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     invalid_name: "Bitte geben Sie Ihren Namen ein.",
     sso_required: "Bitte nutzen Sie die Microsoft- oder Google-Anmeldung.",
+    sso_not_linked:
+      "Dieses Konto ist nicht für diese Single-Sign-On-Anmeldung freigeschaltet. Bitte melden Sie sich mit E-Mail und Passwort an oder wenden Sie sich an Ihre Kanzlei.",
     invalid_token: "Der Code ist ungültig. Bitte versuchen Sie es erneut.",
     invalid_challenge: "Die Anmeldung ist abgelaufen. Bitte melden Sie sich erneut an.",
     account_deactivated:
@@ -122,6 +124,16 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const [ssoConfigured, setSsoConfigured] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+
+  // SSO sign-in of a user with 2FA: the callback hands the challenge over in
+  // the URL fragment (never sent to a server). Continue with the TOTP step.
+  useEffect(() => {
+    if (mode !== "login" || typeof window === "undefined") return;
+    const m = /^#sso2fa=([^&]+)$/.exec(window.location.hash);
+    if (!m) return;
+    setChallengeToken(decodeURIComponent(m[1]));
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, [mode]);
 
   useEffect(() => {
     // Probe whether WorkOS SSO is configured
