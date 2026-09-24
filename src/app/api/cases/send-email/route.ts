@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { sendMail } from "@/lib/mail";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
 import {
   assertOutputActionAllowed,
@@ -77,9 +77,10 @@ export const POST = createHandler(
       }
     }
 
-    const settings = await loadKanzleiSettings();
-    const _fromName = settings.kanzleiName || settings.anwaltName || "Subsumio";
-    const fromEmail = settings.emailFrom || process.env.MAIL_FROM || "noreply@subsumio.local";
+    // Only the reply-to address comes from the settings: an unreadable settings
+    // page falls back to MAIL_FROM instead of blocking the email.
+    const settings = await loadKanzleiSettingsForBrain(ctx.brainId).catch(() => null);
+    const fromEmail = settings?.emailFrom || process.env.MAIL_FROM || "noreply@subsumio.local";
 
     const trackingId = generateTrackingId();
     const html = `<p style="font-family: sans-serif; white-space: pre-wrap;">${body.body.replace(/\n/g, "<br>")}</p>`;

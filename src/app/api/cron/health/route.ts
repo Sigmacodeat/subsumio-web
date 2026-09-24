@@ -60,12 +60,21 @@ export async function GET(req: NextRequest) {
          LIMIT 5`
       );
       const entries = result.rows as Array<{ brain_id: string; last_day: string }>;
+      // Freshness, not mere existence: the digest runs daily (06:00 UTC) and
+      // logs one row per firm it mailed. The newest row must be from today or
+      // yesterday (UTC) — before 06:00 today's run has not happened yet. An
+      // older newest row means the digest has stopped running.
+      const lastDay = entries[0]?.last_day ? String(entries[0].last_day).slice(0, 10) : "";
+      const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+      const fresh = lastDay !== "" && lastDay >= yesterday;
       checks.deadline_digest = {
-        ok: entries.length > 0,
+        ok: fresh,
         detail:
-          entries.length > 0
-            ? `last: ${entries[0]?.last_day} (${entries.length} brains)`
-            : "no notifications logged yet",
+          entries.length === 0
+            ? "no notifications logged yet"
+            : fresh
+              ? `last: ${lastDay} (${entries.length} brains)`
+              : `STALE — last digest ${lastDay}, expected ${yesterday} or later`,
       };
     } catch {
       checks.deadline_digest = { ok: false, detail: "table not initialized" };
@@ -108,25 +117,41 @@ export async function GET(req: NextRequest) {
     checks.pipeline_sync = { ok: false, detail: "no db — cannot verify" };
   }
 
-  // 6. Notification channels configured (SMTP, WhatsApp, Push)
+  // 6. Notification channels (SMTP, WhatsApp, Push). SMTP is configured PER
+  // FIRM, so every firm's settings are read from its own brain with trusted
+  // headers. A firm without SMTP is a firm choice (reminders fall back to
+  // in-app) and only shows in the detail; a firm whose settings cannot be
+  // read at all is a failure — the reminder cron cannot mail it either.
   try {
-    const { loadKanzleiSettings } = await import("@/lib/kanzlei-settings");
-    const smtpSettings = await loadKanzleiSettings();
-    const smtpOn = !!(smtpSettings.smtpHost && smtpSettings.smtpUser && smtpSettings.smtpPassword);
+    const { loadKanzleiSettingsForBrain, isSmtpConfigured } =
+      await import("@/lib/kanzlei-settings-server");
+    const { getRecipientsByBrain, mapWithConcurrency } = await import("@/lib/cron-utils");
+    const brains = [...(await getRecipientsByBrain()).keys()];
+    const reads = await mapWithConcurrency(brains, (brainId) =>
+      loadKanzleiSettingsForBrain(brainId, { timeoutMs: 5_000 })
+    );
+    let smtpFirms = 0;
+    let unreadable = 0;
+    for (const r of reads) {
+      if (r.status === "rejected") unreadable++;
+      else if (isSmtpConfigured(r.value)) smtpFirms++;
+    }
+    const smtpOn = smtpFirms > 0;
     const waOn = !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
     const pushOn = !!(process.env.APNS_TEAM_ID || process.env.FCM_SERVER_KEY);
-    const channels: string[] = [];
-    if (!smtpOn) channels.push("email");
-    if (!waOn) channels.push("whatsapp");
-    if (!pushOn) channels.push("push");
+    const platformMailOn = !!process.env.RESEND_API_KEY;
     checks.notifications = {
-      ok: smtpOn,
-      detail: smtpOn
-        ? `email✓ ${waOn ? "whatsapp✓" : "whatsapp✗"} ${pushOn ? "push✓" : "push✗"}`
-        : `missing: ${channels.join(", ")} — deadline reminders degraded to in-app only`,
+      ok: unreadable === 0,
+      detail:
+        `email(SMTP) ${smtpFirms}/${brains.length} firms${smtpOn ? "" : " — reminders in-app only"}` +
+        ` · digest-mail ${platformMailOn ? "✓" : "✗"} ${waOn ? "whatsapp✓" : "whatsapp✗"} ${pushOn ? "push✓" : "push✗"}` +
+        (unreadable > 0 ? ` · settings unreadable for ${unreadable} firm(s)` : ""),
     };
-  } catch {
-    checks.notifications = { ok: false, detail: "cannot load kanzlei settings" };
+  } catch (err) {
+    checks.notifications = {
+      ok: false,
+      detail: `cannot check firm settings: ${err instanceof Error ? err.message : String(err)}`,
+    };
   }
 
   // 7. Free disk space — a full disk took the engine down for weeks unnoticed.

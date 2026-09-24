@@ -6,7 +6,7 @@ const m = vi.hoisted(() => ({
   webhook: vi.fn(),
   sse: vi.fn(),
   patch: vi.fn(),
-  pages: {} as Record<string, unknown[]>,
+  pages: {} as Record<string, unknown[] | Error>,
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -18,7 +18,11 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: (...a: unknown[]) => m.patch(...a),
 }));
 vi.mock("@/lib/cron-utils", () => ({
-  batchFetchPages: vi.fn(async () => m.pages),
+  fetchAllPagesStrict: vi.fn(async (_brainId: string, type: string) => {
+    const v = m.pages[type];
+    if (v instanceof Error) throw v;
+    return v ?? [];
+  }),
   getRecipientsByBrain: vi.fn(async () => new Map([["brain-at", []]])),
 }));
 vi.mock("@/lib/realtime-bus", () => ({
@@ -77,5 +81,20 @@ describe("cron deadline-alerts", () => {
     const kiWrite = m.patch.mock.calls.find((c) => c[1].slug === "legal/deadlines/ki")![1];
     expect(kiWrite.frontmatter.alert_stages_unreviewed).toContain("urgent");
     expect(kiWrite.frontmatter.alert_stages_sent).toBeUndefined();
+  });
+
+  it("answers 500 with the error in the body when a firm's deadlines cannot be read", async () => {
+    m.pages = {
+      legal_case: [],
+      legal_deadline: new Error("list legal_deadline failed: HTTP 503"),
+    };
+    const res = await (POST as unknown as (r: Request) => Promise<Response>)(
+      new Request("http://localhost/api/cron/deadline-alerts", { method: "POST" })
+    );
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+    expect(body.errors[0]).toMatch(/brain-at.*HTTP 503/);
+    expect(m.sse).not.toHaveBeenCalled();
   });
 });

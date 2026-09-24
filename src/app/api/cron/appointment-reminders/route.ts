@@ -5,7 +5,8 @@ import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { DEFAULT_KANZLEI_SETTINGS, type KanzleiSettings } from "@/lib/kanzlei-settings";
+import { isSmtpConfigured, loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import nodemailer from "nodemailer";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 
@@ -33,26 +34,37 @@ export const GET = createCronHandler(async () => {
   const now = new Date();
   const recipientsByBrain = await getRecipientsByBrain();
   const identityStore = getWhatsAppIdentityStore();
-  const settings = await loadKanzleiSettings();
-  const smtpConfigured = !!(settings.smtpHost && settings.smtpUser && settings.smtpPassword);
-  const transporter = smtpConfigured
-    ? nodemailer.createTransport({
-        host: settings.smtpHost!,
-        port: parseInt(settings.smtpPort ?? "587", 10),
-        secure: settings.smtpSecure ?? false,
-        auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
-      })
-    : null;
-  const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
 
   let brainsChecked = 0;
   let totalSent = 0;
+  let smtpBrains = 0;
   const errors: string[] = [];
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
     const appointments = await fetchPages(brainId, "appointment", 500);
     if (appointments.length === 0) continue;
+
+    // SMTP from this firm's own settings, read server-side with trusted headers.
+    let settings: KanzleiSettings = DEFAULT_KANZLEI_SETTINGS;
+    try {
+      settings = await loadKanzleiSettingsForBrain(brainId);
+    } catch (err) {
+      errors.push(
+        `Kanzlei settings unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+    const smtpConfigured = isSmtpConfigured(settings);
+    if (smtpConfigured) smtpBrains++;
+    const transporter = smtpConfigured
+      ? nodemailer.createTransport({
+          host: settings.smtpHost!,
+          port: parseInt(settings.smtpPort ?? "587", 10),
+          secure: settings.smtpSecure ?? false,
+          auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
+        })
+      : null;
+    const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
 
     for (const appt of appointments) {
       const fm = appt.frontmatter ?? {};
@@ -169,7 +181,8 @@ export const GET = createCronHandler(async () => {
     ok: true,
     brains_checked: brainsChecked,
     sent: totalSent,
-    smtp_configured: smtpConfigured,
+    smtp_configured: smtpBrains > 0,
+    smtp_configured_brains: smtpBrains,
     errors: errors.length > 0 ? errors : undefined,
   });
 });

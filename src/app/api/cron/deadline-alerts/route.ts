@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { batchFetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
+import { fetchAllPagesStrict, getRecipientsByBrain } from "@/lib/cron-utils";
 import { broadcastDeadlineAlert } from "@/lib/realtime-bus";
 import { dispatchWebhookEvent } from "@/lib/webhook-dispatch";
 import {
@@ -19,12 +19,20 @@ const log = logger("deadline-alerts");
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-/** Deadlines and matters of one firm. */
+/**
+ * ALL deadlines and matters of one firm. The listing is sorted by last
+ * update, so a fixed cap (500 before) silently dropped the oldest-edited
+ * deadlines of a larger firm — exactly the long-running ones about to fall
+ * due. Paged completely and strictly: a failed batch throws.
+ */
 async function loadBrain(brainId: string): Promise<{ cases: AlertPage[]; deadlines: AlertPage[] }> {
-  const pages = await batchFetchPages(brainId, ["legal_case", "legal_deadline"], 500);
+  const [cases, deadlines] = await Promise.all([
+    fetchAllPagesStrict(brainId, "legal_case"),
+    fetchAllPagesStrict(brainId, "legal_deadline"),
+  ]);
   return {
-    cases: (pages["legal_case"] ?? []) as unknown as AlertPage[],
-    deadlines: (pages["legal_deadline"] ?? []) as unknown as AlertPage[],
+    cases: cases as unknown as AlertPage[],
+    deadlines: deadlines as unknown as AlertPage[],
   };
 }
 
@@ -114,6 +122,7 @@ async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
 
   let totalAlerts = 0;
   const perBrain: Array<{ brainId: string; alerts: number }> = [];
+  const errors: string[] = [];
 
   for (const brainId of brains) {
     let items: DueAlert[] = [];
@@ -121,7 +130,9 @@ async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
       const { cases, deadlines } = await loadBrain(brainId);
       items = collectDueAlerts(cases, deadlines, now);
     } catch (err) {
-      log.warn("brain unreadable", { brainId, error: err instanceof Error ? err.message : err });
+      const message = err instanceof Error ? err.message : String(err);
+      log.warn("brain unreadable", { brainId, error: message });
+      errors.push(`Deadline data unreadable for brain ${brainId}: ${message}`);
       continue;
     }
     if (items.length === 0) continue;
@@ -161,14 +172,26 @@ async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
     perBrain.push({ brainId, alerts: items.length });
   }
 
-  log.info("deadline alerts processed", { brains: brains.length, total: totalAlerts });
-
-  return NextResponse.json({
-    executedAt: nowIso,
-    brainsChecked: brains.length,
-    totalAlerts,
-    perBrain,
+  log.info("deadline alerts processed", {
+    brains: brains.length,
+    total: totalAlerts,
+    errors: errors.length,
   });
+
+  // A firm whose deadlines could not be read got no alerts: answer 500 so the
+  // cron log shows it; the body keeps the full report.
+  const ok = errors.length === 0;
+  return NextResponse.json(
+    {
+      ok,
+      executedAt: nowIso,
+      brainsChecked: brains.length,
+      totalAlerts,
+      perBrain,
+      errors: errors.length > 0 ? errors : undefined,
+    },
+    { status: ok ? 200 : 500 }
+  );
 }
 
 export const POST = createCronHandler(deadlineAlertHandler, { maxDuration: 60 });

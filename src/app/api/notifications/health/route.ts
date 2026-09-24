@@ -1,5 +1,5 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +8,9 @@ export const GET = createHandler(
     action: "brain.read",
     rateTier: "standard",
   },
-  async (_ctx) => {
-    const settings = await loadKanzleiSettings();
-    const smtpConfigured = !!(settings.smtpHost && settings.smtpUser && settings.smtpPassword);
+  async (ctx) => {
+    const settings = await loadKanzleiSettingsForBrain(ctx.brainId).catch(() => null);
+    const smtpConfigured = !!(settings?.smtpHost && settings.smtpUser && settings.smtpPassword);
     const whatsappConfigured = !!(
       process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN
     );
@@ -26,7 +26,9 @@ export const GET = createHandler(
         configured: smtpConfigured,
         detail: smtpConfigured
           ? undefined
-          : "SMTP nicht konfiguriert — Fristen-Erinnerungen werden nur im Dashboard angezeigt",
+          : settings
+            ? "SMTP nicht konfiguriert — Fristen-Erinnerungen werden nur im Dashboard angezeigt"
+            : "Kanzlei-Einstellungen derzeit nicht lesbar — SMTP-Status unbekannt",
       },
       {
         channel: "whatsapp",

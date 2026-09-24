@@ -137,24 +137,13 @@ export const GET = createPublicHandler(
     // 5. OCR — enabled by default (agency quality)
     checks.ocr = { status: "ok" };
 
-    // 6. SMTP — degraded (not down) when not configured (in-app notification fallback active)
-    try {
-      const { loadKanzleiSettings } = await import("@/lib/kanzlei-settings");
-      const smtpSettings = await loadKanzleiSettings();
-      checks.smtp =
-        smtpSettings.smtpHost && smtpSettings.smtpUser && smtpSettings.smtpPassword
-          ? { status: "ok" }
-          : {
-              status: "degraded",
-              detail:
-                "SMTP not configured — deadline reminders fall back to in-app notifications only",
-            };
-    } catch {
-      checks.smtp = {
-        status: "degraded",
-        detail: "Kanzlei settings unavailable — SMTP status unknown",
-      };
-    }
+    // 6. SMTP is configured PER FIRM (Kanzlei-Einstellungen), not per
+    // deployment — this public, firm-less probe cannot and must not read a
+    // firm's settings. (It used the browser settings loader before, which
+    // server-side always failed and reported "degraded".) The per-firm
+    // status lives in /api/cron/health (CRON_SECRET) and, for a signed-in
+    // firm, /api/notifications/health.
+    checks.smtp = { status: "ok", detail: "configured per firm — see /api/cron/health" };
 
     // Determine overall status: critical checks (engine, auth, config) must be ok
     const criticalKeys = ["engine", "auth", "config"];

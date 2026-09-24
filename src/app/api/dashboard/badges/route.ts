@@ -1,6 +1,10 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { loadApprovalSummary, type ApprovalCategoryKey } from "@/lib/approval-summary";
+import { listEnginePages } from "@/lib/engine-pages";
+
+/** Safety stop for the full deadline read — far beyond any real firm. */
+const DEADLINE_BADGE_READ_CAP = 100_000;
 
 interface BadgeCounts {
   [href: string]: { count: number; variant: "danger" | "warning" | "info" };
@@ -72,7 +76,13 @@ export const GET = createHandler(
     const approvalsPromise = loadApprovalSummary(ctx.headers, ctx.user.email).catch(() => null);
     const [deadlines, intake, bea, beaMessages, signatures, docs, legalDocs, invoices] =
       await Promise.all([
-        fetchPagesByType(ctx.headers, "legal_deadline", 100),
+        // Every deadline, not the 100 most recently edited: the listing is
+        // sorted by last update, so a fixed cap hid exactly the long-standing
+        // deadlines that are now falling due. The engine has no count or
+        // due-date filter endpoint, so this pages through all of them.
+        listEnginePages(ctx.headers, "legal_deadline", DEADLINE_BADGE_READ_CAP, {
+          timeoutMs: 8_000,
+        }).then((pages) => pages as unknown as Record<string, unknown>[]),
         fetchPagesByType(ctx.headers, "intake_request", 50),
         fetchPagesByType(ctx.headers, "bea_draft", 50),
         fetchPagesByType(ctx.headers, "bea_message", 50),
