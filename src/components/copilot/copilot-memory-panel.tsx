@@ -1,5 +1,8 @@
 "use client";
 
+// grounding-exempt: lists stored copilot memories (preferences/facts the user
+// explicitly saved or confirmed) — no AI-generated legal text is rendered.
+
 import { useState, useEffect, useCallback } from "react";
 import { Brain, Plus, Pin, PinOff, Trash2, Loader2, Sparkles, Edit3, Save, X } from "lucide-react";
 import { useLang } from "@/lib/use-lang";

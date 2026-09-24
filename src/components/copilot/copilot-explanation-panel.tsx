@@ -1,5 +1,8 @@
 "use client";
 
+// grounding-exempt: renders retrieval metadata (sources, scores, caveats) for
+// an answer that was already grounded in the chat — not new AI legal text.
+
 import { useState, useEffect } from "react";
 import {
   Lightbulb,

@@ -1,5 +1,9 @@
 "use client";
 
+// grounding-exempt: the briefing is a day-digest (deadlines, inbox, news) that
+// carries the AI Act label (AI_BADGE_LABEL); it is not a legal analysis with
+// statute citations, so no CitationPanel applies.
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useState, useEffect, useCallback } from "react";

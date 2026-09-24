@@ -29,7 +29,6 @@ const ADDIN_DIRS = ["word-addin", "outlook-addin"];
 const AI_CALL_PATTERNS: RegExp[] = [
   /\bapi\.query\.think\(/,
   /\bapi\.legal\.(translate|schriftsatz|deepAnalysis|tabularReview|caseStrategy|caseInvestigation|caseScan|opponentSimulation|extractObligations|contradictionsCheck|contractRedline|berufungsgruende|analyzeDocument)\(/,
-  /["'`]\/api\/copilot\/draft-review["'`]/,
   /\/draft-reply["'`]/,
   /["'`}]\/api\/legal\/(memo|summarize|risk-analysis|subsumption|contract-draft|contract-redline|schriftsatz|analyze|deep-analysis|case-strategy|litigation|chronology|perspektiven-room|opponent-simulation|process-strategy|berufungsgruende|contradiction-probe|commentaries|precedent-search|research|submission-review)["'`?/]/,
   /["'`}]\/api\/think["'`?]/,
@@ -37,6 +36,13 @@ const AI_CALL_PATTERNS: RegExp[] = [
   /["'`}]\/api\/portal\/chat["'`?]/,
   /["'`}]\/api\/work-products\/memo\/generate["'`?]/,
   /["'`}]\/api\/email\/draft-reply["'`?]/,
+  // Copilot side panels (explanation/plan/memory/draft-review render model output).
+  /["'`}]\/api\/copilot\/(explain|plan|memory|draft-review)["'`?]/,
+  // Marketing concierge streams AI replies on the public site.
+  /["'`}]\/api\/concierge["'`?]/,
+  // The daily briefing is fetched through a shared lib helper — the URL never
+  // appears in the component, so the call-site pattern catches the consumer.
+  /\bloadBriefing\(/,
 ];
 
 function walk(dir: string): string[] {
