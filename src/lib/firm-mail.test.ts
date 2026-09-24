@@ -1,17 +1,17 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
-const sendMailMock = vi.fn(async () => ({ sent: true, trackingId: "t-1" }));
-const nodemailerSend = vi.fn(async () => ({ messageId: "m-1" }));
-const createTransportMock = vi.fn(() => ({ sendMail: nodemailerSend }));
+const sendMailMock = vi.fn(async (_input?: unknown) => ({ sent: true, trackingId: "t-1" }));
+const nodemailerSend = vi.fn(async (_opts?: unknown) => ({ messageId: "m-1" }));
+const createTransportMock = vi.fn((_opts?: unknown) => ({ sendMail: nodemailerSend }));
 
 vi.mock("@/lib/mail", () => ({
-  sendMail: (...args: unknown[]) => sendMailMock(...args),
+  sendMail: (input: unknown) => sendMailMock(input),
   escapeHtml: (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;"),
 }));
 
 vi.mock("nodemailer", () => ({
-  default: { createTransport: (...args: unknown[]) => createTransportMock(...args) },
-  createTransport: (...args: unknown[]) => createTransportMock(...args),
+  default: { createTransport: (opts: unknown) => createTransportMock(opts) },
+  createTransport: (opts: unknown) => createTransportMock(opts),
 }));
 
 vi.mock("@/lib/email/tracking", () => ({

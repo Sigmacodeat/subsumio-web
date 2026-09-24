@@ -228,6 +228,7 @@ describe("POST /api/cases/send-email", () => {
   test("handles sendMail failure gracefully", async () => {
     vi.mocked(sendMail).mockResolvedValueOnce({
       sent: false,
+      via: "none",
       error: "SMTP connection refused",
       trackingId: "track-123",
     });
