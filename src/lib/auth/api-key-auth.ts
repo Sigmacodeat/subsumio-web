@@ -16,6 +16,7 @@ import { effectivePlan } from "@/lib/billing/trial";
 import { hashApiKey } from "@/lib/api-keys";
 import { getApiKeyStore, type StoredApiKey } from "@/lib/api-key-store";
 import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
+import { isAccountBlocked } from "@/lib/auth/account-status";
 import { env } from "@/lib/env";
 import { addCallerIdentity, type EngineContext } from "@/lib/engine";
 
@@ -49,8 +50,9 @@ export async function verifyApiKey(
 
   // Load the owner user
   const user = await getStore().getById(match.ownerId);
-  if (!user) return null;
-  if (user.deactivatedAt) return null;
+  // Same "may this account work right now?" rule as sessions: deactivated
+  // accounts and members of a suspended firm are refused.
+  if (!user || (await isAccountBlocked(user))) return null;
 
   // Resolve brainId, plan and paying account (same logic as engineContext)
   let brainId = user.brainId;
