@@ -53,7 +53,7 @@ export const POST = createHandler(
       log.error(`[fristenreport] fristen read failed: HTTP ${res.status}`);
       return apiError("service_unavailable", "Fristen konnten nicht geladen werden", 503);
     }
-    const { fristen } = (await res.json()) as { fristen: Frist[] };
+    const { fristen, partial } = (await res.json()) as { fristen: Frist[]; partial?: boolean };
 
     const today = new Date().toISOString().slice(0, 10);
     const horizon = new Date(Date.now() + body.include_upcoming_days * 86_400_000)
@@ -82,6 +82,14 @@ export const POST = createHandler(
       overdue,
       upcoming,
       unreviewed,
+      // A deadline source failed: the report must say it may be missing Fristen.
+      ...(partial
+        ? {
+            partial: true,
+            warning:
+              "Fristen konnten nicht vollständig geladen werden — der Bericht kann Fristen auslassen.",
+          }
+        : {}),
     };
 
     // Work-product receipt (audit trail), scoped to the caller's brain.

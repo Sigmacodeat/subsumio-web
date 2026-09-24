@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Briefcase, Upload } from "lucide-react";
+import { AlertTriangle, Briefcase, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -15,7 +15,8 @@ import { formalNameOf } from "@/lib/person-name";
 import type { Lang } from "@/content/site";
 import type { BrainStats } from "@/lib/types";
 import { SecretaryGateWarning } from "@/components/dashboard/secretary-gate-warning";
-import { buildAgenda, type AgendaEntry } from "@/lib/overview-agenda";
+import { buildAgenda, fristenToAgendaPages, type AgendaEntry } from "@/lib/overview-agenda";
+import { useFristen } from "@/lib/queries/legal";
 import {
   ATTENTION_ICONS,
   ActiveMatters,
@@ -49,16 +50,24 @@ const AGENDA_WINDOW_DAYS = 14;
 function MyDay({ role }: { role?: string }) {
   const cockpit = useKanzleiCockpitData();
   const badges = useSidebarBadges();
-  const loading = cockpit.loading;
+  // Same read model as the Fristen view: Fristenbuch + legal_deadline pages +
+  // deadlines embedded in matters. The cockpit's capped legal_deadline list is
+  // only the fallback while the read model is unavailable.
+  const fristenQuery = useFristen();
+  const fristen = fristenQuery.data?.fristen;
+  const loading = cockpit.loading || fristenQuery.isLoading;
+  // Never pass off a failed or partial read as "nothing due".
+  const deadlinesIncomplete =
+    fristenQuery.isError || fristenQuery.data?.partial === true || (!fristen && cockpit.degraded);
 
   const agenda = useMemo(
     () =>
       buildAgenda(
-        cockpit.deadlines.map((d) => d.page),
+        fristen ? fristenToAgendaPages(fristen) : cockpit.deadlines.map((d) => d.page),
         cockpit.cases,
         { windowDays: AGENDA_WINDOW_DAYS }
       ),
-    [cockpit.deadlines, cockpit.cases]
+    [fristen, cockpit.deadlines, cockpit.cases]
   );
 
   // Next open deadline per matter, for the "Aktive Akten" register.
@@ -78,9 +87,11 @@ function MyDay({ role }: { role?: string }) {
   const dueThisWeek = allEntries.filter(
     (e) => e.kind !== "vorfrist" && e.days >= 0 && e.days <= 7
   ).length;
-  const unreviewed = cockpit.deadlines.filter(
-    (d) => String(d.page.frontmatter?.review_status ?? "") === "unreviewed"
-  ).length;
+  const unreviewed = fristen
+    ? fristen.filter((f) => f.status !== "done" && f.review_status === "unreviewed").length
+    : cockpit.deadlines.filter(
+        (d) => String(d.page.frontmatter?.review_status ?? "") === "unreviewed"
+      ).length;
   const approvalsCount = badges.data?.["/dashboard/freigaben"]?.count ?? 0;
 
   const kpis: OverviewKpi[] = [
@@ -197,6 +208,29 @@ function MyDay({ role }: { role?: string }) {
 
   return (
     <div className="space-y-6">
+      {(deadlinesIncomplete || cockpit.degraded) && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
+        >
+          <AlertTriangle
+            size={17}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
+              {deadlinesIncomplete
+                ? "Fristen konnten nicht vollständig geladen werden"
+                : "Übersicht unvollständig"}
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              {deadlinesIncomplete
+                ? "Zahlen und Agenda können Fristen auslassen. Bitte im Fristenbuch prüfen oder die Seite neu laden."
+                : "Einzelne Bereiche konnten nicht geladen werden; die angezeigten Zahlen können zu niedrig sein."}
+            </p>
+          </div>
+        </div>
+      )}
       <OverviewKpis items={kpis} loading={loading} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

@@ -108,4 +108,92 @@ describe("GET /api/legal/fristen", () => {
     expect(body.zusammenfassung.overdue).toBe(0);
     expect(body.zusammenfassung.done).toBe(1);
   });
+  it("marks the list partial (not silently short) when a deadline source fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const parsed = new URL(url);
+        if (parsed.pathname === "/api/legal/fristenbuch") {
+          return new Response(JSON.stringify({ heute: "", eintraege: [], zusammenfassung: {} }), {
+            status: 200,
+          });
+        }
+        const type = parsed.searchParams.get("type");
+        if (type === "legal_deadline") return new Response("boom", { status: 500 });
+        if (type === "legal_case") {
+          return new Response(
+            JSON.stringify([
+              {
+                slug: "cases/a",
+                title: "A",
+                frontmatter: {
+                  deadlines: [{ id: "d1", title: "Berufung", due_date: "2026-10-01" }],
+                },
+              },
+            ]),
+            { status: 200 }
+          );
+        }
+        return new Response("[]", { status: 200 });
+      })
+    );
+    const res = await GET(new NextRequest("http://localhost:3000/api/legal/fristen"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.partial).toBe(true);
+    expect(body.failed_sources).toContain("legal_deadline");
+    expect(body.fristen).toHaveLength(1);
+    // Embedded deadline carries its identity inside the matter.
+    expect(body.fristen[0]).toMatchObject({
+      source: "legal_case",
+      source_slug: "cases/a",
+      deadline_ref: { id: "d1" },
+    });
+  });
+
+  it("answers 503 when every deadline source fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("down", { status: 502 }))
+    );
+    const res = await GET(new NextRequest("http://localhost:3000/api/legal/fristen"));
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toBe("fristen_unavailable");
+  });
+
+  it("does not flag partial when only the absence records fail", async () => {
+    engine({
+      "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
+      "/api/pages?type=legal_case&limit=100&offset=0": [],
+      "/api/pages?type=legal_deadline&limit=100&offset=0": [],
+    });
+    const res = await GET(new NextRequest("http://localhost:3000/api/legal/fristen"));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.partial).toBeUndefined();
+    expect(body.failed_sources).toEqual(["absence_record"]);
+  });
+
+  it("gives legacy embedded deadlines (no id) a title + due_date reference", async () => {
+    engine({
+      "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
+      "/api/pages?type=legal_case&limit=100&offset=0": [
+        {
+          slug: "cases/b",
+          title: "B",
+          frontmatter: { deadlines: [{ title: "Klagebeantwortung", due_date: "2026-11-02" }] },
+        },
+      ],
+      "/api/pages?type=legal_deadline&limit=100&offset=0": [],
+      "/api/pages?type=absence_record&limit=100&offset=0": [],
+    });
+    const body = await (
+      await GET(new NextRequest("http://localhost:3000/api/legal/fristen"))
+    ).json();
+    expect(body.fristen[0].deadline_ref).toEqual({
+      title: "Klagebeantwortung",
+      due_date: "2026-11-02",
+    });
+  });
 });

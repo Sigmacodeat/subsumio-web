@@ -182,6 +182,42 @@ export function buildAgenda(
   };
 }
 
+/** A row of the unified Fristen read model (GET /api/legal/fristen). */
+export interface AgendaFristLike {
+  id: string;
+  title: string;
+  due_date: string;
+  status: string;
+  type?: string;
+  case_slug?: string;
+  vorfrist_date?: string;
+  is_notfrist?: boolean;
+  review_status?: string;
+}
+
+/**
+ * Maps the Fristen read model onto agenda source pages, so "Mein Tag" shows
+ * the same deadlines as the Fristen view — including deadlines embedded in a
+ * matter (`deadlines[]`) and the Fristenbuch calendar, not just the most
+ * recently edited `legal_deadline` pages. The row id keeps entry keys unique
+ * when one matter holds several deadlines.
+ */
+export function fristenToAgendaPages(fristen: AgendaFristLike[]): AgendaSourcePage[] {
+  return fristen.map((f) => ({
+    slug: f.id,
+    title: f.title,
+    frontmatter: {
+      due_date: f.due_date,
+      vorfrist_date: f.vorfrist_date,
+      status: f.status,
+      is_notfrist: f.is_notfrist === true,
+      review_status: f.review_status,
+      case_slug: f.case_slug,
+      event_type: f.type === "hearing" || f.type === "event" ? "hearing" : f.type,
+    },
+  }));
+}
+
 /** Day heading: "Heute", "Morgen", else "Mittwoch, 23.09.". */
 export function agendaDayLabel(day: { date: Date; days: number }): string {
   if (day.days === 0) return "Heute";

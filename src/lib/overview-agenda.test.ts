@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { agendaDayLabel, buildAgenda } from "./overview-agenda";
+import { agendaDayLabel, buildAgenda, fristenToAgendaPages } from "./overview-agenda";
 
 const now = new Date(2026, 8, 19, 9, 0); // Sa, 19.09.2026
 
@@ -102,5 +102,56 @@ describe("agendaDayLabel", () => {
     expect(agendaDayLabel({ date: now, days: 0 })).toBe("Heute");
     expect(agendaDayLabel({ date: now, days: 1 })).toBe("Morgen");
     expect(agendaDayLabel({ date: new Date(2026, 8, 23), days: 4 })).toMatch(/Mittwoch/);
+  });
+});
+
+describe("fristenToAgendaPages (Mein Tag uses the Fristen read model)", () => {
+  test("includes matter-embedded deadlines and keeps entries of one matter apart", () => {
+    const pages = fristenToAgendaPages([
+      {
+        id: "d-1",
+        title: "Berufung",
+        due_date: "2026-09-22",
+        status: "pending",
+        type: "deadline",
+        case_slug: "legal/cases/a",
+        is_notfrist: true,
+        review_status: "unreviewed",
+      },
+      {
+        id: "d-2",
+        title: "Replik",
+        due_date: "2026-09-22",
+        status: "pending",
+        type: "deadline",
+        case_slug: "legal/cases/a",
+      },
+      {
+        id: "d-3",
+        title: "Erledigt",
+        due_date: "2026-09-21",
+        status: "done",
+        type: "deadline",
+        case_slug: "legal/cases/a",
+      },
+      {
+        id: "t-1",
+        title: "Tagsatzung",
+        due_date: "2026-09-23",
+        status: "pending",
+        type: "hearing",
+        case_slug: "legal/cases/a",
+      },
+    ]);
+    const agenda = buildAgenda(pages, cases, { now, windowDays: 14 });
+    const entries = agenda.days.flatMap((d) => d.entries);
+    expect(entries.map((e) => e.title)).toEqual(["Berufung", "Replik", "Tagsatzung"]);
+    expect(new Set(entries.map((e) => e.key)).size).toBe(entries.length);
+    expect(entries[0]).toMatchObject({
+      notfrist: true,
+      unreviewed: true,
+      caseNumber: "QA-2026-003",
+    });
+    expect(entries.find((e) => e.title === "Tagsatzung")?.kind).toBe("hearing");
   });
 });

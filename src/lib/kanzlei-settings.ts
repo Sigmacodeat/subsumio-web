@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api, ApiRequestError } from "./api";
 
 export interface KanzleiSettings {
   kanzleiName: string;
@@ -134,6 +134,23 @@ export async function loadKanzleiSettings(): Promise<KanzleiSettings> {
     return normalizeKanzleiSettings(page.frontmatter as Partial<KanzleiSettings>);
   } catch {
     return local;
+  }
+}
+
+/**
+ * Like `loadKanzleiSettings`, but a failed read THROWS instead of quietly
+ * falling back to browser-local or default settings. Deadline calculation
+ * depends on the Rechtsraum: a silent fallback would compute a German firm's
+ * deadline with the Austrian engine. Only a settings page that does not exist
+ * yet (404 — never configured) resolves, to the local/default settings.
+ */
+export async function loadKanzleiSettingsStrict(): Promise<KanzleiSettings> {
+  try {
+    const page = await api.brain.getPage(KANZLEI_SETTINGS_SLUG);
+    return normalizeKanzleiSettings(page.frontmatter as Partial<KanzleiSettings>);
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) return readLocalKanzleiSettings();
+    throw err;
   }
 }
 

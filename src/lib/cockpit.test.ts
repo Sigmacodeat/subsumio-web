@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { fetchPagesByType, fetchPagesByTypes, fetchStats, fetchRecentQueries } from "./cockpit";
+import {
+  fetchPagesByType,
+  fetchPagesByTypeResult,
+  fetchPagesByTypes,
+  fetchStats,
+  fetchRecentQueries,
+} from "./cockpit";
 
 const HEADERS = { "x-subsumio-api-key": "k" };
 
@@ -64,5 +70,24 @@ describe("fetchRecentQueries", () => {
 
     mockFetch(() => Response.json([{ query: "Streitwert?", created_at: "t" }]));
     expect(await fetchRecentQueries(HEADERS, 5)).toHaveLength(1);
+  });
+});
+
+describe("fetchPagesByTypeResult", () => {
+  it("reports a failed read instead of passing it off as an empty list", async () => {
+    mockFetch(() => new Response("boom", { status: 500 }));
+    expect(await fetchPagesByTypeResult(HEADERS, "legal_deadline", 50)).toEqual({
+      pages: [],
+      ok: false,
+    });
+
+    mockFetch(() => Promise.reject(new Error("offline")));
+    expect((await fetchPagesByTypeResult(HEADERS, "legal_deadline", 50)).ok).toBe(false);
+
+    mockFetch(() => Response.json([]));
+    expect(await fetchPagesByTypeResult(HEADERS, "legal_deadline", 50)).toEqual({
+      pages: [],
+      ok: true,
+    });
   });
 });

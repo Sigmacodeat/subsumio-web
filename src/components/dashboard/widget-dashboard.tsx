@@ -210,7 +210,9 @@ export function useKanzleiCockpitData() {
     isOpenStatus(p.frontmatter?.status)
   );
 
-  const degraded = cockpitQuery.isError;
+  // A failed page list is reported by the route (not thrown), so a partial
+  // cockpit is degraded too — never a silent "0 Fristen".
+  const degraded = cockpitQuery.isError || cockpitQuery.data?.degraded === true;
   const loading = cockpitQuery.isLoading;
 
   return {

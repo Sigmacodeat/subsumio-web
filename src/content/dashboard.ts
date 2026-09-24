@@ -1346,6 +1346,10 @@ export const D = {
     de: "Fristen konnten nicht geladen werden.",
     en: "Failed to load deadlines.",
   },
+  "deadlines.error_partial": {
+    de: "Fristen konnten nicht vollständig geladen werden. Die Liste kann unvollständig sein — bitte erneut laden, bevor Sie sich darauf verlassen.",
+    en: "Deadlines could not be loaded completely. The list may be incomplete — reload before relying on it.",
+  },
   "deadlines.retry": { de: "Erneut versuchen", en: "Retry" },
   "deadlines.empty_title": { de: "Keine Fristen gefunden", en: "No deadlines found" },
   "deadlines.empty_no_data": {

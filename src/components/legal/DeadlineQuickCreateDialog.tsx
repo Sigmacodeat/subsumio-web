@@ -41,7 +41,8 @@ import { useToast } from "@/components/ui/toast";
 import { computeFrist, fristOptionsFor, type FristComputation } from "@/lib/legal/frist-options";
 import { computeVorfrist, DEFAULT_VORFRIST_DAYS } from "@/lib/legal/vorfrist";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
+import { isTombstoned } from "@/lib/tombstone";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -86,26 +87,56 @@ export function DeadlineQuickCreateDialog({
   const [isNotfrist, setIsNotfrist] = useState(false);
   const [vorfristPreview, setVorfristPreview] = useState<string | null>(null);
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
+  // The Rechtsraum decides which deadline engine runs (AT/DE/CH). Until it is
+  // known — or when it cannot be read — no statutory deadline is computed:
+  // a silent default would give a German firm the Austrian engine.
+  const [settingsState, setSettingsState] = useState<"loading" | "ok" | "error">("loading");
+  const [settingsReload, setSettingsReload] = useState(0);
   const [isErvDate, setIsErvDate] = useState(false);
   const [fristCalc, setFristCalc] = useState<FristComputation | null>(null);
   const [fristError, setFristError] = useState<string | null>(null);
   const fristOptions = useMemo(() => fristOptionsFor(rechtsraum.country), [rechtsraum.country]);
 
   const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(open, async () => {
-    const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
-    return pages.map((p: BrainPage) => ({
-      slug: p.slug,
-      title: p.title || p.slug,
-    }));
+    // The engine returns at most 100 pages per request: page through all
+    // matters (deleted ones included while paging, filtered afterwards).
+    const pages: BrainPage[] = [];
+    for (let offset = 0; offset < 5_000; offset += 100) {
+      const batch = await api.brain.listPages({
+        type: "legal_case",
+        limit: 100,
+        offset,
+        includeTombstoned: true,
+      });
+      pages.push(...batch);
+      if (batch.length < 100) break;
+    }
+    return pages
+      .filter((p) => !isTombstoned(p))
+      .map((p: BrainPage) => ({
+        slug: p.slug,
+        title: p.title || p.slug,
+      }));
   });
 
   // Load Rechtsraum settings for holiday-aware calculation
   useEffect(() => {
     if (!open) return;
-    loadKanzleiSettings()
-      .then((s) => setRechtsraum(getRechtsraumParams(s)))
-      .catch(() => {});
-  }, [open]);
+    let cancelled = false;
+    setSettingsState("loading");
+    loadKanzleiSettingsStrict()
+      .then((s) => {
+        if (cancelled) return;
+        setRechtsraum(getRechtsraumParams(s));
+        setSettingsState("ok");
+      })
+      .catch(() => {
+        if (!cancelled) setSettingsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, settingsReload]);
 
   // Every manual deadline goes through computeFrist: Austrian firms (and
   // firms without a Rechtsraum) get the deterministic frist-engine with
@@ -116,6 +147,17 @@ export function DeadlineQuickCreateDialog({
       setCalcPreview(null);
       setFristCalc(null);
       setFristError(null);
+      return;
+    }
+    if (settingsState !== "ok") {
+      // Never compute with a guessed jurisdiction.
+      setCalcPreview(null);
+      setFristCalc(null);
+      setFristError(
+        settingsState === "error"
+          ? "Kanzlei-Einstellungen (Rechtsraum) konnten nicht geladen werden — die Frist wird nicht berechnet."
+          : null
+      );
       return;
     }
     try {
@@ -134,7 +176,7 @@ export function DeadlineQuickCreateDialog({
       setCalcPreview(null);
       setFristError(err instanceof Error ? err.message : String(err));
     }
-  }, [ruleKey, date, rechtsraum, isErvDate]);
+  }, [ruleKey, date, rechtsraum, isErvDate, settingsState]);
 
   // Auto-compute Vorfrist from the final deadline date
   useEffect(() => {
@@ -272,6 +314,27 @@ export function DeadlineQuickCreateDialog({
           </DialogHeader>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-2">
+            {settingsState === "error" && (
+              <div
+                role="alert"
+                className="flex items-start justify-between gap-3 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+              >
+                <span>
+                  Die Kanzlei-Einstellungen (Rechtsraum) konnten nicht geladen werden. Fristen
+                  werden nicht automatisch berechnet, bis sie verfügbar sind — sonst würde womöglich
+                  das Fristenrecht eines anderen Landes angewendet.
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSettingsReload((n) => n + 1)}
+                  className="h-auto shrink-0 px-2 py-1 text-xs text-[color:var(--ds-danger-text)]"
+                >
+                  Erneut laden
+                </Button>
+              </div>
+            )}
             {/* Description */}
             <div className="space-y-1.5">
               <Label htmlFor="quick-deadline-desc" className="text-xs">
