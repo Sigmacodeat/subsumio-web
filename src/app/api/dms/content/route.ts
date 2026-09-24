@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getConnector } from "@/lib/dms";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
+import { ATTACHMENT_CSP, IMAGE_INLINE_CSP, PDF_INLINE_CSP } from "@/lib/file-response-headers";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/dms/content");
@@ -67,6 +68,12 @@ export const GET = createHandler(
         "Content-Type": content.mimeType,
         "Content-Disposition": `${safeInline && query.download !== "1" ? "inline" : "attachment"}; filename*=UTF-8''${filename}`,
         "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy":
+          safeInline && query.download !== "1"
+            ? mime === "application/pdf"
+              ? PDF_INLINE_CSP
+              : IMAGE_INLINE_CSP
+            : ATTACHMENT_CSP,
         "Accept-Ranges": "bytes",
         "Cache-Control": "private, no-store",
       };

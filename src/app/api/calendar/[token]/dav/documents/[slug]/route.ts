@@ -1,5 +1,6 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { resolveFeedToken } from "@/lib/feed-auth";
+import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
 
 export const dynamic = "force-dynamic";
 
@@ -40,12 +41,11 @@ export async function GET(
     });
     if (fileRes.ok) {
       const headers = new Headers();
-      headers.set(
-        "Content-Type",
-        fileRes.headers.get("content-type") ?? "application/octet-stream"
-      );
-      const cd = fileRes.headers.get("content-disposition");
-      if (cd) headers.set("Content-Disposition", cd);
+      applyUploadedFileHeaders(headers, {
+        contentType: fileRes.headers.get("content-type"),
+        contentDisposition: fileRes.headers.get("content-disposition"),
+        wantInline: false,
+      });
       const cl = fileRes.headers.get("content-length");
       if (cl) headers.set("Content-Length", cl);
       headers.set("Cache-Control", "no-store");
@@ -65,6 +65,8 @@ export async function GET(
       headers: {
         "Content-Type": "text/markdown; charset=utf-8",
         "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "sandbox; default-src 'none'",
       },
     });
   } catch {
