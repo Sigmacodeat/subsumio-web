@@ -60,6 +60,45 @@ ausstehende Datenbank-Migrationen beim Start ein. Schwere Migrationen (große Ta
 vorher gestückelt von Hand einspielen, wie bei v124 (`content_chunks.source_id`, 4 Mio. Zeilen in
 Stapeln zu 100 000, danach `CREATE INDEX CONCURRENTLY`).
 
+## Cron-Überwachung
+
+Die Jobs stehen in `crontab` und laufen per supercronic im `cron`-Container (jeder Deploy erzeugt
+ihn neu, Änderungen an `crontab` greifen damit automatisch). Die Fristen-Jobs — Tagesübersicht
+`/api/cron/deadlines`, Erinnerungen `/api/cron/deadline-reminders`, Eskalation
+`/api/cron/deadline-alerts` — und `/api/cron/health` laufen **ohne** `|| true`:
+
+- Die Routen antworten mit **HTTP 500**, wenn ein Lauf Fehler hatte (Fristen einer Kanzlei nicht
+  lesbar, Kanzlei-Einstellungen nicht lesbar, E-Mail-Versand fehlgeschlagen). Der JSON-Körper
+  enthält trotzdem den vollständigen Bericht (`errors`, `failed`, `warnings`).
+- `curl -f` endet dann mit Exit-Code 22, `--max-time` mit 28 bei einem hängenden Lauf; supercronic
+  protokolliert den Job als fehlgeschlagen.
+
+Fehlgeschlagene Läufe finden:
+
+```sh
+ssh subsumio-netcup 'docker logs --since 24h subsumio-engine-cron-1 2>&1 | grep -iE "deadline|health" | grep -iE "fail|error|exit"'
+```
+
+**Totmannschalter (optional).** Ein Cron, der gar nicht mehr läuft, meldet keinen Fehler. Dafür
+pingt jeder Fristen-Job nach einem **erfolgreichen** Lauf eine URL, wenn sie gesetzt ist — z. B.
+eine Healthchecks.io- oder Uptime-Kuma-Push-URL, die alarmiert, wenn der Ping ausbleibt. In
+`/opt/subsumio/server/deploy/netcup/.env`:
+
+```sh
+CRON_HEARTBEAT_URL_DEADLINES=https://hc-ping.com/<uuid>            # täglich 06:00 UTC
+CRON_HEARTBEAT_URL_DEADLINE_REMINDERS=https://hc-ping.com/<uuid>   # täglich 07:00 UTC
+CRON_HEARTBEAT_URL_DEADLINE_ALERTS=https://hc-ping.com/<uuid>      # alle 30 Minuten
+CRON_HEARTBEAT_URL_HEALTH=https://hc-ping.com/<uuid>               # alle 10 Minuten
+```
+
+Leer oder nicht gesetzt = kein Ping. Ein fehlgeschlagener Ping wird protokolliert, macht den Job
+aber nicht zum Fehler. Nach dem Setzen `docker compose -p subsumio-engine up -d cron` (oder der
+nächste Deploy).
+
+`/api/cron/health` prüft zusätzlich, dass die Fristen-Übersicht **frisch** ist (letzter Eintrag
+in `subsumio_notify_log` von heute oder gestern, UTC) und dass die Kanzlei-Einstellungen jeder
+Kanzlei lesbar sind (SMTP ist pro Kanzlei konfiguriert).
+
 ## Datenbank-Tuning
 
 Damit der 14-GB-Suchindex im Speicher bleibt, in

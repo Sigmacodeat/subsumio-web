@@ -228,6 +228,13 @@ services:
         condition: service_healthy
     environment:
       CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET in .env}
+      # Optional dead-man's-switch pings, curl'd after a SUCCESSFUL run of the
+      # Fristen-critical jobs (see crontab + RUNBOOK "Cron-Überwachung").
+      # Empty = no ping.
+      CRON_HEARTBEAT_URL_DEADLINES: ${CRON_HEARTBEAT_URL_DEADLINES:-}
+      CRON_HEARTBEAT_URL_DEADLINE_REMINDERS: ${CRON_HEARTBEAT_URL_DEADLINE_REMINDERS:-}
+      CRON_HEARTBEAT_URL_DEADLINE_ALERTS: ${CRON_HEARTBEAT_URL_DEADLINE_ALERTS:-}
+      CRON_HEARTBEAT_URL_HEALTH: ${CRON_HEARTBEAT_URL_HEALTH:-}
     volumes:
       - ./crontab:/etc/crontab:ro
     entrypoint: >
