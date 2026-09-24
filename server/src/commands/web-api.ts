@@ -4691,11 +4691,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const sourceId = requestSourceId(req);
       const { purgeStoredFilesForSource } = await import("../core/file-store.ts");
       const originalsDeleted = await purgeStoredFilesForSource(sourceId, ctx(req).config.storage);
-      const result = await engine.executeRaw<{ id: number }>(
-        "DELETE FROM pages WHERE source_id = $1 RETURNING id",
-        [sourceId]
-      );
-      res.json({ ok: true, originals_deleted: originalsDeleted, pages_deleted: result.length });
+      // Pages plus derived data (search cache, background runs with their
+      // subagent transcripts, ingest log) — Art. 17 DSGVO covers all of it.
+      const { purgeSourceData } = await import("../core/source-data-purge.ts");
+      const purged = await purgeSourceData(engine, sourceId);
+      res.json({
+        ok: true,
+        originals_deleted: originalsDeleted,
+        pages_deleted: purged.pages,
+        query_cache_deleted: purged.query_cache,
+        jobs_deleted: purged.minion_jobs,
+        ingest_log_deleted: purged.ingest_log,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "source_data_purge_failed", message: msg });
