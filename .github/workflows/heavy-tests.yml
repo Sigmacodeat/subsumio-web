@@ -99,7 +99,7 @@ jobs:
         run: |
           mkdir -p heavy-artifacts
           cp -r "$HOME/.gbrain/audit"/heavy-* heavy-artifacts/ 2>/dev/null || true
-          cp tests/heavy/rss-baseline.json heavy-artifacts/ 2>/dev/null || true
+          cp server/tests/heavy/rss-baseline.json heavy-artifacts/ 2>/dev/null || true
           cp /tmp/akten-retrieval-results.jsonl heavy-artifacts/ 2>/dev/null || true
           cp /tmp/e2e-pipeline-results.jsonl heavy-artifacts/ 2>/dev/null || true
       - name: Upload heavy-test artifacts
