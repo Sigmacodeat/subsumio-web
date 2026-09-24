@@ -838,7 +838,14 @@ describe("time tracking engine calls", () => {
 
 describe("billed-entry guard", () => {
   const billed: TimeEntry[] = [
-    { id: "b1", description: "Recherche", minutes: 60, date: "2026-01-10", billed: true, invoice_number: "R-1" },
+    {
+      id: "b1",
+      description: "Recherche",
+      minutes: 60,
+      date: "2026-01-10",
+      billed: true,
+      invoice_number: "R-1",
+    },
     { id: "u1", description: "Entwurf", minutes: 30, date: "2026-01-11", billed: false },
   ];
 

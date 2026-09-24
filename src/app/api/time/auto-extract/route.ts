@@ -17,10 +17,7 @@ import {
   extractedToTimeEntry,
   type ConversationMessage,
 } from "@/lib/ai-time-extract";
-import {
-  createTimeEntry,
-  writeTimeEntriesWithRetry,
-} from "@/lib/time-tracking";
+import { createTimeEntry, writeTimeEntriesWithRetry } from "@/lib/time-tracking";
 import { createServerBrainClient } from "@/lib/server-brain";
 import type { TimeEntry } from "@/lib/legal-types";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -131,7 +128,10 @@ export const POST = createHandler(
         );
         persistedCount = created.length;
       } catch (err) {
-        log.error("[auto-extract] persist failed:", err instanceof Error ? err.message : String(err));
+        log.error(
+          "[auto-extract] persist failed:",
+          err instanceof Error ? err.message : String(err)
+        );
       }
 
       if (persistedCount > 0 && ctx.brainId) {

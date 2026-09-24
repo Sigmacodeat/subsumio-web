@@ -138,7 +138,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * failing loudly (409) only after repeated collisions.
  */
 export async function writeTimeEntriesWithRetry<M>(
-  brain: { getPage: (slug: string) => Promise<{ frontmatter?: unknown }>; updatePage: (page: { slug: string; frontmatter: Record<string, unknown> }) => Promise<unknown> },
+  brain: {
+    getPage: (slug: string) => Promise<{ frontmatter?: unknown }>;
+    updatePage: (page: { slug: string; frontmatter: Record<string, unknown> }) => Promise<unknown>;
+  },
   caseSlug: string,
   compute: (
     freshEntries: TimeEntry[],
@@ -177,7 +180,9 @@ export async function writeTimeEntriesWithRetry<M>(
 
 /** The engine returns at most 100 pages per request; page through the rest. */
 export async function listAllPagesOfType(
-  brain: { listPages: (opts: { type: string; limit: number; offset: number }) => Promise<unknown[]> },
+  brain: {
+    listPages: (opts: { type: string; limit: number; offset: number }) => Promise<unknown[]>;
+  },
   type: string,
   max = 5000
 ) {
@@ -234,7 +239,6 @@ export async function listAllTimeEntries(brain: {
     })
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
-
 
 export function createTimeEntry(input: {
   description: string;

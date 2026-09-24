@@ -242,7 +242,11 @@ export const PATCH = createHandler(
               ...e,
               case_slug: body.case_slug,
             }));
-            const result = markEntriesBilled(entriesWithCase, body.entry_ids!, body.invoice_number!);
+            const result = markEntriesBilled(
+              entriesWithCase,
+              body.entry_ids!,
+              body.invoice_number!
+            );
             return {
               nextEntries: result.entries.map(({ case_slug: _cs, ...e }) => e),
               meta: { updated: result.updated, not_found: result.not_found },

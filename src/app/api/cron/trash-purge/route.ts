@@ -31,7 +31,9 @@ async function purgeExpiredSoftDeletedUsers(report: { failed: number; errors: st
   for (const { id } of rows) {
     try {
       await pool.query(`DELETE FROM subsumio_comments WHERE user_id = $1`, [id]).catch(() => {});
-      await pool.query(`DELETE FROM subsumio_notifications WHERE user_id = $1`, [id]).catch(() => {});
+      await pool
+        .query(`DELETE FROM subsumio_notifications WHERE user_id = $1`, [id])
+        .catch(() => {});
       await pool.query(`DELETE FROM subsumio_settings WHERE user_id = $1`, [id]).catch(() => {});
       await pool.query(`DELETE FROM subsumio_usage WHERE user_id = $1`, [id]).catch(() => {});
       await pool.query(`DELETE FROM subsumio_users WHERE id = $1`, [id]);
@@ -222,13 +224,14 @@ export const GET = createCronHandler(async () => {
     usersPurged = await purgeExpiredSoftDeletedUsers(report);
   } catch (err) {
     report.failed++;
-    report.errors.push(
-      `user purge: ${err instanceof Error ? err.message : String(err)}`
-    );
+    report.errors.push(`user purge: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   // A run with errors answers 500 so supercronic marks the job FAILED.
   const ok = report.errors.length === 0;
   if (!ok) log.error("[trash-purge] completed with errors", { errors: report.errors });
-  return NextResponse.json({ ok, ...report, users_purged: usersPurged }, { status: ok ? 200 : 500 });
+  return NextResponse.json(
+    { ok, ...report, users_purged: usersPurged },
+    { status: ok ? 200 : 500 }
+  );
 });
