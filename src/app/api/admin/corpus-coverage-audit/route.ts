@@ -4,6 +4,7 @@ import { getSharedPgPool } from "@/lib/auth/store";
 import { logger } from "@/lib/logger";
 import { LEGAL_SOURCE_COVERAGE_MATRIX } from "@/lib/legal-source-coverage";
 import { auditCoverage, type SourceDbStats } from "@/lib/corpus-completeness-audit";
+import { latestSnapshotAt, readLatestInventory } from "@/lib/corpus-inventory";
 import {
   auditDeStatutes,
   fetchGiiTocCached,
@@ -36,26 +37,21 @@ export const GET = createHandler(
     const pool = getSharedPgPool();
     if (!pool) return apiError("service_unavailable", "Datenbank nicht erreichbar", 503);
     try {
-      const result = await pool.query(`
-        SELECT p.source_id,
-               count(DISTINCT p.id)::int AS pages,
-               count(cc.id)::int AS chunks,
-               count(cc.id) FILTER (WHERE cc.embedding IS NOT NULL)::int AS embedded,
-               max(p.updated_at) AS last_updated
-        FROM pages p
-        LEFT JOIN content_chunks cc ON cc.page_id = p.id
-        WHERE p.deleted_at IS NULL AND p.source_id LIKE 'law-%'
-        GROUP BY p.source_id
-      `);
+      // From the 10-minute snapshot (3 ms), not a live pages×chunks join —
+      // that join took 17 s here on every open of the Bestand tab
+      // (measured 2026-09-24). Same numbers, same source as every other
+      // panel on the page; `snapshotAt` says how old they are.
+      const inventory = await readLatestInventory(pool);
+      const snapshotAt = latestSnapshotAt(inventory);
       const dbStats = new Map<string, SourceDbStats>(
-        result.rows.map((r) => [
-          r.source_id as string,
+        inventory.map((r) => [
+          r.source_id,
           {
-            source_id: r.source_id as string,
-            pages: r.pages as number,
-            chunks: r.chunks as number,
-            embedded: r.embedded as number,
-            last_updated: r.last_updated ? new Date(r.last_updated as string).toISOString() : null,
+            source_id: r.source_id,
+            pages: r.pages,
+            chunks: r.chunks,
+            embedded: r.embedded,
+            last_updated: r.last_updated,
           },
         ])
       );
@@ -100,7 +96,7 @@ export const GET = createHandler(
         }
       }
 
-      return apiSuccess({ ...audit, de_statutes: deStatutes });
+      return apiSuccess({ ...audit, de_statutes: deStatutes, snapshot_at: snapshotAt });
     } catch (err) {
       log.error("[corpus-coverage-audit] query failed:", (err as Error).message);
       return apiError("coverage_audit_failed", "Audit konnte nicht durchgeführt werden", 500);

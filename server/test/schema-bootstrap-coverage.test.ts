@@ -860,6 +860,12 @@ const COLUMN_EXEMPTIONS = new Set<string>([
   "saas_credit_balance.allow_negative_balance",
   "saas_credit_balance.max_negative_balance",
   "saas_credit_balance.auto_reload_last_triggered_at",
+  // Migration v147 — `documents` on corpus_inventory_snapshot. The table is
+  // created entirely by migration v145 (not in the schema blob, same
+  // precedent as search_telemetry / query_cache), so the v145 → v147 chain
+  // handles fresh + upgrade; no schema-blob index references the column, so
+  // there is no forward reference for the bootstrap to cover.
+  "corpus_inventory_snapshot.documents",
 ]);
 
 test("every ALTER TABLE ADD COLUMN in MIGRATIONS is covered by applyForwardReferenceBootstrap (column-only class)", async () => {
