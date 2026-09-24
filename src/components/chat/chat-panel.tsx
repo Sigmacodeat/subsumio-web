@@ -1385,7 +1385,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           isStreaming: false,
           tokensUsed: result.tokens_used,
           latencyMs: result.latency_ms,
-          model: modelOverride && modelOverride !== "auto" ? modelOverride : undefined,
+          // The engine reports what it really used (the firm's model profile
+          // can override a pick); fall back to the pick while it is missing.
+          model:
+            result.model ?? (modelOverride && modelOverride !== "auto" ? modelOverride : undefined),
           mode: queryMode,
         };
 
@@ -2098,7 +2101,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           isStreaming: false,
           tokensUsed: result.tokens_used,
           latencyMs: result.latency_ms,
-          model: modelOverride && modelOverride !== "auto" ? modelOverride : undefined,
+          // The engine reports what it really used (the firm's model profile
+          // can override a pick); fall back to the pick while it is missing.
+          model:
+            result.model ?? (modelOverride && modelOverride !== "auto" ? modelOverride : undefined),
           mode: queryMode,
         };
         setMessages((m) => [...m.slice(0, -1), finalMsg]);

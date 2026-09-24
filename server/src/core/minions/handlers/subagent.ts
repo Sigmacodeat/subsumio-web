@@ -56,6 +56,8 @@ import type {
 import { classifyCapabilities } from "../../ai/capabilities.ts";
 import { randomUUIDv7 } from "bun";
 import { resolveSpecialist } from "../specialist-defs.ts";
+import { resolveSpecialistTier } from "../../model-profile.ts";
+import type { ModelTier } from "../../model-config.ts";
 
 // ── Defaults ────────────────────────────────────────────────
 
@@ -184,6 +186,9 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       throw new Error("subagent job data.prompt is required (string)");
     }
 
+    // Tier the specialist actually runs on (after the firm's model profile).
+    let effectiveModelTier: ModelTier | undefined;
+
     // v0.43 — Specialist subagent definition resolution.
     // If data.subagent_def is set, load the embedded (or plugin) definition
     // and overlay system prompt, allowed_tools, max_turns, and model.
@@ -205,6 +210,15 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         if (def.model) {
           data.model = def.model;
         } else if (def.modelTier) {
+          // The firm's model profile (dashboard → KI-Modelle) can move the
+          // specialist's area to another tier; area floors always hold.
+          const tier = await resolveSpecialistTier(
+            engine,
+            typeof data._source_id === "string" ? data._source_id : null,
+            def.name,
+            def.modelTier
+          );
+          effectiveModelTier = tier;
           // Per-specialist config override: models.specialist.<name>
           // Takes precedence over tier defaults — enables hybrid routing
           // where individual specialists use different providers.
@@ -213,17 +227,17 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           const specialistModel = engine ? await engine.getConfig(specialistKey) : null;
           if (specialistModel && specialistModel.trim()) {
             data.model = await resolveModel(engine, {
-              tier: def.modelTier,
+              tier,
               configKey: specialistKey,
-              fallback: TIER_DEFAULTS[def.modelTier],
+              fallback: TIER_DEFAULTS[tier],
             });
           } else {
             // Tier-based config chain — allows users to override per-tier
             // (e.g. models.tier.utility = deepseek:deepseek-chat)
             const tierModel = await resolveModel(engine, {
-              tier: def.modelTier,
-              configKey: `models.tier.${def.modelTier}`,
-              fallback: TIER_DEFAULTS[def.modelTier],
+              tier,
+              configKey: `models.tier.${tier}`,
+              fallback: TIER_DEFAULTS[tier],
             });
             data.model = tierModel;
           }
@@ -368,7 +382,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // v0.42.38.0+ — extract modelTier + maxOutputTokens from specialist def.
     // Shared by both gateway and legacy paths.
     const tierDef = data.subagent_def ? resolveSpecialist(data.subagent_def) : null;
-    const modelTier = tierDef?.modelTier;
+    const modelTier = effectiveModelTier ?? tierDef?.modelTier;
     const maxOutputTokens = tierDef?.maxOutputTokens;
 
     // v0.38 S1.5 — gateway path. Route here when the feature flag is on.

@@ -410,23 +410,57 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // moderate/simple → reasoning tier (cost savings).
   let modelTier: "deep" | "reasoning" = "deep";
   let modelFallback = "opus";
-  if (!opts.model && (opts.legalMode || opts.taxMode)) {
+  let pickedModel = opts.model;
+
+  // The firm's model profile (area "chat") sets the tier an answer runs on at
+  // minimum. A user's per-question pick may go STRONGER than that, never
+  // weaker, so a firm that requires Sonnet-class answers cannot be undercut
+  // from the chat. Picks outside the picker catalogue (CLI `--model`) carry no
+  // tier and are left untouched. A pinned area tier also CAPS automatic
+  // routing — that is the firm choosing cost over the complexity router.
+  let firmMinimum: "deep" | "reasoning" | null = null;
+  let chatProfile: Awaited<
+    ReturnType<(typeof import("../model-profile.ts"))["loadModelProfile"]>
+  > | null = null;
+  if (opts.sourceId) {
+    const { loadModelProfile, effectiveTier, tierAtLeast } = await import("../model-profile.ts");
+    const { tierForPickableModel } = await import("../model-config.ts");
+    chatProfile = await loadModelProfile(engine, opts.sourceId);
+    firmMinimum = effectiveTier("chat", "reasoning", chatProfile) as "deep" | "reasoning";
+    const pickedTier = tierForPickableModel(pickedModel);
+    if (pickedModel && pickedTier && !tierAtLeast(pickedTier, firmMinimum)) {
+      warnings.push(
+        `MODEL_PROFILE: pick ${pickedModel} below the firm minimum (${firmMinimum}) — ignored`
+      );
+      pickedModel = undefined;
+    }
+  }
+
+  if (!pickedModel && (opts.legalMode || opts.taxMode)) {
     const { classifyLegalComplexity, complexityToTier } = await import("./intent.ts");
     const complexity = classifyLegalComplexity(opts.question);
     modelTier = complexityToTier(complexity);
-    if (modelTier === "reasoning") {
-      // v0.43.1: Legal reasoning requires Sonnet-class, not DeepSeek.
-      // DeepSeek lacks the multi-step reasoning for subsumption and
-      // cross-document analysis (BenGER 2026, TruPath Labs 2026).
-      // The reasoning tier default is now Sonnet (model-config.ts);
-      // this fallback aligns with it.
-      modelFallback = "sonnet";
-    }
     warnings.push(`INTENT_MODEL_ROUTING: complexity=${complexity} tier=${modelTier}`);
+  }
+  if (!pickedModel && chatProfile) {
+    const { effectiveTier } = await import("../model-profile.ts");
+    const profiled = effectiveTier("chat", modelTier, chatProfile) as "deep" | "reasoning";
+    if (profiled !== modelTier) {
+      warnings.push(`MODEL_PROFILE: chat tier ${modelTier} -> ${profiled}`);
+      modelTier = profiled;
+    }
+  }
+  if (modelTier === "reasoning") {
+    // v0.43.1: Legal reasoning requires Sonnet-class, not DeepSeek.
+    // DeepSeek lacks the multi-step reasoning for subsumption and
+    // cross-document analysis (BenGER 2026, TruPath Labs 2026).
+    // The reasoning tier default is now Sonnet (model-config.ts);
+    // this fallback aligns with it.
+    modelFallback = "sonnet";
   }
 
   const modelUsed = await resolveModel(engine, {
-    cliFlag: opts.model,
+    cliFlag: pickedModel,
     configKey: "models.think",
     tier: modelTier,
     fallback: modelFallback,

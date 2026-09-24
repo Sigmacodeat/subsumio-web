@@ -655,6 +655,9 @@ export const api = {
         }
         if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
         if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
+        // The model the engine actually answered with. It can differ from the
+        // pick when the firm's model profile requires a stronger one.
+        if (typeof parsed.model === "string") result.model = parsed.model;
       });
 
       return result;

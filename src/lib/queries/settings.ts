@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
+import type { AreaChoice, ModelArea, ModelProfileResponse } from "@/lib/model-profile-types";
 
 export class ApiGetError extends Error {
   constructor(
@@ -367,6 +368,10 @@ export interface ModelPreferenceResponse {
   } | null;
   brainId: string;
   modelPolicy: "any" | "eu_only";
+  /** Firm minimum for a chat answer; null when the engine could not be asked. */
+  chatMinimumTier: "utility" | "reasoning" | "deep" | null;
+  /** Catalogue ids that clear the firm minimum; null when unknown (all allowed). */
+  allowedChatPicks: string[] | null;
 }
 
 export function useModelPreference() {
@@ -387,6 +392,54 @@ export function useUpdateModelPreference() {
       }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings", "model"] });
+    },
+  });
+}
+
+// ── Firm model profile (KI-Modelle) ──
+
+export class ModelProfileSaveError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string
+  ) {
+    super(message);
+    this.name = "ModelProfileSaveError";
+  }
+}
+
+export function useModelProfile() {
+  return useQuery({
+    queryKey: ["settings", "model-profile"],
+    queryFn: () => apiGet<ModelProfileResponse>("/api/settings/model-profile"),
+  });
+}
+
+export function useUpdateModelProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (areas: Partial<Record<ModelArea, AreaChoice>>) => {
+      const res = await csrfFetch("/api/settings/model-profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ areas }),
+      });
+      // Errors use the standard web shape: { error: <message>, code: <code> }.
+      const body = (await res.json().catch(() => null)) as
+        | (ModelProfileResponse & { error?: string; code?: string })
+        | null;
+      if (!res.ok || !body) {
+        throw new ModelProfileSaveError(
+          res.status,
+          body?.code ?? "save_failed",
+          body?.error ?? `HTTP ${res.status}`
+        );
+      }
+      return body as ModelProfileResponse;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(["settings", "model-profile"], data);
     },
   });
 }
