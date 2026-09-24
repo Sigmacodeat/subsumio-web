@@ -56,6 +56,26 @@ describe("credit-rate-card", () => {
       expect(rate.output).toBe(180);
     });
 
+    it("derives a rate from canonical pricing for models outside the curated card", () => {
+      for (const id of [
+        "bedrock:eu.anthropic.claude-sonnet-5",
+        "anthropic:claude-fable-5-1",
+        "openrouter:anthropic/claude-fable-5.1",
+      ]) {
+        const canonical = CANONICAL_PRICING[id];
+        if (!canonical) continue;
+        expect(getCreditRate(id).output).toBeGreaterThan(canonical.output);
+      }
+    });
+
+    it("never bills an unknown model below any curated rate", () => {
+      const rate = getCreditRate("unknown:foo-bar");
+      for (const r of Object.values(CREDIT_RATE_CARD)) {
+        expect(rate.input).toBeGreaterThanOrEqual(r.input);
+        expect(rate.output).toBeGreaterThanOrEqual(r.output);
+      }
+    });
+
     it("falls back to DEFAULT_CREDIT_RATE for unknown model", () => {
       const rate = getCreditRate("unknown:foo-bar");
       expect(rate).toEqual(DEFAULT_CREDIT_RATE);
