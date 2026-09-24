@@ -6594,6 +6594,26 @@ export const MIGRATIONS: Migration[] = [
         ADD COLUMN IF NOT EXISTS documents INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 148,
+    name: "corpus_quality_snapshot",
+    // Chunk-quality statistics of the law corpus (role mix, length
+    // histogram, average length, per-source coverage), computed every
+    // 10 minutes by /api/cron/corpus-inventory from a 1 % sample scaled to
+    // the exact inventory counts. The quality tab on /ops/corpus ran the
+    // full aggregation live on every open (and every 5 s while embedding);
+    // it reads this one row instead and shows the snapshot time.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS corpus_quality_snapshot (
+        id            BIGSERIAL PRIMARY KEY,
+        measured_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        payload       JSONB NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_quality_snapshot_measured
+        ON corpus_quality_snapshot (measured_at DESC);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =
