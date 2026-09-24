@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
   BookOpen,
   CalendarDays,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,7 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
+import { DeadlineEditDialog, type DeadlineEditValues } from "@/components/legal/DeadlineEditDialog";
 import { AiDeadlineSuggestions } from "@/components/legal/AiDeadlineSuggestions";
 import { useMe } from "@/lib/queries/auth";
 import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
@@ -348,6 +350,8 @@ export default function DeadlinesPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [savingDetected, setSavingDetected] = useState<number | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<DeadlineItem | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   const loadDeadlines = useCallback(async () => {
     setLoading(true);
@@ -482,9 +486,13 @@ export default function DeadlinesPage() {
     }
   }
 
-  async function updateDeadlinePage(item: DeadlineItem, frontmatter: Record<string, unknown>) {
+  async function updateDeadlinePage(
+    item: DeadlineItem,
+    frontmatter: Record<string, unknown>,
+    pageTitle?: string
+  ): Promise<boolean> {
     const target = deadlineWriteTarget(item);
-    if (target.kind === "none") return;
+    if (target.kind === "none") return false;
     setActionBusy(item.id);
     try {
       if (target.kind === "embedded") {
@@ -496,16 +504,60 @@ export default function DeadlinesPage() {
         if (!deadlines) throw new Error("embedded deadline not found");
         await api.brain.updatePage({ slug: target.caseSlug, frontmatter: { deadlines } });
       } else {
-        await api.brain.updatePage({ slug: target.slug, frontmatter });
+        await api.brain.updatePage({
+          slug: target.slug,
+          frontmatter,
+          ...(pageTitle ? { title: pageTitle } : {}),
+        });
       }
       await loadDeadlines();
+      return true;
     } catch {
       addToast({
         type: "error",
         title: t("deadlines.update_failed"),
       });
+      return false;
     } finally {
       setActionBusy(null);
+    }
+  }
+
+  /**
+   * Cockpit edit: writes date/label/Notfrist changes through the same
+   * embedded-vs-page resolution as Erledigt/Freigeben. An approved deadline
+   * falls back to "unreviewed" — a changed Frist must be re-recognised, not
+   * silently keep its approval (BGH XII ZB 338/24 pattern used by
+   * deadline-approval).
+   */
+  async function saveEditedDeadline(d: DeadlineItem, values: DeadlineEditValues) {
+    setEditSaving(true);
+    const patch: Record<string, unknown> = {
+      // Pages render fm.description (fm.title as fallback); embedded entries
+      // render d.title. Patching both covers every source shape. `date` covers
+      // appointment pages, which store the day under `date`, not `due_date`.
+      description: values.description,
+      title: values.description,
+      due_date: values.dueDate,
+      date: values.dueDate,
+      vorfrist_date: values.vorfristDate || null,
+      law: values.law || null,
+      is_notfrist: values.isNotfrist,
+      second_check_required: values.isNotfrist,
+      updated_at: new Date().toISOString(),
+    };
+    if (d.reviewStatus === "approved") {
+      patch.review_status = "unreviewed";
+      patch.reviewed_by = null;
+      patch.reviewed_at = null;
+      patch.second_check_at = null;
+      patch.second_check_by = null;
+    }
+    const ok = await updateDeadlinePage(d, patch, values.description);
+    setEditSaving(false);
+    if (ok) {
+      addToast({ type: "success", title: t("deadlines.edit_saved") });
+      setEditTarget(null);
     }
   }
 
@@ -863,6 +915,11 @@ export default function DeadlinesPage() {
                     <BookOpen size={13} /> Akte öffnen
                   </DropdownMenuItem>
                 )}
+                {isOpen(d) && deadlineWriteTarget(d).kind !== "none" && (
+                  <DropdownMenuItem onClick={() => setEditTarget(d)} className="gap-2 text-xs">
+                    <Pencil size={13} /> {t("deadlines.edit")}
+                  </DropdownMenuItem>
+                )}
                 {isOpen(d) && action !== "approve" && d.reviewStatus !== "approved" && (
                   <DropdownMenuItem onClick={() => approve(d)} className="gap-2 text-xs">
                     <CheckCircle2 size={13} /> {t("deadlines.approve")}
@@ -1023,6 +1080,29 @@ export default function DeadlinesPage() {
         open={quickCreateOpen}
         onOpenChange={setQuickCreateOpen}
         onCreated={() => void loadDeadlines()}
+      />
+      {/* Edit dialog — corrects date/Vorfrist/Notfrist straight from the cockpit */}
+      <DeadlineEditDialog
+        open={editTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
+        deadline={
+          editTarget
+            ? {
+                description: editTarget.description,
+                date: editTarget.date,
+                vorfristDate: editTarget.vorfristDate,
+                isNotfrist: editTarget.isNotfrist,
+                law: editTarget.law,
+                reviewStatus: editTarget.reviewStatus,
+              }
+            : null
+        }
+        saving={editSaving}
+        onSave={(values) => {
+          if (editTarget) void saveEditedDeadline(editTarget, values);
+        }}
       />
 
       {/* Deadline Calculator */}

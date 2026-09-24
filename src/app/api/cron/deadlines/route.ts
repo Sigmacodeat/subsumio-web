@@ -8,6 +8,7 @@ import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { env } from "@/lib/env";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 import { syncPipelineDeadlines } from "@/lib/legal/pipeline-sync";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/deadlines");
@@ -35,6 +36,8 @@ interface DeadlineItem {
   caseTitle?: string;
   law?: string;
   vorfristDate?: string;
+  /** Notfrist (statutory, non-extendable) — escalated separately when overdue. */
+  isNotfrist?: boolean;
 }
 
 function classify(
@@ -87,6 +90,7 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
         caseTitle: page.title,
         law: d.law ? String(d.law) : undefined,
         vorfristDate: vfDate,
+        isNotfrist: d.is_notfrist === true,
       });
     }
   }
@@ -105,6 +109,7 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
       status,
       law: fm.law ? String(fm.law) : undefined,
       vorfristDate: vfDate,
+      isNotfrist: fm.is_notfrist === true,
     });
   }
 
@@ -170,6 +175,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let whatsappBlocked = 0;
   let pipelineSynced = 0;
   let pipelineCreated = 0;
+  let notfristEscalated = 0;
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -220,6 +226,58 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       else if (result.error !== "mail_not_configured") {
         errors.push(
           `Digest mail to user ${user.id} failed for brain ${brainId}: ${result.error ?? "unknown"}`
+        );
+      }
+    }
+
+    // Notfrist-Eskalation: eine überfällige Notfrist (unheilbar versäumt)
+    // darf nicht im Tages-Digest untergehen — eigene Mail an alle Kanzlei-
+    // Mitglieder plus die in den Kanzlei-Einstellungen hinterlegte
+    // Eskalationsadresse (z. B. Kanzleiinhaber). Abschaltbar per Setting.
+    const overdueNotfristen = items.filter((i) => i.status === "overdue" && i.isNotfrist);
+    if (overdueNotfristen.length > 0) {
+      try {
+        const kanzlei = await loadKanzleiSettingsForBrain(brainId);
+        if (kanzlei.deadlineNotfristEscalation !== false) {
+          const extra = kanzlei.deadlineEscalationEmail?.trim();
+          const to = [
+            ...new Set([
+              ...recipients.map((r) => r.email).filter((e): e is string => Boolean(e)),
+              ...(extra ? [extra] : []),
+            ]),
+          ];
+          const lines = overdueNotfristen.map(
+            (i) =>
+              `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`
+          );
+          const escText = [
+            `Folgende Notfristen sind ÜBERFÄLLIG und brauchen sofortige Klärung:`,
+            "",
+            ...lines,
+            "",
+            `Alle Fristen: ${appUrl}/dashboard/deadlines?status=overdue`,
+            "",
+            "Eine versäumte Notfrist ist nicht heilbar — bitte sofort prüfen, ob",
+            "die Leistung fristwahrend erbracht wurde und die Frist als erledigt",
+            "vermerkt ist.",
+          ].join("\n");
+          for (const addr of to) {
+            const result = await sendMail({
+              to: addr,
+              subject: `🚨 NOTFRIST ÜBERFÄLLIG — ${overdueNotfristen.length} Frist(en)`,
+              text: escText,
+            });
+            if (result.sent) notfristEscalated++;
+            else if (result.error !== "mail_not_configured") {
+              errors.push(
+                `Notfrist escalation mail to ${addr} failed for brain ${brainId}: ${result.error ?? "unknown"}`
+              );
+            }
+          }
+        }
+      } catch (err) {
+        errors.push(
+          `Notfrist escalation failed for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
@@ -276,6 +334,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       whatsapp_blocked: whatsappBlocked,
       pipeline_synced: pipelineSynced,
       pipeline_created: pipelineCreated,
+      notfrist_escalated: notfristEscalated,
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
     },

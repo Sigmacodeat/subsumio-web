@@ -5,6 +5,7 @@ import {
   isClosedDeadline,
   markCaseDeadlines,
   nextDueStage,
+  parseReminderStages,
   sentFields,
   type DueReminder,
   type ReminderPage,
@@ -453,5 +454,50 @@ describe("annotateDelegations", () => {
     annotateDelegations(groups, new Map([["legal/cases/1", "RA Müller"]]), [absence()], now);
     expect(groups[0].delegation?.delegateName).toBe("RA Vertreter");
     expect(groups[0].items[0].delegation).toBeUndefined(); // no own responsible → case-level only
+  });
+});
+
+describe("parseReminderStages (firm-configured stages)", () => {
+  it("parses a comma-separated settings string into descending day offsets", () => {
+    expect(parseReminderStages("14,7,3,1,0")).toEqual([14, 7, 3, 1, 0]);
+    expect(parseReminderStages("30, 7,1")).toEqual([30, 7, 1]);
+    expect(parseReminderStages([10, 2])).toEqual([10, 2]);
+  });
+
+  it("dedupes, sorts and drops invalid entries", () => {
+    expect(parseReminderStages("7,7,3,abc,-2,999")).toEqual([7, 3]);
+  });
+
+  it("falls back to the statutory-safe default on empty/garbage input", () => {
+    for (const bad of ["", "abc", null, undefined, {}, [], "  , ,"]) {
+      expect(parseReminderStages(bad)).toEqual([7, 3, 1, 0]);
+    }
+  });
+
+  it("custom stages drive nextDueStage and collectDueReminders", () => {
+    const stages = parseReminderStages("14,2");
+    expect(nextDueStage({}, inDays(14), now, stages)).toBe(14);
+    // 7 days out: the 14-day stage already passed → it fires (min of due).
+    expect(nextDueStage({}, inDays(7), now, stages)).toBe(14);
+    expect(nextDueStage({ reminder_stages_sent: [14] }, inDays(7), now, stages)).toBeUndefined();
+    expect(nextDueStage({}, inDays(1), now, stages)).toBe(2);
+    expect(nextDueStage({}, inDays(20), now, stages)).toBeUndefined();
+
+    const groups = collectDueReminders(
+      [],
+      [deadlinePage("d/custom", { title: "14-Tage-Frist", due_date: inDays(14) })],
+      now,
+      [],
+      stages
+    );
+    expect(groups[0].items[0].stage).toBe(14);
+  });
+
+  it("sentFields marks only configured stages as passed", () => {
+    const stages = parseReminderStages("14,2,0");
+    expect(
+      sentFields({}, { stage: 2, vorfristReached: false, daysRemaining: 2 }, "T", stages)
+        .reminder_stages_sent
+    ).toEqual([14, 2]);
   });
 });
