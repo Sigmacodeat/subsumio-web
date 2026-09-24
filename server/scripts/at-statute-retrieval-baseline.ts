@@ -20,8 +20,8 @@
  *
  *   bun run server/scripts/at-statute-retrieval-baseline.ts --label vorher-pdf
  */
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { dirname, join } from "path";
 import postgres from "postgres";
 
 function arg(name: string, fb?: string) {
@@ -40,8 +40,9 @@ const DB_URL = arg(
 const LABEL = arg("label", "baseline")!;
 const OUT = arg(
   "out",
-  join(import.meta.dirname, "..", "..", ".windsurf", "plans", `at-retrieval-${LABEL}.json`)
+  join(import.meta.dirname, "..", "..", ".data", "eval-runs", `at-retrieval-${LABEL}.json`)
 )!;
+mkdirSync(dirname(OUT), { recursive: true });
 const TOPK = Number(arg("topk", "8"));
 
 type Q = {

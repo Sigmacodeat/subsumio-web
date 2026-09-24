@@ -1,7 +1,7 @@
 # Subsumio — Native Apps (iOS & Android) via Capacitor
 
 Die nativen Apps sind eine dünne Schale um die gehostete Web-App (`server.url` in
-`web/capacitor.config.ts`). Eine Codebase, vier Plattformen: Web, PWA, iOS, Android.
+`capacitor.config.ts` im Repo-Root). Eine Codebase, vier Plattformen: Web, PWA, iOS, Android.
 Die native Schicht ergänzt, was die PWA nicht kann: **Push-Benachrichtigungen,
 biometrische Entsperrung, „An Subsumio senden“-Share-Extension.**
 
@@ -27,7 +27,7 @@ npx cap add ios       # erzeugt ios/   (Xcode-Projekt)
 npx cap add android   # erzeugt android/ (Gradle-Projekt)
 ```
 
-Die generierten Ordner `web/ios/` und `web/android/` einchecken — sie tragen
+Die generierten Ordner `ios/` und `android/` einchecken — sie tragen
 App-Icons, Splash Screens, Signing-Konfiguration und native Plugins.
 
 ## Konfiguration
@@ -38,7 +38,7 @@ App-Icons, Splash Screens, Signing-Konfiguration und native Plugins.
   den Dev-Server: `CAP_SERVER_URL=http://<dein-lan-ip>:3000 npx cap sync`.
 - **Icons & Splash:** `npm install -D @capacitor/assets`, dann
   `npx capacitor-assets generate --iconBackgroundColor '#06060f' --splashBackgroundColor '#06060f'`
-  mit `web/public/icon-512.png` als Quelle (`assets/icon.png`).
+  mit `public/icon-512.png` als Quelle (`assets/icon.png`).
 
 ## Build & Test
 

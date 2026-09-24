@@ -80,3 +80,12 @@ tests/e2e-playwright/marketing-visual.spec.ts-snapshots/
 
 # Runtime state written by src/lib/source-registry.ts
 .source-registry-diff/
+
+# Agent/IDE scratch and generated artifacts (repo cleanup 2026-09-24)
+/.windsurf/plans/
+**/.devin/.dod-gate-passed
+server/test/.cache/
+tests/e2e-workflow-report.json
+scripts/corpus-meta-excluded-report.json
+outlook-addin/dist/
+word-addin/dist/
