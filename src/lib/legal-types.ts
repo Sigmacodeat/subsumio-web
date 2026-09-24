@@ -310,6 +310,23 @@ export interface CaseFrontmatter {
   portal_enabled?: boolean;
   portal_note?: string;
   /**
+   * Registry of issued portal links (hash-only, src/lib/portal-links.ts).
+   * Raw tokens are never stored.
+   */
+  portal_links?: Array<{
+    token_hash: string;
+    created_at: string;
+    expires_at?: string;
+    purpose?: string;
+    revoked_at?: string;
+  }>;
+  /**
+   * "Alle Links widerrufen" sets this ISO cutoff — portal tokens issued
+   * before it are dead even if their hash never reached the registry.
+   * Enforced in src/lib/portal-access.ts.
+   */
+  portal_links_reset_at?: string;
+  /**
    * WP-7.40: Workflow-Template-IDs (src/lib/workflow.ts), die Mandanten
    * im Portal selbst ausführen dürfen. Prompts bleiben serverseitig.
    */

@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { sendMail } from "@/lib/mail";
+import { sendFirmMail } from "@/lib/firm-mail";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
-import { signPortalToken } from "@/lib/portal-token";
+import { signPortalToken, verifyPortalToken } from "@/lib/portal-token";
+import { registerPortalLink } from "@/lib/portal-links";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +50,10 @@ export const POST = createHandler(
     if (!caseRes?.ok) {
       return apiError("case_not_found", "Akte nicht gefunden", 404);
     }
-    const caseFm = ((await caseRes.json()).frontmatter ?? {}) as Record<string, unknown>;
+    const casePage = (await caseRes.json().catch(() => null)) as {
+      frontmatter?: Record<string, unknown>;
+    } | null;
+    const caseFm = (casePage?.frontmatter ?? {}) as Record<string, unknown>;
     if (caseFm.status === "archived") {
       return apiError("case_archived", "Die Akte ist archiviert.", 409);
     }
@@ -63,6 +68,17 @@ export const POST = createHandler(
 
     // Generate portal token + deep link
     const token = await signPortalToken(body.case_slug, undefined, ctx.brainId);
+
+    // Registry entry (hash only) — the firm can list and revoke this link
+    // later even after the URL has left the screen.
+    const issued = await verifyPortalToken(token);
+    await registerPortalLink(ctx.headers, body.case_slug, {
+      token,
+      created_at: new Date().toISOString(),
+      created_by: ctx.user.email,
+      expires_at: new Date((issued?.exp ?? 0) * 1000 || Date.now()).toISOString(),
+      purpose: `sign:${body.document_slug}`,
+    });
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.subsum.io";
     const portalUrl = `${baseUrl}/portal/${token}?sign=${encodeURIComponent(body.document_slug)}&type=${body.document_type}`;
 
@@ -118,7 +134,11 @@ export const POST = createHandler(
         locale === "en"
           ? `<p>Hello ${htmlName},</p><p>You have a document to sign:</p><p><strong>${htmlTitle}</strong></p><p><a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:hsl(230, 60%, 52%);color:#fff;text-decoration:none;border-radius:8px;">Sign document</a></p><p>Best regards</p>`
           : `<p>Hallo ${htmlName},</p><p>Sie haben ein Dokument zur Unterschrift:</p><p><strong>${htmlTitle}</strong></p><p><a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:hsl(230, 60%, 52%);color:#fff;text-decoration:none;border-radius:8px;">Dokument unterschreiben</a></p><p>Mit freundlichen Grüßen</p>`;
-      const result = await sendMail({
+      // Same transport as invoices and matter mail: the firm's own SMTP
+      // first, platform fallback second — a signature request must arrive
+      // from the firm the client knows, not a generic platform address.
+      const settings = await loadKanzleiSettingsForBrain(ctx.brainId);
+      const result = await sendFirmMail(settings, {
         to: body.recipient_email,
         subject,
         text: messageText,
@@ -127,7 +147,7 @@ export const POST = createHandler(
       if (!result.sent) {
         return apiError("mail_send_failed", result.error ?? "Mail send failed", 502);
       }
-      return apiSuccess({ url: portalUrl, channel: "email", mailId: result.id });
+      return apiSuccess({ url: portalUrl, channel: "email", via: result.via });
     }
 
     if (body.channel === "whatsapp") {

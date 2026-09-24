@@ -75,10 +75,10 @@ export const POST = createHandler(
     rateTier: "standard",
     body: replySchema,
     audit: (_ctx, body) => ({
-      action: "case.update" as const,
+      action: "portal.reply" as const,
       entityType: "portal_message",
       entityId: body.case_slug,
-      details: { action: "portal_reply", length: body.message.length },
+      details: { length: body.message.length },
     }),
   },
   async (ctx, body) => {

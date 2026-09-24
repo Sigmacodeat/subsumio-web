@@ -25,6 +25,10 @@ export type AuditAction =
   | "data_room.accept"
   | "data_room.revoke"
   | "data_room.access"
+  | "portal.token_generate"
+  | "portal.token_revoke"
+  | "portal.reply"
+  | "whatsapp.client_invite"
   | "trust.booking"
   | "trust.reversal"
   | "trust.reconciliation"
@@ -350,6 +354,10 @@ const ACTION_LABELS: Record<string, string> = {
   "data_room.invite": "In Datenraum eingeladen",
   "data_room.accept": "Datenraum-Einladung angenommen",
   "data_room.revoke": "Datenraum-Zugang entzogen",
+  "portal.token_generate": "Portal-Link erstellt",
+  "portal.token_revoke": "Portal-Link widerrufen",
+  "portal.reply": "Antwort im Mandantenportal",
+  "whatsapp.client_invite": "WhatsApp-Mandantenfreigabe erstellt",
   "data_room.access": "Dokument im Datenraum abgerufen",
   "trust.booking": "Treuhandbuchung erfasst",
   "trust.reversal": "Treuhandbuchung storniert",

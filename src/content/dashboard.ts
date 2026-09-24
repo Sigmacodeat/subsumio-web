@@ -3198,6 +3198,32 @@ export const D = {
     de: "Portal-Link konnte nicht widerrufen werden.",
     en: "Portal link could not be revoked.",
   },
+  "cases.detail_portal_links_title": {
+    de: "Ausgestellte Portal-Links",
+    en: "Issued portal links",
+  },
+  "cases.detail_portal_links_hint": {
+    de: "Jeder Link gilt 30 Tage für genau diese Akte. Einzelne Links lassen sich hier widerrufen; „Alle widerrufen“ sperrt sofort auch ältere Links, die vor dieser Übersicht ausgestellt wurden.",
+    en: "Each link is valid 30 days for exactly this matter. Links can be revoked individually; \u201cRevoke all\u201d also immediately kills older links issued before this overview existed.",
+  },
+  "cases.detail_portal_links_loading": { de: "Links werden geladen…", en: "Loading links…" },
+  "cases.detail_portal_links_error": {
+    de: "Portal-Links konnten nicht geladen werden.",
+    en: "Portal links could not be loaded.",
+  },
+  "cases.detail_portal_links_empty": {
+    de: "Noch keine Links ausgestellt.",
+    en: "No links issued yet.",
+  },
+  "cases.detail_portal_links_revoke_all": {
+    de: "Alle Links widerrufen",
+    en: "Revoke all links",
+  },
+  "cases.detail_portal_link_status_active": { de: "Aktiv", en: "Active" },
+  "cases.detail_portal_link_status_expired": { de: "Abgelaufen", en: "Expired" },
+  "cases.detail_portal_link_status_revoked": { de: "Widerrufen", en: "Revoked" },
+  "cases.detail_portal_link_until": { de: "bis", en: "until" },
+  "cases.detail_portal_link_purpose_sign": { de: "Unterschrift", en: "Signature" },
   "cases.detail_portal_workflows_title": {
     de: "Self-Service für Mandanten",
     en: "Client self-service",

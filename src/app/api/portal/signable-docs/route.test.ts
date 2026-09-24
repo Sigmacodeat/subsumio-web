@@ -5,7 +5,10 @@ vi.mock("@/lib/auth/rate-limit", () => ({
   hit: vi.fn().mockResolvedValue({ ok: true, retryAfterSeconds: 0 }),
   clientIp: () => "203.0.113.7",
 }));
-vi.mock("@/lib/portal-token", () => ({ verifyPortalToken: vi.fn() }));
+vi.mock("@/lib/portal-token", () => ({
+  verifyPortalToken: vi.fn(),
+  isPortalTokenSuperseded: vi.fn(() => false),
+}));
 
 import { GET } from "./route";
 import { verifyPortalToken } from "@/lib/portal-token";

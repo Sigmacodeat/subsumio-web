@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { verifyPortalToken } from "@/lib/portal-token";
-import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { resolvePortalAccess } from "@/lib/portal-access";
+import { createPublicHandler } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { broadcastPortalVisit } from "@/lib/realtime-bus";
 
@@ -18,24 +18,22 @@ export const GET = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
-    const payload = await verifyPortalToken(portalToken(req, query.token));
-    if (!payload) {
-      return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
-    }
+    // Full gate — a link is only "valid" when the matter's portal is
+    // actually reachable (enabled, not archived, link not revoked).
+    const access = await resolvePortalAccess(portalToken(req, query.token));
+    if (access instanceof Response) return access;
 
     // Broadcast portal visit to the firm (realtime SSE)
-    if (payload.brain_id) {
-      broadcastPortalVisit(payload.brain_id, {
-        caseSlug: payload.case_slug,
-        action: "view",
-        visitedAt: new Date().toISOString(),
-      });
-    }
+    broadcastPortalVisit(access.payload.brain_id, {
+      caseSlug: access.caseSlug,
+      action: "view",
+      visitedAt: new Date().toISOString(),
+    });
 
     return Response.json({
       valid: true,
-      caseSlug: payload.case_slug,
-      expiresAt: payload.exp,
+      caseSlug: access.caseSlug,
+      expiresAt: access.payload.exp,
     });
   }
 );

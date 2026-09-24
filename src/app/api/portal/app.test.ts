@@ -13,6 +13,7 @@ vi.mock("@/lib/portal-token", () => ({
   verifyPortalToken: vi.fn(async (t: string) =>
     t === "tok" ? { case_slug: "cases/mueller", brain_id: "brain_a", exp: 9_999_999_999 } : null
   ),
+  isPortalTokenSuperseded: vi.fn(() => false),
 }));
 vi.mock("web-push", () => ({
   default: {

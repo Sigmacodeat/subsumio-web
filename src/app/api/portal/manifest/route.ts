@@ -1,5 +1,5 @@
-import { verifyPortalToken } from "@/lib/portal-token";
 import { portalToken } from "@/lib/portal-session";
+import { resolvePortalAccess } from "@/lib/portal-access";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request): Promise<Response> {
   const token = portalToken(req, new URL(req.url).searchParams.get("token"));
-  const payload = await verifyPortalToken(token);
-  if (!payload) return new Response("Not found", { status: 404 });
+  const access = await resolvePortalAccess(token);
+  if (access instanceof Response) return new Response("Not found", { status: 404 });
   const start = `/portal/${encodeURIComponent(token)}`;
   return new Response(
     JSON.stringify({

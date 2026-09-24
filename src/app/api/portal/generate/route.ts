@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { signPortalToken } from "@/lib/portal-token";
+import { signPortalToken, verifyPortalToken } from "@/lib/portal-token";
+import { registerPortalLink } from "@/lib/portal-links";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -16,7 +17,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: generateSchema,
     audit: (_ctx, body) => ({
-      action: "case.update" as const,
+      action: "portal.token_generate" as const,
       entityType: "portal_token",
       entityId: body.caseSlug,
       details: { action: "generate" },
@@ -33,7 +34,8 @@ export const POST = createHandler(
     if (!caseRes?.ok) {
       return apiError("case_not_found", "Akte nicht gefunden", 404);
     }
-    const fm = caseFrontmatter((await caseRes.json().catch(() => null)) ?? {});
+    const casePage = (await caseRes.json().catch(() => null)) ?? {};
+    const fm = caseFrontmatter(casePage);
     if (fm.status === "archived") {
       return apiError("case_archived", "Die Akte ist archiviert.", 409);
     }
@@ -45,6 +47,17 @@ export const POST = createHandler(
       );
     }
     const token = await signPortalToken(body.caseSlug, undefined, ctx.brainId);
+
+    // Registry entry (hash only) — so the firm can list and revoke this link
+    // later even after the URL has left the screen.
+    const issued = await verifyPortalToken(token);
+    await registerPortalLink(ctx.headers, body.caseSlug, {
+      token,
+      created_at: new Date().toISOString(),
+      created_by: ctx.user.email,
+      expires_at: new Date((issued?.exp ?? 0) * 1000 || Date.now()).toISOString(),
+    });
+
     return Response.json({ token, url: `/portal/${token}` });
   }
 );

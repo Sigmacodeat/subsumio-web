@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { resolvePortalAccess } from "@/lib/portal-access";
 import { createPublicHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
-import { caseFrontmatter } from "@/lib/legal-types";
 
 export const maxDuration = 30;
 
@@ -48,25 +47,13 @@ export const POST = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, body) => {
-    const payload = await verifyPortalToken(portalToken(req, body.token));
-    if (!payload?.brain_id) {
-      return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
-    }
-
-    const headers = engineHeadersForBrain(payload.brain_id);
-    const caseRes = await fetch(
-      `${ENGINE_URL}/api/pages/${encodeURIComponent(payload.case_slug)}`,
-      { headers, signal: AbortSignal.timeout(10_000) }
-    );
-    if (!caseRes.ok) return apiError("case_not_found", "Akte nicht gefunden", 404);
-    const casePage = (await caseRes.json()) as { frontmatter?: Record<string, unknown> };
-    const fm = caseFrontmatter(casePage);
-    if (!fm.portal_enabled || fm.status === "archived") {
-      return apiError("portal_disabled", "Portal nicht freigegeben", 403);
-    }
+    // Full gate: portal_enabled + archived + link-reset cutoff, in one place.
+    const access = await resolvePortalAccess(portalToken(req, body.token));
+    if (access instanceof Response) return access;
+    const headers = access.headers;
 
     const now = Date.now();
-    const existing = await listFeedback(payload.case_slug, payload.brain_id);
+    const existing = await listFeedback(access.caseSlug, access.payload.brain_id);
     const recent = existing.find((p) => {
       const ts = p.frontmatter?.submitted_at;
       const t = typeof ts === "string" ? Date.parse(ts) : NaN;
@@ -74,7 +61,7 @@ export const POST = createPublicHandler(
     });
 
     const frontmatter = {
-      case_slug: payload.case_slug,
+      case_slug: access.caseSlug,
       nps_score: body.score,
       comment: body.comment?.trim() || null,
       submitted_at: new Date(now).toISOString(),
@@ -91,7 +78,7 @@ export const POST = createPublicHandler(
       return apiSuccess({ ok: true, updated: true });
     }
 
-    const slug = `feedback-${payload.case_slug}-${now}`;
+    const slug = `feedback-${access.caseSlug}-${now}`;
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },

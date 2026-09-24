@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { verifyPortalToken } from "@/lib/portal-token";
-import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { resolvePortalAccess } from "@/lib/portal-access";
+import { createPublicHandler } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
-import { caseFrontmatter } from "@/lib/legal-types";
 import { buildPortalCaseView } from "@/lib/portal-view";
 
 const caseSchema = z.object({
@@ -20,48 +18,10 @@ export const GET = createPublicHandler(
     rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
-    const payload = await verifyPortalToken(portalToken(req, query.token));
-    if (!payload) {
-      return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
-    }
-    if (!payload.brain_id) {
-      return apiError(
-        "new_portal_link_required",
-        "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.",
-        403
-      );
-    }
-
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(payload.case_slug)}`, {
-      headers: engineHeadersForBrain(payload.brain_id),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
-      return apiError(
-        "case_not_found",
-        "Akte konnte nicht geladen werden",
-        res.status === 404 ? 404 : 502
-      );
-    }
-
-    const page = await res.json();
-    const fm = caseFrontmatter(page);
-    if (fm.status === "archived") {
-      return apiError(
-        "case_archived",
-        "Diese Akte wurde archiviert und ist nicht mehr verfügbar.",
-        403
-      );
-    }
-    if (!fm.portal_enabled) {
-      return apiError(
-        "portal_disabled",
-        "Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.",
-        403
-      );
-    }
+    const access = await resolvePortalAccess(portalToken(req, query.token));
+    if (access instanceof Response) return access;
 
     // Never hand the raw page to the client: whitelisted fields + released documents only.
-    return Response.json({ page: buildPortalCaseView(page) });
+    return Response.json({ page: buildPortalCaseView(access.page) });
   }
 );

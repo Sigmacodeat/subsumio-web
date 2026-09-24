@@ -9,7 +9,7 @@
  * Eingangsdatum-Stempel oder Kanal-Übersicht an einer Stelle.
  */
 
-export type InboundChannel = "upload" | "email" | "whatsapp" | "erv" | "scan" | "portal";
+export type InboundChannel = "upload" | "email" | "whatsapp" | "erv" | "scan" | "portal" | "share";
 
 export const INBOUND_CHANNEL_LABEL: Record<InboundChannel, string> = {
   upload: "Hochgeladen",
@@ -18,6 +18,7 @@ export const INBOUND_CHANNEL_LABEL: Record<InboundChannel, string> = {
   erv: "ERV",
   scan: "Scan",
   portal: "Mandantenportal",
+  share: "Geteilt",
 };
 
 export interface InboundEntry {
