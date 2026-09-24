@@ -45,6 +45,7 @@ import {
 import { BUNDESLAENDER } from "@/lib/legal/frist-engine-de";
 import {
   checkInternalConflict,
+  matterConflictParties,
   type ContactRef,
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
@@ -418,16 +419,23 @@ export default function NewCasePage() {
   const relatedCaseSlugs = watch("relatedCaseSlugs") ?? [];
   const mandateId = watch("mandateId");
 
+  // Stable key so the effect re-runs when an additional opponent's name changes.
+  const additionalOpponentNames = additionalOpponents.map((o) => o.name).join("\n");
   useEffect(() => {
-    const refs: ContactRef[] = [];
-    if (clientName?.trim()) refs.push({ name: clientName.trim(), role: "client" });
-    if (opponentName?.trim()) refs.push({ name: opponentName.trim(), role: "opponent" });
+    const refs: ContactRef[] = matterConflictParties({
+      client_name: clientName,
+      opponent_name: opponentName,
+      additional_opponents: additionalOpponentNames
+        .split("\n")
+        .filter(Boolean)
+        .map((name) => ({ name })),
+    });
     if (refs.length < 2) {
       setConflictResult(null);
       return;
     }
     setConflictResult(checkInternalConflict(refs));
-  }, [clientName, opponentName]);
+  }, [clientName, opponentName, additionalOpponentNames]);
 
   function applyContact(slug: string, role: ContactRole) {
     const contact = contacts.find((c) => c.slug === slug);
