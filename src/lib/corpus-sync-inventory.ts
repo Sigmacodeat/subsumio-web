@@ -40,6 +40,7 @@ export interface SyncInventorySource {
   missingByReason: Record<FetchOutcome | "open", number>;
   diskNotInDb: number;
   dbNotOnDisk: number;
+  dbHistorical: number;
   notInRisSoll: number | null;
   aboveSoll: number;
 }
@@ -80,8 +81,10 @@ export interface CorpusSyncRow {
   missingUnreachable: number;
   /** Auf der Platte, nicht in der DB. */
   importOpen: number;
-  /** In der DB, nicht auf der Platte. */
+  /** In der DB, nicht auf der Platte, ohne Enddatum — Altbestand zum Bereinigen. */
   dbExtra: number;
+  /** In der DB, nicht auf der Platte, aber datiert: ältere Fassung, bewusst behalten. */
+  dbHistorical: number;
   /** Auf der Platte, aber nicht mehr im RIS-Soll: außer Kraft / ersetzt. */
   notInSoll: number | null;
   dbChunks: number;
@@ -168,6 +171,7 @@ export function parseSyncInventory(json: string): SyncInventory | null {
         },
         diskNotInDb: num(s.diskNotInDb),
         dbNotOnDisk: num(s.dbNotOnDisk),
+        dbHistorical: num(s.dbHistorical),
         notInRisSoll: numOrNull(s.notInRisSoll),
         aboveSoll: num(s.aboveSoll),
       })),
@@ -226,6 +230,7 @@ export function toSyncRow(
     missingUnreachable,
     importOpen: s.diskNotInDb,
     dbExtra: s.dbNotOnDisk,
+    dbHistorical: s.dbHistorical,
     notInSoll: s.notInRisSoll,
     dbChunks,
     embeddedChunks,

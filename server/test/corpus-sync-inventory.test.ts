@@ -61,7 +61,7 @@ beforeAll(() => {
 afterAll(() => rmSync(ROOT, { recursive: true, force: true }));
 
 const DB: Record<string, Array<string | null>> = {
-  "law-at-normen": ["NOR1", "NOR8", "NOR9", null],
+  "law-at-normen": ["NOR1", "NOR8", "NOR9", null, "NOR7"],
   "law-at-judikatur": ["JJR_1"],
 };
 
@@ -69,9 +69,12 @@ const engine = {
   async executeRaw(sql: string, params: unknown[] = []) {
     if (sql.includes("pipeline_state")) return [{ source_key: "jud-ogh", ris_total: "5" }];
     const [source, lastId] = params as [string, number];
-    return (DB[source] ?? [])
-      .map((doc_id, i) => ({ id: i + 1, doc_id }))
-      .filter((r) => r.id > lastId);
+    return (
+      (DB[source] ?? [])
+        // NOR7: an older version dated by mark-superseded-versions.ts.
+        .map((doc_id, i) => ({ id: i + 1, doc_id, dated: doc_id === "NOR7" }))
+        .filter((r) => r.id > lastId)
+    );
   },
   async connect() {},
   async disconnect() {},
@@ -90,8 +93,8 @@ describe("corpus-sync-inventory", () => {
       rawFiles: 5,
       normalizedFiles: 4,
       diskDocs: 3, // NOR2 counted once
-      dbDocs: 3,
-      dbPages: 4,
+      dbDocs: 4,
+      dbPages: 5,
       dbPagesWithoutDocId: 1,
       missingOnDisk: 2,
       // Raw reasons; the web side (toSyncRow) keeps "failed" as open work —
@@ -99,6 +102,7 @@ describe("corpus-sync-inventory", () => {
       missingByReason: { open: 0, failed: 1, no_text: 1, not_found: 0 },
       diskNotInDb: 1, // NOR2
       dbNotOnDisk: 1, // NOR9
+      dbHistorical: 1, // NOR7 — kept on purpose, not an orphan
       notInRisSoll: 1, // NOR8 — repealed, still on disk
     });
 

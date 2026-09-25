@@ -602,6 +602,11 @@ export function SyncStatusSection({
                             {fmt(r.missingUnreachable)} bei RIS ohne Text
                           </span>
                         )}
+                        {r.dbHistorical > 0 && (
+                          <span title="Ältere Fassungen mit Enddatum — Rechtsgeschichte, bewusst in der Datenbank behalten">
+                            {fmt(r.dbHistorical)} ältere Fassungen
+                          </span>
+                        )}
                         {(r.notInSoll ?? 0) > 0 && (
                           <span title="Auf dem Server, aber nicht mehr im geltenden RIS-Bestand: außer Kraft oder durch neue Fassung ersetzt">
                             {fmt(r.notInSoll)} außer Kraft

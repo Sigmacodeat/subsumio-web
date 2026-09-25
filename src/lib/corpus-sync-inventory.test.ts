@@ -30,6 +30,7 @@ function src(over: Partial<SyncInventorySource>): SyncInventorySource {
     missingByReason: { open: 0, no_text: 0, not_found: 0, failed: 0 },
     diskNotInDb: 0,
     dbNotOnDisk: 0,
+    dbHistorical: 0,
     notInRisSoll: null,
     aboveSoll: 0,
     ...over,

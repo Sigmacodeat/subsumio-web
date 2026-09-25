@@ -48,7 +48,7 @@ const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? "/law-corpus";
 const PRINT = process.argv.includes("--print");
 
 /** Sources with an id-exact RIS in-force index. */
-const INDEX_OF: Record<string, string> = {
+export const INDEX_OF: Record<string, string> = {
   "at-normen": "ris-inforce.jsonl",
   "at-landesrecht": "ris-inforce-landesrecht.jsonl",
 };
@@ -84,8 +84,10 @@ export interface SyncInventorySource {
   missingByReason: Record<FetchOutcome | "open", number>;
   /** On disk (normalized), not a live page in the DB — the real import gap. */
   diskNotInDb: number;
-  /** Live DB page whose doc_id is not on disk (orphan). */
+  /** Live DB page whose doc_id is not on disk and carries no end date (orphan). */
   dbNotOnDisk: number;
+  /** Live DB page not on disk but dated (in_force_to): an older version kept on purpose. */
+  dbHistorical: number;
   /** On disk but not in the RIS in-force index: repealed or superseded (index sources only). */
   notInRisSoll: number | null;
   /** RIS lists fewer than we hold (courts: diskDocs − Soll when positive). */
@@ -124,7 +126,7 @@ function readHead(path: string): string {
 const DOC_ID_RE = /^doc_id:\s*["']?([^"'\s]+)/m;
 
 /** doc_id → number of files carrying it, plus the plain file count. */
-function scanNormalized(dir: string): { ids: Map<string, number>; files: number } {
+export function scanNormalized(dir: string): { ids: Map<string, number>; files: number } {
   const ids = new Map<string, number>();
   let files = 0;
   const walk = (d: string) => {
@@ -167,7 +169,7 @@ function countMd(dir: string): number {
 }
 
 /** In-force document ids from a RIS index, § 0 cover sheets excluded. */
-function loadIndexIds(path: string): Set<string> {
+export function loadIndexIds(path: string): Set<string> {
   const ids = new Set<string>();
   for (const line of readFileSync(path, "utf8").split("\n")) {
     if (!line.trim()) continue;
@@ -228,22 +230,26 @@ export async function measure(
 
     // DB: distinct doc_id of live pages, read in id order to keep memory flat.
     const dbIds = new Set<string>();
+    const datedIds = new Set<string>();
     let dbPages = 0;
     let dbPagesWithoutDocId = 0;
     let lastId = 0;
     for (;;) {
       const batch = (await engine.executeRaw(
-        `SELECT id, frontmatter->>'doc_id' AS doc_id
+        `SELECT id, frontmatter->>'doc_id' AS doc_id,
+                nullif(frontmatter->>'in_force_to', '') IS NOT NULL AS dated
            FROM pages
           WHERE deleted_at IS NULL AND source_id = $1 AND id > $2
           ORDER BY id LIMIT 20000`,
         [sourceId, lastId]
-      )) as Array<{ id: number | string; doc_id: string | null }>;
+      )) as Array<{ id: number | string; doc_id: string | null; dated: boolean }>;
       if (batch.length === 0) break;
       for (const r of batch) {
         dbPages++;
-        if (r.doc_id) dbIds.add(r.doc_id);
-        else dbPagesWithoutDocId++;
+        if (r.doc_id) {
+          dbIds.add(r.doc_id);
+          if (r.dated) datedIds.add(r.doc_id);
+        } else dbPagesWithoutDocId++;
       }
       lastId = Number(batch[batch.length - 1]!.id);
     }
@@ -251,8 +257,14 @@ export async function measure(
     let diskNotInDb = 0;
     for (const id of diskIds.keys()) if (!dbIds.has(id)) diskNotInDb++;
     let dbNotOnDisk = 0;
+    let dbHistorical = 0;
     // Out-of-scope sources have no normalized tree to compare against.
-    if (inScope) for (const id of dbIds) if (!diskIds.has(id)) dbNotOnDisk++;
+    if (inScope)
+      for (const id of dbIds) {
+        if (diskIds.has(id)) continue;
+        if (datedIds.has(id)) dbHistorical++;
+        else dbNotOnDisk++;
+      }
 
     let risSoll: number | null = null;
     let risSollKind: SyncInventorySource["risSollKind"] = null;
@@ -312,6 +324,7 @@ export async function measure(
       missingByReason,
       diskNotInDb,
       dbNotOnDisk,
+      dbHistorical,
       notInRisSoll,
       aboveSoll,
     });
