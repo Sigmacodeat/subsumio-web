@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { executeApprovedAction } from "@/lib/approval-execution";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
 import { logger } from "@/lib/logger";
@@ -38,6 +39,7 @@ export const POST = createHandler(
           updatePage: brain.updatePage,
           mutatePageArray: brain.mutatePageArray,
           sendProactiveWhatsApp: sendProactiveMessage,
+          createCase: (input) => createCaseSafely(engineCaseCreateDeps(ctx.headers), input),
         },
         {
           actionSlug: body.id,

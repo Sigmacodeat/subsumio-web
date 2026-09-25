@@ -17,6 +17,11 @@ import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
+import {
+  createCaseSafely,
+  engineCaseCreateDeps,
+  type SafeCaseCreateInput,
+} from "@/lib/safe-case-create";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
 import type { ActionType } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
@@ -364,6 +369,8 @@ function executionDepsForBrain(brainId: string) {
       return (await res.json()) as PageArrayMutateResult;
     },
     sendProactiveWhatsApp: sendProactiveMessage,
+    createCase: (input: SafeCaseCreateInput) =>
+      createCaseSafely(engineCaseCreateDeps(headers), input),
   };
 }
 

@@ -10,9 +10,10 @@
  *
  * Env vars:
  * - WHATSAPP_FLOW_PRIVATE_KEY_PEM: RSA private key in PEM format
+ * - WHATSAPP_APP_SECRET: app secret for the X-Hub-Signature-256 check
  */
 
-import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { createWebhookHandler, apiError } from "@/lib/api-handler";
 import {
   decryptFlowRequest,
   encryptFlowResponse,
@@ -20,6 +21,9 @@ import {
 } from "@/lib/whatsapp/flow-crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
+import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
+import { verifyWhatsAppSignature } from "@/lib/whatsapp/verify";
 import { randomUUID } from "node:crypto";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -146,64 +150,94 @@ async function handleCaseIntake(
       };
     }
     case "create_case": {
-      // Create the case in the brain
-      const caseNumber = String(
-        data.case_number || `2026-${randomUUID().slice(0, 8).toUpperCase()}`
-      );
-      const caseSlug = `legal/cases/${caseNumber}`;
+      // The slug and the Aktenzeichen are assigned here, never taken from the
+      // sender: a sender-chosen value could name an existing matter, and a
+      // plain create would replace it. What the sender typed as their own
+      // reference is kept as a note only.
+      const reference = `WA-${new Date().getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+      const senderReference = String(data.case_number || "").slice(0, 100);
       const clientName = String(data.client_name || "Unbekannt").slice(0, MAX_FIELD_LENGTH);
       const opponentName = String(data.opponent_name || "").slice(0, MAX_FIELD_LENGTH);
       const legalAreaId = String(data.legal_area || "civil").slice(0, 50);
       const description = String(data.description || "").slice(0, 5000);
+      const legalAreaLabel = LEGAL_AREA_MAP[legalAreaId] || legalAreaId;
 
-      const pagePayload = sanitizeObjectStrings({
-        slug: caseSlug,
+      const casePayload = sanitizeObjectStrings({
         title: `${clientName} vs. ${opponentName || "—"}`,
-        type: "legal_case",
-        content: `## Sachverhalt\n\n${description}\n\n## Parteien\n\n**Mandant:** ${clientName}\n**Gegner:** ${opponentName || "noch unbekannt"}\n\n## Rechtsgebiet\n\n${LEGAL_AREA_MAP[legalAreaId] || legalAreaId}`,
+        content: `## Sachverhalt\n\n${description}\n\n## Parteien\n\n**Mandant:** ${clientName}\n**Gegner:** ${opponentName || "noch unbekannt"}\n\n## Rechtsgebiet\n\n${legalAreaLabel}`,
         frontmatter: {
           type: "legal_case",
-          case_number: caseNumber,
+          case_number: reference,
+          ...(senderReference ? { client_reference: senderReference } : {}),
           client_name: clientName,
           opponent_name: opponentName,
           legal_area: legalAreaId,
-          legal_area_label: LEGAL_AREA_MAP[legalAreaId] || legalAreaId,
+          legal_area_label: legalAreaLabel,
           status: "intake",
           created_via: "whatsapp_flow",
           created_at: new Date().toISOString(),
         },
       });
 
-      try {
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...engineHeadersForBrain(brainId),
+      const headers = engineHeadersForBrain(brainId);
+      const outcome = await createCaseSafely(engineCaseCreateDeps(headers), {
+        ...casePayload,
+        slugHint: reference,
+      });
+
+      if (outcome.status === "conflict") {
+        // No matter for a conflicting request. The firm reviews it as an
+        // intake request; the sender is not told about the conflict.
+        const intake = buildIntakeRequest({
+          source: "whatsapp",
+          summary: description || `Anfrage von ${clientName}`,
+          clientName,
+          legalArea: legalAreaLabel,
+          status: "new",
+          conflictCheckStatus: "conflict",
+        });
+        await writeIntakeRequest(brainId, {
+          ...intake,
+          frontmatter: {
+            ...intake.frontmatter,
+            ...(opponentName ? { opponent: opponentName } : {}),
+            intake_reference: reference,
+          } as typeof intake.frontmatter,
+        });
+        void logAudit("whatsapp.flow_case_created", "intake_request", {
+          entityId: intake.slug,
+          details: { brainId, reference, legalArea: legalAreaId, conflict: true },
+        });
+        return {
+          screen: "SUCCESS",
+          data: { case_slug: "", case_number: reference },
+          extension_message: {
+            flow_token: flowToken,
+            optional_params: { case_number: reference },
           },
-          body: JSON.stringify(pagePayload),
-          signal: AbortSignal.timeout(15_000),
-        });
-        void logAudit("whatsapp.flow_case_created", "legal_case", {
-          entityId: caseSlug,
-          details: { brainId, caseNumber, legalArea: legalAreaId },
-        });
-      } catch (err) {
-        log.error(
-          "[flow/case-intake] brain write failed:",
-          err instanceof Error ? err.message : String(err)
-        );
+        };
       }
+
+      if (outcome.status !== "created") {
+        // exists / error: nothing was written — never report SUCCESS.
+        log.error("[flow/case-intake] case not created:", outcome.status);
+        throw new Error(`case_create_failed:${outcome.status}`);
+      }
+
+      void logAudit("whatsapp.flow_case_created", "legal_case", {
+        entityId: outcome.slug,
+        details: { brainId, reference, legalArea: legalAreaId },
+      });
 
       return {
         screen: "SUCCESS",
         data: {
-          case_slug: caseSlug,
-          case_number: caseNumber,
+          case_slug: outcome.slug,
+          case_number: reference,
         },
         extension_message: {
           flow_token: flowToken,
-          optional_params: { case_slug: caseSlug, case_number: caseNumber },
+          optional_params: { case_slug: outcome.slug, case_number: reference },
         },
       };
     }
@@ -330,15 +364,31 @@ async function handleAppointmentBooking(
 
 // ── Route Handler ──────────────────────────────────────────────────────────
 
-export const POST = createPublicHandler(
+export const POST = createWebhookHandler(
   {
-    body: flowRequestSchema,
     rateLimitKey: (req) => `whatsapp-flow:ip:${clientIp(req.headers)}`,
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, body) => {
-    const { encrypted_aes_key, encrypted_flow_data, initial_vector } = body;
+  async (_body, req) => {
+    // Only Meta may call this endpoint: every request carries an HMAC of the
+    // raw body made with the app secret (X-Hub-Signature-256), checked like
+    // the webhook. No secret or a wrong signature → rejected (fail closed).
+    const rawBody = await req.text();
+    if (!verifyWhatsAppSignature(rawBody, req.headers.get("x-hub-signature-256"))) {
+      return apiError("invalid_signature", "Invalid request signature", 401);
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(rawBody);
+    } catch {
+      return apiError("invalid_json", "Request body is not valid JSON", 400);
+    }
+    const parsedBody = flowRequestSchema.safeParse(json);
+    if (!parsedBody.success) {
+      return apiError("validation_failed", "Request body validation failed", 400);
+    }
+    const { encrypted_aes_key, encrypted_flow_data, initial_vector } = parsedBody.data;
 
     const decrypted = decryptFlowRequest({
       encrypted_aes_key,

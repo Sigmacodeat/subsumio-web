@@ -7,6 +7,7 @@ import {
   type ApprovalStatus,
 } from "@/lib/approval";
 import { executeApprovedAction } from "@/lib/approval-execution";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
@@ -166,6 +167,7 @@ export const PATCH = createHandler(
             updatePage: brain.updatePage,
             mutatePageArray: brain.mutatePageArray,
             sendProactiveWhatsApp: sendProactiveMessage,
+            createCase: (input) => createCaseSafely(engineCaseCreateDeps(ctx.headers), input),
           },
           {
             actionSlug: body.id,
