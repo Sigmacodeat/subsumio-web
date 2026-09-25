@@ -396,6 +396,13 @@ describe("POST /api/pages — server conflict gate (§ 10 RAO)", () => {
           const body = JSON.parse(String(init.body ?? "{}"));
           if (body.type === "legal_case") caseWrites.push(body);
         }
+        // The matter is new: reading it before the write finds nothing.
+        if (
+          (!init?.method || init.method === "GET") &&
+          String(url).includes("/api/pages/legal/cases/neu")
+        ) {
+          return new Response(JSON.stringify({ error: "not_found" }), { status: 404 });
+        }
         return new Response(JSON.stringify({ slug: "legal/cases/neu", success: true }), {
           status: 200,
         });
