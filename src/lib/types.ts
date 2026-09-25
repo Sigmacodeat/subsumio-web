@@ -428,6 +428,10 @@ export interface GroundedCitation {
   /** One-sentence reason for the support verdict. */
   support_reason?: string;
   unverifiable_reason?: string;
+  /** false: the norm exists but is no longer in force (never counted as verified). */
+  in_force?: boolean;
+  /** Außerkrafttreten of the cited norm (ISO date), when known. */
+  repealed_since?: string;
   category?:
     | "statute"
     | "state_treaty"
