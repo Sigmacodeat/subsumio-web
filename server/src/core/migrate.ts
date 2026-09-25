@@ -6614,6 +6614,98 @@ export const MIGRATIONS: Migration[] = [
         ON corpus_quality_snapshot (measured_at DESC);
     `,
   },
+  {
+    version: 149,
+    name: "jsonb_double_encoded_rows_normalize",
+    // ENG-4: several engine writes bound JSON.stringify(...) to a bare
+    // `$N::jsonb` placeholder. postgres.js typed the parameter as jsonb and
+    // encoded the string a second time, so Postgres stored a JSON *string*
+    // holding the object/array text (PGLite was unaffected). The writes now
+    // cast from text (`$N::text::jsonb`); this lifts the rows written before
+    // back to real objects/arrays.
+    //
+    // Per column: only string values whose text starts with `{` or `[` and
+    // parses as JSON are replaced — a value that does not parse is left as
+    // it is (per-row exception block), so a malformed legacy string never
+    // aborts the migration. Tables/columns that do not exist on this brain
+    // (created lazily by their module) are skipped. Idempotent: a second run
+    // finds no object-shaped strings. minion_jobs.data keeps its object; only
+    // the nested `children_ids` string (agent fan-out) is lifted to an array.
+    idempotent: true,
+    sql: `
+      DO $mig$
+      DECLARE
+        t record;
+        r record;
+        parsed jsonb;
+      BEGIN
+        FOR t IN
+          SELECT * FROM (VALUES
+            ('query_cache', 'results'),
+            ('query_cache', 'meta'),
+            ('query_cache', 'page_generations'),
+            ('subsumio_decision_records', 'tools_called'),
+            ('subsumio_decision_records', 'alternatives_considered'),
+            ('subagent_tool_executions', 'input'),
+            ('subagent_tool_executions', 'output'),
+            ('subagent_messages', 'content_blocks'),
+            ('sources', 'config'),
+            ('conversation_parser_llm_cache', 'value_json'),
+            ('migration_impact_log', 'details'),
+            ('subsumio_reasoning_traces', 'retrieved_chunks'),
+            ('subsumio_reasoning_traces', 'citations'),
+            ('subsumio_reasoning_traces', 'warnings'),
+            ('eval_takes_quality_runs', 'dim_scores'),
+            ('eval_takes_quality_runs', 'receipt_json'),
+            ('code_traversal_cache', 'response_json')
+          ) AS v(tbl, col)
+        LOOP
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+             WHERE table_schema = ANY (current_schemas(false))
+               AND table_name = t.tbl AND column_name = t.col AND data_type = 'jsonb'
+          ) THEN
+            FOR r IN EXECUTE format(
+              'SELECT ctid AS rid, %1$I #>> ''{}'' AS txt FROM %2$I
+                WHERE jsonb_typeof(%1$I) = ''string''
+                  AND left(ltrim(%1$I #>> ''{}''), 1) IN (''{'', ''['')',
+              t.col, t.tbl
+            ) LOOP
+              BEGIN
+                parsed := r.txt::jsonb;
+                EXECUTE format('UPDATE %I SET %I = $1 WHERE ctid = $2', t.tbl, t.col)
+                  USING parsed, r.rid;
+              EXCEPTION WHEN others THEN
+                NULL;
+              END;
+            END LOOP;
+          END IF;
+        END LOOP;
+
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+           WHERE table_schema = ANY (current_schemas(false))
+             AND table_name = 'minion_jobs' AND column_name = 'data' AND data_type = 'jsonb'
+        ) THEN
+          FOR r IN
+            SELECT id, data ->> 'children_ids' AS txt FROM minion_jobs
+             WHERE jsonb_typeof(data -> 'children_ids') = 'string'
+          LOOP
+            BEGIN
+              parsed := r.txt::jsonb;
+              IF jsonb_typeof(parsed) = 'array' THEN
+                UPDATE minion_jobs SET data = jsonb_set(data, '{children_ids}', parsed)
+                 WHERE id = r.id;
+              END IF;
+            EXCEPTION WHEN others THEN
+              NULL;
+            END;
+          END LOOP;
+        END IF;
+      END
+      $mig$;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =
