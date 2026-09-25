@@ -30,6 +30,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { csrfFetch } from "@/lib/csrf";
 
 type ReviewType =
   | "all"
@@ -245,7 +246,7 @@ export function ReviewInboxTab() {
         });
       }
       if (type === "document_request") {
-        return fetch("/api/document-requests", {
+        return csrfFetch("/api/document-requests", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -257,14 +258,16 @@ export function ReviewInboxTab() {
       }
       if (type === "client_submission") {
         if (action === "import_document") {
-          return fetch("/api/legal/submission-to-document", {
+          return csrfFetch("/api/legal/submission-to-document", {
             method: "POST",
+            signal: AbortSignal.timeout(300000),
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ submissionSlug: item.pageSlug }),
           }).then((res) => res.json());
         }
-        return fetch("/api/legal/submission-review", {
+        return csrfFetch("/api/legal/submission-review", {
           method: "POST",
+          signal: AbortSignal.timeout(300000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             submissionSlug: item.pageSlug,
@@ -274,7 +277,7 @@ export function ReviewInboxTab() {
       }
       if (type === "suggested_party" && item.arrayIndex !== null) {
         const reviewStatus = action === "approve" ? "approved" : "rejected";
-        return fetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
+        return csrfFetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -288,8 +291,9 @@ export function ReviewInboxTab() {
         }).then((res) => res.json());
       }
       if (type === "pending_fact" && item.factId && item.factStatement) {
-        return fetch("/api/legal/matter-knowledge", {
+        return csrfFetch("/api/legal/matter-knowledge", {
           method: "POST",
+          signal: AbortSignal.timeout(300000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             caseSlug: item.caseSlug || item.pageSlug,
@@ -306,7 +310,7 @@ export function ReviewInboxTab() {
       if (type === "pending_fact" && item.arrayIndex !== null) {
         // Fallback for facts without factId — direct patch
         const reviewStatus = action === "approve" ? "approved" : "party_assertion";
-        return fetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
+        return csrfFetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

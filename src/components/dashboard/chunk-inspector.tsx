@@ -44,6 +44,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { SOURCE_LABELS } from "@/lib/corpus-labels";
+import { csrfFetch } from "@/lib/csrf";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -179,8 +180,9 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
   const queryClient = useQueryClient();
   const bulkActionMutation = useMutation({
     mutationFn: async ({ action, ids }: { action: string; ids: string[] }) => {
-      const res = await fetch("/api/admin/chunk-inspector/action", {
+      const res = await csrfFetch("/api/admin/chunk-inspector/action", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, chunkIds: ids }),
@@ -866,7 +868,7 @@ function ChunkDetailContent({
   // PATCH mutation
   const patchMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const res = await fetch("/api/admin/chunk-inspector/detail", {
+      const res = await csrfFetch("/api/admin/chunk-inspector/detail", {
         method: "PATCH",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -896,7 +898,7 @@ function ChunkDetailContent({
   // DELETE mutation
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/chunk-inspector/detail", {
+      const res = await csrfFetch("/api/admin/chunk-inspector/detail", {
         method: "DELETE",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -921,8 +923,9 @@ function ChunkDetailContent({
   // Action mutation (re-embed, flag)
   const actionMutation = useMutation({
     mutationFn: async (action: string) => {
-      const res = await fetch("/api/admin/chunk-inspector/action", {
+      const res = await csrfFetch("/api/admin/chunk-inspector/action", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, chunkIds: [detail.id] }),

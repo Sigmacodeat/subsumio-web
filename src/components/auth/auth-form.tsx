@@ -31,6 +31,7 @@ import {
   StaggerItem,
 } from "@/components/marketing/motion-system";
 import { useMarket } from "@/lib/use-market";
+import { csrfFetch } from "@/lib/csrf";
 
 const COPY = {
   login: {
@@ -217,7 +218,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(`/api/auth/${mode}`, {
+      const res = await csrfFetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -262,7 +263,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/2fa/login-verify", {
+      const res = await csrfFetch("/api/auth/2fa/login-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challengeToken, token: totpCode.trim() }),

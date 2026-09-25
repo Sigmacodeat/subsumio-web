@@ -29,6 +29,7 @@ import {
 } from "@/lib/claim-account";
 import { CaseSelect } from "@/components/legal/case-select";
 import { VerzugszinsenCalculator } from "@/components/legal/VerzugszinsenCalculator";
+import { csrfFetch } from "@/lib/csrf";
 
 const STATUS_COLORS: Record<string, string> = {
   open: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
@@ -111,7 +112,7 @@ export default function ClaimAccountPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/claim-account", {
+      const res = await csrfFetch("/api/claim-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,7 +156,7 @@ export default function ClaimAccountPage() {
   const recordPayment = async () => {
     if (!payingClaim || !paymentAmount) return;
     try {
-      const res = await fetch("/api/claim-account", {
+      const res = await csrfFetch("/api/claim-account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ claim: payingClaim, payment_amount: Number(paymentAmount) }),
@@ -177,7 +178,7 @@ export default function ClaimAccountPage() {
   ): Promise<{ antrag?: AntragsDaten } | null> => {
     setBusyAction(busyKey);
     try {
-      const res = await fetch("/api/claim-account", {
+      const res = await csrfFetch("/api/claim-account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ claim, jurisdiction: jurOf(claim), ...payload }),

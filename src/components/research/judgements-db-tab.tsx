@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { csrfFetch } from "@/lib/csrf";
 
 interface SearchResult {
   id: string;
@@ -224,8 +225,9 @@ export default function JudgementsDbPage() {
     setError(null);
     setPipelineResult(null);
     try {
-      const res = await fetch("/api/legal/judgements-db/pipeline", {
+      const res = await csrfFetch("/api/legal/judgements-db/pipeline", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query,
@@ -293,8 +295,9 @@ export default function JudgementsDbPage() {
           setDetail(null);
         }}
         onValidate={async () => {
-          await fetch(`/api/legal/judgements-db/${encodeURIComponent(detail.id)}`, {
+          await csrfFetch(`/api/legal/judgements-db/${encodeURIComponent(detail.id)}`, {
             method: "POST",
+            signal: AbortSignal.timeout(300000),
           });
           loadDetail(detail.id);
         }}

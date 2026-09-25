@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
 
 interface DocumentRequestComposerProps {
   slug: string;
@@ -68,7 +69,7 @@ export function DocumentRequestComposer({
 
   const updateStatus = useCallback(
     async (status: "sent" | "fulfilled") => {
-      const res = await fetch("/api/document-requests", {
+      const res = await csrfFetch("/api/document-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +95,7 @@ export function DocumentRequestComposer({
         await updateStatus("sent");
         addToast({ type: "success", title: "Dokumentenanfrage per WhatsApp versendet" });
       } else if (channel === "email" && recipientEmail) {
-        const res = await fetch("/api/cases/send-email", {
+        const res = await csrfFetch("/api/cases/send-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

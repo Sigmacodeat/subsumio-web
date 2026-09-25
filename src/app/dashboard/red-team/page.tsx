@@ -16,6 +16,7 @@ import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
 import { unwrapApiBody } from "@/lib/api-body";
 import { CaseSelect } from "@/components/legal/case-select";
+import { csrfFetch } from "@/lib/csrf";
 const SEVERITY_COLORS: Record<string, string> = {
   high: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
@@ -65,8 +66,9 @@ export default function RedTeamPage() {
     }
     setAnalyzing(true);
     try {
-      const res = await fetch("/api/red-team", {
+      const res = await csrfFetch("/api/red-team", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           case_slug: form.case_slug,

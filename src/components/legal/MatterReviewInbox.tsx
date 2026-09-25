@@ -27,6 +27,7 @@ import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
 import { unwrapApiBody } from "@/lib/api-body";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { csrfFetch } from "@/lib/csrf";
 
 type ReviewItemKind =
   | "client_submission"
@@ -234,8 +235,9 @@ export function MatterReviewInbox({
     if (!item.pageSlug) return;
     setUpdating(item.id);
     try {
-      const res = await fetch("/api/legal/submission-review", {
+      const res = await csrfFetch("/api/legal/submission-review", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           submissionSlug: item.pageSlug,
@@ -279,8 +281,9 @@ export function MatterReviewInbox({
     if (!item.pageSlug) return;
     setUpdating(`${item.id}:import`);
     try {
-      const res = await fetch("/api/legal/submission-to-document", {
+      const res = await csrfFetch("/api/legal/submission-to-document", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ submissionSlug: item.pageSlug }),
       });
@@ -374,8 +377,9 @@ export function MatterReviewInbox({
     if (!matter || !item.factId || !item.statement) return;
     setUpdating(`${item.id}:${action}`);
     try {
-      const res = await fetch("/api/legal/matter-knowledge", {
+      const res = await csrfFetch("/api/legal/matter-knowledge", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caseSlug: matter.slug,
@@ -421,7 +425,7 @@ export function MatterReviewInbox({
     if (!item.requestSlug) return;
     setUpdating(item.id);
     try {
-      const res = await fetch("/api/document-requests", {
+      const res = await csrfFetch("/api/document-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

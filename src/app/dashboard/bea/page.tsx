@@ -30,6 +30,7 @@ import {
   type FilingPackage,
 } from "@/lib/efiling-architecture";
 import { JurisdictionGate } from "@/components/dashboard/jurisdiction-gate";
+import { csrfFetch } from "@/lib/csrf";
 
 interface BeaDraft {
   slug: string;
@@ -296,8 +297,9 @@ function BeaPageInner() {
     setExportingSlug(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await fetch("/api/bea/export", {
+      const res = await csrfFetch("/api/bea/export", {
         method: "POST",
+        signal: AbortSignal.timeout(120000),
         headers: {
           "Content-Type": "application/json",
           ...(await getCsrfHeaders()),
@@ -459,8 +461,9 @@ function BeaPageInner() {
     setReceiptBusy(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await fetch("/api/bea/receipt", {
+      const res = await csrfFetch("/api/bea/receipt", {
         method: "POST",
+        signal: AbortSignal.timeout(90000),
         headers: {
           "Content-Type": "application/json",
           ...(await getCsrfHeaders()),

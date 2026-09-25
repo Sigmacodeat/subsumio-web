@@ -1,6 +1,7 @@
 // For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
 import { defineConfig, globalIgnores } from "eslint/config";
 import { FlatCompat } from "@eslint/eslintrc";
+import requireCsrfFetch from "./eslint-rules/require-csrf-fetch.mjs";
 
 const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
@@ -40,6 +41,14 @@ const eslintConfig = defineConfig([
     files: ["src/app/api/**/*.ts", "src/lib/auth/**/*.ts", "src/lib/legal-graph/**/*.ts"],
     ignores: ["**/*.test.ts"],
     rules: { "no-console": "error" },
+  },
+  // Browser code must send state-changing /api/ requests through csrfFetch
+  // (double-submit token); the middleware rejects raw fetch() writes with 403.
+  {
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    ignores: ["src/app/api/**", "**/*.test.{ts,tsx}", "**/*.stories.{ts,tsx}", "**/_archive/**"],
+    plugins: { local: { rules: { "require-csrf-fetch": requireCsrfFetch } } },
+    rules: { "local/require-csrf-fetch": "error" },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([

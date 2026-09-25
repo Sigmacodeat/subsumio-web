@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { encodeSlugPath, formatDateTime } from "@/lib/utils";
 import Link from "next/link";
+import { csrfFetch } from "@/lib/csrf";
 
 export default function OutboundRegisterPage() {
   const { addToast } = useToast();
@@ -63,7 +64,7 @@ export default function OutboundRegisterPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/outbound-register", {
+      const res = await csrfFetch("/api/outbound-register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

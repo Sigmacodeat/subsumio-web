@@ -12,6 +12,7 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { ContinuingEducationEntry } from "@/lib/fao-tracking";
 import { FAO_REQUIRED_HOURS } from "@/lib/fao-tracking";
+import { csrfFetch } from "@/lib/csrf";
 
 export default function FAOTrackingPage() {
   const { addToast } = useToast();
@@ -60,7 +61,7 @@ export default function FAOTrackingPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/fao-tracking", {
+      const res = await csrfFetch("/api/fao-tracking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

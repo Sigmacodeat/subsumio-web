@@ -16,13 +16,13 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { usePortalVisitEvents } from "@/lib/use-portal-visit-events";
 import { api } from "@/lib/api";
-import { csrfFetch } from "@/lib/csrf";
 import type { PowerOfAttorney } from "@/lib/power-of-attorney";
 import { POA_TYPE_LABELS, POA_STATUS_LABELS, isPoAValid } from "@/lib/power-of-attorney";
 import { SignatureDialog } from "@/components/legal/SignatureDialog";
 import { SendLinkDialog } from "@/components/legal/SendLinkDialog";
 
 import { unwrapApiBody } from "@/lib/api-body";
+import { csrfFetch } from "@/lib/csrf";
 export default function PowerOfAttorneyPage() {
   const { addToast } = useToast();
   const { t } = useLang();
@@ -89,8 +89,9 @@ export default function PowerOfAttorneyPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/power-of-attorney", {
+      const res = await csrfFetch("/api/power-of-attorney", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           case_slug: form.case_slug,
@@ -136,6 +137,7 @@ export default function PowerOfAttorneyPage() {
     try {
       const res = await csrfFetch("/api/power-of-attorney/generate-pdf", {
         method: "POST",
+        signal: AbortSignal.timeout(300000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ poa_id: poa.id }),
       });

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
 import { useMarket } from "@/lib/use-market";
+import { csrfFetch } from "@/lib/csrf";
 
 const COPY = {
   forgot: {
@@ -67,7 +68,7 @@ export default function RecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
     try {
       const token =
         mode === "reset" ? (new URLSearchParams(window.location.search).get("token") ?? "") : "";
-      const res = await fetch(`/api/auth/${mode}`, {
+      const res = await csrfFetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "forgot" ? { email } : { token, password }),
