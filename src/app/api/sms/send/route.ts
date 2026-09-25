@@ -4,7 +4,7 @@ import { isSmsConfigured, SMS_MAX_BODY } from "@/lib/sms/twilio";
 import { sendGuardedSms } from "@/lib/sms/guarded-send";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
-import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
+import { viennaLocalHour, type OutboundScope } from "@/lib/whatsapp/outbound-gate";
 
 const scopeEnum = z.enum([
   "daily_briefing",
@@ -54,7 +54,7 @@ export const POST = createHandler(
       scope: body.scope as OutboundScope,
       body: body.message,
       urgent: body.urgent === true,
-      quietHours: { startHour: 21, endHour: 8, localHour: new Date().getHours() },
+      quietHours: { startHour: 21, endHour: 8, localHour: viennaLocalHour() },
     });
     if (!result.sent) {
       const status = result.reason === "not_configured" ? 503 : 403;

@@ -28,7 +28,7 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { env } from "@/lib/env";
 import { engineComplete, isEngineLLMAvailable } from "@/lib/engine-llm";
 import { engineHeadersForBrain } from "@/lib/engine";
-import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
+import { viennaLocalHour, type QuietHours } from "@/lib/whatsapp/outbound-gate";
 
 // One OpenRouter LLM call to sharpen the "Empfehlungen für heute" section.
 // Input: structured briefing data (already computed, $0). Output: 3-5 German sentences.
@@ -107,7 +107,7 @@ function quietHoursFromEnv(now: Date): QuietHours | undefined {
   return {
     startHour: parseInt(m[1], 10),
     endHour: parseInt(m[2], 10),
-    localHour: now.getHours(),
+    localHour: viennaLocalHour(now),
   };
 }
 

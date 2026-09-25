@@ -3,6 +3,7 @@ import {
   evaluateOutbound,
   isWindowOpen,
   isWithinQuietHours,
+  viennaLocalHour,
   WINDOW_MS,
   type OutboundEvaluation,
 } from "./outbound-gate";
@@ -94,5 +95,22 @@ describe("evaluateOutbound", () => {
       })
     );
     expect(d.reason).toBe("no_consent");
+  });
+});
+
+describe("viennaLocalHour — quiet hours in the recipient's time, not the server's", () => {
+  it("22:30 in Vienna (summer, 20:30 UTC) is inside 21–8", () => {
+    const hour = viennaLocalHour(new Date("2026-07-01T20:30:00Z"));
+    expect(hour).toBe(22);
+    expect(isWithinQuietHours({ startHour: 21, endHour: 8, localHour: hour })).toBe(true);
+  });
+
+  it("07:30 in Vienna (summer, 05:30 UTC) is still quiet; 08:30 is not", () => {
+    expect(viennaLocalHour(new Date("2026-07-01T05:30:00Z"))).toBe(7);
+    expect(viennaLocalHour(new Date("2026-07-01T06:30:00Z"))).toBe(8);
+  });
+
+  it("winter time: 20:30 UTC is 21:30 in Vienna", () => {
+    expect(viennaLocalHour(new Date("2026-01-15T20:30:00Z"))).toBe(21);
   });
 });
