@@ -2,6 +2,7 @@ import { createHandler, type HandlerContext } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { advanceStepIdempotent, type WorkflowStep } from "@/lib/workflow";
+import { withKeyedLock } from "@/lib/keyed-lock";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ const approvalSchema = z.object({
   workflowSlug: z.string().max(200),
   stepId: z.string().max(200),
   action: z.enum(["approve", "reject"]),
-  comment: z.string().optional(),
+  comment: z.string().max(2000).optional(),
 });
 
 /**
@@ -20,6 +21,13 @@ const approvalSchema = z.object({
  * Updates the step's approval_status and optionally adds a comment.
  */
 async function approveStepHandler(ctx: HandlerContext, body: z.infer<typeof approvalSchema>) {
+  // Read → decide → write of the whole steps array is serialised per workflow:
+  // parallel decisions on different steps both land, and two decisions on the
+  // same step yield exactly one success (the second sees the decided step → 409).
+  return withKeyedLock(`workflow:${ctx.brainId}:${body.workflowSlug}`, () => decideStep(ctx, body));
+}
+
+async function decideStep(ctx: HandlerContext, body: z.infer<typeof approvalSchema>) {
   const { workflowSlug, stepId, action, comment } = body;
   const userId = ctx.user.id;
 

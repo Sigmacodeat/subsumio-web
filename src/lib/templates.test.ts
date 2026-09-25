@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   extractVariableKeys,
   fillTemplate,
   hasUnfilledVariables,
   resolveKnownVariables,
+  escapeMarkdownValue,
+  fillTemplateMarkdown,
 } from "@/lib/templates";
 
 describe("extractVariableKeys", () => {
@@ -102,5 +104,29 @@ describe("resolveKnownVariables", () => {
     const vars = resolveKnownVariables(null, null);
     expect(vars.datum).toBeTruthy();
     expect(vars.heute).toBe(vars.datum);
+  });
+});
+
+describe("OPS-25: Wiener Datum und Markdown-Maskierung", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("datum/heute folgen der Wiener Zeit, nicht UTC", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-24T22:30:00Z"));
+    const vars = resolveKnownVariables(null, null);
+    expect(vars.datum).toBe("25.9.2026");
+    expect(vars.heute).toBe("25.9.2026");
+  });
+
+  it("maskiert Markdown-Steuerzeichen in Werten", () => {
+    expect(escapeMarkdownValue("Müller_Bau_GmbH")).toBe("Müller\\_Bau\\_GmbH");
+    expect(escapeMarkdownValue("*Neu* #1")).toBe("\\*Neu\\* \\#1");
+    expect(escapeMarkdownValue("- Punkt")).toBe("\\- Punkt");
+  });
+
+  it("fillTemplateMarkdown maskiert nur die Werte, nicht die Vorlage", () => {
+    expect(fillTemplateMarkdown("**An:** {{mandant}}", { mandant: "A_B_C" })).toBe(
+      "**An:** A\\_B\\_C"
+    );
   });
 });

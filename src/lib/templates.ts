@@ -34,6 +34,27 @@ export function fillTemplate(body: string, values: Record<string, string>): stri
   });
 }
 
+/**
+ * Maskiert Markdown-Steuerzeichen in einem Platzhalterwert, damit z. B. ein
+ * Firmenname „Müller_Bau_GmbH“ oder „*Neu*“ beim Word-Export wörtlich und
+ * nicht als Formatierung erscheint (docx-export versteht `\x`-Escapes).
+ */
+export function escapeMarkdownValue(value: string): string {
+  return value
+    .replace(/[\\`*_[\]#>|~]/g, "\\$&")
+    .replace(/^(\s*)([-+])(\s)/gm, "$1\\$2$3")
+    .replace(/^(\s*\d+)\.(\s)/gm, "$1\\.$2");
+}
+
+/** Wie fillTemplate, aber mit maskierten Werten — für Markdown-Ausgaben (Word-Export). */
+export function fillTemplateMarkdown(body: string, values: Record<string, string>): string {
+  const escaped: Record<string, string> = {};
+  for (const [k, v] of Object.entries(values)) {
+    escaped[k] = v !== undefined && v.trim() !== "" ? escapeMarkdownValue(v) : v;
+  }
+  return fillTemplate(body, escaped);
+}
+
 /** True, wenn nach dem Befüllen noch offene `{{...}}`-Platzhalter übrig sind. */
 export function hasUnfilledVariables(filledBody: string): boolean {
   return /\{\{\s*[a-zA-Z0-9_äöüÄÖÜß]+\s*\}\}/.test(filledBody);
@@ -59,7 +80,9 @@ export function resolveKnownVariables(
   caseData: (CaseFrontmatter & { title?: string; slug?: string }) | null | undefined,
   kanzlei: KanzleiSettings | null | undefined
 ): Record<string, string> {
-  const today = new Date().toLocaleDateString("de-AT");
+  // Wiener Datum — der Server läuft in UTC; zwischen 0 und 2 Uhr hätte ein
+  // Schreiben sonst das Datum des Vortags.
+  const today = new Date().toLocaleDateString("de-AT", { timeZone: "Europe/Vienna" });
   const out: Record<string, string> = {
     datum: today,
     heute: today,

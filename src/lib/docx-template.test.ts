@@ -3,7 +3,12 @@
 import { describe, expect, test } from "vitest";
 import PizZip from "pizzip";
 
-import { DocxTemplateError, fillDocxBatch, fillDocxTemplate } from "./docx-template";
+import {
+  DocxTemplateError,
+  fillDocxBatch,
+  fillDocxTemplate,
+  missingDocxVariables,
+} from "./docx-template";
 
 const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -87,5 +92,31 @@ describe("fillDocxBatch", () => {
 
   test("wirft bei leerer Empfängerliste", () => {
     expect(() => fillDocxBatch(makeDocx(p("x")), [])).toThrow(DocxTemplateError);
+  });
+});
+
+describe("fehlende Platzhalter (OPS-25)", () => {
+  test("markiert einen fehlenden Platzhalter sichtbar statt ihn leer zu lassen", () => {
+    const tpl = makeDocx(p("Sehr geehrte/r {{mandnat}}, Ihr Akt {{az}}."));
+    const out = docxText(fillDocxTemplate(tpl, { az: "3 Cg 1/26" }));
+    expect(out).toContain("«FEHLT: mandnat»");
+    expect(out).toContain("3 Cg 1/26");
+  });
+
+  test("leere Werte gelten ebenfalls als fehlend", () => {
+    const tpl = makeDocx(p("Tel: {{kanzlei_telefon}}"));
+    expect(docxText(fillDocxTemplate(tpl, { kanzlei_telefon: "  " }))).toContain(
+      "«FEHLT: kanzlei_telefon»"
+    );
+  });
+
+  test("missingDocxVariables listet genau die unbefüllten Platzhalter", () => {
+    const tpl = makeDocx(p("{{mandant}} / {{gegner}} / {{az}}"));
+    expect(missingDocxVariables(tpl, { mandant: "A", az: "" })).toEqual(["gegner", "az"]);
+  });
+
+  test("Wert mit Unterstrichen bleibt im DOCX unverändert", () => {
+    const tpl = makeDocx(p("{{mandant}}"));
+    expect(docxText(fillDocxTemplate(tpl, { mandant: "A_B_C" }))).toContain("A_B_C");
   });
 });
