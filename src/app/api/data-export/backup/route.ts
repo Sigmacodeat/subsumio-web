@@ -1,4 +1,5 @@
 import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_LIST_MAX } from "@/lib/engine-pages";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -6,8 +7,8 @@ const log = logger("api/data-export/backup");
 
 export const maxDuration = 300;
 
-/** Pages per engine request (the engine caps a list request at 200). */
-const PER_PAGE = 200;
+/** Pages per engine request — the engine answers a list request with at most this many. */
+const PER_PAGE = ENGINE_LIST_MAX;
 /** Hard ceiling, so one request cannot run forever. */
 const MAX_PAGES = 50_000;
 /** Page texts are fetched one by one; this many at a time. */
@@ -20,25 +21,28 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const allPages: Array<Record<string, unknown>> = [];
-      let page = 0;
-      const perPage = PER_PAGE;
-      let hasMore = true;
-      let truncated = false;
+      // How many entries the brain holds — the backup is only complete when
+      // it holds exactly that many. Without the number, completeness cannot
+      // be confirmed and the backup is marked incomplete.
+      const expectedTotal = await readExpectedTotal(ctx.headers);
 
+      const bySlug = new Map<string, Record<string, unknown>>();
+      const allPages: Array<Record<string, unknown>> = [];
+      let truncated = false;
       let engineError = false;
-      while (hasMore) {
-        if (allPages.length >= MAX_PAGES) {
+
+      // A batch can come back shorter than requested while more pages follow
+      // (the engine drops entries the caller may not see after the limit is
+      // applied), so only an empty batch ends the listing.
+      for (let offset = 0; ; offset += PER_PAGE) {
+        if (allPages.length >= MAX_PAGES || offset >= MAX_PAGES * 2) {
           truncated = true;
           break;
         }
-        const res = await fetch(
-          `${ENGINE_URL}/api/pages?limit=${perPage}&offset=${page * perPage}`,
-          {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(30_000),
-          }
-        );
+        const res = await fetch(`${ENGINE_URL}/api/pages?limit=${PER_PAGE}&offset=${offset}`, {
+          headers: ctx.headers,
+          signal: AbortSignal.timeout(30_000),
+        });
         if (!res.ok) {
           engineError = true;
           break;
@@ -48,18 +52,20 @@ export const GET = createHandler(
           engineError = true;
           break;
         }
-        const pages = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as Record<string, unknown>)?.pages)
-            ? (raw as Record<string, unknown[]>).pages
-            : [];
-        if (pages.length === 0) {
-          hasMore = false;
-        } else {
-          allPages.push(...pages);
-          // Stop early if we got fewer than requested — last page
-          if (pages.length < perPage) hasMore = false;
-          page++;
+        const pages = (
+          Array.isArray(raw)
+            ? raw
+            : Array.isArray((raw as Record<string, unknown>)?.pages)
+              ? (raw as Record<string, unknown[]>).pages
+              : []
+        ) as Array<Record<string, unknown>>;
+        if (pages.length === 0) break;
+        for (const entry of pages) {
+          const slug = typeof entry?.slug === "string" ? entry.slug : "";
+          // Entries edited during the backup move in the listing; keep each once.
+          if (!slug || bySlug.has(slug)) continue;
+          bySlug.set(slug, entry);
+          allPages.push(entry);
         }
       }
 
@@ -109,8 +115,14 @@ export const GET = createHandler(
           user_id: ctx.user.id,
           user_email: ctx.user.email,
           total_pages: allPages.length,
+          expected_pages: expectedTotal,
           pages_without_content: missingContent.length,
-          complete: !engineError && !truncated && missingContent.length === 0,
+          complete:
+            !engineError &&
+            !truncated &&
+            missingContent.length === 0 &&
+            expectedTotal !== null &&
+            allPages.length === expectedTotal,
           format: "JSON",
           description:
             "Sicherung aller Einträge des Kanzleiwissens samt Texten — für Umzug oder Archivierung",
@@ -123,6 +135,17 @@ export const GET = createHandler(
           ...(truncated
             ? {
                 truncated_warning: `Sicherung bei ${MAX_PAGES.toLocaleString("de-AT")} Einträgen abgeschnitten. Bitte wenden Sie sich an den Support für eine vollständige Ausleitung.`,
+              }
+            : {}),
+          ...(!engineError && expectedTotal === null
+            ? {
+                count_warning:
+                  "Die Gesamtzahl der Einträge war nicht abrufbar — ob die Sicherung vollständig ist, konnte nicht geprüft werden",
+              }
+            : {}),
+          ...(!engineError && expectedTotal !== null && allPages.length !== expectedTotal
+            ? {
+                count_warning: `Sicherung enthält ${allPages.length.toLocaleString("de-AT")} von ${expectedTotal.toLocaleString("de-AT")} Einträgen`,
               }
             : {}),
           ...(missingContent.length > 0
@@ -139,3 +162,19 @@ export const GET = createHandler(
     }
   }
 );
+
+/** Entry count of the brain from the engine's stats, or null when unavailable. */
+async function readExpectedTotal(headers: Record<string, string>): Promise<number | null> {
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/stats`, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return null;
+    const stats = (await res.json()) as { total_pages?: unknown; page_count?: unknown } | null;
+    const n = Number(stats?.total_pages ?? stats?.page_count);
+    return Number.isInteger(n) && n >= 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
