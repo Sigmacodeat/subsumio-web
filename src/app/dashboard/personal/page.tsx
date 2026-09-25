@@ -28,7 +28,8 @@ const ROLE_LABEL: Record<StaffRole, string> = {
   partner: "Partner:in",
   anwalt: "Rechtsanwält:in",
   assistenz: "Assistenz",
-  rechtsfachwirt: "Rechtsfachwirt:in",
+  // Austrian term (the stored key stays for existing records).
+  rechtsfachwirt: "Rechtsanwaltsanwärter:in",
   sonstige: "Sonstige",
 };
 

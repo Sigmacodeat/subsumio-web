@@ -13,6 +13,18 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { InterviewDefinition } from "@/lib/document-interviews";
 
+const REVIEW_STATUS_LABEL: Record<string, string> = {
+  unreviewed: "Ungeprüft",
+  draft: "Entwurf",
+  pending: "Offen",
+  pending_review: "Zur Prüfung",
+  in_review: "In Prüfung",
+  reviewed: "Geprüft",
+  approved: "Freigegeben",
+  rejected: "Abgelehnt",
+  completed: "Abgeschlossen",
+};
+
 const STATUS_COLORS: Record<string, string> = {
   unreviewed: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
   reviewed: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
@@ -159,7 +171,9 @@ export default function DocumentInterviewsPage() {
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">{iv.title}</h3>
-                <Badge className={STATUS_COLORS[iv.review_status] ?? ""}>{iv.review_status}</Badge>
+                <Badge className={STATUS_COLORS[iv.review_status] ?? ""}>
+                  {REVIEW_STATUS_LABEL[iv.review_status] ?? iv.review_status}
+                </Badge>
               </div>
               <p className="text-sm text-[color:var(--ds-text-muted)]">{iv.description}</p>
               <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
