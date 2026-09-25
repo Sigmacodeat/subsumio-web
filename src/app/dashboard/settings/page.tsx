@@ -55,6 +55,7 @@ import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { SettingsHub } from "@/components/dashboard/settings-hub";
+import { BillingRulesSettings } from "@/components/dashboard/billing-rules-settings";
 import { csrfFetch } from "@/lib/csrf";
 
 /**
@@ -303,6 +304,7 @@ function SettingsPageInner() {
       ustId: "",
       stundensatz: "200",
       abrechnungstakt: "15",
+      billingRulesEnabled: false,
       bankName: "",
       iban: "",
       bic: "",
@@ -348,6 +350,9 @@ function SettingsPageInner() {
     control: kanzleiForm.control,
     name: "rechtsgebietSaetze",
   });
+  const billingRulesWatch = useWatch({ control: kanzleiForm.control, name: "billingRulesEnabled" });
+  const abrechnungstaktWatch = useWatch({ control: kanzleiForm.control, name: "abrechnungstakt" });
+  const stundensatzWatch = useWatch({ control: kanzleiForm.control, name: "stundensatz" });
 
   useEffect(() => {
     if (meQuery.data?.user?.referralCode) {
@@ -381,6 +386,7 @@ function SettingsPageInner() {
           ustId: saved.ustId,
           stundensatz: saved.stundensatz,
           abrechnungstakt: saved.abrechnungstakt ?? "15",
+          billingRulesEnabled: saved.billingRulesEnabled === true,
           bankName: saved.bankName ?? "",
           iban: saved.iban ?? "",
           bic: saved.bic ?? "",
@@ -495,6 +501,7 @@ function SettingsPageInner() {
       ustId: data.ustId,
       stundensatz: data.stundensatz,
       abrechnungstakt: data.abrechnungstakt,
+      billingRulesEnabled: data.billingRulesEnabled === true,
       tarifModell: data.tarifModell,
       rechtsgebietSaetze: data.rechtsgebietSaetze,
       bankName: data.bankName,
@@ -1028,6 +1035,26 @@ function SettingsPageInner() {
                       </div>
                     </div>
                   )}
+
+                  <Field
+                    label={L("Abrechnungsregeln", "Billing rules")}
+                    desc={L(
+                      "Takt und Sätze wirken nur, wenn Sie sie hier einschalten.",
+                      "Increment and rates apply only when switched on here."
+                    )}
+                  >
+                    <BillingRulesSettings
+                      enabled={billingRulesWatch === true}
+                      onEnabledChange={(v) =>
+                        kanzleiForm.setValue("billingRulesEnabled", v, { shouldDirty: true })
+                      }
+                      abrechnungstakt={abrechnungstaktWatch}
+                      stundensatz={stundensatzWatch}
+                      rechtsgebietSaetze={rechtsgebietSaetzeWatch}
+                      tarifModell={tarifModellWatch}
+                      areaLabel={(k) => RATE_AREA_LABELS[k]?.de ?? k}
+                    />
+                  </Field>
 
                   <Field
                     id="settings-zahlungsziel-tage"
