@@ -12,13 +12,8 @@ import { buildNdaTemplate } from "@/lib/nda-template";
 import { contactSlugFor } from "@/lib/case-contacts";
 import { listEnginePages } from "@/lib/engine-pages";
 import { createServerBrainClient } from "@/lib/server-brain";
-import {
-  listAllTimeEntries,
-  markTimeEntriesBilled,
-  updateStandaloneBilling,
-  STANDALONE_ENTRY_PREFIX,
-  type TimeEntryWithCase,
-} from "@/lib/time-tracking";
+import { listAllTimeEntries, type TimeEntryWithCase } from "@/lib/time-tracking";
+import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
@@ -2702,15 +2697,21 @@ async function executeInvoiceDraft(
     };
     const hash = await sha256Hex(invoiceContentString(invoice));
 
-    const res = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
+    // Reserve the time entries for this number first, then write the invoice
+    // (one helper, shared with /api/invoices). If another invoice took some
+    // of them meanwhile, nothing is created — no second invoice over the
+    // same work.
+    const outcome = await createInvoiceReservingEntries(
+      ctx.headers,
+      createServerBrainClient(ctx.headers),
+      {
         slug: invoice.id,
         title: `Rechnung ${invoice.number}`,
-        type: "invoice",
+        caseSlug: page.slug,
+        invoiceNumber: invoice.number,
+        timeEntryIds: billedEntryIds,
+        expenseIds: [],
         frontmatter: {
-          type: "invoice",
           invoice_number: invoice.number,
           client: invoice.client,
           client_slug: invoice.clientSlug,
@@ -2732,38 +2733,16 @@ async function executeInvoiceDraft(
           source: "copilot",
           ...gobdFrontmatter(hash, now),
         },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    // Verrechnete Zeiteinträge als billed markieren — gleiche Semantik wie
-    // der Rechnungsdialog, aber atomar: ein einziges UPDATE mit unless-Guard
-    // (bereits unter anderer Rechnung abgerechnete Einträge werden nie
-    // umattribuiert). Standalone-Timer-Pages laufen auf ihrer eigenen Page.
-    // Die Rechnung existiert bereits — ein Fehler hier darf sie nicht
-    // zurückrollen, wird aber laut geloggt statt verschluckt.
-    if (billedEntryIds.length > 0) {
-      try {
-        const brain = createServerBrainClient(ctx.headers);
-        const standaloneIds = billedEntryIds.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
-        const caseIds = billedEntryIds.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
-        if (caseIds.length > 0) {
-          await markTimeEntriesBilled(brain, page.slug, caseIds, invoice.number);
-        }
-        if (standaloneIds.length > 0) {
-          await updateStandaloneBilling(brain, standaloneIds, {
-            billed: true,
-            invoiceNumber: invoice.number,
-          });
-        }
-      } catch (err) {
-        log.error(
-          "[copilot/tools] invoice_draft: billed-Markierung fehlgeschlagen:",
-          err instanceof Error ? err.message : String(err)
-        );
       }
+    );
+    if (outcome.kind === "conflict") {
+      return fail(
+        "entries_already_billed",
+        "Leistungen bereits abgerechnet",
+        `Einige Zeiteinträge der Akte "${page.title}" wurden inzwischen abgerechnet — es wurde kein Rechnungsentwurf angelegt. Bitte erneut versuchen.`
+      );
     }
+    if (outcome.kind === "create_failed") throw new Error(`HTTP ${outcome.status}`);
 
     return {
       success: true,

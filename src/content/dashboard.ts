@@ -1562,9 +1562,9 @@ export const D = {
   },
   "inv.quick_cancel": { de: "Abbrechen", en: "Cancel" },
   "inv.quick_created": { de: "Rechnung erstellt", en: "Invoice created" },
-  "inv.quick_mark_billed_failed": {
-    de: "Rechnung erstellt, aber die Leistungen konnten nicht als abgerechnet markiert werden. Bitte in der Akte prüfen — Rechnung nicht erneut erstellen.",
-    en: "Invoice created, but the entries could not be marked as billed. Please check the matter — do not create the invoice again.",
+  "inv.quick_create_online_only": {
+    de: "Rechnungen können nur mit Verbindung erstellt werden — Rechnungsnummer und abgerechnete Leistungen werden am Server reserviert.",
+    en: "Invoices can only be created while online — the invoice number and billed work are reserved on the server.",
   },
   "inv.quick_create_failed": {
     de: "Rechnung konnte nicht erstellt werden",
@@ -3497,6 +3497,18 @@ export const D = {
   "cases.detail_exp_billed_locked": {
     de: "Auslage ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
     en: "Expense is already billed — unbill it first.",
+  },
+  "cases.detail_time_delete_confirm": {
+    de: "Zeitbuchung wirklich löschen? Das kann nicht rückgängig gemacht werden.",
+    en: "Really delete this time booking? This cannot be undone.",
+  },
+  "cases.detail_time_billed_locked": {
+    de: "Zeitbuchung ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
+    en: "Time booking is already billed — unbill it first.",
+  },
+  "cases.detail_exp_delete_confirm": {
+    de: "Auslage wirklich löschen? Das kann nicht rückgängig gemacht werden.",
+    en: "Really delete this expense? This cannot be undone.",
   },
   "cases.detail_audit_title": { de: "Audit-Trail", en: "Audit trail" },
   "cases.detail_audit_empty": {

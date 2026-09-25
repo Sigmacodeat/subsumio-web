@@ -8,6 +8,10 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: (...args: unknown[]) => mockPatch(...args),
 }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
+const mockRelease = vi.fn(async (..._args: unknown[]) => ({ time: 2, expenses: 0 }));
+vi.mock("@/lib/invoice-billing-lock", () => ({
+  releaseWorkOfInvoice: (...args: unknown[]) => mockRelease(...args),
+}));
 vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
@@ -96,7 +100,29 @@ describe("/api/invoices/[slug]", () => {
   it("deletes drafts only", async () => {
     stored = { ...sent, frontmatter: { status: "cancelled" } };
     expect((await call("DELETE")).status).toBe(409);
+    expect(mockRelease).not.toHaveBeenCalled();
     stored = { ...sent, frontmatter: { status: "draft" } };
     expect((await call("DELETE")).status).toBe(200);
+  });
+
+  it("releases the billed work of a deleted draft (GELD-9)", async () => {
+    const fm = {
+      status: "draft",
+      invoice_number: "R-1",
+      case_slugs: ["cases/a"],
+      time_entry_ids: ["te-1", "te-2"],
+    };
+    stored = { ...sent, frontmatter: fm };
+    const res = await call("DELETE");
+    expect(res.status).toBe(200);
+    expect(mockRelease).toHaveBeenCalledWith({}, "legal/invoices/r-1", fm, "draft_deleted");
+    expect((await res.json()).released).toEqual({ time: 2, expenses: 0 });
+  });
+
+  it("does not release anything when the delete itself fails", async () => {
+    stored = { ...sent, frontmatter: { status: "draft", invoice_number: "R-1" } };
+    mockPatch.mockResolvedValueOnce(new Response("{}", { status: 500 }));
+    expect((await call("DELETE")).status).toBe(503);
+    expect(mockRelease).not.toHaveBeenCalled();
   });
 });

@@ -16,6 +16,7 @@ import {
   rejectionResponse,
 } from "@/lib/page-write-guards";
 
+import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
 
@@ -302,6 +303,14 @@ export const POST = createHandler(
         frontmatter: body.frontmatter,
       });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+
+      // Billed time entries / expenses are part of an invoice's basis — the
+      // billing state moves only through the dedicated billing routes.
+      const billedRejection = checkBilledEntriesWrite(current, {
+        mode: body.merge === true ? "merge" : "replace",
+        frontmatter: body.frontmatter,
+      });
+      if (billedRejection) return rejectionResponse(billedRejection);
 
       // Vier-Augen-Kontrolle: second_check_* only via the second-check route.
       if (body.frontmatter) {

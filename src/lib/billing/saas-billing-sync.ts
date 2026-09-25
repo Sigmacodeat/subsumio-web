@@ -308,7 +308,9 @@ export async function billMonthlyOverage(): Promise<{ orgs: number; invoices: nu
       const seatSubtotal = org.seats * planConfig.monthly_seat_price;
       const includedCredit = org.seats * planConfig.included_credit;
 
-      // Get purchased_credit for this period (credit packs cover overage)
+      // Purchased credits available in this period: the rest carried over by
+      // resetMonthlyPeriod plus packs bought during the period — never the
+      // original amount of packs already used up in earlier months.
       const creditResult = await pool.query<{ purchased_credit: number }>(
         `SELECT COALESCE(purchased_credit, 0) as purchased_credit
          FROM saas_credit_balance
@@ -317,8 +319,12 @@ export async function billMonthlyOverage(): Promise<{ orgs: number; invoices: nu
       );
       const purchasedCredit = Number(creditResult.rows[0]?.purchased_credit ?? 0);
 
-      // Overage = usage beyond included AND purchased credits
-      const overage = Math.max(0, usageSell - includedCredit - purchasedCredit);
+      // Overage = usage beyond included AND the available purchased credits
+      const overage = monthlyOverage({
+        usage: usageSell,
+        included: includedCredit,
+        purchasedAvailable: purchasedCredit,
+      });
       const total = seatSubtotal + overage;
 
       const insertResult = await pool.query<{ id: number }>(
@@ -452,13 +458,51 @@ export async function reactivateSaasSubscription(userId: string): Promise<void> 
 }
 
 /**
+ * Unverbrauchter Rest gekaufter Credits am Ende einer Periode.
+ *
+ * Verbrauch zehrt zuerst die monatlichen Inklusiv-Credits auf (die verfallen
+ * ohnehin zum Monatsende), erst der Überhang geht zu Lasten der gekauften
+ * Credits. Beispiel: inklusive 60, gekauft 100, verbraucht 160 → Rest 0;
+ * verbraucht 100 → 40 gehen zu Lasten des Kaufs, Rest 60.
+ */
+export function unusedPurchasedCredit(period: {
+  included: number;
+  purchased: number;
+  used: number;
+}): number {
+  const included = Math.max(0, Number(period.included) || 0);
+  const purchased = Math.max(0, Number(period.purchased) || 0);
+  const used = Math.max(0, Number(period.used) || 0);
+  const fromPurchased = Math.max(0, used - included);
+  return Math.max(0, purchased - fromPurchased);
+}
+
+/**
+ * Überziehung einer Periode: Verbrauch über Inklusiv-Credits UND die in der
+ * Periode verfügbaren gekauften Credits (übertragener Rest + Käufe der
+ * Periode) — nie der ursprüngliche Kaufbetrag früherer Monate.
+ */
+export function monthlyOverage(period: {
+  usage: number;
+  included: number;
+  purchasedAvailable: number;
+}): number {
+  const usage = Math.max(0, Number(period.usage) || 0);
+  const included = Math.max(0, Number(period.included) || 0);
+  const purchased = Math.max(0, Number(period.purchasedAvailable) || 0);
+  return Math.max(0, usage - included - purchased);
+}
+
+/**
  * Monthly Period Reset — erstellt neue saas_credit_balance Rows für den
- * neuen Monat und überträgt purchased_credit (gekaufte Credits sind permanent).
+ * neuen Monat und überträgt den UNVERBRAUCHTEN Rest gekaufter Credits.
  *
  * Wird am 1. jedes Monats VOR billMonthlyOverage aufgerufen:
  *   1. Für jede aktive Org: neuen saas_credit_balance Row für den neuen Monat
  *   2. included_credit aus dem SaaS Plan setzen (€60 Solo / €200 Kanzlei/seat)
- *   3. purchased_credit aus dem Vormonat übernehmen (gekauft = permanent)
+ *   3. purchased_credit = unverbrauchter Rest des Vormonats
+ *      (unusedPurchasedCredit — gekaufte Credits verfallen nicht monatlich,
+ *      werden aber auch nur einmal verbraucht)
  *   4. used_credit = 0 (frischer Monat)
  *   5. overage_eur = 0
  *
@@ -490,14 +534,28 @@ export async function resetMonthlyPeriod(): Promise<{ orgs: number; rows: number
 
       const includedCredit = org.seats * planConfig.included_credit;
 
-      // Get purchased_credit from previous period (carry over)
-      const prevResult = await pool.query<{ purchased_credit: number }>(
-        `SELECT COALESCE(purchased_credit, 0) as purchased_credit
+      // Carry over only what is left of the purchased credits — usage beyond
+      // the included credits was paid from them last month.
+      const prevResult = await pool.query<{
+        included_credit: number;
+        purchased_credit: number;
+        used_credit: number;
+      }>(
+        `SELECT COALESCE(included_credit, 0) as included_credit,
+                COALESCE(purchased_credit, 0) as purchased_credit,
+                COALESCE(used_credit, 0) as used_credit
          FROM saas_credit_balance
          WHERE org_id = $1 AND period_start = $2`,
         [org.id, prevPeriodStart]
       );
-      const purchasedCredit = Number(prevResult.rows[0]?.purchased_credit ?? 0);
+      const prev = prevResult.rows[0];
+      const purchasedCredit = prev
+        ? unusedPurchasedCredit({
+            included: Number(prev.included_credit),
+            purchased: Number(prev.purchased_credit),
+            used: Number(prev.used_credit),
+          })
+        : 0;
 
       // Insert new period row (idempotent)
       const result = await pool.query(

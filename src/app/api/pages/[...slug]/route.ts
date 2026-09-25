@@ -10,6 +10,7 @@ import {
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -114,6 +115,17 @@ export const PATCH = createHandler(
           : undefined,
     });
     if (invoiceRejection) return rejectionResponse(invoiceRejection);
+
+    // Billed time entries / expenses are part of an invoice's basis — the
+    // billing state moves only through the dedicated billing routes.
+    const billedRejection = checkBilledEntriesWrite(currentPage, {
+      mode: "merge",
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (billedRejection) return rejectionResponse(billedRejection);
 
     // Increment version on update
     const patchBody: Record<string, unknown> = { ...body, slug: rawSlug };
@@ -441,6 +453,8 @@ export const DELETE = createHandler(
       // § 132 BAO retention; corrections go through the Storno-Note.
       const invoiceRejection = checkInvoiceWrite(casePage, { mode: "delete" });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+      const billedRejection = checkBilledEntriesWrite(casePage, { mode: "delete" });
+      if (billedRejection) return rejectionResponse(billedRejection);
 
       // Guard: already archived — return 409 to prevent double-archive
       if (pageType === "legal_case" && fm.status === "archived") {
