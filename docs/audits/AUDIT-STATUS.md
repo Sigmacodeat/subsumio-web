@@ -28,6 +28,8 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 8e  | Zeit — Atomic Expense Ops  | #62 | 7ba5b6b01e   | ✅ live | Auslagen-Billing/Edits als atomare Engine-Array-Ops statt Read-Modify-Write (Parallel-Agent)                                                                                     |
 | 3a  | Kommunikation — Rest       | #65 | 9369263fd0   | ✅ live | Resend-Webhook `/api/webhooks/resend` (Svix, fail-closed) → Delivery-Status-Write-back; Tracking-Events 90d-Retention; beA-Dead-UI-Counts entfernt                               |
 | 9b  | DSGVO — Rest               | #60 | e9aeb9de97   | ✅ live | AVV-Muster-Download (md + PDF, „anwaltlich zu prüfen"); Per-Item-Retention `retention_until`/`retention_days` für Dokumente/Notizen im trash-purge-Cron                          |
+| 9c  | DSGVO — Retention-Fix      | #66 | 834d0108ed   | ✅ live | Retention unterschreitet nie GoBD-Mindestfrist + respektiert Legal Hold (Parallel-Agent)                                                                                         |
+| 3b  | Kommunikation — Dedupe-Fix | #67 | fae1b8fa46   | ✅ live | Resend-Reconcile-Dedupe-Key pro Brain gescoped (Parallel-Agent)                                                                                                                  |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
