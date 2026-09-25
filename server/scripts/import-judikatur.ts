@@ -396,18 +396,23 @@ async function main() {
   if (!cfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
   configureGateway(buildGatewayConfig(cfg));
 
+  // Disable the statement timeout for this batch import. The default 5min
+  // (server/src/core/db.ts, resolveSessionTimeouts) protects live
+  // request-serving connections; a batch import that has to wait behind a
+  // long purge (2026-09-25: a `DELETE FROM pages … LIMIT 10000` held row
+  // locks for ~50 min and every `INSERT INTO links` of this import timed
+  // out after 5 min on `transactionid`, SQLSTATE 57014) must wait, not die
+  // and restart from scratch every pipeline cycle.
+  //
+  // It has to be the env knob, set BEFORE the pool is created: the timeout
+  // is a connection *startup parameter* on every pooled connection, so a
+  // later `executeRaw("SET statement_timeout = 0")` only reaches the one
+  // connection that happened to run it (a827b34f7a tried exactly that and
+  // LVwG/VwGH still timed out on the next statement). Explicit env from the
+  // caller wins.
+  process.env.GBRAIN_STATEMENT_TIMEOUT ??= "0";
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
-  // Disable the statement timeout for this session — the default 5min
-  // (server/src/core/db.ts) is meant to protect live request-serving
-  // connections, not a batch import. Large sources (BVwG 62k, LVwG 91k
-  // decisions) were dying mid-run on `statement_timeout` (SQLSTATE 57014)
-  // a few hundred to ~1300 decisions in and restarting from scratch every
-  // pipeline cycle — this script is the only judikatur/law import script
-  // that didn't already disable it (import-ch-laws.ts, rechunk-missing.ts,
-  // import-split-statutes-direct.ts and import-ch-multilingual-split.ts all
-  // do). One-off script connection, never touches request-serving traffic.
-  await engine.executeRaw("SET statement_timeout = 0");
   await engine.initSchema();
   try {
     await reconfigureGatewayWithEngine(engine);
