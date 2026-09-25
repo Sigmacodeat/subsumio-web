@@ -29,6 +29,8 @@ const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutz
 - Fristen prüfen: [TOOL:search_deadlines status="open"] oder [TOOL:search_deadlines case_slug="cases/123" status="critical"]
 - Mandanten-Lookup (Akte + Fristen kombiniert): [TOOL:client_lookup query="Muster GmbH" deadline_status="open"]
 - Frist als erledigt markieren: [TOOL:deadline_mark_done deadline_slug="deadline-123"]
+- Aufgaben anzeigen: [TOOL:search_tasks status="open"] oder [TOOL:search_tasks case_slug="cases/123" priority="high"]
+- Termine anzeigen: [TOOL:search_calendar range="week"] oder [TOOL:search_calendar date="2026-10-15" range="today"]
 - Wissen suchen: [TOOL:search_knowledge query="ABGB § 1295"]
 - Akte erstellen: [TOOL:create_case title="Klage Muster GmbH" client_name="Max Mustermann" opponent_name="Gegner AG"]
 - Aktenzusammenfassung: [TOOL:case_summary case_slug="cases/123"]

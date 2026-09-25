@@ -9,6 +9,15 @@ const base = {
   userText: "Was steht hier zur Kündigungsfrist?",
 };
 
+describe("tool list", () => {
+  it("offers every implemented search tool (tasks, calendar)", async () => {
+    const { systemPrompt } = await buildPromptContext(base);
+    expect(systemPrompt).toContain("[TOOL:search_tasks");
+    expect(systemPrompt).toContain("[TOOL:search_calendar");
+    expect(systemPrompt).not.toContain("rvg_calculate");
+  });
+});
+
 describe("buildPromptContext", () => {
   it("conversation history and memory travel as data, not in the instructions", async () => {
     const { systemPrompt, conversationContext } = await buildPromptContext({

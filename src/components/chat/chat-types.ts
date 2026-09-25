@@ -57,7 +57,6 @@ export type ToolType =
   | "client_update"
   | "meeting_tasks"
   | "intake_create"
-  | "rvg_calculate"
   | "document_request_create"
   | "precedent_search"
   | "translate_text"
