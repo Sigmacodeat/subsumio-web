@@ -507,11 +507,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         const [page, batch] = await Promise.all([
           api.brain.getPage(slug),
           api.brain
-            .batchListPagesDetailed(["legal_contact"], 300)
-            .then((r) => {
-              if (r.errors.length) console.warn("[matter-detail] batch list partial:", r.errors);
-              return r.results;
-            })
+            .batchListPages(["legal_contact"], 300)
             .catch(() => ({}) as Record<string, BrainPage[]>),
         ]);
         const allContacts = batch["legal_contact"] ?? [];
@@ -689,7 +685,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const onFocus = () => {
       api.brain
-        .listAllPages({ type: "legal_contact", max: 200 })
+        .listPages({ type: "legal_contact", limit: 200 })
         .then((pages) => {
           setContacts(
             pages.map((p) => {

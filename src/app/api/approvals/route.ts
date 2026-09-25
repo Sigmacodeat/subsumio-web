@@ -9,7 +9,6 @@ import {
 import { executeApprovedAction } from "@/lib/approval-execution";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
-import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/approvals");
@@ -60,33 +59,7 @@ export const GET = createHandler(
     const limit = Math.min(parseInt(query.limit || "50", 10), 200);
     try {
       const brain = createServerBrainClient(ctx.headers);
-      // The engine returns at most 100 per request — page through until the
-      // caller's limit is filled or the engine reports no further cursor.
-      const pages: BrainPage[] = [];
-      let cursor: string | null = null;
-      while (pages.length < limit) {
-        const want = Math.min(100, limit - pages.length);
-        const batch: { items: BrainPage[]; nextCursor: string | null } = brain.listPagesPaged
-          ? await brain.listPagesPaged({
-              type: "agent_action",
-              limit: want,
-              ...(cursor ? { cursor } : { offset: pages.length }),
-            })
-          : {
-              items: await brain.listPages({
-                type: "agent_action",
-                limit: want,
-                offset: pages.length,
-              }),
-              nextCursor: null,
-            };
-        pages.push(...batch.items);
-        if (batch.nextCursor && batch.nextCursor !== cursor) {
-          cursor = batch.nextCursor;
-          continue;
-        }
-        if (cursor || batch.items.length < want) break;
-      }
+      const pages = await brain.listPages({ type: "agent_action", limit });
       const items = pages
         .filter((p) => {
           const fm = p.frontmatter as Record<string, unknown>;

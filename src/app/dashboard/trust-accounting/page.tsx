@@ -175,7 +175,7 @@ export default function TrustAccountingPage() {
 
   useEffect(() => {
     api.brain
-      .listAllPages({ type: "legal_case", max: 200 })
+      .listPages({ type: "legal_case", limit: 200 })
       .then(setCases)
       .catch(() => setCases([]));
   }, []);

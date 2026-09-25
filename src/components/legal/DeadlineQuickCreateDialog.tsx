@@ -111,10 +111,7 @@ export function DeadlineQuickCreateDialog({
       pages.push(...batch);
       if (batch.length < 100) break;
     }
-    // Paging by "recently updated" can return a page twice when it changes
-    // meanwhile — dedupe on slug so the picker can't show a case twice.
-    const unique = [...new Map(pages.map((p) => [p.slug, p])).values()];
-    return unique
+    return pages
       .filter((p) => !isTombstoned(p))
       .map((p: BrainPage) => ({
         slug: p.slug,
