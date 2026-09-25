@@ -37,8 +37,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
+import { firmToday } from "@/lib/datetime";
 import { tracking } from "@/lib/tracking";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { TimeTrackingWidget } from "@/components/dashboard/time-tracking-widget";
 
 const ALL_CASES = "__all";
@@ -114,7 +116,7 @@ function TimeEntriesInner() {
   const [createForm, setCreateForm] = useState({
     description: "",
     minutes: "",
-    date: new Date().toISOString().split("T")[0],
+    date: firmToday(),
     rate: "",
     case_slug: "",
     activity_type: "other" as "research" | "drafting" | "court" | "meeting" | "other",
@@ -122,17 +124,22 @@ function TimeEntriesInner() {
   });
 
   // Fetch time entries
-  const { data: entries, isLoading } = useQuery({
+  // Every entry (sums, CSV and PDF cover all of them); `capped` only when
+  // even the safety stop is reached — then a notice says so.
+  const {
+    data: timeData,
+    isLoading,
+    isError: loadFailed,
+    refetch: refetchEntries,
+  } = useQuery({
     queryKey: ["time-entries"],
-    queryFn: async () => {
-      const data = await api.time.list({ limit: 500 });
-      return data.entries || [];
-    },
+    queryFn: () => api.time.list({ limit: TIME_READ_LIMIT }),
   });
+  const entries = timeData?.entries;
 
   const { data: cases = [] } = useQuery({
     queryKey: ["time-cases"],
-    queryFn: () => api.cases.list({ limit: 100 }),
+    queryFn: () => api.brain.listAllPages({ type: "legal_case", max: 10_000 }),
   });
 
   // Filter entries
@@ -255,15 +262,16 @@ function TimeEntriesInner() {
       e.case_slug || "",
       `"${(e.case_title || caseTitle(e.case_slug)).replace(/"/g, '""')}"`,
       String(e.minutes),
-      (e.minutes / 60).toFixed(2),
+      decimalDe(e.minutes / 60),
       e.billable ? "Ja" : "Nein",
       e.billed ? "Ja" : "Nein",
-      e.rate ? String(e.rate) : "",
-      e.billable && e.rate ? ((e.minutes / 60) * e.rate).toFixed(2) : "",
+      e.rate ? decimalDe(e.rate) : "",
+      e.billable && e.rate ? decimalDe((e.minutes / 60) * e.rate) : "",
       e.lawyer || "",
       e.activity_type || "",
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    // Excel (de-AT) reads ";" as separator and "," as decimal mark.
+    const csv = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -482,8 +490,17 @@ function TimeEntriesInner() {
         </div>
 
         <TabsContent value={activeTab} className="mt-4">
+          {timeData?.capped && <CappedResultsNotice limit={TIME_READ_LIMIT} />}
           {isLoading ? (
             <RowSkeleton count={4} />
+          ) : loadFailed ? (
+            <EmptyState
+              icon={Clock}
+              title="Zeiteinträge konnten nicht geladen werden"
+              description="Die Liste ist nicht leer, sie konnte nur nicht gelesen werden."
+              actionLabel="Erneut laden"
+              onAction={() => void refetchEntries()}
+            />
           ) : filteredEntries.length > 0 ? (
             <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
               {filteredEntries.map((entry: TimeEntryWithMeta) => (
@@ -775,6 +792,14 @@ function TimeStat({ label, value, sub }: { label: string; value: string; sub: st
       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{sub}</div>
     </div>
   );
+}
+
+/** Safety stop for the time list (the API reads everything up to it). */
+const TIME_READ_LIMIT = 20_000;
+
+/** Decimal with comma and two places for the CSV ("1,50"). */
+function decimalDe(n: number): string {
+  return n.toFixed(2).replace(".", ",");
 }
 
 export default function TimeEntriesPage() {

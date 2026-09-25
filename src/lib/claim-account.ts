@@ -46,9 +46,34 @@ export interface Claim {
   zv_measures?: ZvMeasure[];
   /** Zuletzt erzeugte Antragsdaten (Mahnklage/Mahnbescheid/Exekution). */
   last_antrag?: AntragsDaten;
+  /** Ursprüngliche Hauptforderung (principal_amount ist der offene Rest). */
+  original_principal_amount?: number;
+  /** Zahlungsjournal: jeder Eingang mit Anrechnung (§ 1416 ABGB), Nutzer und Zeit. */
+  payments?: ClaimPaymentRecord[];
+  /** Überzahlung — Guthaben des Schuldners, nicht verfallen. */
+  credit_balance?: number;
   created_at: string;
   updated_at: string;
 }
+
+export interface ClaimPaymentRecord {
+  id: string;
+  /** Tag des Zahlungseingangs (YYYY-MM-DD). */
+  date: string;
+  amount: number;
+  allocated_costs: number;
+  allocated_interest: number;
+  allocated_principal: number;
+  /** Überzahlung dieser Zahlung (→ credit_balance). */
+  surplus: number;
+  booked_by?: string;
+  booked_at: string;
+  /** Zahlung auf eine Rate des Ratenplans. */
+  installment?: boolean;
+}
+
+const c = (n: unknown): number => Math.round((Number(n) || 0) * 100);
+const eur = (cents: number): number => Math.round(cents) / 100;
 
 export interface PaymentAllocation {
   payment_id: string;
@@ -69,49 +94,76 @@ export interface PaymentAllocation {
  * 3. Principal (Hauptforderung)
  */
 export function allocatePayment(claim: Claim, paymentAmount: number): PaymentAllocation {
-  let remaining = paymentAmount;
+  // In whole cents — no float remainders in the account.
+  let remaining = c(paymentAmount);
   const now = new Date().toISOString();
 
   // 1. Costs first
-  const openCosts = claim.costs_amount;
-  const allocatedCosts = Math.min(remaining, openCosts);
+  const allocatedCosts = Math.min(remaining, Math.max(0, c(claim.costs_amount)));
   remaining -= allocatedCosts;
 
   // 2. Interest second
-  const openInterest = claim.interest_amount;
-  const allocatedInterest = Math.min(remaining, openInterest);
+  const allocatedInterest = Math.min(remaining, Math.max(0, c(claim.interest_amount)));
   remaining -= allocatedInterest;
 
   // 3. Principal last
-  const openPrincipal = claim.principal_amount;
-  const allocatedPrincipal = Math.min(remaining, openPrincipal);
+  const allocatedPrincipal = Math.min(remaining, Math.max(0, c(claim.principal_amount)));
   remaining -= allocatedPrincipal;
 
   return {
     payment_id: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     claim_id: claim.id,
-    total_payment: paymentAmount,
-    allocated_costs: allocatedCosts,
-    allocated_interest: allocatedInterest,
-    allocated_principal: allocatedPrincipal,
-    remaining: Math.max(0, remaining),
+    total_payment: eur(c(paymentAmount)),
+    allocated_costs: eur(allocatedCosts),
+    allocated_interest: eur(allocatedInterest),
+    allocated_principal: eur(allocatedPrincipal),
+    remaining: eur(Math.max(0, remaining)),
     allocated_at: now,
   };
 }
 
+/**
+ * Book an allocated payment on the claim. The open parts shrink, the
+ * original principal stays recorded, an overpayment is kept as the
+ * debtor's credit (never silently dropped).
+ */
 export function applyPaymentToClaim(claim: Claim, allocation: PaymentAllocation): Claim {
-  const newPaid = claim.paid_amount + allocation.total_payment - allocation.remaining;
-  const newOpen = Math.max(0, claim.total_claim - newPaid);
+  const credited = c(allocation.total_payment) - c(allocation.remaining);
+  const newPaid = c(claim.paid_amount) + credited;
+  const newOpen = Math.max(0, c(claim.total_claim) - newPaid);
 
   return {
     ...claim,
-    paid_amount: newPaid,
-    open_amount: newOpen,
-    costs_amount: Math.max(0, claim.costs_amount - allocation.allocated_costs),
-    interest_amount: Math.max(0, claim.interest_amount - allocation.allocated_interest),
-    principal_amount: Math.max(0, claim.principal_amount - allocation.allocated_principal),
+    original_principal_amount: claim.original_principal_amount ?? claim.principal_amount,
+    paid_amount: eur(newPaid),
+    open_amount: eur(newOpen),
+    costs_amount: eur(Math.max(0, c(claim.costs_amount) - c(allocation.allocated_costs))),
+    interest_amount: eur(Math.max(0, c(claim.interest_amount) - c(allocation.allocated_interest))),
+    principal_amount: eur(
+      Math.max(0, c(claim.principal_amount) - c(allocation.allocated_principal))
+    ),
+    credit_balance: eur(c(claim.credit_balance) + c(allocation.remaining)),
     status: newOpen <= 0 ? "paid" : claim.status,
     updated_at: new Date().toISOString(),
+  };
+}
+
+/** Journal entry of a booked payment. */
+export function paymentRecord(
+  allocation: PaymentAllocation,
+  input: { date: string; bookedBy?: string; installment?: boolean }
+): ClaimPaymentRecord {
+  return {
+    id: allocation.payment_id,
+    date: input.date,
+    amount: allocation.total_payment,
+    allocated_costs: allocation.allocated_costs,
+    allocated_interest: allocation.allocated_interest,
+    allocated_principal: allocation.allocated_principal,
+    surplus: allocation.remaining,
+    booked_by: input.bookedBy,
+    booked_at: allocation.allocated_at,
+    ...(input.installment ? { installment: true } : {}),
   };
 }
 
@@ -131,9 +183,10 @@ export function createClaim(input: {
   jurisdiction?: ClaimJurisdiction;
 }): Claim {
   const now = new Date().toISOString();
-  const interest = input.interest_amount ?? 0;
-  const costs = input.costs_amount ?? 0;
-  const total = input.principal_amount + interest + costs;
+  const principal = eur(c(input.principal_amount));
+  const interest = eur(c(input.interest_amount ?? 0));
+  const costs = eur(c(input.costs_amount ?? 0));
+  const total = eur(c(principal) + c(interest) + c(costs));
 
   return {
     id: `claim-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -141,7 +194,8 @@ export function createClaim(input: {
     claimant_name: input.claimant_name,
     debtor_name: input.debtor_name,
     debtor_address: input.debtor_address,
-    principal_amount: input.principal_amount,
+    principal_amount: principal,
+    original_principal_amount: principal,
     interest_amount: interest,
     costs_amount: costs,
     total_claim: total,

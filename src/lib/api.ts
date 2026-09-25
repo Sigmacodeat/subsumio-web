@@ -3420,6 +3420,8 @@ export const api = {
         activity_type?: string;
       }>;
       total: number;
+      /** More entries match than were returned (`limit`). */
+      capped?: boolean;
       summary: { total_minutes: number; total_hours: number; billable_amount: number };
     }> {
       const searchParams = new URLSearchParams();
