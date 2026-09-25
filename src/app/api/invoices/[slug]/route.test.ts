@@ -173,3 +173,16 @@ describe("/api/invoices/[slug] — issuing a draft (GELD-2 / QA-14)", () => {
     expect(res.status).toBe(409);
   });
 });
+
+describe("/api/invoices/[slug] — Storno-Note (GELD-10)", () => {
+  it("a Storno-Note (issued at creation) cannot be deleted: 409", async () => {
+    stored = {
+      slug: "legal/invoices/r-1",
+      type: "invoice",
+      frontmatter: { status: "sent", invoice_type: "storno", total: -120 },
+    };
+    const res = await call("DELETE");
+    expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+});

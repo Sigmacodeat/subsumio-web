@@ -93,6 +93,11 @@ interface Invoice {
   parentInvoiceId?: string;
   caseSlugs?: string[];
   leitwegId?: string;
+  taxBreakdown?: Array<{ rate: number; net: number; tax: number }>;
+  reverseCharge?: boolean;
+  clientVatId?: string;
+  parentInvoiceNumber?: string;
+  parentInvoiceDate?: string;
   eInvoiceChannel?: "peppol" | "erechnung_gv_at";
   eInvoiceReference?: string;
   eInvoiceStatus?: "queued" | "delivered" | "failed";
@@ -249,11 +254,16 @@ export default function InvoicingPage() {
           reminderFee: fm.reminder_fee,
           invoiceType: fm.invoice_type,
           parentInvoiceId: fm.parent_invoice_id,
+          parentInvoiceNumber: fm.parent_invoice_number,
+          parentInvoiceDate: fm.parent_invoice_date,
           eInvoiceChannel: fm.e_invoice_channel,
           eInvoiceReference: fm.e_invoice_reference,
           eInvoiceStatus: fm.e_invoice_status,
           caseSlugs: fm.case_slugs,
           leitwegId: fm.leitweg_id,
+          taxBreakdown: fm.tax_breakdown,
+          reverseCharge: fm.reverse_charge === true,
+          clientVatId: fm.client_vat_id,
         };
       });
       const loadedCases: InvoiceCase[] = casePages.map((p) => {
@@ -484,6 +494,9 @@ export default function InvoicingPage() {
       vatRate: inv.vatRate,
       tax: inv.tax,
       total: inv.total,
+      taxBreakdown: inv.taxBreakdown,
+      reverseCharge: inv.reverseCharge,
+      clientVatId: inv.clientVatId,
       paymentTerms: inv.paymentTerms,
       bank: inv.bank,
       notes: inv.notes,
@@ -528,6 +541,10 @@ export default function InvoicingPage() {
             notes: inv.notes,
             invoice_type: inv.invoiceType,
             leitweg_id: inv.leitwegId,
+            reverse_charge: inv.reverseCharge,
+            client_vat_id: inv.clientVatId,
+            parent_invoice_number: inv.parentInvoiceNumber,
+            parent_invoice_date: inv.parentInvoiceDate,
           },
           settings,
           options: {
@@ -594,6 +611,10 @@ export default function InvoicingPage() {
             notes: inv.notes,
             invoice_type: inv.invoiceType,
             leitweg_id: inv.leitwegId,
+            reverse_charge: inv.reverseCharge,
+            client_vat_id: inv.clientVatId,
+            parent_invoice_number: inv.parentInvoiceNumber,
+            parent_invoice_date: inv.parentInvoiceDate,
           },
           settings,
           options: {

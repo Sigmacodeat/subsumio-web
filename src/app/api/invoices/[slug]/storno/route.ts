@@ -10,6 +10,13 @@
  * Beträge negiert — die Originalrechnung selbst wird nicht angerührt
  * (genau der GoBD-korrekte Weg: stornieren heißt einen neuen Beleg
  * ausstellen, nicht den alten verändern).
+ *
+ * Genau eine Storno-Note pro Rechnung: der Slug hängt an der Original-
+ * rechnung (`storno-of-…`) und wird create-only geschrieben, der Ablauf läuft
+ * unter einer Sperre pro Rechnung. Ein zweiter, gleichzeitiger Storno erhält
+ * 409. Die Storno-Note wird sofort ausgestellt (Status „sent“) — sie ist
+ * damit unveränderbar und nicht löschbar, genau wie der offene Posten des
+ * Originals, der mit ihr ausgebucht wird.
  */
 
 import { ENGINE_URL } from "@/lib/engine";
@@ -20,6 +27,9 @@ import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbe
 import { closeOpenItemForInvoice } from "@/lib/open-items";
 import { logAudit } from "@/lib/audit";
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import { firmToday, firmYear } from "@/lib/datetime";
+import { computeInvoiceTotals, totalsInputFromFrontmatter } from "@/lib/invoice-totals";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/[slug]/storno");
@@ -41,6 +51,12 @@ interface ExpenseItem {
   date: string;
   description: string;
   amount: number;
+  vat_rate?: number;
+}
+
+/** The one Storno-Note slug of an invoice. */
+function stornoSlugFor(invoiceSlug: string): string {
+  return `legal/invoices/storno-of-${invoiceSlug.replace(/\//g, "__").replace(/[^A-Za-z0-9._-]/g, "-")}`;
 }
 
 export const POST = createHandler(
@@ -63,154 +79,172 @@ export const POST = createHandler(
     const slug = validSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
-    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (getRes.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
-    if (!getRes.ok) return apiError("engine_unreachable", "Rechnung nicht lesbar", 503);
-    const original = await getRes.json();
-    const fm = (original.frontmatter ?? {}) as Record<string, unknown>;
-
-    const PROTECTED_STATUS = new Set(["sent", "paid", "overdue"]);
-    const status = String(fm.status ?? "");
-    if (!PROTECTED_STATUS.has(status)) {
-      return apiError(
-        "not_stornoable",
-        "Nur versendete, bezahlte oder überfällige Rechnungen können storniert werden — ein Entwurf lässt sich stattdessen direkt bearbeiten oder löschen.",
-        409
-      );
-    }
-    if (fm.invoice_type === "storno") {
-      return apiError(
-        "already_storno",
-        "Eine Storno-Note kann nicht selbst storniert werden.",
-        409
-      );
-    }
-
-    // Refuse a second storno of the same invoice — check every invoice page
-    // for one that already points back here as parent_invoice_id. Strict:
-    // a partial list could miss an existing storno and allow a duplicate.
-    const allInvoices = await listEnginePages(ctx.headers, "invoice", 5000, { strict: true });
-    const existingStorno = allInvoices.find(
-      (p) => p.frontmatter?.parent_invoice_id === slug && p.frontmatter?.invoice_type === "storno"
-    );
-    if (existingStorno) {
-      return apiError(
-        "already_stornoed",
-        `Diese Rechnung wurde bereits mit ${String(existingStorno.frontmatter?.invoice_number ?? existingStorno.slug)} storniert.`,
-        409
-      );
-    }
-
-    const year = new Date().getFullYear();
-    const existingNumbers = allInvoices.map((p) => String(p.frontmatter?.invoice_number ?? ""));
-    const number = await allocateInvoiceNumber(
-      ctx.brainId,
-      year,
-      highestInvoiceNumber(existingNumbers, year)
-    );
-
-    const originalItems = Array.isArray(fm.items) ? (fm.items as InvoiceItem[]) : [];
-    const originalExpenses = Array.isArray(fm.expenses) ? (fm.expenses as ExpenseItem[]) : [];
-    const negatedItems = originalItems.map((i) => ({ ...i, amount: -i.amount }));
-    const negatedExpenses = originalExpenses.map((e) => ({ ...e, amount: -e.amount }));
-
-    const subtotal = -Number(fm.subtotal ?? 0);
-    const expenseTotal = -Number(fm.expense_total ?? 0);
-    const advancePayment = -Number(fm.advance_payment ?? 0);
-    const tax = -Number(fm.tax ?? 0);
-    const total = -Number(fm.total ?? 0);
-    const date = new Date().toISOString().slice(0, 10);
-    const stornoSlug = `legal/invoices/storno-${number.replace(/[^a-zA-Z0-9-]/g, "-")}`;
-
-    const hashInput = {
-      number,
-      client: String(fm.client ?? ""),
-      caseNumber: fm.case_number as string | undefined,
-      date,
-      subtotal,
-      expenseTotal,
-      advancePayment,
-      tax,
-      total,
-      items: negatedItems,
-      expenses: negatedExpenses,
-    };
-    const issuedAt = new Date();
-    const hash = await sha256Hex(invoiceContentString(hashInput));
-
-    const stornoPayload = {
-      slug: stornoSlug,
-      title: `Storno-Note ${number} zu ${String(fm.invoice_number ?? slug)}`,
-      type: "invoice" as const,
-      frontmatter: {
-        type: "invoice",
-        invoice_number: number,
-        client: fm.client,
-        client_slug: fm.client_slug,
-        client_address: fm.client_address,
-        case_number: fm.case_number,
-        case_slugs: fm.case_slugs,
-        date,
-        due_date: date,
-        items: negatedItems,
-        expenses: negatedExpenses,
-        status: "draft",
-        subtotal,
-        expense_total: expenseTotal,
-        advance_payment: advancePayment,
-        vat_rate: fm.vat_rate,
-        tax,
-        total,
-        notes: `Storno-Note zu Rechnung ${String(fm.invoice_number ?? slug)} vom ${String(fm.date ?? "")}.`,
-        invoice_type: "storno",
-        parent_invoice_id: slug,
-        ...gobdFrontmatter(hash, issuedAt),
-      },
-    };
-
-    // Create-only: an invoice already stored at this slug is never replaced.
-    const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...stornoPayload, if_absent: true }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (createRes.status === 409) {
-      return apiError(
-        "invoice_exists",
-        "Unter dieser Adresse gibt es bereits eine Rechnung. Es wurde nichts überschrieben.",
-        409
-      );
-    }
-    if (!createRes.ok) {
-      log.error("[storno] create failed", { status: createRes.status });
-      return apiError("engine_unreachable", "Storno-Note konnte nicht angelegt werden", 503);
-    }
-
-    void logAudit("invoice.update", "invoice", {
-      entityId: stornoSlug,
-      details: { action: "storno_created", forInvoice: slug, invoiceNumber: number },
-    });
-
-    // OPOS: der offene Posten der stornierten Rechnung wird ausgebucht —
-    // sonst mahnt der Mahnlauf eine Rechnung, die nicht mehr gilt.
-    // Best-effort: Storno-Note ist bereits angelegt; Fehler wird geloggt.
-    try {
-      await closeOpenItemForInvoice(ctx.headers, slug, "written_off", `Storniert durch ${number}`);
-    } catch (err) {
-      log.error(
-        "[storno] opos write-off failed:",
-        err instanceof Error ? err.message : String(err)
-      );
-    }
-
-    // The stornoed invoice no longer bills its work — put it back to open so
-    // the corrected invoice can take it (audit entry written by the helper).
-    const released = await releaseWorkOfInvoice(ctx.headers, slug, fm, "storno");
-
-    return apiSuccess({ slug: stornoSlug, invoice_number: number, released }, undefined, 201);
+    // One Storno at a time per invoice (advisory lock across instances).
+    return withKeyedLock(`invoice-storno:${ctx.brainId}:${slug}`, () => stornoInvoice(ctx, slug));
   }
 );
+
+async function stornoInvoice(
+  ctx: { headers: Record<string, string>; brainId: string },
+  slug: string
+): Promise<Response> {
+  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+    headers: ctx.headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (getRes.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
+  if (!getRes.ok) return apiError("engine_unreachable", "Rechnung nicht lesbar", 503);
+  const original = await getRes.json();
+  const fm = (original.frontmatter ?? {}) as Record<string, unknown>;
+
+  const PROTECTED_STATUS = new Set(["sent", "paid", "overdue"]);
+  const status = String(fm.status ?? "");
+  if (!PROTECTED_STATUS.has(status)) {
+    return apiError(
+      "not_stornoable",
+      "Nur versendete, bezahlte oder überfällige Rechnungen können storniert werden — ein Entwurf lässt sich stattdessen direkt bearbeiten oder löschen.",
+      409
+    );
+  }
+  if (fm.invoice_type === "storno") {
+    return apiError("already_storno", "Eine Storno-Note kann nicht selbst storniert werden.", 409);
+  }
+
+  // Refuse a second storno of the same invoice — check every invoice page
+  // for one that already points back here as parent_invoice_id. Strict:
+  // a partial list could miss an existing storno and allow a duplicate.
+  const allInvoices = await listEnginePages(ctx.headers, "invoice", 5000, { strict: true });
+  const existingStorno = allInvoices.find(
+    (p) => p.frontmatter?.parent_invoice_id === slug && p.frontmatter?.invoice_type === "storno"
+  );
+  if (existingStorno) {
+    return apiError(
+      "already_stornoed",
+      `Diese Rechnung wurde bereits mit ${String(existingStorno.frontmatter?.invoice_number ?? existingStorno.slug)} storniert.`,
+      409
+    );
+  }
+
+  // The firm's calendar (Vienna): at 00:30 on 1 January the Storno belongs
+  // to the new year's number range and date.
+  const now = new Date();
+  const year = firmYear(now);
+  const existingNumbers = allInvoices.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+  const number = await allocateInvoiceNumber(
+    ctx.brainId,
+    year,
+    highestInvoiceNumber(existingNumbers, year)
+  );
+
+  const originalItems = Array.isArray(fm.items) ? (fm.items as InvoiceItem[]) : [];
+  const originalExpenses = Array.isArray(fm.expenses) ? (fm.expenses as ExpenseItem[]) : [];
+  const negatedItems = originalItems.map((i) => ({ ...i, amount: -i.amount }));
+  const negatedExpenses = originalExpenses.map((e) => ({ ...e, amount: -e.amount }));
+
+  const subtotal = -Number(fm.subtotal ?? 0);
+  const expenseTotal = -Number(fm.expense_total ?? 0);
+  const advancePayment = -Number(fm.advance_payment ?? 0);
+  const tax = -Number(fm.tax ?? 0);
+  const total = -Number(fm.total ?? 0);
+  const taxBreakdown = computeInvoiceTotals(totalsInputFromFrontmatter(fm)).tax_breakdown.map(
+    (r) => ({ rate: r.rate, net: -r.net, tax: -r.tax })
+  );
+  const date = firmToday(now);
+  const stornoSlug = stornoSlugFor(slug);
+
+  const hashInput = {
+    number,
+    client: String(fm.client ?? ""),
+    caseNumber: fm.case_number as string | undefined,
+    date,
+    subtotal,
+    expenseTotal,
+    advancePayment,
+    tax,
+    total,
+    items: negatedItems,
+    expenses: negatedExpenses,
+  };
+  const issuedAt = new Date();
+  const hash = await sha256Hex(invoiceContentString(hashInput));
+
+  const stornoPayload = {
+    slug: stornoSlug,
+    title: `Storno-Note ${number} zu ${String(fm.invoice_number ?? slug)}`,
+    type: "invoice" as const,
+    frontmatter: {
+      type: "invoice",
+      invoice_number: number,
+      client: fm.client,
+      client_slug: fm.client_slug,
+      client_address: fm.client_address,
+      case_number: fm.case_number,
+      case_slugs: fm.case_slugs,
+      date,
+      due_date: date,
+      items: negatedItems,
+      expenses: negatedExpenses,
+      // Issued at once: frozen and not deletable, like the write-off of
+      // the original's open item that goes with it.
+      status: "sent",
+      sent_at: now.toISOString(),
+      subtotal,
+      expense_total: expenseTotal,
+      advance_payment: advancePayment,
+      vat_rate: fm.vat_rate,
+      tax,
+      total,
+      tax_breakdown: taxBreakdown,
+      ...(fm.reverse_charge === true
+        ? { reverse_charge: true, client_vat_id: fm.client_vat_id }
+        : {}),
+      notes: `Storno-Note zu Rechnung ${String(fm.invoice_number ?? slug)} vom ${String(fm.date ?? "")}.`,
+      invoice_type: "storno",
+      parent_invoice_id: slug,
+      parent_invoice_number: String(fm.invoice_number ?? ""),
+      parent_invoice_date: String(fm.date ?? ""),
+      ...gobdFrontmatter(hash, issuedAt),
+    },
+  };
+
+  // Create-only: an invoice already stored at this slug is never replaced.
+  const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { ...ctx.headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ ...stornoPayload, if_absent: true }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (createRes.status === 409) {
+    // The one Storno-Note of this invoice exists already (a parallel
+    // request got there first).
+    return apiError(
+      "already_stornoed",
+      "Diese Rechnung wurde bereits storniert. Es wurde keine zweite Storno-Note angelegt.",
+      409
+    );
+  }
+  if (!createRes.ok) {
+    log.error("[storno] create failed", { status: createRes.status });
+    return apiError("engine_unreachable", "Storno-Note konnte nicht angelegt werden", 503);
+  }
+
+  void logAudit("invoice.update", "invoice", {
+    entityId: stornoSlug,
+    details: { action: "storno_created", forInvoice: slug, invoiceNumber: number },
+  });
+
+  // OPOS: der offene Posten der stornierten Rechnung wird ausgebucht —
+  // sonst mahnt der Mahnlauf eine Rechnung, die nicht mehr gilt.
+  // Best-effort: Storno-Note ist bereits angelegt; Fehler wird geloggt.
+  try {
+    await closeOpenItemForInvoice(ctx.headers, slug, "written_off", `Storniert durch ${number}`);
+  } catch (err) {
+    log.error("[storno] opos write-off failed:", err instanceof Error ? err.message : String(err));
+  }
+
+  // The stornoed invoice no longer bills its work — put it back to open so
+  // the corrected invoice can take it (audit entry written by the helper).
+  const released = await releaseWorkOfInvoice(ctx.headers, slug, fm, "storno");
+
+  return apiSuccess({ slug: stornoSlug, invoice_number: number, released }, undefined, 201);
+}

@@ -32,6 +32,16 @@ const mockRelease = vi.fn(async (..._args: unknown[]) => ({ time: 2, expenses: 1
 vi.mock("@/lib/invoice-billing-lock", () => ({
   releaseWorkOfInvoice: (...args: unknown[]) => mockRelease(...args),
 }));
+const lockQueues = new Map<string, Promise<unknown>>();
+vi.mock("@/lib/keyed-lock", () => ({
+  // In-process queue, like the real lock without Postgres.
+  withKeyedLock: <T>(key: string, fn: () => Promise<T>): Promise<T> => {
+    const prev = lockQueues.get(key) ?? Promise.resolve();
+    const run = prev.catch(() => {}).then(fn);
+    lockQueues.set(key, run);
+    return run;
+  },
+}));
 vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
@@ -163,7 +173,7 @@ describe("POST /api/invoices/[slug]/storno", () => {
     mockListEnginePages.mockResolvedValueOnce([originalInvoice]);
     const res = await post();
     expect(res.status).toBe(409);
-    expect((await res.json()).error).toBe("invoice_exists");
+    expect((await res.json()).error).toBe("already_stornoed");
     expect(mockLogAudit).not.toHaveBeenCalled();
     expect(mockRelease).not.toHaveBeenCalled();
   });
@@ -190,14 +200,17 @@ describe("POST /api/invoices/[slug]/storno", () => {
     const [createUrl, createInit] = mockFetch.mock.calls[1] as [string, RequestInit];
     expect(createUrl).toBe("http://engine-test:3001/api/pages");
     const payload = JSON.parse(String(createInit.body));
-    expect(payload.slug).toBe("legal/invoices/storno-R-2026-0002");
+    // One deterministic slug per original invoice.
+    expect(payload.slug).toBe("legal/invoices/storno-of-legal__invoices__R-2026-0001");
     expect(payload.type).toBe("invoice");
     // Create-only: an invoice already stored at this slug is never replaced.
     expect(payload.if_absent).toBe(true);
     expect(payload.frontmatter).toMatchObject({
       invoice_type: "storno",
       parent_invoice_id: originalInvoice.slug,
-      status: "draft",
+      parent_invoice_number: "R-2026-0001",
+      // Issued at once — frozen and not deletable (GELD-10).
+      status: "sent",
       subtotal: -600,
       expense_total: -50,
       tax: -130,
@@ -209,7 +222,9 @@ describe("POST /api/invoices/[slug]/storno", () => {
     expect(mockLogAudit).toHaveBeenCalledWith(
       "invoice.update",
       "invoice",
-      expect.objectContaining({ entityId: "legal/invoices/storno-R-2026-0002" })
+      expect.objectContaining({
+        entityId: "legal/invoices/storno-of-legal__invoices__R-2026-0001",
+      })
     );
     // GELD-9: the stornoed invoice's work is open again for a corrected invoice.
     expect(mockRelease).toHaveBeenCalledWith(
@@ -230,5 +245,47 @@ describe("POST /api/invoices/[slug]/storno", () => {
     expect(res.status).toBe(503);
     // No storno note — the original still bills its work.
     expect(mockRelease).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/invoices/[slug]/storno — concurrency (GELD-10)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  test("two parallel Storno requests: exactly one Storno-Note, the other gets 409", async () => {
+    const stored = new Map<string, unknown>();
+    let n = 1;
+    mockAllocateInvoiceNumber.mockImplementation(
+      async () => `R-2026-${String(++n).padStart(4, "0")}`
+    );
+    mockListEnginePages.mockImplementation(async () => [
+      originalInvoice,
+      ...[...stored].map(([slug, frontmatter]) => ({ slug, frontmatter })),
+    ]);
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (init?.method === "POST") {
+        const body = JSON.parse(String(init.body)) as {
+          slug: string;
+          frontmatter: unknown;
+          if_absent?: boolean;
+        };
+        if (body.if_absent && stored.has(body.slug)) {
+          return new Response(JSON.stringify({ error: "page_exists" }), { status: 409 });
+        }
+        stored.set(body.slug, body.frontmatter);
+        return new Response(JSON.stringify({ slug: body.slug }), { status: 200 });
+      }
+      return new Response(JSON.stringify(originalInvoice), { status: 200 });
+    });
+
+    const [a, b] = await Promise.all([post(), post()]);
+    expect([a.status, b.status].sort()).toEqual([201, 409]);
+    const stornos = [...stored.values()].filter(
+      (fm) => (fm as { invoice_type?: string }).invoice_type === "storno"
+    );
+    expect(stornos).toHaveLength(1);
+    mockAllocateInvoiceNumber.mockReset();
+    mockAllocateInvoiceNumber.mockImplementation(async () => "R-2026-0002");
+    mockListEnginePages.mockReset();
+    mockFetch.mockReset();
   });
 });

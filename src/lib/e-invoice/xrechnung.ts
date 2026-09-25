@@ -133,8 +133,43 @@ function partyXml(party: EInvoiceParty, role: "Seller" | "Buyer"): string {
   return lines.join("\n");
 }
 
+/** Line net amount, rounded to cents (BT-131) — the basis of every sum. */
+function lineNet(item: EInvoiceLineItem): number {
+  return Math.round(item.quantity * item.unitPrice * 100) / 100;
+}
+
+interface VatBucket {
+  category: string;
+  rate: number;
+  basis: number;
+  reason?: string;
+}
+
+/** VAT breakdown per category and rate (BG-23), tax on the rounded basis. */
+function vatBuckets(data: EInvoiceData): VatBucket[] {
+  const buckets = new Map<string, VatBucket>();
+  const add = (category: string, rate: number, amount: number, reason?: string) => {
+    const key = `${category}:${rate}`;
+    const b = buckets.get(key) ?? { category, rate, basis: 0, reason };
+    b.basis = Math.round((b.basis + amount) * 100) / 100;
+    if (!b.reason && reason) b.reason = reason;
+    buckets.set(key, b);
+  };
+  for (const item of data.lineItems) {
+    add(item.taxCategory, item.taxRate, lineNet(item), item.exemptionReason);
+  }
+  for (const ac of data.allowanceCharges ?? []) {
+    add(ac.taxCategory, ac.taxRate, ac.isCharge ? Math.abs(ac.amount) : -Math.abs(ac.amount));
+  }
+  return [...buckets.values()];
+}
+
+function bucketTax(b: VatBucket): number {
+  return Math.round(((b.basis * b.rate) / 100) * 100) / 100;
+}
+
 function lineItemXml(item: EInvoiceLineItem): string {
-  const lineTotal = item.quantity * item.unitPrice;
+  const lineTotal = lineNet(item);
   const lines: string[] = [];
 
   lines.push(`    <ram:IncludedSupplyChainTradeLineItem>`);
@@ -218,7 +253,8 @@ export function generateXRechnungXml(
       ? (XRECHNUNG_SPEC_IDS[data.profile] ?? XRECHNUNG_SPEC_IDS.BASIC)
       : (ZUGFERD_SPEC_IDS[data.profile] ?? ZUGFERD_SPEC_IDS.BASIC);
 
-  const lineTotal = data.lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const lineTotal =
+    Math.round(data.lineItems.reduce((sum, item) => sum + lineNet(item), 0) * 100) / 100;
   const chargeTotal = (data.allowanceCharges ?? [])
     .filter((ac) => ac.isCharge)
     .reduce((sum, ac) => sum + Math.abs(ac.amount), 0);
@@ -227,10 +263,8 @@ export function generateXRechnungXml(
     .reduce((sum, ac) => sum + Math.abs(ac.amount), 0);
 
   const taxBasis = lineTotal + chargeTotal - allowanceTotal;
-  const taxAmount = data.lineItems.reduce(
-    (sum, item) => sum + (item.quantity * item.unitPrice * item.taxRate) / 100,
-    0
-  );
+  const buckets = vatBuckets(data);
+  const taxAmount = Math.round(buckets.reduce((sum, b) => sum + bucketTax(b), 0) * 100) / 100;
   const grandTotal = taxBasis + taxAmount;
   const duePayable = grandTotal - (data.advancePayment ?? 0);
 
@@ -345,17 +379,20 @@ export function generateXRechnungXml(
     xml.push(allowanceChargeXml(ac));
   }
 
-  // Trade tax
-  xml.push(`      <ram:ApplicableTradeTax>`);
-  xml.push(`        <ram:CalculatedAmount>${fmtAmt(taxAmount)}</ram:CalculatedAmount>`);
-  xml.push(`        <ram:TypeCode>VAT</ram:TypeCode>`);
-  xml.push(`        <ram:BasisAmount>${fmtAmt(taxBasis)}</ram:BasisAmount>`);
-  xml.push(`        <ram:CategoryCode>${data.taxCategory}</ram:CategoryCode>`);
-  if (data.taxExemptionReason) {
-    xml.push(`        <ram:ExemptionReason>${esc(data.taxExemptionReason)}</ram:ExemptionReason>`);
+  // Trade tax — one breakdown per category and rate
+  for (const b of buckets) {
+    xml.push(`      <ram:ApplicableTradeTax>`);
+    xml.push(`        <ram:CalculatedAmount>${fmtAmt(bucketTax(b))}</ram:CalculatedAmount>`);
+    xml.push(`        <ram:TypeCode>VAT</ram:TypeCode>`);
+    const reason = b.category !== "S" ? (b.reason ?? data.taxExemptionReason) : undefined;
+    if (reason) {
+      xml.push(`        <ram:ExemptionReason>${esc(reason)}</ram:ExemptionReason>`);
+    }
+    xml.push(`        <ram:BasisAmount>${fmtAmt(b.basis)}</ram:BasisAmount>`);
+    xml.push(`        <ram:CategoryCode>${b.category}</ram:CategoryCode>`);
+    xml.push(`        <ram:RateApplicablePercent>${b.rate}</ram:RateApplicablePercent>`);
+    xml.push(`      </ram:ApplicableTradeTax>`);
   }
-  xml.push(`        <ram:RateApplicablePercent>${data.taxRate}</ram:RateApplicablePercent>`);
-  xml.push(`      </ram:ApplicableTradeTax>`);
 
   // Payment terms
   if (data.paymentTerms || dueDate) {
@@ -388,6 +425,21 @@ export function generateXRechnungXml(
   );
   xml.push(`        <ram:DuePayableAmount>${fmtAmt(duePayable)}</ram:DuePayableAmount>`);
   xml.push(`      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>`);
+  // Credit note / Storno: the invoice it corrects (BG-3).
+  if (data.precedingInvoice?.number) {
+    xml.push(`      <ram:InvoiceReferencedDocument>`);
+    xml.push(
+      `        <ram:IssuerAssignedID>${esc(data.precedingInvoice.number)}</ram:IssuerAssignedID>`
+    );
+    if (data.precedingInvoice.date) {
+      xml.push(`        <ram:FormattedIssueDateTime>`);
+      xml.push(
+        `          <qdt:DateTimeString format="102">${fmtDate(data.precedingInvoice.date)}</qdt:DateTimeString>`
+      );
+      xml.push(`        </ram:FormattedIssueDateTime>`);
+    }
+    xml.push(`      </ram:InvoiceReferencedDocument>`);
+  }
 
   xml.push(`    </ram:ApplicableHeaderTradeSettlement>`);
   xml.push(`  </SupplyChainTradeTransaction>`);

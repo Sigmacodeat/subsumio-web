@@ -1,6 +1,7 @@
 import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { firmYear } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,8 @@ export const POST = createHandler(
     rateTier: "standard",
   },
   async (ctx) => {
-    const year = new Date().getFullYear();
+    // The firm's calendar year (Vienna) — never the server's UTC year.
+    const year = firmYear();
     let existing: string[] = [];
     try {
       // Every invoice, in batches: a partial list could hand out a number twice.

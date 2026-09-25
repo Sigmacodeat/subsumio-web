@@ -19,6 +19,8 @@ import { requestConflictCheck } from "@/lib/conflict-gate";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
+import { computeInvoiceTotals } from "@/lib/invoice-totals";
+import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
 import { planVaultOrganization } from "@/lib/vault-organization";
@@ -2616,10 +2618,12 @@ async function executeInvoiceDraft(
       );
     }
 
-    const subtotal = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
     const vatRate = vatRateFor(kanzlei);
-    const tax = Math.round(subtotal * vatRate * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
+    // Same calculation (cents, VAT per rate) the invoice route checks.
+    const totals = computeInvoiceTotals({ items, vatRate });
+    const subtotal = totals.subtotal;
+    const tax = totals.tax;
+    const total = totals.total;
     const paymentDays = Math.max(1, parseInt(kanzlei?.zahlungszielTage || "14", 10) || 14);
 
     let existing: string[] = [];
@@ -2629,7 +2633,7 @@ async function executeInvoiceDraft(
     } catch {
       // Der Zähler garantiert Eindeutigkeit auch ohne Bestandsliste.
     }
-    const year = new Date().getFullYear();
+    const year = firmYear();
     const invoiceNumber = await allocateInvoiceNumber(
       ctx.brainId,
       year,
@@ -2643,8 +2647,8 @@ async function executeInvoiceDraft(
       client: fm.client_name ?? "",
       clientSlug: fm.client_slug,
       caseNumber: fm.case_number ?? page.slug,
-      date: now.toISOString().split("T")[0],
-      dueDate: new Date(now.getTime() + paymentDays * 86_400_000).toISOString().split("T")[0],
+      date: firmToday(now),
+      dueDate: addDaysToIsoDate(firmToday(now), paymentDays),
       items,
       status: "draft" as const,
       subtotal,
