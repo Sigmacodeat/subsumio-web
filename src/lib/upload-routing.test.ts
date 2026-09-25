@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { inferUploadRouting, type KnownCase } from "./upload-routing";
+import { inferUploadRouting, uploadTargetCases, type KnownCase } from "./upload-routing";
 
 const CASES: KnownCase[] = [
   { slug: "cases/mueller-gmbh", title: "Müller GmbH", aktenzeichen: "12 C 345/24" },
@@ -48,5 +48,28 @@ describe("inferUploadRouting", () => {
     const r = inferUploadRouting("12C345-24_klage.pdf", CASES);
     expect(r.hint).toContain("klage");
     expect(r.hint).toContain("Az.");
+  });
+});
+
+describe("uploadTargetCases", () => {
+  test("keeps every open matter (150 and more) and drops archived/deleted ones", () => {
+    const cases = Array.from({ length: 150 }, (_, i) => ({
+      slug: `legal/cases/a${i}`,
+      title: `Akte ${i}`,
+      frontmatter: { status: i === 5 ? "archived" : i === 6 ? "tombstoned" : "open" },
+    }));
+    const targets = uploadTargetCases(cases);
+    expect(targets).toHaveLength(148);
+    expect(targets.some((c) => c.slug === "legal/cases/a149")).toBe(true);
+  });
+
+  test("the Aktenzeichen of an old matter at the end of the list is recognised", () => {
+    const cases = [
+      ...Array.from({ length: 149 }, (_, i) => ({ slug: `legal/cases/n${i}`, title: `Neu ${i}` })),
+      { slug: "legal/cases/alt", title: "Alt", aktenzeichen: "7 C 12/19" },
+    ];
+    expect(inferUploadRouting("7C12-19_urteil.pdf", cases).matchedCaseSlug).toBe(
+      "legal/cases/alt"
+    );
   });
 });

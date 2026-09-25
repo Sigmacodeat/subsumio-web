@@ -36,8 +36,11 @@ interface CaseWithHold {
   setBy: string;
 }
 
+/** Every matter of the firm — the hold overview must not stop at the newest few hundred. */
+const LEGAL_HOLD_CASES_MAX = 10_000;
+
 async function fetchCases(): Promise<CaseWithHold[]> {
-  const pages = await api.brain.listAllPages({ type: "legal_case", max: 500 });
+  const pages = await api.brain.listAllPages({ type: "legal_case", max: LEGAL_HOLD_CASES_MAX });
   return (pages as CasePage[]).map((p) => {
     const fm = p.frontmatter ?? {};
     return {
@@ -63,7 +66,12 @@ export default function LegalHoldPage() {
   const [holdReason, setHoldReason] = useState("");
   const [toggling, setToggling] = useState(false);
 
-  const { data: cases, isLoading } = useQuery({
+  const {
+    data: cases,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["legal-hold-cases"],
     queryFn: fetchCases,
     staleTime: 30_000,
@@ -93,7 +101,11 @@ export default function LegalHoldPage() {
             reason: reason || undefined,
           }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          // apiError: { error: "<deutscher Text>", code }
+          const payload = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(payload.error || "");
+        }
         addToast({
           type: "success",
           title: hold
@@ -110,13 +122,14 @@ export default function LegalHoldPage() {
         setHoldReason("");
         void queryClient.invalidateQueries({ queryKey: ["legal-hold-cases"] });
         void queryClient.invalidateQueries({ queryKey: ["legal-holds"] });
-      } catch {
+      } catch (err) {
+        const serverText = err instanceof Error ? err.message : "";
         addToast({
           type: "error",
           title: isEn ? "Operation failed" : "Vorgang fehlgeschlagen",
           description: isEn
             ? "Please try again."
-            : "Die Sperre wurde nicht geändert. Bitte versuchen Sie es erneut.",
+            : serverText || "Die Sperre wurde nicht geändert. Bitte versuchen Sie es erneut.",
           duration: 5000,
         });
       } finally {
@@ -235,6 +248,18 @@ export default function LegalHoldPage() {
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
           ))}
         </div>
+      ) : isError ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title={isEn ? "Matters could not be loaded" : "Akten konnten nicht geladen werden"}
+          description={
+            isEn
+              ? "The hold status is unknown until the list loads."
+              : "Solange die Liste nicht geladen ist, ist unklar, welche Akten gesperrt sind."
+          }
+          actionLabel={isEn ? "Try again" : "Erneut versuchen"}
+          onAction={() => void refetch()}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={ShieldOff}

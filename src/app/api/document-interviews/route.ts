@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createInterview, type InterviewDefinition } from "@/lib/document-interviews";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +9,9 @@ export const dynamic = "force-dynamic";
 const createSchema = z.object({
   template_slug: z.string().min(1).max(300),
   title: z.string().min(1).max(300),
-  description: z.string().max(2000),
-  questions: z.array(
+  description: z.string().max(2000).default(""),
+  questions: z
+    .array(
     z.object({
       id: z.string().min(1).max(100),
       type: z.enum([
@@ -30,7 +32,9 @@ const createSchema = z.object({
       default_value: z.union([z.string(), z.number(), z.boolean()]).optional(),
       variable: z.string().min(1).max(100),
     })
-  ),
+    )
+    .max(200)
+    .default([]),
   output_format: z.enum(["docx", "pdf", "markdown"]).optional(),
 });
 
@@ -54,7 +58,7 @@ export const POST = createHandler(
       questions: body.questions,
       output_format: body.output_format,
     });
-    await fetch(`${ENGINE_URL}/api/pages`, {
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -64,7 +68,10 @@ export const POST = createHandler(
         frontmatter: interview,
       }),
       signal: AbortSignal.timeout(10_000),
-    });
+    }).catch(() => null);
+    if (!res?.ok) {
+      return apiError("engine_error", "Das Interview konnte nicht gespeichert werden", 502);
+    }
     return apiSuccess({ interview });
   }
 );
@@ -80,16 +87,16 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "interview_definition", limit: "200" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: InterviewDefinition[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as InterviewDefinition[];
+    // Pages carry the definition in their frontmatter.
+    let pages: Awaited<ReturnType<typeof listEnginePages>>;
+    try {
+      pages = await listEnginePages(ctx.headers, "interview_definition", 5_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Interviews konnten nicht geladen werden", 502);
+    }
+    let items = pages
+      .map((p) => p.frontmatter as unknown as InterviewDefinition | undefined)
+      .filter((i): i is InterviewDefinition => !!i && typeof i.id === "string");
     if (query?.template_slug) {
       items = items.filter((i) => i.template_slug === query.template_slug);
     }

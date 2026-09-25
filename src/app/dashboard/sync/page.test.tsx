@@ -110,6 +110,11 @@ describe("SyncPage", () => {
     expect(screen.getByText("Server-Titel")).toBeInTheDocument();
     // updatePage → kein Kopie-Button
     expect(screen.queryByRole("button", { name: /Als Kopie speichern/ })).not.toBeInTheDocument();
+    // Deutsche Bezeichnung statt interner Kennung; Link auf EIN Pfadsegment.
+    expect(screen.getByText("Geändert")).toBeInTheDocument();
+    expect(screen.queryByText("updatePage")).not.toBeInTheDocument();
+    const links = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
+    expect(links).toContain("/dashboard/brain/cases%2Fneu");
   });
 
   test("keep-mine fragt vorher nach", async () => {

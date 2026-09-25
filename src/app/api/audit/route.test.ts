@@ -53,6 +53,19 @@ describe("GET /api/audit", () => {
     });
   });
 
+  it("filters one entry's history on the server (entityId)", async () => {
+    vi.mocked(listAuditLogs).mockResolvedValue([] as any);
+    const res = await GET(
+      new NextRequest("http://localhost:3000/api/audit?entityId=docs%2Fbrief&limit=500")
+    );
+    expect(res.status).toBe(200);
+    expect(vi.mocked(listAuditLogs).mock.calls[0][0]).toMatchObject({
+      brainId: "brain_a",
+      entityId: "docs/brief",
+      limit: 500,
+    });
+  });
+
   it("reports a store failure as an error instead of an empty log", async () => {
     vi.mocked(listAuditLogs).mockRejectedValue(new Error("db down"));
     const res = await GET(new NextRequest("http://localhost:3000/api/audit"));

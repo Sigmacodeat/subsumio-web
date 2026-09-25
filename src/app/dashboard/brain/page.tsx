@@ -56,6 +56,7 @@ export default function BrainPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,15 +95,19 @@ export default function BrainPage() {
       async () => {
         if (!trimmed) {
           setSearchResults(null);
+          setSearchFailed(false);
           return;
         }
         setSearching(true);
         try {
           const results = await api.brain.search(trimmed, 20);
           setSearchResults(results);
+          setSearchFailed(false);
         } catch (err) {
           console.error("[brain] search failed:", err instanceof Error ? err.message : String(err));
+          // A failed search is not "no hits".
           setSearchResults([]);
+          setSearchFailed(true);
         } finally {
           setSearching(false);
         }
@@ -239,7 +244,10 @@ export default function BrainPage() {
                 className={chipClass(filter === "all")}
               >
                 {t("brain.filter_all")}
-                <span className="tabular-nums opacity-70">{pages.length}</span>
+                {/* Counts of a cut list would read as totals — only shown when complete. */}
+                {pages.length < 100 && (
+                  <span className="tabular-nums opacity-70">{pages.length}</span>
+                )}
               </button>
               {typeCounts.map(([type, count]) => (
                 <button
@@ -250,13 +258,21 @@ export default function BrainPage() {
                   className={chipClass(filter === type)}
                 >
                   {BRAIN_TYPE_PLURALS[type] ?? brainTypeLabel(type)}
-                  <span className="tabular-nums opacity-70">{count}</span>
+                  {pages.length < 100 && <span className="tabular-nums opacity-70">{count}</span>}
                 </button>
               ))}
             </div>
           )}
 
-          {displayed.length === 0 ? (
+          {searchFailed && searchResults !== null ? (
+            <div
+              role="alert"
+              className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-danger-border)] py-12 text-sm text-[color:var(--ds-danger-text)]"
+            >
+              <AlertCircle size={15} aria-hidden="true" />
+              Die Suche ist gerade nicht erreichbar — bitte versuchen Sie es erneut.
+            </div>
+          ) : displayed.length === 0 ? (
             <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-12 text-sm text-[color:var(--ds-text-muted)]">
               <AlertCircle size={15} aria-hidden="true" />
               {t("brain.no_results").replace("{{query}}", query)}

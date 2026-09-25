@@ -72,6 +72,8 @@ export default function CaseAssignmentPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [assigningSlug, setAssigningSlug] = useState<string | null>(null);
+  // Sections showing all their matters instead of the first 10.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const teamQuery = useTeam();
   const assignmentsQuery = useQuery({
@@ -225,6 +227,20 @@ export default function CaseAssignmentPage() {
             <Skeleton key={i} className="h-28 w-full rounded-xl" />
           ))}
         </div>
+      ) : assignmentsQuery.isError || teamQuery.isError ? (
+        <EmptyState
+          title={isEn ? "Assignments could not be loaded" : "Zuweisungen konnten nicht geladen werden"}
+          description={
+            isEn
+              ? "This is a loading error, not an empty list."
+              : "Das ist ein Ladefehler, keine leere Liste."
+          }
+          actionLabel={isEn ? "Try again" : "Erneut versuchen"}
+          onAction={() => {
+            void assignmentsQuery.refetch();
+            void teamQuery.refetch();
+          }}
+        />
       ) : assignments.length === 0 ? (
         <EmptyState
           title={isEn ? "No active cases" : "Keine aktiven Akten"}
@@ -239,6 +255,7 @@ export default function CaseAssignmentPage() {
       ) : (
         <div className="space-y-4">
           {byLawyer.map(([key, group]) => {
+            const lawyerKey = key;
             const isUnassigned = key === "__unassigned__";
             const member = group.member;
             const cases = search
@@ -315,7 +332,12 @@ export default function CaseAssignmentPage() {
                   </p>
                 ) : (
                   <div className="space-y-1.5">
-                    {cases.slice(0, 10).map((c) => {
+                    {(expanded.has(lawyerKey) ? cases : cases.slice(0, 10)).map((c) => {
+                      // Members are identified by e-mail — a member without a
+                      // display name must be assignable too.
+                      const currentMember =
+                        teamMembers.find((m) => c.lawyerId && m.email === c.lawyerId) ??
+                        teamMembers.find((m) => c.lawyerName && m.name === c.lawyerName);
                       return (
                         <div
                           key={c.caseSlug}
@@ -364,9 +386,9 @@ export default function CaseAssignmentPage() {
                                   ? `Responsible lawyer for ${c.caseTitle}`
                                   : `Sachbearbeiter für ${c.caseTitle}`
                               }
-                              value={c.lawyerName ?? ""}
+                              value={currentMember?.email ?? ""}
                               onChange={(e) => {
-                                const selected = teamMembers.find((m) => m.name === e.target.value);
+                                const selected = teamMembers.find((m) => m.email === e.target.value);
                                 if (selected) {
                                   void assignLawyer(
                                     c.caseSlug,
@@ -379,7 +401,7 @@ export default function CaseAssignmentPage() {
                             >
                               <option value="">{isEn ? "Assign …" : "Zuweisen …"}</option>
                               {teamMembers.map((m) => (
-                                <option key={m.id} value={m.name ?? m.email}>
+                                <option key={m.id} value={m.email}>
                                   {m.name ?? m.email}
                                 </option>
                               ))}
@@ -389,9 +411,27 @@ export default function CaseAssignmentPage() {
                       );
                     })}
                     {cases.length > 10 && (
-                      <p className="px-1 text-xs text-[color:var(--ds-text-subtle)]">
-                        {isEn ? `+${cases.length - 10} more` : `+${cases.length - 10} weitere`}
-                      </p>
+                      <button
+                        type="button"
+                        className="px-1 text-xs text-[color:var(--brand-primary)] hover:underline"
+                        aria-expanded={expanded.has(lawyerKey)}
+                        onClick={() =>
+                          setExpanded((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(lawyerKey)) next.delete(lawyerKey);
+                            else next.add(lawyerKey);
+                            return next;
+                          })
+                        }
+                      >
+                        {expanded.has(lawyerKey)
+                          ? isEn
+                            ? "Show fewer"
+                            : "Weniger anzeigen"
+                          : isEn
+                            ? `Show all (+${cases.length - 10})`
+                            : `Alle anzeigen (+${cases.length - 10} weitere)`}
+                      </button>
                     )}
                   </div>
                 )}

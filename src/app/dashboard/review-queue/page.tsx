@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { csrfFetch } from "@/lib/csrf";
 import type { BrainPage } from "@/lib/types";
 import { cn, encodeSlugPath, formatDate } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -69,6 +70,9 @@ function itemHref(page: BrainPage): string {
     : `/dashboard/brain/${encodeURIComponent(page.slug)}`;
 }
 
+/** Per type; the queue is filtered afterwards to pages that are up for review. */
+const REVIEW_TYPE_MAX = 5_000;
+
 const REVIEWABLE_TYPES = [
   "document_draft",
   "contract",
@@ -96,14 +100,11 @@ export default function ReviewQueuePage() {
     setLoading(true);
     setError(null);
     try {
-      const batch = await api.brain.batchListPagesDetailed(REVIEWABLE_TYPES, 100);
-      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
-      const all: BrainPage[] = [];
-      for (const type of REVIEWABLE_TYPES) {
-        const pages = batch.results[type];
-        if (pages) all.push(...pages);
-      }
-      setPages(all);
+      // Every page of each type (paged), not the newest 100 per type.
+      const perType = await Promise.all(
+        REVIEWABLE_TYPES.map((type) => api.brain.listAllPages({ type, max: REVIEW_TYPE_MAX }))
+      );
+      setPages(perType.flat());
     } catch {
       setError("Die Freigaben konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
     } finally {
@@ -137,18 +138,21 @@ export default function ReviewQueuePage() {
         // Pipeline state pages use 'status' (awaiting_review / needs_human_review)
         // while document pages use 'review_status'
         const isPipeline = p.type === "pipeline_state";
+        // A page without review_status was never put up for review — it is
+        // not "pending" (that listed every matter of the firm as open work).
         const status = isPipeline
           ? typeof fm.status === "string"
             ? fm.status
-            : "pending"
+            : ""
           : typeof fm.review_status === "string"
             ? fm.review_status
-            : "pending";
+            : "";
         const assignee = typeof fm.review_assignee === "string" ? fm.review_assignee : undefined;
         const reviewedAt = typeof fm.reviewed_at === "string" ? fm.reviewed_at : undefined;
         return { page: p, status, assignee, reviewedAt, isPipeline };
       })
       .filter((item) => {
+        if (!item.status) return false;
         // Only show pipeline_state pages that are awaiting_review or needs_human_review
         if (
           item.isPipeline &&
@@ -247,7 +251,7 @@ export default function ReviewQueuePage() {
   async function resumePipeline(caseSlug: string) {
     setUpdating(`pipeline-${caseSlug}`);
     try {
-      const res = await fetch("/api/pipeline/resume", {
+      const res = await csrfFetch("/api/pipeline/resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ case_slug: caseSlug, resume_from_layer: 3 }),
@@ -386,6 +390,7 @@ export default function ReviewQueuePage() {
                     <input
                       type="text"
                       placeholder={t("review_queue.assign_placeholder")}
+                      aria-label={`Prüfung zuweisen: ${page.title}`}
                       defaultValue={assignee ?? ""}
                       onBlur={(e) => {
                         if (e.target.value.trim() && e.target.value.trim() !== assignee)
