@@ -3,9 +3,29 @@ import {
   parseHourlyRate,
   checkStoredInvoiceTotals,
   computeInvoiceTotals,
+  lineAmount,
   rateFraction,
   toCents,
 } from "./invoice-totals";
+
+describe("lineAmount — commercial rounding like every other amount (R6-11)", () => {
+  it("rounds half a cent up", () => {
+    expect(lineAmount(0.1, 160.45)).toBe(16.05);
+    expect(lineAmount(0.5, 2.01)).toBe(1.01);
+  });
+
+  it("matches an integer reference over a grid of hours × rates", () => {
+    // Hours in tenths, rates in cents: amount × 1000 = (hours × 10) × (rate × 100);
+    // the reference rounds that half up to whole cents in integers.
+    for (let h10 = 1; h10 <= 100; h10 += 3) {
+      for (let r100 = 10_000; r100 <= 40_000; r100 += 35) {
+        const milli = h10 * r100;
+        const cents = Math.floor(milli / 10) + (milli % 10 >= 5 ? 1 : 0);
+        expect(Math.round(lineAmount(h10 / 10, r100 / 100) * 100)).toBe(cents);
+      }
+    }
+  });
+});
 
 describe("computeInvoiceTotals (cents, VAT per rate)", () => {
   it("sums in cents — no float artefacts", () => {
