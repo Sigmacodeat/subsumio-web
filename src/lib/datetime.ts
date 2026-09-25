@@ -100,3 +100,20 @@ export function toZonedDateString(iso?: string | null, timeZone: string = FIRM_T
   if (Number.isNaN(d.getTime())) return zonedDateString(new Date(), timeZone);
   return zonedDateString(d, timeZone);
 }
+
+/** Today's calendar day in the firm's timezone ("YYYY-MM-DD") — invoice dates, VAT periods. */
+export function firmToday(now: Date = new Date(), timeZone: string = FIRM_TIMEZONE): string {
+  return zonedDateString(now, timeZone);
+}
+
+/** The calendar year in the firm's timezone — the invoice number range ("R-2027-…"). */
+export function firmYear(now: Date = new Date(), timeZone: string = FIRM_TIMEZONE): number {
+  return Number(zonedDateString(now, timeZone).slice(0, 4));
+}
+
+/** "YYYY-MM-DD" plus `days` calendar days (no timezone involved). */
+export function addDaysToIsoDate(dateIso: string, days: number): string {
+  const d = new Date(`${dateIso.slice(0, 10)}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}

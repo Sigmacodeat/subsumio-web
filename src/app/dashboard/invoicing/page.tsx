@@ -40,7 +40,7 @@ import {
   type TimeEntry,
 } from "@/lib/legal-types";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
-import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
+import { OFFLINE_KEYS, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
@@ -164,6 +164,8 @@ export default function InvoicingPage() {
   const [cases, setCases] = useState<InvoiceCase[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  /** The list could not be loaded and no offline copy exists — never shown as "no invoices". */
+  const [loadError, setLoadError] = useState(false);
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessageText] = useState<string | null>(null);
@@ -209,8 +211,11 @@ export default function InvoicingPage() {
 
   async function loadAll() {
     setLoading(true);
+    setLoadError(false);
     try {
-      const batch = await api.brain.batchListPagesDetailed(["invoice", "legal_case"], 200);
+      // Every invoice and matter (read in batches of 100): a list cut at 200
+      // would hide invoices and their open amounts without a word.
+      const batch = await api.brain.batchListPagesDetailed(["invoice", "legal_case"], 10_000);
       if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       const invoicePages = batch.results["invoice"] ?? [];
       const casePages = batch.results["legal_case"] ?? [];
@@ -282,6 +287,7 @@ export default function InvoicingPage() {
       } else {
         setInvoices([]);
         setCases([]);
+        setLoadError(true);
       }
     } finally {
       setLoading(false);
@@ -660,6 +666,8 @@ export default function InvoicingPage() {
         payload.status === "not_configured" ? "error" : "success",
         8000
       );
+      // A delivered draft is issued by the server (status "sent" + open item).
+      if (payload.issued) void loadAll();
       // Transport-Referenz persistieren, damit der Zustellstatus später
       // gepollt werden kann (queued → delivered).
       if (payload.reference && (payload.status === "queued" || payload.status === "delivered")) {
@@ -919,20 +927,14 @@ export default function InvoicingPage() {
           ? { paid_at: paidPatch.paidAt, paid_amount: paidPatch.paidAmount }
           : {}),
       };
-      if (isOnline()) {
-        // Was api.brain.updatePage — the generic /api/pages route, which
-        // has no invoice-immutability check. api.invoices.update goes
-        // through /api/invoices/[slug] instead, which refuses this once
-        // the invoice is already sent/paid/overdue (see that route's PATCH
-        // handler) rather than silently letting a "finalized" invoice's
-        // status keep changing.
-        await api.invoices.update(inv.id, statusFrontmatter);
-      } else {
-        await enqueueMutation({
-          type: "updatePage",
-          payload: { slug: inv.id, frontmatter: statusFrontmatter },
-        });
+      // Only online: /api/invoices/[slug] checks sums and mandatory details
+      // before a draft is issued and keeps issued invoices frozen. A queued
+      // generic page write would bypass both (and is refused on replay).
+      if (!isOnline()) {
+        setStatusMessage(t("inv.online_only_action" as DashboardKey), "error");
+        return;
       }
+      await api.invoices.update(inv.id, statusFrontmatter);
       const nextInvoices = invoices.map((i) =>
         i.id === inv.id ? { ...i, status, ...paidPatch } : i
       );
@@ -955,15 +957,14 @@ export default function InvoicingPage() {
       variant: "danger",
     });
     if (!ok) return;
+    // Only online: /api/invoices/[slug] deletes drafts only and releases
+    // their billed work for a corrected invoice.
+    if (!isOnline()) {
+      setStatusMessage(t("inv.online_only_action" as DashboardKey), "error");
+      return;
+    }
     try {
-      if (isOnline()) {
-        // Was api.brain.deletePage — bypassed /api/invoices/[slug]'s own
-        // "only drafts can be deleted" check (protectedStatuses: sent,
-        // paid, overdue). api.invoices.delete goes through that route.
-        await api.invoices.delete(inv.id);
-      } else {
-        await enqueueMutation({ type: "deletePage", payload: { slug: inv.id } });
-      }
+      await api.invoices.delete(inv.id);
       const nextInvoices = invoices.filter((i) => i.id !== inv.id);
       setInvoices(nextInvoices);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases });
@@ -1166,6 +1167,18 @@ export default function InvoicingPage() {
         <div role="status" aria-label={t("inv.loading")}>
           <RowSkeleton count={4} />
         </div>
+      ) : loadError ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title={en ? "Invoices could not be loaded" : "Rechnungen konnten nicht geladen werden"}
+          description={
+            en
+              ? "The list is not empty — it could not be read. Please try again."
+              : "Die Liste ist nicht leer, sie konnte nur nicht gelesen werden. Bitte erneut versuchen."
+          }
+          actionLabel={en ? "Try again" : "Erneut laden"}
+          onAction={() => void loadAll()}
+        />
       ) : filtered.length === 0 ? (
         searchQuery ? (
           <EmptyState
@@ -1390,7 +1403,7 @@ export default function InvoicingPage() {
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => updateStatus(inv, "cancelled")}
+                            onClick={() => void deleteInvoice(inv)}
                             disabled={busy}
                             className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >

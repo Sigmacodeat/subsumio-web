@@ -9,6 +9,9 @@ import { sendEInvoice, pollEInvoiceStatus, transportAvailability } from "@/lib/e
 import type { InvoiceFrontmatter } from "@/lib/legal-types";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { createServerBrainClient } from "@/lib/server-brain";
+import { invoiceIssueProblem } from "@/lib/invoice-issue";
+import { createOpenItemForInvoice } from "@/lib/open-items";
+import { rejectionResponse } from "@/lib/page-write-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +80,17 @@ export const POST = createHandler(
       if (!invoice.invoice_number) {
         return apiError("not_an_invoice", "Seite ist keine Rechnung", 400);
       }
+      const status = String(invoice.status ?? "draft");
+      if (status === "cancelled" || status === "tombstoned") {
+        return apiError("invoice_not_sendable", "Diese Rechnung kann nicht versendet werden.", 409);
+      }
+      // Delivering a draft issues it (§ 132 BAO: from then on unchangeable):
+      // only a complete draft with consistent sums goes out.
+      const isDraft = status === "draft";
+      if (isDraft) {
+        const problem = invoiceIssueProblem(page.frontmatter as Record<string, unknown>);
+        if (problem) return rejectionResponse(problem);
+      }
       const settings = await loadKanzleiSettingsForBrain(ctx.brainId);
 
       const data = invoiceToEInvoiceData(invoice, settings, {
@@ -94,7 +108,34 @@ export const POST = createHandler(
       if (result.status === "failed") {
         return apiError("transport_failed", result.message, 502);
       }
+      // Handed to the access point: the draft is now issued — status "sent",
+      // delivery reference and an open item, exactly like the e-mail path.
+      let issued = false;
+      if (isDraft && (result.status === "queued" || result.status === "delivered")) {
+        await brain.updatePage({
+          slug: body.invoiceSlug,
+          frontmatter: {
+            status: "sent",
+            sent_at: new Date().toISOString(),
+            e_invoice_channel: result.channel,
+            e_invoice_reference: result.reference,
+            e_invoice_status: result.status,
+          },
+        });
+        issued = true;
+        try {
+          await createOpenItemForInvoice(
+            ctx.headers,
+            body.invoiceSlug,
+            page.frontmatter as Record<string, unknown>
+          );
+        } catch {
+          // The invoice is issued; a missing open item is repaired by the
+          // next status change and must not undo the delivery.
+        }
+      }
       return apiSuccess({
+        issued,
         status: result.status,
         channel: result.channel,
         reference: result.reference,

@@ -3,6 +3,7 @@ import {
   checkBilledEntriesWrite,
   checkBillingArrayAppend,
   checkInvoiceArrayWrite,
+  checkInvoiceGenericWrite,
   guardBillingArrayMutation,
   unlessMatches,
 } from "./billing-write-guards";
@@ -169,5 +170,44 @@ describe("checkBilledEntriesWrite", () => {
     expect(
       checkBilledEntriesWrite(openPage, { mode: "merge", frontmatter: { minutes: 20 } })
     ).toBeNull();
+  });
+});
+
+describe("checkInvoiceGenericWrite (GELD-2 / GELD-8)", () => {
+  const draft = {
+    slug: "invoice/1",
+    type: "invoice",
+    frontmatter: { status: "draft", invoice_number: "R-2026-0001", total: 1 },
+  };
+
+  it("refuses to create an invoice over the generic page route", () => {
+    expect(checkInvoiceGenericWrite(null, { type: "invoice", frontmatter: {} })?.error).toBe(
+      "invoice_create_via_route"
+    );
+    expect(
+      checkInvoiceGenericWrite(null, { frontmatter: { type: "invoice", invoice_number: "R-1" } })
+        ?.error
+    ).toBe("invoice_create_via_route");
+  });
+
+  it("refuses to issue a draft over the generic route", () => {
+    expect(checkInvoiceGenericWrite(draft, { frontmatter: { status: "sent" } })?.error).toBe(
+      "invoice_issue_via_route"
+    );
+    expect(checkInvoiceGenericWrite(draft, { frontmatter: { status: "paid" } })?.status).toBe(409);
+  });
+
+  it("refuses to renumber a draft", () => {
+    expect(
+      checkInvoiceGenericWrite(draft, { frontmatter: { invoice_number: "R-2026-0002" } })?.error
+    ).toBe("invoice_number_protected");
+  });
+
+  it("lets a draft be edited and leaves other pages alone", () => {
+    expect(
+      checkInvoiceGenericWrite(draft, { frontmatter: { notes: "x", status: "draft" } })
+    ).toBeNull();
+    expect(checkInvoiceGenericWrite(null, { type: "legal_case", frontmatter: {} })).toBeNull();
+    expect(checkInvoiceGenericWrite(sentInvoice, { frontmatter: { status: "paid" } })).toBeNull();
   });
 });

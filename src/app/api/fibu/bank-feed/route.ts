@@ -32,7 +32,9 @@ export const POST = createHandler(
     const transactions = await provider.fetchTransactions({ from, to });
     let result;
     try {
-      result = await importAndMatchTransactions(ctx.headers, transactions);
+      result = await importAndMatchTransactions(ctx.headers, transactions, {
+        brainId: ctx.brainId,
+      });
     } catch {
       return apiError("engine_error", "Engine request failed", 502);
     }

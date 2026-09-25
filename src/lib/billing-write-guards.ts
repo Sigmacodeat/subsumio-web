@@ -25,10 +25,12 @@ import {
   INVOICE_PROCESS_FIELDS,
   finalized,
   isFinalizedInvoice,
+  isInvoicePage,
   type CurrentPageLike,
   type GuardRejection,
 } from "@/lib/page-write-guards";
 import { IMPORT_SOURCE } from "@/lib/kanzlei-import/plan";
+import { isIssuingTransition } from "@/lib/invoice-issue";
 
 /** Matter frontmatter arrays whose elements can be billed on an invoice. */
 export const BILLING_ARRAY_FIELDS = new Set(["time_entries", "expenses"]);
@@ -366,6 +368,54 @@ export function checkBilledEntriesWrite(
         );
       }
     }
+  }
+  return null;
+}
+
+// ── 3. Invoices on the generic write paths ──────────────────────────────
+
+/**
+ * Invoices are created and issued only through their own routes: POST
+ * /api/invoices allocates nothing twice and checks the sums; issuing
+ * (draft → sent/paid/overdue) goes through /api/invoices/[slug], the e-mail
+ * or the e-invoice dispatch, which check completeness and sums first. On the
+ * generic page routes an invoice draft may still be edited, but not created,
+ * not issued and not renumbered. `null` = allowed.
+ */
+export function checkInvoiceGenericWrite(
+  current: CurrentPageLike | null,
+  write: { type?: unknown; frontmatter?: Record<string, unknown> }
+): GuardRejection | null {
+  const incomingType =
+    typeof write.type === "string" ? write.type : (write.frontmatter?.type as unknown);
+  if (!isInvoicePage(current) && incomingType !== "invoice") return null;
+  if (!current) {
+    return {
+      status: 409,
+      error: "invoice_create_via_route",
+      message:
+        "Rechnungen werden nur über „Rechnung erstellen“ angelegt — dort vergibt der Server die Rechnungsnummer und prüft die Summen. Es wurde nichts gespeichert.",
+    };
+  }
+  if (isFinalizedInvoice(current)) return null; // checkInvoiceWrite judges issued invoices
+  const fm = write.frontmatter ?? {};
+  if (
+    "invoice_number" in fm &&
+    String(fm.invoice_number ?? "") !== String(current.frontmatter?.invoice_number ?? "")
+  ) {
+    return {
+      status: 409,
+      error: "invoice_number_protected",
+      message: "Die Rechnungsnummer vergibt der Server und kann nicht geändert werden.",
+    };
+  }
+  if ("status" in fm && isIssuingTransition(current.frontmatter?.status, fm.status)) {
+    return {
+      status: 409,
+      error: "invoice_issue_via_route",
+      message:
+        "Eine Rechnung wird über „Versenden“ bzw. den Rechnungsstatus ausgestellt — dort prüft der Server Summen und Pflichtangaben. Es wurde nichts gespeichert.",
+    };
   }
   return null;
 }

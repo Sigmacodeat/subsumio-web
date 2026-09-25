@@ -51,7 +51,11 @@ describe("parseCamt053", () => {
     expect(credit.sender_name).toBe("Muster GmbH");
     expect(credit.sender_iban).toBe("AT483200000012345864");
     expect(credit.purpose).toContain("RE-2026-0042");
-    expect(credit.id).toBe("camt-REF-001");
+    expect(credit.id).toMatch(/^txn-[0-9a-f]{16}$/);
+    // Deterministic: the same statement parsed again yields the same ids.
+    expect(parseCamt053(CAMT).transactions.map((t) => t.id)).toEqual(
+      s.transactions.map((t) => t.id)
+    );
 
     const debit = s.transactions[1];
     expect(debit.direction).toBe("debit");
@@ -61,5 +65,34 @@ describe("parseCamt053", () => {
   test("wirft bei ungültigem XML / fehlenden Buchungen", () => {
     expect(() => parseCamt053("<Document/>")).toThrow(CamtParseError);
     expect(() => parseCamt053("<html><body/></html>")).toThrow(CamtParseError);
+  });
+});
+
+describe("parseCamt053 — Buchungs-IDs (GELD-16)", () => {
+  const entry = (extra: string, amount = "100.00") => `
+      <Ntry>${extra}
+        <Amt Ccy="EUR">${amount}</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <BookgDt><Dt>2026-02-01</Dt></BookgDt>
+        <NtryDtls><TxDtls><RmtInf><Ustrd>Zahlung</Ustrd></RmtInf></TxDtls></NtryDtls>
+      </Ntry>`;
+  const doc = (entries: string) => `<?xml version="1.0"?>
+<Document><BkToCstmrStmt><Stmt><Acct><Id><IBAN>AT611904300234573201</IBAN></Id></Acct>${entries}</Stmt></BkToCstmrStmt></Document>`;
+
+  test("zwei identische Buchungen ohne Bankreferenz bleiben zwei", () => {
+    const ids = parseCamt053(doc(entry("") + entry(""))).transactions.map((t) => t.id);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  test("gleiche NtryRef in verschiedenen Auszügen ist keine Dublette", () => {
+    const a = parseCamt053(doc(entry("<NtryRef>1</NtryRef>", "100.00"))).transactions[0].id;
+    const b = parseCamt053(doc(entry("<NtryRef>1</NtryRef>", "250.00"))).transactions[0].id;
+    expect(a).not.toBe(b);
+  });
+
+  test("AcctSvcrRef bestimmt die ID", () => {
+    const a = parseCamt053(doc(entry("<AcctSvcrRef>BANK-77</AcctSvcrRef>"))).transactions[0].id;
+    const b = parseCamt053(doc(entry("<AcctSvcrRef>BANK-77</AcctSvcrRef>"))).transactions[0].id;
+    expect(a).toBe(b);
   });
 });

@@ -126,3 +126,50 @@ describe("/api/invoices/[slug]", () => {
     expect(mockRelease).not.toHaveBeenCalled();
   });
 });
+
+describe("/api/invoices/[slug] — issuing a draft (GELD-2 / QA-14)", () => {
+  const draft = (fm: Record<string, unknown>) => ({
+    slug: "legal/invoices/r-1",
+    type: "invoice",
+    frontmatter: {
+      status: "draft",
+      invoice_number: "R-2026-0001",
+      client: "Mandant GmbH",
+      client_address: "Mandant GmbH\nRing 1\n1010 Wien",
+      items: [{ description: "Beratung", date: "2026-09-01", hours: 1, rate: 1000, amount: 1000 }],
+      vat_rate: 0.2,
+      subtotal: 1000,
+      tax: 200,
+      total: 1200,
+      ...fm,
+    },
+  });
+
+  it("draft → sent with sums that do not add up: 409, nothing written", async () => {
+    stored = draft({ total: 50 });
+    const res = await call("PATCH", { status: "sent" });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("invoice_totals_inconsistent");
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("draft → sent without the client's address (over 400 €): 422", async () => {
+    stored = draft({ client_address: "" });
+    const res = await call("PATCH", { status: "sent" });
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("client_address_missing");
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("a complete, consistent draft is issued", async () => {
+    stored = draft({});
+    expect((await call("PATCH", { status: "sent" })).status).toBe(200);
+    expect(mockPatch).toHaveBeenCalledOnce();
+  });
+
+  it("the sums sent along with the status change are the ones checked", async () => {
+    stored = draft({});
+    const res = await call("PATCH", { status: "sent", total: 9999 });
+    expect(res.status).toBe(409);
+  });
+});

@@ -91,7 +91,11 @@ function payload(number: string) {
       case_slugs: ["cases/a"],
       time_entry_ids: ["te-1", "te-2"],
       expense_entry_ids: [],
-      total: 100,
+      items: [{ description: "Beratung", date: "2026-09-01", hours: 1.5, rate: 200, amount: 300 }],
+      vat_rate: 0.2,
+      subtotal: 300,
+      tax: 60,
+      total: 360,
     },
   };
 }
@@ -152,5 +156,57 @@ describe("POST /api/invoices (GELD-4)", () => {
     const res = await call(payload("2026-001"));
     expect(res.status).toBe(503);
     expect(entries().every((e) => e.billed === false)).toBe(true);
+  });
+});
+
+describe("POST /api/invoices — sums are checked by the server (GELD-2/GELD-3)", () => {
+  it("refuses a total that does not follow from the positions: 422, nothing reserved", async () => {
+    const body = payload("2026-001");
+    body.frontmatter.total = 999;
+    const res = await call(body);
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("invoice_totals_mismatch");
+    expect(invoicePages.size).toBe(0);
+    expect(entries().every((e) => e.billed === false)).toBe(true);
+  });
+
+  it("taxes each expense at its own rate and stamps the per-rate breakdown", async () => {
+    const body = payload("2026-001") as { frontmatter: Record<string, unknown> };
+    Object.assign(body.frontmatter, {
+      items: [{ description: "Honorar", date: "2026-09-01", hours: 0, rate: 0, amount: 1000 }],
+      expenses: [{ description: "Gerichtsgebühr", date: "2026-09-01", amount: 100, vat_rate: 0 }],
+      subtotal: 1000,
+      expense_total: 100,
+      tax: 200,
+      total: 1300,
+    });
+    const res = await call(body);
+    expect(res.status).toBe(201);
+    expect(invoicePages.get("invoice/2026-001")!.tax_breakdown).toEqual([
+      { rate: 0.2, net: 1000, tax: 200 },
+      { rate: 0, net: 100, tax: 0 },
+    ]);
+  });
+
+  it("tax on the court fee as well (the old flat rule) is refused", async () => {
+    const body = payload("2026-001") as { frontmatter: Record<string, unknown> };
+    Object.assign(body.frontmatter, {
+      items: [{ description: "Honorar", date: "2026-09-01", hours: 0, rate: 0, amount: 1000 }],
+      expenses: [{ description: "Gerichtsgebühr", date: "2026-09-01", amount: 100, vat_rate: 0 }],
+      subtotal: 1000,
+      expense_total: 100,
+      tax: 220,
+      total: 1320,
+    });
+    const res = await call(body);
+    expect(res.status).toBe(422);
+  });
+
+  it("reverse charge needs the client's VAT ID", async () => {
+    const body = payload("2026-001") as { frontmatter: Record<string, unknown> };
+    Object.assign(body.frontmatter, { reverse_charge: true, tax: 0, total: 300 });
+    expect((await call(body)).status).toBe(422);
+    Object.assign(body.frontmatter, { client_vat_id: "DE123456789" });
+    expect((await call(body)).status).toBe(201);
   });
 });

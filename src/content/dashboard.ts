@@ -1566,6 +1566,30 @@ export const D = {
     de: "Rechnungen können nur mit Verbindung erstellt werden — Rechnungsnummer und abgerechnete Leistungen werden am Server reserviert.",
     en: "Invoices can only be created while online — the invoice number and billed work are reserved on the server.",
   },
+  "inv.client_address_load_failed": {
+    de: "Mandantenanschrift konnte nicht geladen werden — es wurde keine Rechnung erstellt. Bitte erneut versuchen.",
+    en: "The client's address could not be loaded — no invoice was created. Please try again.",
+  },
+  "inv.reverse_charge_label": {
+    de: "Übergang der Steuerschuld (Reverse Charge)",
+    en: "Reverse charge (VAT liability passes to the recipient)",
+  },
+  "inv.reverse_charge_hint": {
+    de: "Unternehmer-Mandant im EU-Ausland (§ 19 Abs 1 UStG 1994) — keine USt, Pflichthinweis auf der Rechnung.",
+    en: "Business client in another EU country — no VAT, mandatory note on the invoice.",
+  },
+  "inv.client_vat_id": {
+    de: "UID-Nummer des Mandanten",
+    en: "Client VAT ID",
+  },
+  "inv.reverse_charge_vat_id_required": {
+    de: "Bei Reverse Charge ist die UID-Nummer des Mandanten Pflicht.",
+    en: "Reverse charge requires the client's VAT ID.",
+  },
+  "inv.online_only_action": {
+    de: "Rechnungsstatus und Löschen nur mit Verbindung — der Server prüft Summen und Pflichtangaben.",
+    en: "Invoice status changes and deletion need a connection — the server checks sums and mandatory details.",
+  },
   "inv.quick_create_failed": {
     de: "Rechnung konnte nicht erstellt werden",
     en: "Invoice could not be created",

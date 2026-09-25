@@ -18,8 +18,16 @@ const mockSendEInvoice = vi.fn(async (_channel?: string, _xml?: string, _opts?: 
   message: "eingereiht",
 }));
 
+const mockUpdatePage = vi.fn(async (..._a: unknown[]) => ({ slug: "x" }));
+const mockCreateOpenItem = vi.fn(async (..._a: unknown[]) => ({ created: true }));
 vi.mock("@/lib/server-brain", () => ({
-  createServerBrainClient: () => ({ getPage: (...a: unknown[]) => mockGetPage(...a) }),
+  createServerBrainClient: () => ({
+    getPage: (...a: unknown[]) => mockGetPage(...a),
+    updatePage: (...a: unknown[]) => mockUpdatePage(...a),
+  }),
+}));
+vi.mock("@/lib/open-items", () => ({
+  createOpenItemForInvoice: (...a: unknown[]) => mockCreateOpenItem(...a),
 }));
 vi.mock("@/lib/kanzlei-settings-server", () => ({
   loadKanzleiSettingsForBrain: () => mockLoadSettings(),
@@ -128,5 +136,57 @@ describe("POST /api/e-invoice/send", () => {
     });
     expect(res.status).toBe(400);
     expect(mockSendEInvoice).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/e-invoice/send — a draft is issued, never sent loose (GELD-14)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  test("a delivered draft becomes sent and gets an open item", async () => {
+    mockGetPage.mockResolvedValueOnce({
+      ...storedInvoice,
+      frontmatter: { ...storedInvoice.frontmatter, status: "draft" },
+    });
+    const res = await post({
+      channel: "peppol",
+      format: "xrechnung",
+      invoiceSlug: "legal/invoices/R-2026-0001",
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.issued).toBe(true);
+    const [update] = mockUpdatePage.mock.calls[0] as [{ frontmatter: Record<string, unknown> }];
+    expect(update.frontmatter.status).toBe("sent");
+    expect(update.frontmatter.e_invoice_reference).toBe("ref-1");
+    expect(mockCreateOpenItem).toHaveBeenCalledOnce();
+  });
+
+  test("a draft whose sums do not add up is not delivered (409)", async () => {
+    mockGetPage.mockResolvedValueOnce({
+      ...storedInvoice,
+      frontmatter: { ...storedInvoice.frontmatter, status: "draft", total: 1 },
+    });
+    const res = await post({
+      channel: "peppol",
+      format: "xrechnung",
+      invoiceSlug: "legal/invoices/R-2026-0001",
+    });
+    expect(res.status).toBe(409);
+    expect(mockSendEInvoice).not.toHaveBeenCalled();
+    expect(mockUpdatePage).not.toHaveBeenCalled();
+  });
+
+  test("an already issued invoice is only re-delivered, not re-issued", async () => {
+    mockGetPage.mockResolvedValueOnce({
+      ...storedInvoice,
+      frontmatter: { ...storedInvoice.frontmatter, status: "sent" },
+    });
+    const res = await post({
+      channel: "peppol",
+      format: "xrechnung",
+      invoiceSlug: "legal/invoices/R-2026-0001",
+    });
+    expect(res.status).toBe(200);
+    expect(mockUpdatePage).not.toHaveBeenCalled();
+    expect(mockCreateOpenItem).not.toHaveBeenCalled();
   });
 });
