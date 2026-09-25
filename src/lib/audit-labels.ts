@@ -349,7 +349,15 @@ export type AuditAction =
   | "human_review.submit"
   | "human_review.summary"
   | "legal.case_investigation"
-  | "legal.case_investigation_review";
+  | "legal.case_investigation_review"
+  | "timer.max_duration"
+  | "legal.questionnaire_create"
+  | "legal.doc_restore_version"
+  | "legal.doc_release"
+  | "legal.doc_checkout"
+  | "legal.doc_checkin"
+  | "legal.docx_fill"
+  | "legal.pdf_tools";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Anmeldung",
@@ -723,6 +731,14 @@ const ACTION_LABELS: Record<string, string> = {
   "automation.create": "Automatisierung angelegt",
   "automation.update": "Automatisierung geändert",
   "automation.delete": "Automatisierung gelöscht",
+  "timer.max_duration": "Zeiterfassung nach Höchstdauer automatisch gestoppt",
+  "legal.questionnaire_create": "Fragebogen erstellt",
+  "legal.doc_restore_version": "Dokumentversion wiederhergestellt",
+  "legal.doc_release": "Dokument freigegeben",
+  "legal.doc_checkout": "Dokument ausgecheckt",
+  "legal.doc_checkin": "Dokument eingecheckt",
+  "legal.docx_fill": "DOCX-Vorlage befüllt",
+  "legal.pdf_tools": "PDF-Werkzeug ausgeführt",
 };
 
 /** Anzeige für Aktionen, die weder ein Label noch eine lesbare Ableitung haben. */

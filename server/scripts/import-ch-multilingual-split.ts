@@ -51,9 +51,13 @@ async function main() {
     process.exit(1);
   }
 
+  // Statement timeout off via the env knob, set BEFORE the pool exists: it is
+  // a connection startup parameter on every pooled connection, a later
+  // `SET statement_timeout = 0` only reaches one connection (see
+  // import-judikatur.ts). Explicit env wins.
+  process.env.GBRAIN_STATEMENT_TIMEOUT ??= "0";
   const engine = new PostgresEngine();
   await engine.connect({ database_url: config.database_url });
-  await engine.executeRaw("SET statement_timeout = 0");
 
   // Ensure sources exist
   for (const lang of ["fr", "it"]) {
