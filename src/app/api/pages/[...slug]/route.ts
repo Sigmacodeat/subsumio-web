@@ -10,6 +10,11 @@ import {
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import {
+  checkPartiesConflicts,
+  type ConflictParty,
+  type MatterConflictOutcome,
+} from "@/lib/conflict-gate";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -312,43 +317,21 @@ export const PATCH = createHandler(
       // explicitly included in the PATCH body. Using body.frontmatter (not
       // patchBody.frontmatter) avoids running the check on every auto-save
       // that happens to include these fields in the merged frontmatter.
-      let conflictWarning:
-        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
-        | undefined;
+      let conflictWarning: MatterConflictOutcome | { checked: false } | undefined;
       const bodyFm = (body.frontmatter ?? {}) as Record<string, unknown>;
-      const namesToCheck = [bodyFm.client_name, bodyFm.opponent_name].filter(
-        (n): n is string => typeof n === "string" && n.trim().length > 0
-      );
-      if (namesToCheck.length > 0) {
+      const parties: ConflictParty[] = [];
+      if (typeof bodyFm.client_name === "string" && bodyFm.client_name.trim()) {
+        parties.push({ name: bodyFm.client_name.trim(), side: "client", ownContactSlugs: [] });
+      }
+      if (typeof bodyFm.opponent_name === "string" && bodyFm.opponent_name.trim()) {
+        parties.push({ name: bodyFm.opponent_name.trim(), side: "opponent", ownContactSlugs: [] });
+      }
+      if (parties.length > 0) {
         try {
-          const conflicts: Array<{ name: string; slug: string; type: string }> = [];
-          const decodedPath = decodeURIComponent(path);
-          for (const name of namesToCheck) {
-            const checkRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...ctx.headers },
-              body: JSON.stringify({ name }),
-              signal: AbortSignal.timeout(15_000),
-            });
-            if (checkRes.ok) {
-              const checkData = (await checkRes.json()) as {
-                matches?: Array<{ name: string; slug: string; type: string }>;
-              };
-              if (checkData.matches?.length) {
-                // B3 FIX: Exclude self-match — the case being patched
-                // shouldn't trigger a conflict warning against itself.
-                conflicts.push(
-                  ...checkData.matches
-                    .filter((m) => m.slug !== path && m.slug !== decodedPath)
-                    .map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
-                );
-              }
-            }
-          }
-          conflictWarning = {
-            checked: true,
-            matches: conflicts.length > 0 ? conflicts : undefined,
-          };
+          // Each name with its side in this matter; the matter itself is no hit.
+          conflictWarning = await checkPartiesConflicts(ctx.headers, parties, {
+            selfCaseSlug: decodeURIComponent(path),
+          });
         } catch {
           conflictWarning = { checked: false };
         }

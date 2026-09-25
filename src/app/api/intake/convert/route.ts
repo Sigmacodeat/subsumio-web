@@ -4,6 +4,12 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { intakeFromPage } from "@/lib/intake";
 import { buildCaseFromIntake } from "@/lib/intake-conversion";
 import { validateAcceptanceForConversion } from "@/lib/intake-acceptance";
+import {
+  canWaiveConflict,
+  checkPartiesConflicts,
+  conflictCheckRecord,
+  intakeParties,
+} from "@/lib/conflict-gate";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
@@ -86,6 +92,60 @@ export const POST = createHandler(
       }
     }
 
+    // Kollisionsprüfung (§ 10 Abs 1 RAO): the stored check must come from the
+    // server (real user id), and the check runs AGAIN now — a conflict that
+    // appeared after the check, or one no justified waiver covers, blocks.
+    const storedCheck = workflow.conflict_check;
+    if (!storedCheck.performed_by_id || !storedCheck.performed_at) {
+      return apiError(
+        "acceptance_incomplete",
+        "Mandatsannahme unvollständig: Die Kollisionsprüfung wurde nicht serverseitig durchgeführt. Bitte die Prüfung erneut ausführen.",
+        422,
+        { code: "conflict_check_not_server_verified" }
+      );
+    }
+    const parties = intakeParties(intakePage.frontmatter as unknown as Record<string, unknown>);
+    let conflictOutcome;
+    try {
+      conflictOutcome = await checkPartiesConflicts(ctx.headers, parties);
+    } catch (err) {
+      log.error(
+        "[intake/convert] conflict check failed:",
+        err instanceof Error ? err.message : err
+      );
+      return apiError(
+        "conflict_check_unavailable",
+        "Kollisionsprüfung nicht verfügbar. Akte wurde nicht angelegt.",
+        503
+      );
+    }
+    if (!conflictOutcome.checked) {
+      return apiError(
+        "acceptance_incomplete",
+        "Mandatsannahme unvollständig: Mandantenname fehlt für die Kollisionsprüfung.",
+        422,
+        { code: "conflict_check_no_parties" }
+      );
+    }
+    const blocking = conflictOutcome.blocking.length > 0;
+    const waiverCovers =
+      storedCheck.waived === true &&
+      Boolean(storedCheck.waived_by_id) &&
+      Boolean(storedCheck.waived_reason?.trim()) &&
+      canWaiveConflict(storedCheck.waived_by_role) &&
+      conflictOutcome.blocking.every((hit) => (storedCheck.matches ?? []).includes(hit.slug));
+    if (blocking && !waiverCovers) {
+      return Response.json(
+        {
+          error: "conflict_detected",
+          message:
+            "Interessenkonflikt festgestellt, der nicht begründet freigegeben ist. Akte wurde nicht angelegt.",
+          conflictWarning: conflictOutcome,
+        },
+        { status: 409 }
+      );
+    }
+
     const casePage = buildCaseFromIntake(intakePage, {
       caseSlug: body.case_slug,
       caseNumber: body.case_number,
@@ -93,6 +153,39 @@ export const POST = createHandler(
       priority: body.priority,
       portalEnabled: body.portal_enabled,
       convertedBy: ctx.user.email,
+    });
+    // The matter carries the conversion-time result, not the stored claim.
+    const conflictRecord = conflictCheckRecord(
+      conflictOutcome,
+      { id: ctx.user.id, email: ctx.user.email, role: ctx.user.role },
+      blocking
+        ? {
+            reason: storedCheck.waived_reason ?? "",
+            actor: {
+              id: storedCheck.waived_by_id ?? "",
+              email: storedCheck.waived_by ?? "",
+              role: storedCheck.waived_by_role,
+            },
+          }
+        : undefined
+    );
+    if (blocking && storedCheck.waived_at) conflictRecord.waived_at = storedCheck.waived_at;
+    casePage.mandate_acceptance = {
+      ...casePage.mandate_acceptance,
+      conflict_check: conflictRecord,
+    };
+    Object.assign(casePage.frontmatter, {
+      mandate_acceptance: casePage.mandate_acceptance,
+      conflict_status: blocking ? "conflict_waived" : "conflict_cleared",
+      ...(blocking
+        ? {
+            conflict_waiver_reason: storedCheck.waived_reason,
+            conflict_waived_by: storedCheck.waived_by,
+            conflict_waived_by_id: storedCheck.waived_by_id,
+            conflict_waived_by_role: storedCheck.waived_by_role,
+            conflict_waived_at: storedCheck.waived_at,
+          }
+        : {}),
     });
 
     // A retry after "case created, intake update failed" must not produce a
@@ -119,6 +212,9 @@ export const POST = createHandler(
     }
 
     if (!caseAlreadyCreated) {
+      // Paket C5 ("Akte sicher anlegen") replaces this direct engine write.
+      // The conflict gate above must stay BEFORE that call and hand over
+      // `casePage.frontmatter` (conflict_status + mandate_acceptance) as-is.
       const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },

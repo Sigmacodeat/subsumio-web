@@ -33,6 +33,13 @@ type EngineMatch = ConflictMatch & {
 };
 type EngineResult = ConflictCheckResponse & { checked_rows?: number };
 
+type CheckSide = "client" | "opponent";
+
+const SIDE_LABEL: Record<CheckSide, string> = {
+  client: "Künftiger Mandant",
+  opponent: "Künftiger Gegner",
+};
+
 const SEVERITY_CONFIG: Record<
   ConflictCheckResponse["severity"],
   {
@@ -136,6 +143,8 @@ export default function KollisionspruefungPage() {
   const { t } = useLang();
   const { addToast } = useToast();
   const [searchName, setSearchName] = useState("");
+  // Role of the name in the NEW mandate — decides what is a conflict (§ 10 RAO).
+  const [side, setSide] = useState<CheckSide>("client");
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<EngineResult | null>(null);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
@@ -144,13 +153,13 @@ export default function KollisionspruefungPage() {
   // Die eigentliche Prüfung läuft SERVERSEITIG über alle Akten der Kanzlei
   // (kein 200-Zeilen-Limit, kein Frontmatter-Roundtrip). Siehe
   // POST /api/legal/conflict-check.
-  async function performCheck(name: string) {
+  async function performCheck(name: string, checkSide: CheckSide = side) {
     if (!name.trim()) return;
     setChecking(true);
     setResult(null);
     setError(null);
     try {
-      const res = (await api.legal.conflictCheck(name.trim())) as EngineResult;
+      const res = (await api.legal.conflictCheck(name.trim(), checkSide)) as EngineResult;
       setResult(res);
       setCheckedAt(new Date());
     } catch {
@@ -163,10 +172,13 @@ export default function KollisionspruefungPage() {
 
   // Deep link: /dashboard/kollisionspruefung?name=… prefills and runs the check.
   useEffect(() => {
-    const name = new URLSearchParams(window.location.search).get("name")?.trim();
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get("name")?.trim();
+    const linkedSide: CheckSide = params.get("side") === "opponent" ? "opponent" : "client";
+    setSide(linkedSide);
     if (name) {
       setSearchName(name);
-      void performCheck(name);
+      void performCheck(name, linkedSide);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
@@ -190,6 +202,7 @@ export default function KollisionspruefungPage() {
     if (!result || !cfg) return;
     const lines = [
       `Kollisionsprüfung: ${result.name}`,
+      `Rolle im neuen Mandat: ${SIDE_LABEL[result.side ?? side]}`,
       `Geprüft am: ${formatDateTime(checkedAt)}`,
       `Ergebnis: ${t(cfg.labelKey)}`,
       cleanExplanation(result.explanation),
@@ -263,6 +276,30 @@ export default function KollisionspruefungPage() {
             {t("conflict.btn_check")}
           </Button>
         </form>
+        <fieldset className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <legend className="sr-only">Rolle im neuen Mandat</legend>
+          <span className="text-xs text-[color:var(--ds-text-muted)]" aria-hidden="true">
+            Rolle im neuen Mandat:
+          </span>
+          {(["client", "opponent"] as const).map((value) => (
+            <label
+              key={value}
+              className="inline-flex items-center gap-1.5 text-[color:var(--ds-text)]"
+            >
+              <input
+                type="radio"
+                name="conflict-side"
+                value={value}
+                checked={side === value}
+                onChange={() => {
+                  setSide(value);
+                  setResult(null);
+                }}
+              />
+              {SIDE_LABEL[value]}
+            </label>
+          ))}
+        </fieldset>
       </div>
 
       {/* Results */}
@@ -299,6 +336,12 @@ export default function KollisionspruefungPage() {
                     <div className="flex gap-1">
                       <dt>Geprüfter Name:</dt>
                       <dd className="font-medium text-[color:var(--ds-text)]">{result.name}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt>Rolle im neuen Mandat:</dt>
+                      <dd className="font-medium text-[color:var(--ds-text)]">
+                        {SIDE_LABEL[result.side ?? side]}
+                      </dd>
                     </div>
                     <div className="flex gap-1">
                       <dt>Treffer:</dt>
@@ -342,7 +385,7 @@ export default function KollisionspruefungPage() {
                     <Copy size={14} aria-hidden="true" />
                     Protokoll kopieren
                   </Button>
-                  {result.severity === "none" && searchName.trim() && (
+                  {result.severity === "none" && result.side === "client" && searchName.trim() && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -402,6 +445,11 @@ export default function KollisionspruefungPage() {
                             )}
                           </div>
                           <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                            {m.assessment === "critical" && (
+                              <span className="font-medium text-[color:var(--ds-danger-text)]">
+                                Seitenwechsel ·{" "}
+                              </span>
+                            )}
                             {sourceLabel(m)}
                             {m.entity_role &&
                               ` · ${ENTITY_ROLE_LABEL[m.entity_role.toLowerCase()] ?? m.entity_role}`}

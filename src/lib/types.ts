@@ -136,10 +136,14 @@ export interface ConflictMatch {
   exact: boolean;
   similarity?: number;
   match_type?: "exact" | "fuzzy" | "substring";
+  /** Relative to the new mandate: critical (other side), review, info (same side). */
+  assessment?: "critical" | "review" | "info";
 }
 
 export interface ConflictCheckResponse {
   name: string;
+  /** Side of the checked name in the new mandate, when the caller gave one. */
+  side?: "client" | "opponent";
   severity: "critical" | "low" | "none";
   explanation: string;
   matches: ConflictMatch[];

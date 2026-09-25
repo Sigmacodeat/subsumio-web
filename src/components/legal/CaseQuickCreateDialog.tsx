@@ -58,7 +58,6 @@ import {
   defaultAcceptanceWorkflow,
   inferKycRequired,
   inferPoaRequired,
-  updateConflictCheck,
 } from "@/lib/intake-acceptance";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -334,48 +333,46 @@ export function CaseQuickCreateDialog({
 
     const client = clients.find((c) => c.slug === clientSlug);
     const opponent = opponents.find((c) => c.slug === opponentSlug);
-    const conflictName = client?.name?.trim() || title.trim();
+    // Each party with its side in the new matter (§ 10 Abs 1 RAO): the client
+    // must not be an opponent elsewhere, the opponent not an existing client.
+    const parties: Array<{ name: string; side: "client" | "opponent" }> = [];
+    if (client?.name?.trim()) parties.push({ name: client.name.trim(), side: "client" });
+    if (opponent?.name?.trim()) parties.push({ name: opponent.name.trim(), side: "opponent" });
 
-    let conflictResult: Awaited<ReturnType<typeof api.legal.conflictCheck>> | null = null;
-    if (isOnline()) {
+    if (isOnline() && parties.length > 0) {
       setConflictCheck("checking");
-      try {
-        conflictResult = await api.legal.conflictCheck(conflictName);
-      } catch (err) {
-        setConflictCheck("error");
-        addToast({
-          type: "error",
-          title: err instanceof Error ? err.message : "Kollisionsprüfung fehlgeschlagen",
-        });
-        setSubmitting(false);
-        return;
-      }
-      if (conflictResult.severity === "critical") {
-        setConflictCheck("critical");
-        addToast({
-          type: "error",
-          title: "Kritische Kollision erkannt",
-          description: conflictResult.explanation,
-        });
-        setSubmitting(false);
-        return;
+      for (const party of parties) {
+        let conflictResult: Awaited<ReturnType<typeof api.legal.conflictCheck>>;
+        try {
+          conflictResult = await api.legal.conflictCheck(party.name, party.side);
+        } catch (err) {
+          setConflictCheck("error");
+          addToast({
+            type: "error",
+            title: err instanceof Error ? err.message : "Kollisionsprüfung fehlgeschlagen",
+          });
+          setSubmitting(false);
+          return;
+        }
+        if (conflictResult.severity === "critical") {
+          setConflictCheck("critical");
+          addToast({
+            type: "error",
+            title: "Kritische Kollision erkannt",
+            description: conflictResult.explanation,
+          });
+          setSubmitting(false);
+          return;
+        }
       }
       setConflictCheck("clear");
     }
 
     const now = new Date().toISOString();
-    const acceptance = updateConflictCheck(
-      defaultAcceptanceWorkflow(),
-      conflictResult ?? {
-        name: conflictName,
-        severity: "none",
-        explanation: "Offline/Quick-Create ohne Kollisionsprüfung",
-        matches: [],
-        checked_cases: 0,
-        disclaimer: "",
-      },
-      me?.email ?? "CaseQuickCreateDialog"
-    );
+    // The conflict check on record is always the SERVER's: /api/pages runs it
+    // when the matter is written (also when an offline create syncs) and fills
+    // this block. The dialog never claims a check of its own.
+    const acceptance = defaultAcceptanceWorkflow();
 
     const kycRequired = inferKycRequired(legalArea, client?.name);
     const poaRequired = inferPoaRequired(legalArea);

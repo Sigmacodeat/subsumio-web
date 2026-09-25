@@ -9158,22 +9158,40 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // aware checker in core/legal/conflict-check.ts (Gap H): legal_case +
   // legal_contact frontmatter PLUS pipeline entity pages (people/*) with
   // roles, aliases and case_refs — the Geschäftsführer of the opposing GmbH
-  // or the witness who is a client elsewhere now shows up. Umlaut-normalized
-  // fuzzy matching included.
+  // or the witness who is a client elsewhere now shows up. Fuzzy matching
+  // (umlauts, legal forms, name order, typos) included. `side` is the side of
+  // the name in the NEW mandate ("client" | "opponent"); it decides whether a
+  // hit on the other side of an existing Akte is critical (§ 10 Abs 1 RAO).
   app.post(
     "/api/legal/conflict-check",
     express.json({ limit: "64kb" }),
     async (req: Request, res: Response) => {
       try {
-        const name = String((req.body as Record<string, unknown>).name ?? "").trim();
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const name = String(body.name ?? "").trim();
         if (!name) {
           apiError(res, 400, "missing_name");
           return;
         }
+        const side = body.side;
+        if (side !== undefined && side !== null && side !== "client" && side !== "opponent") {
+          apiError(res, 400, "invalid_side");
+          return;
+        }
+        const selfCaseSlug =
+          typeof body.self_case_slug === "string" ? body.self_case_slug.slice(0, 500) : undefined;
+        const ownContactSlugs = Array.isArray(body.own_contact_slugs)
+          ? body.own_contact_slugs
+              .filter((s): s is string => typeof s === "string" && s.length > 0)
+              .slice(0, 20)
+          : undefined;
         const { conflictCheck } = await import("../core/legal/conflict-check.ts");
         const result = await conflictCheck(engine, {
           name,
+          side: side === "client" || side === "opponent" ? side : undefined,
           sourceId: requestSourceId(req),
+          selfCaseSlug,
+          ownContactSlugs,
         });
         res.json(result);
       } catch (e) {
