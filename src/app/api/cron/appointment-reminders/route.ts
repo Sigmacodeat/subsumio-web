@@ -140,7 +140,7 @@ export const GET = createCronHandler(async () => {
             totalSent++;
             void logTrackingEvent({
               trackingId,
-              eventType: "delivered",
+              eventType: "sent",
               raw: { source: "smtp", route: "appointment-reminders", recipient: recipient.email },
             });
           } catch (err) {

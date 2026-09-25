@@ -133,7 +133,10 @@ export function useKanzleiCockpitData() {
   const deadlines = (pages.legal_deadline ?? []) as DashboardPageLike[];
   const invoices = (pages.invoice ?? []) as DashboardPageLike[];
   const intake = (pages.intake_request ?? []) as DashboardPageLike[];
-  const bea = (pages.bea_draft ?? []) as DashboardPageLike[];
+  // bea_draft has no live surface (the beA dashboard is retired); imported
+  // beA messages are still listed under /dashboard/communications, so they
+  // stay in the inbox widget — but link there, never to /dashboard/intake
+  // which only lists intake_request records.
   const beaMessages = (pages.bea_message ?? []) as DashboardPageLike[];
   const documentRequests = (pages.document_request ?? []) as DashboardPageLike[];
   const signatures = (pages.signature_request ?? []) as DashboardPageLike[];
@@ -202,9 +205,13 @@ export function useKanzleiCockpitData() {
     )
   );
   const pendingSignatures = signatures.filter((p) => isOpenStatus(p.frontmatter?.status));
-  const inboxItems = [...intake, ...bea, ...beaMessages].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  const sortNewest = (a: DashboardPageLike, b: DashboardPageLike) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  // Counts/stat/activity feed only — must match what /dashboard/intake shows.
+  const inboxItems = [...intake].sort(sortNewest);
+  // The widget additionally surfaces imported beA messages (they have a real
+  // home on /dashboard/communications).
+  const inboxListItems = [...intake, ...beaMessages].sort(sortNewest);
   const openInvoices = invoices.filter((p) => isOpenStatus(p.frontmatter?.status));
   const pendingReviews = [...reviews, ...agentActions].filter((p) =>
     isOpenStatus(p.frontmatter?.status)
@@ -225,6 +232,7 @@ export function useKanzleiCockpitData() {
     unassignedDocs,
     reviewGaps,
     inboxItems,
+    inboxListItems,
     openInvoices,
     pendingReviews,
     openDocumentRequests,
@@ -426,12 +434,13 @@ export function InboxList({ items }: { items: DashboardPageLike[] }) {
           </div>
         ) : (
           items.slice(0, 5).map((item) => {
-            const source = item.type === "bea_draft" ? "Archivimport" : t("nav.intake");
+            const isBea = item.type === "bea_message";
+            const source = isBea ? "beA-Import" : t("nav.intake");
             return (
               <QueueRow
                 key={item.slug}
                 icon={Mail}
-                href="/dashboard/intake"
+                href={isBea ? "/dashboard/communications" : "/dashboard/intake"}
                 title={text(item.title, t("cockpit.untitled_inbox"))}
                 meta={`${source} · ${formatDate(new Date(item.created_at || item.updated_at), lang)}`}
                 badge={source}
@@ -1103,7 +1112,7 @@ export function WidgetDashboard() {
 
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <DeadlineList items={data.deadlines} />
-        <InboxList items={data.inboxItems} />
+        <InboxList items={data.inboxListItems} />
       </div>
 
       {/* Review-Lücken & Unzugeordnete Dokumente — höher priorisiert als generische Metriken */}

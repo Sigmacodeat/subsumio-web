@@ -1311,6 +1311,11 @@ function TrackingBadge({
       color: "text-[color:var(--ds-warning-text)]",
       label: "Spam",
     },
+    failed: {
+      icon: XCircle,
+      color: "text-[color:var(--ds-danger-text)]",
+      label: "Fehlgeschlagen",
+    },
   };
   const cfg = config[status] ?? config.sent;
   const Icon = cfg.icon;
@@ -1370,7 +1375,7 @@ function TrackingTimeline({
       color: "text-[color:var(--ds-category-violet-text)]",
     },
   ];
-  if (status === "bounced" || status === "complained") steps.length = 0;
+  if (status === "bounced" || status === "complained" || status === "failed") steps.length = 0;
 
   return (
     <div className="border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-5 py-4">
@@ -1384,6 +1389,11 @@ function TrackingTimeline({
         {status === "complained" && (
           <span className="inline-flex items-center gap-1 rounded bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs text-[color:var(--ds-warning-text)]">
             <AlertTriangle size={11} /> Spam-Beschwerde
+          </span>
+        )}
+        {status === "failed" && (
+          <span className="inline-flex items-center gap-1 rounded bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs text-[color:var(--ds-danger-text)]">
+            <XCircle size={11} /> Versand fehlgeschlagen
           </span>
         )}
         {forwarded && (

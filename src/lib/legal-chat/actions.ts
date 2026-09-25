@@ -2617,7 +2617,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       ...draftRows,
       ...filingRows,
       "",
-      "Hinweis: Versand/Freigabe bitte im beA-Dashboard final prüfen.",
+      "Hinweis: Der beA-Postfach-Bereich ist im aktuellen Release deaktiviert — die Liste zeigt importierte beA-Nachrichten und Entwürfe zur Dokumentation.",
     ].join("\n");
   }
 

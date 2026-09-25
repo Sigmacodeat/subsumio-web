@@ -45,7 +45,10 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     const followUps = pages.legal_follow_up ?? [];
     const invoices = pages.invoice ?? [];
     const intake = pages.intake_request ?? [];
-    const bea = pages.bea_draft ?? [];
+    // bea_draft is deliberately NOT counted: the beA dashboard is retired, so
+    // a draft has no live surface to open — the briefing must not report
+    // "Eingänge" the lawyer cannot act on. bea_message stays: imported beA
+    // mail is listed under /dashboard/communications.
     const beaMessages = pages.bea_message ?? [];
     const signatures = pages.signature_request ?? [];
     const reviews = pages.review_item ?? [];
@@ -161,7 +164,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       );
     });
 
-    const inboxItems = [...intake, ...bea, ...beaMessages];
+    const inboxItems = [...intake, ...beaMessages];
     const openInvoices = invoices.filter((p: BrainPage) =>
       isOpen((p.frontmatter as Record<string, unknown> | undefined)?.status)
     );

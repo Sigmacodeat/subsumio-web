@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  storeInboundResendEmail,
-  verifyResendWebhook,
-  handleResendTrackingEvent,
-} from "@/lib/email/mailbox";
+import { storeInboundResendEmail, verifyResendWebhook } from "@/lib/email/mailbox";
+import { reconcileResendDeliveryEvent } from "@/lib/email/delivery-status";
 import { createWebhookHandler } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -11,6 +8,11 @@ const log = logger("api/email/webhook/resend");
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Legacy Resend webhook endpoint — kept for existing deployments; the
+ * canonical endpoint is POST /api/webhooks/resend (same signature
+ * verification, identical handling).
+ */
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const payload = await req.text();
 
@@ -23,13 +25,16 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       return NextResponse.json({ ok: true, id: message.id, type: "inbound" });
     }
 
-    // Try tracking event handling (email.delivered, email.bounced, email.complained)
-    const tracked = await handleResendTrackingEvent(event);
-    if (tracked) {
-      return NextResponse.json({ ok: true, type: event.type ?? "tracking" });
+    // Delivery lifecycle events go through the canonical reconciliation
+    // (dedupe + Postausgangsbuch write-back + audit) shared with
+    // /api/webhooks/resend.
+    const dedupeKey = `${event.data?.email_id ?? "unknown"}:${event.type ?? "unknown"}`;
+    const delivery = await reconcileResendDeliveryEvent(event, dedupeKey);
+    if (delivery.handled) {
+      return NextResponse.json({ ok: true, type: event.type ?? "delivery" });
     }
 
-    // Neither inbound nor tracking — ignore
+    // Neither inbound nor delivery — ignore
     return NextResponse.json({ ok: true, ignored: true, type: event.type ?? null });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
