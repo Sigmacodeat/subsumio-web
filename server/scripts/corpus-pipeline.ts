@@ -301,6 +301,34 @@ export function judikaturImportArgv(src: JudikaturSource): string[] {
   ];
 }
 
+/**
+ * Resolve the source key from `pipeline_config.fetch_triggered`, as `value::text`.
+ *
+ * The dashboard (`src/app/api/admin/corpus-pipeline/route.ts`) writes
+ * `{"source_key": "jud-bvwg", "seit": …}`; an operator setting the trigger by
+ * hand in psql stored the bare JSON string `"jud-bvwg"`. The old reader
+ * (`value->>'source_key'`) returned NULL for the string form, so the BVwG
+ * discovery fetch requested on 2026-09-23 never started and nothing said so
+ * for two days. Every shape that names a key now triggers; anything else
+ * returns null and the caller warns instead of staying silent.
+ */
+export function parseFetchTrigger(raw: string | null | undefined): string | null {
+  const text = (raw ?? "").trim();
+  if (!text) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return text; // not JSON at all: treat as the key itself
+  }
+  if (typeof parsed === "string") return parsed.trim() || null;
+  if (parsed && typeof parsed === "object" && "source_key" in parsed) {
+    const key = (parsed as { source_key: unknown }).source_key;
+    if (typeof key === "string") return key.trim() || null;
+  }
+  return null;
+}
+
 export const SIMPLE: SimpleSource[] = [
   {
     kind: "statutes",
@@ -2347,9 +2375,15 @@ async function cycle(): Promise<void> {
     }
 
     // ── Fetch-missing trigger (from dashboard: pipeline_config.fetch_triggered) ──
-    const fetchTriggered = psqlQuery(
-      "SELECT value->>'source_key' FROM pipeline_config WHERE key = 'fetch_triggered'"
+    const fetchTriggerRaw = psqlQuery(
+      "SELECT value::text FROM pipeline_config WHERE key = 'fetch_triggered'"
     ).trim();
+    const fetchTriggered = parseFetchTrigger(fetchTriggerRaw) ?? "";
+    if (fetchTriggerRaw && !fetchTriggered) {
+      console.warn(
+        `  ⚠️ fetch_triggered unlesbar: ${fetchTriggerRaw} — erwartet {"source_key": "jud-…"}; Zeile bleibt stehen, es wird nichts geholt`
+      );
+    }
     if (fetchTriggered && !REPORT_ONLY) {
       const key = fetchTriggered.replace(/'/g, "''");
       // Map source_key to fetch script

@@ -23,6 +23,7 @@ import {
   consecutiveImportFailures,
   JUDIKATUR,
   judikaturImportArgv,
+  parseFetchTrigger,
   type DBPipelineState,
 } from "../scripts/corpus-pipeline.ts";
 
@@ -129,5 +130,30 @@ describe("judikaturImportArgv", () => {
     for (const src of JUDIKATUR) {
       expect(judikaturImportArgv(src)).toContain("--bulk");
     }
+  });
+});
+
+describe("parseFetchTrigger", () => {
+  it("reads the dashboard shape {source_key, seit}", () => {
+    expect(parseFetchTrigger('{"source_key": "jud-bvwg", "seit": "2026-09-23T15:49:08Z"}')).toBe(
+      "jud-bvwg"
+    );
+  });
+
+  it("reads a bare JSON string set by hand via psql (2026-09-23: ignored for two days)", () => {
+    expect(parseFetchTrigger('"jud-bvwg"')).toBe("jud-bvwg");
+  });
+
+  it("reads an unquoted key as a last resort", () => {
+    expect(parseFetchTrigger("jud-vwgh")).toBe("jud-vwgh");
+  });
+
+  it("returns null for nothing, whitespace, or an object without source_key", () => {
+    expect(parseFetchTrigger(null)).toBeNull();
+    expect(parseFetchTrigger("")).toBeNull();
+    expect(parseFetchTrigger("   \n")).toBeNull();
+    expect(parseFetchTrigger('{"source": "jud-bvwg"}')).toBeNull();
+    expect(parseFetchTrigger('{"source_key": ""}')).toBeNull();
+    expect(parseFetchTrigger("42")).toBeNull();
   });
 });
