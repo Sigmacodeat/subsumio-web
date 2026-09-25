@@ -270,7 +270,7 @@ async function writeDbCache<T>(
   await engine.executeRaw(
     `INSERT INTO conversation_parser_llm_cache
        (content_sha256, model_id, call_shape, value_json)
-     VALUES ($1, $2, $3, $4::jsonb)
+     VALUES ($1, $2, $3, $4::text::jsonb)
      ON CONFLICT (content_sha256, model_id, call_shape) DO NOTHING`,
     [contentSha, modelStr, shape, JSON.stringify(value)]
   );

@@ -247,17 +247,17 @@ export async function persistTrace(
          latency_ms, warnings)
        VALUES ($1, $2, $3, $4,
                $5, $6, $7, $8,
-               $9::jsonb, $10, $11, $12,
+               $9::text::jsonb, $10, $11, $12,
                $13, $14, $15,
                $16, $17::jsonb,
                $18, $19::jsonb,
                $20, $21::jsonb, $22,
                $23,
                $24, $25, $26::jsonb,
-               $27, $28, $29::jsonb,
+               $27, $28, $29::text::jsonb,
                $30, $31, $32::jsonb,
                $33, $34,
-               $35, $36::jsonb)
+               $35, $36::text::jsonb)
        ON CONFLICT (trace_id) DO NOTHING`,
       [
         trace.trace_id,

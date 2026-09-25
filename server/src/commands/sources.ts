@@ -579,7 +579,7 @@ async function runFederate(engine: BrainEngine, args: string[], value: boolean):
   }
   const config = parseConfig(src.config);
   config.federated = value;
-  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+  await engine.executeRaw(`UPDATE sources SET config = $1::text::jsonb WHERE id = $2`, [
     JSON.stringify(config),
     id,
   ]);
@@ -763,7 +763,7 @@ async function runWebhookSet(engine: BrainEngine, args: string[]): Promise<void>
   const cfg = parseConfig(src.config);
   cfg.webhook_secret = secret;
   cfg.github_repo = githubRepo;
-  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+  await engine.executeRaw(`UPDATE sources SET config = $1::text::jsonb WHERE id = $2`, [
     JSON.stringify(cfg),
     id,
   ]);
@@ -826,7 +826,7 @@ async function runWebhookRotate(engine: BrainEngine, args: string[]): Promise<vo
   const secret = randomBytes(32).toString("hex");
   const cfg = parseConfig(src.config);
   cfg.webhook_secret = secret;
-  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+  await engine.executeRaw(`UPDATE sources SET config = $1::text::jsonb WHERE id = $2`, [
     JSON.stringify(cfg),
     id,
   ]);
@@ -852,7 +852,7 @@ async function runWebhookClear(engine: BrainEngine, args: string[]): Promise<voi
   const cfg = parseConfig(src.config);
   delete cfg.webhook_secret;
   delete cfg.github_repo;
-  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+  await engine.executeRaw(`UPDATE sources SET config = $1::text::jsonb WHERE id = $2`, [
     JSON.stringify(cfg),
     id,
   ]);
@@ -877,7 +877,7 @@ async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<vo
 
   if (setArg) {
     cfg.tracked_branch = setArg;
-    await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+    await engine.executeRaw(`UPDATE sources SET config = $1::text::jsonb WHERE id = $2`, [
       JSON.stringify(cfg),
       id,
     ]);
@@ -897,7 +897,7 @@ async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<vo
         { encoding: "utf8" }
       ).trim();
       cfg.tracked_branch = branch;
-      await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+      await engine.executeRaw(`UPDATE sources SET config = $1::text::jsonb WHERE id = $2`, [
         JSON.stringify(cfg),
         id,
       ]);
