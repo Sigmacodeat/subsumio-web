@@ -74,23 +74,20 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     const approvalsPromise = loadApprovalSummary(ctx.headers, ctx.user.email).catch(() => null);
-    const [deadlines, intake, bea, beaMessages, signatures, docs, legalDocs, invoices] =
-      await Promise.all([
-        // Every deadline, not the 100 most recently edited: the listing is
-        // sorted by last update, so a fixed cap hid exactly the long-standing
-        // deadlines that are now falling due. The engine has no count or
-        // due-date filter endpoint, so this pages through all of them.
-        listEnginePages(ctx.headers, "legal_deadline", DEADLINE_BADGE_READ_CAP, {
-          timeoutMs: 8_000,
-        }).then((pages) => pages as unknown as Record<string, unknown>[]),
-        fetchPagesByType(ctx.headers, "intake_request", 50),
-        fetchPagesByType(ctx.headers, "bea_draft", 50),
-        fetchPagesByType(ctx.headers, "bea_message", 50),
-        fetchPagesByType(ctx.headers, "signature_request", 50),
-        fetchPagesByType(ctx.headers, "document", 100),
-        fetchPagesByType(ctx.headers, "legal_document", 100),
-        fetchPagesByType(ctx.headers, "invoice", 50),
-      ]);
+    const [deadlines, intake, signatures, docs, legalDocs, invoices] = await Promise.all([
+      // Every deadline, not the 100 most recently edited: the listing is
+      // sorted by last update, so a fixed cap hid exactly the long-standing
+      // deadlines that are now falling due. The engine has no count or
+      // due-date filter endpoint, so this pages through all of them.
+      listEnginePages(ctx.headers, "legal_deadline", DEADLINE_BADGE_READ_CAP, {
+        timeoutMs: 8_000,
+      }).then((pages) => pages as unknown as Record<string, unknown>[]),
+      fetchPagesByType(ctx.headers, "intake_request", 50),
+      fetchPagesByType(ctx.headers, "signature_request", 50),
+      fetchPagesByType(ctx.headers, "document", 100),
+      fetchPagesByType(ctx.headers, "legal_document", 100),
+      fetchPagesByType(ctx.headers, "invoice", 50),
+    ]);
     const approvals = await approvalsPromise;
 
     const badges: BadgeCounts = {};
@@ -112,8 +109,11 @@ export const GET = createHandler(
       badges["/dashboard/deadlines"] = { count: criticalCount, variant: "danger" };
     }
 
-    // Intake — new items
-    const inboxCount = [...intake, ...bea, ...beaMessages].length;
+    // Intake — new items. bea_draft/bea_message are deliberately NOT counted:
+    // the badge must not promise items its page does not show, and the intake
+    // list only renders intake_request records (the beA dashboard is retired;
+    // imported bea_message rows live under /dashboard/communications).
+    const inboxCount = intake.length;
     if (inboxCount > 0) {
       badges["/dashboard/intake"] = { count: inboxCount, variant: "info" };
     }

@@ -5,7 +5,7 @@ import { Webhook } from "svix";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { externalFetchTimeout } from "@/lib/retry";
 import { sendMail, type MailInput } from "@/lib/mail";
-import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
+import { generateTrackingId } from "@/lib/email/tracking";
 import { createSchemaInit } from "@/lib/schema-init";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
@@ -16,7 +16,14 @@ const log = logger("mailbox");
 export type MailDirection = "inbound" | "outbound";
 export type MailStatus = "received" | "sent" | "failed";
 
-export type TrackingStatus = "sent" | "delivered" | "opened" | "clicked" | "bounced" | "complained";
+export type TrackingStatus =
+  | "sent"
+  | "delivered"
+  | "opened"
+  | "clicked"
+  | "bounced"
+  | "complained"
+  | "failed";
 
 export interface MailMessage {
   id: string;
@@ -103,7 +110,7 @@ interface ResendReceivedEmail {
   created_at?: string;
 }
 
-interface ResendWebhookEvent {
+export interface ResendWebhookEvent {
   type?: string;
   created_at?: string;
   data?: {
@@ -872,74 +879,6 @@ export async function mergeMailRaw(id: string, patch: Record<string, unknown>): 
 /** Attach the AI triage result to a stored message (kept in `raw.triage`). */
 export async function setMailTriage(id: string, triage: Record<string, unknown>): Promise<void> {
   await mergeMailRaw(id, { triage });
-}
-
-/**
- * Handle Resend webhook events for tracking (delivered, bounced, complained).
- * Returns true if the event was processed, false if it was not a tracking event.
- */
-export async function handleResendTrackingEvent(event: ResendWebhookEvent): Promise<boolean> {
-  const type = event.type;
-  if (type !== "email.delivered" && type !== "email.bounced" && type !== "email.complained") {
-    return false;
-  }
-
-  const emailId = event.data?.email_id ?? null;
-  const subject = event.data?.subject ?? "";
-  const to = event.data?.to ?? [];
-  const createdAt = event.data?.created_at ?? event.created_at ?? new Date().toISOString();
-
-  // Look up the message by provider_id to get the tracking_id
-  const pool = getSharedPgPool();
-  if (!pool) {
-    log.info("Resend webhook (no DB — skipping)", { type, emailId });
-    return true;
-  }
-
-  await ensureMailboxReady();
-
-  try {
-    const { rows } = await pool.query(
-      "SELECT id, tracking_id FROM subsumio_mail_messages WHERE provider_id = $1",
-      [emailId]
-    );
-
-    const messageId = rows[0]?.id ?? null;
-    const trackingId = rows[0]?.tracking_id ?? null;
-
-    const eventType =
-      type === "email.delivered"
-        ? "delivered"
-        : type === "email.bounced"
-          ? "bounced"
-          : "complained";
-
-    if (trackingId) {
-      await logTrackingEvent({
-        messageId: messageId ?? undefined,
-        trackingId,
-        eventType,
-        raw: { source: "resend_webhook", event, subject, to, emailId, createdAt },
-      });
-    } else {
-      // No tracking_id found — still update the message status
-      if (messageId) {
-        await pool.query(
-          "UPDATE subsumio_mail_messages SET tracking_status = $2, updated_at = now() WHERE id = $1",
-          [messageId, eventType]
-        );
-      }
-      log.info("Resend webhook — no tracking_id found, status updated only", { type, emailId });
-    }
-
-    return true;
-  } catch (err) {
-    log.error("failed to handle Resend webhook", {
-      type,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return true; // Still return true to avoid re-processing
-  }
 }
 
 export async function updateMailMessage(
