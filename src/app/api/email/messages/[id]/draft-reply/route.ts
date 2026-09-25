@@ -15,7 +15,7 @@ export const maxDuration = 60;
  */
 export const POST = createHandler(
   {
-    action: "brain.read",
+    action: "mail.read",
     rateTier: "heavy",
     credits: "think",
     audit: () => ({ action: "email.draft_reply" as const, entityType: "email_message" }),
@@ -30,9 +30,11 @@ export const POST = createHandler(
 
     let matterContext = "";
     if (message.caseSlug) {
-      if ((await caseAccessForUser(ctx.headers, message.caseSlug, ctx.user.id)) === "blocked") {
+      const access = await caseAccessForUser(ctx.headers, message.caseSlug, ctx.user.id);
+      if (access === "blocked") {
         return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
       }
+      if (access !== "ok") return apiError("not_found", "Nachricht nicht gefunden", 404);
       try {
         const page = await createServerBrainClient(ctx.headers).getPage(message.caseSlug);
         matterContext = `Akte: ${page?.title ?? message.caseSlug}\n${String(page?.content ?? "").slice(0, 4000)}`;

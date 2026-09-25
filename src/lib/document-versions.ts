@@ -72,6 +72,47 @@ export function isLockedFor(
   return lock && lock.userId !== userId ? lock : null;
 }
 
+/**
+ * Frontmatter-Felder, die eine Seite an eine Akte binden — Spiegel von
+ * MATTER_BINDING_FIELDS der Engine (server/src/core/matter-binding.ts).
+ */
+export const MATTER_BINDING_FIELDS = [
+  "case_slug",
+  "case_ref",
+  "matter_slug",
+  "case",
+  "legal_case",
+  "assigned_case_slug",
+  "converted_case_slug",
+  "case_slugs",
+  "linked_cases",
+  "related_case_slugs",
+  "matter",
+  "case_number",
+  "case_title",
+  "case_reference",
+  "matter_reference",
+  "assigned_case_number",
+  "aktenzeichen",
+] as const;
+
+/**
+ * Die Aktenbindung des Dokuments für seinen Versions-Snapshot: der Snapshot
+ * gehört zur selben Akte wie das Dokument und darf nie sichtbarer sein.
+ */
+export function versionBindingFields(
+  docFrontmatter: Record<string, unknown> | undefined
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of MATTER_BINDING_FIELDS) {
+    const value = docFrontmatter?.[key];
+    if (value === undefined || value === null || value === "") continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    out[key] = value;
+  }
+  return out;
+}
+
 /** `legal/doc-versions/<docSlug>/v<N>` — Slugs enthalten `/`, erlaubt. */
 export function versionSlug(docSlug: string, version: number): string {
   return `legal/doc-versions/${docSlug}/v${version}`;

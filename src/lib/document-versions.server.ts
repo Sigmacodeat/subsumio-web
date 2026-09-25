@@ -4,6 +4,7 @@ import {
   isLockedFor,
   nextVersionNumber,
   readLock,
+  versionBindingFields,
   versionSlug,
   type DocumentLock,
   type DocumentVersionFrontmatter,
@@ -16,6 +17,9 @@ export class CheckoutConflictError extends Error {
 }
 
 export class VersionError extends Error {}
+
+/** The document does not exist or is outside the caller's matter scope. */
+export class DocumentNotVisibleError extends VersionError {}
 
 interface EnginePage {
   slug: string;
@@ -121,6 +125,8 @@ export async function checkinDocument(
     title: `Version ${version} — ${page.title ?? slug}`,
     type: "document_version",
     frontmatter: {
+      // Same matter as the document — the snapshot is never more visible.
+      ...versionBindingFields(docFrontmatter),
       doc_slug: slug,
       version,
       note: opts?.note?.trim() || undefined,
@@ -170,6 +176,10 @@ export async function listDocumentVersions(
   headers: Record<string, string>,
   slug: string
 ): Promise<DocumentVersionFrontmatter[]> {
+  // Versions are only listed for a document the caller may read itself
+  // (engine matter scope: ethical wall, restricted matters, allow-lists).
+  const doc = await getPage(headers, slug);
+  if (!doc) throw new DocumentNotVisibleError("Dokument nicht gefunden");
   return listVersions(headers, slug);
 }
 
@@ -202,6 +212,7 @@ export async function restoreDocumentVersion(
       title: `Version ${safetyVersion} — ${page.title ?? slug} (vor Wiederherstellung)`,
       type: "document_version",
       frontmatter: {
+        ...versionBindingFields(docFrontmatter),
         doc_slug: slug,
         version: safetyVersion,
         note: `Automatisch gesichert vor Wiederherstellung von Version ${version}`,

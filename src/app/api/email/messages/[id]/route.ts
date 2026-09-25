@@ -23,7 +23,7 @@ const patchSchema = z
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    action: "mail.read",
     rateTier: "standard",
     audit: (_ctx, _body, _query, _req) => ({
       action: "email.message_detail" as const,
@@ -35,11 +35,12 @@ export const GET = createHandler(
     try {
       const message = await getMailMessage(mailboxScopeFor(ctx, req), id);
       if (!message) return apiError("not_found", "Nachricht nicht gefunden", 404);
-      if (
-        message.caseSlug &&
-        (await caseAccessForUser(ctx.headers, message.caseSlug, ctx.user.id)) === "blocked"
-      ) {
-        return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+      if (message.caseSlug) {
+        const access = await caseAccessForUser(ctx.headers, message.caseSlug, ctx.user.id);
+        if (access === "blocked")
+          return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+        // Matter outside the caller's scope (or gone): indistinguishable from a missing mail.
+        if (access !== "ok") return apiError("not_found", "Nachricht nicht gefunden", 404);
       }
       return Response.json({ message });
     } catch (err) {
@@ -77,8 +78,12 @@ export const PATCH = createHandler(
         const access = await caseAccessForUser(ctx.headers, slug, ctx.user.id);
         if (access === "blocked")
           return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
-        if (access === "not_found" && slug === body.case_slug) {
-          return apiError("case_not_found", "Akte nicht gefunden", 400);
+        if (access !== "ok") {
+          if (slug === body.case_slug) {
+            return apiError("case_not_found", "Akte nicht gefunden", 400);
+          }
+          // Current matter not readable for the caller: fail-closed.
+          return apiError("not_found", "Nachricht nicht gefunden", 404);
         }
       }
       const updated = await updateMailMessage(scope, id, {

@@ -3,6 +3,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { apiSuccess } from "@/lib/api-response";
 import {
   CheckoutConflictError,
+  DocumentNotVisibleError,
   listDocumentVersions,
   restoreDocumentVersion,
   VersionError,
@@ -21,6 +22,9 @@ export const GET = createHandler(
       const versions = await listDocumentVersions(ctx.headers, query.slug);
       return apiSuccess(versions);
     } catch (err) {
+      if (err instanceof DocumentNotVisibleError) {
+        return apiError("not_found", "Dokument nicht gefunden", 404);
+      }
       if (err instanceof VersionError) {
         return apiError("versions_failed", err.message, 502);
       }

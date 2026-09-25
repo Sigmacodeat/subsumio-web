@@ -27,7 +27,7 @@ const draftSchema = z.object({
  */
 export const POST = createHandler(
   {
-    action: "brain.read",
+    action: "mail.read",
     rateTier: "heavy",
     credits: "think",
     body: draftSchema,
@@ -40,9 +40,11 @@ export const POST = createHandler(
 
     let matterContext = "";
     if (body.caseSlug) {
-      if ((await caseAccessForUser(ctx.headers, body.caseSlug, ctx.user.id)) === "blocked") {
+      const access = await caseAccessForUser(ctx.headers, body.caseSlug, ctx.user.id);
+      if (access === "blocked") {
         return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
       }
+      if (access !== "ok") return apiError("case_not_found", "Akte nicht gefunden", 404);
       try {
         const page = await createServerBrainClient(ctx.headers).getPage(body.caseSlug);
         matterContext = `Akte: ${page?.title ?? body.caseSlug}\n${String(page?.content ?? "").slice(0, 4000)}`;

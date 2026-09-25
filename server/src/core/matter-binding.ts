@@ -82,8 +82,23 @@ const MATTER_NUMBER_FIELDS = [
  */
 export function matterBindingSelectSql(column = "frontmatter"): string {
   const pairs = MATTER_BINDING_FIELDS.map((k) => `'${k}', ${column}->'${k}'`).join(", ");
-  return `jsonb_strip_nulls(jsonb_build_object(${pairs}))`;
+  // A version snapshot carries its document's binding in `doc_frontmatter`
+  // and names the document in `doc_slug` (see versionParentBinding).
+  const parentPairs = MATTER_BINDING_FIELDS.map(
+    (k) => `'${k}', ${column}->'${VERSION_PARENT_FRONTMATTER}'->'${k}'`
+  ).join(", ");
+  return `jsonb_strip_nulls(jsonb_build_object(${pairs}, '${VERSION_PARENT_SLUG}', ${column}->'${VERSION_PARENT_SLUG}', '${VERSION_PARENT_FRONTMATTER}', jsonb_strip_nulls(jsonb_build_object(${parentPairs}))))`;
 }
+
+/**
+ * Version snapshots (`document_version`, written by the web app's check-in)
+ * belong to the matter of the document they copy: its binding fields live in
+ * `doc_frontmatter` and the document is named by `doc_slug`. A snapshot must
+ * never be more visible than its document.
+ */
+export const VERSION_PAGE_TYPE = "document_version";
+export const VERSION_PARENT_FRONTMATTER = "doc_frontmatter";
+export const VERSION_PARENT_SLUG = "doc_slug";
 
 /** Any engine that runs raw SQL (BrainEngine, or a narrower test double). */
 export interface RawEngine {
@@ -265,10 +280,52 @@ export function hasMatterBindingFields(frontmatter: unknown): boolean {
  * hard reference other than the page's own case_slug is unresolved — the
  * safe answer.
  */
-export function pageMatterBinding(page: BindablePage, index?: MatterIndex): MatterBinding {
+function isVersionPage(page: BindablePage): boolean {
   const fm = asObject(page.frontmatter);
+  const type = page.type ?? (typeof fm.type === "string" ? fm.type : undefined);
+  return type === VERSION_PAGE_TYPE;
+}
+
+/**
+ * The binding fields a version snapshot inherits: its own top-level fields,
+ * else those of the document it copies (`doc_frontmatter`).
+ */
+function withVersionParentBinding(fm: Record<string, unknown>): Record<string, unknown> {
+  const parent = asObject(fm[VERSION_PARENT_FRONTMATTER]);
+  const merged: Record<string, unknown> = { ...fm };
+  for (const k of MATTER_BINDING_FIELDS) {
+    if (strings(fm[k]).length === 0 && strings(parent[k]).length > 0) merged[k] = parent[k];
+  }
+  return merged;
+}
+
+/** Matter above `slug` in the slug tree (or the slug itself), exact paths only. */
+function matterAboveSlug(index: MatterIndex, slug: string): string | undefined {
+  const parts = slug.split("/");
+  for (let i = parts.length; i > 0; i--) {
+    const candidate = parts.slice(0, i).join("/");
+    if (index.slugs.has(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+export function pageMatterBinding(page: BindablePage, index?: MatterIndex): MatterBinding {
+  const version = isVersionPage(page);
+  const rawFm = asObject(page.frontmatter);
+  const fm = version ? withVersionParentBinding(rawFm) : rawFm;
   const matters = new Set<string>();
   const unresolved: string[] = [];
+  // A snapshot of a document filed below a matter's slug path belongs to it.
+  const parentSlug = version ? strings(rawFm[VERSION_PARENT_SLUG])[0] : undefined;
+  if (parentSlug) {
+    if (index) {
+      const m = matterAboveSlug(index, parentSlug);
+      if (m) matters.add(m);
+    } else {
+      // No matter index at hand: the document's place cannot be checked — fail closed.
+      unresolved.push(parentSlug);
+    }
+  }
   const canonical = strings(fm[CANONICAL_CASE_FIELD]);
   if (canonical.length === 0) canonical.push(...strings(page.case_slug));
   for (const c of canonical) {
@@ -504,7 +561,16 @@ export async function resolveRowBindings(
 
   const indexSources = new Set<string>();
   for (const list of candidates) {
-    for (const c of list) if (hasMatterBindingFields(c.frontmatter)) indexSources.add(c.source_id);
+    for (const c of list) {
+      if (
+        hasMatterBindingFields(c.frontmatter) ||
+        (isVersionPage(c) &&
+          (strings(asObject(c.frontmatter)[VERSION_PARENT_SLUG]).length > 0 ||
+            hasMatterBindingFields(asObject(c.frontmatter)[VERSION_PARENT_FRONTMATTER])))
+      ) {
+        indexSources.add(c.source_id);
+      }
+    }
   }
   const indexes = new Map<string, MatterIndex>();
   await Promise.all(

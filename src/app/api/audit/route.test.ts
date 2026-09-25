@@ -21,7 +21,7 @@ const ctx = {
   headers: { "x-subsumio-source": "brain_a" },
   brainId: "brain_a",
   plan: "team",
-  user: { id: "u1", email: "anwalt@kanzlei.example", role: "lawyer", name: "Anwalt" },
+  user: { id: "u1", email: "admin@kanzlei.example", role: "admin", name: "Admin" },
 };
 
 describe("GET /api/audit", () => {
@@ -53,10 +53,25 @@ describe("GET /api/audit", () => {
     });
   });
 
-  it("degrades to an empty list when the store is unavailable", async () => {
+  it("reports a store failure as an error instead of an empty log", async () => {
     vi.mocked(listAuditLogs).mockRejectedValue(new Error("db down"));
     const res = await GET(new NextRequest("http://localhost:3000/api/audit"));
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ entries: [], total: 0 });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.code).toBe("audit_unavailable");
+    expect(body.entries).toBeUndefined();
   });
+
+  it.each(["lawyer", "assistant", "client_viewer"])(
+    "refuses the firm-wide log for role %s",
+    async (role) => {
+      vi.mocked(requireEngineContext).mockResolvedValue({
+        ...ctx,
+        user: { ...ctx.user, role },
+      } as any);
+      const res = await GET(new NextRequest("http://localhost:3000/api/audit"));
+      expect(res.status).toBe(403);
+      expect(listAuditLogs).not.toHaveBeenCalled();
+    }
+  );
 });

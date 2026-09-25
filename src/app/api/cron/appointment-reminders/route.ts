@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
-import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  activeStaffRecipients,
+  fetchPages,
+  getRecipientsByBrain,
+  matterPermissionsBySlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
+import type { MatterPermissions } from "@/lib/matter-access";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
@@ -40,8 +47,11 @@ export const GET = createCronHandler(async () => {
   let smtpBrains = 0;
   const errors: string[] = [];
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    // Active firm staff only; matter appointments only to people who may see the matter.
+    const staff = activeStaffRecipients(brainUsers);
+    let matterPermissions: Map<string, MatterPermissions> | null = null;
     const appointments = await fetchPages(brainId, "appointment", 500);
     if (appointments.length === 0) continue;
 
@@ -83,6 +93,14 @@ export const GET = createCronHandler(async () => {
       const title = String(fm.title ?? appt.title ?? "Termin");
       const location = String(fm.location ?? "");
       const caseTitle = String(fm.case_title ?? "");
+      const caseSlug = typeof fm.case_slug === "string" && fm.case_slug ? fm.case_slug : undefined;
+      if (caseSlug && !matterPermissions) {
+        // Unreadable matters → empty lookup → only admins hear about them (fail-closed).
+        matterPermissions = matterPermissionsBySlug(
+          await fetchPages(brainId, "legal_case", 10_000).catch(() => [])
+        );
+      }
+      const recipients = recipientsForMatter(staff, caseSlug, matterPermissions ?? new Map());
 
       const bodyLines = [
         `📅 Termin-Erinnerung:`,
