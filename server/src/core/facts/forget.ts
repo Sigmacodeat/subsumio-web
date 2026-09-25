@@ -105,7 +105,11 @@ function todayUtc(): string {
 export async function forgetFactInFence(
   engine: BrainEngine,
   factId: number,
-  opts: { reason?: string } = {}
+  opts: {
+    reason?: string;
+    /** When set, a fact outside these sources is reported as not found. */
+    allowedSourceIds?: readonly string[];
+  } = {}
 ): Promise<ForgetFactResult> {
   const reason = opts.reason ?? "forgotten";
 
@@ -118,6 +122,9 @@ export async function forgetFactInFence(
     return { ok: false, path: "not_found", reason };
   }
   const row = rows[0];
+  if (opts.allowedSourceIds && !opts.allowedSourceIds.includes(row.source_id)) {
+    return { ok: false, path: "not_found", reason };
+  }
 
   if (row.expired_at !== null) {
     return { ok: false, path: "already_expired", reason };

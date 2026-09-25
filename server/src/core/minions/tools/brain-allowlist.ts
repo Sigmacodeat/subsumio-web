@@ -105,7 +105,25 @@ export const TENANT_UNSAFE_TOOLS: ReadonlySet<string> = new Set([
   "get_ingest_log",
   "get_recent_salience",
   "find_anomalies",
+  // Takes aggregates and code intelligence read brain-wide as well.
+  "takes_list",
+  "takes_scorecard",
+  "takes_calibration",
+  "code_def",
+  "code_refs",
 ]);
+
+/**
+ * True when an MCP client is bound to a firm's source (anything other than
+ * the host `default` source). Such clients never get TENANT_UNSAFE_TOOLS.
+ */
+export function isTenantBoundClient(auth: {
+  sourceId?: string;
+  allowedSources?: readonly string[];
+}): boolean {
+  if ((auth.sourceId ?? "default") !== "default") return true;
+  return (auth.allowedSources ?? []).some((s) => s !== "default");
+}
 
 /**
  * Tools a matter-scoped job (a web caller with an ethical wall, restricted

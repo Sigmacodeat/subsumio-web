@@ -2888,6 +2888,8 @@ const takes_search: Operation = {
     return ctx.engine.searchTakes(p.query as string, {
       limit: p.limit as number | undefined,
       takesHoldersAllowList: ctx.takesHoldersAllowList,
+      // Only the caller's own sources (several firms share one database).
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "takes-search", positional: ["query"] },
@@ -3799,7 +3801,8 @@ const resolve_slugs: Operation = {
     partial: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
-    return ctx.engine.resolveSlugs(p.partial as string);
+    // Several firms share one database: only the caller's own sources.
+    return ctx.engine.resolveSlugs(p.partial as string, sourceScopeOpts(ctx));
   },
   scope: "read",
 };
@@ -3834,6 +3837,8 @@ const log_ingest: Operation = {
   handler: async (ctx, p) => {
     if (ctx.dryRun) return { dry_run: true, action: "log_ingest" };
     await ctx.engine.logIngest({
+      // The entry belongs to the caller's source, not to the host default.
+      ...(ctx.sourceId ? { source_id: ctx.sourceId } : {}),
       source_type: p.source_type as string,
       source_ref: p.source_ref as string,
       pages_updated: p.pages_updated as string[],
@@ -5324,7 +5329,17 @@ const forget_fact: Operation = {
     const id = p.id as number;
     const reason = typeof p.reason === "string" ? p.reason : undefined;
     const { forgetFactInFence } = await import("./facts/forget.ts");
-    const result = await forgetFactInFence(ctx.engine, id, { reason });
+    // Untrusted callers may only forget facts of their own sources; a fact
+    // of another source behaves exactly like a missing one.
+    const scope = sourceScopeOpts(ctx);
+    const allowedSourceIds =
+      ctx.remote === false
+        ? undefined
+        : (scope.sourceIds ?? (scope.sourceId ? [scope.sourceId] : ["default"]));
+    const result = await forgetFactInFence(ctx.engine, id, {
+      reason,
+      ...(allowedSourceIds ? { allowedSourceIds } : {}),
+    });
     if (!result.ok && result.path === "not_found") {
       throw new OperationError("fact_not_found", `Fact id ${id} not found.`);
     }
