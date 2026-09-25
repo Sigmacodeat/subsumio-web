@@ -489,6 +489,23 @@ export const api = {
       });
     },
 
+    /**
+     * Take back the time entries a Kanzlei data import appended to a matter.
+     * The server removes only this import's entries and keeps invoiced ones.
+     */
+    removeImportedTimeEntries(
+      caseSlug: string,
+      importProjectId: string,
+      ids: string[]
+    ): Promise<{ removed_ids: string[]; kept_ids: string[]; not_found_ids: string[] }> {
+      return request("/api/kanzlei-import/rollback-time-entries", {
+        method: "POST",
+        body: JSON.stringify({ case_slug: caseSlug, import_project_id: importProjectId, ids }),
+      }).then((r) =>
+        unwrapApiBody<{ removed_ids: string[]; kept_ids: string[]; not_found_ids: string[] }>(r)
+      );
+    },
+
     graph(): Promise<{ nodes: GraphNode[]; links: GraphLink[] }> {
       return request("/api/graph");
     },

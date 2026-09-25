@@ -4,7 +4,6 @@
 
 import type { ImportPlan, ImportedTimeEntry, PlanRow } from "./plan";
 import { normaliseName } from "./values";
-import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 
 export interface ImportClient {
   /** Null when the page does not exist. */
@@ -29,15 +28,23 @@ export interface ImportClient {
    */
   appendPageArray(slug: string, field: string, items: unknown[]): Promise<unknown>;
   /**
-   * Atomic element patch/remove (engine page_array_mutate) — rollback drops
-   * imported entries in one guarded statement so entries invoiced in the
-   * meantime are skipped, never removed.
+   * Rollback of imported time entries (/api/kanzlei-import/rollback-time-entries).
+   * The server removes only entries this import appended — also those that
+   * arrived marked billed from the previous system — and keeps every entry an
+   * invoice of this system holds, checked inside one atomic statement.
    */
-  mutatePageArray(
-    slug: string,
-    field: string,
-    mutation: PageArrayMutation
-  ): Promise<PageArrayMutateResult>;
+  removeImportedTimeEntries(
+    caseSlug: string,
+    importProjectId: string,
+    ids: string[]
+  ): Promise<ImportedTimeEntriesRemoval>;
+}
+
+export interface ImportedTimeEntriesRemoval {
+  removed_ids: string[];
+  /** Left in place: invoiced here, or not written by this import. */
+  kept_ids: string[];
+  not_found_ids: string[];
 }
 
 /** What an import wrote, enough to take it back later. */
@@ -202,7 +209,9 @@ export interface RollbackResult {
 
 export async function rollbackImport(
   refs: ImportRefs,
-  client: ImportClient
+  client: ImportClient,
+  /** The import's project id — stamped as import_project_id on its entries. */
+  importProjectId: string
 ): Promise<RollbackResult> {
   const result: RollbackResult = {
     archivedCases: 0,
@@ -215,18 +224,15 @@ export async function rollbackImport(
 
   for (const { caseSlug, ids } of refs.timeEntries) {
     try {
-      // Atomic remove with an in-statement guard: an entry invoiced since
-      // the import (non-empty invoice_number) is skipped, never dropped —
-      // removing it would break that invoice's basis.
-      const res = await client.mutatePageArray(caseSlug, "time_entries", {
-        match: ids,
-        remove: true,
-        unless: { ne: { invoice_number: "" } },
-      });
-      result.removedTimeEntries += res.updated_ids.length;
-      if (res.skipped_ids.length > 0)
+      // Server-checked removal: an entry invoiced since the import (it has an
+      // invoice number) is kept, never dropped — removing it would break that
+      // invoice's basis. Entries imported as already billed in the previous
+      // system carry no invoice number here and are taken back.
+      const res = await client.removeImportedTimeEntries(caseSlug, importProjectId, ids);
+      result.removedTimeEntries += res.removed_ids.length;
+      if (res.kept_ids.length > 0)
         result.kept.push(
-          `${res.skipped_ids.length} Zeiteintrag/-einträge in ${caseSlug}: inzwischen verrechnet`
+          `${res.kept_ids.length} Zeiteintrag/-einträge in ${caseSlug}: inzwischen verrechnet`
         );
     } catch (err) {
       result.failed.push(`${caseSlug}: ${message(err)}`);
