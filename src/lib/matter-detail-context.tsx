@@ -970,6 +970,28 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           });
           if (res.status === 409) {
             const data = await res.json().catch(() => ({}));
+            if (data.error === "conflict_detected") {
+              // Parteiwechsel mit Interessenkollision: nothing was saved.
+              const hits: Array<{ name: string; slug: string; type: string }> =
+                data.conflictWarning?.matches ?? [];
+              setContactConflict({
+                hasConflict: true,
+                severity: "critical",
+                hits: hits.map((m) => ({
+                  name: m.name,
+                  slug: m.slug,
+                  type: m.type,
+                  reason: "Server-seitig erkannt",
+                  similarity: 1,
+                  matchType: "exact" as const,
+                })),
+                checkedContacts: 0,
+                warning: `Interessenkollision erkannt (server-seitig): ${hits.map((m) => m.name).join(", ")}`,
+              });
+              setSaveError(data.message || t("casesdetail.error_save"));
+              void refreshCaseData();
+              return;
+            }
             setConflictWarning(
               t("cases.detail_conflict_warning_v2") +
                 ` (${data.currentVersion ?? t("cases.detail_unknown")})`
@@ -977,8 +999,9 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
             setSaveError(null);
             return;
           }
-          if (res.status === 403 || res.status === 422) {
-            // Server-side refusal (archive, Notfrist protection, missing reason):
+          if (res.status === 403 || res.status === 422 || res.status === 503) {
+            // Server-side refusal (archive, Notfrist protection, missing reason,
+            // conflict check unavailable):
             // show its message and reload the stored state.
             const data = await res.json().catch(() => ({}));
             setSaveError(data.message || t("casesdetail.archived_msg"));
