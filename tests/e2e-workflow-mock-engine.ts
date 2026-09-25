@@ -8,6 +8,7 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { ifAbsentRejection, listWindow, mockConflictCheck } from "./e2e-mock-shared";
 import { randomUUID } from "node:crypto";
 
 const PORT = parseInt(process.env.MOCK_ENGINE_PORT || "3999", 10);
@@ -52,9 +53,15 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function sendJson(res: ServerResponse, status: number, data: unknown) {
+function sendJson(
+  res: ServerResponse,
+  status: number,
+  data: unknown,
+  extraHeaders: Record<string, string> = {}
+) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
+    ...extraHeaders,
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "*",
@@ -209,7 +216,6 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
   // ── Pages: list ─────────────────────────────────────────────────────
   if (path === "/api/pages" && req.method === "GET") {
-    const limit = parseInt(query.get("limit") || "50", 10);
     const typeFilter = query.get("type");
     const q = query.get("q") || "";
     let items = Array.from(pages.values());
@@ -222,7 +228,14 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
           p.slug.toLowerCase().includes(q.toLowerCase())
       );
     }
-    return sendJson(res, 200, items.slice(0, limit));
+    // Like the engine: max. 100 rows, offset or keyset cursor (x-next-cursor).
+    const window = listWindow(items, query);
+    return sendJson(
+      res,
+      200,
+      window.items,
+      window.nextCursor ? { "x-next-cursor": window.nextCursor } : {}
+    );
   }
 
   // ── Pages: create / merge-update ────────────────────────────────────
@@ -232,6 +245,10 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const slug = body.slug || `test/page-${Date.now()}`;
     const existing = pages.get(slug);
     const t = now();
+
+    // Create-only write: a taken slug is refused like the engine does.
+    const taken = ifAbsentRejection(body, !!existing);
+    if (taken) return sendJson(res, taken.status, taken.body);
 
     if (existing && body.merge) {
       const updated: MockPage = {
@@ -629,17 +646,16 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/legal/conflict-check" && req.method === "POST") {
     const raw = await readBody(req);
     const body = safeJsonParse(raw);
-    const name = String(body.name || "").toLowerCase();
-    const matches: Array<Record<string, unknown>> = [];
-    for (const p of pages.values()) {
-      const fm = p.frontmatter || {};
-      const clientName = String(fm.client_name || "").toLowerCase();
-      const opponentName = String(fm.opponent_name || "").toLowerCase();
-      if (clientName === name || opponentName === name) {
-        matches.push({ name: fm.client_name || fm.opponent_name, slug: p.slug, type: p.type });
-      }
+    // The real engine checker over the mock's pages — same answer shape
+    // (severity, explanation, per-hit assessment) the web app requires.
+    try {
+      return sendJson(res, 200, await mockConflictCheck(pages.values(), body));
+    } catch (err) {
+      return sendJson(res, 400, {
+        error: "invalid_request",
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
-    return sendJson(res, 200, { matches, checked_at: now() });
   }
 
   // ── Legal: analyze ──────────────────────────────────────────────────
@@ -1877,26 +1893,33 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
 // ── Start server ──────────────────────────────────────────────────────
 
-const server = createServer((req, res) => {
-  try {
-    void handleReq(req, res);
-  } catch (err) {
+/** Request handler — exported for the contract test (src/test/e2e-mock-contract.test.ts). */
+export const workflowMockHandler = (req: IncomingMessage, res: ServerResponse) => {
+  handleReq(req, res).catch((err) => {
     console.error("[mock-engine-extended] error:", err);
-    sendJson(res, 500, { error: "mock_engine_error" });
-  }
-});
+    if (!res.headersSent) sendJson(res, 500, { error: "mock_engine_error" });
+  });
+};
 
-server.listen(PORT, () => {
-  console.log(`[mock-engine-extended] listening on http://localhost:${PORT}`);
-});
+// Listen only when started as a program (`bun run tests/e2e-workflow-mock-engine.ts`),
+// not when a test imports the handler.
+const isMain =
+  (import.meta as { main?: boolean }).main ??
+  /e2e-workflow-mock-engine\.ts$/.test(process.argv[1] ?? "");
+const server = isMain ? createServer(workflowMockHandler) : null;
+if (server) {
+  server.listen(PORT, () => {
+    console.log(`[mock-engine-extended] listening on http://localhost:${PORT}`);
+  });
 
-process.on("SIGTERM", () => {
-  server.close();
-  process.exit(0);
-});
-process.on("SIGINT", () => {
-  server.close();
-  process.exit(0);
-});
+  process.on("SIGTERM", () => {
+    server.close();
+    process.exit(0);
+  });
+  process.on("SIGINT", () => {
+    server.close();
+    process.exit(0);
+  });
+}
 
 export { server };

@@ -25,6 +25,7 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { ifAbsentRejection, listWindow, mockConflictCheck } from "./e2e-mock-shared";
 
 const PORT = parseInt(process.env.MOCK_ENGINE_PORT || "3001", 10);
 
@@ -138,9 +139,15 @@ seedPages();
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function sendJson(res: ServerResponse, status: number, data: unknown) {
+function sendJson(
+  res: ServerResponse,
+  status: number,
+  data: unknown,
+  extraHeaders: Record<string, string> = {}
+) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
+    ...extraHeaders,
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "*",
@@ -231,7 +238,6 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
   // ── Pages: list ─────────────────────────────────────────────────────
   if (path === "/api/pages" && req.method === "GET") {
-    const limit = parseInt(query.get("limit") || "50", 10);
     const typeFilter = query.get("type");
     const q = query.get("q") || "";
     let items = Array.from(reqPages.values());
@@ -243,8 +249,14 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
           p.content.toLowerCase().includes(q.toLowerCase()) ||
           p.slug.toLowerCase().includes(q.toLowerCase())
       );
-    items = items.slice(0, limit);
-    return sendJson(res, 200, items);
+    // Like the engine: max. 100 rows, offset or keyset cursor (x-next-cursor).
+    const window = listWindow(items, query);
+    return sendJson(
+      res,
+      200,
+      window.items,
+      window.nextCursor ? { "x-next-cursor": window.nextCursor } : {}
+    );
   }
 
   // ── Pages: create ───────────────────────────────────────────────────
@@ -255,6 +267,10 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const now = new Date().toISOString();
 
     const store = reqPages;
+
+    // Create-only write: a taken slug is refused like the engine does.
+    const taken = ifAbsentRejection(body, store.has(slug));
+    if (taken) return sendJson(res, taken.status, taken.body);
 
     // Support merge:true (used by enginePatchPage) — merge frontmatter into existing page
     if (body.merge && store.has(slug)) {
@@ -559,24 +575,18 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/legal/conflict-check" && req.method === "POST") {
     const raw = await readBody(req);
     const body = JSON.parse(raw || "{}");
-    const name = String(body.name || "").toLowerCase();
     const pSrc = requestSource(req);
     const pStore = isDemoSource(pSrc) ? srcStore(pSrc) : pages;
-    // Find pages with matching client_name or opponent_name
-    const matches: Array<{ name: string; slug: string; type: string }> = [];
-    for (const p of pStore.values()) {
-      const fm = p.frontmatter || {};
-      const clientName = String(fm.client_name || "").toLowerCase();
-      const opponentName = String(fm.opponent_name || "").toLowerCase();
-      if (clientName === name || opponentName === name) {
-        matches.push({
-          name: String(fm.client_name || fm.opponent_name || ""),
-          slug: p.slug,
-          type: p.type,
-        });
-      }
+    // The real engine checker over the mock's pages — same answer shape
+    // (severity, explanation, per-hit assessment) the web app requires.
+    try {
+      return sendJson(res, 200, await mockConflictCheck(pStore.values(), body));
+    } catch (err) {
+      return sendJson(res, 400, {
+        error: "invalid_request",
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
-    return sendJson(res, 200, { matches });
   }
 
   // ── Legal: analyze ──────────────────────────────────────────────────
@@ -952,25 +962,31 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
 // ── Start server ──────────────────────────────────────────────────────
 
-const server = createServer((req, res) => {
-  try {
-    void handleReq(req, res);
-  } catch (err) {
+/** Request handler — exported for the contract test (src/test/e2e-mock-contract.test.ts). */
+export const mockEngineHandler = (req: IncomingMessage, res: ServerResponse) => {
+  handleReq(req, res).catch((err) => {
     console.error("[mock-engine] error:", err);
-    sendJson(res, 500, { error: "mock_engine_error" });
-  }
-});
+    if (!res.headersSent) sendJson(res, 500, { error: "mock_engine_error" });
+  });
+};
 
-server.listen(PORT, () => {
-  console.log(`[mock-engine] listening on http://localhost:${PORT}`);
-});
+// Listen only when started as a program (`bun run tests/e2e-mock-engine.ts`),
+// not when a test imports the handler.
+const isMain =
+  (import.meta as { main?: boolean }).main ?? /e2e-mock-engine\.ts$/.test(process.argv[1] ?? "");
+if (isMain) {
+  const server = createServer(mockEngineHandler);
+  server.listen(PORT, () => {
+    console.log(`[mock-engine] listening on http://localhost:${PORT}`);
+  });
 
-// Graceful shutdown
-process.on("SIGTERM", () => {
-  server.close();
-  process.exit(0);
-});
-process.on("SIGINT", () => {
-  server.close();
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on("SIGTERM", () => {
+    server.close();
+    process.exit(0);
+  });
+  process.on("SIGINT", () => {
+    server.close();
+    process.exit(0);
+  });
+}
