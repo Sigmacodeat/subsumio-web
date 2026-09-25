@@ -329,3 +329,162 @@ describe("FRI-7/FRI-8 — identity of matter entries across writes", () => {
     expect(res.events).toEqual([]);
   });
 });
+
+describe("R6-8 — clearing a Notfrist's end date is a protected change", () => {
+  const notfrist = {
+    status: "pending",
+    is_notfrist: true,
+    due_date: "2026-10-30",
+    title: "Berufung",
+  };
+  const clears: Array<[string, Record<string, unknown>]> = [
+    ["empty due_date", { due_date: "" }],
+    ["null due_date", { due_date: null }],
+    ["empty due_date and date", { due_date: "", date: "" }],
+    ["blank due_date", { due_date: "   " }],
+  ];
+
+  it.each(clears)("page write, %s: assistant → 403", (_l, change) => {
+    const res = applyDeadlineWritePolicy({
+      slug: "legal/deadlines/f1",
+      incoming: { ...change, change_reason: "Frist entfällt" },
+      current: { type: "legal_deadline", frontmatter: notfrist },
+      user: assistant,
+    });
+    expect("reject" in res && res.reject.status).toBe(403);
+  });
+
+  it.each(clears)("page write, %s: lawyer without reason → 422", (_l, change) => {
+    const res = applyDeadlineWritePolicy({
+      slug: "legal/deadlines/f1",
+      incoming: change,
+      current: { type: "legal_deadline", frontmatter: notfrist },
+      user: lawyer,
+    });
+    expect("reject" in res && res.reject.status).toBe(422);
+  });
+
+  it("page write: lawyer with reason may clear it; the audit entry carries the reason", () => {
+    const res = applyDeadlineWritePolicy({
+      slug: "legal/deadlines/f1",
+      incoming: { due_date: "", change_reason: "Frist entfällt laut Beschluss" },
+      current: { type: "legal_deadline", frontmatter: notfrist },
+      user: lawyer,
+      now: NOW,
+    });
+    if ("reject" in res) throw new Error("rejected");
+    expect(res.events[0]).toMatchObject({
+      due_date_before: "2026-10-30",
+      due_date_after: null,
+      reason: "Frist entfällt laut Beschluss",
+    });
+  });
+
+  it("stored `date` alone: clearing it is protected too", () => {
+    const res = applyDeadlineWritePolicy({
+      slug: "legal/deadlines/f1",
+      incoming: { date: "" },
+      current: {
+        type: "legal_deadline",
+        frontmatter: { is_notfrist: true, status: "pending", date: "2026-10-30" },
+      },
+      user: assistant,
+    });
+    expect("reject" in res && res.reject.status).toBe(403);
+  });
+
+  it("dropping due_date while a stale `date` remains is still protected", () => {
+    const res = applyDeadlineWritePolicy({
+      slug: "legal/deadlines/f1",
+      incoming: { due_date: null },
+      current: { type: "legal_deadline", frontmatter: { ...notfrist, date: "2026-10-30" } },
+      user: assistant,
+    });
+    expect("reject" in res && res.reject.status).toBe(403);
+  });
+
+  it("an ordinary deadline's date may still be cleared without a reason", () => {
+    const res = applyDeadlineWritePolicy({
+      slug: "legal/deadlines/f3",
+      incoming: { due_date: "" },
+      current: {
+        type: "legal_deadline",
+        frontmatter: { status: "pending", due_date: "2026-10-30" },
+      },
+      user: assistant,
+    });
+    expect("reject" in res).toBe(false);
+  });
+
+  it("matter list: clearing an entry's date → assistant 403, lawyer 422, lawyer with reason ok", () => {
+    const stored = [{ id: "d1", ...notfrist }];
+    const asAssistant = applyDeadlineArrayPolicy(
+      [{ id: "d1", ...notfrist, due_date: "", change_reason: "Frist entfällt" }],
+      stored,
+      assistant,
+      "c"
+    );
+    expect("reject" in asAssistant && asAssistant.reject.status).toBe(403);
+    const noReason = applyDeadlineArrayPolicy(
+      [{ id: "d1", ...notfrist, due_date: null }],
+      stored,
+      lawyer,
+      "c"
+    );
+    expect("reject" in noReason && noReason.reject.status).toBe(422);
+    const ok = applyDeadlineArrayPolicy(
+      [{ id: "d1", ...notfrist, due_date: "", change_reason: "Frist entfällt" }],
+      stored,
+      lawyer,
+      "c",
+      NOW
+    );
+    if ("reject" in ok) throw new Error("rejected");
+    expect(ok.events[0]).toMatchObject({ due_date_after: null, reason: "Frist entfällt" });
+  });
+
+  it("matter list without id: an entry whose date was cleared cannot slip through as new", () => {
+    const res = applyDeadlineArrayPolicy(
+      [{ ...notfrist, due_date: "" }],
+      [{ ...notfrist }],
+      assistant,
+      "c"
+    );
+    expect("reject" in res && res.reject.status).toBe(403);
+  });
+
+  it("atomic mutation unset: [due_date] → assistant 403, lawyer 422, lawyer with reason ok", () => {
+    const stored = [{ id: "d1", ...notfrist }];
+    const asAssistant = planDeadlineArrayMutation(
+      stored,
+      { match: ["d1"], unset: ["due_date"], set: { change_reason: "Frist entfällt" } },
+      assistant,
+      "c"
+    );
+    expect("reject" in asAssistant && asAssistant.reject.status).toBe(403);
+    const noReason = planDeadlineArrayMutation(
+      stored,
+      { match: ["d1"], unset: ["due_date"] },
+      lawyer,
+      "c"
+    );
+    expect("reject" in noReason && noReason.reject.status).toBe(422);
+    const emptied = planDeadlineArrayMutation(
+      stored,
+      { match: ["d1"], set: { due_date: "" } },
+      lawyer,
+      "c"
+    );
+    expect("reject" in emptied && emptied.reject.status).toBe(422);
+    const ok = planDeadlineArrayMutation(
+      stored,
+      { match: ["d1"], unset: ["due_date"], set: { change_reason: "Frist entfällt" } },
+      lawyer,
+      "c",
+      NOW
+    );
+    if ("reject" in ok) throw new Error("rejected");
+    expect(ok.perEntry[0].unset).toContain("due_date");
+    expect(ok.events[0]).toMatchObject({ due_date_after: null, reason: "Frist entfällt" });
+  });
+});
