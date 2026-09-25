@@ -222,6 +222,9 @@ const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   // cookie exists to double-submit.
   "/api/webhooks/resend",
   "/api/docusign/webhook",
+  // RCIID status webhook: server-to-server, authenticated by the HMAC
+  // signature over the raw body inside the route (fail-closed without secret).
+  "/api/rciid/webhook",
 ] as const;
 const API_CSRF_EXEMPT_PATHS = new Set([
   // Presence is an authenticated best-effort heartbeat endpoint. The route

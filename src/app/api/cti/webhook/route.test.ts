@@ -15,11 +15,22 @@ vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 vi.mock("@/lib/api-response", () => ({ apiSuccess: (d: unknown) => Response.json({ data: d }) }));
+const handlerOpts = vi.hoisted(() => ({
+  current: null as null | { rateLimitKey?: (req: NextRequest) => string },
+}));
+const mockHit = vi.fn(async () => ({ ok: true, retryAfterSeconds: 0 }));
+vi.mock("@/lib/auth/rate-limit", () => ({
+  hit: (...a: unknown[]) => mockHit(...(a as [])),
+  clientIp: (h: Headers) => h.get("x-forwarded-for") ?? "unknown",
+}));
 vi.mock("@/lib/api-handler", () => ({
-  createPublicHandler:
-    (_opts: unknown, handler: (req: NextRequest, body: unknown) => Promise<Response>) =>
-    async (req: NextRequest) =>
-      handler(req, await req.json()),
+  createPublicHandler: (
+    opts: { rateLimitKey?: (req: NextRequest) => string },
+    handler: (req: NextRequest, body: unknown) => Promise<Response>
+  ) => {
+    handlerOpts.current = opts;
+    return async (req: NextRequest) => handler(req, await req.json());
+  },
   apiError: (code: string, message: string, status: number) =>
     Response.json({ error: code, message }, { status }),
 }));
@@ -116,5 +127,32 @@ describe("POST /api/cti/webhook", () => {
       slug: "legal/phone-notes/cti-c1",
       frontmatter: { duration_s: 42, call_status: "ended" },
     });
+  });
+});
+
+describe("CTI webhook — rate limit per sender", () => {
+  it("anonymous requests from one IP do not share a bucket with the provider's IP", async () => {
+    const key = handlerOpts.current?.rateLimitKey;
+    expect(key).toBeTypeOf("function");
+    const a = key!(
+      new Request("http://x", { headers: { "x-forwarded-for": "198.51.100.1" } }) as never
+    );
+    const b = key!(
+      new Request("http://x", { headers: { "x-forwarded-for": "203.0.113.5" } }) as never
+    );
+    expect(a).not.toBe(b);
+  });
+
+  it("requests without a valid token never count against the shared budget", async () => {
+    for (let i = 0; i < 300; i++) {
+      await POST(
+        new Request("http://x/api/cti/webhook", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: "Bearer falsch" },
+          body: JSON.stringify({ event: "ringing" }),
+        }) as never
+      );
+    }
+    expect(mockHit).not.toHaveBeenCalled();
   });
 });

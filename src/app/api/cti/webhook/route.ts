@@ -7,6 +7,7 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { findCallerMatches, normalisePhone, parseCtiPayload, resolveCtiBrainId } from "@/lib/cti";
 import { listEnginePages } from "@/lib/engine-pages";
 import { timingSafeCompare } from "@/lib/crypto-utils";
+import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/cti/webhook");
@@ -49,7 +50,10 @@ const EVENT_LABEL: Record<string, string> = {
 export const POST = createPublicHandler(
   {
     body: bodySchema,
-    rateLimitKey: () => "cti-webhook",
+    // Per sender IP: unauthenticated requests cannot use up the budget of
+    // the telephony provider. The shared budget is counted only after the
+    // token check (below).
+    rateLimitKey: (req) => `cti-webhook:ip:${clientIp(req.headers)}`,
     rateLimitMax: 240,
     rateLimitWindowMs: 60_000,
   },
@@ -62,6 +66,10 @@ export const POST = createPublicHandler(
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!token || !timingSafeCompare(token, secret)) {
       return apiError("unauthorized", "Ungültiger CTI-Token", 401);
+    }
+    const authed = await hit("cti-webhook:authed", 240, 60_000);
+    if (!authed.ok) {
+      return apiError("rate_limited", "Zu viele Telefonie-Ereignisse", 429);
     }
 
     const brainId = resolveCtiBrainId();
