@@ -44,7 +44,7 @@ import {
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
 import { executeRawJsonb } from "../core/sql-query.ts";
-import { publicErrorMessage } from "../core/public-error-message.ts";
+import { publicErrorMessage, redactErrorResponseBody } from "../core/public-error-message.ts";
 import {
   PRIVATE_CHAT_PREFIX,
   agentRunVisibility,
@@ -2585,6 +2585,40 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     ensuredSources.add(sourceId);
   }
 
+  // ── Error bodies: log the cause, send a redacted message (audit ENG-5) ──
+  // Route handlers answer failures with `{ error, message: <raw exception> }`.
+  // Raw messages can carry provider names, model ids or billing URLs, and a
+  // 5xx left no trace of its cause in the engine log. Every JSON error body
+  // passes through here: provider detail is replaced by the generic text
+  // (publicErrorMessage), and the raw cause of a 5xx is logged with method,
+  // path and request id. Registered first so it covers every /api route.
+  app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+    const sendJson = res.json.bind(res);
+    res.json = ((body: unknown) => {
+      if (res.statusCode < 400) return sendJson(body);
+      const { body: safe, cause } = redactErrorResponseBody(res.statusCode, body);
+      if (cause !== undefined) {
+        const raw = req.header("x-request-id");
+        console.error(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            level: "error",
+            module: "engine/web-api",
+            msg: "route_error",
+            method: req.method,
+            path: req.path,
+            status: res.statusCode,
+            error: (body as { error?: unknown }).error,
+            cause,
+            ...(raw && /^[A-Za-z0-9._-]{8,80}$/.test(raw) ? { requestId: raw } : {}),
+          })
+        );
+      }
+      return sendJson(safe);
+    }) as typeof res.json;
+    next();
+  });
+
   // ── CORS for direct-to-engine browser uploads ────────────────────────
   // Applied BEFORE the guard so OPTIONS preflight doesn't get 401'd.
   const corsAllowlist = parseEngineCorsAllowlist();
@@ -4048,11 +4082,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   const legalErr = (res: Response, name: string, e: unknown) => {
     const msg = e instanceof Error ? e.message : "unknown";
     if (e instanceof OperationError && e.code === "matter_read_only") {
-      res.status(403).json({ error: e.code, message: msg });
+      res.status(403).json({ error: e.code, message: publicErrorMessage(msg) });
       return;
     }
     const status = e instanceof EngineNotFoundError ? 404 : /not found/i.test(msg) ? 404 : 500;
-    res.status(status).json({ error: `${name}_failed`, message: msg });
+    // The raw error (with stack) stays in the engine log; the client gets a
+    // message without provider or model detail (ENG-5).
+    if (status >= 500) console.error(`[web-api] legal/${name} failed:`, e);
+    res.status(status).json({ error: `${name}_failed`, message: publicErrorMessage(msg) });
   };
 
   app.post(
