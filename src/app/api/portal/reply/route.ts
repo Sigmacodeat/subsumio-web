@@ -7,6 +7,7 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { portalMessageSlugPrefix } from "@/lib/portal-messages";
 import { notifyPortalClients } from "@/lib/portal-push";
 import { mailPortalClients } from "@/lib/portal-notify";
+import { zonedDateString } from "@/lib/datetime";
 
 const replySchema = z.object({
   case_slug: z.string().min(1).max(300),
@@ -97,7 +98,8 @@ export const POST = createHandler(
             body.bill_note ??
             `Portal-Nachricht an Mandant (${body.message.slice(0, 80)}${body.message.length > 80 ? "…" : ""})`,
           minutes: body.bill_minutes,
-          date: now.slice(0, 10),
+          // The firm day in Vienna — a reply shortly after midnight is not booked on the day before.
+          date: zonedDateString(new Date(now)),
           lawyer: ctx.user?.name ?? ctx.user?.email ?? undefined,
           activity_type: "email",
         }),

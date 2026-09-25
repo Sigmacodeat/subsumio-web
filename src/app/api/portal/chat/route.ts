@@ -35,30 +35,28 @@ const REFUSAL_RESPONSES = [
   "Ich bin auf Ihre Akte beschränkt und kann keine Informationen zu anderen Mandanten oder internen Kanzlei-Prozessen geben.",
 ];
 
+/**
+ * Questions that ask for OTHER matters, clients or firm internals get a fixed
+ * answer without a model call. Kept narrow on purpose: everyday questions
+ * ("Welcher Mitarbeiter betreut meine Akte?", "Gilt die Geheimhaltung?") are
+ * answered normally — isolation itself lies in the data selection, which only
+ * ever contains this matter's released documents.
+ */
 function isAdversarialQuery(message: string): boolean {
   const lower = message.toLowerCase();
   const adversarialPatterns = [
-    /andere akte/,
-    /andere mandanten?/,
-    /andere falle/,
-    /intern(e|er|es) notiz/,
-    /kanzlei intern/,
-    /geheim/,
-    /andere klient/,
-    /other cases?/,
-    /other clients?/,
+    /andere(n|r)? akte/,
+    /andere(n|r)? mandant/,
+    /andere(n|r)? f(ä|a)lle/,
+    /andere(n|r)? klient/,
+    /fremde(n|r)? akte/,
+    /intern(e|er|es|en)? notiz/,
+    /kanzlei ?intern/,
+    /other (cases?|clients?)/,
     /internal notes?/,
-    /confidential/,
-    /alle akten/,
-    /alle mandanten/,
-    /alle klient/,
-    /andere rechtsanwalt/,
-    /other lawyers?/,
-    /personalakten?/,
-    /mitarbeiter/,
-    /staff/,
-    /gehalt/,
-    /salary/,
+    /alle (akten|mandanten|klienten)/,
+    /personalakte/,
+    /(gehalt|gehälter|salary|salaries)/,
     /finanzen der kanzlei/,
     /kanzlei.*finanzen/,
   ];
@@ -121,7 +119,7 @@ export const POST = createPublicHandler(
     const fm = access.frontmatter as unknown as Record<string, unknown>;
 
     if (isAdversarialQuery(body.message)) {
-      const refusal = REFUSAL_RESPONSES[Math.floor(Math.random() * REFUSAL_RESPONSES.length)]!;
+      const refusal = REFUSAL_RESPONSES[0]!;
       return Response.json({
         answer: refusal,
         grounded: false,

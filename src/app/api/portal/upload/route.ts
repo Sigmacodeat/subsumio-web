@@ -238,11 +238,7 @@ export const POST = createPublicHandler(
     const requestOutcome = await withKeyedLock(
       `document-request:${brainId}:${payload.case_slug}`,
       async () => {
-        const request = await findOpenDocumentRequest(
-          brainId,
-          payload.case_slug,
-          requestSlugHint
-        );
+        const request = await findOpenDocumentRequest(brainId, payload.case_slug, requestSlugHint);
         const fulfilled = request
           ? fulfillDocumentRequestItems(
               request.frontmatter,
