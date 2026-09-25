@@ -9,6 +9,9 @@ import { registerPortalLink } from "@/lib/portal-links";
 
 export const dynamic = "force-dynamic";
 
+/** Documents in these states are no longer open for a signature. */
+const CLOSED_STATUSES = new Set(["signed", "declined", "expired", "revoked"]);
+
 const sendLinkSchema = z.object({
   case_slug: z.string().min(1).max(500),
   document_slug: z.string().min(1).max(500),
@@ -40,6 +43,15 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // Channel requirements first: nothing is issued, stored or marked for a
+    // request that cannot be delivered.
+    if (body.channel === "email" && !body.recipient_email) {
+      return apiError("validation_error", "Bitte eine E-Mail-Adresse angeben.", 400);
+    }
+    if (body.channel === "whatsapp" && !body.recipient_phone) {
+      return apiError("validation_error", "Bitte eine Telefonnummer angeben.", 400);
+    }
+
     // The link opens the client portal for this matter. Refuse before sending
     // anything if the matter is not released for the portal — otherwise the
     // client receives a link that only shows "not enabled".
@@ -66,49 +78,37 @@ export const POST = createHandler(
     }
     const locale: "de" | "en" = caseFm.locale === "en" || caseFm.language === "en" ? "en" : "de";
 
-    // Generate portal token + deep link
-    const token = await signPortalToken(body.case_slug, undefined, ctx.brainId);
+    // The document must exist, be open, and belong to this matter (or to
+    // none yet) — a document of another matter is never re-assigned here.
+    const docRes = await fetch(
+      `${ENGINE_URL}/api/pages/${encodeURIComponent(body.document_slug)}`,
+      { headers: ctx.headers, signal: AbortSignal.timeout(10_000) }
+    ).catch(() => null);
+    if (!docRes?.ok) {
+      return apiError("document_not_found", "Dokument nicht gefunden", 404);
+    }
+    const docPage = (await docRes.json().catch(() => null)) as {
+      frontmatter?: Record<string, unknown>;
+    } | null;
+    const docFm = (docPage?.frontmatter ?? {}) as Record<string, unknown>;
+    const docCase = typeof docFm.case_slug === "string" ? docFm.case_slug : "";
+    if (docCase && docCase !== body.case_slug) {
+      return apiError("document_case_mismatch", "Das Dokument gehört zu einer anderen Akte.", 409);
+    }
+    if (CLOSED_STATUSES.has(String(docFm.status ?? ""))) {
+      return apiError(
+        "document_closed",
+        "Dieses Dokument ist nicht mehr zur Unterschrift offen.",
+        409
+      );
+    }
 
-    // Registry entry (hash only) — the firm can list and revoke this link
-    // later even after the URL has left the screen.
-    const issued = await verifyPortalToken(token);
-    await registerPortalLink(ctx.headers, body.case_slug, {
-      token,
-      created_at: new Date().toISOString(),
-      created_by: ctx.user.email,
-      expires_at: new Date((issued?.exp ?? 0) * 1000 || Date.now()).toISOString(),
-      purpose: `sign:${body.document_slug}`,
-    });
+    // Generate portal token + deep link. The token is only ever handed to the
+    // recipient — it is not stored anywhere readable (the registry keeps its
+    // hash).
+    const token = await signPortalToken(body.case_slug, undefined, ctx.brainId);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.subsum.io";
     const portalUrl = `${baseUrl}/portal/${token}?sign=${encodeURIComponent(body.document_slug)}&type=${body.document_type}`;
-
-    // Mark the document as sent and stamp the matter — the portal only offers
-    // documents whose case_slug matches the token's matter.
-    const docUpdate = await enginePatchPage(
-      ctx.headers,
-      {
-        slug: body.document_slug,
-        frontmatter: {
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          sent_via: body.channel,
-          portal_url: portalUrl,
-          case_slug: body.case_slug,
-        },
-      },
-      { timeoutMs: 10_000 }
-    );
-    if (!docUpdate.ok) {
-      return apiError("document_not_updated", "Dokument konnte nicht aktualisiert werden", 502);
-    }
-
-    if (body.save_phone_to_contact && body.contact_slug && body.recipient_phone) {
-      await enginePatchPage(
-        ctx.headers,
-        { slug: body.contact_slug, frontmatter: { phone: body.recipient_phone } },
-        { timeoutMs: 10_000 }
-      ).catch(() => null);
-    }
 
     const recipientName = body.recipient_name || (locale === "en" ? "Client" : "Mandant");
     const htmlName = escapeHtml(recipientName);
@@ -118,14 +118,12 @@ export const POST = createHandler(
         ? `Hello ${recipientName},\n\nYou have a document to sign:\n${body.document_title}\n\nPlease open the following link and sign directly:\n${portalUrl}\n\nBest regards`
         : `Hallo ${recipientName},\n\nSie haben ein Dokument zur Unterschrift:\n${body.document_title}\n\nBitte öffnen Sie folgenden Link und unterschreiben Sie direkt:\n${portalUrl}\n\nMit freundlichen Grüßen`;
 
+    // Deliver first; only a delivered (or copied) link is registered and marks
+    // the document as sent.
+    let delivery: Record<string, unknown>;
     if (body.channel === "copy") {
-      return apiSuccess({ url: portalUrl, channel: "copy" });
-    }
-
-    if (body.channel === "email") {
-      if (!body.recipient_email) {
-        return apiError("validation_error", "recipient_email required for email channel", 400);
-      }
+      delivery = { channel: "copy" };
+    } else if (body.channel === "email") {
       const subject =
         locale === "en"
           ? `Document to sign: ${body.document_title}`
@@ -139,24 +137,23 @@ export const POST = createHandler(
       // from the firm the client knows, not a generic platform address.
       const settings = await loadKanzleiSettingsForBrain(ctx.brainId);
       const result = await sendFirmMail(settings, {
-        to: body.recipient_email,
+        to: body.recipient_email as string,
         subject,
         text: messageText,
         html,
       });
       if (!result.sent) {
-        return apiError("mail_send_failed", result.error ?? "Mail send failed", 502);
+        return apiError(
+          "mail_send_failed",
+          result.error ?? "Die E-Mail konnte nicht versendet werden.",
+          502
+        );
       }
-      return apiSuccess({ url: portalUrl, channel: "email", via: result.via });
-    }
-
-    if (body.channel === "whatsapp") {
-      if (!body.recipient_phone) {
-        return apiError("validation_error", "recipient_phone required for whatsapp channel", 400);
-      }
+      delivery = { channel: "email", via: result.via };
+    } else {
       // Use proactive send (respects consent + 24h window + quiet hours)
       const result = await sendProactiveMessage({
-        to: body.recipient_phone,
+        to: body.recipient_phone as string,
         freeform: messageText,
         scope: "client_reminder",
         brainId: ctx.brainId,
@@ -164,14 +161,56 @@ export const POST = createHandler(
       if (!result.sent) {
         return apiError(
           "whatsapp_send_failed",
-          result.decision.reason ?? "WhatsApp send failed",
+          result.decision.reason ?? "Die WhatsApp-Nachricht konnte nicht versendet werden.",
           502
         );
       }
-      return apiSuccess({ url: portalUrl, channel: "whatsapp", messageId: result.messageId });
+      delivery = { channel: "whatsapp", messageId: result.messageId };
     }
 
-    return apiError("validation_error", "invalid channel", 400);
+    // Registry entry (hash only) — the firm can list and revoke this link
+    // later even after the URL has left the screen.
+    const issued = await verifyPortalToken(token);
+    await registerPortalLink(ctx.headers, body.case_slug, {
+      token,
+      created_at: new Date().toISOString(),
+      created_by: ctx.user.email,
+      expires_at: new Date((issued?.exp ?? 0) * 1000 || Date.now()).toISOString(),
+      purpose: `sign:${body.document_slug}`,
+    });
+
+    // Mark the document as sent and stamp the matter — the portal only offers
+    // documents whose case_slug matches the token's matter. No link or token
+    // is stored on the document (an older stored link is cleared).
+    const docUpdate = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: body.document_slug,
+        frontmatter: {
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          sent_via: body.channel,
+          portal_url: null,
+          case_slug: body.case_slug,
+        },
+      },
+      { timeoutMs: 10_000 }
+    ).catch(() => null);
+
+    if (body.save_phone_to_contact && body.contact_slug && body.recipient_phone) {
+      await enginePatchPage(
+        ctx.headers,
+        { slug: body.contact_slug, frontmatter: { phone: body.recipient_phone } },
+        { timeoutMs: 10_000 }
+      ).catch(() => null);
+    }
+
+    return apiSuccess({
+      url: portalUrl,
+      ...delivery,
+      // The link went out; only the status could not be recorded.
+      document_updated: docUpdate?.ok === true,
+    });
   }
 );
 
