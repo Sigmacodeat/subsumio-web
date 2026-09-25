@@ -533,3 +533,31 @@
 | `/api/work-products/memo/generate`                          | POST                     | Session                   | `legal.memo`                      | heavy    |
 | `/api/workflows`                                            | GET, POST, PATCH         | Session                   | `admin.*`                         | standard |
 | `/api/workflows/approve`                                    | POST                     | Session                   | `workflow.approve`                | standard |
+
+## Endpoint-Details
+
+### `POST /api/legal/retrieval-feedback`
+
+Speichert Nutzer-Feedback zu einem Such-/Retrieval-Ergebnis als Engine-Page
+vom Typ `retrieval_feedback` (Slug `retrieval-feedback/<orgId>/<ts>-<rand>`)
+im Brain des Aufrufers — Source-Isolation via Session-Headern, überlebt
+Restarts (kein In-Memory-Store mehr).
+
+Body (Zod-validiert): `query` (1–500), `result_slug` (1–500),
+`result_title` (≤500), `feedback_type` (`relevant` | `irrelevant` |
+`outdated` | `wrong`), `severity` (`low` | `medium` | `high`, Default
+`medium`), `comment` (≤2000), `search_mode`, `rank_position`,
+`result_score`.
+
+Antworten: `201 { id, created_at }` · `400` Validierung · `502`
+`feedback_save_failed` (Engine-Fehler).
+
+### `GET /api/legal/retrieval-feedback`
+
+Aggregierte Feedback-Statistiken der Org des Aufrufers (keine
+User-Enumeration). Query: `limit` (1–5000) begrenzt die gelesenen
+Feedback-Pages.
+
+Antworten: `200 { stats, total }` — `stats` enthält `by_type`,
+`by_severity`, `problematic_results`, `problematic_queries`,
+`satisfaction_rate` · `502` `feedback_load_failed` (Engine-Fehler).

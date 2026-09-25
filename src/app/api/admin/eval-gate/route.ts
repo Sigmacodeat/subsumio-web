@@ -6,6 +6,7 @@ import {
   type HarnessId,
 } from "@/lib/eval-harness-reuse";
 import { getFeedbackStats, getFeedbackForBrain } from "@/lib/retrieval-feedback";
+import { createServerBrainClient } from "@/lib/server-brain";
 
 /**
  * GET /api/admin/eval-gate
@@ -27,8 +28,11 @@ export const GET = createHandler(
     // Collect live results from available harnesses
     const results: Partial<Record<HarnessId, HarnessResult>> = {};
 
-    // Feedback harness — live from in-memory store
-    const orgFeedback = getFeedbackForBrain(ctx.brainId);
+    // Feedback harness — live from the persisted retrieval_feedback pages.
+    // A failed engine read must not sink the whole gate; an empty list just
+    // reports the harness as "not_run".
+    const brain = createServerBrainClient(ctx.headers);
+    const orgFeedback = await getFeedbackForBrain(brain, ctx.brainId).catch(() => []);
     const feedbackStats = getFeedbackStats(orgFeedback);
     results.feedback = {
       harness_id: "feedback",

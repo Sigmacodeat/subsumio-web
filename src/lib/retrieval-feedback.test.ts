@@ -1,17 +1,16 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   submitFeedback,
-  getFeedback,
-  getAllFeedback,
-  getFeedbackForQuery,
-  getFeedbackForSlug,
   getFeedbackForOrg,
   getFeedbackForBrain,
+  getFeedbackForQuery,
+  getFeedbackForSlug,
+  feedbackFromPage,
   getFeedbackStats,
   getFeedbackBoosts,
   exportForEval,
   validateFeedback,
-  clearFeedbackStore,
+  FEEDBACK_PAGE_TYPE,
   type RetrievalFeedback,
   type FeedbackType,
   type FeedbackSeverity,
@@ -19,9 +18,9 @@ import {
 
 // ── Fixtures ──────────────────────────────────────────────────────────
 
-function makeFeedback(
-  overrides: Partial<Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">> = {}
-): Omit<RetrievalFeedback, "id" | "query_hash" | "created_at"> {
+type FeedbackInput = Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">;
+
+function makeFeedback(overrides: Partial<FeedbackInput> = {}): FeedbackInput {
   return {
     query: "Lieferverzug BGB",
     result_slug: "test/case-1",
@@ -35,7 +34,56 @@ function makeFeedback(
   };
 }
 
-const _NOW = "2026-06-20T12:00:00Z";
+function makeEntry(overrides: Partial<RetrievalFeedback> = {}): RetrievalFeedback {
+  return {
+    id: "retrieval-feedback/org-1/abc123",
+    query: "Lieferverzug BGB",
+    query_hash: "q1",
+    result_slug: "test/case-1",
+    result_title: "Musterfall Lieferverzug",
+    feedback_type: "relevant" as FeedbackType,
+    severity: "medium" as FeedbackSeverity,
+    user_id: "user-1",
+    brain_id: "brain-1",
+    org_id: "org-1",
+    created_at: "2026-06-20T12:00:00Z",
+    ...overrides,
+  };
+}
+
+interface FakePage {
+  slug: string;
+  frontmatter?: Record<string, unknown>;
+}
+
+function pageFor(entry: RetrievalFeedback): FakePage {
+  return {
+    slug: entry.id,
+    frontmatter: { type: FEEDBACK_PAGE_TYPE, ...entry },
+  };
+}
+
+/** In-test engine client: serves `pages` in limit/offset slices, records creates. */
+function fakeBrain(pages: FakePage[] = []) {
+  const created: Array<{
+    slug: string;
+    title: string;
+    content?: string;
+    type?: string;
+    frontmatter?: Record<string, unknown>;
+  }> = [];
+  const listPages = vi.fn(
+    async (opts: { type: string; limit: number; offset: number }): Promise<unknown[]> =>
+      opts.type === FEEDBACK_PAGE_TYPE ? pages.slice(opts.offset, opts.offset + opts.limit) : []
+  );
+  const createPage = vi.fn(async (page: (typeof created)[number]): Promise<{ slug: string }> => {
+    created.push(page);
+    return { slug: page.slug };
+  });
+  return { created, listPages, createPage };
+}
+
+// ── Validation ────────────────────────────────────────────────────────
 
 describe("Retrieval Feedback — Validation", () => {
   it("validates correct feedback", () => {
@@ -75,92 +123,192 @@ describe("Retrieval Feedback — Validation", () => {
   });
 });
 
-describe("Retrieval Feedback — Submit & Get", () => {
-  beforeEach(() => {
-    clearFeedbackStore();
-  });
+// ── Submit (engine write) ─────────────────────────────────────────────
 
-  it("submits feedback and returns entry with id and hash", () => {
-    const entry = submitFeedback(makeFeedback());
-    expect(entry.id).toBeDefined();
+describe("Retrieval Feedback — Submit", () => {
+  it("persists feedback as retrieval_feedback page and returns the entry", async () => {
+    const brain = fakeBrain();
+    const entry = await submitFeedback(brain, makeFeedback());
+
+    expect(entry.id).toMatch(/^retrieval-feedback\/org-1\//);
     expect(entry.query_hash).toBeDefined();
     expect(entry.created_at).toBeDefined();
     expect(entry.query).toBe("Lieferverzug BGB");
     expect(entry.feedback_type).toBe("relevant");
+
+    expect(brain.createPage).toHaveBeenCalledTimes(1);
+    const page = brain.created[0];
+    expect(page.slug).toBe(entry.id);
+    expect(page.type).toBe(FEEDBACK_PAGE_TYPE);
+    const fm = page.frontmatter as Record<string, unknown>;
+    expect(fm.type).toBe(FEEDBACK_PAGE_TYPE);
+    expect(fm.org_id).toBe("org-1");
+    expect(fm.brain_id).toBe("brain-1");
+    expect(fm.user_id).toBe("user-1");
+    expect(fm.query_hash).toBe(entry.query_hash);
+    expect(fm.feedback_type).toBe("relevant");
   });
 
-  it("retrieves feedback by id", () => {
-    const entry = submitFeedback(makeFeedback());
-    const retrieved = getFeedback(entry.id);
-    expect(retrieved).toBeDefined();
-    expect(retrieved!.id).toBe(entry.id);
+  it("stores the comment as page body for full-text search", async () => {
+    const brain = fakeBrain();
+    await submitFeedback(brain, makeFeedback({ comment: "Ergebnis veraltet" }));
+    expect(brain.created[0].content).toBe("Ergebnis veraltet");
+    expect(brain.created[0].frontmatter?.comment).toBe("Ergebnis veraltet");
   });
 
-  it("returns undefined for non-existent id", () => {
-    expect(getFeedback("non-existent")).toBeUndefined();
+  it("sanitizes exotic org ids inside the slug", async () => {
+    const brain = fakeBrain();
+    const entry = await submitFeedback(brain, makeFeedback({ org_id: "org/bös€" }));
+    expect(entry.id).toMatch(/^retrieval-feedback\/[a-zA-Z0-9_-]+\//);
   });
 
-  it("getAllFeedback returns all entries", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/a" }));
-    submitFeedback(makeFeedback({ result_slug: "test/b" }));
-    expect(getAllFeedback()).toHaveLength(2);
+  it("propagates engine errors so the route can answer 5xx", async () => {
+    const brain = fakeBrain();
+    brain.createPage.mockRejectedValueOnce(new Error("engine down"));
+    await expect(submitFeedback(brain, makeFeedback())).rejects.toThrow("engine down");
   });
 });
 
-describe("Retrieval Feedback — Query/Slug/Org/Brain Access", () => {
-  beforeEach(() => {
-    clearFeedbackStore();
+// ── Page → entry mapping ──────────────────────────────────────────────
+
+describe("Retrieval Feedback — feedbackFromPage", () => {
+  it("maps a well-formed page", () => {
+    const entry = feedbackFromPage(pageFor(makeEntry()));
+    expect(entry).not.toBeNull();
+    expect(entry!.id).toBe("retrieval-feedback/org-1/abc123");
+    expect(entry!.feedback_type).toBe("relevant");
   });
 
-  it("getFeedbackForQuery returns matching entries", () => {
-    submitFeedback(makeFeedback({ query: "Lieferverzug" }));
-    submitFeedback(makeFeedback({ query: "Lieferverzug", result_slug: "test/other" }));
-    submitFeedback(makeFeedback({ query: "Kündigung" }));
-    const results = getFeedbackForQuery("Lieferverzug");
-    expect(results).toHaveLength(2);
+  it("skips tombstoned pages", () => {
+    const page = pageFor(makeEntry());
+    page.frontmatter = { ...page.frontmatter, status: "tombstoned" };
+    expect(feedbackFromPage(page)).toBeNull();
+  });
+
+  it("skips pages without a recognizable feedback_type", () => {
+    expect(feedbackFromPage({ slug: "x", frontmatter: { feedback_type: "meh" } })).toBeNull();
+    expect(feedbackFromPage({ slug: "x", frontmatter: {} })).toBeNull();
+    expect(feedbackFromPage({ slug: "x" })).toBeNull();
+  });
+});
+
+// ── Tenant-isolated reads ─────────────────────────────────────────────
+
+describe("Retrieval Feedback — Org/Brain Access", () => {
+  it("getFeedbackForOrg returns only the caller's org entries", async () => {
+    const brain = fakeBrain([
+      pageFor(makeEntry({ id: "retrieval-feedback/org-1/a", org_id: "org-1" })),
+      pageFor(makeEntry({ id: "retrieval-feedback/org-2/b", org_id: "org-2" })),
+    ]);
+    const result = await getFeedbackForOrg(brain, "org-1");
+    expect(result).toHaveLength(1);
+    expect(result[0].org_id).toBe("org-1");
+  });
+
+  it("getFeedbackForBrain returns only the caller's brain entries", async () => {
+    const brain = fakeBrain([
+      pageFor(makeEntry({ id: "a", brain_id: "brain-1" })),
+      pageFor(makeEntry({ id: "b", brain_id: "brain-2" })),
+    ]);
+    expect(await getFeedbackForBrain(brain, "brain-1")).toHaveLength(1);
+    expect(await getFeedbackForBrain(brain, "brain-2")).toHaveLength(1);
+    expect(await getFeedbackForBrain(brain, "brain-3")).toHaveLength(0);
+  });
+
+  it("returns an empty list when no feedback exists", async () => {
+    const brain = fakeBrain();
+    const result = await getFeedbackForOrg(brain, "org-1");
+    expect(result).toEqual([]);
+  });
+
+  it("skips tombstoned and malformed pages", async () => {
+    const brain = fakeBrain([
+      pageFor(makeEntry({ id: "a" })),
+      { slug: "b", frontmatter: { status: "tombstoned", org_id: "org-1" } },
+      { slug: "c", frontmatter: { unrelated: true } },
+    ]);
+    const result = await getFeedbackForOrg(brain, "org-1");
+    expect(result.map((f) => f.id)).toEqual(["a"]);
+  });
+
+  it("sorts newest first and pages through batches of 100", async () => {
+    const pages: FakePage[] = Array.from({ length: 150 }, (_, i) =>
+      pageFor(
+        makeEntry({
+          id: `retrieval-feedback/org-1/e${i}`,
+          created_at: `2026-06-${String((i % 28) + 1).padStart(2, "0")}T00:00:00Z`,
+        })
+      )
+    );
+    const brain = fakeBrain(pages);
+    const result = await getFeedbackForOrg(brain, "org-1");
+    expect(result).toHaveLength(150);
+    expect(brain.listPages.mock.calls.length).toBeGreaterThan(1);
+    for (let i = 1; i < result.length; i++) {
+      expect(result[i - 1].created_at >= result[i].created_at).toBe(true);
+    }
+  });
+
+  it("honours the limit option", async () => {
+    const pages: FakePage[] = Array.from({ length: 150 }, (_, i) =>
+      pageFor(makeEntry({ id: `e${i}` }))
+    );
+    const brain = fakeBrain(pages);
+    const result = await getFeedbackForOrg(brain, "org-1", { limit: 50 });
+    expect(result).toHaveLength(50);
+  });
+
+  it("propagates list errors so the route can answer 5xx", async () => {
+    const brain = fakeBrain();
+    brain.listPages.mockRejectedValueOnce(new Error("engine down"));
+    await expect(getFeedbackForOrg(brain, "org-1")).rejects.toThrow("engine down");
+  });
+});
+
+// ── Pure filters ──────────────────────────────────────────────────────
+
+describe("Retrieval Feedback — Query/Slug filters", () => {
+  it("getFeedbackForQuery groups by query hash", async () => {
+    // query_hash is derived from the query text on submit — entries must
+    // come through submitFeedback for the hash to be real.
+    const brain = fakeBrain();
+    const e1 = await submitFeedback(brain, makeFeedback({ query: "Lieferverzug" }));
+    const e2 = await submitFeedback(
+      brain,
+      makeFeedback({ query: "Lieferverzug", result_slug: "test/other" })
+    );
+    const e3 = await submitFeedback(brain, makeFeedback({ query: "Kündigung" }));
+    const filtered = getFeedbackForQuery([e1, e2, e3], "Lieferverzug");
+    expect(filtered.map((f) => f.result_slug).sort()).toEqual(["test/case-1", "test/other"]);
   });
 
   it("getFeedbackForSlug returns matching entries", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/case-1" }));
-    submitFeedback(makeFeedback({ result_slug: "test/case-1", feedback_type: "irrelevant" }));
-    submitFeedback(makeFeedback({ result_slug: "test/case-2" }));
-    const results = getFeedbackForSlug("test/case-1");
-    expect(results).toHaveLength(2);
-  });
-
-  it("getFeedbackForOrg filters by org_id", () => {
-    submitFeedback(makeFeedback({ org_id: "org-1" }));
-    submitFeedback(makeFeedback({ org_id: "org-2" }));
-    expect(getFeedbackForOrg("org-1")).toHaveLength(1);
-    expect(getFeedbackForOrg("org-2")).toHaveLength(1);
-  });
-
-  it("getFeedbackForBrain filters by brain_id", () => {
-    submitFeedback(makeFeedback({ brain_id: "brain-1" }));
-    submitFeedback(makeFeedback({ brain_id: "brain-2" }));
-    expect(getFeedbackForBrain("brain-1")).toHaveLength(1);
-    expect(getFeedbackForBrain("brain-2")).toHaveLength(1);
+    const list = [
+      makeEntry({ result_slug: "test/case-1" }),
+      makeEntry({ result_slug: "test/case-1", feedback_type: "irrelevant" }),
+      makeEntry({ result_slug: "test/case-2" }),
+    ];
+    expect(getFeedbackForSlug(list, "test/case-1")).toHaveLength(2);
   });
 });
 
-describe("Retrieval Feedback — Stats", () => {
-  beforeEach(() => {
-    clearFeedbackStore();
-  });
+// ── Stats ─────────────────────────────────────────────────────────────
 
+describe("Retrieval Feedback — Stats", () => {
   it("returns empty stats for no feedback", () => {
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([]);
     expect(stats.total_feedback).toBe(0);
     expect(stats.satisfaction_rate).toBe(0);
   });
 
   it("counts feedback by type", () => {
-    submitFeedback(makeFeedback({ feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ feedback_type: "irrelevant" }));
-    submitFeedback(makeFeedback({ feedback_type: "outdated" }));
-    submitFeedback(makeFeedback({ feedback_type: "wrong" }));
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([
+      makeEntry({ feedback_type: "relevant" }),
+      makeEntry({ feedback_type: "relevant" }),
+      makeEntry({ feedback_type: "irrelevant" }),
+      makeEntry({ feedback_type: "outdated" }),
+      makeEntry({ feedback_type: "wrong" }),
+    ]);
     expect(stats.by_type.relevant).toBe(2);
     expect(stats.by_type.irrelevant).toBe(1);
     expect(stats.by_type.outdated).toBe(1);
@@ -168,138 +316,135 @@ describe("Retrieval Feedback — Stats", () => {
   });
 
   it("counts feedback by severity", () => {
-    submitFeedback(makeFeedback({ severity: "low" }));
-    submitFeedback(makeFeedback({ severity: "medium" }));
-    submitFeedback(makeFeedback({ severity: "high" }));
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([
+      makeEntry({ severity: "low" }),
+      makeEntry({ severity: "medium" }),
+      makeEntry({ severity: "high" }),
+    ]);
     expect(stats.by_severity.low).toBe(1);
     expect(stats.by_severity.medium).toBe(1);
     expect(stats.by_severity.high).toBe(1);
   });
 
   it("calculates satisfaction rate", () => {
-    submitFeedback(makeFeedback({ feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ feedback_type: "irrelevant" }));
-    submitFeedback(makeFeedback({ feedback_type: "wrong" }));
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([
+      makeEntry({ feedback_type: "relevant" }),
+      makeEntry({ feedback_type: "relevant" }),
+      makeEntry({ feedback_type: "irrelevant" }),
+      makeEntry({ feedback_type: "wrong" }),
+    ]);
     expect(stats.satisfaction_rate).toBe(0.5);
   });
 
   it("identifies problematic results", () => {
-    submitFeedback(
-      makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" })
-    );
-    submitFeedback(makeFeedback({ result_slug: "test/bad", feedback_type: "outdated" }));
-    submitFeedback(makeFeedback({ result_slug: "test/good", feedback_type: "relevant" }));
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([
+      makeEntry({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" }),
+      makeEntry({ result_slug: "test/bad", feedback_type: "outdated" }),
+      makeEntry({ result_slug: "test/good", feedback_type: "relevant" }),
+    ]);
     expect(stats.problematic_results).toHaveLength(1);
     expect(stats.problematic_results[0].result_slug).toBe("test/bad");
     expect(stats.problematic_results[0].negative_count).toBe(2);
   });
 
   it("identifies problematic queries", () => {
-    submitFeedback(makeFeedback({ query: "bad query", feedback_type: "irrelevant" }));
-    submitFeedback(makeFeedback({ query: "bad query", feedback_type: "wrong" }));
-    submitFeedback(makeFeedback({ query: "good query", feedback_type: "relevant" }));
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([
+      makeEntry({ query: "bad query", query_hash: "hb", feedback_type: "irrelevant" }),
+      makeEntry({ query: "bad query", query_hash: "hb", feedback_type: "wrong" }),
+      makeEntry({ query: "good query", query_hash: "hg", feedback_type: "relevant" }),
+    ]);
     expect(stats.problematic_queries).toHaveLength(1);
     expect(stats.problematic_queries[0].negative_count).toBe(2);
     expect(stats.problematic_queries[0].satisfaction_rate).toBe(0);
   });
 
   it("counts unique queries and results", () => {
-    submitFeedback(makeFeedback({ query: "q1", result_slug: "r1" }));
-    submitFeedback(makeFeedback({ query: "q1", result_slug: "r2" }));
-    submitFeedback(makeFeedback({ query: "q2", result_slug: "r1" }));
-    const stats = getFeedbackStats();
+    const stats = getFeedbackStats([
+      makeEntry({ query: "q1", query_hash: "q1", result_slug: "r1" }),
+      makeEntry({ query: "q1", query_hash: "q1", result_slug: "r2" }),
+      makeEntry({ query: "q2", query_hash: "q2", result_slug: "r1" }),
+    ]);
     expect(stats.unique_queries).toBe(2);
     expect(stats.unique_results).toBe(2);
   });
 });
 
-describe("Retrieval Feedback — Boost Signals", () => {
-  beforeEach(() => {
-    clearFeedbackStore();
-  });
+// ── Boost Signals ─────────────────────────────────────────────────────
 
+describe("Retrieval Feedback — Boost Signals", () => {
   it("returns empty for no feedback", () => {
-    expect(getFeedbackBoosts()).toHaveLength(0);
+    expect(getFeedbackBoosts([])).toHaveLength(0);
   });
 
   it("returns positive boost for relevant feedback", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/good", feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ result_slug: "test/good", feedback_type: "relevant" }));
-    const boosts = getFeedbackBoosts();
+    const boosts = getFeedbackBoosts([
+      makeEntry({ result_slug: "test/good", feedback_type: "relevant" }),
+      makeEntry({ result_slug: "test/good", feedback_type: "relevant" }),
+    ]);
     expect(boosts).toHaveLength(1);
     expect(boosts[0].boost).toBeGreaterThan(0);
     expect(boosts[0].result_slug).toBe("test/good");
   });
 
   it("returns negative boost for wrong feedback", () => {
-    submitFeedback(
-      makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" })
-    );
-    submitFeedback(
-      makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" })
-    );
-    const boosts = getFeedbackBoosts();
+    const boosts = getFeedbackBoosts([
+      makeEntry({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" }),
+      makeEntry({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" }),
+    ]);
     expect(boosts).toHaveLength(1);
     expect(boosts[0].boost).toBeLessThan(0);
   });
 
   it("filters results with < 2 feedback", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/one", feedback_type: "relevant" }));
-    const boosts = getFeedbackBoosts();
+    const boosts = getFeedbackBoosts([
+      makeEntry({ result_slug: "test/one", feedback_type: "relevant" }),
+    ]);
     expect(boosts).toHaveLength(0);
   });
 
   it("clamps boost to [-0.5, +0.5]", () => {
-    for (let i = 0; i < 20; i++) {
-      submitFeedback(
-        makeFeedback({ result_slug: "test/boosted", feedback_type: "relevant", severity: "high" })
-      );
-    }
-    const boosts = getFeedbackBoosts();
+    const list = Array.from({ length: 20 }, () =>
+      makeEntry({ result_slug: "test/boosted", feedback_type: "relevant", severity: "high" })
+    );
+    const boosts = getFeedbackBoosts(list);
     expect(boosts[0].boost).toBeLessThanOrEqual(0.5);
   });
 
   it("calculates confidence based on count", () => {
-    for (let i = 0; i < 10; i++) {
-      submitFeedback(makeFeedback({ result_slug: "test/confident", feedback_type: "relevant" }));
-    }
-    const boosts = getFeedbackBoosts();
+    const list = Array.from({ length: 10 }, () =>
+      makeEntry({ result_slug: "test/confident", feedback_type: "relevant" })
+    );
+    const boosts = getFeedbackBoosts(list);
     expect(boosts[0].confidence).toBe(1);
   });
 
   it("sorts by absolute boost value", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/a", feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ result_slug: "test/a", feedback_type: "relevant" }));
-    for (let i = 0; i < 5; i++) {
-      submitFeedback(
-        makeFeedback({ result_slug: "test/b", feedback_type: "wrong", severity: "high" })
-      );
-    }
-    const boosts = getFeedbackBoosts();
+    const list = [
+      makeEntry({ result_slug: "test/a", feedback_type: "relevant" }),
+      makeEntry({ result_slug: "test/a", feedback_type: "relevant" }),
+      ...Array.from({ length: 5 }, () =>
+        makeEntry({ result_slug: "test/b", feedback_type: "wrong", severity: "high" })
+      ),
+    ];
+    const boosts = getFeedbackBoosts(list);
     expect(Math.abs(boosts[0].boost)).toBeGreaterThanOrEqual(Math.abs(boosts[1].boost));
   });
 });
 
-describe("Retrieval Feedback — Eval Export", () => {
-  beforeEach(() => {
-    clearFeedbackStore();
-  });
+// ── Eval Export ───────────────────────────────────────────────────────
 
+describe("Retrieval Feedback — Eval Export", () => {
   it("exports empty for no feedback", () => {
-    expect(exportForEval()).toHaveLength(0);
+    expect(exportForEval([])).toHaveLength(0);
   });
 
   it("groups by query and categorizes slugs", () => {
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r1", feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r2", feedback_type: "irrelevant" }));
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r3", feedback_type: "outdated" }));
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r4", feedback_type: "wrong" }));
-    const exported = exportForEval();
+    const exported = exportForEval([
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r1", feedback_type: "relevant" }),
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r2", feedback_type: "irrelevant" }),
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r3", feedback_type: "outdated" }),
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r4", feedback_type: "wrong" }),
+    ]);
     expect(exported).toHaveLength(1);
     expect(exported[0].relevant_slugs).toContain("r1");
     expect(exported[0].irrelevant_slugs).toContain("r2");
@@ -308,16 +453,18 @@ describe("Retrieval Feedback — Eval Export", () => {
   });
 
   it("deduplicates slugs within same category", () => {
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r1", feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r1", feedback_type: "relevant" }));
-    const exported = exportForEval();
+    const exported = exportForEval([
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r1", feedback_type: "relevant" }),
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r1", feedback_type: "relevant" }),
+    ]);
     expect(exported[0].relevant_slugs).toHaveLength(1);
   });
 
   it("separates different queries", () => {
-    submitFeedback(makeFeedback({ query: "Q1", result_slug: "r1", feedback_type: "relevant" }));
-    submitFeedback(makeFeedback({ query: "Q2", result_slug: "r2", feedback_type: "irrelevant" }));
-    const exported = exportForEval();
+    const exported = exportForEval([
+      makeEntry({ query: "Q1", query_hash: "Q1", result_slug: "r1", feedback_type: "relevant" }),
+      makeEntry({ query: "Q2", query_hash: "Q2", result_slug: "r2", feedback_type: "irrelevant" }),
+    ]);
     expect(exported).toHaveLength(2);
   });
 });
