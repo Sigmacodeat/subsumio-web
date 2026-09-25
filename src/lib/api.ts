@@ -2404,7 +2404,9 @@ export const api = {
       }>;
       total: number;
     }> {
-      return request("/api/review-inbox");
+      // The route answers { data: { items, total } } — unwrap, or every
+      // reader sees an empty inbox.
+      return request("/api/review-inbox").then((body) => unwrapApiBody(body));
     },
   },
 

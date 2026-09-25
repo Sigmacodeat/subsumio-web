@@ -357,7 +357,8 @@ export default function CommunicationsPage() {
     queryKey: ["communications", "mail"],
     queryFn: async (): Promise<UnifiedMessage[]> => {
       const res = await fetch("/api/email/messages?folder=inbox&limit=100");
-      if (!res.ok) return [];
+      // A failed mailbox read is an error, not an empty mailbox.
+      if (!res.ok) throw new Error(`mail list failed: HTTP ${res.status}`);
       const json = await res.json();
       const list = (json?.data?.messages ?? json?.messages ?? []) as Array<Record<string, unknown>>;
       return list
@@ -391,7 +392,7 @@ export default function CommunicationsPage() {
   const markReadMutation = useMutation({
     mutationFn: (input: Parameters<typeof api.inbox.markRead>[0]) =>
       input.slug.startsWith("mail:")
-        ? patchMail(input.slug, { isRead: true }).then(() => ({ success: true }))
+        ? patchMail(input.slug, { isRead: input.read }).then(() => ({ success: true }))
         : api.inbox.markRead(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["communications", "batch"] });
@@ -603,7 +604,7 @@ export default function CommunicationsPage() {
             size="sm"
             onClick={() =>
               view === "messages"
-                ? void batchQuery.refetch()
+                ? void Promise.all([batchQuery.refetch(), mailQuery.refetch()])
                 : view === "review"
                   ? void qc.invalidateQueries({ queryKey: ["review-inbox"] })
                   : undefined
@@ -803,6 +804,24 @@ export default function CommunicationsPage() {
             </div>
           )}
 
+          {/* Mailbox read failed while the other channels loaded */}
+          {!error && !loading && mailQuery.isError && (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+            >
+              <span>
+                {lang === "en"
+                  ? "E-mails could not be loaded — the list is incomplete."
+                  : "E-Mails konnten nicht geladen werden — die Liste ist unvollständig."}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => void mailQuery.refetch()}>
+                <RefreshCw size={14} className="mr-2" />
+                {tr("refresh", lang)}
+              </Button>
+            </div>
+          )}
+
           {/* Error state */}
           {error && !loading && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
@@ -985,7 +1004,7 @@ export default function CommunicationsPage() {
                       {/* Triage Actions */}
                       {card && (
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {card.deadline && (
+                          {card.deadline && !msg.slug.startsWith("mail:") && (
                             <button
                               type="button"
                               onClick={() =>
@@ -1013,58 +1032,64 @@ export default function CommunicationsPage() {
                               {tr("triage_assign", lang)}
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void triageActionMutation.mutateAsync({
-                                slug: msg.slug,
-                                action: "accept",
-                              })
-                            }
-                            disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none"
-                          >
-                            <CheckCircle2 size={12} aria-hidden="true" />
-                            {tr("triage_accept", lang)}
-                          </button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                          {/* Triage status is kept on brain pages; a mailbox mail is
+                              handled by assigning it to a matter (above). */}
+                          {!msg.slug.startsWith("mail:") && (
+                            <>
                               <button
                                 type="button"
-                                aria-label={tr("more_actions", lang)}
-                                title={tr("more_actions", lang)}
-                                className="rounded-md p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                onClick={() =>
+                                  void triageActionMutation.mutateAsync({
+                                    slug: msg.slug,
+                                    action: "accept",
+                                  })
+                                }
+                                disabled={triageActionMutation.isPending}
+                                className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none"
                               >
-                                <MoreHorizontal size={14} />
+                                <CheckCircle2 size={12} aria-hidden="true" />
+                                {tr("triage_accept", lang)}
                               </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                              <DropdownMenuItem
-                                disabled={triageActionMutation.isPending}
-                                onSelect={() =>
-                                  void triageActionMutation.mutateAsync({
-                                    slug: msg.slug,
-                                    action: "reject",
-                                  })
-                                }
-                              >
-                                <Ban size={13} className="mr-2" aria-hidden="true" />
-                                {tr("triage_reject", lang)}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={triageActionMutation.isPending}
-                                onSelect={() =>
-                                  void triageActionMutation.mutateAsync({
-                                    slug: msg.slug,
-                                    action: "dismiss",
-                                  })
-                                }
-                              >
-                                <X size={13} className="mr-2" aria-hidden="true" />
-                                {tr("triage_dismiss", lang)}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={tr("more_actions", lang)}
+                                    title={tr("more_actions", lang)}
+                                    className="rounded-md p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                  >
+                                    <MoreHorizontal size={14} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuItem
+                                    disabled={triageActionMutation.isPending}
+                                    onSelect={() =>
+                                      void triageActionMutation.mutateAsync({
+                                        slug: msg.slug,
+                                        action: "reject",
+                                      })
+                                    }
+                                  >
+                                    <Ban size={13} className="mr-2" aria-hidden="true" />
+                                    {tr("triage_reject", lang)}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    disabled={triageActionMutation.isPending}
+                                    onSelect={() =>
+                                      void triageActionMutation.mutateAsync({
+                                        slug: msg.slug,
+                                        action: "dismiss",
+                                      })
+                                    }
+                                  >
+                                    <X size={13} className="mr-2" aria-hidden="true" />
+                                    {tr("triage_dismiss", lang)}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
