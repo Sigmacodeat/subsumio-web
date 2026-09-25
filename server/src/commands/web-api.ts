@@ -1644,6 +1644,62 @@ function isMatterScoped(
 }
 
 /**
+ * The slugs of graph endpoints the caller may see: matter scope (every
+ * binding, resolved in bulk from the database) and, when the caller belongs
+ * to ACL groups, document-level ACLs. Exported for tests.
+ */
+export async function graphVisibleSlugs(
+  engine: BrainEngine,
+  req: Request,
+  sourceId: string,
+  rows: ReadonlyArray<{
+    from_id: number;
+    from_slug: string;
+    from_type: string;
+    to_id: number;
+    to_slug: string;
+    to_type: string;
+  }>
+): Promise<Set<string>> {
+  const nodes = new Map<
+    string,
+    { slug: string; page_id: number; type: string; source_id: string }
+  >();
+  for (const r of rows) {
+    nodes.set(r.from_slug, {
+      slug: r.from_slug,
+      page_id: Number(r.from_id),
+      type: r.from_type,
+      source_id: sourceId,
+    });
+    nodes.set(r.to_slug, {
+      slug: r.to_slug,
+      page_id: Number(r.to_id),
+      type: r.to_type,
+      source_id: sourceId,
+    });
+  }
+  let visible = [...nodes.values()];
+  const scope = req.matterScope ?? "all";
+  if (scope !== "all") {
+    visible = await filterByMatterScope(engine, req, visible, scope);
+  }
+  const groups = req.aclGroups;
+  if (groups && groups !== "all" && groups.length > 0 && visible.length > 0) {
+    const { filterPagesByACL } = await import("../core/acl.ts");
+    const accessible = new Set(
+      await filterPagesByACL(
+        engine,
+        visible.map((n) => n.page_id),
+        groups
+      )
+    );
+    visible = visible.filter((n) => accessible.has(n.page_id));
+  }
+  return new Set(visible.map((n) => n.slug));
+}
+
+/**
  * Keep the rows the caller's matter scope allows. Every frontmatter matter
  * binding counts (case_slug, case_ref, …; core/matter-binding.ts): rows
  * without frontmatter get their current binding from the database in bulk.
@@ -5430,18 +5486,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? "200"), 10) || 200, 500);
       const sourceId = requestSourceId(req);
-      const rows = await engine.executeRaw<{
+      const allRows = await engine.executeRaw<{
+        from_id: number;
         from_slug: string;
         from_title: string;
         from_type: string;
+        to_id: number;
         to_slug: string;
         to_title: string;
         to_type: string;
         link_type: string;
       }>(
         `SELECT
-           fp.slug as from_slug, fp.title as from_title, fp.type as from_type,
-           tp.slug as to_slug, tp.title as to_title, tp.type as to_type,
+           fp.id as from_id, fp.slug as from_slug, fp.title as from_title, fp.type as from_type,
+           tp.id as to_id, tp.slug as to_slug, tp.title as to_title, tp.type as to_type,
            l.link_type
          FROM links l
          JOIN pages fp ON fp.id = l.from_page_id AND fp.deleted_at IS NULL
@@ -5450,6 +5508,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
          ORDER BY l.id DESC
          LIMIT $1`,
         [limit, sourceId]
+      );
+
+      // Same visibility as /api/search: a node the caller's matter scope
+      // (ethical walls, restricted matters, allow-lists) or document ACLs hide
+      // is dropped, and an edge only stays when both ends are visible — titles
+      // and slugs of a walled matter never reach the caller.
+      const visibleSlugs = await graphVisibleSlugs(engine, req, sourceId, allRows);
+      const rows = allRows.filter(
+        (r) => visibleSlugs.has(r.from_slug) && visibleSlugs.has(r.to_slug)
       );
 
       const nodeMap = new Map<
