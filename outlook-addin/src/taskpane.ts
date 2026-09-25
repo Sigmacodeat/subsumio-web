@@ -143,7 +143,8 @@ async function connect() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showStatus("Verbunden.", "ok");
     _connected = true;
-    localStorage.setItem("subsumio_api_key", token);
+    // The key stays in memory for this taskpane only (like the Word add-in):
+    // browser storage belongs to the whole app origin, not to this page.
     document.getElementById("mainSection")!.style.display = "block";
     document.getElementById("authSection")!.style.display = "none";
     document.getElementById("connectedSection")!.style.display = "flex";
@@ -159,7 +160,7 @@ async function connect() {
 function disconnect() {
   token = "";
   _connected = false;
-  localStorage.removeItem("subsumio_api_key");
+  forgetStoredApiKey();
   document.getElementById("mainSection")!.style.display = "none";
   document.getElementById("authSection")!.style.display = "block";
   document.getElementById("connectedSection")!.style.display = "none";
@@ -167,11 +168,18 @@ function disconnect() {
   showStatus("Getrennt.", "info");
 }
 
-function tryRestoreSession() {
-  const saved = localStorage.getItem("subsumio_api_key");
-  if (saved && saved.startsWith("sk_live_")) {
-    (document.getElementById("token") as HTMLInputElement).value = saved;
-    connect();
+/**
+ * Older versions kept the API key in localStorage. It is removed on every
+ * start and never read back; the user connects again per session.
+ */
+const LEGACY_API_KEY_STORAGE_KEY = "subsumio_api_key";
+
+function forgetStoredApiKey(): void {
+  try {
+    localStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
+    sessionStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
+  } catch {
+    /* storage blocked — nothing stored either */
   }
 }
 
@@ -655,10 +663,10 @@ function escapeHtml(text: string): string {
 /**
  * Wire every handler via addEventListener instead of inline onclick=""
  * attributes. This is what lets taskpane.html ship a CSP with no
- * 'unsafe-inline' in script-src — the load-bearing defense for the
- * sk_live_ API key held in localStorage (see connect()/tryRestoreSession()):
- * a strict script-src means an injected <script> or onerror= payload can't
- * execute even if it lands in the DOM somewhere, since no inline JS runs.
+ * 'unsafe-inline' in script-src — a defense for the API key held in memory
+ * while the taskpane is open: a strict script-src means an injected <script>
+ * or onerror= payload can't execute even if it lands in the DOM somewhere,
+ * since no inline JS runs.
  */
 function wireUpHandlers() {
   document.getElementById("connectBtn")?.addEventListener("click", connect);
@@ -687,5 +695,5 @@ function wireUpHandlers() {
 // Office initialization
 Office.onReady(() => {
   wireUpHandlers();
-  tryRestoreSession();
+  forgetStoredApiKey();
 });
