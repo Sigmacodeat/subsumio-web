@@ -303,14 +303,9 @@ function swissHolidays(
     add(offsetDays(apr1, daysToThu), "Näfelser Fahrt");
   }
 
-  // Sechseläuten (ZH): dritter Montag im April
-  if (canton === "ZH") {
-    const apr1 = new Date(Date.UTC(year, 3, 1, 12));
-    const dow = apr1.getUTCDay();
-    const daysToMon = dow === 1 ? 0 : dow === 0 ? 1 : 8 - dow + 1;
-    const firstMon = offsetDays(apr1, daysToMon);
-    add(offsetDays(firstMon, 14), "Sechseläuten");
-  }
+  // Sechseläuten (Stadt Zürich) ist ein halbtägiger städtischer Anlass, kein
+  // kantonaler Feiertag i. S. v. Art. 142 Abs. 3 ZPO — er verschiebt keine
+  // Frist und steht daher bewusst nicht in dieser Liste.
 
   // Fronleichnam (60 Tage nach Ostern): katholische Kantone
   const corpusChristiCantons = new Set([
