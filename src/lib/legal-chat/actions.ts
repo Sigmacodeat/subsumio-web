@@ -1,7 +1,14 @@
 import { requestConflictCheck } from "@/lib/conflict-gate";
 import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { randomUUID } from "node:crypto";
-import { ENGINE_URL, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import { engineHeadersForBrain, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { createServerBrainClient } from "@/lib/server-brain";
+import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
+import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { computeInvoiceTotals, roundEur } from "@/lib/invoice-totals";
+import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
+import { vatRateFor } from "@/lib/kanzlei-settings";
 import { engineRequest, listPages, think, type EnginePageInput } from "@/lib/engine-client";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
@@ -18,8 +25,19 @@ import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 
 import { logger } from "@/lib/logger";
-import { FIRM_TIMEZONE, zonedWallTimeToUtc } from "@/lib/datetime";
+import {
+  FIRM_TIMEZONE,
+  addDaysToIsoDate,
+  firmToday,
+  firmYear,
+  zonedWallTimeToUtc,
+} from "@/lib/datetime";
 const log = logger("lib/legal-chat/actions");
+
+/** VAT rate as a German percent label (0.2 → "20", 0.081 → "8,1"). */
+function vatPercentLabel(rate: number): string {
+  return (Math.round(rate * 1000) / 10).toLocaleString("de-DE");
+}
 
 interface ChatContext {
   sender: WhatsAppIdentity;
@@ -1343,71 +1361,125 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   // create_invoice needs the target case
   if (front.intent === "create_invoice") {
     if (!targetSlug) throw new Error("create_invoice: no target case");
-    const casePage = await getPage(ctx.sender.brainId, targetSlug);
+    const brainId = ctx.sender.brainId;
+    const casePage = await getPage(brainId, targetSlug);
     const caseFm = fm(casePage);
-    const amount = Number(payload.amount) || 0;
     const description = str(payload.description) || "Rechnung via WhatsApp";
-    const invoiceId = `INV-${Date.now()}`;
-    const invoiceSlug = `legal/invoices/${invoiceId}`;
     const caseNumber = str(caseFm.case_number);
-    const mwst = amount * 0.19;
-    const total = amount + mwst;
-    await putPage(ctx.sender.brainId, {
+    const client = str(caseFm.client_name);
+
+    // Same path as POST /api/invoices and the Copilot draft: the firm's VAT
+    // rate (country / Kleinunternehmer), sums in cents, a consecutive number
+    // from the firm's counter, create-only write via the shared helper.
+    // Without readable firm settings no invoice is created (no guessed rate).
+    const kanzlei = await loadKanzleiSettingsForBrain(brainId);
+    const vatRate = vatRateFor(kanzlei);
+    const now = new Date();
+    const today = firmToday(now);
+    const items = [
+      { description, date: today, hours: 0, rate: 0, amount: roundEur(payload.amount) },
+    ];
+    const totals = computeInvoiceTotals({ items, vatRate });
+    if (totals.subtotal <= 0) {
+      await markAction(ctx, action, "failed", "invalid_amount");
+      return "Der Rechnungsbetrag muss größer als 0 sein. Es wurde keine Rechnung angelegt.";
+    }
+
+    let existingNumbers: string[] = [];
+    try {
+      const pages = await listEnginePages(engineHeadersForBrain(brainId), "invoice", 50_000);
+      existingNumbers = pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+    } catch {
+      // The counter alone still guarantees a unique number.
+    }
+    const year = firmYear(now);
+    const invoiceNumber = await allocateInvoiceNumber(
+      brainId,
+      year,
+      highestInvoiceNumber(existingNumbers, year)
+    );
+    const paymentDays = Math.max(1, parseInt(kanzlei.zahlungszielTage || "14", 10) || 14);
+    const hash = await sha256Hex(
+      invoiceContentString({
+        number: invoiceNumber,
+        client,
+        caseNumber,
+        date: today,
+        subtotal: totals.subtotal,
+        tax: totals.tax,
+        total: totals.total,
+        items,
+      })
+    );
+    const invoiceSlug = `legal/invoices/${invoiceNumber}`;
+    const vatLabel = vatPercentLabel(vatRate);
+    const headers = engineHeadersForBrainWithMatterScope(brainId, ctx.sender.matterScope);
+    const outcome = await createInvoiceReservingEntries(headers, createServerBrainClient(headers), {
       slug: invoiceSlug,
-      title: `Rechnung ${invoiceId} — ${casePage.title}`,
-      type: "invoice",
-      content: `## Rechnung\n\n**Aktenzeichen:** ${caseNumber}\n**Leistung:** ${description}\n**Netto:** ${amount.toFixed(2)} EUR\n**MwSt (19%):** ${mwst.toFixed(2)} EUR\n**Brutto:** ${total.toFixed(2)} EUR`,
+      title: `Rechnung ${invoiceNumber} — ${casePage.title}`,
+      content: `## Rechnung\n\n**Aktenzeichen:** ${caseNumber}\n**Leistung:** ${description}\n**Netto:** ${totals.subtotal.toFixed(2)} EUR\n**USt (${vatLabel} %):** ${totals.tax.toFixed(2)} EUR\n**Brutto:** ${totals.total.toFixed(2)} EUR`,
+      caseSlug: casePage.slug,
+      invoiceNumber,
+      // A WhatsApp invoice is a free amount — it lists no recorded entries.
+      timeEntryIds: [],
+      expenseIds: [],
       frontmatter: {
-        type: "invoice",
-        invoice_id: invoiceId,
-        case_slug: casePage.slug,
-        case_title: casePage.title,
-        case_number: caseNumber,
-        client_name: str(caseFm.client_name),
-        net_amount: amount,
-        mwst,
-        total,
+        invoice_number: invoiceNumber,
         status: "draft",
-        description,
+        invoice_type: "standard",
+        client,
+        client_slug: str(caseFm.client_slug) || undefined,
+        case_number: caseNumber,
+        case_slugs: [casePage.slug],
+        date: today,
+        due_date: addDaysToIsoDate(today, paymentDays),
+        items,
+        time_entry_ids: [],
+        expense_entry_ids: [],
+        subtotal: totals.subtotal,
+        vat_rate: vatRate,
+        tax: totals.tax,
+        total: totals.total,
+        tax_breakdown: totals.tax_breakdown,
+        payment_terms: `${paymentDays} Tage netto`,
+        notes: description,
+        source: "whatsapp",
         created_via: "whatsapp",
-        created_at: new Date().toISOString(),
+        ...gobdFrontmatter(hash, now),
       },
-      // A new invoice never replaces a stored one.
-      if_absent: true,
     });
-    const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
-    const invoices = Array.isArray(caseFm.invoices) ? caseFm.invoices : [];
-    await putPage(ctx.sender.brainId, {
-      slug: casePage.slug,
-      title: casePage.title,
-      type: "legal_case",
-      frontmatter: {
-        invoices: [
-          ...invoices,
-          { invoice_id: invoiceId, slug: invoiceSlug, total, status: "draft" },
-        ],
-        audit_log: [
-          ...audit,
-          {
-            id: randomUUID(),
-            at: new Date().toISOString(),
-            action: "updated",
-            actor: ctx.sender.name || "WhatsApp",
-            field: "invoices",
-            note: `Rechnung ${invoiceId} über ${total.toFixed(2)} EUR via WhatsApp erstellt`,
-          },
-        ],
+    if (outcome.kind !== "created") {
+      await markAction(ctx, action, "failed", outcome.kind);
+      return "Die Rechnung konnte nicht angelegt werden. Bitte im Dashboard erneut versuchen.";
+    }
+
+    // Link on the matter: atomic appends, never a read-modify-write.
+    await appendPageArrayItems(brainId, casePage.slug, "invoices", [
+      {
+        invoice_id: invoiceNumber,
+        slug: invoiceSlug,
+        total: totals.total,
+        status: "draft",
       },
-      merge: true,
-    });
+    ]);
+    await appendPageArrayItems(brainId, casePage.slug, "audit_log", [
+      {
+        id: randomUUID(),
+        at: now.toISOString(),
+        action: "updated",
+        actor: ctx.sender.name || "WhatsApp",
+        field: "invoices",
+        note: `Rechnung ${invoiceNumber} über ${totals.total.toFixed(2)} EUR via WhatsApp erstellt`,
+      },
+    ]);
     await markAction(ctx, action, "executed");
     return [
       `✅ Rechnung erstellt:`,
-      `Rechnungsnummer: ${invoiceId}`,
+      `Rechnungsnummer: ${invoiceNumber}`,
       `Akte: ${casePage.title}`,
-      `Netto: ${amount.toFixed(2)} EUR`,
-      `MwSt (19%): ${mwst.toFixed(2)} EUR`,
-      `Brutto: ${total.toFixed(2)} EUR`,
+      `Netto: ${totals.subtotal.toFixed(2)} EUR`,
+      `USt (${vatLabel} %): ${totals.tax.toFixed(2)} EUR`,
+      `Brutto: ${totals.total.toFixed(2)} EUR`,
       `Status: Entwurf (im Dashboard finalisieren)`,
     ].join("\n");
   }
@@ -2942,15 +3014,21 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
     const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
     if (!resolved.ok) return resolved.message;
     const target = resolved.page;
-    const mwst = intent.amount * 0.19;
-    const total = intent.amount + mwst;
+    // The firm's own VAT rate — the same one the invoice is created with.
+    let vatRate: number;
+    try {
+      vatRate = vatRateFor(await loadKanzleiSettingsForBrain(ctx.sender.brainId));
+    } catch {
+      return "Die Kanzlei-Einstellungen sind gerade nicht lesbar — ohne sie kann ich den USt-Satz nicht bestimmen. Bitte später erneut versuchen.";
+    }
+    const totals = computeInvoiceTotals({ items: [{ amount: intent.amount }], vatRate });
     await createPendingAction(ctx, intent, target);
     return [
       `Erkannt: Rechnung für "${target.title}"`,
       `Leistung: ${intent.description}`,
-      `Netto: ${intent.amount.toFixed(2)} EUR`,
-      `MwSt (19%): ${mwst.toFixed(2)} EUR`,
-      `Brutto: ${total.toFixed(2)} EUR`,
+      `Netto: ${totals.subtotal.toFixed(2)} EUR`,
+      `USt (${vatPercentLabel(vatRate)} %): ${totals.tax.toFixed(2)} EUR`,
+      `Brutto: ${totals.total.toFixed(2)} EUR`,
       `Antworte mit JA zum Erstellen.`,
     ].join("\n");
   }
