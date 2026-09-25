@@ -191,6 +191,47 @@ export function createDailyDedup(tableName: string) {
 }
 
 /**
+ * Permanent per-item dedup — unlike createDailyDedup the key is not a day but
+ * a caller-chosen item identity (e.g. an overdue Notfrist), so "seen once"
+ * stays seen forever. isNew and mark are separate: the caller marks only
+ * after a successful send, so a failed notification retries on the next run.
+ * In dev mode (no pool) isNew always returns true (no dedup).
+ */
+export function createKeyedDedup(tableName: string) {
+  const ensureSchema = createSchemaInit(`
+    CREATE TABLE IF NOT EXISTS ${tableName} (
+      brain_id text NOT NULL,
+      item_key text NOT NULL,
+      sent_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (brain_id, item_key)
+    )
+  `);
+
+  return {
+    async isNew(brainId: string, itemKey: string): Promise<boolean> {
+      const pool = getSharedPgPool();
+      if (!pool) return true;
+      await ensureSchema();
+      const { rowCount } = await pool.query(
+        `SELECT 1 FROM ${tableName} WHERE brain_id = $1 AND item_key = $2`,
+        [brainId, itemKey]
+      );
+      return rowCount === 0;
+    },
+    async mark(brainId: string, itemKey: string): Promise<void> {
+      const pool = getSharedPgPool();
+      if (!pool) return;
+      await ensureSchema();
+      await pool.query(
+        `INSERT INTO ${tableName} (brain_id, item_key) VALUES ($1, $2)
+         ON CONFLICT (brain_id, item_key) DO NOTHING`,
+        [brainId, itemKey]
+      );
+    },
+  };
+}
+
+/**
  * Fetch pending agent_action pages from the engine.
  * These are approvals awaiting the lawyer's decision.
  * Returns [] on any error.

@@ -69,7 +69,15 @@ export interface KanzleiSettings {
   // Leer/unleserlich fällt auf den Standard zurück, nie auf "keine Mail".
   deadlineReminderStages?: string;
   // Überfällige Notfristen bekommen eine eigene Eskalations-Mail (default an).
+  // Die Eskalation alarmiert jede versäumte Notfrist genau einmal — sie steht
+  // danach weiterhin in jedem Digest, ohne täglich erneut zu mailen.
   deadlineNotfristEscalation?: boolean;
+  // Ruhetage für Fristen-Mails (default an): an Samstagen, Sonntagen und
+  // gesetzlichen Feiertagen des Rechtsraums gehen Digest, WhatsApp-Digest und
+  // die Notfrist-Eskalation nicht raus — verschoben auf den nächsten Werktag,
+  // nicht verworfen. Der Freitags-Digest enthält ohnehin alles ≤3-Tage-
+  // Kritische des Wochenendes. false = auch an Ruhetagen senden.
+  deadlineQuietDays?: boolean;
   // Zusätzlicher Eskalations-Empfänger (z. B. Kanzleiinhaber/in), der bei
   // überfälligen Notfristen immer mitinformiert wird.
   deadlineEscalationEmail?: string;
