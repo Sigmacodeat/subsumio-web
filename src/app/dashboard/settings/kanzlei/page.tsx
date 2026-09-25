@@ -433,14 +433,14 @@ export default function KanzleiSettingsPage() {
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
               {L(
-                "Keine Fristen-Mails an Wochenenden & Feiertagen",
-                "No deadline mails on weekends & public holidays"
+                "Routine-Fristen-Mails ruhen an Wochenenden & Feiertagen",
+                "Routine deadline mails pause on weekends & public holidays"
               )}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
               {L(
-                "Digest und Notfrist-Eskalation werden auf den nächsten Werktag verschoben (Feiertage nach Rechtsraum). Überfällige Fristen bleiben im nächsten Digest sichtbar — nichts geht verloren.",
-                "Digest and statutory-deadline escalation move to the next business day (holidays per jurisdiction). Overdue deadlines stay visible in the next digest — nothing is lost."
+                "Tages-Digest und Stufen-Erinnerungen werden auf den nächsten Werktag verschoben (Feiertage nach Rechtsraum). Immer sofort gemeldet werden: Notfristen, heute fällige Fristen und die Notfrist-Eskalation. Überfällige Fristen bleiben im nächsten Digest sichtbar — nichts geht verloren.",
+                "Daily digest and staged reminders move to the next business day (holidays per jurisdiction). Always sent immediately: statutory deadlines, deadlines due today and the statutory-deadline escalation. Overdue deadlines stay visible in the next digest — nothing is lost."
               )}
             </p>
           </div>
