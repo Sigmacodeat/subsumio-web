@@ -54,6 +54,8 @@ beforeAll(() => {
   // OGH: soll from the RIS hit count only.
   md("_normalized/at-judikatur/JJR_1.md", "JJR_1");
   md("_normalized/at-judikatur/JJT_2.md", "JJT_2");
+  // Small RIS collection: Soll from the hit count.
+  md("_normalized/at-avn/a.md", "AVN1");
   // Out of scope: raw only.
   md("ch/x.md", null);
 });
@@ -82,7 +84,8 @@ const engine = {
 
 describe("corpus-sync-inventory", () => {
   test("puts every document in exactly one bucket, by document number", async () => {
-    const inv = await measure(engine, ROOT);
+    // No network in tests: the small-source Soll comes from a stub.
+    const inv = await measure(engine, ROOT, async () => new Map([["at-avn", 707]]));
     const by = Object.fromEntries(inv.sources.map((s) => [s.corpus, s]));
 
     const normen = by["at-normen"];
@@ -115,6 +118,13 @@ describe("corpus-sync-inventory", () => {
       diskNotInDb: 1,
       dbNotOnDisk: 0,
       notInRisSoll: null,
+    });
+
+    expect(by["at-avn"]).toMatchObject({
+      risSoll: 707,
+      risSollKind: "hits",
+      diskDocs: 1,
+      missingOnDisk: 706,
     });
 
     expect(by["ch"]).toMatchObject({ inScope: false, rawFiles: 1, risSoll: null });

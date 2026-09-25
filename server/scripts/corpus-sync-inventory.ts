@@ -43,6 +43,7 @@ import { join } from "node:path";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
 import { readFetchOutcomes, type FetchOutcome } from "./ris-fetch-outcomes.ts";
+import { RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace.ts";
 
 const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? "/law-corpus";
 const PRINT = process.argv.includes("--print");
@@ -52,6 +53,72 @@ export const INDEX_OF: Record<string, string> = {
   "at-normen": "ris-inforce.jsonl",
   "at-landesrecht": "ris-inforce-landesrecht.jsonl",
 };
+
+/**
+ * Smaller RIS collections without an in-force index: the Soll is the RIS hit
+ * count of their search (checked by hand on 2026-09-25 — e.g. Gemeinden 18,663
+ * vs 18,171 on disk). Fetched at most once a day, one request every 2 s
+ * (RIS OGD terms), cached in _state/ris-hits-cache.json.
+ */
+export const HITS_QUERY: Record<string, string> = {
+  "at-bmerl": "Sonstige?Applikation=Erlaesse",
+  "at-avsv": "Sonstige?Applikation=Avsv",
+  "at-avn": "Sonstige?Applikation=Avn",
+  "at-spg": "Sonstige?Applikation=Spg",
+  "at-kmger": "Sonstige?Applikation=KmGer",
+  "at-bezirke": "Bezirke?Applikation=Bvb",
+  "at-gemeinden": "Gemeinden?Applikation=Gr",
+};
+const HITS_TTL_MS = 24 * 3600 * 1000;
+
+export type HitsLookup = (corpora: string[]) => Promise<Map<string, number>>;
+
+/** RIS hit counts for HITS_QUERY sources, cached for a day in _state. */
+export function risHitsFromApi(stateDir: string): HitsLookup {
+  return async (corpora) => {
+    const cachePath = join(stateDir, "ris-hits-cache.json");
+    let cache: Record<string, { hits: number; at: number }> = {};
+    try {
+      cache = JSON.parse(readFileSync(cachePath, "utf8"));
+    } catch {
+      // first run or unreadable — refetch
+    }
+    const out = new Map<string, number>();
+    let asked = 0;
+    for (const corpus of corpora) {
+      const q = HITS_QUERY[corpus];
+      if (!q) continue;
+      const hit = cache[corpus];
+      if (hit && Date.now() - hit.at < HITS_TTL_MS) {
+        out.set(corpus, hit.hits);
+        continue;
+      }
+      if (asked++ > 0) await new Promise((r) => setTimeout(r, RIS_PAUSE_MS));
+      try {
+        const res = await fetch(`https://data.bka.gv.at/ris/api/v2.6/${q}&DokumenteProSeite=Ten`, {
+          headers: { "User-Agent": RIS_USER_AGENT },
+          signal: AbortSignal.timeout(30_000),
+        });
+        const data = (await res.json()) as {
+          OgdSearchResult?: { OgdDocumentResults?: { Hits?: { "#text"?: string } } };
+        };
+        const n = parseInt(data?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"] ?? "", 10);
+        if (Number.isFinite(n) && n > 0) {
+          out.set(corpus, n);
+          cache[corpus] = { hits: n, at: Date.now() };
+        } else if (hit) out.set(corpus, hit.hits); // keep the last known Soll
+      } catch {
+        if (hit) out.set(corpus, hit.hits);
+      }
+    }
+    try {
+      writeFileSync(cachePath, JSON.stringify(cache, null, 1));
+    } catch {
+      // read-only state dir in tests — the numbers are still returned
+    }
+    return out;
+  };
+}
 
 /** Court directory → pipeline_state key holding the RIS hit count. */
 function courtPipelineKey(corpus: string): string | null {
@@ -196,7 +263,8 @@ function listDirs(root: string): string[] {
 
 export async function measure(
   engine: Engine,
-  corpusRoot: string = CORPUS_ROOT
+  corpusRoot: string = CORPUS_ROOT,
+  lookupHits: HitsLookup = risHitsFromApi(join(corpusRoot, "_state"))
 ): Promise<SyncInventory> {
   const started = Date.now();
   const NORMALIZED = join(corpusRoot, "_normalized");
@@ -215,6 +283,8 @@ export async function measure(
     if (d === "eu") for (const sub of listDirs(join(corpusRoot, "eu"))) corpora.add(`eu-${sub}`);
     else corpora.add(d);
   }
+
+  const smallHits = await lookupHits([...corpora].filter((c) => HITS_QUERY[c]));
 
   const sources: SyncInventorySource[] = [];
   for (const corpus of [...corpora].sort()) {
@@ -296,7 +366,7 @@ export async function measure(
       for (const id of diskIds.keys()) if (!soll.has(id)) notInRisSoll++;
     } else {
       const key = courtPipelineKey(corpus);
-      const hits = key ? risHits.get(key) : undefined;
+      const hits = key ? risHits.get(key) : smallHits.get(corpus);
       if (hits) {
         risSoll = hits;
         risSollKind = "hits";

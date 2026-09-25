@@ -183,6 +183,7 @@ describe("pipelineKeyForCorpus", () => {
     expect(pipelineKeyForCorpus("at-landesrecht")).toBe("landesrecht");
     expect(pipelineKeyForCorpus("at-judikatur")).toBe("jud-ogh");
     expect(pipelineKeyForCorpus("at-judikatur-vwgh")).toBe("jud-vwgh");
-    expect(pipelineKeyForCorpus("at-gemeinden")).toBeNull();
+    expect(pipelineKeyForCorpus("at-gemeinden")).toBe("at-gemeinden");
+    expect(pipelineKeyForCorpus("at-staatsvertraege")).toBeNull();
   });
 });

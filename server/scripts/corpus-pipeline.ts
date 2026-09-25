@@ -2443,6 +2443,15 @@ async function cycle(): Promise<void> {
               "--keep-xml",
               "/law-corpus/_xml/at-landesrecht",
             ],
+        // Smaller RIS collections ("Nachholen" on /ops/corpus; the key is
+        // the corpus directory, which fetch-missing-sources.ts accepts).
+        "at-bmerl": ["scripts/fetch-missing-sources.ts", "--source", "at-bmerl"],
+        "at-avsv": ["scripts/fetch-missing-sources.ts", "--source", "at-avsv"],
+        "at-avn": ["scripts/fetch-missing-sources.ts", "--source", "at-avn"],
+        "at-spg": ["scripts/fetch-missing-sources.ts", "--source", "at-spg"],
+        "at-kmger": ["scripts/fetch-missing-sources.ts", "--source", "at-kmger"],
+        "at-bezirke": ["scripts/fetch-missing-sources.ts", "--source", "at-bezirke"],
+        "at-gemeinden": ["scripts/fetch-missing-sources.ts", "--source", "at-gemeinden"],
         // Federal paragraphs in force that are not on disk yet (the fetcher
         // skips everything already validated in _normalized).
         "normen-at": [

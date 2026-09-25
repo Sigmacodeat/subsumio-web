@@ -183,6 +183,14 @@ export function pipelineKeyForCorpus(corpus: string): string | null {
   if (corpus === "at-normen") return "normen-at";
   if (corpus === "at-landesrecht") return "landesrecht";
   if (corpus === "at-judikatur") return "jud-ogh";
+  // Kleinere RIS-Sammlungen: der Ordnername ist der Trigger-Schlüssel
+  // (fetch-missing-sources.ts --source <ordner>).
+  if (
+    ["at-bmerl", "at-avsv", "at-avn", "at-spg", "at-kmger", "at-bezirke", "at-gemeinden"].includes(
+      corpus
+    )
+  )
+    return corpus;
   const m = corpus.match(/^at-judikatur-([a-z]+)$/);
   return m ? `jud-${m[1]}` : null;
 }
