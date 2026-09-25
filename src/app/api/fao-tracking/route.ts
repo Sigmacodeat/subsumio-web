@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createEducationEntry,
   computeAnnualStatus,
@@ -68,16 +69,14 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "fao_education_entry", limit: "500" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let entries: ContinuingEducationEntry[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as ContinuingEducationEntry[];
+    // Every entry, not only the first engine batch of 100.
+    let data: unknown[];
+    try {
+      data = await listEnginePages(ctx.headers, "fao_education_entry", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
+    let entries: ContinuingEducationEntry[] = data as ContinuingEducationEntry[];
     if (query?.lawyer_email) {
       entries = entries.filter((e) => e.lawyer_email === query.lawyer_email);
     }

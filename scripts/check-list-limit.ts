@@ -30,6 +30,9 @@ const EXEMPT_MARKER = /list-cap-ok:\s*\S/;
 /** `limit=<digits>` or `limit: <digits>` inside a pages-list context. */
 const URL_LIMIT = /\/api\/pages[^'"`)]*?\blimit=(\d[\d_]*)/g;
 const CALL_LIMIT = /\blistPages\(\{[^}]*?\blimit:\s*(\d[\d_]*)/gs;
+/** Query-string builders — only in files that list engine pages (see scanFile). */
+const PARAMS_LIMIT = /\bURLSearchParams\(\{[^}]*?\blimit:\s*["'`](\d[\d_]*)["'`]/gs;
+const SET_LIMIT = /\.set\(\s*["']limit["']\s*,\s*["'`]?(\d[\d_]*)/g;
 
 const ENGINE_LIST_MAX = 100;
 
@@ -52,7 +55,11 @@ function lineOf(content: string, index: number): string {
 
 export function scanFile(content: string): string[] {
   const hits: string[] = [];
-  for (const rx of [URL_LIMIT, CALL_LIMIT]) {
+  const listsEnginePages = /\/api\/pages\b/.test(content);
+  const patterns = listsEnginePages
+    ? [URL_LIMIT, CALL_LIMIT, PARAMS_LIMIT, SET_LIMIT]
+    : [URL_LIMIT, CALL_LIMIT];
+  for (const rx of patterns) {
     rx.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = rx.exec(content))) {

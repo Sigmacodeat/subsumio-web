@@ -661,6 +661,16 @@ export default function ReportsPage() {
         <div role="status" aria-label={t("aria.loading")}>
           <RowSkeleton count={4} />
         </div>
+      ) : agentsQuery.isError && jobs.length === 0 ? (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <span>Berichte konnten nicht geladen werden.</span>
+          <Button size="sm" variant="outline" onClick={() => void agentsQuery.refetch()}>
+            Erneut versuchen
+          </Button>
+        </div>
       ) : tab === "by_agent" ? (
         <ByAgentView jobs={jobs} t={t} />
       ) : filteredJobs.length === 0 ? (

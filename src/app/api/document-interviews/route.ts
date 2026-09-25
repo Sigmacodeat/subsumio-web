@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createInterview, type InterviewDefinition } from "@/lib/document-interviews";
 import { engineWriteOrThrow } from "@/lib/engine-write";
 
@@ -85,16 +86,14 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "interview_definition", limit: "200" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: InterviewDefinition[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as InterviewDefinition[];
+    // Every entry, not only the first engine batch of 100.
+    let data: unknown[];
+    try {
+      data = await listEnginePages(ctx.headers, "interview_definition", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
+    let items: InterviewDefinition[] = data as InterviewDefinition[];
     if (query?.template_slug) {
       items = items.filter((i) => i.template_slug === query.template_slug);
     }

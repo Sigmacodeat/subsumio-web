@@ -55,7 +55,12 @@ export const GET = createHandler(
       return Response.json({ jobs });
     } catch (err) {
       log.error("[agents] list failed:", err instanceof Error ? err.message : String(err));
-      return Response.json({ jobs: [] });
+      // An unreachable engine is an error, not "no jobs".
+      return apiError(
+        "service_unavailable",
+        "Agenten-Aufträge konnten nicht geladen werden. Bitte erneut versuchen.",
+        503
+      );
     }
   }
 );

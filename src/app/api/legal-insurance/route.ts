@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createRSVCaseData,
   buildCoverageInquiryEmail,
@@ -117,16 +118,14 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "rsv_case", limit: "200" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<
-      { frontmatter?: RSVCaseData } | RSVCaseData
-    >;
+    // Every entry, not only the first engine batch of 100.
+    let data: unknown[];
+    try {
+      data = await listEnginePages(ctx.headers, "rsv_case", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
+    const pages = data as Array<{ frontmatter?: RSVCaseData } | RSVCaseData>;
     let items = pages.map((page) =>
       "frontmatter" in page && page.frontmatter ? page.frontmatter : (page as RSVCaseData)
     );

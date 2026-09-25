@@ -79,7 +79,12 @@ export const GET = createHandler(
       return apiSuccess(playbooks);
     } catch (err) {
       log.error("[playbooks] list failed:", err instanceof Error ? err.message : String(err));
-      return apiSuccess([]);
+      // An unreachable engine is an error, not "no playbooks".
+      return apiError(
+        "service_unavailable",
+        "Playbooks konnten nicht geladen werden. Bitte erneut versuchen.",
+        503
+      );
     }
   }
 );
