@@ -12,7 +12,7 @@
  */
 
 import type { Pool } from "pg";
-import { getOrgStore } from "./auth/store";
+import { getOrgStore, getStore } from "./auth/store";
 import { engineHeadersForBrain } from "./engine";
 import { checkFirmLegalHolds, type LegalHoldCheckResult } from "./legal-hold-check";
 import { logAudit } from "./audit";
@@ -36,6 +36,31 @@ async function defaultResolveBrainId(orgId: string | null, userBrainId: string):
   if (!orgId) return userBrainId;
   const org = await getOrgStore().getById(orgId);
   return org?.brainId ?? userBrainId;
+}
+
+/**
+ * Legal-hold check for the firm of the user about to be deleted — not the
+ * firm of whoever asks. Used by the operator's DSGVO deletion, which runs
+ * from the operator's own context. Same brain resolution and check as the
+ * 30-day purge below. A suspended firm is still checked (its data is kept).
+ * Unknown user → "not_found"; engine trouble → "unknown" (fail closed).
+ */
+export async function checkLegalHoldsForUser(
+  userId: string,
+  deps: UserPurgeDeps = {}
+): Promise<LegalHoldCheckResult | { status: "not_found" }> {
+  const checkHolds = deps.checkHolds ?? checkFirmLegalHolds;
+  const resolveBrainId = deps.resolveBrainId ?? defaultResolveBrainId;
+  const user = await getStore().getById(userId);
+  if (!user) return { status: "not_found" };
+  let brainId: string;
+  try {
+    brainId = await resolveBrainId(user.orgId ?? null, user.brainId);
+  } catch {
+    return { status: "unknown" };
+  }
+  if (!brainId) return { status: "unknown" };
+  return checkHolds(engineHeadersForBrain(brainId));
 }
 
 export async function purgeExpiredSoftDeletedUsers(

@@ -14,11 +14,24 @@ vi.mock("@/lib/engine", async () => ({
   ENGINE_URL: "http://engine.test",
   engineConfigurationResponse: () => null,
   requireEngineContext: vi.fn(),
+  engineHeadersForBrain: (brainId: string) => ({ "x-subsumio-source": brainId }),
 }));
 vi.mock("@/lib/auth/api-key-auth", () => ({ verifyApiKey: vi.fn().mockResolvedValue(null) }));
 
 const pool = vi.hoisted(() => ({ query: vi.fn().mockResolvedValue({ rows: [] }) }));
-vi.mock("@/lib/auth/store", () => ({ getSharedPgPool: () => pool }));
+const users = vi.hoisted(
+  () =>
+    ({
+      u_target: { id: "u_target", brainId: "brain_personal", orgId: "org_a" },
+    }) as Record<string, { id: string; brainId: string; orgId: string | null }>
+);
+vi.mock("@/lib/auth/store", () => ({
+  getSharedPgPool: () => pool,
+  getStore: () => ({ getById: async (id: string) => users[id] ?? null }),
+  getOrgStore: () => ({
+    getById: async (id: string) => (id === "org_a" ? { id, brainId: "brain_firm_a" } : null),
+  }),
+}));
 
 const checkFirmLegalHolds = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/legal-hold-check", () => ({ checkFirmLegalHolds }));
@@ -104,9 +117,33 @@ describe("POST /api/admin/data-delete — legal hold gate", () => {
     expect(pool.query).not.toHaveBeenCalled();
   });
 
-  it("passes the operator's own signed headers to the hold check, not identity-less firm headers", async () => {
+  it("checks the firm of the user being deleted, not the operator's own brain", async () => {
     checkFirmLegalHolds.mockResolvedValue({ status: "clear" });
     await post(REQUEST_BODY);
-    expect(checkFirmLegalHolds).toHaveBeenCalledWith(expect.objectContaining({ "x-op": "1" }));
+    expect(checkFirmLegalHolds).toHaveBeenCalledTimes(1);
+    expect(checkFirmLegalHolds.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ "x-subsumio-source": "brain_firm_a" })
+    );
+    expect(checkFirmLegalHolds.mock.calls[0][0]).not.toEqual(
+      expect.objectContaining({ "x-op": "1" })
+    );
+  });
+
+  it("an immediate deletion of a member of a held firm is blocked (409), nothing deleted", async () => {
+    checkFirmLegalHolds.mockImplementation(async (headers: Record<string, string>) =>
+      headers["x-subsumio-source"] === "brain_firm_a"
+        ? { status: "held", cases: ["legal/case-1"] }
+        : { status: "clear" }
+    );
+    const res = await post({ ...REQUEST_BODY, immediate: true });
+    expect(res.status).toBe(409);
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it("answers 404 for an unknown user without deleting anything", async () => {
+    const res = await post({ ...REQUEST_BODY, user_id: "u_missing" });
+    expect(res.status).toBe(404);
+    expect(checkFirmLegalHolds).not.toHaveBeenCalled();
+    expect(pool.query).not.toHaveBeenCalled();
   });
 });

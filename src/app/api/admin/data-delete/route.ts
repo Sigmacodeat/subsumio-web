@@ -10,7 +10,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
-import { checkFirmLegalHolds } from "@/lib/legal-hold-check";
+import { checkLegalHoldsForUser } from "@/lib/user-purge";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/admin/data-delete");
@@ -63,13 +63,14 @@ export const POST = createHandler(
     // 0. Legal hold gate — actually checked, not just reported. A matter
     // under legal hold keeps its personal data until the hold is released;
     // the operator must pass legal_hold_override knowingly. The check runs
-    // with the operator's signed identity (ctx.headers) — the
-    // engine-identity-guard forbids identity-less firm headers here, so the
-    // scan covers exactly the matters the operator may see. Shared with the
-    // 30-day hard-delete purge (cron/trash-purge) via checkFirmLegalHolds so
-    // a hold placed during the grace window is caught by the SAME check,
-    // not a second, divergent copy of it.
-    const holdCheck = await checkFirmLegalHolds(ctx.headers);
+    // against the firm of the user being deleted (not the operator's own
+    // context) and covers all of that firm's matters. Shared with the 30-day
+    // hard-delete purge (cron/trash-purge) via checkFirmLegalHolds so a hold
+    // placed during the grace window is caught by the SAME check.
+    const holdCheck = await checkLegalHoldsForUser(userId);
+    if (holdCheck.status === "not_found") {
+      return apiError("not_found", "Nutzer nicht gefunden", 404);
+    }
     if (holdCheck.status === "unknown") {
       // Engine unreachable → fail closed: cannot prove no hold exists.
       log.error("[data-delete] legal hold check failed: engine unreachable");
