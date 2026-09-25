@@ -94,7 +94,14 @@ import type {
   EnrichCandidatesOpts,
   EnrichCandidate,
 } from "./types.ts";
-import { GBrainError, PAGE_SORT_SQL, ENRICH_ORDER_SQL, parsePageCursor } from "./types.ts";
+import {
+  GBrainError,
+  PAGE_SORT_SQL,
+  ENRICH_ORDER_SQL,
+  parsePageCursor,
+  UPDATED_DESC_KEYSET_KEY,
+  UPDATED_DESC_KEYSET_ORDER,
+} from "./types.ts";
 import { computeAnomaliesFromBuckets } from "./cycle/anomaly.ts";
 import * as db from "./db.ts";
 import { ConnectionManager } from "./connection-manager.ts";
@@ -1555,11 +1562,11 @@ export class PostgresEngine implements BrainEngine {
     const cursor = parsePageCursor(filters?.cursor);
     const cursorCondition =
       sortKey === "updated_desc" && cursor
-        ? sql`AND (p.updated_at, p.id) < (${cursor.updatedAt}::timestamptz, ${cursor.id})`
+        ? sql`AND (${sql.unsafe(UPDATED_DESC_KEYSET_KEY)}, p.id) < (${cursor.updatedAt}::timestamptz, ${cursor.id})`
         : sql``;
     // p.id tiebreak makes updated_desc a total order (required for keyset).
     const orderBy = sql.unsafe(
-      PAGE_SORT_SQL[sortKey] + (sortKey === "updated_desc" ? ", p.id DESC" : "")
+      sortKey === "updated_desc" ? UPDATED_DESC_KEYSET_ORDER : PAGE_SORT_SQL[sortKey]
     );
 
     const rows = await sql`

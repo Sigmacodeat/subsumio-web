@@ -92,3 +92,43 @@ describe("PGLiteEngine.listPages keyset paging", () => {
     await engine.disconnect();
   });
 });
+
+describe("PGLiteEngine.listPages keyset paging — sub-millisecond timestamps", () => {
+  it("never skips rows written within the same millisecond as a page boundary", async () => {
+    const engine = new PGLiteEngine();
+    await engine.connect({});
+    await engine.initSchema();
+
+    for (let i = 0; i < 9; i++) {
+      await engine.putPage(`test/micro-${i}`, {
+        title: `Micro ${i}`,
+        type: "concept",
+        compiled_truth: `body ${i}`,
+        timeline: "",
+      });
+    }
+    // All rows inside ONE millisecond, distinct microseconds — the JS cursor
+    // can only carry the millisecond part.
+    await engine.executeRaw(
+      `UPDATE pages SET updated_at = timestamptz '2026-09-25 12:00:00.123000+00'
+         + ((regexp_replace(slug, '^test/micro-', ''))::int * interval '37 microseconds')
+       WHERE slug LIKE 'test/micro-%'`
+    );
+
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    for (let guard = 0; guard < 20; guard++) {
+      const batch = await engine.listPages({ limit: 2, sort: "updated_desc", cursor });
+      for (const pg of batch) seen.push(pg.slug);
+      if (batch.length < 2) break;
+      const last = batch[batch.length - 1];
+      cursor = encodePageCursor({ updated_at: last.updated_at, id: last.id });
+    }
+
+    const ours = seen.filter((s) => s.startsWith("test/micro-"));
+    expect(new Set(ours).size).toBe(9);
+    expect(ours).toHaveLength(9);
+
+    await engine.disconnect();
+  });
+});

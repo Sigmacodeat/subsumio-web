@@ -111,7 +111,14 @@ import { deriveResolutionTuple, finalizeScorecard } from "./takes-resolution.ts"
 import { normalizeWeightForStorage } from "./takes-fence.ts";
 import { executeRawJsonb } from "./sql-query.ts";
 import { stripNul, buildLinkRows, buildTimelineRows, buildTakeRows } from "./batch-rows.ts";
-import { GBrainError, PAGE_SORT_SQL, ENRICH_ORDER_SQL, parsePageCursor } from "./types.ts";
+import {
+  GBrainError,
+  PAGE_SORT_SQL,
+  ENRICH_ORDER_SQL,
+  parsePageCursor,
+  UPDATED_DESC_KEYSET_KEY,
+  UPDATED_DESC_KEYSET_ORDER,
+} from "./types.ts";
 import { computeAnomaliesFromBuckets } from "./cycle/anomaly.ts";
 import { resolveBoostMap, resolveHardExcludes } from "./search/source-boost.ts";
 import {
@@ -1477,7 +1484,9 @@ export class PGLiteEngine implements BrainEngine {
     const cursor = parsePageCursor(filters?.cursor);
     if (sortKey === "updated_desc" && cursor) {
       params.push(cursor.updatedAt, cursor.id);
-      where.push(`(p.updated_at, p.id) < ($${params.length - 1}::timestamptz, $${params.length})`);
+      where.push(
+        `(${UPDATED_DESC_KEYSET_KEY}, p.id) < ($${params.length - 1}::timestamptz, $${params.length})`
+      );
     }
 
     const whereSql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
@@ -1485,7 +1494,7 @@ export class PGLiteEngine implements BrainEngine {
     const limitSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
 
     // p.id tiebreak makes updated_desc a total order (required for keyset).
-    const orderBy = PAGE_SORT_SQL[sortKey] + (sortKey === "updated_desc" ? ", p.id DESC" : "");
+    const orderBy = sortKey === "updated_desc" ? UPDATED_DESC_KEYSET_ORDER : PAGE_SORT_SQL[sortKey];
 
     const { rows } = await this.db.query(
       `SELECT p.* FROM pages p ${tagJoin} ${whereSql}

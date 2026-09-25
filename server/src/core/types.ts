@@ -373,6 +373,16 @@ export const PAGE_SORT_SQL: Record<NonNullable<PageFilters["sort"]>, string> = {
 };
 
 /**
+ * Keyset order for `updated_desc` list paging. The cursor carries a
+ * millisecond timestamp (JS Date), while updated_at is stored in
+ * microseconds — ordering and comparing on the millisecond-truncated value
+ * keeps rows written within the same millisecond from being skipped at a
+ * page boundary; p.id breaks ties so the order is total.
+ */
+export const UPDATED_DESC_KEYSET_KEY = "date_trunc('milliseconds', p.updated_at)";
+export const UPDATED_DESC_KEYSET_ORDER = `${UPDATED_DESC_KEYSET_KEY} DESC, p.id DESC`;
+
+/**
  * Encode a keyset cursor for `updated_desc` list paging
  * (`"<updated_at ISO>|<page id>"`). The pair is the position of the last
  * scanned row; the next page continues strictly after it.
