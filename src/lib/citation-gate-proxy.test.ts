@@ -237,4 +237,35 @@ describe("createEngineProxy citationGate", () => {
     expect(json._grounding.grounded_citations).toBeDefined();
     expect(Array.isArray(json._grounding.grounded_citations)).toBe(true);
   });
+
+  it("passes a handler's JSON 404 (document not found) through as 404", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "translate_failed", message: "Page not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    const handler = createEngineProxy({
+      action: "legal.translate" as never,
+      enginePath: "/api/legal/translate",
+      body: testSchema,
+      label: "translate",
+    });
+    const res = await handler(makeNextRequest({ text: "x" }));
+    expect(res.status).toBe(404);
+  });
+
+  it("answers 503 when the engine does not know the endpoint at all", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("<pre>Cannot POST /api/legal/translate</pre>", { status: 404 })
+    );
+    const handler = createEngineProxy({
+      action: "legal.translate" as never,
+      enginePath: "/api/legal/translate",
+      body: testSchema,
+      label: "translate",
+    });
+    const res = await handler(makeNextRequest({ text: "x" }));
+    expect(res.status).toBe(503);
+  });
 });
