@@ -9,6 +9,7 @@ import {
 import { broadcastTimeActivityStopped } from "@/lib/realtime-bus";
 import { logAudit } from "@/lib/audit";
 import { getStore } from "@/lib/auth/store";
+import { firmBrainIdFor } from "@/lib/engine";
 import { logger } from "@/lib/logger";
 
 const log = logger("time-tracking-inactivity");
@@ -21,7 +22,8 @@ const INACTIVITY_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
  * POST /api/cron/time-tracking/inactivity-check
  *
  * Cron job that checks for inactive users and stops their time tracking.
- * Runs every 5 minutes to check if users have been inactive for > 30 minutes.
+ * Runs hourly (server crontab) and stops timers without a heartbeat for
+ * > 30 minutes or past the maximum duration.
  */
 export async function POST(req: NextRequest) {
   const authError = await validateCronAuth(req);
@@ -97,16 +99,27 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Get list of active users from the user store.
- * Returns all users with a brainId (excluding deactivated accounts).
+ * Active users with the brain their timer lives in. A timer is started in
+ * the firm's brain (ctx.brainId); for a firm member that is the firm's
+ * brain, not the unused personal workspace `user.brainId` from signup.
+ * Suspended firms (null) are skipped; each (brain, user) is checked once.
  */
 async function getActiveUsers(): Promise<Array<{ userId: string; brainId: string }>> {
   try {
     const store = getStore();
     const users = await store.list();
-    return users
-      .filter((u) => !u.deactivatedAt && u.brainId)
-      .map((u) => ({ userId: u.id, brainId: u.brainId }));
+    const out: Array<{ userId: string; brainId: string }> = [];
+    const seen = new Set<string>();
+    for (const u of users) {
+      if (u.deactivatedAt || !u.brainId) continue;
+      const brainId = await firmBrainIdFor(u);
+      if (!brainId) continue;
+      const key = `${brainId}\u0000${u.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ userId: u.id, brainId });
+    }
+    return out;
   } catch (err) {
     log.error("Failed to list active users", { error: String(err) });
     return [];
