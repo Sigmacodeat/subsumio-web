@@ -14,7 +14,10 @@ export interface HostedDataRoom {
 
 export interface SharedSpaceCard {
   id: string;
+  /** The matter the room belongs to. */
   slug: string;
+  /** Detail page of the room — addressed by the room id, not the matter. */
+  href: string;
   name: string;
   description?: string;
   status: string;
@@ -28,6 +31,7 @@ export function hostedRoomsToSpaces(body: unknown): SharedSpaceCard[] {
   return hosted.map((room) => ({
     id: room.id,
     slug: room.case_slug,
+    href: `/dashboard/shared-spaces/${encodeURIComponent(room.id)}`,
     name: room.title,
     description:
       room.members > 0

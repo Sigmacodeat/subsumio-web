@@ -243,7 +243,7 @@ export default function ClientPortalPage() {
               </div>
               <div className="mt-3 flex gap-2">
                 <Button variant="outline" size="sm" className="text-xs" asChild>
-                  <Link href={`/dashboard/shared-spaces/${space.slug}`}>
+                  <Link href={space.href}>
                     <Download size={12} className="mr-1.5" />
                     Dokumente öffnen
                   </Link>
@@ -421,16 +421,13 @@ export default function ClientPortalPage() {
                     {t("client_portal.documents")}
                   </Link>
                 </Button>
-                <div
-                  className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] bg-transparent px-3 py-2 text-xs text-[color:var(--ds-text-muted)]"
-                  title={t("client_portal.msg_disabled")}
-                >
-                  <MessageSquare size={12} />
-                  {t("client_portal.message")}
-                  <span className="ml-1 rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs font-medium">
-                    {t("client_portal.coming_soon")}
-                  </span>
-                </div>
+                {/* Portal messages are read and answered in Kommunikation. */}
+                <Button variant="outline" size="sm" className="flex-1 text-xs" asChild>
+                  <Link href="/dashboard/communications">
+                    <MessageSquare size={12} className="mr-1.5" />
+                    {t("client_portal.message")}
+                  </Link>
+                </Button>
               </div>
             </div>
           ))}
