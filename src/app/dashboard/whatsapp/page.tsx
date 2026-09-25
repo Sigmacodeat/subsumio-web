@@ -148,7 +148,11 @@ export default function WhatsAppDashboardPage() {
         "legal_case",
       ] as const;
       const [statusRes, batch] = await Promise.all([
-        api.whatsapp.status().catch(() => null),
+        // A failed status read is shown, not presented as "not connected".
+        api.whatsapp.status().catch(() => {
+          setError(t("whatsapp.err_load"));
+          return null;
+        }),
         api.brain.batchListPagesDetailed([...BATCH_TYPES], 200).then((r) => {
           // Partial results still render — but a failed type is surfaced,
           // not silently presented as "no entries".
@@ -627,12 +631,29 @@ export default function WhatsAppDashboardPage() {
                         size="sm"
                         variant="secondary"
                         onClick={() =>
-                          void api.whatsapp
-                            .updateIdentity({
-                              id: identity.id,
-                              status: identity.status === "active" ? "suspended" : "active",
-                            })
-                            .then(() => reload())
+                          void (async () => {
+                            const suspending = identity.status === "active";
+                            if (
+                              suspending &&
+                              !(await confirm({
+                                title: "WhatsApp-Nummer sperren?",
+                                message:
+                                  "Nachrichten von dieser Nummer werden bis zur Freigabe nicht mehr verarbeitet.",
+                                confirmLabel: t("whatsapp.suspend"),
+                                variant: "danger",
+                              }))
+                            )
+                              return;
+                            try {
+                              await api.whatsapp.updateIdentity({
+                                id: identity.id,
+                                status: suspending ? "suspended" : "active",
+                              });
+                              await reload();
+                            } catch {
+                              setError(t("whatsapp.err_save_identity"));
+                            }
+                          })()
                         }
                       >
                         {identity.status === "active"
@@ -651,7 +672,10 @@ export default function WhatsAppDashboardPage() {
                             variant: "danger",
                           }).then((ok) =>
                             ok
-                              ? api.whatsapp.deleteIdentity(identity.id).then(() => reload())
+                              ? api.whatsapp
+                                  .deleteIdentity(identity.id)
+                                  .then(() => reload())
+                                  .catch(() => setError(t("whatsapp.err_save_identity")))
                               : null
                           )
                         }
@@ -864,7 +888,7 @@ function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024).toLocaleString("de-AT", { maximumFractionDigits: 1 })} MB`;
 }
 
 function SetupFlag({ label, ok }: { label: string; ok: boolean }) {

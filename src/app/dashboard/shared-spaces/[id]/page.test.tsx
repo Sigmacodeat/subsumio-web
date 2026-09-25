@@ -23,9 +23,7 @@ const room = {
   can_manage: true,
   documents: [],
   matter_documents: [],
-  members: [
-    { id: "m1", email: "gegner@example.at", status: "active", invited_at: "2026-09-01" },
-  ],
+  members: [{ id: "m1", email: "gegner@example.at", status: "active", invited_at: "2026-09-01" }],
 };
 
 beforeEach(() => {
