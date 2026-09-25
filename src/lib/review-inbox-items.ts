@@ -434,7 +434,7 @@ export async function loadReviewInboxItems(
       requestSlug: null,
       items: [],
       channel: null,
-      portalUrl: null,
+      portalLink: false,
       messageDraft: null,
       dueDate: null,
       urgency: null,

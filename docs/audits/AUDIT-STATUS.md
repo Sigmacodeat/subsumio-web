@@ -39,6 +39,7 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 12g | Kollisionsprüfung          | —   | —            | ⏳ PR   | Seitenbewusst (Mandant/Gegner), toleranter Namensabgleich, Mandatsannahme und Freigabe serverseitig                                                                              |
 | 12h | Folgearbeiten Audit        | —   | —            | ⏳ PR   | DMS pro Kanzlei mit geprüftem Ausgangsverkehr, alle Benachrichtigungen aktenbewusst, WhatsApp-Einwilligung pro Kanzlei, Alt-Geheimnisse versiegelt, Anlegen ersetzt nie          |
 | 12i | Pakete D0–D6 (Qualität)    | —   | —            | ⏳ PR   | Listen vollständig (Cursor-Paging), Schreibfehler nie als Erfolg, CSRF überall, Geld/Kalender/KI/Kommunikation/Kanzleibetrieb/Auth laut Audit-Paketen überarbeitet               |
+| 12j | Abschluss Megaaudit        | —   | —            | ⏳ PR   | Restpunkte (Webhooks, WhatsApp-Rechnung, Portal-Links, JSONB-Altdaten), Code-Gesundheit, Abrechnungstakt (opt-in), Akten-Scan nur auf Abruf, nächtlicher Judikatur-Wächter       |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 

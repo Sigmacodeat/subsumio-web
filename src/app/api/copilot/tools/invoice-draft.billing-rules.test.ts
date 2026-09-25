@@ -39,6 +39,7 @@ vi.mock("@/lib/time-tracking", () => ({
 }));
 vi.mock("@/lib/invoice-numbering", () => ({
   allocateInvoiceNumber: vi.fn(async () => "R-2026-0001"),
+  reserveInvoiceNumber: vi.fn(async () => "R-2026-0001"),
   highestInvoiceNumber: () => 0,
 }));
 vi.mock("@/lib/invoice-billing-lock", () => ({

@@ -27,10 +27,7 @@ const EXEMPT_MARKER = /engine-write-ok:\s*\S/;
  * Known remaining sites in files owned by a parallel work package. Remove an
  * entry once its file is migrated; the guard fails if an entry goes stale.
  */
-const KNOWN_OPEN = new Set([
-  // PUT then POST fallback on restore; the PUT is a wasted 404 but checked.
-  "src/app/api/admin/backup/[id]/route.ts",
-]);
+const KNOWN_OPEN = new Set<string>([]);
 
 const WRITE_METHOD = /^(post|put|patch|delete)$/i;
 
