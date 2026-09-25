@@ -98,51 +98,6 @@ const zvMeasureSchema = z.object({
   costs: z.number().min(0).optional(),
 });
 
-const installmentSchema = z.object({
-  index: z.number().int().min(0),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  amount: z.number().min(0),
-  paid_amount: z.number().min(0),
-  status: z.enum(["offen", "teilbezahlt", "bezahlt", "überfällig"]),
-});
-
-const zvRecordSchema = z.object({
-  id: z.string().min(1).max(100),
-  claim_id: z.string().min(1).max(100),
-  type: zvTypeEnum,
-  target: z.string().min(1).max(500),
-  court: z.string().max(300),
-  date: z.string(),
-  status: z.enum(["beantragt", "angeordnet", "durchgeführt", "aufgehoben", "erfolglos"]),
-  result: z.string().max(1000).optional(),
-  amount_recovered: z.number().min(0).optional(),
-  costs: z.number().min(0),
-  created_at: z.string(),
-});
-
-const antragSchema = z.object({
-  art: z.enum(["mahnklage", "mahnbescheid", "exekution"]),
-  jurisdiction: z.enum(["at", "de"]),
-  gericht: z.string().max(300),
-  antragsteller: z.object({ name: z.string().max(300), rolle: z.string().max(100) }),
-  gegner: z.object({
-    name: z.string().max(300),
-    adresse: z.string().max(500).optional(),
-  }),
-  forderung: z.object({
-    hauptforderung: z.number(),
-    zinsen: z.number(),
-    zinsen_prozent: z.number(),
-    zinsen_laufend_ab: z.string(),
-    kosten: z.number(),
-    gesamt: z.number(),
-    offen: z.number(),
-  }),
-  rechtsgrundlage: z.string().max(500),
-  hinweise: z.array(z.string().max(500)).max(20),
-  antragstext: z.string().max(20_000),
-});
-
 /**
  * A claim action names the claim by id. The stored claim is the only source
  * of balances and status: whatever a (possibly stale) client sends as
