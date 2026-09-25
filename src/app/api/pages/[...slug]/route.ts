@@ -9,6 +9,7 @@ import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,
   guardProtectedPageWrite,
+  isInvoicePage,
   guardSecondCheckWrite,
   isKanzleiSettingsTarget,
   readCurrentPage,
@@ -20,6 +21,7 @@ import {
   type MatterConflictOutcome,
 } from "@/lib/conflict-gate";
 import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
+import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
 import { can } from "@/lib/permissions";
 import {
@@ -476,6 +478,8 @@ export const DELETE = createHandler(
             failed: Array<{ slug: string; status?: number; error?: string }>;
           }
         | { attempted: false } = { attempted: false };
+      // Work released from a deleted invoice draft (null: release failed).
+      let released: { time: number; expenses: number } | null | undefined;
 
       if (pageType === "legal_case") {
         // Build timeline event for archive
@@ -555,6 +559,12 @@ export const DELETE = createHandler(
         );
         if (delRes.status === 404) return apiNotFound("not_found");
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
+        // A deleted invoice draft no longer bills its work — put it back to
+        // open, exactly as the invoice route's DELETE does (issued invoices
+        // were rejected above).
+        if (isInvoicePage(casePage)) {
+          released = await releaseWorkOfInvoice(ctx.headers, decodedSlug, fm, "draft_deleted");
+        }
         // A deleted document also leaves its matter's document list (matter
         // view, matter export). Best effort: the tombstone above already hides
         // it everywhere that reads the document itself.
@@ -605,6 +615,7 @@ export const DELETE = createHandler(
           ok: !cascade.attempted || cascade.failed.length === 0,
           method: pageType === "legal_case" ? "archived" : "deleted",
           cascade,
+          ...(released !== undefined ? { released } : {}),
         },
         { status: cascade.attempted && cascade.failed.length > 0 ? 207 : 200 }
       );
