@@ -6,18 +6,29 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * GET /api/cron/contradiction-probe — nightly contradiction probe.
+ * GET /api/cron/contradiction-probe — manual contradiction probe for one firm.
  *
  * Triggers the engine's eval suspected-contradictions with Haiku judge
- * (low cost, ~$0.50 budget cap). Results are stored in
+ * (low cost, ~$0.50 budget cap) scoped to one doc_type. Results are stored in
  * eval_contradictions_runs and can be read by the find_contradictions
  * MCP operation / subagent tool.
+ *
+ * Not scheduled: the contradiction check for firm documents runs after each
+ * upload (post-upload outbox). This route needs an explicit brain_id and
+ * doc_type — no default brain, so it never silently probes the law corpus.
  */
 
 export const GET = createCronHandler(async (req: NextRequest) => {
   const url = new URL(req.url);
-  const brainId = url.searchParams.get("brain_id")?.trim() || "law-de";
+  const brainId = url.searchParams.get("brain_id")?.trim();
+  const docType = url.searchParams.get("doc_type")?.trim();
   const caseSlug = url.searchParams.get("case_slug")?.trim();
+  if (!brainId || !docType) {
+    return Response.json(
+      { success: false, error: "brain_id und doc_type sind erforderlich." },
+      { status: 400 }
+    );
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...engineHeadersForBrain(brainId),
@@ -30,6 +41,7 @@ export const GET = createCronHandler(async (req: NextRequest) => {
       budget_usd: 0.5,
       top_k: 5,
       limit: 20,
+      doc_type: docType,
       ...(caseSlug ? { case_slug: caseSlug } : {}),
     }),
     signal: AbortSignal.timeout(280_000),

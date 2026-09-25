@@ -10761,27 +10761,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
   app.post("/api/admin/contradiction-probe", async (req: Request, res: Response) => {
     try {
-      const { runEvalSuspectedContradictions } =
+      const { runEvalSuspectedContradictions, buildProbeRunArgs } =
         await import("../commands/eval-suspected-contradictions.ts");
-      const body = (req.body ?? {}) as {
-        budget_usd?: number;
-        top_k?: number;
-        limit?: number;
-        doc_type?: string;
-      };
-      const args = [
-        "run",
-        "--json",
-        "--yes",
-        "--budget-usd",
-        String(body.budget_usd ?? 0.5),
-        "--top-k",
-        String(body.top_k ?? 5),
-        "--limit",
-        String(body.limit ?? 20),
-      ];
-      if (body.doc_type) {
-        args.push("--doc-type", body.doc_type);
+      // Validate before running: without a query source the CLI path exits
+      // the process, which must never happen inside the HTTP server.
+      const args = buildProbeRunArgs((req.body ?? {}) as Record<string, unknown>);
+      if (!args) {
+        apiError(res, 400, "doc_type_required");
+        return;
       }
       await runEvalSuspectedContradictions(engine, args);
       res.json({ status: "ok", message: "contradiction probe completed" });

@@ -263,7 +263,7 @@ function generateExtractionIssues(input: InsightInput): Insight[] {
 /**
  * Generate real contradiction insights from case.frontmatter.contradictions[].
  * These are inhaltliche Widersprüche between documents — detected by the
- * nightly contradiction-probe and on-demand cross-check.
+ * post-upload contradiction check and on-demand cross-check.
  */
 function generateRealContradictions(input: InsightInput): Insight[] {
   const insights: Insight[] = [];

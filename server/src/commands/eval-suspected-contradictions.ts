@@ -464,6 +464,40 @@ async function runReview(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   }
 }
 
+/**
+ * Build the `run` argv for the HTTP probe route (/api/admin/contradiction-probe).
+ *
+ * The CLI path ends in process.exit(2) when no query source is given — inside
+ * the long-running engine HTTP process that would take the server down. The
+ * route therefore validates BEFORE calling runEvalSuspectedContradictions and
+ * answers 400 when this returns null. The HTTP route only supports the
+ * doc_type scope (a non-empty string without a leading "-").
+ */
+export function buildProbeRunArgs(body: {
+  budget_usd?: unknown;
+  top_k?: unknown;
+  limit?: unknown;
+  doc_type?: unknown;
+}): string[] | null {
+  const docType = typeof body.doc_type === "string" ? body.doc_type.trim() : "";
+  if (!docType || docType.startsWith("-")) return null;
+  const num = (v: unknown, dflt: number): string =>
+    typeof v === "number" && Number.isFinite(v) && v > 0 ? String(v) : String(dflt);
+  return [
+    "run",
+    "--json",
+    "--yes",
+    "--budget-usd",
+    num(body.budget_usd, 0.5),
+    "--top-k",
+    num(body.top_k, 5),
+    "--limit",
+    num(body.limit, 20),
+    "--doc-type",
+    docType,
+  ];
+}
+
 export async function runEvalSuspectedContradictions(
   engine: BrainEngine,
   args: string[]
