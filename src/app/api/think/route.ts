@@ -15,7 +15,11 @@ import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
 import { resolveModelChoice } from "@/lib/model-choice";
 import { createHash, randomUUID } from "node:crypto";
-import { attachUsageToBooking } from "@/lib/billing/credits";
+import {
+  attachUsageToBooking,
+  insufficientCreditsResponse,
+  refundConsumptionBooking,
+} from "@/lib/billing/credits";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/think");
@@ -35,14 +39,19 @@ const thinkSchema = z.object({
 
 /**
  * Passes the stream through untouched and, when the engine's final `usage`
- * event goes by, completes the credit booking with model and tokens.
+ * event goes by, completes the credit booking with model and tokens. An
+ * engine `error` event before any usage means no answer was delivered: the
+ * up-front booking is taken back (`onFailed`, called at most once).
  */
-function meterUsage(
+export function meterUsage(
   stream: ReadableStream<Uint8Array>,
-  bookingKey: string
+  bookingKey: string,
+  onFailed: () => void = () => {}
 ): ReadableStream<Uint8Array> {
   const decoder = new TextDecoder();
   let buffer = "";
+  let sawUsage = false;
+  let failed = false;
   return stream.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -51,7 +60,20 @@ function meterUsage(
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
         for (const line of lines) {
-          if (!line.startsWith("data: ") || !line.includes('"usage"')) continue;
+          if (!line.startsWith("data: ")) continue;
+          if (!sawUsage && !failed && line.includes('"error"')) {
+            try {
+              const event = JSON.parse(line.slice(6)) as { error?: unknown };
+              if (event.error) {
+                failed = true;
+                onFailed();
+              }
+            } catch {
+              // not a JSON event
+            }
+            continue;
+          }
+          if (!line.includes('"usage"')) continue;
           try {
             const event = JSON.parse(line.slice(6)) as {
               usage?: {
@@ -62,6 +84,7 @@ function meterUsage(
               };
             };
             if (!event.usage) continue;
+            sawUsage = true;
             void attachUsageToBooking(bookingKey, {
               modelId: event.usage.model ?? null,
               inputTokens: event.usage.input_tokens,
@@ -91,14 +114,33 @@ export const POST = createHandler(
       details: { mode: body.mode, query_mode: body.query_mode, case_slug: body.case_slug },
     }),
   },
-  async (ctx, body, _query, _req) => {
+  async (ctx, body, _query, req) => {
+    // Booked up front — and awaited, so parallel requests cannot all pass the
+    // balance check and run unpaid — so an abandoned answer is still paid
+    // for; the engine reports what it actually consumed at the end of the
+    // stream, and the booking is completed with it (measured cost per credit,
+    // not estimated). When the engine delivers no answer, it is taken back.
+    const bookingKey = `think-${randomUUID()}`;
+    const booking = await recordCreditConsumption(
+      ctx,
+      "think",
+      body.case_slug,
+      undefined,
+      bookingKey
+    );
+    if (!booking.ok) {
+      return insufficientCreditsResponse(booking.balance ?? 0, booking.required ?? 0);
+    }
     void recordQuery(ctx.brainId);
     void recordQuota(ctx, "queries");
-    // Booked up front so an abandoned answer is still paid for; the engine
-    // reports what it actually consumed at the end of the stream, and the
-    // booking is completed with it (measured cost per credit, not estimated).
-    const bookingKey = `think-${randomUUID()}`;
-    void recordCreditConsumption(ctx, "think", body.case_slug, undefined, bookingKey);
+    let refunded = false;
+    const refundBooking = () => {
+      if (refunded || ctx.demo) return;
+      refunded = true;
+      void refundConsumptionBooking(ctx.billing.ownerId, ctx.billing.ownerType, bookingKey).catch(
+        (err) => log.warn("[think] refund failed:", err instanceof Error ? err.message : err)
+      );
+    };
 
     try {
       const safeBody = sanitizeObjectStrings(body);
@@ -123,14 +165,18 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...caseScopedHeaders },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(300_000),
+        // The user's "Stopp" (client disconnect) ends the engine request too,
+        // so the model stops generating instead of running on unseen.
+        signal: AbortSignal.any([req.signal, AbortSignal.timeout(300_000)]),
       });
 
       if (!upstream.ok) {
+        refundBooking();
         return apiError("engine_error", `Engine returned ${upstream.status}`, upstream.status);
       }
 
       if (!upstream.body) {
+        refundBooking();
         return apiError("engine_error", "Engine returned empty body", 502);
       }
 
@@ -150,7 +196,8 @@ export const POST = createHandler(
           createCitationGateStream(intercepted, {
             fallbackJurisdiction: userJurisdiction(jurisdiction),
           }),
-          bookingKey
+          bookingKey,
+          refundBooking
         ),
         {
           contentType: upstream.headers.get("Content-Type") || "text/event-stream",
@@ -159,6 +206,8 @@ export const POST = createHandler(
       );
     } catch (err) {
       log.error("[think] engine unreachable:", err instanceof Error ? err.message : String(err));
+      // Aborted by the user ("Stopp"): the answer was abandoned, it stays paid.
+      if (!req.signal.aborted) refundBooking();
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
   }

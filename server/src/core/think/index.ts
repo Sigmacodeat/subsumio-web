@@ -234,6 +234,12 @@ export interface RunThinkOpts {
    * the JSON envelope (citations, gaps) is emitted separately after [DONE].
    */
   onStreamChunk?: (text: string) => void;
+  /**
+   * Aborts the streamed answer when the caller goes away (the user pressed
+   * "Stopp" / closed the tab): the model stops generating instead of running
+   * on unseen, and no non-streaming fallback call is made.
+   */
+  abortSignal?: AbortSignal;
 }
 
 /** Structured response from the LLM (matches the schema declared in prompt.ts). */
@@ -869,6 +875,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
           system: streamSystemPrompt,
           messages: streamMessages,
           maxTokens: dynamicMaxTokens,
+          ...(opts.abortSignal ? { abortSignal: opts.abortSignal } : {}),
         })) {
           if (chunk.type === "text" && chunk.text) {
             accumulated += chunk.text;
@@ -886,6 +893,8 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
           for (const w of streamResolved.warnings) warnings.push(w);
         }
       } catch (streamErr) {
+        // The caller is gone — do not pay for a second, non-streamed answer.
+        if (opts.abortSignal?.aborted) throw streamErr;
         // Fallback to non-streaming path if streaming fails
         warnings.push(
           `STREAM_FAILED_FALLBACK: ${streamErr instanceof Error ? streamErr.message : "unknown"}`

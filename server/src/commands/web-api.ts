@@ -3767,6 +3767,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+    // Client gone before the answer finished ("Stopp", tab closed): stop the
+    // model call instead of letting it run on at the firm's expense.
+    const thinkAbort = new AbortController();
+    res.on("close", () => {
+      if (!res.writableEnded) thinkAbort.abort();
+    });
 
     try {
       const { runThink } = await import("../core/think/index.ts");
@@ -3827,6 +3833,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // legal-aware system prompt with statute citation discipline.
           legalMode: true,
           jurisdiction,
+          abortSignal: thinkAbort.signal,
           // Real-time token streaming: each text delta fires an SSE chunk event.
           onStreamChunk: (text) => {
             streamedAnswer += text;
