@@ -168,9 +168,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
 
     // Erstanfragen verlieren Mandate, wenn sie liegen — offene Intakes
-    // älter als 24h eskalieren einmalig (deterministische ID) an alle.
+    // älter als 24h eskalieren einmalig (deterministische ID) an alle aktiven
+    // Mitarbeiter; eine bereits einer Akte zugeordnete Anfrage nur an
+    // Personen mit Zugriff auf diese Akte.
     const STALE_INTAKE_MS = 24 * 60 * 60 * 1000;
     const OPEN_INTAKE_STATUS = new Set(["new", "needs_info", "conflict_check", "accepted"]);
+    const intakeMatterPermissions = matterPermissionsBySlug(casePages);
     for (const page of intakePages) {
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
       if (!OPEN_INTAKE_STATUS.has(String(fm.status ?? "new"))) continue;
@@ -178,7 +181,14 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       if (!Number.isFinite(created) || now.getTime() - created < STALE_INTAKE_MS) continue;
       staleIntakes++;
       const hoursOpen = Math.floor((now.getTime() - created) / 3_600_000);
-      for (const recipient of recipients) {
+      const intakeCase = [fm.converted_case_slug, fm.case_slug].find(
+        (v): v is string => typeof v === "string" && v.length > 0
+      );
+      for (const recipient of recipientsForMatter(
+        recipients,
+        intakeCase,
+        intakeMatterPermissions
+      )) {
         try {
           await createIntakeStaleNotification({
             userId: recipient.id,

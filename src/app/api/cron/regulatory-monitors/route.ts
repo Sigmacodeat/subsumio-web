@@ -5,7 +5,14 @@ import { sendMail } from "@/lib/mail";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  activeStaffRecipients,
+  fetchPages,
+  getRecipientsByBrain,
+  matterPermissionsBySlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
+import type { MatterPermissions } from "@/lib/matter-access";
 import {
   type RegulatoryMonitor,
   type RegulatoryAlert,
@@ -38,7 +45,8 @@ export const maxDuration = 300;
  *   2. Für jeden Monitor: sucht via searchJudgements nach neuen Treffern
  *   3. Neue Treffer → regulatory_alert Brain-Pages
  *   4. Update monitor last_run_at / last_run_hits
- *   5. Email-Notification an Brain-Nutzer (wenn email_notifications=true)
+ *   5. Email-Notification je Person (wenn email_notifications=true): aktive
+ *      Mitarbeiter; mandatsbezogene Monitore nur an Personen mit Aktenzugriff
  *
  * Integration mit /api/cron/case-law: teilt die Dedup-Tabelle
  * subsumio_caselaw_seen. Backward-compatible: liest auch die legacy
@@ -215,8 +223,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let mailsSent = 0;
   let errors = 0;
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    // Default recipients: active firm staff only; a matter-bound monitor only
+    // to people who may open that matter (unreadable matter → admins only).
+    const staff = activeStaffRecipients(brainUsers);
+    let matterPermissions: Map<string, MatterPermissions> | null = null;
 
     // 1. Load all monitor definitions
     const monitorPages = await fetchMonitorPages(brainId);
@@ -275,9 +287,16 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         // 6. Send email notifications
         if (allFreshHits.length > 0 && monitor.email_notifications) {
           const { subject, text } = renderMonitorDigest(monitor, allFreshHits, appUrl);
+          if (monitor.case_slug && !monitor.notify_emails?.length && !matterPermissions) {
+            matterPermissions = matterPermissionsBySlug(
+              await fetchPages(brainId, "legal_case", 10_000).catch(() => [])
+            );
+          }
           const emails = monitor.notify_emails?.length
             ? monitor.notify_emails
-            : recipients.map((u) => u.email);
+            : recipientsForMatter(staff, monitor.case_slug, matterPermissions ?? new Map()).map(
+                (u) => u.email
+              );
           for (const email of emails) {
             const r = await sendMail({ to: email, subject, text });
             if (r.sent) mailsSent++;

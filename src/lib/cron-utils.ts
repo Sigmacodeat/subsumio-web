@@ -184,6 +184,31 @@ export function matterPermissionsBySlug(
 }
 
 /**
+ * Access rules of ONE matter, for notices outside the batch crons (webhooks,
+ * the task queue) that must not read every matter of the firm. A matter that
+ * cannot be read yields an empty lookup — admins only (see
+ * mayReceiveMatterNotice).
+ */
+export async function matterPermissionsForSlug(
+  brainId: string,
+  caseSlug: string
+): Promise<Map<string, MatterPermissions>> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages/${caseSlug.split("/").map(encodeURIComponent).join("/")}`,
+      { headers: engineHeadersForBrain(brainId), signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) return new Map();
+    const page = (await res.json()) as { slug?: unknown; frontmatter?: Record<string, unknown> };
+    // A different page (e.g. a redirect to another slug) is not this matter.
+    if (page.slug !== undefined && page.slug !== caseSlug) return new Map();
+    return matterPermissionsBySlug([{ slug: caseSlug, title: "", frontmatter: page.frontmatter }]);
+  } catch {
+    return new Map();
+  }
+}
+
+/**
  * May this person be told about something of this matter (deadline title,
  * matter name)? Active staff only; the matter's visibility, team, grants and
  * ethical wall apply exactly as when opening the matter. Notices without a
@@ -209,6 +234,29 @@ export function recipientsForMatter(
   permissions: ReadonlyMap<string, MatterPermissions>
 ): User[] {
   return users.filter((u) => mayReceiveMatterNotice(u, caseSlug, permissions));
+}
+
+/**
+ * Recipients of a firm-wide notice whose content spans ALL matters (e.g. an
+ * AI-written briefing that may name any matter): active staff with access to
+ * every matter of the firm — nobody behind a wall, outside a restricted team
+ * or without a grant on a confidential matter. If the matters cannot be read
+ * completely, firm admins only (fail-closed).
+ */
+export async function recipientsForAllMatters(
+  brainId: string,
+  users: readonly User[]
+): Promise<User[]> {
+  const staff = activeStaffRecipients(users);
+  if (staff.length === 0) return [];
+  let cases: EnginePage[];
+  try {
+    cases = await fetchAllPagesStrict(brainId, "legal_case");
+  } catch {
+    return staff.filter((u) => u.role === "admin");
+  }
+  const permissions = matterPermissionsBySlug(cases);
+  return staff.filter((u) => cases.every((c) => mayReceiveMatterNotice(u, c.slug, permissions)));
 }
 
 /**

@@ -11,7 +11,11 @@ import {
 import { verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/lib/whatsapp/verify";
 import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
-import { getWhatsAppConsentStore, isConsentActive } from "@/lib/whatsapp/consent-store";
+import {
+  getWhatsAppConsentStore,
+  isConsentActive,
+  whatsAppTenantKeys,
+} from "@/lib/whatsapp/consent-store";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
@@ -124,7 +128,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     // aber NICHT an den Orchestrator — ein STOPP schaltet den Kanal
     // komplett stumm (strengste Opt-out-Lesart). Neue Absender ohne jede
     // Consent-Row bleiben unberührt (inbound-initiiert = 24h-Fenster).
-    if (await isFullyOptedOut(message.from)) {
+    if (await isFullyOptedOut(message.from, sender)) {
       await markMessageProcessed(
         message.id,
         phoneHash(message.from),
@@ -374,29 +378,45 @@ function executionDepsForBrain(brainId: string) {
   };
 }
 
+/** Die Kanzlei, der die Absender-Identität gehört (Brain- und Org-Kennung). */
+function senderTenantKeys(sender: { brainId?: string; orgId?: string }): string[] {
+  return whatsAppTenantKeys(sender.brainId ?? "", sender.orgId);
+}
+
 /**
- * True, wenn die Nummer Consent-Rows hat, aber KEINE aktive — d. h. der
- * Nutzer hat einmal eingewilligt und danach widerrufen. Absender ohne
- * jede Row (Neukontakt) zählen nicht als opted-out.
+ * True, wenn die Nummer bei der Kanzlei des Absenders Consent-Rows hat, aber
+ * KEINE aktive — d. h. der Nutzer hat einmal eingewilligt und danach
+ * widerrufen. Absender ohne jede Row (Neukontakt) zählen nicht als opted-out.
  */
-async function isFullyOptedOut(phone: string): Promise<boolean> {
-  const rows = await getWhatsAppConsentStore().getByPhoneHash(phoneHash(phone));
+async function isFullyOptedOut(
+  phone: string,
+  sender: { brainId?: string; orgId?: string }
+): Promise<boolean> {
+  const rows = await getWhatsAppConsentStore().getByPhoneHash(
+    senderTenantKeys(sender),
+    phoneHash(phone)
+  );
   return rows.length > 0 && !rows.some(isConsentActive);
 }
 
 // ── Consent-Keywords (WP-8.51) ───────────────────────────────────────────
 
-/** STOPP: alle aktiven Einwilligungen dieser Nummer widerrufen. */
+/**
+ * STOPP: alle aktiven Einwilligungen dieser Nummer widerrufen — bei jeder
+ * Kanzlei. Der Widerruf kommt von der betroffenen Person selbst (signierte
+ * Nachricht von genau dieser Nummer) und gilt deshalb umfassend; Erteilen
+ * und Reaktivieren bleiben kanzleigebunden.
+ */
 async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string }): Promise<void> {
   const store = getWhatsAppConsentStore();
   const hash = phoneHash(phone);
   const now = new Date().toISOString();
-  const rows = await store.getByPhoneHash(hash);
-  for (const c of rows.filter(isConsentActive)) {
+  const active = (await store.getByPhoneHashAllFirms(hash)).filter(isConsentActive);
+  for (const c of active) {
     await store.update(c.id, { optOutAt: now });
   }
   await logAudit("whatsapp.consent_revoked", "whatsapp_identity", {
-    details: { phoneHash: hash, revoked: rows.filter(isConsentActive).length },
+    details: { phoneHash: hash, revoked: active.length },
   });
   const res = await sendWhatsAppText(
     phone,
@@ -409,15 +429,18 @@ async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string
   }
 }
 
-/** START: widerrufene Einwilligungen reaktivieren (Double-Opt-In-proof bleibt). */
+/**
+ * START: widerrufene Einwilligungen reaktivieren (Double-Opt-In-proof bleibt)
+ * — nur die der Kanzlei, der die Absender-Identität gehört.
+ */
 async function reinstateWhatsAppConsent(
   phone: string,
-  sender: { brainId?: string }
+  sender: { brainId?: string; orgId?: string }
 ): Promise<void> {
   const store = getWhatsAppConsentStore();
   const hash = phoneHash(phone);
   const now = new Date().toISOString();
-  const rows = await store.getByPhoneHash(hash);
+  const rows = await store.getByPhoneHash(senderTenantKeys(sender), hash);
   const withdrawn = rows.filter((c) => c.optOutAt);
   for (const c of withdrawn) {
     await store.update(c.id, {
