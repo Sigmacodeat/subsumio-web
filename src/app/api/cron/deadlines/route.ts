@@ -2,7 +2,13 @@ import { NextRequest } from "next/server";
 import { sendMail } from "@/lib/mail";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { createCronHandler } from "@/lib/api-handler";
-import { fetchAllPagesStrict, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
+import {
+  fetchAllPagesStrict,
+  getRecipientsByBrain,
+  createDailyDedup,
+  createKeyedDedup,
+} from "@/lib/cron-utils";
+import { isQuietDay, notfristEscalationKey } from "@/lib/deadline-notify";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { env } from "@/lib/env";
@@ -168,6 +174,10 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
 }
 
 const alreadyNotifiedToday = createDailyDedup("subsumio_notify_log");
+// Eine überfällige Notfrist eskaliert genau einmal — sie bleibt danach in
+// jedem Tages-Digest sichtbar, aber die Alarm-Mail wiederholt sich nicht
+// täglich (nicht markiert bei Versandfehler → nächster Lauf versucht erneut).
+const notfristEscalatedKey = createKeyedDedup("subsumio_notfrist_escalation_log");
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
   const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.io";
@@ -182,6 +192,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let pipelineSynced = 0;
   let pipelineCreated = 0;
   let notfristEscalated = 0;
+  let quietDaysSkipped = 0;
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -221,6 +232,29 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     if (items.length === 0) continue;
     brainsWithDeadlines++;
 
+    // Kanzlei-Settings früh laden — steuert Ruhetage UND die Eskalation.
+    // Bei Lesefehler bewusst fail-open: weiterhin täglich senden statt
+    // still zu schweigen (bisheriges Verhalten).
+    let kanzlei = null;
+    let kanzleiLoaded = false;
+    try {
+      kanzlei = await loadKanzleiSettingsForBrain(brainId);
+      kanzleiLoaded = true;
+    } catch (err) {
+      warnings.push(
+        `Kanzlei settings unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
+    // Ruhetag (Sa/So/Feiertag im Rechtsraum): Routine-Digest, WhatsApp-Digest
+    // UND die Notfrist-Eskalation gehen am nächsten Werktag raus. Nichts geht
+    // verloren — überfällige Fristen werden beim nächsten Lauf erneut
+    // gefunden; die Eskalations-Dedup ist pro Frist, nicht pro Tag.
+    if (kanzleiLoaded && isQuietDay(new Date(), kanzlei ?? {})) {
+      quietDaysSkipped++;
+      continue;
+    }
+
     if (await alreadyNotifiedToday(brainId)) continue;
 
     const { subject, text } = renderDigest(items, appUrl);
@@ -241,19 +275,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     // Mitglieder plus die in den Kanzlei-Einstellungen hinterlegte
     // Eskalationsadresse (z. B. Kanzleiinhaber). Abschaltbar per Setting.
     const overdueNotfristen = items.filter((i) => i.status === "overdue" && i.isNotfrist);
-    if (overdueNotfristen.length > 0) {
+    if (overdueNotfristen.length > 0 && (kanzlei?.deadlineNotfristEscalation ?? true)) {
       try {
-        const kanzlei = await loadKanzleiSettingsForBrain(brainId);
-        if (kanzlei.deadlineNotfristEscalation !== false) {
-          const extra = kanzlei.deadlineEscalationEmail?.trim();
+        // Nur noch nicht alarmierte Notfristen eskalieren — die Dedup ist
+        // pro Frist permanent, nicht pro Tag.
+        const fresh = [];
+        for (const i of overdueNotfristen) {
+          const key = notfristEscalationKey(i);
+          if (await notfristEscalatedKey.isNew(brainId, key)) fresh.push({ item: i, key });
+        }
+        if (fresh.length > 0) {
+          const extra = kanzlei?.deadlineEscalationEmail?.trim();
           const to = [
             ...new Set([
               ...recipients.map((r) => r.email).filter((e): e is string => Boolean(e)),
               ...(extra ? [extra] : []),
             ]),
           ];
-          const lines = overdueNotfristen.map(
-            (i) =>
+          const lines = fresh.map(
+            ({ item: i }) =>
               `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`
           );
           const escText = [
@@ -267,18 +307,27 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
             "die Leistung fristwahrend erbracht wurde und die Frist als erledigt",
             "vermerkt ist.",
           ].join("\n");
+          let anySent = false;
           for (const addr of to) {
             const result = await sendMail({
               to: addr,
-              subject: `🚨 NOTFRIST ÜBERFÄLLIG — ${overdueNotfristen.length} Frist(en)`,
+              subject: `🚨 NOTFRIST ÜBERFÄLLIG — ${fresh.length} Frist(en)`,
               text: escText,
             });
-            if (result.sent) notfristEscalated++;
-            else if (result.error !== "mail_not_configured") {
+            if (result.sent) {
+              notfristEscalated++;
+              anySent = true;
+            } else if (result.error !== "mail_not_configured") {
               errors.push(
                 `Notfrist escalation mail to ${addr} failed for brain ${brainId}: ${result.error ?? "unknown"}`
               );
             }
+          }
+          // Erst nach erfolgreichem Versand markieren — ein Totalausfall
+          // (mail_not_configured zählt nicht, das ist Deployment-Wahl) darf
+          // die Frist nicht als "eskaliert" verbuchen.
+          if (anySent) {
+            for (const { key } of fresh) await notfristEscalatedKey.mark(brainId, key);
           }
         }
       } catch (err) {
@@ -341,6 +390,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       pipeline_synced: pipelineSynced,
       pipeline_created: pipelineCreated,
       notfrist_escalated: notfristEscalated,
+      quiet_days_skipped: quietDaysSkipped,
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
     },
