@@ -194,3 +194,59 @@ describe("PATCH/DELETE /api/pages/[...slug] — ausgestellte Rechnungen", () => 
     expect(written()?.frontmatter).toMatchObject({ status: "tombstoned" });
   });
 });
+
+describe("PATCH/DELETE /api/pages/[...slug] — Fristen (C6)", () => {
+  it("FRI-7: DELETE of a live Notfrist page is refused (403) — nothing tombstoned", async () => {
+    stored = {
+      slug: "legal/deadlines/f1",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", is_notfrist: true, due_date: "2026-03-30" },
+    };
+    const res = await call("DELETE", "legal/deadlines/f1");
+    expect(res.status).toBe(403);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("FRI-15: DELETE of an ordinary deadline is logged as deadline.delete with the old date", async () => {
+    const { logAudit } = await import("@/lib/audit");
+    stored = {
+      slug: "legal/deadlines/f2",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", due_date: "2026-04-01" },
+    };
+    const res = await call("DELETE", "legal/deadlines/f2");
+    expect(res.status).toBe(200);
+    const call0 = vi.mocked(logAudit).mock.calls.find((c) => c[0] === "deadline.delete");
+    expect(call0?.[2]).toMatchObject({
+      entityId: "legal/deadlines/f2",
+      userId: "u1",
+      details: { due_date_before: "2026-04-01" },
+    });
+  });
+
+  it("FRI-7: PATCH moving a Notfrist in a matter without a reason is refused", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: {
+        deadlines: [{ id: "d1", title: "Berufung", due_date: "2026-03-30", is_notfrist: true }],
+      },
+    };
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: {
+        deadlines: [{ id: "d1", title: "Berufung", due_date: "2026-04-30", is_notfrist: true }],
+      },
+    });
+    expect(res.status).toBe(422);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("FRI-8: without If-Match the version advances from the STORED version, not a client value", async () => {
+    stored = { slug: "legal/cases/akte-1", type: "legal_case", frontmatter: { version: 9 } };
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: { priority: "high", version: 1 },
+    });
+    expect(res.status).toBe(200);
+    expect(written()?.frontmatter?.version).toBe(10);
+  });
+});

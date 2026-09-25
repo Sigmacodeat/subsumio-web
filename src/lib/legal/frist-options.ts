@@ -53,6 +53,23 @@ export interface FristComputation {
   vorfrist?: string;
   notfrist: boolean;
   hinweise: string[];
+  /** The Fristart is suspended by the verhandlungsfreie Zeit (§ 222 Abs 1
+   *  ZPO), so the user must say whether the matter is a Ferialsache
+   *  (§ 222 Abs 2 ZPO). Always false outside Austria. */
+  ferialsacheRelevant: boolean;
+  /** True when § 222 Abs 1 ZPO extended the period — only correct if the
+   *  matter is NOT a Ferialsache; callers flag it for a second check. */
+  vhfzVerlaengert: boolean;
+}
+
+/** Hinweis, der jede durch die verhandlungsfreie Zeit verlängerte Frist
+ *  begleitet, solange niemand bestätigt hat, dass keine Ferialsache vorliegt. */
+export const FERIALSACHE_WARNUNG =
+  "Ferialsache prüfen: In den Fällen des § 222 Abs 2 ZPO (u. a. einstweilige Verfügungen, Unterhalt, Besitzstörung, Wechselsachen, §§ 35–37 EO, Verfahrenshilfe, Beweissicherung, Wiedereinsetzung, Versäumungs- und Anerkenntnisurteile) gibt es keine Hemmung — die Frist endet dann früher.";
+
+/** True when the engine's notes show a § 222 Abs 1 ZPO extension. */
+export function vhfzHatVerlaengert(hinweise: readonly string[]): boolean {
+  return hinweise.some((h) => h.includes("(§ 222 Abs 1 ZPO)"));
 }
 
 const VERFAHREN_LABEL: Record<FristArt["verfahrenstyp"], string> = {
@@ -135,7 +152,13 @@ export function fristOptionsFor(country?: string): FristOption[] {
 export function computeFrist(
   key: string,
   startIso: string,
-  opts: { country?: string; state?: string; ervEinlangen?: boolean } = {}
+  opts: {
+    country?: string;
+    state?: string;
+    ervEinlangen?: boolean;
+    /** § 222 Abs 2 ZPO: no suspension by the verhandlungsfreie Zeit. */
+    ferialsache?: boolean;
+  } = {}
 ): FristComputation {
   const country = resolveFristCountry(opts.country);
   if (country === "AT") {
@@ -145,13 +168,15 @@ export function computeFrist(
     }
     const applyErv = opts.ervEinlangen && !art.zustellungs_trigger;
     const zustellung = applyErv ? zustellungERV(startIso) : startIso;
-    const result = berechneFristAuto(key, zustellung);
-    const hinweise = applyErv
-      ? [
-          `ERV-Zustellungsfiktion (§ 89a Abs 2 GOG): zugestellt am ${zustellung}`,
-          ...result.hinweise,
-        ]
-      : result.hinweise;
+    const result = berechneFristAuto(key, zustellung, { ferialsache: opts.ferialsache === true });
+    const vhfzVerlaengert = vhfzHatVerlaengert(result.hinweise);
+    const hinweise = [
+      ...(applyErv
+        ? [`ERV-Zustellungsfiktion (§ 89a Abs 2 GOG): zugestellt am ${zustellung}`]
+        : []),
+      ...result.hinweise,
+      ...(vhfzVerlaengert ? [FERIALSACHE_WARNUNG] : []),
+    ];
     return {
       key,
       label: art.bezeichnung,
@@ -161,6 +186,8 @@ export function computeFrist(
       vorfrist: result.vorfrist,
       notfrist: art.notfrist,
       hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
+      ferialsacheRelevant: art.regime === "zpo" && art.gehemmtInVhfz,
+      vhfzVerlaengert,
     };
   }
 
@@ -186,6 +213,8 @@ export function computeFrist(
         vorfrist: result.vorfrist,
         notfrist: art.notfrist,
         hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
+        ferialsacheRelevant: false,
+        vhfzVerlaengert: false,
       };
     }
   }
@@ -207,5 +236,7 @@ export function computeFrist(
     dueDate,
     notfrist: false,
     hinweise: note ? [note] : [],
+    ferialsacheRelevant: false,
+    vhfzVerlaengert: false,
   };
 }

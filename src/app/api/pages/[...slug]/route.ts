@@ -10,6 +10,13 @@ import {
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import {
+  applyDeadlineWritePolicy,
+  checkDeadlinePageDelete,
+  isDeadlinePage,
+  type DeadlineChangeEvent,
+} from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -117,6 +124,7 @@ export const PATCH = createHandler(
 
     // Increment version on update
     const patchBody: Record<string, unknown> = { ...body, slug: rawSlug };
+    let deadlineEvents: DeadlineChangeEvent[] = [];
 
     if (patchBody.frontmatter) {
       // Vier-Augen-Kontrolle: second_check_* is stamped only by
@@ -129,6 +137,18 @@ export const PATCH = createHandler(
       );
       if ("reject" in guarded) return rejectionResponse(guarded.reject);
       patchBody.frontmatter = guarded.frontmatter;
+
+      // Fristen: server-stamped identity, Notfrist protection, audit trail.
+      const policy = applyDeadlineWritePolicy({
+        slug: rawSlug,
+        type: patchBody.type ?? currentPage.type,
+        incoming: patchBody.frontmatter as Record<string, unknown>,
+        current: currentPage,
+        user: ctx.user,
+      });
+      if ("reject" in policy) return rejectionResponse(policy.reject);
+      patchBody.frontmatter = policy.frontmatter;
+      deadlineEvents = policy.events;
 
       const fm = patchBody.frontmatter as Record<string, unknown>;
       const isRestore = !!fm.restored_at && fm.status !== "archived";
@@ -155,7 +175,14 @@ export const PATCH = createHandler(
 
     if (patchBody.frontmatter) {
       const fm = patchBody.frontmatter as Record<string, unknown>;
-      const currentVersion = ifMatch ? parseInt(ifMatch, 10) : (fm.version as number | undefined);
+      // Without If-Match the stored version is the base — a client-sent
+      // version must not rewind the counter other writers rely on.
+      const storedVersion = Number(curFm.version);
+      const currentVersion = ifMatch
+        ? parseInt(ifMatch, 10)
+        : Number.isFinite(storedVersion)
+          ? storedVersion
+          : 0;
       fm.version = (typeof currentVersion === "number" ? currentVersion : 0) + 1;
 
       // Restore: append timeline event
@@ -191,6 +218,7 @@ export const PATCH = createHandler(
         });
       }
       const result = await res.json();
+      await logDeadlineEvents(ctx, deadlineEvents);
 
       // Restore cascade: if the PATCH sets status to a non-archived value
       // and includes restored_at, un-tombstone all linked documents.
@@ -442,6 +470,16 @@ export const DELETE = createHandler(
       const invoiceRejection = checkInvoiceWrite(casePage, { mode: "delete" });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
 
+      // A live Notfrist is never deleted — it is cancelled with a reason.
+      const deadlinePage = isDeadlinePage(pageType, fm.type, decodedSlug);
+      if (deadlinePage) {
+        const notfristRejection = checkDeadlinePageDelete(
+          fm,
+          (casePage as { title?: string }).title
+        );
+        if (notfristRejection) return rejectionResponse(notfristRejection);
+      }
+
       // Guard: already archived — return 409 to prevent double-archive
       if (pageType === "legal_case" && fm.status === "archived") {
         return Response.json(
@@ -664,6 +702,22 @@ export const DELETE = createHandler(
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
       }
 
+      if (deadlinePage) {
+        await logDeadlineEvents(ctx, [
+          {
+            kind: "delete",
+            deadline_id: decodedSlug,
+            title: String(
+              fm.title ?? fm.description ?? (casePage as { title?: string }).title ?? ""
+            ),
+            is_notfrist: fm.is_notfrist === true || fm.second_check_required === true,
+            due_date_before: typeof fm.due_date === "string" ? fm.due_date : null,
+            due_date_after: null,
+            status_before: typeof fm.status === "string" ? fm.status : null,
+            status_after: "tombstoned",
+          },
+        ]);
+      }
       void logAudit(pageType === "legal_case" ? "case.delete" : "document.delete", "page", {
         entityId: path,
         details: {

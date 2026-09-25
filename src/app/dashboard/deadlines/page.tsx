@@ -63,9 +63,14 @@ import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
 import {
   deadlineWriteTarget,
-  patchEmbeddedDeadline,
+  writeEmbeddedDeadline,
   type EmbeddedDeadlineRef,
 } from "@/lib/deadline-row-actions";
+import {
+  FerialsacheField,
+  ferialsacheQuestionVisible,
+  type FerialsacheAnswer,
+} from "@/components/legal/ferialsache-field";
 
 interface DeadlineItem {
   id: string;
@@ -236,19 +241,39 @@ function DeadlineBadges({
 
 const RECHTSRAUM_UNAVAILABLE = "rechtsraum_unavailable";
 
+interface CalcResult {
+  dueDate: string;
+  label: string;
+  law: string;
+  note: string;
+  ferialsacheRelevant: boolean;
+  vhfzVerlaengert: boolean;
+}
+
 function calculateDeadline(
   key: string,
   startDate: string,
   state?: string,
-  country?: string
-): { dueDate: string; label: string; law: string; note: string } {
-  const r = computeFrist(key, startDate, { state, country });
+  country?: string,
+  ferialsache?: boolean
+): CalcResult {
+  const r = computeFrist(key, startDate, { state, country, ferialsache });
   return {
     dueDate: r.dueDate,
     label: r.label,
     law: r.law,
     note: r.hinweise.join(" · "),
+    ferialsacheRelevant: r.ferialsacheRelevant,
+    vhfzVerlaengert: r.vhfzVerlaengert,
   };
+}
+
+/** Server rejections (e.g. Notfrist protection) carry a readable message. */
+function writeErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiRequestError && err.message && err.status >= 400 && err.status < 500) {
+    return err.message;
+  }
+  return fallback;
 }
 
 export default function DeadlinesPage() {
@@ -332,12 +357,8 @@ export default function DeadlinesPage() {
   const [rechtsraumFailed, setRechtsraumFailed] = useState(false);
   const calcOption = calcOptions.find((o) => o.key === calcKey) ?? calcOptions[0];
   const [calcDate, setCalcDate] = useState(() => toLocalIsoDate(new Date()));
-  const [calcResult, setCalcResult] = useState<{
-    dueDate: string;
-    label: string;
-    law: string;
-    note: string;
-  } | null>(null);
+  const [calcResult, setCalcResult] = useState<CalcResult | null>(null);
+  const [calcFerialsache, setCalcFerialsache] = useState<FerialsacheAnswer>(null);
   const [showAiDetect, setShowAiDetect] = useState(false);
   // ?ai=1 deep-links straight to the KI-Vorschläge (demo tour chapter 3,
   // intake "Frist prüfen" CTA) — the HITL review must be reachable by URL.
@@ -478,7 +499,7 @@ export default function DeadlinesPage() {
         title:
           err instanceof ApiRequestError && err.code === "second_check_self_blocked"
             ? t("deadlines.second_check_self_blocked")
-            : t("deadlines.update_failed"),
+            : writeErrorMessage(err, t("deadlines.update_failed")),
       });
     } finally {
       setSecondCheckBusy(false);
@@ -496,13 +517,9 @@ export default function DeadlinesPage() {
     setActionBusy(item.id);
     try {
       if (target.kind === "embedded") {
-        // Patch only this entry of the matter's deadlines[] — writing the
-        // fields to the matter page itself would close or re-review the Akte.
-        const casePage = await api.brain.getPage(target.caseSlug);
-        const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-        const deadlines = patchEmbeddedDeadline(caseFm.deadlines, target.ref, frontmatter);
-        if (!deadlines) throw new Error("embedded deadline not found");
-        await api.brain.updatePage({ slug: target.caseSlug, frontmatter: { deadlines } });
+        // Patch only this entry of the matter's deadlines[] — atomically, so a
+        // Frist added in the Akte at the same time is not overwritten.
+        await writeEmbeddedDeadline(api.brain, target.caseSlug, target.ref, frontmatter);
       } else {
         await api.brain.updatePage({
           slug: target.slug,
@@ -512,10 +529,10 @@ export default function DeadlinesPage() {
       }
       await loadDeadlines();
       return true;
-    } catch {
+    } catch (err) {
       addToast({
         type: "error",
-        title: t("deadlines.update_failed"),
+        title: writeErrorMessage(err, t("deadlines.update_failed")),
       });
       return false;
     } finally {
@@ -545,6 +562,8 @@ export default function DeadlinesPage() {
       is_notfrist: values.isNotfrist,
       second_check_required: values.isNotfrist,
       updated_at: new Date().toISOString(),
+      // The server requires (and logs) a reason for moving a Notfrist.
+      ...(values.changeReason ? { change_reason: values.changeReason } : {}),
     };
     if (d.reviewStatus === "approved") {
       patch.review_status = "unreviewed";
@@ -632,24 +651,52 @@ export default function DeadlinesPage() {
     return () => window.removeEventListener("subsumio:create-deadline", handler);
   }, []);
 
+  function runCalc(ferialsache: FerialsacheAnswer) {
+    if (rechtsraumFailed) {
+      setCalcResult(null);
+      setCalcError(RECHTSRAUM_UNAVAILABLE);
+      return;
+    }
+    try {
+      setCalcResult(
+        calculateDeadline(
+          calcOption.key,
+          calcDate,
+          rechtsraum.state,
+          rechtsraum.country,
+          ferialsache === true
+        )
+      );
+      setCalcError(null);
+    } catch (err) {
+      setCalcResult(null);
+      setCalcError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   async function sendReminders() {
     addToast({ type: "info", title: t("deadlines.toast_sending") });
     try {
-      const res = await csrfFetch("/api/cron/deadline-reminders", { method: "POST" });
-      const data = await res.json();
+      // Own, session-authenticated route for this firm — never a cron route.
+      const res = await csrfFetch("/api/deadlines/send-reminders", { method: "POST" });
+      const body = (await res.json().catch(() => null)) as {
+        data?: { sentCount?: number; emailed?: boolean; smtpConfigured?: boolean };
+      } | null;
       if (res.ok) {
+        const sent = body?.data?.sentCount ?? 0;
         addToast({
           type: "success",
-          title: `${data.sentCount} ${t("deadlines.toast_sent")}`,
+          title: `${sent} ${t("deadlines.toast_sent")}`,
           duration: 5000,
         });
+        if (sent > 0 && body?.data?.smtpConfigured === false) {
+          addToast({ type: "info", title: t("deadlines.toast_smtp") });
+        }
       } else {
         addToast({
           type: "warning",
           title:
-            data.error === "smtp_not_configured"
-              ? t("deadlines.toast_smtp")
-              : "Die Erinnerungen konnten nicht versendet werden. Bitte versuchen Sie es später erneut.",
+            "Die Erinnerungen konnten nicht versendet werden. Bitte versuchen Sie es später erneut.",
         });
       }
     } catch {
@@ -1153,6 +1200,7 @@ export default function DeadlinesPage() {
                   setCalcKey(v);
                   setCalcResult(null);
                   setCalcError(null);
+                  setCalcFerialsache(null);
                 }}
               >
                 <SelectTrigger id="calc-template">
@@ -1182,27 +1230,7 @@ export default function DeadlinesPage() {
             </div>
             <div className="flex items-end">
               <button
-                onClick={() => {
-                  if (rechtsraumFailed) {
-                    setCalcResult(null);
-                    setCalcError(RECHTSRAUM_UNAVAILABLE);
-                    return;
-                  }
-                  try {
-                    setCalcResult(
-                      calculateDeadline(
-                        calcOption.key,
-                        calcDate,
-                        rechtsraum.state,
-                        rechtsraum.country
-                      )
-                    );
-                    setCalcError(null);
-                  } catch (err) {
-                    setCalcResult(null);
-                    setCalcError(err instanceof Error ? err.message : String(err));
-                  }
-                }}
+                onClick={() => runCalc(calcFerialsache)}
                 className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
               >
                 <Calculator size={14} />
@@ -1219,6 +1247,17 @@ export default function DeadlinesPage() {
                 ? "Die Kanzlei-Einstellungen (Rechtsraum) konnten nicht geladen werden — die Frist wird nicht berechnet, damit kein fremdes Fristenrecht angewendet wird. Bitte Seite neu laden."
                 : t("deadlines.at_engine_error")}
             </div>
+          )}
+          {calcResult && ferialsacheQuestionVisible(calcResult, calcFerialsache) && (
+            <FerialsacheField
+              id="calc-ferialsache"
+              value={calcFerialsache}
+              onChange={(v) => {
+                setCalcFerialsache(v);
+                runCalc(v);
+              }}
+              missing={calcFerialsache === null}
+            />
           )}
           {calcResult && (
             <div className="brand-border brand-soft rounded-lg border p-3">

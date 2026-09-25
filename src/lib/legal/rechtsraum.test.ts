@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
+import { getRechtsraumParams, resolveMatterRechtsraum } from "@/lib/legal/rechtsraum";
 import type { KanzleiSettings } from "@/lib/kanzlei-settings";
 
 describe("getRechtsraumParams", () => {
@@ -47,5 +47,36 @@ describe("getRechtsraumParams", () => {
   it("returns empty for AT with non-AT state", () => {
     const settings = { rechtsraumCountry: "AT", rechtsraumState: "BY" } as KanzleiSettings;
     expect(getRechtsraumParams(settings)).toEqual({});
+  });
+});
+
+describe("resolveMatterRechtsraum (FRI-1)", () => {
+  it("an Austrian matter uses the AT engine even in a German firm", () => {
+    expect(resolveMatterRechtsraum("at", { country: "DE", state: "BY" })).toEqual({
+      country: "AT",
+      state: "AT",
+      source: "matter",
+    });
+  });
+
+  it("a German matter in an Austrian firm gets German rules without a guessed Land", () => {
+    expect(resolveMatterRechtsraum("de", { country: "AT", state: "AT" })).toEqual({
+      country: "DE",
+      state: undefined,
+      source: "matter",
+    });
+  });
+
+  it("a German matter in a German firm keeps the firm's Land", () => {
+    expect(resolveMatterRechtsraum("de", { country: "DE", state: "NW" }).state).toBe("NW");
+  });
+
+  it("an EU/unknown matter falls back to the firm", () => {
+    expect(resolveMatterRechtsraum("eu", { country: "AT", state: "AT" })).toEqual({
+      country: "AT",
+      state: "AT",
+      source: "firm",
+    });
+    expect(resolveMatterRechtsraum(undefined, {}).country).toBeUndefined();
   });
 });

@@ -147,6 +147,16 @@ export function parseDeadlineTable(markdown: string): ParsedDeadlineRow[] {
 
 // ── Fristenbuch assembly ────────────────────────────────────
 
+/**
+ * "Heute" for the Fristenbuch: the firm's calendar day in Europe/Vienna, not
+ * the UTC date — between 00:00 and 01:00/02:00 Vienna time UTC is still on
+ * the previous day, which showed a deadline that ended yesterday as
+ * "kritisch" instead of "überfällig".
+ */
+export function fristenbuchHeute(now: Date = new Date()): string {
+  return now.toLocaleDateString("sv-SE", { timeZone: "Europe/Vienna" });
+}
+
 export async function ladeFristenbuch(
   engine: FristenbuchEngine,
   opts: {

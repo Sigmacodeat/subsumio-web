@@ -505,11 +505,11 @@ describe("parseIntent — deadline_calc bundesland 3-letter codes", () => {
     expect(r.bundesland).toBe("SN");
   });
 
-  test("no bundesland → defaults to BY", () => {
+  test("FRI-2: no bundesland → no silent default (the firm's Rechtsraum decides)", () => {
     const r = parseIntent("frist berechnen zpo-berufung 2026-03-15");
     expect(r.kind).toBe("deadline_calc");
     if (r.kind !== "deadline_calc") return;
-    expect(r.bundesland).toBe("BY");
+    expect(r.bundesland).toBeUndefined();
   });
 });
 

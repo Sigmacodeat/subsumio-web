@@ -10,7 +10,9 @@ import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { calculateRvg } from "@/lib/rvg";
-import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
+import { computeFrist, fristOptionsFor } from "@/lib/legal/frist-options";
+import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 
 import { logger } from "@/lib/logger";
@@ -41,7 +43,15 @@ export type ParsedIntent =
   | { kind: "case_summary"; caseRef: string }
   | { kind: "brain_query"; query: string }
   | { kind: "rvg_calc"; streitwert: number }
-  | { kind: "deadline_calc"; ruleKey: string; startDate: string; bundesland: string }
+  | {
+      kind: "deadline_calc";
+      ruleKey: string;
+      startDate: string;
+      /** Only for DE/CH firms (Land/Kanton); never defaulted. */
+      bundesland?: string;
+      /** § 222 Abs 2 ZPO — "ferialsache" in the command. */
+      ferialsache?: boolean;
+    }
   | { kind: "conflict_check"; name: string; caseRef?: string }
   | { kind: "document_fetch"; caseRef: string; query: string }
   | { kind: "list_cases" }
@@ -253,17 +263,20 @@ export function parseIntent(text: string): ParsedIntent {
     if (caseMatch) return { kind: "invoice_status", caseRef: caseMatch[1].trim() };
   }
 
-  // Deadline calculation: "frist berechnen berufung ab 2026-03-15 BY" or "berechne frist zpo-berufung 15.03.2026"
-  // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
+  // Deadline calculation: "frist berechnen berufung ab 2026-03-15" (AT keys use
+  // underscores, e.g. einspruch_zahlungsbefehl), optional Land/Kanton for DE/CH
+  // firms and "ferialsache" (§ 222 Abs 2 ZPO). Must be checked BEFORE the
+  // deadline/task matchers to avoid being swallowed.
   const deadlineCalcMatch = trimmed.match(
-    /^(?:frist|deadline)\s+berechnen\s+([a-z-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?/i
+    /^(?:frist|deadline)\s+berechnen\s+([a-z_-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?(?:\s+(ferialsache))?\s*$/i
   );
   if (deadlineCalcMatch) {
     return {
       kind: "deadline_calc",
       ruleKey: deadlineCalcMatch[1].toLowerCase(),
       startDate: normalizeDate(deadlineCalcMatch[2]),
-      bundesland: (deadlineCalcMatch[3] || "BY").toUpperCase(),
+      ...(deadlineCalcMatch[3] ? { bundesland: deadlineCalcMatch[3].toUpperCase() } : {}),
+      ...(deadlineCalcMatch[4] ? { ferialsache: true } : {}),
     };
   }
 
@@ -2250,24 +2263,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   }
 
   if (intent.kind === "deadline_calc") {
-    const rule = DEADLINE_RULES.find((r) => r.key === intent.ruleKey);
-    if (!rule) {
-      const available = DEADLINE_RULES.map((r) => r.key).join(", ");
-      return `Unbekannte Fristregel: ${intent.ruleKey}. Verfügbare Regeln: ${available}`;
-    }
-    const land = intent.bundesland as Bundesland;
-    const result = calculateDeadline(rule, intent.startDate, land);
-    return [
-      `Fristberechnung: ${rule.label}`,
-      `Startdatum: ${intent.startDate}`,
-      `Bundesland: ${intent.bundesland}`,
-      `Enddatum: ${result.due_date}`,
-      // Followup D.14: rule.law already carries the precise statutory basis
-      // (calculateDeadline returns it too, as result.law) — was computed but
-      // never surfaced in the WhatsApp reply text.
-      `Rechtsgrundlage: ${result.law}`,
-      `Hinweis: ${result.calculation_note || "Bitte im Fristenkalender fachlich prüfen."}`,
-    ].join("\n");
+    return deadlineCalcReply(intent, ctx.sender.brainId);
   }
 
   if (intent.kind === "conflict_check") {
@@ -3177,4 +3173,57 @@ async function smartAssignCase(
   if (accessible.length === 1) return accessible[0];
 
   return null;
+}
+
+/**
+ * "frist berechnen …" over chat/WhatsApp — the same engine as the Fristen
+ * page: the firm's Rechtsraum decides (Austria → AT frist-engine with § 222
+ * ZPO, § 126 ZPO and Austrian holidays). Unreadable settings → no result,
+ * never a guessed country or Land.
+ */
+async function deadlineCalcReply(
+  intent: { ruleKey: string; startDate: string; bundesland?: string; ferialsache?: boolean },
+  brainId: string
+): Promise<string> {
+  let rechtsraum: { country?: string; state?: string };
+  try {
+    rechtsraum = getRechtsraumParams(await loadKanzleiSettingsForBrain(brainId));
+  } catch {
+    return "Fristberechnung nicht möglich: Die Kanzlei-Einstellungen (Rechtsraum) konnten nicht gelesen werden. Bitte im Fristenrechner der Web-App berechnen.";
+  }
+  const country = rechtsraum.country ?? "AT";
+  // A Land/Kanton only matters for DE/CH; Austria has no regional holidays here.
+  const state = country === "AT" ? rechtsraum.state : (intent.bundesland ?? rechtsraum.state);
+  const options = fristOptionsFor(country);
+  // Accept "zpo-berufung"-style keys by also trying the underscore form.
+  const key = options.some((o) => o.key === intent.ruleKey)
+    ? intent.ruleKey
+    : intent.ruleKey.replace(/-/g, "_");
+  if (!options.some((o) => o.key === key)) {
+    return `Unbekannte Fristart: ${intent.ruleKey}. Verfügbare Fristarten (${country}): ${options
+      .map((o) => o.key)
+      .join(", ")}`;
+  }
+  let result;
+  try {
+    result = computeFrist(key, intent.startDate, {
+      country,
+      state,
+      ferialsache: intent.ferialsache === true,
+    });
+  } catch (err) {
+    return `Fristberechnung nicht möglich: ${err instanceof Error ? err.message : String(err)}`;
+  }
+  return [
+    `Fristberechnung: ${result.label}${country !== "AT" ? ` (${country})` : ""}`,
+    `Zustellung/Beginn: ${intent.startDate}`,
+    ...(country !== "AT" && state ? [`Bundesland/Kanton: ${state}`] : []),
+    `Enddatum: ${result.dueDate}`,
+    ...(result.vorfrist ? [`Vorfrist: ${result.vorfrist}`] : []),
+    `Rechtsgrundlage: ${result.law}`,
+    ...(result.notfrist ? ["Notfrist — Vier-Augen-Kontrolle im Fristenbuch."] : []),
+    ...(result.hinweise.length > 0
+      ? result.hinweise.map((h) => `Hinweis: ${h}`)
+      : ["Hinweis: Bitte im Fristenkalender fachlich prüfen."]),
+  ].join("\n");
 }

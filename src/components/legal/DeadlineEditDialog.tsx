@@ -27,6 +27,8 @@ export interface DeadlineEditValues {
   vorfristDate: string;
   isNotfrist: boolean;
   law: string;
+  /** Required when the due date of a Notfrist moves; the server logs it. */
+  changeReason?: string;
 }
 
 interface DeadlineEditDialogProps {
@@ -60,6 +62,7 @@ export function DeadlineEditDialog({
   const [vorfristDate, setVorfristDate] = useState("");
   const [isNotfrist, setIsNotfrist] = useState(false);
   const [law, setLaw] = useState("");
+  const [changeReason, setChangeReason] = useState("");
 
   // Populate from the row each time the dialog opens on a different deadline.
   useEffect(() => {
@@ -69,10 +72,17 @@ export function DeadlineEditDialog({
     setVorfristDate(deadline.vorfristDate ?? "");
     setIsNotfrist(deadline.isNotfrist === true);
     setLaw(deadline.law ?? "");
+    setChangeReason("");
   }, [open, deadline]);
 
   const wasApproved = deadline?.reviewStatus === "approved";
-  const canSubmit = description.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(dueDate);
+  // Moving a Notfrist needs a written reason (checked again on the server).
+  const needsReason =
+    deadline?.isNotfrist === true && !!deadline.date && dueDate !== deadline.date.slice(0, 10);
+  const canSubmit =
+    description.trim().length > 0 &&
+    /^\d{4}-\d{2}-\d{2}$/.test(dueDate) &&
+    (!needsReason || changeReason.trim().length >= 5);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -83,6 +93,7 @@ export function DeadlineEditDialog({
       vorfristDate,
       isNotfrist,
       law: law.trim(),
+      ...(needsReason ? { changeReason: changeReason.trim() } : {}),
     });
   }
 
@@ -159,6 +170,34 @@ export function DeadlineEditDialog({
                 />
               </div>
             </div>
+
+            {needsReason && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-deadline-reason" className="text-xs">
+                  {L(
+                    "Begründung für die Änderung der Notfrist",
+                    "Reason for changing the statutory deadline"
+                  )}{" "}
+                  *
+                </Label>
+                <Input
+                  id="edit-deadline-reason"
+                  value={changeReason}
+                  onChange={(e) => setChangeReason(e.target.value)}
+                  aria-describedby="edit-deadline-reason-hint"
+                  required
+                />
+                <p
+                  id="edit-deadline-reason-hint"
+                  className="text-xs text-[color:var(--ds-text-muted)]"
+                >
+                  {L(
+                    "Wird mit altem und neuem Datum im Protokoll gespeichert (mind. 5 Zeichen).",
+                    "Stored in the audit trail with the old and new date (min. 5 characters)."
+                  )}
+                </p>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="edit-deadline-law" className="text-xs">

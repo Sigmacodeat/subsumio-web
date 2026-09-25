@@ -69,3 +69,43 @@ describe("computeFrist (DE)", () => {
     expect(r.vorfrist).toBeUndefined();
   });
 });
+
+describe("computeFrist — Ferialsache (§ 222 Abs 2 ZPO) und VfGH (§ 35 VfGG) (FRI-3/FRI-4)", () => {
+  it("§ 521 Abs 1 iVm § 222 Abs 2 Z 6 ZPO: Rekurs gegen EV-Beschluss, zugestellt 2026-07-20, Ferialsache → 2026-08-03", () => {
+    expect(computeFrist("rekurs", "2026-07-20", { country: "AT", ferialsache: true }).dueDate).toBe(
+      "2026-08-03"
+    );
+  });
+
+  it("§ 222 Abs 1 ZPO: ohne Ferialsache-Angabe bei Zustellung in der vhfZ → verlängert + Warnhinweis auf § 222 Abs 2", () => {
+    const r = computeFrist("rekurs", "2026-07-20", { country: "AT" });
+    expect(r.dueDate).toBe("2026-08-31");
+    expect(r.ferialsacheRelevant).toBe(true);
+    expect(r.vhfzVerlaengert).toBe(true);
+    expect(r.hinweise.some((h) => h.includes("§ 222 Abs 2 ZPO"))).toBe(true);
+  });
+
+  it("§ 464 Abs 1 ZPO: Zustellung außerhalb der vhfZ ohne Überschneidung → keine Warnung", () => {
+    const r = computeFrist("berufung", "2026-03-02", { country: "AT" });
+    expect(r.dueDate).toBe("2026-03-30");
+    expect(r.vhfzVerlaengert).toBe(false);
+    expect(r.hinweise.some((h) => h.includes("Ferialsache prüfen"))).toBe(false);
+  });
+
+  it("§ 230 Abs 1 ZPO: Klagebeantwortung ist keine vhfZ-gehemmte Frist → Ferialsache nicht relevant", () => {
+    expect(
+      computeFrist("klagebeantwortung", "2026-07-20", { country: "AT" }).ferialsacheRelevant
+    ).toBe(false);
+  });
+
+  it("§ 82 Abs 1 iVm § 35 VfGG, § 126 Abs 2 ZPO: VfGH-Beschwerde 6 Wochen ab 2026-11-12 endet am 24.12.", () => {
+    expect(computeFrist("beschwerde_vfgh", "2026-11-12", { country: "AT" }).dueDate).toBe(
+      "2026-12-24"
+    );
+  });
+
+  it("DE-Fristen haben keine Ferialsache-Frage", () => {
+    const r = computeFrist("zpo-berufung", "2026-07-20", { country: "DE", state: "BY" });
+    expect(r.ferialsacheRelevant).toBe(false);
+  });
+});

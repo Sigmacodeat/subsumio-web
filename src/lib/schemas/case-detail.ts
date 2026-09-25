@@ -18,6 +18,12 @@ export const deadlineFormSchema = z.object({
   is_notfrist: z.boolean().optional(),
   second_check_required: z.boolean().optional(),
   erv_zustelldatum: z.string().optional(),
+  /** Day the period started from (Zustellung) — kept for the Fristenbuch. */
+  start_date: z.string().optional(),
+  /** § 222 Abs 2 ZPO: the user confirmed the matter is (not) a Ferialsache. */
+  ferialsache: z.boolean().optional(),
+  /** Reason for moving a Notfrist — required and logged by the server. */
+  change_reason: z.string().max(500).optional(),
 });
 
 export type DeadlineFormData = z.infer<typeof deadlineFormSchema>;
