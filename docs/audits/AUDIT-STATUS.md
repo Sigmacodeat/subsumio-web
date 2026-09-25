@@ -30,6 +30,7 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 9b  | DSGVO — Rest               | #60 | e9aeb9de97   | ✅ live | AVV-Muster-Download (md + PDF, „anwaltlich zu prüfen"); Per-Item-Retention `retention_until`/`retention_days` für Dokumente/Notizen im trash-purge-Cron                          |
 | 9c  | DSGVO — Retention-Fix      | #66 | 834d0108ed   | ✅ live | Retention unterschreitet nie GoBD-Mindestfrist + respektiert Legal Hold (Parallel-Agent)                                                                                         |
 | 3b  | Kommunikation — Dedupe-Fix | #67 | fae1b8fa46   | ✅ live | Resend-Reconcile-Dedupe-Key pro Brain gescoped (Parallel-Agent)                                                                                                                  |
+| D5a | Signatur/Portal          | #72 | —            | ⏳ PR   | QES nur mit gültigem Zertifikat „qualified", Abschluss-Callbacks idempotent (Session-Claim + deterministischer Signatur-Slug), Aktenpflicht in Signatur-Schnellanlage            |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
