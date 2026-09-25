@@ -4,6 +4,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 import { apiGet } from "@/lib/queries/settings";
 
+/**
+ * A refused agent action must surface as an error (toast), never as a
+ * silent no-op: reads the route's German `error` text when there is one.
+ */
+async function ensureOk(res: Response, fallback: string): Promise<Response> {
+  if (res.ok) return res;
+  const body = (await res.json().catch(() => null)) as {
+    error?: unknown;
+    message?: unknown;
+  } | null;
+  const text =
+    typeof body?.error === "string"
+      ? body.error
+      : typeof body?.message === "string"
+        ? body.message
+        : `${fallback} (HTTP ${res.status})`;
+  throw new Error(text);
+}
+
 export type AgentStatus =
   | "waiting"
   | "active"
@@ -175,7 +194,7 @@ export function useSendInboxMessage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ payload: text }),
       });
-      if (!res.ok) return null;
+      await ensureOk(res, "Nachricht nicht gesendet");
       const data = await res.json();
       return data.message as InboxMessage | null;
     },
@@ -189,7 +208,9 @@ export function usePauseAgent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) =>
-      csrfFetch(`/api/agents/${id}/pause`, { method: "POST" }).then((r) => r.ok),
+      csrfFetch(`/api/agents/${id}/pause`, { method: "POST" }).then((r) =>
+        ensureOk(r, "Pausieren fehlgeschlagen").then(() => true)
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -198,7 +219,9 @@ export function useResumeAgent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) =>
-      csrfFetch(`/api/agents/${id}/resume`, { method: "POST" }).then((r) => r.ok),
+      csrfFetch(`/api/agents/${id}/resume`, { method: "POST" }).then((r) =>
+        ensureOk(r, "Fortsetzen fehlgeschlagen").then(() => true)
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -207,7 +230,9 @@ export function useCancelAgent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) =>
-      csrfFetch(`/api/agents/${id}/cancel`, { method: "POST" }).then((r) => r.ok),
+      csrfFetch(`/api/agents/${id}/cancel`, { method: "POST" }).then((r) =>
+        ensureOk(r, "Abbrechen fehlgeschlagen").then(() => true)
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -217,7 +242,7 @@ export function useReplayAgent() {
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await csrfFetch(`/api/agents/${id}/replay`, { method: "POST" });
-      if (!res.ok) return null;
+      await ensureOk(res, "Wiederholen fehlgeschlagen");
       const data = await res.json();
       return data.newJobId as number | null;
     },
@@ -242,7 +267,7 @@ export function useSubmitSupervisor() {
           ...(input.skipCritic ? { skip_critic: true } : {}),
         }),
       });
-      if (!res.ok) return null;
+      await ensureOk(res, "Auftrag konnte nicht gestartet werden");
       const data = await res.json();
       return data.jobId as number | null;
     },

@@ -55,7 +55,8 @@ export const GET = createHandler(
       return Response.json({ jobs });
     } catch (err) {
       log.error("[agents] list failed:", err instanceof Error ? err.message : String(err));
-      return Response.json({ jobs: [] });
+      // A failed load is not an empty list: the UI shows an error with retry.
+      return apiError("engine_unavailable", "Aufträge konnten nicht geladen werden", 503);
     }
   }
 );
@@ -87,10 +88,12 @@ export const POST = createHandler(
       });
 
       if (!upstream.ok) {
-        return new Response(JSON.stringify({ error: `Engine returned ${upstream.status}` }), {
-          status: upstream.status,
-          headers: { "Content-Type": "application/json" },
-        });
+        log.warn(`[agents] supervisor submit refused: HTTP ${upstream.status}`);
+        return apiError(
+          "engine_error",
+          "Auftrag konnte nicht gestartet werden",
+          upstream.status >= 500 ? 502 : upstream.status
+        );
       }
 
       const job = await upstream.json();
