@@ -69,7 +69,7 @@ describe("POST /api/cases/documents/detach", () => {
   });
 
   test("an archived matter answers 409", async () => {
-    mockDetach.mockRejectedValue(new CaseArchivedError("x"));
+    mockDetach.mockRejectedValue(new CaseArchivedError("legal/cases/a", "archived"));
     const res = await post({ case_slug: "legal/cases/a", doc_slug: "docs/x" });
     expect(res.status).toBe(409);
   });

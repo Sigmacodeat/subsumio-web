@@ -1,7 +1,6 @@
 import { describe, test, expect } from "vitest";
 import {
   bankTransactionId,
-  withBatchOccurrenceIds,
   createBankTransaction,
   autoMatchTransaction,
   applyMatch,

@@ -39,6 +39,7 @@ vi.mock("@/lib/api-handler", () => ({
         await logAudit(spec.action as never, spec.entityType, {
           entityId: spec.entityId,
           details: spec.details as Record<string, unknown>,
+          brainId: "brain-test",
         });
       }
       return res;
