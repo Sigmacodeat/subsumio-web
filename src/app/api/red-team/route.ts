@@ -2,7 +2,12 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
-import { createRedTeamPrompt, parseRedTeamOutput } from "@/lib/red-team-agent";
+import {
+  createRedTeamPrompt,
+  parseRedTeamOutput,
+  RED_TEAM_MAX_CONTEXT_CHARS,
+  RED_TEAM_MAX_DRAFT_CHARS,
+} from "@/lib/red-team-agent";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -10,8 +15,20 @@ export const maxDuration = 60;
 const inputSchema = z.object({
   case_slug: z.string().min(1).max(300),
   draft_slug: z.string().max(300).optional(),
-  draft_text: z.string().min(1),
-  case_context: z.string().min(1),
+  draft_text: z
+    .string()
+    .min(1)
+    .max(
+      RED_TEAM_MAX_DRAFT_CHARS,
+      `Der Entwurf ist zu lang (höchstens ${RED_TEAM_MAX_DRAFT_CHARS.toLocaleString("de-AT")} Zeichen). Bitte in Abschnitten prüfen.`
+    ),
+  case_context: z
+    .string()
+    .min(1)
+    .max(
+      RED_TEAM_MAX_CONTEXT_CHARS,
+      `Der Kontext ist zu lang (höchstens ${RED_TEAM_MAX_CONTEXT_CHARS.toLocaleString("de-AT")} Zeichen).`
+    ),
   legal_area: z.string().max(200).optional(),
   opponent_perspective: z.string().max(5000).optional(),
 });
@@ -62,17 +79,33 @@ export const POST = createHandler(
 
     const result = parseRedTeamOutput(rawOutput, body.case_slug);
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/red-team/${result.id}`,
-        title: `Red-Team: ${body.case_slug}`,
-        type: "red_team_result",
-        frontmatter: result,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    // The analysis must not look filed when it was not: a failed save is an
+    // error (the result travels along so it is not lost for the user).
+    let saved = false;
+    try {
+      const saveRes = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/red-team/${result.id}`,
+          title: `Red-Team: ${body.case_slug}`,
+          type: "red_team_result",
+          frontmatter: result,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      saved = saveRes.ok;
+    } catch {
+      saved = false;
+    }
+    if (!saved) {
+      return apiError(
+        "save_failed",
+        "Die Analyse wurde erstellt, konnte aber nicht in der Akte gespeichert werden.",
+        502,
+        { result }
+      );
+    }
 
     return apiSuccess({ result });
   }
