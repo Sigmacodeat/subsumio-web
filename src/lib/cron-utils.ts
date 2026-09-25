@@ -84,6 +84,17 @@ export async function fetchAllPagesStrict(brainId: string, type: string): Promis
 }
 
 /**
+ * The fictional demo matter seeded for every new firm (every page carries
+ * `demo: true`) stays visible in the dashboard, but must never trigger
+ * reminders, escalations or briefings.
+ */
+export function excludeDemoPages<T extends { frontmatter?: Record<string, unknown> | null }>(
+  pages: T[]
+): T[] {
+  return pages.filter((p) => p.frontmatter?.demo !== true);
+}
+
+/**
  * Fetch pages of multiple types in parallel. Returns a map keyed by type.
  * Each type fetch is independent — a failure for one type returns [] for that key.
  */

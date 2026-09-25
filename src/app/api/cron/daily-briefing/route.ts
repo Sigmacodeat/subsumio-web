@@ -12,6 +12,7 @@ import {
   matterPermissionsBySlug,
   mayReceiveMatterNotice,
   mayReceiveMatterNoticeAnonymously,
+  excludeDemoPages,
 } from "@/lib/cron-utils";
 import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
 import {
@@ -139,7 +140,14 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       // legal_deadline pages, the same second source cron/deadlines.ts
       // reads — a deadline tracked as its own page (not embedded in a
       // case's frontmatter.deadlines[]) was invisible to the briefing.
-      const batch = await batchFetchPages(sender.brainId, ["legal_case", "legal_deadline"], 1000);
+      const rawBatch = await batchFetchPages(
+        sender.brainId,
+        ["legal_case", "legal_deadline"],
+        1000
+      );
+      const batch = Object.fromEntries(
+        Object.entries(rawBatch).map(([type, pages]) => [type, excludeDemoPages(pages)])
+      );
       const allCases = batch["legal_case"] ?? [];
 
       // The briefing only covers matters its reader may see: a number bound to

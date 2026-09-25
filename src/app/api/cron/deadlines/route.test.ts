@@ -26,6 +26,7 @@ vi.mock("@/lib/cron-utils", async (importOriginal) => {
     matterPermissionsBySlug: actual.matterPermissionsBySlug,
     mayReceiveMatterNotice: actual.mayReceiveMatterNotice,
     mayReceiveMatterNoticeAnonymously: actual.mayReceiveMatterNoticeAnonymously,
+    excludeDemoPages: actual.excludeDemoPages,
     fetchAllPagesStrict: vi.fn(async (_brain: string, type: string) => m.pages[type] ?? []),
     getRecipientsByBrain: vi.fn(async () => new Map([["brain-a", m.users]])),
     createDailyDedup: () => async () => false,

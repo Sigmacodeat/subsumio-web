@@ -40,6 +40,7 @@ vi.mock("@/lib/cron-utils", async (importOriginal) => {
     activeStaffRecipients: actual.activeStaffRecipients,
     matterPermissionsBySlug: actual.matterPermissionsBySlug,
     recipientsForMatter: actual.recipientsForMatter,
+    excludeDemoPages: actual.excludeDemoPages,
     fetchAllPagesStrict: vi.fn(read),
     fetchPages: vi.fn(read),
     getRecipientsByBrain: vi.fn(

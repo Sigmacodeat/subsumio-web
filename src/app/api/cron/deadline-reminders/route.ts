@@ -13,6 +13,7 @@ import {
   matterPermissionsBySlug,
   recipientsForMatter,
   type EnginePage,
+  excludeDemoPages,
 } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import {
@@ -154,8 +155,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     let intakePages: EnginePage[];
     try {
       [casePages, deadlinePages, followUpPages, absencePages, intakePages] = await Promise.all([
-        fetchAllPagesStrict(brainId, "legal_case"),
-        fetchAllPagesStrict(brainId, "legal_deadline"),
+        fetchAllPagesStrict(brainId, "legal_case").then(excludeDemoPages),
+        fetchAllPagesStrict(brainId, "legal_deadline").then(excludeDemoPages),
         fetchAllPagesStrict(brainId, "legal_follow_up"),
         fetchPages(brainId, "absence_record", 10_000),
         fetchPages(brainId, "intake_request", 10_000),

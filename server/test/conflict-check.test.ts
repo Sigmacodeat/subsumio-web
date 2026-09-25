@@ -500,3 +500,37 @@ describe("conflictCheck on PGLite — prefilter recall", () => {
     expect(await slugsFor("Berta Unbekannt")).toEqual([]);
   });
 });
+
+describe("conflictCheck on PGLite — the seeded demo matter is never a collision", () => {
+  let engine: PGLiteEngine;
+
+  beforeAll(async () => {
+    engine = new PGLiteEngine();
+    await engine.connect({});
+    await engine.initSchema();
+    await engine.putPage("legal/cases/demo-berger", {
+      type: "legal_case",
+      title: "Demo Berger",
+      compiled_truth: "",
+      frontmatter: { client_name: "Irgendwer", opponent_name: "Berger", demo: true },
+    });
+    await engine.putPage("legal/cases/echt-berger", {
+      type: "legal_case",
+      title: "Echt Berger",
+      compiled_truth: "",
+      frontmatter: { client_name: "Irgendwer", opponent_name: "Berger Echt" },
+    });
+  }, 60_000);
+
+  afterAll(async () => {
+    if (engine) await engine.disconnect();
+  });
+
+  it("finds the real matter but not the demo one", async () => {
+    const slugs = (await conflictCheck(engine, { name: "Berger", side: "client" })).matches.map(
+      (m) => m.slug
+    );
+    expect(slugs).not.toContain("legal/cases/demo-berger");
+    expect(slugs).toContain("legal/cases/echt-berger");
+  });
+});

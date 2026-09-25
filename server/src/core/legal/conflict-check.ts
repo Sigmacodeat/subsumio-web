@@ -454,6 +454,7 @@ export async function conflictCheck(
             type as page_type
        FROM pages
        WHERE deleted_at IS NULL ${sourceClause}
+         AND COALESCE(frontmatter->>'demo', '') <> 'true'
          AND (
            (type = 'legal_case' AND (
              ${likeAny("frontmatter->>'client_name'")}
@@ -481,6 +482,7 @@ export async function conflictCheck(
             frontmatter->>'aliases' as aliases
        FROM pages
        WHERE deleted_at IS NULL ${sourceClause}
+         AND COALESCE(frontmatter->>'demo', '') <> 'true'
          AND type = 'person'
          AND frontmatter->>'case_ref' IS NOT NULL
          AND (${likeAny("title")} OR ${likeAny("frontmatter->>'aliases'")})

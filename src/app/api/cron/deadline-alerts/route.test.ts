@@ -18,6 +18,8 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: (...a: unknown[]) => m.patch(...a),
 }));
 vi.mock("@/lib/cron-utils", () => ({
+  excludeDemoPages: <T extends { frontmatter?: Record<string, unknown> | null }>(p: T[]) =>
+    p.filter((x) => x.frontmatter?.demo !== true),
   fetchAllPagesStrict: vi.fn(async (_brainId: string, type: string) => {
     const v = m.pages[type];
     if (v instanceof Error) throw v;

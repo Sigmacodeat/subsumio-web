@@ -11,6 +11,7 @@ import {
   matterPermissionsBySlug,
   mayReceiveMatterNotice,
   mayReceiveMatterNoticeAnonymously,
+  excludeDemoPages,
 } from "@/lib/cron-utils";
 import type { MatterPermissions } from "@/lib/matter-access";
 import type { User } from "@/lib/auth/store";
@@ -91,8 +92,8 @@ async function collectDeadlines(
   // Complete and strict: a failed read throws (the run reports an error)
   // instead of a truncated list that silently leaves deadlines out.
   const [cases, deadlinePages] = await Promise.all([
-    fetchAllPagesStrict(brainId, "legal_case"),
-    fetchAllPagesStrict(brainId, "legal_deadline"),
+    fetchAllPagesStrict(brainId, "legal_case").then(excludeDemoPages),
+    fetchAllPagesStrict(brainId, "legal_deadline").then(excludeDemoPages),
   ]);
 
   // 1. Fristen aus Akten-Frontmattern (legal_case → frontmatter.deadlines[])
