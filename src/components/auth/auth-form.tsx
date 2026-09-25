@@ -71,6 +71,8 @@ const COPY = {
     account_locked: "Zu viele Fehlversuche. Bitte versuchen Sie es in 30 Minuten erneut.",
     two_factor_policy_unavailable:
       "Die Sicherheitseinstellungen Ihrer Kanzlei sind gerade nicht abrufbar. Bitte versuchen Sie es in einer Minute erneut.",
+    legal_required:
+      "Bitte bestätigen Sie die AGB und die Datenschutzerklärung und schließen Sie den AVV ab.",
     generic: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   } as Record<string, string>,
   twoFactor: {
@@ -112,6 +114,9 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Contract conclusion at signup — both boxes are required (server enforces).
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptDpa, setAcceptDpa] = useState(false);
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
   const industry = "legal";
@@ -216,6 +221,10 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (mode === "signup" && (!acceptTerms || !acceptDpa)) {
+      setError(t.errors.legal_required);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/auth/${mode}`, {
@@ -223,7 +232,16 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mode === "signup"
-            ? { name, email, password, locale: "at", industry, jurisdiction }
+            ? {
+                name,
+                email,
+                password,
+                locale: "at",
+                industry,
+                jurisdiction,
+                acceptTerms,
+                acceptDpa,
+              }
             : { email, password }
         ),
       });
@@ -503,6 +521,60 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                   <p className="mt-1 text-[11px] [color:var(--mk-text-subtle)]">
                     {t.jurisdictionHint}
                   </p>
+                </fieldset>
+              )}
+
+              {mode === "signup" && (
+                <fieldset className="space-y-2" data-testid="signup-legal">
+                  <legend className="sr-only">Vertragsbedingungen</legend>
+                  <label className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+                    />
+                    <span>
+                      Ich akzeptiere die{" "}
+                      <Link
+                        href={p("/terms")}
+                        target="_blank"
+                        className="text-[var(--brand-text)] underline"
+                      >
+                        AGB
+                      </Link>{" "}
+                      und habe die{" "}
+                      <Link
+                        href={p("/privacy")}
+                        target="_blank"
+                        className="text-[var(--brand-text)] underline"
+                      >
+                        Datenschutzerklärung
+                      </Link>{" "}
+                      gelesen.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={acceptDpa}
+                      onChange={(e) => setAcceptDpa(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+                    />
+                    <span>
+                      Ich schließe im Namen meiner Kanzlei den{" "}
+                      <Link
+                        href={p("/dpa")}
+                        target="_blank"
+                        className="text-[var(--brand-text)] underline"
+                      >
+                        Auftragsverarbeitungsvertrag (AVV)
+                      </Link>{" "}
+                      nach Art. 28 DSGVO elektronisch ab.
+                    </span>
+                  </label>
                 </fieldset>
               )}
 

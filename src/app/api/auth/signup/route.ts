@@ -10,6 +10,8 @@ import { signupSchema } from "@/lib/api-validation";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { verifySession } from "@/lib/auth/session";
 import { env } from "@/lib/env";
+import { buildLegalAcceptance, legalAcceptancePatch } from "@/lib/auth/legal-acceptance";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -68,20 +70,30 @@ export const POST = createPublicHandler(
       jurisdiction ?? (demoSession?.demo?.jurisdiction === "de" ? "de" : "at");
 
     const passwordHash = await hashPassword(password);
-    const user = await store.create(
-      await buildNewUser({
-        email,
-        name,
-        passwordHash,
-        locale: locale === "en" ? "en" : "de",
-        referredBy,
-        industry,
-        // Tenant jurisdiction: explicit signup picker > demo attribution >
-        // AT default. Drives law-corpus scoping and seeded demo matter.
-        jurisdiction: tenantJurisdiction === "de" ? "DE" : "AT",
-        startTrial: true,
-      })
-    );
+    const draft = await buildNewUser({
+      email,
+      name,
+      passwordHash,
+      locale: locale === "en" ? "en" : "de",
+      referredBy,
+      industry,
+      // Tenant jurisdiction: explicit signup picker > demo attribution >
+      // AT default. Drives law-corpus scoping and seeded demo matter.
+      jurisdiction: tenantJurisdiction === "de" ? "DE" : "AT",
+      startTrial: true,
+    });
+    // The schema only lets the request through with acceptTerms/acceptDpa ===
+    // true; the record (versions + server time) is stored with the account.
+    const acceptance = buildLegalAcceptance(draft, "signup");
+    const user = await store.create({ ...draft, ...legalAcceptancePatch(draft, acceptance) });
+    void logAudit("user.legal_accepted", "user", {
+      brainId: user.brainId,
+      entityId: user.id,
+      userId: user.id,
+      userEmail: user.email,
+      ip: clientIp(req.headers),
+      details: { ...acceptance },
+    });
 
     // Brain provisioning — fire-and-forget; pre-warms the Engine source so
     // the first dashboard load is instant. Engine lazily creates the source

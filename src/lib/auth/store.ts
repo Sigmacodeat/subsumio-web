@@ -9,6 +9,7 @@ import { Pool, type PoolConfig } from "pg";
 import { AuthError } from "@/lib/errors";
 import type { OnboardingProgress } from "@/lib/types";
 import { trialEndsAtFrom } from "@/lib/billing/trial";
+import type { LegalAcceptance } from "@/lib/auth/legal-acceptance";
 
 export type Plan = "free" | "pro" | "team" | "enterprise";
 
@@ -105,6 +106,11 @@ export interface User {
   davTokenCreatedAt?: string | null;
   /** Last time a DAV client used the token (ISO). */
   davTokenLastUsedAt?: string | null;
+  /** Current acceptance of AGB / Datenschutzerklärung / AVV (versions + time).
+   *  See src/lib/auth/legal-acceptance.ts. */
+  legalAcceptance?: LegalAcceptance | null;
+  /** Every acceptance ever recorded for this account (append-only). */
+  legalAcceptanceHistory?: LegalAcceptance[] | null;
   createdAt: string;
 }
 
@@ -823,6 +829,7 @@ export type PublicUser = Omit<
   | "zeroEntropyKey"
   | "calendarFeedTokenHash"
   | "davTokenHash"
+  | "legalAcceptanceHistory"
 >;
 export function toPublic(user: User): PublicUser {
   const {
@@ -842,6 +849,8 @@ export function toPublic(user: User): PublicUser {
     // Feed/DAV credential hashes never leave the server.
     calendarFeedTokenHash: _cfh,
     davTokenHash: _dth,
+    // Acceptance history stays server-side; the current record is public.
+    legalAcceptanceHistory: _lah,
     ...pub
   } = user;
   void _ph;
@@ -859,6 +868,7 @@ export function toPublic(user: User): PublicUser {
   void _zek;
   void _cfh;
   void _dth;
+  void _lah;
   return pub;
 }
 

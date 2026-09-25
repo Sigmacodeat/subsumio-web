@@ -55,7 +55,15 @@ test.describe("Keyboard-Only Walkthrough", () => {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, name, password, locale: "de", industry: "legal" }),
+          body: JSON.stringify({
+            acceptTerms: true,
+            acceptDpa: true,
+            email,
+            name,
+            password,
+            locale: "de",
+            industry: "legal",
+          }),
         });
         return { status: res.status, ok: res.ok };
       },
