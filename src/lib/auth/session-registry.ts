@@ -262,15 +262,19 @@ export async function isSessionRevokedOrIdle(
        FROM subsumio_user_sessions WHERE sid = $1 AND user_id = $2`,
       [sid, userId, idleMs]
     );
-    if (rows.length === 0) return false;
-    if (rows[0].revoked_at !== null) return true;
-    if (rows[0].idle) {
+    let revoked = false;
+    if (rows.length > 0 && rows[0].revoked_at !== null) revoked = true;
+    else if (rows.length > 0 && rows[0].idle) {
       await revokeSession(userId, sid).catch(() => false);
-      return true;
+      revoked = true;
     }
-    return false;
-  } catch {
-    return false;
+    lastKnownSidRevoked.set(sid, revoked);
+    return revoked;
+  } catch (err) {
+    // Fail-closed like isSidRevoked: an unknown state is not "not revoked".
+    const lastKnown = lastKnownSidRevoked.get(sid);
+    if (lastKnown !== undefined) return lastKnown;
+    throw err;
   }
 }
 

@@ -15,7 +15,16 @@ vi.mock("@/lib/api-handler", () => ({
       }
       const parsed = opts.body!.safeParse(await req.json());
       if (!parsed.success) return Response.json({ error: "bad" }, { status: 400 });
-      return handler(ctx, parsed.data, {});
+      // Like the real createHandler: an AppError becomes its HTTP answer.
+      try {
+        return await handler(ctx, parsed.data, {});
+      } catch (err) {
+        const e = err as { statusCode?: number; code?: string; message?: string };
+        if (typeof e.statusCode === "number") {
+          return Response.json({ error: e.message, code: e.code }, { status: e.statusCode });
+        }
+        throw err;
+      }
     },
   apiError: (code: string, message: string, status: number) =>
     Response.json({ error: message, code }, { status }),

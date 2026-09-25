@@ -196,7 +196,8 @@ describe("GET /api/readiness (deep probe)", () => {
     } as never);
 
     const { GET } = await import("@/app/api/readiness/route");
-    const res = await GET({} as never);
+    // Details only for operators (internal secret); CRON_SECRET is the missing one here.
+    const res = await GET(req({ headers: { "x-internal-secret": "s" } }));
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.checks.config.status).toBe("down");

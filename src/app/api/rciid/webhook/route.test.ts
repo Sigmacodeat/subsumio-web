@@ -14,7 +14,7 @@ vi.mock("@/lib/rciid", async (orig) => {
     fileReportToCase: vi.fn(),
   };
 });
-vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));
+vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined), SYSTEM_BRAIN: "system" }));
 
 import { POST } from "./route";
 

@@ -14,7 +14,14 @@ vi.mock("@/lib/logger", () => ({
 }));
 vi.mock("@/lib/api-handler", () => ({
   createHandler: (
-    _opts: unknown,
+    opts: {
+      audit?: (
+        ctx: unknown,
+        body: unknown,
+        query: unknown,
+        req: Request
+      ) => { action: string; entityType: string; entityId?: string; details?: unknown } | null;
+    },
     handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
   ) => {
     const ctx = {
@@ -24,7 +31,23 @@ vi.mock("@/lib/api-handler", () => ({
     };
     return async (req: Request) => {
       const body = req.method === "DELETE" ? {} : await req.json().catch(() => ({}));
-      return handler(ctx, body, {}, req);
+      const res = await handler(ctx, body, {}, req);
+      // Like the real createHandler: on success the audit spec is written
+      // into the firm's protocol with the acting user.
+      if (res.ok && opts.audit) {
+        const spec = opts.audit(ctx, body, {}, req);
+        if (spec) {
+          const { logAudit } = await import("@/lib/audit");
+          void logAudit(spec.action as never, spec.entityType, {
+            entityId: spec.entityId,
+            details: spec.details as never,
+            brainId: ctx.brainId,
+            userId: ctx.user.id,
+            userEmail: ctx.user.email,
+          });
+        }
+      }
+      return res;
     };
   },
   apiError: (code: string, message: string, status: number) =>

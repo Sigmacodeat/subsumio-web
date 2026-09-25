@@ -176,6 +176,9 @@ describe("Zustellstatus landet bei der sendenden Kanzlei", () => {
     expect(vi.mocked(listAuditLogs)).toHaveBeenCalledWith(
       expect.objectContaining({ brainId: "test-brain", entityId: h, limit: 5 })
     );
+  });
+});
+
 describe("POST /api/sms/status — Kanzlei-Zuordnung (OPS-10)", () => {
   beforeEach(() => {
     seenKeys.clear();
