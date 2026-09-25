@@ -238,7 +238,8 @@ export default function EmailSettingsPage() {
                     ? "Status konnte nicht geändert werden"
                     : "Postfach konnte nicht getrennt werden",
           description:
-            data?.error === "calendar_sync_oauth_only"
+            // Errors arrive as { error: "<Text>", code: "<code>" }.
+            data?.code === "calendar_sync_oauth_only" || data?.error === "calendar_sync_oauth_only"
               ? "Kalender-Sync ist nur für Microsoft-365-Postfächer verfügbar."
               : "Bitte versuchen Sie es erneut.",
         });

@@ -158,10 +158,15 @@ export function getProviderLabel(provider: ModelProvider): string {
   return labels[provider];
 }
 
-export function formatCost(usd: number): string {
-  if (usd < 0.01) return `$${usd.toFixed(3)}`;
-  if (usd < 1) return `$${usd.toFixed(2)}`;
-  return `$${usd.toFixed(1)}`;
+/** Model prices are in US dollars; shown in Austrian number format ("0,12 US$"). */
+export function formatCost(usd: number, lang: "de" | "en" = "de"): string {
+  const digits = usd < 0.01 ? 3 : usd < 1 ? 2 : 1;
+  if (lang === "en") return `$${usd.toFixed(digits)}`;
+  const n = new Intl.NumberFormat("de-AT", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(usd);
+  return `${n} US$`;
 }
 
 export function formatContextWindow(tokens: number): string {
