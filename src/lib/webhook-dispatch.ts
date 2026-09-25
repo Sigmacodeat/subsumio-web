@@ -11,6 +11,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { logger } from "@/lib/logger";
+import { decrypt } from "@/lib/encryption";
 
 const log = logger("webhook-dispatch");
 
@@ -53,19 +54,25 @@ export async function getRegisteredWebhooks(): Promise<RegisteredWebhook[]> {
     const data = await res.json();
     const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as WebhookPage[];
 
-    return pages
-      .map((p) => {
+    const hooks = await Promise.all(
+      pages.map(async (p) => {
         const fm = p.frontmatter;
+        // Secrets are stored encrypted (secret_enc); older entries hold `secret`.
+        const secret =
+          (typeof fm.secret_enc === "string"
+            ? await decrypt(fm.secret_enc).catch(() => null)
+            : null) ?? (typeof fm.secret === "string" ? fm.secret : "");
         return {
           id: String(fm.id ?? p.slug),
           url: String(fm.url ?? ""),
           events: Array.isArray(fm.events) ? fm.events.map(String) : [],
-          secret: String(fm.secret ?? ""),
+          secret,
           status: String(fm.status ?? "active"),
           created_at: String(fm.created_at ?? new Date().toISOString()),
         };
       })
-      .filter((w) => w.status === "active" && w.url);
+    );
+    return hooks.filter((w) => w.status === "active" && w.url);
   } catch (err) {
     log.error("Failed to fetch registered webhooks", { error: String(err) });
     return [];

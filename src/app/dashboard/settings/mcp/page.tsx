@@ -32,6 +32,7 @@ export default function McpTokensPage() {
   const [tokens, setTokens] = useState<McpToken[]>([]);
   const [endpoint, setEndpoint] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function McpTokensPage() {
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
+    setLoadError(false);
     try {
       const res = await fetch("/api/settings/mcp-tokens");
       if (!res.ok) throw new Error();
@@ -50,11 +52,16 @@ export default function McpTokensPage() {
       setTokens(data.tokens ?? []);
       if (data.endpoint) setEndpoint(data.endpoint);
     } catch {
-      addToast({ type: "error", title: t("webhooks.err_load") });
+      setLoadError(true);
+      addToast({
+        type: "error",
+        title: L("Zugänge konnten nicht geladen werden", "Access keys could not be loaded"),
+      });
     } finally {
       setLoading(false);
     }
-  }, [addToast, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- L only depends on lang
+  }, [addToast, lang]);
 
   useEffect(() => {
     void load();
@@ -62,7 +69,7 @@ export default function McpTokensPage() {
 
   async function create() {
     if (!name.trim()) {
-      addToast({ type: "error", title: t("webhooks.err_required") });
+      addToast({ type: "error", title: L("Bitte einen Namen angeben", "Please enter a name") });
       return;
     }
     setSaving(true);
@@ -73,14 +80,18 @@ export default function McpTokensPage() {
         body: JSON.stringify({ name: name.trim() }),
       });
       if (!res.ok) throw new Error();
-      const data = (await res.json()) as { token?: string };
+      // The route answers { data: { token, … } } — the key is shown once.
+      const data = unwrapApiBody(await res.json()) as { token?: string };
       setFreshToken(data.token ?? null);
       setName("");
       setShowForm(false);
-      addToast({ type: "success", title: t("webhooks.saved") });
+      addToast({ type: "success", title: L("Zugang erstellt", "Access key created") });
       await load();
     } catch {
-      addToast({ type: "error", title: t("webhooks.err_save") });
+      addToast({
+        type: "error",
+        title: L("Zugang konnte nicht erstellt werden", "Access key could not be created"),
+      });
     } finally {
       setSaving(false);
     }
@@ -102,10 +113,13 @@ export default function McpTokensPage() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
-      addToast({ type: "success", title: t("webhooks.deleted") });
+      addToast({ type: "success", title: L("Zugang widerrufen", "Access key revoked") });
       await load();
     } catch {
-      addToast({ type: "error", title: t("webhooks.err_delete") });
+      addToast({
+        type: "error",
+        title: L("Zugang konnte nicht widerrufen werden", "Access key could not be revoked"),
+      });
     } finally {
       setDeleting(null);
     }
@@ -259,6 +273,25 @@ export default function McpTokensPage() {
           {[0, 1].map((i) => (
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <span>
+            {L("Die Zugänge konnten nicht geladen werden.", "Access keys could not be loaded.")}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              void load();
+            }}
+          >
+            {L("Erneut laden", "Retry")}
+          </Button>
         </div>
       ) : tokens.length === 0 ? (
         !showForm && (
