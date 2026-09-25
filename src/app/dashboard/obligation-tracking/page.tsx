@@ -17,6 +17,12 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { ObligationExtractionResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {
+  formatObligationDate,
+  obligationTypeLabel,
+  recurringLabel,
+  urgencyLabel,
+} from "@/lib/obligation-labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
@@ -180,6 +186,14 @@ export default function ObligationTrackingPage() {
 
       {result && (
         <div className="space-y-4">
+          {result.obligations.length === 0 &&
+            result.renewal_dates.length === 0 &&
+            result.payment_terms.length === 0 && (
+              <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] p-6 text-center text-sm text-[color:var(--ds-text-muted)]">
+                Im Dokument wurden keine Pflichten, Verlängerungs- oder Zahlungstermine erkannt.
+                Bitte das Dokument dennoch selbst prüfen.
+              </div>
+            )}
           {/* Summary */}
           {result.summary && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -204,17 +218,17 @@ export default function ObligationTrackingPage() {
                           variant="default"
                           className={cn("border text-xs", URGENCY_STYLES[o.urgency])}
                         >
-                          {o.urgency}
+                          {urgencyLabel(o.urgency)}
                         </Badge>
                         <Badge
                           variant="default"
                           className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                         >
-                          {o.type}
+                          {obligationTypeLabel(o.type)}
                         </Badge>
                         {o.trigger_date && (
                           <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
-                            {o.trigger_date}
+                            {formatObligationDate(o.trigger_date)}
                           </span>
                         )}
                         {o.recurring && o.recurring !== "one-time" && (
@@ -222,7 +236,7 @@ export default function ObligationTrackingPage() {
                             variant="default"
                             className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                           >
-                            {o.recurring}
+                            {recurringLabel(o.recurring)}
                           </Badge>
                         )}
                       </div>
@@ -258,7 +272,7 @@ export default function ObligationTrackingPage() {
                 {result.renewal_dates.map((r, i) => (
                   <div key={i} className="flex items-center gap-3 text-sm">
                     <span className="font-mono whitespace-nowrap text-[color:var(--ds-text)]">
-                      {r.date}
+                      {formatObligationDate(r.date)}
                     </span>
                     <span className="text-[color:var(--ds-text-muted)]">{r.description}</span>
                     {r.auto_renew && (
@@ -266,7 +280,7 @@ export default function ObligationTrackingPage() {
                         variant="default"
                         className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                       >
-                        Auto-Renewal
+                        Automatische Verlängerung
                       </Badge>
                     )}
                   </div>
@@ -285,7 +299,7 @@ export default function ObligationTrackingPage() {
                 {result.payment_terms.map((p, i) => (
                   <div key={i} className="flex items-center gap-3 text-sm">
                     <span className="font-mono whitespace-nowrap text-[color:var(--ds-text)]">
-                      {p.due_date}
+                      {formatObligationDate(p.due_date)}
                     </span>
                     {p.amount && (
                       <Badge
