@@ -28,6 +28,8 @@ const EXEMPT_MARKER = /engine-write-ok:\s*\S/;
  * entry once its file is migrated; the guard fails if an entry goes stale.
  */
 const KNOWN_OPEN = new Set([
+  // PUT then POST fallback on restore; the PUT is a wasted 404 but checked.
+  "src/app/api/admin/backup/[id]/route.ts",
   "src/app/api/intake/convert/route.ts",
   "src/app/api/pages/route.ts",
   "src/app/api/whatsapp/flow-endpoint/route.ts",
@@ -58,6 +60,26 @@ function isEngineWriteFetch(node: ts.CallExpression, sf: ts.SourceFile): boolean
     return true; // computed method: treat as a write
   }
   return false; // default GET
+}
+
+/**
+ * The engine serves only GET and DELETE on /api/pages/<slug>. A PATCH/PUT
+ * there answers 404 — a silent no-op when unchecked. Merge writes go through
+ * POST /api/pages with `merge: true` (enginePatchPage).
+ */
+function isSlugPatch(node: ts.CallExpression, sf: ts.SourceFile): boolean {
+  const callee = node.expression.getText(sf);
+  if (!/^(fetch|engineWriteOrThrow|engineWriteBestEffort)$/.test(callee)) return false;
+  const [url, init] = node.arguments;
+  if (!url || !/ENGINE_URL\}\/api\/pages\/\$\{/.test(url.getText(sf))) return false;
+  if (!init || !ts.isObjectLiteralExpression(init)) return false;
+  return init.properties.some(
+    (p) =>
+      ts.isPropertyAssignment(p) &&
+      p.name.getText(sf) === "method" &&
+      ts.isStringLiteralLike(p.initializer) &&
+      /^(patch|put)$/i.test(p.initializer.text)
+  );
 }
 
 /** Climb `await` / `(…)` / `.catch()` / `.then()` wrappers; true if the result is dropped. */
@@ -97,10 +119,16 @@ export function scanSource(fileName: string, content: string): string[] {
   const lines = content.split("\n");
   const hits: string[] = [];
   const visit = (node: ts.Node) => {
-    if (ts.isCallExpression(node) && isEngineWriteFetch(node, sf) && resultIsDiscarded(node)) {
+    const push = (why: string) => {
       const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
       const text = lines[line] ?? "";
-      if (!EXEMPT_MARKER.test(text)) hits.push(`${line + 1}: ${text.trim().slice(0, 120)}`);
+      if (!EXEMPT_MARKER.test(text)) hits.push(`${line + 1}: ${why}${text.trim().slice(0, 120)}`);
+    };
+    if (ts.isCallExpression(node) && isEngineWriteFetch(node, sf) && resultIsDiscarded(node)) {
+      push("");
+    }
+    if (ts.isCallExpression(node) && isSlugPatch(node, sf)) {
+      push("PATCH/PUT to /api/pages/<slug> (engine has no such route — use enginePatchPage): ");
     }
     ts.forEachChild(node, visit);
   };

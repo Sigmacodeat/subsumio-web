@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -47,19 +47,15 @@ export const PATCH = createHandler(
     const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
     const updatedFm = { ...fm, read: body.read, updated_at: new Date().toISOString() };
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.slug)}`, {
-      method: "PATCH",
+    // The engine has no PATCH route for pages — merge writes are POST + merge.
+    const res = await enginePatchPage(
       headers,
-      body: JSON.stringify({
+      {
         slug: body.slug,
-        title: existing.title,
-        type: existing.type,
-        content: existing.content ?? "",
         frontmatter: updatedFm,
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");

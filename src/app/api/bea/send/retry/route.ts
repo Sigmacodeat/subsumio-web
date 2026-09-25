@@ -106,9 +106,10 @@ export const POST = createHandler(
 
     // Persist sending state
     const sendingPersisted = await engineWriteBestEffort(
-      `${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`,
+      `${ENGINE_URL}/api/pages`,
       {
-        method: "PATCH",
+        // No PATCH route for pages in the engine: merge write via POST.
+        method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify({
           slug: body.filing_slug,
@@ -158,9 +159,10 @@ export const POST = createHandler(
           updated_at: new Date().toISOString(),
         };
         await engineWriteBestEffort(
-          `${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`,
+          `${ENGINE_URL}/api/pages`,
           {
-            method: "PATCH",
+            // No PATCH route for pages in the engine: merge write via POST.
+            method: "POST",
             headers: { "Content-Type": "application/json", ...ctx.headers },
             body: JSON.stringify({
               slug: body.filing_slug,
@@ -194,9 +196,10 @@ export const POST = createHandler(
       const finalPkg = confirmReceipt(sendingPkg, receipt);
 
       const packagePersisted = await engineWriteBestEffort(
-        `${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`,
+        `${ENGINE_URL}/api/pages`,
         {
-          method: "PATCH",
+          // No PATCH route for pages in the engine: merge write via POST.
+          method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
           body: JSON.stringify({
             slug: body.filing_slug,
@@ -212,9 +215,10 @@ export const POST = createHandler(
       let deadlineUpdated: boolean | null = null;
       if (body.deadline_id && receipt.is_success) {
         deadlineUpdated = await engineWriteBestEffort(
-          `${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`,
+          `${ENGINE_URL}/api/pages`,
           {
-            method: "PATCH",
+            // No PATCH route for pages in the engine: merge write via POST.
+            method: "POST",
             headers: { "Content-Type": "application/json", ...ctx.headers },
             body: JSON.stringify({
               slug: body.deadline_id,
@@ -267,9 +271,10 @@ export const POST = createHandler(
         updated_at: new Date().toISOString(),
       };
       await engineWriteBestEffort(
-        `${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`,
+        `${ENGINE_URL}/api/pages`,
         {
-          method: "PATCH",
+          // No PATCH route for pages in the engine: merge write via POST.
+          method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
           body: JSON.stringify({
             slug: body.filing_slug,

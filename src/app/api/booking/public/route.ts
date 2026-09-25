@@ -19,7 +19,7 @@ import { z } from "zod";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { apiSuccess } from "@/lib/api-response";
 import { clientIp } from "@/lib/auth/rate-limit";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { availableSlots, resolvePublicBookingBrainId } from "@/lib/public-booking";
 import { checkBookingConflict, createBookingFrontmatter } from "@/lib/online-booking";
 import { sendMail } from "@/lib/mail";
@@ -158,19 +158,20 @@ export const POST = createPublicHandler(
         frontmatter?: { status?: string };
       } | null;
       if (existingFm?.frontmatter?.status === "cancelled") {
-        const reactivate = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-          method: "PATCH",
-          headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-          body: JSON.stringify({
+        // The engine has no PATCH route for pages — merge writes are POST + merge.
+        const reactivate = await enginePatchPage(
+          engineHeadersForBrain(brainId),
+          {
+            slug,
             frontmatter: {
               ...frontmatter,
               booking_id: bookingId,
               source: "web",
               status: "confirmed",
             },
-          }),
-          signal: AbortSignal.timeout(15_000),
-        });
+          },
+          { timeoutMs: 15_000 }
+        );
         if (reactivate.ok) {
           return apiSuccess({
             confirmed: true,

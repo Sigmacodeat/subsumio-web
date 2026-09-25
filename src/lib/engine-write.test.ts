@@ -90,6 +90,14 @@ describe("check-unchecked-engine-writes guard", () => {
     ).toHaveLength(1);
   });
 
+  test("flags PATCH to /api/pages/<slug> (no such engine route)", () => {
+    expect(
+      scan(
+        'async function f(s: string){ const r = await fetch(`${ENGINE_URL}/api/pages/${s}`, { method: "PATCH" }); return r.ok; }'
+      )
+    ).toHaveLength(1);
+  });
+
   test("accepts checked writes, reads, and exempted lines", () => {
     expect(
       scan(

@@ -11,6 +11,13 @@ global.fetch = mockFetch as unknown as typeof fetch;
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine-test:3001",
   engineHeadersForBrain: vi.fn((brainId: string) => ({ "x-subsumio-source": brainId })),
+  // Same wire shape as the real helper: POST /api/pages with merge:true.
+  enginePatchPage: (headers: Record<string, string>, body: Record<string, unknown>) =>
+    mockFetch("http://engine-test:3001/api/pages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...body, merge: true }),
+    }),
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -280,12 +287,14 @@ describe("POST /api/booking/public", () => {
     mockFetch.mockImplementation((url: string, init?: RequestInit) => {
       const u = String(url);
       if (init?.method === "POST" && u.endsWith("/api/pages")) {
-        return Promise.resolve(new Response("conflict", { status: 409 }));
+        const merge = JSON.parse(String(init.body)).merge === true;
+        return Promise.resolve(
+          merge
+            ? new Response(JSON.stringify({ ok: true }), { status: 200 })
+            : new Response("conflict", { status: 409 })
+        );
       }
       if (u.includes("/api/pages/legal%2Fbookings%2F")) {
-        if (init?.method === "PATCH") {
-          return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-        }
         return Promise.resolve(
           new Response(JSON.stringify({ frontmatter: { status: "cancelled" } }), { status: 200 })
         );
@@ -309,10 +318,13 @@ describe("POST /api/booking/public", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).data.confirmed).toBe(true);
 
-    const patches = mockFetch.mock.calls.filter(
-      (c) => (c[1] as RequestInit | undefined)?.method === "PATCH"
-    );
-    expect(patches).toHaveLength(1);
+    // Reactivation is a merge write (the engine has no PATCH route for pages).
+    const merges = mockFetch.mock.calls.filter((c) => {
+      const init = c[1] as RequestInit | undefined;
+      return init?.method === "POST" && JSON.parse(String(init.body ?? "{}")).merge === true;
+    });
+    expect(merges).toHaveLength(1);
+    expect(mockFetch.mock.calls.some((c) => (c[1] as RequestInit)?.method === "PATCH")).toBe(false);
   });
 
   test("lehnt den Honeypot ab", async () => {

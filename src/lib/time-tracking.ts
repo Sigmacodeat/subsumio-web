@@ -10,7 +10,7 @@
  */
 
 import type { TimeEntry } from "@/lib/legal-types";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { zonedDateString } from "@/lib/datetime";
 import { createHash } from "node:crypto";
@@ -729,14 +729,12 @@ export async function setCurrentActivity(
 
   if (!create.ok) {
     // Try update instead
-    const update = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-      method: "PATCH",
+    // The engine has no PATCH route for pages — merge writes are POST + merge.
+    const update = await enginePatchPage(
       headers,
-      body: JSON.stringify({
-        frontmatter: payload,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      { slug, frontmatter: payload as unknown as Record<string, unknown> },
+      { timeoutMs: 10_000 }
+    );
 
     if (!update.ok) {
       throw new Error(`current_activity_set_failed_${update.status}`);
@@ -785,17 +783,12 @@ export async function updateActivityHeartbeat(
   };
   const slug = currentActivitySlug(userId, brainId);
 
-  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-    method: "PATCH",
+  // The engine has no PATCH route for pages — merge writes are POST + merge.
+  const res = await enginePatchPage(
     headers,
-    body: JSON.stringify({
-      frontmatter: {
-        ...current,
-        last_activity_at: new Date().toISOString(),
-      },
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
+    { slug, frontmatter: { ...current, last_activity_at: new Date().toISOString() } },
+    { timeoutMs: 10_000 }
+  );
   if (!res.ok) {
     // Swallowing this failure makes the timer look alive while the
     // inactivity cron is about to stop it — fail loudly instead.

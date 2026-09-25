@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import {
   sendFiling,
   confirmReceipt,
@@ -111,16 +111,12 @@ async function persistFilingPackage(
   draftSlug: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(filingSlug)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        slug: filingSlug,
-        frontmatter: { draft_slug: draftSlug, package: pkg },
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    // The engine has no PATCH route for pages — merge writes are POST + merge.
+    const res = await enginePatchPage(
+      ctx.headers,
+      { slug: filingSlug, frontmatter: { draft_slug: draftSlug, package: pkg } },
+      { timeoutMs: 10_000 }
+    );
     return res.ok;
   } catch {
     return false;
@@ -259,9 +255,10 @@ export const POST = createHandler(
       let deadlineUpdated: boolean | null = null;
       if (body.deadline_id && receipt.is_success) {
         deadlineUpdated = await engineWriteBestEffort(
-          `${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`,
+          `${ENGINE_URL}/api/pages`,
           {
-            method: "PATCH",
+            // No PATCH route for pages in the engine: merge write via POST.
+            method: "POST",
             headers: { "Content-Type": "application/json", ...ctx.headers },
             body: JSON.stringify({
               slug: body.deadline_id,

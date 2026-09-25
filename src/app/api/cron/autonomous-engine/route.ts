@@ -347,12 +347,15 @@ async function executeInboxTriage(
 
   // Persist triage result to engine if we have a raw_slug
   if (raw_slug) {
+    // No PATCH route for pages in the engine: merge write via POST.
     await engineWriteBestEffort(
-      `${ENGINE_URL}/api/pages/${encodeURIComponent(String(raw_slug))}`,
+      `${ENGINE_URL}/api/pages`,
       {
-        method: "PATCH",
+        method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
+          slug: String(raw_slug),
+          merge: true,
           frontmatter: {
             triage_urgency: card.urgency,
             triage_action_type: card.actionType,
