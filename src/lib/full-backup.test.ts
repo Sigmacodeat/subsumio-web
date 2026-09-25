@@ -8,11 +8,15 @@ import { collectFullBackup } from "./full-backup";
 let pages: Array<{ slug: string; title: string }>;
 let statsTotal: number | null;
 let failTextFor: Set<string>;
+let emptyTextFor: Set<string>;
+let brokenJsonFor: Set<string>;
 
 beforeEach(() => {
   pages = [];
   statsTotal = null;
   failTextFor = new Set();
+  emptyTextFor = new Set();
+  brokenJsonFor = new Set();
   global.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input));
     if (url.pathname === "/api/stats") {
@@ -29,6 +33,8 @@ beforeEach(() => {
     if (url.pathname.startsWith("/api/pages/")) {
       const slug = decodeURIComponent(url.pathname.slice("/api/pages/".length));
       if (failTextFor.has(slug)) return new Response("x", { status: 500 });
+      if (brokenJsonFor.has(slug)) return new Response("{not json", { status: 200 });
+      if (emptyTextFor.has(slug)) return Response.json({ slug, content: "" });
       return Response.json({ slug, content: `Text von ${slug}` });
     }
     return new Response("unexpected", { status: 599 });
@@ -72,6 +78,41 @@ describe("collectFullBackup (ENG-7)", () => {
     expect(out.completeness.complete).toBe(false);
     expect(out.completeness.pages_without_content).toBe(1);
     expect(out.completeness.pages_without_content_slugs).toEqual(["p/2"]);
+  });
+
+  it("an entry whose text is deliberately empty is backed up, not reported as unreadable", async () => {
+    pages = [
+      { slug: "contacts/x", title: "Kontakt" },
+      { slug: "p/1", title: "P" },
+    ];
+    statsTotal = 2;
+    emptyTextFor.add("contacts/x");
+    const out = await collectFullBackup({});
+    expect(out.completeness.pages_without_content).toBe(0);
+    expect(out.completeness.complete).toBe(true);
+    expect(out.pages.find((p) => p.slug === "contacts/x")?.content).toBe("");
+  });
+
+  it("a read error still makes the run incomplete, next to an empty entry", async () => {
+    pages = [
+      { slug: "contacts/x", title: "Kontakt" },
+      { slug: "p/2", title: "P" },
+    ];
+    statsTotal = 2;
+    emptyTextFor.add("contacts/x");
+    failTextFor.add("p/2");
+    const out = await collectFullBackup({});
+    expect(out.completeness.complete).toBe(false);
+    expect(out.completeness.pages_without_content_slugs).toEqual(["p/2"]);
+  });
+
+  it("an unreadable answer body counts as a failed read", async () => {
+    pages = [{ slug: "p/3", title: "P" }];
+    statsTotal = 1;
+    brokenJsonFor.add("p/3");
+    const out = await collectFullBackup({});
+    expect(out.completeness.complete).toBe(false);
+    expect(out.completeness.pages_without_content_slugs).toEqual(["p/3"]);
   });
 
   it("is not complete when the entry count cannot be confirmed", async () => {
