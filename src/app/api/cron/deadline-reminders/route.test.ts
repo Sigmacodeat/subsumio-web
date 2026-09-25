@@ -80,7 +80,10 @@ vi.mock("@/lib/push-send", () => ({ sendPushToUser: vi.fn(async () => 0) }));
 
 import { GET } from "./route";
 
-const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+// A fixed weekday: on Saturdays/Sundays the quiet-day rule (correctly) defers
+// routine reminders, which made these tests fail every weekend.
+const WEEKDAY_NOW = new Date("2026-09-23T08:00:00.000Z");
+const tomorrow = new Date(WEEKDAY_NOW.getTime() + 86_400_000).toISOString().slice(0, 10);
 const deadline = (slug: string) => ({
   slug,
   title: "Berufungsfrist",
@@ -92,6 +95,8 @@ const run = () =>
   );
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(WEEKDAY_NOW);
   vi.clearAllMocks();
   m.users = null;
   m.transports.length = 0;
@@ -165,6 +170,7 @@ describe("cron deadline-reminders — Ruhetage", () => {
   // AbortSignal.timeout & Co. der Route normal weiterlaufen.
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-26T08:00:00Z") });
+    vi.setSystemTime(new Date("2026-09-26T08:00:00Z"));
     const page = (slug: string, fm: Record<string, unknown>) => ({
       slug,
       title: slug,
@@ -230,6 +236,8 @@ describe("cron deadline-reminders — Ruhetage", () => {
   });
 
   it("notifies only active staff with access to the matter, one mail per person", async () => {
+    // Not about quiet days: run on the fixed weekday so nothing is deferred.
+    vi.setSystemTime(WEEKDAY_NOW);
     const { createDeadlineNotification } = await import("@/lib/comments");
     m.users = new Map([
       [

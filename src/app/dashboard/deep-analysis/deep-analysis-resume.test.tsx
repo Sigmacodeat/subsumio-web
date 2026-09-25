@@ -29,7 +29,7 @@ afterEach(() => {
 describe("Deep analysis — reopen by address", () => {
   it("?run=… loads that analysis again", async () => {
     window.history.replaceState(null, "", "/?run=r1");
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn(async (_url: string | URL | Request) =>
       Response.json({ data: { run_slug: "deep-analysis/runs/r1", status: "failed", error: "x" } })
     );
     vi.stubGlobal("fetch", fetchMock);

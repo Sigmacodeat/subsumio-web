@@ -72,7 +72,7 @@ export const GET = createHandler(
       return apiSuccess(templates);
     } catch (err) {
       log.error("[templates] list failed:", err instanceof Error ? err.message : String(err));
-      return apiError("engine_unavailable", "Vorlagen konnten nicht geladen werden", 503);
+      return apiError("service_unavailable", "Vorlagen konnten nicht geladen werden", 503);
     }
   }
 );
