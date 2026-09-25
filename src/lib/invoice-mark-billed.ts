@@ -6,10 +6,12 @@
  * lawyer to retry, and a retry creates a second invoice for the same work.
  *
  * Online it never writes back the dialog's snapshot of `time_entries`: time
- * entries go through `/api/time/mark-billed` (server reads the current matter,
- * audit trail, SSE). Expenses have no dedicated route, so only the expense list
- * is patched by id on a freshly read copy of the matter — entries added or
- * edited since the dialog opened are kept.
+ * entries go through `/api/time/mark-billed`, expenses through
+ * `/api/expenses/mark-billed` — both server-side routes read the current
+ * matter, enforce the billed guard (entries billed under a DIFFERENT invoice
+ * are never re-attributed, reported as `already_billed`), write the audit
+ * trail (`expense.mark_billed`) and broadcast SSE. The dialog only keeps its
+ * snapshot for the offline queue.
  */
 import { api } from "@/lib/api";
 import { enqueueMutation, isOnline } from "@/lib/offline-store";
@@ -30,16 +32,14 @@ export interface MarkInvoicedEntriesInput {
 export interface MarkInvoicedEntriesDeps {
   isOnline: () => boolean;
   markBilled: typeof api.time.markBilled;
-  getPage: (slug: string) => Promise<{ frontmatter?: Record<string, unknown> }>;
-  updatePage: typeof api.brain.updatePage;
+  markExpensesBilled: typeof api.expenses.markBilled;
   enqueueMutation: typeof enqueueMutation;
 }
 
 const defaultDeps: MarkInvoicedEntriesDeps = {
   isOnline,
   markBilled: (input) => api.time.markBilled(input),
-  getPage: (slug) => api.brain.getPage(slug),
-  updatePage: (page) => api.brain.updatePage(page),
+  markExpensesBilled: (input) => api.expenses.markBilled(input),
   enqueueMutation,
 };
 
@@ -79,15 +79,11 @@ export async function markInvoicedEntriesBilled(
 
   if (expenseIds.length > 0) {
     try {
-      const fresh = await deps.getPage(caseSlug);
-      const current = fresh.frontmatter?.expenses;
-      const ids = new Set(expenseIds);
-      const expenses = (Array.isArray(current) ? current : []).map((entry) =>
-        entry && typeof entry === "object" && ids.has(String((entry as BillableRef).id))
-          ? { ...(entry as object), billed: true, invoice_number: invoiceNumber }
-          : entry
-      );
-      await deps.updatePage({ slug: caseSlug, frontmatter: { expenses } });
+      await deps.markExpensesBilled({
+        entry_ids: expenseIds,
+        invoice_number: invoiceNumber,
+        case_slug: caseSlug,
+      });
     } catch {
       failed = true;
     }
