@@ -125,6 +125,9 @@ interface RunStatus {
   cancel_too_late: boolean;
 }
 
+/** Consecutive failed status polls before the page stops asking. */
+const MAX_POLL_FAILURES = 10;
+
 export default function DeepAnalysisPage() {
   const { t } = useLang();
   const [report, setReport] = useState<DeepAnalysisReport | null>(null);
@@ -144,6 +147,7 @@ export default function DeepAnalysisPage() {
   // The analysis runs as a background job: the result survives a closed tab,
   // and a run that has not reached the model can be stopped.
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollFailures = useRef(0);
   const stopPolling = () => {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = null;
@@ -180,17 +184,46 @@ export default function DeepAnalysisPage() {
   const poll = useCallback(
     async (runSlug: string) => {
       const id = runSlug.split("/").pop() ?? runSlug;
+      const giveUp = (message: string) => {
+        stopPolling();
+        setLoading(false);
+        setError(message);
+      };
       try {
         const res = await fetch(`/api/legal/deep-analysis/run/${encodeURIComponent(id)}`);
-        if (!res.ok) return;
+        if (res.status === 404) {
+          giveUp("Diese Analyse wurde nicht gefunden.");
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        pollFailures.current = 0;
         const json = await res.json();
         applyRun((json.data ?? json) as RunStatus);
       } catch {
-        // keep polling: a single failed poll is not a failed run
+        // A single failed poll is not a failed run — but polling must not
+        // go on forever against a failing endpoint.
+        pollFailures.current += 1;
+        if (pollFailures.current >= MAX_POLL_FAILURES) {
+          giveUp(
+            "Der Stand der Analyse ist gerade nicht abrufbar. Die Analyse läuft weiter — bitte die Seite später erneut öffnen."
+          );
+        }
       }
     },
     [applyRun]
   );
+
+  // Reopened with ?run=…: show that analysis (running or finished) again.
+  useEffect(() => {
+    const runId = new URLSearchParams(window.location.search).get("run");
+    if (!runId) return;
+    setLoading(true);
+    pollFailures.current = 0;
+    void poll(runId);
+    pollRef.current = setInterval(() => void poll(runId), 3000);
+    return () => stopPolling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const run = async () => {
     const slugList = docs.map((d) => d.slug);
@@ -226,7 +259,12 @@ export default function DeepAnalysisPage() {
       const json = await res.json();
       const status = (json.data ?? json) as RunStatus;
       applyRun(status);
+      // The run id goes into the address, so the page can be left and the
+      // result opened again (bookmark / back navigation).
+      const runId = status.run_slug.split("/").pop() ?? status.run_slug;
+      window.history.replaceState(null, "", `?run=${encodeURIComponent(runId)}`);
       stopPolling();
+      pollFailures.current = 0;
       pollRef.current = setInterval(() => void poll(status.run_slug), 3000);
     } catch {
       setLoading(false);
