@@ -31,13 +31,16 @@ async function main() {
     process.exit(1);
   }
 
+  // Disable the statement timeout for this batch import: large law files can
+  // take minutes to chunk + insert. It has to be the env knob, set BEFORE the
+  // pool exists — the timeout is a connection startup parameter on every
+  // pooled connection (server/src/core/db.ts, resolveSessionTimeouts), so a
+  // later `executeRaw("SET statement_timeout = 0")` only reaches the one
+  // connection that ran it (see import-judikatur.ts). Explicit env wins.
+  process.env.GBRAIN_STATEMENT_TIMEOUT ??= "0";
   const engine = new PostgresEngine();
   await engine.connect({ database_url: config.database_url });
   await engine.initSchema();
-
-  // Disable statement timeout for this session — large law files can take
-  // minutes to chunk + insert, and the default 10min timeout is too tight.
-  await engine.executeRaw("SET statement_timeout = 0");
 
   const files = readdirSync(DIR)
     .filter((f) => extname(f) === ".md")
