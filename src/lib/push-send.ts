@@ -11,7 +11,13 @@
  * production credentials are configured.
  */
 
-import { getPushTokensForUser, unregisterPushToken, type PushTokenEntry } from "./push-token-store";
+import {
+  deletePushTokensForUser,
+  getPushTokensForUser,
+  unregisterPushToken,
+  type PushTokenEntry,
+} from "./push-token-store";
+import { getStore } from "@/lib/auth/store";
 import { parseWebPushSubscription, sendWebPush } from "@/lib/web-push-core";
 import { logger } from "@/lib/logger";
 
@@ -31,6 +37,20 @@ export interface PushPayload {
 export async function sendPushToUser(userId: string, payload: PushPayload): Promise<number> {
   const tokens = await getPushTokensForUser(userId);
   if (tokens.length === 0) return 0;
+
+  // A deactivated (or deleted) account never receives pushes — matter and
+  // deadline titles would land on a device whose user has no access any
+  // more. Its leftover registrations are removed on the way.
+  let user: Awaited<ReturnType<ReturnType<typeof getStore>["getById"]>>;
+  try {
+    user = await getStore().getById(userId);
+  } catch {
+    return 0; // account state unknown — fail closed, but keep the registrations
+  }
+  if (!user || user.deactivatedAt) {
+    await deletePushTokensForUser(userId).catch(() => 0);
+    return 0;
+  }
 
   let sent = 0;
   for (const entry of tokens) {

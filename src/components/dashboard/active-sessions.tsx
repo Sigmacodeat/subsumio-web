@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
+import { currentPushEndpoint } from "@/lib/push-client";
 
 interface SessionRow {
   sid: string;
@@ -86,10 +87,13 @@ export function ActiveSessions() {
 
   const revokeMutation = useMutation({
     mutationFn: async (body: { sid?: string; allOthers?: boolean }) => {
+      // "Sign out others" also ends the other devices' push registrations;
+      // this browser keeps its own.
+      const keepPushEndpoint = body.allOthers ? await currentPushEndpoint() : undefined;
       const res = await csrfFetch("/api/auth/sessions/revoke", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(keepPushEndpoint ? { ...body, keepPushEndpoint } : body),
       });
       if (!res.ok) throw new Error("revoke_failed");
       return res.json();

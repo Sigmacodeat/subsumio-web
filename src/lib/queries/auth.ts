@@ -6,6 +6,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { api, isPublicRoute } from "@/lib/api";
 import { tracking, resetUser } from "@/lib/tracking";
 import type { OnboardingProgress } from "@/lib/types";
+import { currentPushEndpoint, unsubscribeCurrentPush } from "@/lib/push-client";
 
 export interface LoginInput {
   email: string;
@@ -84,7 +85,13 @@ export function useLogout() {
   const qc = useQueryClient();
   const router = useRouter();
   return useMutation({
-    mutationFn: () => api.auth.logout(),
+    mutationFn: async () => {
+      // This device's push registration ends with the session.
+      const pushEndpoint = await currentPushEndpoint();
+      const result = await api.auth.logout(pushEndpoint ? { pushEndpoint } : undefined);
+      if (pushEndpoint) await unsubscribeCurrentPush();
+      return result;
+    },
     onSuccess: () => {
       tracking.auth.logout();
       resetUser();
