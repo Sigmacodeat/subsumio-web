@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createOutboundEntry,
   exportOutboundRegister,
@@ -17,7 +18,9 @@ const createSchema = z.object({
   case_slug: z.string().max(300).optional(),
   subject: z.string().min(1).max(500),
   pages: z.number().min(0).max(1000).optional(),
-  sent_by: z.string().min(1).max(300),
+  // Ignored: "sent by" is always the signed-in user (kept optional so older
+  // clients do not fail validation).
+  sent_by: z.string().max(300).optional(),
   tracking_id: z.string().max(300).optional(),
   /** Mail-provider message id (Resend email_id) for webhook reconciliation. */
   provider_id: z.string().max(300).optional(),
@@ -37,7 +40,10 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const entry = createOutboundEntry(body);
+    const entry = createOutboundEntry({
+      ...body,
+      sent_by: ctx.user.name?.trim() || ctx.user.email,
+    });
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
@@ -77,21 +83,28 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "outbound_entry", limit: "500" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: OutboundEntry[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as OutboundEntry[];
+    // Engine list items carry the entry in `frontmatter`; listEnginePages
+    // pages past the per-request cap and leaves out deleted entries. Strict:
+    // a failed batch must not produce an incomplete register or export.
+    let items: OutboundEntry[];
+    try {
+      const pages = await listEnginePages(ctx.headers, "outbound_entry", 5000, { strict: true });
+      items = pages
+        .map((p) => p.frontmatter as unknown as OutboundEntry)
+        .filter((e): e is OutboundEntry => !!e && typeof e.date === "string");
+    } catch {
+      return apiError("engine_error", "Postausgangsbuch konnte nicht geladen werden", 502);
+    }
+    items.sort((a, b) => b.date.localeCompare(a.date));
     if (query?.case_slug) {
       items = items.filter((e) => e.case_slug === query.case_slug);
     }
-    if (query?.from && query?.to) {
-      items = filterOutboundByDateRange(items, query.from, query.to);
+    if (query?.from || query?.to) {
+      items = filterOutboundByDateRange(
+        items,
+        query.from ?? "0000-01-01",
+        query.to ?? "9999-12-31"
+      );
     }
     if (query?.format === "csv") {
       const csv = exportOutboundRegister(items);
