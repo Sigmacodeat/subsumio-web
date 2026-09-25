@@ -277,3 +277,55 @@ describe("cron deadline-reminders — Ruhetage", () => {
     expect([...new Set(notified)].sort()).toEqual(["admin", "lawyer"]);
   });
 });
+
+describe("cron deadline-reminders — stale intake notices", () => {
+  it("go to active staff only; an intake tied to a matter only to people with access", async () => {
+    const { createIntakeStaleNotification } = await import("@/lib/comments");
+    m.users = new Map([
+      [
+        "brain-a",
+        [
+          { id: "admin", email: "admin@firm-a.test", role: "admin" },
+          { id: "walled", email: "walled@firm-a.test", role: "lawyer" },
+          { id: "client", email: "client@client.test", role: "client_viewer" },
+          { id: "gone", email: "gone@firm-a.test", role: "lawyer", deactivatedAt: "2026-01-01" },
+        ],
+      ],
+    ]);
+    const old = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    m.pages = {
+      "brain-a": {
+        legal_case: [
+          {
+            slug: "cases/walled",
+            title: "Akte W",
+            frontmatter: { permissions: { blocked_users: ["walled"] } },
+          },
+        ],
+        intake_request: [
+          { slug: "intake/free", title: "I1", frontmatter: { status: "new", created_at: old } },
+          {
+            slug: "intake/tied",
+            title: "I2",
+            frontmatter: {
+              status: "accepted",
+              created_at: old,
+              converted_case_slug: "cases/walled",
+            },
+          },
+        ],
+      },
+    };
+    await run();
+    const calls = vi
+      .mocked(createIntakeStaleNotification)
+      .mock.calls.map((c) => c[0] as { userId: string; intakeSlug: string });
+    const to = (slug: string) =>
+      calls
+        .filter((c) => c.intakeSlug === slug)
+        .map((c) => c.userId)
+        .sort();
+    expect(to("intake/free")).toEqual(["admin", "walled"]);
+    expect(to("intake/tied")).toEqual(["admin"]);
+  });
+});

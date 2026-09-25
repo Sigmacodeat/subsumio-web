@@ -4,7 +4,7 @@ import { sendMail } from "@/lib/mail";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { activeStaffRecipients, getRecipientsByBrain } from "@/lib/cron-utils";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -128,8 +128,11 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let brainsWithHits = 0;
   let mailsSent = 0;
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    // Firm-wide digest without matter content: active firm staff only, one
+    // mail per person — never client accounts or deactivated users.
+    const recipients = activeStaffRecipients(brainUsers);
     const watchlist = await readWatchlist(brainId);
     if (watchlist.length === 0) continue;
 

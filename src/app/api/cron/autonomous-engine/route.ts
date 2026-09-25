@@ -14,7 +14,12 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { triageMessage, type TriageInput } from "@/lib/triage";
 import { dispatchWebhookEvent } from "@/lib/webhook-dispatch";
 import { createAutonomousTaskNotification } from "@/lib/comments";
-import { getStore } from "@/lib/auth/store";
+import {
+  activeStaffRecipients,
+  getRecipientsByBrain,
+  matterPermissionsForSlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
 import { enqueuePostUploadTask } from "@/lib/post-upload-outbox";
 import { logger } from "@/lib/logger";
 
@@ -94,15 +99,19 @@ async function autonomousEngineHandler(_req: NextRequest): Promise<Response> {
     result?: Record<string, unknown>
   ) {
     try {
-      const store = getStore();
-      const users = await store.list();
-      for (const user of users) {
-        if (user.deactivatedAt) continue;
-        const userBrainId = user.orgId ? user.brainId : user.brainId;
-        if (userBrainId !== taskBrainId && taskBrainId !== "system") continue;
+      // Only the task's own firm hears about it — a task without a firm (or
+      // queued under the aggregator brain) notifies nobody. Within the firm:
+      // active staff only, and a matter's task only to people who may open
+      // that matter (unreadable matter → admins only).
+      if (!taskBrainId || taskBrainId === "system") return;
+      const staff = activeStaffRecipients((await getRecipientsByBrain()).get(taskBrainId) ?? []);
+      const matterPermissions = caseSlug
+        ? await matterPermissionsForSlug(taskBrainId, caseSlug)
+        : new Map();
+      for (const user of recipientsForMatter(staff, caseSlug || null, matterPermissions)) {
         await createAutonomousTaskNotification({
           userId: user.id,
-          brainId: user.brainId,
+          brainId: taskBrainId,
           taskId,
           taskType,
           status,

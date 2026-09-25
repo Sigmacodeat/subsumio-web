@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { billableRecipientsByBrain } from "@/lib/cron-utils";
+import { billableRecipientsByBrain, recipientsForAllMatters } from "@/lib/cron-utils";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { renderMarkdown } from "@/lib/markdown";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
@@ -20,7 +20,9 @@ export const maxDuration = 300;
  * For each brain (Kanzlei):
  *  1. Submits a supervisor job with the Rundown prompt
  *  2. Polls the engine for job completion (up to 120s)
- *  3. Emails the result to all recipients of that brain
+ *  3. Emails the result, one mail per person, to the firm's active staff who
+ *     may open every matter of the firm — the briefing covers all matters
+ *     (unreadable matters → admins only)
  *  4. Sends a WhatsApp notification (if consent + window allow)
  *
  * The job is tagged name="rundown" so the frontend can filter for it
@@ -188,21 +190,23 @@ export const GET = createCronHandler(async (_req: NextRequest): Promise<Response
 
         // Email delivery
         if (mailOn) {
-          const recipients = recipientsByBrain.get(brainId) ?? [];
+          const recipients = await recipientsForAllMatters(
+            brainId,
+            recipientsByBrain.get(brainId) ?? []
+          );
           const emails = recipients.map((u) => u.email).filter((e): e is string => Boolean(e));
 
           if (emails.length > 0) {
             const subject = `Subsumio Rundown — ${new Date().toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" })}`;
             const html = buildEmailHtml(result.result);
 
-            const mailResult = await sendMail({
-              to: emails,
-              subject,
-              html,
-              text: result.result,
-            });
-
-            if (mailResult.sent) emailed++;
+            // One mail per person — no shared recipient line.
+            let anySent = false;
+            for (const to of emails) {
+              const mailResult = await sendMail({ to, subject, html, text: result.result });
+              if (mailResult.sent) anySent = true;
+            }
+            if (anySent) emailed++;
           }
         }
 

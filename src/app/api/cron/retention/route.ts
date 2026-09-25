@@ -3,9 +3,12 @@ import { sendMail } from "@/lib/mail";
 import { createCronHandler } from "@/lib/api-handler";
 import {
   type EnginePage,
+  activeStaffRecipients,
   fetchPages,
   getRecipientsByBrain,
   createDailyDedup,
+  matterPermissionsBySlug,
+  mayReceiveMatterNotice,
 } from "@/lib/cron-utils";
 import { env } from "@/lib/env";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
@@ -24,6 +27,10 @@ export const maxDuration = 300;
  * berechnet Jahre seit Abschluss und benachrichtigt bei:
  *   - ≥ 7 Jahren: "Prüfung empfohlen" (Aufbewahrungsfrist §§ 131, 132 BAO abgelaufen)
  *   - ≥ 10 Jahren: "Löschfällig" (3 Jahre Karenz nach Fristablauf)
+ *
+ * Empfänger: nur aktive Kanzlei-Mitarbeiter; jede Akte nur an Personen, die
+ * sie öffnen dürfen (Sichtbarkeit, Team, Freigaben, Ethical Wall). Jede
+ * Person bekommt eine eigene Mail mit genau ihren Akten.
  *
  * Dedupe: maximal eine Mail pro Brain pro Kalendertag.
  */
@@ -66,9 +73,13 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let mailsSent = 0;
   let itemsFound = 0;
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    const recipients = activeStaffRecipients(brainUsers);
+    if (recipients.length === 0) continue;
     const closedCases = await fetchClosedCases(brainId);
+    // Every item IS a closed matter, so its access rules come from the same read.
+    const matterPermissions = matterPermissionsBySlug(closedCases);
 
     const items: RetentionItem[] = [];
     for (const page of closedCases) {
@@ -110,6 +121,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         if (daysSinceNotification < 30) continue;
 
         for (const user of recipients) {
+          if (!mayReceiveMatterNotice(user, item.slug, matterPermissions)) continue;
           try {
             await createRetentionNotification({
               userId: user.id,
@@ -144,36 +156,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     if (await alreadyNotifiedToday(brainId)) continue;
 
-    const toDelete = items.filter((i) => i.action === "delete");
-    const toReview = items.filter((i) => i.action === "review");
-
-    const parts: string[] = [];
-    if (toDelete.length > 0) {
-      parts.push("🔴 LÖSCHFÄLLIG (≥ 10 Jahre nach Abschluss):");
-      for (const i of toDelete) {
-        parts.push(
-          `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
-        );
-      }
-      parts.push("");
-    }
-    if (toReview.length > 0) {
-      parts.push("🟡 PRÜFUNG EMPFOHLEN (≥ 7 Jahre nach Abschluss, §§ 131, 132 BAO):");
-      for (const i of toReview) {
-        parts.push(
-          `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
-        );
-      }
-      parts.push("");
-    }
-    parts.push(`Löschfristen-Übersicht: ${appUrl}/dashboard/compliance/retention`);
-    parts.push("");
-    parts.push("Fertigen Sie vor der Löschung stets eine Sicherungskopie an.");
-
-    const subject = `📦 Aufbewahrungsfristen: ${toDelete.length} löschfällig, ${toReview.length} zu prüfen`;
-    const text = parts.join("\n");
-
     for (const user of recipients) {
+      const visible = items.filter((i) => mayReceiveMatterNotice(user, i.slug, matterPermissions));
+      if (visible.length === 0) continue;
+      const { subject, text } = renderRetentionDigest(visible, appUrl);
       const result = await sendMail({ to: user.email, subject, text });
       if (result.sent) mailsSent++;
     }
@@ -186,3 +172,38 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     mails_sent: mailsSent,
   });
 });
+
+/** One person's digest — only the matters they may see. */
+function renderRetentionDigest(
+  items: RetentionItem[],
+  appUrl: string
+): { subject: string; text: string } {
+  const toDelete = items.filter((i) => i.action === "delete");
+  const toReview = items.filter((i) => i.action === "review");
+
+  const parts: string[] = [];
+  if (toDelete.length > 0) {
+    parts.push("🔴 LÖSCHFÄLLIG (≥ 10 Jahre nach Abschluss):");
+    for (const i of toDelete) {
+      parts.push(
+        `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
+      );
+    }
+    parts.push("");
+  }
+  if (toReview.length > 0) {
+    parts.push("🟡 PRÜFUNG EMPFOHLEN (≥ 7 Jahre nach Abschluss, §§ 131, 132 BAO):");
+    for (const i of toReview) {
+      parts.push(
+        `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
+      );
+    }
+    parts.push("");
+  }
+  parts.push(`Löschfristen-Übersicht: ${appUrl}/dashboard/compliance/retention`);
+  parts.push("");
+  parts.push("Fertigen Sie vor der Löschung stets eine Sicherungskopie an.");
+
+  const subject = `📦 Aufbewahrungsfristen: ${toDelete.length} löschfällig, ${toReview.length} zu prüfen`;
+  return { subject, text: parts.join("\n") };
+}

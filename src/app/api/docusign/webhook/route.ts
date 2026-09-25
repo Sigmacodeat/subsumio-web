@@ -17,7 +17,12 @@ import {
 import { appendDocumentsToMatter, uploadFileToMatter } from "@/lib/email/mail-filing";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { createNotificationFailureNotification } from "@/lib/comments";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  activeStaffRecipients,
+  getRecipientsByBrain,
+  matterPermissionsForSlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
 import { logAudit } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 
@@ -143,7 +148,13 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       if (status === "declined") {
         declined = true;
         try {
-          const recipients = (await getRecipientsByBrain()).get(brainId) ?? [];
+          // Active firm staff only; a matter's decline only to people who
+          // may open that matter (unreadable matter → admins only).
+          const staff = activeStaffRecipients((await getRecipientsByBrain()).get(brainId) ?? []);
+          const matterPermissions = caseSlug
+            ? await matterPermissionsForSlug(brainId, caseSlug)
+            : new Map();
+          const recipients = recipientsForMatter(staff, caseSlug || null, matterPermissions);
           for (const recipient of recipients) {
             await createNotificationFailureNotification({
               userId: recipient.id,
