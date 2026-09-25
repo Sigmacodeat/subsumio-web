@@ -1058,9 +1058,8 @@ export function OverviewTab() {
                     <button
                       disabled={caseData?.status === "archived"}
                       onClick={() => {
-                        const updated = ctx.expensesList.filter((e) => e.id !== entry.id);
-                        ctx.setExpensesList(updated);
-                        ctx.saveCaseUpdate({ expenses: updated });
+                        // DELETE /api/expenses — Toasts/State im Context.
+                        void ctx.deleteExpense(entry.id);
                       }}
                       className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
                       title={t("cases.detail_exp_delete")}

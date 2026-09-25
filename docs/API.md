@@ -3,7 +3,7 @@
 > Automatisch generiert aus den Route-Dateien. Regenerieren:
 > `bun x tsx scripts/generate-api-docs.ts`
 
-**511 Endpunkte** — Stand: 2026-09-22
+**534 Endpunkte** — Stand: 2026-09-25
 
 ## Authentifizierung
 
@@ -19,10 +19,11 @@
 | Pfad                                                        | Methoden                 | Auth                      | Action                            | Rate     |
 | ----------------------------------------------------------- | ------------------------ | ------------------------- | --------------------------------- | -------- |
 | `/api/2fa/qrcode`                                           | POST                     | Session                   | `auth.2fa`                        | standard |
-| `/api/absences`                                             | GET, POST                | Session                   | `brain.write`                     | standard |
+| `/api/absences`                                             | GET, POST, PATCH         | Session                   | `brain.write`                     | standard |
 | `/api/acls/groups`                                          | GET, POST                | Session                   | `settings.read`                   | standard |
 | `/api/acls/groups/{groupId}`                                | DELETE                   | Session                   | `settings.write`                  | standard |
 | `/api/acls/groups/{groupId}/members`                        | GET, POST                | Session                   | `settings.read`                   | standard |
+| `/api/acls/groups/{groupId}/members/{userId}`               | DELETE                   | Session                   | `settings.write`                  | standard |
 | `/api/acls/permissions`                                     | GET, POST                | Session                   | `settings.read`                   | standard |
 | `/api/acls/permissions/{slug}/{groupId}`                    | DELETE                   | Session                   | `settings.write`                  | standard |
 | `/api/act-imports`                                          | GET, POST                | Session                   | `brain.write`                     | heavy    |
@@ -60,6 +61,9 @@
 | `/api/admin/corpus-files/versions`                          | GET                      | Session                   | `platform.operator`               | standard |
 | `/api/admin/corpus-files/write`                             | PUT                      | Session                   | `platform.operator`               | standard |
 | `/api/admin/corpus-ingest-log`                              | GET                      | Session                   | `platform.operator`               | standard |
+| `/api/admin/corpus-law-coverage`                            | GET                      | Session                   | `platform.operator`               | standard |
+| `/api/admin/corpus-law-coverage/law`                        | GET                      | Session                   | `platform.operator`               | standard |
+| `/api/admin/corpus-law-coverage/refetch`                    | POST                     | Session                   | `platform.operator`               | standard |
 | `/api/admin/corpus-overview`                                | GET                      | Session                   | `platform.operator`               | standard |
 | `/api/admin/corpus-pipeline`                                | POST                     | Session                   | `platform.operator`               | standard |
 | `/api/admin/data-delete`                                    | POST                     | Session                   | `platform.operator`               | heavy    |
@@ -103,10 +107,9 @@
 | `/api/auth/login`                                           | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/logout`                                          | POST                     | Session                   | `auth.logout`                     | standard |
 | `/api/auth/me`                                              | GET, PATCH               | Session                   | `settings.read`                   | standard |
+| `/api/auth/reset`                                           | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/sessions`                                        | GET                      | Session                   | `settings.read`                   | standard |
 | `/api/auth/sessions/revoke`                                 | POST                     | Session                   | `auth.sessions`                   | standard |
-| `/api/auth/register`                                        | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
-| `/api/auth/reset`                                           | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/signup`                                          | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/sso/callback`                                    | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/auth/sso/workos`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
@@ -187,6 +190,7 @@
 | `/api/cron/document-request-reminders`                      | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/dream-cycle`                                     | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/dunning-run`                                     | GET, POST                | Intern/spezial            | `—`                               | standard |
+| `/api/cron/feedback-triage`                                 | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/health`                                          | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/imap-sync`                                       | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/integrity-recheck`                               | GET                      | Intern/spezial            | `—`                               | standard |
@@ -205,6 +209,7 @@
 | `/api/cron/statute-currency`                                | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/time-suggestions`                                | GET, POST                | Intern/spezial            | `—`                               | standard |
 | `/api/cron/time-tracking/inactivity-check`                  | GET, POST                | Intern/spezial            | `—`                               | standard |
+| `/api/cron/trash-purge`                                     | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/trial-reminder`                                  | GET, POST                | Intern/spezial            | `—`                               | standard |
 | `/api/cron/upload-multipart-cleanup`                        | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/cron/upload-reconcile`                                | GET                      | Intern/spezial            | `—`                               | standard |
@@ -231,6 +236,7 @@
 | `/api/demo/session`                                         | GET, POST                | Session                   | `brain.read`                      | standard |
 | `/api/demo/session/reset`                                   | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/dictation`                                            | GET, POST                | Session                   | `brain.write`                     | heavy    |
+| `/api/dms/content`                                          | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/dms/import`                                           | POST                     | Session                   | `brain.write`                     | heavy    |
 | `/api/dms/push`                                             | POST                     | Session                   | `brain.read`                      | heavy    |
 | `/api/dms/search`                                           | GET                      | Session                   | `brain.read`                      | standard |
@@ -267,6 +273,9 @@
 | `/api/email/webhook/resend`                                 | POST                     | Webhook-Signatur          | `—`                               | standard |
 | `/api/eval-fixture-reviews`                                 | GET, POST, PATCH         | Session                   | `legal.eval_fixture_review`       | standard |
 | `/api/eval-fixture-reviews/questions`                       | GET                      | Session                   | `legal.eval_fixture_review`       | standard |
+| `/api/expenses`                                             | GET, POST, PATCH, DELETE | Session                   | `expenses.read`                   | standard |
+| `/api/expenses/mark-billed`                                 | POST                     | Session                   | `expenses.update`                 | standard |
+| `/api/expenses/unbill`                                      | POST                     | Session                   | `expenses.update`                 | standard |
 | `/api/experience`                                           | GET, POST                | Session                   | `brain.read`                      | standard |
 | `/api/export`                                               | GET                      | Session                   | `brain.read`                      | heavy    |
 | `/api/fachrechner`                                          | POST                     | Session                   | `brain.read`                      | standard |
@@ -288,6 +297,7 @@
 | `/api/intake/convert`                                       | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/intake/public`                                        | POST                     | Session                   | `—`                               | standard |
 | `/api/internal/alert`                                       | POST                     | Intern/spezial            | `—`                               | standard |
+| `/api/internal/engine-user-status`                          | GET                      | Webhook-Signatur          | `—`                               | standard |
 | `/api/internal/post-upload`                                 | POST                     | Intern/spezial            | `—`                               | standard |
 | `/api/internal/revocation-check`                            | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/invoices/{slug}`                                      | GET, PATCH, DELETE       | Session                   | `invoice.read`                    | standard |
@@ -333,6 +343,8 @@
 | `/api/legal/documents/versions`                             | GET, POST                | Session                   | `brain.read`                      | standard |
 | `/api/legal/docx-fill`                                      | POST                     | Session                   | `legal.playbook`                  | heavy    |
 | `/api/legal/eval-gate`                                      | POST                     | Session                   | `brain.read`                      | standard |
+| `/api/legal/feedback`                                       | GET                      | Session                   | `brain.read`                      | standard |
+| `/api/legal/folders/rename`                                 | POST                     | Session                   | `brain.write`                     | heavy    |
 | `/api/legal/frist/compute`                                  | POST                     | Session                   | `brain.read`                      | standard |
 | `/api/legal/fristen`                                        | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/legal/fristen/second-check`                           | POST                     | Session                   | `brain.write`                     | standard |
@@ -430,6 +442,7 @@
 | `/api/portal/feedback`                                      | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/portal/generate`                                      | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/portal/invoices`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
+| `/api/portal/links`                                         | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/portal/manifest`                                      | GET                      | Intern/spezial            | `—`                               | standard |
 | `/api/portal/message`                                       | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/portal/messages`                                      | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
@@ -446,6 +459,8 @@
 | `/api/portal/upload`                                        | POST                     | Öffentlich (rate-limited) | `document.upload`                 | standard |
 | `/api/portal/verify`                                        | GET                      | Öffentlich (rate-limited) | `view`                            | standard |
 | `/api/portal/workflows`                                     | GET, POST                | Öffentlich (rate-limited) | `—`                               | standard |
+| `/api/post-upload-tasks`                                    | GET                      | Session                   | `brain.read`                      | standard |
+| `/api/post-upload-tasks/retry`                              | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/power-of-attorney`                                    | GET, POST                | Session                   | `brain.write`                     | standard |
 | `/api/power-of-attorney/generate-pdf`                       | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/push/register`                                        | GET, POST, DELETE        | Session                   | `push.register`                   | standard |
@@ -482,6 +497,7 @@
 | `/api/settings/mcp-tokens`                                  | GET, POST                | Session                   | `settings.read`                   | standard |
 | `/api/settings/mcp-tokens/{id}`                             | DELETE                   | Session                   | `settings.write`                  | standard |
 | `/api/settings/model`                                       | GET, PATCH               | Session                   | `settings.read`                   | standard |
+| `/api/settings/model-profile`                               | GET, PUT                 | Session                   | `settings.read`                   | standard |
 | `/api/share`                                                | POST                     | Session                   | `share.receive`                   | standard |
 | `/api/signature/capture`                                    | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/signature/qes/done/{token}`                           | GET                      | Intern/spezial            | `—`                               | standard |
@@ -491,12 +507,14 @@
 | `/api/signature/qes/status`                                 | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/sms/consent`                                          | GET, POST                | Session                   | `agent.write`                     | standard |
 | `/api/sms/send`                                             | POST                     | Session                   | `agent.write`                     | standard |
+| `/api/sms/status`                                           | GET, POST                | Session                   | `agent.read`                      | standard |
 | `/api/staff`                                                | GET, POST, PATCH         | Session                   | `brain.write`                     | standard |
 | `/api/stats`                                                | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/team`                                                 | GET                      | Session                   | `settings.read`                   | standard |
 | `/api/team/role`                                            | POST, PATCH              | Session                   | `team.role_change`                | standard |
 | `/api/think`                                                | POST                     | Session                   | `query.submit`                    | heavy    |
 | `/api/time`                                                 | GET, POST, PATCH, DELETE | Session                   | `invoice.read`                    | standard |
+| `/api/time-suggestions`                                     | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/time-tracking/current`                                | GET, POST                | Session                   | `brain.read`                      | standard |
 | `/api/time-tracking/heartbeat`                              | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/time-tracking/passive-preference`                     | GET, PUT                 | Session                   | `brain.read`                      | standard |
@@ -521,6 +539,7 @@
 | `/api/whatsapp/client-invites`                              | POST                     | Session                   | `brain.write`                     | standard |
 | `/api/whatsapp/flow-endpoint`                               | POST                     | Öffentlich (rate-limited) | `—`                               | standard |
 | `/api/whatsapp/identities`                                  | GET, POST, PATCH, DELETE | Session                   | `settings.read`                   | standard |
+| `/api/whatsapp/muted`                                       | GET                      | Session                   | `agent.read`                      | standard |
 | `/api/whatsapp/send`                                        | POST                     | Session                   | `agent.write`                     | standard |
 | `/api/whatsapp/status`                                      | GET                      | Session                   | `settings.read`                   | standard |
 | `/api/whatsapp/templates`                                   | GET, POST, PATCH, DELETE | Session                   | `settings.read`                   | standard |

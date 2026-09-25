@@ -3696,6 +3696,138 @@ export const api = {
       };
     },
   },
+
+  expenses: {
+    list(params?: {
+      case_slug?: string;
+      billable?: boolean;
+      unbilled?: boolean;
+      from?: string;
+      to?: string;
+      limit?: number;
+    }): Promise<{
+      entries: Array<{
+        id: string;
+        description: string;
+        amount: number;
+        date: string;
+        currency?: string;
+        vat_rate?: number;
+        billable?: boolean;
+        billed?: boolean;
+        invoice_number?: string;
+        receipt_slug?: string;
+        case_slug?: string;
+      }>;
+      total: number;
+      summary: {
+        total_amount: number;
+        billable_amount: number;
+        unbilled_amount: number;
+        billed_amount: number;
+      };
+    }> {
+      const searchParams = new URLSearchParams();
+      if (params?.case_slug) searchParams.set("case_slug", params.case_slug);
+      if (params?.billable !== undefined) searchParams.set("billable", String(params.billable));
+      if (params?.unbilled) searchParams.set("unbilled", "true");
+      if (params?.from) searchParams.set("from", params.from);
+      if (params?.to) searchParams.set("to", params.to);
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      // /api/expenses* antwortet mit dem apiSuccess-Envelope ({ data: … }).
+      return request(`/api/expenses${qs ? `?${qs}` : ""}`).then((r) => unwrapApiBody(r));
+    },
+
+    create(input: {
+      case_slug: string;
+      description: string;
+      amount: number;
+      date: string;
+      currency?: string;
+      vat_rate?: number;
+      billable?: boolean;
+      receipt_slug?: string;
+    }): Promise<{
+      entry: {
+        id: string;
+        description: string;
+        amount: number;
+        date: string;
+        currency?: string;
+        vat_rate?: number;
+        billable?: boolean;
+        billed?: boolean;
+        invoice_number?: string;
+        receipt_slug?: string;
+      };
+      case_slug: string;
+    }> {
+      return request("/api/expenses", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }).then((r) => unwrapApiBody(r));
+    },
+
+    update(input: {
+      case_slug: string;
+      id: string;
+      description?: string;
+      amount?: number;
+      date?: string;
+      currency?: string;
+      vat_rate?: number;
+      billable?: boolean;
+      receipt_slug?: string;
+    }): Promise<{
+      entry: {
+        id: string;
+        description: string;
+        amount: number;
+        date: string;
+        currency?: string;
+        vat_rate?: number;
+        billable?: boolean;
+        billed?: boolean;
+        invoice_number?: string;
+        receipt_slug?: string;
+      };
+    }> {
+      return request("/api/expenses", {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }).then((r) => unwrapApiBody(r));
+    },
+
+    delete(input: { case_slug: string; id: string }): Promise<{ ok: boolean }> {
+      return request("/api/expenses", {
+        method: "DELETE",
+        body: JSON.stringify(input),
+      }).then((r) => unwrapApiBody(r));
+    },
+
+    markBilled(input: { entry_ids: string[]; invoice_number: string; case_slug: string }): Promise<{
+      updated: number;
+      not_found: string[];
+      already_billed: string[];
+      invoice_number: string;
+    }> {
+      return request("/api/expenses/mark-billed", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }).then((r) => unwrapApiBody(r));
+    },
+
+    unbill(input: {
+      entry_ids: string[];
+      case_slug: string;
+    }): Promise<{ updated: number; not_found: string[] }> {
+      return request("/api/expenses/unbill", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }).then((r) => unwrapApiBody(r));
+    },
+  },
 };
 
 export type {
