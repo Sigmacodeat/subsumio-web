@@ -25,6 +25,7 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 8c  | Zeit — Expense-Endpoint    | #57 | c5e3345207   | ✅ live | `/api/expenses` CRUD + mark-billed/unbill, billed-Guard 409, UI migriert (updatePage nur noch Offline-Fallback)                                                                  |
 | 1a  | Fristen — Ruhetage         | #58 | b029d3f1dd   | ✅ live | `deadlineQuietDays` (Sa/So/Feiertag im Kanzlei-Rechtsraum): Digest+WhatsApp+Eskalation auf nächsten Werktag; Notfrist-Eskalation einmal pro Frist statt täglich                  |
 | 8d  | Zeit/Geld — Rest           | #59 | 77e48abf44   | ✅ live | Timer-Obergrenze 12h (Heartbeat-409 + Widget-Aufräumen), `invoice-mark-billed`→`/api/expenses/mark-billed`, Mahnformel 5/10/15 € kumulativ, 7 AuditAction-Casts deklariert       |
+| 8e  | Zeit — Atomic Expense Ops  | #62 | 7ba5b6b01e   | ✅ live | Auslagen-Billing/Edits als atomare Engine-Array-Ops statt Read-Modify-Write (Parallel-Agent)                                                                                     |
 | 3a  | Kommunikation — Rest       | #65 | 9369263fd0   | ✅ live | Resend-Webhook `/api/webhooks/resend` (Svix, fail-closed) → Delivery-Status-Write-back; Tracking-Events 90d-Retention; beA-Dead-UI-Counts entfernt                               |
 | 9b  | DSGVO — Rest               | #60 | e9aeb9de97   | ✅ live | AVV-Muster-Download (md + PDF, „anwaltlich zu prüfen"); Per-Item-Retention `retention_until`/`retention_days` für Dokumente/Notizen im trash-purge-Cron                          |
 
