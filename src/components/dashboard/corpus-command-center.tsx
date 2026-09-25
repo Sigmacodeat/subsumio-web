@@ -39,41 +39,11 @@ import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { ShowMoreButton, useShowMore } from "./corpus-show-more";
+import type { ContentStatus, CorpusSyncRow, CorpusSyncTotals } from "@/lib/corpus-sync-inventory";
 
 const API_BASE = "/api/admin/corpus-command-center";
 
-export interface CorpusSyncRow {
-  corpus: string;
-  sourceId: string;
-  /** Anzeigename (SOURCE_LABELS) — Operatoren lesen „Bundesrecht",
-   *  nicht „at-normen". */
-  label: string;
-  /** Historisches Archiv: DB-Bestand ist bewusst über dem RIS-Soll. */
-  historical: boolean;
-  diskFiles: number;
-  dbPages: number;
-  /** Distincte Dokumente in der DB (COUNT DISTINCT import_filename).
-   *  Bei Judikatur 1:1 mit dbPages; bei Gesetzen 1 Datei → viele Pages.
-   *  Dies ist die korrekte Vergleichsgröße mit RIS Total (Dokumente). */
-  dbDocuments: number;
-  dbChunks: number;
-  embeddedChunks: number;
-  staleChunks: number;
-  coveragePct: number;
-  notImported: number;
-  orphanDb: number;
-  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db" | "historical";
-  fullyComplete: boolean;
-  risTotal: number | null;
-  missingFromDb: number;
-  missingFromDisk: number;
-  diskPending: number;
-  newOnRis: number;
-  canUpdate: boolean;
-  pipelineKey: string | null;
-  fetchFruitless: boolean;
-  diskProgress: number;
-}
+export type { CorpusSyncRow, CorpusSyncTotals };
 
 interface WorkQueueItem {
   path: string;
@@ -139,20 +109,9 @@ export interface CommandCenterData {
   snapshotAt?: string | null;
   sync: {
     rows: CorpusSyncRow[];
-    totals: {
-      totalDisk: number;
-      totalDbPages: number;
-      totalDbChunks: number;
-      totalDbDocuments: number;
-      totalEmbedded: number;
-      totalNotImported: number;
-      totalStale: number;
-      coveragePct: number;
-      totalRis: number;
-      totalMissingFromDb: number;
-      totalMissingFromDisk: number;
-      totalNewOnRis: number;
-    };
+    totals: CorpusSyncTotals;
+    /** Zeitpunkt der Dokumentnummern-Messung (stündlich); null = noch nie. */
+    measuredAt: string | null;
   };
   workQueue: {
     items: WorkQueueItem[];
@@ -194,17 +153,48 @@ export interface CommandCenterData {
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-DE");
-const pct = (n: number) => `${n.toFixed(1)}%`;
+const pct = (n: number) =>
+  `${n.toLocaleString("de-AT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 
-const SYNC_STATUS_CONFIG: Record<
-  CorpusSyncRow["syncStatus"],
-  { variant: "success" | "warning" | "danger" | "default" | "info"; label: string }
+const STATUS_CONFIG: Record<
+  ContentStatus,
+  {
+    variant: "success" | "warning" | "danger" | "default" | "info" | "attention";
+    label: string;
+    hint: string;
+  }
 > = {
-  synced: { variant: "success", label: "Synchron" },
-  import_pending: { variant: "warning", label: "Lücke" },
-  orphan_in_db: { variant: "danger", label: "DB-Orphane" },
-  no_db: { variant: "default", label: "Keine DB" },
-  historical: { variant: "info", label: "Historisch" },
+  complete: {
+    variant: "success",
+    label: "Vollständig",
+    hint: "Jedes Dokument des RIS-Solls liegt auf dem Server und in der Datenbank",
+  },
+  fetch_open: {
+    variant: "danger",
+    label: "Abruf offen",
+    hint: "Dokumente aus dem RIS-Soll fehlen noch auf dem Server",
+  },
+  import_open: {
+    variant: "warning",
+    label: "Import offen",
+    hint: "Dokumente liegen auf dem Server, aber noch nicht in der Datenbank",
+  },
+  db_extra: {
+    variant: "attention",
+    label: "DB bereinigen",
+    hint: "Die Datenbank hält Dokumente, die nicht mehr auf dem Server liegen",
+  },
+  no_soll: {
+    variant: "default",
+    label: "Ohne RIS-Soll",
+    hint: "Server und Datenbank stimmen überein — ein RIS-Soll zum Beweis der Vollständigkeit fehlt",
+  },
+  historical: { variant: "info", label: "Archiv", hint: "Alte Fassungen, bewusst aufbewahrt" },
+  out_of_scope: {
+    variant: "default",
+    label: "Nicht im Umfang",
+    hint: "Nur österreichisches Recht wird automatisch importiert",
+  },
 };
 
 /**
@@ -280,20 +270,32 @@ export function CommandCenterGate({
 
 // ── Section 1: Sync-Status ───────────────────────────────────────────────
 
+/** Anteil des RIS-Solls, der bei uns liegt (Platte), 0–100; null ohne Soll. */
+function sollProgress(r: CorpusSyncRow): number | null {
+  if (!r.risSoll) return null;
+  const have = r.risSoll - r.missingOpen - r.missingUnreachable;
+  return Math.max(0, Math.min(100, Math.round((have / r.risSoll) * 1000) / 10));
+}
+
+const OPEN_STATUSES: ReadonlySet<ContentStatus> = new Set([
+  "fetch_open",
+  "import_open",
+  "db_extra",
+]);
+
 export function SyncStatusSection({
   rows,
   totals,
-  dbAvailable = true,
+  measuredAt = null,
   snapshotAt = null,
   onSelectCorpus,
   onRefresh,
 }: {
   rows: CorpusSyncRow[];
-  totals: CommandCenterData["sync"]["totals"];
-  /** false = DB nicht erreichbar — die DB-Spalte zeigt dann 0,
-   *  was sonst fälschlich „Nicht importiert" suggerieren würde. */
-  dbAvailable?: boolean;
-  /** Zeitpunkt der DB-Zählung (Snapshot); Disk und Pipeline sind live. */
+  totals: CorpusSyncTotals;
+  /** Zeitpunkt der Dokumentnummern-Messung (stündlich); null = noch nie. */
+  measuredAt?: string | null;
+  /** Zeitpunkt der Einbettungs-Zählung (10-Minuten-Snapshot). */
   snapshotAt?: string | null;
   onSelectCorpus?: (sourceId: string) => void;
   onRefresh?: () => void;
@@ -302,14 +304,13 @@ export function SyncStatusSection({
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // 3-state filter: "incomplete" (default, war hideComplete=true), "all", "complete"
+  // "offen" (Standard) · "fertig" · "alle"
   const rawFilter = searchParams.get("filter");
   const filterMode: "all" | "incomplete" | "complete" =
     rawFilter === "all" || rawFilter === "complete" ? rawFilter : "incomplete";
   const setFilterMode = (mode: "all" | "incomplete" | "complete") => {
     const params = new URLSearchParams(searchParams.toString());
-    if (mode === "incomplete")
-      params.delete("filter"); // default = kein Param
+    if (mode === "incomplete") params.delete("filter");
     else params.set("filter", mode);
     router.replace(`?${params.toString()}`, { scroll: false });
   };
@@ -323,144 +324,135 @@ export function SyncStatusSection({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Backfill konnte nicht gestartet werden");
+        throw new Error(err.error || "Abruf konnte nicht gestartet werden");
       }
       return res.json();
     },
     onSuccess: (_d, payload) => {
-      addToast({ title: `Backfill für ${payload.source_key} gestartet`, type: "success" });
+      addToast({ title: `Abruf für ${payload.source_key} angestoßen`, type: "success" });
       onRefresh?.();
     },
     onError: (err: Error) => {
-      addToast({ title: "Backfill-Fehler", description: err.message, type: "error" });
+      addToast({ title: "Abruf-Fehler", description: err.message, type: "error" });
     },
   });
 
-  // Historische Archive (law-at) sind weder vollständig noch lückenhaft —
-  // sie liegen bewusst über dem RIS-Soll und zählen in keinen Bucket.
-  const countable = rows.filter((r) => !r.historical);
-  const completeCount = countable.filter((r) => r.fullyComplete).length;
-  const incompleteCount = countable.length - completeCount;
+  // Umfang des Produkts: AT ohne Archiv. DE/CH/EU und das Archiv erscheinen
+  // nur unter „Alle".
+  const inScope = rows.filter((r) => r.inScope && !r.historical);
+  const openCount = inScope.filter((r) => OPEN_STATUSES.has(r.status)).length;
+  const doneCount = inScope.length - openCount;
 
   const displayRows = useMemo(() => {
-    const filtered = rows.filter((r) => {
-      if (r.historical) return filterMode === "all";
-      if (filterMode === "complete") return r.fullyComplete;
-      if (filterMode === "incomplete") return !r.fullyComplete;
-      return true; // "all"
-    });
-    return filtered.sort((a, b) => {
-      if (a.historical !== b.historical) return a.historical ? 1 : -1;
-      if (a.fullyComplete === b.fullyComplete) return 0;
-      return a.fullyComplete ? 1 : -1;
-    });
+    const rank = (r: CorpusSyncRow) =>
+      !r.inScope || r.historical
+        ? 3
+        : OPEN_STATUSES.has(r.status)
+          ? 0
+          : r.status === "no_soll"
+            ? 1
+            : 2;
+    return rows
+      .filter((r) => {
+        if (filterMode === "all") return true;
+        if (!r.inScope || r.historical) return false;
+        const open = OPEN_STATUSES.has(r.status);
+        return filterMode === "incomplete" ? open : !open;
+      })
+      .sort(
+        (a, b) =>
+          rank(a) - rank(b) ||
+          b.missingOpen + b.importOpen + b.dbExtra - (a.missingOpen + a.importOpen + a.dbExtra) ||
+          a.label.localeCompare(b.label)
+      );
   }, [rows, filterMode]);
 
   const filterLabel =
-    filterMode === "all" ? "Alle" : filterMode === "complete" ? "Vollständig" : "Unvollständig";
+    filterMode === "all" ? "Alle" : filterMode === "complete" ? "Fertig" : "Offen";
+
+  if (!measuredAt) {
+    return (
+      <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
+        <CardContent className="flex items-start gap-2 p-4 text-sm text-[color:var(--ds-warning-text)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Noch keine Messung nach Dokumentnummer vorhanden. Die Pipeline zählt stündlich
+            (corpus-sync-inventory); bis dahin zeigt diese Tabelle bewusst keine Zahlen statt
+            geschätzter.
+          </span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const summary: Array<{
+    icon: typeof Globe;
+    tone: string;
+    value: number;
+    label: string;
+    hint: string;
+  }> = [
+    {
+      icon: Globe,
+      tone: "text-[color:var(--ds-info-text)]",
+      value: totals.risSoll,
+      label: "RIS-Soll gesamt",
+      hint: "Dokumente, die das RIS für die Quellen mit Soll listet",
+    },
+    {
+      icon: HardDrive,
+      tone: "text-[color:var(--ds-danger-text)]",
+      value: totals.missingOpen,
+      label: "Fehlen noch (RIS → Server)",
+      hint: "Im RIS-Soll, noch nicht abgerufen — Abruf nötig",
+    },
+    {
+      icon: ArrowRight,
+      tone: "text-[color:var(--ds-warning-text)]",
+      value: totals.importOpen,
+      label: "Warten auf Import",
+      hint: "Auf dem Server, noch nicht in der Datenbank",
+    },
+    {
+      icon: Database,
+      tone: "text-[color:var(--ds-attention-text)]",
+      value: totals.dbExtra,
+      label: "Nur in der Datenbank",
+      hint: "In der DB, aber nicht (mehr) auf dem Server — bereinigen",
+    },
+    {
+      icon: Archive,
+      tone: "text-[color:var(--ds-text-muted)]",
+      value: totals.missingUnreachable,
+      label: "Bei RIS ohne Text",
+      hint: "RIS liefert keinen Text (PDF/Bild) oder kennt die Nummer nicht — mit unserem Abruf nicht schließbar",
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      {!dbAvailable && (
-        <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
-          <CardContent className="flex items-center gap-2 p-3 text-sm text-[color:var(--ds-warning-text)]">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            Noch keine DB-Zählung vorhanden — DB- und Embedding-Spalten zeigen 0. Der
-            RIS↔Disk-Abgleich ist trotzdem gültig. Die Zählung läuft alle 10 Minuten.
-          </CardContent>
-        </Card>
-      )}
-      {dbAvailable && snapshotAt && (
-        <p className="text-xs text-[color:var(--ds-text-subtle)]">
-          DB-Zahlen: Stand {formatDateTime(snapshotAt)} (Zählung alle 10 Minuten) · Disk, Pipeline
-          und Schreibaktivität: live
-        </p>
-      )}
-      {/* Summary Cards — neutral numbers, icon-only color accent */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Globe className="h-7 w-7 text-[color:var(--ds-info-text)]" />
-            <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {totals.totalRis != null ? fmt(totals.totalRis) : "—"}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">RIS OGD</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <AlertTriangle className="h-7 w-7 text-[color:var(--ds-danger-text)]" />
-            <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {fmt(totals.totalMissingFromDb)}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">Fehlt</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <HardDrive className="h-7 w-7 text-[color:var(--ds-text-muted)]" />
-            <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {fmt(totals.totalDisk)}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">Disk-Dateien</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Database className="h-7 w-7 text-[color:var(--ds-info-text)]" />
-            <div>
-              <p
-                className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums"
-                title={`${fmt(totals.totalDbDocuments)} Dokumente · ${fmt(totals.totalDbPages)} Pages gesamt`}
-              >
-                {fmt(totals.totalDbDocuments)}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">DB-Dokumente</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Zap className="h-7 w-7 text-[color:var(--ds-success-text)]" />
-            <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {fmt(totals.totalEmbedded)}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">Embedded</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <ArrowRight className="h-7 w-7 text-[color:var(--ds-warning-text)]" />
-            <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {fmt(totals.totalNotImported)}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">Import-Lücke</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <AlertTriangle className="h-7 w-7 text-[color:var(--ds-attention-text)]" />
-            <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {fmt(totals.totalStale)}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">Stale Chunks</p>
-            </div>
-          </CardContent>
-        </Card>
+      <p className="text-xs text-[color:var(--ds-text-subtle)]">
+        Gezählt nach RIS-Dokumentnummer — dieselbe Einheit für RIS, Server und Datenbank. Stand{" "}
+        {formatDateTime(measuredAt)} (stündlich)
+        {snapshotAt ? ` · Einbettungen: Stand ${formatDateTime(snapshotAt)}` : ""}
+      </p>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        {summary.map((c) => (
+          <Card key={c.label} title={c.hint}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <c.icon className={cn("h-6 w-6 shrink-0", c.tone)} />
+              <div className="min-w-0">
+                <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                  {fmt(c.value)}
+                </p>
+                <p className="text-xs text-[color:var(--ds-text-subtle)]">{c.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Per-Corpus Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -468,101 +460,52 @@ export function SyncStatusSection({
               <Layers className="h-4 w-4" />
               Sync-Status pro Korpus
             </CardTitle>
-            <div className="flex items-center gap-2">
-              {/* Active-Filter Badge (visuell sichtbar — Modern Pattern) */}
-              <Badge
-                variant={
-                  filterMode === "complete"
-                    ? "success"
-                    : filterMode === "incomplete"
-                      ? "warning"
-                      : "default"
-                }
-                className="gap-1 text-[10px]"
-                aria-label={`Aktiver Filter: ${filterLabel}, ${displayRows.length} Corpora`}
-              >
-                {filterLabel} · {fmt(displayRows.length)}
-              </Badge>
-              {/* 3-Option Select Dropdown */}
-              <Select
-                value={filterMode}
-                onValueChange={(v) => setFilterMode(v as "all" | "incomplete" | "complete")}
-              >
-                <SelectTrigger
-                  className="h-8 w-[180px] text-xs"
-                  aria-label="Corpus-Vollständigkeit filtern"
-                >
-                  <SelectValue placeholder="Filter wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle ({fmt(rows.length)})</SelectItem>
-                  <SelectItem value="incomplete" disabled={incompleteCount === 0}>
-                    Unvollständig ({fmt(incompleteCount)})
-                  </SelectItem>
-                  <SelectItem value="complete" disabled={completeCount === 0}>
-                    Vollständig ({fmt(completeCount)})
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={filterMode}
+              onValueChange={(v) => setFilterMode(v as "all" | "incomplete" | "complete")}
+            >
+              <SelectTrigger className="h-8 w-[170px] text-xs" aria-label="Korpora filtern">
+                <SelectValue placeholder="Filter wählen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="incomplete">Offen ({fmt(openCount)})</SelectItem>
+                <SelectItem value="complete">Fertig ({fmt(doneCount)})</SelectItem>
+                <SelectItem value="all">Alle ({fmt(rows.length)})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          {/* aria-live announcement für Screen-Reader (WCAG 4.1.3) */}
           <p className="sr-only" aria-live="polite" role="status">
-            {displayRows.length} Corpora angezeigt — Filter: {filterLabel}
+            {displayRows.length} Korpora angezeigt — Filter: {filterLabel}
           </p>
         </CardHeader>
         <CardContent>
-          <div className="min-w-0 space-y-1.5 overflow-x-auto">
-            {/* Header — die klare Linie: RIS-Soll → lokale Disk → Datenbank. */}
-            <div className="grid min-w-[760px] grid-cols-12 gap-2 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
-              <div className="col-span-3">Quelle</div>
+          <div className="min-w-0 overflow-x-auto">
+            <div className="grid min-w-[880px] grid-cols-[minmax(0,2.6fr)_repeat(3,minmax(0,0.8fr))_minmax(0,2.8fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-3 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
+              <div>Quelle</div>
               <div
-                className="col-span-1 text-right"
-                title="Soll: Dokumente, die das RIS laut In-force-Index hat (— = kein Upstream-Soll)"
+                className="text-right"
+                title="Dokumente laut RIS. Gesetze: geltende Paragraphen aus dem In-force-Index (ohne § 0-Deckblätter). Gerichte: RIS-Trefferzahl inkl. Rechtssätze."
               >
                 RIS-Soll
               </div>
-              <div
-                className="col-span-1 text-right"
-                title="Ist: Dateien auf dem Server (raw + normalisiert)"
-              >
-                Disk
+              <div className="text-right" title="Verschiedene Dokumentnummern auf dem Server">
+                Server
               </div>
               <div
-                className="col-span-1 text-right"
-                title="Ist: Dokumente in der DB (DISTINCT import_filename). Bei Gesetzen 1 Datei → viele §-Pages; die Dokument-Anzahl ist mit dem RIS-Soll vergleichbar."
+                className="text-right"
+                title="Verschiedene Dokumentnummern in der Datenbank (aktive Seiten)"
               >
-                DB
+                Datenbank
               </div>
-              <div
-                className="col-span-3"
-                title="Wo die Kette bricht: RIS→Disk = noch nicht geladen, Disk→DB = Import ausstehend, DB>Soll = historische/ersetzte Fassungen"
-              >
-                Abgleich
-              </div>
-              <div className="col-span-1 text-right" title="Anteil der DB-Chunks mit Embeddings">
-                Embed.
-              </div>
-              <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-1 text-center">Aktion</div>
+              <div>Was noch offen ist</div>
+              <div>Status</div>
+              <div className="text-right">Aktion</div>
             </div>
+
             {displayRows.map((r) => {
-              const config = !dbAvailable
-                ? { variant: "warning" as const, label: "DB offline" }
-                : r.historical
-                  ? { variant: "info" as const, label: "Historisch" }
-                  : r.fullyComplete
-                    ? { variant: "success" as const, label: "Vollständig" }
-                    : {
-                        variant:
-                          SYNC_STATUS_CONFIG[r.syncStatus].variant === "success"
-                            ? ("warning" as const)
-                            : SYNC_STATUS_CONFIG[r.syncStatus].variant,
-                        label:
-                          r.syncStatus === "no_db"
-                            ? "Nicht importiert"
-                            : SYNC_STATUS_CONFIG[r.syncStatus].label,
-                      };
+              const cfg = STATUS_CONFIG[r.status];
+              const progress = sollProgress(r);
+              const muted = !r.inScope || r.historical || r.status === "complete";
               return (
                 <div
                   key={r.corpus}
@@ -577,175 +520,140 @@ export function SyncStatusSection({
                     }
                   }}
                   className={cn(
-                    "grid min-w-[760px] cursor-pointer grid-cols-12 items-center gap-2 rounded px-1 py-1.5 text-xs focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
-                    r.fullyComplete || r.historical
-                      ? "text-[color:var(--ds-text-subtle)] opacity-80 hover:bg-[color:var(--ds-surface-2)]"
-                      : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
+                    "grid min-w-[880px] cursor-pointer grid-cols-[minmax(0,2.6fr)_repeat(3,minmax(0,0.8fr))_minmax(0,2.8fr)_minmax(0,1.2fr)_minmax(0,1fr)] items-center gap-3 border-b border-[color:var(--ds-border)]/50 px-1 py-2.5 text-xs last:border-b-0 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+                    muted ? "text-[color:var(--ds-text-subtle)]" : "text-[color:var(--ds-text)]"
                   )}
                 >
-                  <div
-                    className={cn(
-                      "col-span-3 flex items-center gap-1.5 truncate",
-                      r.fullyComplete && "text-[color:var(--ds-success-text)]"
-                    )}
-                    title={`${r.label} (${r.corpus})`}
-                  >
-                    <span className="truncate">{r.label}</span>
-                    <span className="hidden shrink-0 font-mono text-[10px] text-[color:var(--ds-text-subtle)] md:inline">
-                      {r.corpus}
-                    </span>
-                    {r.newOnRis > 0 && (
-                      <span
-                        className="inline-flex shrink-0 items-center justify-center rounded-full bg-[color:var(--ds-info-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--ds-info-text)]"
-                        aria-label={`${r.newOnRis} neue RIS-Dokumente`}
-                        title={`${r.newOnRis} neue RIS-Dokumente seit letztem Sync`}
-                      >
-                        +{fmt(r.newOnRis)}
+                  <div className="min-w-0">
+                    <div
+                      className="flex items-center gap-1.5 truncate"
+                      title={`${r.label} (${r.corpus})`}
+                    >
+                      <span className="truncate font-medium">{r.label}</span>
+                      <span className="hidden shrink-0 font-mono text-[10px] text-[color:var(--ds-text-subtle)] md:inline">
+                        {r.corpus}
                       </span>
-                    )}
+                    </div>
+                    <div
+                      className="mt-0.5 text-[10px] text-[color:var(--ds-text-subtle)]"
+                      title={`${fmt(r.embeddedChunks)} von ${fmt(r.dbChunks)} Abschnitten eingebettet — zählt nicht in den Status`}
+                    >
+                      {fmt(r.dbPages)} Seiten · Einbettung {pct(r.coveragePct)}
+                    </div>
                   </div>
                   <div
-                    className="col-span-1 text-right tabular-nums"
+                    className="text-right tabular-nums"
                     title={
-                      r.fetchFruitless
-                        ? `RIS listet ${fmt(r.risTotal ?? 0)} Dokumente, deren Volltexte sind nicht abrufbar`
-                        : r.risTotal
-                          ? `RIS-Soll: ${fmt(r.risTotal)} Dokumente`
-                          : "Kein Upstream-Soll für diese Quelle"
+                      r.risSollKind === "hits"
+                        ? "RIS-Trefferzahl (inkl. Rechtssätze) — kein dokumentgenaues Soll"
+                        : r.risSollKind === "index"
+                          ? "Geltende Dokumente laut RIS-In-force-Index"
+                          : "Für diese Quelle gibt es kein RIS-Soll"
                     }
                   >
-                    {r.risTotal ? (
-                      fmt(r.risTotal)
+                    {r.risSoll !== null ? (
+                      <>
+                        {r.risSollKind === "hits" && (
+                          <span className="text-[color:var(--ds-text-subtle)]">≈ </span>
+                        )}
+                        {fmt(r.risSoll)}
+                      </>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
                   </div>
-                  <div
-                    className="col-span-1 text-right tabular-nums"
-                    title={`${fmt(r.diskFiles)} Dateien auf dem Server`}
-                  >
-                    {fmt(r.diskFiles)}
-                  </div>
-                  <div
-                    className="col-span-1 text-right tabular-nums"
-                    title={`${fmt(r.dbDocuments)} Dokumente · ${fmt(r.dbPages)} Pages (1 Datei → viele §-Abschnitte bei Gesetzen)`}
-                  >
-                    {fmt(r.dbDocuments)}
-                  </div>
-                  <div className="col-span-3 text-xs">
+                  <div className="text-right tabular-nums">{fmt(r.diskDocs)}</div>
+                  <div className="text-right tabular-nums">{fmt(r.dbDocs)}</div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
                     {r.historical ? (
-                      <span
-                        className="text-[color:var(--ds-info-text)]"
-                        title="Alte, aufgehobene Gesetzesfassungen — bewusst über dem RIS-Soll aufbewahrt"
-                      >
-                        Archiv — über RIS-Soll hinaus gewollt
+                      <span className="text-[color:var(--ds-info-text)]">
+                        Archiv alter Fassungen — bewusst über jedem Soll
                       </span>
-                    ) : r.fetchFruitless ? (
-                      <span
-                        className="text-[color:var(--ds-text-subtle)]"
-                        title="Das RIS listet diese Dokumente, liefert aber keine Volltexte — die Lücke ist nicht schließbar"
-                      >
-                        RIS-Volltexte nicht abrufbar
-                      </span>
+                    ) : !r.inScope ? (
+                      <span>Nicht im automatischen Import (nur AT)</span>
                     ) : (
-                      <span className="flex flex-wrap gap-x-2 gap-y-0.5">
-                        {r.missingFromDisk > 0 && (
+                      <>
+                        {r.missingOpen > 0 && (
                           <span
-                            className="text-[color:var(--ds-danger-text)]"
-                            title="Im RIS-Soll, aber noch nicht auf dem Server — Fetch nötig"
+                            className="font-medium text-[color:var(--ds-danger-text)]"
+                            title="Im RIS-Soll, noch nicht auf dem Server — Abruf nötig"
                           >
-                            −{fmt(r.missingFromDisk)} RIS→Disk
+                            {fmt(r.missingOpen)} fehlen im Abruf
                           </span>
                         )}
-                        {r.diskPending > 0 && (
+                        {r.importOpen > 0 && (
                           <span
-                            className="text-[color:var(--ds-warning-text)]"
-                            title="Auf dem Server, aber noch nicht in der Datenbank — Import nötig"
+                            className="font-medium text-[color:var(--ds-warning-text)]"
+                            title="Auf dem Server, noch nicht in der Datenbank — Import läuft über die Pipeline"
                           >
-                            −{fmt(r.diskPending)} Disk→DB
+                            {fmt(r.importOpen)} warten auf Import
                           </span>
                         )}
-                        {r.orphanDb > 0 && (
+                        {r.dbExtra > 0 && (
                           <span
-                            className="text-[color:var(--ds-info-text)]"
-                            title="Mehr in der DB als das RIS-Soll — ersetzte/historische Fassungen oder Alt-Importe"
+                            className="font-medium text-[color:var(--ds-attention-text)]"
+                            title="In der Datenbank, aber nicht mehr auf dem Server — Altbestand, bereinigen"
                           >
-                            +{fmt(r.orphanDb)} über Soll
+                            {fmt(r.dbExtra)} nur in DB
                           </span>
                         )}
-                        {r.missingFromDisk === 0 &&
-                          r.diskPending === 0 &&
-                          r.orphanDb === 0 &&
-                          r.dbDocuments === 0 &&
-                          r.diskFiles === 0 &&
-                          r.risTotal === null && (
-                            <span className="text-[color:var(--ds-text-subtle)]">—</span>
-                          )}
-                        {r.missingFromDisk === 0 &&
-                          r.diskPending === 0 &&
-                          r.orphanDb === 0 &&
-                          (r.dbDocuments > 0 || r.diskFiles > 0 || r.risTotal !== null) && (
-                            <span className="text-[color:var(--ds-success-text)]">✓ gleich</span>
-                          )}
-                      </span>
+                        {r.missingUnreachable > 0 && (
+                          <span title="RIS liefert keinen Text (PDF/Bild) oder kennt die Nummer nicht">
+                            {fmt(r.missingUnreachable)} bei RIS ohne Text
+                          </span>
+                        )}
+                        {(r.notInSoll ?? 0) > 0 && (
+                          <span title="Auf dem Server, aber nicht mehr im geltenden RIS-Bestand: außer Kraft oder durch neue Fassung ersetzt">
+                            {fmt(r.notInSoll)} außer Kraft
+                          </span>
+                        )}
+                        {r.missingOpen === 0 && r.importOpen === 0 && r.dbExtra === 0 && (
+                          <span className="text-[color:var(--ds-success-text)]">
+                            {r.risSoll !== null ? "✓ nichts offen" : "✓ Server = Datenbank"}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
-                  <div className="col-span-1 text-right tabular-nums">
-                    <span
-                      className={
-                        r.fullyComplete
-                          ? "font-medium text-[color:var(--ds-success-text)]"
-                          : r.coveragePct >= 90
-                            ? "text-[color:var(--ds-success-text)]"
-                            : r.coveragePct >= 50
-                              ? "text-[color:var(--ds-warning-text)]"
-                              : "text-[color:var(--ds-danger-text)]"
-                      }
-                      title={`${fmt(r.embeddedChunks)} von ${fmt(r.dbChunks)} Chunks embedded`}
-                    >
-                      {pct(r.coveragePct)}
-                    </span>
-                  </div>
-                  <div className="col-span-2 flex flex-col items-center justify-center gap-1">
-                    <Badge variant={config.variant} className="text-[10px]">
-                      {config.label}
+                  <div className="flex flex-col items-start gap-1">
+                    <Badge variant={cfg.variant} className="text-[10px]" title={cfg.hint}>
+                      {cfg.label}
                     </Badge>
-                    {r.diskProgress > 0 && r.diskProgress < 100 && (
+                    {progress !== null && r.inScope && !r.historical && (
                       <div
-                        className="w-12 rounded-full bg-[color:var(--ds-surface-2)]"
-                        title={`Disk-Import: ${r.diskProgress.toFixed(1)}% (${fmt(r.dbDocuments)} von ${fmt(r.diskFiles)} Dateien)`}
-                        aria-label={`Disk-Import Fortschritt: ${r.diskProgress.toFixed(1)} Prozent`}
+                        className="flex items-center gap-1.5"
+                        title={`${pct(progress)} des RIS-Solls liegen auf dem Server`}
                       >
-                        <div
-                          className="h-1 rounded-full bg-[color:var(--brand-solid)]"
-                          style={{ width: `${Math.min(r.diskProgress, 100)}%` }}
-                        />
+                        <div className="h-1 w-14 rounded-full bg-[color:var(--ds-surface-2)]">
+                          <div
+                            className="h-1 rounded-full bg-[color:var(--brand-solid)]"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] tabular-nums">{pct(progress)}</span>
                       </div>
                     )}
                   </div>
-                  <div className="col-span-1 flex justify-center">
-                    {r.canUpdate ? (
+                  <div className="flex justify-end">
+                    {r.canUpdate && r.pipelineKey ? (
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={fetchMissing.isPending}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (r.pipelineKey)
-                            fetchMissing.mutate({
-                              action: "fetch_missing",
-                              source_key: r.pipelineKey,
-                            });
+                          fetchMissing.mutate({
+                            action: "fetch_missing",
+                            source_key: r.pipelineKey!,
+                          });
                         }}
-                        className="h-6 px-1.5 text-[10px]"
-                        title={`Fehlende ${fmt(r.missingFromDb)} für ${r.label} nachholen`}
+                        className="h-7 px-2 text-[11px]"
+                        title={`${fmt(r.missingOpen)} fehlende Dokumente für ${r.label} beim RIS abrufen`}
                       >
-                        {fetchMissing.isPending ? (
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3" />
-                        )}
-                        <span className="ml-1 hidden lg:inline">Aktualisieren</span>
+                        <RefreshCw
+                          className={cn("h-3 w-3", fetchMissing.isPending && "animate-spin")}
+                        />
+                        <span className="ml-1">Nachholen</span>
                       </Button>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
@@ -756,26 +664,16 @@ export function SyncStatusSection({
             })}
             {displayRows.length === 0 && (
               <EmptyState
-                icon={
-                  filterMode === "incomplete"
-                    ? CheckCircle2
-                    : filterMode === "complete"
-                      ? Archive
-                      : Database
-                }
+                icon={filterMode === "incomplete" ? CheckCircle2 : Database}
                 title={
                   filterMode === "incomplete"
-                    ? "Alle Corpora sind vollständig"
-                    : filterMode === "complete"
-                      ? "Noch keine vollständigen Corpora"
-                      : "Keine Corpora gefunden"
+                    ? "Nichts offen — alle Korpora sind vollständig"
+                    : "Keine Korpora in dieser Ansicht"
                 }
                 description={
                   filterMode === "incomplete"
                     ? "Wechseln Sie zu „Alle“, um die Übersicht zu sehen."
-                    : filterMode === "complete"
-                      ? "Sobald ein Corpus 100 % Coverage erreicht, erscheint er hier."
-                      : undefined
+                    : undefined
                 }
                 className="border-0 bg-transparent py-8"
               />
@@ -1965,7 +1863,7 @@ export function CorpusCommandCenter({
           <SyncStatusSection
             rows={data.sync.rows}
             totals={data.sync.totals}
-            dbAvailable={data.dbAvailable}
+            measuredAt={data.sync.measuredAt ?? null}
             snapshotAt={data.snapshotAt ?? null}
             onSelectCorpus={onSelectCorpus}
             onRefresh={refetch}

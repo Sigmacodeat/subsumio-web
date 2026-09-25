@@ -29,6 +29,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
 import { pruneLawCompleteness, upsertLawCompleteness } from "./corpus-status-db.ts";
+import { landQualifiedStatuteId } from "./normalize/normalize-corpus.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -85,10 +86,15 @@ async function main() {
       continue;
     }
     if (!d.nor || !d.gnr || d.apa === "§ 0") continue;
-    const set = byGnr.get(d.gnr) ?? new Set<string>();
+    // Landesrecht: the states number their laws independently, so the key
+    // carries the state ("tir-10000001") — the same form as statute_id in the
+    // DB. Grouped by the bare number, 7,851 state laws collapsed onto 2,579
+    // keys and their DB pages were never matched (audit 2026-09-25).
+    const key = landQualifiedStatuteId(d.nor, d.gnr) ?? d.gnr;
+    const set = byGnr.get(key) ?? new Set<string>();
     set.add(d.nor);
-    byGnr.set(d.gnr, set);
-    if (d.kurztitel && !titleOfGnr.has(d.gnr)) titleOfGnr.set(d.gnr, d.kurztitel);
+    byGnr.set(key, set);
+    if (d.kurztitel && !titleOfGnr.has(key)) titleOfGnr.set(key, d.kurztitel);
   }
   console.log(
     `RIS-Index: ${n(byGnr.size)} Gesetze, ${n([...byGnr.values()].reduce((a, s) => a + s.size, 0))} Dokumente`

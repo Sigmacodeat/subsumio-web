@@ -1,13 +1,17 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
+import {
+  readSyncInventory,
+  syncTotals,
+  toSyncRow,
+  type CorpusSyncRow,
+} from "@/lib/corpus-sync-inventory";
 import { SOURCE_LABELS } from "@/lib/corpus-labels";
-import { readFileSync, existsSync, readdirSync } from "fs";
-import { readdir, stat } from "fs/promises";
-import type { Dirent } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { lawCorpusDir, lawCorpusNormalizedDir } from "@/lib/corpus-paths";
-import { deriveLiveRows, PIPELINE_KEY_TO_DIR } from "@/lib/corpus-pipeline-live";
+import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
+import { deriveLiveRows } from "@/lib/corpus-pipeline-live";
 import {
   latestSnapshotAt,
   readLatestInventory,
@@ -21,132 +25,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
 const NORMALIZED_ROOT = lawCorpusNormalizedDir();
-const RAW_ROOT = lawCorpusDir();
 const FLAGS_FILE = join(NORMALIZED_ROOT, "_steward-flags.json");
-
-// Corpus-Name → Verzeichnis relativ zum Corpus-Root, wenn es vom Namen
-// abweicht (eu/ ist ein Container mit zwei Unter-Corpora).
-const CORPUS_DIR_OVERRIDES: Record<string, string> = {
-  "eu-directives": "eu/directives",
-  "eu-regulations": "eu/regulations",
-};
-
-// Disk-Wahrheit = max(_normalized, raw): _normalized ist die
-// Normalisierungs-Gate-Ausgabe (viaNormalized — jeder Import liest daraus),
-// raw enthält zusätzlich frisch gefetchte, noch nicht normalisierte Dateien.
-// max() bildet "was wir lokal haben" vollständig ab.
-//
-// Rekursiver .md-Scan kostet ~7s über den ganzen Bestand — pro Corpus
-// gecacht, damit das 5s-Polling das FS nicht dauerhaft rödelt.
-const DISK_COUNT_TTL_MS = 30_000;
-const diskCountCache = new Map<string, { n: number; t: number }>();
-
-// Async-Walk statt readdirSync(recursive): ein synchroner Scan über ~700k
-// Dateien blockiert den Event Loop für Sekunden — hier yieldet jede
-// Verzeichnis-Ebene, damit das 5s-Polling andere Requests nicht ausbremst.
-// Zusätzlich mtime-memoisiert pro Verzeichnis: ein Dir ohne mtime-Änderung
-// kann seinen Subtree-Count wiederverwenden, ohne nochmal readdir'd zu
-// werden — der Re-Scan kostet dann nur noch O(changed dirs) statt O(files).
-// ctime wird mitverglichen: auf Dateisystemen mit grober mtime-Granularität
-// (mancher NFS/FUSE-Mounts ~1s) kann eine Add+Remove-Sequenz in derselben
-// Sekunde an mtime vorbeigehen — ctime deckt Inode-Metadaten zusätzlich ab.
-// fs.watch wäre die Alternative, skaliert aber nicht (inotify-Limits bei
-// 700k Dateien).
-const dirScanCache = new Map<
-  string,
-  Map<string, { mtimeMs: number; ctimeMs: number; n: number }>
->();
-
-async function countMdFiles(root: string): Promise<number> {
-  const prev = dirScanCache.get(root) ?? new Map();
-  const next = new Map<string, { mtimeMs: number; ctimeMs: number; n: number }>();
-
-  const walk = async (dir: string): Promise<number> => {
-    const st1 = await stat(dir).catch(() => null);
-    if (!st1?.isDirectory()) return 0;
-    const hit = prev.get(dir);
-    if (hit && hit.mtimeMs === st1.mtimeMs && hit.ctimeMs === st1.ctimeMs) {
-      next.set(dir, hit);
-      return hit.n;
-    }
-    const entries = await readdir(dir, { withFileTypes: true }).catch(() => [] as Dirent[]);
-    let n = 0;
-    for (const e of entries) {
-      if (e.isDirectory()) n += await walk(join(dir, e.name));
-      else if (e.name.endsWith(".md")) n++;
-    }
-    // Double-stat: änderte sich das Dir während des Reads, ist der Count
-    // racy — dann nicht cachen (nächster Scan sieht die neuere mtime).
-    const st2 = await stat(dir).catch(() => null);
-    if (st2 && st2.mtimeMs === st1.mtimeMs && st2.ctimeMs === st1.ctimeMs)
-      next.set(dir, { mtimeMs: st1.mtimeMs, ctimeMs: st1.ctimeMs, n });
-    return n;
-  };
-
-  const n = await walk(root);
-  // `next` enthält nur besuchte Dirs — gelöschte Verzeichnisse werden
-  // damit automatisch aus dem Cache ausgemustert.
-  dirScanCache.set(root, next);
-  return n;
-}
-
-async function corpusDiskCount(corpus: string): Promise<number> {
-  const hit = diskCountCache.get(corpus);
-  if (hit && Date.now() - hit.t < DISK_COUNT_TTL_MS) return hit.n;
-  const rel = CORPUS_DIR_OVERRIDES[corpus] ?? corpus;
-  const [normalized, raw] = await Promise.all([
-    countMdFiles(join(NORMALIZED_ROOT, rel)),
-    countMdFiles(join(RAW_ROOT, rel)),
-  ]);
-  const n = Math.max(normalized, raw, getCorpusIndex(corpus).length);
-  diskCountCache.set(corpus, { n, t: Date.now() });
-  return n;
-}
-
-interface CorpusSyncRow {
-  corpus: string;
-  sourceId: string;
-  /** Anzeigename für Operatoren (SOURCE_LABELS-Fallback: corpus). */
-  label: string;
-  /** Historisches Archiv (law-at): DB-Bestand ist bewusst über RIS hinaus,
-   *  kein Fehler — wird nicht als Orphan/Lücke geführt. */
-  historical: boolean;
-  diskFiles: number;
-  dbPages: number;
-  /** Distincte Dokumente in der DB (COUNT DISTINCT import_filename).
-   *  Bei Judikatur 1:1 mit dbPages; bei Gesetzen 1 Datei → viele Pages.
-   *  Dies ist die korrekte Vergleichsgröße mit RIS Total (Dokumente). */
-  dbDocuments: number;
-  dbChunks: number;
-  embeddedChunks: number;
-  staleChunks: number;
-  coveragePct: number;
-  /** Auf Disk aber nicht in DB — die Import-Lücke. */
-  notImported: number;
-  /** Korpus ist 100% fertig: importiert, embedded, keine Lücken. */
-  fullyComplete: boolean;
-  /** In DB aber nicht auf Disk — verwaiste DB-Einträge. */
-  orphanDb: number;
-  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db" | "historical";
-  /** Live RIS OGD Total für diesen Korpus (null wenn unbekannt). */
-  risTotal: number | null;
-  /** Fehlende Dokumente: RIS OGD Total minus DB-Dokumente (DISTINCT import_filename). */
-  missingFromDb: number;
-  /** Noch nicht auf Disk: RIS OGD Total minus lokale Dateien. */
-  missingFromDisk: number;
-  /** Auf Disk aber noch nicht in DB (Disk-Dokumente minus DB-Dokumente). */
-  diskPending: number;
-  /** Neu auf RIS seit letztem lokalen Sync (RIS - Disk, wenn positiv). */
-  newOnRis: number;
-  /** Ob für diesen Korpus ein Backfill sinnvoll ist. */
-  canUpdate: boolean;
-  /** Pipeline source_key für One-Click Backfill (null wenn kein Mapping). */
-  pipelineKey: string | null;
-  /** RIS-Lücken sind unerreichbar (nur Platzhalter liefert). */
-  fetchFruitless: boolean;
-  /** Fortschritt des Disk-Imports in Prozent (dbDocuments / diskFiles). */
-  diskProgress: number;
-}
 
 interface WorkQueueItem {
   path: string;
@@ -345,44 +224,8 @@ export const GET = createHandler(
       }
     }
 
-    // ── 1b. Corpus-Liste + Disk-Counts ──
-    // Union aus vier Quellen, damit JEDER Bestand sichtbar ist:
-    //  a) _normalized/* — Steward-Korpus (AT)
-    //  b) raw law-corpus/* — Pipeline-Fetch/Import-Quelle (de-*, ch-*, eu/*)
-    //  c) DB source_ids law-* — importiert, aber evtl. ohne Dir
-    //  d) pipeline_state source_keys — via PIPELINE_KEY_TO_DIR
+    // Steward-Korpora (_normalized) — für Work Queue und Trust.
     const normalizedCorpora = listCorpusNames();
-    const corpusSet = new Set<string>(normalizedCorpora);
-
-    if (existsSync(RAW_ROOT)) {
-      try {
-        for (const d of readdirSync(RAW_ROOT, { withFileTypes: true })) {
-          if (!d.isDirectory() || d.name.startsWith("_")) continue;
-          if (d.name === "eu") {
-            // eu/ ist ein Container — Corpora sind die Unterordner.
-            for (const sub of readdirSync(join(RAW_ROOT, "eu"), {
-              withFileTypes: true,
-            })) {
-              if (sub.isDirectory()) corpusSet.add(`eu-${sub.name}`);
-            }
-            continue;
-          }
-          corpusSet.add(d.name);
-        }
-      } catch {
-        /* Volume nicht erreichbar → nur normalized/DB */
-      }
-    }
-
-    const corpora = [...corpusSet].sort();
-    const diskCounts: Record<string, number> = {};
-    await Promise.all(corpora.map(async (c) => (diskCounts[c] = await corpusDiskCount(c))));
-
-    if (corpora.length === 0) {
-      // Fallback (Web-Container ohne law-corpus Volume):
-      // DB source_ids als Corpus-Liste verwenden.
-      corpora.push(...Object.keys(dbStats).filter((s) => s !== "unknown" && s !== "default"));
-    }
 
     // ── 3. Flags (Quality) ──
     let flags: Record<
@@ -397,245 +240,17 @@ export const GET = createHandler(
       }
     }
 
-    // ── 4. Sync-Status zusammenbauen ──
-    // BUG 20+21: corpora sind Directory-Namen (at, at-normen, at-judikatur-vwgh),
-    // aber dbStats ist nach source_id gekeyed (law-at, law-at-judikatur-vwgh).
-    // Ohne Mapping zeigte das Command Center für ALLE Corpora 0 DB-Pages/0 Chunks.
-    //
-    // CORPUS_TO_SOURCE_ID: mappt Directory-Name → DB source_id.
-    // CORPUS_TO_PIPELINE_KEY: mappt Directory-Name → pipeline_state.source_key.
-    //   Direktes Mapping (nicht via source_id), weil at + at-normen beide
-    //   source_id=law-at haben aber unterschiedliche pipeline keys
-    //   (statutes-at vs normen-at).
-    const CORPUS_TO_SOURCE_ID: Record<string, string> = {
-      at: "law-at",
-      // Federal paragraphs are imported into law-at-normen (147k pages); law-at
-      // holds only the old whole-statute split.
-      "at-normen": "law-at-normen",
-      "at-landesrecht": "law-at-landesrecht",
-      "at-staatsvertraege": "law-at-staatsvertraege",
-      "at-literatur": "law-at-literatur",
-      "at-judikatur": "law-at-judikatur",
-      "at-judikatur-vwgh": "law-at-judikatur-vwgh",
-      "at-judikatur-vfgh": "law-at-judikatur-vfgh",
-      "at-judikatur-lvwg": "law-at-judikatur-lvwg",
-      "at-judikatur-bvwg": "law-at-judikatur-bvwg",
-      "at-judikatur-asylgh": "law-at-judikatur-asylgh",
-      "at-judikatur-uvs": "law-at-judikatur-uvs",
-      "at-judikatur-dsk": "law-at-judikatur-dsk",
-      "at-judikatur-dok": "law-at-judikatur-dok",
-      "at-judikatur-gbk": "law-at-judikatur-gbk",
-      "at-judikatur-pvak": "law-at-judikatur-pvak",
-      "at-judikatur-ubas": "law-at-judikatur-ubas",
-      "at-judikatur-umse": "law-at-judikatur-umse",
-      // BUG 24: Diese Corpora existieren auf Disk aber haben keine Pipeline-Source.
-      // Sie werden via batch-import-from-disk manuell importiert. Ohne Mapping
-      // zeigte das Command Center sourceId=corpus (Directory-Name) statt law-at-*.
-      "at-avn": "law-at-avn",
-      "at-avsv": "law-at-avsv",
-      "at-bezirke": "law-at-bezirke",
-      "at-bmerl": "law-at-bmerl",
-      "at-gemeinden": "law-at-gemeinden",
-      "at-kmger": "law-at-kmger",
-      "at-spg": "law-at-spg",
-      de: "law-de",
-      "de-judikatur": "law-de-judikatur",
-      "de-literatur": "law-de-literatur",
-      "de-materialien": "law-de-materialien",
-      ch: "law-ch",
-      "ch-judikatur": "law-ch-judikatur",
-      "ch-literatur": "law-ch-literatur",
-      "eu-directives": "law-eu-directives",
-      "eu-regulations": "law-eu",
-    };
-
-    // BUG 48: pipeline_state.source_key ist 'jud-ogh', 'jud-vwgh', 'statutes-at',
-    // nicht 'ogh'/'vwgh'. Ohne 'jud-'-Prefix fand der Lookup kein RIS Total.
-    const CORPUS_TO_PIPELINE_KEY: Record<string, string> = {
-      at: "statutes-at",
-      "at-normen": "normen-at",
-      "at-landesrecht": "landesrecht",
-      "at-staatsvertraege": "staatsvertraege",
-      "at-literatur": "literatur-at",
-      "at-judikatur": "jud-ogh",
-      "at-judikatur-vwgh": "jud-vwgh",
-      "at-judikatur-vfgh": "jud-vfgh",
-      "at-judikatur-lvwg": "jud-lvwg",
-      "at-judikatur-bvwg": "jud-bvwg",
-      "at-judikatur-asylgh": "jud-asylgh",
-      "at-judikatur-uvs": "jud-uvs",
-      "at-judikatur-dsk": "jud-dsk",
-      "at-judikatur-dok": "jud-dok",
-      "at-judikatur-gbk": "jud-gbk",
-      "at-judikatur-pvak": "jud-pvak",
-      "at-judikatur-ubas": "jud-ubas",
-      "at-judikatur-umse": "jud-umse",
-      de: "statutes-de",
-      "de-literatur": "literatur-de",
-      "de-materialien": "materialien-de",
-      ch: "statutes-ch",
-      "ch-literatur": "literatur-ch",
-      "eu-directives": "eu-directives",
-      "eu-regulations": "eu-regulations",
-    };
-
-    // Pipeline-State Lookup-Map: source_key → { diskCount, dbPages, risTotal }
-    const pipelineBySource: Record<
-      string,
-      { diskCount: number; dbPages: number; risTotal: number | null }
-    > = {};
-    for (const p of pipelineState) {
-      pipelineBySource[p.source] = {
-        diskCount: p.diskCount,
-        dbPages: p.dbPages,
-        risTotal: p.risTotal,
-      };
-    }
-
-    // Union-Teil c)+d): DB-Quellen und Pipeline-Keys ohne eigenes Dir.
-    // dbStats enthält auch brain_*-Quellen (Tenant-Daten) — nur law-* ist Corpus.
-    const SOURCE_ID_TO_CORPUS: Record<string, string> = {};
-    for (const [corpus, sid] of Object.entries(CORPUS_TO_SOURCE_ID)) {
-      if (!(sid in SOURCE_ID_TO_CORPUS)) SOURCE_ID_TO_CORPUS[sid] = corpus;
-    }
-    for (const sid of Object.keys(dbStats)) {
-      if (!sid.startsWith("law-")) continue;
-      const corpus = SOURCE_ID_TO_CORPUS[sid] ?? sid;
-      if (!corpusSet.has(corpus)) {
-        corpusSet.add(corpus);
-        corpora.push(corpus);
-        diskCounts[corpus] = await corpusDiskCount(corpus);
-      }
-    }
-    for (const p of pipelineState) {
-      const dir =
-        PIPELINE_KEY_TO_DIR[p.source.replace(/^backfill-/, "")] ?? PIPELINE_KEY_TO_DIR[p.source];
-      if (!dir) continue;
-      const corpus = dir.includes("/") ? dir.replace("/", "-") : dir;
-      if (!corpusSet.has(corpus)) {
-        corpusSet.add(corpus);
-        corpora.push(corpus);
-        diskCounts[corpus] = await corpusDiskCount(corpus);
-      }
-    }
-    corpora.sort();
-
-    const syncRows: CorpusSyncRow[] = [];
-
-    for (const corpus of corpora) {
-      // BUG 20+21: corpus ist ein Directory-Name, dbStats ist nach source_id gekeyed.
-      // Ohne CORPUS_TO_SOURCE_ID-Mapping waren alle DB-Stats 0.
-      const sourceId = CORPUS_TO_SOURCE_ID[corpus] ?? corpus;
-      const stats = dbStats[sourceId];
-      const dbPages = stats?.pages ?? 0;
-      // BUG 47: dbDocuments ist die korrekte Vergleichsgröße mit RIS Total.
-      // Fallback auf dbPages wenn import_filename nicht gesetzt (ältere Imports).
-      const dbDocuments = stats?.documents ?? dbPages;
-      const dbChunks = stats?.chunks ?? 0;
-      const embedded = stats?.embedded ?? 0;
-
-      // Disk-Zahl: aus pipeline_state via direktem Corpus→PipelineKey-Mapping
-      const pipelineKey = CORPUS_TO_PIPELINE_KEY[corpus];
-      const pipelineInfo = pipelineKey ? pipelineBySource[pipelineKey] : undefined;
-      const disk = pipelineInfo ? pipelineInfo.diskCount : (diskCounts[corpus] ?? 0);
-      // Historisches Archiv (law-at): alte Gesetzesfassungen, bewusst über
-      // dem RIS-In-force-Soll — weder Lücke noch Orphan, eigener Status.
-      // Der In-force-Index ist für das Archiv kein gültiges Soll: es würde
-      // tausende "fehlende" Dokumente melden, die bewusst nicht Teil des
-      // Archivs sind (geltende Normen leben in law-at-normen).
-      const historical = corpus === "at";
-      // RIS Total: aus pipeline_state, wenn verfügbar — null für Archive.
-      const risTotal =
-        !historical && pipelineInfo && pipelineInfo.risTotal ? pipelineInfo.risTotal : null;
-
-      const stale = dbChunks - embedded;
-      const coverage = dbChunks > 0 ? Math.round((embedded / dbChunks) * 1000) / 10 : 0;
-
-      // Differenzen zum Source-of-Truth RIS OGD
-      // BUG 47: RIS Total ist in Dokumenten, nicht in Pages. Daher mit
-      // dbDocuments vergleichen, nicht dbPages. Bei Judikatur 1:1, bei
-      // Gesetzen 1 Datei → viele Pages (z.B. normen: 4081 Dateien → 52603 Pages).
-      const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbDocuments) : 0;
-      const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
-      const diskPending = Math.max(0, disk - dbDocuments);
-      const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
-      // Heuristik: Wenn Judikatur viele RIS-Dokumente fehlen, aber nur wenige
-      // echte Volltexte auf Disk vorhanden sind, produziert ein RIS-Backfill nur
-      // Platzhalter ("Volltext nicht abrufbar"). Solche Lücken werden als
-      // unerreichbar markiert, damit das Dashboard sie nicht als offene Arbeit
-      // anzeigt. Beispiel: ogh 81k RIS-Lücken vs. 1k echte Disk-Dateien.
-      const isJudikatur = corpus.startsWith("at-judikatur");
-      const fetchFruitless =
-        isJudikatur &&
-        risTotal !== null &&
-        missingFromDb > 0 &&
-        (disk === 0 || missingFromDb > disk * 2);
-      // Orphan: DB-Dokumente ohne entsprechenden Disk-Bestand.
-      // Für RIS-Sources: risTotal ist Source-of-Truth → dbDocuments > risTotal = orphan.
-      // Für Nicht-RIS: disk-Dateien vs dbDocuments kann nicht direkt verglichen werden.
-      // Zuverlässiger Signal: disk=0 aber dbPages>0 → alle DB-Pages sind orphan.
-      const orphanDb =
-        risTotal !== null
-          ? Math.max(0, dbDocuments - risTotal)
-          : disk === 0 && dbPages > 0
-            ? dbPages
-            : 0;
-
-      // Status: Wahrheitsgemäß nach RIS für RIS-Sources; für Nicht-RIS konservativ
-      let syncStatus: CorpusSyncRow["syncStatus"] = "synced";
-      if (dbPages === 0 && disk > 0) {
-        syncStatus = "no_db";
-      } else if (missingFromDb > 0) {
-        syncStatus = "import_pending";
-      } else if (diskPending > 0) {
-        syncStatus = "import_pending";
-      } else if (risTotal !== null && orphanDb > 0) {
-        syncStatus = "orphan_in_db";
-      } else if (disk === 0 && dbPages > 0) {
-        syncStatus = "orphan_in_db";
-      }
-      if (historical) syncStatus = "historical";
-
-      // notImported: Dateien auf Disk die noch nicht in der DB sind.
-      // BUG 47: Für RIS-Sources ist missingFromDb die echte Lücke (risTotal - dbDocuments).
-      const notImported = risTotal !== null ? missingFromDb : dbPages === 0 && disk > 0 ? disk : 0;
-      const canUpdate =
-        risTotal !== null && pipelineKey != null && missingFromDb > 0 && !fetchFruitless;
-
-      syncRows.push({
-        corpus,
-        sourceId,
-        label: SOURCE_LABELS[sourceId] ?? corpus,
-        historical,
-        diskFiles: disk,
-        dbPages,
-        dbDocuments,
-        dbChunks,
-        embeddedChunks: embedded,
-        staleChunks: stale,
-        coveragePct: coverage,
-        notImported,
-        orphanDb,
-        syncStatus,
-        fullyComplete:
-          coverage === 100 &&
-          stale === 0 &&
-          dbPages > 0 &&
-          missingFromDb === 0 &&
-          diskPending === 0 &&
-          orphanDb === 0 &&
-          !fetchFruitless,
-        risTotal,
-        missingFromDb: fetchFruitless ? 0 : missingFromDb,
-        missingFromDisk,
-        newOnRis: fetchFruitless ? 0 : newOnRis,
-        diskPending,
-        diskProgress: disk > 0 ? Math.min(100, Math.round((dbDocuments / disk) * 1000) / 10) : 0,
-        canUpdate,
-        pipelineKey: pipelineKey ?? null,
-        fetchFruitless,
-      });
-    }
+    // ── 4. Sync-Status: RIS-Soll → Platte → DB nach Dokumentnummer ──
+    // Die Zählung kommt aus der stündlichen Messung im corpus-pipeline-
+    // Container (_state/corpus-sync-inventory.json) — gleiche Einheit auf
+    // allen drei Ebenen, Mengendifferenzen statt Subtraktion von Summen.
+    // Aus dem 10-Minuten-Snapshot kommen nur Chunks/Embeddings dazu.
+    const inventory = readSyncInventory();
+    const syncRows: CorpusSyncRow[] = (inventory?.sources ?? [])
+      .map((src) =>
+        toSyncRow(src, SOURCE_LABELS[src.sourceId] ?? src.corpus, dbStats[src.sourceId])
+      )
+      .sort((a, b) => a.corpus.localeCompare(b.corpus));
 
     // ── 5. Work Queue (Auffälligkeiten) ──
     const workQueue: WorkQueueItem[] = [];
@@ -698,17 +313,7 @@ export const GET = createHandler(
     );
 
     // ── 7. Totals ──
-    const totalDisk = syncRows.reduce((s, r) => s + r.diskFiles, 0);
-    const totalDbPages = syncRows.reduce((s, r) => s + r.dbPages, 0);
-    const totalDbChunks = syncRows.reduce((s, r) => s + r.dbChunks, 0);
-    const totalDbDocuments = syncRows.reduce((s, r) => s + r.dbDocuments, 0);
-    const totalEmbedded = syncRows.reduce((s, r) => s + r.embeddedChunks, 0);
-    const totalNotImported = syncRows.reduce((s, r) => s + r.notImported, 0);
-    const totalStale = syncRows.reduce((s, r) => s + r.staleChunks, 0);
-    const totalRis = syncRows.reduce((s, r) => s + (r.risTotal || 0), 0);
-    const totalMissingFromDb = syncRows.reduce((s, r) => s + r.missingFromDb, 0);
-    const totalMissingFromDisk = syncRows.reduce((s, r) => s + r.missingFromDisk, 0);
-    const totalNewOnRis = syncRows.reduce((s, r) => s + r.newOnRis, 0);
+    const syncTotalsValue = syncTotals(syncRows);
     const totalVerified = Object.values(flags).filter((f) => f.flag === "verified").length;
     const totalNeedsReview = Object.values(flags).filter((f) => f.flag === "needs_review").length;
     const totalDefective = Object.values(flags).filter((f) => f.flag === "defective").length;
@@ -779,24 +384,9 @@ export const GET = createHandler(
       snapshotAt,
       sync: {
         rows: syncRows,
-        totals: {
-          totalDisk,
-          totalDbPages,
-          totalDbChunks,
-          totalDbDocuments,
-          totalEmbedded,
-          totalNotImported,
-          totalStale,
-          totalRis,
-          totalMissingFromDb,
-          totalMissingFromDisk,
-          totalNewOnRis,
-          // Gleiche Einheit wie pro-Row coveragePct: embedded Chunks /
-          // alle Chunks (vorher / totalDbPages — Chunks≠Pages, >1 Chunk
-          // pro Page blähte den Wert über 100% auf).
-          coveragePct:
-            totalDbChunks > 0 ? Math.round((totalEmbedded / totalDbChunks) * 1000) / 10 : 0,
-        },
+        totals: syncTotalsValue,
+        // Zeitpunkt der Dokumentnummern-Messung; null = noch nie gemessen.
+        measuredAt: inventory?.measuredAt ?? null,
       },
       workQueue: {
         items: workQueue.slice(0, 200), // erste 200 — Rest via Pagination
@@ -818,7 +408,14 @@ export const GET = createHandler(
           needsReview: totalNeedsReview,
           defective: totalDefective,
           archived: totalArchived,
-          unreviewed: totalDisk - totalVerified - totalNeedsReview - totalDefective - totalArchived,
+          unreviewed: Math.max(
+            0,
+            Object.values(diskByCorpus).reduce((a, n) => a + n, 0) -
+              totalVerified -
+              totalNeedsReview -
+              totalDefective -
+              totalArchived
+          ),
         },
       },
       risDelta: {

@@ -22,6 +22,7 @@ import { join } from "path";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
+import { recordFetchOutcome } from "./ris-fetch-outcomes";
 
 function arg(name: string, fb?: string) {
   const i = process.argv.indexOf(`--${name}`);
@@ -30,6 +31,8 @@ function arg(name: string, fb?: string) {
 
 const RIS_FILE = arg("ris", "/tmp/ris-inforce.jsonl")!;
 const OUT_ROOT = arg("out", join(import.meta.dirname, "..", "..", "law-corpus", "at-normen"))!;
+/** law-corpus root (parent of at-normen) — where _state/ris-fetch-outcomes.jsonl lives. */
+const CORPUS_ROOT = join(OUT_ROOT, "..");
 const LIMIT = Number(arg("limit", "0"));
 const ONLY_GNR = arg("gnr");
 const ONLY_NAMED = process.argv.includes("--only-named");
@@ -209,9 +212,12 @@ function extractText(xml: string): { text: string; meta: Record<string, string> 
 /** Zählt aufeinanderfolgende Drosselungs-Antworten über alle Worker hinweg. */
 let consecutive503 = 0;
 let aborted = false;
+/** Why the last fetchXml() returned null — 404 is "not found", anything else "failed". */
+let lastFetchNotFound = false;
 
 async function fetchXml(nor: string, attempt = 0): Promise<string | null> {
   const url = `https://www.ris.bka.gv.at/Dokumente/Bundesnormen/${nor}/${nor}.xml`;
+  if (attempt === 0) lastFetchNotFound = false;
   try {
     const res = await fetch(url, {
       headers: UA,
@@ -219,6 +225,7 @@ async function fetchXml(nor: string, attempt = 0): Promise<string | null> {
     });
     if (res.status === 404) {
       consecutive503 = 0;
+      lastFetchNotFound = true;
       return null;
     }
     if (res.status === 429 || res.status === 503) {
@@ -497,6 +504,15 @@ async function main() {
       if (!xml) {
         done++;
         failed++;
+        // Only a real RIS answer is a verdict; an aborted run says nothing
+        // about the document, and --from-xml never asked RIS.
+        if (!FROM_XML && !aborted)
+          recordFetchOutcome(
+            CORPUS_ROOT,
+            "at-normen",
+            n.nor,
+            lastFetchNotFound ? "not_found" : "failed"
+          );
         continue;
       }
 
@@ -504,6 +520,8 @@ async function main() {
       if (!text.trim()) {
         done++;
         empty++;
+        // Typically an Anlage that RIS keeps only as PDF/image.
+        recordFetchOutcome(CORPUS_ROOT, "at-normen", n.nor, "no_text", n.apa ?? undefined);
         continue;
       }
 

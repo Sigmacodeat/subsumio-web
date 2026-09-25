@@ -13,6 +13,7 @@ import {
   type DbLawAgg,
   type DbLawDoc,
   type DbLawPage,
+  lawKeyFor,
 } from "./law-coverage";
 import { corpusFileCandidatesForSlug, corpusFileForSlug } from "./law-coverage-server";
 
@@ -256,5 +257,49 @@ describe("corpusFileCandidatesForSlug", () => {
     expect(
       corpusFileCandidatesForSlug("law-at-landesrecht", "legal/statutes/at/landesrecht/../x")
     ).toEqual([]);
+  });
+});
+
+describe("Landesrecht: Gesetzesnummern je Bundesland (Audit 2026-09-25)", () => {
+  const lr = [
+    { nor: "LST40017927", gnr: "10000001", apa: "§ 1" },
+    { nor: "LTI40045780", gnr: "10000001", apa: "§ 1" },
+    { nor: "LTI40045781", gnr: "10000001", apa: "§ 2" },
+  ]
+    .map((d) => JSON.stringify(d))
+    .join("\n");
+
+  test("dieselbe Nummer in zwei Ländern ergibt zwei Gesetze mit Land im Key", () => {
+    const idx = parseRisInforceIndex(lr);
+    expect([...idx.keys()].sort()).toEqual(["stmk-10000001", "tir-10000001"]);
+    expect(idx.get("tir-10000001")?.docs.size).toBe(2);
+    expect(lawKeyFor("NOR12139577", "10010980")).toBe("10010980");
+  });
+
+  test("zählt eine vorhandene Dokumentnummer auch ohne passende statute_id", () => {
+    const idx = parseRisInforceIndex(lr);
+    const { rows } = computeLawCoverage(
+      idx,
+      [
+        { key: "tir-10000001", doc: "LTI40045780" },
+        // Ältere Seite ohne statute_id — Dokument ist trotzdem da.
+        { key: "", doc: "LTI40045781" },
+      ],
+      []
+    );
+    expect(rows.find((r) => r.key === "tir-10000001")).toMatchObject({
+      have: 2,
+      status: "complete",
+    });
+    expect(rows.find((r) => r.key === "stmk-10000001")).toMatchObject({
+      have: 0,
+      status: "missing",
+    });
+  });
+
+  test("RIS-Link nutzt die nackte Nummer", () => {
+    expect(lawOfficialUrl("law-at-landesrecht", "tir-10000001", "LTI40045780")?.url).toContain(
+      "Gesetzesnummer=10000001"
+    );
   });
 });
