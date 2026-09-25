@@ -43,7 +43,7 @@ function makeArrayBrain(result?: Partial<PageArrayMutateResult>) {
     calls,
     async appendPageArray(slug: string, field: string, items: unknown[]) {
       calls.push({ method: "appendPageArray", slug, field, payload: items });
-      return { items };
+      return { slug, field, appended: items.length, length: items.length, items };
     },
     async mutatePageArray(slug: string, field: string, mutation: PageArrayMutation) {
       calls.push({ method: "mutatePageArray", slug, field, payload: mutation });
