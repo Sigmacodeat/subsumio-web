@@ -2338,7 +2338,11 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
               sourceId: tokenSourceId,
               // Hot memory is firm-wide; a user-bound token does not get it.
               ...(webMatterGuard
-                ? { matterGuard: webMatterGuard }
+                ? {
+                    matterGuard: webMatterGuard,
+                    // The bound user's document ACL; absent groups fail closed.
+                    aclGroups: authInfo.aclGroups ?? [],
+                  }
                 : { metaHook: getBrainHotMemoryMeta }),
               // v0.31 follow-up fix: thread auth so the whoami op (and any
               // future scope-aware handlers) can introspect the caller. The

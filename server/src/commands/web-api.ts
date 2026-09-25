@@ -1695,7 +1695,7 @@ export async function graphVisibleSlugs(
     visible = await filterByMatterScope(engine, req, visible, scope);
   }
   const groups = req.aclGroups;
-  if (groups && groups !== "all" && groups.length > 0 && visible.length > 0) {
+  if (groups !== undefined && groups !== "all" && visible.length > 0) {
     const { filterPagesByACL } = await import("../core/acl.ts");
     const accessible = new Set(
       await filterPagesByACL(
@@ -1714,16 +1714,92 @@ export async function graphVisibleSlugs(
  * binding counts (case_slug, case_ref, …; core/matter-binding.ts): rows
  * without frontmatter get their current binding from the database in bulk.
  */
-function filterByMatterScope<T extends BindingRow>(
+async function filterByMatterScope<T extends BindingRow>(
   engine: BrainEngine,
   req: Request,
   results: T[],
   scope: string[] | "all"
 ): Promise<T[]> {
-  return filterRowsByMatterBinding(engine, results, scope, {
+  const inScope = await filterRowsByMatterBinding(engine, results, scope, {
     sourceId: requestSourceId(req),
     sources: readSourcesFor(req),
   });
+  return filterRowsByAcl(engine, req, inScope);
+}
+
+/** True when the caller's document-level ACL restricts what they may see. */
+function aclRestricted(req: Request): boolean {
+  return req.aclGroups !== undefined && req.aclGroups !== "all";
+}
+
+/**
+ * The slugs (of `slugs`) the caller's document-level ACL groups do NOT reach:
+ * a slug is denied when any stored copy in the caller's read sources carries
+ * page_permissions none of the caller's groups match. Empty for unrestricted
+ * callers (admins, trusted calls without an identity token).
+ */
+async function aclDeniedSlugs(
+  engine: BrainEngine,
+  req: Request,
+  slugs: ReadonlyArray<string | null | undefined>
+): Promise<Set<string>> {
+  const groups = req.aclGroups;
+  const denied = new Set<string>();
+  if (groups === undefined || groups === "all") return denied;
+  const list = [
+    ...new Set(slugs.filter((x): x is string => typeof x === "string" && x.length > 0)),
+  ];
+  if (list.length === 0) return denied;
+  const sources = readSourcesFor(req) ?? [requestSourceId(req)];
+  const rows = await engine.executeRaw<{ id: number; slug: string }>(
+    `SELECT id, slug FROM pages WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[])`,
+    [list, sources]
+  );
+  if (rows.length === 0) return denied;
+  const { filterPagesByACL } = await import("../core/acl.ts");
+  const ok = new Set(
+    await filterPagesByACL(
+      engine,
+      rows.map((r) => Number(r.id)),
+      groups
+    )
+  );
+  for (const r of rows) if (!ok.has(Number(r.id))) denied.add(r.slug);
+  return denied;
+}
+
+/** Drop rows whose page the caller's document-level ACL does not reach. */
+async function filterRowsByAcl<T extends { slug?: string }>(
+  engine: BrainEngine,
+  req: Request,
+  rows: T[]
+): Promise<T[]> {
+  if (!aclRestricted(req) || rows.length === 0) return rows;
+  const denied = await aclDeniedSlugs(
+    engine,
+    req,
+    rows.map((r) => r.slug)
+  );
+  if (denied.size === 0) return rows;
+  return rows.filter((r) => !(typeof r.slug === "string" && denied.has(r.slug)));
+}
+
+/**
+ * Document-level ACL guard for page-bound routes: a page restricted to groups
+ * the caller is not in behaves exactly like a missing page.
+ */
+async function assertSlugsAclAccess(
+  engine: BrainEngine,
+  req: Request,
+  slugs: ReadonlyArray<string | null | undefined>
+): Promise<void> {
+  if (!aclRestricted(req)) return;
+  const denied = await aclDeniedSlugs(engine, req, slugs);
+  for (const slug of denied) {
+    throw new EngineNotFoundError(
+      `Page ${slug} is outside the caller's matter scope. This is intentionally indistinguishable from not found.`
+    );
+  }
 }
 
 /**
@@ -1744,6 +1820,8 @@ async function assertPageMatterAccess(
     write?: boolean;
   } = {}
 ): Promise<void> {
+  // Document-level ACL first: it applies whatever the matter scope says.
+  await assertSlugsAclAccess(engine, req, [slug]);
   const scope = req.matterScope;
   const readOnly = req.matterReadOnly ?? [];
   const restricted = scope !== undefined && scope !== "all";
@@ -1828,6 +1906,7 @@ async function assertSlugsMatterScope(
     ...new Set(slugs.filter((x): x is string => typeof x === "string" && x.length > 0)),
   ];
   for (const slug of list) assertMatterScope(scope, slug, caseSlug);
+  await assertSlugsAclAccess(engine, req, list);
   if (scope === undefined || scope === "all" || list.length === 0) return;
   const bindings = await resolveRowBindings(
     engine,
@@ -1876,7 +1955,8 @@ function matterScopeMiddleware(apiKey: string | undefined) {
  * Subsumio R3: Middleware that resolves the caller's document-level ACL groups.
  * Reads the user_id from the identity token, queries access_group_members for
  * the caller's source, and attaches the group UUIDs to req.aclGroups.
- * "all" = no ACL filtering (admin or no groups configured).
+ * "all" = no ACL filtering (admins and trusted calls without an identity token);
+ * a user in no group gets [] and sees only pages without page_permissions.
  */
 /**
  * The access rules of every matter in a source that has any, cached briefly:
@@ -1993,8 +2073,9 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
         return;
       }
       const { getUserGroups } = await import("../core/acl.ts");
-      const groupIds = await getUserGroups(engine, payload.userId, sourceId);
-      req.aclGroups = groupIds.length > 0 ? groupIds : "all";
+      // A user in no group gets an empty list (open pages only), never "all":
+      // leaving the last group must not widen what the user can see.
+      req.aclGroups = await getUserGroups(engine, payload.userId, sourceId);
       next();
     } catch (e) {
       // Fail-closed: if ACL resolution fails, do NOT widen to "all".
@@ -3965,7 +4046,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         .map(gapSlug)
         .filter((g): g is string => typeof g === "string" && g.length > 0);
       const visibleGaps =
-        matterScope !== "all" && gapSlugs.length > 0
+        (matterScope !== "all" || aclRestricted(req)) && gapSlugs.length > 0
           ? new Set(
               (
                 await filterByMatterScope(
@@ -5109,14 +5190,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
          LIMIT 10000`,
         [sourceId]
       );
+      // Same visibility as every other read: matter scope and document ACL.
+      const truncated = rows.length === 10000;
+      const visible = await filterByMatterScope(engine, req, rows, req.matterScope ?? "all");
 
       res.json({
         format: "subsumio-export-v1",
         exported_at: new Date().toISOString(),
         source: sourceId,
-        page_count: rows.length,
-        truncated: rows.length === 10000,
-        pages: rows.map((r) => ({
+        page_count: visible.length,
+        truncated,
+        pages: visible.map((r) => ({
           slug: r.slug,
           title: r.title,
           type: r.type,
@@ -8939,8 +9023,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const response = tabularRunToApiResponse(state);
       // Matter-scope: Zeilen außerhalb des Scopes werden ausgefiltert —
       // dieselbe Postur wie bei der Suchergebnis-Filterung.
-      if (req.matterScope && req.matterScope !== "all") {
-        response.rows = await filterByMatterScope(engine, req, state.rows, req.matterScope);
+      if ((req.matterScope && req.matterScope !== "all") || aclRestricted(req)) {
+        response.rows = await filterByMatterScope(
+          engine,
+          req,
+          state.rows,
+          req.matterScope ?? "all"
+        );
       }
       res.json(response);
     } catch (e) {
@@ -9367,6 +9456,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         sourceId: requestSourceId(req),
         caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
         matterScope: req.matterScope ?? "all",
+        aclGroups: req.aclGroups ?? "all",
       });
       res.json(buch);
     } catch (e) {
@@ -9388,6 +9478,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         sourceId: requestSourceId(req),
         caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
         matterScope: req.matterScope ?? "all",
+        aclGroups: req.aclGroups ?? "all",
       });
       const ics = baueIcs(buch);
       res.setHeader("Content-Type", "text/calendar; charset=utf-8");

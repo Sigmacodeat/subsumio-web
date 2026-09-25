@@ -169,6 +169,11 @@ export async function ladeFristenbuch(
      * restricted, not granted) are left out. Undefined = unrestricted.
      */
     matterScope?: MatterScope;
+    /**
+     * The caller's document-level ACL groups (core/acl.ts): calendars
+     * restricted to other groups are left out. Undefined / "all" = no filter.
+     */
+    aclGroups?: string[] | "all";
   }
 ): Promise<Fristenbuch> {
   const heute = opts.heute;
@@ -190,14 +195,27 @@ export async function ladeFristenbuch(
     conds.push(`slug = $${params.length}`);
   }
 
-  const pages = await engine.executeRaw<{
+  const allPages = await engine.executeRaw<{
+    id: number;
     slug: string;
     compiled_truth: string | null;
     frontmatter: Record<string, unknown> | null;
   }>(
-    `SELECT slug, compiled_truth, frontmatter FROM pages WHERE ${conds.join(" AND ")} ORDER BY slug`,
+    `SELECT id, slug, compiled_truth, frontmatter FROM pages WHERE ${conds.join(" AND ")} ORDER BY slug`,
     params
   );
+  let pages = allPages;
+  if (opts.aclGroups !== undefined && opts.aclGroups !== "all" && allPages.length > 0) {
+    const { filterPagesByACL } = await import("../acl.ts");
+    const ok = new Set(
+      await filterPagesByACL(
+        engine as unknown as Parameters<typeof filterPagesByACL>[0],
+        allPages.map((p) => Number(p.id)),
+        opts.aclGroups
+      )
+    );
+    pages = allPages.filter((p) => ok.has(Number(p.id)));
+  }
 
   const eintraege: FristenbuchEintrag[] = [];
   let unparsebar = 0;

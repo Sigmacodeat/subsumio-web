@@ -425,6 +425,11 @@ export interface AuthInfo {
   webUserId?: string;
   /** Matters the bound web user may read but not change. */
   matterReadOnly?: string[];
+  /**
+   * Document-level ACL groups of the bound web user (core/acl.ts): "all" for
+   * admins, otherwise the user's groups ([] = open pages only).
+   */
+  aclGroups?: string[] | "all";
 }
 
 export interface OperationContext {
@@ -569,7 +574,8 @@ export interface OperationContext {
   /**
    * Subsumio R3: Document-level ACL groups for this caller.
    * undefined / "all" = no ACL filtering (trusted admin, legacy).
-   * string[] = only pages accessible to these group UUIDs are visible.
+   * string[] = only pages accessible to these group UUIDs are visible;
+   * [] (a user in no group) = open pages only.
    *
    * Set by buildOperationContext from opts.aclGroups, populated by the
    * web-api middleware from the caller's access_group_members rows.
@@ -753,14 +759,15 @@ export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolea
  * Subsumio R3: Async document-level ACL filter for search results.
  * Filters results by page_id against page_permissions + access_group_members.
  * Pages with NO permission rows are open-by-default.
- * Returns the input array unchanged when aclGroups is undefined/"all"/empty.
+ * Returns the input array unchanged when aclGroups is undefined/"all"; an
+ * empty group list keeps open pages only.
  */
 export async function aclFilter<T extends { page_id?: number }>(
   results: T[],
   ctx: OperationContext
 ): Promise<T[]> {
   const groups = ctx.aclGroups;
-  if (!groups || groups === "all" || groups.length === 0) return results;
+  if (groups === undefined || groups === "all") return results;
   if (results.length === 0) return results;
   const { filterPagesByACL } = await import("./acl.ts");
   const pageIds = results.map((r) => r.page_id).filter((id): id is number => id != null);
@@ -1045,7 +1052,7 @@ const get_page: Operation = {
     // set, verify the page is accessible. Pages with no permission rows
     // are open-by-default. Denied pages throw the same error as not-found
     // to prevent information leakage.
-    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0) {
+    if (ctx.aclGroups !== undefined && ctx.aclGroups !== "all") {
       const { isPageAccessible } = await import("./acl.ts");
       const accessible = await isPageAccessible(ctx.engine, page.id, ctx.aclGroups);
       if (!accessible) {
@@ -2290,7 +2297,7 @@ const list_pages: Operation = {
     }));
 
     // Subsumio R3: Filter by document-level ACLs.
-    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
+    if (ctx.aclGroups !== undefined && ctx.aclGroups !== "all" && pages.length > 0) {
       const { filterPagesByACL } = await import("./acl.ts");
       const accessibleIds = new Set(
         await filterPagesByACL(

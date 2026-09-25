@@ -273,7 +273,8 @@ export function buildOperationContext(
     // (OAuth token permissions). Undefined = no enforcement (legacy/CLI).
     matterScope: opts.matterScope ?? opts.auth?.matterScope,
     // Subsumio R3: Thread document-level ACL groups into the context.
-    aclGroups: opts.aclGroups,
+    // A web MCP token carries its user's groups on the auth record.
+    aclGroups: opts.aclGroups ?? opts.auth?.aclGroups,
     userId: opts.userId,
   };
 }

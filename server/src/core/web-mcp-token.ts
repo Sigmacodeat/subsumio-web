@@ -21,6 +21,7 @@ import type { BrainEngine } from "./engine.ts";
 import type { AuthInfo } from "./operations.ts";
 import type { MatterScope } from "./matter-access.ts";
 import { callerMatterScope, loadSourceMatterAccess } from "./matter-access-db.ts";
+import { getUserGroups } from "./acl.ts";
 import { sharedReadSourcesFromEnv } from "./shared-read-sources.ts";
 
 export const WEB_MCP_PREFIX = "web-mcp:";
@@ -135,6 +136,8 @@ export interface WebMcpAccess {
   /** Always an explicit list, so the matter guard applies even without walls. */
   matterScope: string[];
   readOnly: string[];
+  /** Document-level ACL groups: "all" for admins, else the user's groups. */
+  aclGroups: string[] | "all";
 }
 
 export type WebMcpRejection = "owner_missing" | "owner_inactive";
@@ -155,12 +158,19 @@ export async function resolveWebMcpToken(
     known
   );
   const matterScope: MatterScope = scope === "all" ? ["*"] : scope;
+  // Same document ACL as the web session: admins see everything, everyone
+  // else the pages open to all plus those of their groups.
+  const aclGroups =
+    status.role === "admin"
+      ? ("all" as const)
+      : await getUserGroups(engine, binding.userId, binding.sourceId);
   return {
     sourceId: binding.sourceId,
     userId: binding.userId,
     ...(status.role ? { role: status.role } : {}),
     matterScope: matterScope as string[],
     readOnly,
+    aclGroups,
   };
 }
 
@@ -181,6 +191,7 @@ export function webMcpAuthFields(
     sharedReadSources: sharedReadSources.filter((s) => s !== access.sourceId),
     matterScope: access.matterScope,
     matterReadOnly: access.readOnly,
+    aclGroups: access.aclGroups,
     webUserId: access.userId,
   };
 }

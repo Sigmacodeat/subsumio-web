@@ -422,7 +422,34 @@ async function visibleSlugs(
     if (binding.matters.some((m) => hiddenPrivate(vis, m))) return;
     if (pageBindingAllowed(scope, slug, binding)) visible.add(slug);
   });
+  for (const slug of await aclDeniedSlugs(ctx, [...visible])) visible.delete(slug);
   return visible;
+}
+
+/**
+ * Slugs whose stored page (any copy in the call's read sources) the caller's
+ * document-level ACL groups do not reach. Empty when `ctx.aclGroups` is
+ * undefined / "all".
+ */
+async function aclDeniedSlugs(ctx: OperationContext, slugs: string[]): Promise<Set<string>> {
+  const denied = new Set<string>();
+  const groups = ctx.aclGroups;
+  if (groups === undefined || groups === "all" || slugs.length === 0) return denied;
+  const rows = await ctx.engine.executeRaw<{ id: number; slug: string }>(
+    `SELECT id, slug FROM pages WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[])`,
+    [slugs, readSources(ctx)]
+  );
+  if (rows.length === 0) return denied;
+  const { filterPagesByACL } = await import("../../acl.ts");
+  const ok = new Set(
+    await filterPagesByACL(
+      ctx.engine,
+      rows.map((r) => Number(r.id)),
+      groups
+    )
+  );
+  for (const r of rows) if (!ok.has(Number(r.id))) denied.add(r.slug);
+  return denied;
 }
 
 async function assertSlugVisible(
@@ -463,6 +490,8 @@ async function assertPutPageAllowed(
     }
   }
   if (slug) {
+    // A page the caller's document ACL hides cannot be overwritten either.
+    if ((await aclDeniedSlugs(ctx, [slug])).size > 0) throw pageNotFound(slug);
     bindings.push(
       ...(await resolveRowBindings(ctx.engine, [{ slug, source_id: sourceId }], { sourceId }))
     );
