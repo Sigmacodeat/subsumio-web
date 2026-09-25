@@ -55,6 +55,12 @@ describe("PERMISSIONS helper functions", () => {
 });
 
 describe("can (RBAC matrix)", () => {
+  test("only lawyers and admins start a case scan", () => {
+    expect(can(mockUser("admin"), "legal.case_scanner")).toBe(true);
+    expect(can(mockUser("lawyer"), "legal.case_scanner")).toBe(true);
+    expect(can(mockUser("assistant"), "legal.case_scanner")).toBe(false);
+  });
+
   test("admin can do everything", () => {
     const user = mockUser("admin");
     const actions: RouteAction[] = [

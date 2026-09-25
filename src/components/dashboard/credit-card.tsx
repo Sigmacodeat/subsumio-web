@@ -75,6 +75,7 @@ const OPERATION_LABELS: Record<string, string> = {
   agent: "Automatisierter Ablauf",
   deadline_detect: "Fristen-Erkennung",
   frist_engine: "Fristenrechner",
+  case_scan: "Akten-Scan (je Akte)",
 };
 
 const TX_TYPE_LABELS: Record<string, string> = {

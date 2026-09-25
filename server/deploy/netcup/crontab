@@ -61,8 +61,8 @@
 # ── 06:45 UTC (08:45 CEST) — Regulatory monitors ──
 45 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/regulatory-monitors || true
 
-# ── 02:00 UTC (04:00 CEST) — Nightly case scanner ──
-0 2 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-scanner || true
+# Case scanner: no scheduled run. Scans start on demand only (lawyer/admin,
+# cost preview in credits); /api/cron/case-scanner answers "deactivated".
 
 # ── 02:30 UTC (04:30 CEST) — Dream cycle (brain maintenance) ──
 # Runs extract_facts, consolidate, synthesize, embed — keeps the brain's
