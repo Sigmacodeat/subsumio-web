@@ -8,6 +8,8 @@ type EnvVarSpec = {
   required: boolean;
   description: string;
   validate?: (value: string) => boolean;
+  /** Other names that satisfy this requirement (any one of them is enough). */
+  alternatives?: string[];
 };
 
 const ENV_SPECS: EnvVarSpec[] = [
@@ -27,6 +29,25 @@ const ENV_SPECS: EnvVarSpec[] = [
     name: "SUBSUMIO_INTERNAL_SECRET",
     required: true,
     description: "Internal secret for service-to-service calls",
+  },
+  {
+    // Without it every cron answers 503 — deadline reminders included —
+    // while the app itself looks healthy.
+    name: "CRON_SECRET",
+    required: true,
+    description: "Bearer secret for scheduled jobs (deadline reminders, dunning, backups)",
+  },
+  {
+    // Checked lazily on the first portal link otherwise.
+    name: "PORTAL_TOKEN_SECRET",
+    required: true,
+    description: "HMAC secret for client-portal links",
+  },
+  {
+    name: "SUBSUMIO_AUTH_DATABASE_URL",
+    alternatives: ["DATABASE_URL"],
+    required: true,
+    description: "Postgres URL for accounts, sessions and revocations (or DATABASE_URL)",
   },
   {
     name: "UPSTASH_REDIS_REST_URL",
@@ -70,7 +91,9 @@ export function validateEnv(): EnvValidationResult {
   const warnings: string[] = [];
 
   for (const spec of ENV_SPECS) {
-    const value = process.env[spec.name];
+    const value = [spec.name, ...(spec.alternatives ?? [])]
+      .map((name) => process.env[name])
+      .find((v) => !!v);
     if (spec.required && isProd && !value) {
       missing.push(`${spec.name}: ${spec.description}`);
     } else if (!value && !isProd) {
@@ -84,4 +107,17 @@ export function validateEnv(): EnvValidationResult {
   }
 
   return { ok: missing.length === 0, missing, warnings };
+}
+
+/**
+ * Required variables that are missing in this environment (production only).
+ * Used by the readiness probe so a misconfigured deployment reports "down"
+ * instead of "ok".
+ */
+export function missingRequiredEnv(): string[] {
+  if (process.env.NODE_ENV !== "production") return [];
+  return ENV_SPECS.filter(
+    (spec) =>
+      spec.required && ![spec.name, ...(spec.alternatives ?? [])].some((n) => !!process.env[n])
+  ).map((spec) => spec.name);
 }
