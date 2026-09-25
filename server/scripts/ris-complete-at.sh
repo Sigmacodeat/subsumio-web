@@ -61,7 +61,16 @@ step bun scripts/ris-xml-fetch-normen.ts --ris "$STATE/ris-inforce.jsonl" \
 # runs first (idempotent). A complete scan also writes the inventory of state
 # norms in force (_state/ris-landesrecht-inforce.jsonl).
 step bun scripts/migrate-landesrecht-layout.ts --apply
-step bun scripts/fetch-at-landesrecht-xml.ts --keep-xml /law-corpus/_xml/at-landesrecht
+# With the in-force index present, fetch only what is missing, by document
+# number (the paged full scan was cut off at page ~266 on 2026-09-22 and never
+# resumed). Without the index, the full scan also writes it.
+if [ -f "$STATE/ris-inforce-landesrecht.jsonl" ]; then
+  step bun scripts/fetch-at-landesrecht-xml.ts \
+    --from-index "$STATE/ris-inforce-landesrecht.jsonl" \
+    --keep-xml /law-corpus/_xml/at-landesrecht
+else
+  step bun scripts/fetch-at-landesrecht-xml.ts --keep-xml /law-corpus/_xml/at-landesrecht
+fi
 
 # Normalizer v4: state-qualified statute ids, readable RIS links (.html).
 step bun scripts/normalize/normalize-corpus.ts --corpus at-landesrecht --batch 500
