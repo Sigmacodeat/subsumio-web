@@ -58,6 +58,7 @@ import {
 
 import { logger } from "@/lib/logger";
 import { addDaysToDateString, firmToday, firmYear } from "@/lib/datetime";
+import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
 const log = logger("api/copilot/tools");
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
@@ -2560,7 +2561,7 @@ async function executeInvoiceDraft(
       : null;
     const fm = (page.frontmatter ?? {}) as CaseFrontmatter & { time_entries?: TimeEntry[] };
 
-    const stundensatz = Number.parseFloat(kanzlei?.stundensatz ?? "") || 0;
+    const stundensatz = parseHourlyRate(kanzlei?.stundensatz) ?? 0;
     const billedEntryIds: string[] = [];
     // `include_unbilled_time` must see BOTH stores: the matter's
     // time_entries array AND standalone `time_entry` pages the timer
@@ -2582,8 +2583,7 @@ async function executeInvoiceDraft(
     }
     const items = params.items?.length
       ? params.items.map((i) => {
-          const amount =
-            i.amount ?? Math.round((i.hours ?? 0) * (i.rate ?? stundensatz) * 100) / 100;
+          const amount = i.amount ?? lineAmount(i.hours ?? 0, i.rate ?? stundensatz);
           return {
             description: sanitizeUserInput(i.description),
             date: firmToday(),
@@ -2615,10 +2615,9 @@ async function executeInvoiceDraft(
       );
     }
 
-    const subtotal = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
     const vatRate = vatRateFor(kanzlei);
-    const tax = Math.round(subtotal * vatRate * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
+    // Shared cent-exact computation (same as the invoice dialog).
+    const { subtotal, tax, total } = computeInvoiceTotals({ items, vatRate });
     const paymentDays = Math.max(1, parseInt(kanzlei?.zahlungszielTage || "14", 10) || 14);
 
     let existing: string[] = [];
