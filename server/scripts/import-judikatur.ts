@@ -396,6 +396,21 @@ async function main() {
   if (!cfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
   configureGateway(buildGatewayConfig(cfg));
 
+  // Disable the statement timeout for this batch import. The default 5min
+  // (server/src/core/db.ts, resolveSessionTimeouts) protects live
+  // request-serving connections; a batch import that has to wait behind a
+  // long purge (2026-09-25: a `DELETE FROM pages … LIMIT 10000` held row
+  // locks for ~50 min and every `INSERT INTO links` of this import timed
+  // out after 5 min on `transactionid`, SQLSTATE 57014) must wait, not die
+  // and restart from scratch every pipeline cycle.
+  //
+  // It has to be the env knob, set BEFORE the pool is created: the timeout
+  // is a connection *startup parameter* on every pooled connection, so a
+  // later `executeRaw("SET statement_timeout = 0")` only reaches the one
+  // connection that happened to run it (a827b34f7a tried exactly that and
+  // LVwG/VwGH still timed out on the next statement). Explicit env from the
+  // caller wins.
+  process.env.GBRAIN_STATEMENT_TIMEOUT ??= "0";
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
   await engine.initSchema();

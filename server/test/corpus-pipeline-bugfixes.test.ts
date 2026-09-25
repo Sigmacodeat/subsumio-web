@@ -23,6 +23,7 @@ import {
   consecutiveImportFailures,
   JUDIKATUR,
   judikaturImportArgv,
+  parseFetchTrigger,
   type DBPipelineState,
 } from "../scripts/corpus-pipeline.ts";
 
@@ -73,6 +74,34 @@ describe("consecutiveImportFailures", () => {
     expect(consecutiveImportFailures(history)).toBe(2);
   });
 
+  it("an operator 'reset…' entry ends the streak so a parked source is retried", () => {
+    // After MAX_IMPORT_ATTEMPTS the source is parked as `failed` and the
+    // import is never started again — so no "finished" can ever arrive to
+    // break the streak. `append_stage_history(key, 'import', 'reset: …')`
+    // is the documented operator path once the cause is fixed.
+    const parked = historyOf([
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+    ]);
+    expect(consecutiveImportFailures(parked)).toBe(5);
+    const reset = historyOf([
+      ...parked.map(({ stage, action }) => ({ stage, action })),
+      { stage: "import", action: "reset: statement_timeout fix deployed (a827b34f7a)" },
+    ]);
+    expect(consecutiveImportFailures(reset)).toBe(0);
+    // A failure AFTER the reset counts again from zero — the reset is not a
+    // permanent exemption.
+    const failedAgain = historyOf([
+      ...reset.map(({ stage, action }) => ({ stage, action })),
+      { stage: "import", action: "started" },
+      { stage: "import", action: "failed (exit 1)" },
+    ]);
+    expect(consecutiveImportFailures(failedAgain)).toBe(1);
+  });
+
   it("would have engaged the retry cap that alert-flag dedup broke", () => {
     // Reproduces the exact bug: five straight import failures used to
     // collapse to a single deduped "import_failed" alert, so
@@ -101,5 +130,30 @@ describe("judikaturImportArgv", () => {
     for (const src of JUDIKATUR) {
       expect(judikaturImportArgv(src)).toContain("--bulk");
     }
+  });
+});
+
+describe("parseFetchTrigger", () => {
+  it("reads the dashboard shape {source_key, seit}", () => {
+    expect(parseFetchTrigger('{"source_key": "jud-bvwg", "seit": "2026-09-23T15:49:08Z"}')).toBe(
+      "jud-bvwg"
+    );
+  });
+
+  it("reads a bare JSON string set by hand via psql (2026-09-23: ignored for two days)", () => {
+    expect(parseFetchTrigger('"jud-bvwg"')).toBe("jud-bvwg");
+  });
+
+  it("reads an unquoted key as a last resort", () => {
+    expect(parseFetchTrigger("jud-vwgh")).toBe("jud-vwgh");
+  });
+
+  it("returns null for nothing, whitespace, or an object without source_key", () => {
+    expect(parseFetchTrigger(null)).toBeNull();
+    expect(parseFetchTrigger("")).toBeNull();
+    expect(parseFetchTrigger("   \n")).toBeNull();
+    expect(parseFetchTrigger('{"source": "jud-bvwg"}')).toBeNull();
+    expect(parseFetchTrigger('{"source_key": ""}')).toBeNull();
+    expect(parseFetchTrigger("42")).toBeNull();
   });
 });
