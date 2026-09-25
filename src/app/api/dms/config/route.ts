@@ -1,3 +1,4 @@
+import { assertPublicDmsUrl, DmsEgressError } from "@/lib/dms/egress";
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { DMS_PROVIDERS } from "@/lib/dms";
@@ -75,6 +76,16 @@ export const PUT = createHandler(
         return apiError(checked.error, URL_ERRORS[checked.error] ?? "Ungültige Adresse", 400);
       }
       baseUrl = checked.url;
+      // The host must resolve to public addresses only (no internal targets).
+      try {
+        await assertPublicDmsUrl(baseUrl);
+      } catch (err) {
+        return apiError(
+          "private_host",
+          err instanceof DmsEgressError ? err.message : "Ungültige Adresse",
+          400
+        );
+      }
     }
     try {
       const config = await saveDmsConfig(ctx.brainId, ctx.user.id, {

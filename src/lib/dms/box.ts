@@ -9,6 +9,7 @@
  *   BOX_ENTERPRISE_ID         — Enterprise ID (optional, for JWT auth)
  */
 
+import { dmsSafeFetch } from "./egress";
 import {
   type DMSConnector,
   type DMSDocument,
@@ -186,7 +187,7 @@ export function createBoxConnector(settings: DMSSettings): DMSConnector {
       formData.append("attributes", attributes);
       formData.append("file", new Blob([content], { type: "text/plain" }), filename);
 
-      const uploadRes = await fetch(`${BOX_API}/files/content`, {
+      const uploadRes = await dmsSafeFetch(`${BOX_API}/files/content`, {
         method: "POST",
         headers: dmsAuthHeaders(settings),
         body: formData,

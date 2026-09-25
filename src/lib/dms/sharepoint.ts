@@ -11,6 +11,7 @@
  *   SHAREPOINT_DRIVE_ID       — Document library drive ID (optional, auto-discovered)
  */
 
+import { dmsSafeFetch } from "./egress";
 import {
   type DMSConnector,
   type DMSDocument,
@@ -233,7 +234,7 @@ export function createSharePointConnector(settings: DMSSettings): DMSConnector {
         const parentId = opts.folderId ?? "root";
         const url = `${graphBase()}/drives/${driveId}/items/${parentId}:/${encodeURIComponent(filename)}:/content`;
 
-        const res = await fetch(url, {
+        const res = await dmsSafeFetch(url, {
           method: "PUT",
           headers: {
             ...dmsAuthHeaders(settings),

@@ -12,6 +12,7 @@
  * gilt nur noch für Kanzleien in DMS_ALLOWED_BRAIN_IDS.
  */
 
+import { dmsSafeFetch } from "./egress";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 
 import { logger } from "@/lib/logger";
@@ -135,7 +136,7 @@ const DMS_FETCH_TIMEOUT_MS = 10_000;
 export async function dmsFetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { ...init, signal: AbortSignal.timeout(DMS_FETCH_TIMEOUT_MS) });
+    res = await dmsSafeFetch(url, { ...init, signal: AbortSignal.timeout(DMS_FETCH_TIMEOUT_MS) });
   } catch (err) {
     throw new Error(
       `DMS request to ${url} failed: ${err instanceof Error ? err.message : String(err)}`
@@ -159,9 +160,8 @@ export async function fetchDmsContent(
 ): Promise<DMSContent | null> {
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await dmsSafeFetch(url, {
       headers: dmsAuthHeaders(settings),
-      redirect: "follow",
       signal: AbortSignal.timeout(60_000),
     });
   } catch {
@@ -218,7 +218,7 @@ export async function importToBrainCommon(
   let content = doc.content;
   if (!content) {
     try {
-      const contentRes = await fetch(contentUrl, {
+      const contentRes = await dmsSafeFetch(contentUrl, {
         headers: dmsAuthHeaders(settings),
         signal: AbortSignal.timeout(DMS_FETCH_TIMEOUT_MS),
       });
