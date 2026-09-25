@@ -275,7 +275,19 @@ export async function groundLiteratureCitations(
 ): Promise<GroundedCitation[]> {
   const results: GroundedCitation[] = [];
 
-  for (const ref of refs.slice(0, 20)) {
+  for (const [i, ref] of refs.entries()) {
+    if (i >= MAX_CHECKED_CITATIONS) {
+      results.push({
+        code: ref.work,
+        paragraph: ref.ref,
+        context: ref.raw,
+        verified: false,
+        category: ref.kind === "materialien" ? "materialien" : "literatur",
+        jurisdiction: ref.jurisdiction,
+        unverifiable_reason: NOT_CHECKED_REASON,
+      });
+      continue;
+    }
     if (ref.kind === "licensed_work") {
       results.push({
         code: ref.work,
@@ -526,6 +538,15 @@ export async function readNorm(
   };
 }
 
+/**
+ * Citations looked up per answer. Lookups are local and cheap, so the cap is
+ * generous; anything beyond it is still reported — as "not checked" — so the
+ * verified/unverified counts always cover every citation in the text.
+ */
+export const MAX_CHECKED_CITATIONS = 60;
+
+export const NOT_CHECKED_REASON = `Nicht geprüft (Prüflimit von ${MAX_CHECKED_CITATIONS} Zitaten erreicht) — anwaltlich prüfen`;
+
 export interface GroundCitationsOptions {
   /** Jurisdiction the answer is written in; bare abbreviations resolve to it. */
   jurisdiction?: GroundingJurisdiction | null;
@@ -537,8 +558,20 @@ export async function groundCitations(
 ): Promise<GroundedCitation[]> {
   const results: GroundedCitation[] = [];
 
-  for (const cite of rawCitations.slice(0, 20)) {
+  let checked = 0;
+  for (const cite of rawCitations) {
     if (!cite.code || !cite.paragraph) continue;
+    if (checked >= MAX_CHECKED_CITATIONS) {
+      results.push({
+        code: String(cite.code).trim(),
+        paragraph: String(cite.paragraph).trim(),
+        context: String(cite.context || "").trim(),
+        verified: false,
+        unverifiable_reason: NOT_CHECKED_REASON,
+      });
+      continue;
+    }
+    checked++;
 
     const code = String(cite.code).trim();
     const paragraph = String(cite.paragraph).trim();

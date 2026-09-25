@@ -1274,6 +1274,8 @@ export const api = {
       };
       success_probability: number;
       generatedAt: string;
+      /** Documents of the matter the strategy is based on. */
+      documentsConsidered?: number;
     }> {
       return request("/api/legal/case-strategy", {
         method: "POST",
