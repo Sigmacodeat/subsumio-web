@@ -5,7 +5,7 @@
  * TODO 3: Notfrist-Enforcement — server-side guard rejects done without second_check
  * TODO 4: ERV-Zustelldatum in computeDueDate
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   computeDueDate,
   calculateDeadline,
@@ -144,8 +144,15 @@ describe("TODO 4: ERV-Zustelldatum in Fristberechnung", () => {
   });
 
   it("computeDeadlineStatus already handles ERV-Zustelldatum (E3)", () => {
-    // ERV in future → pending (service not effected yet)
-    const status = computeDeadlineStatus("2026-07-15", undefined, undefined, "2026-12-01");
-    expect(status).toBe("pending");
+    // ERV in future → pending (service not effected yet). Fixed clock: "in the
+    // future" must not depend on the day the suite runs.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-15T10:00:00+02:00"));
+    try {
+      const status = computeDeadlineStatus("2026-07-15", undefined, undefined, "2026-12-01");
+      expect(status).toBe("pending");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

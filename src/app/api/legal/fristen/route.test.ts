@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
@@ -39,6 +39,13 @@ describe("GET /api/legal/fristen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    // Fixed clock: the fixtures carry calendar dates, so "overdue" must not
+    // depend on the day the suite runs.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-15T10:00:00+02:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("adds the responsible lawyer and keeps the completion note of duplicates", async () => {
