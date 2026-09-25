@@ -22,6 +22,24 @@
 
 export type GuardRejection = { status: number; error: string; message: string };
 
+/**
+ * True when page `content` opens with a YAML frontmatter block. Page metadata
+ * is sent only as `title`/`type`/`frontmatter`, where the write guards see
+ * it; the engine refuses such content as well.
+ */
+export function hasLeadingFrontmatter(content: unknown): boolean {
+  return typeof content === "string" && /^\uFEFF?---[ \t]*(?:\r?\n|$)/.test(content);
+}
+
+export const FRONTMATTER_IN_CONTENT_REJECTION: GuardRejection = {
+  status: 400,
+  error: "frontmatter_in_content",
+  message: "Metadaten gehören in das Feld „frontmatter“, nicht als YAML-Block in den Seiteninhalt.",
+};
+
+/** A matter's access rules: changed only via /api/cases/access. */
+export const ACCESS_RULE_FIELDS = ["permissions"] as const;
+
 export interface CurrentPageLike {
   slug?: string;
   type?: string;
@@ -640,6 +658,27 @@ export function guardProtectedPageWrite(input: {
       // Server-stamped submitter: the four-eyes check compares against it.
       next.submitted_by = actor.email;
       return { frontmatter: next };
+    }
+  }
+
+  // Walls, team, visibility and grants of a matter change only through the
+  // matter-access route (role checks, audit). Sending them unchanged is fine;
+  // a full replace that omits them keeps the stored rules (engine).
+  if (mode !== "delete") {
+    const access = changedKeys(
+      ACCESS_RULE_FIELDS,
+      incoming,
+      stored,
+      mode === "replace" ? "merge" : mode,
+      field
+    );
+    if (access.length > 0) {
+      return {
+        reject: forbiddenFields(
+          access,
+          "Sichtbarkeit, Aktenteam, Chinese Walls und Freigaben werden nur über die Aktenrechte geändert"
+        ),
+      };
     }
   }
 

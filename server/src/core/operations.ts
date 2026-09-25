@@ -582,6 +582,14 @@ export interface OperationContext {
    */
   aclGroups?: string[] | "all";
   /**
+   * Set by the web API for every op it runs for a signed-in user: the call
+   * itself is trusted (remote: false), but the written content and
+   * frontmatter come from an end user. Engine-owned frontmatter markers
+   * (content-sanity gate: quarantine, content_flag, embed_skip) are then
+   * dropped exactly as for remote callers — only the gate sets them.
+   */
+  endUserWrite?: boolean;
+  /**
    * Subsumio Ethical Wall: Web-app user ID of the caller.
    * Set by the web-api middleware from the session user.
    * Used by checkEthicalWallEngine() to enforce blocked_users
@@ -1327,7 +1335,8 @@ const put_page: Operation = {
         // v0.42 (#1699): untrusted callers can't smuggle gate-owned frontmatter
         // markers (quarantine/content_flag/embed_skip). Fail-closed — anything
         // not strictly local is remote (matches CV6 / v0.26.9 F7b posture).
-        remote: ctx.remote !== false,
+        // The web API's end-user writes are treated the same way.
+        remote: ctx.remote !== false || ctx.endUserWrite === true,
         ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
         // v0.39.0.0 T1.5: pack-aware type inference (loaded above; legacy
         // inferType behavior when undefined).
@@ -1920,11 +1929,29 @@ const purge_deleted_pages: Operation = {
  */
 const FRONTMATTER_ARRAY_FIELD_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+/**
+ * Frontmatter keys no array op may touch: the content-sanity gate's markers
+ * (only the gate sets them) and a matter's access rules (only the matter
+ * access route changes them).
+ */
+const RESERVED_ARRAY_FIELDS: ReadonlySet<string> = new Set([
+  "quarantine",
+  "content_flag",
+  "embed_skip",
+  "permissions",
+]);
+
 function assertFrontmatterArrayField(value: unknown, param: string): string {
   if (typeof value !== "string" || !FRONTMATTER_ARRAY_FIELD_RE.test(value)) {
     throw new OperationError(
       "invalid_params",
       `${param} must be a plain top-level frontmatter key (letters, digits, underscore).`
+    );
+  }
+  if (RESERVED_ARRAY_FIELDS.has(value)) {
+    throw new OperationError(
+      "invalid_params",
+      `${param} '${value}' is managed by the engine and cannot be changed with an array operation.`
     );
   }
   return value;

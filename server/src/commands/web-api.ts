@@ -2184,6 +2184,9 @@ export async function invokeOp(
 ): Promise<unknown> {
   const result = await dispatchToolCall(engine, name, params, {
     remote: false,
+    // Trusted server-to-server call, but page content and frontmatter come
+    // from a web user: engine-owned markers are dropped as for remote writes.
+    endUserWrite: true,
     sourceId,
     ...(allowedSources ? { allowedSources } : {}),
     ...(matterScope ? { matterScope } : {}),
@@ -5254,12 +5257,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       let existingContent: string | undefined;
       let existingTitle: string | undefined;
       let existingType: string | undefined;
-      // A case page's access rules (frontmatter.permissions) are loaded for
-      // every case write, so they survive a full overwrite and only change
-      // through the web app's matter-access route (header below).
-      const touchesAccess =
-        merge || type === "legal_case" || Object.hasOwn(bodyFrontmatter, "permissions");
-      if (touchesAccess) {
+      if (merge) {
         try {
           const existingRaw = await invokeOp(
             engine,
@@ -5289,10 +5287,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // page doesn't exist yet — merge degrades to create
         }
       }
-      // Only a merge builds on the stored page; a full write keeps nothing of
-      // it except the access rules applied below.
-      const existingPermissions = existingFrontmatter.permissions;
-      const storedType = existingType;
+      // A page's access rules (frontmatter.permissions — walls, team,
+      // grants) are taken from the STORED page on every write, whatever the
+      // write says about the page type (body.type, frontmatter.type or none),
+      // so they survive a full overwrite and only change through the web
+      // app's matter-access route (header below). Read directly, not through
+      // the caller's scope: a page hidden from the caller is refused below.
+      const storedPage = await engine.getPage(slug, { sourceId, includeDeleted: true });
+      const storedFrontmatter =
+        storedPage?.frontmatter && typeof storedPage.frontmatter === "object"
+          ? (storedPage.frontmatter as Record<string, unknown>)
+          : {};
+      const existingPermissions = storedFrontmatter.permissions;
+      const storedType = storedPage?.type ?? existingType;
       if (!merge) {
         existingFrontmatter = {};
         existingContent = undefined;
@@ -5336,14 +5343,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         if (canonical) frontmatter.case_slug = canonical;
       }
 
-      let markdown = content;
-      if (Object.keys(frontmatter).length > 0) {
-        // js-yaml handles quoting/escaping (colons, newlines, unicode) so
-        // user-supplied values can't break out of the frontmatter block.
-        const { dump } = await import("js-yaml");
-        const yamlBlock = dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd();
-        markdown = `---\n${yamlBlock}\n---\n\n${content}`;
-      }
+      // Page metadata comes only from `title`/`type`/`frontmatter`, where the
+      // web app's write guards see it. The page always gets our own YAML
+      // block (also when empty), so a YAML block the caller put at the start
+      // of `content` is stored as body text and never read as metadata.
+      // js-yaml handles quoting/escaping (colons, newlines, unicode) so
+      // user-supplied values can't break out of the frontmatter block.
+      const { dump } = await import("js-yaml");
+      const yamlBlock = dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd();
+      const markdown = `---\n${yamlBlock}\n---\n\n${content}`;
 
       // The new frontmatter and the stored page (whatever the caller's scope —
       // a page hidden from them must not be overwritten as if it were new)
