@@ -124,6 +124,9 @@ export const POST = createHandler(
 
     let md: string;
     let caseRef = "";
+    // Stored pages say themselves whether they are AI output — the client
+    // cannot switch that off (Art. 50 KI-VO) or skip the export policy.
+    let storedAiOutput = false;
 
     if (body.markdown && typeof body.markdown === "string") {
       md = buildMarkdownFromDraft(body.markdown, body.title || "Subsumio Dokument", body.formData);
@@ -139,6 +142,17 @@ export const POST = createHandler(
       md = String(page.compiled_truth ?? page.content ?? "");
       const fm = page.frontmatter ?? {};
       caseRef = String(fm.case_number ?? fm.case_ref ?? "");
+      storedAiOutput = fm.ai_generated === true;
+      if (storedAiOutput && !body.verification) {
+        return Response.json(
+          {
+            error:
+              "Dieser KI-Entwurf kann erst nach der Prüfung als Word-Dokument exportiert werden.",
+            code: "verification_required",
+          },
+          { status: 403 }
+        );
+      }
     } else {
       return Response.json({ error: "slug or markdown is required" }, { status: 400 });
     }
@@ -148,7 +162,7 @@ export const POST = createHandler(
       title,
       caseRef,
       letterhead: body.letterhead,
-      aiGenerated: body.ai_generated !== false,
+      aiGenerated: storedAiOutput || body.ai_generated !== false,
     });
     const buf = docx.buffer.slice(
       docx.byteOffset,

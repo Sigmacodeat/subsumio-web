@@ -10,29 +10,32 @@ export const dynamic = "force-dynamic";
 const createSchema = z.object({
   template_slug: z.string().min(1).max(300),
   title: z.string().min(1).max(300),
-  description: z.string().max(2000),
-  questions: z.array(
-    z.object({
-      id: z.string().min(1).max(100),
-      type: z.enum([
-        "text",
-        "textarea",
-        "date",
-        "number",
-        "select",
-        "multiselect",
-        "boolean",
-        "party",
-      ]),
-      label: z.string().min(1).max(500),
-      help_text: z.string().max(1000).optional(),
-      required: z.boolean(),
-      placeholder: z.string().max(300).optional(),
-      options: z.array(z.string()).optional(),
-      default_value: z.union([z.string(), z.number(), z.boolean()]).optional(),
-      variable: z.string().min(1).max(100),
-    })
-  ),
+  description: z.string().max(2000).default(""),
+  questions: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(100),
+        type: z.enum([
+          "text",
+          "textarea",
+          "date",
+          "number",
+          "select",
+          "multiselect",
+          "boolean",
+          "party",
+        ]),
+        label: z.string().min(1).max(500),
+        help_text: z.string().max(1000).optional(),
+        required: z.boolean(),
+        placeholder: z.string().max(300).optional(),
+        options: z.array(z.string()).optional(),
+        default_value: z.union([z.string(), z.number(), z.boolean()]).optional(),
+        variable: z.string().min(1).max(100),
+      })
+    )
+    .max(200)
+    .default([]),
   output_format: z.enum(["docx", "pdf", "markdown"]).optional(),
 });
 
@@ -86,14 +89,16 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    // Every entry, not only the first engine batch of 100.
-    let data: unknown[];
+    // Pages carry the definition in their frontmatter.
+    let pages: Awaited<ReturnType<typeof listEnginePages>>;
     try {
-      data = await listEnginePages(ctx.headers, "interview_definition", 10_000, { strict: true });
+      pages = await listEnginePages(ctx.headers, "interview_definition", 5_000, { strict: true });
     } catch {
-      return apiError("engine_error", "Engine request failed", 502);
+      return apiError("engine_error", "Interviews konnten nicht geladen werden", 502);
     }
-    let items: InterviewDefinition[] = data as InterviewDefinition[];
+    let items = pages
+      .map((p) => p.frontmatter as unknown as InterviewDefinition | undefined)
+      .filter((i): i is InterviewDefinition => !!i && typeof i.id === "string");
     if (query?.template_slug) {
       items = items.filter((i) => i.template_slug === query.template_slug);
     }

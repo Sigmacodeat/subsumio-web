@@ -7400,6 +7400,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const resultPayload = {
           slug: versionedSlug,
           title: page?.title ?? pending.title ?? pending.filename,
+          // The matter bound at presign time — the web proxy files the
+          // document there instead of trusting the confirm body.
+          ...(pending.caseSlug ? { case_slug: pending.caseSlug } : {}),
           original_persisted: true,
           async: asyncExtract,
           extraction_status: page?.frontmatter?.extraction_status,

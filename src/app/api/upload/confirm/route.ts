@@ -1,5 +1,6 @@
+import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { createHandler, recordQuota } from "@/lib/api-handler";
+import { createHandler } from "@/lib/api-handler";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import {
   GUARD_READ_FAILED,
@@ -43,11 +44,36 @@ async function stampAnalysisPending(
 
 export const maxDuration = 600;
 
+/**
+ * The confirm body. The matter a document is filed into is the one bound to
+ * the upload at token/presign time (the engine keeps it with the pending
+ * upload and echoes it as `case_slug`); the body's `case_slug` only serves
+ * the archived-matter pre-check.
+ */
+const confirmSchema = z
+  .object({
+    upload_token: z.string().min(1).max(512),
+    source: z.string().max(50).optional(),
+    case_slug: z.string().max(1000).optional(),
+    expected_sha256: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/i)
+      .optional(),
+  })
+  .passthrough();
+
+/** Matter from the engine's confirm result — never from the browser. */
+function resultCaseSlug(result: { case_slug?: unknown }): string | undefined {
+  return typeof result.case_slug === "string" && result.case_slug ? result.case_slug : undefined;
+}
+
 export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "heavy",
-    quota: "uploads",
+    // The upload unit was booked when the upload token was issued
+    // (/api/upload-token); confirming the same file books nothing again.
+    body: confirmSchema,
     audit: (ctx, _body) => ({
       action: "document.confirm" as const,
       entityType: "document",
@@ -131,13 +157,16 @@ export const POST = createHandler(
             if (eventType === "done" && data) {
               sideEffectsFired = true;
               try {
-                const result = JSON.parse(data) as { slug?: string; title?: string };
-                void recordQuota(ctx, "uploads");
+                const result = JSON.parse(data) as {
+                  slug?: string;
+                  title?: string;
+                  case_slug?: unknown;
+                };
                 if (result.slug) {
                   await stampAnalysisPending(ctx.headers, result.slug);
                   await enqueueAllPostUploadTasks({
                     doc_slug: result.slug,
-                    case_slug: caseSlug || undefined,
+                    case_slug: resultCaseSlug(result),
                     brain_id: ctx.brainId,
                     doc_title: result.title,
                     uploaded_at: new Date().toISOString(),
@@ -168,8 +197,6 @@ export const POST = createHandler(
     // Plain JSON path (non-SSE): buffer, parse, enqueue post-upload tasks
     const text = await upstream.text();
     if (upstream.ok) {
-      void recordQuota(ctx, "uploads");
-
       try {
         const result = JSON.parse(text) as {
           slug?: string;
@@ -179,13 +206,14 @@ export const POST = createHandler(
           extraction_status?: string;
           extraction_method?: string;
           async?: boolean;
+          case_slug?: unknown;
         };
 
         if (result.slug) {
           await stampAnalysisPending(ctx.headers, result.slug);
           await enqueueAllPostUploadTasks({
             doc_slug: result.slug,
-            case_slug: caseSlug || undefined,
+            case_slug: resultCaseSlug(result),
             brain_id: ctx.brainId,
             doc_title: result.title,
             uploaded_at: new Date().toISOString(),

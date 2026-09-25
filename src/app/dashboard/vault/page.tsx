@@ -58,7 +58,10 @@ import { DmsBrowserDialog } from "@/components/legal/DmsBrowserDialog";
 import type { DashboardKey } from "@/content/dashboard";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { formatDate } from "@/lib/utils";
+import { toCsv } from "@/lib/csv";
+import { listVaultPages, VAULT_TYPE_MAX } from "@/lib/vault-docs";
 
+/** Server-side search results shown for a query. */
 const DOCS_LIMIT = 200;
 
 function HubLink({
@@ -269,8 +272,8 @@ export default function VaultPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listAllPages({ max: DOCS_LIMIT });
-      setCapped(pages.length >= DOCS_LIMIT);
+      const { pages, capped: cut } = await listVaultPages();
+      setCapped(cut);
       const nextDocs = pages.filter(isDocumentPage).map(parseDoc);
       setDocs(nextDocs);
       await setCache(OFFLINE_KEYS.vault, nextDocs);
@@ -541,7 +544,7 @@ export default function VaultPage() {
 
       <FailedTasksBanner />
 
-      {capped && !query.trim() && <CappedResultsNotice limit={DOCS_LIMIT} />}
+      {capped && !query.trim() && <CappedResultsNotice limit={VAULT_TYPE_MAX} />}
 
       {/* Result count + sort control */}
       {!loading && filtered.length > 0 && (
@@ -638,13 +641,16 @@ export default function VaultPage() {
                 variant="secondary"
                 className="gap-2 whitespace-nowrap"
                 onClick={() => {
-                  const csv = [
-                    ["Dokument", ...reviewResult.questions].join(";"),
-                    ...reviewResult.rows.map((r) =>
-                      [r.title, ...r.cells.map((cell) => cell.answer.replace(/"/g, '""'))].join(";")
-                    ),
-                  ].join("\n");
-                  const blob = new Blob([csv], { type: "text/csv" });
+                  // Every cell quoted — answers with ";" or line breaks no
+                  // longer shift the columns.
+                  const csv = toCsv([
+                    ["Dokument", ...reviewResult.questions],
+                    ...reviewResult.rows.map((r) => [
+                      r.title,
+                      ...r.cells.map((cell) => cell.answer),
+                    ]),
+                  ]);
+                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;

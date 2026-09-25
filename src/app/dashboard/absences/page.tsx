@@ -100,7 +100,8 @@ export default function AbsencePage() {
 
   const loadAbsences = useCallback(async () => {
     try {
-      const pages = await api.brain.listAllPages({ type: "absence_record", max: 100 });
+      // Every absence record, not the newest 100.
+      const pages = await api.brain.listAllPages({ type: "absence_record", max: 10_000 });
       const records = pages
         .map((p) => ({
           ...(p.frontmatter as unknown as AbsenceRecord),

@@ -3,7 +3,9 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { TRASH_TYPES, toTrashItem, type TrashItem } from "@/lib/trash";
-import { logAudit } from "@/lib/audit";
+import { getAuditExtra, setAuditExtra } from "@/lib/audit-context";
+import { canRestoreCase, restoreCaseDocuments } from "@/lib/case-cascade";
+import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 import { logger } from "@/lib/logger";
@@ -36,6 +38,14 @@ const querySchema = z.object({
 
 export type { TrashItem };
 
+/**
+ * Pages of one type read for the Papierkorb. The engine cannot filter by
+ * status, so active and deleted pages are paged through together (cursor,
+ * strict) and filtered here; a type that reaches this bound is reported as
+ * `truncated` instead of silently cut.
+ */
+const TRASH_SCAN_MAX = 50_000;
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -46,8 +56,14 @@ export const GET = createHandler(
     try {
       const types = query?.type ? [query.type] : TRASH_TYPES;
       const batches = await Promise.all(
-        types.map((type) => listEnginePages(ctx.headers, type, 5000, { includeTombstoned: true }))
+        types.map((type) =>
+          listEnginePages(ctx.headers, type, TRASH_SCAN_MAX, {
+            includeTombstoned: true,
+            strict: true,
+          })
+        )
       );
+      const truncatedTypes = types.filter((_t, i) => batches[i]!.length >= TRASH_SCAN_MAX);
       const seen = new Map<string, TrashItem>();
       for (const pages of batches) {
         for (const page of pages) {
@@ -59,7 +75,10 @@ export const GET = createHandler(
       const items = [...seen.values()].sort((a, b) =>
         (b.deleted_at ?? "").localeCompare(a.deleted_at ?? "")
       );
-      return apiSuccess({ items });
+      return apiSuccess({
+        items,
+        ...(truncatedTypes.length > 0 ? { truncated: true, truncated_types: truncatedTypes } : {}),
+      });
     } catch (err) {
       log.error("[trash] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Papierkorb konnte nicht geladen werden", 503);
@@ -79,8 +98,6 @@ const restoreSchema = z.object({
   status: z.enum(["open", "dormant"]).optional(),
 });
 
-const RESTORE_BATCH = 5;
-
 export const POST = createHandler(
   {
     action: "brain.write",
@@ -90,10 +107,18 @@ export const POST = createHandler(
       action: "case.restore" as const,
       entityType: "page",
       entityId: body.slug,
-      details: { via: "trash" },
+      details: { via: "trash", ...getAuditExtra(ctx)?.details },
     }),
   },
   async (ctx, body) => {
+    // Restoring is the same decision as on the matter page: lawyer/admin only.
+    if (!canRestoreCase(ctx.user.role)) {
+      return apiError(
+        "forbidden",
+        "Nur Anwältinnen/Anwälte und Administratoren können Einträge wiederherstellen.",
+        403
+      );
+    }
     const path = body.slug.split("/").map(encodeURIComponent).join("/");
 
     const getRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
@@ -179,64 +204,44 @@ export const POST = createHandler(
       return apiError("engine_unreachable", "Element konnte nicht wiederhergestellt werden", 503);
     }
 
+    // A restored document returns to its matter's document list (deleting it
+    // took it off that list). Best effort — the document itself is restored.
+    if (isTombstonedPage && caseSlug && pageType === "document") {
+      await reconcileCaseDocuments(ctx.headers, caseSlug, {
+        id: body.slug,
+        slug: body.slug,
+        name:
+          (typeof fm.source_filename === "string" && fm.source_filename) ||
+          (page as { title?: string }).title ||
+          body.slug.split("/").pop() ||
+          body.slug,
+        url: `/api/files/${body.slug}`,
+        uploadedAt: typeof fm.uploaded_at === "string" ? fm.uploaded_at : now,
+        size: typeof fm.doc_size === "number" ? fm.doc_size : 0,
+        kind: "document",
+      }).catch((err) => {
+        log.warn("[trash] matter document list not updated", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+    }
+
     // Restoring a matter reactivates the documents the archive cascade
     // tombstoned (tombstone_reason === "case_archived"). Manually deleted
     // documents stay deleted — restoring them is a separate, deliberate act.
     let cascaded = 0;
     let cascadeFailed = 0;
     if (isArchivedCase) {
-      try {
-        const slugForms = new Set([page.slug, body.slug, path].filter((s): s is string => !!s));
-        const docs = await listEnginePages(ctx.headers, "document", 10_000, {
-          includeTombstoned: true,
-        });
-        const matched = docs.filter((d) => {
-          const dfm = d.frontmatter ?? {};
-          return (
-            dfm.status === "tombstoned" &&
-            dfm.tombstone_reason === "case_archived" &&
-            slugForms.has(dfm.case_slug as string)
-          );
-        });
-        for (let i = 0; i < matched.length; i += RESTORE_BATCH) {
-          const results = await Promise.all(
-            matched.slice(i, i + RESTORE_BATCH).map(async (doc) => {
-              const res = await enginePatchPage(
-                ctx.headers,
-                {
-                  slug: doc.slug,
-                  frontmatter: {
-                    status: null,
-                    restored_at: now,
-                    restored_by: ctx.user.email,
-                    tombstoned_at: null,
-                    tombstoned_by: null,
-                    tombstone_reason: null,
-                  },
-                },
-                { timeoutMs: 15_000 }
-              );
-              return res.ok;
-            })
-          );
-          for (const ok of results) {
-            if (ok) cascaded++;
-            else cascadeFailed++;
-          }
-        }
-      } catch (err) {
-        log.error(
-          "[trash] case restore cascade failed:",
-          err instanceof Error ? err.message : String(err)
-        );
-        cascadeFailed++;
+      const slugForms = new Set([page.slug, body.slug, path].filter((s): s is string => !!s));
+      const cascade = await restoreCaseDocuments(ctx.headers, slugForms, ctx.user.email, now);
+      cascaded = cascade.succeeded;
+      cascadeFailed = cascade.failed.length;
+      if (cascadeFailed > 0) {
+        log.error("[trash] case restore cascade incomplete", { failed: cascadeFailed });
       }
     }
 
-    void logAudit("case.restore", "page", {
-      entityId: body.slug,
-      details: { via: "trash", userId: ctx.user.id, cascaded, cascadeFailed },
-    });
+    setAuditExtra(ctx, { details: { cascaded, cascadeFailed } });
     broadcastSseEvent(ctx.brainId, "case.restored", {
       slug: body.slug,
       by: ctx.user.email,

@@ -1015,6 +1015,7 @@ export default function NewCasePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeAdditionalOpponent(idx)}
+                        aria-label="Gegenpartei entfernen"
                         className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                       >
                         <Trash2 size={14} />
@@ -1132,6 +1133,7 @@ export default function NewCasePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeRelatedCase(idx)}
+                        aria-label="Verknüpfte Akte entfernen"
                         className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                       >
                         <Trash2 size={14} />

@@ -44,3 +44,40 @@ describe("POST /api/word-export — KI-Kennzeichnung (Art. 50 KI-VO)", () => {
     expect(vi.mocked(generateDocx).mock.calls.at(-1)?.[1]).toMatchObject({ aiGenerated: false });
   });
 });
+
+describe("POST /api/word-export — gespeicherte KI-Seiten", () => {
+  function storedPage(frontmatter: Record<string, unknown>) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ slug: "docs/ki", content: "Entwurf", frontmatter }))
+    );
+  }
+
+  it("refuses to export a stored AI draft without a verification (403)", async () => {
+    storedPage({ ai_generated: true });
+    const calls = vi.mocked(generateDocx).mock.calls.length;
+    const res = await exportDocx({ slug: "docs/ki", title: "Entwurf" });
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("verification_required");
+    expect(vi.mocked(generateDocx).mock.calls.length).toBe(calls);
+  });
+
+  it("ignores ai_generated:false for a stored AI page", async () => {
+    storedPage({ ai_generated: true });
+    const res = await exportDocx({
+      slug: "docs/ki",
+      title: "Entwurf",
+      ai_generated: false,
+      verification: { state: "VERIFIED", content_hash: "a".repeat(64) },
+    });
+    expect(res.status).toBe(200);
+    expect(vi.mocked(generateDocx).mock.calls.at(-1)?.[1]).toMatchObject({ aiGenerated: true });
+  });
+
+  it("exports a stored page without AI origin as before", async () => {
+    storedPage({});
+    const res = await exportDocx({ slug: "docs/brief", title: "Brief", ai_generated: false });
+    expect(res.status).toBe(200);
+    expect(vi.mocked(generateDocx).mock.calls.at(-1)?.[1]).toMatchObject({ aiGenerated: false });
+  });
+});

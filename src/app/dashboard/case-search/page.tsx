@@ -212,7 +212,12 @@ export default function CaseSearchPage() {
   const [sortBy, setSortBy] = useState<"updatedAt" | "title" | "priority">("updatedAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const { data: items, isLoading } = useQuery<FacetItem[]>({
+  const {
+    data: items,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<FacetItem[]>({
     queryKey: ["facet-cases"],
     queryFn: async () => {
       // listAllPages pages through the engine's 200-row cap and drops tombstones.
@@ -563,6 +568,18 @@ export default function CaseSearchPage() {
                 <Skeleton key={i} className="h-14 w-full rounded-lg" />
               ))}
             </div>
+          ) : isError ? (
+            <EmptyState
+              icon={Briefcase}
+              title={isEn ? "Matters could not be loaded" : "Akten konnten nicht geladen werden"}
+              description={
+                isEn
+                  ? "This is a loading error, not an empty result."
+                  : "Das ist ein Ladefehler, kein leeres Suchergebnis."
+              }
+              actionLabel={isEn ? "Try again" : "Erneut versuchen"}
+              onAction={() => void refetch()}
+            />
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Briefcase}

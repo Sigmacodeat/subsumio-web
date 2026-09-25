@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import CommentThread from "@/components/legal/CommentThread";
 import type { EvidenceFormData } from "@/lib/schemas/case-detail";
 
@@ -25,6 +26,7 @@ type SortKey = "weight-desc" | "weight-asc" | "title";
 export function EvidenceTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const confirm = useConfirm();
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("weight-desc");
@@ -566,7 +568,9 @@ export function EvidenceTab() {
                         <button
                           disabled={caseData?.status === "archived"}
                           onClick={() => {
-                            ctx.setEditingEvidenceIndex(i);
+                            // The list is filtered/sorted: edit the entry by its
+                            // position in the stored list, not in the view.
+                            ctx.setEditingEvidenceIndex(ctx.evidenceList.indexOf(ev));
                             ctx.setShowEvidenceForm(true);
                             ctx.evidenceForm.reset(ev as EvidenceFormData);
                           }}
@@ -576,8 +580,21 @@ export function EvidenceTab() {
                         </button>
                         <button
                           disabled={caseData?.status === "archived"}
-                          onClick={() => {
-                            const updated = ctx.evidenceList.filter((_, idx) => idx !== i);
+                          aria-label={lang === "en" ? "Delete evidence" : "Beweis löschen"}
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: lang === "en" ? "Delete evidence?" : "Beweismittel löschen?",
+                              message:
+                                lang === "en"
+                                  ? `"${ev.title || "Evidence"}" will be removed from this matter.`
+                                  : `„${ev.title || "Beweismittel"}" wird aus der Akte entfernt.`,
+                              confirmLabel: lang === "en" ? "Delete" : "Löschen",
+                              variant: "danger",
+                            });
+                            if (!ok) return;
+                            // Remove exactly this entry — the view is filtered and
+                            // sorted, so its index is not the stored index.
+                            const updated = ctx.evidenceList.filter((entry) => entry !== ev);
                             ctx.setEvidenceList(updated);
                             ctx.saveCaseUpdate({ evidence: updated });
                           }}

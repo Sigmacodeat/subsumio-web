@@ -20,7 +20,7 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     try {
-      const caseNumber = await allocateCaseNumber(ctx.headers, body.prefix);
+      const caseNumber = await allocateCaseNumber(ctx.headers, ctx.brainId, body.prefix);
       return apiSuccess({ caseNumber });
     } catch (err) {
       if (err instanceof CaseNumberAllocationError) {

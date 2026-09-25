@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 const auditQuerySchema = z.object({
   action: z.string().optional(),
   entityType: z.string().optional(),
+  /** One entry's history (e.g. a document's version-history view). */
+  entityId: z.string().max(1000).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
   limit: z
@@ -49,6 +51,7 @@ export const GET = createHandler(
         brainId: ctx.brainId,
         action: query.action,
         entityType: query.entityType,
+        entityId: query.entityId,
         from: query.from,
         to: query.to ? `${query.to}T23:59:59.999Z` : undefined,
         limit: query.limit,

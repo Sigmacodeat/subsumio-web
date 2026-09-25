@@ -205,52 +205,35 @@ export default function ReviewSetsPage() {
     }
   }
 
-  async function handleDocDecision(docSlug: string, decision: ReviewDecision) {
-    if (!selectedSet?.frontmatter?.documents) return;
-    const docs = selectedSet.frontmatter.documents.map((d) =>
-      d.slug === docSlug ? { ...d, decision, decisionAt: new Date().toISOString() } : d
-    );
+  /**
+   * Save ONE document's change. The server applies it to the stored list
+   * (per-set lock), so parallel reviewers do not overwrite each other's
+   * decisions with a stale copy of the whole list.
+   */
+  async function saveDocUpdate(update: Record<string, unknown> & { slug: string }, okMsg?: string) {
+    if (!selectedSet) return;
     setSaving(true);
     try {
-      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
+      await api.legal.reviewSets.update(selectedSet.slug, { documentUpdates: [update] });
+      if (okMsg) showToast(okMsg);
       await loadSets();
     } catch {
       setError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleDocDecision(docSlug: string, decision: ReviewDecision) {
+    await saveDocUpdate({ slug: docSlug, decision });
   }
 
   async function handleDocPrivilege(docSlug: string, privilegeType: PrivilegeType) {
-    if (!selectedSet?.frontmatter?.documents) return;
-    const docs = selectedSet.frontmatter.documents.map((d) =>
-      d.slug === docSlug ? { ...d, privilegeType } : d
-    );
-    setSaving(true);
-    try {
-      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
-      await loadSets();
-    } catch {
-      setError(SAVE_FAILED);
-    } finally {
-      setSaving(false);
-    }
+    await saveDocUpdate({ slug: docSlug, privilegeType });
   }
 
   async function handleDocRedaction(docSlug: string, redactionCode: RedactionCode | "") {
-    if (!selectedSet?.frontmatter?.documents) return;
-    const docs = selectedSet.frontmatter.documents.map((d) =>
-      d.slug === docSlug ? { ...d, redactionCode: redactionCode || undefined } : d
-    );
-    setSaving(true);
-    try {
-      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
-      await loadSets();
-    } catch {
-      setError(SAVE_FAILED);
-    } finally {
-      setSaving(false);
-    }
+    await saveDocUpdate({ slug: docSlug, redactionCode: redactionCode || null });
   }
 
   async function handleDrawQcSample() {
@@ -275,30 +258,52 @@ export default function ReviewSetsPage() {
   }
 
   async function handleFinalDecision(docSlug: string, finalDecision: ReviewDecision) {
-    if (!selectedSet?.frontmatter?.documents) return;
-    const docs = selectedSet.frontmatter.documents.map((d) =>
-      d.slug === docSlug ? { ...d, finalDecision, finalAt: new Date().toISOString() } : d
+    await saveDocUpdate(
+      { slug: docSlug, finalDecision },
+      t("review_sets.qc_conflict_resolved" as DashboardKey)
     );
-    setSaving(true);
-    try {
-      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
-      showToast(t("review_sets.qc_conflict_resolved" as DashboardKey));
-      await loadSets();
-    } catch {
-      setError(SAVE_FAILED);
-    } finally {
-      setSaving(false);
-    }
   }
 
   async function handleQcDecision(docSlug: string, qcDecision: ReviewDecision) {
-    if (!selectedSet?.frontmatter?.documents) return;
-    const docs = selectedSet.frontmatter.documents.map((d) =>
-      d.slug === docSlug ? { ...d, qcDecision, qcAt: new Date().toISOString() } : d
-    );
+    await saveDocUpdate({ slug: docSlug, qcDecision });
+  }
+
+  /** UIS-1-3: put documents of the set's matter into the set. */
+  const [addOpen, setAddOpen] = useState(false);
+  const [matterDocs, setMatterDocs] = useState<BrainPage[] | null>(null);
+  const [matterDocsError, setMatterDocsError] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  async function openAddDocuments() {
+    if (!selectedSet) return;
+    setAddOpen(true);
+    setMatterDocs(null);
+    setMatterDocsError(false);
+    setPicked(new Set());
+    const caseSlug = selectedSet.frontmatter?.case_slug;
+    try {
+      // Complete list of the matter's documents (server-side matter scan).
+      const docs = caseSlug
+        ? await api.brain.listPages({ type: "document", caseSlug })
+        : await api.brain.listAllPages({ type: "document", max: 2_000 });
+      const inSet = new Set((selectedSet.frontmatter?.documents ?? []).map((d) => d.slug));
+      setMatterDocs(docs.filter((d) => !inSet.has(d.slug)));
+    } catch {
+      setMatterDocsError(true);
+    }
+  }
+
+  async function handleAddDocuments() {
+    if (!selectedSet || !matterDocs || picked.size === 0) return;
     setSaving(true);
     try {
-      await api.legal.reviewSets.update(selectedSet.slug, { documents: docs });
+      await api.legal.reviewSets.update(selectedSet.slug, {
+        addDocuments: matterDocs
+          .filter((d) => picked.has(d.slug))
+          .map((d) => ({ slug: d.slug, title: d.title || d.slug })),
+      });
+      showToast(`${picked.size} Dokument(e) zum Prüfset hinzugefügt`);
+      setAddOpen(false);
       await loadSets();
     } catch {
       setError(SAVE_FAILED);
@@ -558,6 +563,80 @@ export default function ReviewSetsPage() {
               ))}
             </div>
 
+            {/* Dokumente ins Prüfset aufnehmen */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                {(selectedSet.frontmatter?.documents ?? []).length === 0
+                  ? "Dieses Prüfset enthält noch keine Dokumente."
+                  : `${(selectedSet.frontmatter?.documents ?? []).length} Dokument(e) im Prüfset`}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={saving || selectedSet.frontmatter?.status === "produced"}
+                onClick={() => void openAddDocuments()}
+              >
+                <FileText size={14} /> Dokumente hinzufügen
+              </Button>
+            </div>
+            {addOpen && (
+              <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] p-3">
+                {matterDocsError ? (
+                  <div role="alert" className="flex items-center gap-2 text-xs">
+                    <AlertCircle size={13} className="text-[color:var(--ds-danger-text)]" />
+                    Die Dokumente der Akte konnten nicht geladen werden.
+                    <Button size="sm" variant="ghost" onClick={() => void openAddDocuments()}>
+                      Erneut versuchen
+                    </Button>
+                  </div>
+                ) : matterDocs === null ? (
+                  <div className="flex items-center gap-2 text-xs" role="status">
+                    <Loader2 size={13} className="animate-spin" /> Dokumente werden geladen …
+                  </div>
+                ) : matterDocs.length === 0 ? (
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    Alle Dokumente der Akte sind bereits im Prüfset.
+                  </p>
+                ) : (
+                  <>
+                    <ul className="max-h-60 space-y-1 overflow-y-auto">
+                      {matterDocs.map((d) => (
+                        <li key={d.slug}>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={picked.has(d.slug)}
+                              onChange={(e) =>
+                                setPicked((prev) => {
+                                  const next = new Set(prev);
+                                  if (e.target.checked) next.add(d.slug);
+                                  else next.delete(d.slug);
+                                  return next;
+                                })
+                              }
+                            />
+                            {d.title || d.slug}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={saving || picked.size === 0}
+                        onClick={() => void handleAddDocuments()}
+                      >
+                        {picked.size} aufnehmen
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setAddOpen(false)}>
+                        Abbrechen
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* QC / Coding-Consistency */}
             {(() => {
               const docs = selectedSet.frontmatter?.documents ?? [];
@@ -577,9 +656,23 @@ export default function ReviewSetsPage() {
                     </span>
                     <span>
                       {t("review_sets.qc_agreement" as DashboardKey)}:{" "}
-                      {qc.agreementRate !== null ? `${(qc.agreementRate * 100).toFixed(1)} %` : "—"}
+                      {qc.agreementRate !== null
+                        ? qc.agreementRate.toLocaleString("de-AT", {
+                            style: "percent",
+                            minimumFractionDigits: 1,
+                            maximumFractionDigits: 1,
+                          })
+                        : "—"}
                     </span>
-                    <span>Cohen-κ: {qc.kappa !== null ? qc.kappa.toFixed(2) : "—"}</span>
+                    <span>
+                      Cohen-κ:{" "}
+                      {qc.kappa !== null
+                        ? qc.kappa.toLocaleString("de-AT", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "—"}
+                    </span>
                     <span
                       className={
                         qc.conflicts > 0 ? "font-semibold text-[color:var(--ds-danger-text)]" : ""
@@ -716,15 +809,20 @@ export default function ReviewSetsPage() {
                           {t("review_sets.decision" as DashboardKey)}
                         </label>
                         <select
-                          value={doc.decision}
+                          value={doc.decision ?? ""}
                           aria-label={`${t("review_sets.decision" as DashboardKey)}: ${doc.title}`}
                           onChange={(e) =>
+                            e.target.value &&
                             handleDocDecision(doc.slug, e.target.value as ReviewDecision)
                           }
                           disabled={saving}
                           className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs"
-                          style={{ color: DECISION_TOKEN[doc.decision] }}
+                          style={{
+                            color: doc.decision ? DECISION_TOKEN[doc.decision] : undefined,
+                          }}
                         >
+                          {/* Newly added documents are not reviewed yet. */}
+                          {!doc.decision && <option value="">— noch offen —</option>}
                           {DECISIONS.map((d) => (
                             <option key={d} value={d}>
                               {REVIEW_DECISION_LABELS_DE[d]}

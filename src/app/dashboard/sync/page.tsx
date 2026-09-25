@@ -23,6 +23,13 @@ import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** Offline change kinds in plain German — never the internal code. */
+const MUTATION_TYPE_LABELS: Record<QueuedMutation["type"], string> = {
+  createPage: "Neu angelegt",
+  updatePage: "Geändert",
+  deletePage: "Gelöscht",
+};
+
 function ConflictCard({ mut }: { mut: QueuedMutation }) {
   const { t } = useLang();
   const { resolveConflict } = useMutationQueue();
@@ -35,7 +42,9 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
   const [renameSlug, setRenameSlug] = useState("");
 
   const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
-  const href = `/dashboard/brain/${slug.split("/").map(encodeURIComponent).join("/")}`;
+  // The detail route is /dashboard/brain/[slug] — ONE segment, so the whole
+  // slug (with its "/") is encoded as one.
+  const href = `/dashboard/brain/${encodeURIComponent(slug)}`;
   const ageDays = conflictAgeDays(mut.conflictAt);
 
   const fetchServer = useCallback(() => {
@@ -107,7 +116,7 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
           {slug || mut.id}
         </span>
         <span className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[11px] text-[color:var(--ds-text-muted)]">
-          {mut.type}
+          {MUTATION_TYPE_LABELS[mut.type] ?? "Änderung"}
         </span>
         {(mut.retries ?? 0) > 0 && (
           <span
@@ -120,7 +129,11 @@ function ConflictCard({ mut }: { mut: QueuedMutation }) {
         {mut.conflictAt && (
           <span className="flex items-center gap-1 text-[11px] text-[color:var(--ds-warning-text)]">
             <Clock size={11} aria-hidden />
-            {ageDays === 0 ? t("sync.conflict_today" as DashboardKey) : `seit ${ageDays}d`}
+            {ageDays === 0
+              ? t("sync.conflict_today" as DashboardKey)
+              : ageDays === 1
+                ? "seit 1 Tag"
+                : `seit ${ageDays} Tagen`}
           </span>
         )}
       </div>

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 
@@ -28,6 +29,7 @@ export function PhoneNotesTab() {
   const { t } = useLang();
   const ctx = useMatterDetail();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const [notes, setNotes] = useState<PhoneNoteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -43,24 +45,19 @@ export function PhoneNotesTab() {
   const load = useCallback(async () => {
     if (!caseSlug) return;
     try {
-      // listPages() is a single engine call capped at 200 regardless of the
-      // requested limit — a Kanzlei with more than 200 phone notes across
-      // all cases would silently lose notes here. batchListPages paginates
-      // past that cap (see engine-list-cap-and-tombstones); it's also how
-      // this data is loaded kanzleiweit before filtering to this one case,
-      // same shape as before.
-      const { results, errors } = await api.brain.batchListPagesDetailed(
-        ["legal_phone_note"],
-        2000
-      );
-      if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
-      const pages = results.legal_phone_note ?? [];
-      const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
-      const mapped: PhoneNoteItem[] = filtered.map((p: BrainPage) => ({
+      // The matter's phone notes, complete (server-side matter scan) — not
+      // the firm's newest ones filtered afterwards. Listings carry no text,
+      // so the note bodies are read in batches of 100.
+      const pages = await api.brain.listPages({ type: "legal_phone_note", caseSlug });
+      const bodies: Record<string, BrainPage> = {};
+      for (let i = 0; i < pages.length; i += 100) {
+        Object.assign(bodies, await api.brain.getPages(pages.slice(i, i + 100).map((p) => p.slug)));
+      }
+      const mapped: PhoneNoteItem[] = pages.map((p: BrainPage) => ({
         slug: p.slug,
         title: p.title,
         caller: String(p.frontmatter?.caller ?? ""),
-        content: String(p.content ?? ""),
+        content: String(bodies[p.slug]?.content ?? p.content ?? ""),
         results: String(p.frontmatter?.results ?? ""),
         follow_up: String(p.frontmatter?.follow_up ?? ""),
         occurred_at: String(p.frontmatter?.occurred_at ?? ""),
@@ -113,6 +110,13 @@ export function PhoneNotesTab() {
   }
 
   async function deleteNote(note: PhoneNoteItem) {
+    const ok = await confirm({
+      title: "Telefonnotiz löschen?",
+      message: "Die Telefonnotiz wird in den Papierkorb verschoben.",
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await api.brain.deletePage(note.slug);
       addToast({ type: "success", title: t("mattertab.phone_deleted") });

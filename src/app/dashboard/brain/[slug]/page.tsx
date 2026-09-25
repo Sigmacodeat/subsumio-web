@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
+import { withQueryParam } from "@/lib/url-params";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import type { BrainPage, Entity } from "@/lib/types";
 import { pageTypeOf } from "@/lib/types";
@@ -407,7 +408,10 @@ export default function BrainDetailPage() {
 
           {canPreview && showPreview && !editMode && (
             <Suspense fallback={null}>
-              <PdfDocumentViewer url={`${fileHref}?inline=1`} title={page?.title} />
+              <PdfDocumentViewer
+                url={withQueryParam(fileHref, "inline", "1")}
+                title={page?.title}
+              />
             </Suspense>
           )}
 

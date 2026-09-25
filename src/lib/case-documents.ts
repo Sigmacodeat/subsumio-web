@@ -133,3 +133,70 @@ async function reconcileUnlocked(
   }
   throw new Error(`case_reconcile_convergence_failed: ${lastError}`);
 }
+
+function matchesDoc(entry: Record<string, unknown>, docSlug: string): boolean {
+  return entry.slug === docSlug || entry.id === docSlug || entry.url === docSlug;
+}
+
+/**
+ * Remove a document from the matter's `documents` list (the list the matter
+ * view and the matter export read). Holds the same lock as every other writer
+ * of that list and re-reads to confirm. Returns false when the entry was not
+ * listed. Throws on read/write failure and CaseArchivedError for a closed
+ * matter (its list is not written).
+ */
+export async function removeFromCaseDocuments(
+  headers: Record<string, string>,
+  caseSlug: string,
+  docSlug: string,
+  maxAttempts = 4
+): Promise<boolean> {
+  const key = caseDocumentsLockKey(headers["x-subsumio-source"] ?? "", caseSlug);
+  return withKeyedLock(key, async () => {
+    let removed = false;
+    let lastError = "";
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const existing = await fetchCaseDocuments(headers, caseSlug);
+      const kept = existing.filter((d) => !matchesDoc(d, docSlug));
+      if (kept.length === existing.length) return removed;
+      const patchRes = await enginePatchPage(headers, {
+        slug: caseSlug,
+        frontmatter: { documents: kept },
+      });
+      if (!patchRes.ok) {
+        lastError = `case_patch_failed_${patchRes.status}`;
+        continue;
+      }
+      removed = true;
+      const after = await fetchCaseDocuments(headers, caseSlug);
+      if (!after.some((d) => matchesDoc(d, docSlug))) return true;
+      lastError = "re_added_by_concurrent_writer";
+    }
+    throw new Error(`case_document_remove_failed: ${lastError}`);
+  });
+}
+
+/**
+ * „Aus Akte entfernen": the document leaves the matter's list and becomes an
+ * unassigned inbox item (it is not deleted — it can be reassigned). The
+ * matter list is cleaned first, so a failure never leaves a document that
+ * claims no matter but still shows up in one.
+ */
+export async function detachCaseDocument(
+  headers: Record<string, string>,
+  caseSlug: string,
+  docSlug: string
+): Promise<{ removedFromList: boolean }> {
+  const removedFromList = await removeFromCaseDocuments(headers, caseSlug, docSlug);
+  const res = await enginePatchPage(headers, {
+    slug: docSlug,
+    frontmatter: {
+      case_slug: null,
+      assignment_status: "unassigned",
+      intake_status: "needs_assignment",
+      unassigned_at: new Date().toISOString(),
+    },
+  });
+  if (!res.ok) throw new Error(`document_patch_failed_${res.status}`);
+  return { removedFromList };
+}

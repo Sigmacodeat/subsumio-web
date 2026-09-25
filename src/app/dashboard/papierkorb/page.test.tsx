@@ -64,6 +64,23 @@ function mockCsrfByUrl(restoreBody: unknown, restoreStatus = 200) {
 }
 
 describe("Papierkorb page", () => {
+  it("reports documents the matter restore could not bring back", async () => {
+    mockFetch.mockResolvedValueOnce(okJson(items));
+    mockCsrfByUrl({ data: { slug: "legal/cases/old", cascaded: 1, cascadeFailed: 2 } });
+    confirm.mockResolvedValue(true);
+    render(<PapierkorbPage />);
+    const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });
+    await userEvent.click(buttons[0]);
+    await waitFor(() =>
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "error",
+          title: "Akte wiederhergestellt — Dokumente unvollständig",
+        })
+      )
+    );
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     confirm.mockResolvedValue(true);
@@ -174,7 +191,14 @@ describe("Papierkorb page", () => {
 
   it("rolls the item back when restore fails", async () => {
     mockFetch.mockResolvedValueOnce(okJson(items));
-    mockCsrfByUrl({ error: "parent_archived" }, 409);
+    // Real apiError shape: German text in `error`, machine code in `code`.
+    mockCsrfByUrl(
+      {
+        error: "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her.",
+        code: "parent_archived",
+      },
+      409
+    );
     render(<PapierkorbPage />);
 
     const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });

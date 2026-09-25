@@ -228,14 +228,21 @@ export async function restoreDocumentVersion(
     });
   }
 
+  // Only the TEXT (and title) comes back. Assignment, status, deletion and
+  // hold markers, extraction state and approvals stay as they are now — an
+  // old snapshot must not move the document to a former matter or revive it.
+  // The original file under /api/files is not versioned and stays the latest.
   await putPage(headers, {
     slug,
     merge: true,
     content: target.doc_content,
+    ...(target.doc_title ? { title: target.doc_title } : {}),
     frontmatter: {
       ...page.frontmatter,
-      ...target.doc_frontmatter,
       checked_out_by: null,
+      restored_from_version: version,
+      restored_version_at: new Date().toISOString(),
+      restored_version_by: user.email ?? user.id,
     },
   });
   return { restoredFrom: version, safetyVersion };
