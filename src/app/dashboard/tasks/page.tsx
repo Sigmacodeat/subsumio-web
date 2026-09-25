@@ -13,6 +13,7 @@ import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 
 type Filter = "all" | "open" | "done" | "mine";
@@ -22,6 +23,8 @@ export default function TasksPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("open");
+  const [busyTask, setBusyTask] = useState<string | null>(null);
+  const { addToast } = useToast();
   const { data: meData } = useMe();
   const { data: teamData } = useTeam();
   const teamMembers = teamData?.members ?? [];
@@ -108,13 +111,28 @@ export default function TasksPage() {
     taskId: string,
     mutate: (task: Record<string, unknown>) => Record<string, unknown>
   ) {
-    const fresh = await api.brain.getPage(caseSlug);
-    const freshTasks = Array.isArray(fresh.frontmatter?.tasks)
-      ? (fresh.frontmatter.tasks as Array<Record<string, unknown>>)
-      : [];
-    const updated = freshTasks.map((t) => (t.id === taskId ? mutate(t) : t));
-    await api.brain.updatePage({ slug: caseSlug, frontmatter: { tasks: updated } });
-    await qc.invalidateQueries({ queryKey: ["tasks-cases"] });
+    const key = `${caseSlug}:${taskId}`;
+    if (busyTask) return;
+    setBusyTask(key);
+    try {
+      const fresh = await api.brain.getPage(caseSlug);
+      const freshTasks = Array.isArray(fresh.frontmatter?.tasks)
+        ? (fresh.frontmatter.tasks as Array<Record<string, unknown>>)
+        : [];
+      if (!freshTasks.some((t) => t.id === taskId)) throw new Error("task_not_found");
+      const updated = freshTasks.map((t) => (t.id === taskId ? mutate(t) : t));
+      await api.brain.updatePage({ slug: caseSlug, frontmatter: { tasks: updated } });
+    } catch {
+      // Never a silent no-op: the checkbox/assignee would look saved.
+      addToast({
+        type: "error",
+        title: "Aufgabe konnte nicht gespeichert werden",
+        description: "Bitte laden Sie die Seite neu und versuchen Sie es erneut.",
+      });
+    } finally {
+      setBusyTask(null);
+      await qc.invalidateQueries({ queryKey: ["tasks-cases"] });
+    }
   }
 
   return (
@@ -205,6 +223,7 @@ export default function TasksPage() {
                     void mutateTask(task.caseSlug, task.taskId, (t) => ({ ...t, done: !t.done }))
                   }
                   aria-label={task.done ? "Als offen markieren" : "Als erledigt markieren"}
+                  disabled={busyTask === `${task.caseSlug}:${task.taskId}`}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)] transition-[background-color] hover:bg-[color:var(--ds-surface-hover)]"
                 >
                   {task.done ? (
