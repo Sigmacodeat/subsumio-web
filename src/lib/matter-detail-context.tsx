@@ -303,6 +303,31 @@ interface MatterDetailContextValue {
 
 const MatterDetailContext = createContext<MatterDetailContextValue | null>(null);
 
+/** The server's conflict outcome (PATCH /api/pages/<matter>) as the matter view's warning. */
+function serverConflictResult(
+  warning: { matches?: Array<{ name?: string; slug?: string; role?: string; title?: string }> },
+  severity: "critical" | "low"
+): ConflictCheckResult {
+  const matches = warning?.matches ?? [];
+  const names = matches.map((m) => m.name ?? m.title ?? "").filter(Boolean);
+  return {
+    hasConflict: true,
+    severity,
+    hits: matches.map((m) => ({
+      contact: {
+        name: m.name ?? m.title ?? "",
+        ...(m.slug ? { slug: m.slug } : {}),
+        role: m.role === "client" || m.role === "opponent" ? m.role : "other",
+      },
+      reason: `Server-seitig erkannt: ${m.name ?? m.title ?? ""}${m.title && m.title !== m.name ? ` (${m.title})` : ""}`,
+      similarity: 1,
+      matchType: "exact" as const,
+    })),
+    checkedContacts: 0,
+    warning: `Interessenkollision erkannt (server-seitig): ${names.join(", ")}`,
+  };
+}
+
 export function useMatterDetail(): MatterDetailContextValue {
   const ctx = useContext(MatterDetailContext);
   if (!ctx) throw new Error("useMatterDetail must be used within MatterDetailProvider");
@@ -972,22 +997,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
             const data = await res.json().catch(() => ({}));
             if (data.error === "conflict_detected") {
               // Parteiwechsel mit Interessenkollision: nothing was saved.
-              const hits: Array<{ name: string; slug: string; type: string }> =
-                data.conflictWarning?.matches ?? [];
-              setContactConflict({
-                hasConflict: true,
-                severity: "critical",
-                hits: hits.map((m) => ({
-                  name: m.name,
-                  slug: m.slug,
-                  type: m.type,
-                  reason: "Server-seitig erkannt",
-                  similarity: 1,
-                  matchType: "exact" as const,
-                })),
-                checkedContacts: 0,
-                warning: `Interessenkollision erkannt (server-seitig): ${hits.map((m) => m.name).join(", ")}`,
-              });
+              setContactConflict(serverConflictResult(data.conflictWarning, "critical"));
               setSaveError(data.message || t("casesdetail.error_save"));
               void refreshCaseData();
               return;
@@ -1014,25 +1024,14 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           }
           const data = await res.json().catch(() => ({}));
           if (data.conflictWarning?.matches?.length > 0) {
-            const names = data.conflictWarning.matches
-              .map((m: { name: string }) => m.name)
-              .join(", ");
-            setContactConflict({
-              hasConflict: true,
-              severity: "critical",
-              hits: data.conflictWarning.matches.map(
-                (m: { name: string; slug: string; type: string }) => ({
-                  name: m.name,
-                  slug: m.slug,
-                  type: m.type,
-                  reason: "Server-seitig erkannt",
-                  similarity: 1,
-                  matchType: "exact" as const,
-                })
-              ),
-              checkedContacts: 0,
-              warning: `Interessenkollision erkannt (server-seitig): ${names}`,
-            });
+            // Saved: either a lawyer waived a blocking hit, or the hits only
+            // need a look (contacts, witnesses).
+            setContactConflict(
+              serverConflictResult(
+                data.conflictWarning,
+                data.conflictWarning.blocking?.length > 0 ? "critical" : "low"
+              )
+            );
           }
         } else {
           await enqueueMutation({
