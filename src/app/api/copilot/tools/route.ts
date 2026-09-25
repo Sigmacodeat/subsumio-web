@@ -57,6 +57,7 @@ import {
 } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
+import { addDaysToDateString, firmToday, firmYear } from "@/lib/datetime";
 const log = logger("api/copilot/tools");
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
@@ -2587,7 +2588,7 @@ async function executeInvoiceDraft(
             i.amount ?? Math.round((i.hours ?? 0) * (i.rate ?? stundensatz) * 100) / 100;
           return {
             description: sanitizeUserInput(i.description),
-            date: new Date().toISOString().split("T")[0],
+            date: firmToday(),
             hours: i.hours ?? 0,
             rate: i.rate ?? stundensatz,
             amount,
@@ -2629,7 +2630,7 @@ async function executeInvoiceDraft(
     } catch {
       // Der Zähler garantiert Eindeutigkeit auch ohne Bestandsliste.
     }
-    const year = new Date().getFullYear();
+    const year = firmYear();
     const invoiceNumber = await allocateInvoiceNumber(
       ctx.brainId,
       year,
@@ -2643,8 +2644,8 @@ async function executeInvoiceDraft(
       client: fm.client_name ?? "",
       clientSlug: fm.client_slug,
       caseNumber: fm.case_number ?? page.slug,
-      date: now.toISOString().split("T")[0],
-      dueDate: new Date(now.getTime() + paymentDays * 86_400_000).toISOString().split("T")[0],
+      date: firmToday(now),
+      dueDate: addDaysToDateString(firmToday(now), paymentDays),
       items,
       status: "draft" as const,
       subtotal,

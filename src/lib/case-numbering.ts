@@ -1,5 +1,6 @@
 import { createServerBrainClient } from "@/lib/server-brain";
 import { logger } from "@/lib/logger";
+import { firmYear } from "@/lib/datetime";
 
 const log = logger("lib/case-numbering");
 
@@ -34,7 +35,8 @@ interface CounterState {
 }
 
 function currentYear(): number {
-  return new Date().getFullYear();
+  // Vienna calendar year, not the server's (UTC) year.
+  return firmYear();
 }
 
 function readCounter(frontmatter: Record<string, unknown> | undefined): CounterState {
