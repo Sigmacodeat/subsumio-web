@@ -136,13 +136,14 @@ const importClient: ImportClient = {
       throw err;
     }
   },
-  // Atomic engine ops — import/rollback append and remove time_entries
-  // without a read-modify-write window on the whole array.
+  // Atomic engine op — the import appends time_entries without a
+  // read-modify-write window on the whole array.
   async appendPageArray(slug, field, items) {
     return api.brain.appendPageArray(slug, field, items);
   },
-  async mutatePageArray(slug, field, mutation) {
-    return api.brain.mutatePageArray(slug, field, mutation);
+  // Rollback: server-checked removal of this import's own entries.
+  async removeImportedTimeEntries(caseSlug, importProjectId, ids) {
+    return api.brain.removeImportedTimeEntries(caseSlug, importProjectId, ids);
   },
 };
 
@@ -411,7 +412,7 @@ export default function ImportKanzleiPage() {
     setBusy("rollback");
     setError(null);
     try {
-      const result = await rollbackImport(entry.refs, importClient);
+      const result = await rollbackImport(entry.refs, importClient, entry.project.id);
       setRollback(result);
       await api.brain.updatePage({
         slug: entry.slug,

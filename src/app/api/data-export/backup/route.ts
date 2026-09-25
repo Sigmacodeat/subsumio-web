@@ -1,6 +1,7 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { ENGINE_LIST_MAX } from "@/lib/engine-pages";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/data-export/backup");
@@ -152,7 +153,8 @@ export const GET = createHandler(
             ? { pages_without_content_slugs: missingContent.slice(0, 200) }
             : {}),
         },
-        data: allPages,
+        // Settings secrets (SMTP password) never leave in a backup file.
+        data: redactPageSecrets(allPages),
       };
 
       return Response.json(exportData);

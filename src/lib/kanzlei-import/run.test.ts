@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { planImport, type ExistingData } from "./plan";
 import { executeImport, rollbackImport, type ImportClient } from "./run";
+import { planImportRollbackRemoval } from "@/lib/billing-write-guards";
 
 type Page = { slug: string; title?: string; type?: string; frontmatter: Record<string, unknown> };
 
@@ -34,54 +35,22 @@ function fakeClient(initial: Page[]) {
       p.frontmatter[field] = [...cur, ...items];
       return { items: p.frontmatter[field] };
     },
-    // Faithful mirror of the engine's page_array_mutate: matched elements
-    // get `set` merged / `unset` dropped / removed — skipped unchanged when
-    // `unless` holds (eq: every pair equal; ne: every key exists and differs).
-    async mutatePageArray(slug, field, mutation) {
-      const p = pages.get(slug);
+    // Mirror of /api/kanzlei-import/rollback-time-entries: the same server
+    // planner decides which entries this import may take back.
+    async removeImportedTimeEntries(caseSlug, importProjectId, ids) {
+      log.push(`rollback ${caseSlug}`);
+      const p = pages.get(caseSlug);
       const cur =
-        p && Array.isArray(p.frontmatter[field])
-          ? (p.frontmatter[field] as Record<string, unknown>[])
+        p && Array.isArray(p.frontmatter.time_entries)
+          ? (p.frontmatter.time_entries as Record<string, unknown>[])
           : [];
-      const key = mutation.match_key ?? "id";
-      const wanted = new Set(mutation.match.map(String));
-      const matched: string[] = [];
-      const skipped: string[] = [];
-      const unlessHolds = (e: Record<string, unknown>) => {
-        const u = mutation.unless;
-        if (!u) return false;
-        for (const [k, v] of Object.entries(u.eq ?? {})) if (e[k] !== v) return false;
-        for (const [k, v] of Object.entries(u.ne ?? {})) if (!(k in e) || e[k] === v) return false;
-        return true;
-      };
-      const next: unknown[] = [];
-      for (const e of cur) {
-        const id = String(e[key]);
-        if (!wanted.has(id)) {
-          next.push(e);
-          continue;
-        }
-        matched.push(id);
-        if (unlessHolds(e)) {
-          skipped.push(id);
-          next.push(e);
-          continue;
-        }
-        if (mutation.remove) continue;
-        const patched = { ...e, ...(mutation.set ?? {}) };
-        for (const k of mutation.unset ?? []) delete patched[k];
-        next.push(patched);
-      }
-      if (p) p.frontmatter[field] = next;
+      const plan = planImportRollbackRemoval(cur, ids, importProjectId);
+      const remove = new Set(plan.removable);
+      if (p) p.frontmatter.time_entries = cur.filter((e) => !remove.has(String(e.id)));
       return {
-        slug,
-        field,
-        matched_ids: matched,
-        updated_ids: matched.filter((id) => !skipped.includes(id)),
-        skipped_ids: skipped,
-        not_found_ids: mutation.match.map(String).filter((id) => !matched.includes(id)),
-        items: next,
-        length: next.length,
+        removed_ids: plan.removable,
+        kept_ids: plan.kept.map((k) => k.id),
+        not_found_ids: plan.notFound,
       };
     },
   };
@@ -151,13 +120,63 @@ describe("executeImport", () => {
       Record<string, unknown>
     >;
     entries[1].invoice_number = "RE-2026-0007";
-    const back = await rollbackImport(out.refs, client);
+    const back = await rollbackImport(out.refs, client, opts.projectId);
     expect(back.removedTimeEntries).toBe(1);
     expect(back.kept[0]).toMatch(/verrechnet/);
     const left = (
       pages.get("legal/cases/m")!.frontmatter.time_entries as Array<{ id: string }>
     ).map((e) => e.id);
     expect(left).toEqual(["own", "imp-xyz12345-2"]);
+  });
+
+  it("takes back entries imported as already billed in the previous system", async () => {
+    const matter: Page = {
+      slug: "legal/cases/m",
+      title: "Berger",
+      type: "legal_case",
+      frontmatter: {
+        case_number: "M-1",
+        time_entries: [
+          // Billed here, on an invoice of this system — never touched.
+          { id: "own", date: "2026-09-01", minutes: 30, billed: true, invoice_number: "RE-1" },
+          // Another import's legacy-billed entry — not this rollback's.
+          {
+            id: "other",
+            date: "2026-08-01",
+            minutes: 45,
+            billed: true,
+            source: "kanzlei-import",
+            import_project_id: "mig-other",
+          },
+        ],
+      },
+    };
+    const existing: ExistingData = { cases: [matter], contacts: [], deadlines: [] };
+    const plan = planImport(
+      "time_entries",
+      [
+        ["M-1", "02.09.2026", "60", "Schriftsatz"],
+        ["M-1", "03.09.2026", "15", "Telefonat"],
+      ],
+      { case_ref: 0, date: 1, minutes: 2, description: 3 },
+      existing,
+      { ...opts, defaultBilled: true }
+    );
+    const { client, pages } = fakeClient([matter]);
+    const out = await executeImport(plan, client);
+    expect(out.counts.imported).toBe(2);
+    const imported = (
+      pages.get("legal/cases/m")!.frontmatter.time_entries as Array<Record<string, unknown>>
+    ).slice(2);
+    expect(imported.every((e) => e.billed === true)).toBe(true);
+
+    const back = await rollbackImport(out.refs, client, opts.projectId);
+    expect(back.removedTimeEntries).toBe(2);
+    expect(back.kept).toEqual([]);
+    const left = (
+      pages.get("legal/cases/m")!.frontmatter.time_entries as Array<{ id: string }>
+    ).map((e) => e.id);
+    expect(left).toEqual(["own", "other"]);
   });
 
   it("completes contacts and reverts only values nobody changed since", async () => {
@@ -178,7 +197,7 @@ describe("executeImport", () => {
     const out = await executeImport(plan, client);
     expect(out.counts.completed).toBe(2);
     pages.get("contact/b")!.frontmatter.email = "bert@neu.at";
-    const back = await rollbackImport(out.refs, client);
+    const back = await rollbackImport(out.refs, client, opts.projectId);
     expect(pages.get("contact/a")!.frontmatter).toMatchObject({ email: "", phone: "" });
     expect(pages.get("contact/b")!.frontmatter.email).toBe("bert@neu.at");
     expect(back.kept).toEqual(["Bert: email wurde inzwischen geändert"]);
@@ -196,7 +215,7 @@ describe("executeImport", () => {
     );
     const { client, pages } = fakeClient([matter]);
     const out = await executeImport(plan, client);
-    const back = await rollbackImport(out.refs, client);
+    const back = await rollbackImport(out.refs, client, opts.projectId);
     expect(back).toMatchObject({ removedRecords: 1, archivedCases: 0, failed: [] });
     expect(pages.get(out.refs.pages[0])!.frontmatter.status).toBe("tombstoned");
   });

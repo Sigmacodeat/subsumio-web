@@ -28,6 +28,7 @@ import {
   type CurrentPageLike,
   type GuardRejection,
 } from "@/lib/page-write-guards";
+import { IMPORT_SOURCE } from "@/lib/kanzlei-import/plan";
 
 /** Matter frontmatter arrays whose elements can be billed on an invoice. */
 export const BILLING_ARRAY_FIELDS = new Set(["time_entries", "expenses"]);
@@ -237,6 +238,49 @@ export function checkBillingArrayAppend(field: string, items: unknown[]): GuardR
   }
   return null;
 }
+
+// ── 2b'. Taking back a data import ──────────────────────────────────────
+
+export interface ImportRollbackPlan {
+  /** Entries this import appended and no invoice of this system claims. */
+  removable: string[];
+  /** Entries left in place: not from this import, or on an invoice here. */
+  kept: Array<{ id: string; reason: "not_from_this_import" | "invoiced" }>;
+  notFound: string[];
+}
+
+/**
+ * Which matter time entries a rollback of import `importProjectId` may
+ * remove. The one narrow exception to the billed lock: an entry the import
+ * itself appended may go even when it arrived marked billed (work billed in
+ * the previous system) — provided it carries no invoice number, i.e. no
+ * invoice of this system holds it. Everything else stays.
+ */
+export function planImportRollbackRemoval(
+  storedEntries: unknown,
+  ids: readonly string[],
+  importProjectId: string
+): ImportRollbackPlan {
+  const list = Array.isArray(storedEntries) ? storedEntries.filter(isRecord) : [];
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const e of list) {
+    const id = textOf(e.id);
+    if (id !== null && !byId.has(id)) byId.set(id, e);
+  }
+  const plan: ImportRollbackPlan = { removable: [], kept: [], notFound: [] };
+  for (const id of new Set(ids)) {
+    const e = byId.get(id);
+    if (!e) plan.notFound.push(id);
+    else if (e.source !== IMPORT_SOURCE || textOf(e.import_project_id) !== importProjectId)
+      plan.kept.push({ id, reason: "not_from_this_import" });
+    else if (invoiceNumberOf(e) !== "") plan.kept.push({ id, reason: "invoiced" });
+    else plan.removable.push(id);
+  }
+  return plan;
+}
+
+/** Engine skip guard for the rollback: never remove an entry an invoice claims. */
+export const NOT_WHEN_INVOICED = { ne: { invoice_number: "" } } as const;
 
 // ── 2c. Generic page writes (whole arrays / standalone entries) ─────────
 

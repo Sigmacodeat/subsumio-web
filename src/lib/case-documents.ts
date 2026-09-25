@@ -49,6 +49,25 @@ function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/");
 }
 
+/**
+ * The matter is archived (or deleted): its document list is closed and is not
+ * written. A permanent condition — callers that retry (the post-upload outbox)
+ * must stop instead of retrying; the document itself stays in the brain, it is
+ * just not listed on a matter that is no longer active.
+ */
+export class CaseArchivedError extends Error {
+  readonly code = "case_archived";
+  constructor(
+    readonly caseSlug: string,
+    readonly caseStatus: string
+  ) {
+    super(`case_archived: ${caseSlug} (${caseStatus})`);
+    this.name = "CaseArchivedError";
+  }
+}
+
+const CLOSED_CASE_STATUSES = new Set(["archived", "tombstoned"]);
+
 async function fetchCaseDocuments(
   headers: Record<string, string>,
   caseSlug: string
@@ -59,14 +78,20 @@ async function fetchCaseDocuments(
   });
   if (!res.ok) throw new Error(`case_fetch_failed_${res.status}`);
   const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+  const status = page.frontmatter?.status;
+  if (typeof status === "string" && CLOSED_CASE_STATUSES.has(status)) {
+    throw new CaseArchivedError(caseSlug, status);
+  }
   const docs = page.frontmatter?.documents;
   return Array.isArray(docs) ? (docs as Record<string, unknown>[]) : [];
 }
 
 /**
  * Add `docEntry` to the case's documents array, converging under concurrent
- * writers. Idempotent by slug. Throws only if it cannot converge after
- * `maxAttempts` rounds (so the caller can surface / retry via the outbox).
+ * writers. Idempotent by slug. Throws if it cannot converge after
+ * `maxAttempts` rounds (so the caller can surface / retry via the outbox), and
+ * throws CaseArchivedError — without writing — when the matter is archived or
+ * deleted (permanent: do not retry).
  */
 export async function reconcileCaseDocuments(
   headers: Record<string, string>,

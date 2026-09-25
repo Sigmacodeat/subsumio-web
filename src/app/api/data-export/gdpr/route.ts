@@ -1,5 +1,6 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/data-export/gdpr");
@@ -90,7 +91,7 @@ export const GET = createHandler(
           legal_basis: "GDPR Art. 20",
           description: "Structured, commonly used, machine-readable format per GDPR Art. 20",
         },
-        data: allPages,
+        data: redactPageSecrets(allPages),
         statistics: {
           total_pages: allPages.length,
           by_type: allPages.reduce((acc: Record<string, number>, p) => {
