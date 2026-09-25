@@ -53,7 +53,7 @@ const markAllReadSchema = z.object({}).strict();
 
 export const POST = createHandler(
   {
-    action: "settings.write",
+    action: "notifications.write",
     rateTier: "standard",
     // Order matters: specific schemas first, catch-all (markAllRead) last
     body: z
@@ -139,7 +139,7 @@ const patchReadSchema = z.object({
 
 export const PATCH = createHandler(
   {
-    action: "settings.write",
+    action: "notifications.write",
     rateTier: "standard",
     body: patchReadSchema,
     audit: (_ctx, body) => ({
@@ -161,7 +161,7 @@ const deleteSchema = z.object({
 
 export const DELETE = createHandler(
   {
-    action: "settings.write",
+    action: "notifications.write",
     rateTier: "standard",
     body: deleteSchema.optional(),
     audit: (_ctx, body) => ({
