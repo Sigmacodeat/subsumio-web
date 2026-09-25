@@ -45,7 +45,7 @@ describe("SignatureQuickCreateDialog", () => {
     render(<SignatureQuickCreateDialog open onOpenChange={() => {}} />);
     expect(await screen.findByLabelText(/Akte \*/)).toBeInTheDocument();
     fill();
-    const submit = screen.getByRole("button", { name: /signature\.quick_create|btn_create|Erstellen/i });
+    const submit = document.querySelector('button[type="submit"]') as HTMLButtonElement;
     await waitFor(() => expect(submit).toBeDisabled());
     expect(createPage).not.toHaveBeenCalled();
   });
@@ -56,7 +56,9 @@ describe("SignatureQuickCreateDialog", () => {
     fill();
     fireEvent.submit(document.getElementById("quick-sig-doc")!.closest("form")!);
     await waitFor(() => expect(createPage).toHaveBeenCalled());
-    const payload = (createPage.mock.calls[0] as unknown as [{ frontmatter: { case_slug: string } }])[0];
+    const payload = (
+      createPage.mock.calls[0] as unknown as [{ frontmatter: { case_slug: string } }]
+    )[0];
     expect(payload.frontmatter.case_slug).toBe("cases/a");
   });
 });
