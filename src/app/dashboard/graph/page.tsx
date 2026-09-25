@@ -188,8 +188,12 @@ export default function GraphPage() {
 
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = color + "26";
+        // Resolved theme colours can be hsl()/rgb(): appending a hex alpha
+        // produced an invalid colour. Draw the tint with globalAlpha instead.
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.15;
         ctx.fill();
+        ctx.globalAlpha = 1;
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.stroke();
@@ -332,7 +336,10 @@ export default function GraphPage() {
                     <span key={type} className="flex items-center gap-1.5">
                       <span
                         className="h-2.5 w-2.5 rounded-full border-2"
-                        style={{ borderColor: color, backgroundColor: color + "33" }}
+                        style={{
+                          borderColor: color,
+                          backgroundColor: `color-mix(in srgb, ${color} 20%, transparent)`,
+                        }}
                         aria-hidden="true"
                       />
                       <span className="text-xs text-[color:var(--ds-text-muted)]">
