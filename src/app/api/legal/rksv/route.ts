@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 import {
   resolveRksvAdapter,
   RksvNotConfiguredError,
@@ -149,10 +149,9 @@ export const POST = createHandler(
       "-"
     );
     try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        ctx.headers,
+        {
           slug,
           title: `RKSV-Beleg ${body.receiptNumber}`,
           type: "rksv_receipt",
@@ -161,9 +160,9 @@ export const POST = createHandler(
             case_slug: body.case_slug,
             chain_value: chainValue(signed),
           },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+        },
+        { timeoutMs: 10_000 }
+      );
     } catch (err) {
       // Signatur ist erfolgt — Persistenz-Fehler nur protokollieren, Beleg
       // trotzdem zurückgeben (DEP-Chain bleibt über chain_value nachvollziehbar).

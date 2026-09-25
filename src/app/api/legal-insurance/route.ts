@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 import {
   createRSVCaseData,
   buildCoverageInquiryEmail,
@@ -79,17 +79,16 @@ export const POST = createHandler(
     rsv.coverage_status = "pending";
     rsv.inquired_at = new Date().toISOString();
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      ctx.headers,
+      {
         slug: `legal/rsv/${rsv.id}`,
         title: `RSV: ${body.client_name} (${body.insurance_provider})`,
         type: "rsv_case",
         frontmatter: rsv,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
 
     return apiSuccess({
       rsv,

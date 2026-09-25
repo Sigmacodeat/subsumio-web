@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { engineThink } from "@/lib/engine-think";
-import { ENGINE_URL } from "@/lib/engine";
+import { engineWriteOrThrow } from "@/lib/engine";
 import { createRedTeamPrompt, parseRedTeamOutput } from "@/lib/red-team-agent";
 
 export const dynamic = "force-dynamic";
@@ -62,17 +62,16 @@ export const POST = createHandler(
 
     const result = parseRedTeamOutput(rawOutput, body.case_slug);
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      ctx.headers,
+      {
         slug: `legal/red-team/${result.id}`,
         title: `Red-Team: ${body.case_slug}`,
         type: "red_team_result",
         frontmatter: result,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
 
     return apiSuccess({ result });
   }

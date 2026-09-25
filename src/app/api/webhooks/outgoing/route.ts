@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +35,9 @@ export const POST = createHandler(
     const id = `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const slug = `settings/webhooks/${id}`;
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      ctx.headers,
+      {
         slug,
         title: `Webhook: ${body.url}`,
         type: "webhook_config",
@@ -51,9 +50,9 @@ export const POST = createHandler(
           status: "active",
           created_at: new Date().toISOString(),
         },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
 
     return apiSuccess({ id, url: body.url, events: body.events });
   }

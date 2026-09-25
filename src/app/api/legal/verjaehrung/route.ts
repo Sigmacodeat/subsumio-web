@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage, engineWriteOrThrow, requireEngineOk } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { encodeSlugPath } from "@/lib/utils";
 import {
@@ -130,10 +130,9 @@ async function handleCreate(headers: Record<string, string>, body: z.infer<typeo
   const deadlineDate = sol.effective_barred_date ?? sol.regular_barred_date;
   const now = new Date().toISOString();
 
-  await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify({
+  await engineWriteOrThrow(
+    headers,
+    {
       slug: deadlineSlug,
       title: `Verjährung: ${sol.claim_label}`,
       type: "legal_deadline",
@@ -154,19 +153,21 @@ async function handleCreate(headers: Record<string, string>, body: z.infer<typeo
         updated_at: now,
       },
       merge: true,
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
+    },
+    { timeoutMs: 15_000 }
+  );
 
   const solWithDeadline = { ...sol, deadline_slug: deadlineSlug };
   const updated = [...existing, solWithDeadline];
 
-  await enginePatchPage(headers, {
-    slug: body.caseSlug,
-    frontmatter: {
-      statute_of_limitations: updated,
-    } as Record<string, unknown>,
-  });
+  await requireEngineOk(
+    await enginePatchPage(headers, {
+      slug: body.caseSlug,
+      frontmatter: {
+        statute_of_limitations: updated,
+      } as Record<string, unknown>,
+    })
+  );
 
   return apiSuccess({
     ok: true,
@@ -213,22 +214,26 @@ async function handleAddEvent(
   const updated = [...existing];
   updated[idx] = sol;
 
-  await enginePatchPage(headers, {
-    slug: body.caseSlug,
-    frontmatter: {
-      statute_of_limitations: updated,
-    } as Record<string, unknown>,
-  });
+  await requireEngineOk(
+    await enginePatchPage(headers, {
+      slug: body.caseSlug,
+      frontmatter: {
+        statute_of_limitations: updated,
+      } as Record<string, unknown>,
+    })
+  );
 
   // Update the linked deadline page if the effective date changed
   if (sol.deadline_slug && sol.effective_barred_date) {
-    await enginePatchPage(headers, {
-      slug: sol.deadline_slug,
-      frontmatter: {
-        due_date: sol.effective_barred_date,
-        updated_at: new Date().toISOString(),
-      },
-    });
+    await requireEngineOk(
+      await enginePatchPage(headers, {
+        slug: sol.deadline_slug,
+        frontmatter: {
+          due_date: sol.effective_barred_date,
+          updated_at: new Date().toISOString(),
+        },
+      })
+    );
   }
 
   return apiSuccess({

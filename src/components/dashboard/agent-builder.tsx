@@ -713,7 +713,15 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           {templatesQuery.error && (
             <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]">
               <AlertCircle size={14} aria-hidden="true" />
-              Vorlagen konnten nicht geladen werden. Bitte laden Sie die Seite neu.
+              Vorlagen konnten nicht geladen werden.
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void templatesQuery.refetch()}
+                className="ml-auto"
+              >
+                Erneut versuchen
+              </Button>
             </div>
           )}
 

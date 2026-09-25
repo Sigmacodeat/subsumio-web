@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
+import {
+  enginePatchPage,
+  engineHeadersForBrain,
+  engineWriteOrThrow,
+  requireEngineOk,
+} from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { appendDocumentsToMatter, uploadFileToMatter } from "@/lib/email/mail-filing";
 import {
@@ -116,11 +121,19 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
       },
     },
     { timeoutMs: 15_000 }
-  ).catch(() => null);
-  await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  )
+    .then((res) => requireEngineOk(res, `/api/pages (signed-doc ${signedSlug})`))
+    .catch((err) => {
+      // The signature itself is already applied — the evidence write must
+      // not silently vanish, so it is logged loudly.
+      log.error(
+        "[qes/done] signed-document stamp failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+    });
+  await engineWriteOrThrow(
+    headers,
+    {
       slug: `legal/signatures/qes/${token.slice(0, 16)}`,
       title: `Qualifizierte Signatur: ${session.title}`,
       type: "captured_signature",
@@ -140,9 +153,14 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
         value_check_code: check.valueCheckCode,
         certificate_check_code: check.certificateCheckCode,
       },
-    }),
-    signal: AbortSignal.timeout(10_000),
-  }).catch(() => null);
+    },
+    { timeoutMs: 10_000 }
+  ).catch((err) => {
+    log.error(
+      "[qes/done] captured-signature record failed:",
+      err instanceof Error ? err.message : String(err)
+    );
+  });
 
   await updateQesSession(token, { status: "signed", signedDocumentSlug: signedSlug });
   void logAudit("signature.qes_signed", "document", {

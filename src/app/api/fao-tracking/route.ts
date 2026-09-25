@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 import {
   createEducationEntry,
   computeAnnualStatus,
@@ -36,17 +36,16 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const entry = createEducationEntry(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      ctx.headers,
+      {
         slug: `legal/fao-entries/${entry.id}`,
         title: `FAO: ${body.lawyer_name} — ${body.topic} (${body.hours}h)`,
         type: "fao_education_entry",
         frontmatter: entry,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
     return apiSuccess({ entry });
   }
 );

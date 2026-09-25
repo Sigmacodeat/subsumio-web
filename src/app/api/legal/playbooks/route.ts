@@ -79,7 +79,7 @@ export const GET = createHandler(
       return apiSuccess(playbooks);
     } catch (err) {
       log.error("[playbooks] list failed:", err instanceof Error ? err.message : String(err));
-      return apiSuccess([]);
+      return apiError("service_unavailable", "Playbooks konnten nicht geladen werden", 503);
     }
   }
 );

@@ -11,7 +11,7 @@
  * Fire-and-forget: signup never fails if the Engine is unreachable.
  */
 
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, engineWriteOrThrow } from "@/lib/engine";
 import {
   WORKFLOW_TEMPLATES,
   buildWorkflowSteps,
@@ -151,17 +151,16 @@ async function seedWorkflows(
     fm.status = "draft";
 
     try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        headers,
+        {
           slug,
           title: buildWorkflowTitle(template),
           type: "workflow",
           frontmatter: fm,
-        }),
-        signal: AbortSignal.timeout(5_000),
-      });
+        },
+        { timeoutMs: 5_000 }
+      );
     } catch {
       // Individual workflow creation failure is non-fatal
     }
@@ -211,12 +210,7 @@ async function createSeedPage(
     frontmatter?: Record<string, unknown>;
   }
 ): Promise<void> {
-  await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(5_000),
-  });
+  await engineWriteOrThrow(headers, payload, { timeoutMs: 5_000 });
 }
 
 async function seedDemoMatter(

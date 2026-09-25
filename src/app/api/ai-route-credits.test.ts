@@ -43,7 +43,22 @@ vi.mock("@/lib/api-handler", () => ({
   apiSuccess: (data: unknown) => Response.json({ data }),
   recordCreditConsumption: (...args: unknown[]) => h.charge(...args),
 }));
-vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
+vi.mock("@/lib/engine", () => ({
+  ENGINE_URL: "http://engine.test",
+  engineWriteOrThrow: async (
+    headers: Record<string, string>,
+    body: Record<string, unknown>,
+    opts?: { path?: string }
+  ) => {
+    const res = await fetch(`http://engine.test${opts?.path ?? "/api/pages"}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Engine write failed: HTTP ${res.status}`);
+    return res;
+  },
+}));
 vi.mock("@/lib/engine-think", () => ({ engineThink: (...a: unknown[]) => h.think(...a) }));
 vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),

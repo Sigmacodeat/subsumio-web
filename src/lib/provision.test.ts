@@ -5,6 +5,23 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://localhost:3001",
   engineHeadersForBrain: vi.fn((brainId: string) => ({ "x-subsumio-source": brainId })),
+  // Delegate to global fetch so fetchSpy assertions still observe the writes.
+  engineWriteOrThrow: vi.fn(
+    async (
+      headers: Record<string, string>,
+      body: Record<string, unknown>,
+      opts?: { path?: string; timeoutMs?: number }
+    ) => {
+      const res = await fetch(`http://localhost:3001${opts?.path ?? "/api/pages"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(opts?.timeoutMs ?? 30_000),
+      });
+      if (!res.ok) throw new Error(`Engine write failed: HTTP ${res.status}`);
+      return res;
+    }
+  ),
 }));
 
 vi.mock("@/lib/industry-pack", () => ({

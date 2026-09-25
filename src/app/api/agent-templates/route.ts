@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -56,16 +57,12 @@ export const GET = createHandler(
   },
   async (ctx, _body, query, _req) => {
     try {
-      const params = new URLSearchParams({ type: "agent_template", limit: "200" });
-      const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      let pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<
-        Record<string, unknown>
-      >;
+      // The engine clamps a single request to 100 pages — listEnginePages
+      // paginates, so >100 templates are not silently truncated. strict: a
+      // failed read must surface as an error, not as an empty list.
+      let pages = (await listEnginePages(ctx.headers, "agent_template", 500, {
+        strict: true,
+      })) as unknown as Array<Record<string, unknown>>;
 
       if (query.search) {
         const q = query.search.toLowerCase();
@@ -100,7 +97,7 @@ export const GET = createHandler(
       return Response.json({ templates });
     } catch (err) {
       log.error("[agent-templates] list failed:", err instanceof Error ? err.message : String(err));
-      return Response.json({ templates: [] });
+      return apiError("service_unavailable", "Agent-Templates konnten nicht geladen werden", 503);
     }
   }
 );

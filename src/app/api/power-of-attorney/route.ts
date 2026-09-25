@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 import {
   createPowerOfAttorney,
   isPoAValid,
@@ -34,17 +34,16 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const poa = createPowerOfAttorney(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      ctx.headers,
+      {
         slug: `legal/poa/${poa.id}`,
         title: `Vollmacht: ${body.client_name} (${body.type})`,
         type: "power_of_attorney",
         frontmatter: poa,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
     return apiSuccess({ poa });
   }
 );

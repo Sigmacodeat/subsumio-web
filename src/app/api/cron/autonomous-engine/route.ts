@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import {
+  ENGINE_URL,
+  engineHeadersForBrain,
+  enginePatchPage,
+  engineWriteOrThrow,
+  requireEngineOk,
+} from "@/lib/engine";
 import {
   fetchPendingTasks,
   markTaskRunning,
@@ -337,10 +343,11 @@ async function executeInboxTriage(
   // Persist triage result to engine if we have a raw_slug
   if (raw_slug) {
     try {
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(String(raw_slug))}`, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Merge-write via POST /api/pages — the engine has no PATCH route, so
+      // a literal PATCH would be a silent no-op.
+      await requireEngineOk(
+        await enginePatchPage(headers as Record<string, string>, {
+          slug: String(raw_slug),
           frontmatter: {
             triage_urgency: card.urgency,
             triage_action_type: card.actionType,
@@ -352,11 +359,14 @@ async function executeInboxTriage(
             triaged_at: new Date().toISOString(),
             triaged_by: "autonomous_engine",
           },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // best-effort — triage result is still returned
+        })
+      );
+    } catch (err) {
+      // best-effort — triage result is still returned, but the miss is logged
+      log.warn(
+        "[autonomous-engine] triage persist failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 
@@ -526,10 +536,9 @@ Verwende eine formelle Anrede und Grußformel.`;
       draftSlug = draftId;
 
       // Persist the draft as a page in the engine
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        headers as Record<string, string>,
+        {
           slug: draftId,
           title: `E-Mail-Entwurf: ${subject}`,
           type: "email_draft",
@@ -542,9 +551,9 @@ Verwende eine formelle Anrede und Grußformel.`;
             generated_by: "autonomous_engine",
             created_at: new Date().toISOString(),
           },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+        },
+        { timeoutMs: 10_000 }
+      );
     }
   } catch (err) {
     log.warn("Email draft generation failed", { case_slug, error: String(err) });
@@ -639,10 +648,9 @@ Das Update soll verständlich, höflich und informativ sein. Verwende eine forme
       updateSlug = slug;
 
       // Persist the client update
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        headers as Record<string, string>,
+        {
           slug,
           title: `Mandanten-Update: ${label} — ${case_slug ?? ""}`,
           type: "client_update",
@@ -656,9 +664,9 @@ Das Update soll verständlich, höflich und informativ sein. Verwende eine forme
             generated_by: "autonomous_engine",
             created_at: new Date().toISOString(),
           },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+        },
+        { timeoutMs: 10_000 }
+      );
     }
   } catch (err) {
     log.warn("Client update generation failed", { case_slug, error: String(err) });
@@ -791,10 +799,9 @@ Daten: ${JSON.stringify(reportData, null, 2)}`,
       reportSlug = slug;
 
       // Persist the report
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        headers as Record<string, string>,
+        {
           slug,
           title: `${label}: ${case_slug ?? ""}`,
           type: "report",
@@ -807,9 +814,9 @@ Daten: ${JSON.stringify(reportData, null, 2)}`,
             created_at: new Date().toISOString(),
             ...reportData,
           },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+        },
+        { timeoutMs: 10_000 }
+      );
     }
   } catch (err) {
     log.warn("Report generation failed", { case_slug, error: String(err) });

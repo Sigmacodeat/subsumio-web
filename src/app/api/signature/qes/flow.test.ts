@@ -41,6 +41,26 @@ vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine.test",
   engineHeadersForBrain: (b: string) => ({ "x-subsumio-source": b }),
   enginePatchPage: vi.fn(async () => new Response("{}", { status: 200 })),
+  requireEngineOk: vi.fn(async (res: Response) => {
+    if (!res.ok) throw new Error(`Engine write failed: HTTP ${res.status}`);
+    return res;
+  }),
+  // Delegate to global fetch so the stubbed engine endpoints observe the write.
+  engineWriteOrThrow: vi.fn(
+    async (
+      headers: Record<string, string>,
+      body: Record<string, unknown>,
+      opts?: { path?: string }
+    ) => {
+      const res = await fetch(`http://engine.test${opts?.path ?? "/api/pages"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Engine write failed: HTTP ${res.status}`);
+      return res;
+    }
+  ),
 }));
 vi.mock("@/lib/api-handler", async (orig) => {
   const real = await orig<typeof import("@/lib/api-handler")>();

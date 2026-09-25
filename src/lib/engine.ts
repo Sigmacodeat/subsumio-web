@@ -29,6 +29,7 @@ import {
 } from "@/lib/auth/two-factor-gate";
 import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
+import { AppError } from "@/lib/errors";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
 import { getTenant } from "@/lib/tenants";
@@ -529,6 +530,103 @@ export async function enginePatchPage(
     body: JSON.stringify({ ...body, merge: true }),
     signal: AbortSignal.timeout(opts?.timeoutMs ?? 30_000),
   });
+}
+
+export class EngineWriteError extends AppError {
+  constructor(path: string, status: number, engineMessage?: string) {
+    super(`Engine write failed: ${path} → HTTP ${status}`, {
+      code: "engine_write_failed",
+      statusCode: 502,
+      details: { path, status, engineMessage },
+    });
+    this.name = "EngineWriteError";
+  }
+}
+
+/**
+ * Write to the engine and THROW on any non-2xx response.
+ *
+ * `fetch` resolves happily on HTTP 4xx/5xx — a bare `await fetch(...)`
+ * treats a rejected write as success. Every engine write must go through
+ * this helper (or check `res.ok` explicitly); `check-unchecked-engine-writes`
+ * guards the bare-await pattern in CI.
+ *
+ * Thrown as `EngineWriteError` (AppError, status 502) so `createHandler`
+ * maps it to a clean `engine_write_failed` response. The engine's own error
+ * body is attached to `details.engineMessage` for logs — never interpolated
+ * into `message`, so internal details can't leak into client responses.
+ *
+ * For merge-updates to an existing page prefer `enginePatchPage` +
+ * `requireOk` (or this helper with `path: "/api/pages"` and `merge: true`
+ * in the body) — there is no PATCH/PUT route on the engine.
+ */
+export async function engineWriteOrThrow(
+  headers: Record<string, string>,
+  body: Record<string, unknown>,
+  opts?: { path?: string; method?: string; timeoutMs?: number }
+): Promise<Response> {
+  const path = opts?.path ?? "/api/pages";
+  const res = await fetch(`${ENGINE_URL}${path}`, {
+    method: opts?.method ?? "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(opts?.timeoutMs ?? 30_000),
+  });
+  if (!res.ok) {
+    const engineMessage = await res
+      .json()
+      .then((j) => (typeof j?.error === "string" ? j.error : undefined))
+      .catch(() => undefined);
+    log.error("[engine] write failed:", {
+      path,
+      status: res.status,
+      engineMessage,
+    });
+    throw new EngineWriteError(path, res.status, engineMessage);
+  }
+  return res;
+}
+
+/**
+ * Does a page exist on the engine? 404 → false. Other failures throw
+ * (fail-closed — callers use this for dedupe before writes; answering
+ * "no" on a network error would allow a duplicate write).
+ */
+export async function enginePageExists(
+  headers: Record<string, string>,
+  slug: string,
+  opts?: { timeoutMs?: number }
+): Promise<boolean> {
+  const path = `/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`;
+  const res = await fetch(`${ENGINE_URL}${path}`, {
+    headers,
+    signal: AbortSignal.timeout(opts?.timeoutMs ?? 10_000),
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) {
+    log.error("[engine] exists-check failed:", { path, status: res.status });
+    throw new AppError(`Engine request failed: HTTP ${res.status}`, {
+      code: "engine_error",
+      statusCode: 502,
+    });
+  }
+  return true;
+}
+
+/**
+ * Check the status of a `Response` returned by `enginePatchPage` or a manual
+ * engine fetch. Returns the response on success, throws `EngineWriteError`
+ * on failure — use inside `try`/`catch` where a failed write should be
+ * logged and tolerated, or bare where it must abort the operation.
+ */
+export async function requireEngineOk(res: Response, path = "/api/pages"): Promise<Response> {
+  if (res.ok) return res;
+  const engineMessage = await res
+    .json()
+    .then((j) => (typeof j?.error === "string" ? j.error : undefined))
+    .catch(() => undefined);
+  log.error("[engine] write failed:", { path, status: res.status, engineMessage });
+  throw new EngineWriteError(path, res.status, engineMessage);
 }
 
 // ── Hardened wrappers (RBAC + Rate Limit + Quota) ─────────────────────────

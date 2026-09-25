@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { enginePageExists, engineWriteOrThrow } from "@/lib/engine";
 import { listOpenItems } from "@/lib/open-items";
 import {
   createBankTransaction,
@@ -58,9 +58,20 @@ export const POST = createHandler(
       transaction: BankTransaction;
       match: ReturnType<typeof autoMatchTransaction>;
     }> = [];
+    let skipped = 0;
 
     for (const input of body.transactions) {
       const txn = createBankTransaction(input);
+
+      // Re-import guard: the transaction id is a deterministic hash of the
+      // statement line, so re-importing the same statement maps to the same
+      // page. Skipping here prevents double-booked partial payments.
+      const txnSlug = `legal/bank-transactions/${txn.id}`;
+      if (await enginePageExists(ctx.headers, txnSlug)) {
+        skipped++;
+        continue;
+      }
+
       const match = autoMatchTransaction(txn, openItems);
 
       if (match) {
@@ -84,17 +95,16 @@ export const POST = createHandler(
               item.open_amount !== original.open_amount ||
               item.dunning_fee !== original.dunning_fee)
           ) {
-            await fetch(`${ENGINE_URL}/api/pages`, {
-              method: "POST",
-              headers: { ...ctx.headers, "Content-Type": "application/json" },
-              body: JSON.stringify({
+            await engineWriteOrThrow(
+              ctx.headers,
+              {
                 slug: `legal/open-items/${item.id}`,
                 title: `OPOS: ${item.invoice_number} — ${item.client_name}`,
                 type: "open_item",
                 frontmatter: item,
-              }),
-              signal: AbortSignal.timeout(10_000),
-            });
+              },
+              { timeoutMs: 10_000 }
+            );
           }
         }
 
@@ -106,21 +116,21 @@ export const POST = createHandler(
       }
 
       // Persist transaction
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: `legal/bank-transactions/${txn.id}`,
+      await engineWriteOrThrow(
+        ctx.headers,
+        {
+          slug: txnSlug,
           title: `${txn.date} ${txn.amount.toFixed(2)}€ ${txn.sender_name ?? ""}`,
           type: "bank_transaction",
           frontmatter: results[results.length - 1]!.transaction,
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+        },
+        { timeoutMs: 10_000 }
+      );
     }
 
     return apiSuccess({
       imported: results.length,
+      skipped,
       matched: results.filter((r) => r.match !== null).length,
       unmatched: results.filter((r) => r.match === null).length,
       results,

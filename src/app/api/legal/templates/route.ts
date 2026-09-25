@@ -77,7 +77,9 @@ export const GET = createHandler(
       return apiSuccess(templates);
     } catch (err) {
       log.error("[templates] list failed:", err instanceof Error ? err.message : String(err));
-      return apiSuccess([]);
+      // A load failure must look like a failure — returning an empty list
+      // would tell the firm "no templates exist", which is wrong.
+      return apiError("service_unavailable", "Vorlagen konnten nicht geladen werden", 503);
     }
   }
 );

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { engineThink } from "@/lib/engine-think";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess, recordCreditConsumption } from "@/lib/api-handler";
 import {
   createPerspektivenPrompt,
@@ -145,19 +145,23 @@ export const POST = createHandler(
     // result types are written via the generic page op, not enumerated
     // in the manifest ahead of time).
     try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        ctx.headers,
+        {
           slug: `legal/perspektiven-raum/${session.id}`,
           title: `Perspektivenraum: ${body.case_slug}`,
           type: "perspektiven_session",
           frontmatter: session,
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // Best-effort persistence — response still carries the session.
+        },
+        { timeoutMs: 10_000 }
+      );
+    } catch (err) {
+      // The response still carries the session — but a lost record must be
+      // loud in the logs, not swallowed.
+      log.error(
+        "[perspektiven-room] persist failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
 
     return apiSuccess({ session });

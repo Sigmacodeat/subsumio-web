@@ -25,6 +25,7 @@ import type {
   TabularReviewStartResponse,
 } from "./types";
 import { lawyerFacingAnswer } from "@/lib/engine-degraded";
+import { readApiError } from "@/lib/api-response";
 import type { CitationSupportResult, GroundingMetadata } from "./citation-gate-client";
 import type { NormReading } from "./legal-grounding";
 import type { SourceRegistryResponse } from "./source-registry";
@@ -201,10 +202,16 @@ async function requestUncached<T>(path: string, options?: RequestInit): Promise<
     const error = await res.text().catch(() => "");
     if (error) {
       try {
-        const parsed = JSON.parse(error) as { message?: unknown; error?: unknown };
-        const code = typeof parsed.error === "string" ? parsed.error : undefined;
-        const message = typeof parsed.message === "string" ? parsed.message : code ? code : "";
-        if (message) throw new ApiRequestError(message, res.status, code, parsed);
+        const parsed = JSON.parse(error);
+        const apiErr = readApiError(parsed);
+        if (apiErr) {
+          throw new ApiRequestError(apiErr.message, res.status, apiErr.code, parsed);
+        }
+        // Legacy shape { message } from non-envelope routes.
+        const message = (parsed as { message?: unknown }).message;
+        if (typeof message === "string" && message) {
+          throw new ApiRequestError(message, res.status, undefined, parsed);
+        }
       } catch (parseErr) {
         if (parseErr instanceof ApiRequestError) throw parseErr;
       }
@@ -215,6 +222,17 @@ async function requestUncached<T>(path: string, options?: RequestInit): Promise<
   const text = await res.text();
   if (!text) return undefined as unknown as T;
   return JSON.parse(text) as T;
+}
+
+/**
+ * Unwrap the apiSuccess envelope `{ data: T }` where a route uses it.
+ * Tolerates legacy raw payloads (arrays or objects without `data`).
+ */
+function unwrapData<T>(r: T | { data?: T }): T {
+  if (r !== null && typeof r === "object" && !Array.isArray(r) && "data" in r) {
+    return (r as { data?: T }).data as T;
+  }
+  return r as T;
 }
 
 /**
@@ -1167,12 +1185,15 @@ export const api = {
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
         if (options?.contract_type) params.set("contract_type", options.contract_type);
         const qs = params.toString();
-        return request(`/api/legal/playbooks${qs ? `?${qs}` : ""}`);
+        // Route answers with the apiSuccess envelope { data: [...] }.
+        return request<BrainPage[]>(`/api/legal/playbooks${qs ? `?${qs}` : ""}`).then(
+          (r) => unwrapData<BrainPage[]>(r) ?? []
+        );
       },
 
       get(slug: string): Promise<BrainPage> {
         const path = encodeURIComponent(slug);
-        return request(`/api/legal/playbooks/${path}`);
+        return request<BrainPage>(`/api/legal/playbooks/${path}`).then((r) => unwrapData(r));
       },
 
       create(input: {
@@ -1182,10 +1203,10 @@ export const api = {
         rules: PlaybookRule[];
         description?: string;
       }): Promise<{ slug: string }> {
-        return request("/api/legal/playbooks", {
+        return request<{ slug: string }>("/api/legal/playbooks", {
           method: "POST",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapData(r));
       },
 
       update(
@@ -1199,15 +1220,17 @@ export const api = {
         }>
       ): Promise<{ slug: string; success: boolean }> {
         const path = encodeURIComponent(slug);
-        return request(`/api/legal/playbooks/${path}`, {
+        return request<{ slug: string; success: boolean }>(`/api/legal/playbooks/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapData(r));
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
         const path = encodeURIComponent(slug);
-        return request(`/api/legal/playbooks/${path}`, { method: "DELETE" });
+        return request<{ ok: boolean }>(`/api/legal/playbooks/${path}`, {
+          method: "DELETE",
+        }).then((r) => unwrapData(r));
       },
     },
 
@@ -1222,12 +1245,15 @@ export const api = {
         if (options?.category) params.set("category", options.category);
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
         const qs = params.toString();
-        return request(`/api/legal/templates${qs ? `?${qs}` : ""}`);
+        // Route answers with the apiSuccess envelope { data: [...] }.
+        return request<BrainPage[]>(`/api/legal/templates${qs ? `?${qs}` : ""}`).then(
+          (r) => unwrapData<BrainPage[]>(r) ?? []
+        );
       },
 
       get(slug: string): Promise<BrainPage> {
         const path = encodeURIComponent(slug);
-        return request(`/api/legal/templates/${path}`);
+        return request<BrainPage>(`/api/legal/templates/${path}`).then((r) => unwrapData(r));
       },
 
       create(input: {
@@ -1238,10 +1264,10 @@ export const api = {
         body: string;
         variables?: Array<{ key: string; label: string; required: boolean }>;
       }): Promise<{ slug: string }> {
-        return request("/api/legal/templates", {
+        return request<{ slug: string }>("/api/legal/templates", {
           method: "POST",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapData(r));
       },
 
       update(
@@ -1256,15 +1282,17 @@ export const api = {
         }
       ): Promise<{ slug: string; success: boolean }> {
         const path = encodeURIComponent(slug);
-        return request(`/api/legal/templates/${path}`, {
+        return request<{ slug: string; success: boolean }>(`/api/legal/templates/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapData(r));
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
         const path = encodeURIComponent(slug);
-        return request(`/api/legal/templates/${path}`, { method: "DELETE" });
+        return request<{ ok: boolean }>(`/api/legal/templates/${path}`, {
+          method: "DELETE",
+        }).then((r) => unwrapData(r));
       },
     },
 

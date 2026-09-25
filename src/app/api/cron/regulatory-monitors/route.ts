@@ -1,6 +1,6 @@
 import { listEnginePages } from "@/lib/engine-pages";
 import { NextRequest } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, engineWriteOrThrow } from "@/lib/engine";
 import { sendMail } from "@/lib/mail";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import { createCronHandler } from "@/lib/api-handler";
@@ -103,20 +103,24 @@ async function persistAlertPage(
     created_at: new Date().toISOString(),
   };
   try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      engineHeadersForBrain(brainId),
+      {
         slug,
         title: alert.title,
         type: "regulatory_alert",
         content: alert.summary || "",
         frontmatter: alertToFrontmatter(alert),
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch {
-    // Einzelne Fehler dürfen den Cron nicht abbrechen
+      },
+      { timeoutMs: 30_000 }
+    );
+  } catch (err) {
+    // Einzelne Fehler dürfen den Cron nicht abbrechen — aber sie werden
+    // protokolliert, nicht verschluckt.
+    log.warn(
+      "[regulatory-monitors] alert persist failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   }
 }
 
@@ -127,10 +131,9 @@ async function updateMonitorStatus(
   status: "ok" | "error"
 ): Promise<void> {
   try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      engineHeadersForBrain(brainId),
+      {
         slug: monitorSlug(monitor.monitor_id),
         type: "regulatory_monitor",
         frontmatter: monitorToFrontmatter({
@@ -141,11 +144,16 @@ async function updateMonitorStatus(
           updated_at: new Date().toISOString(),
         }),
         merge: true,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    // Non-fatal
+      },
+      { timeoutMs: 10_000 }
+    );
+  } catch (err) {
+    // Non-fatal for the run, but loud — a monitor whose status can't be
+    // persisted silently looks stale.
+    log.warn(
+      `[regulatory-monitors] status write failed for ${monitor.monitor_id}:`,
+      err instanceof Error ? err.message : String(err)
+    );
   }
 }
 

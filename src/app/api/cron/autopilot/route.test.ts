@@ -36,6 +36,20 @@ vi.mock("@/lib/kanzlei-settings-server", () => ({
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine.test",
   engineHeadersForBrain: (brainId: string) => ({ "x-subsumio-source": brainId }),
+  // Delegate to global fetch so pagesTouched still observes the write.
+  engineWriteOrThrow: async (
+    headers: Record<string, string>,
+    body: Record<string, unknown>,
+    opts?: { path?: string }
+  ) => {
+    const res = await fetch(`http://engine.test${opts?.path ?? "/api/pages"}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Engine write failed: HTTP ${res.status}`);
+    return res;
+  },
 }));
 
 import { POST } from "./route";

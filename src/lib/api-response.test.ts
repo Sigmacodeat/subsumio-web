@@ -13,6 +13,7 @@ import {
   apiPaginated,
   apiStream,
   apiCached,
+  readApiError,
 } from "./api-response";
 
 describe("apiError", () => {
@@ -246,5 +247,33 @@ describe("apiCached", () => {
   test("uses custom tag for ETag when provided", () => {
     const res = apiCached({ data: 1 }, { tag: "custom-tag" });
     expect(res.headers.get("ETag")).toBe('"custom-tag"');
+  });
+});
+
+describe("readApiError", () => {
+  test("reads message from `error` and code from `code`", () => {
+    const body = { error: "Vorlagen konnten nicht geladen werden", code: "service_unavailable" };
+    const parsed = readApiError(body);
+    expect(parsed?.message).toBe("Vorlagen konnten nicht geladen werden");
+    expect(parsed?.code).toBe("service_unavailable");
+  });
+
+  test("round-trips a real apiError() response", async () => {
+    const res = apiError("quota_exceeded", "Kontingent erschöpft", 429, { retry_after: 60 });
+    const parsed = readApiError(await res.json());
+    expect(parsed).toEqual({
+      message: "Kontingent erschöpft",
+      code: "quota_exceeded",
+      details: { retry_after: 60 },
+    });
+  });
+
+  test("returns null for non-error payloads", () => {
+    expect(readApiError({ data: [] })).toBeNull();
+    expect(readApiError([])).toBeNull();
+    expect(readApiError(null)).toBeNull();
+    expect(readApiError("error text")).toBeNull();
+    expect(readApiError({ error: "" })).toBeNull();
+    expect(readApiError({ error: 500 })).toBeNull();
   });
 });

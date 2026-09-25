@@ -14,8 +14,11 @@
 // sessions from support-session.ts, and this file needs ENGINE_URL /
 // engineHeadersForBrain from engine.ts — only the two support-session API
 // routes import this file, never engine.ts itself.
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain, engineWriteOrThrow } from "@/lib/engine";
 import type { SupportSession } from "@/lib/support-session";
+import { logger } from "@/lib/logger";
+
+const log = logger("lib/support-session-audit");
 
 export async function writeFirmVisibleSupportAuditEntry(
   orgBrainId: string,
@@ -33,10 +36,9 @@ export async function writeFirmVisibleSupportAuditEntry(
       ? "Subsumio-Support: Zugriff gestartet"
       : "Subsumio-Support: Zugriff beendet";
   try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...engineHeadersForBrain(orgBrainId) },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      engineHeadersForBrain(orgBrainId),
+      {
         slug,
         title,
         type: "audit_log",
@@ -49,10 +51,15 @@ export async function writeFirmVisibleSupportAuditEntry(
           timestamp: now,
           date: now.split("T")[0],
         },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    // Best-effort — the operator-side Postgres audit entry is the durable record.
+      },
+      { timeoutMs: 10_000 }
+    );
+  } catch (err) {
+    // Best-effort — the operator-side Postgres audit entry is the durable
+    // record — but a dropped mirror entry must still show up in the logs.
+    log.error(
+      "[support-session-audit] mirror write failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   }
 }

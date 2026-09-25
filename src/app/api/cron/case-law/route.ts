@@ -1,11 +1,14 @@
 import { NextRequest } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, engineWriteOrThrow } from "@/lib/engine";
 import { sendMail } from "@/lib/mail";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+
+const log = logger("api/cron/case-law");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -66,10 +69,9 @@ async function persistHitsAsPages(brainId: string, hits: JudgementHit[]) {
   for (const h of hits) {
     const slug = `legal/judgements/${h.id}`;
     try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        engineHeadersForBrain(brainId),
+        {
           slug,
           title: `${h.court} — ${h.title || "Urteil"}`,
           type: "judgement",
@@ -86,11 +88,15 @@ async function persistHitsAsPages(brainId: string, hits: JudgementHit[]) {
             keywords: h.keywords || [],
             fetched_at: new Date().toISOString(),
           },
-        }),
-        signal: AbortSignal.timeout(30_000),
-      });
-    } catch {
+        },
+        { timeoutMs: 30_000 }
+      );
+    } catch (err) {
       // Einzelne Fehler dürfen den Cron nicht abbrechen
+      log.warn(
+        "[case-law] judgement persist failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 }

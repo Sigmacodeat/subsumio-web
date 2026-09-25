@@ -55,7 +55,7 @@ export const GET = createHandler(
       return Response.json({ jobs });
     } catch (err) {
       log.error("[agents] list failed:", err instanceof Error ? err.message : String(err));
-      return Response.json({ jobs: [] });
+      return apiError("service_unavailable", "Jobs konnten nicht geladen werden", 503);
     }
   }
 );

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 import { apiGet } from "@/lib/queries/settings";
+import { readApiError } from "@/lib/api-response";
 
 export type AgentStatus =
   | "waiting"
@@ -294,8 +295,8 @@ export function useTriggerCaseNextSteps(caseSlug: string) {
         body: JSON.stringify({ case_slug: caseSlug }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `HTTP ${res.status}`);
+        const errBody = await res.json().catch(() => null);
+        throw new Error(readApiError(errBody)?.message ?? `HTTP ${res.status}`);
       }
       const data = await res.json();
       return data.jobId as number | null;
@@ -312,8 +313,8 @@ export function useTriggerRundown() {
     mutationFn: async () => {
       const res = await csrfFetch("/api/agents/rundown", { method: "POST" });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `HTTP ${res.status}`);
+        const errBody = await res.json().catch(() => null);
+        throw new Error(readApiError(errBody)?.message ?? `HTTP ${res.status}`);
       }
       const data = await res.json();
       return data.jobId as number | null;

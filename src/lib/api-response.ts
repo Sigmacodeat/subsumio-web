@@ -24,6 +24,31 @@ export interface ApiSuccessBody<T> {
   };
 }
 
+/**
+ * Read an API error payload produced by apiError()/createHandler.
+ * `error` carries the human-readable message, `code` the machine code.
+ * Returns null when the body is not an error envelope (e.g. a success
+ * payload or a non-JSON response), so callers can fall back to a generic
+ * message.
+ */
+export function readApiError(json: unknown): {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+} | null {
+  if (!json || typeof json !== "object" || Array.isArray(json)) return null;
+  const body = json as Record<string, unknown>;
+  if (typeof body.error !== "string" || body.error.length === 0) return null;
+  return {
+    message: body.error,
+    code: typeof body.code === "string" ? body.code : undefined,
+    details:
+      body.details && typeof body.details === "object" && !Array.isArray(body.details)
+        ? (body.details as Record<string, unknown>)
+        : undefined,
+  };
+}
+
 /** 400 Bad Request */
 export function apiBadRequest(
   code: string,

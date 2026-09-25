@@ -15,7 +15,12 @@ import { getWhatsAppConsentStore, isConsentActive } from "@/lib/whatsapp/consent
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import {
+  ENGINE_URL,
+  engineHeadersForBrain,
+  enginePatchPage,
+  engineWriteOrThrow,
+} from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
 import type { ActionType } from "@/lib/approval";
@@ -224,13 +229,9 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
         if (!brainId) continue;
       }
 
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...engineHeadersForBrain(brainId),
-        },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        engineHeadersForBrain(brainId),
+        {
           slug,
           title: `WhatsApp Outbound: ${status.status}`,
           type: "chat_outbox",
@@ -246,9 +247,9 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
             updated_at: new Date().toISOString(),
           },
           merge: true,
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
+        },
+        { timeoutMs: 15_000 }
+      );
     } catch (err) {
       log.error(
         "[whatsapp-webhook] status update failed:",

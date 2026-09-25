@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage, requireEngineOk } from "@/lib/engine";
+import { logger } from "@/lib/logger";
 import {
   sendFiling,
   confirmReceipt,
@@ -20,6 +21,8 @@ import {
 } from "@/lib/verification-policy";
 
 export const dynamic = "force-dynamic";
+
+const log = logger("api/bea/send");
 
 const beaSendSchema = z.object({
   filing_slug: z.string().min(1).max(300),
@@ -110,18 +113,22 @@ async function persistFilingPackage(
   draftSlug: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(filingSlug)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        slug: filingSlug,
-        frontmatter: { draft_slug: draftSlug, package: pkg },
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    return res.ok;
-  } catch {
+    await requireEngineOk(
+      await enginePatchPage(
+        ctx.headers,
+        {
+          slug: filingSlug,
+          frontmatter: { draft_slug: draftSlug, package: pkg },
+        },
+        { timeoutMs: 10_000 }
+      )
+    );
+    return true;
+  } catch (err) {
+    log.warn(
+      `[bea/send] filing package persist failed (${filingSlug}):`,
+      err instanceof Error ? err.message : String(err)
+    );
     return false;
   }
 }
@@ -243,23 +250,27 @@ export const POST = createHandler(
       // 7. Update deadline if linked
       if (body.deadline_id && receipt.is_success) {
         try {
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", ...ctx.headers },
-            body: JSON.stringify({
-              slug: body.deadline_id,
-              merge: true,
-              frontmatter: {
-                status: "done",
-                done_at: new Date().toISOString(),
-                done_by: ctx.user.email,
-                filing_id: sendingPkg.id,
+          await requireEngineOk(
+            await enginePatchPage(
+              ctx.headers,
+              {
+                slug: body.deadline_id,
+                frontmatter: {
+                  status: "done",
+                  done_at: new Date().toISOString(),
+                  done_by: ctx.user.email,
+                  filing_id: sendingPkg.id,
+                },
               },
-            }),
-            signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // best-effort
+              { timeoutMs: 10_000 }
+            )
+          );
+        } catch (err) {
+          // Filing succeeded — the linked deadline staying open is logged.
+          log.warn(
+            "[bea/send] deadline update failed:",
+            err instanceof Error ? err.message : String(err)
+          );
         }
       }
 

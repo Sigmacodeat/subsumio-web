@@ -6,7 +6,7 @@
  * issue/expiry metadata, enabling per-link listing and revocation.
  */
 
-import { ENGINE_URL } from "./engine";
+import { ENGINE_URL, engineWriteOrThrow } from "./engine";
 import { withKeyedLock } from "./keyed-lock";
 import { portalTokenHash } from "./portal-token";
 
@@ -97,16 +97,15 @@ export async function registerPortalLink(
       if (!getRes.ok) return;
       const page = (await getRes.json()) as { frontmatter?: Record<string, unknown> };
       const links = appendPortalLink(page.frontmatter, entry);
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({
+      await engineWriteOrThrow(
+        headers,
+        {
           slug: caseSlug,
           merge: true,
           frontmatter: { portal_links: links },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+        },
+        { timeoutMs: 10_000 }
+      );
     });
   } catch (err) {
     log.error(

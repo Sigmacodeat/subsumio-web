@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, engineWriteOrThrow } from "@/lib/engine";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 import {
   loadKanzleiSettingsForBrain,
@@ -93,17 +93,16 @@ async function listPages(type: string, headers: Record<string, string>): Promise
 }
 
 async function persistExecution(execution: AutopilotExecution, headers: Record<string, string>) {
-  await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  await engineWriteOrThrow(
+    headers,
+    {
       slug: `legal/autopilot-executions/${execution.id}`,
       title: `Autopilot: ${execution.policyName}`,
       type: "autopilot_execution",
       frontmatter: { ...execution, approval_required: true, approval_status: "pending" },
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
+    },
+    { timeoutMs: 10_000 }
+  );
 }
 
 /**
@@ -186,7 +185,12 @@ async function runForBrain(
           execution.error = error instanceof Error ? error.message : String(error);
         }
         executions.push(execution);
-        await persistExecution(execution, headers).catch(() => undefined);
+        await persistExecution(execution, headers).catch((err) =>
+          log.warn("[autopilot] execution persist failed:", {
+            id: execution.id,
+            error: err instanceof Error ? err.message : String(err),
+          })
+        );
       }
       if (budgetExhausted) break;
     }

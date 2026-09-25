@@ -616,6 +616,14 @@ export default function ReportsPage() {
             <Skeleton key={i} className="h-[68px] rounded-xl" />
           ))}
         </div>
+      ) : agentsQuery.isError ? (
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
+          <AlertCircle size={16} aria-hidden="true" />
+          <span className="flex-1">{t("dashboard.error_load")}</span>
+          <Button variant="ghost" size="sm" onClick={() => agentsQuery.refetch()}>
+            {t("dashboard.retry")}
+          </Button>
+        </div>
       ) : (
         <StatsBar jobs={jobs} t={t} />
       )}
@@ -660,6 +668,17 @@ export default function ReportsPage() {
       {agentsQuery.isLoading ? (
         <div role="status" aria-label={t("aria.loading")}>
           <RowSkeleton count={4} />
+        </div>
+      ) : agentsQuery.isError ? (
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <AlertCircle size={16} aria-hidden="true" />
+          <span className="flex-1">{t("dashboard.error_load")}</span>
+          <Button variant="ghost" size="sm" onClick={() => agentsQuery.refetch()}>
+            {t("dashboard.retry")}
+          </Button>
         </div>
       ) : tab === "by_agent" ? (
         <ByAgentView jobs={jobs} t={t} />

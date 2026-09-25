@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 import { apiGet } from "@/lib/queries/settings";
+import { readApiError } from "@/lib/api-response";
 
 export interface AgentStep {
   id: string;
@@ -130,8 +131,8 @@ export function useCreateAgentTemplate() {
         body: JSON.stringify(input),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "create_failed");
+        const errBody = await res.json().catch(() => null);
+        throw new Error(readApiError(errBody)?.message ?? "create_failed");
       }
       return res.json() as Promise<{ slug: string; success: boolean }>;
     },
@@ -150,8 +151,8 @@ export function useUpdateAgentTemplate() {
         body: JSON.stringify(input),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "update_failed");
+        const errBody = await res.json().catch(() => null);
+        throw new Error(readApiError(errBody)?.message ?? "update_failed");
       }
       return res.json() as Promise<{ slug: string; success: boolean }>;
     },
@@ -168,8 +169,8 @@ export function useDeleteAgentTemplate() {
         method: "DELETE",
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "delete_failed");
+        const errBody = await res.json().catch(() => null);
+        throw new Error(readApiError(errBody)?.message ?? "delete_failed");
       }
       return res.json() as Promise<{ success: boolean }>;
     },
@@ -190,8 +191,8 @@ export function useRunAgentTemplate() {
         }
       );
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "run_failed");
+        const errBody = await res.json().catch(() => null);
+        throw new Error(readApiError(errBody)?.message ?? "run_failed");
       }
       return res.json() as Promise<{ jobId: number | null; success: boolean }>;
     },

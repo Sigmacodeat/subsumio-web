@@ -2041,18 +2041,15 @@ async function executeDeadlineMarkDone(
   params: z.infer<typeof deadlineMarkDoneSchema>
 ): Promise<ToolResponse> {
   try {
-    // Update the deadline page frontmatter via engine
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(params.deadline_slug)}`, {
-      method: "PATCH",
-      headers: {
-        ...ctx.headers,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    // Merge-write via POST /api/pages — the engine has no PATCH route.
+    const res = await enginePatchPage(
+      { ...ctx.headers, "Content-Type": "application/json" },
+      {
+        slug: params.deadline_slug,
         frontmatter: { status: "done", done_at: new Date().toISOString() },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
+      },
+      { timeoutMs: 15_000 }
+    );
 
     if (!res.ok) {
       // Fallback: try to at least confirm

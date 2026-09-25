@@ -7,7 +7,10 @@ import {
   isMs365Connected,
 } from "@/lib/msgraph-user";
 import { getStore } from "@/lib/auth/store";
-import { ENGINE_URL } from "@/lib/engine";
+import { engineWriteOrThrow } from "@/lib/engine";
+import { logger } from "@/lib/logger";
+
+const log = logger("api/outlook/calendar");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -91,28 +94,36 @@ export const POST = createHandler(
         const slug = delegated
           ? `calendar/outlook/${ctx.user.id}/${eventId}`
           : `calendar/outlook/${eventId}`;
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({
-            slug,
-            title: `Termin: ${body.subject}`,
-            type: "calendar_event",
-            frontmatter: {
+        try {
+          await engineWriteOrThrow(
+            ctx.headers,
+            {
+              slug,
+              title: `Termin: ${body.subject}`,
               type: "calendar_event",
-              case_slug: body.caseSlug,
-              outlook_event_id: eventId,
-              owner_user_id: delegated ? ctx.user.id : undefined,
-              subject: body.subject,
-              start: body.start,
-              end: body.end,
-              location: body.location,
-              web_link: webLink,
-              synced_at: new Date().toISOString(),
+              frontmatter: {
+                type: "calendar_event",
+                case_slug: body.caseSlug,
+                outlook_event_id: eventId,
+                owner_user_id: delegated ? ctx.user.id : undefined,
+                subject: body.subject,
+                start: body.start,
+                end: body.end,
+                location: body.location,
+                web_link: webLink,
+                synced_at: new Date().toISOString(),
+              },
             },
-          }),
-          signal: AbortSignal.timeout(10_000),
-        });
+            { timeoutMs: 10_000 }
+          );
+        } catch (err) {
+          // The Outlook event already exists — failing the request would make
+          // a retry create a duplicate. Log loudly instead of swallowing.
+          log.error(
+            "[outlook/calendar] case-link persist failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+        }
       }
 
       return apiSuccess({

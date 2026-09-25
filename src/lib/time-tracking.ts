@@ -682,12 +682,15 @@ export async function setCurrentActivity(
   });
 
   if (!create.ok) {
-    // Try update instead
-    const update = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-      method: "PATCH",
+    // Try merge-update instead — the engine has no PATCH route; POST with
+    // merge:true to /api/pages is the partial-update op.
+    const update = await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
       headers,
       body: JSON.stringify({
+        slug,
         frontmatter: payload,
+        merge: true,
       }),
       signal: AbortSignal.timeout(10_000),
     });
@@ -739,14 +742,17 @@ export async function updateActivityHeartbeat(
   };
   const slug = currentActivitySlug(userId, brainId);
 
-  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-    method: "PATCH",
+  // Merge-write via POST /api/pages — the engine has no PATCH route.
+  const res = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
     headers,
     body: JSON.stringify({
+      slug,
       frontmatter: {
         ...current,
         last_activity_at: new Date().toISOString(),
       },
+      merge: true,
     }),
     signal: AbortSignal.timeout(10_000),
   });
@@ -768,11 +774,16 @@ export async function clearCurrentActivity(
   const headers = timeHeaders(brainId, callerHeaders);
   const slug = currentActivitySlug(userId, brainId);
 
-  await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
     method: "DELETE",
     headers,
     signal: AbortSignal.timeout(10_000),
   });
+  // 404 = nothing running — fine. Anything else means a zombie "current
+  // activity" survives, which would block the next start — fail loudly.
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`clear current activity failed: HTTP ${res.status}`);
+  }
 }
 
 /**

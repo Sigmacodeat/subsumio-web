@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -72,19 +72,18 @@ export const POST = createHandler(
       triageUpdate.triage_deadline_label = body.deadline_label ?? "Frist aus Triage";
     }
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.slug)}`, {
-      method: "PATCH",
+    // Merge-write via POST /api/pages — the engine has no PATCH route.
+    const res = await enginePatchPage(
       headers,
-      body: JSON.stringify({
+      {
         slug: body.slug,
-        title: existing.title,
-        type: existing.type,
-        content: existing.content ?? "",
+        title: existing.title as string | undefined,
+        type: existing.type as string | undefined,
+        content: (existing.content as string | undefined) ?? "",
         frontmatter: triageUpdate,
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      },
+      { timeoutMs: 10_000 }
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");

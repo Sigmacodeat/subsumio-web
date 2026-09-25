@@ -52,6 +52,52 @@ export interface MatchResult {
   matchReason: string;
 }
 
+/**
+ * cyrb53 hash — deterministic, non-cryptographic. Used for the transaction
+ * idempotency key (client-safe: fibu.ts is imported by browser components,
+ * so node:crypto is not available here).
+ */
+function cyrb53(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+/**
+ * Deterministic transaction id — the same statement line (same IBAN, date,
+ * amount, direction, counterparty, reference) always maps to the same id.
+ * Re-importing the same statement is therefore idempotent: the import route
+ * skips transactions whose id already exists instead of double-booking a
+ * partial payment.
+ */
+export function bankTransactionId(input: {
+  date: string;
+  amount: number;
+  direction: "debit" | "credit";
+  iban: string;
+  sender_iban?: string;
+  reference?: string;
+  purpose?: string;
+}): string {
+  const key = [
+    input.iban.replace(/\s+/g, "").toUpperCase(),
+    input.date,
+    input.amount.toFixed(2),
+    input.direction,
+    (input.sender_iban ?? "").replace(/\s+/g, "").toUpperCase(),
+    (input.reference ?? "").trim().toLowerCase(),
+    (input.purpose ?? "").trim().toLowerCase(),
+  ].join("|");
+  return `txn-${cyrb53(key).toString(36)}`;
+}
+
 export function createBankTransaction(input: {
   date: string;
   amount: number;
@@ -64,7 +110,7 @@ export function createBankTransaction(input: {
   purpose?: string;
 }): BankTransaction {
   return {
-    id: `txn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: bankTransactionId(input),
     date: input.date,
     amount: input.amount,
     direction: input.direction,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage, requireEngineOk } from "@/lib/engine";
+import { logger } from "@/lib/logger";
 import {
   retryFiling,
   sendFiling,
@@ -14,6 +15,9 @@ import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 export const dynamic = "force-dynamic";
+
+const log = logger("api/bea/retry");
+const errMsg = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 const retrySchema = z.object({
   filing_slug: z.string().min(1).max(300),
@@ -103,20 +107,17 @@ export const POST = createHandler(
     const xml = buildXJustizXml(retryingPkg, metadata);
     const sendingPkg = sendFiling(retryingPkg, `middleware-retry-${Date.now()}`);
 
-    // Persist sending state
+    // Persist sending state — merge-write via POST /api/pages (the engine
+    // has no PATCH route; a literal PATCH is a silent no-op).
     try {
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify({
+      await requireEngineOk(
+        await enginePatchPage(ctx.headers, {
           slug: body.filing_slug,
           frontmatter: { draft_slug: body.draft_slug, package: sendingPkg },
-          merge: true,
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // best-effort
+        })
+      );
+    } catch (err) {
+      log.warn("[bea/retry] state persist failed:", errMsg(err));
     }
 
     try {
@@ -148,18 +149,14 @@ export const POST = createHandler(
           updated_at: new Date().toISOString(),
         };
         try {
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", ...ctx.headers },
-            body: JSON.stringify({
+          await requireEngineOk(
+            await enginePatchPage(ctx.headers, {
               slug: body.filing_slug,
               frontmatter: { draft_slug: body.draft_slug, package: failedPkg },
-              merge: true,
-            }),
-            signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // best-effort
+            })
+          );
+        } catch (err) {
+          log.warn("[bea/retry] failed-state persist failed:", errMsg(err));
         }
 
         return apiError(
@@ -184,40 +181,32 @@ export const POST = createHandler(
       const finalPkg = confirmReceipt(sendingPkg, receipt);
 
       try {
-        await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({
+        await requireEngineOk(
+          await enginePatchPage(ctx.headers, {
             slug: body.filing_slug,
             frontmatter: { draft_slug: body.draft_slug, package: finalPkg },
-            merge: true,
-          }),
-          signal: AbortSignal.timeout(10_000),
-        });
-      } catch {
-        // best-effort
+          })
+        );
+      } catch (err) {
+        log.warn("[bea/retry] final-state persist failed:", errMsg(err));
       }
 
       // Update deadline if linked
       if (body.deadline_id && receipt.is_success) {
         try {
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", ...ctx.headers },
-            body: JSON.stringify({
+          await requireEngineOk(
+            await enginePatchPage(ctx.headers, {
               slug: body.deadline_id,
-              merge: true,
               frontmatter: {
                 status: "done",
                 done_at: new Date().toISOString(),
                 done_by: ctx.user.email,
                 filing_id: sendingPkg.id,
               },
-            }),
-            signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // best-effort
+            })
+          );
+        } catch (err) {
+          log.warn("[bea/retry] deadline update failed:", errMsg(err));
         }
       }
 
@@ -254,18 +243,14 @@ export const POST = createHandler(
         updated_at: new Date().toISOString(),
       };
       try {
-        await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({
+        await requireEngineOk(
+          await enginePatchPage(ctx.headers, {
             slug: body.filing_slug,
             frontmatter: { draft_slug: body.draft_slug, package: failedPkg },
-            merge: true,
-          }),
-          signal: AbortSignal.timeout(10_000),
-        });
-      } catch {
-        // best-effort
+          })
+        );
+      } catch (persistErr) {
+        log.warn("[bea/retry] failed-state persist failed:", errMsg(persistErr));
       }
 
       return apiError(

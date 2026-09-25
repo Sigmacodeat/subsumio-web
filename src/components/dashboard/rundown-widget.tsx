@@ -27,6 +27,23 @@ export function RundownWidget() {
 
   const jobs = rundownQuery.data ?? [];
   const latest = jobs[0];
+
+  // A failed load must not look like "no briefing exists" — show an error
+  // with retry instead of the empty-state card.
+  if (rundownQuery.isError) {
+    return (
+      <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
+        <div className="flex items-center gap-3">
+          <p className="min-w-0 flex-1 text-xs text-[color:var(--ds-danger-text)]">
+            {t("dashboard.error_load")}
+          </p>
+          <Button size="sm" variant="ghost" onClick={() => rundownQuery.refetch()}>
+            {t("dashboard.retry")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const isRunning = jobs.some((j) => j.status === "active" || j.status === "waiting");
   const hasToday = latest && isToday(latest.completedAt ?? latest.startedAt);
 

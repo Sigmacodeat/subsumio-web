@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, engineWriteOrThrow } from "@/lib/engine";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import {
   createUserCalendarEvent,
@@ -115,16 +115,15 @@ async function handler() {
             location: typeof fm.location === "string" ? fm.location : undefined,
           });
           if (eventId) {
-            await fetch(`${ENGINE_URL}/api/pages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...headers },
-              body: JSON.stringify({
+            await engineWriteOrThrow(
+              headers,
+              {
                 slug: appt.slug,
                 merge: true,
                 frontmatter: { outlook_event_id: eventId },
-              }),
-              signal: AbortSignal.timeout(10_000),
-            });
+              },
+              { timeoutMs: 10_000 }
+            );
             eventsSynced++;
           }
         } catch (err) {

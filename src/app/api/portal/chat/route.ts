@@ -2,7 +2,7 @@ import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { portalVisibleDocumentSlugs } from "@/lib/portal-view";
 import type { DocumentEntry } from "@/lib/legal-types";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineWriteOrThrow } from "@/lib/engine";
 import { engineComplete } from "@/lib/engine-llm";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
@@ -229,10 +229,9 @@ export const POST = createPublicHandler(
     const grounded = grounding.corpus_checked && !grounding.has_unverified;
 
     const slug = `portal-chat/${access.caseSlug}/${Date.now()}`;
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({
+    await engineWriteOrThrow(
+      headers,
+      {
         slug,
         title: "Portal-Chat",
         type: "portal_chat",
@@ -245,9 +244,16 @@ export const POST = createPublicHandler(
           grounded,
           created_at: new Date().toISOString(),
         },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    }).catch(() => {});
+      },
+      { timeoutMs: 10_000 }
+    ).catch((err) => {
+      // The answer is already delivered — a lost transcript must at least
+      // be loud in the logs, never silently swallowed.
+      log.error(
+        "[portal/chat] transcript persist failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+    });
 
     return Response.json({
       answer,
