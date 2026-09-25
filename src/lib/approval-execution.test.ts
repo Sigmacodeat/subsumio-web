@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { executeApprovedAction, type ApprovalExecutionDeps } from "./approval-execution";
+import type { PageArrayMutation } from "./server-brain";
 import type { BrainPage } from "./types";
 
 function actionPage(frontmatter: Record<string, unknown>): BrainPage {
@@ -41,7 +42,7 @@ function depsFor(page: BrainPage): ApprovalExecutionDeps & {
       return { slug: p.slug, success: true };
     }),
     // Minimal mirror of page_array_mutate for tests: set/unset/remove by id.
-    mutatePageArray: vi.fn(async (slug, field, mutation) => {
+    mutatePageArray: vi.fn(async (slug: string, field: string, mutation: PageArrayMutation) => {
       const cur =
         page.slug === slug && Array.isArray(page.frontmatter?.[field])
           ? (page.frontmatter[field] as Record<string, unknown>[])
@@ -56,7 +57,7 @@ function depsFor(page: BrainPage): ApprovalExecutionDeps & {
         matched_ids: matched,
         updated_ids: matched,
         skipped_ids: [],
-        not_found_ids: mutation.match.map(String).filter((id) => !matched.includes(id)),
+        not_found_ids: mutation.match.map((m) => String(m)).filter((id) => !matched.includes(id)),
         items: cur,
         length: cur.length,
       };

@@ -116,11 +116,14 @@ export async function setupDB(): Promise<PostgresEngine> {
   }
 
   // Truncate all data tables (preserves schema + extensions).
+  // RESTART IDENTITY resets BIGSERIAL sequences — parity tests assert
+  // identity-column equality (e.g. canonical_chunk_id) against a fresh
+  // PGLite, so sequence drift across runs would break reproducibility.
   // Some tables (e.g. v0.28 takes/synthesis_evidence) only exist after
   // migrations run via engine.connect() below, so skip non-existent tables.
   for (const table of ALL_TABLES) {
     try {
-      await conn.unsafe(`TRUNCATE ${table} CASCADE`);
+      await conn.unsafe(`TRUNCATE ${table} RESTART IDENTITY CASCADE`);
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
       if (code !== "42P01") throw e; // 42P01 = undefined_table; ignore those
