@@ -3,11 +3,11 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const sendMail = vi.fn(async () => ({}));
+const sendMail = vi.fn(async (_msg: Record<string, unknown>) => ({}));
 vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail }) } }));
-const createDeadlineNotification = vi.fn(async () => undefined);
+const createDeadlineNotification = vi.fn(async (_n: Record<string, unknown>) => undefined);
 vi.mock("@/lib/comments", () => ({
-  createDeadlineNotification: (...a: unknown[]) => createDeadlineNotification(...(a as [])),
+  createDeadlineNotification: (...a: unknown[]) => createDeadlineNotification(...(a as [Record<string, unknown>])),
 }));
 let smtp = true;
 vi.mock("@/lib/kanzlei-settings-server", () => ({
