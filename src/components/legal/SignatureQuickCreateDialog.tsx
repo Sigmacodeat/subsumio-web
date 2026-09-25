@@ -53,6 +53,10 @@ export function SignatureQuickCreateDialog({
   const [saving, setSaving] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
   const [template, setTemplate] = useState<DocumentTemplate>("manual");
+  // A request can only be sent through the client portal of its matter —
+  // without a preset, the matter is chosen here.
+  const [pickedCaseSlug, setPickedCaseSlug] = useState("");
+  const caseSlug = presetCaseSlug || pickedCaseSlug;
 
   const sigForm = useForm<SignatureRequestFormData>({
     resolver: zodResolver(signatureRequestSchema) as never,
@@ -67,6 +71,7 @@ export function SignatureQuickCreateDialog({
   const resetForm = useCallback(() => {
     sigForm.reset({ documentName: "", recipientName: "", recipientEmail: "", expiresDays: "14" });
     setTemplate("manual");
+    setPickedCaseSlug("");
   }, [sigForm]);
 
   useEffect(() => {
@@ -77,10 +82,18 @@ export function SignatureQuickCreateDialog({
     return await api.brain.listAllPages({ type: "legal_document", max: 100 });
   });
 
+  const { data: matters } = useDialogFetch<BrainPage[]>(open && !presetCaseSlug, async () => {
+    return await api.brain.listAllPages({ type: "legal_case", max: 2000 });
+  });
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const isValid = await sigForm.trigger();
     if (!isValid) return;
+    if (!caseSlug) {
+      addToast({ type: "error", title: "Bitte eine Akte auswählen." });
+      return;
+    }
     const data = sigForm.getValues();
     setSaving(true);
     const now = new Date();
@@ -112,7 +125,7 @@ export function SignatureQuickCreateDialog({
           // tracks who needs to sign what; the actual document lives
           // elsewhere (paper, DocuSign, an emailed PDF).
           provider: template === "nda" ? "template" : "external",
-          case_slug: presetCaseSlug || undefined,
+          case_slug: caseSlug,
         },
       };
       if (isOnline()) await api.brain.createPage(payload);
@@ -136,6 +149,7 @@ export function SignatureQuickCreateDialog({
   }
 
   const canSubmit =
+    !!caseSlug &&
     !!sigForm.watch("documentName") &&
     !!sigForm.watch("recipientName") &&
     !!sigForm.watch("recipientEmail");
@@ -191,6 +205,27 @@ export function SignatureQuickCreateDialog({
                 </p>
               )}
             </div>
+
+            {/* Matter (only when not opened from a matter) */}
+            {!presetCaseSlug && (
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-sig-case" className="text-xs">
+                  Akte *
+                </Label>
+                <Select value={pickedCaseSlug} onValueChange={setPickedCaseSlug}>
+                  <SelectTrigger id="quick-sig-case">
+                    <SelectValue placeholder="Akte auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(matters ?? []).map((m) => (
+                      <SelectItem key={m.slug} value={m.slug}>
+                        {m.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Draft selector */}
             {(drafts ?? []).length > 0 && (
