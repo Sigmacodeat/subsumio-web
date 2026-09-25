@@ -31,6 +31,8 @@ const thinkSchema = z.object({
   query: z.string().min(1, "query_required").max(10_000, "query_too_long"),
   // Persona / tool instructions for the system prompt (kept out of retrieval).
   instructions: z.string().max(40_000).optional(),
+  // Conversation history / memory: data for the answer, never instructions.
+  context: z.string().max(40_000).optional(),
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
   query_mode: z.enum(["conservative", "balanced", "deep_matter"]).default("balanced"),
   case_slug: z.string().optional(),
@@ -151,6 +153,7 @@ export const POST = createHandler(
       const payload = {
         query: safeBody.query,
         ...(safeBody.instructions ? { instructions: safeBody.instructions } : {}),
+        ...(safeBody.context ? { context: safeBody.context } : {}),
         mode: engineMode,
         case_slug: safeBody.case_slug,
         query_mode: body.query_mode,

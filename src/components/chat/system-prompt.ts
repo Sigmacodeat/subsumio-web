@@ -177,25 +177,11 @@ Wenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte.
     personaParts.push(`\n${collisionWarnings}`);
   }
 
-  // ── Copilot Memory ──
-  if (memoryContext) {
-    personaParts.push(`\n${memoryContext}`);
-  }
-
-  // ── Conversation History ──
-  if (conversationHistory && conversationHistory.length > 0) {
-    const historyParts: string[] = ["\n## BISHERIGE KONVERSATION"];
-    const recentHistory = conversationHistory.slice(-12);
-    for (const msg of recentHistory) {
-      const role = msg.role === "user" ? "NUTZER" : "COPILOT";
-      const content = msg.content.slice(0, 2000);
-      historyParts.push(`[${role}]: ${content}`);
-    }
-    personaParts.push(historyParts.join("\n"));
-    personaParts.push(
-      "Beziehe dich auf diese Konversation. Verwende 'wie wir besprochen haben' oder 'wie oben erwähnt', wenn relevant."
-    );
-  }
+  // Memory and conversation history are NOT part of the instructions: they
+  // quote documents and earlier answers, so they travel as a separate data
+  // block the engine marks as "data, not instructions" (buildConversationContext).
+  void memoryContext;
+  void conversationHistory;
 
   // ── Tool Instructions ──
   personaParts.push(`\n## KANZLEI-FUNKTIONEN\n${TOOL_INSTRUCTIONS}`);
@@ -238,9 +224,32 @@ interface PromptContextParams {
   memoryContext?: string;
 }
 
+/**
+ * Memory entries and the recent conversation as one data block. The engine
+ * places it in the user message inside a delimited block marked as data —
+ * never in the system prompt, where quoted document text would carry the
+ * weight of an instruction.
+ */
+export function buildConversationContext(
+  conversationHistory: ChatMessage[] | undefined,
+  memoryContext: string | undefined
+): string {
+  const parts: string[] = [];
+  if (memoryContext?.trim()) parts.push(memoryContext.trim());
+  if (conversationHistory && conversationHistory.length > 0) {
+    const lines = ["## BISHERIGE KONVERSATION"];
+    for (const msg of conversationHistory.slice(-12)) {
+      const role = msg.role === "user" ? "NUTZER" : "COPILOT";
+      lines.push(`[${role}]: ${msg.content.slice(0, 2000)}`);
+    }
+    parts.push(lines.join("\n"));
+  }
+  return parts.join("\n\n");
+}
+
 export async function buildPromptContext(
   params: PromptContextParams
-): Promise<{ systemPrompt: string; userInput: string }> {
+): Promise<{ systemPrompt: string; userInput: string; conversationContext: string }> {
   const {
     jurisdiction,
     selectedCaseSlug,
@@ -354,8 +363,9 @@ export async function buildPromptContext(
     memoryContext
   );
   const userInput = `${contextParts.join("\n")}\nNUTZERFRAGE:\n${userText}`;
+  const conversationContext = buildConversationContext(conversationHistory, memoryContext);
 
-  return { systemPrompt, userInput };
+  return { systemPrompt, userInput, conversationContext };
 }
 
 export function processStreamingChunk(

@@ -97,6 +97,8 @@ interface ThinkOptions {
   mode?: ThinkMode;
   /** System-prompt instructions (persona, tools); never part of the retrieval query. */
   instructions?: string;
+  /** Conversation history / memory as data — sent apart from instructions. */
+  context?: string;
   queryMode?: QueryMode;
   caseSlug?: string;
   model?: string;
@@ -742,6 +744,7 @@ export const api = {
         body: JSON.stringify({
           query,
           ...(options.instructions ? { instructions: options.instructions } : {}),
+          ...(options.context ? { context: options.context } : {}),
           mode,
           query_mode: options.queryMode,
           case_slug: options.caseSlug,

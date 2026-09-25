@@ -3782,6 +3782,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     const instructions = rawInstructions.trim()
       ? sanitizePromptInput(rawInstructions, 60_000).text
       : undefined;
+    // Conversation history / memory from the caller: DATA for the answer,
+    // placed in the user message as a marked block — never system rank.
+    const rawContext = typeof body?.context === "string" ? body.context : "";
+    const callerContext = rawContext.trim()
+      ? neutralizeToolMarkers(sanitizePromptInput(rawContext, 40_000).text)
+      : undefined;
 
     const rawMode = String(body?.mode ?? "balanced");
     const searchMode = (["conservative", "balanced", "tokenmax"] as const).includes(
@@ -3856,6 +3862,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         runThink(engine, {
           question: query,
           ...(instructions ? { instructions } : {}),
+          ...(callerContext ? { callerContext } : {}),
           ...(pickedModel ? { model: pickedModel } : {}),
           remote: false,
           sourceId,
