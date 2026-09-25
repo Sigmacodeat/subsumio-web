@@ -6,7 +6,16 @@
 // "DELETE_MY_ACCOUNT" absichert — der Dialog verlangt dasselbe Eintippen.
 
 import { useState } from "react";
-import { Download, FileJson, Info, Loader2, ShieldAlert, Trash2 } from "lucide-react";
+import {
+  Download,
+  FileJson,
+  FileText,
+  Info,
+  Loader2,
+  ScrollText,
+  ShieldAlert,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,8 +40,44 @@ export default function PrivacySettingsPage() {
   const [confirmInput, setConfirmInput] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [avvPdfLoading, setAvvPdfLoading] = useState(false);
+  const [avvPdfError, setAvvPdfError] = useState<string | null>(null);
 
   const canConfirm = confirmInput.trim() === CONFIRM_PHRASE;
+
+  // AVV-Muster als PDF: das Markdown unter /legal wird clientseitig mit
+  // jsPDF gerendert (kein Server-Roundtrip, kein Tracking). Lazy-Import
+  // hält jsPDF aus dem initialen Bundle der Settings-Seite.
+  async function handleAvvPdf() {
+    if (avvPdfLoading) return;
+    setAvvPdfLoading(true);
+    setAvvPdfError(null);
+    try {
+      const res = await fetch("/legal/avv-template.md");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const content = await res.text();
+      const { generateDraftPdf } = await import("@/lib/legal-draft-pdf");
+      const doc = generateDraftPdf({
+        title: L(
+          "Auftragsverarbeitungsvertrag (Art. 28 DSGVO)",
+          "Data processing agreement (Art. 28 GDPR)"
+        ),
+        content,
+        kanzlei: { name: "Subsumio" },
+        watermark: L("MUSTER", "TEMPLATE"),
+      });
+      doc.save("avv-muster.pdf");
+    } catch (err) {
+      setAvvPdfError(
+        L(
+          `Das PDF konnte nicht erstellt werden. ${err instanceof Error ? err.message : ""}`.trim(),
+          `The PDF could not be created. ${err instanceof Error ? err.message : ""}`.trim()
+        )
+      );
+    } finally {
+      setAvvPdfLoading(false);
+    }
+  }
 
   async function handleDelete() {
     if (!canConfirm || deleting) return;
@@ -113,6 +158,53 @@ export default function PrivacySettingsPage() {
           {L(
             "Der vollständige Export enthält zusätzlich Metadaten Ihrer API-Schlüssel und Ihre Kontaktanfragen über die Website.",
             "The full export additionally includes your API key metadata and contact requests sent via the website."
+          )}
+        </p>
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6">
+        <div className="flex items-center gap-2">
+          <ScrollText size={18} className="text-[color:var(--ds-text-muted)]" aria-hidden />
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            {L("Auftragsverarbeitung (Art. 28 DSGVO)", "Data processing (Art. 28 GDPR)")}
+          </h2>
+        </div>
+        <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+          {L(
+            "Kanzleien benötigen für DSGVO-Prüfungen einen Auftragsverarbeitungsvertrag (AVV) mit ihren Software-Anbietern. Laden Sie unser AVV-Muster herunter und lassen Sie es anwaltlich gegen Ihre Verhältnisse prüfen.",
+            "Firms need a data processing agreement (DPA) with their software providers for GDPR reviews. Download our DPA template and have it reviewed by a lawyer against your circumstances."
+          )}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="sm" asChild>
+            <a href="/legal/avv-template.md" download="avv-muster.md">
+              <FileText size={14} aria-hidden />
+              {L("Markdown herunterladen", "Download Markdown")}
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleAvvPdf()}
+            disabled={avvPdfLoading}
+          >
+            {avvPdfLoading ? (
+              <Loader2 size={14} className="animate-spin" aria-hidden />
+            ) : (
+              <Download size={14} aria-hidden />
+            )}
+            {L("Als PDF herunterladen", "Download as PDF")}
+          </Button>
+        </div>
+        {avvPdfError && (
+          <p role="alert" className="text-sm text-[color:var(--ds-danger-text)]">
+            {avvPdfError}
+          </p>
+        )}
+        <p className="text-xs text-[color:var(--ds-text-subtle)]">
+          {L(
+            "Unverbindliches Muster — vor Verwendung durch eine Rechtsanwältin oder einen Rechtsanwalt zu prüfen und anzupassen.",
+            "Non-binding template — must be reviewed and adapted by a lawyer before use."
           )}
         </p>
       </section>
