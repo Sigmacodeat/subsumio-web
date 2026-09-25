@@ -8,9 +8,21 @@
  * WhatsApp-Flows schreiben alle in `caseFm.expenses`), und
  * src/lib/invoice-mark-billed.ts behandelt `expense_ids` als IDs innerhalb
  * der Akte. Deshalb gibt es hier kein Standalone-Prefix/Slug-Handling.
+ *
+ * Jeder Schreibzugriff läuft über die atomaren Engine-Operationen
+ * `page_array_append` / `page_array_mutate` (ein UPDATE, Guard in der
+ * Engine) — wie die Zeiteinträge seit PR #56. Ein Read-Modify-Write mit
+ * Verify-Read (die erste Fassung) konnte zwei parallel erstellte Rechnungen
+ * dieselbe Auslage doppelt abrechnen lassen: beide lasen `billed:false`,
+ * beide schrieben, und der Verify-Read sah jeweils nur den eigenen Stand.
  */
 
 import type { ExpenseEntry } from "@/lib/legal-types";
+import type {
+  PageArrayAppendResult,
+  PageArrayMutateResult,
+  PageArrayMutation,
+} from "@/lib/server-brain";
 import { listAllPagesOfType } from "@/lib/time-tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -33,74 +45,29 @@ export interface ExpenseSummary {
   billed_amount: number;
 }
 
-export interface MarkExpensesBilledResult {
+export interface ExpenseBillingResult {
   updated: number;
   not_found: string[];
   /** Entries already billed under a DIFFERENT invoice — never re-attributed. */
   already_billed: string[];
-  entries: ExpenseEntryWithCase[];
 }
+
+/** The two atomic array ops the server brain client exposes. */
+export interface ExpensesArrayClient {
+  appendPageArray(slug: string, field: string, items: unknown[]): Promise<PageArrayAppendResult>;
+  mutatePageArray(
+    slug: string,
+    field: string,
+    mutation: PageArrayMutation
+  ): Promise<PageArrayMutateResult>;
+}
+
+export const EXPENSES_FIELD = "expenses";
 
 // ── Errors ────────────────────────────────────────────────────────────
 
 export class ExpensesNotFoundError extends Error {}
-export class ExpensesWriteConflictError extends Error {}
 export class ExpenseBilledError extends Error {}
-
-const EXPENSES_WRITE_MAX_ATTEMPTS = 5;
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-// ── Read-modify-write mit Retry ───────────────────────────────────────
-
-/**
- * Jeder Schreibzugriff auf `expenses` einer Akte ist ein Read-Modify-Write
- * auf das gesamte Frontmatter-Feld — die Engine kann kein atomares
- * Array-Append. Zwei konkurrierende Writer lesen dasselbe Array und das
- * zweite Merge-Update überschreibt das erste still. Dieser Wrapper liest
- * nach dem Schreiben erneut und retried bei Mismatch: "Daten still
- * verlieren" wird zu "erkennen und wiederholen", erst nach wiederholten
- * Kollisionen schlägt es hörbar fehl (409).
- */
-export async function writeExpensesWithRetry<M>(
-  brain: {
-    getPage: (slug: string) => Promise<{ frontmatter?: unknown }>;
-    updatePage: (page: { slug: string; frontmatter: Record<string, unknown> }) => Promise<unknown>;
-  },
-  caseSlug: string,
-  compute: (
-    freshEntries: ExpenseEntry[],
-    freshFrontmatter: Record<string, unknown>
-  ) => { nextEntries: ExpenseEntry[]; meta: M } | { notFound: true } | { billed: true },
-  log?: { warn: (msg: string, ctx?: object) => void; error: (msg: string, ctx?: object) => void }
-): Promise<{ entries: ExpenseEntry[]; meta: M }> {
-  for (let attempt = 0; attempt < EXPENSES_WRITE_MAX_ATTEMPTS; attempt++) {
-    const casePage = await brain.getPage(caseSlug);
-    const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-    const freshEntries = Array.isArray(fm.expenses) ? (fm.expenses as ExpenseEntry[]) : [];
-
-    const outcome = compute(freshEntries, fm);
-    if ("notFound" in outcome) throw new ExpensesNotFoundError();
-    if ("billed" in outcome) throw new ExpenseBilledError();
-
-    await brain.updatePage({
-      slug: caseSlug,
-      frontmatter: { ...fm, expenses: outcome.nextEntries },
-    });
-
-    const verifyPage = await brain.getPage(caseSlug);
-    const verifyFm = (verifyPage.frontmatter ?? {}) as Record<string, unknown>;
-    const verifyEntries = Array.isArray(verifyFm.expenses)
-      ? (verifyFm.expenses as ExpenseEntry[])
-      : [];
-    if (JSON.stringify(verifyEntries) === JSON.stringify(outcome.nextEntries)) {
-      return { entries: outcome.nextEntries, meta: outcome.meta };
-    }
-    log?.warn("[expenses] write_conflict, retrying", { caseSlug, attempt });
-    await sleep(25 + Math.random() * 75);
-  }
-  log?.error("[expenses] write_conflict exhausted retries", { caseSlug });
-  throw new ExpensesWriteConflictError();
-}
 
 // ── Lesen ─────────────────────────────────────────────────────────────
 
@@ -129,6 +96,11 @@ export async function listAllExpenses(brain: {
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
+/** Calendar day (YYYY-MM-DD) of an expense date that may carry a time part. */
+function dayOf(date: string): string {
+  return String(date).slice(0, 10);
+}
+
 export function filterExpenses(
   entries: ExpenseEntryWithCase[],
   opts: ExpenseQueryFilters
@@ -140,11 +112,14 @@ export function filterExpenses(
   if (opts.unbilled) {
     result = result.filter((e) => !e.billed);
   }
+  // Compare calendar days: the UI stores `date` as a full ISO timestamp, so a
+  // plain string compare against `to=2026-09-25` would drop that day's
+  // expenses.
   if (opts.from) {
-    result = result.filter((e) => e.date >= opts.from!);
+    result = result.filter((e) => dayOf(e.date) >= dayOf(opts.from!));
   }
   if (opts.to) {
-    result = result.filter((e) => e.date <= opts.to!);
+    result = result.filter((e) => dayOf(e.date) <= dayOf(opts.to!));
   }
   return result;
 }
@@ -193,116 +168,97 @@ export function createExpense(input: {
   };
 }
 
-export function updateExpenseEntry(
-  entries: ExpenseEntry[],
-  id: string,
-  updates: Partial<ExpenseEntry>
-): { found: boolean; billed?: boolean; entries: ExpenseEntry[]; updated?: ExpenseEntry } {
-  const idx = entries.findIndex((e) => e.id === id);
-  if (idx === -1) return { found: false, entries };
-  // Eine abgerechnete Auslage ist Teil der Rechnungsgrundlage — Ändern oder
-  // Entbuchen darf nur über unbill/mark-billed laufen, damit der Audit-Trail
-  // den invoice_number-Übergang behält. Stilles Editieren würde die Rechnung
-  // von ihrer Bemessungsgrundlage lösen (GoBD).
-  if (entries[idx].billed) return { found: true, billed: true, entries };
-  const updated = { ...entries[idx], ...updates };
-  const next = [...entries];
-  next[idx] = updated;
-  return { found: true, entries: next, updated };
+/** Atomic append — no read-modify-write, so parallel creates never lose one. */
+export async function appendExpense(
+  brain: ExpensesArrayClient,
+  caseSlug: string,
+  entry: ExpenseEntry
+): Promise<void> {
+  await brain.appendPageArray(caseSlug, EXPENSES_FIELD, [entry]);
 }
 
-export function deleteExpenseEntry(
-  entries: ExpenseEntry[],
+/**
+ * Eine abgerechnete Auslage ist Teil der Rechnungsgrundlage — Ändern oder
+ * Löschen darf nur über unbill/mark-billed laufen, damit der Audit-Trail den
+ * invoice_number-Übergang behält. Stilles Editieren würde die Rechnung von
+ * ihrer Bemessungsgrundlage lösen (GoBD). Der Guard läuft IN der Engine, im
+ * selben UPDATE — eine parallel laufende Abrechnung kann ihn nicht überholen.
+ */
+const NOT_WHEN_BILLED = { eq: { billed: true } };
+
+export async function updateExpenseAtomic(
+  brain: ExpensesArrayClient,
+  caseSlug: string,
+  id: string,
+  updates: Partial<ExpenseEntry>
+): Promise<ExpenseEntry> {
+  const res = await brain.mutatePageArray(caseSlug, EXPENSES_FIELD, {
+    match: [id],
+    set: updates,
+    unless: NOT_WHEN_BILLED,
+  });
+  if (res.not_found_ids.includes(id)) throw new ExpensesNotFoundError();
+  if (res.skipped_ids.includes(id)) throw new ExpenseBilledError();
+  const updated = (res.items as ExpenseEntry[]).find((e) => e && e.id === id);
+  if (!updated) throw new ExpensesNotFoundError();
+  return updated;
+}
+
+export async function deleteExpenseAtomic(
+  brain: ExpensesArrayClient,
+  caseSlug: string,
   id: string
-): { found: boolean; billed?: boolean; entries: ExpenseEntry[] } {
-  const target = entries.find((e) => e.id === id);
-  if (!target) return { found: false, entries };
-  if (target.billed) return { found: true, billed: true, entries };
-  const filtered = entries.filter((e) => e.id !== id);
-  return { found: true, entries: filtered };
+): Promise<void> {
+  const res = await brain.mutatePageArray(caseSlug, EXPENSES_FIELD, {
+    match: [id],
+    remove: true,
+    unless: NOT_WHEN_BILLED,
+  });
+  if (res.not_found_ids.includes(id)) throw new ExpensesNotFoundError();
+  if (res.skipped_ids.includes(id)) throw new ExpenseBilledError();
 }
 
 // ── Billing-Integration ───────────────────────────────────────────────
 
 /**
- * Markiert mehrere Auslagen als abgerechnet (analog markEntriesBilled).
- * Einträge, die bereits unter einer ANDEREN Rechnung abgerechnet sind,
- * behalten ihre Zuordnung — sonst würde der GoBD-Trail der alten Rechnung
- * gefälscht. Retries derselben Rechnung bleiben idempotent.
+ * Markiert Auslagen als abgerechnet — atomar, analog markTimeEntriesBilled.
+ * Der `unless`-Guard wird im UPDATE ausgewertet: Einträge, die bereits unter
+ * einer ANDEREN Rechnung abgerechnet sind, werden übersprungen (als
+ * already_billed gemeldet, nie umgehängt — sonst würde der GoBD-Trail der
+ * alten Rechnung gefälscht); Retries derselben Rechnung bleiben idempotent.
  */
-export function markExpensesBilled(
-  entries: ExpenseEntryWithCase[],
+export async function markExpensesBilledAtomic(
+  brain: ExpensesArrayClient,
+  caseSlug: string,
   ids: string[],
   invoiceNumber: string
-): MarkExpensesBilledResult {
-  const idSet = new Set(ids);
-  const notFound: string[] = [];
-  const alreadyBilled: string[] = [];
-  const updated: ExpenseEntryWithCase[] = [];
-
-  for (const id of ids) {
-    if (!entries.some((e) => e.id === id)) {
-      notFound.push(id);
-    }
-  }
-
-  const result = entries.map((e) => {
-    if (idSet.has(e.id)) {
-      if (e.billed && e.invoice_number && e.invoice_number !== invoiceNumber) {
-        alreadyBilled.push(e.id);
-        return e;
-      }
-      const updatedEntry = {
-        ...e,
-        billed: true,
-        invoice_number: invoiceNumber,
-      };
-      updated.push(updatedEntry);
-      return updatedEntry;
-    }
-    return e;
+): Promise<ExpenseBillingResult> {
+  if (ids.length === 0) return { updated: 0, not_found: [], already_billed: [] };
+  const res = await brain.mutatePageArray(caseSlug, EXPENSES_FIELD, {
+    match: ids,
+    set: { billed: true, invoice_number: invoiceNumber },
+    // Skip only entries billed under a different invoice: eq requires
+    // billed === true AND ne requires invoice_number present-and-different.
+    unless: { eq: { billed: true }, ne: { invoice_number: invoiceNumber } },
   });
-
   return {
-    updated: updated.length,
-    not_found: notFound,
-    already_billed: alreadyBilled,
-    entries: result,
+    updated: res.updated_ids.length,
+    not_found: res.not_found_ids,
+    already_billed: res.skipped_ids,
   };
 }
 
-/**
- * Hebt die Abrechnungsmarkierung für angegebene Auslagen auf.
- * Setzt billed=false und entfernt invoice_number.
- */
-export function unbillExpenses(
-  entries: ExpenseEntryWithCase[],
+/** Hebt die Abrechnungsmarkierung auf: billed=false, invoice_number weg — atomar. */
+export async function unbillExpensesAtomic(
+  brain: ExpensesArrayClient,
+  caseSlug: string,
   ids: string[]
-): MarkExpensesBilledResult {
-  const idSet = new Set(ids);
-  const notFound: string[] = [];
-  const updated: ExpenseEntryWithCase[] = [];
-
-  for (const id of ids) {
-    if (!entries.some((e) => e.id === id)) {
-      notFound.push(id);
-    }
-  }
-
-  const result = entries.map((e) => {
-    if (idSet.has(e.id)) {
-      const { invoice_number: _inv, ...rest } = e;
-      const updatedEntry: ExpenseEntryWithCase = { ...rest, billed: false };
-      updated.push(updatedEntry);
-      return updatedEntry;
-    }
-    return e;
+): Promise<{ updated: number; not_found: string[] }> {
+  if (ids.length === 0) return { updated: 0, not_found: [] };
+  const res = await brain.mutatePageArray(caseSlug, EXPENSES_FIELD, {
+    match: ids,
+    set: { billed: false },
+    unset: ["invoice_number"],
   });
-
-  return {
-    updated: updated.length,
-    not_found: notFound,
-    already_billed: [],
-    entries: result,
-  };
+  return { updated: res.updated_ids.length, not_found: res.not_found_ids };
 }
