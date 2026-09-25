@@ -506,6 +506,8 @@ interface ToolResponse {
     }>;
     href?: string;
     message?: string;
+    /** Full AI-generated text: shown untruncated with grounding in the chat card. */
+    aiText?: string;
     filterHref?: string;
     summary?: {
       caseTitle?: string;
@@ -868,7 +870,8 @@ async function executeEmailDraft(
       display: {
         kind: "summary",
         title: `Email-Entwurf: ${params.subject}`,
-        message: data.answer ? data.answer.slice(0, 200) + "..." : "Kein Entwurf generiert",
+        message: data.answer ? undefined : "Kein Entwurf generiert",
+        aiText: data.answer || undefined,
         items: [
           { label: "Betreff", value: params.subject },
           { label: "Empfänger", value: params.recipient ?? "—" },
@@ -920,15 +923,24 @@ async function executeDeadlineExtract(
       display: {
         kind: "summary",
         title: `Fristen extrahiert aus: ${page.title}`,
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 300) + "..."
-          : "Keine Fristen gefunden",
+        message: thinkData.answer ? undefined : "Keine Fristen gefunden",
+        aiText: thinkData.answer || undefined,
         items: [
           {
             label: "Dokument",
             value: page.title,
             href: `/dashboard/brain/${encodeURIComponent(page.slug)}`,
           },
+          // Only the start of the document is analysed — say so instead of
+          // letting a partial deadline list look complete.
+          ...(page.content.length > 8000
+            ? [
+                {
+                  label: "Hinweis",
+                  value: `Nur die ersten 8.000 von ${page.content.length.toLocaleString("de-AT")} Zeichen geprüft`,
+                },
+              ]
+            : []),
         ],
       },
     };
@@ -971,9 +983,8 @@ async function executeDocumentSummary(
       display: {
         kind: "summary",
         title: `Zusammenfassung: ${page.title}`,
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 400) + "..."
-          : "Keine Zusammenfassung verfügbar",
+        message: thinkData.answer ? undefined : "Keine Zusammenfassung verfügbar",
+        aiText: thinkData.answer || undefined,
         items: [
           {
             label: "Dokument",
@@ -1153,9 +1164,8 @@ async function executeClientUpdate(
       display: {
         kind: "summary",
         title: `Mandanten-Update: ${page.title}`,
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 300) + "..."
-          : "Kein Update generiert",
+        message: thinkData.answer ? undefined : "Kein Update generiert",
+        aiText: thinkData.answer || undefined,
         items: [
           {
             label: "Akte",
@@ -1197,9 +1207,8 @@ async function executeMeetingTasks(
       display: {
         kind: "summary",
         title: "Besprechungsnotizen analysiert",
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 400) + "..."
-          : "Keine Aufgaben extrahiert",
+        message: thinkData.answer ? undefined : "Keine Aufgaben extrahiert",
+        aiText: thinkData.answer || undefined,
         items: params.case_slug
           ? [
               {
@@ -1403,9 +1412,8 @@ async function executeTranslateText(
       kind: "summary",
       title: `Übersetzung nach ${params.target_language}`,
       href: "/dashboard/translate",
-      message: translated
-        ? `${translated.slice(0, 400)}${translated.length > 400 ? "..." : ""}`
-        : "Übersetzung abgeschlossen.",
+      message: translated ? undefined : "Übersetzung abgeschlossen.",
+      aiText: translated || undefined,
     },
   };
 }
@@ -1488,7 +1496,8 @@ async function executeDeepAnalysis(
       display: {
         kind: "summary",
         title: "Tiefenanalyse abgeschlossen",
-        message: data.summary?.slice(0, 400) ?? "Analyse durchgeführt",
+        message: data.summary ? undefined : "Analyse durchgeführt",
+        aiText: data.summary || undefined,
         items: params.slugs.map((s) => ({
           label: "Dokument",
           value: s,

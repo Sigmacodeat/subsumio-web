@@ -39,6 +39,19 @@ describe("check-grounding-invariant — rule", () => {
   });
 });
 
+describe("check-grounding-invariant — AI pipeline pages", () => {
+  test("reading an LLM-written pipeline page without a panel is a violation", () => {
+    const read =
+      "const p = await api.brain.getPage(`procedural-strategy/${caseSlug}`); <pre>{p.content}</pre>";
+    expect(checkSource(read)).toBe("violation");
+    expect(checkSource(`${read} <GroundedOutputPanel text={p.content} />`)).toBe("ok");
+  });
+
+  test("ordinary brain pages are not AI surfaces", () => {
+    expect(checkSource("await api.brain.getPage(`cases/${slug}`)")).toBe("no-ai");
+  });
+});
+
 describe("check-grounding-invariant — Office add-ins", () => {
   const grounded = `fetch(\`\${API_BASE}/api/legal/ground\`); "${AI_BADGE_LABEL}"; "${AI_NOTICE}"`;
 

@@ -7,6 +7,8 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -154,6 +156,10 @@ function PipelineStrategyCard({ caseSlug, lang }: { caseSlug: string; lang: stri
             <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
               {page.content}
             </pre>
+          </div>
+          <div className="mt-2 flex flex-col gap-2">
+            <AIActConformityBanner purpose="Verfahrensstrategie" compact />
+            <GroundedOutputPanel text={page.content} />
           </div>
         </div>
       )}

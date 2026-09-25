@@ -43,6 +43,12 @@ const AI_CALL_PATTERNS: RegExp[] = [
   // The daily briefing is fetched through a shared lib helper — the URL never
   // appears in the component, so the call-site pattern catches the consumer.
   /\bloadBriefing\(/,
+  // Copilot tools return AI text (deadline extraction, client update, summary,
+  // translation) that the chat renders in its tool result card.
+  /\bexecuteConfirmedTool\(|["'`]\/api\/copilot\/tools["'`]/,
+  // Pages the legal pipeline writes with an LLM (legal-pipeline.ts) and a
+  // surface later reads back verbatim through the brain page API.
+  /["'`]\/?(procedural-strategy|forensic-reports|settlement-analysis|cost-benefit|burden-of-proof|admissibility-checks|fact-gaps|enforcement-analysis|appeal-risk|insurance-coverage|counterclaim-risk|evidence-quality|mediation-adr|limitation-scan|cost-award|witness-expert|legal-drafts)\//,
 ];
 
 function walk(dir: string): string[] {

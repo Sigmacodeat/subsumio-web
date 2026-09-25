@@ -116,7 +116,8 @@ export default function AltlastenPage() {
               pipelineScore = typeof stateFm.total_score === "number" ? stateFm.total_score : null;
             }
 
-            // Try to get limitation scan
+            // Try to get limitation scan.
+            // grounding-exempt: only numeric frontmatter scores are read, no AI text is shown
             const limSlug = `limitation-scan/${slug}`;
             const limPage = await api.brain.getPage(limSlug).catch(() => null);
             if (limPage) {

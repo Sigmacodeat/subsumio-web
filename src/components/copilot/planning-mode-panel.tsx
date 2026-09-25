@@ -80,6 +80,41 @@ const _STATUS_LABELS_DE = {
   blocked: "Blockiert",
 };
 
+/**
+ * The parameters a proposed action will run with, in readable size and in
+ * full — the user confirms exactly what is shown here, so nothing may be cut
+ * off or squeezed into unreadable raw JSON.
+ */
+export function ProposalParams({ params }: { params: Record<string, unknown> }) {
+  const entries = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== null && v !== ""
+  );
+  return (
+    <dl className="mt-1 max-h-72 space-y-1 overflow-y-auto rounded bg-[color:var(--ds-surface)] p-1.5 text-xs text-[color:var(--ds-text)]">
+      {entries.map(([key, value]) => (
+        <div key={key}>
+          <dt className="font-medium text-[color:var(--ds-text-muted)]">
+            {key.replace(/_/g, " ")}
+          </dt>
+          <dd className="break-words whitespace-pre-wrap">
+            {Array.isArray(value) ? (
+              <ul className="list-disc pl-4">
+                {value.map((v, i) => (
+                  <li key={i}>{typeof v === "object" ? JSON.stringify(v) : String(v)}</li>
+                ))}
+              </ul>
+            ) : typeof value === "object" ? (
+              JSON.stringify(value, null, 2)
+            ) : (
+              String(value)
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps) {
   const { lang } = useLang();
   const isEn = lang === "en";
@@ -571,9 +606,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                                 </p>
                               )}
                               {Object.keys(proposal.params).length > 0 && (
-                                <pre className="mt-1 max-h-20 overflow-auto rounded bg-[color:var(--ds-surface)] p-1 font-[family-name:var(--font-jetbrains)] text-[8px] text-[color:var(--ds-text-muted)]">
-                                  {JSON.stringify(proposal.params, null, 1)}
-                                </pre>
+                                <ProposalParams params={proposal.params} />
                               )}
                               <div className="mt-1 flex items-center gap-1">
                                 <button
