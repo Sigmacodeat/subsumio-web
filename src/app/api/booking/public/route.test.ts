@@ -238,7 +238,9 @@ describe("POST /api/booking/public", () => {
     // Request hat denselben Slot inzwischen gebucht.
     mockFetch.mockImplementation((url: string, init?: RequestInit) => {
       if (init?.method === "POST" && String(url).endsWith("/api/pages")) {
-        return Promise.resolve(new Response("conflict", { status: 409 }));
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: "page_exists" }), { status: 409 })
+        );
       }
       return Promise.resolve(enginePagesFor(String(url)));
     });
@@ -266,26 +268,31 @@ describe("POST /api/booking/public", () => {
         (c[1] as RequestInit | undefined)?.method === "POST" && String(c[0]).endsWith("/api/pages")
     );
     expect(writes).toHaveLength(1);
-    const slug = JSON.parse(String((writes[0][1] as RequestInit).body)).slug as string;
+    const written = JSON.parse(String((writes[0][1] as RequestInit).body));
+    expect(written.if_absent).toBe(true);
+    const slug = written.slug as string;
     expect(slug).toBe(
       `legal/bookings/${date.replace(/\D/g, "")}-${slot.start.replace(/\D/g, "").slice(0, 12)}`
     );
   });
 
-  test("Re-Buchung eines stornierten Slots reaktiviert die Page statt 409", async () => {
+  test("Re-Buchung eines stornierten Slots schreibt die nächste Generation create-only", async () => {
     const date = futureDate();
     // Der deterministische Slug bleibt nach einer Stornierung belegt — die
-    // Route muss die alte Page reaktivieren statt den Slot für immer zu
-    // sperren.
+    // Route weicht auf den nächsten deterministischen Slug aus (…-r1), wieder
+    // create-only, statt die stornierte Seite zu überschreiben.
     mockFetch.mockImplementation((url: string, init?: RequestInit) => {
       const u = String(url);
       if (init?.method === "POST" && u.endsWith("/api/pages")) {
-        return Promise.resolve(new Response("conflict", { status: 409 }));
+        const slug = JSON.parse(String(init.body)).slug as string;
+        if (slug.endsWith("-r1")) {
+          return Promise.resolve(new Response(JSON.stringify({ slug }), { status: 200 }));
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: "page_exists" }), { status: 409 })
+        );
       }
       if (u.includes("/api/pages/legal%2Fbookings%2F")) {
-        if (init?.method === "PATCH") {
-          return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-        }
         return Promise.resolve(
           new Response(JSON.stringify({ frontmatter: { status: "cancelled" } }), { status: 200 })
         );
@@ -309,10 +316,90 @@ describe("POST /api/booking/public", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).data.confirmed).toBe(true);
 
-    const patches = mockFetch.mock.calls.filter(
-      (c) => (c[1] as RequestInit | undefined)?.method === "PATCH"
+    const writes = mockFetch.mock.calls
+      .filter((c) => (c[1] as RequestInit | undefined)?.method === "POST")
+      .map((c) => JSON.parse(String((c[1] as RequestInit).body)));
+    expect(writes).toHaveLength(2);
+    expect(writes.every((w) => w.if_absent === true)).toBe(true);
+    expect(writes[1].slug).toBe(`${writes[0].slug}-r1`);
+    // Nie ein Überschreiben/PATCH der stornierten Seite.
+    expect(mockFetch.mock.calls.some((c) => (c[1] as RequestInit)?.method === "PATCH")).toBe(false);
+  });
+
+  test("zwei parallele Buchungen desselben Slots: genau eine gewinnt (create-only)", async () => {
+    const date = futureDate();
+    // In-Memory-Engine mit echter if_absent-Semantik: ein belegter Slug wird
+    // mit 409 page_exists abgelehnt, nichts wird überschrieben.
+    const store = new Map<string, { frontmatter: Record<string, unknown> }>();
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (init?.method === "POST" && u.endsWith("/api/pages")) {
+        const body = JSON.parse(String(init.body));
+        if (body.if_absent !== true && store.has(body.slug)) {
+          store.set(body.slug, { frontmatter: body.frontmatter });
+          return new Response(JSON.stringify({ slug: body.slug }), { status: 200 });
+        }
+        if (store.has(body.slug)) {
+          return new Response(JSON.stringify({ error: "page_exists" }), { status: 409 });
+        }
+        store.set(body.slug, { frontmatter: body.frontmatter });
+        return new Response(JSON.stringify({ slug: body.slug }), { status: 200 });
+      }
+      const m = u.match(/\/api\/pages\/(legal%2Fbookings%2F[^?]+)/);
+      if (m) {
+        const page = store.get(decodeURIComponent(m[1]));
+        return page
+          ? new Response(JSON.stringify(page), { status: 200 })
+          : new Response("{}", { status: 404 });
+      }
+      return enginePagesFor(u);
+    });
+
+    const getRes = await GET(
+      new Request(`http://localhost/api/booking/public?date=${date}`) as unknown as NextRequest
     );
-    expect(patches).toHaveLength(1);
+    const slot = (await getRes.json()).data.slots[0];
+    if (!slot) return;
+
+    const post = (name: string) =>
+      POST(
+        new Request("http://localhost/api/booking/public", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...baseBody(slot.start, date), name }),
+        }) as unknown as NextRequest
+      );
+    const [a, b] = await Promise.all([post("Erste Person"), post("Zweite Person")]);
+    expect([a.status, b.status].sort()).toEqual([200, 409]);
+    expect(store.size).toBe(1);
+    const winner = a.status === 200 ? "Erste Person" : "Zweite Person";
+    expect([...store.values()][0].frontmatter.client_name).toBe(winner);
+  });
+
+  test("Engine-Fehler beim Lesen der Belegung → 503 statt 'alles frei'", async () => {
+    const date = futureDate();
+    mockFetch.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes("legal%2Fsettings%2Fkanzlei")) {
+        return Promise.resolve(new Response(JSON.stringify(ENABLED_SETTINGS), { status: 200 }));
+      }
+      return Promise.resolve(new Response("boom", { status: 500 }));
+    });
+    const res = await GET(
+      new Request(`http://localhost/api/booking/public?date=${date}`) as unknown as NextRequest
+    );
+    expect(res.status).toBe(503);
+    const post = await POST(
+      new Request("http://localhost/api/booking/public", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(baseBody(`${date}T08:00:00.000Z`, date)),
+      }) as unknown as NextRequest
+    );
+    expect(post.status).toBe(503);
+    expect(
+      mockFetch.mock.calls.some((c) => (c[1] as RequestInit | undefined)?.method === "POST")
+    ).toBe(false);
   });
 
   test("lehnt den Honeypot ab", async () => {

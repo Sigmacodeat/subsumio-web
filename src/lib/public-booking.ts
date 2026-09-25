@@ -67,17 +67,13 @@ async function listTypedPages(
   headers: Record<string, string>,
   type: string
 ): Promise<EnginePage[]> {
-  try {
-    // Cursor-paginated (the engine's bare array has no `pages` wrapper —
-    // pre-fix `data.pages ?? []` silently returned nothing, so bookings
-    // could collide). Tombstoned slots stay out of the availability set.
-    return (await listEnginePages(headers, type, 10_000, {
-      strict: true,
-      timeoutMs: 15_000,
-    })) as unknown as EnginePage[];
-  } catch {
-    return [];
-  }
+  // Cursor-paginated and strict: a failed read throws instead of looking
+  // like "no bookings" — otherwise every slot would be offered as free.
+  // Tombstoned slots stay out of the availability set.
+  return (await listEnginePages(headers, type, 10_000, {
+    strict: true,
+    timeoutMs: 15_000,
+  })) as unknown as EnginePage[];
 }
 
 /** Belegte Zeitfenster eines Tages aus booking- und appointment-Seiten. */
@@ -126,7 +122,10 @@ export async function bookedRangesForDate(
   return ranges;
 }
 
-/** Freie Slots eines Tages — Quelle der Wahrheit für GET und POST. */
+/**
+ * Freie Slots eines Tages — Quelle der Wahrheit für GET und POST.
+ * Wirft, wenn die Belegung nicht gelesen werden kann (nie "alles frei").
+ */
 export async function availableSlots(
   brainId: string,
   dateIso: string
