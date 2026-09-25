@@ -84,8 +84,11 @@ const mockEnqueue = vi.mocked(enqueueAllPostUploadTasks);
 
 /** Matter read by the archive check (GET /api/pages/<case>). */
 let casePage: Record<string, unknown> = { type: "legal_case", frontmatter: { status: "active" } };
+/** Matter the engine bound to the upload at presign time (echoed by confirm). */
+let engineCaseSlug: string | undefined = "legal/cases/1";
 
 beforeEach(() => {
+  engineCaseSlug = "legal/cases/1";
   casePage = { type: "legal_case", frontmatter: { status: "active" } };
   vi.stubGlobal(
     "fetch",
@@ -98,6 +101,7 @@ beforeEach(() => {
             extraction_status: "ready",
             extraction_method: "pdf",
             async: false,
+            ...(engineCaseSlug ? { case_slug: engineCaseSlug } : {}),
           })
     )
   );
@@ -122,7 +126,7 @@ function makeRequest(body: unknown): NextRequest {
 describe("POST /api/upload/confirm", () => {
   it("proxies to engine and enqueues post-upload tasks with case_slug", async () => {
     const req = makeRequest({
-      upload_id: "upl-1",
+      upload_token: "upl-1",
       case_slug: "legal/cases/1",
       defer_pipeline: false,
     });
@@ -158,7 +162,7 @@ describe("POST /api/upload/confirm", () => {
 
   it("refuses to file into an archived matter (409), nothing confirmed", async () => {
     casePage = { type: "legal_case", frontmatter: { status: "archived" } };
-    const res = await POST(makeRequest({ upload_id: "upl-9", case_slug: "legal/cases/1" }));
+    const res = await POST(makeRequest({ upload_token: "upl-9", case_slug: "legal/cases/1" }));
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("case_archived");
     const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
@@ -167,8 +171,9 @@ describe("POST /api/upload/confirm", () => {
   });
 
   it("enqueues only analyze task when no case_slug", async () => {
+    engineCaseSlug = undefined;
     const req = makeRequest({
-      upload_id: "upl-2",
+      upload_token: "upl-2",
       defer_pipeline: true,
     });
     const res = await POST(req);
@@ -189,11 +194,12 @@ describe("POST /api/upload/confirm", () => {
           title: "Async.pdf",
           async: true,
           extraction_status: "processing",
+          case_slug: "legal/cases/2",
         })
       )
     );
 
-    const req = makeRequest({ upload_id: "upl-3", case_slug: "legal/cases/2" });
+    const req = makeRequest({ upload_token: "upl-3", case_slug: "legal/cases/2" });
     const res = await POST(req);
     expect(res.status).toBe(200);
 
@@ -203,13 +209,36 @@ describe("POST /api/upload/confirm", () => {
     expect(mockEnqueue.mock.calls[0][0].case_slug).toBe("legal/cases/2");
   });
 
+  it("files into the matter bound to the upload, not the one in the confirm body", async () => {
+    engineCaseSlug = "legal/cases/1";
+    const res = await POST(makeRequest({ upload_token: "upl-5", case_slug: "legal/cases/fremd" }));
+    expect(res.status).toBe(200);
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue.mock.calls[0][0].case_slug).toBe("legal/cases/1");
+  });
+
+  it("books no second upload unit (the token already reserved it)", async () => {
+    const { recordQuota } = await import("@/lib/api-handler");
+    vi.mocked(recordQuota).mockClear();
+    const res = await POST(makeRequest({ upload_token: "upl-6", case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(200);
+    expect(recordQuota).not.toHaveBeenCalled();
+  });
+
+  it("rejects a body without upload token", async () => {
+    const res = await POST(makeRequest({ case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(400);
+    const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.some(([u]) => String(u).endsWith("/api/upload/confirm"))).toBe(false);
+  });
+
   it("still returns engine response when slug is missing", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => Response.json({ error: "no_slug" }, { status: 400 }))
     );
 
-    const req = makeRequest({ upload_id: "upl-bad" });
+    const req = makeRequest({ upload_token: "upl-bad" });
     const res = await POST(req);
     expect(res.status).toBe(400);
 

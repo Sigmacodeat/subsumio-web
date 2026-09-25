@@ -3,6 +3,7 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { getAuditExtra, setAuditExtra, slugFromRoutePath } from "@/lib/audit-context";
 import { archiveCaseDocuments, restoreCaseDocuments } from "@/lib/case-cascade";
+import { removeFromCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   GUARD_READ_FAILED,
@@ -546,6 +547,16 @@ export const DELETE = createHandler(
         );
         if (delRes.status === 404) return apiNotFound("not_found");
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
+        // A deleted document also leaves its matter's document list (matter
+        // view, matter export). Best effort: the tombstone above already hides
+        // it everywhere that reads the document itself.
+        if (docCaseSlug) {
+          await removeFromCaseDocuments(ctx.headers, docCaseSlug, decodedSlug).catch((err) => {
+            log.warn("[pages/...slug] matter document list not updated", {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+        }
       }
 
       if (deadlinePage) {

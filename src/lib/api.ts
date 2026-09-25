@@ -360,6 +360,9 @@ function brainListPageWithCursor(options: Parameters<typeof brainListPagesRaw>[0
   );
 }
 
+/** Bound for matter selection lists (`api.cases.list`). */
+const CASE_PICKER_MAX = 10_000;
+
 export const api = {
   search(query: string, limit = 10, type?: string): Promise<SearchResult[]> {
     const params = new URLSearchParams({ q: query, limit: String(limit) });
@@ -895,9 +898,19 @@ export const api = {
 
     /** Allocate the next sequential Aktenzeichen for this Kanzlei (yearly-resetting). */
     allocateCaseNumber(prefix?: string): Promise<{ caseNumber: string }> {
-      return request("/api/legal/case-number/allocate", {
-        method: "POST",
-        body: JSON.stringify(prefix ? { prefix } : {}),
+      // The route answers apiSuccess → { data: { caseNumber } }; request() does not unwrap.
+      return requestUncached<{ data?: { caseNumber?: string } }>(
+        "/api/legal/case-number/allocate",
+        {
+          method: "POST",
+          body: JSON.stringify(prefix ? { prefix } : {}),
+        }
+      ).then((res) => {
+        const caseNumber = res?.data?.caseNumber;
+        if (typeof caseNumber !== "string" || !caseNumber) {
+          throw new Error("Aktenzeichen konnte nicht vergeben werden");
+        }
+        return { caseNumber };
       });
     },
 
@@ -3330,11 +3343,18 @@ export const api = {
   },
 
   cases: {
+    /**
+     * Every matter (not deleted), for selection lists. Pages through the page
+     * listing — the full-text search this used before answers an empty query
+     * with an empty list, so every matter picker stayed empty. `limit` is a
+     * legacy hint: a picker must offer every matter, so it never cuts below
+     * the listing bound.
+     */
     list(params?: { type?: string; limit?: number }): Promise<BrainPage[]> {
-      const searchParams = new URLSearchParams();
-      searchParams.set("type", params?.type ?? "legal_case");
-      if (params?.limit) searchParams.set("limit", String(params.limit));
-      return request(`/api/search?type=legal_case&limit=${params?.limit ?? 200}`);
+      return api.brain.listAllPages({
+        type: params?.type ?? "legal_case",
+        max: Math.max(params?.limit ?? 0, CASE_PICKER_MAX),
+      });
     },
   },
 

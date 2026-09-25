@@ -5,6 +5,7 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { TRASH_TYPES, toTrashItem, type TrashItem } from "@/lib/trash";
 import { getAuditExtra, setAuditExtra } from "@/lib/audit-context";
 import { canRestoreCase, restoreCaseDocuments } from "@/lib/case-cascade";
+import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 import { logger } from "@/lib/logger";
@@ -201,6 +202,28 @@ export const POST = createHandler(
     if (!patchRes.ok) {
       log.error("[trash] restore failed", { status: patchRes.status });
       return apiError("engine_unreachable", "Element konnte nicht wiederhergestellt werden", 503);
+    }
+
+    // A restored document returns to its matter's document list (deleting it
+    // took it off that list). Best effort — the document itself is restored.
+    if (isTombstonedPage && caseSlug && pageType === "document") {
+      await reconcileCaseDocuments(ctx.headers, caseSlug, {
+        id: body.slug,
+        slug: body.slug,
+        name:
+          (typeof fm.source_filename === "string" && fm.source_filename) ||
+          (page as { title?: string }).title ||
+          body.slug.split("/").pop() ||
+          body.slug,
+        url: `/api/files/${body.slug}`,
+        uploadedAt: typeof fm.uploaded_at === "string" ? fm.uploaded_at : now,
+        size: typeof fm.doc_size === "number" ? fm.doc_size : 0,
+        kind: "document",
+      }).catch((err) => {
+        log.warn("[trash] matter document list not updated", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
     }
 
     // Restoring a matter reactivates the documents the archive cascade

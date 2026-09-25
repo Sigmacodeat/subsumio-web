@@ -35,6 +35,7 @@ import { suggestFolder } from "@/lib/vault-organization";
 import { buildFolderTree, folderMatches } from "@/lib/folder-tree";
 import { FolderTree, FOLDER_DND_MIME } from "@/components/legal/folder-tree";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface DocJurisdiction {
   jurisdiction: string;
@@ -46,6 +47,7 @@ export function DocumentsTab() {
   const ctx = useMatterDetail();
   const { t } = useLang();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -1320,30 +1322,47 @@ export function DocumentsTab() {
                   disabled={caseData?.status === "archived"}
                   onClick={async () => {
                     const docSlug = doc.slug || doc.url;
-                    if (docSlug && isOnline()) {
-                      try {
-                        const docSlugPath = docSlug.split("/").map(encodeURIComponent).join("/");
-                        await csrfFetch(`/api/pages/${docSlugPath}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            frontmatter: {
-                              case_slug: null,
-                              assignment_status: "unassigned",
-                              intake_status: "needs_assignment",
-                              unassigned_at: new Date().toISOString(),
-                              // Removing a document from the wrong matter is
-                              // a triage action, never a deletion. Keeping the
-                              // original available prevents evidence loss and
-                              // lets the user reassign it from the inbox.
-                              tombstoned_at: null,
-                            },
-                            merge: true,
-                          }),
-                        });
-                      } catch {
-                        /* best effort */
+                    if (!docSlug || !caseData?.slug) return;
+                    if (!isOnline()) {
+                      addToast({
+                        type: "error",
+                        title: "Keine Verbindung",
+                        description: "Dokumente können nur online aus der Akte entfernt werden.",
+                      });
+                      return;
+                    }
+                    const ok = await confirm({
+                      title: "Aus Akte entfernen?",
+                      message: `„${doc.name}" wird aus dieser Akte entfernt und kommt zur Zuordnung in den Posteingang. Das Dokument selbst wird nicht gelöscht.`,
+                      confirmLabel: "Entfernen",
+                      variant: "danger",
+                    });
+                    if (!ok) return;
+                    // Removing a document from the wrong matter is a triage
+                    // action, never a deletion: it leaves the matter's list
+                    // (and its export) and can be reassigned from the inbox.
+                    try {
+                      const res = await csrfFetch("/api/cases/documents/detach", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ case_slug: caseData.slug, doc_slug: docSlug }),
+                      });
+                      if (!res.ok) {
+                        // apiError: { error: "<deutscher Text>", code }
+                        const payload = (await res.json().catch(() => ({}))) as {
+                          error?: string;
+                        };
+                        throw new Error(payload.error ?? "");
                       }
+                      addToast({ type: "success", title: "Dokument aus der Akte entfernt" });
+                    } catch (err) {
+                      addToast({
+                        type: "error",
+                        title: "Entfernen fehlgeschlagen",
+                        description:
+                          (err instanceof Error && err.message) ||
+                          "Das Dokument ist weiterhin in der Akte. Bitte erneut versuchen.",
+                      });
                     }
                     await ctx.refreshCaseData();
                   }}

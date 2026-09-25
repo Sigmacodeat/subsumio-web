@@ -462,8 +462,10 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
         body: JSON.stringify({ slug: params.slug }),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `HTTP ${res.status}`);
+        // apiError: { error: "<deutscher Text>", code } — e.g. a document whose
+        // text extraction cannot be re-run has to be uploaded again.
+        const payload = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error || `HTTP ${res.status}`);
       }
       return res.json();
     },
@@ -483,17 +485,20 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
       }
       return { previous };
     },
-    onError: (_err, _params, context) => {
+    onError: (err, _params, context) => {
       if (context?.previous) {
         queryClient.setQueryData(QUERY_KEY, context.previous);
       }
+      const serverText =
+        err instanceof Error && !err.message.startsWith("HTTP ") ? err.message : "";
       addToast({
         type: "error",
         title: lang === "en" ? "Retry failed" : "Erneute Verarbeitung fehlgeschlagen",
         description:
           lang === "en"
             ? "The document could not be requeued. Please try again later."
-            : "Das Dokument konnte nicht erneut eingereiht werden. Bitte versuchen Sie es später erneut.",
+            : serverText ||
+              "Das Dokument konnte nicht erneut eingereiht werden. Bitte versuchen Sie es später erneut.",
         duration: 5000,
       });
     },

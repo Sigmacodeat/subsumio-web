@@ -39,7 +39,9 @@ export const GET = createHandler(
     const members = await store.members(room.id);
     // The matter's documents the host can pick from (walls apply: ctx.headers).
     const matterDocs = role.canManage
-      ? (await listEnginePages(ctx.headers, "document", 2_000))
+      ? // The whole document type, not the newest N of the firm: the matter
+        // filter runs afterwards, so a cap would hide older matter documents.
+        (await listEnginePages(ctx.headers, "document", 50_000))
           .filter((p) => p.frontmatter?.case_slug === room.caseSlug)
           .map((p) => ({ slug: p.slug, title: p.title }))
       : [];
