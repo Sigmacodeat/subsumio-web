@@ -604,6 +604,29 @@ export function unbillEntries(entries: TimeEntryWithCase[], ids: string[]): Mark
 
 // ── Passive Time Tracking (W3.2) ───────────────────────────────────────
 
+/**
+ * Harte Obergrenze für einen laufenden Timer: 12 Stunden seit `started_at`.
+ * Der Inactivity-Cron stoppt nur bei fehlendem Heartbeat — ein versehentlich
+ * über Nacht laufender Timer mit offenem Tab (der Heartbeat läuft weiter)
+ * würde sonst unbegrenzt Zeit gutschreiben. Erzwungen an zwei Stellen:
+ * serverseitig in der Heartbeat-Route (Auto-Stop + 409) und im
+ * Inactivity-Cron als Fallback, falls der Client nie wieder heartbeats.
+ */
+export const TIMER_MAX_DURATION_MS = 12 * 60 * 60 * 1000;
+
+/** ISO-Ende an der Obergrenze: `started_at` + TIMER_MAX_DURATION_MS. */
+export function timerMaxDurationEnd(activity: Pick<CurrentActivity, "started_at">): string {
+  return new Date(new Date(activity.started_at).getTime() + TIMER_MAX_DURATION_MS).toISOString();
+}
+
+/** true, wenn die laufende Aktivität die Höchstdauer überschritten hat. */
+export function timerExceededMaxDuration(
+  activity: Pick<CurrentActivity, "started_at">,
+  now: Date = new Date()
+): boolean {
+  return now.getTime() - new Date(activity.started_at).getTime() > TIMER_MAX_DURATION_MS;
+}
+
 function timeEntrySlug(userId: string, startedAt: string): string {
   const timestamp = new Date(startedAt).getTime().toString(36);
   const hash = createHash("sha256").update(`${userId}${startedAt}`).digest("hex").slice(0, 8);
@@ -758,6 +781,9 @@ export async function clearCurrentActivity(
  * `endedAt` overrides the end timestamp — the inactivity cron passes the
  * last real heartbeat (`last_activity_at`) so the idle tail between the
  * lawyer's last action and the cron run is not billed.
+ *
+ * The end is always clamped to `started_at + TIMER_MAX_DURATION_MS`: the
+ * 12h cap must hold for every stop path, not just the heartbeat route.
  */
 export async function stopCurrentActivity(
   brainId: string,
@@ -768,8 +794,13 @@ export async function stopCurrentActivity(
   const current = await getCurrentActivity(brainId, userId, callerHeaders);
   if (!current) return null;
 
-  const endedAt = endedAtOverride ?? new Date().toISOString();
+  const requestedEnd = endedAtOverride ?? new Date().toISOString();
   const startedAt = new Date(current.started_at);
+  const capEndMs = startedAt.getTime() + TIMER_MAX_DURATION_MS;
+  // NaN-safe: a corrupt started_at must not throw inside toISOString().
+  const endedAt = Number.isFinite(capEndMs)
+    ? new Date(Math.min(new Date(requestedEnd).getTime(), capEndMs)).toISOString()
+    : requestedEnd;
   const duration = Math.floor((new Date(endedAt).getTime() - startedAt.getTime()) / 1000);
 
   // Only create entry if duration > 60 seconds (1 minute minimum)

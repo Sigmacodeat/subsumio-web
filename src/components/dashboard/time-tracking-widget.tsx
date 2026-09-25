@@ -90,7 +90,15 @@ export function TimeTrackingWidget() {
     if (!currentActivity) return;
 
     const interval = setInterval(() => {
-      csrfFetch("/api/time-tracking/heartbeat", { method: "POST" });
+      csrfFetch("/api/time-tracking/heartbeat", { method: "POST" })
+        .then((res) => {
+          // 409 = server stopped the timer at the max-duration cap.
+          if (res.status === 409) {
+            setCurrentActivity(null);
+            setElapsed(0);
+          }
+        })
+        .catch(() => {});
     }, 60_000);
 
     return () => clearInterval(interval);

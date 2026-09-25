@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/api", () => ({ api: { time: {}, brain: {} } }));
+vi.mock("@/lib/api", () => ({ api: { time: {}, brain: {}, expenses: {} } }));
 vi.mock("@/lib/offline-store", () => ({ isOnline: () => true, enqueueMutation: vi.fn() }));
 
 import { markInvoicedEntriesBilled, type MarkInvoicedEntriesDeps } from "./invoice-mark-billed";
@@ -10,8 +10,12 @@ function deps(overrides: Partial<MarkInvoicedEntriesDeps> = {}): MarkInvoicedEnt
   return {
     isOnline: () => true,
     markBilled: vi.fn(async () => ({ updated: 1, not_found: [], invoice_number: "R-1" })),
-    getPage: vi.fn(async () => ({ frontmatter: {} })),
-    updatePage: vi.fn(async () => ({ slug: "cases/a", success: true })),
+    markExpensesBilled: vi.fn(async () => ({
+      updated: 1,
+      not_found: [],
+      already_billed: [],
+      invoice_number: "R-1",
+    })),
     enqueueMutation: vi.fn(async () => {}),
     ...overrides,
   };
@@ -39,35 +43,24 @@ describe("markInvoicedEntriesBilled", () => {
       invoice_number: "R-1",
       case_slug: "cases/a",
     });
-    expect(d.updatePage).not.toHaveBeenCalled();
+    expect(d.markExpensesBilled).not.toHaveBeenCalled();
   });
 
-  it("patches only expenses, on a fresh copy of the matter, keeping entries added meanwhile", async () => {
-    const d = deps({
-      getPage: vi.fn(async () => ({
-        frontmatter: {
-          time_entries: [{ id: "t-new" }],
-          expenses: [
-            { id: "e1", amount: 10 },
-            { id: "e-new", amount: 5 },
-          ],
-        },
-      })),
-    });
+  it("sends expenses to /api/expenses/mark-billed instead of patching the matter", async () => {
+    const d = deps();
     const failed = await markInvoicedEntriesBilled(
       { ...base, timeEntryIds: [], expenseIds: ["e1"] },
       d
     );
     expect(failed).toBe(false);
-    expect(d.updatePage).toHaveBeenCalledWith({
-      slug: "cases/a",
-      frontmatter: {
-        expenses: [
-          { id: "e1", amount: 10, billed: true, invoice_number: "R-1" },
-          { id: "e-new", amount: 5 },
-        ],
-      },
+    // The server route owns the billed guard + already_billed reporting +
+    // audit trail — the client never writes a local expenses snapshot.
+    expect(d.markExpensesBilled).toHaveBeenCalledWith({
+      entry_ids: ["e1"],
+      invoice_number: "R-1",
+      case_slug: "cases/a",
     });
+    expect(d.enqueueMutation).not.toHaveBeenCalled();
   });
 
   it("reports a failure instead of throwing when mark-billed fails (no retry → no duplicate invoice)", async () => {
@@ -80,7 +73,18 @@ describe("markInvoicedEntriesBilled", () => {
       markInvoicedEntriesBilled({ ...base, timeEntryIds: ["t1"], expenseIds: ["e1"] }, d)
     ).resolves.toBe(true);
     // The expense step still ran.
-    expect(d.updatePage).toHaveBeenCalledTimes(1);
+    expect(d.markExpensesBilled).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a failure when expense mark-billed rejects (e.g. all ids unknown → 404)", async () => {
+    const d = deps({
+      markExpensesBilled: vi.fn(async () => {
+        throw new Error("HTTP 404 expense_not_found");
+      }),
+    });
+    await expect(
+      markInvoicedEntriesBilled({ ...base, timeEntryIds: [], expenseIds: ["e1"] }, d)
+    ).resolves.toBe(true);
   });
 
   it("offline, queues only the lists the invoice touched", async () => {
@@ -91,5 +95,6 @@ describe("markInvoicedEntriesBilled", () => {
       payload: { slug: "cases/a", frontmatter: { time_entries: [{ id: "t1" }] } },
     });
     expect(d.markBilled).not.toHaveBeenCalled();
+    expect(d.markExpensesBilled).not.toHaveBeenCalled();
   });
 });
