@@ -26,6 +26,7 @@ const COURT_DIRS: Record<CaseCourt, string> = {
   "RIS-Justiz": "at-judikatur",
   VwGH: "at-judikatur-vwgh",
   VfGH: "at-judikatur-vfgh",
+  ECLI: "at-judikatur",
 };
 
 type CaseIndex = Map<string, string>; // key → filename

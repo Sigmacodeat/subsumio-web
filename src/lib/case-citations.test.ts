@@ -53,6 +53,34 @@ describe("extractCaseCitations", () => {
   test("dates and plain fractions are not Geschäftszahlen", () => {
     expect(cited("fällig am 12/05/2020, Quote 3/4")).toEqual([]);
   });
+
+  test("OGH Geschäftszahl with check letter (1 Ob 23/24x)", () => {
+    expect(cited("OGH 1 Ob 23/24x")).toEqual(["OGH:1 Ob 23/24x"]);
+  });
+
+  test("an OGH ECLI resolves to its Geschäftszahl", () => {
+    expect(cited("ECLI:AT:OGH0002:2024:0010OB00023.24X.0101.000.")).toEqual(["OGH:1 Ob 23/24x"]);
+    expect(cited("ECLI:AT:OGH0002:2005:009OBA00089.05M.0101.000")).toEqual(["OGH:9 ObA 89/05m"]);
+    expect(cited("ECLI:AT:OGH0002:2015:0140OS00110.15F.0101.000")).toEqual(["OGH:14 Os 110/15f"]);
+  });
+
+  test("ECLI and Geschäftszahl of the same decision count once", () => {
+    expect(cited("1 Ob 23/24x (ECLI:AT:OGH0002:2024:0010OB00023.24X.0101.000)")).toEqual([
+      "OGH:1 Ob 23/24x",
+    ]);
+  });
+
+  test("Rechtssatz and VwGH ECLIs", () => {
+    expect(cited("ECLI:AT:OGH0002:2001:RS0115754")).toEqual(["RIS-Justiz:RS0115754"]);
+    expect(cited("ECLI:AT:VWGH:2018:RA2018070485.L00")).toEqual(["VwGH:Ra 2018/07/0485"]);
+  });
+
+  test("an ECLI we cannot map is still counted, with a RIS search link", () => {
+    const [c] = extractCaseCitations("ECLI:AT:BVWG:2020:W123.2000000.1.00");
+    expect(c.court).toBe("ECLI");
+    expect(c.cited).toBe("ECLI:AT:BVWG:2020:W123.2000000.1.00");
+    expect(c.searchUrl).toMatch(/^https:\/\/www\.ris\.bka\.gv\.at\/Ergebnis\.wxe\?/);
+  });
 });
 
 describe("keysForFilename", () => {

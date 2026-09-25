@@ -452,6 +452,13 @@ export function inferAnswerJurisdiction(
   return fallback ?? defaultGroundingJurisdiction();
 }
 
+/** "§ 6 Abs 1 Z 5" → "§ 6", "Art. 6 Abs. 1 lit. b" → "Art. 6"; unparsable → as given. */
+export function baseNormParagraph(paragraph: string): string {
+  const ref = parseNormRef(paragraph);
+  if (!ref) return paragraph;
+  return `${ref.kind === "art" ? "Art." : "§"} ${ref.num}`;
+}
+
 interface ResolvedNorm {
   text: string | null;
   sourceUrl: string | null;
@@ -474,8 +481,11 @@ async function resolveNormText(
   // source of the official RIS link.
   const atNorm = await lookupAtNormFile(meta, paragraph);
   let text = atNorm?.text ?? null;
-  if (!text) text = await lookupSplitParagraph(code, paragraph, codeKey);
-  if (!text) text = await lookupCorpusParagraph(codeKey, paragraph);
+  // Subdivisions ("Abs 1 Z 5", "lit a", "Satz 2") are part of the norm's
+  // text, not of its file or heading — look the norm itself up.
+  const base = baseNormParagraph(paragraph);
+  if (!text) text = await lookupSplitParagraph(code, base, codeKey);
+  if (!text) text = await lookupCorpusParagraph(codeKey, base);
 
   let frontmatter = atNorm?.frontmatter ?? {};
   let sourceUrl: string | null = null;
