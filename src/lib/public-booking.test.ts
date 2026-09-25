@@ -52,6 +52,28 @@ describe("public booking availability", () => {
     expect(at("11:00")?.status).toBe("available");
   });
 
+  it("blocks the full length of a calendar-editor appointment (`duration`)", async () => {
+    const date = futureDate();
+    fetchMock.mockImplementation(async (url: string) => {
+      const u = String(url);
+      if (u.includes("legal%2Fsettings%2Fkanzlei")) return Response.json(SETTINGS);
+      if (u.includes("type=appointment")) {
+        return Response.json([
+          {
+            slug: "legal/appointments/hearing",
+            frontmatter: { date, time: "09:00", duration: 120, status: "scheduled" },
+          },
+        ]);
+      }
+      return Response.json([]);
+    });
+    const { slots } = await availableSlots("brain-at", date);
+    const at = (hhmm: string) =>
+      slots.find((s) => s.start === zonedWallTimeToUtc(date, hhmm, "Europe/Vienna").toISOString());
+    expect(at("10:30")?.status).toBe("booked");
+    expect(at("11:00")?.status).toBe("available");
+  });
+
   it("reads past the engine's 100-row page cap", async () => {
     const date = futureDate();
     // 150 unrelated bookings on other days, then the one blocking 09:00.

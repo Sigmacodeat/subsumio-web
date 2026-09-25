@@ -112,8 +112,14 @@ export async function bookedRangesForDate(
     // firm zone, not the server's.
     const start = zonedWallTimeToUtc(fm.date, time, timeZone);
     if (Number.isNaN(start.getTime())) continue;
+    // Calendar-editor appointments store `duration`, WhatsApp ones
+    // `duration_minutes` — a 2-hour hearing must block 2 hours, not 30 min.
     const duration =
-      typeof fm.duration_minutes === "number" && fm.duration_minutes > 0 ? fm.duration_minutes : 30;
+      typeof fm.duration_minutes === "number" && fm.duration_minutes > 0
+        ? fm.duration_minutes
+        : typeof fm.duration === "number" && fm.duration > 0
+          ? fm.duration
+          : 30;
     ranges.push({
       start: start.toISOString(),
       end: new Date(start.getTime() + duration * 60_000).toISOString(),
