@@ -158,8 +158,10 @@ export default function DraftingPage() {
     if (!canGenerate) return;
     setEnqueuing(true);
     try {
-      const res = await fetch("/api/autonomous/tasks", {
+      const res = await csrfFetch("/api/autonomous/tasks", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "legal_draft_generation",

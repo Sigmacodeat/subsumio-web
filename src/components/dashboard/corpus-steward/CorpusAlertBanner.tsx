@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { Sparkles, AlertTriangle, CheckCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { csrfFetch } from "@/lib/csrf";
 
 interface CorpusAlert {
   id: string;
@@ -65,7 +66,7 @@ export function CorpusAlertBanner() {
 
   const markReadMut = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/corpus-alerts", {
+      const res = await csrfFetch("/api/admin/corpus-alerts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),

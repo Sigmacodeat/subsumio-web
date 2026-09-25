@@ -16,6 +16,7 @@ import { interpretCreditScore } from "@/lib/credit-check";
 import { generateRubrum, type RubrumParty } from "@/lib/letterhead-rubrum";
 import { validateFaxNumber, formatFaxNumber } from "@/lib/fax-gateway";
 import { isRetiredApiPath } from "@/lib/retired-routes";
+import { csrfFetch } from "@/lib/csrf";
 
 const CAPABILITIES = [
   {
@@ -410,7 +411,7 @@ function FachrechnerCard() {
           input.nachlasswert = num("nachlasswert") ?? 0;
           break;
       }
-      const res = await fetch("/api/fachrechner", {
+      const res = await csrfFetch("/api/fachrechner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

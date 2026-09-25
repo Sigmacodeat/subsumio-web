@@ -29,6 +29,7 @@ import type { StatuteOfLimitations } from "@/lib/legal-types";
 import { VERJAEHRUNG_PRESETS, daysUntilBarred, isBarred } from "@/lib/legal-verjaehrung";
 
 import { unwrapApiBody } from "@/lib/api-body";
+import { csrfFetch } from "@/lib/csrf";
 interface VerjaehrungItem extends StatuteOfLimitations {
   isBarred?: boolean;
   daysUntilBarred?: number;
@@ -123,7 +124,7 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
   async function handleCreate() {
     setBusy(true);
     try {
-      const res = await fetch("/api/legal/verjaehrung", {
+      const res = await csrfFetch("/api/legal/verjaehrung", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,7 +153,7 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
   async function handleAddEvent(solId: string) {
     setBusy(true);
     try {
-      const res = await fetch("/api/legal/verjaehrung", {
+      const res = await csrfFetch("/api/legal/verjaehrung", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

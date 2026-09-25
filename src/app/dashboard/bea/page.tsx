@@ -30,6 +30,7 @@ import {
   type FilingPackage,
 } from "@/lib/efiling-architecture";
 import { JurisdictionGate } from "@/components/dashboard/jurisdiction-gate";
+import { csrfFetch } from "@/lib/csrf";
 
 interface BeaDraft {
   slug: string;
@@ -297,11 +298,10 @@ function BeaPageInner() {
     setExportingSlug(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await fetch("/api/bea/export", {
+      const res = await csrfFetch("/api/bea/export", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({
           case_slug: draft.slug,
@@ -449,11 +449,6 @@ function BeaPageInner() {
     }
   }
 
-  async function getCsrfHeaders(): Promise<Record<string, string>> {
-    const match = document.cookie.match(/sb_csrf=([^;]+)/);
-    return match ? { "x-csrf-token": match[1] } : {};
-  }
-
   async function confirmReceipt(draft: BeaDraft): Promise<void> {
     const pkg = filings[draft.slug];
     if (!pkg) return;
@@ -462,11 +457,10 @@ function BeaPageInner() {
     setReceiptBusy(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await fetch("/api/bea/receipt", {
+      const res = await csrfFetch("/api/bea/receipt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({
           filing_id: pkg.id,

@@ -41,6 +41,51 @@ const eslintConfig = defineConfig([
     ignores: ["**/*.test.ts"],
     rules: { "no-console": "error" },
   },
+  // CSRF (audit UI-1): the middleware rejects every non-GET /api/* call from a
+  // firm session without the x-csrf-token header. Raw fetch never sends it —
+  // use csrfFetch (src/lib/csrf.ts) or api.*. Exempt paths mirror the
+  // middleware: portal, auth entry points, anonymous public forms, presence.
+  {
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    ignores: [
+      "**/*.test.{ts,tsx}",
+      "**/*.stories.{ts,tsx}",
+      // Server code: calls the engine, never the browser-facing /api/*.
+      "src/app/api/**",
+      "src/app/_archive/**",
+      // Session-less flows the middleware exempts (no CSRF cookie yet).
+      "src/app/portal/**",
+      "src/components/portal/**",
+      "src/components/marketing/**",
+      "src/components/auth/auth-form.tsx",
+      "src/components/auth/recovery-form.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^\\x2Fapi\\x2F(?!portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|realtime\\x2Fpresence)/] > ObjectExpression > Property[key.name='method'][value.value=/^(post|put|patch|delete)$/i]",
+          message:
+            "Schreibende /api/-Aufrufe brauchen den CSRF-Header: csrfFetch (src/lib/csrf.ts) oder api.* statt fetch verwenden.",
+        },
+        {
+          selector:
+            "CallExpression[callee.name='fetch'][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^\\x2Fapi\\x2F(?!portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|realtime\\x2Fpresence)/] > ObjectExpression > Property[key.name='method'][value.value=/^(post|put|patch|delete)$/i]",
+          message:
+            "Schreibende /api/-Aufrufe brauchen den CSRF-Header: csrfFetch (src/lib/csrf.ts) oder api.* statt fetch verwenden.",
+        },
+        {
+          // `method` passed as a variable (e.g. `{ method, body }`): cannot be
+          // proven read-only, so it needs csrfFetch as well.
+          selector:
+            "CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^\\x2Fapi\\x2F(?!portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|realtime\\x2Fpresence)/] > ObjectExpression > Property[key.name='method'][value.type='Identifier']",
+          message:
+            "Schreibende /api/-Aufrufe brauchen den CSRF-Header: csrfFetch (src/lib/csrf.ts) oder api.* statt fetch verwenden.",
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

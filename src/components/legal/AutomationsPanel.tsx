@@ -32,6 +32,7 @@ import {
 } from "@/lib/automation-model";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
 import { formatDateTime } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
 
 /** Eine Regel, wie /api/automations sie liefert. */
 export interface AutomationRuleView extends AutomationRule {
@@ -189,7 +190,7 @@ export function AutomationsPanel() {
   ): Promise<boolean> {
     setBusy(true);
     try {
-      const res = await fetch("/api/automations", {
+      const res = await csrfFetch("/api/automations", {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
