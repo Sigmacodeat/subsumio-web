@@ -280,6 +280,57 @@ describe("per-item retention (documents/notes)", () => {
     expect(body.skippedHold).toBe(2);
   });
 
+  it("GoBD-stamped receipts never fall below § 132 BAO, whatever retention_until says", async () => {
+    // hashed_at 2024 → gesetzlich bis 31.12.2031; ein per Pages-API auf 2020
+    // gesetztes retention_until darf den Beleg nicht löschfällig machen.
+    pagesByType.set("document", [
+      liveDoc("docs/beleg-jung", {
+        retention_until: pastDate,
+        gobd_retention: true,
+        hashed_at: "2024-03-01T10:00:00.000Z",
+      }),
+      // hashed_at 2015 → gesetzlich bis 31.12.2022 → jetzt wirklich fällig.
+      liveDoc("docs/beleg-alt", {
+        retention_until: pastDate,
+        gobd_retention: true,
+        hashed_at: "2015-06-01T10:00:00.000Z",
+      }),
+      // Stempel ohne hashed_at: Mindestfrist unbestimmbar → fail-closed.
+      liveDoc("docs/beleg-kaputt", { retention_until: pastDate, gobd_retention: true }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(500); // wegen beleg-kaputt (retentionInvalid)
+    expect(tombstoneCalls.map((t) => t.slug)).toEqual(["docs/beleg-alt"]);
+    expect(body.retentionGobdFloored).toBe(1);
+    expect(body.retentionInvalid).toBe(1);
+    expect(String(body.errors)).toMatch(/beleg-kaputt.*hashed_at/);
+  });
+
+  it("treats an unreadable or missing parent case as held (engine 500 / 404)", async () => {
+    const inner = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (
+        String(input).includes("legal%2Fcases%2Fbroken") ||
+        String(input).includes("legal/cases/broken")
+      ) {
+        return new Response("upstream error", { status: 500 });
+      }
+      return inner(input as never, init as never);
+    }) as typeof fetch;
+    pagesByType.set("document", [
+      liveDoc("docs/in-broken-case", {
+        retention_until: pastDate,
+        case_slug: "legal/cases/broken",
+      }),
+      liveDoc("docs/in-gone-case", { retention_until: pastDate, case_slug: "legal/cases/gone" }),
+      liveDoc("docs/free", { retention_until: pastDate }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls.map((t) => t.slug)).toEqual(["docs/free"]);
+    expect(body.skippedHold).toBe(2);
+  });
+
   it("does not re-tombstone already tombstoned pages", async () => {
     pagesByType.set("document", [tombstoned("docs/trashed", { retention_until: pastDate })]);
     const { status } = await run();
