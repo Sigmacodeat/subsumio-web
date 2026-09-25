@@ -18,9 +18,12 @@ const SECRET = "test-shared-secret-key-for-subsumio";
 const SOURCE = "firm-error-redaction";
 const PROVIDER_ERROR = "chat(anthropic:claude) insufficient credits";
 
+/** listPages fails only once armed — migrations call it during initSchema. */
+let failList = false;
 class FailingListEngine extends PGLiteEngine {
-  override async listPages(): Promise<never> {
-    throw new Error(PROVIDER_ERROR);
+  override async listPages(...args: Parameters<PGLiteEngine["listPages"]>) {
+    if (failList) throw new Error(PROVIDER_ERROR);
+    return super.listPages(...args);
   }
 }
 
@@ -55,12 +58,18 @@ describe("redactErrorResponseBody", () => {
       error: "document_review_failed",
       message: PROVIDER_ERROR,
     });
-    expect(body).toEqual({ error: "document_review_failed", message: GENERIC_WRITE_FAILURE_MESSAGE });
+    expect(body).toEqual({
+      error: "document_review_failed",
+      message: GENERIC_WRITE_FAILURE_MESSAGE,
+    });
     expect(cause).toBe(PROVIDER_ERROR);
   });
 
   test("4xx: ordinary messages pass, no cause", () => {
-    const { body, cause } = redactErrorResponseBody(404, { error: "x", message: "Page not found." });
+    const { body, cause } = redactErrorResponseBody(404, {
+      error: "x",
+      message: "Page not found.",
+    });
     expect(body).toEqual({ error: "x", message: "Page not found." });
     expect(cause).toBeUndefined();
   });
@@ -77,6 +86,7 @@ describe("engine route failure", () => {
     const spy = spyOn(console, "error").mockImplementation((...args: unknown[]) => {
       logged.push(args.map(String).join(" "));
     });
+    failList = true;
     try {
       const res = await fetch(`${base}/api/pages?type=legal_case&limit=10`, {
         headers: {
@@ -98,6 +108,7 @@ describe("engine route failure", () => {
       expect(line).toContain(PROVIDER_ERROR);
       expect(line).toContain("req-eng5-000001");
     } finally {
+      failList = false;
       spy.mockRestore();
     }
   });
