@@ -42,6 +42,51 @@ async function stampAnalysisPending(
   }
 }
 
+interface ConfirmResult {
+  slug?: string;
+  title?: string;
+  case_slug?: unknown;
+  /** Set by the engine when the upload belongs to a bulk import (never from the browser). */
+  pipeline_deferred?: unknown;
+}
+
+/**
+ * Side effects of a confirmed upload. A deferred upload (bulk matter import)
+ * is marked "deferred" and gets no per-document analysis — the import's
+ * single case-level pipeline analyses it; queuing it here as well would book
+ * and run the analysis once per file on top of that.
+ */
+async function afterConfirm(
+  headers: Record<string, string>,
+  brainId: string,
+  slug: string,
+  result: ConfirmResult
+): Promise<void> {
+  if (result.pipeline_deferred === true) {
+    try {
+      const res = await enginePatchPage(headers, {
+        slug,
+        frontmatter: { analysis_status: "deferred", pipeline_deferred: true },
+      });
+      if (!res.ok) log.error(`[upload/confirm] deferred stamp failed for ${slug}: ${res.status}`);
+    } catch (err) {
+      log.error(
+        `[upload/confirm] deferred stamp error for ${slug}:`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+    return;
+  }
+  await stampAnalysisPending(headers, slug);
+  await enqueueAllPostUploadTasks({
+    doc_slug: slug,
+    case_slug: resultCaseSlug(result),
+    brain_id: brainId,
+    doc_title: result.title,
+    uploaded_at: new Date().toISOString(),
+  });
+}
+
 export const maxDuration = 600;
 
 /**
@@ -157,20 +202,9 @@ export const POST = createHandler(
             if (eventType === "done" && data) {
               sideEffectsFired = true;
               try {
-                const result = JSON.parse(data) as {
-                  slug?: string;
-                  title?: string;
-                  case_slug?: unknown;
-                };
+                const result = JSON.parse(data) as ConfirmResult;
                 if (result.slug) {
-                  await stampAnalysisPending(ctx.headers, result.slug);
-                  await enqueueAllPostUploadTasks({
-                    doc_slug: result.slug,
-                    case_slug: resultCaseSlug(result),
-                    brain_id: ctx.brainId,
-                    doc_title: result.title,
-                    uploaded_at: new Date().toISOString(),
-                  });
+                  await afterConfirm(ctx.headers, ctx.brainId, result.slug, result);
                 }
               } catch {
                 /* best-effort */
@@ -207,17 +241,11 @@ export const POST = createHandler(
           extraction_method?: string;
           async?: boolean;
           case_slug?: unknown;
+          pipeline_deferred?: unknown;
         };
 
         if (result.slug) {
-          await stampAnalysisPending(ctx.headers, result.slug);
-          await enqueueAllPostUploadTasks({
-            doc_slug: result.slug,
-            case_slug: resultCaseSlug(result),
-            brain_id: ctx.brainId,
-            doc_title: result.title,
-            uploaded_at: new Date().toISOString(),
-          });
+          await afterConfirm(ctx.headers, ctx.brainId, result.slug, result);
         }
 
         return Response.json(result, { status: upstream.status });

@@ -98,7 +98,9 @@ import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
 import {
+  confirmPipelinePlan,
   legalPipelineIdempotencyKey,
+  presignPipelineRouting,
   shouldAutoTriggerUploadPipeline,
   uploadPipelineCaseSlug,
 } from "../core/upload-pipeline-routing.ts";
@@ -6409,6 +6411,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     title?: string;
     tags?: string[];
     password?: string;
+    /** Upload source (documents, wiki …) — only legal sources start the legal pipeline. */
+    uploadSource: string;
+    /** Bulk matter import: no per-document pipeline or post-upload tasks. */
+    deferPipeline: boolean;
     createdAt: number;
     expiresAt: number;
   }
@@ -6477,10 +6483,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // With a signed upload token the matter is the token's (checked by
         // the web app when it issued the token); otherwise the body's.
         const rawUploadToken = String(req.headers["x-upload-token"] ?? "");
+        const tokenPayload = rawUploadToken ? verifyUploadToken(rawUploadToken) : null;
         const caseBinding = bindPresignCaseSlug({
           tokenPresent: rawUploadToken.length > 0,
-          payload: rawUploadToken ? verifyUploadToken(rawUploadToken) : null,
+          payload: tokenPayload,
           bodyCaseSlug: body.case_slug ? String(body.case_slug) : undefined,
+        });
+        const { source: uploadSource, deferPipeline } = presignPipelineRouting({
+          payload: tokenPayload,
+          bodySource: body.source,
+          bodyDefer: body.defer_pipeline,
         });
         if (!caseBinding.ok) {
           apiError(res, caseBinding.status, caseBinding.error);
@@ -6556,6 +6568,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             title,
             tags: tagList,
             password,
+            uploadSource,
+            deferPipeline,
             createdAt: Date.now(),
             expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
           });
@@ -6597,6 +6611,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           title,
           tags: tagList,
           password,
+          uploadSource,
+          deferPipeline,
           createdAt: Date.now(),
           expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
         });
@@ -7011,6 +7027,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         const opCtx = ctx(req);
+        const confirmPlan = confirmPipelinePlan({
+          source: pending.uploadSource,
+          deferPipeline: pending.deferPipeline,
+        });
         if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
           if (wantsSse) {
             sseSend("error", { error: "token_tenant_mismatch" });
@@ -7399,6 +7419,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               no_embed: noEmbed,
               password: pending.password,
               upload_frontmatter: uploadFrontmatter,
+              auto_trigger_legal_pipeline: confirmPlan.autoTriggerLegalPipeline,
               matter_scope: req.matterScope ?? "all",
               acl_groups: req.aclGroups ?? "all",
               ...(billingOwnerId && billingOwnerType
@@ -7436,6 +7457,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             ownerId: billingOwnerId || undefined,
             ownerType: billingOwnerType,
             userId: billingUserId || undefined,
+            autoTriggerLegalPipeline: confirmPlan.autoTriggerLegalPipeline,
           });
           partSlugs = result.partSlugs;
           if (result.stamp_failures) stampFailures = result.stamp_failures;
@@ -7454,15 +7476,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // confirm proxy can fire its own side effects. Pre-fix, the web app
         // was the sole responsible party — a dropped stream meant no
         // analysis_status stamp and no post-upload tasks.
+        // A deferred upload (bulk matter import) gets no per-document tasks:
+        // the import's single case-level pipeline analyses it.
         try {
-          await persistEnginePostUploadTasks(engine, pending.sourceId, {
-            doc_slug: versionedSlug,
-            case_slug: pending.caseSlug,
-            brain_id: pending.sourceId,
-            doc_title: page?.title ?? pending.title ?? pending.filename,
-            doc_size: pending.expectedSize,
-            uploaded_at: new Date().toISOString(),
-          });
+          if (confirmPlan.persistPostUploadTasks) {
+            await persistEnginePostUploadTasks(engine, pending.sourceId, {
+              doc_slug: versionedSlug,
+              case_slug: pending.caseSlug,
+              brain_id: pending.sourceId,
+              doc_title: page?.title ?? pending.title ?? pending.filename,
+              doc_size: pending.expectedSize,
+              uploaded_at: new Date().toISOString(),
+            });
+          }
         } catch (postUploadErr) {
           console.error(
             `[upload-confirm] engine-side post-upload task persist failed for ${versionedSlug}: ` +
@@ -7476,6 +7502,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // The matter bound at presign time — the web proxy files the
           // document there instead of trusting the confirm body.
           ...(pending.caseSlug ? { case_slug: pending.caseSlug } : {}),
+          // Tells the web proxy not to queue per-document analysis.
+          ...(confirmPlan.pipelineDeferred ? { pipeline_deferred: true } : {}),
           original_persisted: true,
           async: asyncExtract,
           extraction_status: page?.frontmatter?.extraction_status,
@@ -7578,10 +7606,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // With a signed upload token the matter is the token's (checked by
         // the web app when it issued the token); otherwise the body's.
         const rawUploadToken = String(req.headers["x-upload-token"] ?? "");
+        const tokenPayload = rawUploadToken ? verifyUploadToken(rawUploadToken) : null;
         const caseBinding = bindPresignCaseSlug({
           tokenPresent: rawUploadToken.length > 0,
-          payload: rawUploadToken ? verifyUploadToken(rawUploadToken) : null,
+          payload: tokenPayload,
           bodyCaseSlug: body.case_slug ? String(body.case_slug) : undefined,
+        });
+        const { source: uploadSource, deferPipeline } = presignPipelineRouting({
+          payload: tokenPayload,
+          bodySource: body.source,
+          bodyDefer: body.defer_pipeline,
         });
         if (!caseBinding.ok) {
           apiError(res, caseBinding.status, caseBinding.error);
@@ -7669,6 +7703,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             title,
             tags: tagList,
             password,
+            uploadSource,
+            deferPipeline,
             createdAt: Date.now(),
             expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
           });

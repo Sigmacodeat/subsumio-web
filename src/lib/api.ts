@@ -2772,6 +2772,9 @@ export const api = {
               tags: options?.tags,
               password: options?.password,
               expected_sha256: fileSha256 ?? undefined,
+              // Also carried by the signed upload token; a bulk import must
+              // never start one pipeline per file.
+              defer_pipeline: options?.defer_pipeline,
             }),
             signal: AbortSignal.timeout(15_000),
           });

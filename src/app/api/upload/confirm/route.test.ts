@@ -225,6 +225,38 @@ describe("POST /api/upload/confirm", () => {
     expect(recordQuota).not.toHaveBeenCalled();
   });
 
+  it("a deferred upload (bulk import) is stamped 'deferred' and queues no per-document analysis", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        String(url).includes("/api/pages/")
+          ? Response.json(casePage)
+          : Response.json({
+              slug: "documents/case-1/teil-7.pdf",
+              title: "Teil 7",
+              case_slug: "legal/cases/1",
+              pipeline_deferred: true,
+            })
+      )
+    );
+    const res = await POST(makeRequest({ upload_token: "upl-7", case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(200);
+    expect(mockEnqueue).not.toHaveBeenCalled();
+    expect(mockEnginePatch).toHaveBeenCalledTimes(1);
+    expect(mockEnginePatch.mock.calls[0][1]).toMatchObject({
+      slug: "documents/case-1/teil-7.pdf",
+      frontmatter: { analysis_status: "deferred", pipeline_deferred: true },
+    });
+  });
+
+  it("a deferral claimed only by the browser body does not skip the analysis", async () => {
+    const res = await POST(
+      makeRequest({ upload_token: "upl-8", case_slug: "legal/cases/1", pipeline_deferred: true })
+    );
+    expect(res.status).toBe(200);
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects a body without upload token", async () => {
     const res = await POST(makeRequest({ case_slug: "legal/cases/1" }));
     expect(res.status).toBe(400);
