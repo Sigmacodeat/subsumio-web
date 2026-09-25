@@ -123,4 +123,11 @@ describe("Posteingangsbuch page", () => {
       expect(addToast).toHaveBeenCalledWith(expect.objectContaining({ type: "error" }))
     );
   });
+
+  it("a load error shows an error with retry, not 'Noch keine Einträge'", async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(new Response("x", { status: 502 })));
+    render(<PosteingangsbuchPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/nicht geladen/);
+    expect(screen.queryByText("Noch keine Einträge")).not.toBeInTheDocument();
+  });
 });

@@ -59,8 +59,11 @@ export default function PosteingangsbuchPage() {
     case_slug: "",
   });
 
+  const [loadError, setLoadError] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch("/api/inbound-register");
       if (!res.ok) throw new Error(String(res.status));
@@ -69,6 +72,7 @@ export default function PosteingangsbuchPage() {
       setFailedStamps((data.failed_stamps ?? data.data?.failed_stamps ?? []) as FailedStamp[]);
       setPendingStamps((data.pending_stamps ?? data.data?.pending_stamps ?? []) as FailedStamp[]);
     } catch {
+      setLoadError(true);
       addToast({ type: "error", title: "Posteingangsbuch konnte nicht geladen werden" });
     } finally {
       setLoading(false);
@@ -94,13 +98,21 @@ export default function PosteingangsbuchPage() {
           case_slug: form.case_slug.trim() || undefined,
         }),
       });
-      if (!res.ok) throw new Error(String(res.status));
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error || String(res.status));
+      }
       setForm({ channel: "scan", subject: "", sender_name: "", sender_address: "", case_slug: "" });
       setShowCreate(false);
       await load();
       addToast({ type: "success", title: "Eingetragen" });
-    } catch {
-      addToast({ type: "error", title: "Eintrag konnte nicht gespeichert werden" });
+    } catch (e) {
+      const msg = e instanceof Error && !/^\d+$/.test(e.message) ? e.message : undefined;
+      addToast({
+        type: "error",
+        title: "Eintrag konnte nicht gespeichert werden",
+        description: msg,
+      });
     } finally {
       setSaving(false);
     }
@@ -299,6 +311,16 @@ export default function PosteingangsbuchPage() {
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
+        </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <span>Das Posteingangsbuch konnte nicht geladen werden.</span>
+          <Button variant="outline" size="sm" onClick={() => void load()}>
+            Erneut laden
+          </Button>
         </div>
       ) : entries.length === 0 ? (
         <EmptyState
