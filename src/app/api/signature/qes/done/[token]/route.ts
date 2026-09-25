@@ -12,7 +12,7 @@ import {
   signedFilename,
 } from "@/lib/qes/pdf-as";
 import { appBase, pdfAsBase } from "@/lib/qes/config";
-import { getQesSession, updateQesSession } from "@/lib/qes/sessions";
+import { claimQesCompletion, getQesSession, updateQesSession } from "@/lib/qes/sessions";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -40,10 +40,19 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
   const limited = await hit(`qes:done:${clientIp(req.headers)}`, 30, 60_000);
   if (!limited.ok) return new Response("Too many requests", { status: 429 });
   const { token } = await context.params;
-  const session = await getQesSession(token);
+  let session = await getQesSession(token);
   if (!session)
     return new Response("Signaturvorgang nicht gefunden oder abgelaufen.", { status: 404 });
   if (session.status === "signed") return backToMatter(session.caseSlug, { qes: "signed" });
+  if (session.status === "processing")
+    return backToMatter(session.caseSlug, { qes: "processing" });
+  // Atomically claim the session before doing any work: a retried or double
+  // invoke-app-url callback must not upload a second signed copy.
+  if (session.status === "fetched" || session.status === "failed") {
+    const claimed = await claimQesCompletion(token);
+    if (!claimed) return backToMatter(session.caseSlug, { qes: "processing" });
+    session = claimed;
+  }
 
   const base = pdfAsBase();
   const pdfUrl = req.nextUrl.searchParams.get("pdfurl");
@@ -81,6 +90,14 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
     return fail("Der Signaturdienst hat kein PDF geliefert.");
   }
   if (!check.valueOk) return fail("Die Signaturprüfung ist fehlgeschlagen.");
+  // A document is only "qualified" when BOTH checks pass: the signature value
+  // AND the certificate chain (trusted root, valid at signing time). A valid
+  // value on an expired/revoked/untrusted certificate is not a QES.
+  if (!check.certificateOk) {
+    return fail(
+      `Das Signaturzertifikat ist nicht gültig (Code ${check.certificateCheckCode ?? "unbekannt"}).`
+    );
+  }
 
   const signer = certificateSubjectName(check.signerCertificate);
   const entry = await uploadFileToMatter(

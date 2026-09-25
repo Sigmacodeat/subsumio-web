@@ -18,7 +18,7 @@ export interface QesSession {
   caseSlug: string;
   title: string;
   method: QesMethod;
-  status: "pending" | "fetched" | "signed" | "failed";
+  status: "pending" | "fetched" | "processing" | "signed" | "failed";
   originalDigest: string | null;
   signedDocumentSlug: string | null;
   error: string | null;
@@ -86,6 +86,38 @@ export async function getQesSession(token: string): Promise<QesSession | null> {
   if (new Date(session.expiresAt).getTime() < Date.now() && session.status !== "signed")
     return null;
   return session;
+}
+
+/**
+ * Atomically claim a session for completion (fetched/failed → processing).
+ * Returns the claimed session, or null when it is in another state — e.g.
+ * a parallel invoke-app-url callback already claimed it. Single UPDATE on
+ * Postgres; the in-memory fallback mutates synchronously, so two callers
+ * can never both win.
+ */
+export async function claimQesCompletion(token: string): Promise<QesSession | null> {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
+  const pool = getSharedPgPool();
+  if (!pool) {
+    const session = memory.get(token);
+    if (!session) return null;
+    if (session.status !== "fetched" && session.status !== "failed") return null;
+    if (new Date(session.expiresAt).getTime() < Date.now()) return null;
+    const next = { ...session, status: "processing" as const };
+    memory.set(token, next);
+    return next;
+  }
+  await ensureSchema();
+  const { rows } = await pool.query<{ data: QesSession }>(
+    `UPDATE subsumio_qes_sessions
+       SET data = jsonb_set(data, '{status}', '"processing"')
+     WHERE token = $1
+       AND data->>'status' IN ('fetched', 'failed')
+       AND expires_at > now()
+     RETURNING data`,
+    [token]
+  );
+  return rows[0]?.data ?? null;
 }
 
 export async function updateQesSession(

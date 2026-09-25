@@ -29,6 +29,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
+import { CaseSelect } from "@/components/legal/case-select";
 import type { BrainPage } from "@/lib/types";
 import { enqueueMutation, isOnline } from "@/lib/offline-store";
 import { buildNdaTemplate } from "@/lib/nda-template";
@@ -53,6 +54,7 @@ export function SignatureQuickCreateDialog({
   const [saving, setSaving] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
   const [template, setTemplate] = useState<DocumentTemplate>("manual");
+  const [caseSlug, setCaseSlug] = useState("");
 
   const sigForm = useForm<SignatureRequestFormData>({
     resolver: zodResolver(signatureRequestSchema) as never,
@@ -67,6 +69,7 @@ export function SignatureQuickCreateDialog({
   const resetForm = useCallback(() => {
     sigForm.reset({ documentName: "", recipientName: "", recipientEmail: "", expiresDays: "14" });
     setTemplate("manual");
+    setCaseSlug("");
   }, [sigForm]);
 
   useEffect(() => {
@@ -112,7 +115,10 @@ export function SignatureQuickCreateDialog({
           // tracks who needs to sign what; the actual document lives
           // elsewhere (paper, DocuSign, an emailed PDF).
           provider: template === "nda" ? "template" : "external",
-          case_slug: presetCaseSlug || undefined,
+          // The matter link is what makes the request sendable (the portal
+          // link is scoped to a matter) — without it the send action stays
+          // disabled on the signature page.
+          case_slug: presetCaseSlug || caseSlug || undefined,
         },
       };
       if (isOnline()) await api.brain.createPage(payload);
@@ -138,7 +144,9 @@ export function SignatureQuickCreateDialog({
   const canSubmit =
     !!sigForm.watch("documentName") &&
     !!sigForm.watch("recipientName") &&
-    !!sigForm.watch("recipientEmail");
+    !!sigForm.watch("recipientEmail") &&
+    // Without a matter the request can never be sent — block saving it.
+    (!!presetCaseSlug || !!caseSlug);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,6 +224,24 @@ export function SignatureQuickCreateDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Matter — needed so the request can actually be sent */}
+            {!presetCaseSlug && (
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-sig-case" className="text-xs">
+                  {t("signature.quick_case" as DashboardKey)} *
+                </Label>
+                <CaseSelect
+                  id="quick-sig-case"
+                  value={caseSlug}
+                  onChange={setCaseSlug}
+                  placeholder={t("signature.quick_case_placeholder" as DashboardKey)}
+                />
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {t("signature.quick_case_hint" as DashboardKey)}
+                </p>
               </div>
             )}
 
