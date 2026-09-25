@@ -11,6 +11,7 @@
 
 import type { TimeEntry } from "@/lib/legal-types";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { zonedDateString } from "@/lib/datetime";
 import { createHash } from "node:crypto";
 
@@ -211,59 +212,137 @@ export function computeSummary(entries: TimeEntry[]): TimeSummary {
 // ── CRUD Helpers ──────────────────────────────────────────────────────
 
 export class TimeEntriesNotFoundError extends Error {}
-export class TimeEntriesWriteConflictError extends Error {}
 export class TimeEntryBilledError extends Error {}
 
-const TIME_ENTRIES_WRITE_MAX_ATTEMPTS = 5;
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/**
+ * Minimal client shape for the atomic time_entries helpers — implemented by
+ * `ServerBrainClient` (createServerBrainClient). The engine applies the
+ * mutation in a single UPDATE statement; there is no read-modify-write
+ * window, so the old write-verify-retry workaround is gone.
+ */
+export interface TimeEntriesArrayClient {
+  appendPageArray(slug: string, field: string, items: unknown[]): Promise<{ items: unknown[] }>;
+  mutatePageArray(
+    slug: string,
+    field: string,
+    mutation: PageArrayMutation
+  ): Promise<PageArrayMutateResult>;
+}
+
+const TIME_ENTRIES_FIELD = "time_entries";
 
 /**
- * Every write to a matter's `time_entries` array is a read-modify-write on
- * the whole frontmatter field — the engine has no atomic array-append. Two
- * concurrent writers can read the same array and the second merge-update
- * silently clobbers the first. This wrapper re-reads after the write and
- * retries on mismatch: "silently lose data" becomes "detect and retry",
- * failing loudly (409) only after repeated collisions.
+ * Append entries to a matter's time_entries atomically. Missing field
+ * becomes an array; the page must exist (404 from the engine otherwise).
  */
-export async function writeTimeEntriesWithRetry<M>(
-  brain: {
-    getPage: (slug: string) => Promise<{ frontmatter?: unknown }>;
-    updatePage: (page: { slug: string; frontmatter: Record<string, unknown> }) => Promise<unknown>;
-  },
+export async function appendTimeEntries(
+  brain: TimeEntriesArrayClient,
   caseSlug: string,
-  compute: (
-    freshEntries: TimeEntry[],
-    freshFrontmatter: Record<string, unknown>
-  ) => { nextEntries: TimeEntry[]; meta: M } | { notFound: true } | { billed: true },
-  log?: { warn: (msg: string, ctx?: object) => void; error: (msg: string, ctx?: object) => void }
-): Promise<{ entries: TimeEntry[]; meta: M }> {
-  for (let attempt = 0; attempt < TIME_ENTRIES_WRITE_MAX_ATTEMPTS; attempt++) {
-    const casePage = await brain.getPage(caseSlug);
-    const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-    const freshEntries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
+  entries: TimeEntry[]
+): Promise<void> {
+  if (entries.length === 0) return;
+  await brain.appendPageArray(caseSlug, TIME_ENTRIES_FIELD, entries);
+}
 
-    const outcome = compute(freshEntries, fm);
-    if ("notFound" in outcome) throw new TimeEntriesNotFoundError();
-    if ("billed" in outcome) throw new TimeEntryBilledError();
-
-    await brain.updatePage({
-      slug: caseSlug,
-      frontmatter: { ...fm, time_entries: outcome.nextEntries },
-    });
-
-    const verifyPage = await brain.getPage(caseSlug);
-    const verifyFm = (verifyPage.frontmatter ?? {}) as Record<string, unknown>;
-    const verifyEntries = Array.isArray(verifyFm.time_entries)
-      ? (verifyFm.time_entries as TimeEntry[])
-      : [];
-    if (JSON.stringify(verifyEntries) === JSON.stringify(outcome.nextEntries)) {
-      return { entries: outcome.nextEntries, meta: outcome.meta };
-    }
-    log?.warn("[time] write_conflict, retrying", { caseSlug, attempt });
-    await sleep(25 + Math.random() * 75);
+/**
+ * Patch one embedded entry by id. Billed entries are skipped by the engine's
+ * `unless` guard inside the same statement — a concurrent mark-billed that
+ * lands between our read and write can never be silently overwritten.
+ * `undefined` values in `updates` remove the key (old merge semantics).
+ */
+export async function updateTimeEntry(
+  brain: TimeEntriesArrayClient,
+  caseSlug: string,
+  id: string,
+  updates: Partial<TimeEntry>
+): Promise<TimeEntry> {
+  const set: Record<string, unknown> = {};
+  const unset: string[] = [];
+  for (const [k, v] of Object.entries(updates)) {
+    if (k === "id") continue; // identity is stable — never rewritten
+    if (v === undefined) unset.push(k);
+    else set[k] = v;
   }
-  log?.error("[time] write_conflict exhausted retries", { caseSlug });
-  throw new TimeEntriesWriteConflictError();
+  const res = await brain.mutatePageArray(caseSlug, TIME_ENTRIES_FIELD, {
+    match: [id],
+    set,
+    unset: unset.length > 0 ? unset : undefined,
+    // A billed entry is part of an invoice's basis — edits must go through
+    // unbill/mark-billed so the audit trail keeps the invoice transition.
+    unless: { eq: { billed: true } },
+  });
+  if (res.not_found_ids.includes(id)) throw new TimeEntriesNotFoundError();
+  if (res.skipped_ids.includes(id)) throw new TimeEntryBilledError();
+  const updated = (res.items as TimeEntry[]).find((e) => e && e.id === id);
+  if (!updated) throw new TimeEntriesNotFoundError();
+  return updated;
+}
+
+/**
+ * Remove one embedded entry by id — billed entries are guard-skipped, same
+ * statement. Throws TimeEntriesNotFoundError / TimeEntryBilledError.
+ */
+export async function deleteTimeEntry(
+  brain: TimeEntriesArrayClient,
+  caseSlug: string,
+  id: string
+): Promise<void> {
+  const res = await brain.mutatePageArray(caseSlug, TIME_ENTRIES_FIELD, {
+    match: [id],
+    remove: true,
+    unless: { eq: { billed: true } },
+  });
+  if (res.not_found_ids.includes(id)) throw new TimeEntriesNotFoundError();
+  if (res.skipped_ids.includes(id)) throw new TimeEntryBilledError();
+}
+
+export interface EmbeddedBillingResult {
+  updated: number;
+  not_found: string[];
+  already_billed: string[];
+}
+
+/**
+ * Mark embedded matter entries as billed — atomically. The `unless` guard is
+ * evaluated inside the UPDATE: entries already billed under a DIFFERENT
+ * invoice are skipped (reported as already_billed, never re-attributed —
+ * GoBD), while same-invoice retries stay idempotent. Not-found ids are
+ * reported, not silently ignored.
+ */
+export async function markTimeEntriesBilled(
+  brain: TimeEntriesArrayClient,
+  caseSlug: string,
+  ids: string[],
+  invoiceNumber: string
+): Promise<EmbeddedBillingResult> {
+  if (ids.length === 0) return { updated: 0, not_found: [], already_billed: [] };
+  const res = await brain.mutatePageArray(caseSlug, TIME_ENTRIES_FIELD, {
+    match: ids,
+    set: { billed: true, invoice_number: invoiceNumber },
+    // Skip only entries billed under a different invoice: eq requires
+    // billed === true AND ne requires invoice_number present-and-different.
+    unless: { eq: { billed: true }, ne: { invoice_number: invoiceNumber } },
+  });
+  return {
+    updated: res.updated_ids.length,
+    not_found: res.not_found_ids,
+    already_billed: res.skipped_ids,
+  };
+}
+
+/** Clear billed flag + invoice_number on embedded entries — atomically. */
+export async function unbillTimeEntries(
+  brain: TimeEntriesArrayClient,
+  caseSlug: string,
+  ids: string[]
+): Promise<{ updated: number; not_found: string[] }> {
+  if (ids.length === 0) return { updated: 0, not_found: [] };
+  const res = await brain.mutatePageArray(caseSlug, TIME_ENTRIES_FIELD, {
+    match: ids,
+    set: { billed: false },
+    unset: ["invoice_number"],
+  });
+  return { updated: res.updated_ids.length, not_found: res.not_found_ids };
 }
 
 /** The engine returns at most 100 pages per request; page through the rest. */

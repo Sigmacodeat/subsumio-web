@@ -20,6 +20,7 @@ import { logAudit } from "@/lib/audit";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
 import type { ActionType } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
+import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -347,6 +348,20 @@ function executionDepsForBrain(brainId: string) {
       const res = await enginePatchPage(headers, { slug, ...patch }, { timeoutMs: 15_000 });
       if (!res.ok) throw new Error(`approval_effect_update_failed:${res.status}`);
       return { slug, success: true };
+    },
+    mutatePageArray: async (
+      slug: string,
+      field: string,
+      mutation: PageArrayMutation
+    ): Promise<PageArrayMutateResult> => {
+      const res = await fetch(`${ENGINE_URL}/api/pages/array-mutate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({ slug, field, ...mutation }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) throw new Error(`approval_effect_mutate_failed:${res.status}`);
+      return (await res.json()) as PageArrayMutateResult;
     },
     sendProactiveWhatsApp: sendProactiveMessage,
   };

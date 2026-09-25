@@ -28,6 +28,11 @@ import { lawyerFacingAnswer } from "@/lib/engine-degraded";
 import type { CitationSupportResult, GroundingMetadata } from "./citation-gate-client";
 import type { NormReading } from "./legal-grounding";
 import type { SourceRegistryResponse } from "./source-registry";
+import type {
+  PageArrayAppendResult,
+  PageArrayMutation,
+  PageArrayMutateResult,
+} from "./server-brain";
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
 import { csrfFetch, getCsrfToken } from "./csrf";
@@ -437,6 +442,32 @@ export const api = {
     deletePage(slug: string): Promise<{ success: boolean }> {
       const path = slug.split("/").map(encodeURIComponent).join("/");
       return request(`/api/pages/${path}`, { method: "DELETE" });
+    },
+
+    /**
+     * Atomic append to a top-level frontmatter array field (single engine
+     * UPDATE — no read-modify-write window). Backs time_entries writes.
+     */
+    appendPageArray(slug: string, field: string, items: unknown[]): Promise<PageArrayAppendResult> {
+      return request("/api/pages/array-append", {
+        method: "POST",
+        body: JSON.stringify({ slug, field, items }),
+      });
+    },
+
+    /**
+     * Atomic patch/remove of frontmatter array elements matched by
+     * `match_key` ∈ `match`, with an optional {eq,ne} skip guard.
+     */
+    mutatePageArray(
+      slug: string,
+      field: string,
+      mutation: PageArrayMutation
+    ): Promise<PageArrayMutateResult> {
+      return request("/api/pages/array-mutate", {
+        method: "POST",
+        body: JSON.stringify({ slug, field, ...mutation }),
+      });
     },
 
     graph(): Promise<{ nodes: GraphNode[]; links: GraphLink[] }> {

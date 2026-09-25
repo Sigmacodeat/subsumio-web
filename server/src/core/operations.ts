@@ -34,6 +34,7 @@ import {
   makeResolver,
   type UnresolvedFrontmatterRef,
 } from "./link-extraction.ts";
+import { NotFoundError } from "./engine-errors.ts";
 import { isFactsBackstopEligible } from "./facts/eligibility.ts";
 import { stripTakesFence } from "./takes-fence.ts";
 import { stripFactsFence } from "./facts-fence.ts";
@@ -1857,6 +1858,263 @@ const purge_deleted_pages: Operation = {
     return { status: "purged", count: result.count, slugs: result.slugs };
   },
   cliHints: { name: "purge-deleted" },
+};
+
+/**
+ * Subsumio atomic-array ops: `field` is a single top-level frontmatter key.
+ * Everything the ops pass to the engine is a bound parameter — this regex is
+ * API sanity, not injection defense.
+ */
+const FRONTMATTER_ARRAY_FIELD_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function assertFrontmatterArrayField(value: unknown, param: string): string {
+  if (typeof value !== "string" || !FRONTMATTER_ARRAY_FIELD_RE.test(value)) {
+    throw new OperationError(
+      "invalid_params",
+      `${param} must be a plain top-level frontmatter key (letters, digits, underscore).`
+    );
+  }
+  return value;
+}
+
+/**
+ * Shared classification for the `null` return of the atomic array engine
+ * methods: re-read the page once to distinguish missing/soft-deleted (404)
+ * from a field that exists but is not an array (400). The third case —
+ * array exists but nothing matched — returns the field's current contents
+ * for the caller's not-found reporting.
+ */
+async function classifyArrayWriteMiss(
+  ctx: OperationContext,
+  slug: string,
+  field: string
+): Promise<{ kind: "empty_match"; items: unknown[] } | never> {
+  const page = await ctx.engine.getPage(slug, {
+    sourceId: ctx.sourceId,
+    includeDeleted: true,
+  });
+  if (!page || page.deleted_at) {
+    throw new NotFoundError(`Page not found: ${slug}`);
+  }
+  const current = page.frontmatter?.[field];
+  if (current !== undefined && !Array.isArray(current)) {
+    throw new OperationError(
+      "field_not_array",
+      `Field "${field}" on page ${slug} is not an array.`
+    );
+  }
+  return { kind: "empty_match", items: Array.isArray(current) ? current : [] };
+}
+
+const page_array_append: Operation = {
+  name: "page_array_append",
+  description:
+    "Atomically append items to a top-level frontmatter array field of a page (e.g. a matter's time_entries). Single UPDATE with jsonb_set + jsonb concat — concurrent writers serialize on the row lock, so unlike put_page merge there is no read-modify-write window and no lost appends. Missing field is created as an array; a field that exists and is not an array fails. Returns the post-append array.",
+  params: {
+    page_slug: { type: "string", required: true },
+    field: { type: "string", required: true },
+    items: { type: "array", required: true },
+  },
+  mutating: true,
+  scope: "write",
+  handler: async (ctx, p) => {
+    const slug = p.page_slug as string;
+    validatePageSlug(slug);
+    const field = assertFrontmatterArrayField(p.field, "field");
+    const items = p.items as unknown[];
+    if (!isSlugInMatterScope(slug, ctx)) {
+      // Same indistinguishable-from-missing shape the web layer uses.
+      throw new NotFoundError(`Page not found: ${slug}`);
+    }
+    const res = await ctx.engine.appendPageArrayItems(slug, field, items, {
+      sourceId: ctx.sourceId,
+    });
+    if (res === null) await classifyArrayWriteMiss(ctx, slug, field);
+    const items2 = res?.items ?? [];
+    return {
+      slug,
+      field,
+      appended: items.length,
+      length: items2.length,
+      items: items2,
+    };
+  },
+};
+
+/**
+ * Scalar equality used for the JS side of `unless` reporting. The SQL side
+ * compares eq via containment and ne via `->> IS DISTINCT FROM`; restricting
+ * unless values to scalars keeps both evaluations identical.
+ */
+type UnlessMap = Record<string, string | number | boolean | null>;
+
+function readUnlessMap(value: unknown, name: string): UnlessMap | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new OperationError("invalid_params", `unless.${name} must be an object of scalars.`);
+  }
+  const out: UnlessMap = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    assertFrontmatterArrayField(k, `unless.${name} key`);
+    if (v !== null && typeof v !== "string" && typeof v !== "number" && typeof v !== "boolean") {
+      throw new OperationError(
+        "invalid_params",
+        `unless.${name}.${k} must be a scalar (string, number, boolean, null).`
+      );
+    }
+    if (name === "ne" && v === null) {
+      throw new OperationError(
+        "invalid_params",
+        `unless.ne.${k}: null is not comparable — "exists and differs" is meaningless for null.`
+      );
+    }
+    out[k] = v;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+const page_array_mutate: Operation = {
+  name: "page_array_mutate",
+  description:
+    "Atomically patch or remove elements of a top-level frontmatter array field whose match_key (compared as text) is in match[]. One UPDATE statement — matched elements get `set` keys merged and `unset` keys removed, or are dropped with remove: true. `unless: {eq: {...}, ne: {...}}` skips matched elements where every eq pair equals AND every ne pair exists-and-differs — e.g. {eq: {billed: true}, ne: {invoice_number: 'X'}} skips entries already billed under a different invoice while keeping same-invoice retries idempotent. Returns per-id reporting (updated / skipped / not_found) plus the post-write array.",
+  params: {
+    page_slug: { type: "string", required: true },
+    field: { type: "string", required: true },
+    match_key: { type: "string", description: "Element key matched as text. Default: id." },
+    match: { type: "array", required: true },
+    set: { type: "object", description: "Keys merged into matched elements." },
+    unset: { type: "array", description: "Keys removed from matched elements." },
+    remove: { type: "boolean", description: "Remove matched elements instead of patching." },
+    unless: { type: "object", description: "{eq: {...}, ne: {...}} skip guard." },
+  },
+  mutating: true,
+  scope: "write",
+  handler: async (ctx, p) => {
+    const slug = p.page_slug as string;
+    validatePageSlug(slug);
+    const field = assertFrontmatterArrayField(p.field, "field");
+    const matchKey = assertFrontmatterArrayField(p.match_key ?? "id", "match_key");
+
+    const matchRaw = p.match as unknown[];
+    if (matchRaw.length === 0) {
+      throw new OperationError("invalid_params", "match must contain at least one value.");
+    }
+    const matchValues: string[] = [];
+    for (const v of matchRaw) {
+      if (!["string", "number", "boolean"].includes(typeof v)) {
+        throw new OperationError(
+          "invalid_params",
+          "match values must be scalars (string, number, boolean)."
+        );
+      }
+      const s = String(v);
+      if (!matchValues.includes(s)) matchValues.push(s);
+    }
+
+    const remove = p.remove === true;
+    const set = p.set as Record<string, unknown> | undefined;
+    const unset = p.unset as string[] | undefined;
+    if (set !== undefined && (typeof set !== "object" || set === null || Array.isArray(set))) {
+      throw new OperationError("invalid_params", "set must be an object.");
+    }
+    if (unset !== undefined && !Array.isArray(unset)) {
+      throw new OperationError("invalid_params", "unset must be an array of key names.");
+    }
+    if (remove && (set !== undefined || unset !== undefined)) {
+      throw new OperationError(
+        "invalid_params",
+        "remove is exclusive — do not combine with set/unset."
+      );
+    }
+    if (!remove && !set && !unset?.length) {
+      throw new OperationError("invalid_params", "Nothing to do: pass set, unset, or remove.");
+    }
+
+    const setKeys = set ? Object.keys(set) : [];
+    const unsetKeys = unset ?? [];
+    for (const k of [...setKeys, ...unsetKeys]) {
+      assertFrontmatterArrayField(k, "set/unset key");
+    }
+    if (setKeys.includes(matchKey) || unsetKeys.includes(matchKey)) {
+      throw new OperationError(
+        "invalid_params",
+        `match_key "${matchKey}" must not be written by set/unset — identity is stable.`
+      );
+    }
+    const overlap = setKeys.filter((k) => unsetKeys.includes(k));
+    if (overlap.length > 0) {
+      throw new OperationError(
+        "invalid_params",
+        `set/unset keys must be disjoint: ${overlap.join(", ")}`
+      );
+    }
+
+    const unlessRaw = p.unless as Record<string, unknown> | undefined;
+    if (unlessRaw !== undefined && (typeof unlessRaw !== "object" || unlessRaw === null)) {
+      throw new OperationError("invalid_params", "unless must be an object {eq, ne}.");
+    }
+    const unlessEq = readUnlessMap(unlessRaw?.eq, "eq");
+    const unlessNe = readUnlessMap(unlessRaw?.ne, "ne");
+    const unless =
+      unlessEq || unlessNe
+        ? { ...(unlessEq ? { eq: unlessEq } : {}), ...(unlessNe ? { ne: unlessNe } : {}) }
+        : undefined;
+
+    if (!isSlugInMatterScope(slug, ctx)) {
+      throw new NotFoundError(`Page not found: ${slug}`);
+    }
+
+    const res = await ctx.engine.mutatePageArrayItems(
+      slug,
+      field,
+      { matchKey, matchValues, set, unset, remove, unless },
+      { sourceId: ctx.sourceId }
+    );
+
+    if (res === null) {
+      const miss = await classifyArrayWriteMiss(ctx, slug, field);
+      // Page exists, field is an array (or absent) — nothing matched.
+      return {
+        slug,
+        field,
+        matched_ids: [],
+        updated_ids: [],
+        skipped_ids: [],
+        not_found_ids: matchValues,
+        items: miss.items,
+        length: miss.items.length,
+      };
+    }
+
+    const items = res.items;
+    const matchedSet = new Set(res.matched_ids);
+    const skippedSet = new Set(res.skipped_ids);
+
+    const matched: string[] = [];
+    const updated: string[] = [];
+    const skipped: string[] = [];
+    const notFound: string[] = [];
+    for (const id of matchValues) {
+      if (!matchedSet.has(id)) {
+        notFound.push(id);
+        continue;
+      }
+      matched.push(id);
+      if (skippedSet.has(id)) skipped.push(id);
+      else updated.push(id);
+    }
+
+    return {
+      slug,
+      field,
+      matched_ids: matched,
+      updated_ids: updated,
+      skipped_ids: skipped,
+      not_found_ids: notFound,
+      items,
+      length: items.length,
+    };
+  },
 };
 
 const LIST_PAGES_SORT_VALUES = ["updated_desc", "updated_asc", "created_desc", "slug"] as const;
@@ -7658,6 +7916,10 @@ export const operations: Operation[] = [
   // v0.26.5 destructive-guard ops (page-level soft-delete + recovery + admin purge)
   restore_page,
   purge_deleted_pages,
+  // Atomic frontmatter-array primitives (Subsumio time_entries) — single-
+  // statement jsonb_set updates; no read-modify-write window.
+  page_array_append,
+  page_array_mutate,
   // Search
   search,
   query,

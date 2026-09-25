@@ -3,12 +3,9 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
-  unbillEntries,
+  unbillTimeEntries,
   updateStandaloneBilling,
-  writeTimeEntriesWithRetry,
   STANDALONE_ENTRY_PREFIX,
-  TimeEntriesWriteConflictError,
-  type TimeEntryWithCase,
 } from "@/lib/time-tracking";
 
 import { logger } from "@/lib/logger";
@@ -44,23 +41,9 @@ export const POST = createHandler(
         const casePage = await brain.getPage(body.case_slug).catch(() => null);
         if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-        const { meta } = await writeTimeEntriesWithRetry(
-          brain,
-          body.case_slug,
-          (freshEntries) => {
-            const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-              ...e,
-              case_slug: body.case_slug,
-            }));
-            const r = unbillEntries(entriesWithCase, caseIds);
-            return {
-              nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
-              meta: r,
-            };
-          },
-          log
-        );
-        result = meta;
+        // Atomic single-statement update — clears billed + invoice_number
+        // on the matched elements without a read-modify-write window.
+        result = await unbillTimeEntries(brain, body.case_slug, caseIds);
       }
 
       if (standaloneIds.length > 0) {
@@ -87,13 +70,6 @@ export const POST = createHandler(
         not_found: result.not_found,
       });
     } catch (err) {
-      if (err instanceof TimeEntriesWriteConflictError) {
-        return apiError(
-          "write_conflict",
-          "Abrechnung konnte nicht zurückgenommen werden — bitte erneut versuchen.",
-          409
-        );
-      }
       log.error("[time] unbill failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Abrechnung konnte nicht zurückgenommen werden", 500);
     }

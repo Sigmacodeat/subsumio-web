@@ -7,17 +7,16 @@ import {
   filterEntries,
   computeSummary,
   computeBillingSummary,
-  markEntriesBilled,
   createTimeEntry,
-  updateEntry,
-  deleteEntry,
-  writeTimeEntriesWithRetry,
+  appendTimeEntries,
+  updateTimeEntry,
+  deleteTimeEntry,
+  markTimeEntriesBilled,
   listAllTimeEntries,
   standaloneEntryFromPage,
   updateStandaloneBilling,
   STANDALONE_ENTRY_PREFIX,
   TimeEntriesNotFoundError,
-  TimeEntriesWriteConflictError,
   TimeEntryBilledError,
   type TimeEntryWithCase,
 } from "@/lib/time-tracking";
@@ -26,11 +25,6 @@ import { logger } from "@/lib/logger";
 const log = logger("api/time");
 
 export const dynamic = "force-dynamic";
-
-const timeEntryWriteLog = {
-  warn: (msg: string, ctx?: object) => log.warn(msg, ctx),
-  error: (msg: string, ctx?: object) => log.error(msg, ctx),
-};
 
 /** Maps the lib's write errors to API responses — shared by PATCH/DELETE. */
 function timeEntryWriteError(err: unknown): ReturnType<typeof apiError> | null {
@@ -41,13 +35,6 @@ function timeEntryWriteError(err: unknown): ReturnType<typeof apiError> | null {
     return apiError(
       "time_entry_billed",
       "Der Eintrag ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
-      409
-    );
-  }
-  if (err instanceof TimeEntriesWriteConflictError) {
-    return apiError(
-      "write_conflict",
-      "Zeiteintrag konnte nicht gespeichert werden — bitte erneut versuchen.",
       409
     );
   }
@@ -227,16 +214,10 @@ export const POST = createHandler(
     const exists = await brain.getPage(body.case_slug).catch(() => null);
     if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
+    // Atomic append — the engine writes jsonb_set(field || items) in one
+    // UPDATE, so a concurrent writer can't clobber this entry.
     try {
-      await writeTimeEntriesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => ({
-          nextEntries: [...freshEntries, entry],
-          meta: null,
-        }),
-        timeEntryWriteLog
-      );
+      await appendTimeEntries(brain, body.case_slug, [entry]);
     } catch (err) {
       const mapped = timeEntryWriteError(err);
       if (mapped) return mapped;
@@ -297,37 +278,10 @@ export const PATCH = createHandler(
           );
         }
         const caseSlug = body.case_slug;
-        try {
-          const { meta } = await writeTimeEntriesWithRetry<{
-            updated: number;
-            not_found: string[];
-            already_billed: string[];
-          }>(
-            brain,
-            caseSlug,
-            (freshEntries) => {
-              const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-                ...e,
-                case_slug: body.case_slug,
-              }));
-              const result = markEntriesBilled(entriesWithCase, caseIds, body.invoice_number!);
-              return {
-                nextEntries: result.entries.map(({ case_slug: _cs, ...e }) => e),
-                meta: {
-                  updated: result.updated,
-                  not_found: result.not_found,
-                  already_billed: result.already_billed,
-                },
-              };
-            },
-            timeEntryWriteLog
-          );
-          billedResult = meta;
-        } catch (err) {
-          const mapped = timeEntryWriteError(err);
-          if (mapped) return mapped;
-          throw err;
-        }
+        // Atomic in one UPDATE — the different-invoice skip guard runs
+        // inside the engine statement, so concurrent billing can neither
+        // re-attribute another invoice's entries nor lose our write.
+        billedResult = await markTimeEntriesBilled(brain, caseSlug, caseIds, body.invoice_number);
       }
 
       if (standaloneIds.length > 0) {
@@ -403,21 +357,13 @@ export const PATCH = createHandler(
       return apiSuccess({ entry: standaloneEntryFromPage(body.id, nextFm) });
     }
 
+    if (Object.keys(allowedUpdates).length === 0) {
+      return apiError("nothing_to_update", "Keine aktualisierbaren Felder angegeben", 400);
+    }
+
     let updated: TimeEntry;
     try {
-      const { meta } = await writeTimeEntriesWithRetry<TimeEntry>(
-        brain,
-        body.case_slug!,
-        (freshEntries) => {
-          const result = updateEntry(freshEntries, body.id, allowedUpdates);
-          if (result.billed) return { billed: true };
-          if (!result.found || !result.updated) return { notFound: true };
-          const meta: TimeEntry = result.updated;
-          return { nextEntries: result.entries, meta };
-        },
-        timeEntryWriteLog
-      );
-      updated = meta;
+      updated = await updateTimeEntry(brain, body.case_slug!, body.id, allowedUpdates);
     } catch (err) {
       const mapped = timeEntryWriteError(err);
       if (mapped) return mapped;
@@ -474,17 +420,7 @@ export const DELETE = createHandler(
     if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
     try {
-      await writeTimeEntriesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => {
-          const result = deleteEntry(freshEntries, body.id);
-          if (result.billed) return { billed: true };
-          if (!result.found) return { notFound: true };
-          return { nextEntries: result.entries, meta: null };
-        },
-        timeEntryWriteLog
-      );
+      await deleteTimeEntry(brain, body.case_slug, body.id);
     } catch (err) {
       const mapped = timeEntryWriteError(err);
       if (mapped) return mapped;

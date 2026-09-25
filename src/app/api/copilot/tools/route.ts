@@ -14,9 +14,8 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { createServerBrainClient } from "@/lib/server-brain";
 import {
   listAllTimeEntries,
-  markEntriesBilled,
+  markTimeEntriesBilled,
   updateStandaloneBilling,
-  writeTimeEntriesWithRetry,
   STANDALONE_ENTRY_PREFIX,
   type TimeEntryWithCase,
 } from "@/lib/time-tracking";
@@ -2739,32 +2738,18 @@ async function executeInvoiceDraft(
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     // Verrechnete Zeiteinträge als billed markieren — gleiche Semantik wie
-    // der Rechnungsdialog (retry-gesichert statt stale-Snapshot-Patch;
-    // Standalone-Timer-Pages auf ihrer eigenen Page). Die Rechnung existiert
-    // bereits — ein Fehler hier darf sie nicht zurückrollen, wird aber laut
-    // geloggt statt verschluckt.
+    // der Rechnungsdialog, aber atomar: ein einziges UPDATE mit unless-Guard
+    // (bereits unter anderer Rechnung abgerechnete Einträge werden nie
+    // umattribuiert). Standalone-Timer-Pages laufen auf ihrer eigenen Page.
+    // Die Rechnung existiert bereits — ein Fehler hier darf sie nicht
+    // zurückrollen, wird aber laut geloggt statt verschluckt.
     if (billedEntryIds.length > 0) {
       try {
         const brain = createServerBrainClient(ctx.headers);
         const standaloneIds = billedEntryIds.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
         const caseIds = billedEntryIds.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
         if (caseIds.length > 0) {
-          await writeTimeEntriesWithRetry(
-            brain,
-            page.slug,
-            (freshEntries) => {
-              const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-                ...e,
-                case_slug: page.slug,
-              }));
-              const r = markEntriesBilled(entriesWithCase, caseIds, invoice.number);
-              return {
-                nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
-                meta: r,
-              };
-            },
-            log
-          );
+          await markTimeEntriesBilled(brain, page.slug, caseIds, invoice.number);
         }
         if (standaloneIds.length > 0) {
           await updateStandaloneBilling(brain, standaloneIds, {

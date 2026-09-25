@@ -17,7 +17,7 @@ import {
   extractedToTimeEntry,
   type ConversationMessage,
 } from "@/lib/ai-time-extract";
-import { createTimeEntry, writeTimeEntriesWithRetry } from "@/lib/time-tracking";
+import { createTimeEntry, appendTimeEntries } from "@/lib/time-tracking";
 import { createServerBrainClient } from "@/lib/server-brain";
 import type { TimeEntry } from "@/lib/legal-types";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -99,7 +99,7 @@ export const POST = createHandler(
     }
 
     // If auto_approve, persist the entries to the matter's time_entries —
-    // atomically in one retry-guarded write (previously this only built
+    // atomically in one engine-side UPDATE (previously this only built
     // objects and reported them as persisted without ever writing).
     let persistedCount = 0;
     if (body.auto_approve && body.case_slug && result.entries.length > 0) {
@@ -117,15 +117,7 @@ export const POST = createHandler(
         });
       });
       try {
-        await writeTimeEntriesWithRetry(
-          brain,
-          body.case_slug,
-          (freshEntries) => ({
-            nextEntries: [...freshEntries, ...created],
-            meta: null,
-          }),
-          log
-        );
+        await appendTimeEntries(brain, body.case_slug, created);
         persistedCount = created.length;
       } catch (err) {
         log.error(

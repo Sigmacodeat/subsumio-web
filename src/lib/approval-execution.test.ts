@@ -40,6 +40,27 @@ function depsFor(page: BrainPage): ApprovalExecutionDeps & {
       updated.push(p);
       return { slug: p.slug, success: true };
     }),
+    // Minimal mirror of page_array_mutate for tests: set/unset/remove by id.
+    mutatePageArray: vi.fn(async (slug, field, mutation) => {
+      const cur =
+        page.slug === slug && Array.isArray(page.frontmatter?.[field])
+          ? (page.frontmatter[field] as Record<string, unknown>[])
+          : [];
+      const wanted = new Set(mutation.match.map(String));
+      const matched = cur
+        .map((e) => String(e[mutation.match_key ?? "id"]))
+        .filter((id) => wanted.has(id));
+      return {
+        slug,
+        field,
+        matched_ids: matched,
+        updated_ids: matched,
+        skipped_ids: [],
+        not_found_ids: mutation.match.map(String).filter((id) => !matched.includes(id)),
+        items: cur,
+        length: cur.length,
+      };
+    }),
   };
 }
 

@@ -136,6 +136,14 @@ const importClient: ImportClient = {
       throw err;
     }
   },
+  // Atomic engine ops — import/rollback append and remove time_entries
+  // without a read-modify-write window on the whole array.
+  async appendPageArray(slug, field, items) {
+    return api.brain.appendPageArray(slug, field, items);
+  },
+  async mutatePageArray(slug, field, mutation) {
+    return api.brain.mutatePageArray(slug, field, mutation);
+  },
 };
 
 function todayInVienna(): string {

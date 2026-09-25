@@ -2038,17 +2038,21 @@ export async function invokeOp(
   if (result.isError) {
     let msg = "operation_failed";
     let errorKind: string | undefined;
+    let errorCode: string | undefined;
     try {
       const parsed = JSON.parse(result.content[0]?.text ?? "{}");
       msg = parsed.error?.message ?? parsed.message ?? msg;
       errorKind = parsed.error === "not_found" ? "not_found" : undefined;
+      errorCode = typeof parsed.error === "string" ? parsed.error : undefined;
     } catch {
       /* ignore */
     }
     if (errorKind === "not_found") {
       throw new EngineNotFoundError(msg);
     }
-    throw new OperationError("web_api_error", msg);
+    // Preserve the op's serialized error code (invalid_params, field_not_array,
+    // …) so HTTP routes can map status codes without parsing the message.
+    throw new OperationError(errorCode ?? "web_api_error", msg);
   }
   try {
     return JSON.parse(result.content[0]?.text ?? "null");
@@ -5106,6 +5110,133 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       });
     }
   });
+
+  // ── Atomic frontmatter-array primitives (Subsumio time_entries) ──
+  // Unlike `merge: true` on POST /api/pages — which reads the page, merges
+  // in JavaScript, and rewrites the whole frontmatter — these are single
+  // UPDATE statements inside the engine (jsonb_set + || / guarded element
+  // rewrite). Two concurrent writers serialize on the row lock, so appends
+  // and guarded billing updates can never lose each other's work.
+  //
+  // Both routes are scoped exactly like DELETE /api/pages/{slug}: verified
+  // matter scope + matter write permissions are asserted before the op runs
+  // (out-of-scope is indistinguishable from not-found), source isolation via
+  // the x-subsumio-source header, and the ops themselves re-check the slug
+  // prefix against ctx.matterScope.
+
+  const arrayOpError = (res: Response, e: unknown, fallback: string): void => {
+    const msg = e instanceof Error ? e.message : "unknown";
+    if (e instanceof EngineNotFoundError) {
+      apiError(res, 404, "page_not_found", "Page not found.");
+      return;
+    }
+    if (e instanceof OperationError && e.code === "matter_read_only") {
+      apiError(res, 403, e.code, msg);
+      return;
+    }
+    if (
+      e instanceof OperationError &&
+      (e.code === "invalid_params" || e.code === "field_not_array")
+    ) {
+      apiError(res, 400, e.code, msg);
+      return;
+    }
+    console.error(`[web-api] ${fallback} failed:`, e);
+    apiError(res, 500, fallback, publicErrorMessage(msg));
+  };
+
+  // POST /api/pages/array-append { slug, field, items }
+  // Appends items to a top-level frontmatter array field atomically.
+  app.post(
+    "/api/pages/array-append",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const slug = String(body.slug ?? "");
+        if (!slug) {
+          apiError(res, 400, "missing_slug");
+          return;
+        }
+        if (typeof body.field !== "string" || body.field.length === 0) {
+          apiError(res, 400, "missing_field");
+          return;
+        }
+        if (!Array.isArray(body.items)) {
+          apiError(res, 400, "missing_items", "items must be an array.");
+          return;
+        }
+        const sourceId = requestSourceId(req);
+        const stored = await engine.getPage(slug, { sourceId, includeDeleted: true });
+        await assertPageMatterAccess(engine, req, slug, { stored, write: true });
+        const result = await invokeOp(
+          engine,
+          "page_array_append",
+          { page_slug: slug, field: body.field, items: body.items },
+          sourceId,
+          readSourcesFor(req),
+          req.matterScope ?? "all",
+          req.aclGroups ?? "all",
+          req.userId
+        );
+        res.json(result);
+      } catch (e) {
+        arrayOpError(res, e, "array_append_failed");
+      }
+    }
+  );
+
+  // POST /api/pages/array-mutate { slug, field, match[], match_key?, set?,
+  // unset?, remove?, unless? } — patch or drop array elements whose match_key
+  // value (compared as text) is in match[], atomically, with an optional
+  // {eq,ne} guard for "skip elements already billed under another invoice".
+  app.post(
+    "/api/pages/array-mutate",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const slug = String(body.slug ?? "");
+        if (!slug) {
+          apiError(res, 400, "missing_slug");
+          return;
+        }
+        if (typeof body.field !== "string" || body.field.length === 0) {
+          apiError(res, 400, "missing_field");
+          return;
+        }
+        if (!Array.isArray(body.match) || body.match.length === 0) {
+          apiError(res, 400, "missing_match", "match must be a non-empty array of ids.");
+          return;
+        }
+        const sourceId = requestSourceId(req);
+        const stored = await engine.getPage(slug, { sourceId, includeDeleted: true });
+        await assertPageMatterAccess(engine, req, slug, { stored, write: true });
+        const result = await invokeOp(
+          engine,
+          "page_array_mutate",
+          {
+            page_slug: slug,
+            field: body.field,
+            match: body.match,
+            ...(body.match_key !== undefined ? { match_key: body.match_key } : {}),
+            ...(body.set !== undefined ? { set: body.set } : {}),
+            ...(body.unset !== undefined ? { unset: body.unset } : {}),
+            ...(body.remove !== undefined ? { remove: body.remove } : {}),
+            ...(body.unless !== undefined ? { unless: body.unless } : {}),
+          },
+          sourceId,
+          readSourcesFor(req),
+          req.matterScope ?? "all",
+          req.aclGroups ?? "all",
+          req.userId
+        );
+        res.json(result);
+      } catch (e) {
+        arrayOpError(res, e, "array_mutate_failed");
+      }
+    }
+  );
 
   // ── Subsumio R3: Document-Level ACL REST Endpoints ──
 

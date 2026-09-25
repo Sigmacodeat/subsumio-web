@@ -1170,6 +1170,181 @@ export class PGLiteEngine implements BrainEngine {
     return { slugs, count: slugs.length };
   }
 
+  // PGLite returns jsonb result columns as text in some paths — normalize
+  // so both engines hand callers the same parsed shape.
+  private _jsonbValue(value: unknown): unknown {
+    return typeof value === "string" ? (JSON.parse(value) as unknown) : value;
+  }
+
+  /**
+   * Subsumio atomic-append — parity with PostgresEngine.appendPageArrayItems.
+   * Same single-UPDATE jsonb_set shape; the `items` payload is wrapped in an
+   * object (`$4::jsonb->'items'`) because a top-level JS array param can bind
+   * as a Postgres array literal instead of jsonb (gbrain#1861).
+   */
+  async appendPageArrayItems(
+    slug: string,
+    field: string,
+    items: unknown[],
+    opts?: { sourceId?: string }
+  ): Promise<{ items: unknown[] } | null> {
+    const sourceId = opts?.sourceId ?? "default";
+    if (items.length === 0) {
+      const { rows } = await this.db.query(
+        `SELECT p.frontmatter -> $3 AS items
+           FROM pages p
+          WHERE p.slug = $1 AND p.source_id = $2 AND p.deleted_at IS NULL
+            AND (p.frontmatter -> $3 IS NULL
+                 OR jsonb_typeof(p.frontmatter -> $3) = 'array')`,
+        [slug, sourceId, field]
+      );
+      if (rows.length === 0) return null;
+      const items0 = this._jsonbValue((rows[0] as { items: unknown }).items);
+      return { items: Array.isArray(items0) ? items0 : [] };
+    }
+    const { rows } = await this.db.query(
+      `UPDATE pages p
+          SET frontmatter = jsonb_set(
+                p.frontmatter, ARRAY[$3]::text[],
+                COALESCE(
+                  CASE WHEN jsonb_typeof(p.frontmatter -> $3) = 'array'
+                       THEN p.frontmatter -> $3 END,
+                  '[]'::jsonb
+                ) || ($4::jsonb -> 'items'),
+                true
+              ),
+              updated_at = now()
+        WHERE p.slug = $1 AND p.source_id = $2 AND p.deleted_at IS NULL
+          AND (p.frontmatter -> $3 IS NULL
+               OR jsonb_typeof(p.frontmatter -> $3) = 'array')
+        RETURNING p.frontmatter -> $3 AS items`,
+      [slug, sourceId, field, { items }]
+    );
+    if (rows.length === 0) return null;
+    const value = this._jsonbValue((rows[0] as { items: unknown }).items);
+    return { items: Array.isArray(value) ? value : [] };
+  }
+
+  /**
+   * Subsumio atomic array-element mutation — parity with
+   * PostgresEngine.mutatePageArrayItems. Same SQL text verbatim.
+   */
+  async mutatePageArrayItems(
+    slug: string,
+    field: string,
+    spec: {
+      matchKey: string;
+      matchValues: string[];
+      set?: Record<string, unknown>;
+      unset?: string[];
+      remove?: boolean;
+      unless?: { eq?: Record<string, unknown>; ne?: Record<string, unknown> };
+    },
+    opts?: { sourceId?: string }
+  ): Promise<{
+    items: unknown[];
+    matched_ids: string[];
+    skipped_ids: string[];
+  } | null> {
+    const sourceId = opts?.sourceId ?? "default";
+    const set = spec.set ?? {};
+    const unset = spec.unset ?? [];
+    const remove = spec.remove === true;
+    const unless =
+      spec.unless && (spec.unless.eq || spec.unless.ne)
+        ? {
+            ...(spec.unless.eq ? { eq: spec.unless.eq } : {}),
+            ...(spec.unless.ne ? { ne: spec.unless.ne } : {}),
+          }
+        : null;
+    // The new array must be computed inside SET referencing `p` — Postgres
+    // re-evaluates SET/WHERE on the locked row's newest version after a
+    // lock wait (EvalPlanQual), so a concurrent writer's changes are never
+    // clobbered. The `m` CTE only collects pre-state matched/skipped ids
+    // for reporting; a CTE of the full array in SET would be stale (CTEs
+    // are not re-evaluated), which is exactly the lost-update bug this op
+    // exists to fix.
+    const { rows } = await this.db.query(
+      `WITH m AS (
+         SELECT DISTINCT (t.e ->> $4) AS id,
+           CASE
+             WHEN $9::jsonb IS NULL OR $9::jsonb = '{}'::jsonb
+                  OR jsonb_typeof($9::jsonb) IS DISTINCT FROM 'object' THEN false
+             ELSE
+               CASE WHEN jsonb_typeof($9::jsonb -> 'eq') IS DISTINCT FROM 'object'
+                    THEN true ELSE t.e @> ($9::jsonb -> 'eq') END
+               AND
+               CASE WHEN jsonb_typeof($9::jsonb -> 'ne') IS DISTINCT FROM 'object'
+                    THEN true
+                    ELSE NOT EXISTS (
+                      SELECT 1 FROM jsonb_each($9::jsonb -> 'ne') AS ne(k, v)
+                      WHERE NOT (
+                        jsonb_typeof(t.e) = 'object' AND t.e ? ne.k
+                        AND (t.e ->> ne.k) IS DISTINCT FROM (ne.v #>> '{}')
+                      )
+                    ) END
+           END AS skipped
+         FROM pages q, jsonb_array_elements(q.frontmatter -> $3) AS t(e)
+         WHERE q.slug = $1 AND q.source_id = $2 AND q.deleted_at IS NULL
+           AND jsonb_typeof(q.frontmatter -> $3) = 'array'
+           AND (t.e ->> $4) = ANY($5::text[])
+       )
+       UPDATE pages p
+          SET frontmatter = jsonb_set(
+                p.frontmatter, ARRAY[$3]::text[], COALESCE((
+                  SELECT jsonb_agg(g.out ORDER BY g.ord) FILTER (WHERE g.keep)
+                  FROM (
+                    SELECT elems.e, elems.ord, elems.m, elems.s,
+                      CASE WHEN elems.m AND NOT elems.s AND NOT $8::boolean
+                           THEN (elems.e || $6::jsonb) - $7::text[]
+                           ELSE elems.e END AS out,
+                      NOT ($8::boolean AND elems.m AND NOT elems.s) AS keep
+                    FROM (
+                      SELECT t.e, t.ord,
+                        COALESCE((t.e ->> $4) = ANY($5::text[]), false) AS m,
+                        CASE
+                          WHEN $9::jsonb IS NULL OR $9::jsonb = '{}'::jsonb
+                               OR jsonb_typeof($9::jsonb) IS DISTINCT FROM 'object' THEN false
+                          ELSE
+                            CASE WHEN jsonb_typeof($9::jsonb -> 'eq') IS DISTINCT FROM 'object'
+                                 THEN true ELSE t.e @> ($9::jsonb -> 'eq') END
+                            AND
+                            CASE WHEN jsonb_typeof($9::jsonb -> 'ne') IS DISTINCT FROM 'object'
+                                 THEN true
+                                 ELSE NOT EXISTS (
+                                   SELECT 1 FROM jsonb_each($9::jsonb -> 'ne') AS ne(k, v)
+                                   WHERE NOT (
+                                     jsonb_typeof(t.e) = 'object' AND t.e ? ne.k
+                                     AND (t.e ->> ne.k) IS DISTINCT FROM (ne.v #>> '{}')
+                                   )
+                                 ) END
+                        END AS s
+                      FROM jsonb_array_elements(p.frontmatter -> $3)
+                           WITH ORDINALITY AS t(e, ord)
+                    ) elems
+                  ) g
+                ), '[]'::jsonb),
+                true),
+              updated_at = now()
+        WHERE p.slug = $1 AND p.source_id = $2 AND p.deleted_at IS NULL
+          AND jsonb_typeof(p.frontmatter -> $3) = 'array'
+          AND EXISTS (SELECT 1 FROM m)
+        RETURNING p.frontmatter -> $3 AS items,
+                  (SELECT jsonb_agg(id) FROM m) AS matched_ids,
+                  (SELECT jsonb_agg(id) FROM m WHERE skipped) AS skipped_ids`,
+      [slug, sourceId, field, spec.matchKey, spec.matchValues, set, unset, remove, unless]
+    );
+    if (rows.length === 0) return null;
+    const items = this._jsonbValue((rows[0] as { items: unknown }).items);
+    const matched = this._jsonbValue((rows[0] as { matched_ids: unknown }).matched_ids);
+    const skipped = this._jsonbValue((rows[0] as { skipped_ids: unknown }).skipped_ids);
+    return {
+      items: Array.isArray(items) ? items : [],
+      matched_ids: Array.isArray(matched) ? (matched as string[]) : [],
+      skipped_ids: Array.isArray(skipped) ? (skipped as string[]) : [],
+    };
+  }
+
   async refreshPageBody(
     slug: string,
     sourceId: string,

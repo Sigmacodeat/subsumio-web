@@ -3,12 +3,9 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
-  markEntriesBilled,
+  markTimeEntriesBilled,
   updateStandaloneBilling,
-  writeTimeEntriesWithRetry,
   STANDALONE_ENTRY_PREFIX,
-  TimeEntriesWriteConflictError,
-  type TimeEntryWithCase,
 } from "@/lib/time-tracking";
 
 import { logger } from "@/lib/logger";
@@ -50,23 +47,21 @@ export const POST = createHandler(
         const casePage = await brain.getPage(body.case_slug).catch(() => null);
         if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-        const { meta } = await writeTimeEntriesWithRetry(
+        // Atomic single-statement update — the "already billed under a
+        // different invoice" skip runs inside the engine (unless guard),
+        // so two invoices drafted in parallel can never double-bill an
+        // entry the other one just claimed.
+        const embedded = await markTimeEntriesBilled(
           brain,
           body.case_slug,
-          (freshEntries) => {
-            const entriesWithCase: TimeEntryWithCase[] = freshEntries.map((e) => ({
-              ...e,
-              case_slug: body.case_slug,
-            }));
-            const r = markEntriesBilled(entriesWithCase, caseIds, body.invoice_number);
-            return {
-              nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
-              meta: r,
-            };
-          },
-          log
+          caseIds,
+          body.invoice_number
         );
-        result = meta;
+        result = {
+          updated: embedded.updated,
+          not_found: embedded.not_found,
+          already_billed: embedded.already_billed,
+        };
       }
 
       let alreadyBilled: string[] = result.already_billed ?? [];
@@ -99,13 +94,6 @@ export const POST = createHandler(
         invoice_number: body.invoice_number,
       });
     } catch (err) {
-      if (err instanceof TimeEntriesWriteConflictError) {
-        return apiError(
-          "write_conflict",
-          "Einträge konnten nicht als abgerechnet markiert werden — bitte erneut versuchen.",
-          409
-        );
-      }
       log.error("[time] mark-billed failed:", err instanceof Error ? err.message : String(err));
       return apiError(
         "internal_error",
