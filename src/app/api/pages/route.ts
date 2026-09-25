@@ -2,6 +2,7 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
 import { ENGINE_URL } from "@/lib/engine";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
@@ -183,12 +184,17 @@ async function refreshAktenblatt(headers: Record<string, string>, slug: string):
       }
     );
     if (next === (page.content ?? "").trim()) return;
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ slug, merge: true, content: next }),
-      signal: AbortSignal.timeout(15_000),
-    });
+    // Best effort, but a refused write is logged instead of passing silently.
+    await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({ slug, merge: true, content: next }),
+        signal: AbortSignal.timeout(15_000),
+      },
+      "Aktenblatt"
+    );
   } catch (e) {
     log.warn("[pages] aktenblatt refresh skipped:", e instanceof Error ? e.message : String(e));
   }

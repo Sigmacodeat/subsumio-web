@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { intakeFromPage } from "@/lib/intake";
 import { buildCaseFromIntake } from "@/lib/intake-conversion";
@@ -263,6 +264,7 @@ export const POST = createHandler(
     // tasks. Best-effort: the case must never fail because of this.
     const missingDocs = intakePage.frontmatter.missing_documents ?? [];
     let documentRequestSlug: string | undefined;
+    let requestSent = false;
     if (missingDocs.length > 0) {
       try {
         // Cursor-paginated: a single /api/pages call is capped at 100 rows —
@@ -279,18 +281,22 @@ export const POST = createHandler(
           documentRequestSlug = existingRequest.slug;
           // Retry mit Senden-Wunsch: vorhandenen Entwurf als gesendet markieren.
           if (body.send_document_request) {
-            await fetch(`${ENGINE_URL}/api/pages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...ctx.headers },
-              body: JSON.stringify({
-                slug: existingRequest.slug,
-                title: "Dokumentenanfrage Update",
-                type: "document_request",
-                merge: true,
-                frontmatter: { status: "sent", sent_at: now, updated_at: now },
-              }),
-              signal: AbortSignal.timeout(15_000),
-            });
+            requestSent = await engineWriteBestEffort(
+              `${ENGINE_URL}/api/pages`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...ctx.headers },
+                body: JSON.stringify({
+                  slug: existingRequest.slug,
+                  title: "Dokumentenanfrage Update",
+                  type: "document_request",
+                  merge: true,
+                  frontmatter: { status: "sent", sent_at: now, updated_at: now },
+                }),
+                signal: AbortSignal.timeout(15_000),
+              },
+              "Dokumentenanfrage (gesendet)"
+            );
           }
         } else {
           const { buildDocumentRequest } = await import("@/lib/document-requests");
@@ -318,10 +324,14 @@ export const POST = createHandler(
             }),
             signal: AbortSignal.timeout(15_000),
           });
-          if (reqRes.ok) documentRequestSlug = request.slug;
+          if (reqRes.ok) {
+            documentRequestSlug = request.slug;
+            requestSent = body.send_document_request === true;
+          }
         }
         // Same notification the PATCH route emits on status → sent.
-        if (body.send_document_request && documentRequestSlug) {
+        // Only a request actually stored as sent is announced.
+        if (requestSent && documentRequestSlug) {
           try {
             const { createDocumentRequestNotification } = await import("@/lib/comments");
             await createDocumentRequestNotification({
@@ -360,6 +370,7 @@ export const POST = createHandler(
       case: casePage,
       intake_slug: body.slug,
       document_request_slug: documentRequestSlug,
+      ...(body.send_document_request ? { document_request_sent: requestSent } : {}),
     });
   }
 );

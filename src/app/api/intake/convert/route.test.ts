@@ -435,6 +435,58 @@ describe("POST /api/intake/convert", () => {
     expect(reqBody.frontmatter.sent_at).toBeTruthy();
   });
 
+  test("an existing request whose 'sent' mark is refused is not announced as sent", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: ["Vollmacht"],
+        acceptance: {
+          conflict_check: SERVER_CLEAR,
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    const existingRequest = {
+      slug: "legal/document-requests/vorhanden",
+      type: "document_request",
+      frontmatter: {
+        case_slug: "legal/cases/2026-12345-max-muster",
+        source_event_slug: "legal/intake/2026-06-20/max",
+        status: "draft",
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([existingRequest]), { status: 200 }))
+      .mockResolvedValueOnce(new Response("engine down", { status: 500 }));
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({
+          slug: "legal/intake/2026-06-20/max",
+          send_document_request: true,
+        }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.document_request_slug).toBe("legal/document-requests/vorhanden");
+    expect(body.document_request_sent).toBe(false);
+    const { createDocumentRequestNotification } = await import("@/lib/comments");
+    expect(createDocumentRequestNotification).not.toHaveBeenCalled();
+  });
+
   test("portal_enabled: true belegt die Anfrage mit einem Upload-Link", async () => {
     const intakePage = {
       slug: "legal/intake/2026-06-20/max",

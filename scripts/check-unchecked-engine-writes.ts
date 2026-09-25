@@ -30,8 +30,6 @@ const EXEMPT_MARKER = /engine-write-ok:\s*\S/;
 const KNOWN_OPEN = new Set([
   // PUT then POST fallback on restore; the PUT is a wasted 404 but checked.
   "src/app/api/admin/backup/[id]/route.ts",
-  "src/app/api/intake/convert/route.ts",
-  "src/app/api/pages/route.ts",
 ]);
 
 const WRITE_METHOD = /^(post|put|patch|delete)$/i;
