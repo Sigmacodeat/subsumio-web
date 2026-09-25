@@ -289,3 +289,29 @@ export async function getConnector(): Promise<DMSConnector | null> {
 export function isAnyDMSConfigured(): boolean {
   return Boolean(process.env.DMS_PROVIDER && process.env.DMS_BASE_URL);
 }
+
+/**
+ * The DMS connector is configured once per installation (DMS_PROVIDER + its
+ * credentials), not per firm. Several firms share one instance, so it is
+ * only offered to the firms whose brain ids are listed explicitly in
+ * `DMS_ALLOWED_BRAIN_IDS` (comma-separated) — the firm that owns the DMS.
+ * Unset or empty → no firm gets it (fail-closed).
+ */
+export function dmsAllowedBrainIds(): string[] {
+  return (process.env.DMS_ALLOWED_BRAIN_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export function isDmsEnabledForBrain(brainId: string | undefined | null): boolean {
+  return !!brainId && dmsAllowedBrainIds().includes(brainId);
+}
+
+/** The installation DMS connector, or null when this firm is not enabled for it. */
+export async function getConnectorForBrain(
+  brainId: string | undefined | null
+): Promise<DMSConnector | null> {
+  if (!isDmsEnabledForBrain(brainId)) return null;
+  return getConnector();
+}

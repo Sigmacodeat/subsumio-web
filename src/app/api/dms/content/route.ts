@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getConnector } from "@/lib/dms";
+import { getConnectorForBrain } from "@/lib/dms";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { ATTACHMENT_CSP, IMAGE_INLINE_CSP, PDF_INLINE_CSP } from "@/lib/file-response-headers";
@@ -26,12 +26,13 @@ const dmsContentSchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "brain.read",
+    // Staff only: client_viewer accounts never reach the firm's DMS.
+    action: "agent.read",
     rateTier: "standard",
     query: dmsContentSchema,
   },
   async (ctx, _body, query, req) => {
-    const connector = await getConnector();
+    const connector = await getConnectorForBrain(ctx.brainId);
     if (!connector || !connector.isConfigured()) {
       return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
     }

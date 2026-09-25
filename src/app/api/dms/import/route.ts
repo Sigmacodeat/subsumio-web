@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getConnector } from "@/lib/dms";
+import { getConnectorForBrain } from "@/lib/dms";
 import { recordQuota } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
@@ -25,7 +25,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const connector = await getConnector();
+    const connector = await getConnectorForBrain(ctx.brainId);
     if (!connector || !connector.isConfigured()) {
       return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
     }

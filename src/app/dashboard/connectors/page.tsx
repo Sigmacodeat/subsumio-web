@@ -129,7 +129,7 @@ export default function ConnectorsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCoverage, setShowCoverage] = useState(false);
   const [showDmsBrowser, setShowDmsBrowser] = useState(false);
-  const [advokatPath, setAdvokatPath] = useState("/imports/advokat");
+  const [advokatPath, setAdvokatPath] = useState("advokat");
   const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
   const advokatInputRef = useRef<HTMLInputElement>(null);
 
@@ -370,7 +370,8 @@ export default function ConnectorsPage() {
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
             Binden Sie einen Export- oder Dokumentenordner Ihres ADVOKAT-Servers ein. Subsumio liest
             den Ordner nur (schreibt nie hinein) und gleicht ihn jede Minute ab. Der erste
-            Unterordner gilt als Aktenzeichen.
+            Unterordner gilt als Aktenzeichen. Angegeben wird ein Ordner im Import-Verzeichnis Ihrer
+            Kanzlei auf dem Server (z. B. „advokat“); Pfade außerhalb werden abgelehnt.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -378,8 +379,8 @@ export default function ConnectorsPage() {
             ref={advokatInputRef}
             value={advokatPath}
             onChange={(event) => setAdvokatPath(event.target.value)}
-            placeholder="/imports/advokat"
-            aria-label="Pfad des ADVOKAT-Ordners auf dem Server"
+            placeholder="advokat"
+            aria-label="ADVOKAT-Ordner im Import-Verzeichnis der Kanzlei"
           />
           <Button
             type="button"

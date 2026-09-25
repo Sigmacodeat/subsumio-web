@@ -382,6 +382,14 @@ export interface AuthInfo {
    */
   allowedSources?: string[];
   /**
+   * Shared, public, read-only sources (the law corpus) this caller may name
+   * EXPLICITLY via a per-call `source_id`, in addition to its own grant.
+   * Never widens the default scope — a query without `source_id` still reads
+   * only `allowedSources` / `sourceId`. Set for firm MCP tokens from the
+   * operator-configured shared-read list (core/shared-read-sources.ts).
+   */
+  sharedReadSources?: string[];
+  /**
    * Subsumio P0-SECR-002: Verified matter scope for this caller.
    * "all" = no per-matter restriction (trusted local CLI, admin).
    * string[] = only pages whose slug starts with one of these prefixes
@@ -769,8 +777,15 @@ export async function aclFilter<T extends { page_id?: number }>(
  *       trusted local (remote === false) → `{}` (spans the whole brain)
  *       remote                           → the caller's grant (sourceScopeOpts)
  *   - explicit `source_id`:
- *       remote + federated grant that doesn't include it → permission_denied
- *       otherwise                                        → `{ sourceId }`
+ *       trusted local                                     → `{ sourceId }`
+ *       remote, allowed when the source is
+ *         in the federated grant (if one is set), or
+ *         equal to the caller's own `ctx.sourceId` (no grant), or
+ *         in `ctx.auth.sharedReadSources` (shared law corpus)
+ *                                                         → `{ sourceId }`
+ *       remote, anything else                             → permission_denied
+ *     Several firms share one database; a remote caller without a federated
+ *     grant is bound to its own source and never reads another one by name.
  *   - neither → the caller's grant (sourceScopeOpts).
  *
  * `code_traversal_cache_clear` is intentionally NOT a caller — it is localOnly
@@ -786,8 +801,14 @@ export function resolveRequestedScope(
     return ctx.remote === false ? {} : sourceScopeOpts(ctx);
   }
   if (sourceIdParam !== undefined) {
+    if (ctx.remote === false) return { sourceId: sourceIdParam };
     const allowed = ctx.auth?.allowedSources;
-    if (ctx.remote !== false && allowed && allowed.length > 0 && !allowed.includes(sourceIdParam)) {
+    const inGrant =
+      allowed && allowed.length > 0
+        ? allowed.includes(sourceIdParam)
+        : !!ctx.sourceId && ctx.sourceId === sourceIdParam;
+    const shared = ctx.auth?.sharedReadSources ?? [];
+    if (!inGrant && !shared.includes(sourceIdParam)) {
       throw new OperationError(
         "permission_denied",
         `source '${sourceIdParam}' is outside your granted sources`,
@@ -7778,7 +7799,7 @@ const acl_delete_group: Operation = {
   scope: "write",
   handler: async (ctx, p) => {
     const { deleteAccessGroup } = await import("./acl.ts");
-    const ok = await deleteAccessGroup(ctx.engine, String(p.group_id));
+    const ok = await deleteAccessGroup(ctx.engine, String(p.group_id), ctx.sourceId);
     return { success: ok };
   },
   cliHints: { name: "acl-delete-group", positional: ["group_id"] },
@@ -7794,7 +7815,15 @@ const acl_add_member: Operation = {
   scope: "write",
   handler: async (ctx, p) => {
     const { addGroupMember } = await import("./acl.ts");
-    await addGroupMember(ctx.engine, String(p.group_id), String(p.user_id), ctx.sourceId);
+    const ok = await addGroupMember(
+      ctx.engine,
+      String(p.group_id),
+      String(p.user_id),
+      ctx.sourceId
+    );
+    if (!ok) {
+      throw new OperationError("not_found", "Access group not found", "Check the group id");
+    }
     return { success: true };
   },
   cliHints: { name: "acl-add-member", positional: ["group_id", "user_id"] },
@@ -7810,7 +7839,12 @@ const acl_remove_member: Operation = {
   scope: "write",
   handler: async (ctx, p) => {
     const { removeGroupMember } = await import("./acl.ts");
-    const ok = await removeGroupMember(ctx.engine, String(p.group_id), String(p.user_id));
+    const ok = await removeGroupMember(
+      ctx.engine,
+      String(p.group_id),
+      String(p.user_id),
+      ctx.sourceId
+    );
     return { success: ok };
   },
   cliHints: { name: "acl-remove-member", positional: ["group_id", "user_id"] },
@@ -7825,7 +7859,7 @@ const acl_list_members: Operation = {
   scope: "read",
   handler: async (ctx, p) => {
     const { listGroupMembers } = await import("./acl.ts");
-    return listGroupMembers(ctx.engine, String(p.group_id));
+    return listGroupMembers(ctx.engine, String(p.group_id), ctx.sourceId);
   },
   cliHints: { name: "acl-list-members", positional: ["group_id"] },
 };
@@ -7853,12 +7887,16 @@ const acl_set_page_permission: Operation = {
       throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug");
     }
     const permission = p.permission === "write" ? "write" : "read";
-    await setPagePermission(
+    const set = await setPagePermission(
       ctx.engine,
       page.id,
       String(p.group_id),
-      permission as "read" | "write"
+      permission as "read" | "write",
+      ctx.sourceId
     );
+    if (!set) {
+      throw new OperationError("not_found", "Access group not found", "Check the group id");
+    }
     return { success: true, page_id: page.id, permission };
   },
   cliHints: { name: "acl-set-permission", positional: ["slug", "group_id"] },

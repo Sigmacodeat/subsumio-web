@@ -208,6 +208,56 @@ describe("verifyAccessToken", () => {
     expect(auth.scopes).toEqual(["read", "write"]);
     expect(auth.webUserId).toBe("u-lawyer");
     expect(auth.matterScope).toEqual(expect.arrayContaining(["!cases/walled"]));
+    // Explicit read grant: the firm's own source only.
+    expect(auth.allowedSources).toEqual([SOURCE]);
+  });
+
+  test("a firm token cannot read another firm's source by naming it", async () => {
+    await insertToken("tok-scope", `web-mcp:${SOURCE}:scope`, webMcpPermissions(SOURCE, "u-admin"));
+    const auth = (await provider().verifyAccessToken("tok-scope")) as unknown as AuthInfo;
+    await engine.executeRaw(
+      `INSERT INTO sources (id, name, config) VALUES ('firm-other', 'firm-other', '{}'::jsonb) ON CONFLICT (id) DO NOTHING`
+    );
+    await engine.putPage(
+      "cases/foreign",
+      {
+        type: "legal_case",
+        title: "Fremdakte",
+        compiled_truth: "Sachverhalt fremd Zebra",
+        frontmatter: {},
+      } as any,
+      { sourceId: "firm-other" }
+    );
+    const res = await dispatchToolCall(
+      engine,
+      "query",
+      { query: "Zebra", source_id: "firm-other", expand: false },
+      {
+        remote: true,
+        sourceId: SOURCE,
+        auth,
+        matterScope: auth.matterScope,
+        matterGuard: { scope: auth.matterScope as string[], readOnly: [] },
+      }
+    );
+    expect(res.isError).toBe(true);
+    expect(res.content[0]!.text).toContain("permission_denied");
+    // The default scope (the token's grant) never reaches the other firm.
+    const all = await dispatchToolCall(
+      engine,
+      "list_pages",
+      { limit: 100 },
+      {
+        remote: true,
+        sourceId: SOURCE,
+        auth,
+        matterScope: auth.matterScope,
+        matterGuard: { scope: auth.matterScope as string[], readOnly: [] },
+      }
+    );
+    const text = all.content[0]?.text ?? "";
+    expect(text).not.toContain("firm-other");
+    expect(text).not.toContain("cases/foreign");
   });
 
   test("tokens without owner, with an inactive owner, or without a resolver are refused", async () => {

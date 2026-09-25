@@ -134,6 +134,18 @@ describe("getConnector", () => {
     expect(connector).not.toBeNull();
     expect(connector?.name).toBe("NetDocuments");
   });
+
+  test("getConnectorForBrain only serves firms listed in DMS_ALLOWED_BRAIN_IDS", async () => {
+    process.env.DMS_PROVIDER = "imanager";
+    process.env.DMS_ALLOWED_BRAIN_IDS = "brain-a, brain-c";
+    vi.resetModules();
+    const { getConnectorForBrain } = await import("./index");
+    expect((await getConnectorForBrain("brain-a"))?.name).toBe("iManage Work");
+    expect(await getConnectorForBrain("brain-b")).toBeNull();
+    expect(await getConnectorForBrain("")).toBeNull();
+    delete process.env.DMS_ALLOWED_BRAIN_IDS;
+    expect(await getConnectorForBrain("brain-a")).toBeNull();
+  });
 });
 
 describe("importToBrainCommon", () => {

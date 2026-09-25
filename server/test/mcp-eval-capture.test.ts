@@ -184,7 +184,10 @@ describe("op-layer capture — query", () => {
   });
 
   test("explicit source_id overrides ctx.sourceId for query retrieval", async () => {
+    // Trusted local caller: a remote caller may only name its own source
+    // (or an explicitly granted one) — see source-scope-resolver.test.ts.
     const ctx = makeCtx({
+      remote: false,
       sourceId: "default",
       config: makeConfig({ capture: false }),
     });

@@ -50,6 +50,7 @@ export const POST = createHandler(
     const result = await sendGuardedSms({
       to: normalized,
       brainId: ctx.brainId,
+      orgId: ctx.user.orgId,
       scope: body.scope as OutboundScope,
       body: body.message,
       urgent: body.urgent === true,

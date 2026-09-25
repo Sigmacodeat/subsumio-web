@@ -9,7 +9,7 @@ let connector: {
 } | null = null;
 
 vi.mock("@/lib/dms", () => ({
-  getConnector: vi.fn(async () => connector),
+  getConnectorForBrain: vi.fn(async () => connector),
 }));
 
 vi.mock("@/lib/api-handler", () => ({

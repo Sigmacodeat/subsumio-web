@@ -27,6 +27,7 @@ import { ocrImageBuffer } from "../../import-file.ts";
 import { inspectUploadBytes } from "../../upload-security.ts";
 import { persistFileBuffer } from "../../file-store.ts";
 import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import { tenantWatchDirAllowed } from "./import-root.ts";
 import type { IngestionEvent } from "../types.ts";
 
 const TEXT_EXTS = new Set([".md", ".txt", ".html", ".htm", ".json", ".xml"]);
@@ -67,6 +68,12 @@ export class AdvokatImportConnector extends BaseConnector {
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     if (!existsSync(this.watchDir)) {
       this._ctx?.logger.warn(`[${this.id}] ADVOKAT mirror does not exist: ${this.watchDir}`);
+      return { items: [], nextCursor: cursor };
+    }
+    if (!tenantWatchDirAllowed(this.watchDir, this._config.tenant_source_id)) {
+      this._ctx?.logger.warn(
+        `[${this.id}] watch_dir is outside the firm's import root; scan skipped`
+      );
       return { items: [], nextCursor: cursor };
     }
 

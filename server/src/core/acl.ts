@@ -153,51 +153,88 @@ export async function createAccessGroup(
   return row;
 }
 
-export async function deleteAccessGroup(engine: BrainEngine, groupId: string): Promise<boolean> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/*
+ * Group ids are only meaningful inside their own source: several firms share
+ * one database, so every group operation below is bound to the caller's
+ * source_id. A group of another source behaves exactly like a missing one.
+ */
+
+/** True when `groupId` names a group of `sourceId`. */
+export async function groupBelongsToSource(
+  engine: BrainEngine,
+  groupId: string,
+  sourceId: string
+): Promise<boolean> {
+  if (!UUID_RE.test(groupId)) return false;
   const [row] = await engine.executeRaw<{ id: string }>(
-    `DELETE FROM access_groups WHERE id = $1::uuid RETURNING id::text`,
-    [groupId]
+    `SELECT id::text AS id FROM access_groups WHERE id = $1::uuid AND source_id = $2`,
+    [groupId, sourceId]
   );
   return !!row;
 }
 
+export async function deleteAccessGroup(
+  engine: BrainEngine,
+  groupId: string,
+  sourceId: string
+): Promise<boolean> {
+  if (!UUID_RE.test(groupId)) return false;
+  const [row] = await engine.executeRaw<{ id: string }>(
+    `DELETE FROM access_groups WHERE id = $1::uuid AND source_id = $2 RETURNING id::text`,
+    [groupId, sourceId]
+  );
+  return !!row;
+}
+
+/** Adds the member; false (nothing written) when the group is not in `sourceId`. */
 export async function addGroupMember(
   engine: BrainEngine,
   groupId: string,
   userId: string,
   sourceId: string
-): Promise<void> {
+): Promise<boolean> {
+  if (!(await groupBelongsToSource(engine, groupId, sourceId))) return false;
   await engine.executeRaw(
     `INSERT INTO access_group_members (group_id, user_id, source_id)
      VALUES ($1::uuid, $2, $3)
      ON CONFLICT (group_id, user_id) DO NOTHING`,
     [groupId, userId, sourceId]
   );
+  return true;
 }
 
 export async function removeGroupMember(
   engine: BrainEngine,
   groupId: string,
-  userId: string
+  userId: string,
+  sourceId: string
 ): Promise<boolean> {
+  if (!UUID_RE.test(groupId)) return false;
   const [row] = await engine.executeRaw<{ group_id: string }>(
-    `DELETE FROM access_group_members WHERE group_id = $1::uuid AND user_id = $2
-     RETURNING group_id::text`,
-    [groupId, userId]
+    `DELETE FROM access_group_members m
+     USING access_groups g
+     WHERE m.group_id = g.id AND g.id = $1::uuid AND g.source_id = $3 AND m.user_id = $2
+     RETURNING m.group_id::text AS group_id`,
+    [groupId, userId, sourceId]
   );
   return !!row;
 }
 
 export async function listGroupMembers(
   engine: BrainEngine,
-  groupId: string
+  groupId: string,
+  sourceId: string
 ): Promise<{ user_id: string; created_at: string }[]> {
+  if (!UUID_RE.test(groupId)) return [];
   return engine.executeRaw<{ user_id: string; created_at: string }>(
-    `SELECT user_id, created_at::text AS created_at
-     FROM access_group_members
-     WHERE group_id = $1::uuid
-     ORDER BY created_at`,
-    [groupId]
+    `SELECT m.user_id, m.created_at::text AS created_at
+     FROM access_group_members m
+     JOIN access_groups g ON g.id = m.group_id
+     WHERE m.group_id = $1::uuid AND g.source_id = $2
+     ORDER BY m.created_at`,
+    [groupId, sourceId]
   );
 }
 
@@ -215,18 +252,22 @@ export async function getUserGroups(
   return rows.map((r) => r.group_id);
 }
 
+/** Sets the permission; false (nothing written) when the group is not in `sourceId`. */
 export async function setPagePermission(
   engine: BrainEngine,
   pageId: number,
   groupId: string,
-  permission: "read" | "write"
-): Promise<void> {
+  permission: "read" | "write",
+  sourceId: string
+): Promise<boolean> {
+  if (!(await groupBelongsToSource(engine, groupId, sourceId))) return false;
   await engine.executeRaw(
     `INSERT INTO page_permissions (page_id, group_id, permission)
      VALUES ($1, $2::uuid, $3)
      ON CONFLICT (page_id, group_id) DO UPDATE SET permission = $3`,
     [pageId, groupId, permission]
   );
+  return true;
 }
 
 export async function removePagePermission(

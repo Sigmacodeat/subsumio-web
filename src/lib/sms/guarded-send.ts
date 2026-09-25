@@ -20,7 +20,7 @@ import {
   type OutboundScope,
   type QuietHours,
 } from "@/lib/whatsapp/outbound-gate";
-import { getSmsConsentStore, hasActiveSmsConsent } from "./consent-store";
+import { getSmsConsentStore, hasActiveSmsConsent, smsTenantKeys } from "./consent-store";
 import { sendSms, type SmsSendResult } from "./twilio";
 
 export type SmsBlockReason = "no_consent" | "quiet_hours" | "not_configured" | "provider_error";
@@ -36,6 +36,8 @@ export interface GuardedSmsResult {
 export async function sendGuardedSms(params: {
   to: string;
   brainId: string;
+  /** The sending firm's organisation id; consent is looked up per firm. */
+  orgId?: string | null;
   scope: OutboundScope;
   body: string;
   urgent?: boolean;
@@ -46,7 +48,12 @@ export async function sendGuardedSms(params: {
   const normalized = normalizePhone(params.to);
   const hash = phoneHash(normalized);
 
-  const consented = await hasActiveSmsConsent(getSmsConsentStore(), hash, params.scope);
+  const consented = await hasActiveSmsConsent(
+    getSmsConsentStore(),
+    smsTenantKeys(params.brainId, params.orgId),
+    hash,
+    params.scope
+  );
   if (!consented) {
     await logAudit("sms.outbound_blocked", "sms_outbound", {
       brainId: params.brainId,

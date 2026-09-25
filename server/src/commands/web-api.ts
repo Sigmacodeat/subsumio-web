@@ -10,7 +10,7 @@ import { installProcessErrorReporting, reportError } from "../core/error-report.
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { readdirSync, readFileSync, statSync, realpathSync } from "fs";
+import { readdirSync, readFileSync, statSync } from "fs";
 import { join, dirname, extname, basename } from "path";
 import { fileURLToPath } from "url";
 import {
@@ -89,6 +89,7 @@ import {
 import { inspectUploadBytes, inspectUploadFile } from "../core/upload-security.ts";
 import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
+import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
 import {
   legalPipelineIdempotencyKey,
@@ -1963,14 +1964,22 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
  * matching national law source + `law-eu` are federated — preventing
  * cross-jurisdiction contamination (e.g. an AT attorney getting DE StPO results).
  */
-const SHARED_READ_SOURCES: string[] = (
-  process.env.SUBSUMIO_SHARED_READ_SOURCES ??
-  process.env.GBRAIN_SHARED_READ_SOURCES ??
-  ""
-)
-  .split(",")
-  .map((s) => s.trim())
-  .filter((s) => s && SOURCE_RE.test(s));
+const SHARED_READ_SOURCES: string[] = sharedReadSourcesFromEnv();
+
+/** Public-demo template sources (seeded fictional matters), the only clone origins. */
+export function isDemoTemplateSource(sourceId: string): boolean {
+  const override = process.env.SUBSUMIO_DEMO_TEMPLATE?.trim();
+  return (
+    sourceId === "demo-template" ||
+    /^demo-template-[a-z0-9_-]{1,32}$/.test(sourceId) ||
+    (!!override && sourceId === override)
+  );
+}
+
+/** Per-visitor demo session sources (`demo-s-*`), the only clone targets. */
+export function isDemoSessionSource(sourceId: string): boolean {
+  return /^demo-s-[a-z0-9]{1,32}$/.test(sourceId);
+}
 
 /**
  * Map a jurisdiction code to the law sources that jurisdiction's attorneys need.
@@ -4752,6 +4761,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "invalid_source_id");
           return;
         }
+        // Demo-only: several firms share this database, so the copy is bound
+        // to a demo template as origin and to the caller's own demo session
+        // source as target. Firm sources can be neither.
+        if (!isDemoTemplateSource(from) || !isDemoSessionSource(to)) {
+          apiError(res, 403, "clone_not_allowed");
+          return;
+        }
+        if (to !== requestSourceId(req)) {
+          apiError(res, 403, "clone_target_mismatch");
+          return;
+        }
         if (slugs !== null && slugs.length === 0) {
           res.json({ ok: true, cloned: { pages: 0 } });
           return;
@@ -5286,7 +5306,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const { deleteAccessGroup } = await import("../core/acl.ts");
-      const ok = await deleteAccessGroup(engine, groupId);
+      const ok = await deleteAccessGroup(engine, groupId, requestSourceId(req));
+      if (!ok) {
+        apiError(res, 404, "group_not_found");
+        return;
+      }
       res.json({ success: ok });
     } catch (e) {
       res
@@ -5299,8 +5323,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   app.get("/api/acls/groups/:groupId/members", async (req: Request, res: Response) => {
     try {
       const groupId = String(req.params.groupId ?? "");
-      const { listGroupMembers } = await import("../core/acl.ts");
-      const members = await listGroupMembers(engine, groupId);
+      const { groupBelongsToSource, listGroupMembers } = await import("../core/acl.ts");
+      const sourceId = requestSourceId(req);
+      if (!(await groupBelongsToSource(engine, groupId, sourceId))) {
+        apiError(res, 404, "group_not_found");
+        return;
+      }
+      const members = await listGroupMembers(engine, groupId, sourceId);
       res.json(members);
     } catch (e) {
       res.status(500).json({
@@ -5324,7 +5353,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
         const { addGroupMember } = await import("../core/acl.ts");
-        await addGroupMember(engine, groupId, userId, requestSourceId(req));
+        if (!(await addGroupMember(engine, groupId, userId, requestSourceId(req)))) {
+          apiError(res, 404, "group_not_found");
+          return;
+        }
         res.json({ success: true });
       } catch (e) {
         res.status(500).json({
@@ -5341,7 +5373,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const groupId = String(req.params.groupId ?? "");
       const userId = String(req.params.userId ?? "");
       const { removeGroupMember } = await import("../core/acl.ts");
-      const ok = await removeGroupMember(engine, groupId, userId);
+      const ok = await removeGroupMember(engine, groupId, userId, requestSourceId(req));
       res.json({ success: ok });
     } catch (e) {
       res.status(500).json({
@@ -5393,7 +5425,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
         const { setPagePermission } = await import("../core/acl.ts");
-        await setPagePermission(engine, page.id, groupId, permission as "read" | "write");
+        const set = await setPagePermission(
+          engine,
+          page.id,
+          groupId,
+          permission as "read" | "write",
+          requestSourceId(req)
+        );
+        if (!set) {
+          apiError(res, 404, "group_not_found");
+          return;
+        }
         res.json({ success: true, page_id: page.id, permission });
       } catch (e) {
         res.status(500).json({
@@ -9857,24 +9899,34 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
         const requestedPath = String(body.watch_dir ?? "").trim();
-        if (!requestedPath || !requestedPath.startsWith("/")) {
+        if (!requestedPath) {
           res.status(400).json({
             error: "invalid_watch_dir",
-            message: "watch_dir muss ein absoluter, auf dem Engine-Host gemounteter Pfad sein.",
+            message: "watch_dir fehlt.",
           });
           return;
         }
-        let watchDir: string;
-        try {
-          watchDir = realpathSync(requestedPath);
-          if (!statSync(watchDir).isDirectory()) throw new Error("not_directory");
-        } catch {
+        // Only below this firm's own import root (realpath: no `..`, no
+        // symlinks out). Several firms share the engine host.
+        const { resolveTenantWatchDir } =
+          await import("../core/ingestion/connectors/import-root.ts");
+        const resolved = resolveTenantWatchDir(
+          requestedPath,
+          requireTenant ? tenantSource : undefined
+        );
+        if (!resolved.ok) {
           res.status(400).json({
             error: "invalid_watch_dir",
-            message: "Der Ordner existiert auf dem Engine-Host nicht oder ist nicht lesbar.",
+            message:
+              resolved.reason === "import_root_missing"
+                ? "Für diese Kanzlei ist kein Import-Verzeichnis auf dem Engine-Host eingerichtet."
+                : resolved.reason === "not_a_directory"
+                  ? "Der Ordner existiert im Import-Verzeichnis der Kanzlei nicht oder ist nicht lesbar."
+                  : "watch_dir muss im Import-Verzeichnis der Kanzlei liegen.",
           });
           return;
         }
+        const watchDir = resolved.watchDir;
         const pollInterval = Math.max(
           30_000,
           Math.min(Number(body.poll_interval_ms) || 60_000, 3_600_000)

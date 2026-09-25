@@ -1,4 +1,4 @@
-import { getConnector, isAnyDMSConfigured } from "@/lib/dms";
+import { getConnector, isAnyDMSConfigured, isDmsEnabledForBrain } from "@/lib/dms";
 import { createHandler } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +9,9 @@ export const GET = createHandler(
     rateTier: "standard",
     cacheMaxAge: 30,
   },
-  async (_ctx, _body, _query, _req) => {
-    const configured = isAnyDMSConfigured();
+  async (ctx, _body, _query, _req) => {
+    // The installation DMS belongs to the firm(s) enabled for it only.
+    const configured = isAnyDMSConfigured() && isDmsEnabledForBrain(ctx.brainId);
     if (!configured) {
       return Response.json({ configured: false });
     }

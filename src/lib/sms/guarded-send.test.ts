@@ -11,11 +11,11 @@ const PHONE = "+436641234567";
 const NORM = normalizePhone(PHONE);
 const HASH = phoneHash(NORM);
 
-async function grant(scopes: string[] = ["client_reminder"]) {
+async function grant(scopes: string[] = ["client_reminder"], orgId = "b1") {
   const store = getSmsConsentStore();
   await store.create({
-    id: `c-${HASH.slice(0, 8)}`,
-    orgId: "org1",
+    id: `c-${orgId}-${HASH.slice(0, 8)}`,
+    orgId,
     subjectType: "client",
     subjectRef: "client-1",
     phoneHash: HASH,
@@ -77,7 +77,7 @@ describe("sendGuardedSms", () => {
   it("blocks after revocation", async () => {
     await grant();
     const store = getSmsConsentStore();
-    const rows = await store.getByPhoneHash(HASH);
+    const rows = await store.getByPhoneHash(["b1"], HASH);
     await store.update(rows[0].id, { optOutAt: new Date().toISOString() });
     const r = await sendGuardedSms({
       to: PHONE,
@@ -111,6 +111,33 @@ describe("sendGuardedSms", () => {
       send: okSend,
     });
     expect(urgent.sent).toBe(true);
+  });
+
+  it("another firm's consent does not authorise a send", async () => {
+    await grant(["client_reminder"], "brain-firm-a");
+    const r = await sendGuardedSms({
+      to: PHONE,
+      brainId: "brain-firm-b",
+      orgId: "org-firm-b",
+      scope: "client_reminder",
+      body: "x",
+      send: okSend,
+    });
+    expect(r.sent).toBe(false);
+    expect(r.reason).toBe("no_consent");
+  });
+
+  it("a consent recorded under the firm's organisation id counts for that firm", async () => {
+    await grant(["client_reminder"], "org-firm-a");
+    const r = await sendGuardedSms({
+      to: PHONE,
+      brainId: "brain-firm-a",
+      orgId: "org-firm-a",
+      scope: "client_reminder",
+      body: "x",
+      send: okSend,
+    });
+    expect(r.sent).toBe(true);
   });
 
   it("surfaces provider failure without faking success", async () => {
