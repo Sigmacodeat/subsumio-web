@@ -123,7 +123,7 @@ describe("CaseQuickCreateDialog — conflict check", () => {
       ["Anna Beispiel", "client"],
       ["Widget GmbH", "opponent"],
     ]);
-    const payload = vi.mocked(api.brain.createPage).mock.calls[0]![0] as {
+    const payload = vi.mocked(api.brain.createPage).mock.calls[0]![0] as unknown as {
       frontmatter: { mandate_acceptance: { conflict_check: { status: string } } };
     };
     // the record is filled by the server when the matter is written
