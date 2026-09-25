@@ -51,6 +51,40 @@ describe("Kanzlei-Einstellungen (OPS-18)", () => {
     expect(rejected(r)).toBeNull();
   });
 
+  it("the billing-rules switch is a protected setting: only settings.write may flip it (OPS-16)", () => {
+    for (const current of [settingsPage, null]) {
+      expect(
+        rejected(
+          judge({
+            slug: "legal/settings/kanzlei",
+            current,
+            frontmatter: { type: "kanzlei_settings", billingRulesEnabled: true },
+          })
+        )?.status
+      ).toBe(403);
+      expect(
+        rejected(
+          judge({
+            slug: "legal/settings/kanzlei",
+            current,
+            mode: "replace",
+            frontmatter: { type: "kanzlei_settings", billingRulesEnabled: true },
+          })
+        )?.status
+      ).toBe(403);
+    }
+    expect(
+      rejected(
+        judge({
+          slug: "legal/settings/kanzlei",
+          current: settingsPage,
+          actor: admin,
+          frontmatter: { billingRulesEnabled: true },
+        })
+      )
+    ).toBeNull();
+  });
+
   it("nobody deletes them or array-mutates them generically", () => {
     expect(
       rejected(

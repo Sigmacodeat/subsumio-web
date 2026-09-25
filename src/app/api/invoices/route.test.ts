@@ -6,6 +6,9 @@ type Fm = Record<string, unknown>;
 const pages = new Map<string, Fm>();
 const invoicePages = new Map<string, Fm>();
 let listFails = false;
+/** Stored Kanzlei settings (null = never saved → 404 → defaults). */
+let settingsFm: Fm | null = null;
+let settingsFails = false;
 /** An invoice another request writes between the existence check and this write. */
 let takenAtWrite: string | null = null;
 const writes: Array<Record<string, unknown>> = [];
@@ -34,9 +37,13 @@ vi.mock("@/lib/api-handler", () => ({
 }));
 
 import { POST } from "./route";
+import { roundHours, timeLineAmount } from "@/lib/billing-rules";
+import { computeInvoiceTotals } from "@/lib/invoice-totals";
 
 beforeEach(() => {
   listFails = false;
+  settingsFm = null;
+  settingsFails = false;
   takenAtWrite = null;
   writes.length = 0;
   pages.clear();
@@ -73,6 +80,12 @@ beforeEach(() => {
         );
       }
       const slug = decodeURIComponent(u.pathname.replace(/^\/api\/pages\//, ""));
+      if (slug === "legal/settings/kanzlei") {
+        if (settingsFails) return new Response("{}", { status: 500 });
+        return settingsFm
+          ? Response.json({ slug, type: "kanzlei_settings", frontmatter: settingsFm })
+          : new Response("{}", { status: 404 });
+      }
       const fm = invoicePages.get(slug);
       return fm
         ? Response.json({ slug, type: "invoice", frontmatter: fm })
@@ -208,5 +221,80 @@ describe("POST /api/invoices — sums are checked by the server (GELD-2/GELD-3)"
     expect((await call(body)).status).toBe(422);
     Object.assign(body.frontmatter, { client_vat_id: "DE123456789" });
     expect((await call(body)).status).toBe(201);
+  });
+});
+
+describe("POST /api/invoices — Abrechnungsregeln der Kanzlei (OPS-16)", () => {
+  // te-1 = 60 min, te-2 = 30 min (see beforeEach); rate 200 €/h.
+  function ruledPayload(billed: [number, number]) {
+    const rate = 200;
+    const recorded = [60, 30];
+    const items = recorded.map((rec, i) => {
+      const b = billed[i];
+      return {
+        description: `Leistung ${i + 1}`,
+        date: "2026-09-01",
+        hours: roundHours(b / 60),
+        rate,
+        amount: timeLineAmount(b, rate),
+        recorded_minutes: rec,
+        billed_minutes: b,
+        rate_source: "firm_default",
+      };
+    });
+    const totals = computeInvoiceTotals({ items, vatRate: 0.2 });
+    const body = payload("2026-001") as { frontmatter: Record<string, unknown> };
+    Object.assign(body.frontmatter, {
+      items,
+      subtotal: totals.subtotal,
+      tax: totals.tax,
+      total: totals.total,
+    });
+    return body;
+  }
+
+  it("rules off (default): an invoice exactly as before is accepted, even with a stored increment", async () => {
+    settingsFm = { abrechnungstakt: "45", stundensatz: "200" };
+    const res = await call(payload("2026-001"));
+    expect(res.status).toBe(201);
+  });
+
+  it("rules off: positions that bill rounded-up minutes are refused", async () => {
+    settingsFm = { abrechnungstakt: "45" };
+    const res = await call(ruledPayload([90, 45]));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("invoice_billing_mismatch");
+    expect(invoicePages.size).toBe(0);
+  });
+
+  it("rules on: positions rounded to the increment are accepted and keep both minutes", async () => {
+    settingsFm = { billingRulesEnabled: true, abrechnungstakt: "45" };
+    const res = await call(ruledPayload([90, 45]));
+    expect(res.status).toBe(201);
+    const stored = invoicePages.get("invoice/2026-001")!.items as Array<Record<string, unknown>>;
+    expect(stored.map((i) => [i.recorded_minutes, i.billed_minutes])).toEqual([
+      [60, 90],
+      [30, 45],
+    ]);
+    // The time entries themselves keep their recorded minutes.
+    expect(entries().map((e) => e.minutes)).toEqual([60, 30]);
+  });
+
+  it("rules on: unrounded or legacy positions are refused, nothing reserved", async () => {
+    settingsFm = { billingRulesEnabled: true, abrechnungstakt: "45" };
+    let res = await call(ruledPayload([60, 30]));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("invoice_billing_mismatch");
+    res = await call(payload("2026-001"));
+    expect(res.status).toBe(422);
+    expect(invoicePages.size).toBe(0);
+    expect(entries().every((e) => e.billed === false)).toBe(true);
+  });
+
+  it("fails closed when the Kanzlei settings cannot be read", async () => {
+    settingsFails = true;
+    const res = await call(payload("2026-001"));
+    expect(res.status).toBe(503);
+    expect(invoicePages.size).toBe(0);
   });
 });
