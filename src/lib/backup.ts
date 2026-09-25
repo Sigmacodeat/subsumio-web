@@ -22,6 +22,10 @@ export interface BackupMetadata {
   pageTypes: Record<string, number>;
   status: "completed" | "failed";
   error?: string;
+  /** Firm the backup was taken from. Absent on older backups, which cannot be restored. */
+  brainId?: string;
+  orgId?: string;
+  orgName?: string;
   /** False when entries or texts are missing or the run was cut off. Absent on older backups. */
   complete?: boolean;
   truncated?: boolean;
@@ -38,6 +42,29 @@ export interface BackupCompleteness {
   truncated_warning?: string;
   count_warning?: string;
   warning?: string;
+}
+
+/** The firm a backup belongs to; stored in the file and its metadata. */
+export interface BackupOrigin {
+  brainId: string;
+  orgId: string;
+  orgName: string;
+}
+
+const BACKUP_ID_RE = /^backup_[A-Za-z0-9_-]+$/;
+
+/** Backup ids are generated here; anything else never becomes a file path. */
+export function isValidBackupId(id: string): boolean {
+  return BACKUP_ID_RE.test(id);
+}
+
+/**
+ * The firm recorded inside a backup file (`export_metadata.brain_id`). Null
+ * for older backups without an origin — those are never restored.
+ */
+export function backupOriginBrainId(parsed: unknown): string | null {
+  const meta = (parsed as { export_metadata?: { brain_id?: unknown } } | null)?.export_metadata;
+  return typeof meta?.brain_id === "string" && meta.brain_id ? meta.brain_id : null;
 }
 
 async function ensureBackupDir(): Promise<void> {
@@ -83,6 +110,7 @@ export async function listBackups(): Promise<BackupMetadata[]> {
 export async function createBackup(
   pages: Array<Record<string, unknown>>,
   createdBy: string,
+  origin: BackupOrigin,
   completeness?: BackupCompleteness
 ): Promise<BackupMetadata> {
   await ensureBackupDir();
@@ -101,6 +129,9 @@ export async function createBackup(
       type: "full_backup",
       generated_at: new Date().toISOString(),
       created_by: createdBy,
+      brain_id: origin.brainId,
+      org_id: origin.orgId,
+      org_name: origin.orgName,
       format: "JSON",
       ...completeness,
       total_pages: pages.length,
@@ -117,6 +148,9 @@ export async function createBackup(
     filename,
     createdAt: new Date().toISOString(),
     createdBy,
+    brainId: origin.brainId,
+    orgId: origin.orgId,
+    orgName: origin.orgName,
     totalPages: pages.length,
     totalSize: stat.size,
     pageTypes,
@@ -141,6 +175,7 @@ export async function createBackup(
 export async function getBackupFile(
   id: string
 ): Promise<{ content: string; metadata: BackupMetadata } | null> {
+  if (!isValidBackupId(id)) return null;
   await ensureBackupDir();
   const filename = `${id}.json`;
   const filePath = path.join(BACKUP_DIR, filename);
@@ -172,6 +207,7 @@ export async function getBackupFile(
 }
 
 export async function deleteBackup(id: string): Promise<boolean> {
+  if (!isValidBackupId(id)) return false;
   await ensureBackupDir();
   const filename = `${id}.json`;
   const filePath = path.join(BACKUP_DIR, filename);

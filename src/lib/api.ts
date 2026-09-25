@@ -2286,6 +2286,8 @@ export const api = {
         pageTypes: Record<string, number>;
         status: string;
         complete?: boolean;
+        brainId?: string;
+        orgName?: string;
       }>;
       stats: {
         totalBackups: number;
@@ -2293,6 +2295,8 @@ export const api = {
         lastBackupAt: string | null;
         oldestBackupAt: string | null;
       };
+      /** Firm of the active support session; null outside one. */
+      tenant: { brainId: string; orgName: string } | null;
     }> {
       return request("/api/admin/backup");
     },
@@ -2318,6 +2322,7 @@ export const api = {
 
     restore(
       id: string,
+      reason: string,
       pageTypes?: string[]
     ): Promise<{
       ok: boolean;
@@ -2328,7 +2333,7 @@ export const api = {
     }> {
       return request(`/api/admin/backup/${encodeURIComponent(id)}`, {
         method: "POST",
-        body: JSON.stringify({ confirm: true, pageTypes }),
+        body: JSON.stringify({ confirm: true, reason, pageTypes }),
       });
     },
 

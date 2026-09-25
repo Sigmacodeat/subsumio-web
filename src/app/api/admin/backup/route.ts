@@ -11,9 +11,14 @@ export const GET = createHandler(
     action: "platform.operator",
     rateTier: "standard",
   },
-  async (_ctx) => {
-    const [backups, stats] = await Promise.all([listBackups(), getBackupStats()]);
-    return Response.json({ backups, stats });
+  async (ctx) => {
+    const [all, stats] = await Promise.all([listBackups(), getBackupStats()]);
+    // Inside a support session only that firm's backups are listed.
+    const backups = ctx.supportSession ? all.filter((b) => b.brainId === ctx.brainId) : all;
+    const tenant = ctx.supportSession
+      ? { brainId: ctx.brainId, orgName: ctx.supportSession.orgName }
+      : null;
+    return Response.json({ backups, stats, tenant });
   }
 );
 
@@ -29,10 +34,24 @@ export const POST = createHandler(
     audit: (ctx) => ({
       action: "admin.backup" as const,
       entityType: "backup",
-      details: { triggeredBy: ctx.user.email },
+      details: {
+        triggeredBy: ctx.user.email,
+        brainId: ctx.brainId,
+        orgName: ctx.supportSession?.orgName ?? null,
+      },
     }),
   },
   async (ctx, _body) => {
+    // A backup is always one firm's data. Without a support session the
+    // operator's context is their own empty workspace — refuse instead of
+    // storing an "empty full backup".
+    if (!ctx.supportSession) {
+      return apiError(
+        "support_session_required",
+        "Backups nur innerhalb einer Support-Sitzung für eine Kanzlei",
+        409
+      );
+    }
     // Every entry with its text; the result says whether anything is missing.
     const { pages: allPages, completeness } = await collectFullBackup(ctx.headers);
     if (completeness.engine_error && allPages.length === 0) {
@@ -47,6 +66,11 @@ export const POST = createHandler(
     const metadata: BackupMetadata = await createBackup(
       redactPageSecrets(allPages),
       ctx.user.email,
+      {
+        brainId: ctx.brainId,
+        orgId: ctx.supportSession.orgId,
+        orgName: ctx.supportSession.orgName,
+      },
       completeness
     );
     return Response.json({ ok: true, backup: metadata });
