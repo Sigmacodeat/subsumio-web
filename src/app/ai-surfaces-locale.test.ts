@@ -17,6 +17,22 @@ describe("AI surfaces — Austrian formats", () => {
     expect(read(file)).not.toMatch(/["']de-DE["']/);
   });
 
+  test("amounts via formatEur, not toFixed(2) €", () => {
+    expect(read("src/components/legal/matter-tabs/overview-tab.tsx")).not.toMatch(
+      /toFixed\(2\)\}\s*€/
+    );
+  });
+
+  test.each([
+    "src/app/dashboard/compliance/answer-quality/page.tsx",
+    "src/app/dashboard/settings/privacy/page.tsx",
+    "src/app/dashboard/shared-spaces/accept/page.tsx",
+  ])("%s reads the error text from `error` (apiError shape)", (file) => {
+    expect(read(file)).not.toMatch(
+      /error\?\.message|\{ message\?: string \}\)\?\.message\s*:\s*undefined/
+    );
+  });
+
   test("litigation: matter chosen from the list, no raw error message shown", () => {
     const src = read("src/app/dashboard/litigation/page.tsx");
     expect(src).toContain("<CaseSelect");
