@@ -3,11 +3,16 @@
 /**
  * Mobile: Fristen-Übersicht
  * Shows upcoming deadlines sorted by urgency with overdue alerts.
- * Pulls from /api/legal/ai-deadlines.
+ * Same source as the desktop Fristenbuch: the unified Fristen read model
+ * (GET /api/legal/fristen via useFristen) — cancelled/rejected deadlines are
+ * already excluded there. A failed load shows an error with retry, never
+ * the empty state ("nichts fällig" would be a dangerous conclusion).
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { useFristen, type Frist } from "@/lib/queries/legal";
+import { zonedDateString } from "@/lib/datetime";
 
 interface Deadline {
   id: string;
@@ -27,37 +32,38 @@ const PRIORITY_COLORS = {
 };
 const PRIORITY_LABELS = { critical: "Kritisch", high: "Hoch", medium: "Mittel", low: "Niedrig" };
 
+const STATUS_PRIORITY: Record<string, Deadline["priority"]> = {
+  overdue: "critical",
+  critical: "critical",
+  warning: "high",
+  vorfrist: "medium",
+  pending: "low",
+};
+
+/** Calendar days from today (firm time zone) to a YYYY-MM-DD due date. */
 function daysUntil(dateStr: string): number {
-  const diff = new Date(dateStr).getTime() - Date.now();
-  return Math.ceil(diff / 86_400_000);
+  const due = Date.parse(`${dateStr.slice(0, 10)}T00:00:00Z`);
+  const today = Date.parse(`${zonedDateString(new Date())}T00:00:00Z`);
+  return Math.round((due - today) / 86_400_000);
+}
+
+function toDeadline(f: Frist): Deadline {
+  return {
+    id: f.id,
+    title: f.title,
+    dueDate: f.due_date,
+    matter: f.case_title,
+    type: f.type,
+    priority: STATUS_PRIORITY[f.status] ?? "low",
+    done: f.status === "done",
+  };
 }
 
 export default function MobileDeadlinesPage() {
-  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "overdue" | "today" | "week">("all");
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/legal/ai-deadlines?limit=100", {
-          signal: AbortSignal.timeout(15_000),
-        });
-        if (res.ok) {
-          const data = (await res.json()) as { deadlines?: Deadline[]; results?: Deadline[] };
-          if (!cancelled) setDeadlines(data.deadlines ?? data.results ?? []);
-        }
-      } catch (e) {
-        if (!cancelled) console.error(e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, isLoading: loading, isError, refetch, isFetching } = useFristen();
+  const deadlines = useMemo(() => (data?.fristen ?? []).map(toDeadline), [data]);
+  const partial = data?.partial === true;
 
   const filtered = useMemo(() => {
     return deadlines
@@ -69,7 +75,7 @@ export default function MobileDeadlinesPage() {
         if (filter === "week") return days >= 0 && days <= 7;
         return true;
       })
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   }, [deadlines, filter]);
 
   const overdueCount = deadlines.filter((d) => !d.done && daysUntil(d.dueDate) < 0).length;
@@ -192,12 +198,54 @@ export default function MobileDeadlinesPage() {
 
       {/* List */}
       <div style={{ flex: 1, overflowY: "auto" }}>
+        {partial && !loading && !isError && (
+          <div
+            role="status"
+            style={{
+              margin: "10px 16px 0",
+              padding: "8px 12px",
+              borderRadius: 8,
+              fontSize: 12,
+              background: "var(--ds-warning-bg)",
+              border: "1px solid var(--ds-warning-border)",
+              color: "var(--signal-warning-500)",
+            }}
+          >
+            Nicht alle Fristenquellen konnten geladen werden — die Liste ist unvollständig.
+          </div>
+        )}
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
             <Loader2
               size={24}
               style={{ color: "var(--brand-500)", animation: "spin 1s linear infinite" }}
             />
+          </div>
+        ) : isError ? (
+          <div
+            role="alert"
+            style={{ textAlign: "center", padding: "40px 20px", color: "var(--signal-danger-500)" }}
+          >
+            <AlertTriangle size={32} style={{ margin: "0 auto 10px" }} />
+            <div style={{ fontSize: 14, marginBottom: 12 }}>
+              Fristen konnten nicht geladen werden
+            </div>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 20,
+                fontSize: 13,
+                border: "none",
+                background: "var(--brand-500)",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              {isFetching ? "Lädt …" : "Erneut versuchen"}
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ds-text-muted)" }}>
@@ -246,10 +294,11 @@ export default function MobileDeadlinesPage() {
                   <div style={{ fontSize: 11, color: "var(--ds-text-muted)" }}>
                     {d.matter && <span>{d.matter} · </span>}
                     <span>
-                      {new Date(d.dueDate).toLocaleDateString("de-AT", {
+                      {new Date(`${d.dueDate.slice(0, 10)}T12:00:00Z`).toLocaleDateString("de-AT", {
                         weekday: "short",
                         day: "2-digit",
                         month: "short",
+                        timeZone: "Europe/Vienna",
                       })}
                     </span>
                   </div>

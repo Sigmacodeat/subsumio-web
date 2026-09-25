@@ -130,7 +130,8 @@ export type RouteAction =
   | "admin.data_export"
   | "admin.audit_export" // nur admin
   | "platform.operator" // Subsumio-Betreiber (ops.subsum.io), nie über KanzleiRole
-  | "platform.support_session"; // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
+  | "platform.support_session" // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
+  | "notifications.write"; // POST/PATCH/DELETE /api/notifications — nur eigene Benachrichtigungen, alle Rollen
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   // Auth endpoints are public (no auth required), but we still declare them for audit consistency
@@ -226,6 +227,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
   "legal.case_scanner": ["admin", "lawyer", "assistant"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
+  // Wirkt ausschließlich auf die eigenen Benachrichtigungen (userId-Scope in der Route).
+  "notifications.write": ["admin", "lawyer", "assistant", "client_viewer"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -344,6 +347,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "admin.audit_export": "admin.audit_export",
     "platform.operator": "settings.update",
     "platform.support_session": "support.session_end",
+    "notifications.write": "settings.update",
   };
   return map[routeAction] ?? "settings.update";
 }

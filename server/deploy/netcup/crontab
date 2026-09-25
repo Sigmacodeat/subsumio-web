@@ -104,7 +104,10 @@
 15 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/automations || true
 
 # ── Every hour — Appointment reminders ──
-0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders || true
+# Reminds every appointment (calendar, WhatsApp) 24 h ahead, hearings also
+# 7 days ahead. Termin-kritisch: runs without `|| true` (5xx = FAILED) and can
+# ping CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS on success.
+0 * * * *      curl -fsS --max-time 300 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders && { [ -z "${CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS}" || echo "heartbeat ping failed: appointment-reminders" >&2; }
 
 # ── Every hour — Analysis retry (Dead Letter Queue) ──
 # Retries failed document analyses with exponential backoff (1h → 4h → 16h).

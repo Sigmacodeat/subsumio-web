@@ -3,11 +3,14 @@ import { NextResponse } from "next/server";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { revokeSession, revokeSessionRows } from "@/lib/auth/session-registry";
 import { SESSION_COOKIE } from "@/lib/auth/session";
+import { deletePushTokensForUser } from "@/lib/push-token-store";
 
 const revokeSchema = z
   .object({
     sid: z.string().min(1).max(128).optional(),
     allOthers: z.boolean().optional(),
+    /** The calling browser's web-push endpoint — kept on "sign out others". */
+    keepPushEndpoint: z.string().url().max(2000).optional(),
   })
   .refine((d) => Boolean(d.sid) !== Boolean(d.allOthers), {
     message: "either_sid_or_all_others",
@@ -34,6 +37,10 @@ export const POST = createHandler(
   async (ctx, body) => {
     if (body.allOthers) {
       const revoked = await revokeSessionRows(ctx.user.id, ctx.sessionId ?? null);
+      // Other devices also stop receiving push notifications.
+      await deletePushTokensForUser(ctx.user.id, {
+        exceptEndpoint: body.keepPushEndpoint,
+      }).catch(() => 0);
       return Response.json({ ok: true, revoked });
     }
 

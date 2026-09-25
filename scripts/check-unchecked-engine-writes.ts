@@ -32,7 +32,6 @@ const KNOWN_OPEN = new Set([
   "src/app/api/admin/backup/[id]/route.ts",
   "src/app/api/intake/convert/route.ts",
   "src/app/api/pages/route.ts",
-  "src/app/api/whatsapp/flow-endpoint/route.ts",
 ]);
 
 const WRITE_METHOD = /^(post|put|patch|delete)$/i;

@@ -298,6 +298,16 @@ function NotificationCenterInner() {
     if (ok) deleteAllReadMutation.mutate();
   }
 
+  async function deleteOne(id: string) {
+    const ok = await confirm({
+      title: "Benachrichtigung löschen",
+      message: "Die Benachrichtigung wird endgültig entfernt.",
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (ok) deleteMutation.mutate(id);
+  }
+
   return (
     <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -472,7 +482,7 @@ function NotificationCenterInner() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteMutation.mutate(n.id)}
+                        onClick={() => void deleteOne(n.id)}
                         disabled={deleteMutation.isPending}
                         aria-label={t("notifications.aria_delete")}
                         title={t("notifications.aria_delete")}

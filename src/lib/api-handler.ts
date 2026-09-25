@@ -1042,10 +1042,12 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
 
         if (!upstream.ok) {
           const errPayload = await upstream.json().catch(() => ({}));
-          // If the engine doesn't support this endpoint (404), return 503
-          // instead of passing through 404 — the route exists, the engine just
-          // doesn't have this feature.
-          if (upstream.status === 404) {
+          // If the engine doesn't support this endpoint (404 without a JSON
+          // error body), return 503 instead of passing through 404 — the
+          // route exists, the engine just doesn't have this feature. A JSON
+          // 404 from the handler itself ("document not found") passes through
+          // so the UI can name the actual problem.
+          if (upstream.status === 404 && typeof errPayload?.error !== "string") {
             return Response.json(
               { error: "service_unavailable", message: "Engine unterstützt diesen Endpunkt nicht" },
               { status: 503 }

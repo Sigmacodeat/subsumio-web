@@ -383,3 +383,30 @@ describe("copilot conflict tools (§ 10 RAO)", () => {
     expect((await res.json()).success).toBe(false);
   });
 });
+
+describe("search_calendar", () => {
+  it("finds Outlook-synced calendar events by their start time", async () => {
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json([
+          {
+            slug: "calendar/outlook/l@x.at/E1",
+            title: "Termin: Mandantengespräch",
+            frontmatter: {
+              type: "calendar_event",
+              start: `${tomorrow}T09:00:00.0000000`,
+              timezone: "Europe/Vienna",
+            },
+          },
+        ])
+      )
+    );
+    const res = await call({ tool: "search_calendar", params: { range: "week" } });
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveLength(1);
+    expect(json.data[0].label).toBe("Termin: Mandantengespräch");
+  });
+});

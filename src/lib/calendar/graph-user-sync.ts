@@ -1,14 +1,19 @@
 /**
  * WP-4.19 — Two-way calendar sync per user (Microsoft 365, delegated OAuth).
+ * The ONE implementation: the per-user cron (cron/outlook-user-sync) and the
+ * mailbox "Jetzt synchronisieren" (email/accounts/[id]/calendar-sync) both
+ * run `pullOutlookEvents` + `pushAppointmentsToOutlook`.
  *
- * Pull: events from the user's primary calendar (Graph /me/calendarView) are
- * upserted as `calendar_event` pages in the firm brain, keyed by
- * `outlook_event_id` so re-syncs are idempotent.
+ * Pull: events from the user's calendar (Graph /me/calendarView, every page
+ * via @odata.nextLink, times in Europe/Vienna via `Prefer: outlook.timezone`)
+ * are upserted as `calendar_event` pages keyed by owner mailbox + event id,
+ * so re-syncs are idempotent. Mirrors of Subsumio appointments are skipped.
  *
- * Push: `appointment` pages flagged `sync_to_outlook: true` and owned by the
- * account's address (`calendar_owner_email`) are created in that user's
- * Outlook calendar; the returned event id is stored back as
- * `outlook_event_id` so the pull direction never duplicates them.
+ * Push (upsert): `appointment` pages flagged `sync_to_outlook: true` and owned
+ * by the account (`calendar_owner_email`) are
+ *   - created in Outlook when they have no `outlook_event_id` yet,
+ *   - PATCHed when changed since the last push (`updated_at` > `outlook_synced_at`),
+ *   - DELETEd when cancelled or deleted in Subsumio.
  *
  * Requires the mailbox's OAuth grant to include Calendars.ReadWrite — accounts
  * connected before that scope existed need one re-consent (Einstellungen →
@@ -16,13 +21,14 @@
  */
 
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { listEnginePages } from "@/lib/engine-pages";
+import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
 import { externalFetchTimeout } from "@/lib/retry";
 import {
   getMailAccountAuth,
   recordCalendarSyncResult,
   type MailAccount,
 } from "@/lib/email/imap-accounts";
+import { addMinutesToWallClock } from "@/lib/calendar/wall-clock";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
@@ -41,7 +47,8 @@ export interface GraphCalendarEvent {
 /** Graph event → engine page payload (pure, unit-tested). */
 export function graphEventToPage(
   event: GraphCalendarEvent,
-  ownerEmail: string
+  ownerEmail: string,
+  opts: { ownerUserId?: string } = {}
 ): {
   slug: string;
   title: string;
@@ -66,6 +73,7 @@ export function graphEventToPage(
       cancelled: event.isCancelled === true,
       web_link: event.webLink ?? null,
       owner_email: ownerEmail,
+      ...(opts.ownerUserId ? { owner_user_id: opts.ownerUserId } : {}),
       synced_from: "outlook",
       last_modified: event.lastModifiedDateTime ?? null,
       synced_at: new Date().toISOString(),
@@ -96,14 +104,10 @@ export function appointmentToGraphEvent(frontmatter: Record<string, unknown>): {
         : 60;
   const startClock = /^\d{2}:\d{2}$/.test(time) ? time : "09:00";
   const startIso = `${date}T${startClock}:00`;
-  // Wall-clock arithmetic, not Date+toISOString — that would shift the end
-  // into UTC while the start stays local Vienna time.
-  const [sh, sm] = startClock.split(":").map(Number);
-  const endTotal = sh * 60 + sm + durationMin;
-  const endClock = `${String(Math.floor(endTotal / 60) % 24).padStart(2, "0")}:${String(
-    endTotal % 60
-  ).padStart(2, "0")}`;
-  const endIso = `${date}T${endClock}:00`;
+  // Wall-clock arithmetic (not Date+toISOString, which would shift the end
+  // into UTC) that rolls into the next day for appointments past midnight.
+  const end = addMinutesToWallClock(date, startClock, durationMin);
+  const endIso = `${end.date}T${end.time}:00`;
   return {
     subject: `Subsumio: ${topic}`,
     start: { dateTime: startIso, timeZone: "Europe/Vienna" },
@@ -117,21 +121,222 @@ export function appointmentToGraphEvent(frontmatter: Record<string, unknown>): {
   };
 }
 
-async function graphFetch<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${GRAPH}${path}`, {
+export const CALENDAR_TIMEZONE = "Europe/Vienna";
+/** Safety stop for calendarView paging (100 events per page). */
+export const MAX_CALENDAR_PAGES = 50;
+
+export class GraphRequestError extends Error {
+  constructor(
+    readonly status: number,
+    message: string
+  ) {
+    super(message);
+    this.name = "GraphRequestError";
+  }
+}
+
+/** Graph request; `path` may be a full @odata.nextLink URL. 204 → null. */
+async function graphFetch<T>(
+  accessToken: string,
+  path: string,
+  init?: RequestInit
+): Promise<T | null> {
+  const res = await fetch(path.startsWith("https://") ? path : `${GRAPH}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      // Wall times in the firm zone instead of UTC without offset.
+      Prefer: `outlook.timezone="${CALENDAR_TIMEZONE}"`,
       ...(init?.headers ?? {}),
     },
     signal: externalFetchTimeout(),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`graph_${res.status}:${text.slice(0, 200)}`);
+    throw new GraphRequestError(res.status, `graph_${res.status}:${text.slice(0, 200)}`);
   }
-  return (await res.json()) as T;
+  if (res.status === 204) return null;
+  const text = await res.text();
+  return text ? (JSON.parse(text) as T) : null;
+}
+
+/**
+ * Every event of the calendar view window — follows @odata.nextLink so a busy
+ * calendar is not cut off after the first 100 events. Throws when the page
+ * budget runs out rather than returning a silently truncated list.
+ */
+export async function fetchCalendarView(
+  accessToken: string,
+  window: { start: Date; end: Date }
+): Promise<GraphCalendarEvent[]> {
+  const events: GraphCalendarEvent[] = [];
+  let next: string | undefined =
+    `/me/calendarView?startDateTime=${encodeURIComponent(window.start.toISOString())}` +
+    `&endDateTime=${encodeURIComponent(window.end.toISOString())}` +
+    `&$top=100&$orderby=start/dateTime`;
+  for (let page = 0; next; page++) {
+    if (page >= MAX_CALENDAR_PAGES) throw new Error("calendar_view_too_large");
+    const data: { value?: GraphCalendarEvent[]; "@odata.nextLink"?: string } | null =
+      await graphFetch(accessToken, next);
+    events.push(...(data?.value ?? []));
+    next = data?.["@odata.nextLink"];
+  }
+  return events;
+}
+
+/** Pull Outlook → Subsumio as calendar_event pages. Returns pulled count + errors. */
+export async function pullOutlookEvents(
+  accessToken: string,
+  headers: Record<string, string>,
+  owner: { email: string; userId?: string },
+  window: { start: Date; end: Date },
+  /** outlook_event_ids of pushed Subsumio appointments — not re-imported. */
+  skipEventIds: ReadonlySet<string> = new Set()
+): Promise<{ pulled: number; errors: string[] }> {
+  const events = await fetchCalendarView(accessToken, window);
+  let pulled = 0;
+  const errors: string[] = [];
+  for (const event of events) {
+    if (skipEventIds.has(event.id)) continue;
+    const page = graphEventToPage(event, owner.email, { ownerUserId: owner.userId });
+    if (!page) continue;
+    try {
+      const res = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(page),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) pulled++;
+      else errors.push(`pull:${event.id}:${res.status}`);
+    } catch (e) {
+      errors.push(`pull:${event.id}:${e instanceof Error ? e.message : "network"}`);
+    }
+  }
+  return { pulled, errors };
+}
+
+const CLOSED_STATUSES = new Set(["cancelled", "storniert", "tombstoned"]);
+
+export type AppointmentPushAction = "create" | "update" | "delete" | null;
+
+/** What the push has to do for one appointment (pure, unit-tested). */
+export function appointmentPushAction(fm: Record<string, unknown>): AppointmentPushAction {
+  if (fm.sync_to_outlook !== true) return null;
+  const eventId = typeof fm.outlook_event_id === "string" ? fm.outlook_event_id : "";
+  const closed = CLOSED_STATUSES.has(String(fm.status ?? ""));
+  if (closed) return eventId && !fm.outlook_deleted_at ? "delete" : null;
+  if (!eventId) return "create";
+  const updated = Date.parse(String(fm.updated_at ?? ""));
+  const synced = Date.parse(String(fm.outlook_synced_at ?? fm.synced_at ?? ""));
+  if (Number.isFinite(updated) && (!Number.isFinite(synced) || updated > synced)) {
+    return "update";
+  }
+  return null;
+}
+
+async function markPushed(
+  headers: Record<string, string>,
+  slug: string,
+  frontmatter: Record<string, unknown>
+): Promise<void> {
+  const res = await enginePatchPage(headers, { slug, frontmatter });
+  if (!res.ok) throw new Error(`engine_mark_failed:${res.status}`);
+}
+
+/**
+ * Push Subsumio appointments of `ownerEmails` into that Outlook calendar
+ * (create / update / delete). `appointments` must include deleted
+ * (tombstoned) pages so deletions reach Outlook.
+ */
+export async function pushAppointmentsToOutlook(
+  accessToken: string,
+  headers: Record<string, string>,
+  appointments: readonly ListedPage[],
+  ownerEmails: readonly string[]
+): Promise<{ pushed: number; updated: number; deleted: number; errors: string[] }> {
+  const owners = new Set(ownerEmails.map((e) => e.toLowerCase()));
+  const out = { pushed: 0, updated: 0, deleted: 0, errors: [] as string[] };
+  for (const appt of appointments) {
+    const fm = (appt.frontmatter ?? {}) as Record<string, unknown>;
+    const owner =
+      typeof fm.calendar_owner_email === "string" ? fm.calendar_owner_email.toLowerCase() : "";
+    if (!owner || !owners.has(owner)) continue;
+    const action = appointmentPushAction(fm);
+    if (!action) continue;
+    const eventId = String(fm.outlook_event_id ?? "");
+    const now = new Date().toISOString();
+    try {
+      if (action === "delete") {
+        try {
+          await graphFetch(accessToken, `/me/events/${encodeURIComponent(eventId)}`, {
+            method: "DELETE",
+          });
+        } catch (e) {
+          // Already gone in Outlook — nothing left to delete.
+          if (!(e instanceof GraphRequestError && e.status === 404)) throw e;
+        }
+        await markPushed(headers, appt.slug, { outlook_deleted_at: now });
+        out.deleted++;
+        continue;
+      }
+      const body = appointmentToGraphEvent(fm);
+      if (!body) continue;
+      if (action === "update") {
+        try {
+          await graphFetch(accessToken, `/me/events/${encodeURIComponent(eventId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          });
+          await markPushed(headers, appt.slug, { outlook_synced_at: now, synced_at: now });
+          out.updated++;
+          continue;
+        } catch (e) {
+          // Deleted in Outlook meanwhile → create it again below.
+          if (!(e instanceof GraphRequestError && e.status === 404)) throw e;
+        }
+      }
+      const created = await graphFetch<{ id: string }>(accessToken, "/me/events", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      if (!created?.id) throw new Error("graph_create_without_id");
+      await markPushed(headers, appt.slug, {
+        outlook_event_id: created.id,
+        synced_to: "outlook",
+        outlook_synced_at: now,
+        synced_at: now,
+      });
+      out.pushed++;
+    } catch (e) {
+      out.errors.push(`push:${appt.slug}:${e instanceof Error ? e.message : "network"}`);
+    }
+  }
+  return out;
+}
+
+/** Pull window used by both sync entry points. */
+export function calendarSyncWindow(now: number = Date.now()): { start: Date; end: Date } {
+  return { start: new Date(now - 30 * 86_400_000), end: new Date(now + 90 * 86_400_000) };
+}
+
+/** outlook_event_ids already owned by Subsumio appointments (pull skips them). */
+export function pushedEventIds(appointments: readonly ListedPage[]): Set<string> {
+  const ids = new Set<string>();
+  for (const a of appointments) {
+    const id = (a.frontmatter as Record<string, unknown> | undefined)?.outlook_event_id;
+    if (typeof id === "string" && id) ids.add(id);
+  }
+  return ids;
+}
+
+/** All appointments of a brain incl. deleted ones (for delete propagation). Strict. */
+export function listAppointmentsForSync(headers: Record<string, string>): Promise<ListedPage[]> {
+  return listEnginePages(headers, "appointment", 10_000, {
+    includeTombstoned: true,
+    strict: true,
+  });
 }
 
 export interface CalendarSyncResult {
@@ -159,60 +364,27 @@ export async function syncAccountCalendar(account: MailAccount): Promise<Calenda
   if (!auth || auth.type !== "oauth") throw new Error("calendar_sync_no_oauth_token");
   const headers = engineHeadersForBrain(account.brainId);
 
+  const appointments = await listAppointmentsForSync(headers);
+
   // ── Pull: Outlook → Subsumio ────────────────────────────────────────────
-  const now = Date.now();
-  const windowStart = new Date(now - 14 * 86400000).toISOString();
-  const windowEnd = new Date(now + 90 * 86400000).toISOString();
-  const view = await graphFetch<{ value: GraphCalendarEvent[] }>(
+  const pull = await pullOutlookEvents(
     auth.accessToken,
-    `/me/calendarView?startDateTime=${encodeURIComponent(windowStart)}&endDateTime=${encodeURIComponent(windowEnd)}&$top=100&$orderby=start/dateTime`
+    headers,
+    { email: account.email },
+    calendarSyncWindow(),
+    pushedEventIds(appointments)
   );
-  for (const event of view.value ?? []) {
-    const page = graphEventToPage(event, account.email);
-    if (!page) continue;
-    try {
-      const res = await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify(page),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (res.ok) result.pulled++;
-      else result.errors.push(`pull:${event.id}:${res.status}`);
-    } catch (e) {
-      result.errors.push(`pull:${event.id}:${e instanceof Error ? e.message : "network"}`);
-    }
-  }
+  result.pulled = pull.pulled;
+  result.errors.push(...pull.errors);
 
   // ── Push: Subsumio → Outlook ────────────────────────────────────────────
   // Only appointments the owner explicitly flagged; without attribution we
   // would push the whole firm calendar into every connected mailbox.
-  const appointments = await listEnginePages(headers, "appointment", 500);
-  for (const appt of appointments) {
-    const fm = (appt.frontmatter ?? {}) as Record<string, unknown>;
-    if (fm.sync_to_outlook !== true) continue;
-    if (fm.calendar_owner_email !== account.email) continue;
-    if (fm.outlook_event_id) continue; // already pushed — pull keeps it fresh
-    const body = appointmentToGraphEvent(fm);
-    if (!body) continue;
-    try {
-      const created = await graphFetch<{ id: string }>(auth.accessToken, "/me/events", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-      await enginePatchPage(headers, {
-        slug: appt.slug,
-        frontmatter: {
-          outlook_event_id: created.id,
-          synced_to: "outlook",
-          synced_at: new Date().toISOString(),
-        },
-      });
-      result.pushed++;
-    } catch (e) {
-      result.errors.push(`push:${appt.slug}:${e instanceof Error ? e.message : "network"}`);
-    }
-  }
+  const push = await pushAppointmentsToOutlook(auth.accessToken, headers, appointments, [
+    account.email,
+  ]);
+  result.pushed = push.pushed + push.updated + push.deleted;
+  result.errors.push(...push.errors);
 
   await recordCalendarSyncResult(
     account.id,

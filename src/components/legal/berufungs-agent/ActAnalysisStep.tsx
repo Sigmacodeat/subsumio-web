@@ -66,7 +66,7 @@ export function ActAnalysisStep({
     let cancelled = false;
     setLoadingCases(true);
     api.brain
-      .listAllPages({ type: "legal_case", max: 100 })
+      .listAllPages({ type: "legal_case", max: 10_000 })
       .then((pages) => {
         if (!cancelled) setCases(pages);
       })
@@ -74,6 +74,8 @@ export function ActAnalysisStep({
         if (!cancelled) {
           console.error("[berufungs-agent] case list error:", err);
           setCases([]);
+          // A failed load is not "no matters" — say so.
+          setError("Die Akten konnten nicht geladen werden. Bitte laden Sie die Seite neu.");
         }
       })
       .finally(() => {

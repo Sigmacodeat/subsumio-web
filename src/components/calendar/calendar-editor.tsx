@@ -20,6 +20,9 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { csrfFetch } from "@/lib/csrf";
 import { formatDate } from "@/lib/utils";
+import { DEFAULT_REMINDER_MINUTES } from "@/lib/appointment-reminder-schedule";
+import { addMinutesToWallClock } from "@/lib/calendar/wall-clock";
+import { ownOutlookEvents } from "@/lib/calendar/outlook-events";
 import {
   conflictsForEntry,
   minutesToTime,
@@ -47,6 +50,8 @@ export interface Appointment {
   type: AppointmentType;
   /** Jitsi-Raum-Link, serverseitig generiert und im Frontmatter persistiert. */
   videoLink?: string;
+  /** Erinnerung so viele Minuten vor Beginn (0 = keine); Cron-Default 24 h. */
+  reminderMinutes?: number;
 }
 
 export interface CaseOption {
@@ -58,6 +63,18 @@ export interface CaseOption {
 const APPOINTMENT_TYPES: AppointmentType[] = ["meeting", "hearing", "consultation", "internal"];
 const NO_CASE = "__none__";
 const DRAFT_ID = "__draft__";
+
+/** Upper bound per page type for the calendar; reaching it shows a notice. */
+export const CALENDAR_LIST_MAX = 10_000;
+
+const REMINDER_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "0", label: "Keine Erinnerung" },
+  { value: "60", label: "1 Std. vorher" },
+  { value: "180", label: "3 Std. vorher" },
+  { value: "1440", label: "1 Tag vorher" },
+  { value: "2880", label: "2 Tage vorher" },
+];
+const DEFAULT_REMINDER_OPTION = String(DEFAULT_REMINDER_MINUTES);
 
 function toAppointmentType(value: unknown): AppointmentType {
   return APPOINTMENT_TYPES.includes(value as AppointmentType)
@@ -119,6 +136,7 @@ export function CalendarEditDialog({
     caseSlug: NO_CASE,
     type: "meeting" as AppointmentType,
     videoLink: false,
+    reminderMinutes: DEFAULT_REMINDER_OPTION,
   });
 
   useEffect(() => {
@@ -134,6 +152,10 @@ export function CalendarEditDialog({
         caseSlug: appointment.caseSlug || NO_CASE,
         type: appointment.type,
         videoLink: Boolean(appointment.videoLink),
+        reminderMinutes:
+          appointment.reminderMinutes !== undefined
+            ? String(appointment.reminderMinutes)
+            : DEFAULT_REMINDER_OPTION,
       });
     } else {
       setForm({
@@ -146,6 +168,7 @@ export function CalendarEditDialog({
         caseSlug: NO_CASE,
         type: "meeting",
         videoLink: false,
+        reminderMinutes: DEFAULT_REMINDER_OPTION,
       });
     }
   }, [appointment, presetDate, open]);
@@ -229,6 +252,7 @@ export function CalendarEditDialog({
         caseSlug: form.caseSlug === NO_CASE ? undefined : form.caseSlug,
         type: form.type,
         wantsVideoLink: form.videoLink,
+        reminderMinutes: Number(form.reminderMinutes),
         isNew: !appointment,
       });
       onOpenChange(false);
@@ -385,6 +409,32 @@ export function CalendarEditDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="appt-reminder" className="text-xs">
+              Erinnerung
+            </Label>
+            <Select
+              value={form.reminderMinutes}
+              onValueChange={(v) => setForm({ ...form, reminderMinutes: v })}
+            >
+              <SelectTrigger id="appt-reminder">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REMINDER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {form.type === "hearing" && form.reminderMinutes !== "0" && (
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Bei Verhandlungen zusätzlich 7 Tage vorher.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -545,6 +595,7 @@ function mapAppointment(p: BrainPage): Appointment {
     duration: typeof fm.duration === "number" ? fm.duration : undefined,
     location: typeof fm.location === "string" ? fm.location : undefined,
     videoLink: typeof fm.video_link === "string" ? fm.video_link : undefined,
+    reminderMinutes: typeof fm.reminder_minutes === "number" ? fm.reminder_minutes : undefined,
     description: p.content?.slice(0, 500) ?? "",
     caseSlug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
     caseTitle: typeof fm.case_title === "string" ? fm.case_title : undefined,
@@ -565,21 +616,39 @@ export function useAppointments() {
   const me = useMe();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [casePages, setCasePages] = useState<BrainPage[]>([]);
+  const [outlookPages, setOutlookPages] = useState<BrainPage[]>([]);
+  const [mirroredEventIds, setMirroredEventIds] = useState<Set<string>>(new Set());
+  const [capped, setCapped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   const reload = useCallback(async () => {
     try {
-      // Every appointment and matter (read in batches of 100) — a cut-off would
-      // hide appointments without a word.
-      const batch = await api.brain.batchListPagesDetailed(["appointment", "legal_case"], 10_000);
-      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      // Complete lists (paged server-side): the listing is ordered by last
+      // change, so a small cap silently dropped long-untouched hearings.
+      const batch = await api.brain.batchListPagesDetailed(
+        ["appointment", "legal_case", "calendar_event"],
+        CALENDAR_LIST_MAX
+      );
+      const required = batch.errors.filter((type) => type !== "calendar_event");
+      if (required.length) throw new Error(`batch list failed: ${required.join(",")}`);
+      const apptPages = batch.results["appointment"] ?? [];
+      const cases = batch.results["legal_case"] ?? [];
       setAppointments(
-        (batch.results["appointment"] ?? [])
+        apptPages
           .map(mapAppointment)
           .filter((a) => /^\d{4}-\d{2}-\d{2}$/.test(a.date) && a.status !== "cancelled")
       );
-      setCasePages(batch.results["legal_case"] ?? []);
+      setCasePages(cases);
+      setOutlookPages(batch.results["calendar_event"] ?? []);
+      setMirroredEventIds(
+        new Set(
+          apptPages
+            .map((p) => (p.frontmatter as Record<string, unknown> | undefined)?.outlook_event_id)
+            .filter((id): id is string => typeof id === "string" && id.length > 0)
+        )
+      );
+      setCapped(apptPages.length >= CALENDAR_LIST_MAX || cases.length >= CALENDAR_LIST_MAX);
       setError(false);
     } catch {
       setError(true);
@@ -628,6 +697,9 @@ export function useAppointments() {
           case_title: caseTitle,
           status: "scheduled",
           appointment_type: data.type,
+          // Erinnerung: der stündliche Cron rechnet den Zeitpunkt aus
+          // date/time (Europe/Vienna) minus reminder_minutes.
+          reminder_minutes: data.reminderMinutes ?? DEFAULT_REMINDER_MINUTES,
           // WP-4.19: per-user two-way sync — the cron pushes flagged
           // appointments into the owner's Outlook calendar.
           sync_to_outlook: true,
@@ -658,15 +730,17 @@ export function useAppointments() {
       // Mirror new appointments to Outlook. Start and end are both local
       // Vienna wall-clock times (converting the end via toISOString shifted it to UTC).
       if (data.isNew) {
-        const startMin = parseTimeToMinutes(data.time) ?? 9 * 60;
-        const endMin = startMin + (data.duration || 60);
+        const startClock = minutesToTime(parseTimeToMinutes(data.time) ?? 9 * 60);
+        // End may roll into the next day (late appointments).
+        const end = addMinutesToWallClock(data.date!, startClock, data.duration || 60);
         const outlook = await csrfFetch("/api/outlook/calendar/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             subject: data.title,
-            start: `${data.date}T${minutesToTime(startMin)}:00`,
-            end: `${data.date}T${minutesToTime(endMin)}:00`,
+            start: `${data.date}T${startClock}:00`,
+            end: `${end.date}T${end.time}:00`,
+            appointmentSlug: slug,
             timeZone: "Europe/Vienna",
             location: data.location || undefined,
             body: data.description || undefined,
@@ -702,5 +776,28 @@ export function useAppointments() {
     [reload, addToast, t]
   );
 
-  return { appointments, casePages, cases, loading, error, reload, save, remove };
+  // The user's own Outlook appointments (pulled by the per-user sync) —
+  // for every role, not only admins.
+  const outlookEvents = useMemo(
+    () =>
+      ownOutlookEvents(
+        outlookPages,
+        { id: me.data?.user?.id, email: me.data?.user?.email },
+        mirroredEventIds
+      ),
+    [outlookPages, me.data?.user?.id, me.data?.user?.email, mirroredEventIds]
+  );
+
+  return {
+    appointments,
+    casePages,
+    cases,
+    outlookEvents,
+    capped,
+    loading,
+    error,
+    reload,
+    save,
+    remove,
+  };
 }

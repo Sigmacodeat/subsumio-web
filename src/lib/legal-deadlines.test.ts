@@ -365,13 +365,15 @@ describe("Swiss holidays (publicHolidays with Canton)", () => {
     expect(publicHolidays(2026, "ZH").get("2026-01-06")).toBeUndefined();
   });
 
-  test("Sechseläuten (ZH) — third Monday in April", () => {
-    const h = publicHolidays(2026, "ZH");
-    const sechseläuten = Array.from(h.values()).find((v) => v === "Sechseläuten");
-    expect(sechseläuten).toBeDefined();
-    // Not in BE
-    const hBE = publicHolidays(2026, "BE");
-    expect(Array.from(hBE.values()).some((v) => v === "Sechseläuten")).toBe(false);
+  test("Sechseläuten (ZH) is no deadline-relevant holiday", () => {
+    for (const year of [2025, 2026]) {
+      const h = publicHolidays(year, "ZH", "CH");
+      expect(Array.from(h.values())).not.toContain("Sechseläuten");
+    }
+    // 2025-04-22 (Tuesday) was wrongly listed: a Zurich deadline ending
+    // that day must not be moved to the next day.
+    const end = nextWorkday(new Date(Date.UTC(2025, 3, 22, 12)), "ZH", "CH");
+    expect(end.shifted).toBe(false);
   });
 
   test("Näfelser Fahrt (GL) — first Thursday in April", () => {

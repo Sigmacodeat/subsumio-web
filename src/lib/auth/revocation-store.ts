@@ -56,6 +56,16 @@ export async function revokeAllSessions(userId: string): Promise<void> {
   // Mirror the version-floor bump into the registry so the "Aktive Sitzungen"
   // list and the per-sid revocation check agree with it.
   void import("./session-registry").then((m) => m.revokeSessionRows(userId).catch(() => {}));
+  // Signed out everywhere (deactivation, password reset, …): no device keeps
+  // receiving push notifications with matter or deadline titles.
+  await import("@/lib/push-token-store")
+    .then((m) => m.deletePushTokensForUser(userId))
+    .catch((err) =>
+      log.warn(
+        `[revocation] push registrations of ${userId} not removed:`,
+        err instanceof Error ? err.message : String(err)
+      )
+    );
   const pool = getSharedPgPool();
   if (!pool) {
     const current = revokedVersions.get(userId) ?? 0;

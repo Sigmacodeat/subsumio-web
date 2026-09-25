@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendWhatsAppInteractive, sendWhatsAppMedia } from "@/lib/whatsapp/send";
 import { sendWhatsAppFlow } from "@/lib/whatsapp/flow-send";
+import { createFlowToken } from "@/lib/whatsapp/flow-token";
 import { sendGuardedWhatsAppMessage, sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders, resolveSender, phoneHash } from "@/lib/whatsapp/verify";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
@@ -250,6 +251,13 @@ export const POST = createHandler(
         }
         case "flow": {
           if (!body.flow) return apiError("flow_required", "Flow fehlt", 400);
+          // Appointment flows get a server-signed token bound to the
+          // recipient, so the booking records who booked.
+          const requestedKind = body.flow.flowToken.split(":")[0];
+          const flowToken =
+            requestedKind === "appointment"
+              ? (createFlowToken("appointment", normalizedTo) ?? body.flow.flowToken)
+              : body.flow.flowToken;
           const result = await sendGuardedWhatsAppMessage({
             to: normalizedTo,
             brainId: ctx.brainId,
@@ -258,7 +266,7 @@ export const POST = createHandler(
             send: () =>
               sendWhatsAppFlow({
                 to: normalizedTo,
-                flowToken: body.flow!.flowToken,
+                flowToken,
                 flowName: body.flow!.flowName,
                 flowId: body.flow!.flowId,
                 flowCta: body.flow!.flowCta,

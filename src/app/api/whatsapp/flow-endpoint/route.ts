@@ -23,7 +23,9 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
-import { verifyWhatsAppSignature } from "@/lib/whatsapp/verify";
+import { phoneHash, verifyWhatsAppSignature } from "@/lib/whatsapp/verify";
+import { verifyFlowToken } from "@/lib/whatsapp/flow-token";
+import { zonedDateString } from "@/lib/datetime";
 import { randomUUID } from "node:crypto";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -85,7 +87,10 @@ const ALL_SLOT_TIMES = [
  * TOCTOU race, not an enforced hold.
  */
 async function getBookedTimes(brainId: string, dateStr: string): Promise<Set<string>> {
-  const pages = await listEnginePages(engineHeadersForBrain(brainId), "appointment", 500);
+  // Complete and strict: a failed read must not look like "all free".
+  const pages = await listEnginePages(engineHeadersForBrain(brainId), "appointment", 10_000, {
+    strict: true,
+  });
   const booked = new Set<string>();
   for (const page of pages) {
     const fm = page.frontmatter ?? {};
@@ -95,6 +100,14 @@ async function getBookedTimes(brainId: string, dateStr: string): Promise<Set<str
     }
   }
   return booked;
+}
+
+/** True for a date/time the slot picker offers: YYYY-MM-DD, not in the past, a fixed slot. */
+function isOfferedSlot(dateStr: string, time: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  if (Number.isNaN(Date.parse(`${dateStr}T00:00:00Z`))) return false;
+  if (dateStr < zonedDateString(new Date())) return false;
+  return ALL_SLOT_TIMES.includes(time);
 }
 
 async function generateSlots(
@@ -284,6 +297,22 @@ async function handleAppointmentBooking(
       const appointmentDate = String(data.appointment_date || "").slice(0, 20);
       const appointmentTime = String(data.appointment_time || "").slice(0, 20);
       const topic = String(data.topic || "Allgemeine Beratung").slice(0, MAX_FIELD_LENGTH);
+      // Only a slot the picker actually offers: a valid, not-past date and
+      // one of the fixed slot times — never an arbitrary string.
+      if (!isOfferedSlot(appointmentDate, appointmentTime)) {
+        return {
+          screen: "DATE_SELECT",
+          data: {
+            selected_date: appointmentDate,
+            available_slots: /^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)
+              ? await generateSlots(appointmentDate, brainId)
+              : [],
+            error: "invalid_slot",
+          },
+        };
+      }
+      // Who booked: the number the Flow was sent to (server-signed token).
+      const contact = verifyFlowToken(flowToken);
       // Re-verify the slot is still free right before writing — the picker
       // shown to the user (get_slots) is a snapshot, not a hold, so two
       // people booking the same date concurrently could otherwise both
@@ -307,39 +336,47 @@ async function handleAppointmentBooking(
         slug: `legal/appointments/${appointmentId}`,
         title: `Termin: ${appointmentDate} ${appointmentTime} — ${topic}`,
         type: "appointment",
-        content: `## Termin\n\n**Datum:** ${appointmentDate}\n**Uhrzeit:** ${appointmentTime}\n**Thema:** ${topic}\n**Quelle:** WhatsApp Flow\n\n### Erinnerung\n\n24h vor dem Termin wird eine Erinnerung gesendet.`,
+        content: `## Termin\n\n**Datum:** ${appointmentDate}\n**Uhrzeit:** ${appointmentTime}\n**Thema:** ${topic}\n**Kontakt:** ${contact ? `WhatsApp ${contact.phone}` : "unbekannt (bitte über den WhatsApp-Verlauf zuordnen)"}\n**Quelle:** WhatsApp Flow\n\n### Erinnerung\n\nDie Kanzlei wird 24 h vor dem Termin erinnert.`,
         frontmatter: {
           type: "appointment",
           appointment_id: appointmentId,
+          title: `Termin (WhatsApp): ${topic}`,
           date: appointmentDate,
           time: appointmentTime,
           topic,
           status: "confirmed",
+          ...(contact
+            ? { contact_phone: contact.phone, contact_phone_hash: phoneHash(contact.phone) }
+            : { contact_unverified: true }),
           created_via: "whatsapp_flow",
           created_at: new Date().toISOString(),
         },
       });
 
-      try {
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...engineHeadersForBrain(brainId),
-          },
-          body: JSON.stringify(apptPayload),
-          signal: AbortSignal.timeout(15_000),
-        });
-        void logAudit("whatsapp.flow_appointment_booked", "appointment", {
-          entityId: appointmentId,
-          details: { brainId, date: appointmentDate, time: appointmentTime },
-        });
-      } catch (err) {
-        log.error(
-          "[flow/appointment] brain write failed:",
-          err instanceof Error ? err.message : String(err)
-        );
+      // A failed write must never be confirmed to the person booking: the
+      // handler's error path answers with the error screen instead.
+      const writeRes = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...engineHeadersForBrain(brainId),
+        },
+        body: JSON.stringify({ ...apptPayload, if_absent: true }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!writeRes.ok) {
+        log.error("[flow/appointment] brain write failed:", writeRes.status);
+        throw new Error(`appointment_write_failed:${writeRes.status}`);
       }
+      void logAudit("whatsapp.flow_appointment_booked", "appointment", {
+        entityId: appointmentId,
+        details: {
+          brainId,
+          date: appointmentDate,
+          time: appointmentTime,
+          contact_verified: Boolean(contact),
+        },
+      });
 
       return {
         screen: "SUCCESS",

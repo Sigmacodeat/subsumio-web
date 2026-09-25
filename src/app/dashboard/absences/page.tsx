@@ -15,6 +15,7 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,6 +75,9 @@ const STATUS_ORDER: Record<DisplayStatus, number> = {
   cancelled: 3,
 };
 
+/** Upper bound for the absence list; reaching it shows a notice. */
+const ABSENCES_LIST_MAX = 10_000;
+
 const EMPTY_FORM = {
   user_name: "",
   user_email: "",
@@ -92,6 +96,7 @@ export default function AbsencePage() {
   const [absences, setAbsences] = useState<Array<AbsenceRecord & { slug: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [capped, setCapped] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -100,8 +105,12 @@ export default function AbsencePage() {
 
   const loadAbsences = useCallback(async () => {
     try {
-      // Every absence record, not the newest 100.
-      const pages = await api.brain.listAllPages({ type: "absence_record", max: 10_000 });
+      // Complete list: past absences must not push current ones out.
+      const pages = await api.brain.listAllPages({
+        type: "absence_record",
+        max: ABSENCES_LIST_MAX,
+      });
+      setCapped(pages.length >= ABSENCES_LIST_MAX);
       const records = pages
         .map((p) => ({
           ...(p.frontmatter as unknown as AbsenceRecord),
@@ -226,6 +235,8 @@ export default function AbsencePage() {
           </PrimaryAction>
         }
       />
+
+      {capped && <CappedResultsNotice limit={ABSENCES_LIST_MAX} />}
 
       {activeCount > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">

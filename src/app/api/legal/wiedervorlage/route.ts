@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL, engineHeaders, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { zonedDateString } from "@/lib/datetime";
 
 export const maxDuration = 30;
 
@@ -11,7 +12,8 @@ const schema = z.object({
     .array(
       z.object({
         anspruch: z.string(),
-        restzeit_tage: z.number(),
+        /** null/absent = remaining time unknown → due today, never guessed. */
+        restzeit_tage: z.number().nullable().optional(),
         paragraph: z.string().optional(),
         handlungsbedarf: z.string().optional(),
       })
@@ -48,9 +50,11 @@ export const POST = createHandler(
     const results: Array<{ slug: string; status: string; due_date: string }> = [];
 
     for (const anspruch of body.urgent_ansprueche) {
-      const days = Math.max(1, Math.ceil(anspruch.restzeit_tage));
-      const dueDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-      const dueIso = dueDate.toISOString().split("T")[0]!;
+      const known = typeof anspruch.restzeit_tage === "number";
+      // Unknown remaining time: due today (earliest safe date), not a guess.
+      const days = known ? Math.max(1, Math.ceil(anspruch.restzeit_tage as number)) : 0;
+      const dueIso = zonedDateString(new Date(now.getTime() + days * 24 * 60 * 60 * 1000));
+      const restzeitText = known ? `${days} Tage` : "unbekannt — sofort prüfen";
 
       const slug = `deadlines/wiedervorlage-${body.case_slug}-${anspruch.anspruch}`
         .replace(/[^a-z0-9/-]/gi, "-")
@@ -64,7 +68,10 @@ export const POST = createHandler(
         due_date: dueIso,
         status: days <= 7 ? "critical" : days <= 30 ? "warning" : "pending",
         priority: "high",
-        description: `Verjährung droht in ${days} Tagen. ${anspruch.handlungsbedarf ?? ""}`,
+        description: known
+          ? `Verjährung droht in ${days} Tagen. ${anspruch.handlungsbedarf ?? ""}`
+          : `Verjährung droht, Restzeit unbekannt — sofort prüfen. ${anspruch.handlungsbedarf ?? ""}`,
+        restzeit_unbekannt: known ? undefined : true,
         law: anspruch.paragraph ?? "",
         verjaehrung_score: body.verjaehrung_score,
         auto_generated: true,
@@ -79,7 +86,7 @@ export const POST = createHandler(
             slug,
             type: "deadline",
             title: frontmatter.title as string,
-            compiled_truth: `## Wiedervorlage\n\n**Akte:** ${body.case_slug}\n**Anspruch:** ${anspruch.anspruch}\n**Restzeit:** ${days} Tage\n**§:** ${anspruch.paragraph ?? ""}\n**Handlungsbedarf:** ${anspruch.handlungsbedarf ?? ""}\n\n> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!`,
+            compiled_truth: `## Wiedervorlage\n\n**Akte:** ${body.case_slug}\n**Anspruch:** ${anspruch.anspruch}\n**Restzeit:** ${restzeitText}\n**§:** ${anspruch.paragraph ?? ""}\n**Handlungsbedarf:** ${anspruch.handlungsbedarf ?? ""}\n\n> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!`,
             frontmatter,
           }),
           signal: AbortSignal.timeout(15_000),
@@ -99,21 +106,28 @@ export const POST = createHandler(
       }
     }
 
+    const succeeded = results.filter((r) => r.status === "created").length;
+    const failed = results.length - succeeded;
+    if (succeeded === 0) {
+      return apiError(
+        "wiedervorlage_failed",
+        "Die Wiedervorlage konnte nicht angelegt werden. Bitte erneut versuchen.",
+        502
+      );
+    }
+
     // Also update case frontmatter to flag wiedervorlage
     await enginePatchPage(headers, {
       slug: body.case_slug,
       frontmatter: {
         wiedervorlage_urgent: true,
-        wiedervorlage_count: body.urgent_ansprueche.length,
+        wiedervorlage_count: succeeded,
         wiedervorlage_created_at: now.toISOString(),
       },
     });
 
-    const succeeded = results.filter((r) => r.status === "created").length;
-    const failed = results.length - succeeded;
-
     return Response.json({
-      ok: true,
+      ok: failed === 0,
       total: results.length,
       succeeded,
       failed,

@@ -15,6 +15,7 @@ vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => {}) }));
 vi.mock("@/lib/auth/rate-limit", () => ({ clientIp: () => "127.0.0.1" }));
 vi.mock("@/lib/whatsapp/verify", () => ({
   verifyWhatsAppSignature: vi.fn(() => state.signatureValid),
+  phoneHash: (p: string) => `hash:${p}`,
 }));
 // Test crypto: the "encrypted" flow data is the plain request JSON.
 vi.mock("@/lib/whatsapp/flow-crypto", () => ({
@@ -90,6 +91,12 @@ beforeEach(() => {
           : [],
       });
     }
+    if (url.pathname === "/api/pages" && method === "GET") {
+      const type = url.searchParams.get("type");
+      const offset = Number(url.searchParams.get("offset") ?? 0);
+      const rows = [...engine.pages.values()].filter((p) => (p as { type?: string }).type === type);
+      return Response.json(offset === 0 ? rows : []);
+    }
     if (url.pathname === "/api/pages" && method === "POST") {
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
       if (engine.writeStatus !== 200) return new Response("no", { status: engine.writeStatus });
@@ -101,12 +108,12 @@ beforeEach(() => {
   }) as unknown as typeof fetch;
 });
 
-function flowRequest(data: Record<string, unknown>) {
+function flowRequest(data: Record<string, unknown>, flowToken = "case_intake:x") {
   const request = {
     version: "3.0",
     action: "data_exchange",
     screen: "REVIEW",
-    flow_token: "case_intake:x",
+    flow_token: flowToken,
     data,
   };
   return POST(
@@ -183,5 +190,62 @@ describe("WhatsApp flow endpoint — Neue Akte (KOM-16)", () => {
       type: "intake_request",
       frontmatter: { conflict_check_status: "conflict" },
     });
+  });
+});
+
+describe("WhatsApp flow endpoint — Terminbuchung (KOM-17)", () => {
+  const tomorrow = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+  const book = (time: string, token = "appointment:x") =>
+    flowRequest(
+      {
+        action: "book_appointment",
+        appointment_date: tomorrow,
+        appointment_time: time,
+        topic: "Erstberatung",
+      },
+      token
+    );
+  const parse = async (res: Response) =>
+    JSON.parse(await res.text()) as { screen: string; data: Record<string, unknown> };
+
+  beforeEach(() => {
+    process.env.WHATSAPP_FLOW_TOKEN_SECRET = "test-flow-secret";
+  });
+
+  it("refuses a time the slot picker never offered (e.g. 03:00)", async () => {
+    const body = await parse(await book("03:00"));
+    expect(body.screen).toBe("DATE_SELECT");
+    expect(body.data.error).toBe("invalid_slot");
+    expect(engine.writes).toHaveLength(0);
+  });
+
+  it("records who booked when the Flow was sent with a signed token", async () => {
+    const { createFlowToken } = await import("@/lib/whatsapp/flow-token");
+    const token = createFlowToken("appointment", "+43 660 1234567")!;
+    const body = await parse(await book("10:00", token));
+    expect(body.screen).toBe("SUCCESS");
+    expect(engine.writes).toHaveLength(1);
+    expect(engine.writes[0]).toMatchObject({
+      if_absent: true,
+      frontmatter: {
+        date: tomorrow,
+        time: "10:00",
+        contact_phone: "+436601234567",
+        contact_phone_hash: "hash:+436601234567",
+      },
+    });
+    expect(String(engine.writes[0]!.content)).not.toContain("wird eine Erinnerung gesendet");
+  });
+
+  it("marks the contact as unverified for an unsigned or forged token", async () => {
+    await book("10:30", "appointment:v1.eyJwIjoiKzQzMSIsImUiOjk5OTk5OTk5OTk5OTl9.forged");
+    expect(engine.writes[0]!.frontmatter).toMatchObject({ contact_unverified: true });
+    expect(engine.writes[0]!.frontmatter).not.toHaveProperty("contact_phone");
+  });
+
+  it("does not confirm a booking the engine did not store", async () => {
+    engine.writeStatus = 500;
+    const body = await parse(await book("11:00"));
+    expect(body.screen).not.toBe("SUCCESS");
   });
 });

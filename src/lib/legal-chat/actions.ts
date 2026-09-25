@@ -18,6 +18,7 @@ import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 
 import { logger } from "@/lib/logger";
+import { FIRM_TIMEZONE, zonedWallTimeToUtc } from "@/lib/datetime";
 const log = logger("lib/legal-chat/actions");
 
 interface ChatContext {
@@ -1865,8 +1866,10 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     const title = str(payload.title) || "Termin";
     const location = str(payload.location);
     const reminderHours = Number(payload.reminderHours) || 24;
-    const reminderAt = new Date(`${date}T${time}:00`);
-    reminderAt.setHours(reminderAt.getHours() - reminderHours);
+    // date/time are Vienna wall time — the server runs in UTC.
+    const reminderAt = new Date(
+      zonedWallTimeToUtc(date, time, FIRM_TIMEZONE).getTime() - reminderHours * 3_600_000
+    );
     const hasCase = !!targetSlug;
     const casePage = hasCase ? await getPage(ctx.sender.brainId, targetSlug!) : null;
     const caseFm = casePage ? fm(casePage) : {};

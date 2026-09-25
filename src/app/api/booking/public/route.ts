@@ -31,6 +31,42 @@ export const dynamic = "force-dynamic";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Upper bound of re-bookings of one cancelled slot (generation slugs). */
+const MAX_REBOOKINGS = 20;
+
+function availabilityUnavailable(err: unknown): Response {
+  log.error("booking availability unreadable", {
+    error: err instanceof Error ? err.message : String(err),
+  });
+  return apiError(
+    "engine_unreachable",
+    "Die Terminbuchung ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.",
+    503
+  );
+}
+
+/**
+ * True when the booking page at `slug` no longer holds its slot (cancelled,
+ * tombstoned or gone). Any read failure counts as "still held" — fail closed.
+ */
+async function isReleasedBooking(brainId: string, slug: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+      headers: engineHeadersForBrain(brainId),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.status === 404) return true;
+    if (!res.ok) return false;
+    const page = (await res.json().catch(() => null)) as {
+      frontmatter?: { status?: unknown };
+    } | null;
+    const status = page?.frontmatter?.status;
+    return status === "cancelled" || status === "tombstoned";
+  } catch {
+    return false;
+  }
+}
+
 const querySchema = z.object({ date: z.string().regex(DATE_RE, "invalid_date") });
 
 const bodySchema = z.object({
@@ -62,7 +98,13 @@ export const GET = createPublicHandler(
   async (_req, _body, query) => {
     const brainId = resolvePublicBookingBrainId();
     if (!brainId) return apiError("not_configured", "Terminbuchung nicht verfügbar", 404);
-    const { config, slots } = await availableSlots(brainId, query!.date);
+    let result: Awaited<ReturnType<typeof availableSlots>>;
+    try {
+      result = await availableSlots(brainId, query!.date);
+    } catch (err) {
+      return availabilityUnavailable(err);
+    }
+    const { config, slots } = result;
     if (!config.enabled) return apiError("not_enabled", "Terminbuchung nicht verfügbar", 404);
     // Nur freie Slots ausgeben — belegte Zeiten bleiben intern.
     return apiSuccess({
@@ -89,7 +131,13 @@ export const POST = createPublicHandler(
       return apiError("not_configured", "Terminbuchung derzeit nicht verfügbar.", 503);
     }
 
-    const { config, slots } = await availableSlots(brainId, body!.date);
+    let result: Awaited<ReturnType<typeof availableSlots>>;
+    try {
+      result = await availableSlots(brainId, body!.date);
+    } catch (err) {
+      return availabilityUnavailable(err);
+    }
+    const { config, slots } = result;
     if (!config.enabled) return apiError("not_enabled", "Terminbuchung nicht verfügbar", 404);
 
     // Slot anhand der Startzeit finden (Client schickt keine Slot-ID, weil
@@ -116,9 +164,9 @@ export const POST = createPublicHandler(
     }
 
     const bookingId = crypto.randomUUID();
-    // Deterministic page slug per (date, slot start): the engine rejects a
-    // second create on the same slug with 409 — two parallel POSTs for the
-    // same slot can no longer both pass the check-then-write window.
+    // Deterministic page slug per (date, slot start), written create-only
+    // (`if_absent`): the engine refuses a taken slug in the same INSERT, so
+    // of two parallel POSTs for the same slot exactly one lands.
     const slotKey = `${body!.date.replace(/\D/g, "")}-${slot.start.replace(/\D/g, "").slice(0, 12)}`;
     const frontmatter = createBookingFrontmatter(
       {
@@ -133,66 +181,48 @@ export const POST = createPublicHandler(
       slot
     );
 
-    const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/bookings/${slotKey}`,
-        title: `Termin: ${body!.date} — ${body!.name}`,
-        type: "booking",
-        content: `## Online-Terminbuchung\n\n**Slot:** ${slot.start} – ${slot.end}\n**Name:** ${body!.name}\n**Anliegen:** ${body!.matter}`,
-        frontmatter: { ...frontmatter, booking_id: bookingId, source: "web" },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (createRes.status === 409) {
-      // Same-slug page exists. Either we lost the race to a parallel
-      // request, or the page is a stale cancelled booking — a cancelled
-      // slot must be re-bookable, not permanently blocked by its tombstone.
-      const slug = `legal/bookings/${slotKey}`;
-      const existing = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        headers: engineHeadersForBrain(brainId),
-        signal: AbortSignal.timeout(10_000),
-      }).catch(() => null);
-      const existingFm = (await existing?.json().catch(() => null)) as {
-        frontmatter?: { status?: string };
-      } | null;
-      if (existingFm?.frontmatter?.status === "cancelled") {
-        // The engine has no PATCH route for pages — merge writes are POST + merge.
-        const reactivate = await enginePatchPage(
-          engineHeadersForBrain(brainId),
-          {
-            slug,
-            frontmatter: {
-              ...frontmatter,
-              booking_id: bookingId,
-              source: "web",
-              status: "confirmed",
-            },
-          },
-          { timeoutMs: 15_000 }
-        );
-        if (reactivate.ok) {
-          return apiSuccess({
-            confirmed: true,
-            booking_id: bookingId,
-            start: slot.start,
-            end: slot.end,
-          });
-        }
+    // A cancelled or deleted booking keeps its slug. Re-booking that slot
+    // moves on to the next deterministic generation slug (`…-r1`, `…-r2`):
+    // parallel requests still compute the same slug, so the create-only
+    // write keeps them mutually exclusive.
+    const baseSlug = `legal/bookings/${slotKey}`;
+    let written = false;
+    for (let generation = 0; generation <= MAX_REBOOKINGS; generation++) {
+      const slug = generation === 0 ? baseSlug : `${baseSlug}-r${generation}`;
+      const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          title: `Termin: ${body!.date} — ${body!.name}`,
+          type: "booking",
+          content: `## Online-Terminbuchung\n\n**Slot:** ${slot.start} – ${slot.end}\n**Name:** ${body!.name}\n**Anliegen:** ${body!.matter}`,
+          frontmatter: { ...frontmatter, booking_id: bookingId, source: "web" },
+          if_absent: true,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (createRes.ok) {
+        written = true;
+        break;
       }
+      if (createRes.status !== 409) {
+        log.error("booking page write failed", { status: createRes.status });
+        return apiError(
+          "engine_unreachable",
+          "Die Buchung konnte nicht gespeichert werden. Bitte versuchen Sie es später erneut.",
+          503
+        );
+      }
+      // Slug taken: only a released (cancelled/deleted) booking frees the
+      // slot; a live booking — or one we cannot read — means "taken".
+      if (!(await isReleasedBooking(brainId, slug))) break;
+    }
+    if (!written) {
       return apiError(
         "slot_already_booked",
         "Dieser Termin ist nicht mehr verfügbar. Bitte wählen Sie einen anderen.",
         409
-      );
-    }
-    if (!createRes.ok) {
-      log.error("booking page write failed", { status: createRes.status });
-      return apiError(
-        "engine_unreachable",
-        "Die Buchung konnte nicht gespeichert werden. Bitte versuchen Sie es später erneut.",
-        503
       );
     }
 

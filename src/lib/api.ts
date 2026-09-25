@@ -2574,8 +2574,13 @@ export const api = {
       return request("/api/auth/2fa/login-verify", { method: "POST", body: JSON.stringify(input) });
     },
 
-    logout(): Promise<{ ok?: boolean }> {
-      return request("/api/auth/logout", { method: "POST" });
+    logout(opts?: { pushEndpoint?: string }): Promise<{ ok?: boolean }> {
+      return request("/api/auth/logout", {
+        method: "POST",
+        ...(opts?.pushEndpoint
+          ? { body: JSON.stringify({ pushEndpoint: opts.pushEndpoint }) }
+          : {}),
+      });
     },
 
     async me(): Promise<LooseAuthResponse | null> {

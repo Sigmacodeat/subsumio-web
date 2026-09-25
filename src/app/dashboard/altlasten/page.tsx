@@ -325,7 +325,9 @@ export default function AltlastenPage() {
                 const r = u as Record<string, unknown>;
                 return {
                   anspruch: String(r.anspruch ?? "Unbekannter Anspruch"),
-                  restzeit_tage: typeof r.restzeit_tage === "number" ? r.restzeit_tage : 30,
+                  // Unknown remaining time stays unknown — never an invented
+                  // 30 days (the Wiedervorlage is then due immediately).
+                  restzeit_tage: typeof r.restzeit_tage === "number" ? r.restzeit_tage : null,
                   paragraph: String(r.paragraph ?? ""),
                   handlungsbedarf: String(
                     r.handlungsbedarf ?? "Sofortige Prüfung und Klageerhebung erforderlich"
@@ -335,7 +337,7 @@ export default function AltlastenPage() {
             : [
                 {
                   anspruch: "Verjährung droht",
-                  restzeit_tage: 30,
+                  restzeit_tage: null,
                   paragraph: String(fm.law ?? ""),
                   handlungsbedarf: "Sofortige Prüfung und Klageerhebung erforderlich",
                 },

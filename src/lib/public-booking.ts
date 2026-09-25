@@ -67,17 +67,13 @@ async function listTypedPages(
   headers: Record<string, string>,
   type: string
 ): Promise<EnginePage[]> {
-  try {
-    // Cursor-paginated (the engine's bare array has no `pages` wrapper —
-    // pre-fix `data.pages ?? []` silently returned nothing, so bookings
-    // could collide). Tombstoned slots stay out of the availability set.
-    return (await listEnginePages(headers, type, 10_000, {
-      strict: true,
-      timeoutMs: 15_000,
-    })) as unknown as EnginePage[];
-  } catch {
-    return [];
-  }
+  // Cursor-paginated and strict: a failed read throws instead of looking
+  // like "no bookings" — otherwise every slot would be offered as free.
+  // Tombstoned slots stay out of the availability set.
+  return (await listEnginePages(headers, type, 10_000, {
+    strict: true,
+    timeoutMs: 15_000,
+  })) as unknown as EnginePage[];
 }
 
 /** Belegte Zeitfenster eines Tages aus booking- und appointment-Seiten. */
@@ -116,8 +112,14 @@ export async function bookedRangesForDate(
     // firm zone, not the server's.
     const start = zonedWallTimeToUtc(fm.date, time, timeZone);
     if (Number.isNaN(start.getTime())) continue;
+    // Calendar-editor appointments store `duration`, WhatsApp ones
+    // `duration_minutes` — a 2-hour hearing must block 2 hours, not 30 min.
     const duration =
-      typeof fm.duration_minutes === "number" && fm.duration_minutes > 0 ? fm.duration_minutes : 30;
+      typeof fm.duration_minutes === "number" && fm.duration_minutes > 0
+        ? fm.duration_minutes
+        : typeof fm.duration === "number" && fm.duration > 0
+          ? fm.duration
+          : 30;
     ranges.push({
       start: start.toISOString(),
       end: new Date(start.getTime() + duration * 60_000).toISOString(),
@@ -126,7 +128,10 @@ export async function bookedRangesForDate(
   return ranges;
 }
 
-/** Freie Slots eines Tages — Quelle der Wahrheit für GET und POST. */
+/**
+ * Freie Slots eines Tages — Quelle der Wahrheit für GET und POST.
+ * Wirft, wenn die Belegung nicht gelesen werden kann (nie "alles frei").
+ */
 export async function availableSlots(
   brainId: string,
   dateIso: string

@@ -2308,7 +2308,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     const isYesterday = date.toDateString() === yesterday.toDateString();
     if (isToday) return t("chat.today");
     if (isYesterday) return t("chat.yesterday");
-    return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+    return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
       weekday: "long",
       day: "numeric",
       month: "long",
