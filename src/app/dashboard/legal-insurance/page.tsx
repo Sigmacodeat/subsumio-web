@@ -87,7 +87,7 @@ export default function LegalInsurancePage() {
   useEffect(() => {
     void load();
     api.brain
-      .listAllPages({ type: "legal_case", max: 200 })
+      .listAllPages({ type: "legal_case", max: 10_000 })
       .then((pages) =>
         setCases(
           pages.map((p) => {
