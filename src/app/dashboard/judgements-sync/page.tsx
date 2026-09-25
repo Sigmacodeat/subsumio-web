@@ -69,7 +69,7 @@ export default function JudgementsSyncPage() {
             idx === i ? { ...s, status: "done" as const, count: result.imported } : s
           )
         );
-      } catch (e) {
+      } catch {
         setSources((prev) =>
           prev.map((s, idx) =>
             idx === i
