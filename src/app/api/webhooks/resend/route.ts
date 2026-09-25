@@ -58,6 +58,15 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     if (!result.handled) {
       return Response.json({ ok: true, ignored: true, type: event.type ?? null });
     }
+    if (result.retryable) {
+      // Correlation or Postausgangsbuch write-back failed; the dedupe claim
+      // is released. A non-2xx makes Svix redeliver (signed) — a 200 here
+      // would lose the delivery status for good.
+      return Response.json(
+        { ok: false, error: "reconcile_incomplete", type: event.type },
+        { status: 500 }
+      );
+    }
     return Response.json({
       ok: true,
       type: event.type,

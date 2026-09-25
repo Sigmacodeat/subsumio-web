@@ -145,3 +145,27 @@ describe("POST /api/webhooks/resend", () => {
     expect(reconcileResendDeliveryEvent).not.toHaveBeenCalled();
   });
 });
+
+describe("POST /api/webhooks/resend — retryable", () => {
+  beforeEach(() => {
+    verifyResendWebhook.mockReset();
+    storeInboundResendEmail.mockReset().mockResolvedValue(null);
+    reconcileResendDeliveryEvent.mockReset();
+  });
+
+  test("retryable-Ergebnis (Engine-Ausfall) antwortet 500, damit Svix erneut zustellt", async () => {
+    verifyResendWebhook.mockReturnValue({ type: "email.bounced", data: { email_id: "re_7" } });
+    reconcileResendDeliveryEvent.mockResolvedValue({
+      handled: true,
+      status: "bounced",
+      messageId: "m1",
+      brainId: "brain-1",
+      trackingId: "trk_1",
+      pagesUpdated: 0,
+      retryable: true,
+    });
+    const res = await post();
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBe("reconcile_incomplete");
+  });
+});

@@ -31,6 +31,10 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     const dedupeKey = `${event.data?.email_id ?? "unknown"}:${event.type ?? "unknown"}`;
     const delivery = await reconcileResendDeliveryEvent(event, dedupeKey);
     if (delivery.handled) {
+      if (delivery.retryable) {
+        // Half-done (engine outage) — claim released, non-2xx = Svix retries.
+        return NextResponse.json({ ok: false, error: "reconcile_incomplete" }, { status: 500 });
+      }
       return NextResponse.json({ ok: true, type: event.type ?? "delivery" });
     }
 

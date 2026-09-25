@@ -13,6 +13,7 @@ const pool = {
 
 const getSharedPgPool = vi.fn((): typeof pool | null => pool);
 const filterNewIds = vi.fn(async (..._args: unknown[]) => new Set<number>([0]));
+const forgetIds = vi.fn(async (..._args: unknown[]) => undefined);
 const logTrackingEvent = vi.fn(async (..._args: unknown[]) => null);
 const logAudit = vi.fn(async (..._args: unknown[]) => undefined);
 const listEnginePages = vi.fn(async (..._args: unknown[]) => [] as Record<string, unknown>[]);
@@ -23,6 +24,7 @@ vi.mock("@/lib/auth/store", () => ({
 }));
 vi.mock("@/lib/caselaw-dedup", () => ({
   filterNewIds: (...args: unknown[]) => filterNewIds(...args),
+  forgetIds: (...args: unknown[]) => forgetIds(...args),
 }));
 vi.mock("@/lib/email/tracking", () => ({
   logTrackingEvent: (...args: unknown[]) => logTrackingEvent(...args),
@@ -134,6 +136,50 @@ describe("reconcileResendDeliveryEvent", () => {
         }),
       })
     );
+  });
+
+  test("Case-E-Mail-Pfad: raw.brain_id UND altes raw.brainId werden per COALESCE gelesen", async () => {
+    queryResults.push([]); // kein mailbox-Treffer
+    queryResults.push([{ tracking_id: "trk_9", message_id: null, brain_id: "brain-2" }]);
+    await reconcileResendDeliveryEvent(
+      { type: "email.failed", data: { email_id: "re_z" } },
+      "re_z:email.failed"
+    );
+    const lookup = queryCalls.find((c) => c.sql.includes("subsumio_email_tracking_events"));
+    expect(lookup?.sql).toMatch(/COALESCE\(raw->>'brain_id', raw->>'brainId'\)/);
+  });
+
+  test("Engine-Fehler beim Write-back: Dedupe-Claim wird freigegeben, retryable:true", async () => {
+    queryResults.push([{ id: "m1", brain_id: "brain-1", tracking_id: "trk_1" }]);
+    listEnginePages.mockResolvedValue([
+      { slug: "legal/outbound-register/out-1", frontmatter: { tracking_id: "trk_1" } },
+    ] as never);
+    enginePatchPage.mockImplementationOnce(async () => new Response("upstream", { status: 502 }));
+
+    const res = await reconcileResendDeliveryEvent(bounceEvent, "re_abc:email.bounced");
+    expect(res.retryable).toBe(true);
+    expect(res.pagesUpdated).toBe(0);
+    expect(forgetIds).toHaveBeenCalledWith("system", "resend-delivery", ["re_abc:email.bounced"]);
+  });
+
+  test("Engine-Listing wirft: retryable, Claim freigegeben; sauberer Lauf gibt nichts frei", async () => {
+    queryResults.push([{ id: "m1", brain_id: "brain-1", tracking_id: "trk_1" }]);
+    listEnginePages.mockRejectedValue(new Error("engine 503"));
+    const failed = await reconcileResendDeliveryEvent(bounceEvent, "re_abc:email.bounced");
+    expect(failed.retryable).toBe(true);
+    expect(forgetIds).toHaveBeenCalledTimes(1);
+
+    vi.clearAllMocks();
+    filterNewIds.mockResolvedValue(new Set([0]));
+    queryResults.push([{ id: "m1", brain_id: "brain-1", tracking_id: "trk_1" }]);
+    listEnginePages.mockResolvedValue([
+      { slug: "legal/outbound-register/out-1", frontmatter: { tracking_id: "trk_1" } },
+    ] as never);
+    enginePatchPage.mockImplementation(async () => new Response("{}", { status: 200 }));
+    const ok = await reconcileResendDeliveryEvent(bounceEvent, "re_abc:email.bounced");
+    expect(ok.retryable).toBeUndefined();
+    expect(ok.pagesUpdated).toBe(1);
+    expect(forgetIds).not.toHaveBeenCalled();
   });
 
   test("späteres 'delivered' überschreibt terminalen Fehler nicht", async () => {
