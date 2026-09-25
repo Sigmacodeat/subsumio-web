@@ -88,16 +88,30 @@ export async function generateTOTP(
 
 /** Prüft einen TOTP-Code gegen ein Secret (mit ±1 Step-Toleranz). */
 export async function verifyTOTP(token: string, secret: string): Promise<boolean> {
-  const now = Date.now() / 1000;
+  return (await verifyTOTPStep(token, secret)) !== null;
+}
+
+/**
+ * Wie verifyTOTP, liefert aber den getroffenen Zeitschritt (Unix-Zeit / 30)
+ * oder null. Mit dem Schritt setzen Aufrufer den Replay-Schutz nach
+ * RFC 6238 §5.2 um: ein Schritt wird pro Nutzer höchstens einmal akzeptiert.
+ */
+export async function verifyTOTPStep(
+  token: string,
+  secret: string,
+  nowMs: number = Date.now()
+): Promise<number | null> {
+  const now = nowMs / 1000;
   for (const offset of [-1, 0, 1]) {
-    const expected = await generateTOTP(secret, { time: now + offset * 30 });
+    const time = now + offset * 30;
+    const expected = await generateTOTP(secret, { time });
     if (
       expected.length === token.length &&
       timingSafeEqual(Buffer.from(expected), Buffer.from(token))
     )
-      return true;
+      return Math.floor(time / 30);
   }
-  return false;
+  return null;
 }
 
 /** OTP-Auth-URL für QR-Code (otpauth://). */

@@ -33,7 +33,13 @@ export function isSmsConfigured(): boolean {
 /** Twilio hard limit is 1600 chars per message body. */
 export const SMS_MAX_BODY = 1600;
 
-export async function sendSms(params: { to: string; body: string }): Promise<SmsSendResult> {
+export async function sendSms(params: {
+  to: string;
+  body: string;
+  /** Sending firm's brain — echoed in the (Twilio-signed) status callback URL
+   *  so delivery reports land in that firm's audit protocol. */
+  statusRef?: string;
+}): Promise<SmsSendResult> {
   const accountSid = env("TWILIO_ACCOUNT_SID");
   const authToken = env("TWILIO_AUTH_TOKEN");
   const from = env("TWILIO_FROM_NUMBER");
@@ -50,7 +56,10 @@ export async function sendSms(params: { to: string; body: string }): Promise<Sms
   else form.set("From", from!);
   // Delivery tracking: Twilio ruft /api/sms/status mit Signatur zurück.
   const appUrl = env("NEXT_PUBLIC_APP_URL");
-  if (appUrl) form.set("StatusCallback", `${appUrl.replace(/\/+$/, "")}/api/sms/status`);
+  if (appUrl) {
+    const ref = params.statusRef ? `?b=${encodeURIComponent(params.statusRef)}` : "";
+    form.set("StatusCallback", `${appUrl.replace(/\/+$/, "")}/api/sms/status${ref}`);
+  }
 
   let res: Response;
   try {

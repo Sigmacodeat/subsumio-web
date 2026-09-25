@@ -301,3 +301,23 @@ describe("PATCH/DELETE /api/pages/[...slug] — Fristen (C6)", () => {
     expect(written()?.frontmatter?.version).toBe(10);
   });
 });
+
+describe("DELETE /api/pages/[...slug] — Audit-Zuordnung (OPS-10)", () => {
+  it("logs a matter delete into the firm's protocol with the acting user", async () => {
+    const { logAudit } = await import("@/lib/audit");
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: { status: "active" },
+    };
+    const res = await call("DELETE", "legal/cases/akte-1");
+    expect(res.status).toBe(200);
+    const entry = vi.mocked(logAudit).mock.calls.find((c) => c[0] === "case.delete");
+    expect(entry?.[2]).toMatchObject({
+      brainId: "brain-at",
+      userId: "u1",
+      userEmail: "anwalt@example.com",
+      entityId: "legal/cases/akte-1",
+    });
+  });
+});

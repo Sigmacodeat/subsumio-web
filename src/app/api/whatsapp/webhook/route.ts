@@ -20,7 +20,7 @@ import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrat
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import {
   createCaseSafely,
   engineCaseCreateDeps,
@@ -96,6 +96,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     if (!sender) {
       // Deny unknown/suspended/revoked senders. Audit by phone hash only — never log the raw number.
       await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
+        brainId: SYSTEM_BRAIN,
         details: { phoneHash: phoneHash(message.from), messageId: message.id },
       });
       results.push({ id: message.id, status: "ignored", error: "sender_not_allowed" });
@@ -416,6 +417,7 @@ async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string
     await store.update(c.id, { optOutAt: now });
   }
   await logAudit("whatsapp.consent_revoked", "whatsapp_identity", {
+    brainId: sender.brainId ?? SYSTEM_BRAIN,
     details: { phoneHash: hash, revoked: active.length },
   });
   const res = await sendWhatsAppText(
@@ -450,6 +452,7 @@ async function reinstateWhatsAppConsent(
     });
   }
   await logAudit("whatsapp.consent_granted", "whatsapp_identity", {
+    brainId: sender.brainId ?? SYSTEM_BRAIN,
     details: { phoneHash: hash, reinstated: withdrawn.length },
   });
   const res = await sendWhatsAppText(

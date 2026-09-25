@@ -234,6 +234,9 @@ export const POST = createHandler(
     }
 
     void logAudit("case.restore", "page", {
+      brainId: ctx.brainId,
+      userId: ctx.user.id,
+      userEmail: ctx.user.email,
       entityId: body.slug,
       details: { via: "trash", userId: ctx.user.id, cascaded, cascadeFailed },
     });

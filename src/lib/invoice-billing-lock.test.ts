@@ -6,7 +6,7 @@ vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine.test",
   engineHeadersForBrain: vi.fn(),
 }));
-vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
+vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(), SYSTEM_BRAIN: "system" }));
 vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));

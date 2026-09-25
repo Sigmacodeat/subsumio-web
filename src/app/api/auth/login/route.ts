@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyPassword } from "@/lib/auth/password";
+import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { getStore, toPublic } from "@/lib/auth/store";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -7,7 +7,7 @@ import { signActionToken, bindFragment, CHALLENGE_TOKEN_TTL_SECONDS } from "@/li
 import { loginSchema } from "@/lib/api-validation";
 import { isAccountLocked, recordFailedLogin, clearLockout } from "@/lib/auth/lockout";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
-import { logAudit } from "@/lib/audit";
+import { logUserAudit } from "@/lib/audit-user";
 import {
   ACCOUNT_BLOCKED_CODE,
   ACCOUNT_BLOCKED_MESSAGE,
@@ -15,6 +15,15 @@ import {
 } from "@/lib/auth/account-status";
 import { twoFactorPolicyFor } from "@/lib/kanzlei-settings-server";
 import { z } from "zod";
+
+// A real hash to compare against when there is no usable one (unknown address,
+// SSO-only account): the response then takes as long as a wrong password,
+// so timing does not reveal whether an account exists.
+let dummyHash: Promise<string> | null = null;
+async function burnPasswordCheck(password: string): Promise<void> {
+  dummyHash ??= hashPassword(`dummy-${Math.random()}-${Date.now()}`);
+  await verifyPassword(password, await dummyHash).catch(() => false);
+}
 
 // Extended schema with trimmed email for internal validation
 const loginSchemaInternal = loginSchema.extend({
@@ -48,16 +57,12 @@ export const POST = createPublicHandler(
 
     const user = await getStore().getByEmail(email);
 
-    // Same error for unknown email and wrong password — no account enumeration.
-    if (!user) {
+    // Same error — and the same work — for an unknown address, an SSO-only
+    // account (no local password) and a wrong password: no account
+    // enumeration. The login page points SSO users to their provider button.
+    if (!user || !user.passwordHash) {
+      await burnPasswordCheck(password);
       return apiError("invalid_credentials", "Invalid credentials", 401);
-    }
-
-    // SSO users have no local password — redirect them to SSO login
-    if (!user.passwordHash) {
-      return apiError("sso_required", "SSO login required", 401, {
-        provider: user.ssoProvider ?? "sso",
-      });
     }
 
     if (!(await verifyPassword(password, user.passwordHash))) {
@@ -123,7 +128,7 @@ export const POST = createPublicHandler(
       userAgent: req.headers.get("user-agent"),
       ip,
     });
-    void logAudit("user.login", "user", { entityId: user.id, details: { ip } });
+    void logUserAudit("user.login", "user", user, { entityId: user.id, details: { ip } });
     const res = NextResponse.json({ user: toPublic(user), must2fa });
     res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     return res;

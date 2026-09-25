@@ -191,6 +191,9 @@ export const POST = createHandler(
     }
 
     void logAudit("invoice.update", "invoice", {
+      brainId: ctx.brainId,
+      userId: ctx.user.id,
+      userEmail: ctx.user.email,
       entityId: stornoSlug,
       details: { action: "storno_created", forInvoice: slug, invoiceNumber: number },
     });

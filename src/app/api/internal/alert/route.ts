@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireInternalSecret } from "@/lib/auth/internal-guard";
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/internal/alert");
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
 
     // Write to audit log for traceability
     await logAudit("system.alert", "system", {
+      brainId: SYSTEM_BRAIN,
       details: {
         alert_type: body.type,
         severity: body.severity,

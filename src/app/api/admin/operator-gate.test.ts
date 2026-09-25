@@ -28,7 +28,13 @@ function ctx(email: string, twoFactorEnabled = true) {
     headers: {},
     brainId: "brain",
     plan: "team",
-    user: { id: "u1", email, role: "admin", twoFactorEnabled },
+    user: {
+      id: "u1",
+      email,
+      role: "admin",
+      twoFactorEnabled,
+      emailVerifiedAt: "2026-01-01T00:00:00.000Z",
+    },
   };
 }
 

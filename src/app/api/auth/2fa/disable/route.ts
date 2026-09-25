@@ -4,11 +4,14 @@ import { revokeAllSessions } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
 import { hit } from "@/lib/auth/rate-limit";
 import { z } from "zod";
+import { verifySecondFactor } from "@/lib/auth/second-factor";
 
 export const dynamic = "force-dynamic";
 
 const disableSchema = z.object({
   password: z.string().min(1).max(1000),
+  /** Current TOTP or backup code — the second factor itself must confirm. */
+  code: z.string().min(1).max(20).optional(),
 });
 
 export const POST = createHandler(
@@ -41,6 +44,17 @@ export const POST = createHandler(
 
     if (!user.passwordHash || !(await verifyPassword(body.password, user.passwordHash))) {
       return Response.json({ error: "password_required" }, { status: 403 });
+    }
+
+    if (!body.code) {
+      return Response.json({ error: "code_required" }, { status: 403 });
+    }
+    const factor = await verifySecondFactor(user, body.code);
+    if (!factor.ok) {
+      return Response.json(
+        { error: factor.reason === "locked" ? "two_factor_locked" : "invalid_token" },
+        { status: factor.reason === "locked" ? 429 : 403 }
+      );
     }
 
     await store.update(ctx.user.id, {

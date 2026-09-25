@@ -103,6 +103,9 @@ export const PATCH = createHandler(
         });
       }
       void logAudit("invoice.update", "invoice", {
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
         entityId: slug,
         details: { fields: Object.keys(body) },
       });
@@ -182,7 +185,12 @@ export const DELETE = createHandler(
       );
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      void logAudit("invoice.delete", "invoice", { entityId: slug });
+      void logAudit("invoice.delete", "invoice", {
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        entityId: slug,
+      });
 
       // The deleted draft no longer bills its work — put it back to open so
       // a corrected invoice can take it.

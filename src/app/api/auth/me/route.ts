@@ -47,7 +47,8 @@ export const GET = createHandler(
 
 export const PATCH = createHandler(
   {
-    action: "settings.write",
+    // Own profile only (ctx.user.id) — not the admin-only firm settings.
+    action: "profile.update",
     body: updateProfileSchema,
     audit: (ctx, body) => ({
       action: "settings.update",

@@ -1,6 +1,6 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getTenant } from "@/lib/tenants";
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import { endSupportSession } from "@/lib/support-session";
 import { writeFirmVisibleSupportAuditEntry } from "@/lib/support-session-audit";
 
@@ -25,7 +25,7 @@ export const POST = createHandler(
     const tenant = await getTenant(ended.orgId);
     void logAudit("support.session_end", "org", {
       entityId: ended.orgId,
-      brainId: tenant?.brainId,
+      brainId: tenant?.brainId ?? SYSTEM_BRAIN,
       userId: ctx.user.id,
       userEmail: ctx.user.email,
       details: { reason: ended.reason, orgName: ended.orgName, startedAt: ended.startedAt },

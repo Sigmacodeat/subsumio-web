@@ -92,6 +92,7 @@ export async function purgeExpiredSoftDeletedUsers(
       await pool.query(`DELETE FROM subsumio_users WHERE id = $1`, [row.id]);
       purged++;
       void logAudit("admin.data_delete", "user", {
+        brainId,
         entityId: row.id,
         details: { reason: "grace_period_expired", days: USER_SOFT_DELETE_GRACE_DAYS },
       });

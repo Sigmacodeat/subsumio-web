@@ -334,6 +334,7 @@ export const GET = createCronHandler(async () => {
 
         report.purged++;
         void logAudit("trash.purge", "page", {
+          brainId,
           entityId: item.slug,
           details: {
             title: item.title,

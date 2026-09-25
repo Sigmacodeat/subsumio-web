@@ -119,11 +119,11 @@ export function use2FAVerify() {
 export function use2FADisable() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (password: string) =>
+    mutationFn: ({ password, code }: { password: string; code: string }) =>
       csrfFetch("/api/auth/2fa/disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, code }),
       }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["auth", "me"] }),
   });

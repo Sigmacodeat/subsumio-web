@@ -2,7 +2,10 @@ import { z } from "zod";
 import { NextResponse } from "next/server";
 import { createHandler } from "@/lib/api-handler";
 import { getStore } from "@/lib/auth/store";
-import { verifyTOTP } from "@/lib/totp";
+import { verifyTOTPStep } from "@/lib/totp";
+import { claimTotpStep } from "@/lib/auth/second-factor";
+import { revokeSessionRows } from "@/lib/auth/session-registry";
+import { logUserAudit } from "@/lib/audit-user";
 import { hit } from "@/lib/auth/rate-limit";
 import { generateBackupCodes, hashBackupCodes } from "@/lib/auth/backup-codes";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
@@ -50,8 +53,13 @@ export const POST = createHandler(
       return Response.json({ error: "setup_expired" }, { status: 410 });
     }
 
-    const valid = await verifyTOTP(body.token, pendingSecret);
-    if (!valid) return Response.json({ error: "invalid_token" }, { status: 400 });
+    const step = await verifyTOTPStep(body.token, pendingSecret);
+    if (step === null || !(await claimTotpStep(user.id, step))) {
+      return Response.json({ error: "invalid_token" }, { status: 400 });
+    }
+    // Replacing an ACTIVE factor (only reachable after setup re-authenticated
+    // with password + current code): other devices are signed out below.
+    const replacing = user.twoFactorEnabled === true;
 
     const backupCodes = generateBackupCodes();
     const hashedCodes = await hashBackupCodes(backupCodes);
@@ -62,7 +70,14 @@ export const POST = createHandler(
       pendingTwoFactorSecret: null,
       pendingTwoFactorExpiresAt: null,
       twoFactorBackupCodes: hashedCodes,
+      // The enrolment code must not be replayable for the next login.
+      twoFactorLastStep: step,
     });
+
+    if (replacing) {
+      await revokeSessionRows(ctx.user.id, ctx.sessionId ?? null);
+      void logUserAudit("user.2fa_replaced", "user", user, { entityId: user.id });
+    }
 
     // Re-issue the session without must2fa: the login-time session was
     // stateless (JWT-signed) and, if the org requires 2FA, was minted with

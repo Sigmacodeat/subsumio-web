@@ -19,7 +19,7 @@
  */
 
 import { getSharedPgPool } from "@/lib/auth/store";
-import { logAudit, type AuditAction } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN, type AuditAction } from "@/lib/audit";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
 import { filterNewIds, forgetIds } from "@/lib/caselaw-dedup";
@@ -240,7 +240,7 @@ export async function reconcileResendDeliveryEvent(
   // render via the audit-label humaniser fallback.
   await logAudit("comm.delivery_status" as AuditAction, "outbound_email", {
     entityId: messageId ?? trackingId ?? emailId ?? dedupeKey,
-    brainId: brainId ?? undefined,
+    brainId: brainId ?? SYSTEM_BRAIN,
     details: {
       eventType: event.type ?? null,
       emailId,

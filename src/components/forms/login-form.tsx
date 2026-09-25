@@ -149,7 +149,7 @@ export function LoginForm() {
       {login.data?.error && login.data.error !== "2fa_required" && !login.isError && (
         <p className="text-sm text-[color:var(--ds-danger-text)]">
           {login.data.error === "invalid_credentials"
-            ? "E-Mail oder Passwort falsch."
+            ? "E-Mail oder Passwort falsch. Bei Anmeldung über Microsoft oder Google bitte diese nutzen."
             : login.data.error === "account_deactivated"
               ? "Dieses Konto ist gesperrt. Bitte wenden Sie sich an Ihre Kanzlei oder an support@subsum.io."
               : login.data.error === "sso_required"

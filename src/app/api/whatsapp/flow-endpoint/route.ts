@@ -205,6 +205,7 @@ async function handleCaseIntake(
           } as typeof intake.frontmatter,
         });
         void logAudit("whatsapp.flow_case_created", "intake_request", {
+          brainId,
           entityId: intake.slug,
           details: { brainId, reference, legalArea: legalAreaId, conflict: true },
         });
@@ -225,6 +226,7 @@ async function handleCaseIntake(
       }
 
       void logAudit("whatsapp.flow_case_created", "legal_case", {
+        brainId,
         entityId: outcome.slug,
         details: { brainId, reference, legalArea: legalAreaId },
       });
@@ -331,6 +333,7 @@ async function handleAppointmentBooking(
           signal: AbortSignal.timeout(15_000),
         });
         void logAudit("whatsapp.flow_appointment_booked", "appointment", {
+          brainId,
           entityId: appointmentId,
           details: { brainId, date: appointmentDate, time: appointmentTime },
         });

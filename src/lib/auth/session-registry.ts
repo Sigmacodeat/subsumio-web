@@ -201,6 +201,58 @@ export async function isSidRevoked(userId: string, sid: string): Promise<boolean
   }
 }
 
+/** Idle limit for a session in ms: `SUBSUMIO_SESSION_IDLE_HOURS` (default 12 h,
+ *  0 disables). Unattended devices in a firm must not keep matter access for
+ *  the full 30-day token lifetime. */
+export function sessionIdleLimitMs(): number {
+  const raw = process.env.SUBSUMIO_SESSION_IDLE_HOURS;
+  const hours = raw === undefined || raw === "" ? 12 : Number(raw);
+  if (!Number.isFinite(hours) || hours < 0) return 12 * 3600 * 1000;
+  return hours * 3600 * 1000;
+}
+
+/**
+ * Revocation + idle check in one read. True when the session must be
+ * rejected: revoked, or its last activity is older than the idle limit (the
+ * row is then revoked so the edge middleware and the device list agree). A
+ * missing row stays valid (fail open on metadata, as isSidRevoked).
+ */
+export async function isSessionRevokedOrIdle(
+  userId: string,
+  sid: string,
+  idleMs: number = sessionIdleLimitMs()
+): Promise<boolean> {
+  const pool = getSharedPgPool();
+  if (!pool) {
+    const row = memoryRows.get(sid);
+    if (!row) return false;
+    if (row.revokedAt !== null) return true;
+    if (idleMs > 0 && row.userId === userId && Date.now() - row.lastSeenAt > idleMs) {
+      row.revokedAt = Date.now();
+      return true;
+    }
+    return false;
+  }
+  try {
+    await ensureRegistrySchema();
+    const { rows } = await pool.query<{ revoked_at: Date | null; idle: boolean }>(
+      `SELECT revoked_at,
+              ($3::bigint > 0 AND last_seen_at < now() - ($3::bigint * interval '1 millisecond')) AS idle
+       FROM subsumio_user_sessions WHERE sid = $1 AND user_id = $2`,
+      [sid, userId, idleMs]
+    );
+    if (rows.length === 0) return false;
+    if (rows[0].revoked_at !== null) return true;
+    if (rows[0].idle) {
+      await revokeSession(userId, sid).catch(() => false);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 /** Sids currently revoked for a user — served to the edge middleware via the
  *  internal revocation-check endpoint (same trust level as min_version). */
 export async function listRevokedSids(userId: string): Promise<string[]> {

@@ -412,6 +412,9 @@ export const PATCH = createHandler(
       // Audit log + SSE for restore operations
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
         void logAudit("case.restore", "page", {
+          brainId: ctx.brainId,
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
           entityId: path,
           details: {
             userId: ctx.user.id,
@@ -745,6 +748,9 @@ export const DELETE = createHandler(
         ]);
       }
       void logAudit(pageType === "legal_case" ? "case.delete" : "document.delete", "page", {
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
         entityId: path,
         details: {
           userId: ctx.user.id,

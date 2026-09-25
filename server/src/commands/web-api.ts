@@ -2960,6 +2960,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   action: "document.upload",
                   entity_type: "file",
                   entity_id: slug,
+                  brain_id: tenantSource,
                   details: {
                     filename: file.filename,
                     storage_path: persistRes.storage_path,
@@ -7223,6 +7224,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   action: "document.upload",
                   entity_type: "file",
                   entity_id: versionedSlug,
+                  brain_id: pending.sourceId,
                   details: {
                     filename: pending.filename,
                     storage_path: persistRes.storage_path,
