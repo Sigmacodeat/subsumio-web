@@ -46,7 +46,7 @@ vi.mock("@/lib/whatsapp/verify", async (importOriginal) => {
   };
 });
 vi.mock("@/lib/whatsapp/identity", () => ({
-  resolveSenderIdentity: vi.fn(async () => ({ brainId: "brain-1", userId: "u1" })),
+  resolveSenderIdentity: vi.fn(async () => ({ brainId: "brain-1", orgId: "org-1", userId: "u1" })),
 }));
 vi.mock("@/lib/whatsapp/window-store", () => ({
   getWhatsAppWindowStore: () => ({ touch: vi.fn(async () => {}) }),
@@ -56,7 +56,10 @@ vi.mock("@/lib/whatsapp/consent-store", async (importOriginal) => {
   return {
     ...orig,
     getWhatsAppConsentStore: () => ({
-      getByPhoneHash: async () => mocks.rows,
+      getByPhoneHash: async (keys: string[], hash: string) =>
+        mocks.rows.filter((r) => r.phoneHash === hash && keys.includes(r.orgId)),
+      getByPhoneHashAllFirms: async (hash: string) =>
+        mocks.rows.filter((r) => r.phoneHash === hash),
       getById: async () => null,
       create: async (c: WhatsAppConsent) => c,
       update: mocks.storeUpdate,
@@ -203,6 +206,39 @@ describe("whatsapp webhook — strict opt-out", () => {
       "whatsapp_identity",
       expect.anything()
     );
+  });
+
+  test("STOPP widerruft auch Einwilligungen anderer Kanzleien (Widerruf der betroffenen Person)", async () => {
+    mocks.rows.push(consentRow(), consentRow({ id: "c-other", orgId: "org-2" }));
+    const { json } = await post("STOPP");
+    expect(json.results[0].status).toBe("opt_out");
+    expect(mocks.storeUpdate).toHaveBeenCalledWith(
+      "c-other",
+      expect.objectContaining({ optOutAt: expect.any(String) })
+    );
+    expect(mocks.storeUpdate).toHaveBeenCalledWith(
+      "c-1",
+      expect.objectContaining({ optOutAt: expect.any(String) })
+    );
+  });
+
+  test("START reaktiviert nur Einwilligungen der Kanzlei des Absenders", async () => {
+    mocks.rows.push(
+      consentRow({ optOutAt: "2026-09-01T00:00:00Z" }),
+      consentRow({ id: "c-other", orgId: "org-2", optOutAt: "2026-09-01T00:00:00Z" })
+    );
+    await post("START");
+    expect(mocks.storeUpdate).toHaveBeenCalledWith("c-1", expect.anything());
+    expect(mocks.storeUpdate).not.toHaveBeenCalledWith("c-other", expect.anything());
+  });
+
+  test("Widerruf nur bei einer fremden Kanzlei mutet den Kanal der eigenen nicht", async () => {
+    mocks.rows.push(
+      consentRow({ id: "c-other", orgId: "org-2", optOutAt: "2026-09-01T00:00:00Z" })
+    );
+    const { json } = await post("Wann ist mein Termin?");
+    expect(json.results[0].status).toBe("answered");
+    expect(mocks.orchestrate).toHaveBeenCalledOnce();
   });
 
   test("ungültige Signatur → 401, nichts wird verarbeitet", async () => {

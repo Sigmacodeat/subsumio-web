@@ -13,6 +13,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { env } from "@/lib/env";
 import type { OutboundScope } from "./outbound-gate";
+import { smsTenantKeys } from "@/lib/sms/consent-store";
 
 export interface WhatsAppConsent {
   id: string;
@@ -38,8 +39,27 @@ export function isConsentActive(c: WhatsAppConsent): boolean {
   return !!c.optInAt && !c.optOutAt;
 }
 
+/**
+ * Consent is recorded per firm, exactly like SMS consent: several firms share
+ * one instance (and one business number), and a firm may only rely on — or
+ * change — the opt-ins it recorded itself. A record belongs to the firm when
+ * its `orgId` is one of the firm's tenant keys (brain id or organisation id).
+ * Records without a firm key (legacy rows) belong to no firm and authorize
+ * nothing until they are recorded again.
+ */
+export function whatsAppTenantKeys(brainId: string, orgId?: string | null): string[] {
+  return smsTenantKeys(brainId, orgId);
+}
+
 export interface WhatsAppConsentStore {
-  getByPhoneHash(phoneHash: string): Promise<WhatsAppConsent[]>;
+  /** Consents for `phoneHash` recorded by the firm identified by `tenantKeys`. */
+  getByPhoneHash(tenantKeys: string[], phoneHash: string): Promise<WhatsAppConsent[]>;
+  /**
+   * Every firm's consents for `phoneHash`. ONLY for the subject's own
+   * withdrawal (STOPP sent from that very number) — never to decide whether a
+   * firm may send, and never for a firm-initiated change.
+   */
+  getByPhoneHashAllFirms(phoneHash: string): Promise<WhatsAppConsent[]>;
   getById(id: string): Promise<WhatsAppConsent | null>;
   create(consent: WhatsAppConsent): Promise<WhatsAppConsent>;
   update(id: string, patch: Partial<WhatsAppConsent>): Promise<WhatsAppConsent | null>;
@@ -52,10 +72,11 @@ export interface WhatsAppConsentStore {
  */
 export async function hasActiveConsent(
   store: WhatsAppConsentStore,
+  tenantKeys: string[],
   phoneHash: string,
   scope: OutboundScope
 ): Promise<boolean> {
-  const rows = await store.getByPhoneHash(phoneHash);
+  const rows = await store.getByPhoneHash(tenantKeys, phoneHash);
   return rows.some((c) => isConsentActive(c) && c.scopes.includes(scope));
 }
 
@@ -92,7 +113,16 @@ class FileWhatsAppConsentStore implements WhatsAppConsentStore {
     return this.writeQueue;
   }
 
-  async getByPhoneHash(phoneHash: string) {
+  async getByPhoneHash(tenantKeys: string[], phoneHash: string) {
+    const keys = tenantKeys.filter(Boolean);
+    if (keys.length === 0) return [];
+    // Legacy rows without a firm key never match a tenant key.
+    return (await this.load()).filter(
+      (c) => c.phoneHash === phoneHash && typeof c.orgId === "string" && keys.includes(c.orgId)
+    );
+  }
+
+  async getByPhoneHashAllFirms(phoneHash: string) {
     return (await this.load()).filter((c) => c.phoneHash === phoneHash);
   }
 
@@ -171,6 +201,8 @@ class PgWhatsAppConsentStore implements WhatsAppConsentStore {
           updated_at timestamptz NOT NULL DEFAULT now()
         );
         CREATE INDEX IF NOT EXISTS idx_wa_consent_phone ON subsumio_whatsapp_consent (phone_hash);
+        CREATE INDEX IF NOT EXISTS idx_wa_consent_org_phone
+          ON subsumio_whatsapp_consent (org_id, phone_hash);
       `
         )
         .then(() => undefined);
@@ -203,7 +235,19 @@ class PgWhatsAppConsentStore implements WhatsAppConsentStore {
     };
   }
 
-  async getByPhoneHash(phoneHash: string) {
+  async getByPhoneHash(tenantKeys: string[], phoneHash: string) {
+    const keys = tenantKeys.filter(Boolean);
+    if (keys.length === 0) return [];
+    await this.ensureSchema();
+    // Legacy rows without a firm key (org_id '') never match a tenant key.
+    const { rows } = await this.pool().query(
+      `SELECT * FROM subsumio_whatsapp_consent WHERE org_id = ANY($1::text[]) AND phone_hash = $2`,
+      [keys, phoneHash]
+    );
+    return rows.map((r) => this.row(r));
+  }
+
+  async getByPhoneHashAllFirms(phoneHash: string) {
     await this.ensureSchema();
     const { rows } = await this.pool().query(
       `SELECT * FROM subsumio_whatsapp_consent WHERE phone_hash = $1`,
