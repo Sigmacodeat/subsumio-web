@@ -51,6 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { issuePortalLink } from "@/lib/portal-link-client";
 import { cn, encodeSlugPath, formatDateTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -74,7 +75,9 @@ interface DocumentRequestRecord {
       required: boolean;
       received_document_slug?: string;
     }>;
-    portal_token_id?: string;
+    /** The request offers the client portal (link issued fresh on copy). */
+    portal_link?: boolean;
+    /** Older requests: only tells that the portal was offered. */
     portal_url?: string;
     source_event_slug?: string;
     message_draft?: string;
@@ -266,9 +269,19 @@ export default function DocumentRequestsPage() {
     });
   }
 
-  function copyPortalLink(url: string) {
-    const full = url.startsWith("http") ? url : `${window.location.origin}${url}`;
-    void navigator.clipboard.writeText(full).then(
+  // Portal links are never stored: each copy issues a fresh, registered link.
+  async function copyPortalLink(caseSlug: string) {
+    let full: string;
+    try {
+      full = await issuePortalLink(caseSlug);
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Portal-Link konnte nicht erzeugt werden",
+      });
+      return;
+    }
+    await navigator.clipboard.writeText(full).then(
       () => addToast({ type: "success", title: "Portal-Link kopiert" }),
       () => addToast({ type: "error", title: "Kopieren nicht möglich" })
     );
@@ -548,10 +561,10 @@ export default function DocumentRequestsPage() {
                         Ursprüngliche Nachricht
                       </a>
                     )}
-                    {fm.portal_url && (
+                    {(fm.portal_link === true || !!fm.portal_url) && fm.case_slug && (
                       <button
                         type="button"
-                        onClick={() => copyPortalLink(fm.portal_url || "")}
+                        onClick={() => void copyPortalLink(fm.case_slug)}
                         className="inline-flex items-center gap-1 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
                       >
                         <Copy size={12} aria-hidden="true" />

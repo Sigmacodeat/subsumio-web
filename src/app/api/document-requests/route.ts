@@ -209,6 +209,15 @@ export const PATCH = createHandler(
       if ((patch as Record<string, unknown>)[key] === undefined)
         delete (patch as Record<string, unknown>)[key];
     });
+    // Older requests stored the portal link with its token: drop it on the
+    // next update (null removes the key), keep only that the portal is offered.
+    if (currentFm.portal_url !== undefined || currentFm.portal_token_id !== undefined) {
+      Object.assign(patch, {
+        portal_url: null,
+        portal_token_id: null,
+        ...(currentFm.portal_url ? { portal_link: true } : {}),
+      });
+    }
 
     // Merge without title/type: the request keeps its name and its type.
     const res = await fetch(`${ENGINE_URL}/api/pages`, {

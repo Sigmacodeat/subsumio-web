@@ -487,7 +487,7 @@ describe("POST /api/intake/convert", () => {
     expect(createDocumentRequestNotification).not.toHaveBeenCalled();
   });
 
-  test("portal_enabled: true belegt die Anfrage mit einem Upload-Link", async () => {
+  test("portal_enabled: true bietet das Portal an, ohne einen Link zu speichern", async () => {
     const intakePage = {
       slug: "legal/intake/2026-06-20/max",
       type: "intake_request",
@@ -527,8 +527,10 @@ describe("POST /api/intake/convert", () => {
       String((init as RequestInit | undefined)?.body ?? "").includes('"document_request"')
     );
     const reqBody = JSON.parse(String((docReqCalls[0]?.[1] as RequestInit).body));
-    expect(reqBody.frontmatter.portal_url).toMatch(/^\/portal\//);
-    expect(reqBody.frontmatter.portal_token_id).toBeTruthy();
+    // The request offers the portal; no link (with its token) is stored.
+    expect(reqBody.frontmatter.portal_link).toBe(true);
+    expect(reqBody.frontmatter.portal_url).toBeUndefined();
+    expect(JSON.stringify(reqBody)).not.toContain("/portal/");
   });
 
   test.each([

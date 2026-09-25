@@ -23,7 +23,8 @@ export interface ReviewInboxItem {
   requestSlug: string | null;
   items: string[];
   channel: string | null;
-  portalUrl: string | null;
+  /** The request offers the client portal; a fresh link is issued on copy. */
+  portalLink: boolean;
   messageDraft: string | null;
   dueDate: string | null;
   urgency: string | null;
@@ -118,7 +119,7 @@ export async function loadReviewInboxItems(
       requestSlug: page.slug,
       items: openItems,
       channel: str(f.channel) || null,
-      portalUrl: str(f.portal_url) || null,
+      portalLink: f.portal_link === true || !!str(f.portal_url),
       messageDraft: str(f.message_draft) || null,
       dueDate: null,
       urgency: null,
@@ -173,7 +174,7 @@ export async function loadReviewInboxItems(
       requestSlug: null,
       items: [],
       channel: null,
-      portalUrl: null,
+      portalLink: false,
       messageDraft: null,
       dueDate,
       urgency: urgency || null,
@@ -213,7 +214,7 @@ export async function loadReviewInboxItems(
       requestSlug: null,
       items: [],
       channel: str(f.channel) || null,
-      portalUrl: null,
+      portalLink: false,
       messageDraft: null,
       dueDate: null,
       urgency: null,
@@ -277,7 +278,7 @@ export async function loadReviewInboxItems(
         requestSlug: null,
         items: [],
         channel: null,
-        portalUrl: null,
+        portalLink: false,
         messageDraft: null,
         dueDate: dueDate || null,
         urgency: urgency || null,
@@ -328,7 +329,7 @@ export async function loadReviewInboxItems(
         requestSlug: null,
         items: [],
         channel: null,
-        portalUrl: null,
+        portalLink: false,
         messageDraft: null,
         dueDate: null,
         urgency: null,
@@ -381,7 +382,7 @@ export async function loadReviewInboxItems(
         requestSlug: null,
         items: [],
         channel: null,
-        portalUrl: null,
+        portalLink: false,
         messageDraft: null,
         dueDate: null,
         urgency: null,

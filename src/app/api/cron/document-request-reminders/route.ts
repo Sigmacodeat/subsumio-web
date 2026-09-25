@@ -13,6 +13,7 @@ import type { MatterPermissions } from "@/lib/matter-access";
 import { createDocumentRequestNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { normalizePhone } from "@/lib/whatsapp/types";
+import { issueRegisteredPortalLink } from "@/lib/portal-link-issue";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,9 @@ interface DocumentRequestFm {
   sent_at?: string;
   reminder_sent_at?: string;
   reminder_count?: number;
+  /** The request offers the portal; the link is issued fresh per message. */
+  portal_link?: boolean;
+  /** Older requests stored a link; it only tells that the portal was offered. */
   portal_url?: string;
   message_draft?: string;
 }
@@ -153,8 +157,19 @@ export const GET = createCronHandler(async (_req) => {
         if (recipientPhone) {
           try {
             const itemList = openItems.map((i) => `• ${i.label}`).join("\n");
+            // A fresh, registered link — never one read back from storage.
+            const portalLink =
+              fm.portal_link === true || typeof fm.portal_url === "string"
+                ? await issueRegisteredPortalLink({
+                    headers,
+                    brainId,
+                    caseSlug: fm.case_slug,
+                    createdBy: "system:document-request-reminder",
+                    purpose: `document_request:${page.slug}`,
+                  })
+                : null;
             const freeform = `Erinnerung: Bitte laden Sie folgende Unterlagen hoch:\n${itemList}${
-              fm.portal_url ? `\n\nPortal: ${fm.portal_url}` : ""
+              portalLink ? `\n\nPortal: ${portalLink}` : ""
             }`;
             await sendProactiveMessage({
               to: recipientPhone,

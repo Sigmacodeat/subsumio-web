@@ -314,16 +314,8 @@ function BeaPageInner() {
           case_number: draft.caseNumber,
           subject: draft.subject,
           priority: "normal",
-          documents: [
-            {
-              title: draft.subject,
-              file_path: draft.slug,
-              mime_type: "application/pdf",
-              size_bytes: 0,
-              file_hash: "pending",
-              is_main_document: true,
-            },
-          ],
+          // The server exports the draft's stored text with its real size and hash.
+          draft_slug: draft.slug,
         }),
       });
       if (!res.ok) {

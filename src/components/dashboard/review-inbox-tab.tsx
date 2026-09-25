@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
+import { issuePortalLink } from "@/lib/portal-link-client";
 import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { useRealtime } from "@/lib/realtime";
 import { cn, encodeSlugPath, formatRelativeTime } from "@/lib/utils";
@@ -63,7 +64,7 @@ interface ReviewItem {
   requestSlug: string | null;
   items: string[];
   channel: string | null;
-  portalUrl: string | null;
+  portalLink: boolean;
   messageDraft: string | null;
   dueDate: string | null;
   urgency: string | null;
@@ -396,12 +397,19 @@ export function ReviewInboxTab() {
     { key: "pending_fact", label: tr("facts", lang) },
   ];
 
-  function copyPortalUrl(item: ReviewItem) {
-    if (!item.portalUrl) return;
-    const url = `${window.location.origin}${item.portalUrl}`;
-    void navigator.clipboard.writeText(url).then(() => {
+  // Portal links are not stored: a fresh one is issued for each copy.
+  async function copyPortalUrl(item: ReviewItem) {
+    if (!item.portalLink || !item.caseSlug) return;
+    try {
+      const url = await issuePortalLink(item.caseSlug);
+      await navigator.clipboard.writeText(url);
       addToast({ type: "success", title: tr("toast_portal_copied", lang) });
-    });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Portal-Link konnte nicht erzeugt werden",
+      });
+    }
   }
 
   return (
@@ -585,8 +593,8 @@ export function ReviewInboxTab() {
                           )}
                           {tr("send", lang)}
                         </button>
-                        {item.portalUrl && (
-                          <button onClick={() => copyPortalUrl(item)} className={ACTION_BTN}>
+                        {item.portalLink && item.caseSlug && (
+                          <button onClick={() => void copyPortalUrl(item)} className={ACTION_BTN}>
                             <ArrowUpRight size={12} />
                             {tr("copy_portal", lang)}
                           </button>

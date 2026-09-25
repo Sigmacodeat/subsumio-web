@@ -37,6 +37,10 @@ vi.mock("@/lib/whatsapp/proactive-send", () => ({
     return { ok: true };
   }),
 }));
+const issueLink = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/portal-link-issue", () => ({
+  issueRegisteredPortalLink: (...a: unknown[]) => issueLink(...a),
+}));
 vi.mock("@/lib/engine", () => ({
   engineHeadersForBrain: () => ({}),
   enginePatchPage: vi.fn(async () => new Response("{}")),
@@ -90,5 +94,30 @@ describe("document request reminders", () => {
       .mocked(createDocumentRequestNotification)
       .mock.calls.map((c) => (c[0] as { userId: string }).userId);
     expect(notified).toEqual(["u1"]);
+  });
+
+  it("sends a freshly issued portal link, never one stored on the request", async () => {
+    issueLink.mockReset();
+    issueLink.mockResolvedValue("https://app.example/portal/frisch.token");
+    pages.push(
+      request("r1", {
+        recipient_phone: "+436641234567",
+        portal_url: "/portal/altes.token",
+      })
+    );
+    await GET(new NextRequest("http://x/api/cron/document-request-reminders"));
+    expect(issueLink).toHaveBeenCalledWith(
+      expect.objectContaining({ brainId: "brain_a", caseSlug: "cases/a" })
+    );
+    expect(sent[0]!.freeform).toContain("https://app.example/portal/frisch.token");
+    expect(sent[0]!.freeform).not.toContain("altes.token");
+  });
+
+  it("leaves the portal out when no link can be issued", async () => {
+    issueLink.mockReset();
+    issueLink.mockResolvedValue(null);
+    pages.push(request("r1", { recipient_phone: "+436641234567", portal_link: true }));
+    await GET(new NextRequest("http://x/api/cron/document-request-reminders"));
+    expect(sent[0]!.freeform).not.toContain("Portal:");
   });
 });

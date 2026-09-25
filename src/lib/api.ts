@@ -2428,7 +2428,7 @@ export const api = {
         requestSlug: string | null;
         items: string[];
         channel: string | null;
-        portalUrl: string | null;
+        portalLink: boolean;
         messageDraft: string | null;
         dueDate: string | null;
         urgency: string | null;

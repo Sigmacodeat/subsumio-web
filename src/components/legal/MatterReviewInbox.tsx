@@ -662,7 +662,7 @@ export function MatterReviewInbox({
                       slug={composerRequest.slug}
                       caseSlug={matter.slug}
                       messageDraft={composerRequest.open_items.map((i) => i.label).join(", ")}
-                      portalUrl={composerRequest.portal_url}
+                      portalLink={composerRequest.portal_link === true}
                       items={composerRequest.open_items.map((i) => i.label)}
                       recipientPhone={clientContact?.phone}
                       recipientEmail={clientContact?.email}

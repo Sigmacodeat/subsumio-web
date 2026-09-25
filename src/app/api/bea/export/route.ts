@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
+import { ENGINE_URL } from "@/lib/engine";
+import { GUARD_READ_FAILED, readCurrentPage, rejectionResponse } from "@/lib/page-write-guards";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import {
   createFilingPackage,
@@ -29,8 +32,44 @@ const beaExportSchema = z.object({
   priority: z.enum(["normal", "urgent", "fristgebunden"]).default("normal"),
   deadline_date: z.string().optional(),
   deadline_id: z.string().max(200).optional(),
-  documents: z.array(documentSchema).min(1).max(20),
+  documents: z.array(documentSchema).min(1).max(20).optional(),
+  /** Export the text of this beA draft as the main document (size and hash from the stored text). */
+  draft_slug: z
+    .string()
+    .min(1)
+    .max(300)
+    .regex(/^legal\/bea-drafts\//, "invalid_draft_slug")
+    .optional(),
 });
+
+type ExportDocument = z.infer<typeof documentSchema>;
+
+/**
+ * The main document of a draft export: the draft's stored text, with its
+ * real byte size and SHA-256 — never a placeholder.
+ */
+async function draftDocument(
+  headers: Record<string, string>,
+  draftSlug: string,
+  title: string
+): Promise<ExportDocument | Response> {
+  const read = await readCurrentPage(ENGINE_URL, headers, draftSlug);
+  if (read.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+  if (read.kind === "missing") return apiError("draft_not_found", "Entwurf nicht gefunden", 404);
+  const text = String((read.page as { content?: unknown }).content ?? "");
+  const bytes = Buffer.from(text, "utf8");
+  if (bytes.length === 0) {
+    return apiError("draft_empty", "Der Entwurf hat keinen Text — nichts zu exportieren.", 422);
+  }
+  return {
+    title,
+    file_path: draftSlug,
+    mime_type: "text/plain; charset=utf-8",
+    size_bytes: bytes.length,
+    file_hash: createHash("sha256").update(bytes).digest("hex"),
+    is_main_document: true,
+  };
+}
 
 export const POST = createHandler(
   {
@@ -44,7 +83,7 @@ export const POST = createHandler(
       details: {
         court: body.court,
         caseNumber: body.case_number,
-        documentCount: body.documents.length,
+        documentCount: body.documents?.length ?? (body.draft_slug ? 1 : 0),
         priority: body.priority,
       },
     }),
@@ -55,6 +94,17 @@ export const POST = createHandler(
     }
     const sender = await resolveFilingSender(ctx.brainId, process.env.BEA_SENDER_ID);
     if (sender instanceof Response) return sender;
+
+    let documents: ExportDocument[];
+    if (body.documents?.length) {
+      documents = body.documents;
+    } else if (body.draft_slug) {
+      const doc = await draftDocument(ctx.headers, body.draft_slug, body.subject);
+      if (doc instanceof Response) return doc;
+      documents = [doc];
+    } else {
+      return apiError("documents_missing", "Keine Dokumente für den Export angegeben", 422);
+    }
 
     // 1. Build FilingPackage
     const pkg = createFilingPackage({
@@ -71,8 +121,8 @@ export const POST = createHandler(
     });
 
     // 2. Add documents
-    for (let i = 0; i < body.documents.length; i++) {
-      const doc = body.documents[i];
+    for (let i = 0; i < documents.length; i++) {
+      const doc = documents[i];
       pkg.documents.push(
         createFilingDocument({
           title: doc.title,
@@ -116,7 +166,7 @@ export const POST = createHandler(
       details: {
         court: body.court,
         caseNumber: body.case_number,
-        documentCount: body.documents.length,
+        documentCount: documents.length,
         validationHash: exportPackage.manifest.validationHash,
       },
     });

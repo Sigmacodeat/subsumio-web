@@ -15,7 +15,7 @@ describe("document requests", () => {
     expect(items.map((i) => i.key)).toEqual(["vollmacht", "bescheid", "zustellnachweis"]);
   });
 
-  it("builds a draft document_request and can include a portal link", async () => {
+  it("builds a draft document_request that offers the portal without storing a link", async () => {
     const request = await buildDocumentRequest(
       {
         caseSlug: "legal/cases/2026-014",
@@ -34,7 +34,28 @@ describe("document requests", () => {
       source_event_slug: "legal/conversations/whatsapp/wamid-docs",
     });
     expect(request.frontmatter.items).toHaveLength(2);
-    expect(request.frontmatter.portal_url).toContain("/portal/");
+    expect(request.frontmatter.portal_link).toBe(true);
+    // No portal link (and so no access token) is stored on the request.
+    expect(JSON.stringify(request)).not.toContain("/portal/");
+    expect(request.frontmatter).not.toHaveProperty("portal_url");
+    expect(request.frontmatter).not.toHaveProperty("portal_token_id");
+  });
+
+  it("never hands on a link stored by older requests", () => {
+    const parsed = documentRequestFromPage({
+      slug: "legal/document-requests/alt",
+      title: "Alt",
+      type: "document_request",
+      frontmatter: {
+        type: "document_request",
+        case_slug: "legal/cases/a",
+        portal_url: "/portal/geheimes.token",
+        portal_token_id: "abc",
+      },
+    } as unknown as BrainPage);
+    expect(parsed?.frontmatter.portal_link).toBe(true);
+    expect(JSON.stringify(parsed)).not.toContain("geheimes.token");
+    expect(parsed?.frontmatter).not.toHaveProperty("portal_token_id");
   });
 
   it("writes document requests as mergeable brain pages", async () => {

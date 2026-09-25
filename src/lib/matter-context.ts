@@ -1062,9 +1062,10 @@ export async function buildDocumentRequestSummaries(
           })),
       };
       const sentAt = optionalString(fm.sent_at);
-      const portalUrl = optionalString(fm.portal_url);
       if (sentAt) summary.sent_at = sentAt;
-      if (portalUrl) summary.portal_url = portalUrl;
+      // Only whether the portal is offered — never a stored link (older
+      // requests carried one with its access token).
+      if (fm.portal_link === true || optionalString(fm.portal_url)) summary.portal_link = true;
       return summary;
     })
     .filter((item): item is MatterDocumentRequestSummary => item !== null)

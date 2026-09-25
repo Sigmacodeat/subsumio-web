@@ -160,7 +160,8 @@ export interface MatterDocumentRequestSummary {
   created_at: string;
   updated_at: string;
   sent_at?: string;
-  portal_url?: string;
+  /** The request offers the client portal (the link is issued when sent). */
+  portal_link?: boolean;
   open_items: Array<{ key: string; label: string; required: boolean }>;
   fulfilled_items: Array<{ key: string; label: string; document_slug: string }>;
 }
