@@ -2172,6 +2172,41 @@ function readSourcesFor(req: Request): string[] | undefined {
   return [own];
 }
 
+/**
+ * Stub page for an upload whose extraction runs in the background, so the
+ * document is visible (with its matter, type and `processing` status) right
+ * away; the extract-document worker overwrites it on completion. put_page
+ * reads metadata only from the YAML block of `content`, so the block is
+ * built here.
+ */
+export async function putProcessingPlaceholder(
+  engine: BrainEngine,
+  slug: string,
+  title: string,
+  frontmatter: Record<string, unknown>,
+  sourceId: string = "default",
+  allowedSources?: string[],
+  matterScope?: string[] | "all",
+  aclGroups?: string[] | "all"
+): Promise<unknown> {
+  const fm: Record<string, unknown> = { ...frontmatter, title };
+  for (const key of Object.keys(fm)) {
+    if (fm[key] === undefined || fm[key] === null) delete fm[key];
+  }
+  const { dump } = await import("js-yaml");
+  const yamlBlock = dump(fm, { lineWidth: -1, noRefs: true }).trimEnd();
+  const content = `---\n${yamlBlock}\n---\n\n> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n`;
+  return invokeOp(
+    engine,
+    "put_page",
+    { slug, content },
+    sourceId,
+    allowedSources,
+    matterScope,
+    aclGroups
+  );
+}
+
 export async function invokeOp(
   engine: BrainEngine,
   name: string,
@@ -3126,21 +3161,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // Stub page so the document is visible as `processing` immediately.
           // The extract-document worker overwrites it with the extracted
           // content (and the terminal extraction_status) on completion.
-          await invokeOp(
+          await putProcessingPlaceholder(
             engine,
-            "put_page",
+            slug,
+            title ?? file.filename.replace(/\.[^.]+$/, ""),
             {
-              slug,
-              title: title ?? file.filename.replace(/\.[^.]+$/, ""),
-              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-              frontmatter: {
-                ...uploadFrontmatter,
-                type: uploadFrontmatter.type ?? "document",
-                extraction_status: "processing",
-                extraction_queued_at: new Date().toISOString(),
-                upload_size: file.data.byteLength,
-              },
-              merge: false,
+              ...uploadFrontmatter,
+              type: uploadFrontmatter.type ?? "document",
+              extraction_status: "processing",
+              extraction_queued_at: new Date().toISOString(),
+              upload_size: file.data.byteLength,
             },
             tenantSource
           );
@@ -6331,21 +6361,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
         // Stub page so the document is visible as `processing` immediately;
         // the extract-document worker overwrites it on completion.
-        await invokeOp(
+        await putProcessingPlaceholder(
           engine,
-          "put_page",
+          slug,
+          title ?? file.filename.replace(/\.[^.]+$/, ""),
           {
-            slug,
-            title: title ?? file.filename.replace(/\.[^.]+$/, ""),
-            content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-            frontmatter: {
-              ...uploadFrontmatter,
-              type: uploadFrontmatter.type ?? "document",
-              extraction_status: "processing",
-              extraction_queued_at: new Date().toISOString(),
-              upload_size: file.size,
-            },
-            merge: false,
+            ...uploadFrontmatter,
+            type: uploadFrontmatter.type ?? "document",
+            extraction_status: "processing",
+            extraction_queued_at: new Date().toISOString(),
+            upload_size: file.size,
           },
           tenantSource,
           undefined,
@@ -7456,21 +7481,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         let stampFailures: string[] | undefined;
         if (asyncExtract) {
           // Stub page
-          await invokeOp(
+          await putProcessingPlaceholder(
             engine,
-            "put_page",
+            versionedSlug,
+            pending.title ?? pending.filename.replace(/\.[^.]+$/, ""),
             {
-              slug: versionedSlug,
-              title: pending.title ?? pending.filename.replace(/\.[^.]+$/, ""),
-              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-              frontmatter: {
-                ...uploadFrontmatter,
-                type: uploadFrontmatter.type ?? "document",
-                extraction_status: "processing",
-                extraction_queued_at: new Date().toISOString(),
-                upload_size: fileSize,
-              },
-              merge: false,
+              ...uploadFrontmatter,
+              type: uploadFrontmatter.type ?? "document",
+              extraction_status: "processing",
+              extraction_queued_at: new Date().toISOString(),
+              upload_size: fileSize,
             },
             pending.sourceId,
             undefined,
