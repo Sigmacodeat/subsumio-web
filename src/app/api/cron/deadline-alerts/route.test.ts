@@ -77,7 +77,10 @@ describe("cron deadline-alerts", () => {
     expect(ki).toMatchObject({ unreviewed: true, label: "ungeprüfter KI-Vorschlag" });
 
     expect(m.webhook).toHaveBeenCalledTimes(1);
-    expect(m.webhook.mock.calls[0][1]).toMatchObject({ deadline_id: "legal/deadlines/manuell" });
+    // Delivered to the firm whose deadline it is, not a shared brain.
+    expect(m.webhook.mock.calls[0][0]).toBe("brain-at");
+    expect(m.webhook.mock.calls[0][1]).toBe("deadline.critical");
+    expect(m.webhook.mock.calls[0][2]).toMatchObject({ deadline_id: "legal/deadlines/manuell" });
 
     // The unreviewed alert is remembered in its own list.
     const kiWrite = m.patch.mock.calls.find((c) => c[1].slug === "legal/deadlines/ki")![1];

@@ -152,7 +152,7 @@ async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
       // an unreviewed AI suggestion stays an in-app hint.
       if (item.urgency === "urgent" && !item.unreviewedAi) {
         try {
-          await dispatchWebhookEvent("deadline.critical", {
+          await dispatchWebhookEvent(brainId, "deadline.critical", {
             case_slug: item.caseSlug ?? "unknown",
             deadline_id:
               item.ref.kind === "page" ? item.ref.slug : `${item.ref.caseSlug}#${item.title}`,

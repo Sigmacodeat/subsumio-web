@@ -452,15 +452,19 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           // Fire outgoing webhook for invoice.paid event
           try {
             const { dispatchWebhookEvent } = await import("@/lib/webhook-dispatch");
+            const { firmBrainIdFor } = await import("@/lib/engine");
             const invoiceObj = obj as Record<string, unknown>;
-            await dispatchWebhookEvent("invoice.paid", {
-              user_id: user.id,
-              customer_id: customerId,
-              plan: user.plan,
-              invoice_id: typeof invoiceObj.id === "string" ? invoiceObj.id : undefined,
-              amount_paid:
-                typeof invoiceObj.amount_paid === "number" ? invoiceObj.amount_paid : undefined,
-            });
+            // Only the paying firm's own webhooks; a suspended firm gets none.
+            const firmBrainId = await firmBrainIdFor(user);
+            if (firmBrainId)
+              await dispatchWebhookEvent(firmBrainId, "invoice.paid", {
+                user_id: user.id,
+                customer_id: customerId,
+                plan: user.plan,
+                invoice_id: typeof invoiceObj.id === "string" ? invoiceObj.id : undefined,
+                amount_paid:
+                  typeof invoiceObj.amount_paid === "number" ? invoiceObj.amount_paid : undefined,
+              });
           } catch {
             // best-effort — webhook delivery should not block billing webhook processing
           }

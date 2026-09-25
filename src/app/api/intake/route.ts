@@ -151,7 +151,7 @@ export const POST = createHandler(
     // Fire outgoing webhook for intake.new event
     try {
       const { dispatchWebhookEvent } = await import("@/lib/webhook-dispatch");
-      await dispatchWebhookEvent("intake.new", {
+      await dispatchWebhookEvent(ctx.brainId, "intake.new", {
         slug: intake.slug,
         client_name: body.client_name,
         legal_area: body.legal_area,

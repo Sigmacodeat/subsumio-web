@@ -376,7 +376,7 @@ async function executeInboxTriage(
 
   // Fire webhook for critical/high urgency triage results
   if (card.urgency === "critical" || card.urgency === "high") {
-    await dispatchWebhookEvent("document.received", {
+    await dispatchWebhookEvent(task.brain_id, "document.received", {
       message_id,
       subject,
       urgency: card.urgency,

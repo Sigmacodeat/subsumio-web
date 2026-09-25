@@ -1,15 +1,16 @@
 /**
  * Webhook Outgoing Delivery — Dispatches registered webhooks when events fire.
  *
- * Uses Svix for signed webhook delivery (HMAC-SHA256 with rotating secrets).
- * Falls back to direct fetch + HMAC signing when Svix is not configured.
+ * Direct fetch with HMAC-SHA256 signing (per-webhook secret, stored encrypted).
  *
  * Events are fired from across the app (case creation, deadline alerts,
- * invoice payments, document receipt, intake submissions) via dispatchWebhookEvent().
+ * invoice payments, document receipt, intake submissions) via
+ * dispatchWebhookEvent(brainId, …) — always for one firm's brain.
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { logger } from "@/lib/logger";
 import { decrypt } from "@/lib/encryption";
 
@@ -31,37 +32,31 @@ export interface RegisteredWebhook {
   created_at: string;
 }
 
-interface WebhookPage {
-  slug: string;
-  title: string;
-  frontmatter: Record<string, unknown>;
-}
-
 /**
- * Fetch all registered webhooks from the engine (stored as pages of type "webhook_config").
+ * All active webhooks one firm registered — pages of type "webhook_config" in
+ * the firm's own brain, the same brain `POST /api/webhooks/outgoing` writes
+ * to. Signing secrets are stored encrypted and decrypted here; an entry whose
+ * secret cannot be decrypted is skipped instead of being signed with an empty
+ * key.
  */
-export async function getRegisteredWebhooks(): Promise<RegisteredWebhook[]> {
-  const headers = engineHeadersForBrain("system");
-  const params = new URLSearchParams({ type: "webhook_config", limit: "100" });
-
+export async function getRegisteredWebhooks(brainId: string): Promise<RegisteredWebhook[]> {
+  if (!brainId) return [];
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
+    const pages = await listEnginePages(engineHeadersForBrain(brainId), "webhook_config", 1000, {
+      strict: true,
+      timeoutMs: 10_000,
     });
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as WebhookPage[];
 
     const hooks = await Promise.all(
       pages.map(async (p) => {
-        const fm = p.frontmatter;
+        const fm = p.frontmatter ?? {};
         // Secrets are stored encrypted (secret_enc); older entries hold `secret`.
         const secret =
-          (typeof fm.secret_enc === "string"
-            ? await decrypt(fm.secret_enc).catch(() => null)
-            : null) ?? (typeof fm.secret === "string" ? fm.secret : "");
+          typeof fm.secret_enc === "string"
+            ? ((await decrypt(fm.secret_enc).catch(() => null)) ?? "")
+            : typeof fm.secret === "string"
+              ? fm.secret
+              : "";
         return {
           id: String(fm.id ?? p.slug),
           url: String(fm.url ?? ""),
@@ -72,18 +67,28 @@ export async function getRegisteredWebhooks(): Promise<RegisteredWebhook[]> {
         };
       })
     );
-    return hooks.filter((w) => w.status === "active" && w.url);
+    return hooks.filter((w) => {
+      if (w.status !== "active" || !w.url) return false;
+      if (!w.secret) {
+        log.warn("Webhook skipped: signing secret unavailable", { brainId, webhookId: w.id });
+        return false;
+      }
+      return true;
+    });
   } catch (err) {
-    log.error("Failed to fetch registered webhooks", { error: String(err) });
+    log.error("Failed to fetch registered webhooks", { brainId, error: String(err) });
     return [];
   }
 }
 
 /**
- * Fetch webhooks that are subscribed to a specific event type.
+ * Fetch one firm's webhooks that are subscribed to a specific event type.
  */
-async function getWebhooksForEvent(eventType: WebhookEventType): Promise<RegisteredWebhook[]> {
-  const all = await getRegisteredWebhooks();
+async function getWebhooksForEvent(
+  brainId: string,
+  eventType: WebhookEventType
+): Promise<RegisteredWebhook[]> {
+  const all = await getRegisteredWebhooks(brainId);
   return all.filter((w) => w.events.includes(eventType));
 }
 
@@ -98,17 +103,18 @@ function signPayload(payload: string, secret: string, timestamp: number): string
 }
 
 /**
- * Dispatch a webhook event to all registered subscribers.
- * Called from anywhere in the app when an event occurs.
+ * Dispatch a webhook event to the subscribers one firm registered.
+ * `brainId` is the firm's brain; the event only reaches that firm's webhooks.
  *
  * @example
- * await dispatchWebhookEvent("case.created", { case_slug: "...", title: "..." });
+ * await dispatchWebhookEvent(ctx.brainId, "case.created", { case_slug: "...", title: "..." });
  */
 export async function dispatchWebhookEvent(
+  brainId: string,
   eventType: WebhookEventType,
   payload: Record<string, unknown>
 ): Promise<{ dispatched: number; failed: number }> {
-  const webhooks = await getWebhooksForEvent(eventType);
+  const webhooks = await getWebhooksForEvent(brainId, eventType);
   if (webhooks.length === 0) return { dispatched: 0, failed: 0 };
 
   const body = JSON.stringify({
