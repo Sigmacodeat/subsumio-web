@@ -76,6 +76,34 @@ describe("markInvoicedEntriesBilled", () => {
     expect(d.markExpensesBilled).toHaveBeenCalledTimes(1);
   });
 
+  it("a 200 with already_billed is a failure: an expense the server kept on another invoice", async () => {
+    const d = deps({
+      markExpensesBilled: vi.fn(async () => ({
+        updated: 1,
+        not_found: [],
+        already_billed: ["e1"],
+        invoice_number: "R-1",
+      })),
+    });
+    await expect(
+      markInvoicedEntriesBilled({ ...base, timeEntryIds: [], expenseIds: ["e1", "e2"] }, d)
+    ).resolves.toBe(true);
+  });
+
+  it("a 200 with not_found (time or expense) is a failure, a clean 200 is not", async () => {
+    const timeMissing = deps({
+      markBilled: vi.fn(async () => ({ updated: 0, not_found: ["t1"], invoice_number: "R-1" })),
+    });
+    await expect(
+      markInvoicedEntriesBilled({ ...base, timeEntryIds: ["t1"], expenseIds: [] }, timeMissing)
+    ).resolves.toBe(true);
+
+    const clean = deps();
+    await expect(
+      markInvoicedEntriesBilled({ ...base, timeEntryIds: ["t1"], expenseIds: ["e1"] }, clean)
+    ).resolves.toBe(false);
+  });
+
   it("reports a failure when expense mark-billed rejects (e.g. all ids unknown → 404)", async () => {
     const d = deps({
       markExpensesBilled: vi.fn(async () => {
