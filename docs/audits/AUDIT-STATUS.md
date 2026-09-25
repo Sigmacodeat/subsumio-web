@@ -30,6 +30,13 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 9b  | DSGVO — Rest               | #60 | e9aeb9de97   | ✅ live | AVV-Muster-Download (md + PDF, „anwaltlich zu prüfen"); Per-Item-Retention `retention_until`/`retention_days` für Dokumente/Notizen im trash-purge-Cron                          |
 | 9c  | DSGVO — Retention-Fix      | #66 | 834d0108ed   | ✅ live | Retention unterschreitet nie GoBD-Mindestfrist + respektiert Legal Hold (Parallel-Agent)                                                                                         |
 | 3b  | Kommunikation — Dedupe-Fix | #67 | fae1b8fa46   | ✅ live | Resend-Reconcile-Dedupe-Key pro Brain gescoped (Parallel-Agent)                                                                                                                  |
+| 12a | Zugriff & Rollen           | —   | —            | ⏳ PR   | Aktenzugriff und Rollen einheitlich in Postfach, Protokoll, Graph, Versionen, Datenräumen, Echtzeit und Erinnerungen                                                             |
+| 12b | Mandantentrennung          | —   | —            | ⏳ PR   | Quellen strikt pro Kanzlei (MCP, Quellen-Klon, ACL-Gruppen, Ordner-Import, SMS-Einwilligung, DMS)                                                                                |
+| 12c | Geschützte Datensätze      | —   | —            | ⏳ PR   | Kanzleidaten, KYC, Anderkonten, Freigaben, Legal Hold nur über eigene Routen; SMTP-Passwort verschlüsselt; Ladefehler überschreiben nichts mehr                                  |
+| 12d | Geld-Integrität            | —   | —            | ⏳ PR   | Gestellte Rechnungen auf allen Schreibwegen unveränderbar, Leistungen atomar reserviert, Unbill/Storno konsistent, Credit-Übertrag nur Restbetrag                                |
+| 12e | Akte sicher anlegen        | —   | —            | ⏳ PR   | Ein gemeinsamer Anlage-Pfad (Import, WhatsApp, Copilot, Freigaben) ohne Überschreiben, mit Kollisionsprüfung; Vollsicherung blättert vollständig                                 |
+| 12f | Fristen AT                 | —   | —            | ⏳ PR   | AT-Fristengine überall (Akten-Tab, Chat, Widget), Ferialsachen, VfGH/BFG-Fristen, Vier-Augen serverseitig, Notfrist-Schutz, revisionssicheres Protokoll                          |
+| 12g | Kollisionsprüfung          | —   | —            | ⏳ PR   | Seitenbewusst (Mandant/Gegner), toleranter Namensabgleich, Mandatsannahme und Freigabe serverseitig                                                                              |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
