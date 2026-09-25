@@ -94,7 +94,7 @@ import type {
   EnrichCandidatesOpts,
   EnrichCandidate,
 } from "./types.ts";
-import { GBrainError, PAGE_SORT_SQL, ENRICH_ORDER_SQL } from "./types.ts";
+import { GBrainError, PAGE_SORT_SQL, ENRICH_ORDER_SQL, parsePageCursor } from "./types.ts";
 import { computeAnomaliesFromBuckets } from "./cycle/anomaly.ts";
 import * as db from "./db.ts";
 import { ConnectionManager } from "./connection-manager.ts";
@@ -1537,12 +1537,23 @@ export class PostgresEngine implements BrainEngine {
     // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
     // postgres.js sql.unsafe lets us splice the literal fragment safely.
     const sortKey = filters?.sort && PAGE_SORT_SQL[filters.sort] ? filters.sort : "updated_desc";
-    const orderBy = sql.unsafe(PAGE_SORT_SQL[sortKey]);
+    // Keyset paging for updated_desc: continue strictly after the last
+    // scanned (updated_at, id) tuple. Offset paging drifts when rows are
+    // updated mid-scan — the cursor does not.
+    const cursor = parsePageCursor(filters?.cursor);
+    const cursorCondition =
+      sortKey === "updated_desc" && cursor
+        ? sql`AND (p.updated_at, p.id) < (${cursor.updatedAt}::timestamptz, ${cursor.id})`
+        : sql``;
+    // p.id tiebreak makes updated_desc a total order (required for keyset).
+    const orderBy = sql.unsafe(
+      PAGE_SORT_SQL[sortKey] + (sortKey === "updated_desc" ? ", p.id DESC" : "")
+    );
 
     const rows = await sql`
       SELECT p.* FROM pages p
       ${tagJoin}
-      WHERE 1=1 ${typeCondition} ${tagCondition} ${updatedCondition} ${slugCondition} ${sourceCondition} ${deletedCondition}
+      WHERE 1=1 ${typeCondition} ${tagCondition} ${updatedCondition} ${slugCondition} ${sourceCondition} ${deletedCondition} ${cursorCondition}
       ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}
     `;
 

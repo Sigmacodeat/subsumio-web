@@ -1004,7 +1004,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 100 });
+        const pages = await api.brain.listAllPages({ type: "legal_case", max: 100 });
         if (cancelled) return;
         setCases(
           pages

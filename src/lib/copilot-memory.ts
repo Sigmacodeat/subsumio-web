@@ -47,15 +47,36 @@ async function enginePagesList(
   headers: EngineHeaders,
   params: { type: string; limit: number }
 ): Promise<BrainPage[]> {
-  if (!headers) return api.brain.listPages(params) as Promise<BrainPage[]>;
-  const qs = new URLSearchParams({ type: params.type, limit: String(params.limit) });
-  const res = await fetch(`${ENGINE_URL}/api/pages?${qs.toString()}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) throw new Error(`engine_pages_list_failed_${res.status}`);
-  const data = await res.json();
-  return Array.isArray(data) ? (data as BrainPage[]) : [];
+  // Cursor-paginated on both paths: a bare listPages call stops silently at
+  // the engine's 100-row cap. (This file is also imported client-side, so it
+  // must not pull @/lib/engine-pages — that module is server-only.)
+  if (!headers) return api.brain.listAllPages({ type: params.type, max: params.limit });
+  const out = new Map<string, BrainPage>();
+  let fetched = 0;
+  let cursor: string | undefined;
+  let iterations = 0;
+  for (;;) {
+    if (++iterations > 1000) break;
+    const want = Math.min(100, params.limit - fetched);
+    if (want <= 0) break;
+    const pageParam = cursor ? `&cursor=${encodeURIComponent(cursor)}` : `&offset=${fetched}`;
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=${encodeURIComponent(params.type)}&limit=${want}${pageParam}`,
+      { headers, signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) throw new Error(`engine_pages_list_failed_${res.status}`);
+    const data = (await res.json()) as unknown;
+    const batch = Array.isArray(data) ? (data as BrainPage[]) : [];
+    fetched += batch.length;
+    for (const p of batch) if (p?.slug) out.set(p.slug, p);
+    const next = res.headers.get("x-next-cursor");
+    if (next && next !== cursor) {
+      cursor = next;
+      continue;
+    }
+    if (batch.length < want) break;
+  }
+  return [...out.values()];
 }
 
 async function enginePageGet(headers: EngineHeaders, slug: string): Promise<BrainPage | null> {

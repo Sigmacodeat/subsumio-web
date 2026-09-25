@@ -8,6 +8,7 @@ vi.mock("@/lib/api", () => ({
     brain: {
       getPage: vi.fn(),
       listPages: vi.fn(async () => []),
+      listAllPages: vi.fn(async () => []),
     },
   },
 }));
@@ -59,7 +60,7 @@ describe("CaseCloseChecklistDialog", () => {
         document_requests: [{ status: "fulfilled" }],
       },
     } as unknown as BrainPage);
-    vi.mocked(api.brain.listPages).mockResolvedValueOnce([
+    vi.mocked(api.brain.listAllPages).mockResolvedValueOnce([
       { frontmatter: { case_slugs: ["legal/cases/test"], status: "paid" } },
     ] as unknown as BrainPage[]);
 
@@ -87,7 +88,7 @@ describe("CaseCloseChecklistDialog", () => {
         document_requests: [],
       },
     } as unknown as BrainPage);
-    vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
+    vi.mocked(api.brain.listAllPages).mockResolvedValueOnce([]);
 
     render(
       <CaseCloseChecklistDialog
@@ -118,7 +119,7 @@ describe("CaseCloseChecklistDialog", () => {
         document_requests: [],
       },
     } as unknown as BrainPage);
-    vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
+    vi.mocked(api.brain.listAllPages).mockResolvedValueOnce([]);
 
     render(
       <CaseCloseChecklistDialog
@@ -152,7 +153,7 @@ describe("CaseCloseChecklistDialog", () => {
         document_requests: [],
       },
     } as unknown as BrainPage);
-    vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
+    vi.mocked(api.brain.listAllPages).mockResolvedValueOnce([]);
 
     const onConfirm = vi.fn();
     const onOpenChange = vi.fn();
@@ -181,7 +182,7 @@ describe("CaseCloseChecklistDialog", () => {
     vi.mocked(api.brain.getPage).mockResolvedValueOnce({
       frontmatter: {},
     } as unknown as BrainPage);
-    vi.mocked(api.brain.listPages).mockResolvedValueOnce([]);
+    vi.mocked(api.brain.listAllPages).mockResolvedValueOnce([]);
 
     const onOpenChange = vi.fn();
 
@@ -213,7 +214,7 @@ describe("CaseCloseChecklistDialog", () => {
         document_requests: [{ status: "pending" }], // pending → warning
       },
     } as unknown as BrainPage);
-    vi.mocked(api.brain.listPages).mockResolvedValueOnce([
+    vi.mocked(api.brain.listAllPages).mockResolvedValueOnce([
       { frontmatter: { case_slugs: ["legal/cases/test"], status: "paid" } },
     ] as unknown as BrainPage[]);
 

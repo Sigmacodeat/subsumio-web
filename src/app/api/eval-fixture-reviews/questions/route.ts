@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, realpathSync } from "fs";
 import { resolve, relative } from "path";
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { fmToReview, filterByFixture, type EvalFixtureReview } from "@/lib/eval-fixture-review";
 
@@ -95,22 +95,12 @@ export const GET = createHandler(
 
     let reviews: EvalFixtureReview[] = [];
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=eval_fixture_review&limit=500`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (res.ok) {
-        const raw = await res.json();
-        const pages = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as Record<string, unknown>)?.pages)
-            ? (raw as Record<string, unknown[]>).pages
-            : [];
-        reviews = filterByFixture(
-          pages.map((p) => fmToReview(p)).filter((r): r is EvalFixtureReview => r !== null),
-          query.fixture_file
-        );
-      }
+      // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+      const pages = await listEnginePages(ctx.headers, "eval_fixture_review", 10_000);
+      reviews = filterByFixture(
+        pages.map((p) => fmToReview(p)).filter((r): r is EvalFixtureReview => r !== null),
+        query.fixture_file
+      );
     } catch {
       // Reviews sind Zusatzinfo — Engine-Ausfall soll die Fragenliste nicht blockieren
     }

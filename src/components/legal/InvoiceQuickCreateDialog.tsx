@@ -209,10 +209,11 @@ export function InvoiceQuickCreateDialog({
     setLoadingCases(true);
     (async () => {
       try {
-        const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
+        const batch = await api.brain.batchListPagesDetailed(["invoice", "legal_case"], 200);
+        if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
         if (cancelled) return;
-        const invoicePages = batch["invoice"] ?? [];
-        const casePages = batch["legal_case"] ?? [];
+        const invoicePages = batch.results["invoice"] ?? [];
+        const casePages = batch.results["legal_case"] ?? [];
         const loadedInvoices: Invoice[] = invoicePages.map((p) => {
           const fm = invoiceFrontmatter(p);
           return {

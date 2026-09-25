@@ -66,7 +66,7 @@ export function ActAnalysisStep({
     let cancelled = false;
     setLoadingCases(true);
     api.brain
-      .listPages({ type: "legal_case", limit: 100 })
+      .listAllPages({ type: "legal_case", max: 100 })
       .then((pages) => {
         if (!cancelled) setCases(pages);
       })

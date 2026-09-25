@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 
 export const maxDuration = 120;
@@ -85,38 +86,27 @@ export const POST = createHandler(
 
     const fm = caseData.frontmatter ?? {};
 
-    // 2. Fetch all analyzed documents for this case
+    // 2. Fetch all analyzed documents for this case — cursor-paginated, a
+    // single /api/pages call is capped at 100 rows.
     let documents: DocumentAnalysis[] = [];
     try {
-      const docRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=200`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(30_000),
+      const docData = await listEnginePages(ctx.headers, "document", 10_000, {
+        timeoutMs: 30_000,
       });
-      if (docRes.ok) {
-        const docData = await docRes.json();
-        if (Array.isArray(docData)) {
-          documents = (
-            docData as Array<{
-              slug: string;
-              title: string;
-              frontmatter?: Record<string, unknown>;
-            }>
-          )
-            .filter((p) => {
-              const docFm = p.frontmatter ?? {};
-              return (
-                docFm.case_slug === body.case_slug &&
-                docFm.assignment_status !== "unassigned" &&
-                docFm.status !== "tombstoned"
-              );
-            })
-            .map((p) => ({
-              slug: p.slug,
-              title: p.title ?? p.slug,
-              analysis: (p.frontmatter?.auto_analysis as DocumentAnalysis["analysis"]) ?? undefined,
-            }));
-        }
-      }
+      documents = docData
+        .filter((p) => {
+          const docFm = p.frontmatter ?? {};
+          return (
+            docFm.case_slug === body.case_slug &&
+            docFm.assignment_status !== "unassigned" &&
+            docFm.status !== "tombstoned"
+          );
+        })
+        .map((p) => ({
+          slug: p.slug,
+          title: p.title ?? p.slug,
+          analysis: (p.frontmatter?.auto_analysis as DocumentAnalysis["analysis"]) ?? undefined,
+        }));
     } catch {
       // Best-effort — strategy can be generated without documents
     }

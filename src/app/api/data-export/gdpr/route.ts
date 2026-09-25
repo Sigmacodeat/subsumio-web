@@ -1,4 +1,4 @@
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -44,41 +44,15 @@ export const GET = createHandler(
       const allPages: Array<Record<string, unknown>> = [];
 
       for (const type of types) {
-        try {
-          let offset = 0;
-          const perPage = 100;
-          let hasMore = true;
-          let pagesFetched = 0;
-          while (hasMore && pagesFetched < 50) {
-            const res = await fetch(
-              `${ENGINE_URL}/api/pages?type=${type}&limit=${perPage}&offset=${offset}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(30_000),
-              }
-            );
-            if (res.ok) {
-              const raw = await res.json();
-              const pages = Array.isArray(raw)
-                ? raw
-                : Array.isArray((raw as Record<string, unknown>)?.pages)
-                  ? (raw as Record<string, unknown[]>).pages
-                  : [];
-              if (pages.length === 0) {
-                hasMore = false;
-              } else {
-                allPages.push(...pages);
-                offset += pages.length;
-                pagesFetched++;
-                if (pages.length < perPage) hasMore = false;
-              }
-            } else {
-              hasMore = false;
-            }
-          }
-        } catch {
-          // Einzelne Typen drfen den Export nicht abbrechen
-        }
+        // Cursor-paginated + strict: a failed or shortened read must abort the
+        // Art.-20 export rather than ship a silently incomplete archive
+        // (pre-fix a filtered/short batch looked like "end of list").
+        const pages = await listEnginePages(ctx.headers, type, 50_000, {
+          strict: true,
+          timeoutMs: 30_000,
+          includeTombstoned: true,
+        });
+        allPages.push(...(pages as unknown as Array<Record<string, unknown>>));
       }
 
       const exportData = {

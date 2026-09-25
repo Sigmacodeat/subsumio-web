@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createStaffMember, vacationAccount, StaffInputError, type StaffMember } from "@/lib/staff";
 import type { AbsenceRecord } from "@/lib/absence";
 
@@ -76,36 +77,25 @@ export const GET = createHandler(
     query: listQuery,
   },
   async (ctx, _body, query) => {
-    const [staffRes, absRes] = await Promise.all([
-      fetch(`${ENGINE_URL}/api/pages?type=staff_member&limit=200`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      }),
-      fetch(`${ENGINE_URL}/api/pages?type=absence_record&limit=500`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      }),
+    // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+    const [staffPages, absPages] = await Promise.all([
+      listEnginePages(ctx.headers, "staff_member", 10_000, { strict: true }).catch(() => null),
+      // Strict: a partial absence list would silently corrupt the computed
+      // vacation balances (money-adjacent numbers, not just a display list).
+      listEnginePages(ctx.headers, "absence_record", 10_000, { strict: true }).catch(() => null),
     ]);
-    if (!staffRes.ok)
+    if (staffPages === null)
       return apiError("engine_error", "Mitarbeiter konnten nicht geladen werden", 502);
+    if (absPages === null)
+      return apiError("engine_error", "Abwesenheiten konnten nicht geladen werden", 502);
 
-    const staffData = await staffRes.json();
-    const absData = absRes.ok ? await absRes.json() : { pages: [] };
-    const absences: AbsenceRecord[] = (
-      (Array.isArray(absData) ? absData : (absData.pages ?? [])) as Array<{
-        frontmatter?: AbsenceRecord;
-      }>
-    )
-      .map((p) => p.frontmatter)
+    const absences: AbsenceRecord[] = absPages
+      .map((p) => p.frontmatter as AbsenceRecord | undefined)
       .filter((a): a is AbsenceRecord => Boolean(a));
 
     const year = query?.year ?? new Date().getUTCFullYear();
-    let members: StaffMember[] = (
-      (Array.isArray(staffData) ? staffData : (staffData.pages ?? [])) as Array<{
-        frontmatter?: StaffMember;
-      }>
-    )
-      .map((p) => p.frontmatter)
+    let members: StaffMember[] = staffPages
+      .map((p) => p.frontmatter as StaffMember | undefined)
       .filter((m): m is StaffMember => Boolean(m));
     if (query?.active === "true") members = members.filter((m) => m.active);
     if (query?.active === "false") members = members.filter((m) => !m.active);

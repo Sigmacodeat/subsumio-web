@@ -55,6 +55,7 @@ export function TemplateUseDialog({
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [loadingCases, setLoadingCases] = useState(true);
+  const [casesError, setCasesError] = useState(false);
 
   // All {{...}} tokens actually present in the body — a superset of the
   // template's declared `variables` if the author added one without
@@ -70,15 +71,17 @@ export function TemplateUseDialog({
   useEffect(() => {
     void loadKanzleiSettings().then(setKanzlei);
     void api.brain
-      .batchListPages(["legal_case"], 500)
-      .then(({ legal_case: pages = [] }) => {
+      .batchListPagesDetailed(["legal_case"], 500)
+      .then(({ results, errors }) => {
+        if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
         setCases(
-          pages.map((p) => {
+          (results.legal_case ?? []).map((p) => {
             const fm = caseFrontmatter(p);
             return { slug: p.slug, title: p.title, caseNumber: fm.case_number || p.slug, fm };
           })
         );
       })
+      .catch(() => setCasesError(true))
       .finally(() => setLoadingCases(false));
   }, []);
 
@@ -159,6 +162,11 @@ export function TemplateUseDialog({
                 ))}
               </SelectContent>
             </Select>
+            {casesError && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Aktenliste konnte nicht geladen werden — Felder bitte manuell befüllen.
+              </p>
+            )}
           </div>
 
           {allKeys.length > 0 && (

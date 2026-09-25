@@ -127,7 +127,7 @@ export default function KYCPage() {
   useEffect(() => {
     void load();
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 200 })
       .then(setCases)
       .catch(() => setCases([]));
   }, [load]);

@@ -312,7 +312,12 @@ export default function CommunicationsPage() {
   const batchQuery = useQuery({
     queryKey: ["communications", "batch"],
     queryFn: () =>
-      api.brain.batchListPages(["bea_message", "portal_message", "activity_event"], 200),
+      api.brain
+        .batchListPagesDetailed(["bea_message", "portal_message", "activity_event"], 200)
+        .then((r) => {
+          if (r.errors.length) throw new Error(`batch list failed: ${r.errors.join(",")}`);
+          return r.results;
+        }),
     staleTime: 30_000,
   });
 

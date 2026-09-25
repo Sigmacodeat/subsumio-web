@@ -84,7 +84,7 @@ export default function ClaimAccountPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "claim_account", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "claim_account", max: 200 });
       setClaims(pages.map((p) => p.frontmatter as unknown as Claim));
     } catch {
       addToast({ type: "error", title: t("claim.err_load") });

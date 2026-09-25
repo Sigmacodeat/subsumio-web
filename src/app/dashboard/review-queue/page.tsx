@@ -96,10 +96,11 @@ export default function ReviewQueuePage() {
     setLoading(true);
     setError(null);
     try {
-      const batch = await api.brain.batchListPages(REVIEWABLE_TYPES, 100);
+      const batch = await api.brain.batchListPagesDetailed(REVIEWABLE_TYPES, 100);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       const all: BrainPage[] = [];
       for (const type of REVIEWABLE_TYPES) {
-        const pages = batch[type];
+        const pages = batch.results[type];
         if (pages) all.push(...pages);
       }
       setPages(all);

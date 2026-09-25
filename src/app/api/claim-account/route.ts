@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createClaim,
   allocatePayment,
@@ -328,15 +329,17 @@ export const GET = createHandler(
   },
   async (ctx, query) => {
     const q = query as { case_slug?: string } | undefined;
-    const params = new URLSearchParams({ type: "claim_account", limit: "200" });
-    if (q?.case_slug) params.set("case_slug", q.case_slug);
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    const data = res.ok ? await res.json() : { pages: [] };
-    return apiSuccess({
-      claims: (data.pages ?? []).map((p: { frontmatter: unknown }) => p.frontmatter),
-    });
+    let pages;
+    try {
+      pages = await listEnginePages(ctx.headers, "claim_account", 10_000);
+    } catch {
+      return apiError("service_unavailable", "Forderungen derzeit nicht verfügbar", 503);
+    }
+    // case_slug filtering happens on frontmatter — the engine's /api/pages
+    // endpoint never supported a case_slug param (it was silently ignored).
+    const claims = pages
+      .map((p) => p.frontmatter as unknown as Claim)
+      .filter((c) => c && (!q?.case_slug || c.case_slug === q.case_slug));
+    return apiSuccess({ claims });
   }
 );

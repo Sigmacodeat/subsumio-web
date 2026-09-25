@@ -88,7 +88,7 @@ function NormsPageInner() {
       try {
         const [pages, lawPages] = await Promise.all([
           api.brain.search(initialSearchQuery || "§ Gesetz", 50),
-          api.brain.listPages({ limit: LAW_PAGES_LIMIT }),
+          api.brain.listAllPages({ max: LAW_PAGES_LIMIT }),
         ]);
         if (cancelled) return;
         setCapped(lawPages.length >= LAW_PAGES_LIMIT);

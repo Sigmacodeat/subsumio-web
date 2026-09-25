@@ -64,7 +64,7 @@ export default function OpponentsPage() {
     setLoadError(null);
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
+        const pages = await api.brain.listAllPages({ type: "legal_case", max: CASES_LIMIT });
         if (cancelled) return;
         setCapped(pages.length >= CASES_LIMIT);
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
@@ -32,23 +33,14 @@ export const GET = createHandler(
   },
   async (ctx, _body, query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=clause_annotation&limit=500`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
+      // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+      const pages = await listEnginePages(ctx.headers, "clause_annotation", 10_000, {
+        strict: true,
+        timeoutMs: 10_000,
       });
-
-      let annotations: ClauseAnnotation[] = [];
-      if (res.ok) {
-        const raw = await res.json();
-        const pages = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as Record<string, unknown>)?.pages)
-            ? (raw as Record<string, unknown[]>).pages
-            : [];
-        annotations = pages
-          .map((p) => fmToAnnotation(p))
-          .filter((a): a is ClauseAnnotation => a !== null);
-      }
+      const annotations: ClauseAnnotation[] = pages
+        .map((p) => fmToAnnotation(p))
+        .filter((a): a is ClauseAnnotation => a !== null);
 
       const filtered = filterByContract(annotations, query.contract_slug);
       const sorted = sortByRiskLevel(filtered, "asc");

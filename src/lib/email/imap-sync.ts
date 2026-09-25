@@ -7,7 +7,8 @@
 
 import { ImapFlow } from "imapflow";
 import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
 import { triageMessage } from "@/lib/triage";
 import { detectDeadlines } from "@/lib/ai-deadline-detect";
@@ -194,14 +195,12 @@ export function toInboundEmail(
 
 async function loadMatters(brainId: string): Promise<MatterRef[]> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=1000`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(20_000),
+    // Cursor-paginated: a single /api/pages call silently caps at 100 —
+    // matters beyond that would leave inbound mail unassignable.
+    const pages = await listEnginePages(engineHeadersForBrain(brainId), "legal_case", 20_000, {
+      timeoutMs: 20_000,
     });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { pages?: Array<Record<string, unknown>> } | unknown[];
-    const pages = Array.isArray(data) ? data : (data.pages ?? []);
-    return (pages as Array<Record<string, unknown>>).map((p) => {
+    return (pages as unknown as Array<Record<string, unknown>>).map((p) => {
       const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
       const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
       return {

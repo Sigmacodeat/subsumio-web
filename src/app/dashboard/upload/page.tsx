@@ -207,7 +207,7 @@ function UploadPageInner() {
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+        const pages = await api.brain.listAllPages({ type: "legal_case", max: 200 });
         if (cancelled) return;
         setCases(pages);
       } catch {

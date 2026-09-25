@@ -40,6 +40,21 @@ export interface ServerBrainClient {
     q?: string;
     cursor?: string;
   }): Promise<BrainPage[]>;
+  /**
+   * One page of a listPages scan plus the engine's keyset cursor
+   * (`x-next-cursor` → `nextCursor`). Paging callers use this so a batch
+   * shortened by matter-scope/ACL filters does not look like the end of the
+   * list. Optional: callers keep an offset fallback for older engines.
+   */
+  listPagesPaged?(options?: {
+    limit?: number;
+    offset?: number;
+    source?: string;
+    type?: string;
+    tag?: string;
+    q?: string;
+    cursor?: string;
+  }): Promise<{ items: BrainPage[]; nextCursor: string | null }>;
   createPage(page: {
     slug: string;
     title: string;
@@ -101,6 +116,18 @@ async function engineJson<T>(
   return JSON.parse(text) as T;
 }
 
+function listPagesParams(options?: Parameters<ServerBrainClient["listPages"]>[0]): string {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+  if (options?.source) params.set("source", options.source);
+  if (options?.type) params.set("type", options.type);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.q) params.set("q", options.q);
+  if (options?.cursor) params.set("cursor", options.cursor);
+  return params.toString();
+}
+
 export function createServerBrainClient(headers: Record<string, string>): ServerBrainClient {
   return {
     getPage(slug) {
@@ -108,16 +135,27 @@ export function createServerBrainClient(headers: Record<string, string>): Server
     },
 
     listPages(options) {
-      const params = new URLSearchParams();
-      if (options?.limit) params.set("limit", String(options.limit));
-      if (options?.offset) params.set("offset", String(options.offset));
-      if (options?.source) params.set("source", options.source);
-      if (options?.type) params.set("type", options.type);
-      if (options?.tag) params.set("tag", options.tag);
-      if (options?.q) params.set("q", options.q);
-      if (options?.cursor) params.set("cursor", options.cursor);
-      const qs = params.toString();
+      const qs = listPagesParams(options);
       return engineJson<BrainPage[]>(headers, `/api/pages${qs ? `?${qs}` : ""}`);
+    },
+
+    async listPagesPaged(options) {
+      const qs = listPagesParams(options);
+      const res = await fetch(`${ENGINE_URL}/api/pages${qs ? `?${qs}` : ""}`, {
+        headers,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const raw = (await res.json()) as unknown;
+      const items = Array.isArray(raw)
+        ? raw
+        : ((raw as { items?: BrainPage[]; pages?: BrainPage[] })?.items ??
+          (raw as { pages?: BrainPage[] })?.pages ??
+          []);
+      return { items, nextCursor: res.headers.get("x-next-cursor") };
     },
 
     createPage(page) {

@@ -41,7 +41,7 @@ export function NotesTab() {
   const load = useCallback(async () => {
     if (!caseSlug) return;
     try {
-      const pages = await api.brain.listPages({ type: "legal_note", limit: 500 });
+      const pages = await api.brain.listAllPages({ type: "legal_note", max: 500 });
       const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
       const mapped: NoteItem[] = filtered.map((p: BrainPage) => ({
         slug: p.slug,

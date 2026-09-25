@@ -105,7 +105,7 @@ import { deriveResolutionTuple, finalizeScorecard } from "./takes-resolution.ts"
 import { normalizeWeightForStorage } from "./takes-fence.ts";
 import { executeRawJsonb } from "./sql-query.ts";
 import { stripNul, buildLinkRows, buildTimelineRows, buildTakeRows } from "./batch-rows.ts";
-import { GBrainError, PAGE_SORT_SQL, ENRICH_ORDER_SQL } from "./types.ts";
+import { GBrainError, PAGE_SORT_SQL, ENRICH_ORDER_SQL, parsePageCursor } from "./types.ts";
 import { computeAnomaliesFromBuckets } from "./cycle/anomaly.ts";
 import { resolveBoostMap, resolveHardExcludes } from "./search/source-boost.ts";
 import {
@@ -1446,18 +1446,28 @@ export class PGLiteEngine implements BrainEngine {
       params.push(filters.sourceId);
       where.push(`p.source_id = $${params.length}`);
     }
-    // v0.26.5: hide soft-deleted by default; opt in via filters.includeDeleted.
+    // v0.26.5: hide soft-deleted pages by default; opt in via filters.includeDeleted.
     if (filters?.includeDeleted !== true) {
       where.push("p.deleted_at IS NULL");
+    }
+
+    // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
+    const sortKey = filters?.sort && PAGE_SORT_SQL[filters.sort] ? filters.sort : "updated_desc";
+    // Parity with PostgresEngine: keyset paging for updated_desc continues
+    // strictly after the last scanned (updated_at, id) tuple — offset paging
+    // drifts when rows are updated mid-scan.
+    const cursor = parsePageCursor(filters?.cursor);
+    if (sortKey === "updated_desc" && cursor) {
+      params.push(cursor.updatedAt, cursor.id);
+      where.push(`(p.updated_at, p.id) < ($${params.length - 1}::timestamptz, $${params.length})`);
     }
 
     const whereSql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
     params.push(limit, offset);
     const limitSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
 
-    // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
-    const sortKey = filters?.sort && PAGE_SORT_SQL[filters.sort] ? filters.sort : "updated_desc";
-    const orderBy = PAGE_SORT_SQL[sortKey];
+    // p.id tiebreak makes updated_desc a total order (required for keyset).
+    const orderBy = PAGE_SORT_SQL[sortKey] + (sortKey === "updated_desc" ? ", p.id DESC" : "");
 
     const { rows } = await this.db.query(
       `SELECT p.* FROM pages p ${tagJoin} ${whereSql}

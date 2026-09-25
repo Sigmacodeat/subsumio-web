@@ -21,7 +21,7 @@ interface DeadlineCalendarPage {
 }
 
 async function fetchDeadlineChecks(): Promise<DeadlineCheckResult[]> {
-  const pages = await api.brain.listPages({ type: "deadline_calendar", limit: 100 });
+  const pages = await api.brain.listAllPages({ type: "deadline_calendar", max: 100 });
   const results: DeadlineCheckResult[] = [];
 
   for (const page of pages as DeadlineCalendarPage[]) {

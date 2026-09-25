@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
+import { listEnginePages } from "@/lib/engine-pages";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
@@ -41,7 +42,10 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     try {
       const brain = createServerBrainClient(ctx.headers);
-      const pages = await brain.listPages({ type: "legal_case", limit: 500 });
+      // Cursor-paginated: listPages stops silently at the 100-row engine cap.
+      const pages = await listEnginePages(ctx.headers, "legal_case", 10_000, {
+        strict: true,
+      });
       const cases = pages.map((p) => ({ slug: p.slug, title: p.title, ...caseFrontmatter(p) }));
 
       // If user explicitly selected a case (disambiguation), use it directly

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { createPublicHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -56,35 +57,27 @@ export const GET = createPublicHandler(
       steps: Array<{ label: string; status: string }>;
     }> = [];
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=workflow&limit=200`, {
-        headers: access.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (res.ok) {
-        const raw = await res.json();
-        const pages = Array.isArray(raw)
-          ? raw
-          : (((raw as Record<string, unknown>)?.pages as unknown[] | undefined) ?? []);
-        instances = pages
-          .map((p) => fmToWorkflowInstance(p))
-          .filter((w): w is NonNullable<typeof w> => w !== null)
-          .filter(
-            (w) =>
-              w.frontmatter.case_slug === access.caseSlug &&
-              w.frontmatter.started_by.startsWith("portal:")
-          )
-          .map((w) => ({
-            slug: w.slug,
-            title: w.title,
-            status: w.frontmatter.status,
-            started_at: w.frontmatter.started_at,
-            completed_at: w.frontmatter.completed_at,
-            progress: getWorkflowProgress(w.frontmatter.steps),
-            steps: w.frontmatter.steps.map((s) => ({ label: s.label, status: s.status })),
-          }))
-          .sort((a, b) => b.started_at.localeCompare(a.started_at))
-          .slice(0, 10);
-      }
+      // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+      const pages = await listEnginePages(access.headers, "workflow", 10_000);
+      instances = pages
+        .map((p) => fmToWorkflowInstance(p))
+        .filter((w): w is NonNullable<typeof w> => w !== null)
+        .filter(
+          (w) =>
+            w.frontmatter.case_slug === access.caseSlug &&
+            w.frontmatter.started_by.startsWith("portal:")
+        )
+        .map((w) => ({
+          slug: w.slug,
+          title: w.title,
+          status: w.frontmatter.status,
+          started_at: w.frontmatter.started_at,
+          completed_at: w.frontmatter.completed_at,
+          progress: getWorkflowProgress(w.frontmatter.steps),
+          steps: w.frontmatter.steps.map((s) => ({ label: s.label, status: s.status })),
+        }))
+        .sort((a, b) => b.started_at.localeCompare(a.started_at))
+        .slice(0, 10);
     } catch {
       // Instanzen-Liste optional — Template-Liste trotzdem liefern.
     }

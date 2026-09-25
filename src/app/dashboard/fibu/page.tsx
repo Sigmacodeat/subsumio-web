@@ -56,12 +56,15 @@ export default function FibuPage() {
 
   const load = useCallback(async () => {
     try {
-      const batch = await api.brain.batchListPages(
+      const batch = await api.brain.batchListPagesDetailed(
         ["open_item", "bank_transaction", "payment_link"],
         200
       );
-      const items = (batch["open_item"] ?? []).map((p) => p.frontmatter as unknown as OpenItem);
-      const txns = (batch["bank_transaction"] ?? []).map(
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const items = (batch.results["open_item"] ?? []).map(
+        (p) => p.frontmatter as unknown as OpenItem
+      );
+      const txns = (batch.results["bank_transaction"] ?? []).map(
         (p) => p.frontmatter as unknown as BankTransaction
       );
       setOpenItems(items);

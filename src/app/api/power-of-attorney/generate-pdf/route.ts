@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { generatePoaPdf } from "@/lib/poa-template";
 import type { PowerOfAttorney } from "@/lib/power-of-attorney";
 
@@ -23,16 +23,16 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    // Fetch the POA from the engine
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=power_of_attorney&limit=500`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    const pages: Array<{ slug: string; frontmatter: PowerOfAttorney }> = Array.isArray(data)
-      ? data
-      : (data.pages ?? []);
+    // Fetch the POA from the engine — cursor-paginated, a bare /api/pages
+    // call is capped at 100 rows.
+    let pages: Array<{ slug: string; frontmatter: PowerOfAttorney }>;
+    try {
+      pages = (await listEnginePages(ctx.headers, "power_of_attorney", 10_000, {
+        strict: true,
+      })) as unknown as Array<{ slug: string; frontmatter: PowerOfAttorney }>;
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
     const poaPage = pages.find((p) => p.frontmatter?.id === body.poa_id);
     if (!poaPage) return apiError("not_found", "Vollmacht nicht gefunden", 404);
 

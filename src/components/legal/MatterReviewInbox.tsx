@@ -101,7 +101,7 @@ export function MatterReviewInbox({
         fetch(`/api/matter-context/${encodeURIComponent(matter.slug)}`).then((res) =>
           res.ok ? (res.json() as Promise<MatterContextBundle>) : null
         ),
-        api.brain.listPages({ type: "client_submission", limit: 100 }).catch(() => []),
+        api.brain.listAllPages({ type: "client_submission", max: 100 }).catch(() => []),
       ]);
       setBundle(bundleResponse);
       setSubmissions(submissionPages.filter((page) => page.frontmatter?.case_slug === matter.slug));

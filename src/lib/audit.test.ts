@@ -10,6 +10,7 @@ vi.mock("@/lib/api", () => ({
     brain: {
       createPage: vi.fn(async () => ({})),
       listPages: vi.fn(async () => []),
+      listAllPages: vi.fn(async () => []),
     },
   },
 }));
@@ -22,7 +23,7 @@ import { logAudit, listAuditLogs, auditLabel, verifyAuditChain } from "./audit";
 import { api } from "@/lib/api";
 
 const mockCreatePage = vi.mocked(api.brain.createPage);
-const mockListPages = vi.mocked(api.brain.listPages);
+const mockListPages = vi.mocked(api.brain.listAllPages);
 
 describe("logAudit (dev fallback — brain pages)", () => {
   beforeEach(() => {
@@ -210,10 +211,10 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
     expect(result).toEqual([]);
   });
 
-  test("passes limit to listPages", async () => {
+  test("passes limit to listAllPages", async () => {
     mockListPages.mockResolvedValueOnce([]);
     await listAuditLogs({ brainId: "b1", limit: 50 });
-    expect(mockListPages).toHaveBeenCalledWith({ type: "audit_log", limit: 50 });
+    expect(mockListPages).toHaveBeenCalledWith({ type: "audit_log", max: 50 });
   });
 });
 

@@ -33,11 +33,11 @@ interface CasePage {
 
 async function fetchMatterBudgets(): Promise<MatterBudget[]> {
   // Fetch all fee agreements
-  const agreementPages = await api.brain.listPages({ type: "fee_agreement", limit: 200 });
+  const agreementPages = await api.brain.listAllPages({ type: "fee_agreement", max: 200 });
   const agreements = agreementPages.map((p) => p.frontmatter as unknown as FeeAgreement);
 
   // Fetch case pages to get time entries and expenses
-  const casePages = await api.brain.listPages({ type: "case", limit: 200 });
+  const casePages = await api.brain.listAllPages({ type: "case", max: 200 });
   const caseMap = new Map<string, CasePage>();
   for (const page of casePages as CasePage[]) {
     caseMap.set(page.slug, page);

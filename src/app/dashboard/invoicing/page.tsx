@@ -210,9 +210,10 @@ export default function InvoicingPage() {
   async function loadAll() {
     setLoading(true);
     try {
-      const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
-      const invoicePages = batch["invoice"] ?? [];
-      const casePages = batch["legal_case"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(["invoice", "legal_case"], 200);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const invoicePages = batch.results["invoice"] ?? [];
+      const casePages = batch.results["legal_case"] ?? [];
       const loadedInvoices: Invoice[] = invoicePages.map((p) => {
         const fm = invoiceFrontmatter(p);
         return {
@@ -289,7 +290,7 @@ export default function InvoicingPage() {
 
   async function _loadCases() {
     try {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "legal_case", max: 200 });
       const loadedCases = pages.map((p) => {
         const fm = caseFrontmatter(p);
         return {

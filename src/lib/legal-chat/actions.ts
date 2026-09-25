@@ -92,11 +92,10 @@ async function batchListPages(
   types: string[],
   limit = 200
 ): Promise<Record<string, BrainPage[]>> {
+  // Fail-closed: a failed type must surface as an error reply — silently
+  // treating it as an empty list would produce false "Du hast 0 …" answers.
   const entries = await Promise.all(
-    types.map(
-      async (type) =>
-        [type, await listPages(brainId, type, limit).catch(() => [] as BrainPage[])] as const
-    )
+    types.map(async (type) => [type, await listPages(brainId, type, limit)] as const)
   );
   return Object.fromEntries(entries);
 }

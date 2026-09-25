@@ -74,7 +74,7 @@ export function SignatureQuickCreateDialog({
   }, [open, resetForm]);
 
   const { data: drafts } = useDialogFetch<BrainPage[]>(open, async () => {
-    return await api.brain.listPages({ type: "legal_document", limit: 100 });
+    return await api.brain.listAllPages({ type: "legal_document", max: 100 });
   });
 
   async function handleSubmit(e: React.FormEvent) {

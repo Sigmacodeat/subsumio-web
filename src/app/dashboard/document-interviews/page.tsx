@@ -35,7 +35,7 @@ export default function DocumentInterviewsPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "interview_definition", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "interview_definition", max: 200 });
       setInterviews(pages.map((p) => p.frontmatter as unknown as InterviewDefinition));
     } catch {
       addToast({ type: "error", title: t("interview.err_load") });

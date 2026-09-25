@@ -16,6 +16,7 @@ import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import {
   BRAIN_TYPE_PLURALS,
   brainEntryHref,
@@ -60,7 +61,11 @@ export default function BrainPage() {
     let cancelled = false;
     (async () => {
       try {
-        const list = await api.brain.listPages({ limit: 200 });
+        // Typ-lose Browsing-Liste: bewusst eine Engine-Seite (≤100, der
+        // effektive Cap). Bei Volltreffer zeigt CappedResultsNotice den
+        // Hinweis auf die Suche — komplette Typ-Scans laufen über
+        // api.brain.listAllPages.
+        const list = await api.brain.listPages({ limit: 100 });
         if (cancelled) return;
         setPages(list.filter((p) => !isInternalBrainType(p.type)).map(toItem));
       } catch (err) {
@@ -218,6 +223,8 @@ export default function BrainPage() {
               </div>
             )}
           </div>
+
+          {searchResults === null && pages.length >= 100 && <CappedResultsNotice limit={100} />}
 
           {searchResults === null && typeCounts.length > 1 && (
             <div

@@ -97,7 +97,7 @@ export default function ProcessStrategyPage() {
 
   useEffect(() => {
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 200 })
       .then((pages) => {
         const mapped = pages.map((p) => {
           const fm = caseFrontmatter(p);

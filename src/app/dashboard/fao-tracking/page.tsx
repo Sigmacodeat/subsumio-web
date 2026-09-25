@@ -32,7 +32,7 @@ export default function FAOTrackingPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "fao_education_entry", limit: 500 });
+      const pages = await api.brain.listAllPages({ type: "fao_education_entry", max: 500 });
       setEntries(pages.map((p) => p.frontmatter as unknown as ContinuingEducationEntry));
     } catch {
       addToast({ type: "error", title: t("fao.err_load") });

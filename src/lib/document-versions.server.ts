@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   isLockedFor,
   nextVersionNumber,
@@ -52,14 +53,16 @@ async function listVersions(
   headers: Record<string, string>,
   docSlug: string
 ): Promise<DocumentVersionFrontmatter[]> {
-  const res = await fetch(
-    `${ENGINE_URL}/api/pages?slug_prefix=${encodeURIComponent(`legal/doc-versions/${docSlug}/`)}&limit=200`,
-    { headers, signal: AbortSignal.timeout(10_000) }
-  );
-  if (!res.ok) throw new VersionError(`Engine returned ${res.status}`);
-  const pages = (await res.json()) as Array<{ frontmatter?: DocumentVersionFrontmatter }>;
-  return (Array.isArray(pages) ? pages : [])
-    .map((p) => p.frontmatter)
+  // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+  const pages = await listEnginePages(headers, "", 10_000, {
+    slugPrefix: `legal/doc-versions/${docSlug}/`,
+    strict: true,
+    timeoutMs: 10_000,
+  }).catch(() => {
+    throw new VersionError("Engine list failed");
+  });
+  return pages
+    .map((p) => p.frontmatter as DocumentVersionFrontmatter | undefined)
     .filter((f): f is DocumentVersionFrontmatter => !!f && f.doc_slug === docSlug)
     .sort((a, b) => a.version - b.version);
 }

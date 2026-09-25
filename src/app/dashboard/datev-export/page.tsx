@@ -55,7 +55,7 @@ function DatevExportPageInner() {
         const loaded: ExportEntry[] = [];
 
         const [pages] = await Promise.all([
-          api.brain.listPages({ type: "legal_case", limit: 200 }),
+          api.brain.listAllPages({ type: "legal_case", max: 200 }),
         ]);
         if (cancelled) return;
         for (const page of pages) {

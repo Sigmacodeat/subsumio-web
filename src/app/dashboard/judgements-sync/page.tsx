@@ -45,7 +45,7 @@ export default function JudgementsSyncPage() {
 
   async function loadExisting() {
     try {
-      const pages = await api.brain.listPages({ type: "court_decision", limit: 500 });
+      const pages = await api.brain.listAllPages({ type: "court_decision", max: 500 });
       setExistingCount(pages.length);
     } catch {
       setExistingCount(0);

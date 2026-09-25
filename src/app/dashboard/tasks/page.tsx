@@ -39,8 +39,9 @@ export default function TasksPage() {
     // than 200 cases used to silently lose tasks from every case past the
     // 200th, with no error surfaced. See engine-list-cap-and-tombstones.
     queryFn: async () => {
-      const { legal_case: pages = [] } = await api.brain.batchListPages(["legal_case"], 2000);
-      return pages;
+      const { results, errors } = await api.brain.batchListPagesDetailed(["legal_case"], 2000);
+      if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
+      return results.legal_case ?? [];
     },
   });
 

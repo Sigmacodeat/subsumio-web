@@ -164,7 +164,8 @@ describe("POST /api/invoices/[slug]/storno", () => {
     expect(mockListEnginePages).toHaveBeenCalledWith(
       { "x-subsumio-source": "brain-at" },
       "invoice",
-      5000
+      5000,
+      { strict: true }
     );
     expect(mockAllocateInvoiceNumber).toHaveBeenCalledWith("brain-at", 2026, 1);
 

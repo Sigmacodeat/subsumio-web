@@ -128,7 +128,7 @@ export function AiDeadlineSuggestions() {
   const suggestionsQuery = useQuery({
     queryKey: ["ai-deadline-suggestions"],
     queryFn: async () => {
-      const pages = await api.brain.listPages({ type: "legal_deadline", limit: 300 });
+      const pages = await api.brain.listAllPages({ type: "legal_deadline", max: 300 });
       return pages
         .filter((page) => {
           const f = fm(page);

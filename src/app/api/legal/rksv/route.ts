@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   resolveRksvAdapter,
   RksvNotConfiguredError,
@@ -38,23 +39,19 @@ async function lastReceiptHash(
 ): Promise<string> {
   // Startwert für den ersten Beleg der Kasse (RKSV): Kassen-ID gehasht.
   const startValue = createHash("sha256").update(cashRegisterId, "utf8").digest("base64");
-  try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=rksv_receipt&limit=500`, {
-      headers: { "Content-Type": "application/json", ...headers },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return startValue;
-    const data = await res.json();
-    const pages: { frontmatter?: { receipt?: StoredReceipt } }[] = data.pages ?? data ?? [];
-    const mine = pages
-      .map((p) => p.frontmatter?.receipt)
-      .filter((r): r is StoredReceipt => !!r && r.cashRegisterId === cashRegisterId)
-      .sort((a, b) => a.signed_at.localeCompare(b.signed_at));
-    const last = mine[mine.length - 1];
-    return last ? chainValue(last) : startValue;
-  } catch {
-    return startValue;
-  }
+  // Fail-closed AND complete: a truncated/failed read used to silently return
+  // the start value, restarting the hash chain — an RKSV § 17 violation.
+  // Strict pagination means the chain only ever builds on the full register.
+  const pages = await listEnginePages(headers, "rksv_receipt", 50_000, {
+    strict: true,
+    timeoutMs: 15_000,
+  });
+  const mine = pages
+    .map((p) => (p.frontmatter as { receipt?: StoredReceipt } | undefined)?.receipt)
+    .filter((r): r is StoredReceipt => !!r && r.cashRegisterId === cashRegisterId)
+    .sort((a, b) => a.signed_at.localeCompare(b.signed_at));
+  const last = mine[mine.length - 1];
+  return last ? chainValue(last) : startValue;
 }
 
 const receiptSchema = z.object({

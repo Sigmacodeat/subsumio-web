@@ -49,10 +49,12 @@ export function PhoneNotesTab() {
       // past that cap (see engine-list-cap-and-tombstones); it's also how
       // this data is loaded kanzleiweit before filtering to this one case,
       // same shape as before.
-      const { legal_phone_note: pages = [] } = await api.brain.batchListPages(
+      const { results, errors } = await api.brain.batchListPagesDetailed(
         ["legal_phone_note"],
         2000
       );
+      if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
+      const pages = results.legal_phone_note ?? [];
       const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
       const mapped: PhoneNoteItem[] = filtered.map((p: BrainPage) => ({
         slug: p.slug,

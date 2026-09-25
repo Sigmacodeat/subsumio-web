@@ -21,6 +21,8 @@ const listPages = vi.fn(
   ]
 );
 vi.mock("@/lib/server-brain", () => ({ createServerBrainClient: () => ({ listPages }) }));
+vi.mock("@/lib/copilot-memory", () => ({ listMemories: vi.fn(async () => []) }));
+vi.mock("@/lib/concierge/store", () => ({ leadsForEmail: vi.fn(async () => []) }));
 let storedUser: Record<string, unknown> = {};
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({ getById: async () => storedUser }),
@@ -93,6 +95,6 @@ describe("GET /api/settings/gdpr/data-export", () => {
     const body = await res.json();
     expect(body.brainPages).toHaveLength(total);
     expect(new Set(body.brainPages.map((p: { slug: string }) => p.slug)).size).toBe(total);
-    expect(listPages).toHaveBeenCalledTimes(3);
+    expect(listPages).toHaveBeenCalledTimes(Math.ceil(total / 100));
   });
 });

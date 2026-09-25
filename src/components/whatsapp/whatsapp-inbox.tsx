@@ -66,8 +66,8 @@ export function WhatsAppInbox() {
     setLoadError(null);
     try {
       const [inbound, outbound] = await Promise.all([
-        api.brain.listPages({ type: "chat_inbox", limit: 200 }),
-        api.brain.listPages({ type: "chat_outbox", limit: 200 }),
+        api.brain.listAllPages({ type: "chat_inbox", max: 200 }),
+        api.brain.listAllPages({ type: "chat_outbox", max: 200 }),
       ]);
 
       const allMessages: ChatMessage[] = [

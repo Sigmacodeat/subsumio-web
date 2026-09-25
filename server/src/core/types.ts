@@ -340,6 +340,14 @@ export interface PageFilters {
    * pre-v0.34 unscoped behavior is preserved for local CLI callers.
    */
   sourceIds?: string[];
+  /**
+   * Keyset cursor for `sort: "updated_desc"` pagination, format
+   * `"<updated_at ISO>|<page id>"`. Applies
+   * `WHERE (p.updated_at, p.id) < (cursor.updated_at, cursor.id)` so paging
+   * stays correct even when rows are updated mid-scan (offset paging would
+   * shift and skip/dup rows). Ignored for other sort orders.
+   */
+  cursor?: string;
 }
 
 /** v0.26.5 — opts for getPage / softDeletePage / restorePage. */
@@ -363,6 +371,28 @@ export const PAGE_SORT_SQL: Record<NonNullable<PageFilters["sort"]>, string> = {
   created_desc: "p.created_at DESC",
   slug: "p.slug ASC",
 };
+
+/**
+ * Encode a keyset cursor for `updated_desc` list paging
+ * (`"<updated_at ISO>|<page id>"`). The pair is the position of the last
+ * scanned row; the next page continues strictly after it.
+ */
+export function encodePageCursor(page: { updated_at: Date; id: number }): string {
+  return `${page.updated_at.toISOString()}|${page.id}`;
+}
+
+/** Parse a PageFilters.cursor back into its tuple; null when malformed. */
+export function parsePageCursor(
+  cursor: string | undefined
+): { updatedAt: string; id: number } | null {
+  if (!cursor) return null;
+  const sep = cursor.lastIndexOf("|");
+  if (sep <= 0) return null;
+  const updatedAt = cursor.slice(0, sep);
+  const id = Number(cursor.slice(sep + 1));
+  if (!Number.isFinite(id) || Number.isNaN(Date.parse(updatedAt))) return null;
+  return { updatedAt, id };
+}
 
 /**
  * v0.29 — Salience: pages ranked by emotional + activity salience over a recency window.

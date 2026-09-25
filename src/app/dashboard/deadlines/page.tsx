@@ -387,9 +387,11 @@ export default function DeadlinesPage() {
       }));
       if (fristenData.partial) setPartialWarning(true);
 
-      // Appointments are not part of the fristen read-model — load separately
-      const batch = await api.brain.batchListPages(["appointment"], 300);
-      const appointmentPages = batch["appointment"] ?? [];
+      // Appointments are not part of the fristen read-model — load separately.
+      // A failed type is partial data, not an empty calendar — warn, don't hide.
+      const batch = await api.brain.batchListPagesDetailed(["appointment"], 300);
+      if (batch.errors.length) setPartialWarning(true);
+      const appointmentPages = batch.results["appointment"] ?? [];
       for (const page of appointmentPages) {
         const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
         const date = String(fm.date ?? "");
