@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für Deutschland",
     description:
-      "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Deutschland. Nach DSGVO konzipiert, AVV inklusive; Hosting in Wien oder On-Premise. Jede Antwort mit Fundstelle.",
+      "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Deutschland. Nach DSGVO konzipiert, AVV inklusive; Hosting in Wien oder On-Premise. Antworten mit Fundstelle, Unbelegtes gekennzeichnet.",
     url: "/de",
     type: "website",
   },

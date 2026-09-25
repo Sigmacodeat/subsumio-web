@@ -1,5 +1,5 @@
 // Features page — Server Component composer. Sections: animated
-// knowledge-graph hero (client island) · one documented figure · how it works ·
+// knowledge-graph hero (client island) · how the search works · how it works ·
 // workflow demo · WhatsApp spotlight + full capability bento · the five areas
 // in detail · security cross-link · FAQ · CTA.
 // All hook-driven pieces live in ./features-interactive.tsx; the static
@@ -20,24 +20,13 @@ import {
   FeatureCommandCenter,
   CategoryExplorer,
 } from "./features-interactive";
-import { AnimatedCounter, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { Reveal } from "./motion-system";
 
 export default function FeaturesPage({ market = "at" }: { market?: Market }) {
   const { ui: UI_STRINGS, features: FEATURES_PAGE } = contentFor(market);
   const p = pBind(market);
 
   const t = FEATURES_PAGE;
-
-  // One documented figure only — everything else was unsourced and removed.
-  const stats = [
-    {
-      to: PROOF.recall8.numeric,
-      dec: PROOF.recall8.decimals,
-      prefix: "",
-      suffix: " %",
-      label: PROOF.recall8.label,
-    },
-  ];
 
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
@@ -77,30 +66,19 @@ export default function FeaturesPage({ market = "at" }: { market?: Market }) {
         }
       />
 
-      {/* Stats band */}
+      {/* How the search works — no figure until a measurement receipt exists */}
       <Section tone="light" className={SECTION_PAD_FLUSH}>
-        <StaggerContainer className="mx-auto grid max-w-2xl grid-cols-1 gap-6" stagger={0.08}>
-          {stats.map((s) => (
-            <StaggerItem
-              key={s.label}
-              className="rounded-2xl border [border-color:var(--mk-border)] px-6 py-8 text-center [box-shadow:var(--mk-card-shadow)] [background:var(--mk-surface)]"
-            >
-              <div className="mb-2 [font-family:var(--font-display)] text-5xl leading-none font-normal tracking-[-0.025em] [color:var(--mk-text)] tabular-nums">
-                {s.prefix ?? ""}
-                <AnimatedCounter to={s.to} decimals={s.dec} suffix={s.suffix ?? ""} />
-              </div>
-              <p className="mx-auto max-w-md text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-                {s.label}
-              </p>
-              <Link
-                href={p("/benchmark-methodology")}
-                className="brand-text mt-3 inline-flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
-              >
-                So wurde gemessen <ArrowRight size={14} />
-              </Link>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+        <Reveal className="mx-auto max-w-2xl rounded-2xl border [border-color:var(--mk-border)] px-6 py-8 text-center [box-shadow:var(--mk-card-shadow)] [background:var(--mk-surface)]">
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+            {PROOF.search.plain}
+          </p>
+          <Link
+            href={p("/benchmark-methodology")}
+            className="brand-text mt-3 inline-flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
+          >
+            So arbeitet die Suche <ArrowRight size={14} />
+          </Link>
+        </Reveal>
       </Section>
 
       {/* How it works — four sequential steps */}

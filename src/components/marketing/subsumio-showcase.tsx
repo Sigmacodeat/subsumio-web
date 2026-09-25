@@ -93,7 +93,7 @@ const COPY = {
   ],
   bentoEyebrow: "Alle Funktionen",
   bentoTitle: "Alles, was die Kanzlei braucht — in einem System",
-  bentoSub: "EU-Cloud oder On-Premise im Enterprise-Tarif. Jede Antwort mit Fundstelle.",
+  bentoSub: "EU-Cloud oder On-Premise im Enterprise-Tarif. Antworten mit Fundstelle.",
 } as const;
 
 const reveal = (i: number, reduce = false) => ({

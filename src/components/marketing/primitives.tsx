@@ -613,9 +613,9 @@ export function StatCard({
   suffix?: string;
   decimals?: number;
 }) {
-  // Values are written de-AT ("99,8 %", "1.499 €"): dot groups thousands,
+  // Values are written de-AT ("12,5 %", "1.499 €"): dot groups thousands,
   // comma is the decimal separator. Parsing the comma away once rendered
-  // "99,8 %" as "998 %".
+  // "12,5 %" as "125 %".
   const numericPart = value.match(/[0-9][0-9.,]*/)?.[0] ?? "";
   const normalized = numericPart.replace(/\./g, "").replace(",", ".");
   const num = parseFloat(normalized);

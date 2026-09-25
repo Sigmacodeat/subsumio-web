@@ -32,7 +32,7 @@ export interface FeaturesContent {
 export const FEATURES_PAGE: FeaturesContent = {
   metaTitle: "Subsumio Funktionen — KI-Kanzleisoftware für Rechtsanwälte in Österreich",
   metaDesc:
-    "Antworten aus der Akte mit Fundstellen, Beteiligte und Zusammenhänge, Suche nach Sinn und Stichwort, nächtliche Prüfung, Assistent auf WhatsApp. Die anwaltliche Prüfung bleibt.",
+    "Antworten aus der Akte mit Fundstellen, Beteiligte und Zusammenhänge, Suche nach Sinn und Stichwort, Widerspruchsprüfung, Judikatur-Wächter, Assistent auf WhatsApp. Die anwaltliche Prüfung bleibt.",
   badge: "Alle Funktionen im Überblick",
   h1a: "Was Subsumio für Ihre Kanzlei erledigt.",
   h1b: "Bereich für Bereich erklärt.",
@@ -95,7 +95,7 @@ export const FEATURES_PAGE: FeaturesContent = {
         },
         {
           title: "Ein Eintrag je Person und Firma",
-          desc: "Jede Erwähnung ergänzt den Eintrag; die nächtliche Prüfung führt Doppeltes zusammen.",
+          desc: "Jede Erwähnung ergänzt den Eintrag zu dieser Person oder Firma.",
         },
       ],
       demo: {
@@ -148,38 +148,38 @@ export const FEATURES_PAGE: FeaturesContent = {
     {
       id: "dream",
       icon: "Zap",
-      label: "Nächtliche Prüfung",
-      title: "Ihr Kanzleiwissen bleibt über Nacht in Ordnung",
+      label: "Laufende Prüfung",
+      title: "Was Subsumio von selbst prüft – und was Sie anstoßen",
       intro:
-        "Jede Nacht geht Subsumio die Wissensbasis durch: Dubletten, Verweise ins Leere, widersprüchliche Angaben. Morgens sehen Sie, was aufgefallen ist.",
-      glance: "Dubletten, fehlerhafte Verweise und Widersprüche werden über Nacht erkannt.",
+        "Nach jedem Hochladen prüft Subsumio neue Dokumente gegen die übrige Akte. Jede Nacht sucht der Judikatur-Wächter nach neuen Entscheidungen zu den Normen Ihrer Akten. Den Akten-Scan starten Sie bei Bedarf, mit Kostenvorschau.",
+      glance:
+        "Widerspruchsprüfung nach dem Hochladen, Judikatur-Wächter jede Nacht, Akten-Scan auf Abruf.",
       items: [
         {
-          title: "Dubletten zusammenführen",
-          desc: "Doppelte Einträge zu Personen und Firmen werden erkannt und zusammengeführt.",
-        },
-        {
-          title: "Verweise prüfen",
-          desc: "Verweise, die ins Leere zeigen oder veraltet sind, werden gefunden und korrigiert oder zur Prüfung markiert.",
-        },
-        {
           title: "Widersprüche erkennen",
-          desc: "Widersprüchliche Angaben über Dokumente hinweg werden mit beiden Quellen markiert — etwa zwischen Schriftsatz und Zeugenaussage.",
+          desc: "Nach dem Hochladen in eine Akte werden widersprüchliche Angaben mit beiden Quellen markiert — etwa zwischen Schriftsatz und Zeugenaussage.",
         },
         {
-          title: "Tägliche Übersicht",
-          desc: "Überfällige und kritische Fristen erhalten Sie jeden Morgen per E-Mail.",
+          title: "Judikatur-Wächter",
+          desc: "Jede Nacht wird nach neuen Entscheidungen zu den Normen gesucht, die in Ihren Akten vorkommen. Treffer werden Ihnen gemeldet.",
+        },
+        {
+          title: "Akten-Scan auf Abruf",
+          desc: "Für eine Akte, eine Auswahl oder alle offenen Akten: anstehende Fristen, Rechtsprechung und Risiken zu den Normen, dünn belegte Akten. Vor dem Start sehen Sie die Kosten in Credits.",
+        },
+        {
+          title: "Tägliche Fristenübersicht",
+          desc: "Überfällige und anstehende Fristen erhalten Sie jeden Morgen per E-Mail.",
         },
       ],
       demo: {
-        windowTitle: "Subsumio — über Nacht",
+        windowTitle: "Subsumio — Prüfungen",
         lines: [
-          "03:00 Nächtliche Prüfung gestartet",
-          "  3 doppelte Personeneinträge zusammengeführt",
-          "  12 Verweise geprüft und korrigiert",
+          "09:12 Schriftsatz hochgeladen (Akte 2026/014)",
           "  1 Widerspruch markiert (Lieferdatum: 12. März vs. „Ende April“)",
-          "  Tägliche Übersicht vorbereitet: 2 Termine, 4 offene Punkte",
-          "03:19 abgeschlossen",
+          "  1 Frist zur Bestätigung vorgelegt",
+          "04:00 Judikatur-Wächter: 1 neue Entscheidung zu § 1167 ABGB",
+          "08:00 Fristenübersicht versendet: 2 Termine, 4 offene Punkte",
         ],
       },
     },

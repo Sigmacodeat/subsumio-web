@@ -84,7 +84,6 @@ export const metadata: Metadata = {
     "AI legal research",
     // Cluster D: Österreich-spezifisch (compliance + integration)
     "Buchhaltung",
-    "webERV Anbindung",
     "RATG Abrechnung Software",
     "Honorarrechnung Software",
     "AVV Kanzleisoftware",

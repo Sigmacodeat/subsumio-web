@@ -51,7 +51,7 @@ export const CITIES_DE: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Berlin: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle mit Berliner Feiertagen, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Berliner Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Berlin, die mit deutschem Recht arbeitet — BGB, ZPO, HGB und dem übrigen Bundesrecht von gesetze-im-internet.de. Jede Antwort nennt ihre Fundstelle; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Berlin, die mit deutschem Recht arbeitet — BGB, ZPO, HGB und dem übrigen Bundesrecht von gesetze-im-internet.de. Antworten nennen ihre Fundstellen; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
     jurisdictionNote:
       "Subsumio berechnet Fristen nach §§ 187 ff. BGB und § 222 ZPO und berücksichtigt die gesetzlichen Feiertage Berlins. Das Kammergericht ist das Oberlandesgericht für Berlin; daneben bestehen das Landgericht Berlin und die Amtsgerichte der zwölf Bezirke.",
     courts: ["Kammergericht Berlin", "Landgericht Berlin", "Amtsgerichte Berlin"],

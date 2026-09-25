@@ -17,12 +17,14 @@ function files(dir: string, re: RegExp): string[] {
 const SOURCES = [
   ...files("src/content", /\.ts$/).filter((f) => !f.endsWith("dashboard.ts")),
   ...files("src/components/marketing", /\.tsx?$/),
+  // Alle öffentlichen Seiten beider Märkte (Metadaten tragen eigene Werbetexte).
+  ...files("src/app/at", /^(page|layout|opengraph-image)\.tsx$/),
+  ...files("src/app/de", /^(page|layout|opengraph-image)\.tsx$/),
+  "src/app/demo/page.tsx",
   "src/lib/concierge/knowledge.ts",
+  "src/lib/seo-keywords.ts",
+  "src/components/legal/legal-content.tsx",
   "src/app/layout.tsx",
-  "src/app/at/layout.tsx",
-  "src/app/at/page.tsx",
-  "src/app/at/partners/page.tsx",
-  "src/app/at/privacy/page.tsx",
 ];
 
 const BANNED: Array<[RegExp, string]> = [
@@ -35,6 +37,23 @@ const BANNED: Array<[RegExp, string]> = [
   [/30 Tage Exportfrist/, "automatische Löschfrist nicht implementiert"],
   [/lebenslange Provision/, "Partnerprovision: bis zu 30 %"],
   [/Datenschutzbeauftragten unter/, "kein Datenschutzbeauftragter bestellt"],
+  // Kein kanzleibezogener Nachtlauf außer dem Judikatur-Wächter; Akten-Scan nur auf Abruf.
+  [/n[äa]chtliche Prüfung/i, "kein nächtlicher Prüflauf der Akten"],
+  [/Über Nacht geprüft/i, "kein nächtlicher Prüflauf der Akten"],
+  [/über Nacht (in Ordnung|auf Widersprüche|erkannt)/i, "kein nächtlicher Prüflauf der Akten"],
+  [/Nachts werden Aussagen/, "Widerspruchsprüfung läuft nach dem Hochladen"],
+  [/[Jj]ede Nacht (geht|prüft)/, "kein nächtlicher Prüflauf der Akten"],
+  [/(Am Morgen|am Morgen|Morgens) sehen Sie/, "keine morgendliche Prüfliste"],
+  [/fehlende Unterlagen/i, "keine automatische Suche nach fehlenden Unterlagen"],
+  // Belegte Antworten: nicht Belegtes wird gekennzeichnet — kein absolutes Versprechen.
+  [
+    /[Jj]ede (Antwort|Aussage) (mit|hat|nennt)[^."]{0,20}Fundstelle/,
+    "absolute Fundstellen-Aussage",
+  ],
+  [/webERV Anbindung/i, "webERV-Versand existiert noch nicht"],
+  [/versendet nichts von selbst/, "Erinnerungen gehen automatisch hinaus"],
+  // Zahlen nur mit eingechecktem Messprotokoll (src/content/proof-points.ts).
+  [/99,8\s?%|Recall@8/, "Kennzahl ohne Messprotokoll"],
 ];
 
 describe("Website-Aussagen — keine unhaltbaren Versprechen", () => {

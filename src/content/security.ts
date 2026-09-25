@@ -124,7 +124,7 @@ export const SECURITY: SecurityContent = {
     },
     {
       title: "Menschliche Aufsicht",
-      desc: "Subsumio entwirft und schlägt vor — es bringt nichts ein, bucht nichts und versendet nichts von selbst. Eine Anwältin oder ein Anwalt prüft jedes Ergebnis und gibt es frei.",
+      desc: "Subsumio entwirft und schlägt vor — es bringt nichts ein, bucht nichts und versendet keine KI-Ergebnisse ohne Freigabe. Eine Anwältin oder ein Anwalt prüft jedes Ergebnis und gibt es frei. Automatisch gehen nur Erinnerungen hinaus, die Ihre Kanzlei angestoßen hat — etwa zu angeforderten Unterlagen oder vereinbarten Terminen.",
     },
     {
       title: "Risiko-Einstufung, dokumentiert",

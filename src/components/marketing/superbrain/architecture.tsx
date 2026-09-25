@@ -96,7 +96,11 @@ export function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
   }, [reduce, t.cycleSteps.length]);
 
   return (
-    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Nächtliche Prüfung">
+    <Section
+      tone="slate"
+      className="px-4 py-24 sm:px-6 lg:px-8"
+      aria-label="Automatische Prüfungen"
+    >
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>

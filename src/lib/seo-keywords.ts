@@ -19,7 +19,6 @@ const SEO_KEYWORDS = {
     "Kollisionsprüfung Kanzlei",
     "Aktenverwaltung Software",
     "Buchhaltungsexport Kanzlei",
-    "webERV Anbindung",
     "KI Dokumentenmanagement",
     "Vertragsanalyse KI",
     "legal AI features",
@@ -80,7 +79,6 @@ const SEO_KEYWORDS = {
   whatsapp: [
     "WhatsApp Kanzlei",
     "WhatsApp Anwaltssoftware",
-    "webERV WhatsApp",
     "Kanzlei Kommunikation",
     "legal WhatsApp integration",
   ],
@@ -147,14 +145,14 @@ export { SEO_KEYWORDS };
 
 /** DE-Markt: nur die Einträge ersetzen, die AT-Recht/AT-Orte nennen. */
 const SEO_KEYWORDS_DE: Partial<Record<keyof typeof SEO_KEYWORDS, string[]>> = {
-  features: SEO_KEYWORDS.features.map((k) => (k === "webERV Anbindung" ? "beA Anbindung" : k)),
+  // webERV-Versand existiert noch nicht — kein Keyword dafür (Claims-Guard).
+  features: [...SEO_KEYWORDS.features, "beA Anbindung"],
   security: SEO_KEYWORDS.security.map((k) =>
     k === "§ 9 Abs. 2 RAO Kanzleisoftware" ? "§ 43a Abs. 2 BRAO Kanzleisoftware" : k
   ),
   about: SEO_KEYWORDS.about.map((k) =>
     k === "Legal Tech Österreich" ? "Legal Tech Deutschland" : k
   ),
-  whatsapp: SEO_KEYWORDS.whatsapp.map((k) => (k === "webERV WhatsApp" ? "beA WhatsApp" : k)),
   cities: [
     "KI-Kanzleisoftware Berlin",
     "Anwaltssoftware München",
