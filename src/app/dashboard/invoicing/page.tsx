@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import {
   FileText,
   Send,
@@ -33,12 +32,17 @@ import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
-  caseFrontmatter,
-  invoiceFrontmatter,
-  type ExpenseEntry,
-  type InvoiceExpenseEntry,
-  type TimeEntry,
-} from "@/lib/legal-types";
+  eInvoicePayload,
+  invoiceCaseFromPage,
+  invoiceErrorText,
+  invoiceFromPage,
+  invoiceOverview,
+  sumOfTotals,
+  type Invoice,
+  type InvoiceCase,
+  type InvoicingCache,
+} from "@/lib/invoicing-view";
+import { invoicePrintHtml } from "@/lib/invoice-print-html";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { OFFLINE_KEYS, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -50,73 +54,7 @@ import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { InvoiceQuickCreateDialog } from "@/components/legal/InvoiceQuickCreateDialog";
-
-interface InvoiceItem {
-  description: string;
-  date: string;
-  hours: number;
-  rate: number;
-  amount: number;
-}
-
-interface Invoice {
-  id: string;
-  number: string;
-  client: string;
-  clientSlug?: string;
-  clientAddress?: string;
-  caseNumber?: string;
-  date: string;
-  dueDate: string;
-  items: InvoiceItem[];
-  expenses: InvoiceExpenseEntry[];
-  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
-  subtotal: number;
-  expenseTotal: number;
-  advancePayment: number;
-  paidAmount?: number;
-  paidAt?: string;
-  vatRate: number;
-  tax: number;
-  total: number;
-  paymentTerms?: string;
-  bank?: {
-    name?: string;
-    iban?: string;
-    bic?: string;
-  };
-  notes?: string;
-  reminderCount?: number;
-  reminderSentAt?: string[];
-  reminderFee?: number;
-  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift" | "storno";
-  parentInvoiceId?: string;
-  caseSlugs?: string[];
-  leitwegId?: string;
-  taxBreakdown?: Array<{ rate: number; net: number; tax: number }>;
-  reverseCharge?: boolean;
-  clientVatId?: string;
-  parentInvoiceNumber?: string;
-  parentInvoiceDate?: string;
-  eInvoiceChannel?: "peppol" | "erechnung_gv_at";
-  eInvoiceReference?: string;
-  eInvoiceStatus?: "queued" | "delivered" | "failed";
-}
-
-interface InvoiceCase {
-  slug: string;
-  title: string;
-  caseNumber: string;
-  clientName?: string;
-  clientSlug?: string;
-  timeEntries?: TimeEntry[];
-  expenses?: ExpenseEntry[];
-}
-
-interface InvoicingCache {
-  invoices: Invoice[];
-  cases: InvoiceCase[];
-}
+import { HubMenuLink, IconAction, InvoiceStat } from "@/components/legal/invoicing-parts";
 
 const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: StatusColor }> = {
   draft: { labelKey: "inv.status_draft", color: "gray" },
@@ -125,42 +63,6 @@ const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: StatusColor
   overdue: { labelKey: "inv.status_overdue", color: "red" },
   cancelled: { labelKey: "inv.status_cancelled", color: "gray" },
 };
-
-/** Server error codes → plain German. Never show a raw code or provider message. */
-function invoiceErrorText(code: unknown, fallback: string): string {
-  switch (code) {
-    case "smtp_not_configured":
-      return "E-Mail-Versand ist nicht eingerichtet. Bitte hinterlegen Sie den Postausgang in den Einstellungen.";
-    case "validation_failed":
-      return "Die E-Rechnung ist unvollständig. Bitte prüfen Sie Mandantenadresse, Kanzleidaten und Positionen.";
-    case "xml_not_wellformed":
-      return "Die Datei ist keine gültige E-Rechnung (XML nicht lesbar).";
-    case "not_found":
-      return "Die Rechnung wurde nicht gefunden. Bitte laden Sie die Seite neu.";
-    case "no_recipient_email":
-      return "Für diesen Mandanten ist keine E-Mail-Adresse hinterlegt.";
-    case "invoice_not_overdue":
-      return "Eine Mahnung ist nur für versendete Rechnungen möglich.";
-    case "no_embedded_xml":
-      return "Das PDF enthält keine eingebettete E-Rechnung (ZUGFeRD/Factur-X).";
-    default:
-      return fallback;
-  }
-}
-
-/** Escape user input before injecting into HTML strings — prevents XSS. */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function escapeHtmlLines(text: string): string {
-  return escapeHtml(text).replace(/\n/g, "<br>");
-}
 
 export default function InvoicingPage() {
   const confirm = useConfirm();
@@ -224,60 +126,8 @@ export default function InvoicingPage() {
       if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       const invoicePages = batch.results["invoice"] ?? [];
       const casePages = batch.results["legal_case"] ?? [];
-      const loadedInvoices: Invoice[] = invoicePages.map((p) => {
-        const fm = invoiceFrontmatter(p);
-        return {
-          id: p.slug,
-          number: fm.invoice_number || p.slug,
-          client: fm.client || "",
-          clientSlug: fm.client_slug,
-          clientAddress: fm.client_address,
-          caseNumber: fm.case_number,
-          date: fm.date || p.created_at,
-          dueDate: fm.due_date || "",
-          items: fm.items || [],
-          expenses: fm.expenses || [],
-          status: (fm.status as Invoice["status"]) || "draft",
-          subtotal: fm.subtotal || 0,
-          expenseTotal: fm.expense_total || 0,
-          advancePayment: fm.advance_payment || 0,
-          paidAmount: fm.paid_amount,
-          paidAt: fm.paid_at,
-          vatRate: fm.vat_rate ?? 0.2,
-          tax: fm.tax || 0,
-          total: fm.total || 0,
-          paymentTerms: fm.payment_terms,
-          bank: fm.bank,
-          notes: fm.notes,
-          reminderCount: fm.reminder_count,
-          reminderSentAt: fm.reminder_sent_at,
-          reminderFee: fm.reminder_fee,
-          invoiceType: fm.invoice_type,
-          parentInvoiceId: fm.parent_invoice_id,
-          parentInvoiceNumber: fm.parent_invoice_number,
-          parentInvoiceDate: fm.parent_invoice_date,
-          eInvoiceChannel: fm.e_invoice_channel,
-          eInvoiceReference: fm.e_invoice_reference,
-          eInvoiceStatus: fm.e_invoice_status,
-          caseSlugs: fm.case_slugs,
-          leitwegId: fm.leitweg_id,
-          taxBreakdown: fm.tax_breakdown,
-          reverseCharge: fm.reverse_charge === true,
-          clientVatId: fm.client_vat_id,
-        };
-      });
-      const loadedCases: InvoiceCase[] = casePages.map((p) => {
-        const fm = caseFrontmatter(p);
-        return {
-          slug: p.slug,
-          title: p.title,
-          caseNumber: fm.case_number || p.slug,
-          clientName: fm.client_name,
-          clientSlug: fm.client_slug,
-          timeEntries: fm.time_entries || [],
-          expenses: fm.expenses || [],
-        };
-      });
+      const loadedInvoices: Invoice[] = invoicePages.map(invoiceFromPage);
+      const loadedCases: InvoiceCase[] = casePages.map(invoiceCaseFromPage);
       setInvoices(loadedInvoices);
       setCases(loadedCases);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
@@ -304,168 +154,13 @@ export default function InvoicingPage() {
     }
   }
 
-  async function _loadCases() {
-    try {
-      const pages = await api.brain.listAllPages({ type: "legal_case", max: 200 });
-      const loadedCases = pages.map((p) => {
-        const fm = caseFrontmatter(p);
-        return {
-          slug: p.slug,
-          title: p.title,
-          caseNumber: fm.case_number || p.slug,
-          clientName: fm.client_name,
-          clientSlug: fm.client_slug,
-          timeEntries: fm.time_entries || [],
-          expenses: fm.expenses || [],
-        };
-      });
-      setCases(loadedCases);
-    } catch (err) {
-      console.error(
-        "[invoicing] failed to load cases:",
-        err instanceof Error ? err.message : String(err)
-      );
-      const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
-      setCases(cached?.cases ?? []);
-    }
-  }
-
   async function printInvoice(inv: Invoice) {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const settings = kanzlei ?? (await loadKanzleiSettings());
     const vatRate = inv.vatRate ?? vatRateFor(settings);
-    const num = (n: number) =>
-      new Intl.NumberFormat("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-        Number.isFinite(n) ? n : 0
-      );
-    const html = `
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Rechnung ${inv.number}</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 40px; color: hsl(222, 8%, 20%); font-size: 14px; }
-  .header { border-bottom: 2px solid hsl(213, 46%, 42%); padding-bottom: 20px; margin-bottom: 30px; }
-  .header h1 { margin: 0; font-size: 28px; color: hsl(213, 46%, 42%); }
-  .header p { margin: 4px 0; color: hsl(222, 8%, 40%); }
-  .meta { display: flex; justify-content: space-between; margin-bottom: 30px; }
-  .meta-box { background: hsl(222, 8%, 97%); padding: 15px; border-radius: 8px; }
-  .meta-box strong { display: block; margin-bottom: 8px; color: hsl(222, 8%, 20%); }
-  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-  th { background: hsl(222, 8%, 94%); padding: 12px; text-align: left; font-weight: 600; }
-  td { padding: 12px; border-bottom: 1px solid hsl(222, 8%, 90%); }
-  .right { text-align: right; }
-  .totals { margin-top: 20px; border-top: 2px solid hsl(222, 8%, 90%); padding-top: 20px; }
-  .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-  .total-row.grand { font-size: 18px; font-weight: bold; color: hsl(213, 46%, 42%); border-top: 2px solid hsl(213, 46%, 42%); margin-top: 10px; padding-top: 15px; }
-  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid hsl(222, 8%, 90%); font-size: 12px; color: hsl(222, 8%, 40%); }
-  .muted { color: hsl(222, 8%, 40%); }
-  @media print { body { margin: 20px; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <h1>Rechnung</h1>
-    <p><strong>${escapeHtml(settings?.kanzleiName || "Kanzlei")}</strong></p>
-    <p>${escapeHtml(settings?.anwaltName || "")}</p>
-    ${settings?.kanzleiAdresse ? `<p>${escapeHtmlLines(settings.kanzleiAdresse)}</p>` : ""}
-    ${settings?.kanzleiEmail || settings?.kanzleiTelefon ? `<p>${escapeHtml([settings?.kanzleiEmail, settings?.kanzleiTelefon].filter(Boolean).join(" · "))}</p>` : ""}
-    ${settings?.kammerNummer ? `<p>${escapeHtml(settings.kammerNummer)}</p>` : ""}
-    ${settings?.ustId ? `<p>USt-ID: ${escapeHtml(settings.ustId)}</p>` : ""}
-  </div>
-
-  <div class="meta">
-    <div class="meta-box">
-      <strong>Rechnung an:</strong>
-      ${escapeHtml(inv.client)}
-    </div>
-    <div class="meta-box">
-      <strong>Rechnungsdetails:</strong>
-      <p>Rechnungs-Nr.: ${escapeHtml(inv.number)}</p>
-      <p>Datum: ${escapeHtml(formatDate(inv.date))}</p>
-      ${inv.dueDate ? `<p>Fällig: ${escapeHtml(formatDate(inv.dueDate))}</p>` : ""}
-      ${inv.caseNumber ? `<p>Aktenzeichen: ${escapeHtml(inv.caseNumber)}</p>` : ""}
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Datum</th>
-        <th>Beschreibung</th>
-        <th class="right">Stunden</th>
-        <th class="right">Satz (€)</th>
-        <th class="right">Betrag (€)</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${inv.items
-        .map(
-          (item) => `
-        <tr>
-          <td>${escapeHtml(formatDate(item.date))}</td>
-          <td>${escapeHtml(item.description)}</td>
-          <td class="right">${item.hours > 0 ? num(item.hours) : "—"}</td>
-          <td class="right">${item.hours > 0 ? num(item.rate) : "—"}</td>
-          <td class="right">${num(item.amount)}</td>
-        </tr>
-      `
-        )
-        .join("")}
-    </tbody>
-  </table>
-
-  ${
-    inv.expenses.length > 0
-      ? `
-    <table>
-      <thead>
-        <tr>
-          <th>Datum</th>
-          <th>Auslage</th>
-          <th class="right">Betrag (€)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${inv.expenses
-          .map(
-            (item) => `
-          <tr>
-            <td>${escapeHtml(formatDate(item.date))}</td>
-            <td>${escapeHtml(item.description)}</td>
-            <td class="right">${num(item.amount)}</td>
-          </tr>
-        `
-          )
-          .join("")}
-      </tbody>
-    </table>
-  `
-      : ""
-  }
-
-  <div class="totals">
-    <div class="total-row"><span>Honorar netto</span><span>${formatEur(inv.subtotal, lang)}</span></div>
-    ${inv.expenseTotal > 0 ? `<div class="total-row"><span>Auslagen netto</span><span>${formatEur(inv.expenseTotal, lang)}</span></div>` : ""}
-    <div class="total-row"><span>Mehrwertsteuer (${(vatRate * 100).toFixed(0)}%)</span><span>${formatEur(inv.tax, lang)}</span></div>
-    ${inv.advancePayment > 0 ? `<div class="total-row"><span>Vorschuss / Anzahlung</span><span>− ${formatEur(inv.advancePayment, lang)}</span></div>` : ""}
-    <div class="total-row grand"><span>Gesamtbetrag</span><span>${formatEur(inv.total, lang)}</span></div>
-  </div>
-
-  ${inv.notes ? `<p style="margin-top: 30px; color: hsl(222, 8%, 40%);">${escapeHtml(inv.notes)}</p>` : ""}
-
-  <div class="footer">
-    <p>Zahlungsbedingungen: ${escapeHtml(inv.paymentTerms || "14 Tage netto")}</p>
-    ${inv.bank?.iban ? `<p>${escapeHtml([inv.bank.name, inv.bank.iban, inv.bank.bic].filter(Boolean).join(" · "))}</p>` : ""}
-    <p>${escapeHtml(settings?.rechnungFooter || "Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer.")}</p>
-  </div>
-
-  <script>window.onload = () => { setTimeout(() => window.print(), 300); };</script>
-</body>
-</html>`;
+    const html = invoicePrintHtml(inv, settings, vatRate, lang);
     printWindow.document.write(html);
     printWindow.document.close();
   }
@@ -521,31 +216,7 @@ export default function InvoicingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format,
-          invoice: {
-            invoice_number: inv.number,
-            client: inv.client,
-            client_address: inv.clientAddress,
-            case_number: inv.caseNumber,
-            date: inv.date,
-            due_date: inv.dueDate,
-            items: inv.items,
-            expenses: inv.expenses,
-            subtotal: inv.subtotal,
-            expense_total: inv.expenseTotal,
-            advance_payment: inv.advancePayment,
-            vat_rate: inv.vatRate,
-            tax: inv.tax,
-            total: inv.total,
-            payment_terms: inv.paymentTerms,
-            bank: inv.bank,
-            notes: inv.notes,
-            invoice_type: inv.invoiceType,
-            leitweg_id: inv.leitwegId,
-            reverse_charge: inv.reverseCharge,
-            client_vat_id: inv.clientVatId,
-            parent_invoice_number: inv.parentInvoiceNumber,
-            parent_invoice_date: inv.parentInvoiceDate,
-          },
+          invoice: eInvoicePayload(inv),
           settings,
           options: {
             leitwegId: inv.leitwegId,
@@ -591,31 +262,7 @@ export default function InvoicingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format: "zugferd_scratch",
-          invoice: {
-            invoice_number: inv.number,
-            client: inv.client,
-            client_address: inv.clientAddress,
-            case_number: inv.caseNumber,
-            date: inv.date,
-            due_date: inv.dueDate,
-            items: inv.items,
-            expenses: inv.expenses,
-            subtotal: inv.subtotal,
-            expense_total: inv.expenseTotal,
-            advance_payment: inv.advancePayment,
-            vat_rate: inv.vatRate,
-            tax: inv.tax,
-            total: inv.total,
-            payment_terms: inv.paymentTerms,
-            bank: inv.bank,
-            notes: inv.notes,
-            invoice_type: inv.invoiceType,
-            leitweg_id: inv.leitwegId,
-            reverse_charge: inv.reverseCharge,
-            client_vat_id: inv.clientVatId,
-            parent_invoice_number: inv.parentInvoiceNumber,
-            parent_invoice_date: inv.parentInvoiceDate,
-          },
+          invoice: eInvoicePayload(inv),
           settings,
           options: {
             leitwegId: inv.leitwegId,
@@ -1041,11 +688,7 @@ export default function InvoicingPage() {
       inv.client.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const sumOf = (list: Invoice[]) => list.reduce((s, i) => s + (Number(i.total) || 0), 0);
-  const drafts = invoices.filter((i) => i.status === "draft");
-  const outstanding = invoices.filter((i) => i.status === "sent" || i.status === "overdue");
-  const overdueCount = invoices.filter((i) => i.status === "overdue").length;
-  const paid = invoices.filter((i) => i.status === "paid");
+  const { drafts, outstanding, overdueCount, paid } = invoiceOverview(invoices);
   const en = lang === "en";
   const countLabel = (n: number) =>
     en ? `${n} ${n === 1 ? "invoice" : "invoices"}` : `${n} ${n === 1 ? "Rechnung" : "Rechnungen"}`;
@@ -1129,12 +772,12 @@ export default function InvoicingPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <InvoiceStat
             label={en ? "Drafts" : "Entwürfe"}
-            value={formatEur(sumOf(drafts), lang)}
+            value={formatEur(sumOfTotals(drafts), lang)}
             sub={countLabel(drafts.length)}
           />
           <InvoiceStat
             label={t("inv.outstanding")}
-            value={formatEur(sumOf(outstanding), lang)}
+            value={formatEur(sumOfTotals(outstanding), lang)}
             sub={
               overdueCount > 0
                 ? `${countLabel(outstanding.length)} · ${overdueCount} ${t("inv.status_overdue").toLowerCase()}`
@@ -1144,7 +787,7 @@ export default function InvoicingPage() {
           />
           <InvoiceStat
             label={t("inv.paid")}
-            value={formatEur(sumOf(paid), lang)}
+            value={formatEur(sumOfTotals(paid), lang)}
             sub={countLabel(paid.length)}
           />
         </div>
@@ -1473,85 +1116,5 @@ export default function InvoicingPage() {
         </ul>
       )}
     </div>
-  );
-}
-
-function InvoiceStat({
-  label,
-  value,
-  sub,
-  tone,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  tone?: "warning" | "danger";
-}) {
-  return (
-    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
-      <div
-        className={cn(
-          "mt-1 text-xl font-semibold tabular-nums",
-          tone === "danger"
-            ? "text-[color:var(--ds-danger-text)]"
-            : tone === "warning"
-              ? "text-[color:var(--ds-warning-text)]"
-              : "text-[color:var(--ds-text)]"
-        )}
-      >
-        {value}
-      </div>
-      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">{sub}</div>
-    </div>
-  );
-}
-
-function IconAction({
-  label,
-  onClick,
-  disabled,
-  className,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      className={cn(
-        "rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none disabled:opacity-40 motion-reduce:transition-none",
-        className
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function HubMenuLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: typeof FileText;
-  label: string;
-}) {
-  return (
-    <DropdownMenuItem asChild className="gap-2 text-xs">
-      <Link href={href}>
-        <Icon size={13} aria-hidden="true" />
-        {label}
-      </Link>
-    </DropdownMenuItem>
   );
 }

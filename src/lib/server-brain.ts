@@ -175,8 +175,9 @@ export function createServerBrainClient(headers: Record<string, string>): Server
     },
 
     deletePage(slug) {
-      // The engine has no DELETE route — soft-delete by tombstoning via the
-      // merge-update POST (same path updatePage uses).
+      // Soft-delete by tombstoning via the merge-update POST (same path
+      // updatePage uses). The engine's DELETE /api/pages/{slug} would set
+      // deleted_at instead; callers of this client rely on the tombstone.
       return engineJson<{ success?: boolean }>(headers, "/api/pages", {
         method: "POST",
         body: JSON.stringify({

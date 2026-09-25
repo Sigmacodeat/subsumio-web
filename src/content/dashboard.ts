@@ -10805,6 +10805,14 @@ export const D = {
     de: "Voll-Backup erfolgreich erstellt",
     en: "Full backup successfully created",
   },
+  "admin.backup.created_incomplete": {
+    de: "Backup unvollständig",
+    en: "Backup incomplete",
+  },
+  "admin.backup.created_incomplete_desc": {
+    de: "Die Sicherung wurde gespeichert, ist aber nicht vollständig — Details in der Backup-Datei",
+    en: "The backup was saved but is incomplete — details in the backup file",
+  },
   "admin.backup.creating": { de: "Erstelle...", en: "Creating..." },
   "admin.backup.delete": { de: "Löschen", en: "Delete" },
   "admin.backup.delete_failed": { de: "Löschen fehlgeschlagen", en: "Failed to delete" },

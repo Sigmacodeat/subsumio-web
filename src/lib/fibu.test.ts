@@ -1,6 +1,5 @@
 import { describe, test, expect } from "vitest";
 import {
-  bankTransactionId,
   createBankTransaction,
   autoMatchTransaction,
   applyMatch,

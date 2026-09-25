@@ -2,7 +2,6 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
-import { engineWriteBestEffort } from "@/lib/engine-write";
 import {
   createRedTeamPrompt,
   parseRedTeamOutput,

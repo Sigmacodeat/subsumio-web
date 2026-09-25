@@ -1,11 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import {
-  checkSingleDeadline,
-  parseDeadlineCalendarPage,
-  type DeadlineCheckResult,
-} from "./deadline-post-check";
+import { checkSingleDeadline, parseDeadlineCalendarPage } from "./deadline-post-check";
 
 describe("checkSingleDeadline", () => {
   test("returns null when no matching rule found", () => {

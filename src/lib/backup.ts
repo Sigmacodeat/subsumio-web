@@ -22,6 +22,22 @@ export interface BackupMetadata {
   pageTypes: Record<string, number>;
   status: "completed" | "failed";
   error?: string;
+  /** False when entries or texts are missing or the run was cut off. Absent on older backups. */
+  complete?: boolean;
+  truncated?: boolean;
+  expectedPages?: number | null;
+  pagesWithoutContent?: number;
+}
+
+/** Completeness facts of a backup run; every field given (warnings too) goes into the file. */
+export interface BackupCompleteness {
+  complete: boolean;
+  truncated: boolean;
+  expected_pages: number | null;
+  pages_without_content: number;
+  truncated_warning?: string;
+  count_warning?: string;
+  warning?: string;
 }
 
 async function ensureBackupDir(): Promise<void> {
@@ -66,7 +82,8 @@ export async function listBackups(): Promise<BackupMetadata[]> {
 
 export async function createBackup(
   pages: Array<Record<string, unknown>>,
-  createdBy: string
+  createdBy: string,
+  completeness?: BackupCompleteness
 ): Promise<BackupMetadata> {
   await ensureBackupDir();
   const id = `backup_${new Date().toISOString().replace(/[:.]/g, "-")}`;
@@ -84,8 +101,9 @@ export async function createBackup(
       type: "full_backup",
       generated_at: new Date().toISOString(),
       created_by: createdBy,
-      total_pages: pages.length,
       format: "JSON",
+      ...completeness,
+      total_pages: pages.length,
     },
     pages,
   };
@@ -103,6 +121,14 @@ export async function createBackup(
     totalSize: stat.size,
     pageTypes,
     status: "completed",
+    ...(completeness
+      ? {
+          complete: completeness.complete,
+          truncated: completeness.truncated,
+          expectedPages: completeness.expected_pages,
+          pagesWithoutContent: completeness.pages_without_content,
+        }
+      : {}),
   };
 
   const metaPath = path.join(BACKUP_DIR, `${filename}.meta.json`);

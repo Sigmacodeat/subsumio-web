@@ -499,14 +499,18 @@ export function engineHeadersForBrainWithMatterScope(
  * Merge-update a page's frontmatter (and optionally content/title/type) on the
  * engine.
  *
- * The engine exposes ONLY `GET` + `POST` on `/api/pages` — there is NO `PATCH`
- * and NO `DELETE` route. A partial update is `POST /api/pages` with
- * `merge:true`: the engine loads the existing page, overlays the provided
+ * The engine has NO `PATCH` route on `/api/pages`. A partial update is
+ * `POST /api/pages` with `merge:true`: the engine loads the existing page, overlays the provided
  * frontmatter keys, and keeps the body/title/type when omitted. This helper is
  * the single correct way for server routes to patch a page. The previous
  * `PATCH ${ENGINE_URL}/api/pages/{slug}` calls hit a non-existent route and
  * 404'd silently, so every frontmatter writeback (case reconciliation, analysis
  * status, archive/restore cascades) was a no-op.
+ *
+ * Deleting is a separate route: `DELETE /api/pages/{slug}` soft-deletes the
+ * page (`deleted_at`, matter write check, restorable; lists leave it out).
+ * Some web paths still "delete" by stamping `status: "tombstoned"` through
+ * this helper instead — see src/lib/tombstone.ts.
  *
  * Semantics worth knowing:
  *  - Pass a frontmatter key with value `null` to REMOVE it — the engine drops

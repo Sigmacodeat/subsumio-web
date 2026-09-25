@@ -7,7 +7,6 @@ import { Search, BookOpen, ChevronRight, Loader2, AlertCircle, Upload } from "lu
 import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn, formatDate } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { BrainPage, SearchResult } from "@/lib/types";

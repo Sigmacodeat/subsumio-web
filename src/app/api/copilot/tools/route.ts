@@ -16,11 +16,11 @@ import { listAllTimeEntries, type TimeEntryWithCase } from "@/lib/time-tracking"
 import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
 import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { requestConflictCheck } from "@/lib/conflict-gate";
-import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { reserveInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
 import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
-import { addDaysToDateString, addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
+import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
 import { brainPageHref, INVOICING_HREF } from "@/lib/dashboard-hrefs";
@@ -2637,19 +2637,12 @@ async function executeInvoiceDraft(
     const total = totals.total;
     const paymentDays = Math.max(1, parseInt(kanzlei?.zahlungszielTage || "14", 10) || 14);
 
-    let existing: string[] = [];
-    try {
-      const pages = await listEnginePages(ctx.headers, "invoice", 50_000);
-      existing = pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
-    } catch {
-      // Der Zähler garantiert Eindeutigkeit auch ohne Bestandsliste.
-    }
     const year = firmYear();
-    const invoiceNumber = await allocateInvoiceNumber(
-      ctx.brainId,
-      year,
-      highestInvoiceNumber(existing, year)
-    );
+    // Der Bestand wird nur gelesen, um den Jahreszähler erstmals zu befüllen.
+    const invoiceNumber = await reserveInvoiceNumber(ctx.brainId, year, async () => {
+      const pages = await listEnginePages(ctx.headers, "invoice", 50_000);
+      return pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+    });
 
     const now = new Date();
     const invoice = {
