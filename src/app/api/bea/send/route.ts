@@ -3,6 +3,7 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import {
   sendFiling,
+  exportFilingManually,
   confirmReceipt,
   validateFilingPackage,
   type FilingPackage,
@@ -12,12 +13,7 @@ import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { resolveFilingTransport } from "@/lib/legal/filing-transport";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import {
-  assertOutputActionAllowed,
-  VerificationPolicyError,
-  buildPolicyOutput,
-  type AttorneyOverride,
-} from "@/lib/verification-policy";
+import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +23,9 @@ const beaSendSchema = z.object({
   court: z.string().min(1).max(300),
   case_number: z.string().max(200).optional(),
   subject: z.string().min(1).max(500),
-  sender_name: z.string().min(1).max(300),
+  // Ignored: the sender always comes from the firm settings (kept optional
+  // so older clients do not fail validation).
+  sender_name: z.string().max(300).optional(),
   sender_id: z.string().max(200).optional(),
   priority: z.enum(["normal", "urgent", "fristgebunden"]).default("normal"),
   deadline_date: z.string().optional(),
@@ -45,27 +43,8 @@ const beaSendSchema = z.object({
     )
     .min(1)
     .max(20),
-  verification: z
-    .object({
-      state: z.enum([
-        "VERIFIED",
-        "VERIFIED_WITH_WARNINGS",
-        "NEEDS_HUMAN_REVIEW",
-        "BLOCKED",
-        "VERIFIER_ERROR",
-      ]),
-      content_hash: z.string().length(64),
-      receipt_hash: z.string().length(64).optional(),
-      override: z
-        .object({
-          user_id: z.string().min(1),
-          reason: z.string().min(10),
-          timestamp: z.string().min(1),
-          output_hash: z.string().length(64),
-        })
-        .optional(),
-    })
-    .optional(),
+  /** Attorney release of a filing whose draft is not verified (reason ≥ 10 chars, audited). */
+  verification_override: z.object({ reason: z.string().trim().min(10).max(2000) }).optional(),
 });
 
 interface MiddlewareConfig {
@@ -88,7 +67,7 @@ function getMiddlewareConfig(): MiddlewareConfig | null {
 async function fetchFilingPackage(
   ctx: { headers: Record<string, string>; brainId: string },
   filingSlug: string
-): Promise<FilingPackage | null> {
+): Promise<{ pkg: FilingPackage | null; draftSlug: string | null } | null> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(filingSlug)}`, {
       headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -97,7 +76,10 @@ async function fetchFilingPackage(
     if (!res.ok) return null;
     const data = await res.json();
     const fm = (data.frontmatter ?? {}) as Record<string, unknown>;
-    return fm.package as FilingPackage;
+    return {
+      pkg: (fm.package as FilingPackage) ?? null,
+      draftSlug: typeof fm.draft_slug === "string" ? fm.draft_slug : null,
+    };
   } catch {
     return null;
   }
@@ -144,36 +126,38 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    // ── Verification policy check (file_court) ──
-    if (body.verification) {
-      const output = buildPolicyOutput(
-        body.filing_slug,
-        body.verification.state,
-        body.verification.content_hash,
-        { receipt_hash: body.verification.receipt_hash, title: body.subject }
-      );
-      try {
-        await assertOutputActionAllowed(
-          output,
-          "file_court",
-          { user_id: ctx.user.id, user_email: ctx.user.email, brain_id: ctx.brainId },
-          body.verification.override as AttorneyOverride | undefined
-        );
-      } catch (err) {
-        if (err instanceof VerificationPolicyError) {
-          return apiError("verification_denied", err.decision.reason, 403);
-        }
-        throw err;
-      }
+    if (!hasCourtName(body.court)) {
+      return apiError("court_missing", "Bitte das empfangende Gericht angeben", 422);
     }
+
+    // ── Verification policy check (file_court) ──
+    // Always runs, against the state stored on the draft — never a state the
+    // client claims. No stored state = NEEDS_HUMAN_REVIEW (fail-closed).
+    const denied = await enforceFileCourtPolicy(
+      ctx,
+      body.draft_slug,
+      body.verification_override?.reason
+    );
+    if (denied) return denied;
 
     const config = getMiddlewareConfig();
 
-    // 1. Fetch existing filing package
-    const existingPkg = await fetchFilingPackage(ctx, body.filing_slug);
+    // 1. Fetch existing filing package — it must belong to the checked draft.
+    const filing = await fetchFilingPackage(ctx, body.filing_slug);
+    const existingPkg = filing?.pkg ?? null;
     if (!existingPkg) {
       return apiError("filing_not_found", "Filing-Paket nicht gefunden", 404);
     }
+    if (filing?.draftSlug && filing.draftSlug !== body.draft_slug) {
+      return apiError(
+        "filing_draft_mismatch",
+        "Das Filing-Paket gehört zu einem anderen Entwurf",
+        409
+      );
+    }
+
+    const sender = await resolveFilingSender(ctx.brainId, config?.senderId);
+    if (sender instanceof Response) return sender;
 
     // 2. Validate: must be approved
     if (existingPkg.status !== "approved") {
@@ -191,9 +175,9 @@ export const POST = createHandler(
     const metadata: XJustizMetadata = {
       court: body.court,
       caseNumber: body.case_number,
-      senderName: body.sender_name,
+      senderName: sender.name,
       senderRole: "lawyer",
-      senderId: body.sender_id ?? config?.senderId,
+      senderId: sender.id,
       subject: body.subject,
       priority: body.priority,
       deadlineDate: body.deadline_date,
@@ -201,23 +185,22 @@ export const POST = createHandler(
 
     const xml = buildXJustizXml(existingPkg, metadata);
 
-    // 4. Update status to "sending"
-    const sendingPkg = sendFiling(existingPkg, `middleware-${Date.now()}`);
-    await persistFilingPackage(ctx, body.filing_slug, sendingPkg, body.draft_slug);
-
-    // 5. Send via transport adapter (fail-closed without partner config)
-    const transport = resolveFilingTransport("beA", {
-      endpoint: config?.apiUrl,
-      apiKey: config?.apiKey,
-      senderId: config?.senderId,
-    });
-
+    // 4. Without middleware nothing is transmitted: the package is marked for
+    //    manual submission (export_manual) and stays open until the receipt
+    //    is confirmed — never "sending".
     if (!config) {
-      // No middleware configured — return XJustiz XML for manual upload
-      // but mark as "sending" so the UI shows it's in progress
+      const manualPkg = exportFilingManually(existingPkg, ctx.user.email ?? ctx.user.id);
+      const saved = await persistFilingPackage(ctx, body.filing_slug, manualPkg, body.draft_slug);
+      if (!saved) {
+        return apiError(
+          "filing_not_saved",
+          "Der Status des Filing-Pakets konnte nicht gespeichert werden",
+          502
+        );
+      }
       return apiSuccess({
-        filing_id: sendingPkg.id,
-        status: "sending",
+        filing_id: manualPkg.id,
+        status: manualPkg.status,
         xml,
         middleware_configured: false,
         instructions:
@@ -225,6 +208,17 @@ export const POST = createHandler(
           "laden Sie es manuell im beA-Portal hoch. Bestätigen Sie danach die Empfangsbestätigung.",
       });
     }
+
+    // 5. Update status to "sending"
+    const sendingPkg = sendFiling(existingPkg, `middleware-${Date.now()}`);
+    await persistFilingPackage(ctx, body.filing_slug, sendingPkg, body.draft_slug);
+
+    // 6. Send via transport adapter (fail-closed without partner config)
+    const transport = resolveFilingTransport("beA", {
+      endpoint: config.apiUrl,
+      apiKey: config.apiKey,
+      senderId: config.senderId,
+    });
 
     try {
       const result = await transport.send({

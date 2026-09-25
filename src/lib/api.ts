@@ -2419,11 +2419,12 @@ export const api = {
       court: string;
       case_number?: string;
       subject: string;
-      sender_name: string;
+      sender_name?: string;
       sender_id?: string;
       priority?: "normal" | "urgent" | "fristgebunden";
       deadline_date?: string;
       deadline_id?: string;
+      verification_override?: { reason: string };
       documents: Array<{
         title: string;
         file_path: string;
@@ -2442,11 +2443,12 @@ export const api = {
       court: string;
       case_number?: string;
       subject: string;
-      sender_name: string;
+      sender_name?: string;
       sender_id?: string;
       priority?: "normal" | "urgent" | "fristgebunden";
       deadline_date?: string;
       deadline_id?: string;
+      verification_override?: { reason: string };
     }): Promise<Record<string, unknown>> {
       return request("/api/bea/send/retry", { method: "POST", body: JSON.stringify(input) });
     },

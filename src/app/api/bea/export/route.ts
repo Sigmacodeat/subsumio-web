@@ -7,6 +7,7 @@ import {
 } from "@/lib/efiling-architecture";
 import { buildBeAExportPackage, type XJustizMetadata } from "@/lib/xjustiz";
 import { logAudit } from "@/lib/audit";
+import { hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
 
 const documentSchema = z.object({
   title: z.string().min(1).max(300),
@@ -22,7 +23,8 @@ const beaExportSchema = z.object({
   court: z.string().min(1).max(300),
   case_number: z.string().max(200).optional(),
   subject: z.string().min(1).max(500),
-  sender_name: z.string().min(1).max(300),
+  // Ignored: the sender always comes from the firm settings.
+  sender_name: z.string().max(300).optional(),
   sender_id: z.string().max(200).optional(),
   priority: z.enum(["normal", "urgent", "fristgebunden"]).default("normal"),
   deadline_date: z.string().optional(),
@@ -48,6 +50,12 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    if (!hasCourtName(body.court)) {
+      return apiError("court_missing", "Bitte das empfangende Gericht angeben", 422);
+    }
+    const sender = await resolveFilingSender(ctx.brainId, process.env.BEA_SENDER_ID);
+    if (sender instanceof Response) return sender;
+
     // 1. Build FilingPackage
     const pkg = createFilingPackage({
       case_slug: body.case_slug,
@@ -91,9 +99,9 @@ export const POST = createHandler(
     const metadata: XJustizMetadata = {
       court: body.court,
       caseNumber: body.case_number,
-      senderName: body.sender_name,
+      senderName: sender.name,
       senderRole: "lawyer",
-      senderId: body.sender_id,
+      senderId: sender.id,
       subject: body.subject,
       priority: body.priority,
       deadlineDate: body.deadline_date,
