@@ -64,7 +64,10 @@ vi.mock("@/lib/engine", () => ({
   engineHeadersWithCaseJurisdiction: async (h: Record<string, string>) => h,
 }));
 vi.mock("@/lib/usage", () => ({ recordQuery: vi.fn() }));
-vi.mock("@/lib/model-choice", () => ({ resolveModelChoice: vi.fn(async () => undefined) }));
+const modelChoice = vi.hoisted(() => ({
+  fn: vi.fn(async (): Promise<string | undefined> => undefined),
+}));
+vi.mock("@/lib/model-choice", () => ({ resolveModelChoice: modelChoice.fn }));
 vi.mock("@/lib/citation-gate", () => ({ createCitationGateStream: (s: ReadableStream) => s }));
 vi.mock("@/lib/guardrail-stream-interceptor", () => ({
   interceptGuardrailStream: (s: ReadableStream) => s,
@@ -94,6 +97,43 @@ beforeEach(() => {
   ledger.refunded = [];
 });
 afterEach(() => vi.unstubAllGlobals());
+
+describe("POST /api/think — Nur EU", () => {
+  it("a non-EU pick under EU-only: 403 with the reason, engine not called, credit refunded", async () => {
+    const { ModelPolicyError } = await import("@/lib/eu-policy-refusal");
+    modelChoice.fn.mockRejectedValueOnce(new ModelPolicyError());
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await call();
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/Nur EU/);
+    expect(fetchMock).not.toHaveBeenCalled();
+    await flush();
+    expect(ledger.balance).toBe(1);
+  });
+
+  it("engine refuses a non-EU route: clear 403 message, no silent fallback", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: "eu_only_refused",
+            message: 'EU-only mode (SUBSUMIO_EU_ONLY=1) refused stream via "anthropic:x"',
+          },
+          { status: 403 }
+        )
+      )
+    );
+    const res = await call();
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.code).toBe("eu_only_refused");
+    expect(body.error).toMatch(/keine Daten übermittelt/);
+    await flush();
+    expect(ledger.balance).toBe(1);
+  });
+});
 
 describe("POST /api/think — credits", () => {
   it("engine 502 → booking taken back, balance unchanged", async () => {

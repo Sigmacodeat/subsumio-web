@@ -23,6 +23,7 @@ import type {
 import { rowToMinionJob, rowToInboxMessage, rowToAttachment } from "./types.ts";
 import { validateAttachment } from "./attachments.ts";
 import { isProtectedJobName } from "./protected-names.ts";
+import { isRequestEuOnly, JOB_EU_ONLY_KEY } from "../ai/request-eu-policy.ts";
 import { defaultTimeoutMsFor } from "./handler-timeouts.ts";
 import { validateMandatorySubmission } from "./mandatory-validator.ts";
 import {
@@ -150,6 +151,10 @@ export class MinionQueue {
         throw new Error(`Mandatory job submission rejected: ${result.error}`);
       }
     }
+
+    // A job queued inside a firm's "Nur EU" request (or by a job running
+    // under it) carries the demand along; the worker re-enters the scope.
+    if (isRequestEuOnly()) data = { ...(data ?? {}), [JOB_EU_ONLY_KEY]: true };
 
     await this.ensureSchema();
 

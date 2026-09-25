@@ -14,6 +14,7 @@ import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
 import { resolveModelChoice } from "@/lib/model-choice";
+import { euOnlyRefusalResponse, isEuOnlyRefusal, ModelPolicyError } from "@/lib/eu-policy-refusal";
 import { createHash, randomUUID } from "node:crypto";
 import {
   attachUsageToBooking,
@@ -172,6 +173,9 @@ export const POST = createHandler(
 
       if (!upstream.ok) {
         refundBooking();
+        const errBody = await upstream.json().catch(() => null);
+        // "Nur EU": the engine refused a non-EU model — say so, no fallback.
+        if (isEuOnlyRefusal(errBody)) return euOnlyRefusalResponse();
         return apiError("engine_error", `Engine returned ${upstream.status}`, upstream.status);
       }
 
@@ -205,6 +209,10 @@ export const POST = createHandler(
         }
       );
     } catch (err) {
+      if (err instanceof ModelPolicyError) {
+        refundBooking();
+        return euOnlyRefusalResponse(err.message);
+      }
       log.error("[think] engine unreachable:", err instanceof Error ? err.message : String(err));
       // Aborted by the user ("Stopp"): the answer was abandoned, it stays paid.
       if (!req.signal.aborted) refundBooking();

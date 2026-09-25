@@ -67,6 +67,7 @@ import { isOpsHost, isPlatformOperator } from "@/lib/auth/platform-operator";
 import { hit } from "@/lib/auth/rate-limit";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 import type { WorkProductType } from "@/lib/work-product-receipts";
+import { euOnlyRefusalResponse, isEuOnlyRefusal } from "@/lib/eu-policy-refusal";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/api-handler");
@@ -1024,6 +1025,8 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
               { status: 503 }
             );
           }
+          // "Nur EU": the engine refused a non-EU model for this firm.
+          if (isEuOnlyRefusal(errPayload)) return euOnlyRefusalResponse();
           return Response.json(
             errPayload.error ? errPayload : { error: `Engine returned ${upstream.status}` },
             { status: upstream.status }

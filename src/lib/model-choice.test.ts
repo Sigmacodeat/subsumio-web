@@ -42,9 +42,15 @@ describe("resolveModelChoice", () => {
     expect(await resolveModelChoice("u1", "gpt-4o")).toBeUndefined();
   });
 
-  test("the firm's EU-only policy blocks non-EU models", async () => {
+  test("EU-only: a non-EU pick is refused with a reason, never silently rerouted", async () => {
     orgs.set("o1", { id: "o1", modelPolicy: "eu_only" });
-    expect(await resolveModelChoice("u1", "claude-opus-5")).toBeUndefined();
+    await expect(resolveModelChoice("u1", "claude-opus-5")).rejects.toThrow(/Nur EU/);
     expect(await resolveModelChoice("u1", "mistral-large-3")).toBe("mistral-large-3");
+  });
+
+  test("EU-only: a saved non-EU preference leaves routing to the engine's EU-only enforcement", async () => {
+    orgs.set("o1", { id: "o1", modelPolicy: "eu_only" });
+    users.set("u1", { id: "u1", orgId: "o1", preferredModel: "claude-opus-5" });
+    expect(await resolveModelChoice("u1", undefined)).toBeUndefined();
   });
 });

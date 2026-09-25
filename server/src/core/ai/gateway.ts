@@ -63,6 +63,7 @@ import { hasAnthropicKey } from "./anthropic-key.ts";
 import { AIConfigError, AITransientError, normalizeAIError } from "./errors.ts";
 import { providerFailoverModel } from "./provider-failover.ts";
 import { assertEuEmbedding, assertEuResidency, EuResidencyError } from "./eu-policy.ts";
+import { withRequestEuPolicy } from "./request-eu-policy.ts";
 import { bedrockRuntimeBaseUrl, resolveBedrockRegion } from "./bedrock-config.ts";
 import { runGuardrails, hasGuardrails, type GuardrailHook } from "../guardrails.ts";
 
@@ -216,7 +217,9 @@ let _chatTransport: ((opts: ChatOpts) => Promise<ChatResult>) | null = null;
  * calling early.
  */
 function policyEnv(): Record<string, string | undefined> {
-  return _config?.env ?? process.env;
+  // A firm that demands EU-only (request/job scope) gets the same refusal as
+  // the deployment-wide SUBSUMIO_EU_ONLY switch — see request-eu-policy.ts.
+  return withRequestEuPolicy(_config?.env ?? process.env);
 }
 
 /**

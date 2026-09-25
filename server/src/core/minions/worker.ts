@@ -23,6 +23,7 @@ import type {
 } from "./types.ts";
 import { UnrecoverableError } from "./types.ts";
 import { MinionQueue } from "./queue.ts";
+import { jobRunsEuOnly, runWithRequestEuOnly } from "../ai/request-eu-policy.ts";
 import { calculateBackoff } from "./backoff.ts";
 import { RateLeaseUnavailableError } from "./handlers/subagent.ts";
 import { logLeasePressure } from "./lease-pressure-audit.ts";
@@ -1007,7 +1008,11 @@ export class MinionWorker extends EventEmitter {
     };
 
     try {
-      const result = await handler(context);
+      // "Nur EU" travels with the job: every model call it makes (and every
+      // job it queues) stays under the EU-only refusal.
+      const result = (await jobRunsEuOnly(this.engine, job.data))
+        ? await runWithRequestEuOnly(() => handler(context))
+        : await handler(context);
 
       clearInterval(lockTimer);
 

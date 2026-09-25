@@ -82,6 +82,11 @@ import { persistTrace } from "../core/reasoning-trace.ts";
 import { formatCitationTitle } from "../core/think/ogh-format.ts";
 import { MinionQueue } from "../core/minions/queue.ts";
 import {
+  MODEL_POLICY_HEADER,
+  resolveRequestEuOnly,
+  runWithRequestEuOnly,
+} from "../core/ai/request-eu-policy.ts";
+import {
   readSafeZipEntries,
   type ArchiveBudget,
   ArchiveSafetyError,
@@ -3210,6 +3215,35 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   });
   app.use("/api", guard);
 
+  // A firm with "Nur EU" (web org policy) sends x-subsumio-model-policy:
+  // eu_only. Everything this request does — model calls and the jobs it
+  // queues — then runs under the EU-only refusal (request-eu-policy.ts).
+  // The demand is remembered per source, so the firm's server-side work
+  // (crons, webhooks) without a session header stays under it too.
+  app.use("/api", async (req: Request, res: Response, next: NextFunction) => {
+    let euOnly: boolean;
+    try {
+      euOnly = await resolveRequestEuOnly(
+        engine,
+        requestSourceId(req),
+        req.headers[MODEL_POLICY_HEADER]
+      );
+    } catch (e) {
+      // Cannot establish the firm's policy: refuse rather than risk a
+      // non-EU call for a firm that demanded EU-only.
+      console.error(
+        `[web-api] EU policy lookup failed: ${e instanceof Error ? e.message : String(e)}`
+      );
+      res.status(503).json({ error: "policy_unavailable" });
+      return;
+    }
+    if (euOnly) {
+      runWithRequestEuOnly(() => next());
+      return;
+    }
+    next();
+  });
+
   // Fail-closed tenant gate: in SaaS mode a missing/invalid tenant header
   // must NEVER silently widen to the all-seeing 'default' scope.
   if (requireTenant) {
@@ -3965,11 +3999,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
+      const { EuResidencyError } = await import("../core/ai/eu-policy.ts");
+      const euRefused = e instanceof EuResidencyError;
       if (res.headersSent) {
         // SSE already open — deliver error as a structured event then close.
-        res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+        res.write(
+          `data: ${JSON.stringify({ error: msg, ...(euRefused ? { code: "eu_only_refused" } : {}) })}\n\n`
+        );
         res.write("data: [DONE]\n\n");
         res.end();
+      } else if (euRefused) {
+        // "Nur EU": no request left the process — a refusal, not a failure.
+        res.status(403).json({ error: "eu_only_refused", message: msg });
       } else {
         res.status(500).json({ error: "think_failed", message: msg });
       }
