@@ -1298,7 +1298,10 @@ export const api = {
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
         if (options?.contract_type) params.set("contract_type", options.contract_type);
         const qs = params.toString();
-        return request(`/api/legal/playbooks${qs ? `?${qs}` : ""}`);
+        // Route answers { data: [...] } — unwrap, or the list reads as empty.
+        return request(`/api/legal/playbooks${qs ? `?${qs}` : ""}`).then((r) =>
+          unwrapApiBody<BrainPage[]>(r)
+        );
       },
 
       get(slug: string): Promise<BrainPage> {
@@ -1316,7 +1319,7 @@ export const api = {
         return request("/api/legal/playbooks", {
           method: "POST",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapApiBody<{ slug: string }>(r));
       },
 
       update(
@@ -1353,7 +1356,10 @@ export const api = {
         if (options?.category) params.set("category", options.category);
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
         const qs = params.toString();
-        return request(`/api/legal/templates${qs ? `?${qs}` : ""}`);
+        // Route answers { data: [...] } — unwrap, or the list reads as empty.
+        return request(`/api/legal/templates${qs ? `?${qs}` : ""}`).then((r) =>
+          unwrapApiBody<BrainPage[]>(r)
+        );
       },
 
       get(slug: string): Promise<BrainPage> {
@@ -1372,7 +1378,7 @@ export const api = {
         return request("/api/legal/templates", {
           method: "POST",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapApiBody<{ slug: string }>(r));
       },
 
       update(
