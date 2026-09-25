@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 
@@ -35,25 +36,29 @@ export const POST = createHandler(
     const id = `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const slug = `settings/webhooks/${id}`;
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug,
-        title: `Webhook: ${body.url}`,
-        type: "webhook_config",
-        frontmatter: {
-          id,
-          url: body.url,
-          events: body.events,
-          secret: body.secret,
-          description: body.description,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    await engineWriteOrThrow(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          title: `Webhook: ${body.url}`,
+          type: "webhook_config",
+          frontmatter: {
+            id,
+            url: body.url,
+            events: body.events,
+            secret: body.secret,
+            description: body.description,
+            status: "active",
+            created_at: new Date().toISOString(),
+          },
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Webhook"
+    );
 
     return apiSuccess({ id, url: body.url, events: body.events });
   }

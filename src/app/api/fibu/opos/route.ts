@@ -2,8 +2,15 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listOpenItems } from "@/lib/open-items";
+import { engineWriteOrThrow } from "@/lib/engine-write";
+import {
+  bankTransactionExists,
+  bankTransactionSlug,
+  changedOpenItems,
+} from "@/lib/fibu-import.server";
 import {
   createBankTransaction,
+  withBatchOccurrenceIds,
   autoMatchTransaction,
   applyMatch,
   getOposSummary,
@@ -58,10 +65,19 @@ export const POST = createHandler(
       transaction: BankTransaction;
       match: ReturnType<typeof autoMatchTransaction>;
     }> = [];
+    let skipped = 0;
 
-    for (const input of body.transactions) {
-      const txn = createBankTransaction(input);
+    // Content-derived ids: re-importing the same statement is recognised and
+    // skipped instead of applying the payments a second time.
+    const transactions = withBatchOccurrenceIds(body.transactions.map(createBankTransaction));
+
+    for (const txn of transactions) {
+      if (await bankTransactionExists(ctx.headers, txn.id)) {
+        skipped++;
+        continue;
+      }
       const match = autoMatchTransaction(txn, openItems);
+      let stored: BankTransaction = txn;
 
       if (match) {
         const { transaction: matchedTxn, openItems: updatedItems } = applyMatch(
@@ -69,22 +85,15 @@ export const POST = createHandler(
           match,
           openItems
         );
-        results.push({ transaction: matchedTxn, match });
+        stored = matchedTxn;
 
-        // CRITICAL FIX: persist ALL updated open items, not just status changes.
-        // Previously only `item.status !== original.status` was checked, which
-        // meant partial payments (paid_amount/open_amount change, status stays "open")
-        // were never persisted to the DB.
-        for (const item of updatedItems) {
-          const original = openItems.find((o) => o.id === item.id);
-          if (
-            original &&
-            (item.status !== original.status ||
-              item.paid_amount !== original.paid_amount ||
-              item.open_amount !== original.open_amount ||
-              item.dunning_fee !== original.dunning_fee)
-          ) {
-            await fetch(`${ENGINE_URL}/api/pages`, {
+        // Persist every changed open item (partial payments change the
+        // balance but not the status). A refused write aborts the import
+        // before the transaction is stored, so a retry picks it up again.
+        for (const item of changedOpenItems(openItems, updatedItems)) {
+          await engineWriteOrThrow(
+            `${ENGINE_URL}/api/pages`,
+            {
               method: "POST",
               headers: { ...ctx.headers, "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -94,33 +103,36 @@ export const POST = createHandler(
                 frontmatter: item,
               }),
               signal: AbortSignal.timeout(10_000),
-            });
-          }
+            },
+            "Offener Posten"
+          );
         }
 
-        // HIGH FIX: update in-memory state so the next transaction
-        // in this batch sees the updated balances (prevents stale matching)
+        // Next transaction in this batch sees the updated balances.
         openItems = updatedItems;
-      } else {
-        results.push({ transaction: txn, match: null });
       }
 
-      // Persist transaction
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: `legal/bank-transactions/${txn.id}`,
-          title: `${txn.date} ${txn.amount.toFixed(2)}€ ${txn.sender_name ?? ""}`,
-          type: "bank_transaction",
-          frontmatter: results[results.length - 1]!.transaction,
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...ctx.headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug: bankTransactionSlug(txn.id),
+            title: `${txn.date} ${txn.amount.toFixed(2)}€ ${txn.sender_name ?? ""}`,
+            type: "bank_transaction",
+            frontmatter: stored,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Banktransaktion"
+      );
+      results.push({ transaction: stored, match });
     }
 
     return apiSuccess({
       imported: results.length,
+      skipped,
       matched: results.filter((r) => r.match !== null).length,
       unmatched: results.filter((r) => r.match === null).length,
       results,

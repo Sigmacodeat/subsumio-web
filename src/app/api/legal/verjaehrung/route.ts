@@ -12,6 +12,7 @@ import {
   VERJAEHRUNG_PRESETS,
 } from "@/lib/legal-verjaehrung";
 import type { CaseFrontmatter } from "@/lib/legal-types";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 
@@ -130,33 +131,37 @@ async function handleCreate(headers: Record<string, string>, body: z.infer<typeo
   const deadlineDate = sol.effective_barred_date ?? sol.regular_barred_date;
   const now = new Date().toISOString();
 
-  await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify({
-      slug: deadlineSlug,
-      title: `Verjährung: ${sol.claim_label}`,
-      type: "legal_deadline",
-      content: `Automatisch generiert aus Verjährungseintrag.\n\nGesetz: ${sol.law}\nBeginn: ${sol.start_date}\nFrist: ${sol.period_years} Jahre${sol.max_period_years ? ` (max. ${sol.max_period_years} Jahre)` : ""}\nEffektives Verjährungsdatum: ${deadlineDate}`,
-      frontmatter: {
+  await engineWriteOrThrow(
+    `${ENGINE_URL}/api/pages`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({
+        slug: deadlineSlug,
+        title: `Verjährung: ${sol.claim_label}`,
         type: "legal_deadline",
-        event_type: "verjaehrung",
-        due_date: deadlineDate,
-        description: sol.claim_label,
-        status: "pending",
-        review_status: "unreviewed",
-        source: "verjaehrung_auto",
-        law: sol.law,
-        case_slug: body.caseSlug,
-        is_notfrist: true,
-        noRoll: true,
-        created_at: now,
-        updated_at: now,
-      },
-      merge: true,
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
+        content: `Automatisch generiert aus Verjährungseintrag.\n\nGesetz: ${sol.law}\nBeginn: ${sol.start_date}\nFrist: ${sol.period_years} Jahre${sol.max_period_years ? ` (max. ${sol.max_period_years} Jahre)` : ""}\nEffektives Verjährungsdatum: ${deadlineDate}`,
+        frontmatter: {
+          type: "legal_deadline",
+          event_type: "verjaehrung",
+          due_date: deadlineDate,
+          description: sol.claim_label,
+          status: "pending",
+          review_status: "unreviewed",
+          source: "verjaehrung_auto",
+          law: sol.law,
+          case_slug: body.caseSlug,
+          is_notfrist: true,
+          noRoll: true,
+          created_at: now,
+          updated_at: now,
+        },
+        merge: true,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    },
+    "Verjährungsfrist"
+  );
 
   const solWithDeadline = { ...sol, deadline_slug: deadlineSlug };
   const updated = [...existing, solWithDeadline];

@@ -7,6 +7,7 @@ import {
   FAO_REQUIRED_HOURS,
   type ContinuingEducationEntry,
 } from "@/lib/fao-tracking";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 
@@ -36,17 +37,21 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const entry = createEducationEntry(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/fao-entries/${entry.id}`,
-        title: `FAO: ${body.lawyer_name} — ${body.topic} (${body.hours}h)`,
-        type: "fao_education_entry",
-        frontmatter: entry,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    await engineWriteOrThrow(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/fao-entries/${entry.id}`,
+          title: `FAO: ${body.lawyer_name} — ${body.topic} (${body.hours}h)`,
+          type: "fao_education_entry",
+          frontmatter: entry,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Fortbildungseintrag"
+    );
     return apiSuccess({ entry });
   }
 );

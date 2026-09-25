@@ -11,6 +11,7 @@ import {
   InsuranceNotConfiguredError,
 } from "@/lib/legal/insurance-adapter";
 import { logger } from "@/lib/logger";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 const log = logger("api/legal-insurance");
 
@@ -79,17 +80,21 @@ export const POST = createHandler(
     rsv.coverage_status = "pending";
     rsv.inquired_at = new Date().toISOString();
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/rsv/${rsv.id}`,
-        title: `RSV: ${body.client_name} (${body.insurance_provider})`,
-        type: "rsv_case",
-        frontmatter: rsv,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    await engineWriteOrThrow(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/rsv/${rsv.id}`,
+          title: `RSV: ${body.client_name} (${body.insurance_provider})`,
+          type: "rsv_case",
+          frontmatter: rsv,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "RSV-Anfrage"
+    );
 
     return apiSuccess({
       rsv,

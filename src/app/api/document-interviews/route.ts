@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { createInterview, type InterviewDefinition } from "@/lib/document-interviews";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 
@@ -54,17 +55,21 @@ export const POST = createHandler(
       questions: body.questions,
       output_format: body.output_format,
     });
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/interviews/${interview.id}`,
-        title: `Interview: ${body.title}`,
-        type: "interview_definition",
-        frontmatter: interview,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    await engineWriteOrThrow(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/interviews/${interview.id}`,
+          title: `Interview: ${body.title}`,
+          type: "interview_definition",
+          frontmatter: interview,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Interview"
+    );
     return apiSuccess({ interview });
   }
 );

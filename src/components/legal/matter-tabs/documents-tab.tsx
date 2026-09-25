@@ -445,7 +445,7 @@ export function DocumentsTab() {
         >
           <span className="flex-1">
             {qesResult === "signed"
-              ? "Das Dokument wurde qualifiziert signiert. Das signierte PDF liegt jetzt zusätzlich in dieser Akte."
+              ? `Das Dokument wurde qualifiziert signiert. Das signierte PDF liegt jetzt zusätzlich in dieser Akte.${qesReason ? ` Hinweis: ${qesReason}` : ""}`
               : `Die qualifizierte Signatur wurde nicht abgeschlossen${qesReason ? `: ${qesReason}` : "."} Das Original ist unverändert.`}
           </span>
           <button

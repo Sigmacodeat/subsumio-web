@@ -1,5 +1,7 @@
 import { describe, test, expect } from "vitest";
 import {
+  bankTransactionId,
+  withBatchOccurrenceIds,
   createBankTransaction,
   autoMatchTransaction,
   applyMatch,
@@ -366,5 +368,37 @@ describe("getOverdueItems / getOposSummary", () => {
     expect(getDunningLabel(0)).toBe("");
     expect(getDunningLabel(2)).toBe("Mahnung 2");
     expect(getDunningLabel(99)).toBe("");
+  });
+});
+
+describe("bankTransactionId", () => {
+  const input = {
+    date: "2026-09-20",
+    amount: 500,
+    direction: "credit" as const,
+    iban: "AT61 1904 3002 3457 3201",
+    reference: "RE-2026-0042",
+  };
+
+  test("same booking → same id (re-import is recognisable)", () => {
+    expect(bankTransactionId(input)).toBe(bankTransactionId({ ...input }));
+    expect(createBankTransaction(input).id).toBe(bankTransactionId(input));
+    // Formatting differences in the IBAN do not change the identity.
+    expect(bankTransactionId({ ...input, iban: "AT611904300234573201" })).toBe(
+      bankTransactionId(input)
+    );
+  });
+
+  test("different amount, date or reference → different id", () => {
+    const base = bankTransactionId(input);
+    expect(bankTransactionId({ ...input, amount: 500.01 })).not.toBe(base);
+    expect(bankTransactionId({ ...input, date: "2026-09-21" })).not.toBe(base);
+    expect(bankTransactionId({ ...input, reference: "RE-2026-0043" })).not.toBe(base);
+  });
+
+  test("identical bookings within one statement get stable occurrence suffixes", () => {
+    const t = createBankTransaction(input);
+    const ids = withBatchOccurrenceIds([t, t, t]).map((x) => x.id);
+    expect(ids).toEqual([t.id, `${t.id}-2`, `${t.id}-3`]);
   });
 });

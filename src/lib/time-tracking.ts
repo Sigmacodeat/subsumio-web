@@ -14,6 +14,7 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { zonedDateString } from "@/lib/datetime";
 import { createHash } from "node:crypto";
+import { assertEngineWriteOk } from "@/lib/engine-write";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -813,11 +814,14 @@ export async function clearCurrentActivity(
   const headers = timeHeaders(brainId, callerHeaders);
   const slug = currentActivitySlug(userId, brainId);
 
-  await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
     method: "DELETE",
     headers,
     signal: AbortSignal.timeout(10_000),
   });
+  // 404: nothing running — already cleared. Any other failure leaves the
+  // timer running, so it must not be reported as stopped.
+  if (res.status !== 404) await assertEngineWriteOk(res, "Laufende Zeiterfassung");
 }
 
 /**

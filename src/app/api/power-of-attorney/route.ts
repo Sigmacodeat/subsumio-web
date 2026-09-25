@@ -7,6 +7,7 @@ import {
   getExpiringPoAs,
   type PowerOfAttorney,
 } from "@/lib/power-of-attorney";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 
@@ -34,17 +35,21 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const poa = createPowerOfAttorney(body);
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/poa/${poa.id}`,
-        title: `Vollmacht: ${body.client_name} (${body.type})`,
-        type: "power_of_attorney",
-        frontmatter: poa,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    await engineWriteOrThrow(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/poa/${poa.id}`,
+          title: `Vollmacht: ${body.client_name} (${body.type})`,
+          type: "power_of_attorney",
+          frontmatter: poa,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Vollmacht"
+    );
     return apiSuccess({ poa });
   }
 );

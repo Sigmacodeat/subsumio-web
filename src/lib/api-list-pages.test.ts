@@ -93,13 +93,49 @@ describe("api.brain.batchListPagesDetailed", () => {
     expect(r.errors).toEqual(["invoice"]);
   });
 
-  test("legacy batchListPages keeps returning only results", async () => {
+  test("legacy batchListPages returns only results when every type loaded", async () => {
+    csrfFetchMock.mockImplementation(async () =>
+      Response.json({ results: { legal_case: [page("a")] }, errors: [] })
+    );
+    const r = await api.brain.batchListPages(["legal_case"], 200);
+    expect(r.legal_case).toHaveLength(1);
+    expect("errors" in r).toBe(false);
+  });
+
+  test("legacy batchListPages rejects when a type failed — never an empty list", async () => {
     csrfFetchMock.mockImplementation(async () =>
       Response.json({ results: { legal_case: [page("a")] }, errors: ["invoice"] })
     );
-    const r = await api.brain.batchListPages(["legal_case", "invoice"], 200);
-    expect(r.legal_case).toHaveLength(1);
-    expect("errors" in r).toBe(false);
+    await expect(api.brain.batchListPages(["legal_case", "invoice"], 200)).rejects.toMatchObject({
+      status: 503,
+      code: "batch_list_incomplete",
+    });
+  });
+});
+
+describe("request() error envelope", () => {
+  test("apiError shape: text from `error`, code from `code`", async () => {
+    csrfFetchMock.mockImplementation(async () =>
+      Response.json(
+        { error: "Die Auslage ist bereits abgerechnet.", code: "expense_billed" },
+        { status: 409 }
+      )
+    );
+    await expect(api.brain.batchListPagesDetailed(["x"])).rejects.toMatchObject({
+      status: 409,
+      code: "expense_billed",
+      message: "Die Auslage ist bereits abgerechnet.",
+    });
+  });
+
+  test("legacy shape: code from `error`, text from `message`", async () => {
+    csrfFetchMock.mockImplementation(async () =>
+      Response.json({ error: "page_exists", message: "Existiert bereits." }, { status: 409 })
+    );
+    await expect(api.brain.batchListPagesDetailed(["x"])).rejects.toMatchObject({
+      code: "page_exists",
+      message: "Existiert bereits.",
+    });
   });
 });
 

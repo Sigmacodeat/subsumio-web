@@ -12,6 +12,7 @@ import {
   type PerspektivenRoleOutput,
   type PerspektivenSession,
 } from "@/lib/perspektivenraum-agent";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 const log = logger("api/legal/perspektiven-room");
 
@@ -144,8 +145,11 @@ export const POST = createHandler(
     // manifest, matching the existing red_team_result precedent (custom
     // result types are written via the generic page op, not enumerated
     // in the manifest ahead of time).
-    try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
+    // Best-effort persistence — the response still carries the session;
+    // `saved: false` tells the UI it is not in the history.
+    const saved = await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
         method: "POST",
         headers: { ...ctx.headers, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,11 +159,10 @@ export const POST = createHandler(
           frontmatter: session,
         }),
         signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // Best-effort persistence — response still carries the session.
-    }
+      },
+      "Perspektivenraum-Sitzung"
+    );
 
-    return apiSuccess({ session });
+    return apiSuccess({ session, saved });
   }
 );

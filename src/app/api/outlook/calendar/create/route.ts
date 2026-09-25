@@ -8,6 +8,7 @@ import {
 } from "@/lib/msgraph-user";
 import { getStore } from "@/lib/auth/store";
 import { ENGINE_URL } from "@/lib/engine";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -86,33 +87,39 @@ export const POST = createHandler(
         webLink = event.webLink;
       }
 
-      // If case-linked, store event reference in brain
+      // If case-linked, store event reference in brain. The Outlook event
+      // exists either way; `case_linked: false` reports a failed link.
+      let caseLinked: boolean | null = null;
       if (body.caseSlug && eventId) {
         const slug = delegated
           ? `calendar/outlook/${ctx.user.id}/${eventId}`
           : `calendar/outlook/${eventId}`;
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({
-            slug,
-            title: `Termin: ${body.subject}`,
-            type: "calendar_event",
-            frontmatter: {
+        caseLinked = await engineWriteBestEffort(
+          `${ENGINE_URL}/api/pages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...ctx.headers },
+            body: JSON.stringify({
+              slug,
+              title: `Termin: ${body.subject}`,
               type: "calendar_event",
-              case_slug: body.caseSlug,
-              outlook_event_id: eventId,
-              owner_user_id: delegated ? ctx.user.id : undefined,
-              subject: body.subject,
-              start: body.start,
-              end: body.end,
-              location: body.location,
-              web_link: webLink,
-              synced_at: new Date().toISOString(),
-            },
-          }),
-          signal: AbortSignal.timeout(10_000),
-        });
+              frontmatter: {
+                type: "calendar_event",
+                case_slug: body.caseSlug,
+                outlook_event_id: eventId,
+                owner_user_id: delegated ? ctx.user.id : undefined,
+                subject: body.subject,
+                start: body.start,
+                end: body.end,
+                location: body.location,
+                web_link: webLink,
+                synced_at: new Date().toISOString(),
+              },
+            }),
+            signal: AbortSignal.timeout(10_000),
+          },
+          "Akten-Verknüpfung des Termins"
+        );
       }
 
       return apiSuccess({
@@ -121,6 +128,7 @@ export const POST = createHandler(
         webLink,
         subject: body.subject,
         delegated: Boolean(delegated),
+        case_linked: caseLinked,
       });
     } catch (e) {
       return apiError(

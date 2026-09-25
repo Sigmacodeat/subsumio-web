@@ -100,7 +100,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
 
   const headers = engineHeadersForBrain(session.brainId);
   const now = new Date().toISOString();
-  await enginePatchPage(
+  // The signed PDF is stored at this point; the two evidence writes below
+  // must not be reported as done when the engine refused them.
+  const metadataStored = await enginePatchPage(
     headers,
     {
       slug: signedSlug,
@@ -116,8 +118,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
       },
     },
     { timeoutMs: 15_000 }
-  ).catch(() => null);
-  await fetch(`${ENGINE_URL}/api/pages`, {
+  )
+    .then((res) => res.ok)
+    .catch(() => false);
+  const evidenceStored = await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -142,7 +146,17 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
       },
     }),
     signal: AbortSignal.timeout(10_000),
-  }).catch(() => null);
+  })
+    .then((res) => res.ok)
+    .catch(() => false);
+  const evidenceComplete = metadataStored && evidenceStored;
+  if (!evidenceComplete) {
+    log.error("signature evidence not stored", {
+      signedDocument: signedSlug,
+      metadataStored,
+      evidenceStored,
+    });
+  }
 
   await updateQesSession(token, { status: "signed", signedDocumentSlug: signedSlug });
   void logAudit("signature.qes_signed", "document", {
@@ -155,7 +169,17 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
       signedDocument: signedSlug,
       signer,
       certificateCheck: check.certificateCheckCode,
+      evidenceComplete,
     },
   });
-  return backToMatter(session.caseSlug, { qes: "signed" });
+  return backToMatter(
+    session.caseSlug,
+    evidenceComplete
+      ? { qes: "signed" }
+      : {
+          qes: "signed",
+          reason:
+            "Der Signaturnachweis konnte nicht vollständig gespeichert werden. Bitte den Support informieren.",
+        }
+  );
 }

@@ -190,3 +190,30 @@ function hashJson(data: unknown): string {
   }
   return Math.abs(h).toString(36);
 }
+
+/**
+ * Read an error body from any API route into `{ message, code }`.
+ *
+ * Two shapes are in circulation:
+ *   - `apiError()`:  `{ error: "<Text>", code: "<machine_code>" }`
+ *   - older routes:  `{ error: "<machine_code>", message: "<Text>" }`
+ * Reading `error` as the code (or as the text) unconditionally gets one of the
+ * two wrong. With a `code` field present, `error` is the text; without one, a
+ * lower-case identifier in `error` is the code and `message` the text.
+ */
+export function readApiError(
+  json: unknown,
+  fallback = "Unbekannter Fehler"
+): { message: string; code?: string } {
+  if (!json || typeof json !== "object") {
+    return { message: typeof json === "string" && json.trim() ? json : fallback };
+  }
+  const body = json as { error?: unknown; code?: unknown; message?: unknown };
+  const pick = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
+  const error = pick(body.error);
+  const message = pick(body.message);
+  const code = pick(body.code);
+  if (code) return { message: error ?? message ?? fallback, code };
+  if (error && /^[a-z][a-z0-9_.-]*$/.test(error)) return { message: message ?? error, code: error };
+  return { message: error ?? message ?? fallback };
+}

@@ -16,6 +16,7 @@
 // routes import this file, never engine.ts itself.
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { SupportSession } from "@/lib/support-session";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export async function writeFirmVisibleSupportAuditEntry(
   orgBrainId: string,
@@ -32,8 +33,9 @@ export async function writeFirmVisibleSupportAuditEntry(
     action === "support.session_start"
       ? "Subsumio-Support: Zugriff gestartet"
       : "Subsumio-Support: Zugriff beendet";
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
+  await engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
       method: "POST",
       headers: { "Content-Type": "application/json", ...engineHeadersForBrain(orgBrainId) },
       body: JSON.stringify({
@@ -51,8 +53,7 @@ export async function writeFirmVisibleSupportAuditEntry(
         },
       }),
       signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    // Best-effort — the operator-side Postgres audit entry is the durable record.
-  }
+    },
+    "Support-Protokolleintrag"
+  );
 }

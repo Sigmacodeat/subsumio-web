@@ -9,6 +9,7 @@ import {
 } from "@/lib/msgraph-user";
 import { fetchPages } from "@/lib/cron-utils";
 import { logger } from "@/lib/logger";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -115,16 +116,20 @@ async function handler() {
             location: typeof fm.location === "string" ? fm.location : undefined,
           });
           if (eventId) {
-            await fetch(`${ENGINE_URL}/api/pages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...headers },
-              body: JSON.stringify({
-                slug: appt.slug,
-                merge: true,
-                frontmatter: { outlook_event_id: eventId },
-              }),
-              signal: AbortSignal.timeout(10_000),
-            });
+            await engineWriteOrThrow(
+              `${ENGINE_URL}/api/pages`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...headers },
+                body: JSON.stringify({
+                  slug: appt.slug,
+                  merge: true,
+                  frontmatter: { outlook_event_id: eventId },
+                }),
+                signal: AbortSignal.timeout(10_000),
+              },
+              "Outlook-Termin-Verknüpfung"
+            );
             eventsSynced++;
           }
         } catch (err) {

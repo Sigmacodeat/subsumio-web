@@ -23,6 +23,7 @@ import {
 } from "@/lib/cron-utils";
 import { enqueuePostUploadTask } from "@/lib/post-upload-outbox";
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort, engineWriteOrThrow } from "@/lib/engine-write";
 
 const log = logger("autonomous-engine");
 
@@ -346,8 +347,9 @@ async function executeInboxTriage(
 
   // Persist triage result to engine if we have a raw_slug
   if (raw_slug) {
-    try {
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(String(raw_slug))}`, {
+    await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages/${encodeURIComponent(String(raw_slug))}`,
+      {
         method: "PATCH",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -364,10 +366,9 @@ async function executeInboxTriage(
           },
         }),
         signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // best-effort — triage result is still returned
-    }
+      },
+      "Triage-Ergebnis"
+    );
   }
 
   // Fire webhook for critical/high urgency triage results
@@ -533,28 +534,33 @@ Verwende eine formelle Anrede und Grußformel.`;
     if (res.ok) {
       const data = await res.json();
       draftText = String(data.text ?? data.content ?? data.answer ?? "");
-      draftSlug = draftId;
 
       // Persist the draft as a page in the engine
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: draftId,
-          title: `E-Mail-Entwurf: ${subject}`,
-          type: "email_draft",
-          content: draftText,
-          frontmatter: {
-            case_slug: case_slug ?? null,
-            recipient: recipient ?? null,
-            subject: subject ?? null,
-            status: "draft",
-            generated_by: "autonomous_engine",
-            created_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug: draftId,
+            title: `E-Mail-Entwurf: ${subject}`,
+            type: "email_draft",
+            content: draftText,
+            frontmatter: {
+              case_slug: case_slug ?? null,
+              recipient: recipient ?? null,
+              subject: subject ?? null,
+              status: "draft",
+              generated_by: "autonomous_engine",
+              created_at: new Date().toISOString(),
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "E-Mail-Entwurf"
+      );
+      // Only a stored page is reported back as created.
+      draftSlug = draftId;
     }
   } catch (err) {
     log.warn("Email draft generation failed", { case_slug, error: String(err) });
@@ -648,29 +654,34 @@ Das Update soll verständlich, höflich und informativ sein. Verwende eine forme
     if (res.ok) {
       const data = await res.json();
       updateText = String(data.text ?? data.content ?? data.answer ?? "");
-      updateSlug = slug;
 
       // Persist the client update
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          title: `Mandanten-Update: ${label} — ${case_slug ?? ""}`,
-          type: "client_update",
-          content: updateText,
-          frontmatter: {
-            case_slug: case_slug ?? null,
-            update_type: update_type ?? "general",
-            client_name: client_name ?? null,
-            recipient: recipient ?? null,
-            status: "pending_approval",
-            generated_by: "autonomous_engine",
-            created_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            title: `Mandanten-Update: ${label} — ${case_slug ?? ""}`,
+            type: "client_update",
+            content: updateText,
+            frontmatter: {
+              case_slug: case_slug ?? null,
+              update_type: update_type ?? "general",
+              client_name: client_name ?? null,
+              recipient: recipient ?? null,
+              status: "pending_approval",
+              generated_by: "autonomous_engine",
+              created_at: new Date().toISOString(),
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Mandanten-Update"
+      );
+      // Only a stored page is reported back as created.
+      updateSlug = slug;
     }
   } catch (err) {
     log.warn("Client update generation failed", { case_slug, error: String(err) });
@@ -808,28 +819,33 @@ Daten: ${JSON.stringify(reportData, null, 2)}`,
     if (res.ok) {
       const data = await res.json();
       reportText = String(data.text ?? data.content ?? data.summary ?? "");
-      reportSlug = slug;
 
       // Persist the report
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          title: `${label}: ${case_slug ?? ""}`,
-          type: "report",
-          content: reportText,
-          frontmatter: {
-            report_type: report_type ?? "case_summary",
-            case_slug: case_slug ?? null,
-            date_range: date_range ?? null,
-            generated_by: "autonomous_engine",
-            created_at: new Date().toISOString(),
-            ...reportData,
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            title: `${label}: ${case_slug ?? ""}`,
+            type: "report",
+            content: reportText,
+            frontmatter: {
+              report_type: report_type ?? "case_summary",
+              case_slug: case_slug ?? null,
+              date_range: date_range ?? null,
+              generated_by: "autonomous_engine",
+              created_at: new Date().toISOString(),
+              ...reportData,
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Bericht"
+      );
+      // Only a stored page is reported back as created.
+      reportSlug = slug;
     }
   } catch (err) {
     log.warn("Report generation failed", { case_slug, error: String(err) });
