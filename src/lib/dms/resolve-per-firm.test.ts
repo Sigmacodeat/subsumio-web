@@ -27,7 +27,7 @@ vi.mock("./config-store", () => ({
 
 import { getConnectorForBrain, resolveDmsForBrain } from "./index";
 
-function lastCall(spy: ReturnType<typeof vi.spyOn>) {
+function lastCall(spy: { mock: { calls: unknown[][] } }) {
   const [url, init] = spy.mock.calls.at(-1) as [string, RequestInit];
   return { url: String(url), auth: new Headers(init?.headers).get("authorization") };
 }
