@@ -108,8 +108,10 @@ async function fetchRevocationState(userId: string): Promise<RevocationState> {
   }
   // Return the stale cached value if available, otherwise fail open.
   // A stale cache entry still correctly rejects a session that was revoked
-  // before the outage started. Only truly unknown users (never cached) fail
-  // open, which is an acceptable availability tradeoff for first-ever lookups.
+  // before the outage started: the revocation endpoint answers 503 (not
+  // "nothing revoked") when its store is unreachable, and only a 2xx
+  // answer replaces the entry. Only truly unknown users (never cached) fail
+  // open at the edge; the Node-side verifySession re-checks fail-closed.
   if (cached) return { minVersion: cached.minVersion, revokedSids: cached.revokedSids };
   return { minVersion: 0, revokedSids: new Set() };
 }

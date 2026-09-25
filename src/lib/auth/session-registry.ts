@@ -180,9 +180,26 @@ export async function revokeSessionRows(userId: string, keepSid?: string | null)
   return rowCount ?? 0;
 }
 
+/** Last revocation answer per sid read by this process — the fallback when
+ *  the registry cannot be queried. Bounded; oldest entries drop first. */
+const lastKnownSidRevoked = new Map<string, boolean>();
+const LAST_KNOWN_SID_MAX = 20_000;
+
+function rememberSid(sid: string, revoked: boolean): void {
+  lastKnownSidRevoked.delete(sid);
+  lastKnownSidRevoked.set(sid, revoked);
+  if (lastKnownSidRevoked.size > LAST_KNOWN_SID_MAX) {
+    const oldest = lastKnownSidRevoked.keys().next().value;
+    if (oldest !== undefined) lastKnownSidRevoked.delete(oldest);
+  }
+}
+
 /** Fail-closed revocation check: a row marked revoked rejects the session.
  *  A missing row (lost insert, pre-registry session without sid handled by
- *  the caller) is treated as valid — the registry only carries metadata. */
+ *  the caller) is treated as valid — the registry only carries metadata.
+ *  When the registry cannot be read, the last answer this process saw for
+ *  the sid is used; without one the error is thrown (the caller treats the
+ *  session as invalid) — never "not revoked" by default. */
 export async function isSidRevoked(userId: string, sid: string): Promise<boolean> {
   const pool = getSharedPgPool();
   if (!pool) {
@@ -195,9 +212,13 @@ export async function isSidRevoked(userId: string, sid: string): Promise<boolean
       `SELECT revoked_at FROM subsumio_user_sessions WHERE sid = $1 AND user_id = $2`,
       [sid, userId]
     );
-    return rows.length > 0 && rows[0].revoked_at !== null;
-  } catch {
-    return false;
+    const revoked = rows.length > 0 && rows[0].revoked_at !== null;
+    rememberSid(sid, revoked);
+    return revoked;
+  } catch (err) {
+    const lastKnown = lastKnownSidRevoked.get(sid);
+    if (lastKnown !== undefined) return lastKnown;
+    throw err;
   }
 }
 
@@ -217,8 +238,11 @@ export async function listRevokedSids(userId: string): Promise<string[]> {
       [userId]
     );
     return rows.map((r) => r.sid);
-  } catch {
-    return [];
+  } catch (err) {
+    // An empty list would tell the edge cache "nothing revoked" — throw so
+    // the revocation endpoint answers 503 and the edge keeps its entry.
+    log.error("[session-registry] listRevokedSids failed", err instanceof Error ? err : {});
+    throw err;
   }
 }
 
