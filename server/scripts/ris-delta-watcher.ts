@@ -56,6 +56,7 @@ import {
 import { landOfDocId } from "./normalize/normalize-corpus";
 import { buildTextMarkdown, textRefsOf } from "./fetch-entscheidungstexte";
 import { RIS_PAUSE_MS } from "./ris-pace";
+import { normKey, resolveBundesnormDir, resolveNormFileName, slugify } from "./ris-norm-paths";
 import {
   fetchWithRetry,
   risXmlToText,
@@ -236,33 +237,8 @@ async function fetchXml(url: string): Promise<string | null> {
   return res.text();
 }
 
-export function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
-}
-
-export function normKey(apa: string | null): string | null {
-  if (!apa) return null;
-  const s = apa.trim();
-  if (/^§+\s*0\s*$/.test(s)) return null;
-  const teile: string[] = [];
-  const rx = /(§+|Art\.?|Anl\.?)\s*([0-9]+[a-zA-Z]*)/gi;
-  let m: RegExpExecArray | null;
-  while ((m = rx.exec(s)) !== null) {
-    const art = m[1].toLowerCase();
-    const praefix = art.startsWith("§") ? "p" : art.startsWith("art") ? "art" : "anl";
-    teile.push(`${praefix}-${m[2].toLowerCase()}`);
-  }
-  if (teile.length === 0) return null;
-  return teile.join("-");
-}
+// Same naming as the full fetch (ris-xml-fetch-normen.ts) — one module for both.
+export { slugify, normKey };
 
 function esc(s: string): string {
   return s.replace(/"/g, '\\"');
@@ -388,12 +364,17 @@ export function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): s
 
 /**
  * Bestimmt den Dateipfad für ein Delta-Dokument.
- * Für Bundesrecht: <corpusDir>/<slug-or-gnr>/<key>.md
- * Für Judikatur: <corpusDir>/<changedAt>-<slug>.md
- * Für Landesrecht: <corpusDir>/<slug-or-gnr>/<key>.md
+ * Für Bundesrecht: derselbe Pfad wie beim Vollabruf (ris-norm-paths.ts):
+ *   <corpusDir>/<abk-slug>[-<gnr>]/<key>[-nor<id>].md, ohne Abkürzung gnr-<gnr>/
+ * Für Judikatur: <corpusDir>/<dokumentnummer>.md
+ * Für Landesrecht: <corpusDir>/<land>/gnr-<gnr>/<key>.md
  */
-export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
-  const corpusDir = join(CORPUS_ROOT, app.corpusDir);
+export function docFilePath(
+  app: DeltaApplikation,
+  doc: DeltaDocument,
+  corpusRoot: string = CORPUS_ROOT
+): string {
+  const corpusDir = join(corpusRoot, app.corpusDir);
 
   if (app.endpoint === "Judikatur") {
     // Named by the RIS document number: several Rechtssätze share one
@@ -404,9 +385,17 @@ export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
     return join(corpusDir, decisionFileName(doc.id));
   }
 
-  // Bundesrecht / Landesrecht
   const apa = doc.artikelParagraphAnlage;
   const key = normKey(apa) || doc.id.toLowerCase();
+
+  // Bundesrecht: the folder and file the full fetch uses, so an amendment
+  // replaces the norm the citation check and the norm reader read.
+  if (app.endpoint === "Bundesrecht" && doc.gesetzesnummer) {
+    const dir = resolveBundesnormDir(corpusDir, doc.abkuerzung, doc.gesetzesnummer);
+    return join(corpusDir, dir, resolveNormFileName(join(corpusDir, dir), key, doc.id));
+  }
+
+  // Landesrecht (and Bundesrecht without Gesetzesnummer)
   const gnrDir = doc.gesetzesnummer
     ? `gnr-${doc.gesetzesnummer}`
     : slugify(doc.kurztitel || doc.id);
