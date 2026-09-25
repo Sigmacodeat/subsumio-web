@@ -37,6 +37,7 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 12e | Akte sicher anlegen        | —   | —            | ⏳ PR   | Ein gemeinsamer Anlage-Pfad (Import, WhatsApp, Copilot, Freigaben) ohne Überschreiben, mit Kollisionsprüfung; Vollsicherung blättert vollständig                                 |
 | 12f | Fristen AT                 | —   | —            | ⏳ PR   | AT-Fristengine überall (Akten-Tab, Chat, Widget), Ferialsachen, VfGH/BFG-Fristen, Vier-Augen serverseitig, Notfrist-Schutz, revisionssicheres Protokoll                          |
 | 12g | Kollisionsprüfung          | —   | —            | ⏳ PR   | Seitenbewusst (Mandant/Gegner), toleranter Namensabgleich, Mandatsannahme und Freigabe serverseitig                                                                              |
+| 12h | Folgearbeiten Audit        | —   | —            | ⏳ PR   | DMS pro Kanzlei mit geprüftem Ausgangsverkehr, alle Benachrichtigungen aktenbewusst, WhatsApp-Einwilligung pro Kanzlei, Alt-Geheimnisse versiegelt, Anlegen ersetzt nie          |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
