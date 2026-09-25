@@ -9206,11 +9206,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // eskalation flag drives the Vier-Augen-Kontrolle (kritisch/überfällig).
   app.get("/api/legal/fristenbuch", async (req: Request, res: Response) => {
     try {
-      const { ladeFristenbuch } = await import("../core/legal/fristenbuch.ts");
+      const { ladeFristenbuch, fristenbuchHeute } = await import("../core/legal/fristenbuch.ts");
       const heute =
         typeof req.query.heute === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.heute)
           ? req.query.heute
-          : new Date().toISOString().slice(0, 10);
+          : fristenbuchHeute();
       const buch = await ladeFristenbuch(engine, {
         heute,
         sourceId: requestSourceId(req),
@@ -9229,8 +9229,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // Kanzlei control dates land in the calendar.
   app.get("/api/legal/deadlines.ics", async (req: Request, res: Response) => {
     try {
-      const { ladeFristenbuch, baueIcs } = await import("../core/legal/fristenbuch.ts");
-      const heute = new Date().toISOString().slice(0, 10);
+      const { ladeFristenbuch, baueIcs, fristenbuchHeute } = await import(
+        "../core/legal/fristenbuch.ts"
+      );
+      const heute = fristenbuchHeute();
       const buch = await ladeFristenbuch(engine, {
         heute,
         sourceId: requestSourceId(req),

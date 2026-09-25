@@ -15,6 +15,9 @@
  *     Karfreitag nach § 1 FrHemmG in allen Verfahrensregimen)
  *   - § 32 f. AVG für Verwaltungsverfahren (inkl. Karfreitag + 24.12. als
  *     fristhemmende End-Tage nach § 33 Abs 2 AVG)
+ *   - § 108 BAO für Abgabenverfahren (Karfreitag + 24.12. nach § 108 Abs 3 BAO)
+ *   - VfGH-Verfahren nach § 35 Abs 1 VfGG iVm § 126 Abs 2 ZPO (24.12. ist dort
+ *     KEIN End-Tag, der die Frist verschiebt)
  *   - Verhandlungsfreie Zeit § 222 ZPO (15.7.–17.8., 24.12.–6.1.) mit
  *     Hemmungs-Mechanik nach Abs 1 Satz 2 und Ferialsachen-Ausnahme
  *   - Zustellfiktionen: § 89a GOG (ERV — folgender Werktag, Samstag zählt
@@ -223,7 +226,14 @@ function vhfzDauer(z: VhfzZeitraum): number {
 
 // ── Fristberechnung ─────────────────────────────────────────
 
-export type FristRegime = "zpo" | "avg" | "stpo" | "materiell" | "verwaltungsrecht";
+export type FristRegime = "zpo" | "avg" | "bao" | "stpo" | "materiell" | "verwaltungsrecht";
+
+/** Regime, in denen ein auf den 24.12. fallendes Fristende auf den nächsten
+ *  Tag verschoben wird: § 33 Abs 2 AVG und § 108 Abs 3 BAO nennen den
+ *  24. Dezember ausdrücklich; § 126 Abs 2 ZPO und § 84 Abs 1 StPO nicht. */
+export function regimeSchiebtHeiligabend(regime: FristRegime): boolean {
+  return regime === "avg" || regime === "bao";
+}
 
 export interface FristDauer {
   tage?: number;
@@ -290,8 +300,9 @@ function fristendeRoh(ausloeser: string, dauer: FristDauer): string {
 /** End-Tag-Verschiebung: Fällt das Fristende auf Sa/So/Feiertag (§ 126 Abs 2
  *  ZPO) oder den Karfreitag (§ 1 FrHemmG — gilt für alle verfahrensrechtlichen
  *  Fristen, also ZPO, StPO, AVG und Verwaltungsgerichtsbarkeit) — im
- *  AVG-Regime zusätzlich der 24.12. (§ 33 Abs 2 AVG) — endet die Frist erst
- *  mit dem nächsten Werktag. Materiellrechtliche Fristen verschieben nicht. */
+ *  AVG- und BAO-Regime zusätzlich der 24.12. (§ 33 Abs 2 AVG, § 108 Abs 3
+ *  BAO) — endet die Frist erst mit dem nächsten Werktag. Materiellrechtliche
+ *  Fristen verschieben nicht. */
 function schiebeEndTag(iso: string, regime: FristRegime, hinweise: string[]): string {
   if (regime === "materiell") return iso; // §§ 902 f. ABGB: keine Verschiebung
   let d = iso;
@@ -299,7 +310,7 @@ function schiebeEndTag(iso: string, regime: FristRegime, hinweise: string[]): st
     if (!istWerktag(x)) return true;
     // § 1 FrHemmG: Karfreitag hemmt das Fristende in jedem Verfahrensregime.
     if (istKarfreitag(x)) return true;
-    if (regime === "avg" && x.endsWith("-12-24")) return true;
+    if (regimeSchiebtHeiligabend(regime) && x.endsWith("-12-24")) return true;
     return false;
   };
   let karfreitagImLauf = false;
@@ -310,8 +321,10 @@ function schiebeEndTag(iso: string, regime: FristRegime, hinweise: string[]): st
   if (d !== iso) {
     const frHemmG = karfreitagImLauf ? ", § 1 FrHemmG" : "";
     hinweise.push(
-      regime === "avg"
-        ? `Fristende ${iso} fällt auf Sa/So/Feiertag/Karfreitag/24.12. — verschoben auf ${d} (§ 33 Abs 2 AVG${frHemmG})`
+      regimeSchiebtHeiligabend(regime)
+        ? `Fristende ${iso} fällt auf Sa/So/Feiertag/Karfreitag/24.12. — verschoben auf ${d} (${
+            regime === "bao" ? "§ 108 Abs 3 BAO" : "§ 33 Abs 2 AVG"
+          }${frHemmG})`
         : `Fristende ${iso} fällt auf Sa/So/Feiertag${karfreitagImLauf ? "/Karfreitag" : ""} — verschoben auf ${d} (§ 126 Abs 2 ZPO${frHemmG})`
     );
   }
@@ -578,11 +591,14 @@ export const FRISTEN_REGISTRY: readonly FristArt[] = [
     key: "beschwerde_vfgh",
     bezeichnung: "Beschwerde an den VfGH",
     dauer: { wochen: 6 },
-    regime: "avg",
+    // § 35 Abs 1 und 2 VfGG: Fristberechnung nach der ZPO (§ 126 ZPO —
+    // der 24.12. verschiebt das Fristende nicht), nicht nach dem AVG.
+    regime: "zpo",
     rechtsgrundlage: "§ 82 Abs 1 VfGG",
     notfrist: true,
     gehemmtInVhfz: false,
     verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Fristberechnung nach § 35 VfGG iVm §§ 125 f. ZPO; Tage des Postlaufs zählen nicht",
   },
   {
     key: "vorstellung_avg",
@@ -687,25 +703,28 @@ export const FRISTEN_REGISTRY: readonly FristArt[] = [
   // AT (Österreich) — BAO
   {
     key: "steuer_berufung_at",
-    bezeichnung: "Berufung gegen Steuerbescheid (AT)",
+    bezeichnung: "Bescheidbeschwerde gegen Abgabenbescheid (AT)",
     dauer: { monate: 1 },
-    regime: "verwaltungsrecht",
-    rechtsgrundlage: "§ 245 Abs 1 BAO",
+    regime: "bao",
+    rechtsgrundlage: "§ 243 iVm § 245 Abs 1 BAO",
     notfrist: true,
     gehemmtInVhfz: false,
     verfahrenstyp: "verwaltungsrecht",
-    hinweis: "Berufung innerhalb 1 Monat ab Zustellung des Bescheids.",
+    hinweis:
+      "Bescheidbeschwerde innerhalb 1 Monat ab Zustellung des Bescheids; Fristende am 24.12. oder Karfreitag verschiebt (§ 108 Abs 3 BAO).",
   },
   {
     key: "steuer_revision_vwgh_at",
-    bezeichnung: "Revision an den VwGH (AT)",
-    dauer: { monate: 2 },
-    regime: "verwaltungsrecht",
-    rechtsgrundlage: "§ 28a Abs 1 VwGG",
+    bezeichnung: "Revision an den VwGH gegen BFG-Erkenntnis (AT)",
+    // Das BFG ist Verwaltungsgericht (Art 129 B-VG): Revisionsfrist sechs
+    // Wochen nach § 26 Abs 1 VwGG, Fristberechnung nach § 62 VwGG iVm AVG.
+    dauer: { wochen: 6 },
+    regime: "avg",
+    rechtsgrundlage: "§ 26 Abs 1 VwGG",
     notfrist: true,
     gehemmtInVhfz: false,
     verfahrenstyp: "verwaltungsrecht",
-    hinweis: "Revision gegen BFG-Entscheidung innerhalb 2 Monaten.",
+    hinweis: "Revision gegen ein Erkenntnis des BFG innerhalb von sechs Wochen ab Zustellung.",
   },
   {
     key: "steuer_festsetzungsverjaehrung_at",

@@ -6,6 +6,7 @@ import {
   hasServerSecondCheck,
   readCurrentPage,
 } from "@/lib/page-write-guards";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,12 @@ const DEADLINE_PAGE_TYPES = new Set(["legal_deadline", "deadline"]);
 
 /**
  * Vier-Augen-Kontrolle für Notfristen — server-seitig erzwungen.
+ *
+ * Fail-closed: the first person must be known from a SERVER-stamped id
+ * (`created_by_id` from the session at creation, `reviewed_by_id` at
+ * approval, `completed_by_id`). A deadline without one — imported, created by
+ * the pipeline or before identities were stamped — must first be approved by
+ * a person; only someone else may then do the second check.
  *
  * The ONLY writer of `second_check_*`: the generic page routes strip those
  * fields from client writes and refuse to mark a Notfrist done without them
@@ -120,12 +127,34 @@ export const POST = createHandler(
       });
     }
 
+    const serverFirstIds = [
+      deadline.created_by_id,
+      deadline.reviewed_by_id,
+      deadline.completed_by_id,
+    ].filter(
+      (v): v is string =>
+        typeof v === "string" &&
+        v.trim().length > 0 &&
+        !["internal", "custom", "anonymous", "system"].includes(v.trim())
+    );
+    if (serverFirstIds.length === 0) {
+      return Response.json(
+        {
+          error: "second_check_first_person_unknown",
+          message:
+            "Für diese Frist ist keine Erstperson erfasst. Bitte die Frist zuerst freigeben lassen — die Zweitprüfung muss dann eine andere Person durchführen.",
+        },
+        { status: 409 }
+      );
+    }
+
     const checkerIds = new Set(
       [ctx.user.id, ctx.user.name, ctx.user.email]
         .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
         .map((v) => v.trim().toLowerCase())
     );
     const firstPersons = [
+      deadline.created_by_email,
       deadline.reviewed_by,
       deadline.reviewed_by_id,
       deadline.completed_by,
@@ -161,30 +190,82 @@ export const POST = createHandler(
       second_check_at: now,
     };
 
-    const frontmatter = embedded
-      ? {
-          deadlines: list.map((d, i) =>
-            i === index
-              ? {
-                  ...d,
-                  ...stamp,
-                  updated_at: now,
-                  audit_log: [
-                    ...(Array.isArray(d.audit_log) ? (d.audit_log as unknown[]) : []),
-                    { at: now, action: "second_check", actor: identity },
-                  ],
-                }
-              : d
-          ),
-        }
-      : stamp;
+    const auditEntry = {
+      at: now,
+      action: "second_check",
+      actor: identity,
+      actor_id: ctx.user.id,
+      status_before: typeof deadline.status === "string" ? deadline.status : null,
+      status_after: "done",
+      server: true,
+    };
+    const auditLog = [
+      ...(Array.isArray(deadline.audit_log) ? (deadline.audit_log as unknown[]) : []),
+      auditEntry,
+    ];
 
-    const patchRes = await enginePatchPage(
-      ctx.headers,
-      { slug: targetSlug, frontmatter },
-      { timeoutMs: 15_000 }
-    );
-    if (!patchRes.ok) {
+    let writeOk: boolean;
+    if (embedded) {
+      // Atomic: patch only this entry (addressed by its id) — never write the
+      // whole deadlines[] back from the copy read above.
+      const entryId = typeof deadline.id === "string" && deadline.id ? deadline.id : null;
+      if (!entryId) {
+        return Response.json(
+          {
+            error: "deadline_without_id",
+            message:
+              "Diese Frist hat noch keine eindeutige Kennung. Bitte die Akte einmal öffnen und speichern, dann erneut versuchen.",
+          },
+          { status: 409 }
+        );
+      }
+      const mutateRes = await fetch(`${ENGINE_URL}/api/pages/array-mutate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ctx.headers },
+        body: JSON.stringify({
+          slug: targetSlug,
+          field: "deadlines",
+          match_key: "id",
+          match: [entryId],
+          set: { ...stamp, updated_at: now, audit_log: auditLog },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      writeOk = mutateRes.ok;
+      if (writeOk) {
+        const storedVersion = Number(pageFm.version);
+        await enginePatchPage(
+          ctx.headers,
+          {
+            slug: targetSlug,
+            frontmatter: { version: (Number.isFinite(storedVersion) ? storedVersion : 0) + 1 },
+          },
+          { timeoutMs: 15_000 }
+        );
+      }
+    } else {
+      const patchRes = await enginePatchPage(
+        ctx.headers,
+        { slug: targetSlug, frontmatter: { ...stamp, audit_log: auditLog } },
+        { timeoutMs: 15_000 }
+      );
+      writeOk = patchRes.ok;
+    }
+    if (writeOk) {
+      await logDeadlineEvents(ctx, [
+        {
+          kind: "complete",
+          deadline_id: embedded ? `${targetSlug}#${String(deadline.id)}` : targetSlug,
+          title: String(deadline.title ?? deadline.description ?? ""),
+          is_notfrist: true,
+          due_date_before: typeof deadline.due_date === "string" ? deadline.due_date : null,
+          due_date_after: typeof deadline.due_date === "string" ? deadline.due_date : null,
+          status_before: typeof deadline.status === "string" ? deadline.status : null,
+          status_after: "done",
+        },
+      ]);
+    }
+    if (!writeOk) {
       return Response.json(
         { error: "engine_unreachable", message: "Zweitprüfung fehlgeschlagen" },
         { status: 503 }

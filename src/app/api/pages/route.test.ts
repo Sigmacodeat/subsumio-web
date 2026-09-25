@@ -83,7 +83,9 @@ describe("POST /api/pages", () => {
     expect(writes()[0].body).toMatchObject({ slug: "legal/deadlines/x", merge: true });
     // A merge is not a new page: no page quota, audited as an update.
     expect(recordQuota).not.toHaveBeenCalled();
-    expect(vi.mocked(logAudit).mock.calls[0]?.[0]).toBe("case.update");
+    const actions = vi.mocked(logAudit).mock.calls.map((c) => c[0]);
+    expect(actions).toContain("case.update");
+    expect(actions).not.toContain("case.create");
   });
 
   it("rejects a merge on a document checked out by another user (409)", async () => {
@@ -145,7 +147,7 @@ describe("POST /api/pages", () => {
     const res = await post({ slug: "legal/deadlines/y", title: "Frist", type: "legal_deadline" });
     expect(res.status).toBe(200);
     expect(recordQuota).toHaveBeenCalledWith(expect.anything(), "pages");
-    expect(vi.mocked(logAudit).mock.calls[0]?.[0]).toBe("case.create");
+    expect(vi.mocked(logAudit).mock.calls.map((c) => c[0])).toContain("case.create");
   });
 });
 
@@ -229,7 +231,8 @@ describe("POST /api/pages — server-side write guards", () => {
       frontmatter: { note: "ok", second_check_by: "Anwalt", second_check_at: "t" },
     });
     expect(res.status).toBe(200);
-    expect(writes()[0].body.frontmatter).toEqual({ note: "ok" });
+    // version: every merge advances the stored version (If-Match detection).
+    expect(writes()[0].body.frontmatter).toEqual({ note: "ok", version: 1 });
   });
 
   it("rejects a merge that edits an issued invoice", async () => {
@@ -582,5 +585,164 @@ describe("POST /api/pages — server conflict gate (§ 10 RAO)", () => {
     });
     expect(res.status).toBe(503);
     expect(caseWrites).toHaveLength(0);
+  });
+});
+
+describe("POST /api/pages — Fristen: Identität, Notfrist-Schutz, Protokoll (C6)", () => {
+  let engineCalls: Array<{ url: string; body: any }>;
+  let stored: unknown;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    engineCalls = [];
+    stored = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        engineCalls.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+        if (init?.body === undefined) {
+          return stored === null ? new Response("{}", { status: 404 }) : Response.json(stored);
+        }
+        return Response.json({ slug: "x", success: true });
+      })
+    );
+  });
+
+  const writes = () => engineCalls.filter((c) => Object.keys(c.body).length > 0);
+
+  it("FRI-6: stamps created_by from the session and ignores a client-sent creator", async () => {
+    const res = await post({
+      slug: "legal/deadlines/neu",
+      title: "Berufung",
+      type: "legal_deadline",
+      frontmatter: {
+        due_date: "2026-03-30",
+        is_notfrist: true,
+        created_by: "jemand-anderes@example.com",
+        created_by_id: "u-fake",
+      },
+    });
+    expect(res.status).toBe(200);
+    const fm = writes()[0].body.frontmatter;
+    expect(fm.created_by_id).toBe("u1");
+    expect(fm.created_by).toBe("anwalt@kanzlei.example");
+    expect(fm.audit_log).toHaveLength(1);
+    expect(fm.audit_log[0]).toMatchObject({ action: "created", actor_id: "u1", server: true });
+  });
+
+  it("FRI-7: a Notfrist due date cannot be moved without a reason", async () => {
+    stored = {
+      slug: "legal/deadlines/f1",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", is_notfrist: true, due_date: "2026-03-30" },
+    };
+    const res = await post({
+      slug: "legal/deadlines/f1",
+      merge: true,
+      frontmatter: { due_date: "2026-04-15" },
+    });
+    expect(res.status).toBe(422);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("FRI-7/FRI-15: a lawyer moves a Notfrist with a reason — logged with before/after", async () => {
+    stored = {
+      slug: "legal/deadlines/f1",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", is_notfrist: true, due_date: "2026-03-30" },
+    };
+    const res = await post({
+      slug: "legal/deadlines/f1",
+      merge: true,
+      frontmatter: { due_date: "2026-04-15", change_reason: "Zustellung neu festgestellt" },
+    });
+    expect(res.status).toBe(200);
+    const fm = writes()[0].body.frontmatter;
+    expect(fm.change_reason).toBeUndefined();
+    expect(fm.audit_log.at(-1)).toMatchObject({
+      due_date_before: "2026-03-30",
+      due_date_after: "2026-04-15",
+      reason: "Zustellung neu festgestellt",
+      actor_id: "u1",
+    });
+    const deadlineAudit = vi.mocked(logAudit).mock.calls.find((c) => c[0] === "deadline.update");
+    expect(deadlineAudit?.[2]).toMatchObject({
+      entityId: "legal/deadlines/f1",
+      userId: "u1",
+      details: { due_date_before: "2026-03-30", due_date_after: "2026-04-15" },
+    });
+  });
+
+  it("FRI-7: an assistant cannot cancel a Notfrist, even with a reason", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      ...ctx,
+      user: { ...ctx.user, id: "u3", role: "assistant" },
+    } as any);
+    stored = {
+      slug: "legal/deadlines/f1",
+      type: "legal_deadline",
+      frontmatter: { status: "pending", is_notfrist: true, due_date: "2026-03-30" },
+    };
+    const res = await post({
+      slug: "legal/deadlines/f1",
+      merge: true,
+      frontmatter: { status: "cancelled", change_reason: "Doppelt erfasst" },
+    });
+    expect(res.status).toBe(403);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("FRI-7: removing a Notfrist from a matter's deadlines[] is refused", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: {
+        deadlines: [
+          { id: "d1", title: "Berufung", due_date: "2026-03-30", is_notfrist: true },
+          { id: "d2", title: "Termin", due_date: "2026-04-01" },
+        ],
+      },
+    };
+    const res = await post({
+      slug: "legal/cases/akte-1",
+      merge: true,
+      frontmatter: { deadlines: [{ id: "d2", title: "Termin", due_date: "2026-04-01" }] },
+    });
+    expect(res.status).toBe(403);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it("FRI-15: a client-sent history is replaced by the stored one", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Termin",
+            due_date: "2026-04-01",
+            audit_log: [{ at: "t0", action: "created", actor: "A" }],
+          },
+        ],
+      },
+    };
+    const res = await post({
+      slug: "legal/cases/akte-1",
+      merge: true,
+      frontmatter: {
+        deadlines: [{ id: "d1", title: "Termin", due_date: "2026-04-01", audit_log: [] }],
+      },
+    });
+    expect(res.status).toBe(200);
+    const entry = writes()[0].body.frontmatter.deadlines[0];
+    expect(entry.audit_log).toEqual([{ at: "t0", action: "created", actor: "A" }]);
+  });
+
+  it("FRI-8: a merge advances the stored version", async () => {
+    stored = { slug: "legal/cases/akte-1", type: "legal_case", frontmatter: { version: 7 } };
+    await post({ slug: "legal/cases/akte-1", merge: true, frontmatter: { priority: "high" } });
+    expect(writes()[0].body.frontmatter.version).toBe(8);
   });
 });

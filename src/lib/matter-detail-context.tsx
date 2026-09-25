@@ -32,7 +32,8 @@ import {
   uploadFiles as presignedUploadFiles,
   type UploadProgress as PresignedProgress,
 } from "@/lib/presigned-upload";
-import { DEADLINE_RULES, computeDeadlineStatus, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { computeDeadlineStatus, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { zonedDateString } from "@/lib/datetime";
 import { STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
 import {
   deadlineFormSchema,
@@ -400,10 +401,11 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
 
   const [deadlinesList, setDeadlinesList] = useState<DeadlineEntry[]>([]);
   const [editingDeadlineIndex, setEditingDeadlineIndex] = useState<number | null>(null);
-  const [deadlineRuleKey, setDeadlineRuleKey] = useState(DEADLINE_RULES[0].key);
-  const [deadlineStartDate, setDeadlineStartDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  // No preselected Fristart: the tab offers the Rechtsraum's own list (AT
+  // engine for Austrian matters) and the user must choose explicitly.
+  const [deadlineRuleKey, setDeadlineRuleKey] = useState("");
+  // "Heute" is the firm's calendar day (Europe/Vienna), not UTC.
+  const [deadlineStartDate, setDeadlineStartDate] = useState(() => zonedDateString(new Date()));
   const [aiDetectText, setAiDetectText] = useState("");
   const [aiDetecting, setAiDetecting] = useState(false);
   const [aiDetectedDeadlines, setAiDetectedDeadlines] = useState<
@@ -971,7 +973,9 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
             setSaveError(null);
             return;
           }
-          if (res.status === 403) {
+          if (res.status === 403 || res.status === 422) {
+            // Server-side refusal (archive, Notfrist protection, missing reason):
+            // show its message and reload the stored state.
             const data = await res.json().catch(() => ({}));
             setSaveError(data.message || t("casesdetail.archived_msg"));
             void refreshCaseData();
@@ -1367,7 +1371,18 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       } else {
         updated = [...deadlinesList, entry];
       }
-      setDeadlinesList(updated);
+      // The reason for moving a Notfrist is sent once with this save (the
+      // server consumes and logs it) — it must not linger in local state and
+      // silently justify a later change.
+      setDeadlinesList(
+        updated.map((dl) => {
+          if (!("change_reason" in dl)) return dl;
+          const { change_reason: _reason, ...rest } = dl as DeadlineEntry & {
+            change_reason?: string;
+          };
+          return rest as DeadlineEntry;
+        })
+      );
       deadlineForm.reset({
         title: "",
         due_date: "",

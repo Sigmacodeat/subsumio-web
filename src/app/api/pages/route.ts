@@ -25,6 +25,8 @@ import {
 } from "@/lib/page-write-guards";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
 import { can } from "@/lib/permissions";
+import { applyDeadlineWritePolicy, type DeadlineChangeEvent } from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
 import { logger } from "@/lib/logger";
@@ -322,6 +324,33 @@ export const POST = createHandler(
         body.frontmatter = guarded.frontmatter;
       }
 
+      // Fristen: server-stamped identity (created/approved/completed by),
+      // Notfrist protection and the before/after audit trail.
+      let deadlineEvents: DeadlineChangeEvent[] = [];
+      if (body.frontmatter || body.type === "legal_deadline" || isDeadlineSlug(body.slug)) {
+        const policy = applyDeadlineWritePolicy({
+          slug: body.slug,
+          type: body.type ?? current?.type,
+          incoming: body.frontmatter ?? {},
+          current,
+          user: ctx.user,
+        });
+        if ("reject" in policy) return rejectionResponse(policy.reject);
+        if (body.frontmatter || policy.events.length > 0) body.frontmatter = policy.frontmatter;
+        deadlineEvents = policy.events;
+      }
+
+      // Every merge onto an existing page advances its version, so a client
+      // holding an older copy (If-Match on PATCH) notices the change instead
+      // of overwriting it.
+      if (body.merge === true && current) {
+        const storedVersion = Number(current.frontmatter?.version);
+        body.frontmatter = {
+          ...(body.frontmatter ?? {}),
+          version: (Number.isFinite(storedVersion) ? storedVersion : 0) + 1,
+        };
+      }
+
       let conflictWarning: MatterConflictOutcome | undefined;
       if (body.type === "legal_case") {
         // Conflict status and waiver stamps are server-owned: never taken
@@ -451,6 +480,7 @@ export const POST = createHandler(
       const isMerge = body.merge === true;
       if (!isMerge) void recordQuota(ctx, "pages");
       const result = await res.json();
+      await logDeadlineEvents(ctx, deadlineEvents);
 
       if (isMerge && isCaseSlug(body.slug) && body.content === undefined) {
         // Metadata merge on a matter: refresh the Aktenblatt from the merged

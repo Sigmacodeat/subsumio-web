@@ -20,6 +20,13 @@ import {
 import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
 import { can } from "@/lib/permissions";
+import {
+  applyDeadlineWritePolicy,
+  checkDeadlinePageDelete,
+  isDeadlinePage,
+  type DeadlineChangeEvent,
+} from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -173,6 +180,8 @@ export const PATCH = createHandler(
       );
     }
 
+    let deadlineEvents: DeadlineChangeEvent[] = [];
+
     if (patchBody.frontmatter) {
       // Vier-Augen-Kontrolle: second_check_* is stamped only by
       // /api/legal/fristen/second-check. Client values are dropped (stored ones
@@ -184,6 +193,18 @@ export const PATCH = createHandler(
       );
       if ("reject" in guarded) return rejectionResponse(guarded.reject);
       patchBody.frontmatter = guarded.frontmatter;
+
+      // Fristen: server-stamped identity, Notfrist protection, audit trail.
+      const policy = applyDeadlineWritePolicy({
+        slug: rawSlug,
+        type: patchBody.type ?? currentPage.type,
+        incoming: patchBody.frontmatter as Record<string, unknown>,
+        current: currentPage,
+        user: ctx.user,
+      });
+      if ("reject" in policy) return rejectionResponse(policy.reject);
+      patchBody.frontmatter = policy.frontmatter;
+      deadlineEvents = policy.events;
 
       const isRestore = restoring;
 
@@ -246,6 +267,7 @@ export const PATCH = createHandler(
         });
       }
       const result = await res.json();
+      await logDeadlineEvents(ctx, deadlineEvents);
 
       // Restore cascade: if the PATCH sets status to a non-archived value
       // and includes restored_at, un-tombstone all linked documents.
@@ -487,6 +509,16 @@ export const DELETE = createHandler(
       });
       if ("reject" in protectedDelete) return rejectionResponse(protectedDelete.reject);
 
+      // A live Notfrist is never deleted — it is cancelled with a reason.
+      const deadlinePage = isDeadlinePage(pageType, fm.type, decodedSlug);
+      if (deadlinePage) {
+        const notfristRejection = checkDeadlinePageDelete(
+          fm,
+          (casePage as { title?: string }).title
+        );
+        if (notfristRejection) return rejectionResponse(notfristRejection);
+      }
+
       // Guard: already archived — return 409 to prevent double-archive
       if (pageType === "legal_case" && fm.status === "archived") {
         return Response.json(
@@ -696,6 +728,22 @@ export const DELETE = createHandler(
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
       }
 
+      if (deadlinePage) {
+        await logDeadlineEvents(ctx, [
+          {
+            kind: "delete",
+            deadline_id: decodedSlug,
+            title: String(
+              fm.title ?? fm.description ?? (casePage as { title?: string }).title ?? ""
+            ),
+            is_notfrist: fm.is_notfrist === true || fm.second_check_required === true,
+            due_date_before: typeof fm.due_date === "string" ? fm.due_date : null,
+            due_date_after: null,
+            status_before: typeof fm.status === "string" ? fm.status : null,
+            status_after: "tombstoned",
+          },
+        ]);
+      }
       void logAudit(pageType === "legal_case" ? "case.delete" : "document.delete", "page", {
         entityId: path,
         details: {

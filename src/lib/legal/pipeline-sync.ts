@@ -22,6 +22,7 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { berechneFristAuto, type FristAutoErgebnis } from "@/lib/legal/frist-engine";
 import { computeVorfrist } from "@/lib/legal/vorfrist";
+import { FERIALSACHE_WARNUNG, vhfzHatVerlaengert } from "@/lib/legal/frist-options";
 
 interface DeadlineCalendarPage {
   slug: string;
@@ -244,12 +245,20 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
       const fristKey = guessFristKey(row.frist, row.rechtsgrundlage);
       let fristResult: FristAutoErgebnis | null = null;
       let vorfrist: string | null = null;
+      let vhfzUnconfirmed = false;
 
       if (fristKey) {
         try {
           // Nutze das extrahierte Datum als Zustellungsdatum/Auslöser
           fristResult = berechneFristAuto(fristKey, iso);
           vorfrist = fristResult.vorfrist;
+          // § 222 Abs 2 ZPO: whether the matter is a Ferialsache is not known
+          // here. An extension by the verhandlungsfreie Zeit is flagged and
+          // must be confirmed by a second person.
+          if (vhfzHatVerlaengert(fristResult.hinweise)) {
+            fristResult.hinweise.push(FERIALSACHE_WARNUNG);
+            vhfzUnconfirmed = true;
+          }
         } catch {
           // Fallback auf einfache Vorfrist-Berechnung
           vorfrist = computeVorfrist(iso);
@@ -288,6 +297,9 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
                 kalendertage: fristResult.kalendertage,
                 notfrist: fristResult.art.notfrist,
                 deterministic: true,
+                ...(vhfzUnconfirmed
+                  ? { second_check_required: true, ferialsache_unconfirmed: true }
+                  : {}),
               }
             : {
                 deterministic: false,

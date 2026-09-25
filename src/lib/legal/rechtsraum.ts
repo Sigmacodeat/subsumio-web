@@ -62,6 +62,34 @@ export interface RechtsraumParams {
 }
 
 /**
+ * Rechtsraum for a deadline inside one matter: a matter explicitly assigned to
+ * Austria, Germany or Switzerland (`jurisdiction` "at"/"de"/"ch") uses that
+ * country's rules; otherwise the firm's Rechtsraum applies. The firm's
+ * Bundesland/Kanton is only used when it belongs to that same country — an
+ * Austrian firm's German matter must not get a guessed German Land.
+ */
+export function resolveMatterRechtsraum(
+  matterJurisdiction: string | undefined | null,
+  firm: { state?: string; country?: string }
+): { country?: "DE" | "AT" | "CH"; state?: string; source: "matter" | "firm" } {
+  const j = typeof matterJurisdiction === "string" ? matterJurisdiction.trim().toUpperCase() : "";
+  if (j === "AT" || j === "DE" || j === "CH") {
+    const firmCountry = firm.country ?? "AT";
+    if (j === "AT") return { country: "AT", state: "AT", source: "matter" };
+    return {
+      country: j,
+      state: firmCountry === j ? firm.state : undefined,
+      source: "matter",
+    };
+  }
+  const country =
+    firm.country === "DE" || firm.country === "CH" || firm.country === "AT"
+      ? firm.country
+      : undefined;
+  return { country, state: firm.state, source: "firm" };
+}
+
+/**
  * Extract Rechtsraum parameters from KanzleiSettings.
  * Returns empty object if no Rechtsraum is configured (backward compatible).
  */

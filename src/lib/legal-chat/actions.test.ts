@@ -377,7 +377,13 @@ describe("parseIntent — rvg_calc", () => {
 describe("parseIntent — deadline_calc", () => {
   test.each([
     ["frist berechnen zpo-berufung 2026-03-15 BY", "zpo-berufung", "2026-03-15", "BY"],
-    ["frist berechnen zpo-berufung 15.03.2026", "zpo-berufung", "2026-03-15", "BY"],
+    ["frist berechnen zpo-berufung 15.03.2026", "zpo-berufung", "2026-03-15", undefined],
+    [
+      "frist berechnen einspruch_zahlungsbefehl ab 02.03.2026",
+      "einspruch_zahlungsbefehl",
+      "2026-03-02",
+      undefined,
+    ],
     ["deadline berechnen zpo-klage 01.02.2026 NW", "zpo-klage", "2026-02-01", "NW"],
   ])("%# %s", (input, ruleKey, startDate, bundesland) => {
     const r = parseIntent(input);
@@ -386,6 +392,13 @@ describe("parseIntent — deadline_calc", () => {
     expect(r.ruleKey).toBe(ruleKey);
     expect(r.startDate).toBe(startDate);
     expect(r.bundesland).toBe(bundesland);
+  });
+
+  test("FRI-2 § 222 Abs 2 ZPO: 'ferialsache' flag is parsed", () => {
+    const r = parseIntent("frist berechnen rekurs ab 2026-07-20 ferialsache");
+    expect(r.kind).toBe("deadline_calc");
+    if (r.kind !== "deadline_calc") return;
+    expect(r.ferialsache).toBe(true);
   });
 
   test("'frist berechnen' without rule → not deadline_calc", () => {

@@ -1,14 +1,17 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { can } from "@/lib/permissions";
 import {
   GUARD_READ_FAILED,
   checkProtectedArrayWrite,
+  guardSecondCheckWrite,
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
 import { checkBillingArrayAppend, checkInvoiceArrayWrite } from "@/lib/billing-write-guards";
+import { planDeadlineArrayAppend, type DeadlineChangeEvent } from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/array-append");
@@ -65,15 +68,46 @@ export const POST = createHandler(
     );
     if (invoiceRejection) return rejectionResponse(invoiceRejection);
 
+    // New Fristen in a matter: second-check fields dropped, creator stamped
+    // from the session, audit entry written; the matter's version advances.
+    let payload = body;
+    let deadlineEvents: DeadlineChangeEvent[] = [];
+    let nextVersion: number | null = null;
+    if (body.field === "deadlines") {
+      const read = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
+      if (read.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+      if (read.kind === "missing") return apiError("not_found", "Seite nicht gefunden", 404);
+      const fm = (read.page.frontmatter ?? {}) as Record<string, unknown>;
+      const guarded = guardSecondCheckWrite({ deadlines: body.items }, null);
+      if ("reject" in guarded) return rejectionResponse(guarded.reject);
+      const plan = planDeadlineArrayAppend(
+        guarded.frontmatter.deadlines as unknown[],
+        ctx.user,
+        body.slug
+      );
+      if ("reject" in plan) return rejectionResponse(plan.reject);
+      payload = { ...body, items: plan.items };
+      deadlineEvents = plan.events;
+      const storedVersion = Number(fm.version);
+      nextVersion = (Number.isFinite(storedVersion) ? storedVersion : 0) + 1;
+    }
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/array-append`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
         signal: AbortSignal.timeout(15_000),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) return Response.json(data ?? { error: "append_failed" }, { status: res.status });
+      if (nextVersion !== null) {
+        await enginePatchPage(
+          ctx.headers,
+          { slug: body.slug, frontmatter: { version: nextVersion } },
+          { timeoutMs: 15_000 }
+        );
+        await logDeadlineEvents(ctx, deadlineEvents);
+      }
       return Response.json(data);
     } catch (err) {
       log.error("[pages/array-append] failed:", err instanceof Error ? err.message : String(err));

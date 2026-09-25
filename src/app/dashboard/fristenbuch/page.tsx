@@ -57,6 +57,9 @@ export default function FristenbuchPage() {
 
   const { data, isLoading: loading, isError, refetch } = useFristen();
   const fristen = useMemo(() => data?.fristen ?? [], [data]);
+  // A deadline source failed: the register is incomplete and must say so —
+  // on screen, in the printout and in the CSV export.
+  const partial = data?.partial === true;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [caseFilter, setCaseFilter] = useState<string>("");
@@ -175,7 +178,10 @@ export default function FristenbuchPage() {
       e.completed_by,
       e.source === "legal_case" ? "Akte" : "Fristenbuch",
     ]);
-    const csv = [headers, ...rows].map((r) => r.map(csvCell).join(";")).join("\r\n");
+    const warningRows = partial ? [[`WARNUNG: ${t("deadlines.error_partial")}`], []] : [];
+    const csv = [...warningRows, headers, ...rows]
+      .map((r) => r.map(csvCell).join(";"))
+      .join("\r\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -419,6 +425,19 @@ export default function FristenbuchPage() {
         ))}
       </div>
 
+      {partial && !loadError && (
+        <div
+          role="alert"
+          data-testid="fristenbuch-partial"
+          className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
+        >
+          <AlertTriangle size={18} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+          <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
+            {t("deadlines.error_partial")}
+          </p>
+        </div>
+      )}
+
       {(stats.overdue > 0 || stats.critical > 0) && (
         <div
           role="alert"
@@ -573,6 +592,9 @@ export default function FristenbuchPage() {
           {responsibleFilter &&
             ` · ${t("deadlines.fristenbuch_responsible")}: ${responsibleFilter}`}
         </p>
+        {partial && (
+          <p className="mt-1 text-xs font-semibold">{`WARNUNG: ${t("deadlines.error_partial")}`}</p>
+        )}
       </div>
     </div>
   );

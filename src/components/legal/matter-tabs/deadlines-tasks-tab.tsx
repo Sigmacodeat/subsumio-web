@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Clock,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +29,20 @@ import { sourceLabel, urgencyLabel } from "./format";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
-import { DEADLINE_RULES, calculateDeadline, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { withDeadlineAudit } from "@/lib/legal-deadlines";
 import type { DeadlineEntry } from "@/lib/legal-types";
+import { computeFrist, fristOptionsFor, type FristComputation } from "@/lib/legal/frist-options";
+import { getRechtsraumParams, resolveMatterRechtsraum } from "@/lib/legal/rechtsraum";
+import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
+import {
+  FerialsacheField,
+  ferialsacheAnswerMissing,
+  ferialsacheQuestionVisible,
+  type FerialsacheAnswer,
+} from "@/components/legal/ferialsache-field";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { CitationPanel } from "@/components/legal/CitationPanel";
 import type { DeadlineFormData } from "@/lib/schemas/case-detail";
 import { csrfFetch } from "@/lib/csrf";
 import { api, ApiRequestError } from "@/lib/api";
@@ -40,6 +52,10 @@ import { useTeam } from "@/lib/queries/settings";
 
 /** Pseudo-Assignee-Wert im Zuständig-Select für den KI-Agenten (WP-7.42). */
 const AGENT_ASSIGNEE = "__agent__";
+
+function isCancelled(dl: { status?: string }): boolean {
+  return dl.status === "cancelled" || dl.status === "storniert";
+}
 
 export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
@@ -55,6 +71,161 @@ export function DeadlinesTasksTab() {
   const [newTaskAssigneeId, setNewTaskAssigneeId] = useState("");
   const { data: teamData } = useTeam();
   const teamMembers = teamData?.members ?? [];
+  const confirm = useConfirm();
+
+  // Rechtsraum for the deadline calculator: the matter's jurisdiction (AT/DE/CH)
+  // wins, otherwise the firm's. Until it is known — or when the firm settings
+  // cannot be read — nothing is computed: no silent fallback to another
+  // country's rules.
+  const [firmRechtsraum, setFirmRechtsraum] = useState<{ state?: string; country?: string }>({});
+  const [settingsState, setSettingsState] = useState<"loading" | "ok" | "error">("loading");
+  useEffect(() => {
+    let cancelled = false;
+    loadKanzleiSettingsStrict()
+      .then((s) => {
+        if (cancelled) return;
+        setFirmRechtsraum(getRechtsraumParams(s));
+        setSettingsState("ok");
+      })
+      .catch(() => {
+        if (!cancelled) setSettingsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const rechtsraum = useMemo(
+    () => resolveMatterRechtsraum(ctx.caseData?.jurisdiction, firmRechtsraum),
+    [ctx.caseData?.jurisdiction, firmRechtsraum]
+  );
+  const fristOptions = useMemo(() => fristOptionsFor(rechtsraum.country), [rechtsraum.country]);
+  const [ferialsache, setFerialsache] = useState<FerialsacheAnswer>(null);
+  const [calcPreview, setCalcPreview] = useState<FristComputation | null>(null);
+  const [calcError, setCalcError] = useState<string | null>(null);
+  const [aiDetectError, setAiDetectError] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<number | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  // KI-Fristvorschläge are AI output: grounding + citation panel are mandatory.
+  const { grounding: aiGrounding, groundAnswer: groundAiDeadlines } = useGroundedAnswer();
+  const suggestionText = useMemo(
+    () =>
+      [
+        ...ctx.aiDetectedDeadlines.map((d) => `${d.title} — ${d.date}`),
+        ...(ctx.caseData?.suggestedDeadlines ?? [])
+          .filter((sd) => !sd.confirmed)
+          .map((sd) => [sd.title, sd.due_date, sd.source_quote].filter(Boolean).join(" — ")),
+      ].join("\n"),
+    [ctx.aiDetectedDeadlines, ctx.caseData?.suggestedDeadlines]
+  );
+  useEffect(() => {
+    if (suggestionText.trim()) void groundAiDeadlines(suggestionText);
+  }, [suggestionText, groundAiDeadlines]);
+
+  function runFristCalc(answer: FerialsacheAnswer): FristComputation | null {
+    if (!ctx.deadlineRuleKey) {
+      setCalcError("Bitte eine Fristart wählen.");
+      return null;
+    }
+    if (settingsState !== "ok") {
+      setCalcPreview(null);
+      setCalcError(
+        settingsState === "error"
+          ? "Kanzlei-Einstellungen (Rechtsraum) konnten nicht geladen werden — die Frist wird nicht berechnet, damit kein fremdes Fristenrecht angewendet wird."
+          : "Rechtsraum wird geladen …"
+      );
+      return null;
+    }
+    try {
+      const result = computeFrist(ctx.deadlineRuleKey, ctx.deadlineStartDate, {
+        country: rechtsraum.country,
+        state: rechtsraum.state,
+        ferialsache: answer === true,
+      });
+      setCalcPreview(result);
+      setCalcError(null);
+      return result;
+    } catch (err) {
+      setCalcPreview(null);
+      setCalcError(err instanceof Error ? err.message : String(err));
+      return null;
+    }
+  }
+
+  function applyFristCalc(result: FristComputation, answer: FerialsacheAnswer) {
+    const current = ctx.deadlineForm.getValues();
+    ctx.deadlineForm.reset({
+      ...current,
+      title: result.label,
+      description: current.description || result.hinweise.join(" · ") || undefined,
+      due_date: result.dueDate,
+      type: "deadline",
+      status: "pending",
+      rule_key: result.key,
+      law: result.law,
+      start_date: result.fristbeginn,
+      calculation_note: result.hinweise.join(" · "),
+      vorfrist_date: result.vorfrist ?? current.vorfrist_date,
+      is_notfrist: result.notfrist || current.is_notfrist === true,
+      // A period extended by the verhandlungsfreie Zeit is only right if the
+      // matter is no Ferialsache — a second person confirms that.
+      second_check_required: result.notfrist || result.vhfzVerlaengert || undefined,
+      ferialsache: result.ferialsacheRelevant ? answer === true : undefined,
+      review_status: "unreviewed",
+    } as DeadlineFormData);
+  }
+
+  function deleteDeadline(index: number) {
+    const dl = ctx.deadlinesList[index];
+    if (!dl) return;
+    if (dl.is_notfrist) {
+      // A Notfrist is never removed — it is cancelled with a reason (logged).
+      setCancelReason("");
+      setCancelTarget(index);
+      return;
+    }
+    void confirm({
+      title: "Frist löschen?",
+      message: `„${dl.title ?? ""}“ (${formatDate(dl.due_date)}) wird aus der Akte entfernt.`,
+      confirmLabel: "Löschen",
+      variant: "danger",
+    }).then((ok) => {
+      if (!ok) return;
+      const updated = ctx.deadlinesList.filter((_, idx) => idx !== index);
+      ctx.setDeadlinesList(updated);
+      ctx.saveCaseUpdate({ deadlines: updated });
+    });
+  }
+
+  function confirmCancelNotfrist() {
+    if (cancelTarget === null) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 5) return;
+    const now = new Date().toISOString();
+    const updated = ctx.deadlinesList.map((item, idx) =>
+      idx === cancelTarget
+        ? ({
+            ...item,
+            status: "cancelled",
+            cancelled_at: now,
+            cancelled_by: ctx.currentUserName,
+            change_reason: reason,
+          } as unknown as DeadlineEntry)
+        : item
+    );
+    // The reason travels once with this save; local state keeps no copy that
+    // could silently justify a later change.
+    ctx.setDeadlinesList(
+      updated.map((item, idx) =>
+        idx === cancelTarget
+          ? ({ ...item, change_reason: undefined } as unknown as DeadlineEntry)
+          : item
+      )
+    );
+    ctx.saveCaseUpdate({ deadlines: updated });
+    setCancelTarget(null);
+    setCancelReason("");
+  }
 
   // Auto-expand form when editing
   useEffect(() => {
@@ -69,6 +240,15 @@ export function DeadlinesTasksTab() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [pathname, router, searchParams]);
+
+  const editingEntry =
+    ctx.editingDeadlineIndex !== null ? ctx.deadlinesList[ctx.editingDeadlineIndex] : undefined;
+  const watchedDueDate = ctx.deadlineForm.watch("due_date");
+  const editingNotfristMoved =
+    editingEntry?.is_notfrist === true &&
+    !!editingEntry.due_date &&
+    !!watchedDueDate &&
+    watchedDueDate !== editingEntry.due_date;
 
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
@@ -246,6 +426,26 @@ export function DeadlinesTasksTab() {
               />
             </div>
 
+            {/* Moving a stored Notfrist needs a reason (server-enforced, logged). */}
+            {editingNotfristMoved && (
+              <div>
+                <label
+                  htmlFor="matter-frist-change-reason"
+                  className="mb-1 block text-xs font-medium text-[color:var(--ds-danger-text)]"
+                >
+                  Begründung für die Änderung der Notfrist *
+                </label>
+                <input
+                  id="matter-frist-change-reason"
+                  {...ctx.deadlineForm.register("change_reason")}
+                  className="w-full rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                />
+                <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                  Wird mit altem und neuem Datum protokolliert (mind. 5 Zeichen).
+                </p>
+              </div>
+            )}
+
             {/* Notfrist + ERV-Zustelldatum */}
             <div className="space-y-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <label className="flex cursor-pointer items-start gap-2.5">
@@ -295,35 +495,81 @@ export function DeadlinesTasksTab() {
               <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                 <select
                   value={ctx.deadlineRuleKey}
-                  onChange={(e) => ctx.setDeadlineRuleKey(e.target.value)}
+                  aria-label="Fristart"
+                  data-testid="matter-frist-rule"
+                  onChange={(e) => {
+                    ctx.setDeadlineRuleKey(e.target.value);
+                    setFerialsache(null);
+                    setCalcPreview(null);
+                    setCalcError(null);
+                  }}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
-                  {DEADLINE_RULES.map((rule) => (
-                    <option key={rule.key} value={rule.key}>
-                      {rule.label} ({rule.law})
+                  <option value="">Fristart wählen …</option>
+                  {fristOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {rechtsraum.country && rechtsraum.country !== "AT"
+                        ? `[${rechtsraum.country}] `
+                        : ""}
+                      {option.group ? `${option.group}: ` : ""}
+                      {option.label} ({option.law})
                     </option>
                   ))}
                 </select>
                 <input
                   type="date"
+                  aria-label="Zustellung / Fristbeginn"
                   value={ctx.deadlineStartDate}
-                  onChange={(e) => ctx.setDeadlineStartDate(e.target.value)}
+                  onChange={(e) => {
+                    ctx.setDeadlineStartDate(e.target.value);
+                    setCalcPreview(null);
+                  }}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <Button
                   variant="secondary"
                   className="text-xs"
+                  disabled={ferialsacheAnswerMissing(calcPreview, ferialsache)}
                   onClick={() => {
-                    const rule =
-                      DEADLINE_RULES.find((r) => r.key === ctx.deadlineRuleKey) ??
-                      DEADLINE_RULES[0];
-                    const calculated = calculateDeadline(rule, ctx.deadlineStartDate);
-                    ctx.deadlineForm.reset(calculated as DeadlineFormData);
+                    const result = runFristCalc(ferialsache);
+                    if (!result) return;
+                    // The verhandlungsfreie Zeit extends this period: ask first.
+                    if (ferialsacheAnswerMissing(result, ferialsache)) return;
+                    applyFristCalc(result, ferialsache);
                   }}
                 >
                   {t("cases.detail_dl_calculate")}
                 </Button>
               </div>
+              <p
+                className="text-xs text-[color:var(--ds-text-muted)]"
+                data-testid="matter-frist-rechtsraum"
+              >
+                Fristenrecht:{" "}
+                {rechtsraum.country === "DE"
+                  ? "Deutschland (deutsche Fristenregeln)"
+                  : rechtsraum.country === "CH"
+                    ? "Schweiz"
+                    : "Österreich (ZPO/AVG/BAO, § 222 ZPO, österr. Feiertage)"}
+                {rechtsraum.source === "matter" ? " — laut Akte" : " — laut Kanzlei-Einstellungen"}
+              </p>
+              {calcPreview && ferialsacheQuestionVisible(calcPreview, ferialsache) && (
+                <FerialsacheField
+                  id="matter-frist-ferialsache"
+                  value={ferialsache}
+                  onChange={(v) => {
+                    setFerialsache(v);
+                    const result = runFristCalc(v);
+                    if (result) applyFristCalc(result, v);
+                  }}
+                  missing={ferialsacheAnswerMissing(calcPreview, ferialsache)}
+                />
+              )}
+              {calcError && (
+                <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                  {calcError}
+                </p>
+              )}
             </div>
             <div className="flex gap-2">
               <Button
@@ -396,10 +642,31 @@ export function DeadlinesTasksTab() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text: ctx.aiDetectText, caseSlug: slug }),
                   });
-                  const data = await res.json();
-                  ctx.setAiDetectedDeadlines(data.detected?.length > 0 ? data.detected : []);
+                  const data = (await res.json().catch(() => null)) as {
+                    detected?: Array<{
+                      title: string;
+                      date: string;
+                      type: string;
+                      confidence: number;
+                    }>;
+                    error?: string;
+                    message?: string;
+                  } | null;
+                  if (!res.ok) {
+                    // A failed analysis is NOT "no deadlines found".
+                    ctx.setAiDetectedDeadlines([]);
+                    setAiDetectError(
+                      "Die KI-Fristerkennung ist fehlgeschlagen — der Text wurde NICHT geprüft. Bitte erneut versuchen oder die Fristen manuell erfassen."
+                    );
+                    return;
+                  }
+                  setAiDetectError(null);
+                  ctx.setAiDetectedDeadlines(data?.detected?.length ? data.detected : []);
                 } catch {
                   ctx.setAiDetectedDeadlines([]);
+                  setAiDetectError(
+                    "Die KI-Fristerkennung ist fehlgeschlagen — der Text wurde NICHT geprüft. Bitte erneut versuchen oder die Fristen manuell erfassen."
+                  );
                 } finally {
                   ctx.setAiDetecting(false);
                 }
@@ -428,6 +695,11 @@ export function DeadlinesTasksTab() {
               </Button>
             )}
           </div>
+          {aiDetectError && (
+            <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+              {aiDetectError}
+            </p>
+          )}
           {ctx.aiDetectedDeadlines.length > 0 && (
             <div className="space-y-2">
               {ctx.aiDetectedDeadlines.map((d, i) => (
@@ -438,7 +710,8 @@ export function DeadlinesTasksTab() {
                   <div className="min-w-0">
                     <div className="text-sm text-[color:var(--ds-text)]">{d.title}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {d.date} · {d.type}
+                      <span className="tabular-nums">{formatDate(d.date)}</span> · {d.type} ·
+                      KI-Vorschlag, anwaltlich zu prüfen
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -476,6 +749,10 @@ export function DeadlinesTasksTab() {
                   </div>
                 </div>
               ))}
+              <CitationPanel
+                data={{ grounding: aiGrounding, citations: [], isStreaming: false }}
+                compact
+              />
             </div>
           )}
         </div>
@@ -554,6 +831,10 @@ export function DeadlinesTasksTab() {
                   </div>
                 </div>
               ))}
+            <CitationPanel
+              data={{ grounding: aiGrounding, citations: [], isStreaming: false }}
+              compact
+            />
           </div>
         )}
 
@@ -575,8 +856,9 @@ export function DeadlinesTasksTab() {
               const isOverdue = daysUntil < 0;
               const isCritical = daysUntil >= 0 && daysUntil <= 3;
               const isWarning = daysUntil > 3 && daysUntil <= 7;
-              const status =
-                dl.status === "done"
+              const status = isCancelled(dl)
+                ? "cancelled"
+                : dl.status === "done"
                   ? "done"
                   : isOverdue
                     ? "overdue"
@@ -614,6 +896,11 @@ export function DeadlinesTasksTab() {
                     border:
                       "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
                   },
+                  cancelled: {
+                    label: "Storniert",
+                    color: "text-[color:var(--ds-text-muted)]",
+                    border: "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]",
+                  },
                 };
               const cfg = statusConfig[status];
               return (
@@ -625,7 +912,12 @@ export function DeadlinesTasksTab() {
                       </span>
                       <Badge
                         variant="default"
-                        className={cn("border text-xs", statusBadgeClasses(status as StatusColor))}
+                        className={cn(
+                          "border text-xs",
+                          statusBadgeClasses(
+                            (status === "cancelled" ? "done" : status) as StatusColor
+                          )
+                        )}
                       >
                         {cfg.label}
                       </Badge>
@@ -693,15 +985,16 @@ export function DeadlinesTasksTab() {
                         {t("cases.detail_dl_edit_btn")}
                       </button>
                       <button
-                        disabled={caseData?.status === "archived"}
-                        onClick={() => {
-                          const updated = ctx.deadlinesList.filter((_, idx) => idx !== i);
-                          ctx.setDeadlinesList(updated);
-                          ctx.saveCaseUpdate({ deadlines: updated });
-                        }}
+                        disabled={caseData?.status === "archived" || isCancelled(dl)}
+                        aria-label={
+                          dl.is_notfrist
+                            ? `Notfrist „${dl.title ?? ""}“ stornieren`
+                            : `Frist „${dl.title ?? ""}“ löschen`
+                        }
+                        onClick={() => deleteDeadline(i)}
                         className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={14} aria-hidden />
                       </button>
                     </div>
                   </div>
@@ -709,7 +1002,7 @@ export function DeadlinesTasksTab() {
                     <span className="text-[color:var(--ds-text)] tabular-nums">
                       {formatDate(dl.due_date)}
                     </span>
-                    {status !== "done" && (
+                    {status !== "done" && status !== "cancelled" && (
                       <span
                         className={isOverdue ? "text-[color:var(--ds-danger-text)]" : cfg.color}
                       >
@@ -958,20 +1251,82 @@ export function DeadlinesTasksTab() {
                 </select>
                 <button
                   disabled={caseData?.status === "archived"}
+                  aria-label={`Aufgabe „${task.text}“ löschen`}
                   onClick={() => {
-                    const updated = ctx.tasks.filter((t) => t.id !== task.id);
-                    ctx.setTasks(updated);
-                    ctx.saveCaseUpdate({ tasks: updated });
+                    void confirm({
+                      title: "Aufgabe löschen?",
+                      message: `„${task.text}“ wird aus der Akte entfernt.`,
+                      confirmLabel: "Löschen",
+                      variant: "danger",
+                    }).then((ok) => {
+                      if (!ok) return;
+                      const updated = ctx.tasks.filter((t) => t.id !== task.id);
+                      ctx.setTasks(updated);
+                      ctx.saveCaseUpdate({ tasks: updated });
+                    });
                   }}
                   className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={14} aria-hidden />
                 </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Notfrist: cancel with a mandatory reason instead of deleting */}
+      {cancelTarget !== null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notfrist-cancel-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl">
+            <h3
+              id="notfrist-cancel-title"
+              className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
+            >
+              Notfrist stornieren?
+            </h3>
+            <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
+              „{ctx.deadlinesList[cancelTarget]?.title ?? ""}“ (
+              {formatDate(ctx.deadlinesList[cancelTarget]?.due_date ?? "")}) ist eine Notfrist. Sie
+              wird nicht gelöscht, sondern mit Begründung storniert und protokolliert. Nur
+              Anwältinnen/Anwälte und Administratoren dürfen das.
+            </p>
+            <label htmlFor="notfrist-cancel-reason" className="mb-1 block text-xs font-medium">
+              Begründung *
+            </label>
+            <input
+              id="notfrist-cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCancelTarget(null)}
+                className="text-xs"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={cancelReason.trim().length < 5}
+                onClick={confirmCancelNotfrist}
+                className="text-xs"
+              >
+                Stornieren
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* P0: Vier-Augen second-check confirmation modal for Notfristen */}
       {secondCheckIndex !== null && (
@@ -1058,7 +1413,9 @@ export function DeadlinesTasksTab() {
                       title:
                         err instanceof ApiRequestError && err.code === "second_check_self_blocked"
                           ? t("deadlines.second_check_self_blocked")
-                          : t("deadlines.update_failed"),
+                          : err instanceof ApiRequestError && err.status === 409 && err.message
+                            ? err.message
+                            : t("deadlines.update_failed"),
                     });
                   } finally {
                     setSecondCheckBusy(false);

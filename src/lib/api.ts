@@ -441,6 +441,23 @@ export const api = {
       });
     },
 
+    /**
+     * Versioned partial update: the server refuses with 409 when the page's
+     * version is no longer `version` (someone else wrote in between).
+     */
+    patchPageIfMatch(
+      slug: string,
+      frontmatter: Record<string, unknown>,
+      version: number
+    ): Promise<{ slug: string }> {
+      const path = slug.split("/").map(encodeURIComponent).join("/");
+      return request(`/api/pages/${path}`, {
+        method: "PATCH",
+        headers: { "If-Match": String(version) },
+        body: JSON.stringify({ frontmatter }),
+      });
+    },
+
     deletePage(slug: string): Promise<{ success: boolean }> {
       const path = slug.split("/").map(encodeURIComponent).join("/");
       return request(`/api/pages/${path}`, { method: "DELETE" });
