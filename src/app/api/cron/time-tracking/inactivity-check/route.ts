@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateCronAuth } from "@/lib/cron-auth";
-import { getCurrentActivity, stopCurrentActivity } from "@/lib/time-tracking";
+import {
+  getCurrentActivity,
+  stopCurrentActivity,
+  timerExceededMaxDuration,
+  timerMaxDurationEnd,
+} from "@/lib/time-tracking";
 import { broadcastTimeActivityStopped } from "@/lib/realtime-bus";
+import { logAudit } from "@/lib/audit";
 import { getStore } from "@/lib/auth/store";
 import { logger } from "@/lib/logger";
 
@@ -32,23 +38,43 @@ export async function POST(req: NextRequest) {
       const lastActivity = new Date(current.last_activity_at);
       const now = new Date();
       const inactiveMs = now.getTime() - lastActivity.getTime();
+      // Hard cap first: a timer with a continuous heartbeat (tab left open
+      // overnight) is never "inactive", so the threshold below alone would
+      // let it run — and bill — forever.
+      const overCap = timerExceededMaxDuration(current, now);
 
-      if (inactiveMs > INACTIVITY_THRESHOLD_MS) {
-        // Stop at the last real heartbeat — ending at `now` would bill the
-        // whole idle tail (30+ min plus cron delay) to the client.
-        const entryId = await stopCurrentActivity(
-          brainId,
-          userId,
-          undefined,
-          current.last_activity_at
-        );
+      if (overCap || inactiveMs > INACTIVITY_THRESHOLD_MS) {
+        // Stop at the cap boundary or the last real heartbeat — ending at
+        // `now` would bill the idle tail (30+ min plus cron delay, resp.
+        // everything past the cap) to the client.
+        const endedAt = overCap ? timerMaxDurationEnd(current) : current.last_activity_at;
+        const entryId = await stopCurrentActivity(brainId, userId, undefined, endedAt);
         if (entryId) {
           stoppedCount++;
           broadcastTimeActivityStopped(brainId, { userId, entryId });
-          log.info("Stopped inactive activity", {
-            userId,
-            inactiveMinutes: Math.floor(inactiveMs / 60000),
-          });
+          if (overCap) {
+            void logAudit("timer.max_duration", "time_entry", {
+              brainId,
+              userId,
+              entityId: entryId,
+              details: {
+                started_at: current.started_at,
+                capped_at: endedAt,
+                case_slug: current.case_slug,
+                description: current.description,
+              },
+            });
+            log.info("Stopped over-cap activity", {
+              userId,
+              startedAt: current.started_at,
+              cappedAt: endedAt,
+            });
+          } else {
+            log.info("Stopped inactive activity", {
+              userId,
+              inactiveMinutes: Math.floor(inactiveMs / 60000),
+            });
+          }
         }
       }
     }

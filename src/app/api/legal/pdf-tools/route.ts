@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { mergePdfs, mergeStampedAttachments, PdfToolError } from "@/lib/pdf-tools";
-import type { AuditAction } from "@/lib/audit";
 
 export const maxDuration = 120;
 
@@ -17,7 +16,7 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     audit: (_ctx, _body, _query, req) => ({
-      action: "legal.pdf_tools" as unknown as AuditAction,
+      action: "legal.pdf_tools" as const,
       entityType: "document",
       details: { op: req ? new URL(req.url).searchParams.get("op") : null },
     }),
