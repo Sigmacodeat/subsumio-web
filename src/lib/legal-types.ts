@@ -106,6 +106,8 @@ export interface ExpenseEntry {
   description: string;
   date: string;
   amount: number;
+  /** ISO-4217-Währungscode (Default "EUR" — gesetzt ab /api/expenses). */
+  currency?: string;
   vat_rate?: number;
   billable?: boolean;
   billed?: boolean;

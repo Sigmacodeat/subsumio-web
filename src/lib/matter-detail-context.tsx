@@ -21,7 +21,8 @@ import { useMe } from "@/lib/queries/auth";
 import { useRealtime } from "@/lib/realtime";
 import { usePresence } from "@/lib/use-presence";
 import { useMutationQueue } from "@/lib/use-mutation";
-import { api } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { api, ApiRequestError } from "@/lib/api";
 import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { csrfFetch } from "@/lib/csrf";
 import { isOnline, enqueueMutation, enqueueFileUpload, getCache } from "@/lib/offline-store";
@@ -118,6 +119,10 @@ interface MatterDetailContextValue {
   // Expenses
   expensesList: ExpenseEntry[];
   setExpensesList: React.Dispatch<React.SetStateAction<ExpenseEntry[]>>;
+  /** DELETE /api/expenses — serverseitiger Billed-Guard (409), offline Queue-Fallback. */
+  deleteExpense: (id: string) => Promise<void>;
+  /** POST /api/expenses/unbill — Abrechnung einer Auslage zurücknehmen (GoBD-Unlock). */
+  unbillExpense: (id: string) => Promise<void>;
 
   // Evidence
   evidenceList: EvidenceEntry[];
@@ -316,6 +321,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     contextCaseSlug ||
     (Array.isArray(params.slug) ? params.slug.join("/") : (params.slug as string));
   const { pendingCount: offlinePendingCount, syncing: offlineSyncing } = useMutationQueue();
+  const queryClient = useQueryClient();
 
   const activeTab: string = contextTab;
 
@@ -758,6 +764,20 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     const p = payload as { slug?: string };
     if (p?.slug === slug) void refreshCaseData();
   });
+  // Expense-Änderungen anderer Clients (POST/PATCH/DELETE /api/expenses)
+  // tragen case_slug — wie bei case.updated die Akte frisch lesen.
+  const onExpenseEvent = useCallback(
+    (payload: unknown) => {
+      const p = payload as { case_slug?: string };
+      if (p?.case_slug === slug) void refreshCaseData();
+    },
+    [slug, refreshCaseData]
+  );
+  useRealtime("expense.created", onExpenseEvent);
+  useRealtime("expense.updated", onExpenseEvent);
+  useRealtime("expense.deleted", onExpenseEvent);
+  useRealtime("expense.billed", onExpenseEvent);
+  useRealtime("expense.unbilled", onExpenseEvent);
 
   // ── AI evidence fetch ───────────────────────────────────────────────
 
@@ -1384,11 +1404,15 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const onExpenseSubmit = useCallback(
     (data: ExpenseFormData) => {
       const amount = parseFloat(data.amount);
-      if (data.description.trim() && Number.isFinite(amount) && amount > 0) {
+      if (!data.description.trim() || !Number.isFinite(amount) || amount <= 0) return;
+      if (!caseData || caseData.status === "archived") return;
+      if (!isOnline()) {
+        // Offline: bisheriger Pfad — lokale Liste + updatePage-Mutation in der
+        // Queue (wird beim Reconnect replayed). IDs bleiben Strings, kompatibel.
         const updated: ExpenseEntry[] = [
           ...expensesList,
           {
-            id: Date.now().toString(),
+            id: `exp-${Date.now()}`,
             description: data.description.trim(),
             amount: Math.round(amount * 100) / 100,
             date: new Date().toISOString(),
@@ -1399,9 +1423,85 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         setExpensesList(updated);
         expenseForm.reset({ description: "", amount: "", billable: true });
         void saveCaseUpdate({ expenses: updated });
+        return;
+      }
+      void (async () => {
+        try {
+          const res = await api.expenses.create({
+            case_slug: caseData.slug,
+            description: data.description.trim(),
+            amount: Math.round(amount * 100) / 100,
+            date: new Date().toISOString(),
+            billable: data.billable,
+          });
+          setExpensesList((prev) => [...prev, res.entry]);
+          expenseForm.reset({ description: "", amount: "", billable: true });
+          queryClient.invalidateQueries({ queryKey: ["brain", "page", caseData.slug] });
+          queryClient.invalidateQueries({ queryKey: ["brain", "pages"] });
+          addToast({ type: "success", title: t("cases.detail_exp_saved") });
+        } catch (err) {
+          addToast({
+            type: "error",
+            title: t("cases.detail_exp_save_failed"),
+            description: err instanceof Error ? err.message : undefined,
+          });
+        }
+      })();
+    },
+    [caseData, expensesList, expenseForm, saveCaseUpdate, queryClient, addToast, t]
+  );
+
+  const deleteExpense = useCallback(
+    async (id: string) => {
+      if (!caseData || caseData.status === "archived") return;
+      if (!isOnline()) {
+        const updated = expensesList.filter((e) => e.id !== id);
+        setExpensesList(updated);
+        void saveCaseUpdate({ expenses: updated });
+        return;
+      }
+      try {
+        await api.expenses.delete({ case_slug: caseData.slug, id });
+        setExpensesList((prev) => prev.filter((e) => e.id !== id));
+        queryClient.invalidateQueries({ queryKey: ["brain", "page", caseData.slug] });
+        queryClient.invalidateQueries({ queryKey: ["brain", "pages"] });
+        addToast({ type: "success", title: t("cases.detail_exp_deleted") });
+      } catch (err) {
+        const isBilled = err instanceof ApiRequestError && err.code === "expense_billed";
+        addToast({
+          type: "error",
+          title: isBilled
+            ? t("cases.detail_exp_billed_locked")
+            : t("cases.detail_exp_delete_failed"),
+          description: !isBilled && err instanceof Error ? err.message : undefined,
+        });
+        // Billed-Guard: Server-State könnte neuer sein als die lokale Liste.
+        if (isBilled) void refreshCaseData();
       }
     },
-    [expensesList, expenseForm, saveCaseUpdate]
+    [caseData, expensesList, saveCaseUpdate, queryClient, addToast, t, refreshCaseData]
+  );
+
+  const unbillExpense = useCallback(
+    async (id: string) => {
+      if (!caseData || caseData.status === "archived") return;
+      try {
+        const res = await api.expenses.unbill({ entry_ids: [id], case_slug: caseData.slug });
+        if (res.updated > 0) {
+          setExpensesList((prev) =>
+            prev.map((e) => (e.id === id ? { ...e, billed: false, invoice_number: undefined } : e))
+          );
+          queryClient.invalidateQueries({ queryKey: ["brain", "page", caseData.slug] });
+          queryClient.invalidateQueries({ queryKey: ["brain", "pages"] });
+          addToast({ type: "success", title: t("billingtab.unbilled_ok") });
+        } else {
+          addToast({ type: "error", title: t("billingtab.unbill_failed") });
+        }
+      } catch {
+        addToast({ type: "error", title: t("billingtab.unbill_failed") });
+      }
+    },
+    [caseData, queryClient, addToast, t]
   );
 
   // ── Utility functions ───────────────────────────────────────────────
@@ -1628,6 +1728,8 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     setTimeEntries,
     expensesList,
     setExpensesList,
+    deleteExpense,
+    unbillExpense,
     evidenceList,
     setEvidenceList,
     editingEvidenceIndex,

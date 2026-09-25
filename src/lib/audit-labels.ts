@@ -57,6 +57,11 @@ export type AuditAction =
   | "invoice.e_invoice_validate"
   | "invoice.rksv_sign"
   | "invoice.rksv_dep_export"
+  | "expense.create"
+  | "expense.update"
+  | "expense.delete"
+  | "expense.mark_billed"
+  | "expense.unbill"
   | "fibu.bank_feed"
   | "fibu.camt_import"
   | "fibu.opos_import"
@@ -391,6 +396,11 @@ const ACTION_LABELS: Record<string, string> = {
   "invoice.e_invoice_validate": "E-Rechnung validiert",
   "invoice.rksv_sign": "RKSV-Beleg signiert",
   "invoice.rksv_dep_export": "RKSV-DEP exportiert",
+  "expense.create": "Auslage erfasst",
+  "expense.update": "Auslage aktualisiert",
+  "expense.delete": "Auslage gelöscht",
+  "expense.mark_billed": "Auslagen abgerechnet",
+  "expense.unbill": "Auslagen-Abrechnung zurückgenommen",
   "document.upload": "Dokument hochgeladen",
   "document.download": "Dokument heruntergeladen",
   "document.delete": "Dokument gelöscht",
@@ -670,6 +680,10 @@ const ACTION_LABELS: Record<string, string> = {
   "docusign.send": "DocuSign: Dokument zur Unterschrift versendet",
   "docusign.status": "DocuSign: Status aktualisiert",
   "email.send": "E-Mail gesendet",
+  "expenses.read": "Auslagen abgerufen",
+  "expenses.create": "Auslage erfasst",
+  "expenses.update": "Auslage geändert",
+  "expenses.delete": "Auslage gelöscht",
   "fibu.bank_feed": "Buchhaltung: Bankumsätze verarbeitet",
   "fibu.opos_import": "Buchhaltung: offene Posten importiert",
   "fibu.opos_list": "Buchhaltung: offene Posten abgerufen",

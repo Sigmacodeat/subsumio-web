@@ -167,6 +167,11 @@ class RealtimeClient {
         "time.entry.deleted",
         "time.activity.started",
         "time.activity.stopped",
+        "expense.created",
+        "expense.updated",
+        "expense.deleted",
+        "expense.billed",
+        "expense.unbilled",
       ];
       for (const evt of knownEvents) {
         this.es.addEventListener(evt, (ev: MessageEvent) => {

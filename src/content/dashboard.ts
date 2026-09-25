@@ -3484,6 +3484,20 @@ export const D = {
   "cases.detail_exp_billed": { de: "abgerechnet", en: "billed" },
   "cases.detail_exp_internal": { de: "intern", en: "internal" },
   "cases.detail_exp_delete": { de: "Auslage löschen", en: "Delete expense" },
+  "cases.detail_exp_saved": { de: "Auslage erfasst", en: "Expense recorded" },
+  "cases.detail_exp_save_failed": {
+    de: "Auslage konnte nicht gespeichert werden",
+    en: "Expense could not be saved",
+  },
+  "cases.detail_exp_deleted": { de: "Auslage gelöscht", en: "Expense deleted" },
+  "cases.detail_exp_delete_failed": {
+    de: "Auslage konnte nicht gelöscht werden",
+    en: "Expense could not be deleted",
+  },
+  "cases.detail_exp_billed_locked": {
+    de: "Auslage ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
+    en: "Expense is already billed — unbill it first.",
+  },
   "cases.detail_audit_title": { de: "Audit-Trail", en: "Audit trail" },
   "cases.detail_audit_empty": {
     de: "Noch keine Audit-Einträge vorhanden.",

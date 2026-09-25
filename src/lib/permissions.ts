@@ -66,6 +66,10 @@ export type RouteAction =
   | "invoice.read"
   | "invoice.write"
   | "invoice.e_invoice"
+  | "expenses.read" // GET /api/expenses
+  | "expenses.create" // POST /api/expenses
+  | "expenses.update" // PATCH /api/expenses, POST /api/expenses/mark-billed|unbill
+  | "expenses.delete" // DELETE /api/expenses
   | "legal.conflict"
   | "legal.anonymize"
   | "legal.judgements"
@@ -154,6 +158,10 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "invoice.read": ["admin", "lawyer", "assistant"],
   "invoice.write": ["admin", "lawyer", "assistant"],
   "invoice.e_invoice": ["admin", "lawyer", "assistant"],
+  "expenses.read": ["admin", "lawyer", "assistant"],
+  "expenses.create": ["admin", "lawyer", "assistant"],
+  "expenses.update": ["admin", "lawyer", "assistant"],
+  "expenses.delete": ["admin", "lawyer", "assistant"],
   "legal.conflict": ["admin", "lawyer", "assistant"],
   "legal.anonymize": ["admin", "lawyer", "assistant"],
   "legal.judgements": ["admin", "lawyer", "assistant"],
@@ -267,6 +275,10 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "invoice.read": "invoice.create",
     "invoice.write": "invoice.create",
     "invoice.e_invoice": "invoice.e_invoice_generate",
+    "expenses.read": "case.view",
+    "expenses.create": "expense.create",
+    "expenses.update": "expense.update",
+    "expenses.delete": "expense.delete",
     "legal.conflict": "conflict.check",
     "legal.anonymize": "legal.anonymize",
     "legal.judgements": "judgements.search",

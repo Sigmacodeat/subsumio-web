@@ -50,6 +50,7 @@ export function BillingTab() {
   const router = useRouter();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [unbillingId, setUnbillingId] = useState<string | null>(null);
+  const [unbillingExpenseId, setUnbillingExpenseId] = useState<string | null>(null);
   const [newEntry, setNewEntry] = useState({
     description: "",
     minutes: "",
@@ -131,11 +132,26 @@ export function BillingTab() {
   const handleDeleteExpense = useCallback(
     (id: string) => {
       if (!ctx.caseData || ctx.caseData.status === "archived") return;
-      const updated = ctx.expensesList.filter((e) => e.id !== id);
-      ctx.setExpensesList(updated);
-      void ctx.saveCaseUpdate({ expenses: updated });
+      // DELETE /api/expenses — serverseitiger Billed-Guard; Toasts/State
+      // übernimmt der Context (offline: Queue-Fallback).
+      void ctx.deleteExpense(id);
     },
     [ctx]
+  );
+
+  const handleUnbillExpense = useCallback(
+    async (id: string) => {
+      if (!ctx.caseData || ctx.caseData.status === "archived") return;
+      if (!confirm(t("billingtab.unbill_confirm"))) return;
+      setUnbillingExpenseId(id);
+      try {
+        // POST /api/expenses/unbill — Toasts im Context.
+        await ctx.unbillExpense(id);
+      } finally {
+        setUnbillingExpenseId(null);
+      }
+    },
+    [ctx, t]
   );
 
   const handleUnbillTimeEntry = useCallback(
@@ -552,13 +568,30 @@ export function BillingTab() {
                       <ExternalLink size={10} />
                     </a>
                   )}
-                  <button
-                    disabled={isArchived}
-                    onClick={() => handleDeleteExpense(expense.id)}
-                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {expense.billed && !isArchived && (
+                    <button
+                      disabled={unbillingExpenseId === expense.id}
+                      onClick={() => handleUnbillExpense(expense.id)}
+                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-warning-text)] active:scale-[0.99] motion-reduce:transition-none"
+                      title={t("billingtab.unbill")}
+                    >
+                      {unbillingExpenseId === expense.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Undo2 size={14} />
+                      )}
+                    </button>
+                  )}
+                  {!expense.billed && (
+                    <button
+                      disabled={isArchived}
+                      onClick={() => handleDeleteExpense(expense.id)}
+                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
+                      title={t("cases.detail_exp_delete")}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
