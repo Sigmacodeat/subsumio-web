@@ -23,14 +23,21 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 7b  | KI — Feedback-Persistenz   | #55 | 9018c6d394   | ✅ live | Retrieval-Feedback als Engine-Pages persistiert (org-scoped, eval-gate robust bei Engine-Ausfall)                                                                                |
 | 8b  | Zeit — Atomares Append     | #56 | a587d36914   | ✅ live | Engine-Ops `page_array_append`/`page_array_mutate` (pglite+pg identisch, ein UPDATE-Statement), alle time_entries-Pfade migriert; Harness-Fix RESTART IDENTITY                   |
 | 8c  | Zeit — Expense-Endpoint    | #57 | c5e3345207   | ✅ live | `/api/expenses` CRUD + mark-billed/unbill, billed-Guard 409, UI migriert (updatePage nur noch Offline-Fallback)                                                                  |
+| 1a  | Fristen — Ruhetage         | #58 | b029d3f1dd   | ✅ live | `deadlineQuietDays` (Sa/So/Feiertag im Kanzlei-Rechtsraum): Digest+WhatsApp+Eskalation auf nächsten Werktag; Notfrist-Eskalation einmal pro Frist statt täglich                  |
+| 8d  | Zeit/Geld — Rest           | #59 | 77e48abf44   | ✅ live | Timer-Obergrenze 12h (Heartbeat-409 + Widget-Aufräumen), `invoice-mark-billed`→`/api/expenses/mark-billed`, Mahnformel 5/10/15 € kumulativ, 7 AuditAction-Casts deklariert       |
+| 3a  | Kommunikation — Rest       | #65 | 9369263fd0   | ✅ live | Resend-Webhook `/api/webhooks/resend` (Svix, fail-closed) → Delivery-Status-Write-back; Tracking-Events 90d-Retention; beA-Dead-UI-Counts entfernt                               |
+| 9b  | DSGVO — Rest               | #60 | e9aeb9de97   | ✅ live | AVV-Muster-Download (md + PDF, „anwaltlich zu prüfen"); Per-Item-Retention `retention_until`/`retention_days` für Dokumente/Notizen im trash-purge-Cron                          |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
-- [ ] Fristen: Wochenend-/Ruhezeit-Handling für Eskalations-Mails
-- [ ] Geld: OPOS-Backfill für Altrechnungen; Mahnformeln vereinheitlichen (20/40/60 vs. 5/10/15 €); restliche `as unknown as AuditAction`-Casts
-- [ ] Kommunikation: Delivery-Status-Reconciliation (Bounce-Webhook); Tracking-Retention (DSGVO); beA-Dead-UI-Check
+- [ ] Geld: OPOS-Backfill für Altrechnungen
 - [ ] Portal: optionale zweite Faktor-Ebene für sensible Akten; Link-Registry ggf. als DB-Tabelle; Portal-Aktivitäts-Feed
 - [ ] KI: Retrieval-Feedback soll ins Ranking-Tuning einfließen (Persistenz ✅ seit #55); Beleg-Upload für expense `receipt_slug` verdrahten
 - [ ] Auth: Join in suspendierte Org via altem Link technisch möglich (folgenlos — nächster Request fail-closed, aber UX-wart); SSO-Only-Accounts ohne Passwort können E-Mail nicht ändern (brauchen erst Reset-Flow)
-- [ ] Zeit & Honorar: Timer ohne Obergrenze bei Dauerbetrieb; `invoice-mark-billed.ts` auf `/api/expenses/mark-billed` umstellen (vereinheitlicht Billed-Guard + Audit)
-- [ ] DSGVO: Auftragsverarbeitungs-Doku (AVV-Template) als Download; Retention-Cron deckt nur Akten, nicht Dokumente/Notizen mit eigener Frist
+- [ ] Kommunikation: `EMAIL_TRACKING_RETENTION_DAYS` (90d) konfigurierbar via Kanzlei-Settings; Bounce/Failed auf case_email sollte Badge/Aufgabe in der Akte erzeugen (aktuell nur Postausgangsbuch); SMTP-Pfad liefert keine Delivery-Events
+- [ ] DSGVO: UI zum Setzen von `retention_until`/`retention_days` im Dokumenten-Metadaten-Dialog (Cron-Seite seit #60 live); GoBD-Retention-Ablauf in Release Notes
+- [x] ~~Fristen: Wochenend-/Ruhezeit-Handling~~ ✅ #58
+- [x] ~~Kommunikation: Bounce-Webhook, Tracking-Retention, beA-Dead-UI~~ ✅ #65
+- [x] ~~Zeit: Timer-Obergrenze, `invoice-mark-billed`→`/api/expenses`~~ ✅ #59
+- [x] ~~Geld: Mahnformeln, `as unknown as AuditAction`-Casts~~ ✅ #59
+- [x] ~~DSGVO: AVV-Template, Retention-Cron für Dokumente/Notizen~~ ✅ #60
