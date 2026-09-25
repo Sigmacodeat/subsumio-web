@@ -64,7 +64,7 @@ export function MatterWorkflowCockpit() {
             return (await res.json()) as MatterUnderstandingPanel;
           }
         ),
-        api.brain.listPages({ type: "appointment", limit: 300 }).catch(() => [] as BrainPage[]),
+        api.brain.listAllPages({ type: "appointment", max: 300 }).catch(() => [] as BrainPage[]),
       ]);
       setUnderstanding(understandingResponse);
       setCalendarDeadlineIds(

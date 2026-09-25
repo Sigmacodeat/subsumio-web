@@ -570,13 +570,14 @@ export function useAppointments() {
 
   const reload = useCallback(async () => {
     try {
-      const batch = await api.brain.batchListPages(["appointment", "legal_case"], 200);
+      const batch = await api.brain.batchListPagesDetailed(["appointment", "legal_case"], 200);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       setAppointments(
-        (batch["appointment"] ?? [])
+        (batch.results["appointment"] ?? [])
           .map(mapAppointment)
           .filter((a) => /^\d{4}-\d{2}-\d{2}$/.test(a.date) && a.status !== "cancelled")
       );
-      setCasePages(batch["legal_case"] ?? []);
+      setCasePages(batch.results["legal_case"] ?? []);
       setError(false);
     } catch {
       setError(true);

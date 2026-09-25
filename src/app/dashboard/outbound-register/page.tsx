@@ -37,7 +37,7 @@ export default function OutboundRegisterPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "outbound_entry", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "outbound_entry", max: 200 });
       setEntries(pages.map((p) => p.frontmatter as unknown as OutboundEntry));
     } catch {
       addToast({ type: "error", title: t("outbound.err_load") });
@@ -49,7 +49,7 @@ export default function OutboundRegisterPage() {
   useEffect(() => {
     void load();
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 200 })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
       .catch(() => setCases([]));
   }, [load]);

@@ -17,6 +17,7 @@ import {
 import { clampSearchLimit } from "./engine.ts";
 import type { GBrainConfig } from "./config.ts";
 import type { PageType } from "./types.ts";
+import { encodePageCursor } from "./types.ts";
 import { importFromContent } from "./import-file.ts";
 import { writePageThrough } from "./write-through.ts";
 import { hybridSearch, hybridSearchCached, stampContentFlags } from "./search/hybrid.ts";
@@ -2210,6 +2211,16 @@ const list_pages: Operation = {
       description:
         "v0.43: include each page's frontmatter object in the result (default: false). Lets list views render frontmatter fields (case metadata, deadlines) without N follow-up get_page calls.",
     },
+    cursor: {
+      type: "string",
+      description:
+        "Keyset cursor for sort=updated_desc paging ('<updated_at ISO>|<id>', from a previous response's next_cursor). Unlike offset it never skips/dups rows when pages are updated mid-scan.",
+    },
+    envelope: {
+      type: "boolean",
+      description:
+        "When true, return { pages, has_more, next_cursor } instead of a bare array. has_more reflects rows scanned BEFORE matter-scope/ACL filtering, so a short filtered page does not look like the end of the list.",
+    },
   },
   handler: async (ctx, p) => {
     // Whitelist the sort enum at the handler before passing to the engine.
@@ -2226,17 +2237,29 @@ const list_pages: Operation = {
     // were ignored at this op handler and the engine returned every source's
     // pages indiscriminately.
     const scope = sourceScopeOpts(ctx);
+    const effectiveLimit = clampSearchLimit(p.limit as number | undefined, 50, 100);
     const pages = await ctx.engine.listPages({
       type: p.type as any,
       tag: p.tag as string,
-      limit: clampSearchLimit(p.limit as number | undefined, 50, 100),
+      limit: effectiveLimit,
       offset: Math.max(0, Number(p.offset ?? 0) || 0),
       slugPrefix: typeof p.slug_prefix === "string" ? p.slug_prefix : undefined,
       includeDeleted: (p.include_deleted as boolean) === true,
       updated_after: typeof p.updated_after === "string" ? p.updated_after : undefined,
       sort,
+      cursor: typeof p.cursor === "string" ? p.cursor : undefined,
       ...scope,
     });
+    // Pagination metadata is computed on the UNFILTERED SQL window: matter
+    // scope and document ACLs below can only shrink a page, so "has more"
+    // must mean "the SQL scan returned a full batch" — otherwise a walled
+    // caller would silently lose every entry past a filtered page.
+    const hasMore = pages.length === effectiveLimit;
+    const lastScanned = pages[pages.length - 1];
+    const nextCursor =
+      hasMore && lastScanned && (sort ?? "updated_desc") === "updated_desc"
+        ? encodePageCursor(lastScanned)
+        : null;
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
     // Matter scope is checked on the full page (slug AND every frontmatter
     // matter binding) before the projection below drops the frontmatter —
@@ -2283,6 +2306,9 @@ const list_pages: Operation = {
       });
     }
 
+    if ((p.envelope as boolean) === true) {
+      return { pages: result, has_more: hasMore, next_cursor: nextCursor };
+    }
     return result;
   },
   scope: "read",

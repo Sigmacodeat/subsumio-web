@@ -250,7 +250,10 @@ export default function CalendarExportPage() {
       // Termine aus dem Kanzleikalender.
       const [fristenData, batch] = await Promise.all([
         api.legal.fristen(),
-        api.brain.batchListPages(["appointment"], 300),
+        api.brain.batchListPagesDetailed(["appointment"], 300).then((r) => {
+          if (r.errors.length) throw new Error(`batch list failed: ${r.errors.join(",")}`);
+          return r.results;
+        }),
       ]);
       const loaded: CalendarEvent[] = [];
       for (const f of fristenData.fristen) {

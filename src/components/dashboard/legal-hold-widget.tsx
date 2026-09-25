@@ -23,7 +23,7 @@ interface LegalHoldEntry {
 }
 
 async function fetchLegalHolds(): Promise<{ holds: LegalHoldEntry[]; total: number }> {
-  const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+  const pages = await api.brain.listAllPages({ type: "legal_case", max: 200 });
   const holds: LegalHoldEntry[] = [];
 
   for (const page of pages as CasePage[]) {

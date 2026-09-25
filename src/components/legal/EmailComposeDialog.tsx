@@ -59,7 +59,7 @@ export function EmailComposeDialog({
     if (!open || documents !== undefined || !caseSlug) return;
     let cancelled = false;
     api.brain
-      .listPages({ type: "legal_document", limit: 200 })
+      .listAllPages({ type: "legal_document", max: 200 })
       .then((pages) => {
         if (cancelled) return;
         setAvailableDocs(

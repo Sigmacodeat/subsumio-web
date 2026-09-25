@@ -90,8 +90,9 @@ export const POST = createHandler(
     }
 
     // Refuse a second storno of the same invoice — check every invoice page
-    // for one that already points back here as parent_invoice_id.
-    const allInvoices = await listEnginePages(ctx.headers, "invoice", 5000);
+    // for one that already points back here as parent_invoice_id. Strict:
+    // a partial list could miss an existing storno and allow a duplicate.
+    const allInvoices = await listEnginePages(ctx.headers, "invoice", 5000, { strict: true });
     const existingStorno = allInvoices.find(
       (p) => p.frontmatter?.parent_invoice_id === slug && p.frontmatter?.invoice_type === "storno"
     );

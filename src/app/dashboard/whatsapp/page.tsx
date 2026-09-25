@@ -149,9 +149,15 @@ export default function WhatsAppDashboardPage() {
       ] as const;
       const [statusRes, batch] = await Promise.all([
         api.whatsapp.status().catch(() => null),
-        api.brain
-          .batchListPages([...BATCH_TYPES], 200)
-          .catch(() => ({}) as Record<string, BrainPage[]>),
+        api.brain.batchListPagesDetailed([...BATCH_TYPES], 200).then((r) => {
+          // Partial results still render — but a failed type is surfaced,
+          // not silently presented as "no entries".
+          if (r.errors.length) {
+            console.warn("[whatsapp] batch list partial:", r.errors);
+            setError(t("whatsapp.err_load"));
+          }
+          return r.results;
+        }),
       ]);
       setStatus(statusRes);
       const eventPages = batch["conversation_event"] ?? [];

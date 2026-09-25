@@ -63,7 +63,7 @@ function MobileShareInner() {
   // Aktenliste für die Zuordnung.
   useEffect(() => {
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 200 })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title })).slice(0, 200)))
       .catch(() => {});
   }, []);

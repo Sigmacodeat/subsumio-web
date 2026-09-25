@@ -356,16 +356,53 @@ export async function unbillTimeEntries(
 /** The engine returns at most 100 pages per request; page through the rest. */
 export async function listAllPagesOfType(
   brain: {
-    listPages: (opts: { type: string; limit: number; offset: number }) => Promise<unknown[]>;
+    listPages: (opts: {
+      type: string;
+      limit: number;
+      offset: number;
+      cursor?: string;
+    }) => Promise<unknown[]>;
+    listPagesPaged?: (opts: {
+      type: string;
+      limit: number;
+      offset: number;
+      cursor?: string;
+    }) => Promise<{ items: unknown[]; nextCursor: string | null }>;
   },
   type: string,
   max = 5000
 ) {
   const out: unknown[] = [];
-  for (let offset = 0; offset < max; offset += 100) {
-    const batch = await brain.listPages({ type, limit: 100, offset });
-    out.push(...batch);
-    if (batch.length < 100) break;
+  let fetched = 0;
+  let cursor: string | undefined;
+  let iterations = 0;
+  for (;;) {
+    if (++iterations > 1000) break;
+    const want = Math.min(100, max - fetched);
+    if (want <= 0) break;
+    const opts = {
+      type,
+      limit: want,
+      offset: cursor ? 0 : fetched,
+      ...(cursor ? { cursor } : {}),
+    };
+    // listPagesPaged exposes the engine's keyset cursor — a batch shortened
+    // by matter-scope/ACL filtering is not the end of the list.
+    if (brain.listPagesPaged) {
+      const page = await brain.listPagesPaged(opts);
+      fetched += page.items.length;
+      out.push(...page.items);
+      if (page.nextCursor && page.nextCursor !== cursor) {
+        cursor = page.nextCursor;
+        continue;
+      }
+      if (page.items.length < want) break;
+    } else {
+      const batch = await brain.listPages(opts);
+      fetched += batch.length;
+      out.push(...batch);
+      if (batch.length < want) break;
+    }
   }
   return out as Array<{ slug: string; frontmatter?: unknown }>;
 }
@@ -375,9 +412,9 @@ export async function listAllPagesOfType(
  * with the `time_entries` array embedded in each matter. Shared by /api/time
  * and /api/time/billing-summary so both report identical numbers.
  */
-export async function listAllTimeEntries(brain: {
-  listPages: (opts: { type: string; limit: number; offset: number }) => Promise<unknown[]>;
-}): Promise<TimeEntryWithCase[]> {
+export async function listAllTimeEntries(
+  brain: Parameters<typeof listAllPagesOfType>[0]
+): Promise<TimeEntryWithCase[]> {
   const [pages, cases] = await Promise.all([
     listAllPagesOfType(brain, "time_entry"),
     listAllPagesOfType(brain, "legal_case"),

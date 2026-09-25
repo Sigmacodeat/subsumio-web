@@ -37,7 +37,7 @@ interface CaseWithHold {
 }
 
 async function fetchCases(): Promise<CaseWithHold[]> {
-  const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+  const pages = await api.brain.listAllPages({ type: "legal_case", max: 500 });
   return (pages as CasePage[]).map((p) => {
     const fm = p.frontmatter ?? {};
     return {

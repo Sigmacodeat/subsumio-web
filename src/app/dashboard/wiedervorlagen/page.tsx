@@ -26,7 +26,7 @@ export default function WiedervorlagenPage() {
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["legal-follow-ups"],
-    queryFn: () => api.brain.listPages({ type: "legal_follow_up", limit: 500 }),
+    queryFn: () => api.brain.listAllPages({ type: "legal_follow_up", max: 500 }),
   });
   const casesQuery = useQuery({
     queryKey: ["wiedervorlagen-cases"],
@@ -35,7 +35,7 @@ export default function WiedervorlagenPage() {
   });
   const absencesQuery = useQuery({
     queryKey: ["wiedervorlagen-absences"],
-    queryFn: () => api.brain.listPages({ type: "absence_record", limit: 100 }),
+    queryFn: () => api.brain.listAllPages({ type: "absence_record", max: 100 }),
     staleTime: 60_000,
   });
 

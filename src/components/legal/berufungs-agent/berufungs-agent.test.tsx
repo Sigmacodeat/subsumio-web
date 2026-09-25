@@ -20,6 +20,7 @@ vi.mock("@/lib/api", () => ({
   api: {
     brain: {
       listPages: vi.fn(async () => []),
+      listAllPages: vi.fn(async () => []),
       createPage: vi.fn(async () => ({})),
       updatePage: vi.fn(async () => ({ slug: "", success: true })),
       getPage: vi.fn(async () => ({ slug: "", frontmatter: {} })),

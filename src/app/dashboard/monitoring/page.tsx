@@ -770,9 +770,13 @@ function MonitoringPageInner() {
     setLoading(true);
     setError(null);
     try {
-      const batch = await api.brain.batchListPages(["regulatory_monitor", "regulatory_alert"], 200);
-      const monitorPages = batch["regulatory_monitor"] ?? [];
-      const alertPages = batch["regulatory_alert"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(
+        ["regulatory_monitor", "regulatory_alert"],
+        200
+      );
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const monitorPages = batch.results["regulatory_monitor"] ?? [];
+      const alertPages = batch.results["regulatory_alert"] ?? [];
 
       const parsedMonitors = monitorPages
         .map((p) => frontmatterToMonitor(p))

@@ -40,7 +40,7 @@ export function PracticeQuickCreateDialogs() {
   const [responsible, setResponsible] = useState("");
   const { data: team } = useTeam();
   const { data: cases = [] } = useDialogFetch<CaseOption[]>(kind !== null, async () =>
-    (await api.brain.listPages({ type: "legal_case", limit: 250 })).map(({ slug, title }) => ({
+    (await api.brain.listAllPages({ type: "legal_case", max: 250 })).map(({ slug, title }) => ({
       slug,
       title,
     }))

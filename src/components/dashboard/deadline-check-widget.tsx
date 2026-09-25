@@ -27,7 +27,7 @@ async function fetchDeadlineChecks(): Promise<DeadlineCheckResult[]> {
   // The firm's Rechtsraum decides the rule set (AT engine for Austria). If it
   // cannot be read the check fails visibly instead of guessing a country.
   const rechtsraum = getRechtsraumParams(await loadKanzleiSettingsStrict());
-  const pages = await api.brain.listPages({ type: "deadline_calendar", limit: 100 });
+  const pages = await api.brain.listAllPages({ type: "deadline_calendar", max: 100 });
   const results: DeadlineCheckResult[] = [];
 
   for (const page of pages as DeadlineCalendarPage[]) {

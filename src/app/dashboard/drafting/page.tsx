@@ -241,7 +241,7 @@ export default function DraftingPage() {
   useEffect(() => {
     let cancelled = false;
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 200 })
       .then((pages) => {
         if (!cancelled) setCases(pages);
       })

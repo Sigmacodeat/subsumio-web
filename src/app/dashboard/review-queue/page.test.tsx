@@ -13,7 +13,12 @@ vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k }) }));
 vi.mock("@/lib/api", () => ({
   api: {
     brain: {
-      batchListPages: (...a: unknown[]) => batchListPages(...a),
+      // The page reads per-type errors via the detailed variant.
+      batchListPagesDetailed: (...a: unknown[]) =>
+        batchListPages(...a).then((results: Record<string, unknown>) => ({
+          results,
+          errors: [],
+        })),
       updatePage: (...a: unknown[]) => updatePage(...a),
     },
     auth: { me: () => authMe() },

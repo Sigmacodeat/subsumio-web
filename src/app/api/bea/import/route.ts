@@ -14,7 +14,7 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/bea/import");
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -36,13 +36,12 @@ async function autoAssignCase(
   confidence: "high" | "medium" | "low";
 } | null> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=500`, {
-      headers,
-      signal: AbortSignal.timeout(15_000),
+    // Cursor-paginated: a bare /api/pages call is capped at 100 rows — a
+    // matter past the cap would silently be unassignable.
+    const cases = await listEnginePages(headers, "legal_case", 10_000, {
+      timeoutMs: 15_000,
     });
-    if (!res.ok) return null;
-    const cases = await res.json();
-    if (!Array.isArray(cases) || cases.length === 0) return null;
+    if (cases.length === 0) return null;
 
     const caseRef = (message.case_ref || "").trim().toLowerCase();
     const senderName = (message.sender || "").trim().toLowerCase();

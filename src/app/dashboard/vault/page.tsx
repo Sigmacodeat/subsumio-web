@@ -269,7 +269,7 @@ export default function VaultPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listPages({ limit: DOCS_LIMIT });
+      const pages = await api.brain.listAllPages({ max: DOCS_LIMIT });
       setCapped(pages.length >= DOCS_LIMIT);
       const nextDocs = pages.filter(isDocumentPage).map(parseDoc);
       setDocs(nextDocs);

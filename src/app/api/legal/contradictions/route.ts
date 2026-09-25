@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
+import { enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 export const maxDuration = 120;
@@ -52,27 +53,14 @@ export const POST = createHandler(
     // Fetch all documents for this case from the engine
     let caseDocs: DocumentAnalysis[] = [];
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=200`, {
-        headers: engineHeaders,
-        signal: AbortSignal.timeout(30_000),
+      // Cursor-paginated: a bare /api/pages call is capped at 100 rows, which
+      // silently dropped documents of larger matters.
+      const data = await listEnginePages(engineHeaders, "document", 10_000, {
+        strict: true,
+        timeoutMs: 30_000,
       });
-      if (!res.ok) return apiError("engine_error", `Engine returned ${res.status}`, res.status);
-      const data = await res.json();
-      if (!Array.isArray(data)) {
-        return Response.json({
-          contradictions: [],
-          documents_checked: 0,
-          message: "No documents found",
-        });
-      }
 
-      caseDocs = (
-        data as Array<{
-          slug: string;
-          title: string;
-          frontmatter?: Record<string, unknown>;
-        }>
-      )
+      caseDocs = data
         .filter((p) => {
           const fm = p.frontmatter ?? {};
           return (

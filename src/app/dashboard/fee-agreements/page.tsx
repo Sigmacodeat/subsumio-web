@@ -55,12 +55,13 @@ export default function FeeAgreementsPage() {
 
   const load = useCallback(async () => {
     try {
-      const batch = await api.brain.batchListPages(["fee_agreement", "legal_case"], 200);
+      const batch = await api.brain.batchListPagesDetailed(["fee_agreement", "legal_case"], 200);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       setAgreements(
-        (batch["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement)
+        (batch.results["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement)
       );
       setCases(
-        (batch["legal_case"] ?? []).map((p) => {
+        (batch.results["legal_case"] ?? []).map((p) => {
           const fm = caseFrontmatter(p);
           return {
             slug: p.slug,

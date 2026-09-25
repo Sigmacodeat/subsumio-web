@@ -183,7 +183,7 @@ export default function ContractsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listPages({ type: "legal_contract", limit: 100 });
+      const pages = await api.brain.listAllPages({ type: "legal_contract", max: 100 });
       const nextContracts = pages.map(parseContract);
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);

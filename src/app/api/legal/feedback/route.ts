@@ -1,5 +1,5 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 
 export const dynamic = "force-dynamic";
 
@@ -21,26 +21,13 @@ interface FeedbackPage {
 }
 
 export const GET = createHandler({ action: "brain.read", rateTier: "standard" }, async (ctx) => {
-  const res = await fetch(
-    `${ENGINE_URL}/api/pages?type=client_feedback&slug_prefix=${encodeURIComponent("feedback-")}&limit=500`,
-    { headers: ctx.headers, signal: AbortSignal.timeout(10_000) }
-  );
-  if (!res.ok) {
-    // Kein Feedback-Endpunkt-Fehler an die UI propagieren — leere
-    // Auswertung statt Fehler, wenn noch keine Bewertungen existieren.
-    return apiSuccess({
-      total: 0,
-      nps: null,
-      average: null,
-      promoters: 0,
-      passives: 0,
-      detractors: 0,
-      latest: [],
-      byCase: [],
-    });
-  }
-  const data = await res.json();
-  const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as FeedbackPage[];
+  // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+  // Kein Feedback-Endpunkt-Fehler an die UI propagieren — leere Auswertung
+  // statt Fehler, wenn noch keine Bewertungen existieren (listEnginePages
+  // ist nicht-strict und gibt bei Engine-Ausfall das Gelesene zurück).
+  const pages = (await listEnginePages(ctx.headers, "client_feedback", 10_000, {
+    slugPrefix: "feedback-",
+  })) as unknown as FeedbackPage[];
 
   const entries = pages
     .map((p) => ({

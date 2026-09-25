@@ -40,7 +40,7 @@ export default function ClauseLibraryPage() {
     setLoading(true);
     setError(null);
     try {
-      const pages = await api.brain.listPages({ type: "clause_library", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "clause_library", max: 200 });
       setClauses(pages);
     } catch {
       setError(

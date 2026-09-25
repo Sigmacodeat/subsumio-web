@@ -24,7 +24,12 @@ export const POST = createHandler(
       body.types.map(async (type) => {
         try {
           results[type] = redactPageSecrets(
-            await listEnginePages(ctx.headers, type, body.limit, { timeoutMs: 20_000 })
+            await listEnginePages(ctx.headers, type, body.limit, {
+              timeoutMs: 20_000,
+              // Strict: a mid-scan failure must land in `errors`, not surface
+              // a truncated list that the UI would render as "no entries".
+              strict: true,
+            })
           );
         } catch {
           errors.push(type);

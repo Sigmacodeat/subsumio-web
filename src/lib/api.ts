@@ -297,6 +297,69 @@ async function parseSseConfirm(
   }
 }
 
+/** Shared fetch for `api.brain.listPages` and the paged `listAllPages` loop. */
+function brainListPagesRaw(options?: {
+  limit?: number;
+  offset?: number;
+  source?: string;
+  type?: string;
+  tag?: string;
+  q?: string;
+  cursor?: string;
+  slugPrefix?: string;
+  includeTombstoned?: boolean;
+  caseSlug?: string;
+  caseTitle?: string;
+  caseNumber?: string;
+}): Promise<BrainPage[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+  if (options?.source) params.set("source", options.source);
+  if (options?.type) params.set("type", options.type);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.q) params.set("q", options.q);
+  if (options?.cursor) params.set("cursor", options.cursor);
+  if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
+  if (options?.includeTombstoned) params.set("include_tombstoned", "1");
+  if (options?.caseSlug) params.set("case_slug", options.caseSlug);
+  if (options?.caseTitle) params.set("case_title", options.caseTitle);
+  if (options?.caseNumber) params.set("case_number", options.caseNumber);
+  // The route relays the engine's keyset cursor by wrapping the list as
+  // { items, nextCursor } whenever more rows exist. Single-page callers get
+  // the items; paging callers (listAllPages) read the cursor too.
+  return request<BrainPage[] | { items: BrainPage[]; nextCursor?: string | null }>(
+    `/api/pages?${params.toString()}`
+  ).then((raw) => (Array.isArray(raw) ? raw : (raw?.items ?? [])));
+}
+
+/**
+ * One list page plus the relayed keyset cursor. Internal — used by
+ * listAllPages so it can continue past matter-scope/ACL-filtered batches.
+ */
+function brainListPageWithCursor(options: Parameters<typeof brainListPagesRaw>[0]): Promise<{
+  items: BrainPage[];
+  nextCursor: string | null;
+}> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+  if (options?.source) params.set("source", options.source);
+  if (options?.type) params.set("type", options.type);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.q) params.set("q", options.q);
+  if (options?.cursor) params.set("cursor", options.cursor);
+  if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
+  if (options?.includeTombstoned) params.set("include_tombstoned", "1");
+  return request<BrainPage[] | { items: BrainPage[]; nextCursor?: string | null }>(
+    `/api/pages?${params.toString()}`
+  ).then((raw) =>
+    Array.isArray(raw)
+      ? { items: raw, nextCursor: null }
+      : { items: raw?.items ?? [], nextCursor: raw?.nextCursor ?? null }
+  );
+}
+
 export const api = {
   search(query: string, limit = 10, type?: string): Promise<SearchResult[]> {
     const params = new URLSearchParams({ q: query, limit: String(limit) });
@@ -352,7 +415,7 @@ export const api = {
       q?: string;
       cursor?: string;
       slugPrefix?: string;
-      /** Also return deleted (tombstoned) pages — needed when paging by offset. */
+      /** Also return deleted (tombstoned) pages — needed when paging through. */
       includeTombstoned?: boolean;
       /**
        * Only pages of one matter (frontmatter case_slug / case_title /
@@ -363,54 +426,67 @@ export const api = {
       caseTitle?: string;
       caseNumber?: string;
     }): Promise<BrainPage[]> {
-      const params = new URLSearchParams();
-      if (options?.limit) params.set("limit", String(options.limit));
-      if (options?.offset) params.set("offset", String(options.offset));
-      if (options?.source) params.set("source", options.source);
-      if (options?.type) params.set("type", options.type);
-      if (options?.tag) params.set("tag", options.tag);
-      if (options?.q) params.set("q", options.q);
-      if (options?.cursor) params.set("cursor", options.cursor);
-      if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
-      if (options?.includeTombstoned) params.set("include_tombstoned", "1");
-      if (options?.caseSlug) params.set("case_slug", options.caseSlug);
-      if (options?.caseTitle) params.set("case_title", options.caseTitle);
-      if (options?.caseNumber) params.set("case_number", options.caseNumber);
-      return request(`/api/pages?${params.toString()}`);
+      return brainListPagesRaw(options);
     },
 
     /**
      * Every page of a type, in batches. The engine returns at most 100 per
-     * request, so a plain listPages call silently stops there.
+     * request, so a plain listPages call silently stops there. Pages through
+     * the keyset cursor the server relays — a batch shortened by filters
+     * (matter scope, tombstones) no longer looks like the end of the list.
      */
     async listAllPages(
-      options: { type: string; max?: number } & Record<string, unknown>
+      options: { type?: string; max?: number } & Record<string, unknown>
     ): Promise<BrainPage[]> {
       const max = options.max ?? 10_000;
       const seen = new Map<string, BrainPage>();
-      const size = 100;
-      for (let offset = 0; offset < max; offset += size) {
-        const want = Math.min(size, max - offset);
-        const batch = await this.listPages({
+      let fetched = 0;
+      let cursor: string | undefined;
+      let iterations = 0;
+      for (;;) {
+        if (++iterations > 1000) break;
+        const want = Math.min(100, max - fetched);
+        if (want <= 0) break;
+        const { items, nextCursor: next } = await brainListPageWithCursor({
           type: options.type,
           limit: want,
-          offset,
+          ...(cursor ? { cursor } : { offset: fetched }),
           includeTombstoned: true,
         });
-        for (const page of batch) seen.set(page.slug, page);
-        if (batch.length < want) break;
+        fetched += items.length;
+        for (const page of items) if (page?.slug) seen.set(page.slug, page);
+        if (next && next !== cursor) {
+          cursor = next;
+          continue;
+        }
+        // Reaching here means the engine reported no further cursor (or a
+        // repeated one). Once a cursor was seen the engine is cursor-aware,
+        // so a missing/stuck cursor means "done" — not "fall back to offset".
+        if (cursor || items.length < want) break;
       }
       return [...seen.values()].filter(
         (p) => (p.frontmatter as Record<string, unknown> | undefined)?.status !== "tombstoned"
       );
     },
 
-    batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
-      if (types.length === 0) return Promise.resolve({});
+    /**
+     * Batch list with per-type error reporting. `batchListPages` keeps its
+     * legacy shape (results only); callers that must distinguish "empty"
+     * from "failed" use this variant and render an error state.
+     */
+    async batchListPagesDetailed(
+      types: string[],
+      limit = 100
+    ): Promise<{ results: Record<string, BrainPage[]>; errors: string[] }> {
+      if (types.length === 0) return { results: {}, errors: [] };
       return request<{ results: Record<string, BrainPage[]>; errors: string[] }>(
         "/api/pages/batch-list",
         { method: "POST", body: JSON.stringify({ types, limit }) }
-      ).then((r) => r.results);
+      );
+    },
+
+    batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
+      return api.brain.batchListPagesDetailed(types, limit).then((r) => r.results);
     },
 
     /**

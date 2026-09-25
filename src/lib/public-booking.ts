@@ -1,4 +1,5 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { KANZLEI_SETTINGS_SLUG } from "@/lib/kanzlei-settings";
 import { generateSlots, type BookingSlot } from "@/lib/online-booking";
 import { FIRM_TIMEZONE, zonedDateString, zonedWallTimeToUtc } from "@/lib/datetime";
@@ -66,13 +67,17 @@ async function listTypedPages(
   headers: Record<string, string>,
   type: string
 ): Promise<EnginePage[]> {
-  const res = await fetch(`${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=2000`, {
-    headers,
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) return [];
-  const data = (await res.json().catch(() => ({}))) as { pages?: EnginePage[] };
-  return data.pages ?? [];
+  try {
+    // Cursor-paginated (the engine's bare array has no `pages` wrapper —
+    // pre-fix `data.pages ?? []` silently returned nothing, so bookings
+    // could collide). Tombstoned slots stay out of the availability set.
+    return (await listEnginePages(headers, type, 10_000, {
+      strict: true,
+      timeoutMs: 15_000,
+    })) as unknown as EnginePage[];
+  } catch {
+    return [];
+  }
 }
 
 /** Belegte Zeitfenster eines Tages aus booking- und appointment-Seiten. */

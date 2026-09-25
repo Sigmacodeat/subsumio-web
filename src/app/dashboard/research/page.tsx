@@ -171,7 +171,7 @@ function ResearchPageInner() {
   async function loadSavedResearch() {
     setSavedLoading(true);
     try {
-      const pages = await api.brain.listPages({ type: "legal_research", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "legal_research", max: 200 });
       setSavedPages(pages);
       await setCache(OFFLINE_KEYS.research, pages);
     } catch {

@@ -440,7 +440,7 @@ export async function listAuditLogs(opts: {
   // Dev fallback: read from brain pages
   try {
     const api = await loadApi();
-    const pages = await api.brain.listPages({ type: "audit_log", limit: opts?.limit || 200 });
+    const pages = await api.brain.listAllPages({ type: "audit_log", max: opts?.limit || 200 });
     const entries: AuditEntry[] = pages.map((p) => {
       const fm = p.frontmatter || {};
       let details: Record<string, unknown> | undefined;

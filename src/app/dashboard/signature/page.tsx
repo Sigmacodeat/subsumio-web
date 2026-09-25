@@ -105,7 +105,7 @@ export default function SignaturePage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
+      const sigPages = await api.brain.listAllPages({ type: "signature_request", max: 100 });
       setRequests(
         sigPages.map((p) => {
           const fm = (p.frontmatter ?? {}) as Record<string, unknown>;

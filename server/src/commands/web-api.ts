@@ -4568,22 +4568,27 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
   app.get("/api/pages", async (req: Request, res: Response) => {
     try {
-      const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
+      // Single hard cap, identical to the op's clamp (100). The previous
+      // 200 here was a lie — the op silently returned at most 100.
+      const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 100);
       const offset = Math.max(parseInt(String(req.query.offset ?? "0"), 10) || 0, 0);
       const type = req.query.type ? String(req.query.type) : undefined;
       const tag = req.query.tag ? String(req.query.tag) : undefined;
       const slugPrefix = req.query.slug_prefix ? String(req.query.slug_prefix) : undefined;
+      // Keyset cursor wins over offset (they don't compose meaningfully).
+      const cursor = req.query.cursor ? String(req.query.cursor) : undefined;
       const raw = await invokeOp(
         engine,
         "list_pages",
         {
           limit,
-          offset,
+          ...(cursor ? { cursor } : { offset }),
           ...(type ? { type } : {}),
           ...(tag ? { tag } : {}),
           ...(slugPrefix ? { slug_prefix: slugPrefix } : {}),
           sort: "updated_desc",
           include_frontmatter: true,
+          envelope: true,
         },
         requestSourceId(req),
         undefined,
@@ -4591,7 +4596,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         req.aclGroups ?? "all",
         req.userId
       );
-      const pages = (Array.isArray(raw) ? raw : []).map((p) => {
+      const envelope = raw as {
+        pages?: unknown[];
+        has_more?: boolean;
+        next_cursor?: string | null;
+      };
+      if (envelope.next_cursor) {
+        // Relayed by the web app's /api/pages route as { items, nextCursor }.
+        res.set("x-next-cursor", envelope.next_cursor);
+      }
+      const pages = (Array.isArray(envelope.pages) ? envelope.pages : []).map((p) => {
         const pg = p as Record<string, unknown>;
         const fm =
           pg.frontmatter && typeof pg.frontmatter === "object"

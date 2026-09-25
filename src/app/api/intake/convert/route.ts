@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { intakeFromPage } from "@/lib/intake";
 import { buildCaseFromIntake } from "@/lib/intake-conversion";
@@ -264,16 +265,11 @@ export const POST = createHandler(
     let documentRequestSlug: string | undefined;
     if (missingDocs.length > 0) {
       try {
-        const listRes = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=250`, {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        });
-        const data = listRes.ok ? await listRes.json().catch(() => []) : [];
-        const existing: BrainPage[] = Array.isArray(data)
-          ? data
-          : (((data as { pages?: BrainPage[] }).pages ??
-              (data as { items?: BrainPage[] }).items ??
-              []) as BrainPage[]);
+        // Cursor-paginated: a single /api/pages call is capped at 100 rows —
+        // a dedupe check over a truncated list would create a second request.
+        const existing = (await listEnginePages(ctx.headers, "document_request", 10_000, {
+          timeoutMs: 10_000,
+        })) as unknown as BrainPage[];
         const existingRequest = existing.find(
           (p) =>
             (p.frontmatter as Record<string, unknown> | undefined)?.case_slug === casePage.slug &&

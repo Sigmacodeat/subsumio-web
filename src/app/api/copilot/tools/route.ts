@@ -2340,17 +2340,11 @@ async function executeRenderTemplate(
     display: { kind: "confirmation", title, message },
   });
   try {
-    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=legal_template&limit=200`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(30_000),
+    // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+    const templates = await listEnginePages(ctx.headers, "legal_template", 10_000, {
+      strict: true,
+      timeoutMs: 30_000,
     });
-    if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
-    const templates = (await listRes.json()) as Array<{
-      slug: string;
-      title: string;
-      content?: string;
-      frontmatter?: Record<string, unknown>;
-    }>;
     const q = params.template_query.trim().toLowerCase();
     const template =
       templates.find((t) => t.slug.toLowerCase() === q || t.title.toLowerCase() === q) ??

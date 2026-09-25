@@ -113,15 +113,16 @@ function BeaPageInner() {
       .catch(() => {});
     (async () => {
       try {
-        const batch = await api.brain.batchListPages(
+        const batch = await api.brain.batchListPagesDetailed(
           ["bea_draft", "bea_message", "filing_package", "bea_receipt"],
           50
         );
+        if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
         if (cancelled) return;
-        const draftPages = batch["bea_draft"] ?? [];
-        const importedPages = batch["bea_message"] ?? [];
-        const filingPages = batch["filing_package"] ?? [];
-        const receiptPages = batch["bea_receipt"] ?? [];
+        const draftPages = batch.results["bea_draft"] ?? [];
+        const importedPages = batch.results["bea_message"] ?? [];
+        const filingPages = batch.results["filing_package"] ?? [];
+        const receiptPages = batch.results["bea_receipt"] ?? [];
         const receiptsByFiling: Record<
           string,
           { confirmationCode: string; receivedAt: string; isSuccess: boolean }
@@ -389,8 +390,9 @@ function BeaPageInner() {
         setStatusMessage(`Versand-Status: ${data.status}`);
       }
       // Reload filings to get updated state
-      const batch = await api.brain.batchListPages(["filing_package"], 50);
-      const filingPages = batch["filing_package"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(["filing_package"], 50);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const filingPages = batch.results["filing_package"] ?? [];
       const filingsBySlug: Record<string, FilingPackage> = {};
       for (const p of filingPages) {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -429,8 +431,9 @@ function BeaPageInner() {
       } else {
         setStatusMessage(`Retry fehlgeschlagen: ${data.status}`);
       }
-      const batch = await api.brain.batchListPages(["filing_package"], 50);
-      const filingPages = batch["filing_package"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(["filing_package"], 50);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const filingPages = batch.results["filing_package"] ?? [];
       const filingsBySlug: Record<string, FilingPackage> = {};
       for (const p of filingPages) {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;

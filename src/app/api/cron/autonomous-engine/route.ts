@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   fetchPendingTasks,
   markTaskRunning,
@@ -575,7 +576,7 @@ Verwende eine formelle Anrede und Grußformel.`;
 
 async function executeClientUpdate(
   task: AutonomousTask,
-  headers: HeadersInit
+  headers: Record<string, string>
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
@@ -586,22 +587,24 @@ async function executeClientUpdate(
   let caseContext = "";
   if (case_slug) {
     try {
-      const activityRes = await fetch(
-        `${ENGINE_URL}/api/pages?type=activity&limit=10&case_slug=${encodeURIComponent(String(case_slug))}`,
-        { headers, signal: AbortSignal.timeout(10_000) }
-      );
-      if (activityRes.ok) {
-        const activityData = await activityRes.json();
-        const activities = (
-          Array.isArray(activityData) ? activityData : (activityData.pages ?? [])
-        ) as Array<{
-          title: string;
-          frontmatter: { timestamp?: string; description?: string };
-        }>;
-        caseContext = activities
-          .map((a) => `- ${a.title}: ${a.frontmatter.description ?? ""}`)
-          .join("\n");
-      }
+      // case_slug is not an engine query param — filter on frontmatter
+      // (pre-fix this leaked other matters' activity into the context).
+      const activityPages = await listEnginePages(headers, "activity", 10_000, {
+        timeoutMs: 10_000,
+      });
+      const activities = activityPages
+        .filter((p) => p.frontmatter?.case_slug === case_slug)
+        .map(
+          (p) =>
+            p as unknown as {
+              title: string;
+              frontmatter: { timestamp?: string; description?: string; case_slug?: string };
+            }
+        );
+      caseContext = activities
+        .slice(0, 10)
+        .map((a) => `- ${a.title}: ${a.frontmatter.description ?? ""}`)
+        .join("\n");
     } catch {
       // best-effort
     }
@@ -689,7 +692,7 @@ Das Update soll verständlich, höflich und informativ sein. Verwende eine forme
 
 async function executeReportGeneration(
   task: AutonomousTask,
-  headers: HeadersInit
+  headers: Record<string, string>
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
@@ -701,22 +704,29 @@ async function executeReportGeneration(
 
   if (case_slug) {
     try {
-      // Fetch time entries for the case
-      const timeRes = await fetch(
-        `${ENGINE_URL}/api/pages?type=time_entry&limit=500&case_slug=${encodeURIComponent(String(case_slug))}`,
-        { headers, signal: AbortSignal.timeout(10_000) }
-      );
-      if (timeRes.ok) {
-        const timeData = await timeRes.json();
-        const entries = (Array.isArray(timeData) ? timeData : (timeData.pages ?? [])) as Array<{
-          frontmatter: {
-            minutes?: number;
-            billable?: boolean;
-            billed?: boolean;
-            rate?: number;
-            description?: string;
-          };
-        }>;
+      // Fetch time entries for the case. NOTE: engine /api/pages never
+      // evaluated a case_slug query param — it returned the whole type.
+      // Filtering on frontmatter.case_slug is the correct scope, and
+      // listEnginePages pages past the 100-row cap.
+      {
+        const timePages = await listEnginePages(headers, "time_entry", 10_000, {
+          timeoutMs: 10_000,
+        });
+        const entries = timePages
+          .filter((p) => p.frontmatter?.case_slug === case_slug)
+          .map(
+            (p) =>
+              p as unknown as {
+                frontmatter: {
+                  minutes?: number;
+                  billable?: boolean;
+                  billed?: boolean;
+                  rate?: number;
+                  description?: string;
+                  case_slug?: string;
+                };
+              }
+          );
 
         const totalMinutes = entries.reduce((sum, e) => sum + (e.frontmatter.minutes ?? 0), 0);
         const billableMinutes = entries
@@ -737,18 +747,19 @@ async function executeReportGeneration(
         };
       }
 
-      // Fetch deadlines for the case
-      const deadlineRes = await fetch(
-        `${ENGINE_URL}/api/pages?type=deadline&limit=100&case_slug=${encodeURIComponent(String(case_slug))}`,
-        { headers, signal: AbortSignal.timeout(10_000) }
-      );
-      if (deadlineRes.ok) {
-        const deadlineData = await deadlineRes.json();
-        const deadlines = (
-          Array.isArray(deadlineData) ? deadlineData : (deadlineData.pages ?? [])
-        ) as Array<{
-          frontmatter: { due_date?: string; status?: string };
-        }>;
+      // Fetch deadlines for the case — same case_slug scoping as above.
+      {
+        const deadlinePages = await listEnginePages(headers, "deadline", 10_000, {
+          timeoutMs: 10_000,
+        });
+        const deadlines = deadlinePages
+          .filter((p) => p.frontmatter?.case_slug === case_slug)
+          .map(
+            (p) =>
+              p as unknown as {
+                frontmatter: { due_date?: string; status?: string; case_slug?: string };
+              }
+          );
         reportData = {
           ...reportData,
           total_deadlines: deadlines.length,

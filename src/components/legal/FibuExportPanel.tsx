@@ -96,7 +96,9 @@ export function FibuExportPanel() {
     }
     setBusy(true);
     try {
-      const { invoice: invoicePages = [] } = await api.brain.batchListPages(["invoice"], 2000);
+      const { results, errors } = await api.brain.batchListPagesDetailed(["invoice"], 2000);
+      if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
+      const invoicePages = results.invoice ?? [];
       const rows: InvoiceRow[] = invoicePages
         .map((p) => {
           const fm = (p.frontmatter ?? {}) as Record<string, unknown>;

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { sendMail } from "@/lib/mail";
 import { createCronHandler } from "@/lib/api-handler";
 import { filterNewIds } from "@/lib/caselaw-dedup";
@@ -47,13 +48,11 @@ const ESCALATION_THRESHOLD = 2;
 
 async function listFeedback(brainId: string): Promise<FeedbackPage[]> {
   try {
-    const res = await fetch(
-      `${ENGINE_URL}/api/pages?type=client_feedback&slug_prefix=${encodeURIComponent("feedback-")}&limit=500`,
-      { headers: engineHeadersForBrain(brainId), signal: AbortSignal.timeout(15_000) }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (Array.isArray(data) ? data : (data.pages ?? [])) as FeedbackPage[];
+    // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+    return (await listEnginePages(engineHeadersForBrain(brainId), "client_feedback", 10_000, {
+      slugPrefix: "feedback-",
+      timeoutMs: 15_000,
+    })) as unknown as FeedbackPage[];
   } catch {
     return [];
   }

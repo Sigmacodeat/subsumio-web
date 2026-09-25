@@ -62,7 +62,7 @@ export default function PowerOfAttorneyPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "power_of_attorney", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "power_of_attorney", max: 200 });
       setPoas(pages.map((p) => p.frontmatter as unknown as PowerOfAttorney));
     } catch {
       addToast({ type: "error", title: t("poa.err_load") });
@@ -75,7 +75,7 @@ export default function PowerOfAttorneyPage() {
     void load();
     // Akten for the picker and to show titles instead of internal identifiers.
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 200 })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
       .catch(() => setCases([]));
   }, [load]);
