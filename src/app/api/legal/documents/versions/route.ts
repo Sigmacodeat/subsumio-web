@@ -7,7 +7,6 @@ import {
   restoreDocumentVersion,
   VersionError,
 } from "@/lib/document-versions.server";
-import type { AuditAction } from "@/lib/audit";
 
 const querySchema = z.object({ slug: z.string().min(1) });
 const restoreSchema = z.object({
@@ -36,7 +35,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: restoreSchema,
     audit: (_ctx, body) => ({
-      action: "legal.doc_restore_version" as unknown as AuditAction,
+      action: "legal.doc_restore_version" as const,
       entityType: "document",
       entityId: body.slug,
       details: { version: body.version },

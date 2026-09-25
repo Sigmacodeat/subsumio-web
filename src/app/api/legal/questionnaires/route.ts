@@ -7,7 +7,6 @@ import {
   QUESTIONNAIRE_FIELD_TYPES,
   type QuestionnaireFieldType,
 } from "@/lib/questionnaires";
-import type { AuditAction } from "@/lib/audit";
 
 const fieldSchema = z.object({
   key: z
@@ -34,7 +33,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: createSchema,
     audit: (_ctx, body) => ({
-      action: "legal.questionnaire_create" as unknown as AuditAction,
+      action: "legal.questionnaire_create" as const,
       entityType: "case",
       entityId: body.case_slug,
       details: { title: body.title, fields: body.fields.length },
