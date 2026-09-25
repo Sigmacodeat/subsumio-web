@@ -1,6 +1,34 @@
 import { ENGINE_URL } from "@/lib/engine";
 import type { BrainPage, SearchResult } from "@/lib/types";
 
+export interface PageArrayAppendResult {
+  slug: string;
+  field: string;
+  appended: number;
+  length: number;
+  items: unknown[];
+}
+
+export interface PageArrayMutateResult {
+  slug: string;
+  field: string;
+  matched_ids: string[];
+  updated_ids: string[];
+  skipped_ids: string[];
+  not_found_ids: string[];
+  items: unknown[];
+  length: number;
+}
+
+export interface PageArrayMutation {
+  match: Array<string | number | boolean>;
+  match_key?: string;
+  set?: Record<string, unknown>;
+  unset?: string[];
+  remove?: boolean;
+  unless?: { eq?: Record<string, unknown>; ne?: Record<string, unknown> };
+}
+
 export interface ServerBrainClient {
   getPage(slug: string): Promise<BrainPage>;
   listPages(options?: {
@@ -28,6 +56,20 @@ export interface ServerBrainClient {
   }): Promise<{ slug: string; success?: boolean }>;
   deletePage(slug: string): Promise<{ success?: boolean }>;
   search(query: string, limit?: number): Promise<SearchResult[]>;
+  /**
+   * Atomic append to a top-level frontmatter array field — engine-side
+   * single UPDATE, no read-modify-write (lost-update safe).
+   */
+  appendPageArray(slug: string, field: string, items: unknown[]): Promise<PageArrayAppendResult>;
+  /**
+   * Atomic patch/remove of frontmatter array elements matched by
+   * `match_key` ∈ `match`, with an optional {eq,ne} skip guard.
+   */
+  mutatePageArray(
+    slug: string,
+    field: string,
+    mutation: PageArrayMutation
+  ): Promise<PageArrayMutateResult>;
 }
 
 function encodeSlug(slug: string): string {
@@ -114,6 +156,20 @@ export function createServerBrainClient(headers: Record<string, string>): Server
         headers,
         `/api/search?q=${encodeURIComponent(query)}&limit=${limit}`
       );
+    },
+
+    appendPageArray(slug, field, items) {
+      return engineJson<PageArrayAppendResult>(headers, "/api/pages/array-append", {
+        method: "POST",
+        body: JSON.stringify({ slug, field, items }),
+      });
+    },
+
+    mutatePageArray(slug, field, mutation) {
+      return engineJson<PageArrayMutateResult>(headers, "/api/pages/array-mutate", {
+        method: "POST",
+        body: JSON.stringify({ slug, field, ...mutation }),
+      });
     },
   };
 }

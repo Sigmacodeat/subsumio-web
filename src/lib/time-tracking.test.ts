@@ -1170,3 +1170,167 @@ describe("updateStandaloneBilling", () => {
     expect(r.updated).toBe(0);
   });
 });
+
+// ── Atomic embedded-entry helpers (engine page_array ops) ──────────────
+// The helpers delegate to ServerBrainClient.appendPageArray /
+// mutatePageArray — a fake client records the calls so we pin the exact
+// mutation payloads (unless guards, set/unset split) and error mapping.
+
+describe("atomic time_entries helpers", () => {
+  interface FakeCall {
+    method: "appendPageArray" | "mutatePageArray";
+    slug: string;
+    field: string;
+    payload: unknown;
+  }
+
+  function makeArrayBrain(result?: Partial<import("@/lib/server-brain").PageArrayMutateResult>) {
+    const calls: FakeCall[] = [];
+    const brain = {
+      calls,
+      async appendPageArray(slug: string, field: string, items: unknown[]) {
+        calls.push({ method: "appendPageArray", slug, field, payload: items });
+        return { items };
+      },
+      async mutatePageArray(
+        slug: string,
+        field: string,
+        mutation: import("@/lib/server-brain").PageArrayMutation
+      ) {
+        calls.push({ method: "mutatePageArray", slug, field, payload: mutation });
+        return {
+          slug,
+          field,
+          matched_ids: [],
+          updated_ids: [],
+          skipped_ids: [],
+          not_found_ids: [],
+          items: [],
+          length: 0,
+          ...result,
+        };
+      },
+    };
+    return brain;
+  }
+
+  test("appendTimeEntries forwards items; empty list is a no-op", async () => {
+    const { appendTimeEntries } = await import("@/lib/time-tracking");
+    const brain = makeArrayBrain();
+    await appendTimeEntries(brain, "matters/m-1", []);
+    expect(brain.calls).toHaveLength(0);
+    const entry = { id: "t1", minutes: 30 } as TimeEntry;
+    await appendTimeEntries(brain, "matters/m-1", [entry]);
+    expect(brain.calls).toEqual([
+      { method: "appendPageArray", slug: "matters/m-1", field: "time_entries", payload: [entry] },
+    ]);
+  });
+
+  test("updateTimeEntry splits set/unset, keeps id stable, guards billed", async () => {
+    const { updateTimeEntry } = await import("@/lib/time-tracking");
+    const updatedEntry = { id: "t1", minutes: 90, billed: false };
+    const brain = makeArrayBrain({
+      matched_ids: ["t1"],
+      updated_ids: ["t1"],
+      items: [updatedEntry],
+    });
+    const res = await updateTimeEntry(brain, "matters/m-1", "t1", {
+      id: "t1" as never,
+      minutes: 90,
+      note: undefined,
+    } as Partial<TimeEntry>);
+    expect(res).toEqual(updatedEntry);
+    expect(brain.calls[0]).toMatchObject({
+      method: "mutatePageArray",
+      slug: "matters/m-1",
+      field: "time_entries",
+      payload: {
+        match: ["t1"],
+        set: { minutes: 90 },
+        unset: ["note"],
+        unless: { eq: { billed: true } },
+      },
+    });
+    // `id` must never land in set — identity is stable.
+    const payload = brain.calls[0]!.payload as { set: Record<string, unknown> };
+    expect(Object.keys(payload.set)).not.toContain("id");
+  });
+
+  test("updateTimeEntry maps not_found → TimeEntriesNotFoundError, skipped → TimeEntryBilledError", async () => {
+    const { updateTimeEntry, TimeEntriesNotFoundError, TimeEntryBilledError } =
+      await import("@/lib/time-tracking");
+    const missing = makeArrayBrain({ not_found_ids: ["t9"] });
+    await expect(
+      updateTimeEntry(missing, "matters/m-1", "t9", { minutes: 5 })
+    ).rejects.toBeInstanceOf(TimeEntriesNotFoundError);
+    const billed = makeArrayBrain({
+      matched_ids: ["t1"],
+      skipped_ids: ["t1"],
+      items: [{ id: "t1", billed: true }],
+    });
+    await expect(
+      updateTimeEntry(billed, "matters/m-1", "t1", { minutes: 5 })
+    ).rejects.toBeInstanceOf(TimeEntryBilledError);
+  });
+
+  test("deleteTimeEntry sends remove + billed guard; billed → TimeEntryBilledError", async () => {
+    const { deleteTimeEntry, TimeEntryBilledError } = await import("@/lib/time-tracking");
+    const ok = makeArrayBrain({ matched_ids: ["t1"], updated_ids: ["t1"], items: [] });
+    await deleteTimeEntry(ok, "matters/m-1", "t1");
+    expect(ok.calls[0]).toMatchObject({
+      method: "mutatePageArray",
+      payload: { match: ["t1"], remove: true, unless: { eq: { billed: true } } },
+    });
+    const billed = makeArrayBrain({ matched_ids: ["t2"], skipped_ids: ["t2"] });
+    await expect(deleteTimeEntry(billed, "matters/m-1", "t2")).rejects.toBeInstanceOf(
+      TimeEntryBilledError
+    );
+  });
+
+  test("markTimeEntriesBilled guards different-invoice skips atomically", async () => {
+    const { markTimeEntriesBilled } = await import("@/lib/time-tracking");
+    const brain = makeArrayBrain({
+      matched_ids: ["t1", "t2", "t3"],
+      updated_ids: ["t1", "t3"],
+      skipped_ids: ["t2"],
+      not_found_ids: ["t9"],
+    });
+    const r = await markTimeEntriesBilled(brain, "matters/m-1", ["t1", "t2", "t3", "t9"], "RE-1");
+    expect(brain.calls[0]).toMatchObject({
+      method: "mutatePageArray",
+      payload: {
+        match: ["t1", "t2", "t3", "t9"],
+        set: { billed: true, invoice_number: "RE-1" },
+        unless: { eq: { billed: true }, ne: { invoice_number: "RE-1" } },
+      },
+    });
+    expect(r).toEqual({ updated: 2, not_found: ["t9"], already_billed: ["t2"] });
+    // Empty id list must not hit the engine at all.
+    const empty = makeArrayBrain();
+    expect(await markTimeEntriesBilled(empty, "matters/m-1", [], "RE-1")).toEqual({
+      updated: 0,
+      not_found: [],
+      already_billed: [],
+    });
+    expect(empty.calls).toHaveLength(0);
+  });
+
+  test("unbillTimeEntries clears billed + invoice_number in one mutation", async () => {
+    const { unbillTimeEntries } = await import("@/lib/time-tracking");
+    const brain = makeArrayBrain({
+      matched_ids: ["t1"],
+      updated_ids: ["t1"],
+      not_found_ids: ["t9"],
+    });
+    const r = await unbillTimeEntries(brain, "matters/m-1", ["t1", "t9"]);
+    expect(brain.calls[0]).toMatchObject({
+      method: "mutatePageArray",
+      payload: {
+        match: ["t1", "t9"],
+        set: { billed: false },
+        unset: ["invoice_number"],
+      },
+    });
+    expect(r).toEqual({ updated: 1, not_found: ["t9"] });
+  });
+});

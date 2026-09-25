@@ -872,6 +872,64 @@ export interface BrainEngine {
    * CLI escape hatch. Cascades through existing FKs.
    */
   purgeDeletedPages(olderThanHours: number): Promise<{ slugs: string[]; count: number }>;
+
+  /**
+   * Atomically append `items` to a top-level array field of a page's
+   * frontmatter — a single `UPDATE ... jsonb_set(COALESCE(field,'[]') || items)`
+   * statement, so concurrent writers can never clobber each other the way
+   * read-modify-write on the whole frontmatter can.
+   *
+   * Returns the post-append array. Returns null when no row was updated,
+   * which happens iff the page is missing/soft-deleted OR the field exists
+   * and is not a JSON array — the caller re-reads the page to distinguish.
+   * An empty `items` performs no write and returns the current array.
+   */
+  appendPageArrayItems(
+    slug: string,
+    field: string,
+    items: unknown[],
+    opts?: { sourceId?: string }
+  ): Promise<{ items: unknown[] } | null>;
+
+  /**
+   * Atomically patch or remove the elements of a top-level frontmatter array
+   * field whose `matchKey` (compared as text via `e ->> matchKey`) is in
+   * `matchValues` — again one UPDATE statement:
+   *
+   *   - default mode merges `set` into each matched element (`elem || patch`)
+   *     and deletes `unset` keys (`elem - text[]`);
+   *   - `remove: true` drops matched elements instead of patching them;
+   *   - `unless` is a guard — matched elements that satisfy it are skipped
+   *     unchanged: every `eq` key must equal (`elem @> {k: v}`) AND every
+   *     `ne` key must exist and differ (`elem ->> k IS DISTINCT FROM v`).
+   *     This is how "skip entries already billed under a different invoice"
+   *     stays inside the same atomic statement as the update.
+   *
+   * Returns `{items, matched_ids, skipped_ids}` — post-state array plus the
+   * pre-state ids of elements that matched and, of those, the ones the
+   * `unless` guard left unchanged. `updated = matched − skipped`. Returns
+   * null when no row was updated: page missing/soft-deleted, field not an
+   * array, or no element matched — the caller re-reads the page to
+   * distinguish.
+   */
+  mutatePageArrayItems(
+    slug: string,
+    field: string,
+    spec: {
+      matchKey: string;
+      matchValues: string[];
+      set?: Record<string, unknown>;
+      unset?: string[];
+      remove?: boolean;
+      unless?: { eq?: Record<string, unknown>; ne?: Record<string, unknown> };
+    },
+    opts?: { sourceId?: string }
+  ): Promise<{
+    items: unknown[];
+    matched_ids: string[];
+    skipped_ids: string[];
+  } | null>;
+
   /**
    * v0.26.5: by default `listPages` excludes soft-deleted rows. Set
    * `filters.includeDeleted: true` to surface them.

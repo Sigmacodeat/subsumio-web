@@ -27,6 +27,63 @@ function fakeClient(initial: Page[]) {
       const p = pages.get(slug)!;
       p.frontmatter.status = slug.startsWith("legal/cases/") ? "archived" : "tombstoned";
     },
+    async appendPageArray(slug, field, items) {
+      log.push(`append ${slug}.${field}`);
+      const p = pages.get(slug)!;
+      const cur = Array.isArray(p.frontmatter[field]) ? (p.frontmatter[field] as unknown[]) : [];
+      p.frontmatter[field] = [...cur, ...items];
+      return { items: p.frontmatter[field] };
+    },
+    // Faithful mirror of the engine's page_array_mutate: matched elements
+    // get `set` merged / `unset` dropped / removed — skipped unchanged when
+    // `unless` holds (eq: every pair equal; ne: every key exists and differs).
+    async mutatePageArray(slug, field, mutation) {
+      const p = pages.get(slug);
+      const cur =
+        p && Array.isArray(p.frontmatter[field])
+          ? (p.frontmatter[field] as Record<string, unknown>[])
+          : [];
+      const key = mutation.match_key ?? "id";
+      const wanted = new Set(mutation.match.map(String));
+      const matched: string[] = [];
+      const skipped: string[] = [];
+      const unlessHolds = (e: Record<string, unknown>) => {
+        const u = mutation.unless;
+        if (!u) return false;
+        for (const [k, v] of Object.entries(u.eq ?? {})) if (e[k] !== v) return false;
+        for (const [k, v] of Object.entries(u.ne ?? {})) if (!(k in e) || e[k] === v) return false;
+        return true;
+      };
+      const next: unknown[] = [];
+      for (const e of cur) {
+        const id = String(e[key]);
+        if (!wanted.has(id)) {
+          next.push(e);
+          continue;
+        }
+        matched.push(id);
+        if (unlessHolds(e)) {
+          skipped.push(id);
+          next.push(e);
+          continue;
+        }
+        if (mutation.remove) continue;
+        const patched = { ...e, ...(mutation.set ?? {}) };
+        for (const k of mutation.unset ?? []) delete patched[k];
+        next.push(patched);
+      }
+      if (p) p.frontmatter[field] = next;
+      return {
+        slug,
+        field,
+        matched_ids: matched,
+        updated_ids: matched.filter((id) => !skipped.includes(id)),
+        skipped_ids: skipped,
+        not_found_ids: mutation.match.map(String).filter((id) => !matched.includes(id)),
+        items: next,
+        length: next.length,
+      };
+    },
   };
   return { client, pages, log };
 }
@@ -85,7 +142,8 @@ describe("executeImport", () => {
     const { client, pages, log } = fakeClient([matter]);
     const out = await executeImport(plan, client);
     expect(out.counts.imported).toBe(2);
-    expect(log.filter((l) => l.startsWith("update"))).toHaveLength(1);
+    // One atomic append per matter — no read-modify-write merge.
+    expect(log.filter((l) => l.startsWith("append"))).toHaveLength(1);
     expect((pages.get("legal/cases/m")!.frontmatter.time_entries as unknown[]).length).toBe(3);
 
     // Someone invoices one of the imported entries before the import is taken back.

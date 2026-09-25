@@ -1,6 +1,7 @@
 import type { AgentActionFrontmatter, ActionType } from "@/lib/approval";
 import { buildDocumentRequest } from "@/lib/document-requests";
 import type { BrainPage } from "@/lib/types";
+import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
 import type { ProactiveSendResult } from "@/lib/whatsapp/proactive-send";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
@@ -33,6 +34,16 @@ export interface ApprovalExecutionDeps {
     content?: string;
     frontmatter?: Record<string, unknown>;
   }): Promise<{ slug: string; success?: boolean }>;
+  /**
+   * Atomic patch/remove of frontmatter array elements (engine
+   * page_array_mutate). Required — embedded `time_entries` updates must not
+   * go through a read-modify-write merge.
+   */
+  mutatePageArray(
+    slug: string,
+    field: string,
+    mutation: PageArrayMutation
+  ): Promise<PageArrayMutateResult>;
   sendProactiveWhatsApp?(params: {
     to: string;
     brainId: string;
@@ -417,18 +428,14 @@ async function executeAction(
       const payload = payloadOf(fm);
       const entryId = asString(payload.entry_id);
       if (!entryId) throw new Error("time_entry_approval_requires_entry_id");
-      const casePage = await deps.getPage(slug);
-      const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-      const entries = Array.isArray(caseFm.time_entries) ? caseFm.time_entries : [];
-      const updatedEntries = entries.map((e: Record<string, unknown>) =>
-        e.id === entryId
-          ? { ...e, approved: true, approved_at: at.toISOString(), approved_by: executedBy }
-          : e
-      );
-      await deps.updatePage({
-        slug,
-        frontmatter: { time_entries: updatedEntries, updated_at: at.toISOString() },
+      // Atomic single-UPDATE patch — no read-modify-write on time_entries.
+      const res = await deps.mutatePageArray(slug, "time_entries", {
+        match: [entryId],
+        set: { approved: true, approved_at: at.toISOString(), approved_by: executedBy },
       });
+      if (res.not_found_ids.includes(entryId)) {
+        throw new Error(`time_entry_not_found:${entryId}`);
+      }
       return [{ kind: "time_entry_approved", slug: `${slug}#${entryId}` }];
     }
     default:

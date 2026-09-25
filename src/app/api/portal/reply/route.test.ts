@@ -103,27 +103,19 @@ describe("POST /api/portal/reply — WP-3.16 Leistungsbuchung", () => {
   test("verbucht bill_minutes als time_entry auf der Akte", async () => {
     mockFetch.mockImplementation((url: string, init?: RequestInit) => {
       const u = String(url);
-      if (init?.method === "POST" && u.endsWith("/api/pages")) {
+      if (init?.method === "POST" && u.endsWith("/api/pages/array-append")) {
         const payload = JSON.parse(String(init.body));
-        // time_entries-Update: bei Verify dasselbe Array zurückgeben.
-        if (payload.frontmatter?.time_entries) {
-          (mockFetch as unknown as { __timeEntries?: unknown }).__timeEntries =
-            payload.frontmatter.time_entries;
-        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ items: payload.items }), { status: 200 })
+        );
+      }
+      if (init?.method === "POST" && u.endsWith("/api/pages")) {
         return Promise.resolve(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
       }
-      const stored = (mockFetch as unknown as { __timeEntries?: unknown }).__timeEntries;
       return Promise.resolve(
-        new Response(
-          JSON.stringify({
-            slug: CS,
-            frontmatter: {
-              ...CASE_PAGE.frontmatter,
-              time_entries: stored ?? [],
-            },
-          }),
-          { status: 200 }
-        )
+        new Response(JSON.stringify({ slug: CS, frontmatter: CASE_PAGE.frontmatter }), {
+          status: 200,
+        })
       );
     });
 
@@ -132,12 +124,14 @@ describe("POST /api/portal/reply — WP-3.16 Leistungsbuchung", () => {
     const body = await res.json();
     expect(body.billed).toBe(true);
 
-    const timeWrite = mockFetch.mock.calls
-      .filter((c) => (c[1] as RequestInit | undefined)?.method === "POST")
-      .map((c) => JSON.parse(String((c[1] as RequestInit).body)))
-      .find((p) => Array.isArray(p.frontmatter?.time_entries));
-    expect(timeWrite).toBeTruthy();
-    const entry = timeWrite.frontmatter.time_entries[0];
+    const append = mockFetch.mock.calls
+      .map((c) => ({ url: String(c[0]), init: c[1] as RequestInit | undefined }))
+      .filter((c) => c.init?.method === "POST")
+      .map((c) => ({ url: c.url, payload: JSON.parse(String(c.init!.body)) }))
+      .find((c) => c.url.endsWith("/api/pages/array-append") && c.payload.field === "time_entries");
+    expect(append).toBeTruthy();
+    expect(append!.payload.slug).toBe(CS);
+    const entry = append!.payload.items[0];
     expect(entry.minutes).toBe(12);
     expect(entry.billable).toBe(true);
     expect(entry.description).toContain("Portal-Nachricht");
@@ -147,12 +141,11 @@ describe("POST /api/portal/reply — WP-3.16 Leistungsbuchung", () => {
   test("meldet billed=false, wenn der Zeiteintrag nicht persistiert werden kann", async () => {
     mockFetch.mockImplementation((url: string, init?: RequestInit) => {
       const u = String(url);
+      if (init?.method === "POST" && u.endsWith("/api/pages/array-append")) {
+        // Engine lehnt den atomaren Append ab → billed=false.
+        return Promise.resolve(new Response("engine unavailable", { status: 500 }));
+      }
       if (init?.method === "POST" && u.endsWith("/api/pages")) {
-        const payload = JSON.parse(String(init.body));
-        if (payload.frontmatter?.time_entries) {
-          // Verify sieht den Eintrag nie → Konflikt-Pfad bis zum Abbruch.
-          return Promise.resolve(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
-        }
         return Promise.resolve(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
       }
       return Promise.resolve(

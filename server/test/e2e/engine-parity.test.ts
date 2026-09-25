@@ -698,3 +698,62 @@ describeBoth("Engine parity — relationalFanout", () => {
     expect(shape(pg)).toEqual(shape(pglite));
   });
 });
+
+// ── page-array ops parity (Subsumio atomic time_entries writes) ─────────
+// The append/mutate primitives are single UPDATE statements whose result
+// must be byte-identical across engines — a divergence means a web write
+// path that behaves differently on self-hosted (pglite) vs managed
+// (postgres) deployments.
+describeBoth("Engine parity — page array ops", () => {
+  test("appendPageArrayItems + mutatePageArrayItems produce identical results on both engines", async () => {
+    const slug = "matters/ep-parity-1";
+    const initial = [
+      { id: "t1", minutes: 60, billed: false },
+      { id: "t2", minutes: 30, billed: true, invoice_number: "INV-1" },
+    ];
+    const run = async (eng: BrainEngine) => {
+      await eng.putPage(slug, {
+        type: "legal_case",
+        title: "Parity matter",
+        compiled_truth: "",
+        timeline: "",
+        frontmatter: { time_entries: initial },
+      });
+      const appended = await eng.appendPageArrayItems(slug, "time_entries", [
+        { id: "t3", minutes: 15, billed: false },
+      ]);
+      const patched = await eng.mutatePageArrayItems(slug, "time_entries", {
+        matchKey: "id",
+        matchValues: ["t1", "t2", "t3", "t-missing"],
+        set: { billed: true, invoice_number: "INV-2" },
+        unless: { eq: { billed: true }, ne: { invoice_number: "INV-2" } },
+      });
+      const removed = await eng.mutatePageArrayItems(slug, "time_entries", {
+        matchKey: "id",
+        matchValues: ["t3"],
+        remove: true,
+        unless: { eq: { billed: true } },
+      });
+      const absent = await eng.mutatePageArrayItems(slug, "time_entries", {
+        matchKey: "id",
+        matchValues: ["t-missing"],
+        set: { billed: true },
+      });
+      return { appended, patched, removed, absent };
+    };
+    const pg = await run(pgEngine);
+    const pglite = await run(pgliteEngine);
+    expect(pglite).toEqual(pg);
+    // Concrete contract (guards against both engines agreeing on a wrong
+    // shape): t1 updated, t2 skipped (different invoice), t-missing absent.
+    expect(pg.patched?.matched_ids).toEqual(["t1", "t2", "t3"]);
+    expect(pg.patched?.skipped_ids).toEqual(["t2"]);
+    expect(pg.removed?.skipped_ids).toEqual(["t3"]); // t3 billed by the patch
+    expect(pg.absent).toBeNull();
+    expect(pg.patched?.items).toEqual([
+      { id: "t1", minutes: 60, billed: true, invoice_number: "INV-2" },
+      { id: "t2", minutes: 30, billed: true, invoice_number: "INV-1" },
+      { id: "t3", minutes: 15, billed: true, invoice_number: "INV-2" },
+    ]);
+  });
+});

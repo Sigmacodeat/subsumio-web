@@ -164,6 +164,7 @@ export const PATCH = createHandler(
             getPage: brain.getPage,
             createPage: brain.createPage,
             updatePage: brain.updatePage,
+            mutatePageArray: brain.mutatePageArray,
             sendProactiveWhatsApp: sendProactiveMessage,
           },
           {

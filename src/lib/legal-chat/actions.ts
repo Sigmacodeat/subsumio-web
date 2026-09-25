@@ -112,6 +112,23 @@ async function putPage(brainId: string, page: EnginePageInput): Promise<void> {
   });
 }
 
+/**
+ * Atomically append items to a frontmatter array field (single UPDATE in the
+ * engine — no read-modify-write, so concurrent appends to time_entries or
+ * audit_log can never clobber each other the way a merge-putPage can).
+ */
+async function appendPageArrayItems(
+  brainId: string,
+  slug: string,
+  field: string,
+  items: unknown[]
+): Promise<void> {
+  await engineRequest(brainId, "/api/pages/array-append", {
+    method: "POST",
+    body: JSON.stringify({ slug, field, items }),
+  });
+}
+
 function safeSlugPart(input: string): string {
   return (
     input
@@ -1630,28 +1647,20 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       note: "Erfasst via WhatsApp",
       source: "whatsapp",
     };
-    const current = Array.isArray(caseFm.time_entries) ? caseFm.time_entries : [];
-    const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
-    await putPage(ctx.sender.brainId, {
-      slug: casePage.slug,
-      title: casePage.title,
-      content: casePage.content,
-      frontmatter: {
-        time_entries: [...current, entry],
-        audit_log: [
-          ...audit,
-          {
-            id: randomUUID(),
-            at: new Date().toISOString(),
-            action: "updated",
-            actor: ctx.sender.name || "WhatsApp",
-            field: "time_entries",
-            note: `Zeit via WhatsApp erfasst: ${entry.minutes} Minuten`,
-          },
-        ],
+    // Atomic engine-side appends — a merge-putPage would rebuild both arrays
+    // from the stale snapshot read above and could silently drop a
+    // concurrently appended entry.
+    await appendPageArrayItems(ctx.sender.brainId, casePage.slug, "time_entries", [entry]);
+    await appendPageArrayItems(ctx.sender.brainId, casePage.slug, "audit_log", [
+      {
+        id: randomUUID(),
+        at: new Date().toISOString(),
+        action: "updated",
+        actor: ctx.sender.name || "WhatsApp",
+        field: "time_entries",
+        note: `Zeit via WhatsApp erfasst: ${entry.minutes} Minuten`,
       },
-      merge: true,
-    });
+    ]);
     await markAction(ctx, action, "executed");
     return `Gespeichert: ${entry.minutes} min zu ${casePage.title}.`;
   }

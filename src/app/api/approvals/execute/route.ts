@@ -36,6 +36,7 @@ export const POST = createHandler(
           getPage: brain.getPage,
           createPage: brain.createPage,
           updatePage: brain.updatePage,
+          mutatePageArray: brain.mutatePageArray,
           sendProactiveWhatsApp: sendProactiveMessage,
         },
         {

@@ -4,6 +4,7 @@
 
 import type { ImportPlan, ImportedTimeEntry, PlanRow } from "./plan";
 import { normaliseName } from "./values";
+import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 
 export interface ImportClient {
   /** Null when the page does not exist. */
@@ -21,6 +22,22 @@ export interface ImportClient {
   updatePage(page: { slug: string; frontmatter: Record<string, unknown> }): Promise<void>;
   /** Matters are archived, other records removed from every list. */
   deletePage(slug: string): Promise<void>;
+  /**
+   * Atomic append to a top-level frontmatter array (engine
+   * page_array_append). Required — time_entries writes must not go through
+   * a read-modify-write merge, or a concurrent append is lost.
+   */
+  appendPageArray(slug: string, field: string, items: unknown[]): Promise<unknown>;
+  /**
+   * Atomic element patch/remove (engine page_array_mutate) — rollback drops
+   * imported entries in one guarded statement so entries invoiced in the
+   * meantime are skipped, never removed.
+   */
+  mutatePageArray(
+    slug: string,
+    field: string,
+    mutation: PageArrayMutation
+  ): Promise<PageArrayMutateResult>;
 }
 
 /** What an import wrote, enough to take it back later. */
@@ -147,10 +164,10 @@ export async function executeImport(
           }
         }
         if (added.length > 0) {
-          await client.updatePage({
-            slug: caseSlug,
-            frontmatter: { time_entries: [...current, ...added] },
-          });
+          // Atomic append — a merge-update would rewrite the whole array
+          // from the (possibly already stale) `current` snapshot and could
+          // drop an entry another writer just added.
+          await client.appendPageArray(caseSlug, "time_entries", added);
           refs.timeEntries.push({ caseSlug, ids: added.map((e) => e.id) });
           const addedIds = new Set(added.map((e) => e.id));
           for (const r of rows) {
@@ -198,28 +215,19 @@ export async function rollbackImport(
 
   for (const { caseSlug, ids } of refs.timeEntries) {
     try {
-      const page = await client.getPage(caseSlug);
-      if (!page) continue;
-      const current = Array.isArray(page.frontmatter?.time_entries)
-        ? (page.frontmatter.time_entries as Array<Record<string, unknown>>)
-        : [];
-      const remove = new Set(ids);
-      let kept = 0;
-      const next = current.filter((e) => {
-        if (!remove.has(String(e.id ?? ""))) return true;
-        // Invoiced in Subsumio after the import: removing it would break the invoice.
-        if (e.invoice_number) {
-          kept++;
-          return true;
-        }
-        return false;
+      // Atomic remove with an in-statement guard: an entry invoiced since
+      // the import (non-empty invoice_number) is skipped, never dropped —
+      // removing it would break that invoice's basis.
+      const res = await client.mutatePageArray(caseSlug, "time_entries", {
+        match: ids,
+        remove: true,
+        unless: { ne: { invoice_number: "" } },
       });
-      const removed = current.length - next.length;
-      if (removed > 0)
-        await client.updatePage({ slug: caseSlug, frontmatter: { time_entries: next } });
-      result.removedTimeEntries += removed;
-      if (kept > 0)
-        result.kept.push(`${kept} Zeiteintrag/-einträge in ${caseSlug}: inzwischen verrechnet`);
+      result.removedTimeEntries += res.updated_ids.length;
+      if (res.skipped_ids.length > 0)
+        result.kept.push(
+          `${res.skipped_ids.length} Zeiteintrag/-einträge in ${caseSlug}: inzwischen verrechnet`
+        );
     } catch (err) {
       result.failed.push(`${caseSlug}: ${message(err)}`);
     }

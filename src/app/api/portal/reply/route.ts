@@ -2,7 +2,8 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
-import { createTimeEntry } from "@/lib/time-tracking";
+import { createTimeEntry, appendTimeEntries } from "@/lib/time-tracking";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { portalMessageSlugPrefix } from "@/lib/portal-messages";
 import { notifyPortalClients } from "@/lib/portal-push";
 import { mailPortalClients } from "@/lib/portal-notify";
@@ -15,54 +16,21 @@ const replySchema = z.object({
   bill_note: z.string().trim().max(300).optional(),
 });
 
-const TIME_WRITE_MAX_ATTEMPTS = 5;
-
 /**
- * time_entries auf der Akten-Seite anhängen — read-modify-write mit
- * Verify-Retry (gleiche Race-Absicherung wie api/time/route.ts: ein
- * paralleler Schreiber wird erkannt statt still überschrieben).
+ * time_entries auf der Akten-Seite anhängen — atomar via
+ * /api/pages/array-append (ein UPDATE, kein Read-Modify-Write, kein Retry).
  */
 async function appendTimeEntry(
   headers: Record<string, string>,
   caseSlug: string,
   entry: TimeEntry
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < TIME_WRITE_MAX_ATTEMPTS; attempt++) {
-    const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!caseRes.ok) return false;
-    const page = (await caseRes.json()) as { frontmatter?: Record<string, unknown> };
-    const fm = page.frontmatter ?? {};
-    const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
-    const next = [...entries, entry];
-
-    const writeRes = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({
-        slug: caseSlug,
-        frontmatter: { ...fm, time_entries: next },
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!writeRes.ok) return false;
-
-    const verifyRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!verifyRes.ok) return false;
-    const verify = (await verifyRes.json()) as { frontmatter?: Record<string, unknown> };
-    const verifyEntries = Array.isArray(verify.frontmatter?.time_entries)
-      ? (verify.frontmatter!.time_entries as TimeEntry[])
-      : [];
-    if (JSON.stringify(verifyEntries) === JSON.stringify(next)) return true;
-    await new Promise((r) => setTimeout(r, 25 + Math.random() * 75));
+  try {
+    await appendTimeEntries(createServerBrainClient(headers), caseSlug, [entry]);
+    return true;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 /**
