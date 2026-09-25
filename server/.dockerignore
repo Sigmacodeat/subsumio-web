@@ -2,9 +2,17 @@ node_modules
 .git
 .gitignore
 *.log
+# Secrets and firm import data never belong in an image. Patterns are
+# anchored at the context root (server/), so nested copies need `**/`:
+# deploy-code.sh places the production .env and the import mirror under
+# deploy/netcup/ in the release folder the image is built from.
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
+!**/.env.example
+**/imports
 test
 docker-compose*.yml
 bin

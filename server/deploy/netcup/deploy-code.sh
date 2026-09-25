@@ -103,9 +103,12 @@ mkdir "$APP-new"
 tar -xzf "$TAR" -C "$APP-new"
 rm -f "$TAR"
 echo "$SHA" > "$APP-new/DEPLOYED_COMMIT"
+# compose needs .env to resolve variables at build time; server/.dockerignore
+# keeps it (and every nested .env) out of the image build context.
 cp -p "$APP/$H/.env" "$APP-new/$H/.env"
 chmod 600 "$APP-new/$H/.env"
-[ -d "$APP/$H/imports" ] && cp -a "$APP/$H/imports" "$APP-new/$H/imports"
+# The import mirror is copied only after the build (see below), so it is never
+# part of a build context.
 # The release must be complete before anything is switched.
 for f in package.json "$H/docker-compose.yml" "$H/crontab" "$H/.env" DEPLOYED_COMMIT; do
   [ -s "$APP-new/$f" ] || { echo "[deploy] Unvollständige Version: $f fehlt." >&2; exit 1; }
@@ -116,6 +119,26 @@ REMOTE
 
 echo "[deploy] Abbilder bauen …"
 ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine build --build-arg GIT_SHA=$sha $BUILD"
+
+# No environment file or import data may end up in an engine image.
+check_images=""
+for svc in $BUILD; do
+  case "$svc" in engine | corpus-pipeline) check_images="$check_images subsumio-engine-$svc" ;; esac
+done
+if [ -n "$check_images" ]; then
+  echo "[deploy] Abbilder auf Geheimnisse prüfen …"
+  ssh "$HOST" "sh $APP-new/$H/check-image-secrets.sh$check_images" || {
+    echo "[deploy] Abbild enthält .env/Importdaten — nichts umgeschaltet." >&2
+    exit 1
+  }
+fi
+
+ssh "$HOST" "APP=$APP H=$H" 'sh -s' <<'REMOTE'
+set -eu
+if [ -d "$APP/$H/imports" ] && [ ! -e "$APP-new/$H/imports" ]; then
+  cp -a "$APP/$H/imports" "$APP-new/$H/imports"
+fi
+REMOTE
 
 if [ "$build_only" = 1 ]; then
   echo "[deploy] Gebaut, nicht umgeschaltet. Umschalten: ohne --build erneut ausführen."
