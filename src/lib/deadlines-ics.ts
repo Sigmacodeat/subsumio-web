@@ -14,6 +14,7 @@
  */
 
 import { DEADLINE_SOURCES, loadFristenReadModel, type Frist } from "@/lib/fristen-read-model";
+import { icsLines } from "@/lib/ics-format";
 
 export interface FristEntry {
   /** Stable, unique event id (source + slug + deadline id). */
@@ -144,11 +145,11 @@ export function buildIcs(fristen: FristEntry[], calendarName = "Subsumio Fristen
           "END:VEVENT",
         ]);
       }
-      return events.map((lines) => lines.filter(Boolean).join("\n"));
+      return events.map(icsLines);
     })
-    .join("\n");
+    .join("\r\n");
 
-  return [
+  const header = icsLines([
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Subsumio//Fristenbuch//DE",
@@ -159,11 +160,9 @@ export function buildIcs(fristen: FristEntry[], calendarName = "Subsumio Fristen
     // subscription roughly an hour behind at worst.
     "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
     "X-PUBLISHED-TTL:PT1H",
-    vevents,
-    "END:VCALENDAR",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ]);
+  // vevents are already folded; every content line ends with CRLF.
+  return [header, vevents, "END:VCALENDAR"].filter(Boolean).join("\r\n") + "\r\n";
 }
 
 /**
