@@ -12,6 +12,11 @@
  * must follow from the positions (in cents, VAT per rate — see
  * src/lib/invoice-totals.ts). An invoice whose sums do not add up is refused
  * with 422; the per-rate VAT breakdown is stamped by the server.
+ *
+ * Time positions follow the firm's billing rules (src/lib/billing-rules.ts,
+ * opt-in `billingRulesEnabled`): with the rules on, every billed time entry
+ * has a position whose billed minutes are its recorded minutes rounded up to
+ * the increment; with them off, billed minutes must equal the recorded ones.
  */
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
@@ -26,6 +31,8 @@ import {
   computeInvoiceTotals,
   totalsInputFromFrontmatter,
 } from "@/lib/invoice-totals";
+import { activeBillingRules, checkTimeItemBilling } from "@/lib/billing-rules";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices");
@@ -90,6 +97,22 @@ export const POST = createHandler(
       return apiError(
         "client_vat_id_required",
         "Bei Übergang der Steuerschuld (Reverse Charge) ist die UID-Nummer des Mandanten Pflicht.",
+        422
+      );
+    }
+    // Billing rules: the same functions the dialog built the positions with.
+    // Unreadable settings → refused, never checked against a guess.
+    let settings;
+    try {
+      settings = await loadKanzleiSettingsForBrain(ctx.brainId);
+    } catch {
+      return rejectionResponse(GUARD_READ_FAILED);
+    }
+    const billingProblems = checkTimeItemBilling(fm, activeBillingRules(settings));
+    if (billingProblems.length > 0) {
+      return apiError(
+        "invoice_billing_mismatch",
+        `Die Zeitpositionen passen nicht zu den Abrechnungsregeln der Kanzlei (${billingProblems.join(", ")}). Es wurde keine Rechnung angelegt — bitte die Rechnung neu erstellen.`,
         422
       );
     }

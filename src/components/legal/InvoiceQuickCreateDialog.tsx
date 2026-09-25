@@ -49,6 +49,15 @@ import {
   rateFraction,
   roundEur,
 } from "@/lib/invoice-totals";
+import {
+  RATE_SOURCE_LABELS_DE,
+  activeBillingRules,
+  feeAgreementRate,
+  formatMinutesDe,
+  ruledTimeItems,
+  type FeeAgreementLike,
+  type RateSource,
+} from "@/lib/billing-rules";
 import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 
 interface InvoiceQuickCreateDialogProps {
@@ -64,6 +73,10 @@ interface InvoiceItem {
   hours: number;
   rate: number;
   amount: number;
+  /** Only with the firm's billing rules on (src/lib/billing-rules.ts). */
+  recorded_minutes?: number;
+  billed_minutes?: number;
+  rate_source?: RateSource;
 }
 
 interface Invoice {
@@ -103,6 +116,7 @@ interface InvoiceCase {
   caseNumber: string;
   clientName?: string;
   clientSlug?: string;
+  legalArea?: string;
   timeEntries?: TimeEntry[];
   expenses?: ExpenseEntry[];
 }
@@ -207,6 +221,9 @@ export function InvoiceQuickCreateDialog({
   const [tariffLines, setTariffLines] = useState<TariffInvoiceLine[]>([]);
   const [reverseCharge, setReverseCharge] = useState(false);
   const [clientVatId, setClientVatId] = useState("");
+  // Fee agreements are read only when the firm's billing rules are on.
+  const [feeAgreements, setFeeAgreements] = useState<FeeAgreementLike[] | null>(null);
+  const [feeLoad, setFeeLoad] = useState<"idle" | "ready" | "failed">("idle");
 
   const resetForm = useCallback(() => {
     setSelectedCaseSlug(presetCaseSlug ?? "");
@@ -280,6 +297,7 @@ export function InvoiceQuickCreateDialog({
             caseNumber: fm.case_number || p.slug,
             clientName: fm.client_name,
             clientSlug: fm.client_slug,
+            legalArea: fm.legal_area,
             timeEntries: fm.time_entries || [],
             expenses: fm.expenses || [],
           };
@@ -304,6 +322,34 @@ export function InvoiceQuickCreateDialog({
     };
   }, [open]);
 
+  const rules = activeBillingRules(kanzlei);
+  const rulesOn = rules !== null;
+  useEffect(() => {
+    if (!open || !rulesOn) return;
+    let cancelled = false;
+    setFeeLoad("idle");
+    (async () => {
+      try {
+        const batch = await api.brain.batchListPagesDetailed(["fee_agreement"], 10_000);
+        if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+        if (cancelled) return;
+        setFeeAgreements(
+          (batch.results["fee_agreement"] ?? []).map(
+            (p) => p.frontmatter as unknown as FeeAgreementLike
+          )
+        );
+        setFeeLoad("ready");
+      } catch {
+        // Without the agreements a lower-priority rate could be billed —
+        // creation stays blocked until they can be read.
+        if (!cancelled) setFeeLoad("failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, rulesOn]);
+
   const selectedCase = cases.find((c) => c.slug === selectedCaseSlug);
   const openTime = (selectedCase?.timeEntries ?? []).filter(
     (entry) => entry.billable !== false && !entry.billed
@@ -313,8 +359,19 @@ export function InvoiceQuickCreateDialog({
   );
   const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
   const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
+  const ruledPreview =
+    rules && selectedCase
+      ? ruledTimeItems(openTime, rules, {
+          feeAgreementRate: feeAgreementRate(feeAgreements, selectedCase.slug),
+          legalArea: selectedCase.legalArea,
+          settings: kanzlei,
+        })
+      : null;
+  const rulesBlocked = rulesOn && feeLoad !== "ready";
   const previewItems = [
-    ...timeItemsFor(openTime, parseHourlyRate(kanzlei?.stundensatz) ?? 0),
+    ...(ruledPreview
+      ? ruledPreview.items
+      : timeItemsFor(openTime, parseHourlyRate(kanzlei?.stundensatz) ?? 0)),
     ...flatItemsFor(tariffLines),
   ];
   const timeFee = roundCents(
@@ -385,20 +442,42 @@ export function InvoiceQuickCreateDialog({
         return;
       }
 
-      if (defaultRate === null && billableTime.some((entry) => !entry.rate)) {
-        throw new Error(
-          "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
-        );
+      const activeRules = activeBillingRules(settings);
+      let timeItems: InvoiceItem[];
+      if (activeRules) {
+        // Billing rules on: increment rounding + rate by fee agreement /
+        // practice area / firm rate (src/lib/billing-rules.ts — the same
+        // functions the server checks the positions with).
+        if (billableTime.length > 0 && feeLoad !== "ready") {
+          throw new Error(
+            "Die Honorarvereinbarungen konnten nicht geladen werden. Bitte den Dialog neu öffnen."
+          );
+        }
+        const ruled = ruledTimeItems(billableTime, activeRules, {
+          feeAgreementRate: feeAgreementRate(feeAgreements, c.slug),
+          legalArea: c.legalArea,
+          settings,
+        });
+        if (ruled.missingRate > 0) {
+          throw new Error(
+            "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+          );
+        }
+        timeItems = ruled.items;
+      } else {
+        if (defaultRate === null && billableTime.some((entry) => !entry.rate)) {
+          throw new Error(
+            "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+          );
+        }
+        timeItems = timeItemsFor(billableTime, defaultRate ?? 0);
       }
 
       const billableTimeIds = billableTime.map((e) => e.id);
       const billableExpenseIds = billableExpenses.map((e) => e.id);
 
       // Hourly time entries plus tariff services calculated under the RATG.
-      const items: InvoiceItem[] = [
-        ...timeItemsFor(billableTime, defaultRate ?? 0),
-        ...flatItemsFor(tariffLines),
-      ];
+      const items: InvoiceItem[] = [...timeItems, ...flatItemsFor(tariffLines)];
       const expenses = expenseLinesFor(billableExpenses);
       const vatRate = vatRateFor(settings);
       // One calculation, in cents, VAT per rate — the server checks the same
@@ -600,7 +679,7 @@ export function InvoiceQuickCreateDialog({
     }
   }
 
-  const canSubmit = !!selectedCaseSlug && hasBillable;
+  const canSubmit = !!selectedCaseSlug && hasBillable && !(rulesBlocked && openTime.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -671,6 +750,14 @@ export function InvoiceQuickCreateDialog({
                         {money(timeFee)}
                       </span>
                     </div>
+                    {rulesOn && openTime.length > 0 && (
+                      <BillingRulesPositions
+                        increment={rules?.increment ?? null}
+                        loadState={feeLoad}
+                        items={ruledPreview?.items ?? []}
+                        missingRate={ruledPreview?.missingRate ?? 0}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-[color:var(--ds-warning-text)]">
@@ -894,5 +981,73 @@ export function InvoiceQuickCreateDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Positions under the firm's billing rules: recorded → billed minutes and
+ * where each rate comes from.
+ */
+function BillingRulesPositions({
+  increment,
+  loadState,
+  items,
+  missingRate,
+}: {
+  increment: number | null;
+  loadState: "idle" | "ready" | "failed";
+  items: InvoiceItem[];
+  missingRate: number;
+}) {
+  return (
+    <div
+      className="space-y-1.5 border-t border-[color:var(--ds-border)] pt-2"
+      data-testid="billing-rules-positions"
+    >
+      <p className="text-xs text-[color:var(--ds-text-muted)]">
+        {increment
+          ? `Abrechnungsregeln aktiv: Zeiten werden auf den ${increment}-Minuten-Takt aufgerundet; die erfasste Zeit bleibt unverändert.`
+          : "Abrechnungsregeln aktiv: kein gültiger Abrechnungstakt hinterlegt — Zeiten werden nicht gerundet."}
+      </p>
+      {loadState === "failed" && (
+        <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
+          <AlertTriangle size={12} />
+          Die Honorarvereinbarungen konnten nicht geladen werden — die Rechnung kann erst danach
+          erstellt werden.
+        </p>
+      )}
+      {loadState === "idle" && (
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          Honorarvereinbarungen werden geladen …
+        </p>
+      )}
+      {loadState === "ready" && missingRate > 0 && (
+        <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
+          <AlertTriangle size={12} />
+          Für {missingRate} {missingRate === 1 ? "Zeiteintrag" : "Zeiteinträge"} ist kein
+          Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen.
+        </p>
+      )}
+      {loadState === "ready" && items.length > 0 && (
+        <ul className="space-y-1 text-xs">
+          {items.map((item, i) => (
+            <li key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-0.5">
+              <span className="min-w-0 truncate text-[color:var(--ds-text)]">
+                {item.description}
+              </span>
+              <span className="text-[color:var(--ds-text-muted)]">
+                {formatMinutesDe(item.recorded_minutes ?? 0)}
+                {item.billed_minutes !== item.recorded_minutes
+                  ? ` → ${formatMinutesDe(item.billed_minutes ?? 0)}`
+                  : ""}
+                {" · "}
+                {money(item.rate)}/h
+                {item.rate_source ? ` (${RATE_SOURCE_LABELS_DE[item.rate_source]})` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
