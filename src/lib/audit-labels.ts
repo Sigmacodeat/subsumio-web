@@ -205,6 +205,8 @@ export type AuditAction =
   | "acl.remove_permission"
   | "dms.push"
   | "dms.content_download"
+  | "dms.config_update"
+  | "dms.config_delete"
   | "space.update"
   | "email.send"
   | "docusign.send"
@@ -529,6 +531,8 @@ const ACTION_LABELS: Record<string, string> = {
   "support.session_end": "Subsumio-Support: Zugriff beendet",
   "dms.push": "Dokument an DMS gepusht",
   "dms.content_download": "DMS-Dokument geöffnet",
+  "dms.config_update": "DMS-Anbindung eingerichtet/geändert",
+  "dms.config_delete": "DMS-Anbindung entfernt",
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",
   "whatsapp.document_to_space": "WhatsApp-Dokument zugeordnet",

@@ -34,7 +34,7 @@ export const POST = createHandler(
   async (ctx, body) => {
     const connector = await getConnectorForBrain(ctx.brainId);
     if (!connector || !connector.isConfigured()) {
-      return apiError("dms_not_configured", "Kein DMS für diese Kanzlei konfiguriert.", 503);
+      return apiError("dms_not_configured", "DMS nicht eingerichtet", 503);
     }
 
     const result = await connector.pushToDms(body.filename, body.content_base64, {

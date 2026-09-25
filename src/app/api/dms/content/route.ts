@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getConnectorForBrain } from "@/lib/dms";
+import { dmsContentAccess } from "@/lib/dms/access";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { ATTACHMENT_CSP, IMAGE_INLINE_CSP, PDF_INLINE_CSP } from "@/lib/file-response-headers";
@@ -34,7 +35,21 @@ export const GET = createHandler(
   async (ctx, _body, query, req) => {
     const connector = await getConnectorForBrain(ctx.brainId);
     if (!connector || !connector.isConfigured()) {
-      return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
+      return apiError("dms_not_configured", "DMS nicht eingerichtet", 503);
+    }
+
+    // Only documents this firm imported, and only when the user may read the
+    // matter they are linked to (matter scope + ethical wall).
+    const access = await dmsContentAccess(ctx, query.id);
+    if (access === "not_imported") {
+      return apiError(
+        "dms_not_imported",
+        "Dieses DMS-Dokument wurde in dieser Kanzlei nicht importiert",
+        403
+      );
+    }
+    if (access !== "ok") {
+      return apiError("forbidden", "Kein Zugriff auf dieses Dokument", 403);
     }
 
     try {

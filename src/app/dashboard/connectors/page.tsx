@@ -26,6 +26,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DmsBrowserDialog } from "@/components/legal/DmsBrowserDialog";
+import { DmsConfigPanel } from "@/components/legal/DmsConfigPanel";
 import {
   getCoverageMatrix,
   isWebSelfServiceConnector,
@@ -122,6 +123,7 @@ export default function ConnectorsPage() {
   const { t } = useLang();
   const me = useMe();
   const jurisdiction = me.data?.user?.jurisdiction ?? me.data?.demo?.jurisdiction?.toUpperCase();
+  const isAdmin = me.data?.user?.role === "admin";
   const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
@@ -451,6 +453,9 @@ export default function ConnectorsPage() {
       </div>
 
       {showCoverage && <CoverageMatrix />}
+
+      {/* DMS-Anbindung pro Kanzlei — Einrichten/Ändern nur für Administratoren */}
+      {isAdmin && <DmsConfigPanel />}
 
       {/* WP-8.53: OneDrive/SharePoint — DMS-Browser (Suche/Ordner/Import) */}
       <div className="flex items-center justify-between rounded-xl border [border-color:var(--ds-border)] p-4 [background:var(--ds-surface)]">

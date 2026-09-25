@@ -1,4 +1,4 @@
-import { getConnector, isAnyDMSConfigured, isDmsEnabledForBrain } from "@/lib/dms";
+import { resolveDmsForBrain } from "@/lib/dms";
 import { createHandler } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
@@ -10,17 +10,18 @@ export const GET = createHandler(
     cacheMaxAge: 30,
   },
   async (ctx, _body, _query, _req) => {
-    // The installation DMS belongs to the firm(s) enabled for it only.
-    const configured = isAnyDMSConfigured() && isDmsEnabledForBrain(ctx.brainId);
-    if (!configured) {
+    // Only the DMS of the caller's firm: its own configuration, or the
+    // transitional installation DMS for firms enabled for it.
+    const resolved = await resolveDmsForBrain(ctx.brainId);
+    if (!resolved) {
       return Response.json({ configured: false });
     }
 
-    const connector = await getConnector();
     return Response.json({
       configured: true,
-      provider: connector?.name ?? "unknown",
-      ready: connector?.isConfigured() ?? false,
+      provider: resolved.connector.name,
+      source: resolved.source,
+      ready: resolved.connector.isConfigured(),
     });
   }
 );

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 let connector: {
   isConfigured(): boolean;
@@ -10,6 +10,11 @@ let connector: {
 
 vi.mock("@/lib/dms", () => ({
   getConnectorForBrain: vi.fn(async () => connector),
+}));
+
+let access: "ok" | "not_imported" | "blocked" = "ok";
+vi.mock("@/lib/dms/access", () => ({
+  dmsContentAccess: vi.fn(async () => access),
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -42,10 +47,39 @@ const pdfConnector = (data: ArrayBuffer) => ({
 });
 
 describe("GET /api/dms/content", () => {
+  beforeEach(() => {
+    access = "ok";
+  });
+
   test("503 wenn DMS nicht konfiguriert", async () => {
     connector = null;
     const res = (await GET(req("http://localhost/api/dms/content?id=d1"))) as Response;
     expect(res.status).toBe(503);
+  });
+
+  test("403 für ein DMS-Dokument, das diese Kanzlei nicht importiert hat — kein DMS-Abruf", async () => {
+    const getDocument = vi.fn(async () => ({ id: "d1", name: "akte.pdf" }));
+    const getDocumentContent = vi.fn(async () => null);
+    connector = { isConfigured: () => true, getDocument, getDocumentContent };
+    access = "not_imported";
+    const res = (await GET(req("http://localhost/api/dms/content?id=d1"))) as Response;
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("dms_not_imported");
+    expect(getDocument).not.toHaveBeenCalled();
+    expect(getDocumentContent).not.toHaveBeenCalled();
+  });
+
+  test("403 wenn die verknüpfte Akte für den Nutzer gesperrt ist — kein DMS-Abruf", async () => {
+    const getDocumentContent = vi.fn(async () => null);
+    connector = {
+      isConfigured: () => true,
+      getDocument: async () => ({ id: "d1", name: "akte.pdf" }),
+      getDocumentContent,
+    };
+    access = "blocked";
+    const res = (await GET(req("http://localhost/api/dms/content?id=d1"))) as Response;
+    expect(res.status).toBe(403);
+    expect(getDocumentContent).not.toHaveBeenCalled();
   });
 
   test("404 wenn Dokument nicht existiert", async () => {

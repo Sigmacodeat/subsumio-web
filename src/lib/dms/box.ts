@@ -14,15 +14,16 @@ import {
   type DMSDocument,
   type DMSSearchResult,
   type DMSPushResult,
+  type DMSSettings,
+  type DMSImportOptions,
+  DMS_API_KEY,
   dmsAuthHeaders,
   dmsFetchJson,
   fetchDmsContent,
   isDmsConfigured,
+  importToBrainCommon,
 } from "./index";
 
-import { ENGINE_URL } from "@/lib/engine";
-
-const BOX_FOLDER_ID = process.env.BOX_FOLDER_ID || "0";
 const BOX_API = "https://api.box.com/2.0";
 
 interface BoxItem {
@@ -81,156 +82,140 @@ function boxItemToFolder(item: BoxItem): {
   };
 }
 
-export const boxConnector: DMSConnector = {
-  name: "Box",
+/** Connector bound to one Box account (a firm's own settings or the installation env). */
+export function createBoxConnector(settings: DMSSettings): DMSConnector {
+  return {
+    name: "Box",
 
-  isConfigured(): boolean {
-    return isDmsConfigured();
-  },
+    isConfigured(): boolean {
+      return isDmsConfigured(settings);
+    },
 
-  async search(
-    query: string,
-    opts?: { limit?: number; folderId?: string }
-  ): Promise<DMSSearchResult> {
-    const limit = opts?.limit ?? 50;
-    const params = new URLSearchParams({
-      query,
-      limit: String(limit),
-      fields: "id,type,name,description,size,modified_at,created_at,path_collection,parent",
-    });
-    if (opts?.folderId) {
-      params.set("ancestor_folder_ids", opts.folderId);
-    }
-
-    const data = await dmsFetchJson<BoxSearchResponse>(`${BOX_API}/search?${params}`, {
-      headers: dmsAuthHeaders(),
-    });
-
-    const entries = data.entries ?? [];
-    return {
-      documents: entries.filter((e) => e.type === "file").map(boxItemToDocument),
-      folders: entries.filter((e) => e.type === "folder").map(boxItemToFolder),
-      totalCount: data.total_count ?? 0,
-    };
-  },
-
-  async getDocument(docId: string): Promise<DMSDocument | null> {
-    try {
-      const data = await dmsFetchJson<BoxItem>(`${BOX_API}/files/${docId}`, {
-        headers: dmsAuthHeaders(),
+    async search(
+      query: string,
+      opts?: { limit?: number; folderId?: string }
+    ): Promise<DMSSearchResult> {
+      const limit = opts?.limit ?? 50;
+      const params = new URLSearchParams({
+        query,
+        limit: String(limit),
+        fields: "id,type,name,description,size,modified_at,created_at,path_collection,parent",
       });
-      return boxItemToDocument(data);
-    } catch {
-      return null;
-    }
-  },
+      if (opts?.folderId) {
+        params.set("ancestor_folder_ids", opts.folderId);
+      }
 
-  async getDocumentContent(docId: string) {
-    return fetchDmsContent(`${BOX_API}/files/${encodeURIComponent(docId)}/content`);
-  },
+      const data = await dmsFetchJson<BoxSearchResponse>(`${BOX_API}/search?${params}`, {
+        headers: dmsAuthHeaders(settings),
+      });
 
-  async getFolderContents(folderId: string): Promise<DMSSearchResult> {
-    const data = await dmsFetchJson<BoxFolderResponse>(
-      `${BOX_API}/folders/${folderId}/items?fields=id,type,name,description,size,modified_at,created_at,created_by,path_collection,parent&limit=100`,
-      { headers: dmsAuthHeaders() }
-    );
-
-    const entries = data.item_collection?.entries ?? [];
-    return {
-      documents: entries.filter((e) => e.type === "file").map(boxItemToDocument),
-      folders: entries.filter((e) => e.type === "folder").map(boxItemToFolder),
-      totalCount: data.item_collection?.total_count ?? 0,
-    };
-  },
-
-  async importToBrain(
-    doc: DMSDocument,
-    brainId: string,
-    headers: Record<string, string>
-  ): Promise<{ slug: string; success: boolean }> {
-    const downloadRes = await fetch(`${BOX_API}/files/${doc.id}/content`, {
-      headers: dmsAuthHeaders(),
-      redirect: "follow",
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!downloadRes.ok) {
-      throw new Error(`Box download failed: ${downloadRes.status}`);
-    }
-
-    const content = await downloadRes.text();
-    const slug = `dms/box/${doc.id}-${doc.name
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")}`;
-
-    const pageRes = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug,
-        title: doc.name,
-        type: "legal_document",
-        content,
-        frontmatter: {
-          source: "box",
-          source_id: doc.id,
-          source_name: doc.name,
-          author: doc.author,
-          modified_date: doc.modifiedDate,
-          imported_at: new Date().toISOString(),
-        },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-
-    return { slug, success: pageRes.ok };
-  },
-
-  async pushToDms(
-    filename: string,
-    contentBase64: string,
-    opts: { folderId?: string; metadata?: Record<string, string> }
-  ): Promise<DMSPushResult> {
-    const folderId = opts.folderId ?? BOX_FOLDER_ID;
-    const content = Buffer.from(contentBase64, "base64").toString("utf-8");
-
-    const formData = new FormData();
-    const attributes = JSON.stringify({
-      name: filename,
-      parent: { id: folderId },
-      ...(opts.metadata
-        ? {
-            description: Object.entries(opts.metadata)
-              .map(([k, v]) => `${k}: ${v}`)
-              .join("\n"),
-          }
-        : {}),
-    });
-    formData.append("attributes", attributes);
-    formData.append("file", new Blob([content], { type: "text/plain" }), filename);
-
-    const uploadRes = await fetch(`${BOX_API}/files/content`, {
-      method: "POST",
-      headers: dmsAuthHeaders(),
-      body: formData,
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!uploadRes.ok) {
-      const text = await uploadRes.text().catch(() => "");
+      const entries = data.entries ?? [];
       return {
-        success: false,
-        error: `Box upload failed: ${uploadRes.status} ${text.slice(0, 200)}`,
+        documents: entries.filter((e) => e.type === "file").map(boxItemToDocument),
+        folders: entries.filter((e) => e.type === "folder").map(boxItemToFolder),
+        totalCount: data.total_count ?? 0,
       };
-    }
+    },
 
-    const result = (await uploadRes.json()) as { entries?: BoxItem[] };
-    const file = result.entries?.[0];
+    async getDocument(docId: string): Promise<DMSDocument | null> {
+      try {
+        const data = await dmsFetchJson<BoxItem>(`${BOX_API}/files/${docId}`, {
+          headers: dmsAuthHeaders(settings),
+        });
+        return boxItemToDocument(data);
+      } catch {
+        return null;
+      }
+    },
 
-    return {
-      success: true,
-      documentId: file?.id,
-    };
-  },
-};
+    async getDocumentContent(docId: string) {
+      return fetchDmsContent(`${BOX_API}/files/${encodeURIComponent(docId)}/content`, settings);
+    },
+
+    async getFolderContents(folderId: string): Promise<DMSSearchResult> {
+      const data = await dmsFetchJson<BoxFolderResponse>(
+        `${BOX_API}/folders/${folderId}/items?fields=id,type,name,description,size,modified_at,created_at,created_by,path_collection,parent&limit=100`,
+        { headers: dmsAuthHeaders(settings) }
+      );
+
+      const entries = data.item_collection?.entries ?? [];
+      return {
+        documents: entries.filter((e) => e.type === "file").map(boxItemToDocument),
+        folders: entries.filter((e) => e.type === "folder").map(boxItemToFolder),
+        totalCount: data.item_collection?.total_count ?? 0,
+      };
+    },
+
+    async importToBrain(
+      doc: DMSDocument,
+      brainId: string,
+      headers: Record<string, string>,
+      opts?: DMSImportOptions
+    ): Promise<{ slug: string; success: boolean }> {
+      return importToBrainCommon(
+        doc,
+        brainId,
+        headers,
+        "Box",
+        `${BOX_API}/files/${encodeURIComponent(doc.id)}/content`,
+        settings,
+        opts
+      );
+    },
+
+    async pushToDms(
+      filename: string,
+      contentBase64: string,
+      opts: { folderId?: string; metadata?: Record<string, string> }
+    ): Promise<DMSPushResult> {
+      const folderId = opts.folderId ?? (settings.boxFolderId || "0");
+      const content = Buffer.from(contentBase64, "base64").toString("utf-8");
+
+      const formData = new FormData();
+      const attributes = JSON.stringify({
+        name: filename,
+        parent: { id: folderId },
+        ...(opts.metadata
+          ? {
+              description: Object.entries(opts.metadata)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join("\n"),
+            }
+          : {}),
+      });
+      formData.append("attributes", attributes);
+      formData.append("file", new Blob([content], { type: "text/plain" }), filename);
+
+      const uploadRes = await fetch(`${BOX_API}/files/content`, {
+        method: "POST",
+        headers: dmsAuthHeaders(settings),
+        body: formData,
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text().catch(() => "");
+        return {
+          success: false,
+          error: `Box upload failed: ${uploadRes.status} ${text.slice(0, 200)}`,
+        };
+      }
+
+      const result = (await uploadRes.json()) as { entries?: BoxItem[] };
+      const file = result.entries?.[0];
+
+      return {
+        success: true,
+        documentId: file?.id,
+      };
+    },
+  };
+}
+
+/** Installation (env) connector — transitional single-tenant path. */
+export const boxConnector = createBoxConnector({
+  provider: "box",
+  baseUrl: "",
+  apiKey: DMS_API_KEY,
+  boxFolderId: process.env.BOX_FOLDER_ID || null,
+});

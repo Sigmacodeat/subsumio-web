@@ -28,7 +28,7 @@ vi.mock("@/lib/api-handler", () => ({
       const ctx = {
         brainId: currentBrain,
         headers: {},
-        user: { id: "u1", email: "t@t.com" },
+        user: { id: "u1", email: "t@t.com", role: "lawyer" },
       };
       return handler(ctx, body, Object.fromEntries(url.searchParams), req);
     };
@@ -38,7 +38,13 @@ vi.mock("@/lib/api-handler", () => ({
 }));
 
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));
-vi.mock("@/lib/engine", () => ({ recordQuota: vi.fn() }));
+vi.mock("@/lib/engine", () => ({
+  recordQuota: vi.fn(),
+  ENGINE_URL: "http://engine.invalid",
+  enginePatchPage: vi.fn(),
+}));
+// No firm has a stored DMS config here: only the transitional env gate applies.
+vi.mock("@/lib/dms/config-store", () => ({ getDmsSettingsForBrain: vi.fn(async () => null) }));
 
 const fakeConnector = {
   name: "Fake DMS",
