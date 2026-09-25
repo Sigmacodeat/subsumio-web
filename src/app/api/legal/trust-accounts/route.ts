@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+
+/** Upper bound for the trust-account list. */
+const TRUST_LIST_MAX = 5_000;
 
 export const dynamic = "force-dynamic";
 
@@ -25,24 +29,28 @@ export const GET = createHandler(
     query: z.object({
       matterSlug: z.string().optional(),
       status: z.enum(["active", "frozen", "closed", "overdrawn"]).optional(),
-      limit: z.coerce.number().min(1).max(200).default(50),
+      limit: z.coerce.number().min(1).max(TRUST_LIST_MAX).optional(),
     }),
   },
   async (ctx, _body, query, _req) => {
-    const params = new URLSearchParams({
-      type: "trust_account",
-      limit: String(query?.limit ?? 50),
+    // Every account, paged past the engine's per-request cap; deleted
+    // (tombstoned) accounts stay out of the list. The engine cannot filter by
+    // frontmatter, so matter/status are filtered here.
+    let pages: Array<{ frontmatter?: Record<string, unknown> }>;
+    try {
+      pages = await listEnginePages(ctx.headers, "trust_account", TRUST_LIST_MAX, {
+        strict: true,
+      });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
+    const filtered = pages.filter((p) => {
+      const fm = p.frontmatter ?? {};
+      if (query?.matterSlug && fm.matter_slug !== query.matterSlug) return false;
+      if (query?.status && fm.status !== query.status) return false;
+      return true;
     });
-    if (query?.matterSlug) params.set("matter_slug", query.matterSlug);
-    if (query?.status) params.set("status", query.status);
-
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    return Response.json(Array.isArray(data) ? data : (data.pages ?? []));
+    return Response.json(query?.limit ? filtered.slice(0, query.limit) : filtered);
   }
 );
 

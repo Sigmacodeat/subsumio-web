@@ -25,7 +25,7 @@ function encodeSlug(slug: string): string {
 // "not_found"   → the engine authoritatively says it isn't there (404 / wrong type)
 // "unavailable" → transient (engine 5xx, timeout, network) — the case may well
 //                 exist; we must NOT tell the user it's missing (P1-4).
-type CaseSlugCheck = "exists" | "not_found" | "unavailable";
+type CaseSlugCheck = "exists" | "archived" | "not_found" | "unavailable";
 
 async function validateCaseSlug(
   headers: Record<string, string>,
@@ -45,8 +45,10 @@ async function validateCaseSlug(
   // Any other non-OK (5xx, 429, 401 from an engine hiccup) is transient.
   if (!res.ok) return "unavailable";
   try {
-    const page = (await res.json()) as { type?: string };
-    return page.type === "legal_case" ? "exists" : "not_found";
+    const page = (await res.json()) as { type?: string; frontmatter?: Record<string, unknown> };
+    if (page.type !== "legal_case") return "not_found";
+    // An archived matter is closed: nothing is filed into it any more.
+    return page.frontmatter?.status === "archived" ? "archived" : "exists";
   } catch {
     return "unavailable";
   }
@@ -153,6 +155,13 @@ export const POST = createHandler(
           const caseCheck = await validateCaseSlug(ctx.headers, caseSlugStr);
           if (caseCheck === "not_found") {
             return apiError("case_not_found", "Die angegebene Akte existiert nicht.", 404);
+          }
+          if (caseCheck === "archived") {
+            return apiError(
+              "case_archived",
+              "Die Akte ist archiviert — zuerst wiederherstellen, um Dokumente abzulegen.",
+              409
+            );
           }
           if (caseCheck === "unavailable") {
             // Don't claim the case is missing on a transient engine problem.

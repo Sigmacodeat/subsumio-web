@@ -1,6 +1,12 @@
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, recordQuota } from "@/lib/api-handler";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
+import {
+  GUARD_READ_FAILED,
+  isArchivedCase,
+  readCurrentPage,
+  rejectionResponse,
+} from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/upload/confirm");
@@ -54,6 +60,22 @@ export const POST = createHandler(
     const wantsSse = clientAccept.includes("text/event-stream");
     const bodyRec = (body ?? {}) as Record<string, unknown>;
     const caseSlug = typeof bodyRec.case_slug === "string" ? bodyRec.case_slug : "";
+
+    // An archived matter is closed: nothing is filed into it any more.
+    // Fail closed when the matter cannot be read.
+    if (caseSlug) {
+      const caseRead = await readCurrentPage(ENGINE_URL, ctx.headers, caseSlug);
+      if (caseRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+      if (isArchivedCase(caseRead.kind === "found" ? caseRead.page : null)) {
+        return Response.json(
+          {
+            error: "case_archived",
+            message: "Die Akte ist archiviert — zuerst wiederherstellen, um Dokumente abzulegen.",
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     const upstream = await fetch(`${ENGINE_URL}/api/upload/confirm`, {
       method: "POST",

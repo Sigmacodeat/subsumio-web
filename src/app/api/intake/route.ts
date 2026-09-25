@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { listEnginePages } from "@/lib/engine-pages";
 import { buildIntakeRequest, intakeFromPage, type IntakeRequestFrontmatter } from "@/lib/intake";
 import { defaultAcceptanceWorkflow, type IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -70,16 +71,8 @@ function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/");
 }
 
-function pagesFrom(data: unknown): BrainPage[] {
-  if (Array.isArray(data)) return data as BrainPage[];
-  if (data && typeof data === "object" && Array.isArray((data as { pages?: unknown }).pages)) {
-    return (data as { pages: BrainPage[] }).pages;
-  }
-  if (data && typeof data === "object" && Array.isArray((data as { items?: unknown }).items)) {
-    return (data as { items: BrainPage[] }).items;
-  }
-  return [];
-}
+/** Upper bound for the intake list (all pages of the type, paged). */
+const INTAKE_LIST_MAX = 20_000;
 
 export const GET = createHandler(
   {
@@ -89,15 +82,18 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, query, _req) => {
-    const limit = Math.min(Number.parseInt(query.limit || "100", 10) || 100, 250);
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=intake_request&limit=${limit}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("intake_list_failed", "Intakes konnten nicht geladen werden", 502);
-
-    const pages = pagesFrom(await res.json().catch(() => []));
-    const intakes = pages
+    // Every request, paged past the engine's per-request cap and without
+    // deleted ones; `limit` (optional) only trims the sorted result.
+    let pages: BrainPage[];
+    try {
+      pages = (await listEnginePages(ctx.headers, "intake_request", INTAKE_LIST_MAX, {
+        strict: true,
+      })) as unknown as BrainPage[];
+    } catch {
+      return apiError("intake_list_failed", "Intakes konnten nicht geladen werden", 502);
+    }
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : NaN;
+    const all = pages
       .map(intakeFromPage)
       .filter((item): item is NonNullable<ReturnType<typeof intakeFromPage>> => item !== null)
       .filter((item) => !query.status || item.frontmatter.status === query.status)
@@ -106,8 +102,9 @@ export const GET = createHandler(
           new Date(b.frontmatter.created_at).getTime() -
           new Date(a.frontmatter.created_at).getTime()
       );
+    const intakes = Number.isFinite(limit) && limit > 0 ? all.slice(0, limit) : all;
 
-    return Response.json({ intakes, total: intakes.length });
+    return Response.json({ intakes, total: all.length });
   }
 );
 

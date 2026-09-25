@@ -32,7 +32,9 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import {
   MAX_HOURLY_RATE_EUR,
+  loadKanzleiSettingsStrict,
   normalizeKanzleiSettings,
+  onboardingMayWriteKanzleiSettings,
   saveKanzleiSettings,
 } from "@/lib/kanzlei-settings";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
@@ -168,7 +170,16 @@ export default function OnboardingPage() {
     if (!profile.kanzleiName.trim() && !contactName && !contactEmail) {
       return;
     }
+    // A member joining an existing firm must never replace its settings with
+    // the wizard's values: only an admin writes, and only while no profile
+    // exists. A failed read aborts (no silent overwrite).
+    const role = meQuery.data?.user?.role;
+    if (role !== "admin") return;
+    const existing = await loadKanzleiSettingsStrict();
+    if (!onboardingMayWriteKanzleiSettings(role, existing)) return;
     const settings = normalizeKanzleiSettings({
+      // Keep what provisioning seeded (Rechtsraum, Tarifmodell, …).
+      ...existing,
       kanzleiName: profile.kanzleiName.trim(),
       anwaltName: contactName,
       kanzleiEmail: contactEmail,
@@ -189,7 +200,7 @@ export default function OnboardingPage() {
     await saveKanzleiSettings(settings);
     // Mark firm setup as progressed; best-effort, not blocking
     api.onboarding.updateProgress({ firm: true }).catch(() => {});
-  }, [profile, userEmail, userName, billing]);
+  }, [profile, userEmail, userName, billing, meQuery.data?.user?.role]);
 
   const finish = useCallback(async () => {
     setCompleting(true);

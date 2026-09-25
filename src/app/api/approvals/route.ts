@@ -10,6 +10,10 @@ import { executeApprovedAction } from "@/lib/approval-execution";
 import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { ENGINE_URL } from "@/lib/engine";
+import { readCurrentPage } from "@/lib/page-write-guards";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import { approvalDecisionBlock } from "@/lib/approval-decision";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/approvals");
@@ -136,67 +140,89 @@ export const PATCH = createHandler(
     rateTier: "standard",
     body: approvalsPatchSchema,
     audit: (ctx, body) => ({
-      action: "settings.update" as const,
+      action:
+        body.decision === "approved" ? ("approval.approve" as const) : ("approval.reject" as const),
       entityType: "agent_action",
       entityId: body.id,
       details: { decision: body.decision, decided_by: ctx.user.email },
     }),
   },
   async (ctx, body, _query, _req) => {
-    const brain = createServerBrainClient(ctx.headers);
-    const now = new Date().toISOString();
-    await brain.updatePage({
-      slug: body.id,
-      frontmatter: {
-        status: body.decision as ApprovalStatus,
-        decided_at: now,
-        decided_by: ctx.user.email,
-        ...(body.decision === "rejected" && body.reject_reason
-          ? { reject_reason: body.reject_reason }
-          : {}),
-      },
-    });
-
-    if (body.decision === "approved" && body.execute === true) {
-      try {
-        const result = await executeApprovedAction(
-          {
-            brainId: ctx.brainId,
-            getPage: brain.getPage,
-            createPage: brain.createPage,
-            updatePage: brain.updatePage,
-            mutatePageArray: brain.mutatePageArray,
-            sendProactiveWhatsApp: sendProactiveMessage,
-            createCase: (input) => createCaseSafely(engineCaseCreateDeps(ctx.headers), input),
-          },
-          {
-            actionSlug: body.id,
-            executedBy: ctx.user.email,
-            force: body.force === true,
-          }
-        );
-        return Response.json({
-          ok: true,
-          id: body.id,
-          decision: body.decision,
-          decided_at: now,
-          execution: result,
-        });
-      } catch (err) {
-        log.error(
-          "[approvals] execute after decision failed:",
-          err instanceof Error ? err.message : String(err)
-        );
-        return apiError(
-          "approval_execution_failed",
-          err instanceof Error
-            ? err.message
-            : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
-          400
-        );
-      }
-    }
-
-    return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now });
+    // One decision per action: two deciders must not both see "pending".
+    return withKeyedLock(`approval:${ctx.brainId}:${body.id}`, () => decide(ctx, body));
   }
 );
+
+async function decide(
+  ctx: { headers: Record<string, string>; brainId: string; user: { email: string; role: string } },
+  body: z.infer<typeof approvalsPatchSchema>
+): Promise<Response> {
+  // Only a pending Freigabe-Aktion is decided here — never any other page —
+  // by a lawyer/admin who did not propose or submit it (Vier-Augen).
+  const read = await readCurrentPage(ENGINE_URL, ctx.headers, body.id);
+  if (read.kind === "error") {
+    return apiError(
+      "guard_unavailable",
+      "Die Freigabe konnte nicht geprüft werden. Bitte erneut versuchen.",
+      503
+    );
+  }
+  const block = approvalDecisionBlock(read.kind === "found" ? read.page : null, ctx.user);
+  if (block) return apiError(block.code, block.message, block.status);
+
+  const brain = createServerBrainClient(ctx.headers);
+  const now = new Date().toISOString();
+  await brain.updatePage({
+    slug: body.id,
+    frontmatter: {
+      status: body.decision as ApprovalStatus,
+      decided_at: now,
+      decided_by: ctx.user.email,
+      ...(body.decision === "rejected" && body.reject_reason
+        ? { reject_reason: body.reject_reason }
+        : {}),
+    },
+  });
+
+  if (body.decision === "approved" && body.execute === true) {
+    try {
+      const result = await executeApprovedAction(
+        {
+          brainId: ctx.brainId,
+          getPage: brain.getPage,
+          createPage: brain.createPage,
+          updatePage: brain.updatePage,
+          mutatePageArray: brain.mutatePageArray,
+          sendProactiveWhatsApp: sendProactiveMessage,
+          createCase: (input) => createCaseSafely(engineCaseCreateDeps(ctx.headers), input),
+        },
+        {
+          actionSlug: body.id,
+          executedBy: ctx.user.email,
+          force: body.force === true,
+        }
+      );
+      return Response.json({
+        ok: true,
+        id: body.id,
+        decision: body.decision,
+        decided_at: now,
+        execution: result,
+      });
+    } catch (err) {
+      log.error(
+        "[approvals] execute after decision failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return apiError(
+        "approval_execution_failed",
+        err instanceof Error
+          ? err.message
+          : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
+        400
+      );
+    }
+  }
+
+  return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now });
+}

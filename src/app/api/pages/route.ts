@@ -17,10 +17,14 @@ import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/akt
 import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,
+  guardProtectedPageWrite,
   guardSecondCheckWrite,
+  isKanzleiSettingsTarget,
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
+import { can } from "@/lib/permissions";
 
 import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
 import { logger } from "@/lib/logger";
@@ -104,7 +108,9 @@ export const GET = createHandler(
           includeTombstoned: query.include_tombstoned === "1",
           timeoutMs: 15_000,
         });
-        return Response.json(all.filter((p) => belongsToMatter(p.frontmatter, query)));
+        return Response.json(
+          redactPageSecrets(all.filter((p) => belongsToMatter(p.frontmatter, query)))
+        );
       } catch (err) {
         log.error("[pages] matter list failed:", err instanceof Error ? err.message : String(err));
         return apiError("service_unavailable", "Seiten derzeit nicht verfügbar", 503);
@@ -123,10 +129,11 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = (await res.json()) as unknown;
       // Deleted records are tombstoned, not removed; lists must not bring them back.
-      const data =
+      const data = redactPageSecrets(
         Array.isArray(raw) && query.include_tombstoned !== "1"
           ? raw.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
-          : raw;
+          : raw
+      );
       // Relay cursor pagination metadata from engine if present
       const nextCursor = res.headers.get("x-next-cursor");
       if (nextCursor) {
@@ -277,6 +284,28 @@ export const POST = createHandler(
         frontmatter: body.frontmatter,
       });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+
+      // Records with their own route (Kanzlei-Einstellungen, KYC, Anderkonten,
+      // Freigaben, Kollisions-/Legal-Hold-Felder, Archiv) are not written here.
+      const isMergeWrite = body.merge === true;
+      const protectedWrite = guardProtectedPageWrite({
+        slug: body.slug,
+        current,
+        actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+        mode: isMergeWrite ? "merge" : "replace",
+        type: body.type,
+        frontmatter: body.frontmatter,
+      });
+      if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
+      if (protectedWrite.frontmatter) body.frontmatter = protectedWrite.frontmatter;
+
+      // The SMTP password is stored encrypted, never as page plaintext.
+      if (isKanzleiSettingsTarget(body.slug, current, body.type, body.frontmatter)) {
+        body.frontmatter = await sealKanzleiSettingsFrontmatter(
+          body.frontmatter ?? {},
+          current?.frontmatter ?? null
+        );
+      }
 
       // Billed time entries / expenses are part of an invoice's basis — the
       // billing state moves only through the dedicated billing routes.
@@ -445,7 +474,7 @@ export const POST = createHandler(
         action: isMerge ? "updated" : "created",
       });
 
-      return Response.json({ ...result, conflictWarning });
+      return Response.json({ ...redactPageSecrets(result), conflictWarning });
     } catch (e) {
       log.error("[pages] create failed:", e instanceof Error ? e.message : String(e));
       return apiError("internal_error", "Seite konnte nicht erstellt werden", 500);

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { listEnginePages } from "@/lib/engine-pages";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 
 const batchListSchema = z.object({
   types: z.array(z.string().min(1).max(64)).min(1).max(20),
@@ -22,9 +23,9 @@ export const POST = createHandler(
     await Promise.all(
       body.types.map(async (type) => {
         try {
-          results[type] = await listEnginePages(ctx.headers, type, body.limit, {
-            timeoutMs: 20_000,
-          });
+          results[type] = redactPageSecrets(
+            await listEnginePages(ctx.headers, type, body.limit, { timeoutMs: 20_000 })
+          );
         } catch {
           errors.push(type);
         }

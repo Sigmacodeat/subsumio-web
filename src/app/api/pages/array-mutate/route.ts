@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { GUARD_READ_FAILED, readCurrentPage, rejectionResponse } from "@/lib/page-write-guards";
+import { can } from "@/lib/permissions";
+import {
+  GUARD_READ_FAILED,
+  checkProtectedArrayWrite,
+  readCurrentPage,
+  rejectionResponse,
+} from "@/lib/page-write-guards";
 import { checkInvoiceArrayWrite, guardBillingArrayMutation } from "@/lib/billing-write-guards";
 
 import { logger } from "@/lib/logger";
@@ -50,6 +56,19 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // Protected records and archived matters are not changed here.
+    const rejected = await checkProtectedArrayWrite(
+      ENGINE_URL,
+      ctx.headers,
+      body.slug,
+      body.field,
+      {
+        email: ctx.user.email,
+        canWriteSettings: can(ctx.user, "settings.write"),
+      }
+    );
+    if (rejected) return rejectionResponse(rejected);
+
     // Fail closed: without the stored page neither guard can be judged.
     const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
     if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);

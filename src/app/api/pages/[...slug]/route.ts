@@ -6,7 +6,9 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,
+  guardProtectedPageWrite,
   guardSecondCheckWrite,
+  isKanzleiSettingsTarget,
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
@@ -16,6 +18,8 @@ import {
   type MatterConflictOutcome,
 } from "@/lib/conflict-gate";
 import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
+import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
+import { can } from "@/lib/permissions";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -23,6 +27,11 @@ const log = logger("api/pages/[...slug]");
 function buildPath(slug: string[]): string | null {
   if (slug.some((s) => s.includes(".."))) return null;
   return slug.map(encodeURIComponent).join("/");
+}
+
+function storedVersion(fm: Record<string, unknown>): number {
+  const v = fm.version;
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
 }
 
 const patchSchema = z
@@ -48,7 +57,7 @@ export const GET = createHandler(
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return Response.json(await res.json());
+      return Response.json(redactPageSecrets(await res.json()));
     } catch (err) {
       log.error("[pages/...slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiNotFound("not_found");
@@ -132,8 +141,37 @@ export const PATCH = createHandler(
     });
     if (billedRejection) return rejectionResponse(billedRejection);
 
-    // Increment version on update
     const patchBody: Record<string, unknown> = { ...body, slug: rawSlug };
+    const bodyFrontmatter =
+      patchBody.frontmatter && typeof patchBody.frontmatter === "object"
+        ? (patchBody.frontmatter as Record<string, unknown>)
+        : undefined;
+    // Restore (role-checked below) is the only write an archived matter takes.
+    const restoring =
+      !!bodyFrontmatter?.restored_at &&
+      bodyFrontmatter.status !== "archived" &&
+      bodyFrontmatter.status !== "tombstoned";
+
+    // Records with their own route (Kanzlei-Einstellungen, KYC, Anderkonten,
+    // Freigaben, Kollisions-/Legal-Hold-Felder, Löschen/Archivieren) are not
+    // written here.
+    const protectedWrite = guardProtectedPageWrite({
+      slug: rawSlug,
+      current: currentPage,
+      actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+      mode: "merge",
+      type: body.type,
+      frontmatter: bodyFrontmatter,
+      restore: restoring,
+    });
+    if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
+    if (protectedWrite.frontmatter) patchBody.frontmatter = protectedWrite.frontmatter;
+    if (isKanzleiSettingsTarget(rawSlug, currentPage, body.type, bodyFrontmatter)) {
+      patchBody.frontmatter = await sealKanzleiSettingsFrontmatter(
+        (patchBody.frontmatter as Record<string, unknown> | undefined) ?? {},
+        curFm
+      );
+    }
 
     if (patchBody.frontmatter) {
       // Vier-Augen-Kontrolle: second_check_* is stamped only by
@@ -147,8 +185,7 @@ export const PATCH = createHandler(
       if ("reject" in guarded) return rejectionResponse(guarded.reject);
       patchBody.frontmatter = guarded.frontmatter;
 
-      const fm = patchBody.frontmatter as Record<string, unknown>;
-      const isRestore = !!fm.restored_at && fm.status !== "archived";
+      const isRestore = restoring;
 
       // RBAC: Restore requires admin or lawyer role (brain.delete level)
       if (isRestore && ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
@@ -172,8 +209,9 @@ export const PATCH = createHandler(
 
     if (patchBody.frontmatter) {
       const fm = patchBody.frontmatter as Record<string, unknown>;
-      const currentVersion = ifMatch ? parseInt(ifMatch, 10) : (fm.version as number | undefined);
-      fm.version = (typeof currentVersion === "number" ? currentVersion : 0) + 1;
+      // Always the STORED version + 1 — never a client-sent value, with or
+      // without If-Match (which was verified against the stored one above).
+      fm.version = storedVersion(curFm) + 1;
 
       // Restore: append timeline event
       if (fm.restored_at && fm.status && fm.status !== "archived") {
@@ -191,7 +229,7 @@ export const PATCH = createHandler(
         ];
       }
     } else if (ifMatch) {
-      patchBody.frontmatter = { version: parseInt(ifMatch, 10) + 1 };
+      patchBody.frontmatter = { version: storedVersion(curFm) + 1 };
     }
 
     try {
@@ -373,7 +411,7 @@ export const PATCH = createHandler(
       }
       const partialFailure = restoreCascade.attempted && restoreCascade.failed.length > 0;
       return Response.json(
-        { ...result, conflictWarning, restoreCascade },
+        { ...redactPageSecrets(result), conflictWarning, restoreCascade },
         { status: partialFailure ? 207 : 200 }
       );
     } catch (err) {
@@ -438,6 +476,16 @@ export const DELETE = createHandler(
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
       const billedRejection = checkBilledEntriesWrite(casePage, { mode: "delete" });
       if (billedRejection) return rejectionResponse(billedRejection);
+
+      // KYC records, trust accounts, the Kanzlei settings and decided
+      // approvals are deleted (if at all) only through their own routes.
+      const protectedDelete = guardProtectedPageWrite({
+        slug: decodedSlug,
+        current: casePage,
+        actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+        mode: "delete",
+      });
+      if ("reject" in protectedDelete) return rejectionResponse(protectedDelete.reject);
 
       // Guard: already archived — return 409 to prevent double-archive
       if (pageType === "legal_case" && fm.status === "archived") {
@@ -611,33 +659,20 @@ export const DELETE = createHandler(
           };
         }
       } else {
-        // Non-case pages: check if document belongs to a case with legal_hold
-        const docCaseSlug = fm.case_slug as string | undefined;
+        // Non-case pages: a page under its own Legal Hold, or one that belongs
+        // to a matter under Legal Hold, is not deleted. Fail closed: if the
+        // matter cannot be read, nothing is deleted.
+        const holdActive = {
+          error: "legal_hold_active",
+          message: "Dokument gehört zu einer Akte mit Legal Hold und kann nicht gelöscht werden.",
+        };
+        if (fm.legal_hold === true) return Response.json(holdActive, { status: 423 });
+        const docCaseSlug = typeof fm.case_slug === "string" ? fm.case_slug : "";
         if (docCaseSlug) {
-          try {
-            const caseRes = await fetch(
-              `${ENGINE_URL}/api/pages/${encodeURIComponent(docCaseSlug)}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(5_000),
-              }
-            );
-            if (caseRes.ok) {
-              const caseData = (await caseRes.json()) as { frontmatter?: Record<string, unknown> };
-              const caseFm = caseData.frontmatter ?? {};
-              if (caseFm.legal_hold === true) {
-                return Response.json(
-                  {
-                    error: "legal_hold_active",
-                    message:
-                      "Dokument gehört zu einer Akte mit Legal Hold und kann nicht gelöscht werden.",
-                  },
-                  { status: 423 }
-                );
-              }
-            }
-          } catch {
-            // If case lookup fails, proceed with deletion
+          const caseRead = await readCurrentPage(ENGINE_URL, ctx.headers, docCaseSlug, 5_000);
+          if (caseRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+          if (caseRead.kind === "found" && caseRead.page.frontmatter?.legal_hold === true) {
+            return Response.json(holdActive, { status: 423 });
           }
         }
         // Non-case pages: the engine exposes no DELETE route, so soft-delete by

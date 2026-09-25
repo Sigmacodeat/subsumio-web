@@ -8,9 +8,9 @@ import { FileText, Save, Printer, Download, Info, CheckCircle2, Loader2 } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import { buildVerfahrensdoku, type VerfahrensdokuInput } from "@/lib/gobd-verfahrensdoku";
-import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
 import { verfahrensdokuSchema, type VerfahrensdokuFormData } from "@/lib/schemas/verfahrensdoku";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
@@ -130,6 +130,7 @@ export default function VerfahrensdokuPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "failed">("loading");
 
   const dokuForm = useForm<VerfahrensdokuFormData>({
     resolver: zodResolver(verfahrensdokuSchema) as never,
@@ -167,42 +168,38 @@ export default function VerfahrensdokuPage() {
 
   useEffect(() => {
     let cancelled = false;
-    loadKanzleiSettings()
-      .then((s) => {
+    // Both reads must succeed before saving is possible: a save after a failed
+    // read would overwrite the stored Verfahrensdokumentation with blanks. The
+    // stored document is applied after the firm data, so it always wins.
+    Promise.all([
+      loadKanzleiSettingsStrict(),
+      api.brain.getPage(DOC_SLUG).catch((err: unknown) => {
+        // Not written yet — the form starts from the firm data.
+        if (err instanceof ApiRequestError && err.status === 404) return null;
+        throw err;
+      }),
+    ])
+      .then(([s, p]) => {
         if (cancelled) return;
+        const fm = (p?.frontmatter ?? {}) as Record<string, unknown>;
+        const stored = fm.verfahrensdoku_input;
         dokuForm.reset({
           ...dokuForm.getValues(),
           kanzleiName: s.kanzleiName ?? "",
           anwaltName: s.anwaltName ?? "",
           ustId: s.ustId ?? "",
           verantwortlich: dokuForm.getValues("verantwortlich") || (s.anwaltName ?? ""),
+          ...(stored && typeof stored === "object"
+            ? (stored as Partial<VerfahrensdokuFormData>)
+            : {}),
         });
+        setLoadState("ready");
       })
-      .catch((err) =>
-        console.warn(
-          "[verfahrensdoku] Failed to load kanzlei settings:",
-          err instanceof Error ? err.message : err
-        )
-      );
-    api.brain
-      .getPage(DOC_SLUG)
-      .then((p) => {
+      .catch((err) => {
         if (cancelled) return;
-        const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-        const stored = fm.verfahrensdoku_input;
-        if (stored && typeof stored === "object") {
-          dokuForm.reset({
-            ...dokuForm.getValues(),
-            ...(stored as Partial<VerfahrensdokuFormData>),
-          });
-        }
-      })
-      .catch((err) =>
-        console.warn(
-          "[verfahrensdoku] Failed to load verfahrensdoku page:",
-          err instanceof Error ? err.message : err
-        )
-      );
+        setLoadState("failed");
+        console.warn("[verfahrensdoku] Failed to load:", err instanceof Error ? err.message : err);
+      });
     return () => {
       cancelled = true;
     };
@@ -212,6 +209,8 @@ export default function VerfahrensdokuPage() {
   const markdown = buildVerfahrensdoku(formData);
 
   async function save() {
+    // Never save over data that could not be read.
+    if (loadState !== "ready") return;
     const isValid = await dokuForm.trigger();
     if (!isValid) return;
     const data = dokuForm.getValues();
@@ -330,7 +329,7 @@ export default function VerfahrensdokuPage() {
                 )
               }
               onClick={save}
-              disabled={saving}
+              disabled={saving || loadState !== "ready"}
             >
               {saved ? t("verfahrensdoku.btn_saved") : t("verfahrensdoku.btn_save")}
             </PrimaryAction>
@@ -345,6 +344,17 @@ export default function VerfahrensdokuPage() {
           {t("verfahrensdoku.disclaimer")}
         </p>
       </div>
+
+      {loadState === "failed" && (
+        <div
+          role="alert"
+          className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-xs text-[color:var(--ds-danger-text)]"
+        >
+          Die gespeicherte Verfahrensdokumentation oder die Kanzleidaten konnten nicht geladen
+          werden. Speichern ist gesperrt, damit nichts überschrieben wird — bitte laden Sie die
+          Seite neu.
+        </div>
+      )}
 
       {saveError && (
         <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-xs text-[color:var(--ds-danger-text)]">
