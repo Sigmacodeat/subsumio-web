@@ -73,6 +73,34 @@ describe("consecutiveImportFailures", () => {
     expect(consecutiveImportFailures(history)).toBe(2);
   });
 
+  it("an operator 'reset…' entry ends the streak so a parked source is retried", () => {
+    // After MAX_IMPORT_ATTEMPTS the source is parked as `failed` and the
+    // import is never started again — so no "finished" can ever arrive to
+    // break the streak. `append_stage_history(key, 'import', 'reset: …')`
+    // is the documented operator path once the cause is fixed.
+    const parked = historyOf([
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+      { stage: "import", action: "failed (exit 1)" },
+    ]);
+    expect(consecutiveImportFailures(parked)).toBe(5);
+    const reset = historyOf([
+      ...parked.map(({ stage, action }) => ({ stage, action })),
+      { stage: "import", action: "reset: statement_timeout fix deployed (a827b34f7a)" },
+    ]);
+    expect(consecutiveImportFailures(reset)).toBe(0);
+    // A failure AFTER the reset counts again from zero — the reset is not a
+    // permanent exemption.
+    const failedAgain = historyOf([
+      ...reset.map(({ stage, action }) => ({ stage, action })),
+      { stage: "import", action: "started" },
+      { stage: "import", action: "failed (exit 1)" },
+    ]);
+    expect(consecutiveImportFailures(failedAgain)).toBe(1);
+  });
+
   it("would have engaged the retry cap that alert-flag dedup broke", () => {
     // Reproduces the exact bug: five straight import failures used to
     // collapse to a single deduped "import_failed" alert, so
