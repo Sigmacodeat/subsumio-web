@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { getStore, toPublic } from "@/lib/auth/store";
@@ -41,7 +42,19 @@ export const GET = createHandler(
           ingested: ctx.demo.ingested,
         }
       : null;
-    return Response.json({ user: toPublic(ctx.user), referrals, supportSession, demo });
+    // Binds the device's offline data (IndexedDB) to this person in this
+    // firm; the client wipes it when the scope changes. Opaque on purpose.
+    const offlineScope = `${ctx.user.id}:${createHash("sha256")
+      .update(`${ctx.brainId}\u0000${ctx.demo?.sid ?? ""}`)
+      .digest("hex")
+      .slice(0, 16)}`;
+    return Response.json({
+      user: toPublic(ctx.user),
+      referrals,
+      supportSession,
+      demo,
+      offlineScope,
+    });
   }
 );
 
