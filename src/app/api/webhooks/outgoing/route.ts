@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
-import { engineWriteOrThrow } from "@/lib/engine-write";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { encrypt, isEncryptionEnabled } from "@/lib/encryption";
 
 export const dynamic = "force-dynamic";
 
@@ -36,29 +37,34 @@ export const POST = createHandler(
     const id = `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const slug = `settings/webhooks/${id}`;
 
-    await engineWriteOrThrow(
-      `${ENGINE_URL}/api/pages`,
-      {
-        method: "POST",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          title: `Webhook: ${body.url}`,
-          type: "webhook_config",
-          frontmatter: {
-            id,
-            url: body.url,
-            events: body.events,
-            secret: body.secret,
-            description: body.description,
-            status: "active",
-            created_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      },
-      "Webhook"
-    );
+    // The signing secret is stored encrypted (never readable on the page),
+    // and a failed write is reported instead of claiming a registration.
+    // Production without a key throws here (fail-closed) instead of storing
+    // the secret readable.
+    isEncryptionEnabled();
+    const secretEnc = await encrypt(body.secret);
+    const res = await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
+      headers: { ...ctx.headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug,
+        title: `Webhook: ${body.url}`,
+        type: "webhook_config",
+        frontmatter: {
+          id,
+          url: body.url,
+          events: body.events,
+          secret_enc: secretEnc,
+          description: body.description,
+          status: "active",
+          created_at: new Date().toISOString(),
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!res?.ok) {
+      return apiError("engine_write_failed", "Webhook konnte nicht gespeichert werden", 502);
+    }
 
     return apiSuccess({ id, url: body.url, events: body.events });
   }
@@ -70,15 +76,14 @@ export const GET = createHandler(
     rateTier: "standard",
   },
   async (ctx) => {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=webhook_config&limit=100`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    const webhooks = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<{
-      frontmatter: Record<string, unknown>;
-    }>;
+    // Complete list without deleted entries; a failed read is an error.
+    let webhooks: Array<{ frontmatter: Record<string, unknown> }>;
+    try {
+      const pages = await listEnginePages(ctx.headers, "webhook_config", 1000, { strict: true });
+      webhooks = pages.map((p) => ({ frontmatter: p.frontmatter ?? {} }));
+    } catch {
+      return apiError("engine_error", "Webhooks konnten nicht geladen werden", 502);
+    }
     return apiSuccess({
       webhooks: webhooks.map((w) => ({
         id: w.frontmatter.id,
@@ -109,13 +114,26 @@ export const DELETE = createHandler(
   },
   async (ctx, _body, query) => {
     if (!query?.id) return apiError("missing_id", "Webhook-ID erforderlich", 400);
+    if (!/^[A-Za-z0-9_-]+$/.test(query.id)) {
+      return apiError("invalid_id", "Ungültige Webhook-ID", 400);
+    }
     const slug = `settings/webhooks/${query.id}`;
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-      method: "DELETE",
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("delete_failed", "Löschen fehlgeschlagen", 502);
+    // Deleting marks the entry (the engine keeps pages) and drops the secret;
+    // dispatch only uses active webhooks.
+    const res = await enginePatchPage(
+      ctx.headers,
+      {
+        slug,
+        frontmatter: {
+          status: "tombstoned",
+          deleted_at: new Date().toISOString(),
+          secret: null,
+          secret_enc: null,
+        },
+      },
+      { timeoutMs: 10_000 }
+    ).catch(() => null);
+    if (!res?.ok) return apiError("delete_failed", "Löschen fehlgeschlagen", 502);
     return apiSuccess({ deleted: true });
   }
 );

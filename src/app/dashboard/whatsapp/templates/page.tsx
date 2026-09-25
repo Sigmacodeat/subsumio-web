@@ -139,11 +139,12 @@ export default function WhatsAppTemplatesPage() {
     const ok = await confirm({ message: t("wamplates.confirm_delete") });
     if (!ok) return;
     try {
-      await csrfFetch("/api/whatsapp/templates", {
+      const res = await csrfFetch("/api/whatsapp/templates", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug }),
       });
+      if (!res.ok) throw new Error("delete_failed");
       await reload();
       addToast({ type: "success", title: t("wamplates.toast_deleted" as DashboardKey) });
     } catch {
@@ -345,10 +346,11 @@ export default function WhatsAppTemplatesPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="approved">Approved</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
+                              {Object.entries(TEMPLATE_STATUS_LABEL).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

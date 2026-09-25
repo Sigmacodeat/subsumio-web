@@ -37,9 +37,32 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    let caseSlug = body.case_slug;
+    let caseSlug = body.case_slug?.trim() || undefined;
     let suggested: { reason: string } | undefined;
-    if (!caseSlug) {
+    if (caseSlug) {
+      // The form field is an Aktenzeichen (or a matter picked elsewhere): it
+      // must resolve to an existing matter — never stored as a free-text link.
+      let resolved: string | null = null;
+      try {
+        const casePages = await listEnginePages(ctx.headers, "legal_case", 5000, { strict: true });
+        const wanted = caseSlug.toLowerCase();
+        const hit =
+          casePages.find((p) => p.slug === caseSlug) ??
+          casePages.find((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return [fm.aktenzeichen, fm.case_number].some(
+              (v) => typeof v === "string" && v.trim().toLowerCase() === wanted
+            );
+          });
+        resolved = hit?.slug ?? null;
+      } catch {
+        return apiError("engine_error", "Akten konnten nicht geladen werden", 502);
+      }
+      if (!resolved) {
+        return apiError("case_not_found", "Zu diesem Aktenzeichen wurde keine Akte gefunden.", 422);
+      }
+      caseSlug = resolved;
+    } else {
       // Automatische Aktenzuordnung: deterministisch gegen offene Akten
       // (Aktenzeichen > Parteinamen > Titel-Tokens). Nur ein Vorschlag —
       // die Zuordnung bleibt in der UI als solche markiert.

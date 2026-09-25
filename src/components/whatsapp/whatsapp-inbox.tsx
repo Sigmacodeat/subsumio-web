@@ -168,9 +168,23 @@ export function WhatsAppInbox() {
   const handleSendReply = useCallback(async () => {
     if (!replyText.trim() || !selectedConversation) return;
     setSending(true);
+    const message = replyText.trim().slice(0, 3900);
+    let result: Awaited<ReturnType<typeof api.whatsapp.sendReply>>;
     try {
-      const message = replyText.trim().slice(0, 3900);
-      const result = await api.whatsapp.sendReply(selectedConversation.senderHash, message);
+      result = await api.whatsapp.sendReply(selectedConversation.senderHash, message);
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "WhatsApp-Nachricht konnte nicht versendet werden",
+        description: error instanceof Error ? error.message : undefined,
+      });
+      setSending(false);
+      return;
+    }
+    // Sent. From here on a failure only concerns the protocol entry — never
+    // report the delivered message as "not sent" (it would be sent twice).
+    setReplyText("");
+    try {
       await api.brain.createPage({
         slug: `legal/chat/whatsapp-outbox/${result.messageId || `manual-${Date.now()}`}`,
         title: "WhatsApp-Antwort manuell",
@@ -189,17 +203,16 @@ export function WhatsAppInbox() {
         },
       });
 
-      setReplyText("");
       addToast({ type: "success", title: "WhatsApp-Nachricht versendet" });
-      await loadMessages();
-    } catch (error) {
+    } catch {
       addToast({
-        type: "error",
-        title: "WhatsApp-Nachricht konnte nicht versendet werden",
-        description: error instanceof Error ? error.message : undefined,
+        type: "warning",
+        title: "WhatsApp-Nachricht versendet",
+        description: "Der Protokolleintrag konnte nicht gespeichert werden.",
       });
     } finally {
       setSending(false);
+      void loadMessages();
     }
   }, [addToast, replyText, selectedConversation, loadMessages]);
 
@@ -332,6 +345,7 @@ export function WhatsAppInbox() {
             />
             <Button
               onClick={handleSendReply}
+              aria-label="Senden"
               disabled={!replyText.trim() || sending}
               className="gap-2"
             >

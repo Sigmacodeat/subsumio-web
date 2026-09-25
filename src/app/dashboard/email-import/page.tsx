@@ -20,17 +20,22 @@ interface ImportResult {
 export default function EmailImportPage() {
   const { t } = useLang();
   const [parsed, setParsed] = useState<ParsedEmail[]>([]);
+  // The original messages: imported unchanged so no text or attachment is lost.
+  const [raws, setRaws] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<Record<number, ImportResult>>({});
   const [importError, setImportError] = useState<string | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const results: ParsedEmail[] = [];
+    const originals: string[] = [];
     for (const file of acceptedFiles) {
       const text = await file.text();
       results.push(parseEml(text));
+      originals.push(text);
     }
     setParsed(results);
+    setRaws(originals);
     setResults({});
   }, []);
 
@@ -46,6 +51,7 @@ export default function EmailImportPage() {
           from: email.from,
           body: email.body,
           date: email.date,
+          raw_eml: raws[i],
         });
         next[i] = res;
       } catch {
@@ -178,7 +184,8 @@ export default function EmailImportPage() {
                   </div>
                   {email.attachments.length > 0 && (
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {email.attachments.length} {t("email_import.attachments")}
+                      {email.attachments.length} {t("email_import.attachments")} — werden mit der
+                      Original-E-Mail in der Akte abgelegt
                     </div>
                   )}
 

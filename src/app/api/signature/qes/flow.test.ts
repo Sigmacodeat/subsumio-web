@@ -198,6 +198,95 @@ describe("qualified signature via PDF-AS-WEB", () => {
     expect(uploads).toHaveLength(0);
   });
 
+  it("refuses a result whose certificate chain does not verify (never stored as qualified)", async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.startsWith("http://engine.test/api/pages/")) {
+        return new Response(
+          JSON.stringify({
+            slug: "documents/vollmacht",
+            title: "V",
+            frontmatter: { case_slug: "legal/cases/berger", mime_type: "application/pdf" },
+          }),
+          { status: 200 }
+        );
+      }
+      if (u.startsWith("http://engine.test/api/files/"))
+        return new Response(ORIGINAL, { status: 200 });
+      if (u.startsWith("http://engine.test/api/pages")) return new Response("{}", { status: 201 });
+      return new Response(SIGNED, {
+        status: 200,
+        headers: { ValueCheckCode: "0", CertificateCheckCode: "2" },
+      });
+    });
+    const { token } = await start();
+    const { GET: pdf } = await import("./pdf/[token]/route");
+    await pdf(new Request("http://x") as never, params(token));
+    const { GET: done } = await import("./done/[token]/route");
+    const res = await done(
+      new (await import("next/server")).NextRequest(
+        `http://x/done?pdfurl=${encodeURIComponent("https://pdfas.kanzlei.at/pdf-as-web/PDFData")}`
+      ),
+      params(token)
+    );
+    expect(res.headers.get("location")).toContain("qes=failed");
+    expect(uploads).toHaveLength(0);
+    const { getQesSession } = await import("@/lib/qes/sessions");
+    expect((await getQesSession(token))?.status).toBe("failed");
+    const posts = vi
+      .mocked(fetch)
+      .mock.calls.filter(([u, init]) => String(u) === "http://engine.test/api/pages" && init);
+    expect(posts).toHaveLength(0);
+  });
+
+  it("a missing certificate check code fails closed", async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.startsWith("http://engine.test/api/pages/")) {
+        return new Response(
+          JSON.stringify({
+            slug: "documents/vollmacht",
+            title: "V",
+            frontmatter: { case_slug: "legal/cases/berger", mime_type: "application/pdf" },
+          }),
+          { status: 200 }
+        );
+      }
+      if (u.startsWith("http://engine.test/api/files/"))
+        return new Response(ORIGINAL, { status: 200 });
+      return new Response(SIGNED, { status: 200, headers: { ValueCheckCode: "0" } });
+    });
+    const { token } = await start();
+    const { GET: pdf } = await import("./pdf/[token]/route");
+    await pdf(new Request("http://x") as never, params(token));
+    const { GET: done } = await import("./done/[token]/route");
+    const res = await done(
+      new (await import("next/server")).NextRequest(
+        `http://x/done?pdfurl=${encodeURIComponent("https://pdfas.kanzlei.at/pdf-as-web/PDFData")}`
+      ),
+      params(token)
+    );
+    expect(res.headers.get("location")).toContain("qes=failed");
+    expect(uploads).toHaveLength(0);
+  });
+
+  it("two parallel completion callbacks store the signed document exactly once", async () => {
+    const { token } = await start();
+    const { GET: pdf } = await import("./pdf/[token]/route");
+    await pdf(new Request("http://x") as never, params(token));
+    const { GET: done } = await import("./done/[token]/route");
+    const { NextRequest } = await import("next/server");
+    const url = `http://x/done?pdfurl=${encodeURIComponent("https://pdfas.kanzlei.at/pdf-as-web/PDFData")}`;
+    const [a, b] = await Promise.all([
+      done(new NextRequest(url), params(token)),
+      done(new NextRequest(url), params(token)),
+    ]);
+    expect(uploads).toHaveLength(1);
+    expect([a.status, b.status]).toEqual([303, 303]);
+    expect([a, b].some((r) => r.headers.get("location")?.includes("qes=signed"))).toBe(true);
+    expect([a, b].every((r) => !r.headers.get("location")?.includes("qes=failed"))).toBe(true);
+  });
+
   it("an unknown token reveals nothing", async () => {
     const { GET: pdf } = await import("./pdf/[token]/route");
     expect((await pdf(new Request("http://x") as never, params("x".repeat(32)))).status).toBe(404);

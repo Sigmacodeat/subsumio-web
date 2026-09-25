@@ -13,6 +13,7 @@ import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { engineWriteBestEffort } from "@/lib/engine-write";
+import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +23,13 @@ const retrySchema = z.object({
   court: z.string().min(1).max(300),
   case_number: z.string().max(200).optional(),
   subject: z.string().min(1).max(500),
-  sender_name: z.string().min(1).max(300),
+  // Ignored: the sender always comes from the firm settings.
+  sender_name: z.string().max(300).optional(),
   sender_id: z.string().max(200).optional(),
   priority: z.enum(["normal", "urgent", "fristgebunden"]).default("normal"),
   deadline_date: z.string().optional(),
   deadline_id: z.string().max(200).optional(),
+  verification_override: z.object({ reason: z.string().trim().min(10).max(2000) }).optional(),
 });
 
 function getMiddlewareConfig() {
@@ -49,8 +52,20 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    if (!hasCourtName(body.court)) {
+      return apiError("court_missing", "Bitte das empfangende Gericht angeben", 422);
+    }
+    // Same file_court gate as the first send: the stored draft state decides.
+    const denied = await enforceFileCourtPolicy(
+      ctx,
+      body.draft_slug,
+      body.verification_override?.reason
+    );
+    if (denied) return denied;
+
     // 1. Fetch filing package
     let existingPkg: FilingPackage | null = null;
+    let filingDraftSlug: string | null = null;
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
         headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -60,6 +75,7 @@ export const POST = createHandler(
         const data = await res.json();
         const fm = (data.frontmatter ?? {}) as Record<string, unknown>;
         existingPkg = fm.package as FilingPackage;
+        filingDraftSlug = typeof fm.draft_slug === "string" ? fm.draft_slug : null;
       }
     } catch {
       // ignore
@@ -67,6 +83,14 @@ export const POST = createHandler(
 
     if (!existingPkg) {
       return apiError("filing_not_found", "Filing-Paket nicht gefunden", 404);
+    }
+
+    if (filingDraftSlug && filingDraftSlug !== body.draft_slug) {
+      return apiError(
+        "filing_draft_mismatch",
+        "Das Filing-Paket gehört zu einem anderen Entwurf",
+        409
+      );
     }
 
     // 2. Check retry eligibility
@@ -90,12 +114,15 @@ export const POST = createHandler(
       return apiError("middleware_not_configured", "Middleware nicht konfiguriert", 503);
     }
 
+    const sender = await resolveFilingSender(ctx.brainId, config.senderId);
+    if (sender instanceof Response) return sender;
+
     const metadata: XJustizMetadata = {
       court: body.court,
       caseNumber: body.case_number,
-      senderName: body.sender_name,
+      senderName: sender.name,
       senderRole: "lawyer",
-      senderId: body.sender_id ?? config.senderId,
+      senderId: sender.id,
       subject: body.subject,
       priority: body.priority,
       deadlineDate: body.deadline_date,

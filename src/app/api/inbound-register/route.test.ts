@@ -72,6 +72,9 @@ describe("POST /api/inbound-register", () => {
   });
 
   test("persists a normalized inbound entry in the engine", async () => {
+    mockListEnginePages.mockResolvedValueOnce([
+      { slug: "legal/cases/2026-0001", title: "Akte", frontmatter: {} },
+    ]);
     mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
 
     const res = await post({
@@ -129,6 +132,34 @@ describe("POST /api/inbound-register", () => {
     const body = await res.json();
     expect(body.data.entry.case_slug).toBeUndefined();
     expect(body.data.entry.case_suggested).toBeUndefined();
+  });
+
+  test("an entered Aktenzeichen is resolved to its matter", async () => {
+    mockListEnginePages.mockResolvedValueOnce([
+      {
+        slug: "legal/cases/2026-0007",
+        title: "Muster",
+        frontmatter: { aktenzeichen: "MK-26-0007" },
+      },
+    ]);
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
+    const res = await post({ channel: "scan", subject: "Brief", case_slug: " mk-26-0007 " });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.entry.case_slug).toBe("legal/cases/2026-0007");
+  });
+
+  test("an unknown Aktenzeichen is refused, never stored as a matter link", async () => {
+    mockListEnginePages.mockResolvedValueOnce([
+      {
+        slug: "legal/cases/2026-0007",
+        title: "Muster",
+        frontmatter: { aktenzeichen: "MK-26-0007" },
+      },
+    ]);
+    const res = await post({ channel: "scan", subject: "Brief", case_slug: "irgendwas" });
+    expect(res.status).toBe(422);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("returns 502 when the engine write fails", async () => {

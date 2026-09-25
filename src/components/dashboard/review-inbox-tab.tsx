@@ -23,22 +23,15 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { csrfFetch } from "@/lib/csrf";
 import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { useRealtime } from "@/lib/realtime";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn, encodeSlugPath, formatRelativeTime } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
-import { csrfFetch } from "@/lib/csrf";
 import { readApiError } from "@/lib/api-response";
-
-/** Parse a write response; a non-2xx answer rejects instead of looking like success. */
-async function jsonOrThrow(res: Response): Promise<unknown> {
-  const body = (await res.json().catch(() => null)) as unknown;
-  if (!res.ok) throw new Error(readApiError(body, "Aktion fehlgeschlagen").message);
-  return body;
-}
 
 type ReviewType =
   | "all"
@@ -191,6 +184,25 @@ function tr(key: string, lang: Lang): string {
   return entry ? (lang === "en" ? entry.en : entry.de) : key;
 }
 
+/**
+ * A write from the review inbox: CSRF header, and a refused request is an
+ * error (with the server's message) — never reported as success.
+ */
+async function sendReviewWrite(url: string, method: "POST" | "PATCH", body: unknown) {
+  const res = await csrfFetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = (await res.json().catch(() => ({}))) as { error?: unknown };
+  if (!res.ok) {
+    throw new Error(
+      typeof json.error === "string" && json.error ? json.error : `HTTP ${res.status}`
+    );
+  }
+  return json;
+}
+
 export function ReviewInboxTab() {
   const { lang } = useLang();
   const { addToast } = useToast();
@@ -254,86 +266,60 @@ export function ReviewInboxTab() {
         });
       }
       if (type === "document_request") {
-        return csrfFetch("/api/document-requests", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slug: item.requestSlug,
-            status: action === "send" ? "sent" : "fulfilled",
-            sent_at: action === "send" ? new Date().toISOString() : undefined,
-          }),
-        }).then(jsonOrThrow);
+        return sendReviewWrite("/api/document-requests", "PATCH", {
+          slug: item.requestSlug,
+          status: action === "send" ? "sent" : "fulfilled",
+          sent_at: action === "send" ? new Date().toISOString() : undefined,
+        });
       }
       if (type === "client_submission") {
         if (action === "import_document") {
-          return csrfFetch("/api/legal/submission-to-document", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ submissionSlug: item.pageSlug }),
-          }).then(jsonOrThrow);
-        }
-        return csrfFetch("/api/legal/submission-review", {
-          method: "POST",
-          // Long-running: csrfFetch would otherwise abort after 30s.
-          signal: AbortSignal.timeout(300_000),
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          return sendReviewWrite("/api/legal/submission-to-document", "POST", {
             submissionSlug: item.pageSlug,
-            action: "reviewed",
-          }),
-        }).then(jsonOrThrow);
+          });
+        }
+        return sendReviewWrite("/api/legal/submission-review", "POST", {
+          submissionSlug: item.pageSlug,
+          action: "reviewed",
+        });
       }
       if (type === "suggested_party" && item.arrayIndex !== null) {
         const reviewStatus = action === "approve" ? "approved" : "rejected";
-        return csrfFetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            frontmatter: {
-              suggested_parties: {
-                [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
-              },
+        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
+          frontmatter: {
+            suggested_parties: {
+              [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
             },
-            merge: true,
-          }),
-        }).then(jsonOrThrow);
+          },
+          merge: true,
+        });
       }
       if (type === "pending_fact" && item.factId && item.factStatement) {
-        return csrfFetch("/api/legal/matter-knowledge", {
-          method: "POST",
-          // Long-running: csrfFetch would otherwise abort after 30s.
-          signal: AbortSignal.timeout(300_000),
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            caseSlug: item.caseSlug || item.pageSlug,
-            action,
-            factId: item.factId,
-            statement: item.factStatement,
-            source: {
-              type: "upload_analysis",
-              label: item.source || "Review Inbox",
-            },
-          }),
-        }).then(jsonOrThrow);
+        return sendReviewWrite("/api/legal/matter-knowledge", "POST", {
+          caseSlug: item.caseSlug || item.pageSlug,
+          action,
+          factId: item.factId,
+          statement: item.factStatement,
+          source: {
+            type: "upload_analysis",
+            label: item.source || "Review Inbox",
+          },
+        });
       }
       if (type === "pending_fact" && item.arrayIndex !== null) {
         // Fallback for facts without factId — direct patch
         const reviewStatus = action === "approve" ? "approved" : "party_assertion";
-        return csrfFetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            frontmatter: {
-              facts: {
-                [item.arrayIndex]: {
-                  review_status: reviewStatus,
-                  reviewed_at: new Date().toISOString(),
-                },
+        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
+          frontmatter: {
+            facts: {
+              [item.arrayIndex]: {
+                review_status: reviewStatus,
+                reviewed_at: new Date().toISOString(),
               },
             },
-            merge: true,
-          }),
-        }).then(jsonOrThrow);
+          },
+          merge: true,
+        });
       }
       throw new Error("unknown_type");
     },
@@ -583,7 +569,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "send",
                               item,
@@ -610,7 +596,7 @@ export function ReviewInboxTab() {
                     {item.type === "document_request" && item.status === "sent" && (
                       <button
                         onClick={() =>
-                          void actionMutation.mutateAsync({
+                          actionMutation.mutate({
                             type: item.type,
                             action: "fulfilled",
                             item,
@@ -666,7 +652,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "reject",
                               item,
@@ -684,7 +670,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "reviewed",
                               item,
@@ -702,7 +688,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "import_document",
                               item,
@@ -724,7 +710,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "approve",
                               item,
@@ -742,7 +728,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "reject",
                               item,
@@ -760,7 +746,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "approve",
                               item,
@@ -778,7 +764,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "party_assertion",
                               item,

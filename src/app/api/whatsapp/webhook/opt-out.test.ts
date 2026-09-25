@@ -250,3 +250,20 @@ describe("whatsapp webhook — strict opt-out", () => {
     expect(mocks.orchestrate).not.toHaveBeenCalled();
   });
 });
+
+describe("whatsapp webhook — error reply to clients", () => {
+  beforeEach(() => {
+    mocks.rows.length = 0;
+    mocks.signatureValid.value = true;
+    vi.clearAllMocks();
+  });
+
+  test("a processing error is answered in the Sie-form, without a product name", async () => {
+    mocks.orchestrate.mockRejectedValueOnce(new Error("boom"));
+    const { json } = await post("Wann ist mein Termin?");
+    expect(json.results[0].status).toBe("failed");
+    const text = mocks.sendText.mock.calls[0]?.[1] ?? "";
+    expect(text).toMatch(/versuchen Sie/);
+    expect(text).not.toMatch(/versuche es|Kanzlei OS/);
+  });
+});

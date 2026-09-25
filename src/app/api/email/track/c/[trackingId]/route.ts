@@ -49,8 +49,17 @@ export const GET = createPublicHandler(
     const trackingId = pathParts[pathParts.indexOf("c") + 1] ?? "";
     const { l: linkId, u: encodedUrl, s: signature } = query;
 
-    // Verify HMAC signature to prevent open redirect attacks
-    if (!encodedUrl || !signature || !verifyUrlSignature(encodedUrl, signature)) {
+    // Verify HMAC signature to prevent open redirects. Current links are bound
+    // to their mail and link id; links from older mails (target-only
+    // signature) still redirect but are not counted, so click statistics
+    // cannot be attributed to a foreign tracking id.
+    const bound =
+      !!encodedUrl &&
+      !!signature &&
+      verifyUrlSignature(encodedUrl, signature, { trackingId, linkId });
+    const legacy =
+      !bound && !!encodedUrl && !!signature && verifyUrlSignature(encodedUrl, signature);
+    if (!bound && !legacy) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.io"}/`, {
         status: 302,
       });
@@ -71,6 +80,7 @@ export const GET = createPublicHandler(
 
     // Fire-and-forget tracking — never block the redirect
     void (async () => {
+      if (!bound) return;
       try {
         const ip = extractClientIp(req.headers);
         const userAgent = req.headers.get("user-agent") ?? null;

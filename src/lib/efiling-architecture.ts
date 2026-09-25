@@ -157,6 +157,7 @@ export type FilingStatus =
   | "pending_approval" // Wartet auf Freigabe
   | "approved" // Freigegeben
   | "sending" // Wird gesendet
+  | "export_manual" // XML exportiert, manuelle Übermittlung + Empfangsbestätigung ausstehend
   | "sent" // Erfolgreich gesendet
   | "failed" // Senden fehlgeschlagen
   | "retrying" // Retry läuft
@@ -372,6 +373,23 @@ export function sendFiling(pkg: FilingPackage, middlewareReference: string): Fil
   };
 }
 
+/**
+ * No transport configured: the XJustiz XML is handed out for manual upload.
+ * Nothing has been transmitted yet, so the package is NOT "sending" — it stays
+ * open (export_manual) until the court's receipt is confirmed.
+ */
+export function exportFilingManually(pkg: FilingPackage, actor: string): FilingPackage {
+  const updated = addAuditEntry(
+    pkg,
+    actor,
+    "export_manual",
+    "XJustiz-XML zur manuellen Übermittlung exportiert",
+    pkg.status,
+    "export_manual"
+  );
+  return { ...updated, status: "export_manual" };
+}
+
 export function confirmReceipt(pkg: FilingPackage, receipt: FilingReceipt): FilingPackage {
   const newStatus: FilingStatus = receipt.is_success ? "sent" : "failed";
   const updated = addAuditEntry(
@@ -474,6 +492,7 @@ export function getFilingStatusLabel(status: FilingStatus): string {
     pending_approval: "Wartet auf Freigabe",
     approved: "Freigegeben",
     sending: "Wird gesendet",
+    export_manual: "Manuell zu übermitteln — Empfangsbestätigung ausstehend",
     sent: "Gesendet",
     failed: "Fehlgeschlagen",
     retrying: "Retry läuft",

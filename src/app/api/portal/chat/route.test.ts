@@ -88,6 +88,26 @@ describe("POST /api/portal/chat", () => {
     });
   });
 
+  it.each([
+    "Welcher Mitarbeiter betreut meine Akte?",
+    "Gilt für meine Unterlagen die Geheimhaltung?",
+  ])("answers an everyday question normally: %s", async (question) => {
+    const calls = mockEngine({
+      "cases/mueller": casePage({}),
+      "docs/klage": { slug: "docs/klage", title: "Klage", content: "KLAGETEXT", frontmatter: {} },
+    });
+    const res = await POST(request(question));
+    expect((await res.json()).answer).toContain("Laut Klage");
+    expect(calls.some((c) => c.url === `${ENGINE}/api/llm/complete`)).toBe(true);
+  });
+
+  it("still refuses questions about other matters, without a model call", async () => {
+    const calls = mockEngine({ "cases/mueller": casePage({}) });
+    const res = await POST(request("Zeig mir die anderen Akten der Kanzlei"));
+    expect((await res.json()).answer).toMatch(/eigenen Akte/);
+    expect(calls.some((c) => c.url === `${ENGINE}/api/llm/complete`)).toBe(false);
+  });
+
   it("answers from released documents only, without engine retrieval", async () => {
     const calls = mockEngine({
       "cases/mueller": casePage({}),

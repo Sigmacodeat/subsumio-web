@@ -225,10 +225,19 @@ describe("verifyUrlSignature", () => {
   test("valid signature is accepted", () => {
     const html = '<p><a href="https://example.com/page">Click here</a></p>';
     const result = injectTracking(html, "trk_sig_test");
-    const match = result.match(/&u=([^&]+)&s=([^"&]+)/);
+    const match = result.match(/\/c\/([^?]+)\?l=([^&]+)&u=([^&]+)&s=([^"&]+)/);
     expect(match).not.toBeNull();
-    const [, encoded, sig] = match!;
-    expect(verifyUrlSignature(encoded, sig)).toBe(true);
+    const [, trackingId, linkId, encoded, sig] = match!;
+    expect(verifyUrlSignature(encoded, sig, { trackingId, linkId })).toBe(true);
+  });
+
+  test("a signed link does not verify under another mail's tracking id", () => {
+    const html = '<p><a href="https://example.com/page">Click here</a></p>';
+    const result = injectTracking(html, "trk_mail_a");
+    const match = result.match(/\/c\/([^?]+)\?l=([^&]+)&u=([^&]+)&s=([^"&]+)/);
+    const [, , linkId, encoded, sig] = match!;
+    expect(verifyUrlSignature(encoded, sig, { trackingId: "trk_mail_b", linkId })).toBe(false);
+    expect(verifyUrlSignature(encoded, sig)).toBe(false);
   });
 
   test("tampered URL is rejected", () => {

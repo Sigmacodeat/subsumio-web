@@ -2171,7 +2171,15 @@ export const api = {
   },
 
   email: {
-    import(email: { subject: string; from: string; body: string; date?: string }): Promise<{
+    import(email: {
+      subject: string;
+      from: string;
+      body: string;
+      date?: string;
+      force_case_slug?: string;
+      /** The original .eml — stored unchanged in the matter, attachments included. */
+      raw_eml?: string;
+    }): Promise<{
       success: boolean;
       duplicate?: boolean;
       error?: string;
@@ -2425,7 +2433,9 @@ export const api = {
       }>;
       total: number;
     }> {
-      return request("/api/review-inbox");
+      // The route answers { data: { items, total } } — unwrap, or every
+      // reader sees an empty inbox.
+      return request("/api/review-inbox").then((body) => unwrapApiBody(body));
     },
   },
 
@@ -2448,11 +2458,12 @@ export const api = {
       court: string;
       case_number?: string;
       subject: string;
-      sender_name: string;
+      sender_name?: string;
       sender_id?: string;
       priority?: "normal" | "urgent" | "fristgebunden";
       deadline_date?: string;
       deadline_id?: string;
+      verification_override?: { reason: string };
       documents: Array<{
         title: string;
         file_path: string;
@@ -2471,11 +2482,12 @@ export const api = {
       court: string;
       case_number?: string;
       subject: string;
-      sender_name: string;
+      sender_name?: string;
       sender_id?: string;
       priority?: "normal" | "urgent" | "fristgebunden";
       deadline_date?: string;
       deadline_id?: string;
+      verification_override?: { reason: string };
     }): Promise<Record<string, unknown>> {
       return request("/api/bea/send/retry", { method: "POST", body: JSON.stringify(input) });
     },

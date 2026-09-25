@@ -22,6 +22,7 @@ import {
 } from "@/lib/whatsapp/outbound-gate";
 import { getSmsConsentStore, hasActiveSmsConsent, smsTenantKeys } from "./consent-store";
 import { sendSms, type SmsSendResult } from "./twilio";
+import { recordSmsOutbound } from "./outbound-index";
 
 export type SmsBlockReason = "no_consent" | "quiet_hours" | "not_configured" | "provider_error";
 
@@ -81,6 +82,10 @@ export async function sendGuardedSms(params: {
     return { sent: false, reason, providerError: result.error };
   }
 
+  // Delivery callbacks carry only the SID — remember which firm sent it.
+  if (result.sid) {
+    await recordSmsOutbound(result.sid, params.brainId, hash).catch(() => undefined);
+  }
   await logAudit("sms.outbound_sent", "sms_outbound", {
     brainId: params.brainId,
     details: { phoneHash: hash, scope: params.scope, sid: result.sid },

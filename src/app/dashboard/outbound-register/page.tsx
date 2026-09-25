@@ -11,13 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
+import { csrfFetch } from "@/lib/csrf";
 import type { OutboundEntry } from "@/lib/outbound-register";
 import { CHANNEL_LABELS, DELIVERY_STATUS_LABELS } from "@/lib/outbound-register";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { encodeSlugPath, formatDateTime } from "@/lib/utils";
 import Link from "next/link";
-import { csrfFetch } from "@/lib/csrf";
 
 export default function OutboundRegisterPage() {
   const { addToast } = useToast();
@@ -25,6 +25,7 @@ export default function OutboundRegisterPage() {
   const [entries, setEntries] = useState<OutboundEntry[]>([]);
   const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -33,14 +34,18 @@ export default function OutboundRegisterPage() {
     recipient_address: "",
     case_slug: "",
     subject: "",
-    sent_by: "",
   });
 
   const load = useCallback(async () => {
+    setLoadError(false);
     try {
-      const pages = await api.brain.listAllPages({ type: "outbound_entry", max: 200 });
-      setEntries(pages.map((p) => p.frontmatter as unknown as OutboundEntry));
+      // Same route as the CSV export: complete, without deleted entries.
+      const res = await fetch("/api/outbound-register", { credentials: "same-origin" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as { data?: { items?: OutboundEntry[] } };
+      setEntries(json.data?.items ?? []);
     } catch {
+      setLoadError(true);
       addToast({ type: "error", title: t("outbound.err_load") });
     } finally {
       setLoading(false);
@@ -50,7 +55,7 @@ export default function OutboundRegisterPage() {
   useEffect(() => {
     void load();
     api.brain
-      .listAllPages({ type: "legal_case", max: 200 })
+      .listAllPages({ type: "legal_case", max: 2000 })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
       .catch(() => setCases([]));
   }, [load]);
@@ -58,7 +63,7 @@ export default function OutboundRegisterPage() {
   const caseTitle = (slug: string) => cases.find((c) => c.slug === slug)?.title ?? "Akte";
 
   async function handleCreate() {
-    if (!form.recipient_name || !form.subject || !form.sent_by) {
+    if (!form.recipient_name || !form.subject) {
       addToast({ type: "error", title: "Pflichtfelder fehlen" });
       return;
     }
@@ -73,10 +78,12 @@ export default function OutboundRegisterPage() {
           recipient_address: form.recipient_address,
           case_slug: form.case_slug || undefined,
           subject: form.subject,
-          sent_by: form.sent_by,
         }),
       });
-      if (!res.ok) throw new Error("save_failed");
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error || "save_failed");
+      }
       addToast({ type: "success", title: "Eintrag erstellt" });
       setShowCreate(false);
       setForm({
@@ -85,14 +92,14 @@ export default function OutboundRegisterPage() {
         recipient_address: "",
         case_slug: "",
         subject: "",
-        sent_by: "",
       });
       void load();
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error && e.message !== "save_failed" ? e.message : null;
       addToast({
         type: "error",
         title: "Eintrag konnte nicht gespeichert werden",
-        description: "Bitte versuchen Sie es erneut.",
+        description: msg ?? "Bitte versuchen Sie es erneut.",
       });
     } finally {
       setSaving(false);
@@ -199,17 +206,6 @@ export default function OutboundRegisterPage() {
                 required
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="ob-sender" className="text-xs text-[color:var(--ds-text-muted)]">
-                Versendet von *
-              </Label>
-              <Input
-                id="ob-sender"
-                value={form.sent_by}
-                onChange={(e) => setForm({ ...form, sent_by: e.target.value })}
-                required
-              />
-            </div>
           </div>
           <Button type="submit" disabled={saving} className="gap-2">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -223,6 +219,23 @@ export default function OutboundRegisterPage() {
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <span>Das Postausgangsbuch konnte nicht geladen werden.</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              void load();
+            }}
+          >
+            Erneut laden
+          </Button>
         </div>
       ) : entries.length === 0 ? (
         <EmptyState
