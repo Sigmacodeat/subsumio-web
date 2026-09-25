@@ -37,6 +37,10 @@ export interface SearchResult {
   score: number;
   evidence?: string;
   source?: string;
+  /** Page type (legal_case, legal_document, …). */
+  type?: string;
+  /** Matter the hit belongs to, when the page is bound to one. */
+  case_slug?: string;
   created_at?: string;
 }
 

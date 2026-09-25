@@ -1520,6 +1520,9 @@ function mapSearchResults(results: Array<Record<string, unknown>>) {
     snippet: String(r.chunk_text ?? r.snippet ?? "").slice(0, 300),
     score: Number(r.score ?? 0),
     source: r.source_id ? String(r.source_id) : undefined,
+    // The page type drives the web's area filters and links (the source id
+    // is a tenant/corpus id, not a type).
+    type: r.type ? String(r.type) : undefined,
     case_slug: readCaseSlug(r),
     created_at: undefined,
   }));
