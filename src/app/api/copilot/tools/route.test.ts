@@ -360,6 +360,23 @@ describe("copilot conflict tools (§ 10 RAO)", () => {
     expect(created?.frontmatter.conflict_status).toBe("conflict_cleared");
   });
 
+  it("create_case goes through the safe path and creates nothing on a conflict", async () => {
+    const writes = conflictEngine({ hit: true });
+    const res = await runWrite("create_case", { title: "Neu ./. Alt", client_name: "Neue GmbH" });
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("conflict_detected");
+    expect(writes.filter((w) => w.type === "legal_case")).toHaveLength(0);
+  });
+
+  it("create_case creates with a server slug when there is no conflict", async () => {
+    const writes = conflictEngine({});
+    const res = await runWrite("create_case", { title: "Neu ./. Alt", client_name: "Neue GmbH" });
+    expect((await res.json()).success).toBe(true);
+    const created = writes.find((w) => w.type === "legal_case") as { slug: string } | undefined;
+    expect(created?.slug).toMatch(/^legal\/cases\/neu-alt-[0-9a-f]{8}$/);
+  });
+
   it("conflict_check sends the side and reports an unavailable check as failure", async () => {
     conflictEngine({ down: true });
     const res = await call({ tool: "conflict_check", params: { name: "Meier", side: "opponent" } });

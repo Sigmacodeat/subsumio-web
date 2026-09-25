@@ -716,64 +716,64 @@ async function executeCreateCase(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof createCaseSchema>
 ): Promise<ToolResponse> {
-  try {
-    const safeTitle = sanitizeUserInput(params.title);
-    const safeClientName = params.client_name ? sanitizeUserInput(params.client_name) : undefined;
-    const safeOpponentName = params.opponent_name
-      ? sanitizeUserInput(params.opponent_name)
-      : undefined;
-    const safeCaseType = params.case_type ? sanitizeUserInput(params.case_type) : undefined;
-    const slug = `cases/${safeTitle
-      .toLowerCase()
-      .replace(/ä/g, "ae")
-      .replace(/ö/g, "oe")
-      .replace(/ü/g, "ue")
-      .replace(/ß/g, "ss")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
-    const body = {
-      slug,
-      title: safeTitle,
-      type: "legal_case",
-      content: `# ${safeTitle}\n\n## Akteninformation\n\n- **Mandant:** ${safeClientName ?? "—"}\n- **Gegenseite:** ${safeOpponentName ?? "—"}\n- **Typ:** ${safeCaseType ?? "Zivilrecht"}\n`,
-      frontmatter: {
-        client_name: safeClientName,
-        opponent_name: safeOpponentName,
-        case_type: safeCaseType,
-        status: "active",
-        created_at: new Date().toISOString(),
-      },
-    };
-    // Create-only: an existing page at this slug is never replaced.
-    const res = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({ ...body, if_absent: true }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = (await res.json()) as { slug: string };
+  const safeTitle = sanitizeUserInput(params.title);
+  const safeClientName = params.client_name ? sanitizeUserInput(params.client_name) : undefined;
+  const safeOpponentName = params.opponent_name
+    ? sanitizeUserInput(params.opponent_name)
+    : undefined;
+  const safeCaseType = params.case_type ? sanitizeUserInput(params.case_type) : undefined;
+  // Shared safe path: server slug, never replaces a matter, conflict check (§ 10 RAO).
+  const outcome = await createCaseSafely(engineCaseCreateDeps(ctx.headers), {
+    title: safeTitle,
+    slugHint: safeTitle,
+    content: `# ${safeTitle}\n\n## Akteninformation\n\n- **Mandant:** ${safeClientName ?? "—"}\n- **Gegenseite:** ${safeOpponentName ?? "—"}\n- **Typ:** ${safeCaseType ?? "Zivilrecht"}\n`,
+    frontmatter: {
+      ...(safeClientName ? { client_name: safeClientName } : {}),
+      ...(safeOpponentName ? { opponent_name: safeOpponentName } : {}),
+      ...(safeCaseType ? { case_type: safeCaseType } : {}),
+      status: "active",
+      created_via: "copilot",
+      created_at: new Date().toISOString(),
+    },
+  });
+  if (outcome.status === "created") {
     return {
       success: true,
-      data: result,
+      data: { slug: outcome.slug },
       display: {
         kind: "confirmation",
         title: `Akte erstellt: ${safeTitle}`,
-        href: `/dashboard/cases/${result.slug.replace(/^cases\//, "")}`,
-        message: `Die Akte wurde erfolgreich angelegt. Mandant: ${safeClientName ?? "—"}, Gegenseite: ${safeOpponentName ?? "—"}`,
-      },
-    };
-  } catch (_err) {
-    return {
-      success: false,
-      error: "Create failed",
-      display: {
-        kind: "confirmation",
-        title: "Akte konnte nicht erstellt werden",
-        message: "Engine nicht erreichbar",
+        href: `/dashboard/cases/${outcome.slug.replace(/^legal\/cases\//, "")}`,
+        message: `Die Akte wurde angelegt. Mandant: ${safeClientName ?? "—"}, Gegenseite: ${safeOpponentName ?? "—"}`,
       },
     };
   }
+  if (outcome.status === "conflict") {
+    return {
+      success: false,
+      error: "conflict_detected",
+      data: { conflict: { hasConflict: true, matches: outcome.matches } },
+      display: {
+        kind: "confirmation",
+        title: "⚠️ Interessenkonflikt — keine Akte angelegt",
+        message:
+          "Die Kollisionsprüfung hat einen Konflikt gefunden. Bitte über die Mandatsannahme prüfen und nur mit begründeter Freigabe fortfahren.",
+        items: outcome.matches.map((m) => ({ label: `⚠️ ${m.name}`, value: m.type })),
+      },
+    };
+  }
+  return {
+    success: false,
+    error: outcome.status === "exists" ? "case_slug_exists" : outcome.code,
+    display: {
+      kind: "confirmation",
+      title: "Akte konnte nicht erstellt werden",
+      message:
+        outcome.status === "exists"
+          ? "Unter dieser Kennung gibt es bereits eine Akte."
+          : outcome.message,
+    },
+  };
 }
 
 async function executeCaseSummary(

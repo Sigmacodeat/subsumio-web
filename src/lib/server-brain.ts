@@ -46,6 +46,8 @@ export interface ServerBrainClient {
     content?: string;
     type?: string;
     frontmatter?: Record<string, unknown>;
+    /** Create only: 409 page_exists instead of replacing a stored page. */
+    if_absent?: boolean;
   }): Promise<{ slug: string }>;
   updatePage(page: {
     slug: string;

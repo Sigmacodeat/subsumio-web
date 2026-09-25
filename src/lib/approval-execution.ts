@@ -27,6 +27,8 @@ export interface ApprovalExecutionDeps {
     type?: string;
     content?: string;
     frontmatter?: Record<string, unknown>;
+    /** Create only: 409 page_exists instead of replacing a stored page. */
+    if_absent?: boolean;
   }): Promise<{ slug: string }>;
   updatePage(page: {
     slug: string;
@@ -276,10 +278,16 @@ async function executeDeadlineCreate(
   const dueDate = asString(payload.due_date) ?? asString(payload.date);
   if (!dueDate) throw new Error("deadline_create_requires_due_date");
   const caseSlug = asString(payload.case_slug) ?? fm.target_slug;
+  // A proposed slug is only honoured inside legal/deadlines/; the page is
+  // created, never replaced (a proposal must not land on another record).
+  const proposed = asString(payload.deadline_slug);
   const slug =
-    asString(payload.deadline_slug) ?? `legal/deadlines/${safeSlugPart(title)}-${at.getTime()}`;
+    proposed && /^legal\/deadlines\/[a-z0-9][a-z0-9._-]{0,159}$/.test(proposed)
+      ? proposed
+      : `legal/deadlines/${safeSlugPart(title)}-${at.getTime()}`;
   await deps.createPage({
     slug,
+    if_absent: true,
     title,
     type: "legal_deadline",
     content: asString(payload.content) ?? fm.summary ?? title,

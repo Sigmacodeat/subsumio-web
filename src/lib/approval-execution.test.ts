@@ -327,3 +327,41 @@ describe("executeApprovedAction", () => {
     expect(deps.createPage).not.toHaveBeenCalled();
   });
 });
+
+describe("executeApprovedAction — deadline_create never lands on another record", () => {
+  it("ignores a proposed slug outside legal/deadlines/ and creates only if absent", async () => {
+    const deps = depsFor(
+      actionPage({
+        action_type: "deadline_create",
+        payload: {
+          title: "Berufung",
+          due_date: "2026-07-01",
+          deadline_slug: "legal/cases/fremde-akte",
+        },
+      })
+    );
+    const result = await executeApprovedAction(deps, {
+      actionSlug: "agent-action/1",
+      executedBy: "lawyer@test",
+    });
+    expect(result.status).toBe("executed");
+    const page = deps.created[0] as { slug: string; if_absent?: boolean };
+    expect(page.slug).toMatch(/^legal\/deadlines\/berufung-\d+$/);
+    expect(page.if_absent).toBe(true);
+  });
+
+  it("keeps a well-formed proposed deadline slug", async () => {
+    const deps = depsFor(
+      actionPage({
+        action_type: "deadline_create",
+        payload: {
+          title: "Berufung",
+          due_date: "2026-07-01",
+          deadline_slug: "legal/deadlines/berufung-x",
+        },
+      })
+    );
+    await executeApprovedAction(deps, { actionSlug: "agent-action/1", executedBy: "lawyer@test" });
+    expect((deps.created[0] as { slug: string }).slug).toBe("legal/deadlines/berufung-x");
+  });
+});
