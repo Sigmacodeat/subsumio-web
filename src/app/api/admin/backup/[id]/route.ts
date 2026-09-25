@@ -96,8 +96,10 @@ export const POST = createHandler(
           continue;
         }
 
-        const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-          method: "PUT",
+        // Restore replaces the stored page with the backed-up state (the
+        // engine has no PUT for pages; a create without merge replaces).
+        const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
+          method: "POST",
           headers: { ...ctx.headers, "Content-Type": "application/json" },
           body: JSON.stringify({
             slug,
@@ -108,26 +110,10 @@ export const POST = createHandler(
           }),
           signal: AbortSignal.timeout(10_000),
         });
-
-        if (!res.ok) {
-          // Try POST if PUT fails (page doesn't exist yet)
-          const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
-            method: "POST",
-            headers: { ...ctx.headers, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              slug,
-              title,
-              type: page.type,
-              content: page.content,
-              frontmatter: page.frontmatter,
-            }),
-            signal: AbortSignal.timeout(10_000),
-          });
-          if (!createRes.ok) {
-            failed++;
-            errors.push(`${slug}: ${createRes.status}`);
-            continue;
-          }
+        if (!createRes.ok) {
+          failed++;
+          errors.push(`${slug}: ${createRes.status}`);
+          continue;
         }
         restored++;
       } catch (err) {

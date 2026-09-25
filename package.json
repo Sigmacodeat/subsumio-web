@@ -20,7 +20,7 @@
     "start": "next start",
     "dav": "npx tsx scripts/dav-server.ts",
     "status": "npx tsx scripts/update-status.ts",
-    "lint": "eslint --max-warnings 1",
+    "lint": "eslint --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
     "verify": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && npx tsx scripts/check-route-actions.ts && npx tsx scripts/check-grounding-invariant.ts && npx tsx scripts/check-design-tokens.ts && npx tsx scripts/check-canonical-links.ts && npx tsx scripts/check-nested-interactive.ts && npx tsx scripts/check-audit-labels.ts && npx tsx scripts/check-list-limit.ts && npx tsx scripts/check-unchecked-engine-writes.ts && npx tsx scripts/check-utc-date-strings.ts && npx tsx scripts/check-env-documented.ts",

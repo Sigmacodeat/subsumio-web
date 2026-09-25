@@ -75,6 +75,7 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
 
 ## Entfernt am 26.09.2026
 
+- `/api/cron/judikatur-watch` (02:00 UTC): Judikatur-Wächter pro Kanzlei — nur RIS-Abfragen, keine Modellaufrufe.
 - `/api/cron/case-scanner`: kein automatischer Nachtlauf mehr (Produktentscheidung). Der
   Akten-Scan startet nur auf Abruf durch Anwalt/Admin — für eine Akte, eine Auswahl oder
   alle offenen Akten (höchstens 50), nach Kostenvorschau in Credits und Bestätigung. Die

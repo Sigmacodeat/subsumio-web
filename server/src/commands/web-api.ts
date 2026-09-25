@@ -9992,6 +9992,38 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // ── Judikatur-Wächter (nightly, no model calls) ─────────────
+  // Queues the `legal-case-scanner` job, which only runs the judikatur watch
+  // (RIS lookups for the norms of the source's matters). It starts no agent
+  // runs and has no model costs; agent scans are on demand only (below).
+  app.post(
+    "/api/legal/judikatur-watch",
+    express.json({ limit: "8kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const sourceId = requestSourceId(req);
+        if (!sourceId) {
+          apiError(res, 400, "source_required");
+          return;
+        }
+        const queue = new MinionQueue(engine);
+        const job = await queue.add(
+          "legal-case-scanner",
+          {
+            max_cases: 50,
+            _source_id: sourceId,
+            ...agentMatterStamp(req),
+            ...jobOwnerStamp(req.userId),
+          } as Record<string, unknown>,
+          { timeout_ms: 300_000, max_attempts: 1 }
+        );
+        res.json({ success: true, job_id: job.id, status: "queued" });
+      } catch (e) {
+        legalErr(res, "judikatur_watch", e);
+      }
+    }
+  );
+
   // ── Legal Case Scanner (on demand) ───────────────────────────
   // Preview: which of the caller's visible matters a scan covers (the web
   // app prices it). Start: one capped supervisor run per matter the web app

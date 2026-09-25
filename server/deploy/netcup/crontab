@@ -64,6 +64,9 @@
 # Case scanner: no scheduled run. Scans start on demand only (lawyer/admin,
 # cost preview in credits); /api/cron/case-scanner answers "deactivated".
 
+# ── 02:00 UTC (04:00 CEST) — Judikatur-Wächter (RIS lookups, no model calls) ──
+0 2 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/judikatur-watch || true
+
 # ── 02:30 UTC (04:30 CEST) — Dream cycle (brain maintenance) ──
 # Runs extract_facts, consolidate, synthesize, embed — keeps the brain's
 # structured fact index fresh for contradiction detection and semantic search.
