@@ -146,7 +146,7 @@ export const GET = createHandler(
       );
     } catch (err) {
       log.error("[chunk-inspector] query failed:", (err as Error).message);
-      return apiSuccess([], { page, limit: pageSize, total: 0 });
+      return apiError("service_unavailable", "Chunks konnten nicht geladen werden", 503);
     }
 
     const total = parseInt(countResult.rows[0]?.total ?? "0", 10);
