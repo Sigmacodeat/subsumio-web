@@ -377,6 +377,35 @@ export default function KanzleiSettingsPage() {
       </Section>
 
       <Section
+        title={L("Autopilot", "Autopilot")}
+        description={L(
+          "Erstellt automatisch Vorschläge zu neuen Eingängen, nahenden Fristen und hochgeladenen Dokumenten — nie selbst abgeschlossen, jedes Ergebnis braucht Ihre Freigabe. Läuft einmal nächtlich, mit einer festen Kostenobergrenze pro Nacht.",
+          "Automatically drafts suggestions for new intakes, approaching deadlines and uploaded documents — never finalized on its own, every result needs your approval. Runs once nightly, with a fixed nightly cost cap."
+        )}
+      >
+        <label htmlFor="autopilot-enabled" className="flex cursor-pointer items-start gap-3">
+          <input
+            id="autopilot-enabled"
+            type="checkbox"
+            checked={settings.autopilotEnabled ?? false}
+            onChange={(e) => update("autopilotEnabled", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {L("Autopilot für diese Kanzlei aktivieren", "Enable Autopilot for this firm")}
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              {L(
+                "Standardmäßig aus. Vorschläge landen zur Prüfung in der Akte, nichts wird ohne Freigabe versendet oder abgeschlossen.",
+                "Off by default. Suggestions land in the matter for review, nothing is sent or finalized without approval."
+              )}
+            </p>
+          </div>
+        </label>
+      </Section>
+
+      <Section
         title={L("Fristen-Erinnerungen & Eskalation", "Deadline reminders & escalation")}
         description={L(
           "Steuert die automatischen Fristen-Erinnerungen (E-Mail, WhatsApp, Push) und die Eskalation überfälliger Notfristen.",

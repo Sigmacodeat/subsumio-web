@@ -138,8 +138,12 @@
 # ── 04:00 UTC (06:00 CEST) — Autopilot (autonomous case processing) ──
 # Runs BEFORE the rundown. Processes unmatched intake items per AutoPilotPolicy:
 # analyze → deadline suggestions (unreviewed) → draft response (agent_action approval-gate).
-# Opt-out: set DISABLE_AUTOPILOT_CRON=true in env.
-0 4 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autopilot || true
+# Opt-out globally: DISABLE_AUTOPILOT_CRON=true in env. Opt-in per firm:
+# Kanzlei-Einstellungen (autopilotEnabled, default off) — the route checks
+# it per brain and no-ops when a firm hasn't turned it on.
+# The route only accepts POST (2026-09-25: curl defaulted to GET here since
+# the route was added, so this job 405'd on every run since 2026-09-16).
+0 4 * * *      curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autopilot || true
 
 # ── 09:00 UTC (11:00 CEST) — Invoice dunning run (FiBu) ──
 # Processes sent invoices past zahlungszielTage: reminder → Mahnung 1 → Mahnung 2,
@@ -192,7 +196,10 @@
 # Executes queued autonomous tasks (deadline follow-ups, inbox triage, document
 # analysis, workflow starts). Critical actions stop at requires_approval and wait
 # for a lawyer; nothing irreversible runs unattended. Idempotent per task id.
-* * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autonomous-engine || true
+# The route only accepts POST (2026-09-25: curl defaulted to GET here since
+# the route was added, so this job 405'd every minute since 2026-09-16 —
+# the drafting page's queued tasks never got processed).
+* * * * *      curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autonomous-engine || true
 
 # ─────────────────────────────────────────────────────────────────────────
 # Abrechnung / SaaS-Billing
