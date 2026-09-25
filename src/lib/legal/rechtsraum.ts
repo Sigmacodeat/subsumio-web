@@ -69,7 +69,12 @@ export function getRechtsraumParams(settings?: KanzleiSettings | null): Rechtsra
   if (!settings) return {};
   const country = settings.rechtsraumCountry;
   const state = settings.rechtsraumState;
-  if (!country || !state) return {};
+  if (!country) return {};
+  // Österreich hat keine Bundesland-Auswahl (Feiertage gelten bundesweit); die
+  // Einstellungsseite speichert für AT keinen State. Ohne diesen Fall lief die
+  // Fristenrechnung für AT-Kanzleien ohne jeden Feiertag (2026-09-25).
+  if (country === "AT" && !state) return { state: "AT", country };
+  if (!state) return {};
   // Validate state against country
   if (country === "DE" && !DE_STATES.has(state)) return {};
   if (country === "AT" && state !== "AT") return {};

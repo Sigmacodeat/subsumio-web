@@ -24,6 +24,21 @@ describe("isQuietDay", () => {
     expect(isQuietDay(new Date("2026-12-25T10:00:00Z"), AT)).toBe(true);
   });
 
+  test("AT-Kanzlei OHNE Bundesland (so speichert die Einstellungsseite): Feiertage greifen trotzdem", () => {
+    // Bisher: isPublicHoliday ohne State → false → 25.12. war für jede echte
+    // AT-Kanzlei ein normaler Freitag. 2026-10-26 = Montag, Nationalfeiertag.
+    const atNoState = { rechtsraumCountry: "AT" as const };
+    expect(isQuietDay(new Date("2026-12-25T10:00:00Z"), atNoState)).toBe(true);
+    expect(isQuietDay(new Date("2026-10-26T10:00:00Z"), atNoState)).toBe(true);
+    // Tag der Deutschen Einheit ist in AT kein Feiertag (Samstag 2026-10-03
+    // wäre ohnehin Ruhetag, daher 2026-10-05 Montag und 2025-10-03 Freitag).
+    expect(isQuietDay(new Date("2025-10-03T10:00:00Z"), atNoState)).toBe(false);
+  });
+
+  test("ohne Rechtsraum nur Wochenende, keine Feiertage (kein Raten)", () => {
+    expect(isQuietDay(new Date("2026-12-25T10:00:00Z"), {})).toBe(false);
+  });
+
   test("Werktag ohne Feiertag bleibt Werktag", () => {
     // 2026-09-28 = Montag, kein Feiertag AT/DE/CH
     expect(isQuietDay(new Date("2026-09-28T10:00:00Z"), AT)).toBe(false);

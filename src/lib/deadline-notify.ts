@@ -7,10 +7,16 @@ import { isPublicHoliday, type Bundesland, type Canton } from "@/lib/legal-deadl
  * Feiertag im Rechtsraum der Kanzlei (Firmen-Zeitzone, nicht Server-TZ).
  *
  * An Ruhetagen gehen Routine-Digest-Mails, WhatsApp-Digests und die
- * Notfrist-Eskalation nicht raus — sie werden auf den nächsten Werktag
+ * Stufen-Erinnerungen nicht raus — sie werden auf den nächsten Werktag
  * verschoben, nicht verworfen: eine überfällige Frist bleibt überfällig und
- * wird beim nächsten Lauf erneut gefunden (und einmalig eskaliert). Der
- * Freitags-Digest enthält ohnehin alles ≤3-Tage-Kritische des Wochenendes.
+ * wird beim nächsten Lauf erneut gefunden. NICHT verschoben werden die
+ * Notfrist-Eskalation, Erinnerungen an Notfristen und an heute fällige
+ * Fristen — eine versäumte Notfrist darf nicht bis nach einem Feiertagsblock
+ * warten (Wiedereinsetzungsfristen laufen ab Wegfall des Hindernisses).
+ *
+ * Feiertage: für AT ohne Bundesland (die Einstellungsseite speichert für
+ * Österreich keinen State) greifen die bundesweiten AT-Feiertage über den
+ * Fallback in `isPublicHoliday`.
  */
 export function isQuietDay(
   now: Date,

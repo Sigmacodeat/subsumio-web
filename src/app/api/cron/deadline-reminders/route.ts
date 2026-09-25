@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { DEFAULT_KANZLEI_SETTINGS, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { isSmtpConfigured, loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
+import { isQuietDay } from "@/lib/deadline-notify";
 import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
 import {
@@ -128,6 +129,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let inAppSent = 0;
   let staleIntakes = 0;
   let smtpBrains = 0;
+  let quietDeferred = 0;
   const errors: string[] = [];
   const warnings: string[] = [];
   const failed: Array<{
@@ -241,6 +243,22 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       .filter((r): r is AbsenceRecord => Boolean(r?.user_email));
     annotateDelegations(groups, responsibleByCase, absenceRecords, now);
 
+    // Ruhetag (Sa/So/Feiertag im Rechtsraum, Kanzlei-Setting): Stufen-
+    // Erinnerungen ("in 7 Tagen", "in 3 Tagen") warten bis zum nächsten
+    // Werktag — sie werden hier nur nicht gesendet und nicht als gesendet
+    // markiert, der nächste Werktagslauf findet sie in der dann gültigen
+    // Stufe wieder. Nie verschoben: Notfristen und heute fällige Fristen.
+    // Unlesbare Settings → kein Ruhetag (fail-open: lieber eine Mail zu viel).
+    if (settingsReadable && isQuietDay(now, settings)) {
+      for (const group of groups) {
+        const kept = group.items.filter((i) => i.isNotfrist || i.stage === 0);
+        quietDeferred += group.items.length - kept.length;
+        group.items = kept;
+      }
+    }
+    const activeGroups = groups.filter((g) => g.items.length > 0);
+    if (activeGroups.length === 0) continue;
+
     // P3-3: Send email to ALL recipients, not just the first one
     const emailRecipients = recipients.map((r) => r.email).filter((e): e is string => !!e);
     const toEmails =
@@ -265,7 +283,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     }
 
-    for (const group of groups) {
+    for (const group of activeGroups) {
       const due = group.items;
       const caseSlugForNotif = group.caseSlug ?? "";
       total += due.length;
@@ -484,6 +502,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
       // Per firm now: true when at least one firm with due reminders has SMTP.
       smtp_configured: smtpBrains > 0,
       smtp_configured_brains: smtpBrains,
+      quiet_days_deferred: quietDeferred,
       failed: failed.length > 0 ? failed : undefined,
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
