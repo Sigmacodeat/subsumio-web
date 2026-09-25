@@ -21,7 +21,6 @@ import { CitationLink, GroundingBadge } from "@/components/legal/CitationLink";
 import { AI_BADGE_LABEL, AI_NOTICE } from "@/lib/ai-act";
 import { assessGroundedness } from "@/lib/groundedness";
 import { formatCitationTitle } from "@/lib/ogh-format";
-import type { GroundedCitation } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 import { extractStatuteCitations, type GroundingMetadata } from "@/lib/citation-gate-client";
 import { openNormReader, readerJurisdiction } from "@/lib/norm-reader-events";

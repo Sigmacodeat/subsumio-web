@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -124,7 +124,10 @@ export default function ConnectorsPage() {
   const me = useMe();
   const jurisdiction = me.data?.user?.jurisdiction ?? me.data?.demo?.jurisdiction?.toUpperCase();
   const isAdmin = me.data?.user?.role === "admin";
-  const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
+  const [allConnectors, setConnectors] = useState<ConnectorStatus[]>([]);
+  // Filtered at render: the firm's jurisdiction often arrives after the list.
+  const hiddenServices = hiddenServicesFor(jurisdiction);
+  const connectors = allConnectors.filter((c) => !hiddenServices.has(c.service));
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -135,13 +138,12 @@ export default function ConnectorsPage() {
   const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
   const advokatInputRef = useRef<HTMLInputElement>(null);
 
-  async function loadConnectors() {
+  const loadConnectors = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await api.connectors.list();
-      const hidden = hiddenServicesFor(jurisdiction);
-      setConnectors(res.connectors.filter((c) => !hidden.has(c.service)));
+      setConnectors(res.connectors);
     } catch (e) {
       setConnectors([]);
       setError(
@@ -153,11 +155,11 @@ export default function ConnectorsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadConnectors();
-  }, []);
+  }, [loadConnectors]);
 
   async function handleSync(service: string) {
     const label = CONNECTOR_LABELS[service] ?? service;

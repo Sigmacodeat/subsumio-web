@@ -1,5 +1,5 @@
 import type { BrainPage } from "@/lib/types";
-import { caseFrontmatter, type CaseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
+import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
 
 /**
  * What the tokenised client portal is allowed to see of a matter.

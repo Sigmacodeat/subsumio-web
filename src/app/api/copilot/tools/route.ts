@@ -20,7 +20,7 @@ import { reserveInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
 import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
-import { addDaysToDateString, addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
+import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
 import { brainPageHref, INVOICING_HREF } from "@/lib/dashboard-hrefs";

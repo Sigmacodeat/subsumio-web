@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { BLOG_POSTS, getAllPosts, getPostBySlug } from "./blog";
-import { CITIES, getCityBySlug, getAllCitySlugs } from "./city-pages";
+import { getCityBySlug, getAllCitySlugs } from "./city-pages";
 
 describe("Blog Content", () => {
   it("has at least 3 blog posts", () => {

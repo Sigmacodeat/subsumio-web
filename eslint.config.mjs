@@ -110,6 +110,11 @@ const eslintConfig = defineConfig([
     "law-corpus/**",
     "outlook-addin/dist/**",
     "word-addin/dist/**",
+    // Built Office add-in bundles (scripts/build-office-addins.ts) and their
+    // copies in the native app shells — generated output, not source.
+    "public/*-addin/**",
+    "android/**",
+    "ios/**",
     ".claude/**",
     "scripts/**",
   ]),

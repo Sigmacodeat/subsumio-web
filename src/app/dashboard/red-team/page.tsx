@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
-import { formatDateTime } from "@/lib/utils";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import {
@@ -24,7 +23,6 @@ import { LoadErrorNotice } from "@/components/dashboard/load-error-notice";
 
 import { unwrapApiBody } from "@/lib/api-body";
 import { CaseSelect } from "@/components/legal/case-select";
-import { EmptyState } from "@/components/dashboard/empty-state";
 const SEVERITY_COLORS: Record<string, string> = {
   high: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",

@@ -19,7 +19,7 @@ import { z } from "zod";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { apiSuccess } from "@/lib/api-response";
 import { clientIp } from "@/lib/auth/rate-limit";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { availableSlots, resolvePublicBookingBrainId } from "@/lib/public-booking";
 import { checkBookingConflict, createBookingFrontmatter } from "@/lib/online-booking";
 import { sendMail } from "@/lib/mail";

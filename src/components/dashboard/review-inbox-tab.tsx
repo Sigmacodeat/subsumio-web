@@ -31,7 +31,6 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
-import { readApiError } from "@/lib/api-response";
 
 type ReviewType =
   | "all"
