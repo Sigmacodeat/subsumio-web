@@ -2255,6 +2255,7 @@ export const api = {
         totalSize: number;
         pageTypes: Record<string, number>;
         status: string;
+        complete?: boolean;
       }>;
       stats: {
         totalBackups: number;

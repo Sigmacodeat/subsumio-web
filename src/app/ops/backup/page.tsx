@@ -82,13 +82,17 @@ export default function BackupRestorePage() {
   const createMutation = useMutation({
     mutationFn: () => api.backup.create(),
     onSuccess: (result) => {
-      const totalPages = (result.backup as { total_pages?: number })?.total_pages ?? 0;
-      tracking.backup.created(totalPages);
+      const backup = result.backup as { totalPages?: number; complete?: boolean };
+      tracking.backup.created(backup?.totalPages ?? 0);
       queryClient.invalidateQueries({ queryKey: ["backups"] });
+      // An incomplete run is saved, but never reported as a full backup.
+      const incomplete = backup?.complete === false;
       addToast({
-        title: t("admin.backup.created"),
-        description: t("admin.backup.created_desc"),
-        type: "success",
+        title: t(incomplete ? "admin.backup.created_incomplete" : "admin.backup.created"),
+        description: t(
+          incomplete ? "admin.backup.created_incomplete_desc" : "admin.backup.created_desc"
+        ),
+        type: incomplete ? "warning" : "success",
       });
     },
     onError: (err: Error) => {
@@ -250,6 +254,11 @@ export default function BackupRestorePage() {
                       {backup.status === "failed" && (
                         <Badge variant="danger" className="text-xs">
                           Fehlgeschlagen
+                        </Badge>
+                      )}
+                      {backup.complete === false && (
+                        <Badge variant="warning" className="text-xs">
+                          Unvollständig
                         </Badge>
                       )}
                     </div>
