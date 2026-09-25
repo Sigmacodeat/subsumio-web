@@ -7,6 +7,7 @@ import { logAudit } from "@/lib/audit";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { listMemories } from "@/lib/copilot-memory";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 
 export const maxDuration = 120;
 
@@ -60,7 +61,7 @@ export const GET = createHandler(
     const firmBrain = Boolean(user.orgId);
     if (!firmBrain) {
       try {
-        brainPages = await listAllPages(createServerBrainClient(ctx.headers));
+        brainPages = redactPageSecrets(await listAllPages(createServerBrainClient(ctx.headers)));
       } catch {
         // Brain may not be available
       }

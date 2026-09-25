@@ -18,7 +18,7 @@ vi.mock("@/lib/api-handler", () => ({
 
 import { GET } from "./route";
 
-let pages: Array<{ slug: string; title: string }>;
+let pages: Array<{ slug: string; title: string; frontmatter?: Record<string, unknown> }>;
 let statsTotal: number | null;
 /** Offset whose batch comes back short although more pages follow. */
 let shortBatchAt: number | null;
@@ -93,5 +93,32 @@ describe("GET /api/data-export/backup (AKT-28)", () => {
     const out = await backup();
     expect(out.data).toHaveLength(350);
     expect(out.export_metadata.complete).toBe(false);
+  });
+
+  it("never carries the SMTP password of the Kanzlei settings", async () => {
+    pages = [
+      {
+        slug: "legal/settings/kanzlei",
+        title: "Kanzlei",
+        frontmatter: {
+          type: "kanzlei_settings",
+          smtpHost: "smtp.k.test",
+          smtpPassword: "klartext-alt",
+          smtpPasswordEnc: "sbenc:abc",
+        },
+      },
+      { slug: "p/1", title: "P 1", frontmatter: { smtpPassword: "not-a-settings-page" } },
+    ];
+    statsTotal = 2;
+    const out = await backup();
+    const text = JSON.stringify(out.data);
+    expect(text).not.toContain("klartext-alt");
+    expect(text).not.toContain("sbenc:abc");
+    const settings = out.data[0] as { frontmatter: Record<string, unknown> };
+    expect(settings.frontmatter).toMatchObject({ smtpHost: "smtp.k.test", smtpPasswordSet: true });
+    // Other pages are exported unchanged.
+    expect((out.data[1] as { frontmatter: Record<string, unknown> }).frontmatter).toEqual({
+      smtpPassword: "not-a-settings-page",
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 import { usageFor } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,14 @@ export const GET = createHandler(
           headers: ctx.headers,
           signal: AbortSignal.timeout(10_000),
         });
-        if (upstream.ok) brain = await upstream.json();
+        if (upstream.ok) {
+          const data = (await upstream.json()) as Record<string, unknown> | null;
+          // Settings secrets (SMTP password) never leave in an export.
+          brain =
+            data && Array.isArray(data.pages)
+              ? { ...data, pages: redactPageSecrets(data.pages) }
+              : data;
+        }
       } catch {
         // Engine offline: Konto-Daten trotzdem exportieren, Brain-Teil markiert.
       }

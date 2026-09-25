@@ -95,4 +95,28 @@ describe("GET /api/settings/gdpr/data-export", () => {
     expect(new Set(body.brainPages.map((p: { slug: string }) => p.slug)).size).toBe(total);
     expect(listPages).toHaveBeenCalledTimes(3);
   });
+
+  it("removes the SMTP password from the Kanzlei settings page", async () => {
+    storedUser = {
+      id: "u_solo",
+      email: "solo@example.com",
+      role: "admin",
+      createdAt: "2026-01-01",
+    };
+    vi.mocked(requireEngineContext).mockResolvedValue(ctxFor(storedUser) as any);
+    listPages.mockImplementation(async () => [
+      {
+        slug: "legal/settings/kanzlei",
+        type: "kanzlei_settings",
+        frontmatter: { smtpHost: "h", smtpPassword: "klartext-alt" },
+      },
+    ]);
+    const res = await GET(new NextRequest("http://localhost:3000/api/settings/gdpr/data-export"));
+    const text = await res.text();
+    expect(text).not.toContain("klartext-alt");
+    expect(JSON.parse(text).brainPages[0].frontmatter).toEqual({
+      smtpHost: "h",
+      smtpPasswordSet: true,
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 import { listBackups, createBackup, getBackupStats, type BackupMetadata } from "@/lib/backup";
 import { z } from "zod";
 
@@ -60,7 +61,11 @@ export const POST = createHandler(
       }
     }
 
-    const metadata: BackupMetadata = await createBackup(allPages, ctx.user.email);
+    // Settings secrets (SMTP password) are not written into backup files.
+    const metadata: BackupMetadata = await createBackup(
+      redactPageSecrets(allPages),
+      ctx.user.email
+    );
     return Response.json({ ok: true, backup: metadata });
   }
 );

@@ -51,4 +51,38 @@ describe("GET /api/export", () => {
     const body = JSON.parse(await res.text());
     expect(body.brain.pages).toHaveLength(1);
   });
+
+  it("removes the SMTP password from the Kanzlei settings in the personal export", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      headers: { "x-subsumio-source": "brain_solo" },
+      brainId: "brain_solo",
+      plan: "pro",
+      user: { id: "u2", email: "solo@example.com", role: "admin" },
+    } as any);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              format: "subsumio-export-v1",
+              pages: [
+                {
+                  slug: "legal/settings/kanzlei",
+                  type: "kanzlei_settings",
+                  frontmatter: { smtpUser: "u", smtpPassword: "klartext-alt" },
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+      )
+    );
+    const res = await GET(new NextRequest("http://localhost:3000/api/export"));
+    const text = await res.text();
+    expect(text).not.toContain("klartext-alt");
+    const body = JSON.parse(text);
+    expect(body.brain.format).toBe("subsumio-export-v1");
+    expect(body.brain.pages[0].frontmatter).toEqual({ smtpUser: "u", smtpPasswordSet: true });
+  });
 });
