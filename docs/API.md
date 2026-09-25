@@ -580,3 +580,24 @@ Feedback-Pages.
 Antworten: `200 { stats, total }` — `stats` enthält `by_type`,
 `by_severity`, `problematic_results`, `problematic_queries`,
 `satisfaction_rate` · `502` `feedback_load_failed` (Engine-Fehler).
+
+### `GET /api/cron/trash-purge` — Per-Item-Retention (Dokumente/Notizen)
+
+Zusätzlich zum Papierkorb-Purge verschiebt der Job aktive `document`- und
+`note`-Pages mit abgelaufener eigener Aufbewahrungsfrist in den Papierkorb
+(DSGVO-Speicherbegrenzung, Art. 5 Abs. 1 lit. e DSGVO). Erkennungsfelder im
+Frontmatter:
+
+- `retention_until` (ISO-Datum oder -Zeitpunkt) — löschfällig nach Ablauf.
+  Ein Datum ohne Uhrzeit gilt bis einschließlich dieses Tags (Ende des Tags,
+  UTC — gleiche Semantik wie `retentionUntil()` in `src/lib/gobd.ts`).
+- `retention_days` (Zahl ≥ 0) — Tage ab `retention_from` (Frontmatter,
+  optional) bzw. `created_at` der Page. `retention_until` hat Vorrang.
+
+Ablauf: tombstone (`status: "tombstoned"`, `tombstone_reason:
+"retention_expired"`) → danach gilt die normale Papierkorb-Frist
+(`trashRetentionDays`) bis zum endgültigen Purge. Audit-Events:
+`data.delete` beim Tombstone, `trash.purge` beim Purge. Fail-closed:
+`legal_hold` (eigen oder der Akte), unlesbare Frist-Konfiguration
+(`retentionInvalid`-Zähler, Run → 500) und `trashAutoPurge: false`
+unterbinden die automatische Verschiebung.

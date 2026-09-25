@@ -16,6 +16,8 @@ export interface DraftPdfData {
     name?: string;
     address?: string;
   };
+  /** Diagonal watermark — defaults to "ENTWURF" (drafts). "MUSTER" for templates. */
+  watermark?: string;
 }
 
 const DRAFT_TYPE_LABELS: Record<string, string> = {
@@ -176,7 +178,7 @@ export function generateDraftPdf(data: DraftPdfData): jsPDF {
   doc.setTextColor(200, 200, 200);
   doc.setFontSize(48);
   doc.setFont("helvetica", "bold");
-  doc.text("ENTWURF", pageW / 2, pageH / 2, {
+  doc.text(data.watermark || "ENTWURF", pageW / 2, pageH / 2, {
     align: "center",
     angle: 45,
   });

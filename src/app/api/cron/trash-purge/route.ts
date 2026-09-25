@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { listEnginePages } from "@/lib/engine-pages";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
 import { TRASH_TYPES, toTrashItem, isTrashExpired, type TrashItem } from "@/lib/trash";
+import { isTombstoned } from "@/lib/tombstone";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
@@ -27,6 +28,68 @@ export const maxDuration = 300;
 const EMAIL_TRACKING_RETENTION_DAYS = 90;
 
 /**
+ * Seiten-Typen mit eigenständiger Aufbewahrungsfrist (DSGVO-Speicherbegrenzung,
+ * Art. 5 Abs. 1 lit. e DSGVO). Frontmatter-Felder:
+ *  - `retention_until` — ISO-Datum/-Zeitpunkt; ablaufendes Datum = Löschfälligkeit.
+ *    Ein Datum ohne Uhrzeit ("2030-12-31") gilt bis einschließlich dieses Tags —
+ *    dieselbe Semantik wie `retentionUntil()` in gobd.ts (§ 132 BAO: Ende des
+ *    siebenten Folgejahres). GoBD-gestempelte Dokumente werden so nach Ablauf
+ *    ihrer gesetzlichen Mindestfrist löschfällig.
+ *  - `retention_days` — Tage ab `retention_from` (Frontmatter, optional) bzw.
+ *    `created_at` der Page.
+ * `retention_until` hat Vorrang vor `retention_days`. Abgelaufene Seiten werden
+ * tombstoned (Papierkorb mit `tombstone_reason: "retention_expired"`) — die
+ * normale Papierkorb-Frist und der Purge unten bleiben das Recovery-Fenster.
+ */
+const RETENTION_ITEM_TYPES = ["document", "note"] as const;
+
+/**
+ * Ablaufzeitpunkt einer Per-Item-Retention. Gibt den Ablauf zurück, wenn er
+ * bereits eingetreten ist; `{ invalid: … }` bei unlesbarer Konfiguration
+ * (fail-closed: nie wegen eines Tippfehlers löschen — aber sichtbar machen);
+ * `null` bei keiner oder noch laufender Frist.
+ */
+function retentionExpiredAt(
+  page: ListedPage,
+  now: Date
+): { expiresAt: Date } | { invalid: string } | null {
+  const fm = page.frontmatter ?? {};
+  const until = fm.retention_until;
+  if (until !== undefined && until !== null && String(until).trim() !== "") {
+    // YAML-Frontmatter kann Datumsangaben als Date-Objekt oder Zahl
+    // (Epoch-ms) liefern — beides akzeptieren, sonst als String parsen.
+    if (until instanceof Date || typeof until === "number") {
+      const t = typeof until === "number" ? until : until.getTime();
+      if (!Number.isFinite(t))
+        return { invalid: `retention_until nicht lesbar: ${JSON.stringify(until)}` };
+      return t <= now.getTime() ? { expiresAt: new Date(t) } : null;
+    }
+    if (typeof until !== "string")
+      return { invalid: `retention_until mit unerwartetem Typ: ${JSON.stringify(until)}` };
+    const raw = until.trim();
+    const t = Date.parse(raw);
+    if (!Number.isFinite(t)) return { invalid: `retention_until nicht lesbar: "${raw}"` };
+    // Datum ohne Uhrzeit läuft am Ende des Tags ab (UTC), nicht davor.
+    const expiresAt = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? t + 86_400_000 : t;
+    return expiresAt <= now.getTime() ? { expiresAt: new Date(expiresAt) } : null;
+  }
+  const days = fm.retention_days;
+  if (days !== undefined && days !== null && String(days) !== "") {
+    const n = typeof days === "number" ? days : Number.parseFloat(String(days));
+    if (!Number.isFinite(n) || n < 0)
+      return { invalid: `retention_days ungültig: ${JSON.stringify(days)}` };
+    const basisRaw = fm.retention_from ?? page.created_at;
+    const basis =
+      basisRaw instanceof Date ? basisRaw.getTime() : basisRaw ? Date.parse(String(basisRaw)) : NaN;
+    if (!Number.isFinite(basis))
+      return { invalid: "retention_days ohne lesbare Basis (retention_from/created_at)" };
+    const expiresAt = basis + n * 86_400_000;
+    return expiresAt <= now.getTime() ? { expiresAt: new Date(expiresAt) } : null;
+  }
+  return null;
+}
+
+/**
  * GET /api/cron/trash-purge — endgültige Löschung abgelaufener Papierkorb-
  * Einträge (DSGVO-Löschkonzept).
  *
@@ -34,6 +97,12 @@ const EMAIL_TRACKING_RETENTION_DAYS = 90;
  * auf Einträge, deren Aufbewahrungsfrist (Kanzlei-Setting `trashRetentionDays`,
  * Default 30 Tage) abgelaufen ist. Der Autopilot-Purge der Engine löscht sie
  * 72 h später physisch — bis dahin bleibt ein letztes Recovery-Fenster.
+ *
+ * Zusätzlich: Per-Item-Retention für Dokumente/Notizen — aktive Pages mit
+ * `retention_until`/`retention_days` (s. RETENTION_ITEM_TYPES) werden nach
+ * Fristablauf tombstoned und laufen danach dieselbe Papierkorb-Frist. Auch das
+ * hängt an `trashAutoPurge`: eine Kanzlei, die automatisches Löschen abgestellt
+ * hat, bekommt keine automatischen Retention-Tombstones.
  *
  * Fail-closed überall:
  *  - Settings unlesbar → Brain wird übersprungen (nie mit Defaults löschen).
@@ -48,6 +117,8 @@ export const GET = createCronHandler(async () => {
     purged: 0,
     skippedHold: 0,
     brainsDisabled: 0,
+    retentionTombstoned: 0,
+    retentionInvalid: 0,
     failed: 0,
     errors: [] as string[],
   };
@@ -95,11 +166,10 @@ export const GET = createCronHandler(async () => {
       );
       continue;
     }
-    if (expired.length === 0) continue;
-
     // Legal hold: the item's own flag, plus its parent matter's hold — a held
     // case must protect everything in it (mirrors the DELETE guard in
-    // api/pages/[...slug]). Case lookups are cached per brain.
+    // api/pages/[...slug]). Case lookups are cached per brain; the retention
+    // phase below uses the same check.
     const caseHold = new Map<string, boolean>();
     const caseIsHeld = async (caseSlug: string): Promise<boolean> => {
       const cached = caseHold.get(caseSlug);
@@ -121,6 +191,80 @@ export const GET = createCronHandler(async () => {
       caseHold.set(caseSlug, held);
       return held;
     };
+
+    // Per-Item-Retention: aktive Dokumente/Notizen mit abgelaufener eigenen
+    // Frist in den Papierkorb verschieben. Die Seiten bekommen ein frisches
+    // tombstoned_at — gelöscht werden sie erst nach Ablauf der
+    // Papierkorb-Frist durch den Purge unten (gleiche zweistufige Semantik
+    // wie ein manuelles Löschen).
+    try {
+      for (const type of RETENTION_ITEM_TYPES) {
+        const pages = await listEnginePages(headers, type, 5000, { strict: true });
+        for (const page of pages) {
+          if (isTombstoned(page)) continue;
+          const fm = page.frontmatter ?? {};
+          const expiry = retentionExpiredAt(page, now);
+          if (!expiry) continue;
+          if ("invalid" in expiry) {
+            report.retentionInvalid++;
+            report.errors.push(`${page.slug}: ${expiry.invalid}`);
+            continue;
+          }
+          try {
+            const held =
+              fm.legal_hold === true ||
+              (fm.case_slug ? await caseIsHeld(String(fm.case_slug)) : false);
+            if (held) {
+              report.skippedHold++;
+              continue;
+            }
+            const res = await enginePatchPage(
+              headers,
+              {
+                slug: page.slug,
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstoned_at: now.toISOString(),
+                  tombstoned_by: "cron:retention",
+                  tombstone_reason: "retention_expired",
+                },
+              },
+              { timeoutMs: 15_000 }
+            );
+            // 404 = bereits weg (Race mit manuellem Löschen) — nichts zu tun.
+            if (!res.ok && res.status !== 404) {
+              throw new Error(`retention tombstone returned HTTP ${res.status}`);
+            }
+            if (res.status === 404) continue;
+            report.retentionTombstoned++;
+            void logAudit("data.delete", "page", {
+              entityId: page.slug,
+              brainId,
+              details: {
+                title: page.title,
+                type: page.type ?? String(fm.type ?? type),
+                method: "retention_tombstone",
+                expiresAt: expiry.expiresAt.toISOString(),
+                reason: "retention_expired",
+                brainId,
+              },
+            });
+          } catch (err) {
+            report.failed++;
+            report.errors.push(
+              `${page.slug}: retention tombstone — ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+      }
+    } catch (err) {
+      report.failed++;
+      report.errors.push(
+        `brain ${brainId}: retention scan failed — ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
+    if (expired.length === 0) continue;
 
     for (const item of expired) {
       try {
