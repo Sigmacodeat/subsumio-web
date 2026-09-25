@@ -11,7 +11,13 @@ const user = { id: "user-1", email: "test@example.com", role: "lawyer" };
 
 vi.mock("@/lib/api-handler", () => ({
   createHandler: (
-    opts: { body?: { safeParse: (d: unknown) => { success: boolean; data?: unknown } } },
+    opts: {
+      body?: { safeParse: (d: unknown) => { success: boolean; data?: unknown } };
+      audit?: (
+        ctx: unknown,
+        body: unknown
+      ) => { action: string; entityType: string; entityId?: string; details?: unknown };
+    },
     handler: (ctx: unknown, body: unknown) => Promise<Response>
   ) => {
     return async (req: Request) => {
@@ -25,7 +31,17 @@ vi.mock("@/lib/api-handler", () => ({
         const parsed = opts.body.safeParse(raw);
         if (!parsed.success) return Response.json({ error: "bad_request" }, { status: 400 });
       }
-      return handler(ctx, raw);
+      const res = await handler(ctx, raw);
+      // Like the real createHandler: the audit spec is written once on success.
+      if (res.ok && opts.audit) {
+        const spec = opts.audit(ctx, raw);
+        const { logAudit } = await import("@/lib/audit");
+        await logAudit(spec.action as never, spec.entityType, {
+          entityId: spec.entityId,
+          details: spec.details as Record<string, unknown>,
+        });
+      }
+      return res;
     };
   },
   apiError: (code: string, message: string, status: number) =>
@@ -96,10 +112,15 @@ describe("POST /api/cases/legal-hold", () => {
       "case.legal_hold_toggled",
       expect.objectContaining({ legalHold: true })
     );
+    // Exactly one audit entry per toggle (no second, hand-written one).
+    expect(logAudit).toHaveBeenCalledTimes(1);
     expect(logAudit).toHaveBeenCalledWith(
       "case.update",
       "legal_case",
-      expect.objectContaining({ entityId: "legal/cases/test" })
+      expect.objectContaining({
+        entityId: "legal/cases/test",
+        details: expect.objectContaining({ action: "legal_hold_activated" }),
+      })
     );
   });
 

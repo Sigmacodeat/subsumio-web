@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
-import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { readCurrentPage } from "@/lib/page-write-guards";
 
@@ -27,8 +26,9 @@ export const POST = createHandler(
       entityType: "legal_case",
       entityId: body.case_slug,
       details: {
+        action: body.legal_hold ? "legal_hold_activated" : "legal_hold_released",
         legal_hold: body.legal_hold,
-        reason: body.reason,
+        reason: body.reason?.trim() || undefined,
         by: ctx.user.email,
       },
     }),
@@ -92,17 +92,7 @@ export const POST = createHandler(
       reason: reason || undefined,
     });
 
-    // 3. Log audit
-    await logAudit("case.update", "legal_case", {
-      entityId: body.case_slug,
-      brainId: ctx.brainId,
-      userId: ctx.user.id,
-      userEmail: ctx.user.email,
-      details: {
-        action: body.legal_hold ? "legal_hold_activated" : "legal_hold_released",
-        reason: reason || undefined,
-      },
-    });
+    // 3. Audit: one entry, written by createHandler from the `audit:` spec.
 
     return apiSuccess({
       ok: true,

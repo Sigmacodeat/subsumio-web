@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 const mockFetch = vi.fn();
 const mockListEnginePages = vi.fn();
 const mockEnginePatchPage = vi.fn();
+const currentRole = vi.hoisted(() => ({ value: "lawyer" }));
 
 global.fetch = mockFetch as unknown as typeof fetch;
 
@@ -27,12 +28,12 @@ vi.mock("@/lib/api-handler", () => ({
     },
     handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
   ) => {
-    const ctx = {
-      headers: { "x-subsumio-source": "brain-at" },
-      brainId: "brain-at",
-      user: { id: "u1", name: "Anwalt", email: "anwalt@example.com" },
-    };
     return async (req: Request) => {
+      const ctx = {
+        headers: { "x-subsumio-source": "brain-at" },
+        brainId: "brain-at",
+        user: { id: "u1", name: "Anwalt", email: "anwalt@example.com", role: currentRole.value },
+      };
       const url = new URL(req.url);
       const query = Object.fromEntries(url.searchParams.entries());
       if (req.method === "GET") {
@@ -136,9 +137,26 @@ describe("GET /api/trash", () => {
     expect(mockListEnginePages).toHaveBeenCalledWith(
       { "x-subsumio-source": "brain-at" },
       "invoice",
-      5000,
-      { includeTombstoned: true }
+      50_000,
+      { includeTombstoned: true, strict: true }
     );
+  });
+
+  test("flags a type whose listing reached the scan bound as truncated", async () => {
+    mockListEnginePages.mockResolvedValue(
+      Array.from({ length: 50_000 }, (_, i) => ({
+        slug: `n/${i}`,
+        title: "n",
+        type: "note",
+        frontmatter: {},
+      }))
+    );
+    const res = await GET(
+      new Request("http://localhost/api/trash?type=note") as unknown as NextRequest
+    );
+    const body = await res.json();
+    expect(body.data.truncated).toBe(true);
+    expect(body.data.truncated_types).toEqual(["note"]);
   });
 
   test("returns 503 when the engine listing fails", async () => {
@@ -149,7 +167,40 @@ describe("GET /api/trash", () => {
 });
 
 describe("POST /api/trash (restore)", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    currentRole.value = "lawyer";
+  });
+
+  test("an assistant may not restore (same rule as on the matter page)", async () => {
+    currentRole.value = "assistant";
+    const res = await post({ slug: "legal/cases/old" });
+    expect(res.status).toBe(403);
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockEnginePatchPage).not.toHaveBeenCalled();
+  });
+
+  test("a failed document listing during the cascade is reported, not counted as success", async () => {
+    mockFetch.mockResolvedValueOnce(
+      enginePage({
+        slug: "legal/cases/old",
+        type: "legal_case",
+        frontmatter: { status: "archived" },
+      })
+    );
+    mockEnginePatchPage.mockResolvedValue(new Response("{}", { status: 200 }));
+    mockListEnginePages.mockRejectedValueOnce(new Error("list document failed: HTTP 500"));
+    const res = await post({ slug: "legal/cases/old" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.cascadeFailed).toBeGreaterThan(0);
+    expect(mockListEnginePages).toHaveBeenCalledWith(
+      expect.anything(),
+      "document",
+      expect.any(Number),
+      expect.objectContaining({ strict: true, includeTombstoned: true })
+    );
+  });
 
   test("rejects a missing slug", async () => {
     const res = await post({});

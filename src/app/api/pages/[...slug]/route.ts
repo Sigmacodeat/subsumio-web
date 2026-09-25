@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
-import { logAudit } from "@/lib/audit";
+import { getAuditExtra, setAuditExtra, slugFromRoutePath } from "@/lib/audit-context";
+import { archiveCaseDocuments, restoreCaseDocuments } from "@/lib/case-cascade";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   GUARD_READ_FAILED,
@@ -77,13 +78,13 @@ export const PATCH = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: patchSchema,
-    audit: (ctx, body) => {
-      const slug = (ctx as unknown as { __slug?: string }).__slug;
+    audit: (ctx, body, _query, req) => {
+      const extra = getAuditExtra(ctx);
       return {
-        action: "case.update" as const,
+        action: extra?.action ?? ("case.update" as const),
         entityType: "page",
-        entityId: slug,
-        details: { fields: Object.keys(body) },
+        entityId: extra?.entityId ?? slugFromRoutePath(req, "/api/pages/"),
+        details: { fields: Object.keys(body), ...extra?.details },
       };
     },
   },
@@ -282,106 +283,17 @@ export const PATCH = createHandler(
 
       const patchedFm = (patchBody.frontmatter ?? {}) as Record<string, unknown>;
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
-        try {
-          const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
-          let offset = 0;
-          const pageSize = 500;
-          let fetched: typeof allDocs = [];
-          do {
-            const docsRes = await fetch(
-              `${ENGINE_URL}/api/pages?type=document&limit=${pageSize}&offset=${offset}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(15_000),
-              }
-            );
-            if (!docsRes.ok) {
-              restoreCascade = {
-                attempted: true,
-                matched: 0,
-                succeeded: 0,
-                failed: [{ slug: "*", status: docsRes.status }],
-              };
-              break;
-            }
-            const raw = await docsRes.json();
-            fetched = Array.isArray(raw)
-              ? raw
-              : Array.isArray(raw?.pages)
-                ? raw.pages
-                : Array.isArray(raw?.items)
-                  ? raw.items
-                  : [];
-            allDocs.push(...fetched);
-            offset += pageSize;
-          } while (fetched.length === pageSize);
-
-          if (!restoreCascade.attempted) {
-            const caseSlugForms = new Set([path, decodeURIComponent(path)]);
-            const tombstoned = allDocs.filter(
-              (d) =>
-                caseSlugForms.has((d.frontmatter ?? {}).case_slug as string) &&
-                (d.frontmatter ?? {}).status === "tombstoned"
-            );
-            const UNTOMBSTONE_BATCH = 5;
-            const untombstones: Array<{
-              slug: string;
-              ok: boolean;
-              status?: number;
-              error?: string;
-            }> = [];
-            for (let i = 0; i < tombstoned.length; i += UNTOMBSTONE_BATCH) {
-              const batch = tombstoned.slice(i, i + UNTOMBSTONE_BATCH);
-              const batchResults = await Promise.all(
-                batch.map(async (doc) => {
-                  try {
-                    const untombstoneRes = await enginePatchPage(
-                      ctx.headers,
-                      {
-                        slug: doc.slug,
-                        frontmatter: {
-                          status: "active",
-                          tombstoned_at: null,
-                          tombstone_reason: null,
-                        },
-                      },
-                      { timeoutMs: 15_000 }
-                    );
-                    return untombstoneRes.ok
-                      ? { slug: doc.slug, ok: true as const }
-                      : { slug: doc.slug, ok: false as const, status: untombstoneRes.status };
-                  } catch (err) {
-                    return {
-                      slug: doc.slug,
-                      ok: false as const,
-                      error: err instanceof Error ? err.message : String(err),
-                    };
-                  }
-                })
-              );
-              untombstones.push(...batchResults);
-            }
-            const failed = untombstones
-              .filter((r) => !r.ok)
-              .map(({ slug, status, error }) => ({ slug, status, error }));
-            restoreCascade = {
-              attempted: true,
-              matched: tombstoned.length,
-              succeeded: untombstones.length - failed.length,
-              failed,
-            };
-          }
-        } catch (err) {
-          log.error(
-            "[pages/...slug] restore cascade failed:",
-            err instanceof Error ? err.message : String(err)
-          );
-          restoreCascade = {
-            attempted: true,
-            matched: 0,
-            succeeded: 0,
-            failed: [{ slug: "*", error: err instanceof Error ? err.message : String(err) }],
-          };
+        // Same semantics as the Papierkorb: only documents the archive
+        // cascade removed come back; deliberately deleted ones stay deleted.
+        restoreCascade = await restoreCaseDocuments(
+          ctx.headers,
+          new Set([path, decodeURIComponent(path), rawSlug]),
+          ctx.user.email
+        );
+        if (restoreCascade.failed.length > 0) {
+          log.error("[pages/...slug] restore cascade incomplete", {
+            failed: restoreCascade.failed.length,
+          });
         }
       }
 
@@ -411,12 +323,16 @@ export const PATCH = createHandler(
 
       // Audit log + SSE for restore operations
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
-        void logAudit("case.restore", "page", {
-          entityId: path,
+        setAuditExtra(ctx, {
+          action: "case.restore",
           details: {
-            userId: ctx.user.id,
-            userEmail: ctx.user.email,
             restoredAt: patchedFm.restored_at,
+            ...(restoreCascade.attempted
+              ? {
+                  cascaded: restoreCascade.succeeded,
+                  cascadeFailed: restoreCascade.failed.length,
+                }
+              : {}),
           },
         });
         broadcastSseEvent(ctx.brainId, "case.restored", {
@@ -447,13 +363,13 @@ export const DELETE = createHandler(
   {
     action: "brain.delete",
     rateTier: "standard",
-    audit: (ctx) => {
-      const slug = (ctx as unknown as { __slug?: string }).__slug;
+    audit: (ctx, _body, _query, req) => {
+      const extra = getAuditExtra(ctx);
       return {
-        action: "case.delete" as const,
+        action: extra?.action ?? ("case.delete" as const),
         entityType: "page",
-        entityId: slug,
-        details: { method: "soft_delete" },
+        entityId: extra?.entityId ?? slugFromRoutePath(req, "/api/pages/"),
+        details: { method: "soft_delete", ...extra?.details },
       };
     },
   },
@@ -586,109 +502,13 @@ export const DELETE = createHandler(
         if (!archiveRes.ok)
           throw new Error(`Archive merge-update failed: HTTP ${archiveRes.status}`);
 
-        // 3. Tombstone all documents whose frontmatter case_slug matches this case.
-        //    NOTE: the engine does NOT filter by case_slug query param — it returns
-        //    all pages of the given type. We must filter client-side (same pattern
-        //    as fetchCaseDocumentsBySlug in matter-context.ts). The response may be
-        //    a bare array, { pages }, or { items } depending on engine version.
-        try {
-          const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
-          let offset = 0;
-          const pageSize = 500;
-          let fetched: typeof allDocs = [];
-          do {
-            const docsRes = await fetch(
-              `${ENGINE_URL}/api/pages?type=document&limit=${pageSize}&offset=${offset}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(15_000),
-              }
-            );
-            if (!docsRes.ok) {
-              cascade = {
-                attempted: true,
-                matched: 0,
-                succeeded: 0,
-                failed: [{ slug: "*", status: docsRes.status }],
-              };
-              break;
-            }
-            const raw = await docsRes.json();
-            fetched = Array.isArray(raw)
-              ? raw
-              : Array.isArray(raw?.pages)
-                ? raw.pages
-                : Array.isArray(raw?.items)
-                  ? raw.items
-                  : [];
-            allDocs.push(...fetched);
-            offset += pageSize;
-          } while (fetched.length === pageSize);
-
-          if (!cascade.attempted) {
-            const matched = allDocs.filter((d) =>
-              caseSlugForms.has((d.frontmatter ?? {}).case_slug as string)
-            );
-            const TOMBSTONE_BATCH = 5;
-            const tombstones: Array<{
-              slug: string;
-              ok: boolean;
-              status?: number;
-              error?: string;
-            }> = [];
-            for (let i = 0; i < matched.length; i += TOMBSTONE_BATCH) {
-              const batch = matched.slice(i, i + TOMBSTONE_BATCH);
-              const batchResults = await Promise.all(
-                batch.map(async (doc) => {
-                  try {
-                    const tombstoneRes = await enginePatchPage(
-                      ctx.headers,
-                      {
-                        slug: doc.slug,
-                        frontmatter: {
-                          status: "tombstoned",
-                          tombstoned_at: new Date().toISOString(),
-                          tombstoned_by: ctx.user.email,
-                          tombstone_reason: "case_archived",
-                        },
-                      },
-                      { timeoutMs: 15_000 }
-                    );
-                    return tombstoneRes.ok
-                      ? { slug: doc.slug, ok: true as const }
-                      : { slug: doc.slug, ok: false as const, status: tombstoneRes.status };
-                  } catch (err) {
-                    return {
-                      slug: doc.slug,
-                      ok: false as const,
-                      error: err instanceof Error ? err.message : String(err),
-                    };
-                  }
-                })
-              );
-              tombstones.push(...batchResults);
-            }
-            const failed = tombstones
-              .filter((result) => !result.ok)
-              .map(({ slug, status, error }) => ({ slug, status, error }));
-            cascade = {
-              attempted: true,
-              matched: matched.length,
-              succeeded: tombstones.length - failed.length,
-              failed,
-            };
-          }
-        } catch (err) {
-          log.error(
-            "[pages/...slug] cascade tombstone failed:",
-            err instanceof Error ? err.message : String(err)
-          );
-          cascade = {
-            attempted: true,
-            matched: 0,
-            succeeded: 0,
-            failed: [{ slug: "*", error: err instanceof Error ? err.message : String(err) }],
-          };
+        // 3. Tombstone the matter's active documents (paged through the whole
+        //    document type — the engine caps a list at 100 rows).
+        cascade = await archiveCaseDocuments(ctx.headers, caseSlugForms, ctx.user.email);
+        if (cascade.failed.length > 0) {
+          log.error("[pages/...slug] archive cascade incomplete", {
+            failed: cascade.failed.length,
+          });
         }
       } else {
         // Non-case pages: a page under its own Legal Hold, or one that belongs
@@ -744,11 +564,15 @@ export const DELETE = createHandler(
           },
         ]);
       }
-      void logAudit(pageType === "legal_case" ? "case.delete" : "document.delete", "page", {
-        entityId: path,
+      // One audit entry (written by createHandler on success): the real
+      // action per page type; both are soft deletes (archive / tombstone).
+      setAuditExtra(ctx, {
+        action: pageType === "legal_case" ? "case.delete" : "document.delete",
         details: {
-          userId: ctx.user.id,
-          method: pageType === "legal_case" ? "soft_delete" : "hard_delete",
+          method: "soft_delete",
+          ...(cascade.attempted
+            ? { cascaded: cascade.succeeded, cascadeFailed: cascade.failed.length }
+            : {}),
         },
       });
       broadcastSseEvent(ctx.brainId, "case.deleted", {
