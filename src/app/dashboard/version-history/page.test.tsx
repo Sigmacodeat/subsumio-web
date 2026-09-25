@@ -40,7 +40,9 @@ describe("Versionsverlauf", () => {
     expect(
       await screen.findByText(/Die Versionen konnten nicht geladen werden/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Das Änderungsprotokoll konnte nicht geladen werden/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Das Änderungsprotokoll konnte nicht geladen werden/)
+    ).toBeInTheDocument();
     const auditCall = fetchMock.mock.calls.find(([u]) => String(u).startsWith("/api/audit"));
     expect(String(auditCall![0])).toContain("entityId=docs%2Fbrief");
   });

@@ -24,7 +24,9 @@ vi.mock("@/lib/api", () => ({
 
 function renderPage() {
   return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
       <CaseAssignmentPage />
     </QueryClientProvider>
   );

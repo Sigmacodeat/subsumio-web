@@ -14,7 +14,9 @@ describe("Aktensuche", () => {
   it("a failed load shows an error with retry, not 'Keine Akten gefunden'", async () => {
     listAllPages.mockRejectedValue(new Error("down"));
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
         <CaseSearchPage />
       </QueryClientProvider>
     );

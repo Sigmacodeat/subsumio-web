@@ -78,7 +78,12 @@ describe("PATCH /api/legal/review-sets/[slug]", () => {
   });
 
   test("documents can be added to a set and start unreviewed", async () => {
-    await patch({ addDocuments: [{ slug: "d3", title: "D3" }, { slug: "d1", title: "dup" }] });
+    await patch({
+      addDocuments: [
+        { slug: "d3", title: "D3" },
+        { slug: "d1", title: "dup" },
+      ],
+    });
     expect(docs().map((d) => d.slug)).toEqual(["d1", "d2", "d3"]);
     expect(docs().find((d) => d.slug === "d3")?.decision).toBeUndefined();
     expect((store.frontmatter.statistics as { unreviewed: number }).unreviewed).toBe(3);

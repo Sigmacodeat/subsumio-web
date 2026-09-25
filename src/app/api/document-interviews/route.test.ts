@@ -64,7 +64,9 @@ describe("/api/document-interviews", () => {
     });
     expect(res.status).toBe(200);
     const list = await (
-      await GET(new Request("http://x/api/document-interviews?template_slug=templates/scheidung") as never)
+      await GET(
+        new Request("http://x/api/document-interviews?template_slug=templates/scheidung") as never
+      )
     ).json();
     expect(list.data.items).toHaveLength(1);
     expect(list.data.items[0].title).toBe("Scheidung");

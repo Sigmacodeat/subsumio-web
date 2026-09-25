@@ -8,7 +8,11 @@ vi.mock("@/lib/api", () => ({
 import { listVaultPages, VAULT_TYPE_MAX } from "./vault-docs";
 
 function pages(type: string, n: number) {
-  return Array.from({ length: n }, (_, i) => ({ slug: `${type}/${i}`, title: `${type} ${i}`, type }));
+  return Array.from({ length: n }, (_, i) => ({
+    slug: `${type}/${i}`,
+    title: `${type} ${i}`,
+    type,
+  }));
 }
 
 describe("listVaultPages", () => {

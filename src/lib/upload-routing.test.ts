@@ -68,8 +68,6 @@ describe("uploadTargetCases", () => {
       ...Array.from({ length: 149 }, (_, i) => ({ slug: `legal/cases/n${i}`, title: `Neu ${i}` })),
       { slug: "legal/cases/alt", title: "Alt", aktenzeichen: "7 C 12/19" },
     ];
-    expect(inferUploadRouting("7C12-19_urteil.pdf", cases).matchedCaseSlug).toBe(
-      "legal/cases/alt"
-    );
+    expect(inferUploadRouting("7C12-19_urteil.pdf", cases).matchedCaseSlug).toBe("legal/cases/alt");
   });
 });

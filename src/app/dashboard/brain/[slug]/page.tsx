@@ -408,7 +408,10 @@ export default function BrainDetailPage() {
 
           {canPreview && showPreview && !editMode && (
             <Suspense fallback={null}>
-              <PdfDocumentViewer url={withQueryParam(fileHref, "inline", "1")} title={page?.title} />
+              <PdfDocumentViewer
+                url={withQueryParam(fileHref, "inline", "1")}
+                title={page?.title}
+              />
             </Suspense>
           )}
 

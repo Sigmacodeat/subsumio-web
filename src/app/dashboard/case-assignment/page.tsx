@@ -229,7 +229,9 @@ export default function CaseAssignmentPage() {
         </div>
       ) : assignmentsQuery.isError || teamQuery.isError ? (
         <EmptyState
-          title={isEn ? "Assignments could not be loaded" : "Zuweisungen konnten nicht geladen werden"}
+          title={
+            isEn ? "Assignments could not be loaded" : "Zuweisungen konnten nicht geladen werden"
+          }
           description={
             isEn
               ? "This is a loading error, not an empty list."
@@ -388,7 +390,9 @@ export default function CaseAssignmentPage() {
                               }
                               value={currentMember?.email ?? ""}
                               onChange={(e) => {
-                                const selected = teamMembers.find((m) => m.email === e.target.value);
+                                const selected = teamMembers.find(
+                                  (m) => m.email === e.target.value
+                                );
                                 if (selected) {
                                   void assignLawyer(
                                     c.caseSlug,

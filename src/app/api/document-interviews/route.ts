@@ -12,26 +12,26 @@ const createSchema = z.object({
   description: z.string().max(2000).default(""),
   questions: z
     .array(
-    z.object({
-      id: z.string().min(1).max(100),
-      type: z.enum([
-        "text",
-        "textarea",
-        "date",
-        "number",
-        "select",
-        "multiselect",
-        "boolean",
-        "party",
-      ]),
-      label: z.string().min(1).max(500),
-      help_text: z.string().max(1000).optional(),
-      required: z.boolean(),
-      placeholder: z.string().max(300).optional(),
-      options: z.array(z.string()).optional(),
-      default_value: z.union([z.string(), z.number(), z.boolean()]).optional(),
-      variable: z.string().min(1).max(100),
-    })
+      z.object({
+        id: z.string().min(1).max(100),
+        type: z.enum([
+          "text",
+          "textarea",
+          "date",
+          "number",
+          "select",
+          "multiselect",
+          "boolean",
+          "party",
+        ]),
+        label: z.string().min(1).max(500),
+        help_text: z.string().max(1000).optional(),
+        required: z.boolean(),
+        placeholder: z.string().max(300).optional(),
+        options: z.array(z.string()).optional(),
+        default_value: z.union([z.string(), z.number(), z.boolean()]).optional(),
+        variable: z.string().min(1).max(100),
+      })
     )
     .max(200)
     .default([]),
