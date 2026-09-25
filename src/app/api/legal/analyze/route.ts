@@ -2,7 +2,6 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
-import { env } from "@/lib/env";
 import { groundCitations } from "@/lib/legal-grounding";
 import { encodeSlugPath } from "@/lib/utils";
 import type { RawCitation } from "@/lib/types";
@@ -13,10 +12,10 @@ import {
   safeParseJson,
   ENGINE_FETCH_TIMEOUT,
   MAX_ANALYSIS_CHARS,
-  CONTRADICTIONS_TIMEOUT,
 } from "@/lib/legal/analysis-utils";
 import { findRelevantPrecedents } from "@/lib/legal/precedent-search";
 import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
+import { checkCaseContradictions } from "@/lib/legal/contradiction-check";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/legal/analyze");
@@ -91,7 +90,6 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     const isInternal = ctx.brainId === "internal";
     let engineHeaders: Record<string, string> = ctx.headers;
-    let targetBrainId = ctx.brainId;
 
     const documentSlug = typeof body.document_slug === "string" ? body.document_slug.trim() : "";
     const jurisdiction =
@@ -100,7 +98,6 @@ export const POST = createHandler(
     if (isInternal) {
       const brainId = typeof body.brain_id === "string" ? body.brain_id : "";
       if (brainId) {
-        targetBrainId = brainId;
         engineHeaders = { ...engineHeaders, "x-subsumio-source": brainId };
       }
     }
@@ -298,23 +295,14 @@ export const POST = createHandler(
         documentSlug
       );
 
-      void (async () => {
-        try {
-          const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
-          if (!internalSecret) return;
-          await fetch(`/api/legal/contradictions`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-internal-secret": internalSecret,
-            },
-            body: JSON.stringify({ case_slug: documentCaseSlug, brain_id: targetBrainId }),
-            signal: AbortSignal.timeout(CONTRADICTIONS_TIMEOUT),
-          });
-        } catch {
-          // Best-effort — contradictions check failure must not block analysis response
-        }
-      })();
+      // Called in-process with the same engine headers (same brain, same
+      // access) — no HTTP round trip back into this app.
+      void checkCaseContradictions(engineHeaders, documentCaseSlug).catch((err) => {
+        // Best-effort — contradictions check failure must not block analysis response
+        log.warn("contradictions check failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
     }
 
     if (warnings.length > 0) {
