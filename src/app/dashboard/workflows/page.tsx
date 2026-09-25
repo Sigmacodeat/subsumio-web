@@ -39,6 +39,7 @@ import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { AutomationsPanel } from "@/components/legal/AutomationsPanel";
 import { usePages, useCreatePage } from "@/lib/queries/brain";
+import { useSubmitSupervisor } from "@/lib/queries/agents";
 import { useMe } from "@/lib/queries/auth";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
 import { cn, encodeSlugPath, formatDateTime } from "@/lib/utils";
@@ -147,6 +148,7 @@ export default function WorkflowsPage() {
   const pagesQuery = usePages({ type: "workflow", limit: 200 });
   const meQuery = useMe();
   const createMutation = useCreatePage();
+  const submitAgent = useSubmitSupervisor();
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -203,11 +205,20 @@ export default function WorkflowsPage() {
     try {
       const slug = buildWorkflowSlug(templateId);
       const prompt = customPrompt.trim() || template.prompt;
+      const boundCase = caseSlug.trim() || undefined;
+      // The workflow is carried out by a real agent run (billed like any
+      // agent run). Before, only a page marked "running" was written and
+      // nothing ever executed it.
+      const jobId = await submitAgent.mutateAsync({
+        prompt: boundCase ? `${prompt}\n\nAkte: ${boundCase}` : prompt,
+      });
+      if (typeof jobId !== "number") throw new Error("agent_not_started");
       const fm = buildWorkflowFrontmatter({
         template_id: templateId,
         prompt,
         started_by: user,
-        case_slug: caseSlug.trim() || undefined,
+        case_slug: boundCase,
+        agent_job_id: jobId,
       });
 
       await createMutation.mutateAsync({
@@ -633,6 +644,19 @@ function WorkflowCard({
                 >
                   Zur Akte
                 </Link>
+              </>
+            )}
+            {typeof fm.agent_job_id === "number" ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <Link href="/dashboard/agents" className="brand-text hover:underline">
+                  Fortschritt im Auftrag #{fm.agent_job_id}
+                </Link>
+              </>
+            ) : (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>Ohne verknüpften Auftrag angelegt — wird nicht automatisch ausgeführt</span>
               </>
             )}
           </div>

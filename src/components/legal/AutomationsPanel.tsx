@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 import {
   CASE_STATUS_LABELS,
   CASE_STATUS_VALUES,
@@ -189,7 +190,8 @@ export function AutomationsPanel() {
   ): Promise<boolean> {
     setBusy(true);
     try {
-      const res = await fetch("/api/automations", {
+      // Writes carry the CSRF token (raw fetch was refused by the middleware).
+      const res = await csrfFetch("/api/automations", {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
