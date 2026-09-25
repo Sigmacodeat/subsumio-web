@@ -5,6 +5,7 @@ import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brai
 import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
 import type { ProactiveSendResult } from "@/lib/whatsapp/proactive-send";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
+import type { SafeCaseCreateInput, SafeCaseCreateResult } from "@/lib/safe-case-create";
 
 export type ExecutionStatus = "not_started" | "running" | "executed" | "failed" | "skipped";
 
@@ -54,6 +55,13 @@ export interface ApprovalExecutionDeps {
     now?: Date;
   }): Promise<ProactiveSendResult>;
   sendWhatsAppText?(to: string, message: string): Promise<unknown>;
+  /**
+   * Akte sicher anlegen (src/lib/safe-case-create.ts): server-side slug,
+   * existence check, conflict check, checked engine answer. Without it a
+   * `case_create` action is not executed — a plain createPage would replace
+   * an existing matter and skip the conflict check.
+   */
+  createCase?(input: SafeCaseCreateInput): Promise<SafeCaseCreateResult>;
   now?: () => Date;
 }
 
@@ -204,27 +212,40 @@ async function executeCaseCreate(
   fm: Partial<AgentActionFrontmatter>,
   at: Date
 ): Promise<ApprovalExecutionResult["effects"]> {
+  if (!deps.createCase) throw new Error("case_create_unavailable");
   const payload = payloadOf(fm);
   const title =
     asString(payload.title) ?? asString(payload.case_title) ?? fm.summary ?? "Neue Akte";
   const clientName = asString(payload.client_name);
-  const slug = asString(payload.case_slug) ?? `legal/cases/${safeSlugPart(title)}-${at.getTime()}`;
-  await deps.createPage({
-    slug,
+  const opponentName = asString(payload.opponent_name);
+  const requestedSlug = asString(payload.case_slug);
+  const result = await deps.createCase({
     title,
-    type: "legal_case",
     content: asString(payload.content) ?? fm.summary ?? title,
     frontmatter: {
       type: "legal_case",
       status: asString(payload.status) ?? "open",
       client_name: clientName,
+      ...(opponentName ? { opponent_name: opponentName } : {}),
       source_event_slug: fm.source_event_slug,
       created_via: "approval_execution",
       created_at: at.toISOString(),
       updated_at: at.toISOString(),
     },
+    slugHint: title,
+    ...(requestedSlug ? { requestedSlug } : {}),
+    now: at,
   });
-  return [{ kind: "case_created", slug }];
+  switch (result.status) {
+    case "created":
+      return [{ kind: "case_created", slug: result.slug }];
+    case "exists":
+      throw new Error(`case_slug_exists:${result.slug}`);
+    case "conflict":
+      throw new Error("conflict_detected");
+    case "error":
+      throw new Error(result.code);
+  }
 }
 
 async function executeCaseClose(

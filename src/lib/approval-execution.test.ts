@@ -33,6 +33,10 @@ function depsFor(page: BrainPage): ApprovalExecutionDeps & {
     updated,
     now: () => new Date("2026-06-20T10:00:00.000Z"),
     getPage: vi.fn(async () => page),
+    createCase: vi.fn(async () => ({
+      status: "created" as const,
+      slug: "legal/cases/muster-beispiel-abcd1234",
+    })),
     createPage: vi.fn(async (p) => {
       created.push(p);
       return { slug: p.slug };
@@ -81,10 +85,15 @@ describe("executeApprovedAction", () => {
 
     expect(result.status).toBe("executed");
     expect(result.effects[0].kind).toBe("case_created");
-    expect(deps.created[0]).toMatchObject({
-      type: "legal_case",
-      title: "Muster ./. Beispiel",
-    });
+    // Goes through the safe create path, never a plain createPage.
+    expect(deps.createPage).not.toHaveBeenCalled();
+    expect(deps.createCase).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Muster ./. Beispiel",
+        frontmatter: expect.objectContaining({ type: "legal_case", client_name: "Max" }),
+      })
+    );
+    expect(result.effects[0].slug).toBe("legal/cases/muster-beispiel-abcd1234");
     expect(deps.updated.at(-1)).toMatchObject({
       slug: "agent-action/1",
       frontmatter: {
@@ -264,6 +273,57 @@ describe("executeApprovedAction", () => {
         executedBy: "lawyer@test",
       })
     ).rejects.toThrow("action_not_approved");
+    expect(deps.createPage).not.toHaveBeenCalled();
+  });
+  it("does not overwrite an existing matter named in case_slug (OPS-14)", async () => {
+    const deps = {
+      ...depsFor(
+        actionPage({
+          action_type: "case_create",
+          payload: { title: "Neu", case_slug: "legal/cases/bestehend" },
+        })
+      ),
+      createCase: vi.fn(async () => ({
+        status: "exists" as const,
+        slug: "legal/cases/bestehend",
+      })),
+    };
+    await expect(
+      executeApprovedAction(deps, { actionSlug: "agent-action/1", executedBy: "lawyer@test" })
+    ).rejects.toThrow("case_slug_exists");
+    expect(deps.createCase).toHaveBeenCalledWith(
+      expect.objectContaining({ requestedSlug: "legal/cases/bestehend" })
+    );
+    expect(deps.createPage).not.toHaveBeenCalled();
+    expect(deps.updated.at(-1)).toMatchObject({
+      frontmatter: { execution_status: "failed" },
+    });
+  });
+
+  it("fails with conflict_detected when the conflict check has a hit (OPS-14)", async () => {
+    const deps = {
+      ...depsFor(
+        actionPage({ action_type: "case_create", payload: { title: "Neu", client_name: "X" } })
+      ),
+      createCase: vi.fn(async () => ({
+        status: "conflict" as const,
+        matches: [{ name: "X", slug: "contacts/x", type: "legal_contact" }],
+      })),
+    };
+    await expect(
+      executeApprovedAction(deps, { actionSlug: "agent-action/1", executedBy: "lawyer@test" })
+    ).rejects.toThrow("conflict_detected");
+    expect(deps.createPage).not.toHaveBeenCalled();
+  });
+
+  it("refuses case_create when no safe create path is attached", async () => {
+    const deps = {
+      ...depsFor(actionPage({ action_type: "case_create", payload: { title: "Neu" } })),
+      createCase: undefined,
+    };
+    await expect(
+      executeApprovedAction(deps, { actionSlug: "agent-action/1", executedBy: "lawyer@test" })
+    ).rejects.toThrow("case_create_unavailable");
     expect(deps.createPage).not.toHaveBeenCalled();
   });
 });

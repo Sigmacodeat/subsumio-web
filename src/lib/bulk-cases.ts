@@ -17,13 +17,33 @@ export interface BulkCaseRow {
   mandate_id: string;
 }
 
+/** Most rows one import request handles (each row costs several engine calls). */
+export const BULK_IMPORT_MAX_ROWS = 500;
+
+/**
+ * Outcome of one CSV row: created, skipped because the matter already exists
+ * (in the firm or earlier in the same CSV), stopped by the conflict check, or
+ * failed (invalid row, check unavailable, engine refused the write).
+ */
+export type BulkRowStatus = "created" | "exists" | "conflict" | "error";
+
+export interface BulkRowResult {
+  line: number;
+  case_number: string;
+  client_name?: string;
+  status: BulkRowStatus;
+  slug?: string;
+  error?: string;
+  conflicts?: string[];
+}
+
 export interface BulkImportResult {
   total: number;
   created: number;
-  skipped: number;
+  exists: number;
+  conflicts: number;
   errors: number;
-  case_slugs: string[];
-  errors_detail: Array<{ row: number; error: string }>;
+  results: BulkRowResult[];
 }
 
 /**
@@ -31,7 +51,7 @@ export interface BulkImportResult {
  * Handles quoted fields containing commas, quotes (escaped as ""),
  * and newlines (though we split by line first for simplicity).
  */
-function parseCsvLine(line: string): string[] {
+function parseCsvLine(line: string, delimiter: CsvDelimiter = ","): string[] {
   const fields: string[] = [];
   let current = "";
   let inQuotes = false;
@@ -59,7 +79,7 @@ function parseCsvLine(line: string): string[] {
       if (char === '"') {
         inQuotes = true;
         i++;
-      } else if (char === ",") {
+      } else if (char === delimiter) {
         fields.push(current.trim());
         current = "";
         i++;
@@ -74,16 +94,75 @@ function parseCsvLine(line: string): string[] {
   return fields;
 }
 
-export function parseCsvCases(csvText: string): BulkCaseRow[] {
-  const lines = csvText.trim().split("\n");
-  if (lines.length < 2) return [];
+type CsvDelimiter = "," | ";";
 
-  const headers = parseCsvLine(lines[0]!).map((h) => h.toLowerCase());
-  const rows: BulkCaseRow[] = [];
+/**
+ * Austrian/German Excel writes CSV with `;` (the comma is the decimal
+ * separator). The header line decides: whichever separator splits it into
+ * more columns (outside quotes) wins.
+ */
+export function detectCsvDelimiter(headerLine: string): CsvDelimiter {
+  return parseCsvLine(headerLine, ";").length > parseCsvLine(headerLine, ",").length ? ";" : ",";
+}
+
+/**
+ * Streitwert as typed in Austria/Germany or in plain notation:
+ * "10.000,50" → 10000.5, "10.000" → 10000, "1.234.567" → 1234567,
+ * "10000.50" → 10000.5, "10,5" → 10.5, "€ 10.000,-" → 10000.
+ * Returns NaN when the value is not a readable amount.
+ */
+export function parseDisputeValue(raw: string): number {
+  let s = raw
+    .replace(/\s|\u00a0/g, "")
+    .replace(/^(eur|€)/i, "")
+    .replace(/(eur|€)$/i, "")
+    .replace(/,-+$/, "");
+  if (!s) return NaN;
+  if (!/^-?[\d.,']+$/.test(s)) return NaN;
+  s = s.replace(/'/g, "");
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  if (lastComma >= 0 && lastDot >= 0) {
+    // Both present: the later one is the decimal separator.
+    s = lastComma > lastDot ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (lastComma >= 0) {
+    // Only commas: "10,5" is a decimal (AT), "1,234,567" is grouping.
+    if (/^-?\d{1,3}(,\d{3}){2,}$/.test(s)) s = s.replace(/,/g, "");
+    else if (s.indexOf(",") === lastComma) s = s.replace(",", ".");
+    else return NaN;
+  } else if (lastDot >= 0) {
+    // Only dots: "10.000" / "1.234.567" are thousands (AT), "10000.50" decimal.
+    if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+    else if ((s.match(/\./g) ?? []).length > 1) return NaN;
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+export interface ParsedCsvCases {
+  /** Valid rows with their line number in the CSV (header = line 1). */
+  rows: Array<{ line: number; row: BulkCaseRow }>;
+  /** Rows that cannot be imported, with the reason. */
+  invalid: Array<{ line: number; case_number?: string; error: string }>;
+  delimiter: CsvDelimiter;
+}
+
+export function parseCsvCaseRows(csvText: string): ParsedCsvCases {
+  const lines = csvText
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .split(/\r?\n/);
+  const delimiter = detectCsvDelimiter(lines[0] ?? "");
+  const result: ParsedCsvCases = { rows: [], invalid: [], delimiter };
+  if (lines.length < 2) return result;
+
+  const headers = parseCsvLine(lines[0]!, delimiter).map((h) => h.toLowerCase());
 
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCsvLine(lines[i]!);
+    if (!lines[i]!.trim()) continue;
+    const values = parseCsvLine(lines[i]!, delimiter);
     const row: Partial<BulkCaseRow> = {};
+    let disputeRaw = "";
     headers.forEach((header, idx) => {
       const value = values[idx] ?? "";
       switch (header) {
@@ -117,7 +196,8 @@ export function parseCsvCases(csvText: string): BulkCaseRow[] {
           break;
         case "dispute_value":
         case "streitwert":
-          row.dispute_value = value ? parseFloat(value) : undefined;
+          disputeRaw = value;
+          row.dispute_value = value ? parseDisputeValue(value) : undefined;
           break;
         case "mandate_id":
         case "klammer":
@@ -126,23 +206,32 @@ export function parseCsvCases(csvText: string): BulkCaseRow[] {
       }
     });
 
-    if (row.case_number && row.client_name && row.matter && row.mandate_id) {
-      rows.push(row as BulkCaseRow);
+    const line = i + 1;
+    if (!(row.case_number && row.client_name && row.matter && row.mandate_id)) {
+      result.invalid.push({
+        line,
+        case_number: row.case_number || undefined,
+        error: "Pflichtangabe fehlt (Aktenzeichen, Mandant, Gegenstand oder Klammer)",
+      });
+      continue;
     }
+    if (row.dispute_value !== undefined && Number.isNaN(row.dispute_value)) {
+      result.invalid.push({
+        line,
+        case_number: row.case_number,
+        error: `Streitwert „${disputeRaw}“ ist kein lesbarer Betrag`,
+      });
+      continue;
+    }
+    result.rows.push({ line, row: row as BulkCaseRow });
   }
 
-  return rows;
+  return result;
 }
 
-export function caseSlugFromRow(row: BulkCaseRow): string {
-  const safePart = row.case_number
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
-  return `legal/cases/${safePart}`;
+/** Valid rows only — for previews; the import reports invalid rows too. */
+export function parseCsvCases(csvText: string): BulkCaseRow[] {
+  return parseCsvCaseRows(csvText).rows.map((r) => r.row);
 }
 
 export function caseFrontmatterFromRow(row: BulkCaseRow) {
