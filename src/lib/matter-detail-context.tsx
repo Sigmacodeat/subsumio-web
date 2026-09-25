@@ -1497,8 +1497,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         } else {
           addToast({ type: "error", title: t("billingtab.unbill_failed") });
         }
-      } catch {
-        addToast({ type: "error", title: t("billingtab.unbill_failed") });
+      } catch (err) {
+        // e.g. the invoice is already issued — the server says which one.
+        addToast({
+          type: "error",
+          title: t("billingtab.unbill_failed"),
+          description: err instanceof Error ? err.message : undefined,
+        });
       }
     },
     [caseData, queryClient, addToast, t]

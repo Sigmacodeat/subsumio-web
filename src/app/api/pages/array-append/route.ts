@@ -1,14 +1,19 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { GUARD_READ_FAILED, readCurrentPage, rejectionResponse } from "@/lib/page-write-guards";
+import { checkBillingArrayAppend, checkInvoiceArrayWrite } from "@/lib/billing-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/array-append");
 
 /**
- * Thin proxy onto the engine's atomic page_array_append op — a single UPDATE
+ * Proxy onto the engine's atomic page_array_append op — a single UPDATE
  * (jsonb_set + `||`), so concurrent appends to e.g. a matter's time_entries
  * serialize on the row lock instead of read-modify-write clobbering.
+ *
+ * An issued invoice only accepts payment bookkeeping; new time entries /
+ * expenses may not arrive already attached to an invoice.
  */
 const appendSchema = z.object({
   slug: z.string().min(1).max(300),
@@ -29,6 +34,18 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    const billingRejection = checkBillingArrayAppend(body.field, body.items);
+    if (billingRejection) return rejectionResponse(billingRejection);
+
+    // Fail closed: an unreadable page is not written.
+    const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
+    if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+    const invoiceRejection = checkInvoiceArrayWrite(
+      currentRead.kind === "found" ? currentRead.page : null,
+      body.field
+    );
+    if (invoiceRejection) return rejectionResponse(invoiceRejection);
+
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/array-append`, {
         method: "POST",

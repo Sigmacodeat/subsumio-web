@@ -23,7 +23,7 @@ import { Loader2, FileText, AlertTriangle } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
-import { isOnline, enqueueMutation, getCache, setCache, OFFLINE_KEYS } from "@/lib/offline-store";
+import { isOnline, getCache, setCache, OFFLINE_KEYS } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
 import {
   caseFrontmatter,
@@ -33,7 +33,6 @@ import {
   type TimeEntry,
 } from "@/lib/legal-types";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
-import { markInvoicedEntriesBilled } from "@/lib/invoice-mark-billed";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { RatgTariffForm, type TariffInvoiceLine } from "@/components/legal/RatgTariffForm";
 import { AhkTariffForm } from "@/components/legal/AhkTariffForm";
@@ -302,6 +301,12 @@ export function InvoiceQuickCreateDialog({
     e.preventDefault();
     const c = selectedCase;
     if (!c || !hasBillable) return;
+    // The server reserves the invoice number and the billed work together;
+    // offline neither can be kept unique, so no invoice is queued.
+    if (!isOnline()) {
+      addToast({ type: "error", title: t("inv.quick_create_online_only" as DashboardKey) });
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -351,19 +356,16 @@ export function InvoiceQuickCreateDialog({
       const total = Math.max(0, Math.round((taxableBase + tax - parsedAdvance) * 100) / 100);
       const paymentDays = Math.max(1, parseInt(settings?.zahlungszielTage || "14", 10) || 14);
 
-      // Online the server reserves the number (unique per firm and year);
-      // offline the invoice is queued with a provisional local number.
-      let invoiceNumber = nextInvoiceNumber(invoices);
-      if (isOnline()) {
-        const { csrfFetch } = await import("@/lib/csrf");
-        const res = await csrfFetch("/api/invoices/number", { method: "POST" });
-        const body = (await res.json().catch(() => null)) as {
-          data?: { number?: string };
-          number?: string;
-        } | null;
-        const reserved = body?.data?.number ?? body?.number;
-        if (!res.ok || !reserved) throw new Error(t("inv.quick_create_failed" as DashboardKey));
-        invoiceNumber = reserved;
+      // The server reserves the number (unique per firm and year).
+      const { csrfFetch } = await import("@/lib/csrf");
+      const numberRes = await csrfFetch("/api/invoices/number", { method: "POST" });
+      const numberBody = (await numberRes.json().catch(() => null)) as {
+        data?: { number?: string };
+        number?: string;
+      } | null;
+      const invoiceNumber = numberBody?.data?.number ?? numberBody?.number;
+      if (!numberRes.ok || !invoiceNumber) {
+        throw new Error(t("inv.quick_create_failed" as DashboardKey));
       }
 
       const invoice: Invoice = {
@@ -427,15 +429,12 @@ export function InvoiceQuickCreateDialog({
           ...gobdFrontmatter(hash, issuedAt),
         },
       };
-      if (isOnline()) {
-        await api.brain.createPage(invoicePayload);
-      } else {
-        await enqueueMutation({ type: "createPage", payload: invoicePayload });
-      }
+      // One server step: the entries are reserved for this number first,
+      // then the invoice is written. If another invoice got some of them
+      // first, nothing is created (409) and the error below tells the lawyer
+      // to reload — there is no half-booked invoice to clean up.
+      await api.invoices.create(invoicePayload);
 
-      // The invoice exists from here on. Anything that fails below is a
-      // warning, never an error: an error invites a retry, and a retry would
-      // create a second invoice for the same entries.
       const billedTimeIds = new Set(billableTimeIds);
       const billedExpenseIds = new Set(billableExpenseIds);
       const markBilled = <T extends { id: string }>(list: T[] | undefined, ids: Set<string>) =>
@@ -444,13 +443,6 @@ export function InvoiceQuickCreateDialog({
         );
       const updatedTimeEntries = markBilled(c.timeEntries, billedTimeIds);
       const updatedExpenses = markBilled(c.expenses, billedExpenseIds);
-      const bookkeepingFailed = await markInvoicedEntriesBilled({
-        caseSlug: c.slug,
-        invoiceNumber: invoice.number,
-        timeEntryIds: billableTimeIds,
-        expenseIds: billableExpenseIds,
-        snapshot: { time_entries: updatedTimeEntries, expenses: updatedExpenses },
-      });
 
       const nextInvoices = [invoice, ...invoices];
       const nextCases = cases.map((ca) =>
@@ -466,12 +458,6 @@ export function InvoiceQuickCreateDialog({
       }).catch(() => {});
 
       addToast({ type: "success", title: t("inv.quick_created" as DashboardKey) });
-      if (bookkeepingFailed) {
-        addToast({
-          type: "warning",
-          title: t("inv.quick_mark_billed_failed" as DashboardKey),
-        });
-      }
 
       // Auto-generate e-invoice if format selected
       if (eInvoiceFormat !== "none") {

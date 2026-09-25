@@ -10,6 +10,7 @@ import {
   rejectionResponse,
 } from "@/lib/page-write-guards";
 import { closeOpenItemForInvoice, createOpenItemForInvoice } from "@/lib/open-items";
+import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/[slug]");
@@ -182,7 +183,16 @@ export const DELETE = createHandler(
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       void logAudit("invoice.delete", "invoice", { entityId: slug });
-      return Response.json({ ok: true });
+
+      // The deleted draft no longer bills its work — put it back to open so
+      // a corrected invoice can take it.
+      const released = await releaseWorkOfInvoice(
+        ctx.headers,
+        slug,
+        (currentRead.page.frontmatter ?? {}) as Record<string, unknown>,
+        "draft_deleted"
+      );
+      return Response.json({ ok: true, released });
     } catch (err) {
       log.error("[invoices/slug] delete failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);

@@ -122,21 +122,31 @@ export function BillingTab() {
   const handleDeleteTimeEntry = useCallback(
     (id: string) => {
       if (!ctx.caseData || ctx.caseData.status === "archived") return;
+      const entry = ctx.timeEntries.find((e) => e.id === id);
+      if (!entry) return;
+      // A billed entry is part of an invoice's basis — the server refuses the
+      // write as well; say so instead of failing silently.
+      if (entry.billed) {
+        addToast({ type: "error", title: t("cases.detail_time_billed_locked") });
+        return;
+      }
+      if (!confirm(t("cases.detail_time_delete_confirm"))) return;
       const updated = ctx.timeEntries.filter((e) => e.id !== id);
       ctx.setTimeEntries(updated);
       void ctx.saveCaseUpdate({ timeEntries: updated });
     },
-    [ctx]
+    [ctx, t, addToast]
   );
 
   const handleDeleteExpense = useCallback(
     (id: string) => {
       if (!ctx.caseData || ctx.caseData.status === "archived") return;
+      if (!confirm(t("cases.detail_exp_delete_confirm"))) return;
       // DELETE /api/expenses — serverseitiger Billed-Guard; Toasts/State
       // übernimmt der Context (offline: Queue-Fallback).
       void ctx.deleteExpense(id);
     },
-    [ctx]
+    [ctx, t]
   );
 
   const handleUnbillExpense = useCallback(
@@ -168,12 +178,17 @@ export function BillingTab() {
           const updatedEntries = ctx.timeEntries.map((e) =>
             e.id === entryId ? { ...e, billed: false, invoice_number: undefined } : e
           );
+          // The unbill route already wrote the matter — only mirror it locally.
           ctx.setTimeEntries(updatedEntries);
-          void ctx.saveCaseUpdate({ timeEntries: updatedEntries });
           addToast({ type: "success", title: t("billingtab.unbilled_ok") });
         }
-      } catch {
-        addToast({ type: "error", title: t("billingtab.unbill_failed") });
+      } catch (err) {
+        // e.g. the invoice is already issued — the server says which one.
+        addToast({
+          type: "error",
+          title: t("billingtab.unbill_failed"),
+          description: err instanceof Error ? err.message : undefined,
+        });
       } finally {
         setUnbillingId(null);
       }
@@ -452,13 +467,17 @@ export function BillingTab() {
                       )}
                     </button>
                   )}
-                  <button
-                    disabled={isArchived}
-                    onClick={() => handleDeleteTimeEntry(entry.id)}
-                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {!entry.billed && (
+                    <button
+                      disabled={isArchived}
+                      onClick={() => handleDeleteTimeEntry(entry.id)}
+                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.99] motion-reduce:transition-none"
+                      title={t("cases.detail_time_delete")}
+                      aria-label={t("cases.detail_time_delete")}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

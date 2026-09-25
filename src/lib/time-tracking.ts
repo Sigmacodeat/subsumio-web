@@ -330,17 +330,25 @@ export async function markTimeEntriesBilled(
   };
 }
 
-/** Clear billed flag + invoice_number on embedded entries — atomically. */
+/**
+ * Clear billed flag + invoice_number on embedded entries — atomically. With
+ * `onlyInvoiceNumber`, entries billed under a different invoice by now are
+ * skipped inside the same UPDATE (`""` = only entries without a number).
+ */
 export async function unbillTimeEntries(
   brain: TimeEntriesArrayClient,
   caseSlug: string,
-  ids: string[]
+  ids: string[],
+  onlyInvoiceNumber?: string
 ): Promise<{ updated: number; not_found: string[] }> {
   if (ids.length === 0) return { updated: 0, not_found: [] };
   const res = await brain.mutatePageArray(caseSlug, TIME_ENTRIES_FIELD, {
     match: ids,
     set: { billed: false },
     unset: ["invoice_number"],
+    ...(onlyInvoiceNumber !== undefined
+      ? { unless: { ne: { invoice_number: onlyInvoiceNumber } } }
+      : {}),
   });
   return { updated: res.updated_ids.length, not_found: res.not_found_ids };
 }

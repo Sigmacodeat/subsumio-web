@@ -7,6 +7,8 @@ import {
   updateStandaloneBilling,
   STANDALONE_ENTRY_PREFIX,
 } from "@/lib/time-tracking";
+import { findUnbillBlockers, unbillBlockedResponse } from "@/lib/invoice-billing-lock";
+import { GUARD_READ_FAILED, rejectionResponse } from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/time/unbill");
@@ -36,14 +38,54 @@ export const POST = createHandler(
       const standaloneIds = body.entry_ids.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
       const caseIds = body.entry_ids.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
 
-      let result: { updated: number; not_found: string[] } = { updated: 0, not_found: [] };
+      // Which invoice does each entry sit on? Work on an issued invoice that
+      // is neither stornoed nor deleted stays billed (409) — otherwise it
+      // would be billed a second time.
+      const refs: Array<{ id: string; invoice_number?: unknown }> = [];
       if (caseIds.length > 0) {
         const casePage = await brain.getPage(body.case_slug).catch(() => null);
         if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
+        const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+        const list = Array.isArray(fm.time_entries)
+          ? (fm.time_entries as Array<Record<string, unknown>>)
+          : [];
+        for (const e of list) {
+          if (e && caseIds.includes(String(e.id))) {
+            refs.push({ id: String(e.id), invoice_number: e.invoice_number });
+          }
+        }
+      }
+      for (const id of standaloneIds) {
+        const page = await brain.getPage(id).catch(() => null);
+        const fm = (page?.frontmatter ?? null) as Record<string, unknown> | null;
+        if (fm) refs.push({ id, invoice_number: fm.invoice_number });
+      }
+      let blockers;
+      try {
+        blockers = await findUnbillBlockers(ctx.headers, refs);
+      } catch {
+        return rejectionResponse(GUARD_READ_FAILED);
+      }
+      if (blockers.length > 0) return unbillBlockedResponse(blockers);
 
-        // Atomic single-statement update — clears billed + invoice_number
-        // on the matched elements without a read-modify-write window.
-        result = await unbillTimeEntries(brain, body.case_slug, caseIds);
+      // Unbill per invoice number: an entry that moved to another invoice
+      // since the check above is skipped inside the same UPDATE.
+      const numberOf = new Map(refs.map((r) => [r.id, String(r.invoice_number ?? "")]));
+      let result: { updated: number; not_found: string[] } = { updated: 0, not_found: [] };
+      if (caseIds.length > 0) {
+        const groups = new Map<string, string[]>();
+        for (const id of caseIds) {
+          const n = numberOf.get(id) ?? "";
+          groups.set(n, [...(groups.get(n) ?? []), id]);
+        }
+        const notFound = new Set<string>();
+        for (const [number, ids] of groups) {
+          // Atomic single-statement update — clears billed + invoice_number.
+          const r = await unbillTimeEntries(brain, body.case_slug, ids, number);
+          result.updated += r.updated;
+          for (const id of r.not_found) notFound.add(id);
+        }
+        result.not_found = [...notFound];
       }
 
       if (standaloneIds.length > 0) {

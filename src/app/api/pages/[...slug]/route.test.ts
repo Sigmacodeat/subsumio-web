@@ -194,3 +194,54 @@ describe("PATCH/DELETE /api/pages/[...slug] — ausgestellte Rechnungen", () => 
     expect(written()?.frontmatter).toMatchObject({ status: "tombstoned" });
   });
 });
+
+describe("PATCH /api/pages/[...slug] — billed work (GELD-1)", () => {
+  const matter = () => ({
+    slug: "cases/a",
+    type: "legal_case",
+    frontmatter: {
+      status: "active",
+      time_entries: [
+        { id: "te-1", minutes: 60, billed: true, invoice_number: "R-1" },
+        { id: "te-2", minutes: 15, billed: false },
+      ],
+    },
+  });
+
+  it("refuses dropping a billed time entry through a whole-list save", async () => {
+    stored = matter();
+    const res = await call("PATCH", "cases/a", {
+      frontmatter: { time_entries: [{ id: "te-2", minutes: 15, billed: false }] },
+    });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("entry_billed");
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("refuses un-billing through a whole-list save", async () => {
+    stored = matter();
+    const res = await call("PATCH", "cases/a", {
+      frontmatter: {
+        time_entries: [
+          { id: "te-1", minutes: 60, billed: false },
+          { id: "te-2", minutes: 15, billed: false },
+        ],
+      },
+    });
+    expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("still saves a list that keeps the billed entry unchanged", async () => {
+    stored = matter();
+    const res = await call("PATCH", "cases/a", {
+      frontmatter: {
+        time_entries: [
+          { id: "te-1", minutes: 60, billed: true, invoice_number: "R-1" },
+          { id: "te-3", minutes: 5, billed: false },
+        ],
+      },
+    });
+    expect(res.status).toBe(200);
+  });
+});

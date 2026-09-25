@@ -220,7 +220,7 @@ function sameValue(a: unknown, b: unknown): boolean {
   }
 }
 
-function finalized(status: string, detail: string): GuardRejection {
+export function finalized(status: string, detail: string): GuardRejection {
   const label =
     status === "paid"
       ? "bezahlt"

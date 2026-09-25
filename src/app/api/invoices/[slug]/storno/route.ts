@@ -19,6 +19,7 @@ import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 import { closeOpenItemForInvoice } from "@/lib/open-items";
 import { logAudit } from "@/lib/audit";
+import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/[slug]/storno");
@@ -197,6 +198,10 @@ export const POST = createHandler(
       );
     }
 
-    return apiSuccess({ slug: stornoSlug, invoice_number: number }, undefined, 201);
+    // The stornoed invoice no longer bills its work — put it back to open so
+    // the corrected invoice can take it (audit entry written by the helper).
+    const released = await releaseWorkOfInvoice(ctx.headers, slug, fm, "storno");
+
+    return apiSuccess({ slug: stornoSlug, invoice_number: number, released }, undefined, 201);
   }
 );

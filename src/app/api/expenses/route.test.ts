@@ -458,7 +458,21 @@ describe("POST /api/expenses/mark-billed + unbill", () => {
       expenses: [{ ...EXPENSE, billed: true, invoice_number: "RE-1" }],
     };
     mockBrainCase(fm);
+    // The invoice RE-1 is still a draft — its work may be released.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json([
+          {
+            slug: "invoice/re-1",
+            title: "x",
+            frontmatter: { invoice_number: "RE-1", status: "draft" },
+          },
+        ])
+      )
+    );
     const res = await unbill({ case_slug: "case-1", entry_ids: ["exp-1"] });
+    vi.unstubAllGlobals();
     expect(res.status).toBe(200);
     const [, , mutation] = mockMutatePageArray.mock.calls[0]! as [string, string, Mutation];
     expect(mutation).toMatchObject({ set: { billed: false }, unset: ["invoice_number"] });

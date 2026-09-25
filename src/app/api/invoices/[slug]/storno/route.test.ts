@@ -28,6 +28,10 @@ vi.mock("@/lib/gobd", () => ({
   invoiceContentString: vi.fn(() => "invoice-content"),
 }));
 vi.mock("@/lib/audit", () => ({ logAudit: (...args: unknown[]) => mockLogAudit(...args) }));
+const mockRelease = vi.fn(async (..._args: unknown[]) => ({ time: 2, expenses: 1 }));
+vi.mock("@/lib/invoice-billing-lock", () => ({
+  releaseWorkOfInvoice: (...args: unknown[]) => mockRelease(...args),
+}));
 vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
@@ -190,6 +194,14 @@ describe("POST /api/invoices/[slug]/storno", () => {
       "invoice",
       expect.objectContaining({ entityId: "legal/invoices/storno-R-2026-0002" })
     );
+    // GELD-9: the stornoed invoice's work is open again for a corrected invoice.
+    expect(mockRelease).toHaveBeenCalledWith(
+      { "x-subsumio-source": "brain-at" },
+      originalInvoice.slug,
+      expect.objectContaining({ invoice_number: "R-2026-0001" }),
+      "storno"
+    );
+    expect(body.data.released).toEqual({ time: 2, expenses: 1 });
   });
 
   test("returns 503 when the storno page cannot be created", async () => {
@@ -199,5 +211,7 @@ describe("POST /api/invoices/[slug]/storno", () => {
     mockListEnginePages.mockResolvedValueOnce([originalInvoice]);
     const res = await post();
     expect(res.status).toBe(503);
+    // No storno note — the original still bills its work.
+    expect(mockRelease).not.toHaveBeenCalled();
   });
 });

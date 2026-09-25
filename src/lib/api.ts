@@ -3229,6 +3229,25 @@ export const api = {
 
   invoices: {
     /**
+     * Create a draft invoice and reserve its time entries / expenses in one
+     * server step. 409 `entries_already_billed` = nothing was created.
+     */
+    create(payload: {
+      slug: string;
+      title: string;
+      content?: string;
+      frontmatter: Record<string, unknown>;
+    }): Promise<{
+      slug: string;
+      invoice_number: string;
+      billed: { time: string[]; expenses: string[] };
+    }> {
+      return request("/api/invoices", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }).then((r) => unwrapApiBody(r));
+    },
+    /**
      * Status/field changes on an ISSUED invoice — routes through
      * /api/invoices/[slug] (PATCH), which refuses any change once status is
      * sent/paid/overdue (GoBD/§ 132 BAO immutability). invoicing/page.tsx's
